@@ -181,11 +181,14 @@ public class ShortestPathPlugin extends Plugin {
         WorldPoint currentLocation = localPlayer.getWorldLocation();
         if (currentLocation.distanceTo(currentPath.getTarget()) < config.reachedDistance()) {
             currentPath = null;
+            setTarget(null);
+            return;
         }
 
         if (!isNearPath(currentLocation)) {
             if (config.cancelInstead()) {
                 currentPath = null;
+                setTarget(null);
                 return;
             }
 
@@ -379,13 +382,13 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         client.createMenuEntry(position)
-            .setOption(option)
-            .setTarget(target)
-            .setParam0(event.getActionParam0())
-            .setParam1(event.getActionParam1())
-            .setIdentifier(event.getIdentifier())
-            .setType(MenuAction.RUNELITE)
-            .onClick(this::onMenuOptionClicked);
+                .setOption(option)
+                .setTarget(target)
+                .setParam0(event.getActionParam0())
+                .setParam1(event.getActionParam1())
+                .setIdentifier(event.getIdentifier())
+                .setType(MenuAction.RUNELITE)
+                .onClick(this::onMenuOptionClicked);
     }
 
     private Widget getMinimapDrawWidget() {
