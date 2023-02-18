@@ -26,3 +26,8 @@ As far as I can tell, both algorithm options produce paths identical to eachothe
 
 - Are there any better options?
 - Are there any potential future problems with using either of the two options?
+
+---
+
+The difference between the two options can be seen in full detail in code here:  
+https://github.com/Skretzo/shortest-path/commit/a69e81282fdaf109855e5d75a4c82d6a6139fec2?diff=split#diff-52a8d2893d794d77866281270ec3535651946019cffe758ec44c5b37df1a3234
