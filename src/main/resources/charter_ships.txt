@@ -1,51 +1,52 @@
-# Brimhaven
-2760 3238 0	2792 3414 0	Charter Trader Crewmember 1330		460 Coins		6
-2760 3238 0	2589 2851 0	Charter Trader Crewmember 1330		680 Coins		6
-2760 3238 0	2954 3158 0	Charter Trader Crewmember 1330		480 Coins		6
-2760 3238 0	3671 2931 0	Charter Trader Crewmember 1330		1950 Coins	Cabin Fever	6
-2760 3238 0	2674 3144 0	Charter Trader Crewmember 1330		400 Coins		6
-2760 3238 0	3702 3503 0	Charter Trader Crewmember 1330		2900 Coins	Priest in Peril	6
-2760 3238 0	3038 3192 0	Charter Trader Crewmember 1330		1600 Coins		6
-2760 3238 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6
-2760 3238 0	3001 3032 0	Charter Trader Crewmember 1330		400 Coins	The Grand Tree	6
-2760 3238 0	2157 3330 0	Charter Trader Crewmember 1330		3450 Coins	Song of the Elves	6
-
-# Catherby
-2792 3414 0	2760 3238 0	Charter Trader Crewmember 1330		480 Coins		6
-2792 3414 0	2589 2851 0	Charter Trader Crewmember 1330		1000 Coins		6
-2792 3414 0	2954 3158 0	Charter Trader Crewmember 1330		480 Coins		6
-2792 3414 0	3671 2931 0	Charter Trader Crewmember 1330		1750 Coins	Cabin Fever	6
-2792 3414 0	2674 3144 0	Charter Trader Crewmember 1330		1600 Coins		6
-2792 3414 0	3702 3503 0	Charter Trader Crewmember 1330		3500 Coins	Priest in Peril	6
-2792 3414 0	3038 3192 0	Charter Trader Crewmember 1330		1000 Coins		6
-2792 3414 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6
-2792 3414 0	3001 3032 0	Charter Trader Crewmember 1330		1600 Coins	The Grand Tree	6
-2792 3414 0	2157 3330 0	Charter Trader Crewmember 1330		3560 Coins	Song of the Elves	6
-
-# Corsair Cove
-2589 2851 0	2760 3238 0	Charter Trader Crewmember 1330		680 Coins		6
-2589 2851 0	2792 3414 0	Charter Trader Crewmember 1330		1000 Coins		6
-2589 2851 0	2954 3158 0	Charter Trader Crewmember 1330		800 Coins		6
-2589 2851 0	3671 2931 0	Charter Trader Crewmember 1330		2040 Coins	Cabin Fever	6
-2589 2851 0	2674 3144 0	Charter Trader Crewmember 1330		600 Coins		6
-2589 2851 0	3702 3503 0	Charter Trader Crewmember 1330		4040 Coins	Priest in Peril	6
-2589 2851 0	3038 3192 0	Charter Trader Crewmember 1330		1200 Coins		6
-2589 2851 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6
-2589 2851 0	3001 3032 0	Charter Trader Crewmember 1330		800 Coins	The Grand Tree	6
-2589 2851 0	2157 3330 0	Charter Trader Crewmember 1330		1420 Coins	Song of the Elves	6
-
-# Musa Point
-2954 3158 0	2760 3238 0	Charter Trader Crewmember 1330		200 Coins		6
-2954 3158 0	2792 3414 0	Charter Trader Crewmember 1330		480 Coins		6
-2954 3158 0	2589 2851 0	Charter Trader Crewmember 1330		800 Coins		6
-2954 3158 0	3671 2931 0	Charter Trader Crewmember 1330		550 Coins	Cabin Fever	6
-2954 3158 0	2674 3144 0	Charter Trader Crewmember 1330		400 Coins		6
-2954 3158 0	3702 3503 0	Charter Trader Crewmember 1330		1100 Coins	Priest in Peril	6
-2954 3158 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6
-2954 3158 0	3001 3032 0	Charter Trader Crewmember 1330		200 Coins	The Grand Tree	6
-2954 3158 0	2157 3330 0	Charter Trader Crewmember 1330		4400 Coins	Song of the Elves	6
-
-# Mos Le'Harmless
+# X Y Z	X Y Z	menuOption menuTarget objectID	Skill requirements	Item requirements	Quest	Travel time	Notes
+# Brimhaven							
+2760 3238 0	2792 3414 0	Charter Trader Crewmember 1330		460 Coins		6	
+2760 3238 0	2589 2851 0	Charter Trader Crewmember 1330		680 Coins		6	
+2760 3238 0	2954 3158 0	Charter Trader Crewmember 1330		480 Coins		6	
+2760 3238 0	3671 2931 0	Charter Trader Crewmember 1330		1950 Coins	Cabin Fever	6	
+2760 3238 0	2674 3144 0	Charter Trader Crewmember 1330		400 Coins		6	
+2760 3238 0	3702 3503 0	Charter Trader Crewmember 1330		2900 Coins	Priest in Peril	6	
+2760 3238 0	3038 3192 0	Charter Trader Crewmember 1330		1600 Coins		6	
+2760 3238 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6	
+2760 3238 0	3001 3032 0	Charter Trader Crewmember 1330		400 Coins	The Grand Tree	6	
+2760 3238 0	2157 3330 0	Charter Trader Crewmember 1330		3450 Coins	Song of the Elves	6	
+							
+# Catherby							
+2792 3414 0	2760 3238 0	Charter Trader Crewmember 1330		480 Coins		6	
+2792 3414 0	2589 2851 0	Charter Trader Crewmember 1330		1000 Coins		6	
+2792 3414 0	2954 3158 0	Charter Trader Crewmember 1330		480 Coins		6	
+2792 3414 0	3671 2931 0	Charter Trader Crewmember 1330		1750 Coins	Cabin Fever	6	
+2792 3414 0	2674 3144 0	Charter Trader Crewmember 1330		1600 Coins		6	
+2792 3414 0	3702 3503 0	Charter Trader Crewmember 1330		3500 Coins	Priest in Peril	6	
+2792 3414 0	3038 3192 0	Charter Trader Crewmember 1330		1000 Coins		6	
+2792 3414 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6	
+2792 3414 0	3001 3032 0	Charter Trader Crewmember 1330		1600 Coins	The Grand Tree	6	
+2792 3414 0	2157 3330 0	Charter Trader Crewmember 1330		3560 Coins	Song of the Elves	6	
+							
+# Corsair Cove							
+2589 2851 0	2760 3238 0	Charter Trader Crewmember 1330		680 Coins		6	
+2589 2851 0	2792 3414 0	Charter Trader Crewmember 1330		1000 Coins		6	
+2589 2851 0	2954 3158 0	Charter Trader Crewmember 1330		800 Coins		6	
+2589 2851 0	3671 2931 0	Charter Trader Crewmember 1330		2040 Coins	Cabin Fever	6	
+2589 2851 0	2674 3144 0	Charter Trader Crewmember 1330		600 Coins		6	
+2589 2851 0	3702 3503 0	Charter Trader Crewmember 1330		4040 Coins	Priest in Peril	6	
+2589 2851 0	3038 3192 0	Charter Trader Crewmember 1330		1200 Coins		6	
+2589 2851 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6	
+2589 2851 0	3001 3032 0	Charter Trader Crewmember 1330		800 Coins	The Grand Tree	6	
+2589 2851 0	2157 3330 0	Charter Trader Crewmember 1330		1420 Coins	Song of the Elves	6	
+							
+# Musa Point							
+2954 3158 0	2760 3238 0	Charter Trader Crewmember 1330		200 Coins		6	
+2954 3158 0	2792 3414 0	Charter Trader Crewmember 1330		480 Coins		6	
+2954 3158 0	2589 2851 0	Charter Trader Crewmember 1330		800 Coins		6	
+2954 3158 0	3671 2931 0	Charter Trader Crewmember 1330		550 Coins	Cabin Fever	6	
+2954 3158 0	2674 3144 0	Charter Trader Crewmember 1330		400 Coins		6	
+2954 3158 0	3702 3503 0	Charter Trader Crewmember 1330		1100 Coins	Priest in Peril	6	
+2954 3158 0	2142 3122 0	Charter Trader Crewmember 1330		3200 Coins	Regicide	6	
+2954 3158 0	3001 3032 0	Charter Trader Crewmember 1330		200 Coins	The Grand Tree	6	
+2954 3158 0	2157 3330 0	Charter Trader Crewmember 1330		4400 Coins	Song of the Elves	6	
+							
+# Mos Le'Harmless							
 3671 2931 0	2760 3238 0	Charter Trader Crewmember 1330		1450 Coins		6	
 3671 2931 0	2792 3414 0	Charter Trader Crewmember 1330		1250 Coins		6	
 3671 2931 0	2589 2851 0	Charter Trader Crewmember 1330		2040 Coins		6	
