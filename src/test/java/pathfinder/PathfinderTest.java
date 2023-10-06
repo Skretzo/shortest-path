@@ -51,43 +51,43 @@ public class PathfinderTest {
     public void testAgilityShortcuts() {
         when(config.useAgilityShortcuts()).thenReturn(true);
         when(config.useGrappleShortcuts()).thenReturn(true);
-        testPathLength(2, "agility_shortcuts.txt", QuestState.FINISHED, 99);
+        testPathLength(2, "agility_shortcuts.tsv", QuestState.FINISHED, 99);
     }
 
     @Test
     public void testBoats() {
         when(config.useBoats()).thenReturn(true);
-        testPathLength(2, "boats.txt", QuestState.FINISHED);
+        testPathLength(2, "boats.tsv", QuestState.FINISHED);
     }
 
     @Test
     public void testCanoes() {
         when(config.useCanoes()).thenReturn(true);
-        testPathLength(2, "canoes.txt", QuestState.NOT_STARTED, 99);
+        testPathLength(2, "canoes.tsv", QuestState.NOT_STARTED, 99);
     }
 
     @Test
     public void testCharterShips() {
         when(config.useCharterShips()).thenReturn(true);
-        testPathLength(2, "charter_ships.txt", QuestState.FINISHED);
+        testPathLength(2, "charter_ships.tsv", QuestState.FINISHED);
     }
 
     @Test
     public void testShips() {
         when(config.useShips()).thenReturn(true);
-        testPathLength(2, "ships.txt", QuestState.FINISHED);
+        testPathLength(2, "ships.tsv", QuestState.FINISHED);
     }
 
     @Test
     public void testGnomeGliders() {
         when(config.useGnomeGliders()).thenReturn(true);
-        testPathLength(2, "gnome_gliders.txt", QuestState.FINISHED);
+        testPathLength(2, "gnome_gliders.tsv", QuestState.FINISHED);
     }
 
     @Test
     public void testSpiritTrees() {
         when(config.useSpiritTrees()).thenReturn(true);
-        testPathLength(2, "spirit_trees.txt", QuestState.FINISHED);
+        testPathLength(2, "spirit_trees.tsv", QuestState.FINISHED);
     }
 
     private void testPathLength(int expectedLength, String path, QuestState questState) {

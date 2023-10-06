@@ -227,17 +227,17 @@ public class Transport {
         fairyRings.clear();
         fairyRingCodes.clear();
 
-        addTransports(transports, "/transports.txt", TransportType.TRANSPORT);
-        addTransports(transports, "/agility_shortcuts.txt", TransportType.AGILITY_SHORTCUT);
-        addTransports(transports, "/boats.txt", TransportType.BOAT);
-        addTransports(transports, "/canoes.txt", TransportType.CANOE);
-        addTransports(transports, "/charter_ships.txt", TransportType.CHARTER_SHIP);
-        addTransports(transports, "/ships.txt", TransportType.SHIP);
-        addTransports(transports, "/fairy_rings.txt", TransportType.FAIRY_RING);
-        addTransports(transports, "/gnome_gliders.txt", TransportType.GNOME_GLIDER);
-        addTransports(transports, "/spirit_trees.txt", TransportType.SPIRIT_TREE);
-        addTransports(transports, "/levers.txt", TransportType.TELEPORTATION_LEVER);
-        addTransports(transports, "/portals.txt", TransportType.TELEPORTATION_PORTAL);
+        addTransports(transports, "/transports.tsv", TransportType.TRANSPORT);
+        addTransports(transports, "/agility_shortcuts.tsv", TransportType.AGILITY_SHORTCUT);
+        addTransports(transports, "/boats.tsv", TransportType.BOAT);
+        addTransports(transports, "/canoes.tsv", TransportType.CANOE);
+        addTransports(transports, "/charter_ships.tsv", TransportType.CHARTER_SHIP);
+        addTransports(transports, "/ships.tsv", TransportType.SHIP);
+        addTransports(transports, "/fairy_rings.tsv", TransportType.FAIRY_RING);
+        addTransports(transports, "/gnome_gliders.tsv", TransportType.GNOME_GLIDER);
+        addTransports(transports, "/spirit_trees.tsv", TransportType.SPIRIT_TREE);
+        addTransports(transports, "/levers.tsv", TransportType.TELEPORTATION_LEVER);
+        addTransports(transports, "/portals.tsv", TransportType.TELEPORTATION_PORTAL);
 
         return transports;
     }
