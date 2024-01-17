@@ -1,16 +1,15 @@
 package shortestpath.pathfinder;
 
+import com.google.common.reflect.ClassPath;
+import com.google.common.reflect.ClassPath.ResourceInfo;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.Util;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 
@@ -68,23 +67,25 @@ public class SplitFlagMap {
 
     public static SplitFlagMap fromResources() {
         Map<Integer, byte[]> compressedRegions = new HashMap<>();
-        try (ZipInputStream in = new ZipInputStream(ShortestPathPlugin.class.getResourceAsStream("/collision-map.zip"))) {
+        try {
+            ClassPath classPath = ClassPath.from(ShortestPathPlugin.class.getClassLoader());
+
             int minX = Integer.MAX_VALUE;
             int minY = Integer.MAX_VALUE;
             int maxX = 0;
             int maxY = 0;
 
-            ZipEntry entry;
-            while ((entry = in.getNextEntry()) != null) {
-                String[] n = entry.getName().split("_");
-                final int x = Integer.parseInt(n[0]);
-                final int y = Integer.parseInt(n[1]);
-                minX = Math.min(minX, x);
-                minY = Math.min(minY, y);
-                maxX = Math.max(maxX, x);
-                maxY = Math.max(maxY, y);
-
-                compressedRegions.put(SplitFlagMap.packPosition(x, y), Util.readAllBytes(in));
+            for (ResourceInfo info : classPath.getResources()) {
+                if (info.getResourceName().startsWith("collision-map/")) {
+                    String[] n = info.getResourceName().split("/")[1].split("_");
+                    final int x = Integer.parseInt(n[0]);
+                    final int y = Integer.parseInt(n[1]);
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                    compressedRegions.put(SplitFlagMap.packPosition(x, y), info.asByteSource().read());
+                }
             }
 
             regionExtents = new RegionExtent(minX, minY, maxX, maxY);
