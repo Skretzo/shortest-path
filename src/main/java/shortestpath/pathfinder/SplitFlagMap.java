@@ -1,9 +1,11 @@
 package shortestpath.pathfinder;
 
-import com.google.common.reflect.ClassPath;
-import com.google.common.reflect.ClassPath.ResourceInfo;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import shortestpath.ShortestPathPlugin;
 
 import static net.runelite.api.Constants.REGION_SIZE;
+import shortestpath.Util;
 
 public class SplitFlagMap {
     @Getter
@@ -67,25 +70,26 @@ public class SplitFlagMap {
 
     public static SplitFlagMap fromResources() {
         Map<Integer, byte[]> compressedRegions = new HashMap<>();
-        try {
-            ClassPath classPath = ClassPath.from(ShortestPathPlugin.class.getClassLoader());
 
+        try (InputStream dir = ShortestPathPlugin.class.getResourceAsStream("/collision-map")) {
             int minX = Integer.MAX_VALUE;
             int minY = Integer.MAX_VALUE;
-            int maxX = 0;
-            int maxY = 0;
+            int maxX = Integer.MIN_VALUE;
+            int maxY = Integer.MIN_VALUE;
 
-            for (ResourceInfo info : classPath.getResources()) {
-                if (info.getResourceName().startsWith("collision-map/")) {
-                    String[] n = info.getResourceName().split("/")[1].split("_");
-                    final int x = Integer.parseInt(n[0]);
-                    final int y = Integer.parseInt(n[1]);
-                    minX = Math.min(minX, x);
-                    minY = Math.min(minY, y);
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                    compressedRegions.put(SplitFlagMap.packPosition(x, y), info.asByteSource().read());
-                }
+            BufferedReader lines = new BufferedReader(new InputStreamReader(dir, StandardCharsets.UTF_8));
+            String name;
+            while ((name = lines.readLine()) != null) {
+                InputStream in = ShortestPathPlugin.class.getResourceAsStream("/collision-map/" + name);
+                String[] n = name.split("_");
+                final int x = Integer.parseInt(n[0]);
+                final int y = Integer.parseInt(n[1]);
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+
+                compressedRegions.put(SplitFlagMap.packPosition(x, y), Util.readAllBytes(in));
             }
 
             regionExtents = new RegionExtent(minX, minY, maxX, maxY);
