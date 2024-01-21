@@ -35,8 +35,8 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -285,7 +285,7 @@ public class ShortestPathPlugin extends Plugin {
             }
         }
 
-        final Widget map = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+        final Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
 
         if (map != null && map.getBounds().contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY())) {
             addMenuEntry(event, SET, TARGET, 0);
@@ -367,7 +367,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     private WorldPoint getSelectedWorldPoint() {
-        if (client.getWidget(WidgetInfo.WORLD_MAP_VIEW) == null) {
+        if (client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null) {
             if (client.getSelectedSceneTile() != null) {
                 return client.isInInstancedRegion() ?
                     WorldPoint.fromLocalInstance(client, client.getSelectedSceneTile().getLocalLocation()) :
@@ -443,7 +443,7 @@ public class ShortestPathPlugin extends Plugin {
 
         float pixelsPerTile = worldMap.getWorldMapZoom();
 
-        Widget map = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+        Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
         if (map != null) {
             Rectangle worldMapRect = map.getBounds();
 
@@ -491,11 +491,11 @@ public class ShortestPathPlugin extends Plugin {
     private Widget getMinimapDrawWidget() {
         if (client.isResized()) {
             if (client.getVarbitValue(Varbits.SIDE_PANELS) == 1) {
-                return client.getWidget(WidgetInfo.RESIZABLE_MINIMAP_DRAW_AREA);
+                return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_BOTTOM_LINE_MINIMAP_DRAW_AREA);
             }
-            return client.getWidget(WidgetInfo.RESIZABLE_MINIMAP_STONES_DRAW_AREA);
+            return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_MINIMAP_DRAW_AREA);
         }
-        return client.getWidget(WidgetInfo.FIXED_VIEWPORT_MINIMAP_DRAW_AREA);
+        return client.getWidget(ComponentID.FIXED_VIEWPORT_MINIMAP_DRAW_AREA);
     }
 
     private Shape getMinimapClipAreaSimple() {

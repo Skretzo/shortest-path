@@ -12,8 +12,8 @@ import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -37,7 +37,7 @@ public class PathMapOverlay extends Overlay {
         setPosition(OverlayPosition.DYNAMIC);
         setPriority(OverlayPriority.LOW);
         setLayer(OverlayLayer.MANUAL);
-        drawAfterLayer(WidgetInfo.WORLD_MAP_VIEW);
+        drawAfterLayer(ComponentID.WORLD_MAP_MAPVIEW);
     }
 
     @Override
@@ -46,16 +46,16 @@ public class PathMapOverlay extends Overlay {
             return null;
         }
 
-        if (client.getWidget(WidgetInfo.WORLD_MAP_VIEW) == null) {
+        if (client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null) {
             return null;
         }
 
-        Area worldMapClipArea = getWorldMapClipArea(client.getWidget(WidgetInfo.WORLD_MAP_VIEW).getBounds());
+        Area worldMapClipArea = getWorldMapClipArea(client.getWidget(ComponentID.WORLD_MAP_MAPVIEW).getBounds());
         graphics.setClip(worldMapClipArea);
 
         if (config.drawCollisionMap()) {
             graphics.setColor(config.colourCollisionMap());
-            Rectangle extent = getWorldMapExtent(client.getWidget(WidgetInfo.WORLD_MAP_VIEW).getBounds());
+            Rectangle extent = getWorldMapExtent(client.getWidget(ComponentID.WORLD_MAP_MAPVIEW).getBounds());
             final CollisionMap map = plugin.getMap();
             final int z = client.getPlane();
             for (int x = extent.x; x < (extent.x + extent.width + 1); x++) {
@@ -137,8 +137,8 @@ public class PathMapOverlay extends Overlay {
     }
 
     private Area getWorldMapClipArea(Rectangle baseRectangle) {
-        final Widget overview = client.getWidget(WidgetInfo.WORLD_MAP_OVERVIEW_MAP);
-        final Widget surfaceSelector = client.getWidget(WidgetInfo.WORLD_MAP_SURFACE_SELECTOR);
+        final Widget overview = client.getWidget(ComponentID.WORLD_MAP_OVERVIEW_MAP);
+        final Widget surfaceSelector = client.getWidget(ComponentID.WORLD_MAP_SURFACE_SELECTOR);
 
         Area clipArea = new Area(baseRectangle);
 

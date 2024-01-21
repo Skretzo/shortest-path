@@ -10,8 +10,7 @@ import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.Overlay;
@@ -38,12 +37,12 @@ public class PathMapTooltipOverlay extends Overlay {
         setPosition(OverlayPosition.DYNAMIC);
         setPriority(OverlayPriority.LOW);
         setLayer(OverlayLayer.MANUAL);
-        drawAfterInterface(WidgetID.WORLD_MAP_GROUP_ID);
+        drawAfterInterface(ComponentID.WORLD_MAP_MAPVIEW);
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!config.drawMap() || client.getWidget(WidgetInfo.WORLD_MAP_VIEW) == null) {
+        if (!config.drawMap() || client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null) {
             return null;
         }
 
@@ -85,7 +84,7 @@ public class PathMapTooltipOverlay extends Overlay {
         int clippedHeight = tooltipHeight + TOOLTIP_PADDING_HEIGHT * 2;
         int clippedWidth = tooltipWidth + TOOLTIP_PADDING_WIDTH * 2;
 
-        Rectangle worldMapBounds = client.getWidget(WidgetInfo.WORLD_MAP_VIEW).getBounds();
+        Rectangle worldMapBounds = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW).getBounds();
         int worldMapRightBoundary = worldMapBounds.width + worldMapBounds.x;
         int worldMapBottomBoundary = worldMapBounds.height + worldMapBounds.y;
 
