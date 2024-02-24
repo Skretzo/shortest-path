@@ -26,6 +26,7 @@ public class PathTileOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
     private final ShortestPathConfig config;
+    private static final int TRANSPORT_LABEL_GAP = 3;
 
     @Inject
     public PathTileOverlay(Client client, ShortestPathPlugin plugin, ShortestPathConfig config) {
@@ -138,13 +139,13 @@ public class PathTileOverlay extends Overlay {
             if (TileStyle.LINES.equals(config.pathStyle())) {
                 for (int i = 1; i < path.size(); i++) {
                     drawLine(graphics, path.get(i - 1), path.get(i), color, 1 + counter++);
-                    drawFairyRingCode(graphics, path.get(i - 1), path.get(i));
+                    drawTransports(graphics, path.get(i - 1), path.get(i));
                 }
             } else {
                 boolean showTiles = TileStyle.TILES.equals(config.pathStyle());
                 for (int i = 0; i <  path.size(); i++) {
                     drawTile(graphics, path.get(i), color, counter++, showTiles);
-                    drawFairyRingCode(graphics, path.get(i), (i + 1 == path.size()) ? null : path.get(i + 1));
+                    drawTransports(graphics, path.get(i), (i + 1 == path.size()) ? null : path.get(i + 1));
                 }
             }
         }
@@ -256,7 +257,7 @@ public class PathTileOverlay extends Overlay {
         }
     }
 
-    private void drawFairyRingCode(Graphics2D graphics, WorldPoint location, WorldPoint locationEnd) {
+    private void drawTransports(Graphics2D graphics, WorldPoint location, WorldPoint locationEnd) {
         for (WorldPoint point : WorldPoint.toLocalInstance(client, location)) {
             for (WorldPoint pointEnd : WorldPoint.toLocalInstance(client, locationEnd))
             {
@@ -264,45 +265,42 @@ public class PathTileOverlay extends Overlay {
                     continue;
                 }
 
-                String codeText;
-                if (fairyRingCode(point) == null || (codeText = fairyRingCode(pointEnd)) == null) {
+                if(!WorldPointUtil.isTransport(point, pointEnd)){
                     continue;
                 }
 
-                LocalPoint lp = LocalPoint.fromWorld(client, point);
-                if (lp == null) {
-                    continue;
-                }
+                int vertical_offset = 0;
+                for(Transport transport : plugin.getTransports().get(point)) {
+                    if (!pointEnd.equals(transport.getDestination())) {
+                        continue;
+                    }
+                    String text = transport.getDisplayNotes();
+                    if(text == null || text.isEmpty()){
+                        continue;
+                    }
 
-                Point p = Perspective.localToCanvas(client, lp, client.getPlane());
-                if (p == null) {
-                    continue;
-                }
+                    LocalPoint lp = LocalPoint.fromWorld(client, point);
+                    if (lp == null) {
+                        continue;
+                    }
 
-                Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(codeText, graphics);
-                int x = (int) (p.getX() - textBounds.getWidth() / 2);
-                int y = (int) (p.getY() - textBounds.getHeight());
-                graphics.setColor(Color.BLACK);
-                graphics.drawString(codeText, x + 1, y + 1);
-                graphics.setColor(config.colourText());
-                graphics.drawString(codeText, x, y);
+                    Point p = Perspective.localToCanvas(client, lp, client.getPlane());
+                    if (p == null) {
+                        continue;
+                    }
+
+                    Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
+                    double height = textBounds.getHeight();
+                    int x = (int) (p.getX() - textBounds.getWidth() / 2);
+                    int y = (int) (p.getY() - height) - (vertical_offset);
+                    graphics.setColor(Color.BLACK);
+                    graphics.drawString(text, x + 1, y + 1);
+                    graphics.setColor(config.colourText());
+                    graphics.drawString(text, x, y);
+
+                    vertical_offset += (int)height + TRANSPORT_LABEL_GAP;
+                }
             }
         }
-    }
-
-    private String fairyRingCode(WorldPoint point) {
-        if (point == null) {
-            return null;
-        }
-
-        List<WorldPoint> fairyRings = Transport.getFairyRings();
-
-        for (int i = 0; i < fairyRings.size(); i++) {
-            if (point.equals(fairyRings.get(i))) {
-                return Transport.getFairyRingCodes().get(i);
-            }
-        }
-
-        return null;
     }
 }

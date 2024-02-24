@@ -87,4 +87,10 @@ public class WorldPointUtil {
 
         return Math.max(dx, dy);
     }
+
+    public static boolean isTransport(WorldPoint start, WorldPoint end) {
+        int distance = distanceBetween(start, end);
+        if(distance > 1) return true;
+        return start.getPlane() != end.getPlane();
+    }
 }

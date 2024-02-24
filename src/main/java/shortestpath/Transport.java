@@ -17,13 +17,6 @@ import net.runelite.api.coords.WorldPoint;
  * This class represents a travel point between two WorldPoints.
  */
 public class Transport {
-    /** The locations of the fairy rings */
-    @Getter
-    private static final List<WorldPoint> fairyRings = new ArrayList<>();
-
-    /** The codes of the fairy rings */
-    @Getter
-    private static final List<String> fairyRingCodes = new ArrayList<>();
 
     /** The starting point of this transport */
     @Getter
@@ -88,6 +81,10 @@ public class Transport {
     @Getter
     private int wait;
 
+    /** Notes to display for this transport. For spirit trees, fairy rings, and others, this is the option to pick. */
+    @Getter
+    private String displayNotes;
+
     Transport(final WorldPoint origin, final WorldPoint destination) {
         this.origin = origin;
         this.destination = destination;
@@ -140,6 +137,11 @@ public class Transport {
             this.wait = Integer.parseInt(parts[6]);
         }
 
+        // Destination
+        if (parts.length >= 8 && !parts[7].isEmpty()) {
+            this.displayNotes = parts[7];
+        }
+
         isAgilityShortcut = TransportType.AGILITY_SHORTCUT.equals(transportType);
         isGrappleShortcut = isAgilityShortcut && (getRequiredLevel(Skill.RANGED) > 1 || getRequiredLevel(Skill.STRENGTH) > 1);
         isBoat = TransportType.BOAT.equals(transportType);
@@ -181,6 +183,8 @@ public class Transport {
             String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
             Scanner scanner = new Scanner(s);
             List<String> fairyRingsQuestNames = new ArrayList<>();
+            List<WorldPoint> fairyRings = new ArrayList<>();
+            List<String> fairyRingCodes = new ArrayList<>();
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
 
@@ -210,6 +214,7 @@ public class Transport {
                         Transport transport = new Transport(origin, destination);
                         transport.isFairyRing = true;
                         transport.wait = 5;
+                        transport.displayNotes = fairyRingCodes.get(i);
                         transports.computeIfAbsent(origin, k -> new ArrayList<>()).add(transport);
                         if (!Strings.isNullOrEmpty(questName)) {
                             transport.quests = findQuests(questName);
@@ -224,9 +229,6 @@ public class Transport {
 
     public static HashMap<WorldPoint, List<Transport>> loadAllFromResources() {
         HashMap<WorldPoint, List<Transport>> transports = new HashMap<>();
-        fairyRings.clear();
-        fairyRingCodes.clear();
-
         addTransports(transports, "/transports.tsv", TransportType.TRANSPORT);
         addTransports(transports, "/agility_shortcuts.tsv", TransportType.AGILITY_SHORTCUT);
         addTransports(transports, "/boats.tsv", TransportType.BOAT);
