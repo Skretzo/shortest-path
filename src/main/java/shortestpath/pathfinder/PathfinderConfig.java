@@ -4,10 +4,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.GameState;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
@@ -24,6 +32,7 @@ public class PathfinderConfig {
 
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
+    /** All transports by origin {@link WorldPoint}. The null key is used for transports centered on the player. */
     private final Map<WorldPoint, List<Transport>> allTransports;
     @Getter
     private Map<WorldPoint, List<Transport>> transports;
@@ -49,7 +58,8 @@ public class PathfinderConfig {
         useGnomeGliders,
         useSpiritTrees,
         useTeleportationLevers,
-        useTeleportationPortals;
+        useTeleportationPortals,
+        usePlayerItems;
     private int agilityLevel;
     private int rangedLevel;
     private int strengthLevel;
@@ -86,6 +96,7 @@ public class PathfinderConfig {
         useGnomeGliders = config.useGnomeGliders();
         useTeleportationLevers = config.useTeleportationLevers();
         useTeleportationPortals = config.useTeleportationPortals();
+        usePlayerItems = config.usePlayerItems();
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             agilityLevel = client.getBoostedSkillLevel(Skill.AGILITY);
@@ -98,14 +109,35 @@ public class PathfinderConfig {
         }
     }
 
+    private WorldPoint getCurrentLocation() {
+        Player localPlayer = client.getLocalPlayer();
+        if(localPlayer != null){
+            return client.isInInstancedRegion() ?
+                    WorldPoint.fromLocalInstance(client, localPlayer.getLocalLocation()) : localPlayer.getWorldLocation();
+        }
+        return null;
+    }
+
     private void refreshTransportData() {
         if (!Thread.currentThread().equals(client.getClientThread())) {
             return; // Has to run on the client thread; data will be refreshed when path finding commences
         }
 
+        WorldPoint currentLocation = getCurrentLocation();
+
         useFairyRings &= !QuestState.NOT_STARTED.equals(getQuestState(Quest.FAIRYTALE_II__CURE_A_QUEEN));
         useGnomeGliders &= QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE));
         useSpiritTrees &= QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE));
+
+        //TODO: This just checks the player's inventory and equipment. Later, bank items could be included, but the player will probably need to configure which items are considered
+        var inventoryItems = Arrays.stream(new InventoryID[]{InventoryID.INVENTORY, InventoryID.EQUIPMENT})
+                .map(client::getItemContainer)
+                .filter(Objects::nonNull)
+                .map(ItemContainer::getItems)
+                .flatMap(Arrays::stream)
+                .map(Item::getId)
+                .filter(itemId -> itemId != -1)
+                .collect(Collectors.toList());
 
         transports.clear();
         transportsPacked.clear();
@@ -119,12 +151,20 @@ public class PathfinderConfig {
                     }
                 }
 
-                if (useTransport(transport)) {
+                boolean itemInInventory = transport.getItemRequirements().isEmpty() ||
+                        transport.getItemRequirements().stream().anyMatch(inventoryItems::contains);
+
+                //TODO: wilderness check for item/spell teleports
+                if (useTransport(transport) && itemInInventory) {
                     usableTransports.add(transport);
                 }
             }
 
             WorldPoint point = entry.getKey();
+            //the key is null for player centered transports
+            if(point == null){
+                point = currentLocation;
+            }
             transports.put(point, usableTransports);
             transportsPacked.put(WorldPointUtil.packWorldPoint(point), usableTransports);
         }
@@ -175,6 +215,7 @@ public class PathfinderConfig {
         final boolean isTeleportationPortal = transport.isTeleportationPortal();
         final boolean isPrayerLocked = transportPrayerLevel > 1;
         final boolean isQuestLocked = transport.isQuestLocked();
+        final boolean isPlayerItem = transport.isPlayerItem();
 
         if (isAgilityShortcut) {
             if (!useAgilityShortcuts || agilityLevel < transportAgilityLevel) {
@@ -227,6 +268,10 @@ public class PathfinderConfig {
         }
 
         if (isQuestLocked && !completedQuests(transport)) {
+            return false;
+        }
+
+        if (isPlayerItem && !usePlayerItems){
             return false;
         }
 

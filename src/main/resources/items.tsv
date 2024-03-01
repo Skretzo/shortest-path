@@ -1,0 +1,64 @@
+#X Y Z	X Y Z	menuOption menuTarget objectID	Skill requirements	Item IDs	Quest	Wait	Destination
+#Ardougne Cloaks
+	2608 3220 0			13121 13122 13123 13124		4	Ardougne Cloak: Kandarin Monastery
+#2801 4143 0	13122 13123 13124	4		Ardougne Cloak: Farm (untested)
+
+#Games Necklace
+	2520 3571 0			3853 3855 3857 3859 3861 3863 3865 3867		4	Games Necklace: Barbarian Outpost
+	2899 3553 0			3853 3855 3857 3859 3861 3863 3865 3867		4	Games Necklace: Burthorpe
+#	2966 4380 2			3853 3855 3857 3859 3861 3863 3865 3867		4	Games Necklace: Corporeal Beast (doesn't seem to work, not sure why)
+	3245 9500 2			3853 3855 3857 3859 3861 3863 3865 3867		4	Games Necklace: Tears of Guthix
+	1631 3940 0			3853 3855 3857 3859 3861 3863 3865 3867		4	Games Necklace: Wintertodt
+
+#Ring of Dueling (1-8)
+	3315 3235 0			2566 2564 2562 2560 2558 2556 2554 2552		4	Ring of Dueling: PvP Arena
+	2440 3090 0			2566 2564 2562 2560 2558 2556 2554 2552		4	Ring of Dueling: Castle Wars
+	3151 3635 0			2566 2564 2562 2560 2558 2556 2554 2552		4	Ring of Dueling: Ferox Enclave
+
+#Combat Bracelet (1-6) (uncharged is 11126)
+	2882 3547 0			11118 11120 11122 11124 11972 11974		4	Combat Bracelet: Warriors' Guild
+	3192 3368 0			11118 11120 11122 11124 11972 11974		4	Combat Bracelet: Champions' Guild
+	3052 3490 0			11118 11120 11122 11124 11972 11974		4	Combat Bracelet: Edgeville Monastery
+	2653 3439 0			11118 11120 11122 11124 11972 11974		4	Combat Bracelet: Ranging Guild
+
+#Skills Necklace (1-6) (uncharged is 11113)
+	2611 3390 0			11105 11107 11109 11111 11968 11970		4	Skills Necklace: Fishing Guild
+	3049 9763 0			11105 11107 11109 11111 11968 11970		4	Skills Necklace: Mining Guild
+	2933 3295 0			11105 11107 11109 11111 11968 11970		4	Skills Necklace: Crafting Guild
+	3144 3438 0			11105 11107 11109 11111 11968 11970		4	Skills Necklace: Cooks' Guild
+	1662 3505 0			11105 11107 11109 11111 11968 11970		4	Skills Necklace: Woodcutting Guild
+	1248 3719 0			11105 11107 11109 11111 11968 11970		4	Skills Necklace: Farming Guild
+
+#Amulet of Glory (1-6, 1t-6t, Eternal) (uncharged is 1704, trimmed 10362)
+	3087 3496 0			1706 1708 1710 1712 11976 11978 10360 10358 10356 10354 11966 11964 19707		4	Amulet of Glory: Edgeville
+	2918 3176 0			1706 1708 1710 1712 11976 11978 10360 10358 10356 10354 11966 11964 19707		4	Amulet of Glory: Karamja
+	3105 3251 0			1706 1708 1710 1712 11976 11978 10360 10358 10356 10354 11966 11964 19707		4	Amulet of Glory: Draynor Village
+	3293 3163 0			1706 1708 1710 1712 11976 11978 10360 10358 10356 10354 11966 11964 19707		4	Amulet of Glory: Al Kharid
+
+#Ring of Wealth (1-5, 1i-5i) (uncharged is 2572, trimmed 12785)
+	2534 3862 0			11988 11986 11984 11982 11980 20790 20789 20788 20787 20786	Throne of Miscellania	4	Ring of Wealth: Miscellania
+	3163 3478 0			11988 11986 11984 11982 11980 20790 20789 20788 20787 20786		4	Ring of Wealth: Grand Exchange
+	2995 3375 0			11988 11986 11984 11982 11980 20790 20789 20788 20787 20786		4	Ring of Wealth: Falador Park
+	2824 10168 0			11988 11986 11984 11982 11980 20790 20789 20788 20787 20786	Between a Rock...	4	Ring of Wealth: Dondakan
+
+#Slayer Ring (1-8, eternal)
+#2431 3422 0	11866 11867 11868 11869 11870 11871 11872 11873 21268		4	Slayer Ring: Stronghold
+#3421 3537 0	11866 11867 11868 11869 11870 11871 11872 11873 21268	Priest in Peril	4	Slayer Ring: Slayer Tower
+#2802 9999 0	11866 11867 11868 11869 11870 11871 11872 11873 21268		4	Slayer Ring: Fremeninik
+#3185 4601 0	11866 11867 11868 11869 11870 11871 11872 11873 21268	Haunted Mine	4	Slayer Ring: Tarn's Lair
+#2028 4636 0	11866 11867 11868 11869 11870 11871 11872 11873 21268	Mourning's End Part II	4	Slayer Ring: Dark Beasts
+
+#Digsite Pendant (not sure how to handle destination change)
+#11190 11191 11192 11193 11194
+
+#Ring of Returning?
+
+#Necklace of Passage (1-5)
+	3114 3179 0			21146 21149 21151 21153 21155		4	Necklace of Passage: Wizards' Tower
+	2428 3350 0			21146 21149 21151 21153 21155		4	Necklace of Passage: The Outpost
+	3405 3158 0			21146 21149 21151 21153 21155		4	Necklace of Passage: Eagle's Eyrie
+
+#Burning Amulet
+	3234 3634 0			21166 21169 21171 21173 21175		4	Burning Amulet: Chaos Temple
+	3038 3651 0			21166 21169 21171 21173 21175		4	Burning Amulet: Bandit Camp
+	3028 3842 0			21166 21169 21171 21173 21175		4	Burning Amulet: Lava Maze
