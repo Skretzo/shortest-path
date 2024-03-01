@@ -50,14 +50,14 @@ public class PathTileOverlay extends Overlay {
 
             StringBuilder s = new StringBuilder();
             for (Transport b : plugin.getTransports().getOrDefault(a, new ArrayList<>())) {
-                for (WorldPoint origin : WorldPoint.toLocalInstance(client, b.getOrigin())) {
-                    Point cb = tileCenter(origin);
+                for (WorldPoint destination : WorldPoint.toLocalInstance(client, b.getDestination())) {
+                    Point cb = tileCenter(destination);
                     if (cb != null) {
                         graphics.drawLine(ca.getX(), ca.getY(), cb.getX(), cb.getY());
                     }
-                    if (origin.getPlane() > a.getPlane()) {
+                    if (destination.getPlane() > a.getPlane()) {
                         s.append("+");
-                    } else if (origin.getPlane() < a.getPlane()) {
+                    } else if (destination.getPlane() < a.getPlane()) {
                         s.append("-");
                     } else {
                         s.append("=");
