@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.runelite.api.Client;
@@ -18,6 +19,8 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
+
+import javax.annotation.Nullable;
 
 public class PathMapTooltipOverlay extends Overlay {
     private static final int TOOLTIP_OFFSET_HEIGHT = 25;
@@ -51,7 +54,11 @@ public class PathMapTooltipOverlay extends Overlay {
             List<WorldPoint> path = plugin.getPathfinder().getPath();
             Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
-                if (drawTooltip(graphics, cursorPos, path.get(i), i + 1)) {
+                WorldPoint nextPoint = null;
+                if(path.size() > i+1){
+                    nextPoint = path.get(i+1);
+                }
+                if (drawTooltip(graphics, cursorPos, path.get(i), nextPoint, i + 1)) {
                     return null;
                 }
             }
@@ -60,7 +67,7 @@ public class PathMapTooltipOverlay extends Overlay {
         return null;
     }
 
-    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, WorldPoint point, int n) {
+    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, WorldPoint point, @Nullable WorldPoint nextPoint, int n) {
         Point start = plugin.mapWorldPointToGraphicsPoint(point);
         Point end = plugin.mapWorldPointToGraphicsPoint(point.dx(1).dy(-1));
 
@@ -75,7 +82,15 @@ public class PathMapTooltipOverlay extends Overlay {
             return false;
         }
 
-        List<String> rows = Arrays.asList("Shortest path:", "Step " + n + " of " + plugin.getPathfinder().getPath().size());
+        List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:", "Step " + n + " of " + plugin.getPathfinder().getPath().size()));
+        if(nextPoint != null){
+            for(Transport transport : plugin.getPathfinderConfig().getTransports().getOrDefault(point, new ArrayList<>())){
+                if(nextPoint.equals(transport.getDestination())) {
+                    rows.add(transport.getDisplayInfo());
+                    break;
+                }
+            }
+        }
 
         graphics.setFont(FontManager.getRunescapeFont());
         FontMetrics fm = graphics.getFontMetrics();

@@ -129,6 +129,7 @@ public class ShortestPathPlugin extends Plugin {
     private final Object pathfinderMutex = new Object();
     @Getter
     private Pathfinder pathfinder;
+    @Getter
     private PathfinderConfig pathfinderConfig;
     @Getter
     private boolean startPointSet = false;

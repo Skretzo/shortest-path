@@ -26,9 +26,16 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.Transport;
 import shortestpath.WorldPointUtil;
 
+import javax.annotation.Nonnull;
+
 public class PathfinderConfig {
     private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
+    private static final WorldArea WILDERNESS_ABOVE_GROUND_LEVEL_20 = new WorldArea(2944, 3680, 448, 448, 0);
+    private static final WorldArea WILDERNESS_ABOVE_GROUND_LEVEL_30 = new WorldArea(2944, 3760, 448, 448, 0);
     private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9918, 320, 442, 0);
+    //todo: check that these are correct y values.
+    private static final WorldArea WILDERNESS_UNDERGROUND_LEVEL_20 = new WorldArea(2944, 10075, 320, 442, 0);
+    private static final WorldArea WILDERNESS_UNDERGROUND_LEVEL_30 = new WorldArea(2944, 10155, 320, 442, 0);
 
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
@@ -109,26 +116,8 @@ public class PathfinderConfig {
         }
     }
 
-    private WorldPoint getCurrentLocation() {
-        Player localPlayer = client.getLocalPlayer();
-        if(localPlayer != null){
-            return client.isInInstancedRegion() ?
-                    WorldPoint.fromLocalInstance(client, localPlayer.getLocalLocation()) : localPlayer.getWorldLocation();
-        }
-        return null;
-    }
-
-    private void refreshTransportData() {
-        if (!Thread.currentThread().equals(client.getClientThread())) {
-            return; // Has to run on the client thread; data will be refreshed when path finding commences
-        }
-
-        WorldPoint currentLocation = getCurrentLocation();
-
-        useFairyRings &= !QuestState.NOT_STARTED.equals(getQuestState(Quest.FAIRYTALE_II__CURE_A_QUEEN));
-        useGnomeGliders &= QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE));
-        useSpiritTrees &= QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE));
-
+    /** Specialized method for only updating player-held item and spell transports */
+    public void refreshPlayerTransportData(@Nonnull WorldPoint location, int wildernessLevel) {
         //TODO: This just checks the player's inventory and equipment. Later, bank items could be included, but the player will probably need to configure which items are considered
         var inventoryItems = Arrays.stream(new InventoryID[]{InventoryID.INVENTORY, InventoryID.EQUIPMENT})
                 .map(client::getItemContainer)
@@ -138,6 +127,32 @@ public class PathfinderConfig {
                 .map(Item::getId)
                 .filter(itemId -> itemId != -1)
                 .collect(Collectors.toList());
+
+        List<Transport> playerItemTransports = allTransports.getOrDefault(null, new ArrayList<>());
+        List<Transport> usableTransports = new ArrayList<>(playerItemTransports.size());
+        for (Transport transport : playerItemTransports) {
+            boolean itemInInventory = transport.getItemRequirements().isEmpty() ||
+                    transport.getItemRequirements().stream().anyMatch(inventoryItems::contains);
+
+            //questStates cannot be checked in a non-main thread, so item transports' quests are cached in `refreshTransportData`
+
+            if (useTransport(transport) && itemInInventory && transport.getMaxWildernessLevel() >= wildernessLevel) {
+                usableTransports.add(transport);
+            }
+        }
+
+        transports.put(location, usableTransports);
+        transportsPacked.put(WorldPointUtil.packWorldPoint(location), usableTransports);
+    }
+
+    private void refreshTransportData() {
+        if (!Thread.currentThread().equals(client.getClientThread())) {
+            return; // Has to run on the client thread; data will be refreshed when path finding commences
+        }
+
+        useFairyRings &= !QuestState.NOT_STARTED.equals(getQuestState(Quest.FAIRYTALE_II__CURE_A_QUEEN));
+        useGnomeGliders &= QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE));
+        useSpiritTrees &= QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE));
 
         transports.clear();
         transportsPacked.clear();
@@ -151,22 +166,23 @@ public class PathfinderConfig {
                     }
                 }
 
-                boolean itemInInventory = transport.getItemRequirements().isEmpty() ||
-                        transport.getItemRequirements().stream().anyMatch(inventoryItems::contains);
+                if(entry.getKey() == null){
+                    //null keys are for player-centered transports. They are added in refreshPlayerTransportData at pathfinding time.
+                    //still need to get quest states for these transports while we're in the client thread though
+                    continue;
+                }
 
-                //TODO: wilderness check for item/spell teleports
-                if (useTransport(transport) && itemInInventory) {
+                if (useTransport(transport)) {
                     usableTransports.add(transport);
                 }
             }
 
             WorldPoint point = entry.getKey();
-            //the key is null for player centered transports
-            if(point == null){
-                point = currentLocation;
+
+            if(point != null) {
+                transports.put(point, usableTransports);
+                transportsPacked.put(WorldPointUtil.packWorldPoint(point), usableTransports);
             }
-            transports.put(point, usableTransports);
-            transportsPacked.put(WorldPointUtil.packWorldPoint(point), usableTransports);
         }
     }
 
@@ -180,6 +196,15 @@ public class PathfinderConfig {
 
     public boolean avoidWilderness(int packedPosition, int packedNeightborPosition, boolean targetInWilderness) {
         return avoidWilderness && !isInWilderness(packedPosition) && isInWilderness(packedNeightborPosition) && !targetInWilderness;
+    }
+
+    public boolean isInLevel20Wilderness(int packedPoint) {
+        return WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND_LEVEL_20) == 0 || WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_20) == 0;
+    }
+
+    public boolean isInLevel30Wilderness(int packedPoint){
+        return WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND_LEVEL_30) == 0 || WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_30) == 0;
+
     }
 
     public QuestState getQuestState(Quest quest) {

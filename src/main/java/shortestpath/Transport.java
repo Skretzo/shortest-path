@@ -93,9 +93,19 @@ public class Transport {
     @Getter
     private String displayInfo;
 
+    /** If this is an item transport, this tracks if it is consumable (as opposed to having infinite uses) */
+    @Getter
+    private final boolean isConsumable;
+
+    /** If this is an item transport, this is the maximum wilderness level that it can be used in */
+    @Getter
+    private final int maxWildernessLevel;
+
     Transport(final WorldPoint origin, final WorldPoint destination) {
         this.origin = origin;
         this.destination = destination;
+        this.isConsumable = false;
+        this.maxWildernessLevel = -1;
     }
 
     Transport(final String line, TransportType transportType) {
@@ -164,6 +174,16 @@ public class Transport {
         // Destination
         if (parts.length >= 8 && !parts[7].isEmpty()) {
             this.displayInfo = parts[7];
+        }
+
+        //Consumable - for item transports
+        this.isConsumable = parts.length >= 9 && parts[8].equals("T");
+
+        //Wilderness level - for item transports
+        if(parts.length >= 10 && !parts[9].isEmpty()){
+            this.maxWildernessLevel = Integer.parseInt(parts[9]);
+        } else {
+            this.maxWildernessLevel = -1;
         }
 
         isAgilityShortcut = TransportType.AGILITY_SHORTCUT.equals(transportType);
