@@ -21,6 +21,7 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
+import shortestpath.PlayerItemTransportSetting;
 import shortestpath.ShortestPathConfig;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.Transport;
@@ -65,8 +66,8 @@ public class PathfinderConfig {
         useGnomeGliders,
         useSpiritTrees,
         useTeleportationLevers,
-        useTeleportationPortals,
-        usePlayerItems;
+        useTeleportationPortals;
+    private PlayerItemTransportSetting playerItemsSetting;
     private int agilityLevel;
     private int rangedLevel;
     private int strengthLevel;
@@ -103,7 +104,7 @@ public class PathfinderConfig {
         useGnomeGliders = config.useGnomeGliders();
         useTeleportationLevers = config.useTeleportationLevers();
         useTeleportationPortals = config.useTeleportationPortals();
-        usePlayerItems = config.usePlayerItems();
+        playerItemsSetting = config.playerItemTransportSetting();
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             agilityLevel = client.getBoostedSkillLevel(Skill.AGILITY);
@@ -128,10 +129,12 @@ public class PathfinderConfig {
                 .filter(itemId -> itemId != -1)
                 .collect(Collectors.toList());
 
+        boolean skipInventoryCheck = config.playerItemTransportSetting() == PlayerItemTransportSetting.All;
+
         List<Transport> playerItemTransports = allTransports.getOrDefault(null, new ArrayList<>());
         List<Transport> usableTransports = new ArrayList<>(playerItemTransports.size());
         for (Transport transport : playerItemTransports) {
-            boolean itemInInventory = transport.getItemRequirements().isEmpty() ||
+            boolean itemInInventory = skipInventoryCheck || transport.getItemRequirements().isEmpty() ||
                     transport.getItemRequirements().stream().anyMatch(inventoryItems::contains);
 
             //questStates cannot be checked in a non-main thread, so item transports' quests are cached in `refreshTransportData`
@@ -296,7 +299,17 @@ public class PathfinderConfig {
             return false;
         }
 
-        if (isPlayerItem && !usePlayerItems){
+        if (isPlayerItem){
+            switch (playerItemsSetting){
+                case None:
+                    return false;
+                case InventoryNonConsumable:
+                case AllNonConsumable:
+                    return !transport.isConsumable();
+                case Inventory:
+                case All:
+                    return true;
+            }
             return false;
         }
 

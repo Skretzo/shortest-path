@@ -155,13 +155,13 @@ public interface ShortestPathConfig extends Config {
 
     @ConfigItem(
         keyName = "usePlayerItems",
-        name = "Use items from inventory",
-        description = "Whether to include items from the player's inventory and equipment",
+        name = "Use items",
+        description = "Whether to include items from the player's inventory and equipment.<br>Options labelled (perm) only use permanent items.",
         position = 13,
         section = sectionSettings
     )
-    default boolean usePlayerItems() {
-        return true;
+    default PlayerItemTransportSetting playerItemTransportSetting() {
+        return PlayerItemTransportSetting.InventoryNonConsumable;
     }
 
     @ConfigItem(
