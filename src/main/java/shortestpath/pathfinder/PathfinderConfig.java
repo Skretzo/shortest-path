@@ -25,6 +25,7 @@ import shortestpath.PlayerItemTransportSetting;
 import shortestpath.ShortestPathConfig;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.Transport;
+import shortestpath.TransportVarbit;
 import shortestpath.WorldPointUtil;
 
 import javax.annotation.Nonnull;
@@ -74,6 +75,7 @@ public class PathfinderConfig {
     private int prayerLevel;
     private int woodcuttingLevel;
     private Map<Quest, QuestState> questStates = new HashMap<>();
+    private Map<Integer, Integer> varbitValues = new HashMap<>();
 
     public PathfinderConfig(SplitFlagMap mapData, Map<WorldPoint, List<Transport>> transports, Client client,
                             ShortestPathConfig config) {
@@ -137,7 +139,7 @@ public class PathfinderConfig {
             boolean itemInInventory = skipInventoryCheck || transport.getItemRequirements().isEmpty() ||
                     transport.getItemRequirements().stream().anyMatch(inventoryItems::contains);
 
-            //questStates cannot be checked in a non-main thread, so item transports' quests are cached in `refreshTransportData`
+            //questStates and varbits cannot be checked in a non-main thread, so item transports' quests and varbits are cached in `refreshTransportData`
 
             if (useTransport(transport) && itemInInventory && transport.getMaxWildernessLevel() >= wildernessLevel) {
                 usableTransports.add(transport);
@@ -167,6 +169,10 @@ public class PathfinderConfig {
                         questStates.put(quest, getQuestState(quest));
                     } catch (NullPointerException ignored) {
                     }
+                }
+
+                for(TransportVarbit varbitCheck : transport.getVarbits()) {
+                    varbitValues.put(varbitCheck.getVarbitId(), client.getVarbitValue(varbitCheck.getVarbitId()));
                 }
 
                 if(entry.getKey() == null){
@@ -217,6 +223,15 @@ public class PathfinderConfig {
     private boolean completedQuests(Transport transport) {
         for (Quest quest : transport.getQuests()) {
             if (!QuestState.FINISHED.equals(questStates.getOrDefault(quest, QuestState.NOT_STARTED))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean varbitChecks(Transport transport) {
+        for(TransportVarbit varbitCheck : transport.getVarbits()) {
+            if(!varbitValues.get(varbitCheck.getVarbitId()).equals(varbitCheck.getValue())) {
                 return false;
             }
         }
@@ -305,11 +320,13 @@ public class PathfinderConfig {
                     return false;
                 case InventoryNonConsumable:
                 case AllNonConsumable:
-                    return !transport.isConsumable();
-                case Inventory:
-                case All:
-                    return true;
+                    if(transport.isConsumable()){
+                        return false;
+                    }
             }
+        }
+
+        if(!varbitChecks(transport)){
             return false;
         }
 

@@ -101,11 +101,16 @@ public class Transport {
     @Getter
     private final int maxWildernessLevel;
 
+    /** Any varbits to check for the transport to be valid. All must pass for a transport to be valid */
+    @Getter
+    private final List<TransportVarbit> varbits;
+
     Transport(final WorldPoint origin, final WorldPoint destination) {
         this.origin = origin;
         this.destination = destination;
         this.isConsumable = false;
         this.maxWildernessLevel = -1;
+        this.varbits = new ArrayList<>();
     }
 
     Transport(final String line, TransportType transportType) {
@@ -184,6 +189,17 @@ public class Transport {
             this.maxWildernessLevel = Integer.parseInt(parts[9]);
         } else {
             this.maxWildernessLevel = -1;
+        }
+
+        this.varbits = new ArrayList<>();
+        //Varbit check - all must evaluate to true
+        if(parts.length >= 11 && !parts[10].isEmpty()) {
+            for (String varbitCheck : parts[10].split(DELIM)) {
+                var varbitParts = varbitCheck.split("=");
+                int varbitId = Integer.parseInt(varbitParts[0]);
+                int varbitValue = Integer.parseInt(varbitParts[1]);
+                varbits.add(new TransportVarbit(varbitId, varbitValue));
+            }
         }
 
         isAgilityShortcut = TransportType.AGILITY_SHORTCUT.equals(transportType);
