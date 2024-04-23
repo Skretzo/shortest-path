@@ -40,11 +40,18 @@ public class DebugOverlayPanel extends OverlayPanel {
                 .build();
     }
 
+    private LineComponent makeText(String text) {
+        return LineComponent.builder()
+                .left(text)
+                .build();
+    }
+
     @Override
     public Dimension render(Graphics2D graphics) {
+        PathParameters currentParameters = plugin.getPathManager().getCurrentParameters();
         Pathfinder pathfinder = plugin.getPathfinder();
         Pathfinder.PathfinderStats stats;
-        if (pathfinder == null || (stats = pathfinder.getStats()) == null) {
+        if (pathfinder == null || (stats = pathfinder.getStats()) == null || currentParameters == null) {
             return null;
         }
 
@@ -78,6 +85,12 @@ public class DebugOverlayPanel extends OverlayPanel {
         double milliTime = stats.getElapsedTimeNanos() / 1000000.0;
         String time = String.format("%.2fms", milliTime);
         components.add(makeLine("Time:", time));
+
+        components.add(separator);
+
+        components.add(makeText("Path Owner:"));
+        String requester = currentParameters.getRequester().getFullyQualifiedName();
+        components.add(makeText(requester.replaceAll("\\.", " ")));
 
         return super.render(graphics);
     }

@@ -1,6 +1,5 @@
 package shortestpath;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.Color;
@@ -13,13 +12,13 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.regex.Pattern;
 
 import lombok.Getter;
@@ -40,12 +39,15 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapOverlay;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
@@ -84,6 +86,12 @@ public class ShortestPathPlugin extends Plugin {
     private ClientThread clientThread;
 
     @Inject
+    private ClientToolbar clientToolbar;
+
+    @Inject
+    private EventBus eventBus;
+
+    @Inject
     private ShortestPathConfig config;
 
     @Inject
@@ -113,6 +121,8 @@ public class ShortestPathPlugin extends Plugin {
     @Inject
     private WorldMapOverlay worldMapOverlay;
 
+    private boolean initialized = false;
+
     private Point lastMenuOpenedPoint;
     private WorldMapPoint marker;
     private WorldPoint transportStart;
@@ -124,15 +134,22 @@ public class ShortestPathPlugin extends Plugin {
     private BufferedImage minimapSpriteResizeable;
     private Rectangle minimapRectangle = new Rectangle();
 
-    private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
+    private ExecutorService pathfindingExecutor;
     private Future<?> pathfinderFuture;
     private final Object pathfinderMutex = new Object();
     @Getter
     private Pathfinder pathfinder;
     @Getter
     private PathfinderConfig pathfinderConfig;
+
     @Getter
-    private boolean startPointSet = false;
+    private PluginPathManager pathManager;
+    private ShortestPathAPI apiHandler;
+    private final PluginIdentifier selfIdentifier = new PluginIdentifier(this);
+
+    @Getter
+    private ShortestPathPluginPanel pluginPanel;
+    private NavigationButton navigationButton;
 
     @Provides
     public ShortestPathConfig provideConfig(ConfigManager configManager) {
@@ -141,10 +158,30 @@ public class ShortestPathPlugin extends Plugin {
 
     @Override
     protected void startUp() {
-        SplitFlagMap map = SplitFlagMap.fromResources();
-        Map<WorldPoint, List<Transport>> transports = Transport.loadAllFromResources();
+        // First time setup
+        if (!initialized) {
+            SplitFlagMap map = SplitFlagMap.fromResources();
+            Map<WorldPoint, List<Transport>> transports = Transport.loadAllFromResources();
 
-        pathfinderConfig = new PathfinderConfig(map, transports, client, config);
+            pathfinderConfig = new PathfinderConfig(map, transports, client, config);
+
+            apiHandler = new ShortestPathAPI(this);
+
+            // Manually subscribe to HashMap events so that shortest path can
+            // still handle bookkeeping requests from other plugins while disabled
+            eventBus.register(HashMap.class, (data) -> {
+                if (apiHandler != null) {
+                    apiHandler.parseDataMap(data);
+                }
+            }, 0);
+
+            pathManager = new PluginPathManager();
+            pathManager.addPlugin(selfIdentifier);
+
+            pluginPanel = new ShortestPathPluginPanel(this);
+
+            initialized = true;
+        }
 
         overlayManager.add(pathOverlay);
         overlayManager.add(pathMinimapOverlay);
@@ -154,10 +191,28 @@ public class ShortestPathPlugin extends Plugin {
         if (config.drawDebugPanel()) {
             overlayManager.add(debugOverlayPanel);
         }
+
+        final BufferedImage icon = MARKER_IMAGE;
+        navigationButton = NavigationButton.builder()
+            .tooltip(getName())
+            .icon(icon)
+            .priority(5)
+            .panel(pluginPanel)
+            .build();
+
+        clientToolbar.addNavigation(navigationButton);
+
+        // In-case the user toggled shortest path off then on, try refreshing the path
+        PathParameters existingParameters = pathManager.getCurrentParameters();
+        if (existingParameters != null) {
+            setPath(existingParameters);
+        }
     }
 
     @Override
     protected void shutDown() {
+        cancelPathfinding();
+
         overlayManager.remove(pathOverlay);
         overlayManager.remove(pathMinimapOverlay);
         overlayManager.remove(pathMapOverlay);
@@ -168,6 +223,13 @@ public class ShortestPathPlugin extends Plugin {
             pathfindingExecutor.shutdownNow();
             pathfindingExecutor = null;
         }
+
+        if (pathManager != null) {
+            pathManager.shutDown();
+            // Don't clear the reference in-case the user re-enables shortest path later
+        }
+
+        clientToolbar.removeNavigation(navigationButton);
     }
 
     public void restartPathfinding(WorldPoint start, WorldPoint end) {
@@ -178,8 +240,11 @@ public class ShortestPathPlugin extends Plugin {
             }
 
             if (pathfindingExecutor == null) {
-                ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
-                pathfindingExecutor = Executors.newSingleThreadExecutor(shortestPathNaming);
+                pathfindingExecutor = Executors.newSingleThreadExecutor(r -> {
+                    Thread thread = new Thread(r);
+                    thread.setName("shortest-path-thread");
+                    return thread;
+                });
             }
         }
 
@@ -190,6 +255,20 @@ public class ShortestPathPlugin extends Plugin {
                 pathfinderFuture = pathfindingExecutor.submit(pathfinder);
             }
         });
+    }
+
+    public void cancelPathfinding() {
+        synchronized (pathfinderMutex) {
+            if (pathfinder != null) {
+                pathfinder.cancel();
+                pathfinder = null;
+            }
+        }
+
+        if (marker != null) {
+            worldMapPointManager.remove(marker);
+            marker = null;
+        }
     }
 
     public boolean isNearPath(WorldPoint location) {
@@ -240,20 +319,21 @@ public class ShortestPathPlugin extends Plugin {
     @Subscribe
     public void onGameTick(GameTick tick) {
         Player localPlayer = client.getLocalPlayer();
-        if (localPlayer == null || pathfinder == null) {
+        PathParameters currentParameters = pathManager.getCurrentParameters();
+        if (localPlayer == null || pathfinder == null || currentParameters == null) {
             return;
         }
 
         WorldPoint currentLocation = client.isInInstancedRegion() ?
             WorldPoint.fromLocalInstance(client, localPlayer.getLocalLocation()) : localPlayer.getWorldLocation();
         if (currentLocation.distanceTo(pathfinder.getTarget()) < config.reachedDistance()) {
-            setTarget(null);
+            clearPath(currentParameters.getRequester());
             return;
         }
 
-        if (!startPointSet && !isNearPath(currentLocation)) {
+        if (!isStartSet() && !isNearPath(currentLocation)) {
             if (config.cancelInstead()) {
-                setTarget(null);
+                clearPath(currentParameters.getRequester());
                 return;
             }
             restartPathfinding(currentLocation, pathfinder.getTarget());
@@ -351,15 +431,15 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET)) {
-            setTarget(getSelectedWorldPoint());
+            setTarget(selfIdentifier, getSelectedWorldPoint());
         }
 
         if (entry.getOption().equals(SET) && entry.getTarget().equals(START)) {
-            setStart(getSelectedWorldPoint());
+            setStart(selfIdentifier, getSelectedWorldPoint());
         }
 
         if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) {
-            setTarget(null);
+            clearPath(selfIdentifier);
         }
 
         if (entry.getType() != MenuAction.WALK) {
@@ -380,47 +460,104 @@ public class ShortestPathPlugin extends Plugin {
         return null;
     }
 
-    private void setTarget(WorldPoint target) {
-        Player localPlayer = client.getLocalPlayer();
-        if (!startPointSet && localPlayer == null) {
+    private boolean isStartSet() {
+        PathParameters currentParameters = pathManager.getCurrentParameters();
+        return currentParameters != null && currentParameters.isStartSet();
+    }
+
+    // Internal convenience method not intended for other plugins
+    private void setStart(PluginIdentifier requester, WorldPoint start) {
+        PathParameters parameters = pathManager.getParameters(requester);
+        if (parameters == null) {
             return;
         }
 
-        if (target == null) {
-            synchronized (pathfinderMutex) {
-                if (pathfinder != null) {
-                    pathfinder.cancel();
-                }
-                pathfinder = null;
-            }
+        parameters = new PathParameters(parameters.getRequester(), start, parameters.getTarget(), parameters.isMarkerHidden(), parameters.isVisible());
+        requestPath(parameters);
+    }
 
-            worldMapPointManager.remove(marker);
-            marker = null;
-            startPointSet = false;
+    // Internal convenience method not intended for other plugins
+    private void setTarget(PluginIdentifier requester, WorldPoint target) {
+        PathParameters parameters = pathManager.getParameters(requester);
+        if (parameters == null) {
+            parameters = new PathParameters(requester, null, target, false, true);
         } else {
+            parameters = new PathParameters(requester, parameters.getStart(), target, parameters.isMarkerHidden(), parameters.isVisible());
+        }
+
+        requestPath(parameters);
+    }
+
+    public void clearPath(PluginIdentifier requester) {
+        boolean currentParametersChanged = pathManager.clearPath(requester);
+        pluginPanel.repaintAsync();
+
+        if (currentParametersChanged) {
+            PathParameters newCurrentParameters = pathManager.getCurrentParameters();
+            if (newCurrentParameters != null) {
+                setPath(newCurrentParameters);
+            } else {
+                cancelPathfinding();
+            }
+        }
+
+    }
+
+    public void requestPath(PathParameters parameters) {
+        if (parameters == null) {
+            return;
+        }
+
+        boolean currentParametersChanged = pathManager.requestPath(parameters);
+        pluginPanel.repaintAsync();
+
+        if (!currentParametersChanged) {
+            return;
+        }
+
+        PathParameters currentParameters = pathManager.getCurrentParameters();
+        if (currentParameters == null) {
+            cancelPathfinding();
+            return;
+        }
+
+        setPath(currentParameters);
+    }
+
+    private void setPath(PathParameters parameters) {
+        if (parameters == null) {
+            return;
+        }
+
+        Player localPlayer = client.getLocalPlayer();
+        if (!parameters.isStartSet() && localPlayer == null) {
+            return;
+        }
+
+        if (!parameters.isMarkerHidden()) {
             worldMapPointManager.removeIf(x -> x == marker);
-            marker = new WorldMapPoint(target, MARKER_IMAGE);
+            marker = new WorldMapPoint(parameters.getTarget(), MARKER_IMAGE);
             marker.setName("Target");
             marker.setTarget(marker.getWorldPoint());
             marker.setJumpOnClick(true);
             worldMapPointManager.add(marker);
-
-            WorldPoint start = client.isInInstancedRegion() ?
-                WorldPoint.fromLocalInstance(client, localPlayer.getLocalLocation()) : localPlayer.getWorldLocation();
-            lastLocation = start;
-            if (startPointSet && pathfinder != null) {
-                start = pathfinder.getStart();
-            }
-            restartPathfinding(start, target);
         }
+
+        WorldPoint start = parameters.getStart();
+        if (start == null) {
+            start = client.isInInstancedRegion() ?
+                    WorldPoint.fromLocalInstance(client, localPlayer.getLocalLocation()) : localPlayer.getWorldLocation();
+        }
+        lastLocation = start;
+
+        restartPathfinding(start, parameters.getTarget());
     }
 
-    private void setStart(WorldPoint start) {
-        if (pathfinder == null) {
-            return;
+    void setNewPriorities(List<PluginIdentifier> newPriorities) {
+        if (pathManager.setNewPriorities(newPriorities)) {
+            // Priority order changed; no need to re-request the path
+            setPath(pathManager.getCurrentParameters());
         }
-        startPointSet = true;
-        restartPathfinding(start, pathfinder.getTarget());
     }
 
     public WorldPoint calculateMapPoint(Point point) {
