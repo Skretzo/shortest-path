@@ -1,4 +1,4 @@
-# X Y Z	X Y Z	menuOption menuTarget objectID	Skill requirements	Item IDs	Quest	Wait	Destination	Consumable	Wilderness Level	Info
+# Origin	Destination	menuOption menuTarget objectID	Skill Requirements	Item ID Requirements	Quest	Wait	Display Info	Consumable	Wilderness Level	Varbits
 # Ardougne Cloaks (2-4's farm teleport is limited to 3,5, or infinite times - can this be validated?)										
 	2606 3221 0			13121;13122;13123;13124;20760		4	Ardougne cloak: Kandarin Monastery	F	20	
 	2664 3374 0			13122;13123;13124;20760		4	Ardougne cloak: Farm	F	20	

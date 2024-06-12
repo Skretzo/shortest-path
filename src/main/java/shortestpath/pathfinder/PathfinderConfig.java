@@ -65,7 +65,8 @@ public class PathfinderConfig {
         useGnomeGliders,
         useSpiritTrees,
         useTeleportationLevers,
-        useTeleportationPortals;
+        useTeleportationPortals,
+        useSpellTeleports;
     private PlayerItemTransportSetting playerItemsSetting;
     private int agilityLevel;
     private int rangedLevel;
@@ -105,6 +106,7 @@ public class PathfinderConfig {
         useTeleportationLevers = config.useTeleportationLevers();
         useTeleportationPortals = config.useTeleportationPortals();
         playerItemsSetting = config.playerItemTransportSetting();
+        useSpellTeleports = config.useSpellTeleports();
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             agilityLevel = client.getBoostedSkillLevel(Skill.AGILITY);
@@ -134,8 +136,8 @@ public class PathfinderConfig {
         List<Transport> playerItemTransports = allTransports.getOrDefault(null, new ArrayList<>());
         List<Transport> usableTransports = new ArrayList<>(playerItemTransports.size());
         for (Transport transport : playerItemTransports) {
-            boolean itemInInventory = skipInventoryCheck || transport.getItemRequirements().isEmpty() ||
-                transport.getItemRequirements().stream().anyMatch(inventoryItems::contains);
+            boolean itemInInventory = skipInventoryCheck ||
+                (!transport.getItemIdRequirements().isEmpty() && transport.getItemIdRequirements().stream().anyMatch(requirements -> requirements.stream().allMatch(inventoryItems::contains)));
             // questStates and varbits cannot be checked in a non-main thread, so item transports' quests and varbits are cached in `refreshTransportData`
             if (useTransport(transport) && itemInInventory && transport.getMaxWildernessLevel() >= wildernessLevel) {
                 usableTransports.add(transport);
@@ -259,6 +261,7 @@ public class PathfinderConfig {
         final boolean isPrayerLocked = transportPrayerLevel > 1;
         final boolean isQuestLocked = transport.isQuestLocked();
         final boolean isPlayerItem = transport.isPlayerItem();
+        final boolean isSpellTeleport = transport.isSpellTeleport();
 
         if (isAgilityShortcut) {
             if (!useAgilityShortcuts || agilityLevel < transportAgilityLevel) {
@@ -324,6 +327,10 @@ public class PathfinderConfig {
                         return false;
                     }
             }
+        }
+
+        if (isSpellTeleport && !useSpellTeleports) {
+            return false;
         }
 
         if (!varbitChecks(transport)) {

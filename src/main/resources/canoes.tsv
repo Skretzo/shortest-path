@@ -1,4 +1,4 @@
-# X Y Z	X Y Z	menuOption menuTarget objectID	Skill requirements	Item requirements	Quest	Travel time	Info
+# Origin	Destination	menuOption menuTarget objectID	Skill Requirements	Item Requirements	Quest	Wait	Display Info
 # Edgeville							
 3132 3510 0	3109 3415 0	Paddle Canoe Canoe Station 12166	12 Woodcutting	1 Bronze axe		30	Barbarian Village
 3132 3510 0	3199 3344 0	Paddle Canoe Canoe Station 12166	27 Woodcutting	1 Bronze axe		30	Champions Guild
