@@ -332,6 +332,8 @@ public class Transport {
         addTransports(transports, "/teleportation_portals.tsv", TransportType.TELEPORTATION_PORTAL);
         addTransports(transports, "/teleportation_items.tsv", TransportType.TELEPORTATION_ITEM);
         addTransports(transports, "/teleportation_spells.tsv", TransportType.TELEPORTATION_SPELL);
+        addTransports(transports, "/lovakengj_minecart_network.tsv", TransportType.LOVAKENGJ_MINECART_NETWORK);
+
         return transports;
     }
 }

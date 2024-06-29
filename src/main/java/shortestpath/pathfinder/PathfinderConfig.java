@@ -41,6 +41,7 @@ import static shortestpath.TransportType.TELEPORTATION_LEVER;
 import static shortestpath.TransportType.TELEPORTATION_PORTAL;
 import static shortestpath.TransportType.TELEPORTATION_ITEM;
 import static shortestpath.TransportType.TELEPORTATION_SPELL;
+import static shortestpath.TransportType.LOVAKENGJ_MINECART_NETWORK;
 
 public class PathfinderConfig {
     private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
@@ -79,7 +80,8 @@ public class PathfinderConfig {
         useSpiritTrees,
         useTeleportationLevers,
         useTeleportationPortals,
-        useTeleportationSpells;
+        useTeleportationSpells,
+        useLovakengjMinecartNetwork;
     private TeleportationItem useTeleportationItems;
     private int agilityLevel;
     private int rangedLevel;
@@ -120,6 +122,7 @@ public class PathfinderConfig {
         useTeleportationPortals = config.useTeleportationPortals();
         useTeleportationItems = config.useTeleportationItems();
         useTeleportationSpells = config.useTeleportationSpells();
+        useLovakengjMinecartNetwork = config.useLovakengjMinecartNetwork();
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             agilityLevel = client.getBoostedSkillLevel(Skill.AGILITY);
@@ -305,6 +308,9 @@ public class PathfinderConfig {
                     }
             }
         } else if (TELEPORTATION_SPELL.equals(transport.getType()) && !useTeleportationSpells) {
+            return false;
+        }
+        else if (LOVAKENGJ_MINECART_NETWORK.equals(transport.getType()) && !useLovakengjMinecartNetwork) {
             return false;
         }
 
