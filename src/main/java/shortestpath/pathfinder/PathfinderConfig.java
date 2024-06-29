@@ -65,7 +65,8 @@ public class PathfinderConfig {
         useGnomeGliders,
         useSpiritTrees,
         useTeleportationLevers,
-        useTeleportationPortals;
+        useTeleportationPortals,
+        useLovakengjMinecartNetwork;
     private PlayerItemTransportSetting playerItemsSetting;
     private int agilityLevel;
     private int rangedLevel;
@@ -105,6 +106,7 @@ public class PathfinderConfig {
         useTeleportationLevers = config.useTeleportationLevers();
         useTeleportationPortals = config.useTeleportationPortals();
         playerItemsSetting = config.playerItemTransportSetting();
+        useLovakengjMinecartNetwork = config.useLovakengjMinecartNetwork();
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             agilityLevel = client.getBoostedSkillLevel(Skill.AGILITY);
@@ -259,6 +261,7 @@ public class PathfinderConfig {
         final boolean isPrayerLocked = transportPrayerLevel > 1;
         final boolean isQuestLocked = transport.isQuestLocked();
         final boolean isPlayerItem = transport.isPlayerItem();
+        final boolean isLovakengjMinecartNetwork = transport.isLovakengjMinecartNetwork();
 
         if (isAgilityShortcut) {
             if (!useAgilityShortcuts || agilityLevel < transportAgilityLevel) {
@@ -324,6 +327,10 @@ public class PathfinderConfig {
                         return false;
                     }
             }
+        }
+
+        if (isLovakengjMinecartNetwork && !useLovakengjMinecartNetwork) {
+            return false;
         }
 
         if (!varbitChecks(transport)) {

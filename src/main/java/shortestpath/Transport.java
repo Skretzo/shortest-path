@@ -105,6 +105,10 @@ public class Transport {
     @Getter
     private final List<TransportVarbit> varbits;
 
+    /** Whether the transport is part of the Lovakengj Minecart Network */
+    @Getter
+    private boolean isLovakengjMinecartNetwork;
+
     Transport(final WorldPoint origin, final WorldPoint destination) {
         this.origin = origin;
         this.destination = destination;
@@ -215,6 +219,7 @@ public class Transport {
         isTeleportationLever = TransportType.TELEPORTATION_LEVER.equals(transportType);
         isTeleportationPortal = TransportType.TELEPORTATION_PORTAL.equals(transportType);
         isPlayerItem = TransportType.PLAYER_ITEM.equals(transportType);
+        isLovakengjMinecartNetwork = TransportType.LOVAKENGJ_MINECART_NETWORK.equals(transportType);
     }
 
     /** The skill level required to use this transport */
@@ -268,6 +273,11 @@ public class Transport {
             List<String> fairyRingsQuestNames = new ArrayList<>();
             List<WorldPoint> fairyRings = new ArrayList<>();
             List<String> fairyRingCodes = new ArrayList<>();
+
+            boolean isLovakengjMinecartNetwork = TransportType.LOVAKENGJ_MINECART_NETWORK.equals(transportType);
+            List<WorldPoint> lovakengjMinecartsPositions = new ArrayList<>();
+            List<String> lovakengjMinecartsNames = new ArrayList<>();
+
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
 
@@ -280,6 +290,18 @@ public class Transport {
                     fairyRings.add(new WorldPoint(Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2])));
                     fairyRingCodes.add(p.length >= 4 ? p[3].replaceAll("_", " ") : null);
                     fairyRingsQuestNames.add(p.length >= 7 ? p[6] : "");
+                } else if (isLovakengjMinecartNetwork) {
+                    String[] parts = line.split("\t");
+
+                    final String DELIM = " ";
+                    String[] parts_origin = parts[0].split(DELIM);
+                    WorldPoint origin = new WorldPoint(
+                            Integer.parseInt(parts_origin[0]),
+                            Integer.parseInt(parts_origin[1]),
+                            Integer.parseInt(parts_origin[2]));
+                    lovakengjMinecartsPositions.add(origin);
+
+                    lovakengjMinecartsNames.add(parts.length >= 8 ? parts[7] : "");
                 } else {
                     Transport transport = new Transport(line, transportType);
                     WorldPoint origin = transport.getOrigin();
@@ -305,6 +327,21 @@ public class Transport {
                     }
                 }
             }
+            if (isLovakengjMinecartNetwork) {
+                for (WorldPoint origin : lovakengjMinecartsPositions) {
+                    for (int i = 0; i < lovakengjMinecartsPositions.size(); i++) {
+                        WorldPoint destination = lovakengjMinecartsPositions.get(i);
+                        if (origin.equals(destination)) {
+                            continue;
+                        }
+                        Transport transport = new Transport(origin, destination);
+                        transport.isLovakengjMinecartNetwork = true;
+                        transport.wait = 4;
+                        transport.displayInfo = lovakengjMinecartsNames.get(i);
+                        transports.computeIfAbsent(origin, k -> new ArrayList<>()).add(transport);
+                    }
+                }
+            }
             scanner.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -324,6 +361,7 @@ public class Transport {
         addTransports(transports, "/spirit_trees.tsv", TransportType.SPIRIT_TREE);
         addTransports(transports, "/levers.tsv", TransportType.TELEPORTATION_LEVER);
         addTransports(transports, "/portals.tsv", TransportType.TELEPORTATION_PORTAL);
+        addTransports(transports, "/lovakengj_minecart_network.tsv", TransportType.LOVAKENGJ_MINECART_NETWORK);
 
         addItemTransports(transports);
 
@@ -343,5 +381,6 @@ public class Transport {
         TELEPORTATION_LEVER,
         TELEPORTATION_PORTAL,
         PLAYER_ITEM,
+        LOVAKENGJ_MINECART_NETWORK
     }
 }
