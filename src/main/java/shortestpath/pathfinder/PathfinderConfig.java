@@ -280,8 +280,7 @@ public class PathfinderConfig {
         } else if (CANOE.equals(transport.getType())
             && (!useCanoes || woodcuttingLevel < transportWoodcuttingLevel)) {
             return false;
-        } else if (CHARTER_SHIP.equals(transport.getType())
-            && !useCharterShips) {
+        } else if (CHARTER_SHIP.equals(transport.getType()) && !useCharterShips) {
             return false;
         } else if (SHIP.equals(transport.getType()) && !useShips) {
             return false;

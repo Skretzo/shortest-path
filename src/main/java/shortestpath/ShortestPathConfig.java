@@ -135,11 +135,23 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
+        keyName = "useTeleportationItems",
+        name = "Use teleportation items",
+        description = "Whether to include teleportation items from the player's inventory and equipment.<br>" +
+            "Options labelled (perm) only use permanent non-charge items.",
+        position = 11,
+        section = sectionSettings
+    )
+    default TeleportationItem useTeleportationItems() {
+        return TeleportationItem.INVENTORY_NON_CONSUMABLE;
+    }
+
+    @ConfigItem(
         keyName = "useTeleportationLevers",
         name = "Use teleportation levers",
         description = "Whether to include teleportation levers in the path<br>" +
             "(e.g. the lever from Edgeville to Wilderness)",
-        position = 11,
+        position = 12,
         section = sectionSettings
     )
     default boolean useTeleportationLevers() {
@@ -151,23 +163,11 @@ public interface ShortestPathConfig extends Config {
         name = "Use teleportation portals",
         description = "Whether to include teleportation portals in the path<br>" +
             "(e.g. the portal from Ferox Enclave to Castle Wars)",
-        position = 12,
+        position = 13,
         section = sectionSettings
     )
     default boolean useTeleportationPortals() {
         return true;
-    }
-
-    @ConfigItem(
-        keyName = "useTeleportationItems",
-        name = "Use teleportation items",
-        description = "Whether to include teleportation items from the player's inventory and equipment.<br>" +
-            "Options labelled (perm) only use permanent non-charge items.",
-        position = 13,
-        section = sectionSettings
-    )
-    default TeleportationItem useTeleportationItems() {
-        return TeleportationItem.INVENTORY_NON_CONSUMABLE;
     }
 
     @ConfigItem(
