@@ -22,7 +22,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "avoidWilderness",
         name = "Avoid wilderness",
         description = "Whether the wilderness should be avoided if possible<br>" +
-            "(otherwise, will e.g. suggest using wilderness lever to travel from Edgeville to Ardougne)",
+            "(otherwise, will e.g. use wilderness lever from Edgeville to Ardougne)",
         position = 1,
         section = sectionSettings
     )
@@ -33,7 +33,8 @@ public interface ShortestPathConfig extends Config {
     @ConfigItem(
         keyName = "useAgilityShortcuts",
         name = "Use agility shortcuts",
-        description = "Whether to include agility shortcuts in the path.<br>You must also have the required agility level",
+        description = "Whether to include agility shortcuts in the path.<br>" +
+            "You must also have the required agility level",
         position = 2,
         section = sectionSettings
     )
@@ -56,7 +57,8 @@ public interface ShortestPathConfig extends Config {
     @ConfigItem(
         keyName = "useBoats",
         name = "Use boats",
-        description = "Whether to include small boats in the path<br>(e.g. the boat to Fishing Platform)",
+        description = "Whether to include small boats in the path<br>" +
+            "(e.g. the boat to Fishing Platform)",
         position = 4,
         section = sectionSettings
     )
@@ -89,7 +91,8 @@ public interface ShortestPathConfig extends Config {
     @ConfigItem(
         keyName = "useShips",
         name = "Use ships",
-        description = "Whether to include passenger ships in the path<br>(e.g. the customs ships to Karamja)",
+        description = "Whether to include passenger ships in the path<br>" +
+            "(e.g. the customs ships to Karamja)",
         position = 7,
         section = sectionSettings
     )
@@ -134,7 +137,8 @@ public interface ShortestPathConfig extends Config {
     @ConfigItem(
         keyName = "useTeleportationLevers",
         name = "Use teleportation levers",
-        description = "Whether to include teleportation levers in the path<br>(e.g. the lever from Edgeville to Wilderness)",
+        description = "Whether to include teleportation levers in the path<br>" +
+            "(e.g. the lever from Edgeville to Wilderness)",
         position = 11,
         section = sectionSettings
     )
@@ -145,7 +149,8 @@ public interface ShortestPathConfig extends Config {
     @ConfigItem(
         keyName = "useTeleportationPortals",
         name = "Use teleportation portals",
-        description = "Whether to include teleportation portals in the path<br>(e.g. the portal from Ferox Enclave to Castle Wars)",
+        description = "Whether to include teleportation portals in the path<br>" +
+            "(e.g. the portal from Ferox Enclave to Castle Wars)",
         position = 12,
         section = sectionSettings
     )
@@ -154,31 +159,33 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
-        keyName = "usePlayerItems",
-        name = "Use items",
-        description = "Whether to include items from the player's inventory and equipment.<br>Options labelled (perm) only use permanent items.",
+        keyName = "useTeleportationItems",
+        name = "Use teleportation items",
+        description = "Whether to include teleportation items from the player's inventory and equipment.<br>" +
+            "Options labelled (perm) only use permanent non-charge items.",
         position = 13,
         section = sectionSettings
     )
-    default PlayerItemTransportSetting playerItemTransportSetting() {
-        return PlayerItemTransportSetting.InventoryNonConsumable;
+    default TeleportationItem useTeleportationItems() {
+        return TeleportationItem.INVENTORY_NON_CONSUMABLE;
     }
 
     @ConfigItem(
-        keyName = "useSpellTeleports",
-        name = "Use spell teleports",
-        description = "Whether to include spell teleports in the path",
+        keyName = "useTeleportationSpells",
+        name = "Use teleportation spells",
+        description = "Whether to include teleportation spells in the path",
         position = 14,
         section = sectionSettings
     )
-    default boolean useSpellTeleports() {
+    default boolean useTeleportationSpells() {
         return true;
     }
 
     @ConfigItem(
         keyName = "cancelInstead",
         name = "Cancel instead of recalculating",
-        description = "Whether the path should be cancelled rather than recalculated when the recalculate distance limit is exceeded",
+        description = "Whether the path should be cancelled rather than recalculated " +
+            "when the recalculate distance limit is exceeded",
         position = 15,
         section = sectionSettings
     )

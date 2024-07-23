@@ -1,13 +1,12 @@
 package shortestpath;
 
-import com.google.common.base.Strings;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import lombok.Getter;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
@@ -17,83 +16,40 @@ import net.runelite.api.coords.WorldPoint;
  * This class represents a travel point between two WorldPoints.
  */
 public class Transport {
+    /** A location placeholder different from null to use for permutation transports */
+    private static final WorldPoint LOCATION_PERMUTATION = new WorldPoint(-1, -1, -1);
 
     /** The starting point of this transport */
     @Getter
-    private final WorldPoint origin;
+    private WorldPoint origin = null;
 
     /** The ending point of this transport */
     @Getter
-    private final WorldPoint destination;
+    private WorldPoint destination = null;
 
     /** The skill levels required to use this transport */
     private final int[] skillLevels = new int[Skill.values().length];
 
     /** The quests required to use this transport */
     @Getter
-    private List<Quest> quests = new ArrayList<>();
+    private Set<Quest> quests = new HashSet<>();
 
-    /** The ids of items required to use this transport. If the player has **any** of the matching list of items, this transport is valid */
+    /** The ids of items required to use this transport.
+     * If the player has **any** of the matching list of items,
+     * this transport is valid */
     @Getter
-    private List<List<Integer>> itemIdRequirements = new ArrayList<>();
+    private Set<Set<Integer>> itemIdRequirements = new HashSet<>();
 
-    /** Whether the transport is an agility shortcut */
+    /** The type of transport */
     @Getter
-    private boolean isAgilityShortcut;
+    private TransportType type;
 
-    /** Whether the transport is a crossbow grapple shortcut */
+    /** The travel waiting time in number of ticks */
     @Getter
-    private boolean isGrappleShortcut;
+    private int duration;
 
-    /** Whether the transport is a boat */
-    @Getter
-    private boolean isBoat;
-
-    /** Whether the transport is a canoe */
-    @Getter
-    private boolean isCanoe;
-
-    /** Whether the transport is a charter ship */
-    @Getter
-    private boolean isCharterShip;
-
-    /** Whether the transport is a ship */
-    @Getter
-    private boolean isShip;
-
-    /** Whether the transport is a fairy ring */
-    @Getter
-    private boolean isFairyRing;
-
-    /** Whether the transport is a gnome glider */
-    @Getter
-    private boolean isGnomeGlider;
-
-    /** Whether the transport is a spirit tree */
-    @Getter
-    private boolean isSpiritTree;
-
-    /** Whether the transport is a teleportation lever */
-    @Getter
-    private boolean isTeleportationLever;
-
-    /** Whether the transport is a teleportation portal */
-    @Getter
-    private boolean isTeleportationPortal;
-
-    /** Whether the transport is a player-held item */
-    @Getter
-    private boolean isPlayerItem;
-
-    /** Whether the transport is a spell teleport */
-    @Getter
-    private boolean isSpellTeleport;
-
-    /** The additional travel time */
-    @Getter
-    private int wait;
-
-    /** Info to display for this transport. For spirit trees, fairy rings, and others, this is the destination option to pick. */
+    /** Info to display for this transport. For spirit trees, fairy rings,
+     * and others, this is the destination option to pick. */
     @Getter
     private String displayInfo;
 
@@ -107,41 +63,80 @@ public class Transport {
 
     /** Any varbits to check for the transport to be valid. All must pass for a transport to be valid */
     @Getter
-    private final List<TransportVarbit> varbits = new ArrayList<>();
+    private final Set<TransportVarbit> varbits = new HashSet<>();
 
-    Transport(final WorldPoint origin, final WorldPoint destination) {
-        this.origin = origin;
-        this.destination = destination;
+    /** Creates a new transport from an origin-only transport
+     * and a destination-only transport, and merges requirements */
+    Transport(Transport origin, Transport destination) {
+        this.origin = origin.origin;
+        this.destination = destination.destination;
+
+        for (int i = 0; i < skillLevels.length; i++) {
+            this.skillLevels[0] = Math.max(
+                origin.skillLevels[i],
+                destination.skillLevels[i]);
+        }
+
+        this.quests.addAll(origin.quests);
+        this.quests.addAll(destination.quests);
+
+        this.itemIdRequirements.addAll(origin.itemIdRequirements);
+        this.itemIdRequirements.addAll(destination.itemIdRequirements);
+
+        this.type = origin.type;
+
+        this.duration = Math.max(
+            origin.duration,
+            destination.duration);
+
+        this.displayInfo = destination.displayInfo;
+
+        this.isConsumable |= origin.isConsumable;
+        this.isConsumable |= destination.isConsumable;
+
+        this.maxWildernessLevel = Math.max(
+            origin.maxWildernessLevel,
+            destination.maxWildernessLevel);
+
+        this.varbits.addAll(origin.varbits);
+        this.varbits.addAll(destination.varbits);
     }
 
-    Transport(final Map<String, String> fieldMap, TransportType transportType) {
+    Transport(Map<String, String> fieldMap, TransportType transportType) {
         final String DELIM = " ";
+        final String DELIM_MULTI = ";";
+        final String DELIM_STATE = "=";
 
-        if (fieldMap.containsKey("Origin")) {
-            String[] originArray = fieldMap.get("Origin").split(DELIM);
-            origin = new WorldPoint(
+        String value;
+
+        // If the origin field is null the transport is a teleportation item or spell
+        // If the origin field has 3 elements it is a coordinate of a transport
+        // Otherwise it is a transport that needs to be expanded into all permutations (e.g. fairy ring)
+        if ((value = fieldMap.get("Origin")) != null) {
+            String[] originArray = value.split(DELIM);
+            origin = originArray.length == 3 ? new WorldPoint(
                 Integer.parseInt(originArray[0]),
                 Integer.parseInt(originArray[1]),
-                Integer.parseInt(originArray[2]));
-        } else {
-            origin = null;
+                Integer.parseInt(originArray[2])) : LOCATION_PERMUTATION;
         }
 
-        if (fieldMap.containsKey("Destination")) {
-            String[] destinationArray = fieldMap.get("Destination").split(DELIM);
-            destination = new WorldPoint(
+        if ((value = fieldMap.get("Destination")) != null) {
+            String[] destinationArray = value.split(DELIM);
+            destination = destinationArray.length == 3 ? new WorldPoint(
                 Integer.parseInt(destinationArray[0]),
                 Integer.parseInt(destinationArray[1]),
-                Integer.parseInt(destinationArray[2]));
-        } else {
-            destination = null;
+                Integer.parseInt(destinationArray[2])) : LOCATION_PERMUTATION;
         }
 
-        if (fieldMap.containsKey("Skill Requirements")) {
-            String[] skillRequirements = fieldMap.get("Skill Requirements").split(";");
+        if ((value = fieldMap.get("Skills")) != null) {
+            String[] skillRequirements = value.split(DELIM_MULTI);
 
             for (String requirement : skillRequirements) {
                 String[] levelAndSkill = requirement.split(DELIM);
+
+                if (levelAndSkill.length < 2) {
+                    continue;
+                }
 
                 int level = Integer.parseInt(levelAndSkill[0]);
                 String skillName = levelAndSkill[1];
@@ -156,12 +151,12 @@ public class Transport {
             }
         }
 
-        if (fieldMap.containsKey("Item ID Requirements")) {
-            String[] itemIdsList = fieldMap.get("Item ID Requirements").split(";");
+        if ((value = fieldMap.get("Item IDs")) != null) {
+            String[] itemIdsList = value.split(DELIM_MULTI);
             for (String listIds : itemIdsList)
             {
-                List<Integer> multiitemList = new ArrayList<>();
-                String[] itemIds = listIds.split(",");
+                Set<Integer> multiitemList = new HashSet<>();
+                String[] itemIds = listIds.split(DELIM);
                 for (String item : itemIds) {
                     int itemId = Integer.parseInt(item);
                     multiitemList.add(itemId);
@@ -170,57 +165,49 @@ public class Transport {
             }
         }
 
-        if (fieldMap.containsKey("Quest")) {
-            this.quests = findQuests(fieldMap.get("Quest"));
+        if ((value = fieldMap.get("Quests")) != null) {
+            this.quests = findQuests(value);
         }
 
-        if (fieldMap.containsKey("Wait")) {
-            this.wait = Integer.parseInt(fieldMap.get("Wait"));
+        if ((value = fieldMap.get("Duration")) != null) {
+            this.duration = Integer.parseInt(value);
         }
-        if (TransportType.PLAYER_ITEM.equals(transportType)) {
-            // Item transports should always have a non-zero wait, so the pathfinder doesn't calculate the cost by distance
-            this.wait = Math.max(this.wait, 1);
-        }
-        if (TransportType.SPELL_TELEPORT.equals(transportType)) {
-            // Spell transports should always have a non-zero wait, so the pathfinder doesn't calculate the cost by distance
-            this.wait = Math.max(this.wait, 1);
-        }
-
-        if (fieldMap.containsKey("Display Info")) {
-            this.displayInfo = fieldMap.get("Display Info");
+        if (TransportType.FAIRY_RING.equals(transportType)) {
+            this.duration = 5;
+        } else if (TransportType.TELEPORTATION_ITEM.equals(transportType)) {
+            // Teleportation items should always have a non-zero wait, so the pathfinder doesn't calculate the cost by distance
+            this.duration = Math.max(this.duration, 1);
+        } else if (TransportType.TELEPORTATION_SPELL.equals(transportType)) {
+            // Teleportation spells should always have a non-zero wait, so the pathfinder doesn't calculate the cost by distance
+            this.duration = Math.max(this.duration, 1);
         }
 
-        if (fieldMap.containsKey("Consumable")) {
-            this.isConsumable = fieldMap.get("Consumable").equals("T");
+        if ((value = fieldMap.get("Display info")) != null) {
+            this.displayInfo = value;
         }
 
-        if (fieldMap.containsKey("Wilderness Level")) {
-            this.maxWildernessLevel =  Integer.parseInt(fieldMap.get("Wilderness Level"));
-        } else {
-            this.maxWildernessLevel = -1;
+        if ((value = fieldMap.get("Consumable")) != null) {
+            this.isConsumable = "T".equals(value) || "yes".equals(value.toLowerCase());
         }
 
-        if (fieldMap.containsKey("Varbits")) {
-            for (String varbitCheck : fieldMap.get("Varbits").split(";")) {
-                var varbitParts = varbitCheck.split("=");
+        if ((value = fieldMap.get("Wilderness level")) != null) {
+            this.maxWildernessLevel =  Integer.parseInt(value);
+        }
+
+        if ((value = fieldMap.get("Varbits")) != null) {
+            for (String varbitCheck : value.split(DELIM_MULTI)) {
+                var varbitParts = varbitCheck.split(DELIM_STATE);
                 int varbitId = Integer.parseInt(varbitParts[0]);
                 int varbitValue = Integer.parseInt(varbitParts[1]);
                 varbits.add(new TransportVarbit(varbitId, varbitValue));
             }
         }
 
-        isAgilityShortcut = TransportType.AGILITY_SHORTCUT.equals(transportType);
-        isGrappleShortcut = isAgilityShortcut && (getRequiredLevel(Skill.RANGED) > 1 || getRequiredLevel(Skill.STRENGTH) > 1);
-        isBoat = TransportType.BOAT.equals(transportType);
-        isCanoe = TransportType.CANOE.equals(transportType);
-        isCharterShip = TransportType.CHARTER_SHIP.equals(transportType);
-        isShip = TransportType.SHIP.equals(transportType);
-        isGnomeGlider = TransportType.GNOME_GLIDER.equals(transportType);
-        isSpiritTree = TransportType.SPIRIT_TREE.equals(transportType);
-        isTeleportationLever = TransportType.TELEPORTATION_LEVER.equals(transportType);
-        isTeleportationPortal = TransportType.TELEPORTATION_PORTAL.equals(transportType);
-        isPlayerItem = TransportType.PLAYER_ITEM.equals(transportType);
-        isSpellTeleport = TransportType.SPELL_TELEPORT.equals(transportType);
+        this.type = transportType;
+        if (TransportType.AGILITY_SHORTCUT.equals(transportType) &&
+            (getRequiredLevel(Skill.RANGED) > 1 || getRequiredLevel(Skill.STRENGTH) > 1)) {
+            this.type = TransportType.GRAPPLE_SHORTCUT;
+        }
     }
 
     /** The skill level required to use this transport */
@@ -233,9 +220,9 @@ public class Transport {
         return !quests.isEmpty();
     }
 
-    private static List<Quest> findQuests(String questNamesCombined) {
+    private static Set<Quest> findQuests(String questNamesCombined) {
         String[] questNames = questNamesCombined.split(";");
-        List<Quest> quests = new ArrayList<>();
+        Set<Quest> quests = new HashSet<>();
         for (String questName : questNames) {
             for (Quest quest : Quest.values()) {
                 if (quest.getName().equals(questName)) {
@@ -247,131 +234,107 @@ public class Transport {
         return quests;
     }
 
-    private static void addFairyRingTransports(Map<WorldPoint, List<Transport>> transports, String path) {
-        try {
-            String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
-            Scanner scanner = new Scanner(s);
-            List<String> fairyRingsQuestNames = new ArrayList<>();
-            List<WorldPoint> fairyRings = new ArrayList<>();
-            List<String> fairyRingCodes = new ArrayList<>();
+    private static void addTransports(Map<WorldPoint, Set<Transport>> transports, String path, TransportType transportType) {
+        final String DELIM_COLUMN = "\t";
+        final String PREFIX_COMMENT = "#";
 
-            // Header line is the first line in the file and must start with `# ` so trim off the first two chars
-            String headerLine = scanner.nextLine();
-            String[] headers = headerLine.substring(2).split("\t");
-
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-
-                if (line.startsWith("#") || line.isBlank()) {
-                    continue;
-                }
-
-                String[] fields = line.split("\t");
-                Map<String, String> fieldMap = new HashMap<>();
-                for (int i = 0; i < headers.length; i++) {
-                    if (i < fields.length && !fields[i].isEmpty()) {
-                        fieldMap.put(headers[i], fields[i]);
-                    }
-                }
-
-                fairyRings.add(new WorldPoint(Integer.parseInt(fieldMap.get("X")),
-                                              Integer.parseInt(fieldMap.get("Y")),
-                                              Integer.parseInt(fieldMap.get("Z"))));
-                fairyRingCodes.add(fieldMap.getOrDefault("Fairy Code", null));
-                fairyRingsQuestNames.add(fieldMap.getOrDefault("Fairy Code", ""));
-            }
-
-            for (WorldPoint origin : fairyRings) {
-                for (int i = 0; i < fairyRings.size(); i++) {
-                    WorldPoint destination = fairyRings.get(i);
-                    String questName = fairyRingsQuestNames.get(i);
-                    if (origin.equals(destination)) {
-                        continue;
-                    }
-
-                    Transport transport = new Transport(origin, destination);
-                    transport.isFairyRing = true;
-                    transport.wait = 5;
-                    transport.displayInfo = fairyRingCodes.get(i);
-                    transports.computeIfAbsent(origin, k -> new ArrayList<>()).add(transport);
-                    if (!Strings.isNullOrEmpty(questName)) {
-                        transport.quests = findQuests(questName);
-                    }
-                }
-            }
-            scanner.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void addTransports(Map<WorldPoint, List<Transport>> transports, String path, TransportType transportType) {
         try {
             String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
             Scanner scanner = new Scanner(s);
 
-            // Header line is the first line in the file and must start with `# ` so trim off the first two chars
+            // Header line is the first line in the file and will start with either '#' or '# '
             String headerLine = scanner.nextLine();
-            String[] headers = headerLine.substring(2).split("\t");
+            headerLine = headerLine.startsWith(PREFIX_COMMENT + " ") ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
+            headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
+            String[] headers = headerLine.split(DELIM_COLUMN);
+
+            Set<Transport> newTransports = new HashSet<>();
 
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
 
-                if (line.startsWith("#") || line.isBlank()) {
+                if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
                     continue;
                 }
 
-                String[] fields = line.split("\t");
+                String[] fields = line.split(DELIM_COLUMN);
                 Map<String, String> fieldMap = new HashMap<>();
                 for (int i = 0; i < headers.length; i++) {
-                    if (i < fields.length && !fields[i].isEmpty()) {
+                    if (i < fields.length) {
                         fieldMap.put(headers[i], fields[i]);
                     }
                 }
 
                 Transport transport = new Transport(fieldMap, transportType);
-                WorldPoint origin = transport.getOrigin();
-                transports.computeIfAbsent(origin, k -> new ArrayList<>()).add(transport);
+                newTransports.add(transport);
 
             }
             scanner.close();
+
+            /*
+             * A transport with origin A and destination B is one-way and must
+             * be duplicated as origin B and destination A to become two-way.
+             * Example: key-locked doors
+             * 
+             * A transport with origin A and a missing destination is one-way,
+             * but can go from origin A to all destinations with a missing origin.
+             * Example: fairy ring AIQ -> <blank>
+             * 
+             * A transport with a missing origin and destination B is one-way,
+             * but can go from all origins with a missing destination to destination B.
+             * Example: fairy ring <blank> -> AIQ
+             * 
+             * Transports from origin A to destination A are skipped.
+             * Example: fairy ring AIQ -> AIQ
+             */
+            Set<Transport> transportOrigins = new HashSet<>();
+            Set<Transport> transportDestinations = new HashSet<>();
+            for (Transport transport : newTransports) {
+                WorldPoint origin = transport.getOrigin();
+                WorldPoint destination = transport.getDestination();
+                // Logic to determine ordinary transport vs teleport vs permutation (e.g. fairy ring)
+                if ((origin == null && destination == null)
+                    || (LOCATION_PERMUTATION.equals(origin) && LOCATION_PERMUTATION.equals(destination))) {
+                    continue;
+                } else if (!LOCATION_PERMUTATION.equals(origin) && origin != null
+                    && LOCATION_PERMUTATION.equals(destination)) {
+                    transportOrigins.add(transport);
+                } else if (LOCATION_PERMUTATION.equals(origin)
+                    && !LOCATION_PERMUTATION.equals(destination) && destination != null) {
+                    transportDestinations.add(transport);
+                }
+                if (!LOCATION_PERMUTATION.equals(origin)
+                    && destination != null && !LOCATION_PERMUTATION.equals(destination)
+                    && (origin == null || !origin.equals(destination))) {
+                    transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
+                }
+            }
+            for (Transport origin : transportOrigins) {
+                for (Transport destination : transportDestinations) {
+                    transports.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
+                        .add(new Transport(origin, destination));
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static HashMap<WorldPoint, List<Transport>> loadAllFromResources() {
-        HashMap<WorldPoint, List<Transport>> transports = new HashMap<>();
+    public static HashMap<WorldPoint, Set<Transport>> loadAllFromResources() {
+        HashMap<WorldPoint, Set<Transport>> transports = new HashMap<>();
         addTransports(transports, "/transports.tsv", TransportType.TRANSPORT);
         addTransports(transports, "/agility_shortcuts.tsv", TransportType.AGILITY_SHORTCUT);
         addTransports(transports, "/boats.tsv", TransportType.BOAT);
         addTransports(transports, "/canoes.tsv", TransportType.CANOE);
         addTransports(transports, "/charter_ships.tsv", TransportType.CHARTER_SHIP);
         addTransports(transports, "/ships.tsv", TransportType.SHIP);
-        addFairyRingTransports(transports, "/fairy_rings.tsv");
+        addTransports(transports, "/fairy_rings.tsv", TransportType.FAIRY_RING);
         addTransports(transports, "/gnome_gliders.tsv", TransportType.GNOME_GLIDER);
         addTransports(transports, "/spirit_trees.tsv", TransportType.SPIRIT_TREE);
-        addTransports(transports, "/levers.tsv", TransportType.TELEPORTATION_LEVER);
-        addTransports(transports, "/portals.tsv", TransportType.TELEPORTATION_PORTAL);
-        addTransports(transports, "/items.tsv", TransportType.PLAYER_ITEM);
-        addTransports(transports, "/spell_teleports.tsv", TransportType.SPELL_TELEPORT);
-
+        addTransports(transports, "/teleportation_levers.tsv", TransportType.TELEPORTATION_LEVER);
+        addTransports(transports, "/teleportation_portals.tsv", TransportType.TELEPORTATION_PORTAL);
+        addTransports(transports, "/teleportation_items.tsv", TransportType.TELEPORTATION_ITEM);
+        addTransports(transports, "/teleportation_spells.tsv", TransportType.TELEPORTATION_SPELL);
         return transports;
-    }
-
-    private enum TransportType {
-        TRANSPORT,
-        AGILITY_SHORTCUT,
-        BOAT,
-        CANOE,
-        CHARTER_SHIP,
-        SHIP,
-        FAIRY_RING,
-        GNOME_GLIDER,
-        SPIRIT_TREE,
-        TELEPORTATION_LEVER,
-        TELEPORTATION_PORTAL,
-        PLAYER_ITEM,
-        SPELL_TELEPORT,
     }
 }

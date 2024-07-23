@@ -7,7 +7,9 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import javax.annotation.Nullable;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.coords.WorldPoint;
@@ -18,8 +20,6 @@ import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-
-import javax.annotation.Nullable;
 
 public class PathMapTooltipOverlay extends Overlay {
     private static final int TOOLTIP_OFFSET_HEIGHT = 25;
@@ -38,7 +38,7 @@ public class PathMapTooltipOverlay extends Overlay {
         this.plugin = plugin;
         this.config = config;
         setPosition(OverlayPosition.DYNAMIC);
-        setPriority(Overlay.PRIORITY_LOW);
+        setPriority(Overlay.PRIORITY_HIGHEST);
         setLayer(OverlayLayer.MANUAL);
         drawAfterInterface(InterfaceID.WORLD_MAP);
     }
@@ -83,8 +83,9 @@ public class PathMapTooltipOverlay extends Overlay {
 
         List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:", "Step " + n + " of " + plugin.getPathfinder().getPath().size()));
         if (nextPoint != null) {
-            for (Transport transport : plugin.getPathfinderConfig().getTransports().getOrDefault(point, new ArrayList<>())) {
-                if (nextPoint.equals(transport.getDestination())) {
+            for (Transport transport : plugin.getPathfinderConfig().getTransports().getOrDefault(point, new HashSet<>())) {
+                if (nextPoint.equals(transport.getDestination())
+                    && transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
                     rows.add(transport.getDisplayInfo());
                     break;
                 }
@@ -96,7 +97,7 @@ public class PathMapTooltipOverlay extends Overlay {
         int tooltipHeight = fm.getHeight();
         int tooltipWidth = rows.stream().map(fm::stringWidth).max(Integer::compareTo).get();
 
-        int clippedHeight = tooltipHeight + TOOLTIP_PADDING_HEIGHT * 2;
+        int clippedHeight = tooltipHeight * rows.size() + TOOLTIP_PADDING_HEIGHT * 2;
         int clippedWidth = tooltipWidth + TOOLTIP_PADDING_WIDTH * 2;
 
         Rectangle worldMapBounds = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW).getBounds();
@@ -109,15 +110,15 @@ public class PathMapTooltipOverlay extends Overlay {
             drawPointX = worldMapRightBoundary - clippedWidth;
         }
         if (drawPointY + clippedHeight > worldMapBottomBoundary) {
-            drawPointY = start.getY() - TOOLTIP_OFFSET_HEIGHT * 2 - tooltipHeight;
+            drawPointY = start.getY() - clippedHeight;
         }
         drawPointY += TOOLTIP_OFFSET_HEIGHT;
 
         Rectangle tooltipRect = new Rectangle(
             drawPointX - TOOLTIP_PADDING_WIDTH,
             drawPointY - TOOLTIP_PADDING_HEIGHT,
-            tooltipWidth + TOOLTIP_PADDING_WIDTH * 2,
-            tooltipHeight * rows.size() + TOOLTIP_PADDING_HEIGHT * 2);
+            clippedWidth,
+            clippedHeight);
 
         graphics.setColor(JagexColors.TOOLTIP_BACKGROUND);
         graphics.fillRect(tooltipRect.x, tooltipRect.y, tooltipRect.width, tooltipRect.height);

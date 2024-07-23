@@ -1,4 +1,4 @@
-# Origin	Destination	menuOption menuTarget objectID	Skill Requirements	Item Requirements	Quest	Wait	Display Info
+# Origin	Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Info
 # Tutorial Island							
 3097 3107 0	3098 3107 0	Open Door 9398				1	
 3098 3107 0	3097 3107 0	Open Door 9398				1	

@@ -8,7 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
@@ -48,7 +48,7 @@ public class PathTileOverlay extends Overlay {
             }
 
             StringBuilder s = new StringBuilder();
-            for (Transport b : plugin.getTransports().getOrDefault(a, new ArrayList<>())) {
+            for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>())) {
                 for (WorldPoint destination : WorldPoint.toLocalInstance(client, b.getDestination())) {
                     Point cb = tileCenter(destination);
                     if (cb != null) {
@@ -257,7 +257,7 @@ public class PathTileOverlay extends Overlay {
     }
 
     private void drawTransportInfo(Graphics2D graphics, WorldPoint location, WorldPoint locationEnd) {
-        if (!config.showTransportInfo()) {
+        if (locationEnd == null || !config.showTransportInfo()) {
             return;
         }
         for (WorldPoint point : WorldPoint.toLocalInstance(client, location)) {
@@ -268,8 +268,8 @@ public class PathTileOverlay extends Overlay {
                 }
 
                 int vertical_offset = 0;
-                for (Transport transport : plugin.getTransports().getOrDefault(point, new ArrayList<>())) {
-                    if (!pointEnd.equals(transport.getDestination())) {
+                for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
+                    if (pointEnd == null || !pointEnd.equals(transport.getDestination())) {
                         continue;
                     }
 

@@ -1,13 +1,14 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
-
+import javax.annotation.Nonnull;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
@@ -20,14 +21,26 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
-import shortestpath.PlayerItemTransportSetting;
+import shortestpath.TeleportationItem;
 import shortestpath.ShortestPathConfig;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.Transport;
+import shortestpath.TransportType;
 import shortestpath.TransportVarbit;
 import shortestpath.WorldPointUtil;
-
-import javax.annotation.Nonnull;
+import static shortestpath.TransportType.AGILITY_SHORTCUT;
+import static shortestpath.TransportType.GRAPPLE_SHORTCUT;
+import static shortestpath.TransportType.BOAT;
+import static shortestpath.TransportType.CANOE;
+import static shortestpath.TransportType.CHARTER_SHIP;
+import static shortestpath.TransportType.SHIP;
+import static shortestpath.TransportType.FAIRY_RING;
+import static shortestpath.TransportType.GNOME_GLIDER;
+import static shortestpath.TransportType.SPIRIT_TREE;
+import static shortestpath.TransportType.TELEPORTATION_LEVER;
+import static shortestpath.TransportType.TELEPORTATION_PORTAL;
+import static shortestpath.TransportType.TELEPORTATION_ITEM;
+import static shortestpath.TransportType.TELEPORTATION_SPELL;
 
 public class PathfinderConfig {
     private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
@@ -40,13 +53,13 @@ public class PathfinderConfig {
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
     /** All transports by origin {@link WorldPoint}. The null key is used for transports centered on the player. */
-    private final Map<WorldPoint, List<Transport>> allTransports;
+    private final Map<WorldPoint, Set<Transport>> allTransports;
     @Getter
-    private Map<WorldPoint, List<Transport>> transports;
+    private Map<WorldPoint, Set<Transport>> transports;
 
     // Copy of transports with packed positions for the hotpath; lists are not copied and are the same reference in both maps
     @Getter
-    private PrimitiveIntHashMap<List<Transport>> transportsPacked;
+    private PrimitiveIntHashMap<Set<Transport>> transportsPacked;
 
     private final Client client;
     private final ShortestPathConfig config;
@@ -66,8 +79,8 @@ public class PathfinderConfig {
         useSpiritTrees,
         useTeleportationLevers,
         useTeleportationPortals,
-        useSpellTeleports;
-    private PlayerItemTransportSetting playerItemsSetting;
+        useTeleportationSpells;
+    private TeleportationItem useTeleportationItems;
     private int agilityLevel;
     private int rangedLevel;
     private int strengthLevel;
@@ -76,8 +89,8 @@ public class PathfinderConfig {
     private Map<Quest, QuestState> questStates = new HashMap<>();
     private Map<Integer, Integer> varbitValues = new HashMap<>();
 
-    public PathfinderConfig(SplitFlagMap mapData, Map<WorldPoint, List<Transport>> transports, Client client,
-                            ShortestPathConfig config) {
+    public PathfinderConfig(SplitFlagMap mapData, Map<WorldPoint, Set<Transport>> transports,
+                            Client client, ShortestPathConfig config) {
         this.mapData = mapData;
         this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
         this.allTransports = transports;
@@ -105,8 +118,8 @@ public class PathfinderConfig {
         useGnomeGliders = config.useGnomeGliders();
         useTeleportationLevers = config.useTeleportationLevers();
         useTeleportationPortals = config.useTeleportationPortals();
-        playerItemsSetting = config.playerItemTransportSetting();
-        useSpellTeleports = config.useSpellTeleports();
+        useTeleportationItems = config.useTeleportationItems();
+        useTeleportationSpells = config.useTeleportationSpells();
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             agilityLevel = client.getBoostedSkillLevel(Skill.AGILITY);
@@ -122,7 +135,7 @@ public class PathfinderConfig {
     /** Specialized method for only updating player-held item and spell transports */
     public void refreshPlayerTransportData(@Nonnull WorldPoint location, int wildernessLevel) {
         //TODO: This just checks the player's inventory and equipment. Later, bank items could be included, but the player will probably need to configure which items are considered
-        var inventoryItems = Arrays.stream(new InventoryID[]{InventoryID.INVENTORY, InventoryID.EQUIPMENT})
+        List<Integer> inventoryItems = Arrays.stream(new InventoryID[]{InventoryID.INVENTORY, InventoryID.EQUIPMENT})
             .map(client::getItemContainer)
             .filter(Objects::nonNull)
             .map(ItemContainer::getItems)
@@ -131,10 +144,10 @@ public class PathfinderConfig {
             .filter(itemId -> itemId != -1)
             .collect(Collectors.toList());
 
-        boolean skipInventoryCheck = config.playerItemTransportSetting() == PlayerItemTransportSetting.All;
+        boolean skipInventoryCheck = TeleportationItem.ALL.equals(useTeleportationItems);
 
-        List<Transport> playerItemTransports = allTransports.getOrDefault(null, new ArrayList<>());
-        List<Transport> usableTransports = new ArrayList<>(playerItemTransports.size());
+        Set<Transport> playerItemTransports = allTransports.getOrDefault(null, new HashSet<>());
+        Set<Transport> usableTransports = new HashSet<>(playerItemTransports.size());
         for (Transport transport : playerItemTransports) {
             boolean itemInInventory = skipInventoryCheck ||
                 (!transport.getItemIdRequirements().isEmpty() && transport.getItemIdRequirements().stream().anyMatch(requirements -> requirements.stream().allMatch(inventoryItems::contains)));
@@ -144,8 +157,10 @@ public class PathfinderConfig {
             }
         }
 
-        transports.put(location, usableTransports);
-        transportsPacked.put(WorldPointUtil.packWorldPoint(location), usableTransports);
+        if (!usableTransports.isEmpty()) {
+            transports.put(location, usableTransports);
+            transportsPacked.put(WorldPointUtil.packWorldPoint(location), usableTransports);
+        }
     }
 
     private void refreshTransportData() {
@@ -159,8 +174,8 @@ public class PathfinderConfig {
 
         transports.clear();
         transportsPacked.clear();
-        for (Map.Entry<WorldPoint, List<Transport>> entry : allTransports.entrySet()) {
-            List<Transport> usableTransports = new ArrayList<>(entry.getValue().size());
+        for (Map.Entry<WorldPoint, Set<Transport>> entry : allTransports.entrySet()) {
+            Set<Transport> usableTransports = new HashSet<>(entry.getValue().size());
             for (Transport transport : entry.getValue()) {
                 for (Quest quest : transport.getQuests()) {
                     try {
@@ -186,7 +201,7 @@ public class PathfinderConfig {
 
             WorldPoint point = entry.getKey();
 
-            if (point != null) {
+            if (point != null && !usableTransports.isEmpty()) {
                 transports.put(point, usableTransports);
                 transportsPacked.put(WorldPointUtil.packWorldPoint(point), usableTransports);
             }
@@ -247,65 +262,50 @@ public class PathfinderConfig {
         final int transportPrayerLevel = transport.getRequiredLevel(Skill.PRAYER);
         final int transportWoodcuttingLevel = transport.getRequiredLevel(Skill.WOODCUTTING);
 
-        final boolean isAgilityShortcut = transport.isAgilityShortcut();
-        final boolean isGrappleShortcut = transport.isGrappleShortcut();
-        final boolean isBoat = transport.isBoat();
-        final boolean isCanoe = transport.isCanoe();
-        final boolean isCharterShip = transport.isCharterShip();
-        final boolean isShip = transport.isShip();
-        final boolean isFairyRing = transport.isFairyRing();
-        final boolean isGnomeGlider = transport.isGnomeGlider();
-        final boolean isSpiritTree = transport.isSpiritTree();
-        final boolean isTeleportationLever = transport.isTeleportationLever();
-        final boolean isTeleportationPortal = transport.isTeleportationPortal();
         final boolean isPrayerLocked = transportPrayerLevel > 1;
         final boolean isQuestLocked = transport.isQuestLocked();
-        final boolean isPlayerItem = transport.isPlayerItem();
-        final boolean isSpellTeleport = transport.isSpellTeleport();
 
-        if (isAgilityShortcut) {
-            if (!useAgilityShortcuts || agilityLevel < transportAgilityLevel) {
-                return false;
+        TransportType type = transport.getType();
+
+        if (AGILITY_SHORTCUT.equals(type)
+            && (!useAgilityShortcuts || agilityLevel < transportAgilityLevel)) {
+            return false;
+        } else if (GRAPPLE_SHORTCUT.equals(transport.getType())
+            && (!useGrappleShortcuts
+            || rangedLevel < transportRangedLevel
+            || strengthLevel < transportStrengthLevel)) {
+            return false;
+        } else if (BOAT.equals(transport.getType()) && !useBoats) {
+            return false;
+        } else if (CANOE.equals(transport.getType())
+            && (!useCanoes || woodcuttingLevel < transportWoodcuttingLevel)) {
+            return false;
+        } else if (CHARTER_SHIP.equals(transport.getType())
+            && !useCharterShips) {
+            return false;
+        } else if (SHIP.equals(transport.getType()) && !useShips) {
+            return false;
+        } else if (FAIRY_RING.equals(transport.getType()) && !useFairyRings) {
+            return false;
+        } else if (GNOME_GLIDER.equals(transport.getType()) && !useGnomeGliders) {
+            return false;
+        } else if (SPIRIT_TREE.equals(transport.getType()) && !useSpiritTrees) {
+            return false;
+        } else if (TELEPORTATION_LEVER.equals(transport.getType()) && !useTeleportationLevers) {
+            return false;
+        } else if (TELEPORTATION_PORTAL.equals(transport.getType()) && !useTeleportationPortals) {
+            return false;
+        } else if (TELEPORTATION_ITEM.equals(transport.getType())) {
+            switch (useTeleportationItems) {
+                case NONE:
+                    return false;
+                case INVENTORY_NON_CONSUMABLE:
+                case ALL_NON_CONSUMABLE:
+                    if (transport.isConsumable()) {
+                        return false;
+                    }
             }
-
-            if (isGrappleShortcut && (!useGrappleShortcuts || rangedLevel < transportRangedLevel || strengthLevel < transportStrengthLevel)) {
-                return false;
-            }
-        }
-
-        if (isBoat && !useBoats) {
-            return false;
-        }
-
-        if (isCanoe && (!useCanoes || woodcuttingLevel < transportWoodcuttingLevel)) {
-            return false;
-        }
-
-        if (isCharterShip && !useCharterShips) {
-            return false;
-        }
-
-        if (isShip && !useShips) {
-            return false;
-        }
-
-        if (isFairyRing && !useFairyRings) {
-            return false;
-        }
-
-        if (isGnomeGlider && !useGnomeGliders) {
-            return false;
-        }
-
-        if (isSpiritTree && !useSpiritTrees) {
-            return false;
-        }
-
-        if (isTeleportationLever && !useTeleportationLevers) {
-            return false;
-        }
-
-        if (isTeleportationPortal && !useTeleportationPortals) {
+        } else if (TELEPORTATION_SPELL.equals(transport.getType()) && !useTeleportationSpells) {
             return false;
         }
 
@@ -314,22 +314,6 @@ public class PathfinderConfig {
         }
 
         if (isQuestLocked && !completedQuests(transport)) {
-            return false;
-        }
-
-        if (isPlayerItem) {
-            switch (playerItemsSetting) {
-                case None:
-                    return false;
-                case InventoryNonConsumable:
-                case AllNonConsumable:
-                    if (transport.isConsumable()) {
-                        return false;
-                    }
-            }
-        }
-
-        if (isSpellTeleport && !useSpellTeleports) {
             return false;
         }
 

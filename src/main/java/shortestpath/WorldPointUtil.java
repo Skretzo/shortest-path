@@ -5,6 +5,9 @@ import net.runelite.api.coords.WorldPoint;
 
 public class WorldPointUtil {
     public static int packWorldPoint(WorldPoint point) {
+        if (point == null) {
+            return -1;
+        }
         return packWorldPoint(point.getX(), point.getY(), point.getPlane());
     }
 

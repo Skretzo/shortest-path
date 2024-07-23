@@ -1,11 +1,7 @@
 package pathfinder;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Quest;
@@ -15,26 +11,28 @@ import net.runelite.api.coords.WorldPoint;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
+import shortestpath.TeleportationItem;
 import shortestpath.ShortestPathConfig;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.Transport;
-import shortestpath.Util;
+import shortestpath.TransportType;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.SplitFlagMap;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderTest {
     private static final SplitFlagMap map = SplitFlagMap.fromResources();
-    private static final Map<WorldPoint, List<Transport>> transports = Transport.loadAllFromResources();
-    private static PathfinderConfig pathfinderConfig;
+    private static final Map<WorldPoint, Set<Transport>> transports = Transport.loadAllFromResources();
+
+    private PathfinderConfig pathfinderConfig;
 
     @Mock
     Client client;
@@ -50,115 +48,131 @@ public class PathfinderTest {
     @Test
     public void testAgilityShortcuts() {
         when(config.useAgilityShortcuts()).thenReturn(true);
+        testTransportLength(2, TransportType.AGILITY_SHORTCUT);
+    }
+
+    @Test
+    public void testGrappleShortcuts() {
         when(config.useGrappleShortcuts()).thenReturn(true);
-        testPathLength(2, "agility_shortcuts.tsv", QuestState.FINISHED, 99);
+        testTransportLength(2, TransportType.GRAPPLE_SHORTCUT);
     }
 
     @Test
     public void testBoats() {
         when(config.useBoats()).thenReturn(true);
-        testPathLength(2, "boats.tsv", QuestState.FINISHED);
+        testTransportLength(2, TransportType.BOAT);
     }
 
     @Test
     public void testCanoes() {
         when(config.useCanoes()).thenReturn(true);
-        testPathLength(2, "canoes.tsv", QuestState.NOT_STARTED, 99);
+        testTransportLength(2, TransportType.CANOE);
     }
 
     @Test
     public void testCharterShips() {
         when(config.useCharterShips()).thenReturn(true);
-        testPathLength(2, "charter_ships.tsv", QuestState.FINISHED);
+        testTransportLength(2, TransportType.CHARTER_SHIP);
     }
 
     @Test
     public void testShips() {
         when(config.useShips()).thenReturn(true);
-        testPathLength(2, "ships.tsv", QuestState.FINISHED);
+        testTransportLength(2, TransportType.SHIP);
     }
 
     @Test
     public void testGnomeGliders() {
         when(config.useGnomeGliders()).thenReturn(true);
-        testPathLength(2, "gnome_gliders.tsv", QuestState.FINISHED);
+        testTransportLength(2, TransportType.GNOME_GLIDER);
     }
 
     @Test
     public void testSpiritTrees() {
         when(config.useSpiritTrees()).thenReturn(true);
-        testPathLength(2, "spirit_trees.tsv", QuestState.FINISHED);
+        testTransportLength(2, TransportType.SPIRIT_TREE);
     }
 
-    private void testPathLength(int expectedLength, String path, QuestState questState) {
-        testPathLength(expectedLength, path, questState, -1);
+    @Test
+    public void testTeleportationLevers() {
+        when(config.useTeleportationLevers()).thenReturn(true);
+        testTransportLength(2, TransportType.TELEPORTATION_LEVER);
     }
 
-    private void testPathLength(int expectedLength, String path, QuestState questState, int skillLevel) {
-        if (skillLevel > -1) {
-            setupSkills(skillLevel);
-        }
-        setupQuests(questState);
-
-        int counter = 0;
-        for (int[] startAndTargetCoords : transportCoordinatesFromFile("/" + path)) {
-            counter++;
-            assertEquals(expectedLength, calculatePathLength(startAndTargetCoords));
-        }
-        System.out.println(String.format("Completed %d " + path + " path length tests successfully", counter));
+    @Test
+    public void testAgilityShortcutAndTeleportItem() {
+        when(config.useAgilityShortcuts()).thenReturn(true);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
+        // Draynor Manor to Champions Guild via several stepping stones, but
+        // enabling Combat bracelet teleport should not priotize over stepping stones
+        // 5 tiles is using the stepping stones
+        // ~40 tiles is using the combat bracelet teleport to Champions Guild
+        // >100 tiles is walking around the river via Barbarian Village
+        testTransportLength(5, new WorldPoint(3149, 3363, 0), new WorldPoint(3154, 3363, 0));
     }
 
-    private void setupSkills(int skillLevel) {
-        when(client.getBoostedSkillLevel((Skill) any(Object.class))).thenReturn(skillLevel);
+    @Test
+    public void testChronicle() {
+        // South of river south of Champions Guild to Chronicle teleport destination
+        testTransportLength(2,
+            new WorldPoint(3199, 3336, 0),
+            new WorldPoint(3200, 3355, 0),
+            TeleportationItem.ALL);
     }
 
-    private void setupQuests(QuestState questState) {
+    private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems) {
+        pathfinderConfig = spy(new PathfinderConfig(map, transports, client, config));
+
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
         when(client.getClientThread()).thenReturn(Thread.currentThread());
-        pathfinderConfig = spy(new PathfinderConfig(map, transports, client, config));
-        doReturn(questState).when(pathfinderConfig).getQuestState((Quest) any(Object.class));
-    }
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
+        when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
+        doReturn(questState).when(pathfinderConfig).getQuestState(any(Quest.class));
 
-    private int[][] transportCoordinatesFromFile(String path) {
-        List<int[]> populateCoords = new ArrayList<>();
-        try {
-            String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
-            Scanner scanner = new Scanner(s);
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                if (line.startsWith("#") || line.isBlank()) {
-                    continue;
-                }
-                String[] parts = line.split("\t");
-                final String DELIM = " ";
-                String[] parts_origin = parts[0].split(DELIM);
-                String[] parts_destination = parts[1].split(DELIM);
-                populateCoords.add(new int[] {
-                    Integer.parseInt(parts_origin[0]),
-                    Integer.parseInt(parts_origin[1]),
-                    Integer.parseInt(parts_origin[2]),
-                    Integer.parseInt(parts_destination[0]),
-                    Integer.parseInt(parts_destination[1]),
-                    Integer.parseInt(parts_destination[2])});
-            }
-            scanner.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return populateCoords.toArray(new int[0][0]);
-    }
-
-    private int calculatePathLength(int[] coords) {
-        return calculatePathLength(coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]);
-    }
-
-    private int calculatePathLength(int startX, int startY, int startZ, int endX, int endY, int endZ) {
         pathfinderConfig.refresh();
-        Pathfinder pathfinder = new Pathfinder(
-            pathfinderConfig,
-            new WorldPoint(startX, startY, startZ),
-            new WorldPoint(endX, endY, endZ));
+    }
 
+    private void testTransportLength(int expectedLength, WorldPoint origin, WorldPoint destination) {
+        testTransportLength(expectedLength, origin, destination, TeleportationItem.NONE);
+    }
+
+    private void testTransportLength(int expectedLength, WorldPoint origin, WorldPoint destination,
+        TeleportationItem useTeleportationItems) {
+        setupConfig(QuestState.FINISHED, 99, useTeleportationItems);
+        assertEquals(expectedLength, calculatePathLength(origin, destination));
+        System.out.println("Successfully completed transport length test from " +
+            "(" + origin.getX() + ", " + origin.getY() + ", " + origin.getPlane() + ") to " +
+            "(" + destination.getX() + ", " + destination.getY() + ", " + destination.getPlane() + ")");
+    }
+
+    private void testTransportLength(int expectedLength, TransportType transportType) {
+        testTransportLength(expectedLength, transportType, QuestState.FINISHED, 99, TeleportationItem.NONE);
+    }
+
+    private void testTransportLength(int expectedLength, TransportType transportType, QuestState questState, int skillLevel,
+        TeleportationItem useTeleportationItems) {
+        setupConfig(questState, skillLevel, useTeleportationItems);
+
+        int counter = 0;
+        for (WorldPoint origin : transports.keySet()) {
+            for (Transport transport : transports.get(origin)) {
+                if (transportType.equals(transport.getType())) {
+                    counter++;
+                    assertEquals(expectedLength, calculateTransportLength(transport));
+                }
+            }
+        }
+
+        assertTrue("No tests were performed", counter > 0);
+        System.out.println(String.format("Completed %d " + transportType + " transport length tests successfully", counter));
+    }
+
+    private int calculateTransportLength(Transport transport) {
+        return calculatePathLength(transport.getOrigin(), transport.getDestination());
+    }
+
+    private int calculatePathLength(WorldPoint origin, WorldPoint destination) {
+        Pathfinder pathfinder = new Pathfinder(pathfinderConfig, origin, destination);
         pathfinder.run();
         return pathfinder.getPath().size();
     }

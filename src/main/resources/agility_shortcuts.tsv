@@ -1,4 +1,4 @@
-# Origin	Destination	menuOption menuTarget objectID	Skill Requirements	Item Requirements	Quest	Wait	Display Info
+# Origin	Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Info
 3033 3389 1	3033 3390 0	Jump Wall 17051	4 Agility				
 3032 3389 1	3032 3388 0	Jump Wall 17052	4 Agility				
 2556 3073 1	2556 3072 0	Jump Wall 17048	4 Agility				

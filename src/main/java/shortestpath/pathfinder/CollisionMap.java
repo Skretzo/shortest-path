@@ -3,7 +3,7 @@ package shortestpath.pathfinder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+import java.util.Set;
 import shortestpath.Transport;
 import shortestpath.WorldPointUtil;
 
@@ -81,14 +81,13 @@ public class CollisionMap {
         neighbors.clear();
 
         @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-        List<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (List<Transport>)Collections.EMPTY_LIST);
+        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>)Collections.EMPTY_SET);
 
         // Transports are pre-filtered by PathfinderConfig.refreshTransportData
         // Thus any transports in the list are guaranteed to be valid per the user's settings
-        for (int i = 0; i < transports.size(); ++i) {
-            Transport transport = transports.get(i);
+        for (Transport transport : transports) {
             if (visited.get(transport.getDestination())) continue;
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getWait()));
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration()));
         }
 
         if (isBlocked(x, y, z)) {
@@ -128,9 +127,8 @@ public class CollisionMap {
                 neighbors.add(new Node(neighborPacked, node));
             } else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z)) {
                 @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-                List<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (List<Transport>)Collections.EMPTY_LIST);
-                for (int t = 0; t < neighborTransports.size(); ++t) {
-                    Transport transport = neighborTransports.get(t);
+                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>)Collections.EMPTY_SET);
+                for (Transport transport : neighborTransports) {
                     if (visited.get(transport.getOrigin())) continue;
                     neighbors.add(new Node(transport.getOrigin(), node));
                 }

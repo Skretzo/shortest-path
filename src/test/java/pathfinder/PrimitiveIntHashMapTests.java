@@ -1,15 +1,15 @@
 package pathfinder;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import net.runelite.api.coords.WorldPoint;
 import org.junit.Assert;
 import org.junit.Test;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.Transport;
 import shortestpath.WorldPointUtil;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class PrimitiveIntHashMapTests {
     @Test(expected=IllegalArgumentException.class)
@@ -20,15 +20,34 @@ public class PrimitiveIntHashMapTests {
 
     @Test
     public void tryInsertTransports() {
-        HashMap<WorldPoint, List<Transport>> transports = Transport.loadAllFromResources();
-        PrimitiveIntHashMap<List<Transport>> map = new PrimitiveIntHashMap<>(transports.size());
+        HashMap<WorldPoint, Set<Transport>> transports = Transport.loadAllFromResources();
+        PrimitiveIntHashMap<Set<Transport>> map = new PrimitiveIntHashMap<>(transports.size());
 
-        for (Map.Entry<WorldPoint, List<Transport>> entry : transports.entrySet()) {
+        for (Map.Entry<WorldPoint, Set<Transport>> entry : transports.entrySet()) {
             int packedPoint = WorldPointUtil.packWorldPoint(entry.getKey());
             map.put(packedPoint, entry.getValue());
         }
 
-        for (Map.Entry<WorldPoint, List<Transport>> entry : transports.entrySet()) {
+        // Append empty set
+        for (Map.Entry<WorldPoint, Set<Transport>> entry : transports.entrySet()) {
+            int packedPoint = WorldPointUtil.packWorldPoint(entry.getKey());
+            map.put(packedPoint, entry.getValue());
+            Assert.assertEquals("Appending empty should not overwrite", map.put(packedPoint, new HashSet<>()), map.get(packedPoint));
+        }
+
+        // Append non-empty set
+        for (Map.Entry<WorldPoint, Set<Transport>> entry : transports.entrySet()) {
+            int packedPoint = WorldPointUtil.packWorldPoint(entry.getKey());
+            map.put(packedPoint, entry.getValue());
+            int sizeBefore = map.get(packedPoint).size();
+            Set<Transport> nonEmpty = new HashSet<>();
+            nonEmpty.add(null);
+            map.put(packedPoint, nonEmpty);
+            int sizeAfter = map.get(packedPoint).size();
+            Assert.assertEquals("Appending non-empty should not overwrite", sizeBefore + 1, sizeAfter);
+        }
+
+        for (Map.Entry<WorldPoint, Set<Transport>> entry : transports.entrySet()) {
             int packedPoint = WorldPointUtil.packWorldPoint(entry.getKey());
             Assert.assertEquals("World Point " + entry.getKey() + " did not map to the correct value", entry.getValue(), map.get(packedPoint));
         }
