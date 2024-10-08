@@ -261,6 +261,39 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testNumberOfQuetzals() {
+        // All but 2 permutations of quetzal transports are resolved from origins and destinations
+        int actualCount = 0;
+        for (WorldPoint origin : transports.keySet()) {
+            for (Transport transport : transports.get(origin)) {
+                if (TransportType.QUETZAL.equals(transport.getType())) {
+                    actualCount++;
+                }
+            }
+        }
+        /* Info:
+         * NB: Primio can only be used between Varrock and Civitas illa Fortis
+         * single_quetzal_origin_locations * (number_of_quetzals - 1) + 2
+         *   1 * 10 // Aldarin
+         * + 1 * 10 // Civitas illa Fortis
+         * + 1 * 10 // Hunter Guild
+         * + 1 * 10 // Quetzacalli Gorge
+         * + 1 * 10 // Sunset Coast
+         * + 1 * 10 // The Teomat
+         * + 1 * 10 // Fortis Colosseum
+         * + 1 * 10 // Outer Fortis
+         * + 1 * 10 // Colossal Wyrm Remains
+         * + 1 * 10 // Cam Torum
+         * + 1 * 10 // Salvager Overlook
+         * + 1 // Varrock -> Civitas illa Fortis
+         * + 1 // Civitas illa Fortis -> Varrock
+         * = 110 + 2
+         * = 112
+         */
+        assertEquals(112, actualCount);
+    }
+
+    @Test
     public void testNumberOfSpiritTrees() {
         // All permutations of spirit tree transports are resolved from origins and destinations
         int actualCount = 0;
