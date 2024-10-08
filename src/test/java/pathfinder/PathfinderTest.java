@@ -114,6 +114,12 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testQuetzals() {
+        when(config.useQuetzals()).thenReturn(true);
+        testTransportLength(2, TransportType.QUETZAL);
+    }
+
+    @Test
     public void testTeleportationLevers() {
         when(config.useTeleportationLevers()).thenReturn(true);
         testTransportLength(2, TransportType.TELEPORTATION_LEVER);
