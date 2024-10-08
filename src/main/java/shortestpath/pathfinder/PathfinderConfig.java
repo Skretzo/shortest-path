@@ -38,6 +38,7 @@ import static shortestpath.TransportType.GNOME_GLIDER;
 import static shortestpath.TransportType.MINECART;
 import static shortestpath.TransportType.QUETZAL;
 import static shortestpath.TransportType.SPIRIT_TREE;
+import static shortestpath.TransportType.QUETZAL;
 import static shortestpath.TransportType.TELEPORTATION_LEVER;
 import static shortestpath.TransportType.TELEPORTATION_PORTAL;
 import static shortestpath.TransportType.TELEPORTATION_ITEM;
@@ -82,6 +83,7 @@ public class PathfinderConfig {
         useMinecarts,
         useQuetzals,
         useSpiritTrees,
+        useQuetzals,
         useTeleportationLevers,
         useTeleportationPortals,
         useTeleportationSpells,
@@ -121,6 +123,7 @@ public class PathfinderConfig {
         useMinecarts = config.useMinecarts();
         useQuetzals = config.useQuetzals();
         useSpiritTrees = config.useSpiritTrees();
+        useQuetzals = config.useQuetzals();
         useTeleportationItems = config.useTeleportationItems();
         useTeleportationLevers = config.useTeleportationLevers();
         useTeleportationPortals = config.useTeleportationPortals();
@@ -270,6 +273,8 @@ public class PathfinderConfig {
         } else if (QUETZAL.equals(type) && !useQuetzals) { 
             return false;
         } else if (SPIRIT_TREE.equals(type) && !useSpiritTrees) {
+            return false;
+        } else if (QUETZAL.equals(type) && !useQuetzals) { 
             return false;
         } else if (TELEPORTATION_ITEM.equals(type)) {
             switch (useTeleportationItems) {

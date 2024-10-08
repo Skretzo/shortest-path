@@ -158,6 +158,17 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
+        keyName = "useQuetzals",
+        name = "Use quetzals",
+        description = "Whether to include quetzals in the path.<br>",
+        position = 12,
+        section = sectionSettings
+    )
+    default boolean useQuetzals() {
+        return true;
+    }
+
+    @ConfigItem(
         keyName = "useTeleportationItems",
         name = "Use teleportation items",
         description = "Whether to include teleportation items from the player's inventory and equipment.<br>" +
