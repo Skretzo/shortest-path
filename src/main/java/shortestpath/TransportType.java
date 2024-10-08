@@ -11,6 +11,7 @@ public enum TransportType {
     FAIRY_RING,
     GNOME_GLIDER,
     MINECART,
+    QUETZAL,
     SPIRIT_TREE,
     TELEPORTATION_LEVER,
     TELEPORTATION_PORTAL,

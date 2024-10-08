@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
@@ -37,6 +36,7 @@ import static shortestpath.TransportType.SHIP;
 import static shortestpath.TransportType.FAIRY_RING;
 import static shortestpath.TransportType.GNOME_GLIDER;
 import static shortestpath.TransportType.MINECART;
+import static shortestpath.TransportType.QUETZAL;
 import static shortestpath.TransportType.SPIRIT_TREE;
 import static shortestpath.TransportType.TELEPORTATION_LEVER;
 import static shortestpath.TransportType.TELEPORTATION_PORTAL;
@@ -80,6 +80,7 @@ public class PathfinderConfig {
         useFairyRings,
         useGnomeGliders,
         useMinecarts,
+        useQuetzals,
         useSpiritTrees,
         useTeleportationLevers,
         useTeleportationPortals,
@@ -118,6 +119,7 @@ public class PathfinderConfig {
         useFairyRings = config.useFairyRings();
         useGnomeGliders = config.useGnomeGliders();
         useMinecarts = config.useMinecarts();
+        useQuetzals = config.useQuetzals();
         useSpiritTrees = config.useSpiritTrees();
         useTeleportationItems = config.useTeleportationItems();
         useTeleportationLevers = config.useTeleportationLevers();
@@ -264,6 +266,8 @@ public class PathfinderConfig {
         } else if (GNOME_GLIDER.equals(type) && !useGnomeGliders) {
             return false;
         } else if (MINECART.equals(type) && !useMinecarts) {
+            return false;
+        } else if (QUETZAL.equals(type) && !useQuetzals) { 
             return false;
         } else if (SPIRIT_TREE.equals(type) && !useSpiritTrees) {
             return false;

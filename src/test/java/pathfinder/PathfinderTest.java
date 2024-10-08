@@ -107,6 +107,12 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testQuetzals() {
+        when(config.useQuetzals()).thenReturn(true);
+        testTransportLength(2, TransportType.QUETZAL);
+    }
+
+    @Test
     public void testSpiritTrees() {
         when(config.useSpiritTrees()).thenReturn(true);
         when(client.getVarbitValue(any(Integer.class))).thenReturn(20);
