@@ -329,51 +329,135 @@
 # Quetzal Whistle									
 1585 3053 0			29271;29273;29275	Children of the Sun	4	Quetzal whistle	T	20	
 
-# Clue Compass									
-1641 3809 0			30363		4	Clue compass: 4. Arceuus Library	F	20	
-3110 3420 0			30363		4	Clue compass: B. Barbarian Village	F	20	
-1663 10045 0			30363		4	Clue compass: H. Catacombs of Kourend	F	20	
-3375 3419 0			30363		4	Clue compass: Q. Digsite	F	20	
-3355 3348 0			30363		4	Clue compass: R: Digsite Exam centre	F	20	
-3089 3333 0			30363		4	Clue compass: S: Draynor Manor	F	20	
-3109 3288 0			30363		4	Clue compass: T: Draynor Village (Crossroads)	F	20	
-3129 3250 0			30363		4	Clue compass: U: Draynor Village (Jail)	F	20	
-3082 3252 0			30363		4	Clue compass: V: Draynor Village (Market)	F	20	
-3096 3252 0			30363		4	Clue compass: W: Draynor Village (Miss Schism)	F	20	
-3079 3504 0			30363		4	Clue compass: X: Edgeville	F	20	
-3056 3484 0			30363		4	Clue compass: Y: Edgeville Monestary	F	20	
-3024 4518 0			30363		4	Clue compass: Enchanted Valley	F	20	
-2942 3338 0			30363		4	Clue compass: Falador (Gem shop)	F	20	
-3045 3371 0			30363		4	Clue compass: Falador (Party room)	F	20	
-2957 3502 0			30363		4	Clue compass: Goblin Village	F	20	
-1712 3469 0			30363		4	Clue compass: Hosidius (Charcoal Burners)	F	20	
-1645 3632 0			30363		4	Clue compass: Hosidius Mess	F	20	
-3372 3499 0			30363		4	Clue compass: Limestone Mine	F	20	
-3299 3490 0			30363		4	Clue compass: Lumber Yard Sawmill	F	20	
-3234 3201 0			30363		4	Clue compass: Lumbridge (Bob's axes)	F	20	
-3167 9571 0			30363		4	Clue compass: Lumbridge (Swamp caves)	F	20	
-3200 3169 0			30363		4	Clue compass: Lumbridge (Swamp)	F	20	
-3161 3298 0			30363		4	Clue compass: Lumbridge (Windmill)	F	20	
-1317 3839 0			30363		4	Clue compass: Mount Karuulm	F	20	
-2990 3110 0			30363		4	Clue compass: Mudskipper point	F	20	
-2911 3169 0			30363		4	Clue compass: Musa Point	F	20	
+# Clue compass: Asgarnia
+3056 3483 0			30363		4	Clue compass: Y. Edgeville Monastery	F	20	
+2851 3354 0			30363		4	Clue compass: Entrana	F	20	
+2942 3339 0			30363		4	Clue compass: Falador (Gem shop)	F	20	
+3044 3371 0			30363		4	Clue compass: Falador (Party room)	F	20	
+2958 3502 0			30363		4	Clue compass: Goblin Village	F	20	
+2931 5338 0			30363		4	Clue compass: God Wars Dungeon (K'ril's room)	F	20	
+2916 9892 0			30363	Heroes' Quest	4	Clue compass: Heroes' Guild	F	20	
+2989 3111 0			30363		4	Clue compass: Mudskipper Point	F	20	
 3049 3237 0			30363		4	Clue compass: Port Sarim	F	20	
-2981 3276 0			30363		4	Clue compass: Rimmington (Crossroads)	F	20	
-2975 3238 0			30363		4	Clue compass: Rimmington (Mine)	F	20	
-1542 3630 0			30363		4	Clue compass: Shayzien Combat Ring	F	20	
-1487 3637 0			30363		4	Clue compass: Shayzien War Tent	F	20	
-2852 2953 0			30363		4	Clue compass: Shilo Village	F	20	
-1812 3854 0			30363		4	Clue compass: Soul Altar	F	20	
-2801 3080 0			30363		4	Clue compass: Tai Bwo Wannai Village	F	20	
-2924 3479 0			30363		4	Clue compass: Taverly (Stone Cirlce)	F	20	
-2887 3677 0			30363		4	Clue compass: Trollheim	F	20	
-2465 5148 0			30363		4	Clue compass: Tzhaar Gem stall	F	20	
-2479 5145 0			30363		4	Clue compass: Tzhaar Weapon Shop	F	20	
-3208 3423 0			30363		4	Clue compass: Varrock (Aris' Tent)	F	20	
-3210 3415 0			30363		4	Clue compass: Varrock (Clothes shop)	F	20	
-3160 3465 0			30363		4	Clue compass: Varrock (Grand Exchange)	F	20	
+2981 3277 0			30363		4	Clue compass: Rimmington (Crossroads)	F	20	
+2976 3238 0			30363		4	Clue compass: Rimmington (Mine)	F	20	
+2924 3478 0			30363		4	Clue compass: Taverley (Stone Circle)	F	20	
+2888 3676 0			30363		4	Clue compass: Trollheim	F	20	
+2782 3786 0			30363	Troll Romance	4	Clue compass: Trollweiss Mountain	F	20	
+2845 3541 0			30363		4	Clue compass: Warriors' Guild	F	20	
+2850 3496 0			30363		4	Clue compass: White Wolf Mountain	F	20	
+
+# Clue compass: Desert
+3357 2829 0			30363		4	Clue compass: 1. Agility Pyramid	F	20	
+3302 3289 0			30363		4	Clue compass: 2. Al Kharid Mine	F	20	
+3315 3242 0			30363		4	Clue compass: Z. Emir's Arena	F	20	
+1934 4426 0			30363		4	Clue compass: Pyramid Plunder	F	20	
+3308 3124 0			30363		4	Clue compass: Shantay Pass	F	20	
+3291 2781 0			30363		4	Clue compass: Sophanem	F	20	
+
+# Clue compass: Fremennik
+2374 3848 0			30363	The Fremmenik Isles	4	Clue compass: Fremennik Isles Mine	F	20	
+2511 3640 0			30363		4	Clue compass: Lighthouse	F	20	
+2810 3678 0			30363		4	Clue compass: Mountain Camp	F	20	
+
+# Clue compass: Kandarin
+1764 5366 0			30363		4	Clue compass: 3. Ancient Cavern	F	20	
+2671 3302 0			30363		4	Clue compass: 5. Ardougne (Market)	F	20	
+2532 3377 0			30363	Biohazard	4	Clue compass: 6. Ardougne (Training Camp)	F	20	
+2528 3294 0			30363	Plague City	4	Clue compass: 7. Ardougne (West Chapel)	F	20	
+2634 3386 0			30363		4	Clue compass: 8. Ardougne (Windmill)	F	20	
+2607 3284 0			30363		4	Clue compass: 9. Ardougne (Zoo)	F	20	
+2542 3550 0			30363	Alfred Grimhand's Barcrawl	4	Clue compass: A. Barbarian Outpost Agility course	F	20	
+2444 3092 0			30363		4	Clue compass: G. Castle Wars	F	20	
+2824 3441 0			30363		4	Clue compass: I. Catherby (Archery shop)	F	20	
+2808 3437 0			30363		4	Clue compass: J. Catherby (Bank)	F	20	
+2764 3439 0			30363		4	Clue compass: K. Catherby (Beehive)	F	20	
+2837 3435 0			30363		4	Clue compass: L. Catherby (Fishing shop)	F	20	
+2689 3549 0			30363		4	Clue compass: Falo the Bard	F	20	
+2571 3151 0			30363		4	Clue compass: Fight Arena	F	20	
+2592 3409 0			30363		4	Clue compass: Fishing Guild (Inside)	F	20	
+2609 3393 0			30363		4	Clue compass: Fishing Guild (Outside)	F	20	
+2786 3277 0			30363		4	Clue compass: Fishing Platform	F	20	
+2475 3418 0			30363		4	Clue compass: Gnome Agility Course	F	20	
+2480 3046 0			30363		4	Clue compass: Jiggig	F	20	
+2755 3398 0			30363		4	Clue compass: Keep Le Faye	F	20	
+2734 3349 0			30363		4	Clue compass: Legends' Guild (outside) 	F	20	
+2732 3373 0			30363		4	Clue compass: Legends' Guild (inside)	F	20	
+2439 3164 0			30363		4	Clue compass: Observatory	F	20	
+2733 3476 0			30363		4	Clue compass: Seers' Village	F	20	
+2545 3423 0			30363		4	Clue compass: Shadow Dungeon	F	20	
+2741 3536 0			30363		4	Clue compass: Sinclair Mansion	F	20	
+2548 3112 0			30363		4	Clue compass: Watchtower (building)	F	20	
+2603 3093 0			30363		4	Clue compass: Yanille	F	20	
+
+# Clue compass: Karamja
+2951 2932 0			30363	Legends' Quest	4	Clue compass: Kharazi Jungle	F	20	
+2910 3169 0			30363		4	Clue compass: Musa Point	F	20	
+2853 2953 0			30363		4	Clue compass: Shilo Village	F	20	
+2802 3080 0			30363		4	Clue compass: Tai Bwo Wannai Village	F	20	
+2465 5149 0			30363		4	Clue compass: Tzhaar Gem stall	F	20	
+2478 5145 0			30363		4	Clue compass: Tzhaar Weapon Shop	F	20	
+
+# Clue compass: Kourend
+1641 3809 0			30363		4	Clue compass: 4. Arceuus Library	F	20	
+1662 10045 0			30363		4	Clue compass: H. Catacombs of Kourend	F	20	
+1712 3469 0			30363		4	Clue compass: Hosidius (Charcoal Burners)	F	20	
+1646 3631 0			30363		4	Clue compass: Hosidius Mess	F	20	
+1318 3839 0			30363		4	Clue compass: Mount Karuulm	F	20	
+1541 3630 0			30363		4	Clue compass: Shayzien Combat Ring	F	20	
+1488 3636 0			30363		4	Clue compass: Shayzien War Tent	F	20	
+1811 3855 0			30363		4	Clue compass: Soul Altar	F	20	
+
+# Clue compass: Misthalin
+3110 3421 0			30363		4	Clue compass: B. Barbarian Village	F	20	
+3374 3420 0			30363		4	Clue compass: Q. Digsite	F	20	
+3355 3348 0			30363		4	Clue compass: R. Digsite Exam centre	F	20	
+3089 3332 0			30363		4	Clue compass: S. Draynor Manor	F	20	
+3110 3289 0			30363		4	Clue compass: T. Draynor Village (Crossroads)	F	20	
+3130 3249 0			30363		4	Clue compass: U. Draynor Village (Jail)	F	20	
+3083 3253 0			30363		4	Clue compass: V. Draynor Village (Market)	F	20	
+3095 3253 0			30363		4	Clue compass: W. Draynor Village (Miss Schism)	F	20	
+3078 3503 0			30363		4	Clue compass: X. Edgeville	F	20	
+3023 4517 0			30363		4	Clue compass: Enchanted Valley	F	20	
+3372 3498 0			30363		4	Clue compass: Limestone Mine	F	20	
+3299 3490 0			30363		4	Clue compass: Lumber Yard Sawmill	F	20	
+3234 3200 0			30363		4	Clue compass: Lumbridge (Bob's axes)	F	20	
+3201 3170 0			30363		4	Clue compass: Lumbridge (Swamp)	F	20	
+3167 9571 0			30363		4	Clue compass: Lumbridge (Swamp caves)	F	20	
+3162 3297 0			30363		4	Clue compass: Lumbridge (Windmill)	F	20	
+3207 3422 0			30363		4	Clue compass: Varrock (Aris' Tent)	F	20	
+3209 3415 0			30363		4	Clue compass: Varrock (Clothes shop)	F	20	
+3160 3464 0			30363		4	Clue compass: Varrock (Grand Exchange)	F	20	
 3231 3494 0			30363		4	Clue compass: Varrock (Palace Gardens)	F	20	
-3212 3490 0			30363		4	Clue compass: Varrock (Palace library)	F	20	
-3253 3404 0			30363		4	Clue compass: Varrock (Rune shop)	F	20	
-2851 3496 0			30363		4	Clue compass: White Wolf Mountain	F	20	
-3113 3195 0			30363		4	Clue compass: Wizards' Tower	F	20	
+3213 3490 0			30363		4	Clue compass: Varrock (Palace library)	F	20	
+3252 3403 0			30363		4	Clue compass: Varrock (Rune shop)	F	20	
+3114 3194 0			30363		4	Clue compass: Wizards' Tower	F	20	
+
+# Clue compass: Morytania
+3548 9690 0			30363		4	Clue compass: C. Barrows Chest	F	20	
+3491 3488 0			30363		4	Clue compass: E. Canifis	F	20	
+3562 3379 0			30363		4	Clue compass: F. Castle Drakan	F	20	
+3500 3574 0			30363		4	Clue compass: Morytania Mausoleum	F	20	
+3423 3535 0			30363		4	Clue compass: Slayer Tower	F	20	
+
+# Clue compass: Tirannwn
+2210 4841 0			30363		4	Clue compass: P. Death Altar	F	20	
+2198 3256 0			30363		4	Clue compass: Lord Iorwerth's Encampment	F	20	
+2212 3427 0			30363		4	Clue compass: Gwenith	F	20	
+2007 4709 0			30363		4	Clue compass: Underground Pass	F	20	
+2203 3058 0			30363		4	Clue compass: Zul-Andra	F	20	
+
+# Clue compass: Varlamore
+1428 3119 0			30363		4	Clue compass: D. Cam Torum Entrance	F	20	
+1722 3153 0			30363		4	Clue compass: N. Civitas illa Fortis (Grand Museum)	F	20	
+1702 3080 0			30363		4	Clue compass: O. Civitas illa Fortis (Temple)	F	20	
+1615 3296 0			30363		4	Clue compass: Salvager Overlook	F	20	
+
+# Clue compass: Wilderness
+3242 3662 0			30363		4	Clue compass: M. Chaos Temple	F	20	
+3067 10253 0			30363		4	Clue compass: King Black Dragon	F	20	
+3229 3831 0			30363		4	Clue compass: Lava Dragon Isle	F	20	
+3069 3861 0			30363		4	Clue compass: Lava Maze	F	20	
+3186 3957 0			30363		4	Clue compass: Wilderness Axe hut	F	20	
+3026 3699 0			30363		4	Clue compass: Wilderness Bandit Camp	F	20	
+3368 3929 0			30363		4	Clue compass: Wilderness Volcano	F	20	
