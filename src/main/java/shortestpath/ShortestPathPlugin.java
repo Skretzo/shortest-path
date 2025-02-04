@@ -633,10 +633,11 @@ public class ShortestPathPlugin extends Plugin {
             if (startPointSet && pathfinder != null) {
                 start = pathfinder.getStart();
             }
+            Set<Integer> destinations = new HashSet<>(targets);
             if (pathfinder != null && append) {
-                targets.addAll(pathfinder.getTargets());
+                destinations.addAll(pathfinder.getTargets());
             }
-            restartPathfinding(start, targets);
+            restartPathfinding(start, destinations);
         }
     }
 
