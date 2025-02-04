@@ -385,7 +385,8 @@ public interface ShortestPathConfig extends Config {
     @ConfigItem(
         keyName = "colourPathCalculating",
         name = "Calculating",
-        description = "Colour of the path tiles while the pathfinding calculation is in progress",
+        description = "Colour of the path tiles while the pathfinding calculation is in progress," +
+            "<br>and the colour of unused targets if there are more than a single target",
         position = 32,
         section = sectionColours
     )

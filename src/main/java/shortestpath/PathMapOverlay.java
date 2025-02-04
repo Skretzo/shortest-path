@@ -58,7 +58,7 @@ public class PathMapOverlay extends Overlay {
             for (int x = extentX; x < (extentX + extentWidth + 1); x++) {
                 for (int y = extentY - extentHeight; y < (extentY + 1); y++) {
                     if (map.isBlocked(x, y, z)) {
-                        drawOnMap(graphics, WorldPointUtil.packWorldPoint(x, y, z), false);
+                        drawOnMap(graphics, WorldPointUtil.packWorldPoint(x, y, z), false, null);
                     }
                 }
             }
@@ -98,25 +98,32 @@ public class PathMapOverlay extends Overlay {
         if (plugin.getPathfinder() != null) {
             Color colour = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
             List<Integer> path = plugin.getPathfinder().getPath();
+            Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
                 graphics.setColor(colour);
                 int point = path.get(i);
                 int lastPoint = (i > 0) ? path.get(i - 1) : point;
                 if (WorldPointUtil.distanceBetween(point, lastPoint) > 1) {
-                    drawOnMap(graphics, lastPoint, point, true);
+                    drawOnMap(graphics, lastPoint, point, true, cursorPos);
                 }
-                drawOnMap(graphics, point, true);
+                drawOnMap(graphics, point, true, cursorPos);
+            }
+            for (int target : plugin.getPathfinder().getTargets()) {
+                if (target != path.get(path.size() - 1)) {
+                    graphics.setColor(plugin.colourPathCalculating);
+                    drawOnMap(graphics, target, true, cursorPos);
+                }
             }
         }
 
         return null;
     }
 
-    private void drawOnMap(Graphics2D graphics, int point, boolean checkHover) {
-        drawOnMap(graphics, point, WorldPointUtil.dxdy(point, 1, -1), checkHover);
+    private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos) {
+        drawOnMap(graphics, point, WorldPointUtil.dxdy(point, 1, -1), checkHover, cursorPos);
     }
 
-    private void drawOnMap(Graphics2D graphics, int point, int offsetPoint, boolean checkHover) {
+    private void drawOnMap(Graphics2D graphics, int point, int offsetPoint, boolean checkHover, Point cursorPos) {
         int startX = plugin.mapWorldPointToGraphicsPointX(point);
         int startY = plugin.mapWorldPointToGraphicsPointY(point);
         int endX = plugin.mapWorldPointToGraphicsPointX(offsetPoint);
@@ -138,8 +145,7 @@ public class PathMapOverlay extends Overlay {
             graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0));
             graphics.drawLine(startX, startY, endX, endY);
         } else {
-            Point cursorPos = client.getMouseCanvasPosition();
-            if (checkHover &&
+            if (checkHover && cursorPos != null &&
                 cursorPos.getX() >= x && cursorPos.getX() <= (endX - width / 2) &&
                 cursorPos.getY() >= y && cursorPos.getY() <= (endY - width / 2)) {
                 graphics.setColor(graphics.getColor().darker());

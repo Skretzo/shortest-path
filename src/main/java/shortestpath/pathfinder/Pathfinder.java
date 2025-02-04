@@ -6,6 +6,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
 import lombok.Getter;
 import shortestpath.WorldPointUtil;
 
@@ -17,7 +18,7 @@ public class Pathfinder implements Runnable {
     @Getter
     private final int start;
     @Getter
-    private final int target;
+    private final Set<Integer> targets;
 
     private final PathfinderConfig config;
     private final CollisionMap map;
@@ -42,14 +43,14 @@ public class Pathfinder implements Runnable {
      */
     private int wildernessLevel;
 
-    public Pathfinder(PathfinderConfig config, int start, int target) {
+    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets) {
         stats = new PathfinderStats();
         this.config = config;
         this.map = config.getMap();
         this.start = start;
-        this.target = target;
+        this.targets = targets;
         visited = new VisitedTiles(map);
-        targetInWilderness = PathfinderConfig.isInWilderness(target);
+        targetInWilderness = PathfinderConfig.isInWilderness(targets);
         wildernessLevel = 31;
     }
 
@@ -88,7 +89,7 @@ public class Pathfinder implements Runnable {
         List<Node> nodes = map.getNeighbors(node, visited, config);
         for (int i = 0; i < nodes.size(); ++i) {
             Node neighbor = nodes.get(i);
-            if (neighbor.packedPosition == target) {
+            if (targets.contains(neighbor.packedPosition)) {
                 return neighbor;
             }
 
@@ -152,20 +153,22 @@ public class Pathfinder implements Runnable {
                 }
             }
 
-            if (node.packedPosition == target) {
+            if (targets.contains(node.packedPosition)) {
                 bestLastNode = node;
                 pathNeedsUpdate = true;
                 break;
             }
 
-            int distance = WorldPointUtil.distanceBetween(node.packedPosition, target);
-            long heuristic = distance + (long) WorldPointUtil.distanceBetween(node.packedPosition, target, 2);
-            if (heuristic < bestHeuristic || (heuristic <= bestHeuristic && distance < bestDistance)) {
-                bestLastNode = node;
-                pathNeedsUpdate = true;
-                bestDistance = distance;
-                bestHeuristic = heuristic;
-                cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+            for (int target : targets) {
+                int distance = WorldPointUtil.distanceBetween(node.packedPosition, target);
+                long heuristic = distance + (long) WorldPointUtil.distanceBetween(node.packedPosition, target, 2);
+                if (heuristic < bestHeuristic || (heuristic <= bestHeuristic && distance < bestDistance)) {
+                    bestLastNode = node;
+                    pathNeedsUpdate = true;
+                    bestDistance = distance;
+                    bestHeuristic = heuristic;
+                    cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+                }
             }
 
             if (System.currentTimeMillis() > cutoffTimeMillis) {

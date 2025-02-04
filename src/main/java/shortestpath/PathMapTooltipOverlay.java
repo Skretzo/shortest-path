@@ -57,6 +57,11 @@ public class PathMapTooltipOverlay extends Overlay {
                     return null;
                 }
             }
+            for (int target : plugin.getPathfinder().getTargets()) {
+                if (target != path.get(path.size() - 1)) {
+                    drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1);
+                }
+            }
         }
 
         return null;
@@ -81,7 +86,8 @@ public class PathMapTooltipOverlay extends Overlay {
             return false;
         }
 
-        List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:", "Step " + n + " of " + plugin.getPathfinder().getPath().size()));
+        List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
+            n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getPathfinder().getPath().size())));
         if (nextPoint != WorldPointUtil.UNDEFINED) {
             for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                 if (nextPoint == transport.getDestination()

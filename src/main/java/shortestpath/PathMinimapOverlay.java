@@ -45,6 +45,11 @@ public class PathMinimapOverlay extends Overlay {
 
             drawOnMinimap(graphics, pathPoint, pathColor);
         }
+        for (int target : plugin.getPathfinder().getTargets()) {
+            if (target != pathPoints.get(pathPoints.size() - 1)) {
+                drawOnMinimap(graphics, target, plugin.colourPathCalculating);
+            }
+        }
 
         return null;
     }

@@ -1,0 +1,747 @@
+# Destination	menuOption menuTarget objectID	Skills	Item IDs	Quests	Duration	Display info	Consumable	Wilderness level	Varbits
+# Ardougne Cloaks (2-4's farm teleport is limited to 3,5, or infinite times - can this be validated?)									
+2606 3221 0			13121;13122;13123;13124;20760		4	Ardougne cloak: Kandarin Monastery	F	20	
+2664 3374 0			13122;13123;13124;20760		4	Ardougne cloak: Farm	F	20	
+# Karamja Gloves									
+2840 9387 0			11140;13103		4	Karamja gloves	F	20	
+# Desert Amulets (2 and 3 have one teleport per day, 4 is unlimited)									
+3420 2917 0			13134;13135		4	Desert amulet	F	20	
+3426 2927 0			13136		4	Desert amulet	F	20	
+# Morytania Legs (2 and 3 have 5 teleports per day to slime, 4 is unlimited)									
+3683 9888 0			13113;13114;13115		4	Morytania legs: Slime Pit	F	20	
+3482 3230 0			13114;13115		4	Morytania legs: Burgh de Rott	F	20	
+# Fremennik sea boots (1,2,3 have 1 teleport per day, 4 is unlimited)									
+2643 3675 0			13129;13130;13131;13132		4	Fremennik sea boots	F	20	
+# Kandarin headgear (3 has 1 teleport per day, 4 is unlimited)									
+2729 3409 0			13137;13138;13139;13140		4	Kandarin headgear	F	20	
+# Wilderness Sword (3 has 1 teleport per day, 4 is unlimited)									
+3377 3890 0			13110;13111		4	Wilderness sword	F	20	
+# Western Banner (3 has 1 teleport per day, 4 is unlimited)									
+2339 3649 0			13143;13144		4	Western banner	F	20	
+# Explorer's Ring (2 has 3 teleports per day, 3 and 4 are unlimited)									
+3052 3291 0			13126;13127;13128		4	Explorer's ring	F	20	
+# Rada's Blessing (Kourend Woodland, 1 has 3 teleports, 2 has 5 teleports, 3 and 4 have unlimited. For Mount Karuulum, 3 has 3 teleports and 4 has unlimited)									
+1554 3457 0			22941;22943;22945;22947		4	Rada's blessing: Kourend Woodland	F	20	
+1311 3799 0			22945;22947		4	Rada's blessing: Mount Karuulm	F	20	
+									
+# Games Necklace									
+2520 3571 0			3853;3855;3857;3859;3861;3863;3865;3867		4	Games necklace: Barbarian Outpost	T	20	
+2898 3553 0			3853;3855;3857;3859;3861;3863;3865;3867		4	Games necklace: Burthorpe	T	20	
+2965 4254 2			3853;3855;3857;3859;3861;3863;3865;3867		4	Games necklace: Corporeal Beast	T	20	
+3245 9500 2			3853;3855;3857;3859;3861;3863;3865;3867		4	Games necklace: Tears of Guthix	T	20	
+1631 3940 0			3853;3855;3857;3859;3861;3863;3865;3867		4	Games necklace: Wintertodt	T	20	
+									
+# Ring of Dueling (1-8)									
+3315 3235 0			2566;2564;2562;2560;2558;2556;2554;2552		4	Ring of dueling: PvP Arena	T	20	
+2440 3090 0			2566;2564;2562;2560;2558;2556;2554;2552		4	Ring of dueling: Castle Wars	T	20	
+3151 3635 0			2566;2564;2562;2560;2558;2556;2554;2552		4	Ring of dueling: Ferox Enclave	T	20	
+									
+# Combat Bracelet (1-6) (uncharged is 11126)									
+2882 3547 0			11118;11120;11122;11124;11972;11974		4	Combat bracelet: Warriors' Guild	T	30	
+3192 3368 0			11118;11120;11122;11124;11972;11974		4	Combat bracelet: Champions' Guild	T	30	
+3052 3490 0			11118;11120;11122;11124;11972;11974		4	Combat bracelet: Edgeville Monastery	T	30	
+2653 3439 0			11118;11120;11122;11124;11972;11974		4	Combat bracelet: Ranging Guild	T	30	
+									
+# Skills Necklace (1-6) (uncharged is 11113)									
+2611 3390 0			11105;11107;11109;11111;11968;11970		4	Skills necklace: Fishing Guild	T	30	
+3049 9763 0			11105;11107;11109;11111;11968;11970		4	Skills necklace: Mining Guild	T	30	
+2933 3295 0			11105;11107;11109;11111;11968;11970		4	Skills necklace: Crafting Guild	T	30	
+3144 3438 0			11105;11107;11109;11111;11968;11970		4	Skills necklace: Cooks' Guild	T	30	
+1662 3505 0			11105;11107;11109;11111;11968;11970		4	Skills necklace: Woodcutting Guild	T	30	
+1248 3719 0			11105;11107;11109;11111;11968;11970		4	Skills necklace: Farming Guild	T	30	
+									
+# Amulet of Glory (1-6, 1t-6t, Eternal) (uncharged is 1704, trimmed 10362)									
+3087 3496 0			1706;1708;1710;1712;11976;11978;10360;10358;10356;10354;11966;11964;19707		4	Amulet of glory: Edgeville	T	30	
+2918 3176 0			1706;1708;1710;1712;11976;11978;10360;10358;10356;10354;11966;11964;19707		4	Amulet of glory: Karamja	T	30	
+3105 3251 0			1706;1708;1710;1712;11976;11978;10360;10358;10356;10354;11966;11964;19707		4	Amulet of glory: Draynor Village	T	30	
+3293 3163 0			1706;1708;1710;1712;11976;11978;10360;10358;10356;10354;11966;11964;19707		4	Amulet of glory: Al Kharid	T	30	
+									
+# Ring of Wealth (1-5, 1i-5i) (uncharged is 2572, trimmed 12785)									
+2534 3862 0			11988;11986;11984;11982;11980;20790;20789;20788;20787;20786	Throne of Miscellania	4	Ring of wealth: Miscellania	T	30	
+3163 3478 0			11988;11986;11984;11982;11980;20790;20789;20788;20787;20786		4	Ring of wealth: Grand Exchange	T	30	
+2995 3375 0			11988;11986;11984;11982;11980;20790;20789;20788;20787;20786		4	Ring of wealth: Falador Park	T	30	
+2824 10168 0			11988;11986;11984;11982;11980;20790;20789;20788;20787;20786	Between a Rock...	4	Ring of wealth: Dondakan	T	30	
+									
+# Slayer Ring (1-8, eternal)									
+2432 3423 0			11866;11867;11868;11869;11870;11871;11872;11873;21268		4	Slayer ring: Stronghold	T	30	
+3421 3537 0			11866;11867;11868;11869;11870;11871;11872;11873;21268	Priest in Peril	4	Slayer ring: Slayer Tower	T	30	
+2802 10000 0			11866;11867;11868;11869;11870;11871;11872;11873;21268		4	Slayer ring: Fremennik	T	30	
+3185 4601 0			11866;11867;11868;11869;11870;11871;11872;11873;21268	Haunted Mine	4	Slayer ring: Tarn's Lair	T	30	
+2028 4636 0			11866;11867;11868;11869;11870;11871;11872;11873;21268	Mourning's End Part II	4	Slayer ring: Dark Beasts	T	30	
+									
+# Digsite Pendant (can't find a varbit for the other location's activation)									
+3341 3445 0			11190;11191;11192;11193;11194		4	Digsite pendant: Digsite	T	20	
+3763 3869 1			11190;11191;11192;11193;11194	Bone Voyage	4	Digsite pendant: Fossil Island	T	20	
+3549 10456 0			11190;11191;11192;11193;11194	Dragon Slayer II	4	Digsite pendant: Lithkren	T	20	
+									
+# Necklace of Passage (1-5)									
+3114 3179 0			21146;21149;21151;21153;21155		4	Necklace of passage: Wizards' Tower	T	20	
+2428 3350 0			21146;21149;21151;21153;21155		4	Necklace of passage: The Outpost	T	20	
+3405 3158 0			21146;21149;21151;21153;21155		4	Necklace of passage: Eagle's Eyrie	T	20	
+									
+# Burning Amulet									
+3234 3634 0			21166;21169;21171;21173;21175		4	Burning amulet: Chaos Temple	T	20	
+3038 3651 0			21166;21169;21171;21173;21175		4	Burning amulet: Bandit Camp	T	20	
+3028 3842 0			21166;21169;21171;21173;21175		4	Burning amulet: Lava Maze	T	20	
+									
+# Teleport to House tablet - These depend on the current player's home location, determined by varbit 2187.									
+# 0 - None									
+# 1 - Rimmington									
+2952 3224 0			8013		4	Teleport to House tablet	T	20	2187=1
+# 2 - Taverly									
+2892 3465 0			8013		4	Teleport to House tablet	T	20	2187=2
+# 3 - Pollnivneach									
+3339 3001 0			8013		4	Teleport to House tablet	T	20	2187=3
+# 4 - Rellekka									
+2669 3629 0			8013		4	Teleport to House tablet	T	20	2187=4
+# 5 - Brimhaven									
+2756 3176 0			8013		4	Teleport to House tablet	T	20	2187=5
+# 6 - Yanille									
+2545 3097 0			8013		4	Teleport to House tablet	T	20	2187=6
+# 7 - Prifddinas									
+3239 6077 0			8013		4	Teleport to House tablet	T	20	2187=7
+# 8 - Hosidius									
+1740 3517 0			8013		4	Teleport to House tablet	T	20	2187=8
+									
+#  Teleport tablets									
+3213 3424 0			8007		4	Varrock tablet	T	20	
+# Varbit 4480 is DIARY_VARROCK_MEDIUM									
+3164 3478 0			8007		4	Varrock tablet: GE	T	20	4480=1
+2965 3378 0			8009		4	Falador tablet	T	20	
+3221 3218 0			8008		4	Lumbridge tablet	T	20	
+2757 3478 0			8010		4	Camelot tablet	T	20	
+2661 3302 0			8011	Plague City	4	Ardougne tablet	T	20	
+2549 3112 0			8012	Watchtower	4	Watchtower tablet	T	20	
+# Varbit 4460 is DIARY_ARDOUGNE_HARD									
+2584 3097 0			8012	Watchtower	4	Watchtower tablet: Yanille	T	20	4460=1
+2953 3224 0			11741		4	Rimmington tablet	T	20	
+2893 3465 0			11742		4	Taverley tablet	T	20	
+3340 3004 0			11743		4	Pollnivneach tablet	T	20	
+2670 3631 0			11744		4	Rellekka tablet	T	20	
+2757 3179 0			11745		4	Brimhaven tablet	T	20	
+2544 3096 0			11746		4	Yanille tablet	T	20	
+2890 3679 0			11747		4	Trollheim tablet	T	20	
+1743 3517 0			19651		4	Hosidius tablet	T	20	
+3239 6077 0			23771		4	Prifddinas tablet	T	20	
+3100 9883 0			12781	Desert Treasure I	4	Paddewwa tablet	T	20	
+3320 3337 0			12782	Desert Treasure I	4	Senntisten tablet	T	20	
+3494 3473 0			12779	Desert Treasure I	4	Kharyrll tablet	T	20	
+3002 3470 0			12780	Desert Treasure I	4	Lassar tablet	T	20	
+2968 3696 0			12777	Desert Treasure I	4	Dareeyak tablet	T	20	
+3158 3666 0			12776	Desert Treasure I	4	Carrallanger tablet	T	20	
+3287 3888 0			12775	Desert Treasure I	4	Annakarl tablet	T	20	
+2974 3873 0			12778	Desert Treasure I	4	Ghorrock tablet	T	20	
+2113 3915 0			24949	Lunar Diplomacy	4	Moonclan tablet	T	20	
+2468 3246 0			24951	Lunar Diplomacy	4	Ourania tablet	T	20	
+2546 3756 0			24953		4	Waterbirth tablet	T	20	
+2543 3569 0			24955		4	Barbarian tablet	T	20	
+2636 3167 0			24957		4	Khazard tablet	T	20	
+2613 3391 0			24959		4	Fishing guild tablet	T	20	
+2801 3449 0			24961		4	Catherby tablet	T	20	
+2975 3938 0			24963		4	Ice plateau tablet	T	20	
+1633 3838 0			19613		4	Arceuus Library tablet	T	20	
+3110 3350 0			19615		4	Draynor Manor tablet	T	20	
+1347 3740 0			22949		4	Battlefront tablet	T	20	
+2980 3509 0			19617		4	Mind Altar tablet	T	20	
+3432 3461 0			19619	Priest in Peril	4	Salve Graveyard tablet	T	20	
+3548 3529 0			19621	Priest in Peril	4	Fenkenstrain's Castle tablet	T	20	
+2500 3291 0			19623	Biohazard	4	West Ardougne tablet	T	20	
+3797 2867 0			19625	The Great Brain Robbery	4	Harmony Island tablet	T	20	
+2980 3763 0			19627		4	Cemetery tablet	T	20	
+3565 3314 0			19629	Priest in Peril	4	Barrows tablet	T	20	
+2771 9102 0			19631	Monkey Madness I	4	Ape Atoll tablet	T	20	
+3811 3813 0			21541		4	Volcanic Mine tablet	T	20	
+3352 3782 0			24251		4	Wilderness Crabs tablet	T	20	
+									
+#  Teleport Scrolls (todo: how to detect these in the master scroll book?)									
+3419 2917 0			12402		4	Nardah teleport	T	20	
+3325 3412 0			12403		4	Digsite teleport	T	20	
+2541 2925 0			12404		4	Feldip hills teleport	T	20	
+2094 3913 0			12405	Lunar Diplomacy	4	Lunar isle teleport	T	20	
+3488 3288 0			12406	Priest in Peril	4	Mort'ton teleport	T	20	
+2658 2659 0			12407		4	Pest control teleport	T	20	
+2339 3649 0			12408		4	Piscatoris teleport	T	20	
+2789 3066 0			12409	Tai Bwo Wannai Trio	4	Tai bwo wannai teleport	T	20	
+2194 3258 0			12410	Regicide	4	Iorwerth camp teleport	T	20	
+3701 2996 0			12411	Cabin Fever	4	Mos le'harmless teleport	T	20	
+3302 3487 0			12642		4	Lumberyard teleport	T	20	
+2196 3056 0			12938	Regicide	4	Zul-andra teleport	T	20	
+1310 1250 0			13249		4	Key master teleport	T	20	
+3128 3832 0			21802		4	Revenant cave teleport	T	20	
+1645 3580 0			23387		4	Watson teleport	T	20	
+									
+# capes									
+2931 3286 0			9780;9781		4	Crafting cape	F	20	
+# The Construction cape's home teleports, determined by varbit 2187									
+# 0 - None									
+# 1 - Rimmington									
+2952 3224 0			9789;9790		4	Construction cape: Home	F	20	2187=1
+# 2 - Taverly									
+2892 3465 0			9789;9790		4	Construction cape: Home	F	20	2187=2
+# 3 - Pollnivneach									
+3339 3001 0			9789;9790		4	Construction cape: Home	F	20	2187=3
+# 4 - Rellekka									
+2669 3629 0			9789;9790		4	Construction cape: Home	F	20	2187=4
+# 5 - Brimhaven									
+2756 3176 0			9789;9790		4	Construction cape: Home	F	20	2187=5
+# 6 - Yanille									
+2545 3097 0			9789;9790		4	Construction cape: Home	F	20	2187=6
+# 7 - Prifddinas									
+3239 6077 0			9789;9790		4	Construction cape: Home	F	20	2187=7
+# 8 - Hosidius									
+1740 3517 0			9789;9790		4	Construction cape: Home	F	20	2187=8
+2952 3224 0			9789;9790		4	Construction cape: Rimmington	F	20	
+2892 3465 0			9789;9790		4	Construction cape: Taverley	F	20	
+3339 3001 0			9789;9790		4	Construction cape: Pollnivneach	F	20	
+1743 3517 0			9789;9790		4	Construction cape: Hosidius	F	20	
+2669 3629 0			9789;9790		4	Construction cape: Rellekka	F	20	
+2756 3176 0			9789;9790		4	Construction cape: Brimhaven	F	20	
+2545 3097 0			9789;9790		4	Construction cape: Yanille	F	20	
+3239 6077 0			9789;9790		4	Construction cape: Prifddinas	F	20	
+2604 3401 0			9798;9799		4	Fishing cape	F	20	
+1248 3725 0			9810;9811		4	Farming cape	F	20	
+2556 2917 0			9948;9949		4	Hunter cape: Feldip Hills	F	20	
+3144 3772 0			9948;9949		4	Hunter cape: Black chinchompa	F	20	
+2865 3546 0			9750;9751		4	Strength cape	F	20	
+# Max capes									
+# The Max cape's home teleports, determined by varbit 2187									
+# 0 - None									
+# 1 - Rimmington									
+2952 3224 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=1
+# 2 - Taverly									
+2892 3465 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=2
+# 3 - Pollnivneach									
+3339 3001 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=3
+# 4 - Rellekka									
+2669 3629 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=4
+# 5 - Brimhaven									
+2756 3176 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=5
+# 6 - Yanille									
+2545 3097 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=6
+# 7 - Prifddinas									
+3239 6077 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=7
+# 8 - Hosidius									
+1740 3517 0			13280;13342		4	Max cape: Tele to POH	F	20	2187=8
+2952 3224 0			13280;13342		4	Max cape: POH Portals: Rimmington	F	20	
+2892 3465 0			13280;13342		4	Max cape: POH Portals: Taverley	F	20	
+3339 3001 0			13280;13342		4	Max cape: POH Portals: Pollnivneach	F	20	
+1743 3517 0			13280;13342		4	Max cape: POH Portals: Hosidius	F	20	
+2669 3629 0			13280;13342		4	Max cape: POH Portals: Rellekka	F	20	
+2756 3176 0			13280;13342		4	Max cape: POH Portals: Brimhaven	F	20	
+2545 3097 0			13280;13342		4	Max cape: POH Portals: Yanille	F	20	
+3239 6077 0			13280;13342		4	Max cape: POH Portals: Prifddinas	F	20	
+2865 3546 0			13280;13342		4	Max cape: Warriors' Guild	F	20	
+2604 3401 0			13280;13342		4	Max cape: Fishing Teleports: Fishing Guild	F	20	
+2504 3484 0			13280;13342		4	Max cape: Fishing Teleports: Otto's Grotto	F	20	
+2931 3286 0			13280;13342		4	Max cape: Crafting Guild	F	20	
+2556 2917 0			13280;13342		4	Max cape: Other Teleports: Feldip Hills	T	20	
+3144 3772 0			13280;13342		4	Max cape: Other Teleports: Black chinchompa	T	20	
+1558 3046 0			13280;13342		4	Max cape: Other Teleports: Hunter Guild	F	20	
+1248 3725 0			13280;13342		4	Max cape: Other Teleports: Farming Guild	F	20	
+2729 3348 0			9813;13068		4	Quest point cape: Teleport	F	20	
+2689 3547 0			13221;13222		4	Music cape	F	20	
+2574 3323 0			13069;19476		4	Achievement diary cape: 1. Two-pints	F	20	
+3302 3122 0			13069;19476		4	Achievement diary cape: 2. Jarr	F	20	
+2689 3547 0			13069;19476		4	Achievement diary cape: 3. Sir Rebral	F	20	
+2689 3547 0			13069;19476		4	Achievement diary cape: 4. Thorodin	F	20	
+2978 3347 0			13069;19476		4	Achievement diary cape: 3. Sir Rebral	F	20	
+2659 3627 0			13069;19476		4	Achievement diary cape: 4. Thorodin	F	20	
+2744 3443 0			13069;19476		4	Achievement diary cape: 5. Flax keeper	F	20	
+2808 3192 0			13069;19476		4	Achievement diary cape: 6. Pirate Jackie the Fruit	F	20	
+# The wiki lists these as (retired), so they are left out									
+#2862 2997 0			13069;19476		4	Achievement diary cape: 7. Kaleb Paramaya	F	20	
+#2795 2947 0			13069;19476		4	Achievement diary cape: 8. Jungle forester	F	20	
+#2453 5133 0			13069;19476		4	Achievement diary cape: 9. TzHaar-Mej	F	20	
+1648 3665 0			13069;19476		4	Achievement diary cape: A. Elise	F	20	
+3234 3214 0			13069;19476		4	Achievement diary cape: B. Hatius Cosaintus	F	20	
+3465 3478 0			13069;19476		4	Achievement diary cape: C. Le-sabrè	F	20	
+3225 3415 0			13069;19476		4	Achievement diary cape: D. Toby	F	20	
+3121 3516 0			13069;19476		4	Achievement diary cape: E. Lesser Fanatic	F	20	
+2467 3459 0			13069;19476		4	Achievement diary cape: F. Elder Gnome child	F	20	
+3096 3227 0			13069;19476		4	Achievement diary cape: G. Twiggy O'Korn	F	20	
+									
+# Quest Items									
+# Ectophial - includes the empty version									
+3659 3523 0			4251;4252		4	Ectophial	F	20	
+2330 3171 0			6099;6100;6101;6102;13102		4	Teleport crystal: Lletya	T	20	
+3264 6066 0			6099;6100;6101;6102;13102	Song of the Elves	4	Teleport crystal: Prifddinas	T	20	
+2330 3171 0			23946		4	Eternal teleport crystal: Lletya	F	20	
+3264 6066 0			23946	Song of the Elves	4	Eternal teleport crystal: Prifddinas	F	20	
+2465 3495 0			19564		4	Royal seed pod	F	30	
+2465 3495 0			9469		4	Grand seed pod	T	30	
+# Enchanted lyre - 4493 is DIARY_FREMENNIK_HARD, 4494 is DIARY_FREMENNIK_ELITE									
+2662 3644 0			3691;6125;6126;6127;13079		4	Enchanted lyre: Rellekka	T	20	
+2551 3755 0			3691;6125;6126;6127;13079		4	Enchanted lyre: Waterbirth Island	T	20	4493=1
+2409 3809 0			3691;6125;6126;6127;13079		4	Enchanted lyre: Jatizso	T	20	4494=1
+2336 3802 0			3691;6125;6126;6127;13079		4	Enchanted lyre: Neitiznot	T	20	4494=1
+2662 3644 0			23458		4	Enchanted lyre (i): Rellekka	F	20	
+2551 3755 0			23458		4	Enchanted lyre (i): Waterbirth Island	F	20	4493=1
+2409 3809 0			23458		4	Enchanted lyre (i): Jatizso	F	20	4494=1
+2336 3802 0			23458		4	Enchanted lyre (i): Neitiznot	F	20	4494=1
+3105 9315 0			6707		4	Camulet: Enakhra's Temple	F	20	
+3191 2924 0			6707		4	Camulet: Bandit Camp Quarry	F	20	
+1713 3612 0			21760;25818	The Depths of Despair	4	Kharedst's memoirs: Lunch by the Lancalliums	T	20	
+1802 3748 0			21760;25818	The Queen of Thieves	4	Kharedst's memoirs: The Fisher's Flute	T	20	
+1478 3576 0			21760;25818	Tale of the Righteous	4	Kharedst's memoirs: History and Hearsay	T	20	
+1544 3762 0			21760;25818	The Forsaken Tower	4	Kharedst's memoirs: Jewelry of Jubilation	T	20	
+1680 3746 0			21760;25818	The Ascent of Arceuus	4	Kharedst's memoirs: A Dark Disposition	T	20	
+3649 3230 0			22400		4	Drakan's medallion: Ver Sinhaza	F	20	
+3592 3337 0			22400	Sins of the Father	4	Drakan's medallion: Darkmeyer	F	20	
+# todo: this only works if you've used a Slepey tablet on the medallion									
+3808 9700 0			22400		4	Drakan's medallion: Slepe	F	20	
+2457 2850 0			21913;22114;24855		4	Mythical cape	F	20	
+# Stony Basalt - 4493 is DIARY_FREMENNIK_HARD									
+2845 3694 0			22601		4	Stony basalt	T	20	
+2837 3695 0		73 Agility	22601		4	Stony basalt: Roof	T	20	4493=1
+2846 3938 0			22599		4	Icy basalt	T	20	
+									
+# Other									
+1934 4428 0			26948		4	Pharaoh's sceptre: Jalsavrah	T	20	
+3341 2827 0			26948		4	Pharaoh's sceptre: Jaleustrophos	T	20	
+3232 2897 0			26948		4	Pharaoh's sceptre: Jaldraocht	T	20	
+3313 2718 0			26948		4	Pharaoh's sceptre: Jaltevas	T	20	
+3081 3421 0			9013;21276		4	Skull sceptre	T	20	
+1579 3530 0			13393		4	Xeric's talisman: 1. Xeric's Lookout	T	20	
+1752 3566 0			13393		4	Xeric's talisman: 2. Xeric's Glade	T	20	
+1504 3815 0			13393		4	Xeric's talisman: 3. Xeric's Inferno	T	20	
+1644 3673 0			13393		4	Xeric's talisman: 4. Xeric's Heart	T	20	
+# Requires the use of an ancient tablet to activate									
+1254 3560 0			13393		4	Xeric's talisman: 5. Xeric's Honour	T	20	
+3200 3355 0			13660		4	Chronicle	T	20	
+3615 9461 0			26914		4	Amulet of the eye	F	20	
+2981 3276 0			26818		4	Ring of the elements: Air	T	20	
+3170 3155 0			26818		4	Ring of the elements: Water	T	20	
+3288 3468 0			26818		4	Ring of the elements: Earth	T	20	
+3314 3279 0			26818		4	Ring of the elements: Fire	T	20	
+2400 5982 0			24709		4	Hallowed crystal shard	T	20	
+3296 6436 0			28327		4	Ring of shadows: Ancient Vault	T	20	
+# todo: The remaining Ring of shadows teleports require using a tablet on it once									
+2912 10336 0			28327		4	Ring of shadows: Ghorrock Dungeon	T	20	
+2019 6434 0			28327		4	Ring of shadows: The Scar	T	20	
+2588 6435 0			28327		4	Ring of shadows: Lassar Undercity	T	20	
+1175 3424 0			28327		4	Ring of shadows: The Stranglewood	T	20	
+1491 3283 0			29893		4	Pendant of ates: 1. The Darkfrost	T	20	
+1668 3223 0			29893		4	Pendant of ates: 2. Twilight Temple	T	20	
+1459 3138 0			29893		4	Pendant of ates: 3. Ralos' Rise	T	20	
+# Requires using an icon to use									
+1426 2995 0			29893		4	Pendant of ates: 4. North Aldarin	T	20	
+									
+# Quetzal Whistle									
+1585 3053 0			29271;29273;29275	Children of the Sun	4	Quetzal whistle	T	20	
+									
+# Clue compass: Asgarnia (First unlock)									
+3056 3483 0			30363		4	Clue compass: Y. Edgeville Monastery	F	20	10032>0;10663=3
+2851 3354 0			30363		4	Clue compass: Entrana	F	20	10032>0;10663=3
+2942 3339 0			30363		4	Clue compass: Falador (Gem shop)	F	20	10032>0;10663=3
+3044 3371 0			30363		4	Clue compass: Falador (Party room)	F	20	10032>0;10663=3
+2958 3502 0			30363		4	Clue compass: Goblin Village	F	20	10032>0;10663=3
+2931 5338 0			30363		4	Clue compass: God Wars Dungeon (K'ril's room)	F	20	10032>0;10663=3
+2916 9892 0			30363	Heroes' Quest	4	Clue compass: Heroes' Guild	F	20	10032>0;10663=3
+2989 3111 0			30363		4	Clue compass: Mudskipper Point	F	20	10032>0;10663=3
+3049 3237 0			30363		4	Clue compass: Port Sarim	F	20	10032>0;10663=3
+2981 3277 0			30363		4	Clue compass: Rimmington (Crossroads)	F	20	10032>0;10663=3
+2976 3238 0			30363		4	Clue compass: Rimmington (Mine)	F	20	10032>0;10663=3
+2924 3478 0			30363		4	Clue compass: Taverley (Stone Circle)	F	20	10032>0;10663=3
+2888 3676 0			30363		4	Clue compass: Trollheim	F	20	10032>0;10663=3
+2782 3786 0			30363	Troll Romance	4	Clue compass: Trollweiss Mountain	F	20	10032>0;10663=3
+2845 3541 0			30363		4	Clue compass: Warriors' Guild	F	20	10032>0;10663=3
+2850 3496 0			30363		4	Clue compass: White Wolf Mountain	F	20	10032>0;10663=3
+# Clue compass: Desert (First unlock)									
+3357 2829 0			30363		4	Clue compass: 1. Agility Pyramid	F	20	10032>0;10663=6
+3302 3289 0			30363		4	Clue compass: 2. Al Kharid Mine	F	20	10032>0;10663=6
+3315 3242 0			30363		4	Clue compass: Z. Emir's Arena	F	20	10032>0;10663=6
+1934 4426 0			30363		4	Clue compass: Pyramid Plunder	F	20	10032>0;10663=6
+3308 3124 0			30363		4	Clue compass: Shantay Pass	F	20	10032>0;10663=6
+3291 2781 0			30363		4	Clue compass: Sophanem	F	20	10032>0;10663=6
+# Clue compass: Fremmenik (First unlock)									
+2374 3848 0			30363	The Fremmenik Isles	4	Clue compass: Fremennik Isles Mine	F	20	10032>0;10663=8
+2511 3640 0			30363		4	Clue compass: Lighthouse	F	20	10032>0;10663=8
+2810 3678 0			30363		4	Clue compass: Mountain Camp	F	20	10032>0;10663=8
+# Clue compass: Kandarin (First unlock)									
+1764 5366 0			30363		4	Clue compass: 3. Ancient Cavern	F	20	10032>0;10663=4
+2671 3302 0			30363		4	Clue compass: 5. Ardougne (Market)	F	20	10032>0;10663=4
+2532 3377 0			30363	Biohazard	4	Clue compass: 6. Ardougne (Training Camp)	F	20	10032>0;10663=4
+2528 3294 0			30363	Plague City	4	Clue compass: 7. Ardougne (West Chapel)	F	20	10032>0;10663=4
+2634 3386 0			30363		4	Clue compass: 8. Ardougne (Windmill)	F	20	10032>0;10663=4
+2607 3284 0			30363		4	Clue compass: 9. Ardougne (Zoo)	F	20	10032>0;10663=4
+2542 3550 0			30363	Alfred Grimhand's Barcrawl	4	Clue compass: A. Barbarian Outpost Agility course	F	20	10032>0;10663=4
+2444 3092 0			30363		4	Clue compass: G. Castle Wars	F	20	10032>0;10663=4
+2824 3441 0			30363		4	Clue compass: I. Catherby (Archery shop)	F	20	10032>0;10663=4
+2808 3437 0			30363		4	Clue compass: J. Catherby (Bank)	F	20	10032>0;10663=4
+2764 3439 0			30363		4	Clue compass: K. Catherby (Beehive)	F	20	10032>0;10663=4
+2837 3435 0			30363		4	Clue compass: L. Catherby (Fishing shop)	F	20	10032>0;10663=4
+2689 3549 0			30363		4	Clue compass: Falo the Bard	F	20	10032>0;10663=4
+2571 3151 0			30363		4	Clue compass: Fight Arena	F	20	10032>0;10663=4
+2592 3409 0			30363		4	Clue compass: Fishing Guild (Inside)	F	20	10032>0;10663=4
+2609 3393 0			30363		4	Clue compass: Fishing Guild (Outside)	F	20	10032>0;10663=4
+2786 3277 0			30363		4	Clue compass: Fishing Platform	F	20	10032>0;10663=4
+2475 3418 0			30363		4	Clue compass: Gnome Agility Course	F	20	10032>0;10663=4
+2480 3046 0			30363		4	Clue compass: Jiggig	F	20	10032>0;10663=4
+2755 3398 0			30363		4	Clue compass: Keep Le Faye	F	20	10032>0;10663=4
+2734 3349 0			30363		4	Clue compass: Legends' Guild (outside)	F	20	10032>0;10663=4
+2732 3373 0			30363		4	Clue compass: Legends' Guild (inside)	F	20	10032>0;10663=4
+2439 3164 0			30363		4	Clue compass: Observatory	F	20	10032>0;10663=4
+2733 3476 0			30363		4	Clue compass: Seers' Village	F	20	10032>0;10663=4
+2545 3423 0			30363		4	Clue compass: Shadow Dungeon	F	20	10032>0;10663=4
+2741 3536 0			30363		4	Clue compass: Sinclair Mansion	F	20	10032>0;10663=4
+2548 3112 0			30363		4	Clue compass: Watchtower (building)	F	20	10032>0;10663=4
+2603 3093 0			30363		4	Clue compass: Yanille	F	20	10032>0;10663=4
+# Clue compass: Karamja (First unlock)									
+2951 2932 0			30363	Legends' Quest	4	Clue compass: Kharazi Jungle	F	20	10032>0;10663=2
+2910 3169 0			30363		4	Clue compass: Musa Point	F	20	10032>0;10663=2
+2853 2953 0			30363		4	Clue compass: Shilo Village	F	20	10032>0;10663=2
+2802 3080 0			30363		4	Clue compass: Tai Bwo Wannai Village	F	20	10032>0;10663=2
+2465 5149 0			30363		4	Clue compass: Tzhaar Gem stall	F	20	10032>0;10663=2
+2478 5145 0			30363		4	Clue compass: Tzhaar Weapon Shop	F	20	10032>0;10663=2
+# Clue compass: Kourend (First unlock)									
+1641 3809 0			30363		4	Clue compass: 4. Arceuus Library	F	20	10032>0;10663=20
+1662 10045 0			30363		4	Clue compass: H. Catacombs of Kourend	F	20	10032>0;10663=20
+1712 3469 0			30363		4	Clue compass: Hosidius (Charcoal Burners)	F	20	10032>0;10663=20
+1646 3631 0			30363		4	Clue compass: Hosidius Mess	F	20	10032>0;10663=20
+1318 3839 0			30363		4	Clue compass: Mount Karuulm	F	20	10032>0;10663=20
+1541 3630 0			30363		4	Clue compass: Shayzien Combat Ring	F	20	10032>0;10663=20
+1488 3636 0			30363		4	Clue compass: Shayzien War Tent	F	20	10032>0;10663=20
+1811 3855 0			30363		4	Clue compass: Soul Altar	F	20	10032>0;10663=20
+# Clue compass: Morytania (First unlock)									
+3548 9690 0			30363		4	Clue compass: C. Barrows Chest	F	20	10032>0;10663=5
+3491 3488 0			30363		4	Clue compass: E. Canifis	F	20	10032>0;10663=5
+3562 3379 0			30363		4	Clue compass: F. Castle Drakan	F	20	10032>0;10663=5
+3500 3574 0			30363		4	Clue compass: Morytania Mausoleum	F	20	10032>0;10663=5
+3423 3535 0			30363		4	Clue compass: Slayer Tower	F	20	10032>0;10663=5
+# Clue compass: Tirannwn (First unlock)									
+2210 4841 0			30363		4	Clue compass: P. Death Altar	F	20	10032>0;10663=7
+2198 3256 0			30363		4	Clue compass: Lord Iorwerth's Encampment	F	20	10032>0;10663=7
+2212 3427 0			30363		4	Clue compass: Gwenith	F	20	10032>0;10663=7
+2007 4709 0			30363		4	Clue compass: Underground Pass	F	20	10032>0;10663=7
+2203 3058 0			30363		4	Clue compass: Zul-Andra	F	20	10032>0;10663=7
+# Clue compass: Varlamore (First unlock)									
+1428 3119 0			30363		4	Clue compass: D. Cam Torum Entrance	F	20	10032>0;10663=21
+1722 3153 0			30363		4	Clue compass: N. Civitas illa Fortis (Grand Museum)	F	20	10032>0;10663=21
+1702 3080 0			30363		4	Clue compass: O. Civitas illa Fortis (Temple)	F	20	10032>0;10663=21
+1615 3296 0			30363		4	Clue compass: Salvager Overlook	F	20	10032>0;10663=21
+# Clue compass: Wilderness (First unlock)									
+3242 3662 0			30363		4	Clue compass: M. Chaos Temple	F	20	10032>0;10663=11
+3067 10253 0			30363		4	Clue compass: King Black Dragon	F	20	10032>0;10663=11
+3229 3831 0			30363		4	Clue compass: Lava Dragon Isle	F	20	10032>0;10663=11
+3069 3861 0			30363		4	Clue compass: Lava Maze	F	20	10032>0;10663=11
+3186 3957 0			30363		4	Clue compass: Wilderness Axe hut	F	20	10032>0;10663=11
+3026 3699 0			30363		4	Clue compass: Wilderness Bandit Camp	F	20	10032>0;10663=11
+3368 3929 0			30363		4	Clue compass: Wilderness Volcano	F	20	10032>0;10663=11
+# Clue compass: Asgarnia (Second unlock)									
+3056 3483 0			30363		4	Clue compass: Y. Edgeville Monastery	F	20	10032>0;10664=3
+2851 3354 0			30363		4	Clue compass: Entrana	F	20	10032>0;10664=3
+2942 3339 0			30363		4	Clue compass: Falador (Gem shop)	F	20	10032>0;10664=3
+3044 3371 0			30363		4	Clue compass: Falador (Party room)	F	20	10032>0;10664=3
+2958 3502 0			30363		4	Clue compass: Goblin Village	F	20	10032>0;10664=3
+2931 5338 0			30363		4	Clue compass: God Wars Dungeon (K'ril's room)	F	20	10032>0;10664=3
+2916 9892 0			30363	Heroes' Quest	4	Clue compass: Heroes' Guild	F	20	10032>0;10664=3
+2989 3111 0			30363		4	Clue compass: Mudskipper Point	F	20	10032>0;10664=3
+3049 3237 0			30363		4	Clue compass: Port Sarim	F	20	10032>0;10664=3
+2981 3277 0			30363		4	Clue compass: Rimmington (Crossroads)	F	20	10032>0;10664=3
+2976 3238 0			30363		4	Clue compass: Rimmington (Mine)	F	20	10032>0;10664=3
+2924 3478 0			30363		4	Clue compass: Taverley (Stone Circle)	F	20	10032>0;10664=3
+2888 3676 0			30363		4	Clue compass: Trollheim	F	20	10032>0;10664=3
+2782 3786 0			30363	Troll Romance	4	Clue compass: Trollweiss Mountain	F	20	10032>0;10664=3
+2845 3541 0			30363		4	Clue compass: Warriors' Guild	F	20	10032>0;10664=3
+2850 3496 0			30363		4	Clue compass: White Wolf Mountain	F	20	10032>0;10664=3
+# Clue compass: Desert (Second unlock)									
+3357 2829 0			30363		4	Clue compass: 1. Agility Pyramid	F	20	10032>0;10664=6
+3302 3289 0			30363		4	Clue compass: 2. Al Kharid Mine	F	20	10032>0;10664=6
+3315 3242 0			30363		4	Clue compass: Z. Emir's Arena	F	20	10032>0;10664=6
+1934 4426 0			30363		4	Clue compass: Pyramid Plunder	F	20	10032>0;10664=6
+3308 3124 0			30363		4	Clue compass: Shantay Pass	F	20	10032>0;10664=6
+3291 2781 0			30363		4	Clue compass: Sophanem	F	20	10032>0;10664=6
+# Clue compass: Fremmenik (Second unlock)									
+2374 3848 0			30363	The Fremmenik Isles	4	Clue compass: Fremennik Isles Mine	F	20	10032>0;10664=8
+2511 3640 0			30363		4	Clue compass: Lighthouse	F	20	10032>0;10664=8
+2810 3678 0			30363		4	Clue compass: Mountain Camp	F	20	10032>0;10664=8
+# Clue compass: Kandarin (Second unlock)									
+1764 5366 0			30363		4	Clue compass: 3. Ancient Cavern	F	20	10032>0;10664=4
+2671 3302 0			30363		4	Clue compass: 5. Ardougne (Market)	F	20	10032>0;10664=4
+2532 3377 0			30363	Biohazard	4	Clue compass: 6. Ardougne (Training Camp)	F	20	10032>0;10664=4
+2528 3294 0			30363	Plague City	4	Clue compass: 7. Ardougne (West Chapel)	F	20	10032>0;10664=4
+2634 3386 0			30363		4	Clue compass: 8. Ardougne (Windmill)	F	20	10032>0;10664=4
+2607 3284 0			30363		4	Clue compass: 9. Ardougne (Zoo)	F	20	10032>0;10664=4
+2542 3550 0			30363	Alfred Grimhand's Barcrawl	4	Clue compass: A. Barbarian Outpost Agility course	F	20	10032>0;10664=4
+2444 3092 0			30363		4	Clue compass: G. Castle Wars	F	20	10032>0;10664=4
+2824 3441 0			30363		4	Clue compass: I. Catherby (Archery shop)	F	20	10032>0;10664=4
+2808 3437 0			30363		4	Clue compass: J. Catherby (Bank)	F	20	10032>0;10664=4
+2764 3439 0			30363		4	Clue compass: K. Catherby (Beehive)	F	20	10032>0;10664=4
+2837 3435 0			30363		4	Clue compass: L. Catherby (Fishing shop)	F	20	10032>0;10664=4
+2689 3549 0			30363		4	Clue compass: Falo the Bard	F	20	10032>0;10664=4
+2571 3151 0			30363		4	Clue compass: Fight Arena	F	20	10032>0;10664=4
+2592 3409 0			30363		4	Clue compass: Fishing Guild (Inside)	F	20	10032>0;10664=4
+2609 3393 0			30363		4	Clue compass: Fishing Guild (Outside)	F	20	10032>0;10664=4
+2786 3277 0			30363		4	Clue compass: Fishing Platform	F	20	10032>0;10664=4
+2475 3418 0			30363		4	Clue compass: Gnome Agility Course	F	20	10032>0;10664=4
+2480 3046 0			30363		4	Clue compass: Jiggig	F	20	10032>0;10664=4
+2755 3398 0			30363		4	Clue compass: Keep Le Faye	F	20	10032>0;10664=4
+2734 3349 0			30363		4	Clue compass: Legends' Guild (outside)	F	20	10032>0;10664=4
+2732 3373 0			30363		4	Clue compass: Legends' Guild (inside)	F	20	10032>0;10664=4
+2439 3164 0			30363		4	Clue compass: Observatory	F	20	10032>0;10664=4
+2733 3476 0			30363		4	Clue compass: Seers' Village	F	20	10032>0;10664=4
+2545 3423 0			30363		4	Clue compass: Shadow Dungeon	F	20	10032>0;10664=4
+2741 3536 0			30363		4	Clue compass: Sinclair Mansion	F	20	10032>0;10664=4
+2548 3112 0			30363		4	Clue compass: Watchtower (building)	F	20	10032>0;10664=4
+2603 3093 0			30363		4	Clue compass: Yanille	F	20	10032>0;10664=4
+# Clue compass: Karamja (Second unlock)									
+2951 2932 0			30363	Legends' Quest	4	Clue compass: Kharazi Jungle	F	20	10032>0;10664=2
+2910 3169 0			30363		4	Clue compass: Musa Point	F	20	10032>0;10664=2
+2853 2953 0			30363		4	Clue compass: Shilo Village	F	20	10032>0;10664=2
+2802 3080 0			30363		4	Clue compass: Tai Bwo Wannai Village	F	20	10032>0;10664=2
+2465 5149 0			30363		4	Clue compass: Tzhaar Gem stall	F	20	10032>0;10664=2
+2478 5145 0			30363		4	Clue compass: Tzhaar Weapon Shop	F	20	10032>0;10664=2
+# Clue compass: Kourend (Second unlock)									
+1641 3809 0			30363		4	Clue compass: 4. Arceuus Library	F	20	10032>0;10664=20
+1662 10045 0			30363		4	Clue compass: H. Catacombs of Kourend	F	20	10032>0;10664=20
+1712 3469 0			30363		4	Clue compass: Hosidius (Charcoal Burners)	F	20	10032>0;10664=20
+1646 3631 0			30363		4	Clue compass: Hosidius Mess	F	20	10032>0;10664=20
+1318 3839 0			30363		4	Clue compass: Mount Karuulm	F	20	10032>0;10664=20
+1541 3630 0			30363		4	Clue compass: Shayzien Combat Ring	F	20	10032>0;10664=20
+1488 3636 0			30363		4	Clue compass: Shayzien War Tent	F	20	10032>0;10664=20
+1811 3855 0			30363		4	Clue compass: Soul Altar	F	20	10032>0;10664=20
+# Clue compass: Morytania (Second unlock)									
+3548 9690 0			30363		4	Clue compass: C. Barrows Chest	F	20	10032>0;10664=5
+3491 3488 0			30363		4	Clue compass: E. Canifis	F	20	10032>0;10664=5
+3562 3379 0			30363		4	Clue compass: F. Castle Drakan	F	20	10032>0;10664=5
+3500 3574 0			30363		4	Clue compass: Morytania Mausoleum	F	20	10032>0;10664=5
+3423 3535 0			30363		4	Clue compass: Slayer Tower	F	20	10032>0;10664=5
+# Clue compass: Tirannwn (Second unlock)									
+2210 4841 0			30363		4	Clue compass: P. Death Altar	F	20	10032>0;10664=7
+2198 3256 0			30363		4	Clue compass: Lord Iorwerth's Encampment	F	20	10032>0;10664=7
+2212 3427 0			30363		4	Clue compass: Gwenith	F	20	10032>0;10664=7
+2007 4709 0			30363		4	Clue compass: Underground Pass	F	20	10032>0;10664=7
+2203 3058 0			30363		4	Clue compass: Zul-Andra	F	20	10032>0;10664=7
+# Clue compass: Varlamore (Second unlock)									
+1428 3119 0			30363		4	Clue compass: D. Cam Torum Entrance	F	20	10032>0;10664=21
+1722 3153 0			30363		4	Clue compass: N. Civitas illa Fortis (Grand Museum)	F	20	10032>0;10664=21
+1702 3080 0			30363		4	Clue compass: O. Civitas illa Fortis (Temple)	F	20	10032>0;10664=21
+1615 3296 0			30363		4	Clue compass: Salvager Overlook	F	20	10032>0;10664=21
+# Clue compass: Wilderness (Second unlock)									
+3242 3662 0			30363		4	Clue compass: M. Chaos Temple	F	20	10032>0;10664=11
+3067 10253 0			30363		4	Clue compass: King Black Dragon	F	20	10032>0;10664=11
+3229 3831 0			30363		4	Clue compass: Lava Dragon Isle	F	20	10032>0;10664=11
+3069 3861 0			30363		4	Clue compass: Lava Maze	F	20	10032>0;10664=11
+3186 3957 0			30363		4	Clue compass: Wilderness Axe hut	F	20	10032>0;10664=11
+3026 3699 0			30363		4	Clue compass: Wilderness Bandit Camp	F	20	10032>0;10664=11
+3368 3929 0			30363		4	Clue compass: Wilderness Volcano	F	20	10032>0;10664=11
+# Clue compass: Asgarnia (Third unlock)									
+3056 3483 0			30363		4	Clue compass: Y. Edgeville Monastery	F	20	10032>0;10665=3
+2851 3354 0			30363		4	Clue compass: Entrana	F	20	10032>0;10665=3
+2942 3339 0			30363		4	Clue compass: Falador (Gem shop)	F	20	10032>0;10665=3
+3044 3371 0			30363		4	Clue compass: Falador (Party room)	F	20	10032>0;10665=3
+2958 3502 0			30363		4	Clue compass: Goblin Village	F	20	10032>0;10665=3
+2931 5338 0			30363		4	Clue compass: God Wars Dungeon (K'ril's room)	F	20	10032>0;10665=3
+2916 9892 0			30363	Heroes' Quest	4	Clue compass: Heroes' Guild	F	20	10032>0;10665=3
+2989 3111 0			30363		4	Clue compass: Mudskipper Point	F	20	10032>0;10665=3
+3049 3237 0			30363		4	Clue compass: Port Sarim	F	20	10032>0;10665=3
+2981 3277 0			30363		4	Clue compass: Rimmington (Crossroads)	F	20	10032>0;10665=3
+2976 3238 0			30363		4	Clue compass: Rimmington (Mine)	F	20	10032>0;10665=3
+2924 3478 0			30363		4	Clue compass: Taverley (Stone Circle)	F	20	10032>0;10665=3
+2888 3676 0			30363		4	Clue compass: Trollheim	F	20	10032>0;10665=3
+2782 3786 0			30363	Troll Romance	4	Clue compass: Trollweiss Mountain	F	20	10032>0;10665=3
+2845 3541 0			30363		4	Clue compass: Warriors' Guild	F	20	10032>0;10665=3
+2850 3496 0			30363		4	Clue compass: White Wolf Mountain	F	20	10032>0;10665=3
+# Clue compass: Desert (Third unlock)									
+3357 2829 0			30363		4	Clue compass: 1. Agility Pyramid	F	20	10032>0;10665=6
+3302 3289 0			30363		4	Clue compass: 2. Al Kharid Mine	F	20	10032>0;10665=6
+3315 3242 0			30363		4	Clue compass: Z. Emir's Arena	F	20	10032>0;10665=6
+1934 4426 0			30363		4	Clue compass: Pyramid Plunder	F	20	10032>0;10665=6
+3308 3124 0			30363		4	Clue compass: Shantay Pass	F	20	10032>0;10665=6
+3291 2781 0			30363		4	Clue compass: Sophanem	F	20	10032>0;10665=6
+# Clue compass: Fremmenik (Third unlock)									
+2374 3848 0			30363	The Fremmenik Isles	4	Clue compass: Fremennik Isles Mine	F	20	10032>0;10665=8
+2511 3640 0			30363		4	Clue compass: Lighthouse	F	20	10032>0;10665=8
+2810 3678 0			30363		4	Clue compass: Mountain Camp	F	20	10032>0;10665=8
+# Clue compass: Kandarin (Third unlock)									
+1764 5366 0			30363		4	Clue compass: 3. Ancient Cavern	F	20	10032>0;10665=4
+2671 3302 0			30363		4	Clue compass: 5. Ardougne (Market)	F	20	10032>0;10665=4
+2532 3377 0			30363	Biohazard	4	Clue compass: 6. Ardougne (Training Camp)	F	20	10032>0;10665=4
+2528 3294 0			30363	Plague City	4	Clue compass: 7. Ardougne (West Chapel)	F	20	10032>0;10665=4
+2634 3386 0			30363		4	Clue compass: 8. Ardougne (Windmill)	F	20	10032>0;10665=4
+2607 3284 0			30363		4	Clue compass: 9. Ardougne (Zoo)	F	20	10032>0;10665=4
+2542 3550 0			30363	Alfred Grimhand's Barcrawl	4	Clue compass: A. Barbarian Outpost Agility course	F	20	10032>0;10665=4
+2444 3092 0			30363		4	Clue compass: G. Castle Wars	F	20	10032>0;10665=4
+2824 3441 0			30363		4	Clue compass: I. Catherby (Archery shop)	F	20	10032>0;10665=4
+2808 3437 0			30363		4	Clue compass: J. Catherby (Bank)	F	20	10032>0;10665=4
+2764 3439 0			30363		4	Clue compass: K. Catherby (Beehive)	F	20	10032>0;10665=4
+2837 3435 0			30363		4	Clue compass: L. Catherby (Fishing shop)	F	20	10032>0;10665=4
+2689 3549 0			30363		4	Clue compass: Falo the Bard	F	20	10032>0;10665=4
+2571 3151 0			30363		4	Clue compass: Fight Arena	F	20	10032>0;10665=4
+2592 3409 0			30363		4	Clue compass: Fishing Guild (Inside)	F	20	10032>0;10665=4
+2609 3393 0			30363		4	Clue compass: Fishing Guild (Outside)	F	20	10032>0;10665=4
+2786 3277 0			30363		4	Clue compass: Fishing Platform	F	20	10032>0;10665=4
+2475 3418 0			30363		4	Clue compass: Gnome Agility Course	F	20	10032>0;10665=4
+2480 3046 0			30363		4	Clue compass: Jiggig	F	20	10032>0;10665=4
+2755 3398 0			30363		4	Clue compass: Keep Le Faye	F	20	10032>0;10665=4
+2734 3349 0			30363		4	Clue compass: Legends' Guild (outside)	F	20	10032>0;10665=4
+2732 3373 0			30363		4	Clue compass: Legends' Guild (inside)	F	20	10032>0;10665=4
+2439 3164 0			30363		4	Clue compass: Observatory	F	20	10032>0;10665=4
+2733 3476 0			30363		4	Clue compass: Seers' Village	F	20	10032>0;10665=4
+2545 3423 0			30363		4	Clue compass: Shadow Dungeon	F	20	10032>0;10665=4
+2741 3536 0			30363		4	Clue compass: Sinclair Mansion	F	20	10032>0;10665=4
+2548 3112 0			30363		4	Clue compass: Watchtower (building)	F	20	10032>0;10665=4
+2603 3093 0			30363		4	Clue compass: Yanille	F	20	10032>0;10665=4
+# Clue compass: Karamja (Third unlock)									
+2951 2932 0			30363	Legends' Quest	4	Clue compass: Kharazi Jungle	F	20	10032>0;10665=2
+2910 3169 0			30363		4	Clue compass: Musa Point	F	20	10032>0;10665=2
+2853 2953 0			30363		4	Clue compass: Shilo Village	F	20	10032>0;10665=2
+2802 3080 0			30363		4	Clue compass: Tai Bwo Wannai Village	F	20	10032>0;10665=2
+2465 5149 0			30363		4	Clue compass: Tzhaar Gem stall	F	20	10032>0;10665=2
+2478 5145 0			30363		4	Clue compass: Tzhaar Weapon Shop	F	20	10032>0;10665=2
+# Clue compass: Kourend (Third unlock)									
+1641 3809 0			30363		4	Clue compass: 4. Arceuus Library	F	20	10032>0;10665=20
+1662 10045 0			30363		4	Clue compass: H. Catacombs of Kourend	F	20	10032>0;10665=20
+1712 3469 0			30363		4	Clue compass: Hosidius (Charcoal Burners)	F	20	10032>0;10665=20
+1646 3631 0			30363		4	Clue compass: Hosidius Mess	F	20	10032>0;10665=20
+1318 3839 0			30363		4	Clue compass: Mount Karuulm	F	20	10032>0;10665=20
+1541 3630 0			30363		4	Clue compass: Shayzien Combat Ring	F	20	10032>0;10665=20
+1488 3636 0			30363		4	Clue compass: Shayzien War Tent	F	20	10032>0;10665=20
+1811 3855 0			30363		4	Clue compass: Soul Altar	F	20	10032>0;10665=20
+# Clue compass: Morytania (Third unlock)									
+3548 9690 0			30363		4	Clue compass: C. Barrows Chest	F	20	10032>0;10665=5
+3491 3488 0			30363		4	Clue compass: E. Canifis	F	20	10032>0;10665=5
+3562 3379 0			30363		4	Clue compass: F. Castle Drakan	F	20	10032>0;10665=5
+3500 3574 0			30363		4	Clue compass: Morytania Mausoleum	F	20	10032>0;10665=5
+3423 3535 0			30363		4	Clue compass: Slayer Tower	F	20	10032>0;10665=5
+# Clue compass: Tirannwn (Third unlock)									
+2210 4841 0			30363		4	Clue compass: P. Death Altar	F	20	10032>0;10665=7
+2198 3256 0			30363		4	Clue compass: Lord Iorwerth's Encampment	F	20	10032>0;10665=7
+2212 3427 0			30363		4	Clue compass: Gwenith	F	20	10032>0;10665=7
+2007 4709 0			30363		4	Clue compass: Underground Pass	F	20	10032>0;10665=7
+2203 3058 0			30363		4	Clue compass: Zul-Andra	F	20	10032>0;10665=7
+# Clue compass: Varlamore (Third unlock)									
+1428 3119 0			30363		4	Clue compass: D. Cam Torum Entrance	F	20	10032>0;10665=21
+1722 3153 0			30363		4	Clue compass: N. Civitas illa Fortis (Grand Museum)	F	20	10032>0;10665=21
+1702 3080 0			30363		4	Clue compass: O. Civitas illa Fortis (Temple)	F	20	10032>0;10665=21
+1615 3296 0			30363		4	Clue compass: Salvager Overlook	F	20	10032>0;10665=21
+# Clue compass: Wilderness (Third unlock)									
+3242 3662 0			30363		4	Clue compass: M. Chaos Temple	F	20	10032>0;10665=11
+3067 10253 0			30363		4	Clue compass: King Black Dragon	F	20	10032>0;10665=11
+3229 3831 0			30363		4	Clue compass: Lava Dragon Isle	F	20	10032>0;10665=11
+3069 3861 0			30363		4	Clue compass: Lava Maze	F	20	10032>0;10665=11
+3186 3957 0			30363		4	Clue compass: Wilderness Axe hut	F	20	10032>0;10665=11
+3026 3699 0			30363		4	Clue compass: Wilderness Bandit Camp	F	20	10032>0;10665=11
+3368 3929 0			30363		4	Clue compass: Wilderness Volcano	F	20	10032>0;10665=11
+# Clue compass: Asgarnia (Fourth unlock)									
+3056 3483 0			30363		4	Clue compass: Y. Edgeville Monastery	F	20	10032>0;10666=3
+2851 3354 0			30363		4	Clue compass: Entrana	F	20	10032>0;10666=3
+2942 3339 0			30363		4	Clue compass: Falador (Gem shop)	F	20	10032>0;10666=3
+3044 3371 0			30363		4	Clue compass: Falador (Party room)	F	20	10032>0;10666=3
+2958 3502 0			30363		4	Clue compass: Goblin Village	F	20	10032>0;10666=3
+2931 5338 0			30363		4	Clue compass: God Wars Dungeon (K'ril's room)	F	20	10032>0;10666=3
+2916 9892 0			30363	Heroes' Quest	4	Clue compass: Heroes' Guild	F	20	10032>0;10666=3
+2989 3111 0			30363		4	Clue compass: Mudskipper Point	F	20	10032>0;10666=3
+3049 3237 0			30363		4	Clue compass: Port Sarim	F	20	10032>0;10666=3
+2981 3277 0			30363		4	Clue compass: Rimmington (Crossroads)	F	20	10032>0;10666=3
+2976 3238 0			30363		4	Clue compass: Rimmington (Mine)	F	20	10032>0;10666=3
+2924 3478 0			30363		4	Clue compass: Taverley (Stone Circle)	F	20	10032>0;10666=3
+2888 3676 0			30363		4	Clue compass: Trollheim	F	20	10032>0;10666=3
+2782 3786 0			30363	Troll Romance	4	Clue compass: Trollweiss Mountain	F	20	10032>0;10666=3
+2845 3541 0			30363		4	Clue compass: Warriors' Guild	F	20	10032>0;10666=3
+2850 3496 0			30363		4	Clue compass: White Wolf Mountain	F	20	10032>0;10666=3
+# Clue compass: Desert (Fourth unlock)									
+3357 2829 0			30363		4	Clue compass: 1. Agility Pyramid	F	20	10032>0;10666=6
+3302 3289 0			30363		4	Clue compass: 2. Al Kharid Mine	F	20	10032>0;10666=6
+3315 3242 0			30363		4	Clue compass: Z. Emir's Arena	F	20	10032>0;10666=6
+1934 4426 0			30363		4	Clue compass: Pyramid Plunder	F	20	10032>0;10666=6
+3308 3124 0			30363		4	Clue compass: Shantay Pass	F	20	10032>0;10666=6
+3291 2781 0			30363		4	Clue compass: Sophanem	F	20	10032>0;10666=6
+# Clue compass: Fremmenik (Fourth unlock)									
+2374 3848 0			30363	The Fremmenik Isles	4	Clue compass: Fremennik Isles Mine	F	20	10032>0;10666=8
+2511 3640 0			30363		4	Clue compass: Lighthouse	F	20	10032>0;10666=8
+2810 3678 0			30363		4	Clue compass: Mountain Camp	F	20	10032>0;10666=8
+# Clue compass: Kandarin (Fourth unlock)									
+1764 5366 0			30363		4	Clue compass: 3. Ancient Cavern	F	20	10032>0;10666=4
+2671 3302 0			30363		4	Clue compass: 5. Ardougne (Market)	F	20	10032>0;10666=4
+2532 3377 0			30363	Biohazard	4	Clue compass: 6. Ardougne (Training Camp)	F	20	10032>0;10666=4
+2528 3294 0			30363	Plague City	4	Clue compass: 7. Ardougne (West Chapel)	F	20	10032>0;10666=4
+2634 3386 0			30363		4	Clue compass: 8. Ardougne (Windmill)	F	20	10032>0;10666=4
+2607 3284 0			30363		4	Clue compass: 9. Ardougne (Zoo)	F	20	10032>0;10666=4
+2542 3550 0			30363	Alfred Grimhand's Barcrawl	4	Clue compass: A. Barbarian Outpost Agility course	F	20	10032>0;10666=4
+2444 3092 0			30363		4	Clue compass: G. Castle Wars	F	20	10032>0;10666=4
+2824 3441 0			30363		4	Clue compass: I. Catherby (Archery shop)	F	20	10032>0;10666=4
+2808 3437 0			30363		4	Clue compass: J. Catherby (Bank)	F	20	10032>0;10666=4
+2764 3439 0			30363		4	Clue compass: K. Catherby (Beehive)	F	20	10032>0;10666=4
+2837 3435 0			30363		4	Clue compass: L. Catherby (Fishing shop)	F	20	10032>0;10666=4
+2689 3549 0			30363		4	Clue compass: Falo the Bard	F	20	10032>0;10666=4
+2571 3151 0			30363		4	Clue compass: Fight Arena	F	20	10032>0;10666=4
+2592 3409 0			30363		4	Clue compass: Fishing Guild (Inside)	F	20	10032>0;10666=4
+2609 3393 0			30363		4	Clue compass: Fishing Guild (Outside)	F	20	10032>0;10666=4
+2786 3277 0			30363		4	Clue compass: Fishing Platform	F	20	10032>0;10666=4
+2475 3418 0			30363		4	Clue compass: Gnome Agility Course	F	20	10032>0;10666=4
+2480 3046 0			30363		4	Clue compass: Jiggig	F	20	10032>0;10666=4
+2755 3398 0			30363		4	Clue compass: Keep Le Faye	F	20	10032>0;10666=4
+2734 3349 0			30363		4	Clue compass: Legends' Guild (outside)	F	20	10032>0;10666=4
+2732 3373 0			30363		4	Clue compass: Legends' Guild (inside)	F	20	10032>0;10666=4
+2439 3164 0			30363		4	Clue compass: Observatory	F	20	10032>0;10666=4
+2733 3476 0			30363		4	Clue compass: Seers' Village	F	20	10032>0;10666=4
+2545 3423 0			30363		4	Clue compass: Shadow Dungeon	F	20	10032>0;10666=4
+2741 3536 0			30363		4	Clue compass: Sinclair Mansion	F	20	10032>0;10666=4
+2548 3112 0			30363		4	Clue compass: Watchtower (building)	F	20	10032>0;10666=4
+2603 3093 0			30363		4	Clue compass: Yanille	F	20	10032>0;10666=4
+# Clue compass: Karamja (Fourth unlock)									
+2951 2932 0			30363	Legends' Quest	4	Clue compass: Kharazi Jungle	F	20	10032>0;10666=2
+2910 3169 0			30363		4	Clue compass: Musa Point	F	20	10032>0;10666=2
+2853 2953 0			30363		4	Clue compass: Shilo Village	F	20	10032>0;10666=2
+2802 3080 0			30363		4	Clue compass: Tai Bwo Wannai Village	F	20	10032>0;10666=2
+2465 5149 0			30363		4	Clue compass: Tzhaar Gem stall	F	20	10032>0;10666=2
+2478 5145 0			30363		4	Clue compass: Tzhaar Weapon Shop	F	20	10032>0;10666=2
+# Clue compass: Kourend (Fourth unlock)									
+1641 3809 0			30363		4	Clue compass: 4. Arceuus Library	F	20	10032>0;10666=20
+1662 10045 0			30363		4	Clue compass: H. Catacombs of Kourend	F	20	10032>0;10666=20
+1712 3469 0			30363		4	Clue compass: Hosidius (Charcoal Burners)	F	20	10032>0;10666=20
+1646 3631 0			30363		4	Clue compass: Hosidius Mess	F	20	10032>0;10666=20
+1318 3839 0			30363		4	Clue compass: Mount Karuulm	F	20	10032>0;10666=20
+1541 3630 0			30363		4	Clue compass: Shayzien Combat Ring	F	20	10032>0;10666=20
+1488 3636 0			30363		4	Clue compass: Shayzien War Tent	F	20	10032>0;10666=20
+1811 3855 0			30363		4	Clue compass: Soul Altar	F	20	10032>0;10666=20
+# Clue compass: Morytania (Fourth unlock)									
+3548 9690 0			30363		4	Clue compass: C. Barrows Chest	F	20	10032>0;10666=5
+3491 3488 0			30363		4	Clue compass: E. Canifis	F	20	10032>0;10666=5
+3562 3379 0			30363		4	Clue compass: F. Castle Drakan	F	20	10032>0;10666=5
+3500 3574 0			30363		4	Clue compass: Morytania Mausoleum	F	20	10032>0;10666=5
+3423 3535 0			30363		4	Clue compass: Slayer Tower	F	20	10032>0;10666=5
+# Clue compass: Tirannwn (Fourth unlock)									
+2210 4841 0			30363		4	Clue compass: P. Death Altar	F	20	10032>0;10666=7
+2198 3256 0			30363		4	Clue compass: Lord Iorwerth's Encampment	F	20	10032>0;10666=7
+2212 3427 0			30363		4	Clue compass: Gwenith	F	20	10032>0;10666=7
+2007 4709 0			30363		4	Clue compass: Underground Pass	F	20	10032>0;10666=7
+2203 3058 0			30363		4	Clue compass: Zul-Andra	F	20	10032>0;10666=7
+# Clue compass: Varlamore (Fourth unlock)									
+1428 3119 0			30363		4	Clue compass: D. Cam Torum Entrance	F	20	10032>0;10666=21
+1722 3153 0			30363		4	Clue compass: N. Civitas illa Fortis (Grand Museum)	F	20	10032>0;10666=21
+1702 3080 0			30363		4	Clue compass: O. Civitas illa Fortis (Temple)	F	20	10032>0;10666=21
+1615 3296 0			30363		4	Clue compass: Salvager Overlook	F	20	10032>0;10666=21
+# Clue compass: Wilderness (Fourth unlock)									
+3242 3662 0			30363		4	Clue compass: M. Chaos Temple	F	20	10032>0;10666=11
+3067 10253 0			30363		4	Clue compass: King Black Dragon	F	20	10032>0;10666=11
+3229 3831 0			30363		4	Clue compass: Lava Dragon Isle	F	20	10032>0;10666=11
+3069 3861 0			30363		4	Clue compass: Lava Maze	F	20	10032>0;10666=11
+3186 3957 0			30363		4	Clue compass: Wilderness Axe hut	F	20	10032>0;10666=11
+3026 3699 0			30363		4	Clue compass: Wilderness Bandit Camp	F	20	10032>0;10666=11
+3368 3929 0			30363		4	Clue compass: Wilderness Volcano	F	20	10032>0;10666=11
+# Clue compass: Misthalin									
+3110 3421 0			30363		4	Clue compass: B. Barbarian Village	F	20	10032>0
+3374 3420 0			30363		4	Clue compass: Q. Digsite	F	20	10032>0
+3355 3348 0			30363		4	Clue compass: R. Digsite Exam centre	F	20	10032>0
+3089 3332 0			30363		4	Clue compass: S. Draynor Manor	F	20	10032>0
+3110 3289 0			30363		4	Clue compass: T. Draynor Village (Crossroads)	F	20	10032>0
+3130 3249 0			30363		4	Clue compass: U. Draynor Village (Jail)	F	20	10032>0
+3083 3253 0			30363		4	Clue compass: V. Draynor Village (Market)	F	20	10032>0
+3095 3253 0			30363		4	Clue compass: W. Draynor Village (Miss Schism)	F	20	10032>0
+3078 3503 0			30363		4	Clue compass: X. Edgeville	F	20	10032>0
+3023 4517 0			30363		4	Clue compass: Enchanted Valley	F	20	10032>0
+3372 3498 0			30363		4	Clue compass: Limestone Mine	F	20	10032>0
+3299 3490 0			30363		4	Clue compass: Lumber Yard Sawmill	F	20	10032>0
+3234 3200 0			30363		4	Clue compass: Lumbridge (Bob's axes)	F	20	10032>0
+3201 3170 0			30363		4	Clue compass: Lumbridge (Swamp)	F	20	10032>0
+3167 9571 0			30363		4	Clue compass: Lumbridge (Swamp caves)	F	20	10032>0
+3162 3297 0			30363		4	Clue compass: Lumbridge (Windmill)	F	20	10032>0
+3207 3422 0			30363		4	Clue compass: Varrock (Aris' Tent)	F	20	10032>0
+3209 3415 0			30363		4	Clue compass: Varrock (Clothes shop)	F	20	10032>0
+3160 3464 0			30363		4	Clue compass: Varrock (Grand Exchange)	F	20	10032>0
+3231 3494 0			30363		4	Clue compass: Varrock (Palace Gardens)	F	20	10032>0
+3213 3490 0			30363		4	Clue compass: Varrock (Palace library)	F	20	10032>0
+3252 3403 0			30363		4	Clue compass: Varrock (Rune shop)	F	20	10032>0
+3114 3194 0			30363		4	Clue compass: Wizards' Tower	F	20	10032>0

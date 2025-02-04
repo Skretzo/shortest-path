@@ -133,17 +133,18 @@ public class PathTileOverlay extends Overlay {
         }
 
         if (plugin.drawTiles && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
+            Color colorCalculating = new Color(
+                plugin.colourPathCalculating.getRed(),
+                plugin.colourPathCalculating.getGreen(),
+                plugin.colourPathCalculating.getBlue(),
+                plugin.colourPathCalculating.getAlpha() / 2);
             Color color = plugin.getPathfinder().isDone()
                 ? new Color(
                     plugin.colourPath.getRed(),
                     plugin.colourPath.getGreen(),
                     plugin.colourPath.getBlue(),
                     plugin.colourPath.getAlpha() / 2)
-                : new Color(
-                    plugin.colourPathCalculating.getRed(),
-                    plugin.colourPathCalculating.getGreen(),
-                    plugin.colourPathCalculating.getBlue(),
-                    plugin.colourPathCalculating.getAlpha() / 2);
+                : colorCalculating;
 
             List<Integer> path = plugin.getPathfinder().getPath();
             int counter = 0;
@@ -157,6 +158,11 @@ public class PathTileOverlay extends Overlay {
                 for (int i = 0; i < path.size(); i++) {
                     drawTile(graphics, path.get(i), color, counter++, showTiles);
                     drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1));
+                }
+                for (int target : plugin.getPathfinder().getTargets()) {
+                    if (target != path.get(path.size() - 1)) {
+                        drawTile(graphics, target, colorCalculating, -1, showTiles);
+                    }
                 }
             }
         }

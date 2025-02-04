@@ -220,6 +220,16 @@ public class PathfinderConfig {
             || WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND) == 0;
     }
 
+    public static boolean isInWilderness(Set<Integer> packedPoints) {
+        for (int packedPoint : packedPoints) {
+            if (WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND) == 0 ||
+                WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean avoidWilderness(int packedPosition, int packedNeightborPosition, boolean targetInWilderness) {
         return avoidWilderness && !targetInWilderness
             && !isInWilderness(packedPosition) && isInWilderness(packedNeightborPosition);

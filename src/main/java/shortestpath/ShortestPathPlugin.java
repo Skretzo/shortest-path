@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,8 @@ public class ShortestPathPlugin extends Plugin {
     private static final String CLEAR = "Clear";
     private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
     private static final String SET = "Set";
+    private static final String FIND_CLOSEST = "Find closest";
+    private static final String FLASH_ICONS = "Flash icons";
     private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
     private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
     private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
@@ -140,6 +143,7 @@ public class ShortestPathPlugin extends Plugin {
     private GameState lastGameState = null;
     private GameState lastLastGameState = null;
     private List<PendingTask> pendingTasks = new ArrayList<>(3);
+    private Map<String, Set<Integer>> destinations = null;
 
     private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
     private Future<?> pathfinderFuture;
@@ -161,6 +165,7 @@ public class ShortestPathPlugin extends Plugin {
     protected void startUp() {
         SplitFlagMap map = SplitFlagMap.fromResources();
         Map<Integer, Set<Transport>> transports = Transport.loadAllFromResources();
+        destinations = Destination.loadAllFromResources();
 
         cacheConfigValues();
 
@@ -193,7 +198,7 @@ public class ShortestPathPlugin extends Plugin {
         }
     }
 
-    public void restartPathfinding(int start, int end) {
+    public void restartPathfinding(int start, Set<Integer> ends) {
         synchronized (pathfinderMutex) {
             if (pathfinder != null) {
                 pathfinder.cancel();
@@ -209,7 +214,7 @@ public class ShortestPathPlugin extends Plugin {
         getClientThread().invokeLater(() -> {
             pathfinderConfig.refresh();
             synchronized (pathfinderMutex) {
-                pathfinder = new Pathfinder(pathfinderConfig, start, end);
+                pathfinder = new Pathfinder(pathfinderConfig, start, ends);
                 pathfinderFuture = pathfindingExecutor.submit(pathfinder);
             }
         });
@@ -256,7 +261,7 @@ public class ShortestPathPlugin extends Plugin {
         // Transport option changed; rerun pathfinding
         if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find()) {
             if (pathfinder != null) {
-                restartPathfinding(pathfinder.getStart(), pathfinder.getTarget());
+                restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
             }
         }
     }
@@ -287,25 +292,61 @@ public class ShortestPathPlugin extends Plugin {
             Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
             Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
             Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
-            int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
-                : ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
-            int target = (objTarget instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objTarget)
-                : ((objTarget instanceof Integer) ? ((int) objTarget) : WorldPointUtil.UNDEFINED);
+
             @SuppressWarnings("unchecked")
-            Map<String, Object> configOverride = (objConfigOverride instanceof Map) ? ((Map<String, Object>) objConfigOverride) : null;
-            if (target == WorldPointUtil.UNDEFINED || (start == WorldPointUtil.UNDEFINED && client.getLocalPlayer() == null)) {
-                return;
-            }
-            if (start == WorldPointUtil.UNDEFINED) {
-                start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
-            }
-            if (objConfigOverride != null) {
+            Map<String, Object> configOverride = (objConfigOverride instanceof Map<?,?>) ? ((Map<String, Object>) objConfigOverride) : null;
+            if (configOverride != null && !configOverride.isEmpty()) {
                 this.configOverride.clear();
                 for (String key : configOverride.keySet()) {
                     this.configOverride.put(key, configOverride.get(key));
                 }
+                cacheConfigValues();
             }
-            restartPathfinding(start, target);
+
+            if (objStart == null && objTarget == null) {
+                return;
+            }
+
+            int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
+                : ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
+            if (start == WorldPointUtil.UNDEFINED) {
+                if (client.getLocalPlayer() == null) {
+                    return;
+                }
+                start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
+            }
+
+            Set<Integer> targets = new HashSet<>();
+            if (objTarget instanceof Integer) {
+                int packedPoint = (Integer) objTarget;
+                if (packedPoint == WorldPointUtil.UNDEFINED) {
+                    return;
+                }
+                targets.add(packedPoint);
+            } else if (objTarget instanceof WorldPoint) {
+                int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
+                if (packedPoint == WorldPointUtil.UNDEFINED) {
+                    return;
+                }
+                targets.add(packedPoint);
+            } else if (objTarget instanceof Set<?>) {
+                @SuppressWarnings("unchecked")
+                Set<Object> objTargets = (Set<Object>) objTarget;
+                for (Object obj : objTargets) {
+                    int packedPoint = WorldPointUtil.UNDEFINED;
+                    if (obj instanceof Integer) {
+                        packedPoint = (Integer) obj;
+                    } else if (obj instanceof WorldPoint) {
+                        packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
+                    }
+                    if (packedPoint == WorldPointUtil.UNDEFINED) {
+                        return;
+                    }
+                    targets.add(packedPoint);
+                }
+            }
+
+            restartPathfinding(start, targets.isEmpty() && pathfinder != null ? pathfinder.getTargets() : targets);
         } else if (PLUGIN_MESSAGE_CLEAR.equals(action)) {
             this.configOverride.clear();
             cacheConfigValues();
@@ -332,9 +373,11 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer.getLocalLocation());
-        if (WorldPointUtil.distanceBetween(currentLocation, pathfinder.getTarget()) < config.reachedDistance()) {
-            setTarget(WorldPointUtil.UNDEFINED);
-            return;
+        for (int target : pathfinder.getTargets()) {
+            if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance()) {
+                setTarget(WorldPointUtil.UNDEFINED);
+                return;
+            }
         }
 
         if (!startPointSet && !isNearPath(currentLocation)) {
@@ -342,7 +385,7 @@ public class ShortestPathPlugin extends Plugin {
                 setTarget(WorldPointUtil.UNDEFINED);
                 return;
             }
-            restartPathfinding(currentLocation, pathfinder.getTarget());
+            restartPathfinding(currentLocation, pathfinder.getTargets());
         }
     }
 
@@ -352,8 +395,15 @@ public class ShortestPathPlugin extends Plugin {
             && event.getType() == MenuAction.WALK.getId()) {
             addMenuEntry(event, SET, TARGET, 1);
             if (pathfinder != null) {
-                if (pathfinder.getTarget() != WorldPointUtil.UNDEFINED) {
-                    addMenuEntry(event, SET, START, 1);
+                if (pathfinder.getTargets().size() >= 1) {
+                    addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
+                        (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
+                }
+                for (int target : pathfinder.getTargets()) {
+                    if (target != WorldPointUtil.UNDEFINED) {
+                        addMenuEntry(event, SET, START, 1);
+                        break;
+                    }
                 }
                 int selectedTile = getSelectedWorldPoint();
                 if (pathfinder.getPath() != null) {
@@ -369,16 +419,26 @@ public class ShortestPathPlugin extends Plugin {
 
         final Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
 
-        if (map != null
-            && map.getBounds().contains(
+        if (map != null) {
+            if (map.getBounds().contains(
                 client.getMouseCanvasPosition().getX(),
                 client.getMouseCanvasPosition().getY())) {
-            addMenuEntry(event, SET, TARGET, 0);
-            if (pathfinder != null) {
-                if (pathfinder.getTarget() != WorldPointUtil.UNDEFINED) {
-                    addMenuEntry(event, SET, START, 0);
-                    addMenuEntry(event, CLEAR, PATH, 0);
+                addMenuEntry(event, SET, TARGET, 0);
+                if (pathfinder != null) {
+                    if (pathfinder.getTargets().size() >= 1) {
+                        addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
+                            (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
+                    }
+                    for (int target : pathfinder.getTargets()) {
+                        if (target != WorldPointUtil.UNDEFINED) {
+                            addMenuEntry(event, SET, START, 0);
+                            addMenuEntry(event, CLEAR, PATH, 0);
+                        }
+                    }
                 }
+            }
+            if (event.getOption().equals(FLASH_ICONS)) {
+                addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
             }
         }
 
@@ -495,17 +555,25 @@ public class ShortestPathPlugin extends Plugin {
         pathStyle = override("pathStyle", config.pathStyle());
     }
 
+    private String simplify(String text) {
+        return Text.removeTags(text).toLowerCase()
+            .replaceAll("[^a-zA-Z ]", "")
+            .replaceAll("[ ]", "_")
+            .replace("__", "_");
+    }
+
     private void onMenuOptionClicked(MenuEntry entry) {
         if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET)) {
             setTarget(getSelectedWorldPoint());
-        }
-
-        if (entry.getOption().equals(SET) && entry.getTarget().equals(START)) {
+        } else if (entry.getOption().equals(SET) && pathfinder != null && entry.getTarget().equals(TARGET +
+            ColorUtil.wrapWithColorTag(" " + (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET))) {
+            setTarget(getSelectedWorldPoint(), true);
+        } else if (entry.getOption().equals(SET) && entry.getTarget().equals(START)) {
             setStart(getSelectedWorldPoint());
-        }
-
-        if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) {
+        } else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) {
             setTarget(WorldPointUtil.UNDEFINED);
+        } else if (entry.getOption().equals(FIND_CLOSEST)) {
+            setTargets(destinations.getOrDefault(simplify(entry.getTarget()), null), true);
         }
     }
 
@@ -523,7 +591,19 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     private void setTarget(int target) {
-        if (target == WorldPointUtil.UNDEFINED) {
+        setTarget(target, false);
+    }
+
+    private void setTarget(int target, boolean append) {
+        Set<Integer> targets = new HashSet<>();
+        if (target != WorldPointUtil.UNDEFINED) {
+            targets.add(target);
+        }
+        setTargets(targets, append);
+    }
+
+    private void setTargets(Set<Integer> targets, boolean append) {
+        if (targets == null || targets.isEmpty()) {
             synchronized (pathfinderMutex) {
                 if (pathfinder != null) {
                     pathfinder.cancel();
@@ -531,7 +611,7 @@ public class ShortestPathPlugin extends Plugin {
                 pathfinder = null;
             }
 
-            worldMapPointManager.remove(marker);
+            worldMapPointManager.removeIf(x -> x == marker);
             marker = null;
             startPointSet = false;
         } else {
@@ -540,18 +620,23 @@ public class ShortestPathPlugin extends Plugin {
                 return;
             }
             worldMapPointManager.removeIf(x -> x == marker);
-            marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(target), MARKER_IMAGE);
-            marker.setName("Target");
-            marker.setTarget(marker.getWorldPoint());
-            marker.setJumpOnClick(true);
-            worldMapPointManager.add(marker);
+            if (targets.size() == 1) {
+                marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(targets.iterator().next()), MARKER_IMAGE);
+                marker.setName("Target");
+                marker.setTarget(marker.getWorldPoint());
+                marker.setJumpOnClick(true);
+                worldMapPointManager.add(marker);
+            }
 
             int start = WorldPointUtil.fromLocalInstance(client, localPlayer.getLocalLocation());
             lastLocation = start;
             if (startPointSet && pathfinder != null) {
                 start = pathfinder.getStart();
             }
-            restartPathfinding(start, target);
+            if (pathfinder != null && append) {
+                targets.addAll(pathfinder.getTargets());
+            }
+            restartPathfinding(start, targets);
         }
     }
 
@@ -560,7 +645,7 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
         startPointSet = true;
-        restartPathfinding(start, pathfinder.getTarget());
+        restartPathfinding(start, pathfinder.getTargets());
     }
 
     public int calculateMapPoint(int pointX, int pointY) {
