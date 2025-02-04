@@ -48,6 +48,7 @@ import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.minimap.MinimapConfig;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
@@ -91,6 +92,9 @@ public class ShortestPathPlugin extends Plugin {
 
     @Inject
     private ShortestPathConfig config;
+
+    @Inject
+    private MinimapConfig minimapConfig;
 
     @Inject
     private OverlayManager overlayManager;
@@ -159,6 +163,11 @@ public class ShortestPathPlugin extends Plugin {
     @Provides
     public ShortestPathConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(ShortestPathConfig.class);
+    }
+
+    @Provides
+    public MinimapConfig provideMinimapConfig(ConfigManager configManager) {
+        return configManager.getConfig(MinimapConfig.class);
     }
 
     @Override
@@ -442,7 +451,13 @@ public class ShortestPathPlugin extends Plugin {
             }
         }
 
-        final Shape minimap = getMinimapClipArea();
+        final Shape minimap;
+        if (minimapConfig == null || !minimapConfig.hideMinimap()) {
+            minimap = getMinimapClipArea();
+        }
+        else {
+            minimap = null;
+        }
 
         if (minimap != null && pathfinder != null
             && minimap.contains(
