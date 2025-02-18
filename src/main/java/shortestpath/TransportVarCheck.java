@@ -6,6 +6,7 @@ public enum TransportVarCheck {
     EQUAL("="),
     GREATER(">"),
     SMALLER("<"),
+    TIME_EXCEEDS("@time_exceeds@"),
     ;
 
     @Getter

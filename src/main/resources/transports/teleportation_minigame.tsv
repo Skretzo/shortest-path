@@ -1,0 +1,25 @@
+# Destination	Skills	Quests	Duration	Display info	Wilderness level	Varbits	VarPlayers
+# Home Teleports
+3221 3218 0			22	Lumbridge Home Teleport	20	4070=0	892@time_exceeds@30
+3087 3504 0			22	Edgeville Home Teleport	20	4070=1	892@time_exceeds@30
+2113 3915 0			22	Lunar Home Teleport	20	4070=2	892@time_exceeds@30
+1700 3882 0			22	Arceuus Home Teleport	20	4070=3	892@time_exceeds@30
+# Minigame Teleports
+2531 3569 0			22	Barbarian Assault Minigame Teleport	20		888@time_exceeds@20
+2899 3553 0			22	Burthorpe Games Room Minigame Teleport	20		888@time_exceeds@20
+2442 3093 0			22	Castle Wars Minigame Teleport	20		888@time_exceeds@20
+3149 3634 0			22	Clan Wars Minigame Teleport	20		888@time_exceeds@20
+2667 3163 0	15 Fishing		22	Fishing Trawler Minigame Teleport	20		888@time_exceeds@20
+3361 3149 0	15 Smithing		22	Giant's Foundry Minigame Teleport	20		888@time_exceeds@20
+# 3104 9573 0		Temple of the eye	22	Guardians of the Rift Minigame Teleport	20		888@time_exceeds@20
+3149 3634 0			22	Last Man Standing Minigame Teleport	20		888@time_exceeds@20
+3363 3295 0			22	Mage Training Arena Minigame Teleport	20		888@time_exceeds@20
+2609 3114 0			22	Nightmare Zone Minigame Teleport	20		888@time_exceeds@20
+2658 2663 0			22	Pest Control Minigame Teleport	20		888@time_exceeds@20
+2561 3320 0			22	Rat Pits Minigame Teleport	20		888@time_exceeds@20
+3506 3304 0			22	Shades of Mort'ton Minigame Teleport	20		888@time_exceeds@20
+# 2018 5929 0			22	Soul Wars Minigame Teleport	20		888@time_exceeds@20
+1792 3501 0	35 Farming		22	Tithe Farm Minigame Teleport	20		888@time_exceeds@20
+3801 3015 0	40 Cooking	Cabin Fever	22	Trouble Brewing Minigame Teleport	20		888@time_exceeds@20
+# 2399 5177 0			22	TzHaar Fight Pit Minigame Teleport	20		888@time_exceeds@20
+# 2894 10214 0			22	Blast Furnace Minigame Teleport	20		888@time_exceeds@20

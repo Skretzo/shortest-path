@@ -48,6 +48,7 @@ import static shortestpath.TransportType.TELEPORTATION_LEVER;
 import static shortestpath.TransportType.TELEPORTATION_PORTAL;
 import static shortestpath.TransportType.TELEPORTATION_ITEM;
 import static shortestpath.TransportType.TELEPORTATION_SPELL;
+import static shortestpath.TransportType.TELEPORTATION_MINIGAME;
 import static shortestpath.TransportType.WILDERNESS_OBELISK;
 
 public class PathfinderConfig {
@@ -99,7 +100,8 @@ public class PathfinderConfig {
         useTeleportationLevers,
         useTeleportationPortals,
         useTeleportationSpells,
-        useWildernessObelisks;
+        useWildernessObelisks,
+        useMinigameTeleports;
     private TeleportationItem useTeleportationItems;
     private final int[] boostedLevels = new int[Skill.values().length];
     private Map<Quest, QuestState> questStates = new HashMap<>();
@@ -141,6 +143,7 @@ public class PathfinderConfig {
         useTeleportationPortals = ShortestPathPlugin.override("useTeleportationPortals", config.useTeleportationPortals());
         useTeleportationSpells = ShortestPathPlugin.override("useTeleportationSpells", config.useTeleportationSpells());
         useWildernessObelisks = ShortestPathPlugin.override("useWildernessObelisks", config.useWildernessObelisks());
+        useMinigameTeleports = ShortestPathPlugin.override("useMinigameTeleports", config.useMinigameTeleports());
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             for (int i = 0; i < Skill.values().length; i++) {
@@ -304,7 +307,7 @@ public class PathfinderConfig {
             return false;
         } else if (MINECART.equals(type) && !useMinecarts) {
             return false;
-        } else if (QUETZAL.equals(type) && !useQuetzals) { 
+        } else if (QUETZAL.equals(type) && !useQuetzals) {
             return false;
         } else if (SPIRIT_TREE.equals(type) && !useSpiritTrees) {
             return false;
@@ -329,6 +332,8 @@ public class PathfinderConfig {
         } else if (TELEPORTATION_SPELL.equals(type) && !useTeleportationSpells) {
             return false;
         } else if (WILDERNESS_OBELISK.equals(type) && !useWildernessObelisks) {
+            return false;
+        } else if (TELEPORTATION_MINIGAME.equals(type) && !useMinigameTeleports) {
             return false;
         }
 
@@ -362,6 +367,11 @@ public class PathfinderConfig {
 
     /** Checks if the player has all the required equipment and inventory items for the transport */
     private boolean hasRequiredItems(Transport transport) {
+
+        if (transport.getItemIdRequirements().isEmpty()) {
+            return true;
+        }
+
         if ((TeleportationItem.ALL.equals(useTeleportationItems) ||
             TeleportationItem.ALL_NON_CONSUMABLE.equals(useTeleportationItems)) &&
             TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {

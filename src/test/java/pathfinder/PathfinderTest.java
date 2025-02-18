@@ -138,6 +138,14 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testMinigameTeleports() {
+        when(config.useMinigameTeleports()).thenReturn(true);
+        testTransportLength(2,
+                WorldPointUtil.packWorldPoint(3440, 3192, 0), // Nature Spirit Grotto
+                WorldPointUtil.packWorldPoint(2667, 3163, 0)); // Fishing Trawler
+    }
+
+    @Test
     public void testAgilityShortcutAndTeleportItem() {
         when(config.useAgilityShortcuts()).thenReturn(true);
         when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
