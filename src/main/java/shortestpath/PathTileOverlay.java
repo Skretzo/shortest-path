@@ -53,7 +53,8 @@ public class PathTileOverlay extends Overlay {
             for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>())) {
                 if (b == null
                     || TransportType.TELEPORTATION_ITEM.equals(b.getType())
-                    || TransportType.TELEPORTATION_SPELL.equals(b.getType())) {
+                    || TransportType.TELEPORTATION_SPELL.equals(b.getType())
+                    || TransportType.TELEPORTATION_MINIGAME.equals(b.getType())) {
                     continue; // skip teleports
                 }
                 for (int destination : WorldPointUtil.toLocalInstance(client, b.getDestination())) {

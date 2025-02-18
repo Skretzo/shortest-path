@@ -24,6 +24,10 @@ public class TransportVarPlayer {
                 return values.get(id) > value;
             case SMALLER:
                 return values.get(id) < value;
+            case TIME_EXCEEDS:
+                // Check if the current time in minutes minus the value in the map is greater
+                // than the value
+                return (System.currentTimeMillis() / 60000) - values.get(id) > value;
         }
         return false;
     }
