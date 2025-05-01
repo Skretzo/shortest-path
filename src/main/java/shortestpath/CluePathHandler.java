@@ -24,12 +24,6 @@ import net.runelite.client.plugins.cluescrolls.clues.LocationsClueScroll;
 public class CluePathHandler
 {
 	@Inject
-	private ClientThread clientThread;
-
-	@Inject
-	private Client client;
-
-	@Inject
 	private ShortestPathPlugin shortestPathPlugin;
 
 	@Inject
@@ -40,7 +34,6 @@ public class CluePathHandler
 
 	private ClueScroll clueScroll;
 	private boolean wasLastPathSetByClue = false;
-	private boolean recentlyCheckedClue = false;
 	private Set<WorldPoint> lastLocations = Sets.newHashSet();
 
 	@Subscribe
@@ -78,7 +71,6 @@ public class CluePathHandler
 				{
 					shortestPathPlugin.setTargets(newLocationsSet.stream().map(WorldPointUtil::packWorldPoint).collect(Collectors.toSet()), false);
 					this.wasLastPathSetByClue = true;
-					this.recentlyCheckedClue = false;
 				}
 				else
 				{
@@ -88,7 +80,6 @@ public class CluePathHandler
 						log.debug("[Shortest-Path #Clue] Resetting target location(s) due to empty clue");
 						shortestPathPlugin.setTarget(WorldPointUtil.UNDEFINED);
 						wasLastPathSetByClue = false;
-						recentlyCheckedClue = false;
 					}
 				}
 			}
@@ -106,35 +97,9 @@ public class CluePathHandler
 					log.debug("[Shortest-Path #Clue] Resetting target location(s) due to null clue");
 					shortestPathPlugin.setTarget(WorldPointUtil.UNDEFINED);
 					wasLastPathSetByClue = false;
-					recentlyCheckedClue = false;
 				}
 				this.clueScroll = null;
 			}
-		}
-	}
-
-	@Subscribe
-	public void onWidgetLoaded(WidgetLoaded event)
-	{
-		if (event.getGroupId() >= InterfaceID.TRAIL_MAP01
-			&& event.getGroupId() <= InterfaceID.TRAIL_MAP11)
-		{
-			this.recentlyCheckedClue = true;
-		}
-		else if (event.getGroupId() == InterfaceID.TRAIL_CLUETEXT)
-		{
-			this.clientThread.invokeLater(() ->
-			{
-				final Widget clueScrollText = this.client.getWidget(InterfaceID.TrailCluetext.TEXT);
-				if (clueScrollText != null)
-				{
-					ClueScroll clueScroll = this.clueScrollService.getClue();
-					if (clueScroll != null)
-					{
-						this.recentlyCheckedClue = true;
-					}
-				}
-			});
 		}
 	}
 }
