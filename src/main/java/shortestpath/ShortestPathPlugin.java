@@ -179,7 +179,10 @@ public class ShortestPathPlugin extends Plugin {
             clientThread.invokeLater(pathfinderConfig::refresh);
         }
 
-        this.eventBus.register(this.cluePathHandler);
+		if (config.supportCluePathGen())
+		{
+			this.eventBus.register(this.cluePathHandler);
+		}
 
         overlayManager.add(pathOverlay);
         overlayManager.add(pathMinimapOverlay);
@@ -276,6 +279,14 @@ public class ShortestPathPlugin extends Plugin {
                 restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
             }
         }
+
+		if (event.getKey().equals("supportCluePathGen")) {
+			if (config.supportCluePathGen()) {
+				this.eventBus.register(this.cluePathHandler);
+			} else {
+				this.eventBus.unregister(this.cluePathHandler);
+			}
+		}
     }
 
     @Subscribe
