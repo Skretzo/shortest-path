@@ -42,12 +42,15 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.cluescrolls.ClueScrollPlugin;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
@@ -65,6 +68,7 @@ import shortestpath.pathfinder.PathfinderConfig;
         "Right click on the world map or shift right click a tile to use",
     tags = {"pathfinder", "map", "waypoint", "navigation"}
 )
+@PluginDependency(ClueScrollPlugin.class)
 public class ShortestPathPlugin extends Plugin {
     protected static final String CONFIG_GROUP = "shortestpath";
     private static final String PLUGIN_MESSAGE_PATH = "path";
@@ -88,6 +92,9 @@ public class ShortestPathPlugin extends Plugin {
     @Getter
     @Inject
     private ClientThread clientThread;
+
+    @Inject
+    private EventBus eventBus;
 
     @Inject
     private ShortestPathConfig config;
@@ -115,6 +122,9 @@ public class ShortestPathPlugin extends Plugin {
 
     @Inject
     private WorldMapPointManager worldMapPointManager;
+
+    @Inject
+    private CluePathHandler cluePathHandler;
 
     boolean drawCollisionMap;
     boolean drawMap;
@@ -169,6 +179,8 @@ public class ShortestPathPlugin extends Plugin {
             clientThread.invokeLater(pathfinderConfig::refresh);
         }
 
+        this.eventBus.register(this.cluePathHandler);
+
         overlayManager.add(pathOverlay);
         overlayManager.add(pathMinimapOverlay);
         overlayManager.add(pathMapOverlay);
@@ -186,6 +198,8 @@ public class ShortestPathPlugin extends Plugin {
         overlayManager.remove(pathMapOverlay);
         overlayManager.remove(pathMapTooltipOverlay);
         overlayManager.remove(debugOverlayPanel);
+
+        this.eventBus.unregister(this.cluePathHandler);
 
         if (pathfindingExecutor != null) {
             pathfindingExecutor.shutdownNow();
@@ -589,7 +603,7 @@ public class ShortestPathPlugin extends Plugin {
         return WorldPointUtil.UNDEFINED;
     }
 
-    private void setTarget(int target) {
+    void setTarget(int target) {
         setTarget(target, false);
     }
 
@@ -601,7 +615,7 @@ public class ShortestPathPlugin extends Plugin {
         setTargets(targets, append);
     }
 
-    private void setTargets(Set<Integer> targets, boolean append) {
+    void setTargets(Set<Integer> targets, boolean append) {
         if (targets == null || targets.isEmpty()) {
             synchronized (pathfinderMutex) {
                 if (pathfinder != null) {
