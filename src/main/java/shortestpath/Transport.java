@@ -11,6 +11,8 @@ import lombok.Getter;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.gameval.VarbitID;
 
 /**
  * This class represents a travel point between two WorldPoints.
@@ -245,7 +247,12 @@ public class Transport {
                     for (TransportVarCheck check : TransportVarCheck.values()) {
                         varbitParts = varbitRequirement.split(check.getCode());
                         if (varbitParts.length == 2) {
-                            int varbitId = Integer.parseInt(varbitParts[0]);
+                            int varbitId;
+                            try {
+                                varbitId = Integer.parseInt(varbitParts[0]);
+                            } catch (NumberFormatException ignored) {
+                                varbitId = VarbitID.class.getDeclaredField(varbitParts[0].toUpperCase()).getInt(null);
+                            }
                             int varbitValue = Integer.parseInt(varbitParts[1]);
                             varbits.add(new TransportVarbit(varbitId, varbitValue, check));
                             break;
@@ -253,7 +260,7 @@ public class Transport {
                     }
                     assert varbitParts.length == 2 : "Invalid varbit id and value: '" + varbitRequirement + "'";
                 }
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException | NoSuchFieldException | IllegalAccessException e) {
                 log.error("Invalid varbit id and value: " + value);
             }
         }
@@ -268,7 +275,12 @@ public class Transport {
                     for (TransportVarCheck check : TransportVarCheck.values()) {
                         varPlayerParts = varPlayerRequirement.split(check.getCode());
                         if (varPlayerParts.length == 2) {
-                            int varPlayerId = Integer.parseInt(varPlayerParts[0]);
+                            int varPlayerId;
+                            try {
+                                varPlayerId = Integer.parseInt(varPlayerParts[0]);
+                            } catch (NumberFormatException ignored) {
+                                varPlayerId = VarPlayerID.class.getDeclaredField(varPlayerParts[0].toUpperCase()).getInt(null);
+                            }
                             int varPlayerValue = Integer.parseInt(varPlayerParts[1]);
                             varPlayers.add(new TransportVarPlayer(varPlayerId, varPlayerValue, check));
                             break;
@@ -276,7 +288,7 @@ public class Transport {
                     }
                     assert varPlayerParts.length == 2 : "Invalid VarPlayer id and value: '" + varPlayerRequirement + "'";
                 }
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException | NoSuchFieldException | IllegalAccessException e) {
                 log.error("Invalid VarPlayer id and value: " + value);
             }
         }
