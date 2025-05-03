@@ -112,6 +112,9 @@ public class Transport {
 
         this.varbits.addAll(origin.varbits);
         this.varbits.addAll(destination.varbits);
+
+        this.varPlayers.addAll(origin.varPlayers);
+        this.varPlayers.addAll(destination.varPlayers);
     }
 
     Transport(Map<String, String> fieldMap, TransportType transportType) {
