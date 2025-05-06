@@ -1,6 +1,6 @@
-# Shortest Path
+# Shortest Path Addons
 
-Draws the shortest path to a chosen destination on the map (right click a spot on the world map or shift right click a tile to use).
+Extra features to the Shortest Path plugin. The Shortest Path plugin must also be installed and activated.
 
 ![illustration](https://user-images.githubusercontent.com/53493631/154380329-e1cacdce-a589-4ac3-b6d8-d0dc19f88b2a.png)
 

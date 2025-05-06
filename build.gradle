@@ -22,8 +22,8 @@ dependencies {
     testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'shortestpath'
-version = '1.17.1'
+group = 'shortestpathaddons'
+version = '1.0'
 sourceCompatibility = '1.11'
 
 tasks.withType(JavaCompile) {
