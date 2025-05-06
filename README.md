@@ -1,6 +1,6 @@
 # Shortest Path Addons
 
-Extra features to the Shortest Path plugin. The Shortest Path plugin must also be installed and activated.
+Extra features for the Shortest Path plugin. The Shortest Path plugin must also be installed and activated.
 
 ![illustration](https://user-images.githubusercontent.com/53493631/154380329-e1cacdce-a589-4ac3-b6d8-d0dc19f88b2a.png)
 
