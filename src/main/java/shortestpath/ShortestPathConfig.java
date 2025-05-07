@@ -346,6 +346,15 @@ public interface ShortestPathConfig extends Config {
         return true;
     }
 
+	@ConfigItem(
+		keyName = "supportCluePathGen",
+		name = "Path to active clue",
+		description = "Whether or not to automatically set the active path to the active clue scroll",
+		position = 28,
+		section = sectionSettings
+	)
+	default boolean supportCluePathGen() { return true; }
+
     @ConfigSection(
         name = "Display",
         description = "Options for displaying the path on the world map, minimap and scene tiles",
