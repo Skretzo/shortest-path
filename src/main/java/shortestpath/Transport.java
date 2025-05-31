@@ -76,6 +76,9 @@ public class Transport {
     @Getter
     private final Set<TransportVarPlayer> varPlayers = new HashSet<>();
 
+    /** The transport can only be used on a members' world */
+    public boolean isMembersOnly = false;
+
     /** Creates a new transport from an origin-only transport
      * and a destination-only transport, and merges requirements */
     Transport(Transport origin, Transport destination) {
@@ -113,6 +116,8 @@ public class Transport {
 
         this.varPlayers.addAll(origin.varPlayers);
         this.varPlayers.addAll(destination.varPlayers);
+
+        this.isMembersOnly = origin.isMembersOnly || destination.isMembersOnly;
     }
 
     Transport(Map<String, String> fieldMap, TransportType transportType) {
@@ -282,6 +287,13 @@ public class Transport {
             } catch (NumberFormatException e) {
                 log.error("Invalid VarPlayer id and value: " + value);
             }
+        }
+
+        if (TransportType.isMembersOnly(transportType)) {
+            isMembersOnly = true;
+        }
+        if ((value = fieldMap.get("Members")) != null) {
+            isMembersOnly = value == "TRUE";
         }
 
         this.type = transportType;
