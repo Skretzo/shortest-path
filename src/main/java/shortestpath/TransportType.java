@@ -41,4 +41,32 @@ public enum TransportType {
                 return false;
         }
     }
+
+    /*
+     * Indicates whether a TransportType is members only.
+     * If there is any transport of the type that is available on free
+     * servers, this method returns false.
+     */
+    public static boolean isMembersOnly(TransportType transportType) {
+        if (transportType == null) {
+            return false;
+        }
+        switch (transportType) {
+            case AGILITY_SHORTCUT:
+            case GRAPPLE_SHORTCUT:
+            case BOAT:
+            case CHARTER_SHIP:
+            case FAIRY_RING:
+            case GNOME_GLIDER:
+            case HOT_AIR_BALLOON:
+            case MINECART:
+            case QUETZAL:
+            case SPIRIT_TREE:
+            case TELEPORTATION_LEVER:
+            case WILDERNESS_OBELISK:
+                return true;
+            default:
+                return false;
+        }
+    }
 }

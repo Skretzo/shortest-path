@@ -109,7 +109,8 @@ public class PathfinderConfig {
     private long calculationCutoffMillis;
     @Getter
     private boolean avoidWilderness;
-    private boolean useAgilityShortcuts,
+    private boolean useMembersOnly,
+        useAgilityShortcuts,
         useGrappleShortcuts,
         useBoats,
         useCanoes,
@@ -162,6 +163,7 @@ public class PathfinderConfig {
     public void refresh() {
         calculationCutoffMillis = config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
         avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
+        useMembersOnly = ShortestPathPlugin.override("useMembersOnly", config.useMembersOnly());
         useAgilityShortcuts = ShortestPathPlugin.override("useAgilityShortcuts", config.useAgilityShortcuts());
         useGrappleShortcuts = ShortestPathPlugin.override("useGrappleShortcuts", config.useGrappleShortcuts());
         useBoats = ShortestPathPlugin.override("useBoats", config.useBoats());
@@ -395,7 +397,9 @@ public class PathfinderConfig {
 
         TransportType type = transport.getType();
 
-        if (AGILITY_SHORTCUT.equals(type) && !useAgilityShortcuts) {
+        if (transport.isMembersOnly && !useMembersOnly) {
+            return false;
+        } else if (AGILITY_SHORTCUT.equals(type) && !useAgilityShortcuts) {
             return false;
         } else if (GRAPPLE_SHORTCUT.equals(type) && !useGrappleShortcuts) {
             return false;
