@@ -2,3 +2,11 @@
 .idea
 build/
 out/
+
+# For the Collision Map build
+runelite/
+cache/
+output/
+cache.jar
+keys.json
+cache.zip
