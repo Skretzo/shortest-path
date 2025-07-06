@@ -1859,7 +1859,17 @@
 2405 3420 0	2409 9812 0	Enter Cave entrance 17209						
 2405 3419 0	2409 9812 0	Enter Cave entrance 17209						
 2405 3418 0	2409 9812 0	Enter Cave entrance 17209						
-								
+2471 3426 0	2471 3423 1	Climb-over Obstacle net 23134						
+2472 3426 0	2472 3423 1	Climb-over Obstacle net 23134						
+2473 3426 0	2473 3423 1	Climb-over Obstacle net 23134						
+2474 3426 0	2474 3423 1	Climb-over Obstacle net 23134						
+2475 3426 0	2475 3423 1	Climb-over Obstacle net 23134						
+2476 3426 0	2476 3423 1	Climb-over Obstacle net 23134						
+2473 3423 1	2473 3420 2	Climb Tree branch 23559						
+2477 3420 2	2483 3420 2	Walk-on Balancing rope 23557						
+2485 3419 2	2487 3420 0	Climb-down Tree brance 23560						
+2486 3420 2	2487 3420 0	Climb-down Tree brance 23560						
+
 # Tolna's Rift								
 3309 3452 0	3297 9824 0	Enter Rift 13968						
 3297 9824 0	3312 3450 0	Climb-up Rope 13999						
