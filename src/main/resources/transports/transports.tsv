@@ -1293,7 +1293,19 @@
 2514 3615 0	2514 3613 0	Jump-across Basalt rock 4556						2
 2514 3617 0	2514 3619 0	Jump-to Rocky shore 4559						2
 2514 3619 0	2514 3617 0	Jump-across Basalt rock 4558						2
-								
+2508 3640 0	2505 3641 1	Climb-up Staircase 4568						
+2508 3640 0	2505 3641 2	Top-floor Staircase 4568						
+2505 3641 1	2506 3642 0	Climb-down Staircase 4569
+2505 3641 1	2505 3641 2	Climb-up Staircase 4569
+2505 3641 2	2506 3584 1	Climb-down Staircase 4570
+2505 3641 2	2506 3642 0	Bottom-floor Staircase 4570
+2510 3644 0	2518 9994 0	Climb Iron ladder 4383
+2518 9994 0	2510 3644 0	Climb Iron ladder 4384
+2515 10005 0	2515 10008 0	Climb Iron ladder 4384
+2515 10008 0	2515 10005 0	Climb Iron ladder 4383
+2516 10002 0	2516 10003 0	Open Strange wall 4384
+2513 10003 0	2513 10002 0	Open Strange wall 4384
+
 # Dwarf Cannon Quest area								
 2569 3441 0	2569 3441 1	Climb-up Ladder 16683						
 2569 3441 1	2569 3441 0	Climb-down Ladder 16679						
