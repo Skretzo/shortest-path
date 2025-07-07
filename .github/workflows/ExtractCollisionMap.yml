@@ -30,16 +30,16 @@ jobs:
         run: |
           ./collision-map-update/download-latest-cache.sh
 
-      - name: Insert CollisionMapDumper.java
-        run: |
-          cp ./collision-map-update/CollisionMapDumper.java runelite/cache/src/main/java/net/runelite/cache
-
       # Replace the following in the key file
       # Replace the words "mapsquare" with "region" and "key" with "keys" in the keys.json file
       - name: Patch the key file
         run: |
           sed -i 's/mapsquare/region/g' keys.json
           sed -i 's/key/keys/g' keys.json
+
+      - name: Insert CollisionMapDumper.java
+        run: |
+          cp ./collision-map-update/CollisionMapDumper.java runelite/cache/src/main/java/net/runelite/cache
 
       - name: Patch Runelite with pom file
         run: |
