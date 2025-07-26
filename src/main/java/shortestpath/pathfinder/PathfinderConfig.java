@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
+
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
@@ -34,6 +35,7 @@ import shortestpath.TransportType;
 import shortestpath.TransportVarbit;
 import shortestpath.TransportVarPlayer;
 import shortestpath.WorldPointUtil;
+
 import static shortestpath.TransportType.AGILITY_SHORTCUT;
 import static shortestpath.TransportType.GRAPPLE_SHORTCUT;
 import static shortestpath.TransportType.BOAT;
@@ -70,23 +72,25 @@ public class PathfinderConfig {
     private static final WorldArea NOT_WILDERNESS_3 = new WorldArea(3000, 3534, 5, 5, 0);
     private static final WorldArea NOT_WILDERNESS_4 = new WorldArea(3031, 3525, 2, 2, 0);
     private static final List<Integer> RUNE_POUCHES = Arrays.asList(
-        ItemID.RUNE_POUCH, ItemID.RUNE_POUCH_L,
-        ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_L
+            ItemID.RUNE_POUCH, ItemID.RUNE_POUCH_L,
+            ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_L
     );
     private static final int[] RUNE_POUCH_RUNE_VARBITS = {
-        Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3, Varbits.RUNE_POUCH_RUNE4,
-        Varbits.RUNE_POUCH_RUNE5, Varbits.RUNE_POUCH_RUNE6
-	};
+            Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3, Varbits.RUNE_POUCH_RUNE4,
+            Varbits.RUNE_POUCH_RUNE5, Varbits.RUNE_POUCH_RUNE6
+    };
     private static final int[] RUNE_POUCH_AMOUNT_VARBITS = {
-        Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3, Varbits.RUNE_POUCH_AMOUNT4,
-        Varbits.RUNE_POUCH_AMOUNT5, Varbits.RUNE_POUCH_AMOUNT6
-	};
+            Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3, Varbits.RUNE_POUCH_AMOUNT4,
+            Varbits.RUNE_POUCH_AMOUNT5, Varbits.RUNE_POUCH_AMOUNT6
+    };
     private static final Set<Integer> CURRENCIES = Set.of(
-        ItemID.COINS_995, ItemID.TRADING_STICKS, ItemID.ECTOTOKEN, ItemID.WARRIOR_GUILD_TOKEN);
+            ItemID.COINS_995, ItemID.TRADING_STICKS, ItemID.ECTOTOKEN, ItemID.WARRIOR_GUILD_TOKEN);
 
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
-    /** All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player. */
+    /**
+     * All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player.
+     */
     private final Map<Integer, Set<Transport>> allTransports;
     private final Set<Transport> usableTeleports;
     private final Map<String, Set<Integer>> allDestinations;
@@ -99,7 +103,9 @@ public class PathfinderConfig {
     // Copy of transports with packed positions for the hotpath; lists are not copied and are the same reference in both maps
     @Getter
     private final PrimitiveIntHashMap<Set<Transport>> transportsPacked;
-    /** Reference that points to either allDestinations or filteredDestinations */
+    /**
+     * Reference that points to either allDestinations or filteredDestinations
+     */
     private Map<String, Set<Integer>> destinations;
 
     private final Client client;
@@ -110,22 +116,22 @@ public class PathfinderConfig {
     @Getter
     private boolean avoidWilderness;
     private boolean useAgilityShortcuts,
-        useGrappleShortcuts,
-        useBoats,
-        useCanoes,
-        useCharterShips,
-        useShips,
-        useFairyRings,
-        useGnomeGliders,
-        useHotAirBalloons,
-        useMinecarts,
-        useQuetzals,
-        useSpiritTrees,
-        useTeleportationLevers,
-        useTeleportationMinigames,
-        useTeleportationPortals,
-        useTeleportationSpells,
-        useWildernessObelisks;
+            useGrappleShortcuts,
+            useBoats,
+            useCanoes,
+            useCharterShips,
+            useShips,
+            useFairyRings,
+            useGnomeGliders,
+            useHotAirBalloons,
+            useMinecarts,
+            useQuetzals,
+            useSpiritTrees,
+            useTeleportationLevers,
+            useTeleportationMinigames,
+            useTeleportationPortals,
+            useTeleportationSpells,
+            useWildernessObelisks;
     private TeleportationItem useTeleportationItems;
     private int currencyThreshold;
     private final int[] boostedLevels = new int[Skill.values().length];
@@ -193,7 +199,9 @@ public class PathfinderConfig {
         refreshDestinations();
     }
 
-    /** Specialized method for only updating player-held item and spell transports */
+    /**
+     * Specialized method for only updating player-held item and spell transports
+     */
     public void refreshTeleports(int packedLocation, int wildernessLevel) {
         Set<Transport> usableWildyTeleports = new HashSet<>(usableTeleports.size());
 
@@ -213,7 +221,9 @@ public class PathfinderConfig {
         destinations = avoidWilderness ? filteredDestinations : allDestinations;
     }
 
-    /** Changes to the config might have invalidated some locations, e.g. those in the wilderness */
+    /**
+     * Changes to the config might have invalidated some locations, e.g. those in the wilderness
+     */
     public void filterLocations(Set<Integer> locations, boolean canReviveFiltered) {
         if (avoidWilderness) {
             locations.removeIf(location -> {
@@ -304,30 +314,30 @@ public class PathfinderConfig {
 
     public static boolean isInWilderness(WorldPoint p) {
         return WILDERNESS_ABOVE_GROUND.distanceTo2D(p) == 0
-            && FEROX_ENCLAVE_1.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_2.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_3.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_4.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_5.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_1.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_2.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_3.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_4.distanceTo2D(p) != 0
-            || WILDERNESS_UNDERGROUND.distanceTo2D(p) == 0;
+                && FEROX_ENCLAVE_1.distanceTo2D(p) != 0
+                && FEROX_ENCLAVE_2.distanceTo2D(p) != 0
+                && FEROX_ENCLAVE_3.distanceTo2D(p) != 0
+                && FEROX_ENCLAVE_4.distanceTo2D(p) != 0
+                && FEROX_ENCLAVE_5.distanceTo2D(p) != 0
+                && NOT_WILDERNESS_1.distanceTo2D(p) != 0
+                && NOT_WILDERNESS_2.distanceTo2D(p) != 0
+                && NOT_WILDERNESS_3.distanceTo2D(p) != 0
+                && NOT_WILDERNESS_4.distanceTo2D(p) != 0
+                || WILDERNESS_UNDERGROUND.distanceTo2D(p) == 0;
     }
 
     public static boolean isInWilderness(int packedPoint) {
         return WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_ABOVE_GROUND) == 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_1) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_2) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_3) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_4) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_5) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_1) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_2) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_3) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_4) != 0
-            || WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_UNDERGROUND) == 0;
+                && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_1) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_2) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_3) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_4) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_5) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_1) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_2) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_3) != 0
+                && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_4) != 0
+                || WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_UNDERGROUND) == 0;
     }
 
     public static boolean isInWilderness(Set<Integer> packedPoints) {
@@ -341,18 +351,18 @@ public class PathfinderConfig {
 
     public static boolean isInLevel20Wilderness(int packedPoint) {
         return WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND_LEVEL_20) == 0
-            || WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_20) == 0;
+                || WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_20) == 0;
     }
 
-    public static boolean isInLevel30Wilderness(int packedPoint){
+    public static boolean isInLevel30Wilderness(int packedPoint) {
         return WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND_LEVEL_30) == 0
-            || WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_30) == 0;
+                || WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_30) == 0;
 
     }
 
     public boolean avoidWilderness(int packedPosition, int packedNeightborPosition, boolean targetInWilderness) {
         return avoidWilderness && !targetInWilderness
-            && !isInWilderness(packedPosition) && isInWilderness(packedNeightborPosition);
+                && !isInWilderness(packedPosition) && isInWilderness(packedNeightborPosition);
     }
 
     public QuestState getQuestState(Quest quest) {
@@ -427,7 +437,7 @@ public class PathfinderConfig {
             useTeleportationSpells = ShortestPathPlugin.override("useTeleportationSpells", config.useTeleportationSpells());
             useWildernessObelisks = ShortestPathPlugin.override("useWildernessObelisks", config.useWildernessObelisks());
         }
-        
+
         // Refresh transports to apply the changes
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             refreshTransports();
@@ -508,7 +518,9 @@ public class PathfinderConfig {
         return true;
     }
 
-    /** Checks if the player has all the required skill levels for the transport */
+    /**
+     * Checks if the player has all the required skill levels for the transport
+     */
     private boolean hasRequiredLevels(Transport transport) {
         int[] requiredLevels = transport.getSkillLevels();
         for (int i = 0; i < boostedLevels.length; i++) {
@@ -521,15 +533,17 @@ public class PathfinderConfig {
         return true;
     }
 
-    /** Checks if the player has all the required equipment and inventory items for the transport */
+    /**
+     * Checks if the player has all the required equipment and inventory items for the transport
+     */
     private boolean hasRequiredItems(Transport transport) {
         if ((TeleportationItem.ALL.equals(useTeleportationItems) ||
-            TeleportationItem.ALL_NON_CONSUMABLE.equals(useTeleportationItems)) &&
-            TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
+                TeleportationItem.ALL_NON_CONSUMABLE.equals(useTeleportationItems)) &&
+                TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
             return true;
         }
         if (TeleportationItem.NONE.equals(useTeleportationItems) &&
-            TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
+                TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
             return false;
         }
         itemsAndQuantities.clear();

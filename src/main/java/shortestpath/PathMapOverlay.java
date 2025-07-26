@@ -1,6 +1,7 @@
 package shortestpath;
 
 import com.google.inject.Inject;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -9,6 +10,7 @@ import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.util.HashSet;
 import java.util.List;
+
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.widgets.ComponentID;
@@ -94,16 +96,16 @@ public class PathMapOverlay extends Overlay {
         }
 
         Point cursorPos = client.getMouseCanvasPosition();
-        
+
         // Draw walking-only path first if showBothPaths is enabled
         if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null && plugin.getWalkingPathfinder().getPath() != null) {
-            Color walkingColour = plugin.getWalkingPathfinder().isDone() 
-                ? new Color(plugin.colourWalkingPath.getRed(), plugin.colourWalkingPath.getGreen(),
-                           plugin.colourWalkingPath.getBlue(), plugin.colourWalkingPath.getAlpha() / 2)
-                : new Color(plugin.colourPathCalculating.getRed(), plugin.colourPathCalculating.getGreen(),
-                           plugin.colourPathCalculating.getBlue(), plugin.colourPathCalculating.getAlpha() / 2);
+            Color walkingColour = plugin.getWalkingPathfinder().isDone()
+                    ? new Color(plugin.colourWalkingPath.getRed(), plugin.colourWalkingPath.getGreen(),
+                    plugin.colourWalkingPath.getBlue(), plugin.colourWalkingPath.getAlpha() / 2)
+                    : new Color(plugin.colourPathCalculating.getRed(), plugin.colourPathCalculating.getGreen(),
+                    plugin.colourPathCalculating.getBlue(), plugin.colourPathCalculating.getAlpha() / 2);
             List<Integer> walkingPath = plugin.getWalkingPathfinder().getPath();
-            
+
             for (int i = 0; i < walkingPath.size(); i++) {
                 graphics.setColor(walkingColour);
                 int point = walkingPath.get(i);
@@ -114,7 +116,7 @@ public class PathMapOverlay extends Overlay {
                 drawOnMap(graphics, point, false, cursorPos);
             }
         }
-        
+
         // Draw main path
         if (plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
             Color colour = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
@@ -150,7 +152,7 @@ public class PathMapOverlay extends Overlay {
         int endY = plugin.mapWorldPointToGraphicsPointY(offsetPoint);
 
         if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-            endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE) {
+                endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE) {
             return;
         }
 
@@ -166,8 +168,8 @@ public class PathMapOverlay extends Overlay {
             graphics.drawLine(startX, startY, endX, endY);
         } else {
             if (checkHover && cursorPos != null &&
-                cursorPos.getX() >= x && cursorPos.getX() <= (endX - width / 2) &&
-                cursorPos.getY() >= y && cursorPos.getY() <= (endY - width / 2)) {
+                    cursorPos.getX() >= x && cursorPos.getX() <= (endX - width / 2) &&
+                    cursorPos.getY() >= y && cursorPos.getY() <= (endY - width / 2)) {
                 graphics.setColor(graphics.getColor().darker());
             }
             graphics.fillRect(x, y, width, height);
@@ -193,25 +195,25 @@ public class PathMapOverlay extends Overlay {
 
     private int getWorldMapExtentWidth(Rectangle baseRectangle) {
         return (
-            WorldPointUtil.unpackWorldX(
-                plugin.calculateMapPoint(
-                    baseRectangle.x + baseRectangle.width,
-                    baseRectangle.y + baseRectangle.height)) -
-            WorldPointUtil.unpackWorldX(
-                plugin.calculateMapPoint(
-                    baseRectangle.x,
-                    baseRectangle.y)));
+                WorldPointUtil.unpackWorldX(
+                        plugin.calculateMapPoint(
+                                baseRectangle.x + baseRectangle.width,
+                                baseRectangle.y + baseRectangle.height)) -
+                        WorldPointUtil.unpackWorldX(
+                                plugin.calculateMapPoint(
+                                        baseRectangle.x,
+                                        baseRectangle.y)));
     }
 
     private int getWorldMapExtentHeight(Rectangle baseRectangle) {
         return (
-            WorldPointUtil.unpackWorldY(
-                plugin.calculateMapPoint(
-                    baseRectangle.x,
-                    baseRectangle.y)) -
-            WorldPointUtil.unpackWorldY(
-                plugin.calculateMapPoint(
-                    baseRectangle.x + baseRectangle.width,
-                    baseRectangle.y + baseRectangle.height)));
+                WorldPointUtil.unpackWorldY(
+                        plugin.calculateMapPoint(
+                                baseRectangle.x,
+                                baseRectangle.y)) -
+                        WorldPointUtil.unpackWorldY(
+                                plugin.calculateMapPoint(
+                                        baseRectangle.x + baseRectangle.width,
+                                        baseRectangle.y + baseRectangle.height)));
     }
 }

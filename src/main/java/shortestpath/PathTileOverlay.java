@@ -1,6 +1,7 @@
 package shortestpath;
 
 import com.google.inject.Inject;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,6 +12,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
@@ -134,17 +136,17 @@ public class PathTileOverlay extends Overlay {
         if (plugin.drawTiles) {
             if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null && plugin.getWalkingPathfinder().getPath() != null) {
                 Color walkingColorCalculating = new Color(
-                    plugin.colourPathCalculating.getRed(),
-                    plugin.colourPathCalculating.getGreen(),
-                    plugin.colourPathCalculating.getBlue(),
-                    plugin.colourPathCalculating.getAlpha() / 4); 
+                        plugin.colourPathCalculating.getRed(),
+                        plugin.colourPathCalculating.getGreen(),
+                        plugin.colourPathCalculating.getBlue(),
+                        plugin.colourPathCalculating.getAlpha() / 4);
                 Color walkingColor = plugin.getWalkingPathfinder().isDone()
-                    ? new Color(
+                        ? new Color(
                         plugin.colourWalkingPath.getRed(),
                         plugin.colourWalkingPath.getGreen(),
                         plugin.colourWalkingPath.getBlue(),
-                        plugin.colourWalkingPath.getAlpha() / 4) 
-                    : walkingColorCalculating;
+                        plugin.colourWalkingPath.getAlpha() / 4)
+                        : walkingColorCalculating;
 
                 List<Integer> walkingPath = plugin.getWalkingPathfinder().getPath();
                 if (TileStyle.LINES.equals(plugin.pathStyle)) {
@@ -158,21 +160,21 @@ public class PathTileOverlay extends Overlay {
                     }
                 }
             }
-            
-            
+
+
             if (plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
                 Color colorCalculating = new Color(
-                    plugin.colourPathCalculating.getRed(),
-                    plugin.colourPathCalculating.getGreen(),
-                    plugin.colourPathCalculating.getBlue(),
-                    plugin.colourPathCalculating.getAlpha() / 2);
+                        plugin.colourPathCalculating.getRed(),
+                        plugin.colourPathCalculating.getGreen(),
+                        plugin.colourPathCalculating.getBlue(),
+                        plugin.colourPathCalculating.getAlpha() / 2);
                 Color color = plugin.getPathfinder().isDone()
-                    ? new Color(
+                        ? new Color(
                         plugin.colourPath.getRed(),
                         plugin.colourPath.getGreen(),
                         plugin.colourPath.getBlue(),
                         plugin.colourPath.getAlpha() / 2)
-                    : colorCalculating;
+                        : colorCalculating;
 
                 List<Integer> path = plugin.getPathfinder().getPath();
                 int counter = 0;
@@ -315,15 +317,15 @@ public class PathTileOverlay extends Overlay {
             String counterText = Integer.toString(counter);
             graphics.setColor(plugin.colourText);
             graphics.drawString(
-                counterText,
-                (int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
+                    counterText,
+                    (int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
         }
     }
 
     private int calculatePathDistance(List<Integer> path, int startPoint, int endPoint) {
         int startIndex = -1;
         int endIndex = -1;
-        
+
         for (int i = 0; i < path.size(); i++) {
             if (path.get(i) == startPoint) {
                 startIndex = i;
@@ -332,16 +334,16 @@ public class PathTileOverlay extends Overlay {
                 endIndex = i;
             }
         }
-        
+
         if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) {
             return -1;
         }
-        
+
         int totalDistance = 0;
         for (int i = startIndex + 1; i <= endIndex; i++) {
             totalDistance += WorldPointUtil.distanceBetween(path.get(i - 1), path.get(i));
         }
-        
+
         return totalDistance;
     }
 
@@ -350,8 +352,7 @@ public class PathTileOverlay extends Overlay {
             return;
         }
         for (int point : WorldPointUtil.toLocalInstance(client, location)) {
-            for (int pointEnd : WorldPointUtil.toLocalInstance(client, locationEnd))
-            {
+            for (int pointEnd : WorldPointUtil.toLocalInstance(client, locationEnd)) {
                 if (WorldPointUtil.unpackWorldPlane(point) != client.getPlane()) {
                     continue;
                 }
@@ -371,12 +372,12 @@ public class PathTileOverlay extends Overlay {
                         Player localPlayer = client.getLocalPlayer();
                         if (localPlayer != null) {
                             int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer.getLocalLocation());
-                            
+
                             int remainingPathDistance = calculatePathDistance(path, transport.getDestination(), finalDestination);
-                            
+
                             int walkingDistance;
-                            if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null && 
-                                plugin.getWalkingPathfinder().isDone() && plugin.getWalkingPathfinder().getPath() != null) {
+                            if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null &&
+                                    plugin.getWalkingPathfinder().isDone() && plugin.getWalkingPathfinder().getPath() != null) {
                                 List<Integer> walkingPath = plugin.getWalkingPathfinder().getPath();
                                 walkingDistance = calculatePathDistance(walkingPath, currentLocation, finalDestination);
                                 if (walkingDistance == -1) {
@@ -385,7 +386,7 @@ public class PathTileOverlay extends Overlay {
                             } else {
                                 walkingDistance = WorldPointUtil.distanceBetween(currentLocation, finalDestination);
                             }
-                            
+
                             if (remainingPathDistance != -1 && walkingDistance > remainingPathDistance) {
                                 int tilesSaved = walkingDistance - remainingPathDistance;
                                 if (tilesSaved > 0) {

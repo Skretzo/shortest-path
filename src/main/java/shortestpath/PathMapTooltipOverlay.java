@@ -1,6 +1,7 @@
 package shortestpath;
 
 import com.google.inject.Inject;
+
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
@@ -77,37 +79,37 @@ public class PathMapTooltipOverlay extends Overlay {
         int endY = plugin.mapWorldPointToGraphicsPointY(offsetPoint);
 
         if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-            endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE) {
+                endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE) {
             return false;
         }
 
         int width = endX - startX;
 
         if (cursorPos.getX() < (startX - width / 2) || cursorPos.getX() > (endX - width / 2) ||
-            cursorPos.getY() < (startY - width / 2) || cursorPos.getY() > (endY - width / 2)) {
+                cursorPos.getY() < (startY - width / 2) || cursorPos.getY() > (endY - width / 2)) {
             return false;
         }
 
         List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
-            n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getPathfinder().getPath().size())));
+                n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getPathfinder().getPath().size())));
         if (nextPoint != WorldPointUtil.UNDEFINED) {
             for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                 if (nextPoint == transport.getDestination()
-                    && transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
+                        && transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
                     String transportText = transport.getDisplayInfo();
-                    
-                    
+
+
                     if (plugin.showTilesSaved && TransportType.isResourceMovement(transport.getType())) {
                         Player localPlayer = client.getLocalPlayer();
                         if (localPlayer != null) {
                             int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer.getLocalLocation());
                             List<Integer> path = plugin.getPathfinder().getPath();
-                            
+
                             int remainingPathDistance = calculatePathDistance(path, transport.getDestination(), finalDestination);
-                            
+
                             int walkingDistance;
-                            if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null && 
-                                plugin.getWalkingPathfinder().isDone() && plugin.getWalkingPathfinder().getPath() != null) {
+                            if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null &&
+                                    plugin.getWalkingPathfinder().isDone() && plugin.getWalkingPathfinder().getPath() != null) {
                                 // Use actual walking path distance
                                 List<Integer> walkingPath = plugin.getWalkingPathfinder().getPath();
                                 walkingDistance = calculatePathDistance(walkingPath, currentLocation, finalDestination);
@@ -119,7 +121,7 @@ public class PathMapTooltipOverlay extends Overlay {
                                 // Use straight-line distance as approximation
                                 walkingDistance = WorldPointUtil.distanceBetween(currentLocation, finalDestination);
                             }
-                            
+
                             if (remainingPathDistance != -1 && walkingDistance > remainingPathDistance) {
                                 int tilesSaved = walkingDistance - remainingPathDistance;
                                 if (tilesSaved > 0) {
@@ -128,7 +130,7 @@ public class PathMapTooltipOverlay extends Overlay {
                             }
                         }
                     }
-                    
+
                     rows.add(transportText);
                     break;
                 }
@@ -173,11 +175,11 @@ public class PathMapTooltipOverlay extends Overlay {
 
         return true;
     }
-    
+
     private int calculatePathDistance(List<Integer> path, int startPoint, int endPoint) {
         int startIndex = -1;
         int endIndex = -1;
-        
+
         for (int i = 0; i < path.size(); i++) {
             if (path.get(i) == startPoint) {
                 startIndex = i;
@@ -186,16 +188,16 @@ public class PathMapTooltipOverlay extends Overlay {
                 endIndex = i;
             }
         }
-        
+
         if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) {
             return -1;
         }
-        
+
         int totalDistance = 0;
         for (int i = startIndex + 1; i <= endIndex; i++) {
             totalDistance += WorldPointUtil.distanceBetween(path.get(i - 1), path.get(i));
         }
-        
+
         return totalDistance;
     }
 }

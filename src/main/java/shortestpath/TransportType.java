@@ -43,14 +43,14 @@ public enum TransportType {
     }
 
     /*
-    * Indicates whether a TransportType is a resource movement.
-    * Resource movements are any transport that is not walking.
-    */
+     * Indicates whether a TransportType is a resource movement.
+     * Resource movements are any transport that is not walking.
+     */
     public static boolean isResourceMovement(TransportType transportType) {
         if (transportType == null) {
             return false;
         }
-        if(isTeleport(transportType)) {
+        if (isTeleport(transportType)) {
             return true;
         }
         switch (transportType) {
