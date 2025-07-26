@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import net.runelite.api.Client;
+import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.InterfaceID;
@@ -48,18 +49,19 @@ public class PathMapTooltipOverlay extends Overlay {
         if (plugin.getPathfinder() != null) {
             List<Integer> path = plugin.getPathfinder().getPath();
             Point cursorPos = client.getMouseCanvasPosition();
+            int finalDestination = path.size() > 0 ? path.get(path.size() - 1) : WorldPointUtil.UNDEFINED;
             for (int i = 0; i < path.size(); i++) {
                 int nextPoint = WorldPointUtil.UNDEFINED;
                 if (path.size() > i + 1) {
                     nextPoint = path.get(i + 1);
                 }
-                if (drawTooltip(graphics, cursorPos, path.get(i), nextPoint, i + 1)) {
+                if (drawTooltip(graphics, cursorPos, path.get(i), nextPoint, i + 1, finalDestination)) {
                     return null;
                 }
             }
             for (int target : plugin.getPathfinder().getTargets()) {
                 if (path.size() > 0 && target != path.get(path.size() - 1)) {
-                    drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1);
+                    drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, finalDestination);
                 }
             }
         }
@@ -67,7 +69,7 @@ public class PathMapTooltipOverlay extends Overlay {
         return null;
     }
 
-    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n) {
+    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n, int finalDestination) {
         int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
         int startX = plugin.mapWorldPointToGraphicsPointX(point);
         int startY = plugin.mapWorldPointToGraphicsPointY(point);
@@ -92,7 +94,42 @@ public class PathMapTooltipOverlay extends Overlay {
             for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                 if (nextPoint == transport.getDestination()
                     && transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
-                    rows.add(transport.getDisplayInfo());
+                    String transportText = transport.getDisplayInfo();
+                    
+                    
+                    if (plugin.showTilesSaved && TransportType.isResourceMovement(transport.getType())) {
+                        Player localPlayer = client.getLocalPlayer();
+                        if (localPlayer != null) {
+                            int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer.getLocalLocation());
+                            List<Integer> path = plugin.getPathfinder().getPath();
+                            
+                            int remainingPathDistance = calculatePathDistance(path, transport.getDestination(), finalDestination);
+                            
+                            int walkingDistance;
+                            if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null && 
+                                plugin.getWalkingPathfinder().isDone() && plugin.getWalkingPathfinder().getPath() != null) {
+                                // Use actual walking path distance
+                                List<Integer> walkingPath = plugin.getWalkingPathfinder().getPath();
+                                walkingDistance = calculatePathDistance(walkingPath, currentLocation, finalDestination);
+                                if (walkingDistance == -1) {
+                                    // Fallback to straight-line if point not found in walking path
+                                    walkingDistance = WorldPointUtil.distanceBetween(currentLocation, finalDestination);
+                                }
+                            } else {
+                                // Use straight-line distance as approximation
+                                walkingDistance = WorldPointUtil.distanceBetween(currentLocation, finalDestination);
+                            }
+                            
+                            if (remainingPathDistance != -1 && walkingDistance > remainingPathDistance) {
+                                int tilesSaved = walkingDistance - remainingPathDistance;
+                                if (tilesSaved > 0) {
+                                    transportText += " (" + tilesSaved + " tiles saved)";
+                                }
+                            }
+                        }
+                    }
+                    
+                    rows.add(transportText);
                     break;
                 }
             }
@@ -135,5 +172,30 @@ public class PathMapTooltipOverlay extends Overlay {
         }
 
         return true;
+    }
+    
+    private int calculatePathDistance(List<Integer> path, int startPoint, int endPoint) {
+        int startIndex = -1;
+        int endIndex = -1;
+        
+        for (int i = 0; i < path.size(); i++) {
+            if (path.get(i) == startPoint) {
+                startIndex = i;
+            }
+            if (path.get(i) == endPoint) {
+                endIndex = i;
+            }
+        }
+        
+        if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) {
+            return -1;
+        }
+        
+        int totalDistance = 0;
+        for (int i = startIndex + 1; i <= endIndex; i++) {
+            totalDistance += WorldPointUtil.distanceBetween(path.get(i - 1), path.get(i));
+        }
+        
+        return totalDistance;
     }
 }

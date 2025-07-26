@@ -93,10 +93,32 @@ public class PathMapOverlay extends Overlay {
             }
         }
 
-        if (plugin.getPathfinder() != null) {
+        Point cursorPos = client.getMouseCanvasPosition();
+        
+        // Draw walking-only path first if showBothPaths is enabled
+        if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null && plugin.getWalkingPathfinder().getPath() != null) {
+            Color walkingColour = plugin.getWalkingPathfinder().isDone() 
+                ? new Color(plugin.colourWalkingPath.getRed(), plugin.colourWalkingPath.getGreen(),
+                           plugin.colourWalkingPath.getBlue(), plugin.colourWalkingPath.getAlpha() / 2)
+                : new Color(plugin.colourPathCalculating.getRed(), plugin.colourPathCalculating.getGreen(),
+                           plugin.colourPathCalculating.getBlue(), plugin.colourPathCalculating.getAlpha() / 2);
+            List<Integer> walkingPath = plugin.getWalkingPathfinder().getPath();
+            
+            for (int i = 0; i < walkingPath.size(); i++) {
+                graphics.setColor(walkingColour);
+                int point = walkingPath.get(i);
+                int lastPoint = (i > 0) ? walkingPath.get(i - 1) : point;
+                if (WorldPointUtil.distanceBetween(point, lastPoint) > 1) {
+                    drawOnMap(graphics, lastPoint, point, false, cursorPos);
+                }
+                drawOnMap(graphics, point, false, cursorPos);
+            }
+        }
+        
+        // Draw main path
+        if (plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
             Color colour = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
             List<Integer> path = plugin.getPathfinder().getPath();
-            Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
                 graphics.setColor(colour);
                 int point = path.get(i);

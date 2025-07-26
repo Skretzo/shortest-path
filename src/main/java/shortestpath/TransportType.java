@@ -41,4 +41,36 @@ public enum TransportType {
                 return false;
         }
     }
+
+    /*
+    * Indicates whether a TransportType is a resource movement.
+    * Resource movements are any transport that is not walking.
+    */
+    public static boolean isResourceMovement(TransportType transportType) {
+        if (transportType == null) {
+            return false;
+        }
+        if(isTeleport(transportType)) {
+            return true;
+        }
+        switch (transportType) {
+            case FAIRY_RING:
+            case GNOME_GLIDER:
+            case HOT_AIR_BALLOON:
+            case BOAT:
+            case CANOE:
+            case CHARTER_SHIP:
+            case SHIP:
+            case MINECART:
+            case QUETZAL:
+            case SPIRIT_TREE:
+            case TELEPORTATION_LEVER:
+            case TELEPORTATION_PORTAL:
+            case TELEPORTATION_SPELL:
+            case WILDERNESS_OBELISK:
+                return true;
+            default:
+                return false;
+        }
+    }
 }

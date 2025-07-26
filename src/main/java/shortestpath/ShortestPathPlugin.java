@@ -122,8 +122,11 @@ public class ShortestPathPlugin extends Plugin {
     boolean drawTiles;
     boolean drawTransports;
     boolean showTransportInfo;
+    boolean showTilesSaved;
+    boolean showBothPaths;
     Color colourCollisionMap;
     Color colourPath;
+    Color colourWalkingPath;
     Color colourPathCalculating;
     Color colourText;
     Color colourTransports;
@@ -146,12 +149,17 @@ public class ShortestPathPlugin extends Plugin {
 
     private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
     private Future<?> pathfinderFuture;
+    private Future<?> walkingPathfinderFuture;
     private final Object pathfinderMutex = new Object();
     private static final Map<String, Object> configOverride = new HashMap<>(50);
     @Getter
     private Pathfinder pathfinder;
     @Getter
+    private Pathfinder walkingPathfinder;
+    @Getter
     private PathfinderConfig pathfinderConfig;
+    @Getter
+    private PathfinderConfig walkingPathfinderConfig;
     @Getter
     private boolean startPointSet = false;
 
@@ -165,8 +173,13 @@ public class ShortestPathPlugin extends Plugin {
         cacheConfigValues();
 
         pathfinderConfig = new PathfinderConfig(client, config);
+        walkingPathfinderConfig = new PathfinderConfig(client, config);
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
-            clientThread.invokeLater(pathfinderConfig::refresh);
+            clientThread.invokeLater(() -> {
+                pathfinderConfig.refresh();
+                walkingPathfinderConfig.refresh();
+                walkingPathfinderConfig.setWalkingOnly(true);
+            });
         }
 
         overlayManager.add(pathOverlay);
@@ -188,6 +201,12 @@ public class ShortestPathPlugin extends Plugin {
         overlayManager.remove(debugOverlayPanel);
 
         if (pathfindingExecutor != null) {
+            if (pathfinder != null) {
+                pathfinder.cancel();
+            }
+            if (walkingPathfinder != null) {
+                walkingPathfinder.cancel();
+            }
             pathfindingExecutor.shutdownNow();
             pathfindingExecutor = null;
         }
@@ -199,6 +218,13 @@ public class ShortestPathPlugin extends Plugin {
                 pathfinder.cancel();
                 pathfinderFuture.cancel(true);
             }
+            
+            if (walkingPathfinder != null) {
+                walkingPathfinder.cancel();
+                if (walkingPathfinderFuture != null) {
+                    walkingPathfinderFuture.cancel(true);
+                }
+            }
 
             if (pathfindingExecutor == null) {
                 ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
@@ -209,12 +235,27 @@ public class ShortestPathPlugin extends Plugin {
         getClientThread().invokeLater(() -> {
             pathfinderConfig.refresh();
             pathfinderConfig.filterLocations(ends, canReviveFiltered);
+            
+            if (showBothPaths) {
+                walkingPathfinderConfig.refresh();
+                walkingPathfinderConfig.setWalkingOnly(true);
+                walkingPathfinderConfig.filterLocations(new HashSet<>(ends), canReviveFiltered);
+            }
+            
             synchronized (pathfinderMutex) {
                 if (ends.isEmpty()) {
                     setTarget(WorldPointUtil.UNDEFINED);
                 } else {
                     pathfinder = new Pathfinder(pathfinderConfig, start, ends);
                     pathfinderFuture = pathfindingExecutor.submit(pathfinder);
+                    
+                    if (showBothPaths && hasAnyTeleportEnabled()) {
+                        walkingPathfinder = new Pathfinder(walkingPathfinderConfig, start, new HashSet<>(ends));
+                        walkingPathfinderFuture = pathfindingExecutor.submit(walkingPathfinder);
+                    } else {
+                        walkingPathfinder = null;
+                        walkingPathfinderFuture = null;
+                    }
                 }
             }
         });
@@ -222,6 +263,40 @@ public class ShortestPathPlugin extends Plugin {
 
     public void restartPathfinding(int start, Set<Integer> ends) {
         restartPathfinding(start, ends, true);
+    }
+
+    private boolean hasAnyTeleportEnabled() {
+        return config.useTeleportationItems() != TeleportationItem.NONE ||
+                config.useTeleportationLevers() ||
+                config.useTeleportationMinigames() ||
+                config.useTeleportationPortals() ||
+                config.useTeleportationSpells() ||
+                config.useWildernessObelisks() ||
+                config.useFairyRings() ||
+                config.useGnomeGliders() ||
+                config.useSpiritTrees() ||
+                config.useMinecarts() ||
+                config.useShips() ||
+                config.useBoats() ||
+                config.useCharterShips() ||
+                config.useCanoes() ||
+                config.useHotAirBalloons() ||
+                config.useQuetzals();
+    }
+
+    private boolean pathContainsTeleports(List<Integer> path) {
+        if (path == null || path.size() < 2) {
+            return false;
+        }
+        
+        for (int i = 1; i < path.size(); i++) {
+            int distance = WorldPointUtil.distanceBetween(path.get(i - 1), path.get(i));
+            if (distance > 10) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public boolean isNearPath(int location) {
@@ -232,6 +307,20 @@ public class ShortestPathPlugin extends Plugin {
 
         for (int point : pathfinder.getPath()) {
             if (WorldPointUtil.distanceBetween(location, point) < config.recalculateDistance()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isNearWalkingPath(int location) {
+        if (walkingPathfinder == null || walkingPathfinder.getPath() == null || walkingPathfinder.getPath().isEmpty()) {
+            return true;
+        }
+
+        for (int point : walkingPathfinder.getPath()) {
+            if (WorldPointUtil.distanceBetween(location, point) < 10) {
                 return true;
             }
         }
@@ -257,7 +346,7 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         // Transport option changed; rerun pathfinding
-        if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find()) {
+        if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find() || "showBothPaths".equals(event.getKey())) {
             if (pathfinder != null) {
                 restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
             }
@@ -371,6 +460,21 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
 
+        if (showBothPaths && pathfinder != null && pathfinder.isDone() && pathfinder.getPath() != null) {
+            if (!pathContainsTeleports(pathfinder.getPath())) {
+                synchronized (pathfinderMutex) {
+                    if (walkingPathfinder != null) {
+                        walkingPathfinder.cancel();
+                        walkingPathfinder = null;
+                    }
+                    if (walkingPathfinderFuture != null) {
+                        walkingPathfinderFuture.cancel(true);
+                        walkingPathfinderFuture = null;
+                    }
+                }
+            }
+        }
+
         int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer.getLocalLocation());
         for (int target : pathfinder.getTargets()) {
             if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance()) {
@@ -385,6 +489,26 @@ public class ShortestPathPlugin extends Plugin {
                 return;
             }
             restartPathfinding(currentLocation, pathfinder.getTargets());
+        }
+
+        // Check if we've deviated from the walking path
+        if (showBothPaths && walkingPathfinder != null && !isNearWalkingPath(currentLocation)) {
+            // Recalculate only the walking path
+            synchronized (pathfinderMutex) {
+                if (walkingPathfinder != null) {
+                    walkingPathfinder.cancel();
+                }
+                if (walkingPathfinderFuture != null) {
+                    walkingPathfinderFuture.cancel(true);
+                }
+                
+                walkingPathfinderConfig.refresh();
+                walkingPathfinderConfig.setWalkingOnly(true);
+                walkingPathfinderConfig.filterLocations(new HashSet<>(pathfinder.getTargets()), true);
+                
+                walkingPathfinder = new Pathfinder(walkingPathfinderConfig, currentLocation, new HashSet<>(pathfinder.getTargets()));
+                walkingPathfinderFuture = pathfindingExecutor.submit(walkingPathfinder);
+            }
         }
     }
 
@@ -541,9 +665,12 @@ public class ShortestPathPlugin extends Plugin {
         drawTiles = override("drawTiles", config.drawTiles());
         drawTransports = override("drawTransports", config.drawTransports());
         showTransportInfo = override("showTransportInfo", config.showTransportInfo());
+        showTilesSaved = override("showTilesSaved", config.showTilesSaved());
+        showBothPaths = override("showBothPaths", config.showBothPaths());
 
         colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
         colourPath = override("colourPath", config.colourPath());
+        colourWalkingPath = override("colourWalkingPath", config.colourWalkingPath());
         colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
         colourText = override("colourText", config.colourText());
         colourTransports = override("colourTransports", config.colourTransports());
@@ -608,6 +735,16 @@ public class ShortestPathPlugin extends Plugin {
                     pathfinder.cancel();
                 }
                 pathfinder = null;
+                
+                if (walkingPathfinder != null) {
+                    walkingPathfinder.cancel();
+                }
+                walkingPathfinder = null;
+                
+                if (walkingPathfinderFuture != null) {
+                    walkingPathfinderFuture.cancel(true);
+                    walkingPathfinderFuture = null;
+                }
             }
 
             worldMapPointManager.removeIf(x -> x == marker);

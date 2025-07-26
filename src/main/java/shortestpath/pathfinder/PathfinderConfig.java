@@ -386,6 +386,54 @@ public class PathfinderConfig {
         return true;
     }
 
+    public void setWalkingOnly(boolean walkingOnly) {
+        if (walkingOnly) {
+            useAgilityShortcuts = false;
+            useGrappleShortcuts = false;
+            useBoats = false;
+            useCanoes = false;
+            useCharterShips = false;
+            useShips = false;
+            useFairyRings = false;
+            useGnomeGliders = false;
+            useHotAirBalloons = false;
+            useMinecarts = false;
+            useQuetzals = false;
+            useSpiritTrees = false;
+            useTeleportationItems = TeleportationItem.NONE;
+            useTeleportationLevers = false;
+            useTeleportationMinigames = false;
+            useTeleportationPortals = false;
+            useTeleportationSpells = false;
+            useWildernessObelisks = false;
+        } else {
+            // Restore original settings from config
+            useAgilityShortcuts = ShortestPathPlugin.override("useAgilityShortcuts", config.useAgilityShortcuts());
+            useGrappleShortcuts = ShortestPathPlugin.override("useGrappleShortcuts", config.useGrappleShortcuts());
+            useBoats = ShortestPathPlugin.override("useBoats", config.useBoats());
+            useCanoes = ShortestPathPlugin.override("useCanoes", config.useCanoes());
+            useCharterShips = ShortestPathPlugin.override("useCharterShips", config.useCharterShips());
+            useShips = ShortestPathPlugin.override("useShips", config.useShips());
+            useFairyRings = ShortestPathPlugin.override("useFairyRings", config.useFairyRings());
+            useGnomeGliders = ShortestPathPlugin.override("useGnomeGliders", config.useGnomeGliders());
+            useHotAirBalloons = ShortestPathPlugin.override("useHotAirBalloons", config.useHotAirBalloons());
+            useMinecarts = ShortestPathPlugin.override("useMinecarts", config.useMinecarts());
+            useQuetzals = ShortestPathPlugin.override("useQuetzals", config.useQuetzals());
+            useSpiritTrees = ShortestPathPlugin.override("useSpiritTrees", config.useSpiritTrees());
+            useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
+            useTeleportationLevers = ShortestPathPlugin.override("useTeleportationLevers", config.useTeleportationLevers());
+            useTeleportationMinigames = ShortestPathPlugin.override("useTeleportationMinigames", config.useTeleportationMinigames());
+            useTeleportationPortals = ShortestPathPlugin.override("useTeleportationPortals", config.useTeleportationPortals());
+            useTeleportationSpells = ShortestPathPlugin.override("useTeleportationSpells", config.useTeleportationSpells());
+            useWildernessObelisks = ShortestPathPlugin.override("useWildernessObelisks", config.useWildernessObelisks());
+        }
+        
+        // Refresh transports to apply the changes
+        if (GameState.LOGGED_IN.equals(client.getGameState())) {
+            refreshTransports();
+        }
+    }
+
     private boolean useTransport(Transport transport) {
         final boolean isQuestLocked = transport.isQuestLocked();
 

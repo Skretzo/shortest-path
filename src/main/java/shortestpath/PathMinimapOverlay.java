@@ -30,7 +30,7 @@ public class PathMinimapOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!plugin.drawMinimap || plugin.getPathfinder() == null) {
+        if (!plugin.drawMinimap) {
             return null;
         }
 
@@ -42,18 +42,38 @@ public class PathMinimapOverlay extends Overlay {
         }
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-        List<Integer> pathPoints = plugin.getPathfinder().getPath();
-        Color pathColor = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
-        for (int pathPoint : pathPoints) {
-            if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getPlane()) {
-                continue;
+        
+        if (plugin.showBothPaths && plugin.getWalkingPathfinder() != null && plugin.getWalkingPathfinder().getPath() != null) {
+            List<Integer> walkingPathPoints = plugin.getWalkingPathfinder().getPath();
+            Color walkingPathColor = plugin.getWalkingPathfinder().isDone() 
+                ? new Color(plugin.colourWalkingPath.getRed(), plugin.colourWalkingPath.getGreen(), 
+                           plugin.colourWalkingPath.getBlue(), plugin.colourWalkingPath.getAlpha() / 2)
+                : new Color(plugin.colourPathCalculating.getRed(), plugin.colourPathCalculating.getGreen(),
+                           plugin.colourPathCalculating.getBlue(), plugin.colourPathCalculating.getAlpha() / 2);
+            
+            for (int pathPoint : walkingPathPoints) {
+                if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getPlane()) {
+                    continue;
+                }
+                drawOnMinimap(graphics, pathPoint, walkingPathColor);
             }
-
-            drawOnMinimap(graphics, pathPoint, pathColor);
         }
-        for (int target : plugin.getPathfinder().getTargets()) {
-            if (pathPoints.size() > 0 && target != pathPoints.get(pathPoints.size() - 1)) {
-                drawOnMinimap(graphics, target, plugin.colourPathCalculating);
+
+        // Draw main path
+        if (plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
+            List<Integer> pathPoints = plugin.getPathfinder().getPath();
+            Color pathColor = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
+            for (int pathPoint : pathPoints) {
+                if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getPlane()) {
+                    continue;
+                }
+
+                drawOnMinimap(graphics, pathPoint, pathColor);
+            }
+            for (int target : plugin.getPathfinder().getTargets()) {
+                if (pathPoints.size() > 0 && target != pathPoints.get(pathPoints.size() - 1)) {
+                    drawOnMinimap(graphics, target, plugin.colourPathCalculating);
+                }
             }
         }
 
