@@ -363,8 +363,8 @@ public interface ShortestPathConfig extends Config {
     )
     @ConfigItem(
         keyName = "teleportAlternativesCount",
-        name = "Teleport alternatives count",
-        description = "Number of alternative teleport routes to calculate and display (0 = disabled, 1+ = number of alternatives)",
+        name = "Show alt. routes",
+        description = "Number of alternative teleport routes to show below the main path (0 = disabled, 1-10 = show alternatives)",
         position = 29,
         section = sectionSettings
     )
