@@ -307,7 +307,6 @@ public class PathTileOverlay extends Overlay {
                         continue;
                     }
 
-                    // If alternatives are enabled, show all paths in sorted order instead of just this transport
                     if (plugin.teleportAlternativesCount > 0 && !hasShownAlternatives) {
                         hasShownAlternatives = true;
                         List<Pathfinder> alternatives = plugin.getTeleportAlternatives();
@@ -323,7 +322,6 @@ public class PathTileOverlay extends Overlay {
                         }
                         
                         // Display main path + alternatives up to the requested count (shortest first)
-                        // teleportAlternativesCount = number of alternatives, so total = alternatives + 1 (main path)
                         int maxCount = Math.min(alternatives.size(), plugin.teleportAlternativesCount + 1);
                         for (int altIndex = 0; altIndex < maxCount; altIndex++) {
                             Pathfinder altPathfinder = alternatives.get(altIndex);
@@ -344,16 +342,14 @@ public class PathTileOverlay extends Overlay {
                                 }
                             }
                         }
-                        continue; // Skip the normal transport display
+                        continue;
                     }
                     
-                    // Normal transport display (when alternatives are disabled)
                     String text = transport.getDisplayInfo();
                     if (text == null || text.isEmpty()) {
                         continue;
                     }
                     
-                    // Append tile length if enabled
                     if (plugin.showPathLength && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
                         int tileLength = ShortestPathPlugin.getPathTileLength(plugin.getPathfinder().getPath());
                         text += " (" + tileLength + " tiles)";
@@ -384,15 +380,11 @@ public class PathTileOverlay extends Overlay {
         }
     }
     
-    /**
-     * Get display text for an alternative path by finding the first teleport used
-     */
     private String getAlternativeDisplayText(List<Integer> path) {
         if (path == null || path.size() < 2) {
             return null;
         }
         
-        // Find the first teleport in the path
         for (int i = 0; i < path.size() - 1; i++) {
             int current = path.get(i);
             int next = path.get(i + 1);

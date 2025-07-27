@@ -270,7 +270,6 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
 
-        // Transport option changed; rerun pathfinding
         if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find()) {
             if (pathfinder != null) {
                 restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
@@ -495,7 +494,7 @@ public class ShortestPathPlugin extends Plugin {
                 for (Transport transport : currentTransports) {
                     if (transport.getDestination() == next) {
                         transportIds.add(new TransportId(transport));
-                        break; // Only need one transport per tile pair
+                        break;
                     }
                 }
             }
@@ -526,7 +525,7 @@ public class ShortestPathPlugin extends Plugin {
         allPaths.add(pathfinder);
         excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
         
-        for (int i = 1; i <= teleportAlternativesCount && excludedTransportIds.size() < 1000; i++) { // Memory safety cap
+        for (int i = 1; i <= teleportAlternativesCount && excludedTransportIds.size() < 1000; i++) {
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransportIds);
             altPathfinder.run();
@@ -539,7 +538,6 @@ public class ShortestPathPlugin extends Plugin {
             }
         }
         
-        // Sort all paths by tile distance (shortest first)
         allPaths.sort((a, b) -> Integer.compare(a.getPath().size(), b.getPath().size()));
         
         synchronized (pathfinderMutex) {
