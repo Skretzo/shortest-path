@@ -252,17 +252,19 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
 
-        cacheConfigValues();
-
         // Invalidate alternatives cache only when we need to recalculate paths
         if ("showTeleportAlternatives".equals(event.getKey())) {
             alternativesNeedUpdate = true;
         } else if ("teleportAlternativesCount".equals(event.getKey())) {
+            // Get the new value directly from config to compare
+            int newCount = config.teleportAlternativesCount();
             // Only invalidate if the new count is higher than what we have cached
-            if (cachedAlternatives.size() < teleportAlternativesCount) {
+            if (cachedAlternatives.size() < newCount) {
                 alternativesNeedUpdate = true;
             }
         }
+
+        cacheConfigValues();
 
         if ("drawDebugPanel".equals(event.getKey())) {
             if (config.drawDebugPanel()) {

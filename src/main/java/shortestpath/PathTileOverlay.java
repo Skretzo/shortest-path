@@ -307,6 +307,46 @@ public class PathTileOverlay extends Overlay {
                         continue;
                     }
 
+                    // If alternatives are enabled, show all paths in sorted order instead of just this transport
+                    if (plugin.showTeleportAlternatives && !hasShownAlternatives) {
+                        hasShownAlternatives = true;
+                        List<Pathfinder> alternatives = plugin.getTeleportAlternatives();
+                        
+                        LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
+                        if (lp == null) {
+                            continue;
+                        }
+
+                        Point p = Perspective.localToCanvas(client, lp, client.getPlane());
+                        if (p == null) {
+                            continue;
+                        }
+                        
+                        // Display alternatives up to the requested count (shortest first)
+                        int maxCount = Math.min(alternatives.size(), plugin.teleportAlternativesCount);
+                        for (int altIndex = 0; altIndex < maxCount; altIndex++) {
+                            Pathfinder altPathfinder = alternatives.get(altIndex);
+                            if (altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
+                                String altText = getAlternativeDisplayText(altPathfinder.getPath());
+                                if (altText != null && !altText.isEmpty()) {
+                                    Rectangle2D altTextBounds = graphics.getFontMetrics().getStringBounds(altText, graphics);
+                                    double altHeight = altTextBounds.getHeight();
+                                    int altX = (int) (p.getX() - altTextBounds.getWidth() / 2);
+                                    int altY = (int) (p.getY() - altHeight) - vertical_offset;
+                                    
+                                    graphics.setColor(Color.BLACK);
+                                    graphics.drawString(altText, altX + 1, altY + 1);
+                                    graphics.setColor(plugin.colourText);
+                                    graphics.drawString(altText, altX, altY);
+                                    
+                                    vertical_offset += (int) altHeight + TRANSPORT_LABEL_GAP;
+                                }
+                            }
+                        }
+                        continue; // Skip the normal transport display
+                    }
+                    
+                    // Normal transport display (when alternatives are disabled)
                     String text = transport.getDisplayInfo();
                     if (text == null || text.isEmpty()) {
                         continue;
@@ -338,32 +378,6 @@ public class PathTileOverlay extends Overlay {
                     graphics.drawString(text, x, y);
 
                     vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
-                    
-                    // Draw alternative paths if enabled and we haven't shown them yet
-                    if (plugin.showTeleportAlternatives && !hasShownAlternatives) {
-                        hasShownAlternatives = true;
-                        List<Pathfinder> alternatives = plugin.getTeleportAlternatives();
-                        // Display alternatives in reverse order so shortest appears at top
-                        for (int altIndex = alternatives.size() - 1; altIndex >= 1; altIndex--) {
-                            Pathfinder altPathfinder = alternatives.get(altIndex);
-                            if (altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                                String altText = getAlternativeDisplayText(altPathfinder.getPath());
-                                if (altText != null && !altText.isEmpty()) {
-                                    Rectangle2D altTextBounds = graphics.getFontMetrics().getStringBounds(altText, graphics);
-                                    double altHeight = altTextBounds.getHeight();
-                                    int altX = (int) (p.getX() - altTextBounds.getWidth() / 2);
-                                    int altY = (int) (p.getY() - altHeight) - vertical_offset;
-                                    
-                                    graphics.setColor(Color.BLACK);
-                                    graphics.drawString(altText, altX + 1, altY + 1);
-                                    graphics.setColor(plugin.colourText);
-                                    graphics.drawString(altText, altX, altY);
-                                    
-                                    vertical_offset += (int) altHeight + TRANSPORT_LABEL_GAP;
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
