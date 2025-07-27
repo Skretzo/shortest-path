@@ -252,12 +252,8 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
 
-        // Invalidate alternatives cache only when we need to recalculate paths
         if ("teleportAlternativesCount".equals(event.getKey())) {
-            // Get the new value directly from config to compare
             int newCount = config.teleportAlternativesCount();
-            // Only invalidate if the new count is higher than what we have cached
-            // Note: newCount represents alternatives, so total paths = newCount + 1 (for main path)
             if (cachedAlternatives.size() < newCount + 1) {
                 alternativesNeedUpdate = true;
             }
@@ -483,9 +479,6 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getMap();
     }
 
-    /**
-     * Extract transport IDs from a path by finding transports between consecutive tiles
-     */
     private Set<TransportId> extractTransportIds(List<Integer> path) {
         Set<TransportId> transportIds = new HashSet<>();
         if (path == null || path.size() < 2) {
@@ -511,26 +504,19 @@ public class ShortestPathPlugin extends Plugin {
         return transportIds;
     }
 
-    /**
-     * Calculate alternative paths by iteratively excluding teleports used in previous paths
-     */
     public List<Pathfinder> getTeleportAlternatives() {
         if (teleportAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
             pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
             return new ArrayList<>();
         }
 
-        // Return cached alternatives if they're still valid
         if (!alternativesNeedUpdate && !cachedAlternatives.isEmpty()) {
             return cachedAlternatives;
         }
 
-        // Start background calculation if not already running
         if (alternativesNeedUpdate && (alternativesFuture == null || alternativesFuture.isDone())) {
             alternativesFuture = pathfindingExecutor.submit(this::calculateAlternatives);
         }
-
-        // Return current cache (may be empty during calculation)
         return new ArrayList<>(cachedAlternatives);
     }
 
@@ -540,7 +526,6 @@ public class ShortestPathPlugin extends Plugin {
         allPaths.add(pathfinder);
         excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
         
-        // Calculate additional alternatives (teleportAlternativesCount = number of alternatives)
         for (int i = 1; i <= teleportAlternativesCount && excludedTransportIds.size() < 1000; i++) { // Memory safety cap
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransportIds);
@@ -550,7 +535,7 @@ public class ShortestPathPlugin extends Plugin {
                 allPaths.add(altPathfinder);
                 excludedTransportIds.addAll(extractTransportIds(altPathfinder.getPath()));
             } else {
-                break; // No more valid paths
+                break;
             }
         }
         
@@ -564,9 +549,6 @@ public class ShortestPathPlugin extends Plugin {
         }
     }
 
-    /**
-     * Calculate the tile length of a path (number of tiles)
-     */
     public static int getPathTileLength(List<Integer> path) {
         return path != null ? path.size() : 0;
     }
