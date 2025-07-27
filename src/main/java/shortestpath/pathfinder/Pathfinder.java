@@ -3,6 +3,7 @@ package shortestpath.pathfinder;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -23,6 +24,7 @@ public class Pathfinder implements Runnable {
     private final PathfinderConfig config;
     private final CollisionMap map;
     private final boolean targetInWilderness;
+    private final Set<TransportId> excludedTransportIds;
 
     // Capacities should be enough to store all nodes without requiring the queue to grow
     // They were found by checking the max queue size
@@ -45,11 +47,16 @@ public class Pathfinder implements Runnable {
     private int wildernessLevel;
 
     public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets) {
+        this(config, start, targets, new HashSet<>());
+    }
+
+    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Set<TransportId> excludedTransportIds) {
         stats = new PathfinderStats();
         this.config = config;
         this.map = config.getMap();
         this.start = start;
         this.targets = targets;
+        this.excludedTransportIds = excludedTransportIds != null ? excludedTransportIds : new HashSet<>();
         visited = new VisitedTiles(map);
         targetInWilderness = PathfinderConfig.isInWilderness(targets);
         wildernessLevel = 31;
@@ -87,7 +94,7 @@ public class Pathfinder implements Runnable {
     }
 
     private void addNeighbors(Node node) {
-        List<Node> nodes = map.getNeighbors(node, visited, config);
+        List<Node> nodes = map.getNeighbors(node, visited, config, excludedTransportIds);
         for (int i = 0; i < nodes.size(); ++i) {
             Node neighbor = nodes.get(i);
 

@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.geom.Line2D;
@@ -20,6 +21,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.Pathfinder;
 
 public class PathTileOverlay extends Overlay {
     private final Client client;
@@ -299,6 +301,7 @@ public class PathTileOverlay extends Overlay {
                 }
 
                 int vertical_offset = 0;
+                boolean hasShownAlternatives = false;
                 for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                     if (pointEnd == WorldPointUtil.UNDEFINED || pointEnd != transport.getDestination()) {
                         continue;
@@ -307,6 +310,12 @@ public class PathTileOverlay extends Overlay {
                     String text = transport.getDisplayInfo();
                     if (text == null || text.isEmpty()) {
                         continue;
+                    }
+                    
+                    // Append tile length if enabled
+                    if (plugin.showPathLength && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
+                        int tileLength = ShortestPathPlugin.getPathTileLength(plugin.getPathfinder().getPath());
+                        text += " (" + tileLength + " tiles)";
                     }
 
                     LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
@@ -329,8 +338,61 @@ public class PathTileOverlay extends Overlay {
                     graphics.drawString(text, x, y);
 
                     vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
+                    
+                    // Draw alternative paths if enabled and we haven't shown them yet
+                    if (plugin.showTeleportAlternatives && !hasShownAlternatives) {
+                        hasShownAlternatives = true;
+                        List<Pathfinder> alternatives = plugin.getTeleportAlternatives();
+                        for (int altIndex = 1; altIndex < alternatives.size(); altIndex++) {
+                            Pathfinder altPathfinder = alternatives.get(altIndex);
+                            if (altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
+                                String altText = getAlternativeDisplayText(altPathfinder.getPath());
+                                if (altText != null && !altText.isEmpty()) {
+                                    Rectangle2D altTextBounds = graphics.getFontMetrics().getStringBounds(altText, graphics);
+                                    double altHeight = altTextBounds.getHeight();
+                                    int altX = (int) (p.getX() - altTextBounds.getWidth() / 2);
+                                    int altY = (int) (p.getY() - altHeight) - vertical_offset;
+                                    
+                                    graphics.setColor(Color.BLACK);
+                                    graphics.drawString(altText, altX + 1, altY + 1);
+                                    graphics.setColor(plugin.colourText);
+                                    graphics.drawString(altText, altX, altY);
+                                    
+                                    vertical_offset += (int) altHeight + TRANSPORT_LABEL_GAP;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+    
+    /**
+     * Get display text for an alternative path by finding the first teleport used
+     */
+    private String getAlternativeDisplayText(List<Integer> path) {
+        if (path == null || path.size() < 2) {
+            return null;
+        }
+        
+        // Find the first teleport in the path
+        for (int i = 0; i < path.size() - 1; i++) {
+            int current = path.get(i);
+            int next = path.get(i + 1);
+            
+            for (Transport transport : plugin.getTransports().getOrDefault(current, new HashSet<>())) {
+                if (transport.getDestination() == next && transport.getDisplayInfo() != null) {
+                    String text = transport.getDisplayInfo();
+                    if (plugin.showPathLength) {
+                        int tileLength = ShortestPathPlugin.getPathTileLength(path);
+                        text += " (" + tileLength + " tiles)";
+                    }
+                    return text;
+                }
+            }
+        }
+        
+        return null;
     }
 }

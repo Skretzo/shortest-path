@@ -58,6 +58,7 @@ import net.runelite.client.util.Text;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.TransportId;
 
 @PluginDescriptor(
     name = "Shortest Path",
@@ -130,6 +131,9 @@ public class ShortestPathPlugin extends Plugin {
     int tileCounterStep;
     TileCounter showTileCounter;
     TileStyle pathStyle;
+    boolean showPathLength;
+    boolean showTeleportAlternatives;
+    int teleportAlternativesCount;
 
     private Point lastMenuOpenedPoint;
     private WorldMapPoint marker;
@@ -150,6 +154,7 @@ public class ShortestPathPlugin extends Plugin {
     private static final Map<String, Object> configOverride = new HashMap<>(50);
     @Getter
     private Pathfinder pathfinder;
+    private List<Pathfinder> alternativePathfinders = new ArrayList<>();
     @Getter
     private PathfinderConfig pathfinderConfig;
     @Getter
@@ -465,6 +470,73 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getMap();
     }
 
+    /**
+     * Extract transport IDs from a path by finding transports between consecutive tiles
+     */
+    private Set<TransportId> extractTransportIds(List<Integer> path) {
+        Set<TransportId> transportIds = new HashSet<>();
+        if (path == null || path.size() < 2) {
+            return transportIds;
+        }
+
+        Map<Integer, Set<Transport>> transports = getTransports();
+        for (int i = 0; i < path.size() - 1; i++) {
+            int current = path.get(i);
+            int next = path.get(i + 1);
+            
+            Set<Transport> currentTransports = transports.get(current);
+            if (currentTransports != null) {
+                for (Transport transport : currentTransports) {
+                    if (transport.getDestination() == next) {
+                        transportIds.add(new TransportId(transport));
+                    }
+                }
+            }
+        }
+        
+        return transportIds;
+    }
+
+    /**
+     * Calculate alternative paths by iteratively excluding teleports used in previous paths
+     */
+    public List<Pathfinder> getTeleportAlternatives() {
+        if (!showTeleportAlternatives || pathfinder == null || !pathfinder.isDone() || 
+            pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Pathfinder> alternatives = new ArrayList<>();
+        Set<TransportId> excludedTransportIds = new HashSet<>();
+        
+        // First path is the original best path
+        alternatives.add(pathfinder);
+        excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
+        
+        // Calculate additional alternatives
+        for (int i = 1; i < teleportAlternativesCount && i < 10; i++) { // Cap at 10 for safety
+            Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
+                                                      pathfinder.getTargets(), excludedTransportIds);
+            altPathfinder.run();
+            
+            if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
+                alternatives.add(altPathfinder);
+                excludedTransportIds.addAll(extractTransportIds(altPathfinder.getPath()));
+            } else {
+                break; // No more valid paths
+            }
+        }
+        
+        return alternatives;
+    }
+
+    /**
+     * Calculate the tile length of a path (number of tiles)
+     */
+    public static int getPathTileLength(List<Integer> path) {
+        return path != null ? path.size() : 0;
+    }
+
     public static boolean override(String configOverrideKey, boolean defaultValue) {
         if (!configOverride.isEmpty()) {
             Object value = configOverride.get(configOverrideKey);
@@ -552,6 +624,9 @@ public class ShortestPathPlugin extends Plugin {
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
+        showPathLength = config.showPathLength();
+        showTeleportAlternatives = config.showTeleportAlternatives();
+        teleportAlternativesCount = config.teleportAlternativesCount();
     }
 
     private String simplify(String text) {

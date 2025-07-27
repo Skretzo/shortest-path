@@ -346,10 +346,47 @@ public interface ShortestPathConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+        keyName = "showPathLength",
+        name = "Show path length",
+        description = "Whether to display the tile length for paths in the tile overlay",
+        position = 28,
+        section = sectionSettings
+    )
+    default boolean showPathLength() {
+        return false;
+    }
+
+    @ConfigItem(
+        keyName = "showTeleportAlternatives",
+        name = "Show teleport alternatives",
+        description = "Whether to display alternative teleport routes in the tile overlay",
+        position = 29,
+        section = sectionSettings
+    )
+    default boolean showTeleportAlternatives() {
+        return false;
+    }
+
+    @Range(
+        min = 1,
+        max = 10
+    )
+    @ConfigItem(
+        keyName = "teleportAlternativesCount",
+        name = "Teleport alternatives count",
+        description = "Number of alternative teleport routes to calculate and display",
+        position = 30,
+        section = sectionSettings
+    )
+    default int teleportAlternativesCount() {
+        return 3;
+    }
+
     @ConfigSection(
         name = "Display",
         description = "Options for displaying the path on the world map, minimap and scene tiles",
-        position = 28
+        position = 31
     )
     String sectionDisplay = "sectionDisplay";
 
@@ -357,7 +394,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMap",
         name = "Draw path on world map",
         description = "Whether the path should be drawn on the world map",
-        position = 29,
+        position = 32,
         section = sectionDisplay
     )
     default boolean drawMap() {
@@ -368,7 +405,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMinimap",
         name = "Draw path on minimap",
         description = "Whether the path should be drawn on the minimap",
-        position = 30,
+        position = 33,
         section = sectionDisplay
     )
     default boolean drawMinimap() {
@@ -379,7 +416,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTiles",
         name = "Draw path on tiles",
         description = "Whether the path should be drawn on the game tiles",
-        position = 31,
+        position = 34,
         section = sectionDisplay
     )
     default boolean drawTiles() {
@@ -390,7 +427,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "pathStyle",
         name = "Path style",
         description = "Whether to display the path as tiles or a segmented line",
-        position = 32,
+        position = 35,
         section = sectionDisplay
     )
     default TileStyle pathStyle() {
@@ -400,7 +437,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Colours",
         description = "Colours for the path map, minimap and scene tiles",
-        position = 33
+        position = 36
     )
     String sectionColours = "sectionColours";
 
@@ -409,7 +446,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourPath",
         name = "Path",
         description = "Colour of the path tiles on the world map, minimap and in the game scene",
-        position = 34,
+        position = 37,
         section = sectionColours
     )
     default Color colourPath() {
@@ -422,7 +459,7 @@ public interface ShortestPathConfig extends Config {
         name = "Calculating",
         description = "Colour of the path tiles while the pathfinding calculation is in progress," +
             "<br>and the colour of unused targets if there are more than a single target",
-        position = 35,
+        position = 38,
         section = sectionColours
     )
     default Color colourPathCalculating() {
@@ -434,7 +471,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourTransports",
         name = "Transports",
         description = "Colour of the transport tiles",
-        position = 36,
+        position = 39,
         section = sectionColours
     )
     default Color colourTransports() {
@@ -446,7 +483,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourCollisionMap",
         name = "Collision map",
         description = "Colour of the collision map tiles",
-        position = 37,
+        position = 40,
         section = sectionColours
     )
     default Color colourCollisionMap() {
@@ -458,7 +495,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourText",
         name = "Text",
         description = "Colour of the text of the tile counter and fairy ring codes",
-        position = 38,
+        position = 41,
         section = sectionColours
     )
     default Color colourText() {
@@ -468,7 +505,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Debug Options",
         description = "Various options for debugging",
-        position = 39,
+        position = 42,
         closedByDefault = true
     )
     String sectionDebug = "sectionDebug";
@@ -477,7 +514,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTransports",
         name = "Draw transports",
         description = "Whether transports should be drawn",
-        position = 40,
+        position = 43,
         section = sectionDebug
     )
     default boolean drawTransports() {
@@ -488,7 +525,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawCollisionMap",
         name = "Draw collision map",
         description = "Whether the collision map should be drawn",
-        position = 41,
+        position = 44,
         section = sectionDebug
     )
     default boolean drawCollisionMap() {
@@ -499,7 +536,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawDebugPanel",
         name = "Show debug panel",
         description = "Toggles displaying the pathfinding debug stats panel",
-        position = 42,
+        position = 45,
         section = sectionDebug
     )
     default boolean drawDebugPanel() {

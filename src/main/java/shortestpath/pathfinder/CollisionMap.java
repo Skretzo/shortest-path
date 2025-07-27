@@ -74,6 +74,10 @@ public class CollisionMap {
     private final boolean[] traversable = new boolean[8];
 
     public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config) {
+        return getNeighbors(node, visited, config, null);
+    }
+
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, Set<TransportId> excludedTransportIds) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
@@ -87,6 +91,12 @@ public class CollisionMap {
         // Thus any transports in the list are guaranteed to be valid per the user's settings
         for (Transport transport : transports) {
             if (visited.get(transport.getDestination())) continue;
+            
+            // Skip excluded transports for alternative path calculation
+            if (excludedTransportIds != null && excludedTransportIds.contains(new TransportId(transport))) {
+                continue;
+            }
+            
             neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration()));
         }
 
