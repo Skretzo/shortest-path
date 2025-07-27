@@ -357,30 +357,19 @@ public interface ShortestPathConfig extends Config {
         return false;
     }
 
-    @ConfigItem(
-        keyName = "showTeleportAlternatives",
-        name = "Show teleport alternatives",
-        description = "Whether to display alternative teleport routes in the tile overlay",
-        position = 29,
-        section = sectionSettings
-    )
-    default boolean showTeleportAlternatives() {
-        return false;
-    }
-
     @Range(
-        min = 1,
+        min = 0,
         max = 10
     )
     @ConfigItem(
         keyName = "teleportAlternativesCount",
         name = "Teleport alternatives count",
-        description = "Number of alternative teleport routes to calculate and display",
-        position = 30,
+        description = "Number of alternative teleport routes to calculate and display (0 = disabled, 1+ = number of alternatives)",
+        position = 29,
         section = sectionSettings
     )
     default int teleportAlternativesCount() {
-        return 3;
+        return 0;
     }
 
     @ConfigSection(

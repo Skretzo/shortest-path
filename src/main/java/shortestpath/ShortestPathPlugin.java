@@ -132,7 +132,6 @@ public class ShortestPathPlugin extends Plugin {
     TileCounter showTileCounter;
     TileStyle pathStyle;
     boolean showPathLength;
-    boolean showTeleportAlternatives;
     int teleportAlternativesCount;
 
     private Point lastMenuOpenedPoint;
@@ -253,13 +252,12 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         // Invalidate alternatives cache only when we need to recalculate paths
-        if ("showTeleportAlternatives".equals(event.getKey())) {
-            alternativesNeedUpdate = true;
-        } else if ("teleportAlternativesCount".equals(event.getKey())) {
+        if ("teleportAlternativesCount".equals(event.getKey())) {
             // Get the new value directly from config to compare
             int newCount = config.teleportAlternativesCount();
             // Only invalidate if the new count is higher than what we have cached
-            if (cachedAlternatives.size() < newCount) {
+            // Note: newCount represents alternatives, so total paths = newCount + 1 (for main path)
+            if (cachedAlternatives.size() < newCount + 1) {
                 alternativesNeedUpdate = true;
             }
         }
@@ -515,7 +513,7 @@ public class ShortestPathPlugin extends Plugin {
      * Calculate alternative paths by iteratively excluding teleports used in previous paths
      */
     public List<Pathfinder> getTeleportAlternatives() {
-        if (!showTeleportAlternatives || pathfinder == null || !pathfinder.isDone() || 
+        if (teleportAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
             pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
             return new ArrayList<>();
         }
@@ -534,8 +532,8 @@ public class ShortestPathPlugin extends Plugin {
         allPaths.add(pathfinder);
         excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
         
-        // Calculate additional alternatives
-        for (int i = 1; i < teleportAlternativesCount && i < 10; i++) { // Cap at 10 for safety
+        // Calculate additional alternatives (teleportAlternativesCount = number of alternatives)
+        for (int i = 1; i <= teleportAlternativesCount && i < 11; i++) { // Cap at 10 alternatives for safety
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransportIds);
             altPathfinder.run();
@@ -651,7 +649,6 @@ public class ShortestPathPlugin extends Plugin {
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
         showPathLength = config.showPathLength();
-        showTeleportAlternatives = config.showTeleportAlternatives();
         teleportAlternativesCount = config.teleportAlternativesCount();
     }
 

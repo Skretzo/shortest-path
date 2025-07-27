@@ -308,7 +308,7 @@ public class PathTileOverlay extends Overlay {
                     }
 
                     // If alternatives are enabled, show all paths in sorted order instead of just this transport
-                    if (plugin.showTeleportAlternatives && !hasShownAlternatives) {
+                    if (plugin.teleportAlternativesCount > 0 && !hasShownAlternatives) {
                         hasShownAlternatives = true;
                         List<Pathfinder> alternatives = plugin.getTeleportAlternatives();
                         
@@ -322,8 +322,9 @@ public class PathTileOverlay extends Overlay {
                             continue;
                         }
                         
-                        // Display alternatives up to the requested count (shortest first)
-                        int maxCount = Math.min(alternatives.size(), plugin.teleportAlternativesCount);
+                        // Display main path + alternatives up to the requested count (shortest first)
+                        // teleportAlternativesCount = number of alternatives, so total = alternatives + 1 (main path)
+                        int maxCount = Math.min(alternatives.size(), plugin.teleportAlternativesCount + 1);
                         for (int altIndex = 0; altIndex < maxCount; altIndex++) {
                             Pathfinder altPathfinder = alternatives.get(altIndex);
                             if (altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
