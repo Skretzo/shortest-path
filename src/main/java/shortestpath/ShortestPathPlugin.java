@@ -155,6 +155,7 @@ public class ShortestPathPlugin extends Plugin {
     private Pathfinder pathfinder;
     private List<Pathfinder> cachedAlternatives = new ArrayList<>();
     private boolean alternativesNeedUpdate = true;
+    private Future<?> alternativesFuture;
     @Getter
     private PathfinderConfig pathfinderConfig;
     @Getter
@@ -501,6 +502,7 @@ public class ShortestPathPlugin extends Plugin {
                 for (Transport transport : currentTransports) {
                     if (transport.getDestination() == next) {
                         transportIds.add(new TransportId(transport));
+                        break; // Only need one transport per tile pair
                     }
                 }
             }
@@ -523,17 +525,23 @@ public class ShortestPathPlugin extends Plugin {
             return cachedAlternatives;
         }
 
-        // Recalculate alternatives
-        cachedAlternatives.clear();
+        // Start background calculation if not already running
+        if (alternativesNeedUpdate && (alternativesFuture == null || alternativesFuture.isDone())) {
+            alternativesFuture = pathfindingExecutor.submit(this::calculateAlternatives);
+        }
+
+        // Return current cache (may be empty during calculation)
+        return new ArrayList<>(cachedAlternatives);
+    }
+
+    private void calculateAlternatives() {
         Set<TransportId> excludedTransportIds = new HashSet<>();
-        
-        // Collect all alternatives (including the main path)
         List<Pathfinder> allPaths = new ArrayList<>();
         allPaths.add(pathfinder);
         excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
         
         // Calculate additional alternatives (teleportAlternativesCount = number of alternatives)
-        for (int i = 1; i <= teleportAlternativesCount && i < 11; i++) { // Cap at 10 alternatives for safety
+        for (int i = 1; i <= teleportAlternativesCount && excludedTransportIds.size() < 1000; i++) { // Memory safety cap
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransportIds);
             altPathfinder.run();
@@ -548,10 +556,12 @@ public class ShortestPathPlugin extends Plugin {
         
         // Sort all paths by tile distance (shortest first)
         allPaths.sort((a, b) -> Integer.compare(a.getPath().size(), b.getPath().size()));
-        cachedAlternatives.addAll(allPaths);
         
-        alternativesNeedUpdate = false;
-        return cachedAlternatives;
+        synchronized (pathfinderMutex) {
+            cachedAlternatives.clear();
+            cachedAlternatives.addAll(allPaths);
+            alternativesNeedUpdate = false;
+        }
     }
 
     /**
@@ -708,6 +718,9 @@ public class ShortestPathPlugin extends Plugin {
                 pathfinder = null;
                 cachedAlternatives.clear();
                 alternativesNeedUpdate = true;
+                if (alternativesFuture != null) {
+                    alternativesFuture.cancel(true);
+                }
             }
 
             worldMapPointManager.removeIf(x -> x == marker);
