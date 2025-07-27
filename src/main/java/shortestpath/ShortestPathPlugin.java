@@ -154,7 +154,8 @@ public class ShortestPathPlugin extends Plugin {
     private static final Map<String, Object> configOverride = new HashMap<>(50);
     @Getter
     private Pathfinder pathfinder;
-    private List<Pathfinder> alternativePathfinders = new ArrayList<>();
+    private List<Pathfinder> cachedAlternatives = new ArrayList<>();
+    private boolean alternativesNeedUpdate = true;
     @Getter
     private PathfinderConfig pathfinderConfig;
     @Getter
@@ -220,6 +221,7 @@ public class ShortestPathPlugin extends Plugin {
                 } else {
                     pathfinder = new Pathfinder(pathfinderConfig, start, ends);
                     pathfinderFuture = pathfindingExecutor.submit(pathfinder);
+                    alternativesNeedUpdate = true;
                 }
             }
         });
@@ -506,11 +508,17 @@ public class ShortestPathPlugin extends Plugin {
             return new ArrayList<>();
         }
 
-        List<Pathfinder> alternatives = new ArrayList<>();
+        // Return cached alternatives if they're still valid
+        if (!alternativesNeedUpdate && !cachedAlternatives.isEmpty()) {
+            return cachedAlternatives;
+        }
+
+        // Recalculate alternatives
+        cachedAlternatives.clear();
         Set<TransportId> excludedTransportIds = new HashSet<>();
         
         // First path is the original best path
-        alternatives.add(pathfinder);
+        cachedAlternatives.add(pathfinder);
         excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
         
         // Calculate additional alternatives
@@ -520,14 +528,15 @@ public class ShortestPathPlugin extends Plugin {
             altPathfinder.run();
             
             if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                alternatives.add(altPathfinder);
+                cachedAlternatives.add(altPathfinder);
                 excludedTransportIds.addAll(extractTransportIds(altPathfinder.getPath()));
             } else {
                 break; // No more valid paths
             }
         }
         
-        return alternatives;
+        alternativesNeedUpdate = false;
+        return cachedAlternatives;
     }
 
     /**
@@ -683,6 +692,8 @@ public class ShortestPathPlugin extends Plugin {
                     pathfinder.cancel();
                 }
                 pathfinder = null;
+                cachedAlternatives.clear();
+                alternativesNeedUpdate = true;
             }
 
             worldMapPointManager.removeIf(x -> x == marker);
