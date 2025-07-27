@@ -93,6 +93,11 @@ public class Pathfinder implements Runnable {
         return path;
     }
 
+    public int getPathCost() {
+        Node lastNode = bestLastNode;
+        return lastNode != null ? lastNode.cost : Integer.MAX_VALUE;
+    }
+
     private void addNeighbors(Node node) {
         List<Node> nodes = map.getNeighbors(node, visited, config, excludedTransportIds);
         for (int i = 0; i < nodes.size(); ++i) {

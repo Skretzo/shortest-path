@@ -254,6 +254,16 @@ public class ShortestPathPlugin extends Plugin {
 
         cacheConfigValues();
 
+        // Invalidate alternatives cache only when we need to recalculate paths
+        if ("showTeleportAlternatives".equals(event.getKey())) {
+            alternativesNeedUpdate = true;
+        } else if ("teleportAlternativesCount".equals(event.getKey())) {
+            // Only invalidate if the new count is higher than what we have cached
+            if (cachedAlternatives.size() < teleportAlternativesCount) {
+                alternativesNeedUpdate = true;
+            }
+        }
+
         if ("drawDebugPanel".equals(event.getKey())) {
             if (config.drawDebugPanel()) {
                 overlayManager.add(debugOverlayPanel);
@@ -517,8 +527,9 @@ public class ShortestPathPlugin extends Plugin {
         cachedAlternatives.clear();
         Set<TransportId> excludedTransportIds = new HashSet<>();
         
-        // First path is the original best path
-        cachedAlternatives.add(pathfinder);
+        // Collect all alternatives (including the main path)
+        List<Pathfinder> allPaths = new ArrayList<>();
+        allPaths.add(pathfinder);
         excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
         
         // Calculate additional alternatives
@@ -528,12 +539,16 @@ public class ShortestPathPlugin extends Plugin {
             altPathfinder.run();
             
             if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                cachedAlternatives.add(altPathfinder);
+                allPaths.add(altPathfinder);
                 excludedTransportIds.addAll(extractTransportIds(altPathfinder.getPath()));
             } else {
                 break; // No more valid paths
             }
         }
+        
+        // Sort all paths by tile distance (shortest first)
+        allPaths.sort((a, b) -> Integer.compare(a.getPath().size(), b.getPath().size()));
+        cachedAlternatives.addAll(allPaths);
         
         alternativesNeedUpdate = false;
         return cachedAlternatives;

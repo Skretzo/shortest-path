@@ -343,7 +343,8 @@ public class PathTileOverlay extends Overlay {
                     if (plugin.showTeleportAlternatives && !hasShownAlternatives) {
                         hasShownAlternatives = true;
                         List<Pathfinder> alternatives = plugin.getTeleportAlternatives();
-                        for (int altIndex = 1; altIndex < alternatives.size(); altIndex++) {
+                        // Display alternatives in reverse order so shortest appears at top
+                        for (int altIndex = alternatives.size() - 1; altIndex >= 1; altIndex--) {
                             Pathfinder altPathfinder = alternatives.get(altIndex);
                             if (altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
                                 String altText = getAlternativeDisplayText(altPathfinder.getPath());
