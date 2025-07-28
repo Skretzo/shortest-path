@@ -58,7 +58,6 @@ import net.runelite.client.util.Text;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.TransportId;
 
 @PluginDescriptor(
     name = "Shortest Path",
@@ -478,10 +477,10 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getMap();
     }
 
-    private Set<TransportId> extractTransportIds(List<Integer> path) {
-        Set<TransportId> transportIds = new HashSet<>();
+    private Set<Transport> extractTransports(List<Integer> path) {
+        Set<Transport> transportSet = new HashSet<>();
         if (path == null || path.size() < 2) {
-            return transportIds;
+            return transportSet;
         }
 
         Map<Integer, Set<Transport>> transports = getTransports();
@@ -493,14 +492,14 @@ public class ShortestPathPlugin extends Plugin {
             if (currentTransports != null) {
                 for (Transport transport : currentTransports) {
                     if (transport.getDestination() == next) {
-                        transportIds.add(new TransportId(transport));
+                        transportSet.add(transport);
                         break;
                     }
                 }
             }
         }
         
-        return transportIds;
+        return transportSet;
     }
 
     public List<Pathfinder> getTeleportAlternatives() {
@@ -520,19 +519,19 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     private void calculateAlternatives() {
-        Set<TransportId> excludedTransportIds = new HashSet<>();
+        Set<Transport> excludedTransports = new HashSet<>();
         List<Pathfinder> allPaths = new ArrayList<>();
         allPaths.add(pathfinder);
-        excludedTransportIds.addAll(extractTransportIds(pathfinder.getPath()));
+        excludedTransports.addAll(extractTransports(pathfinder.getPath()));
         
-        for (int i = 1; i <= teleportAlternativesCount && excludedTransportIds.size() < 1000; i++) {
+        for (int i = 1; i <= teleportAlternativesCount && excludedTransports.size() < 1000; i++) {
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
-                                                      pathfinder.getTargets(), excludedTransportIds);
+                                                      pathfinder.getTargets(), excludedTransports);
             altPathfinder.run();
             
             if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
                 allPaths.add(altPathfinder);
-                excludedTransportIds.addAll(extractTransportIds(altPathfinder.getPath()));
+                excludedTransports.addAll(extractTransports(altPathfinder.getPath()));
             } else {
                 break;
             }

@@ -9,6 +9,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import lombok.Getter;
+import shortestpath.Transport;
 import shortestpath.WorldPointUtil;
 
 public class Pathfinder implements Runnable {
@@ -24,7 +25,7 @@ public class Pathfinder implements Runnable {
     private final PathfinderConfig config;
     private final CollisionMap map;
     private final boolean targetInWilderness;
-    private final Set<TransportId> excludedTransportIds;
+    private final Set<Transport> excludedTransports;
 
     // Capacities should be enough to store all nodes without requiring the queue to grow
     // They were found by checking the max queue size
@@ -50,13 +51,13 @@ public class Pathfinder implements Runnable {
         this(config, start, targets, new HashSet<>());
     }
 
-    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Set<TransportId> excludedTransportIds) {
+    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Set<Transport> excludedTransports) {
         stats = new PathfinderStats();
         this.config = config;
         this.map = config.getMap();
         this.start = start;
         this.targets = targets;
-        this.excludedTransportIds = excludedTransportIds != null ? excludedTransportIds : new HashSet<>();
+        this.excludedTransports = excludedTransports != null ? excludedTransports : new HashSet<>();
         visited = new VisitedTiles(map);
         targetInWilderness = PathfinderConfig.isInWilderness(targets);
         wildernessLevel = 31;
@@ -99,7 +100,7 @@ public class Pathfinder implements Runnable {
     }
 
     private void addNeighbors(Node node) {
-        List<Node> nodes = map.getNeighbors(node, visited, config, excludedTransportIds);
+        List<Node> nodes = map.getNeighbors(node, visited, config, excludedTransports);
         for (int i = 0; i < nodes.size(); ++i) {
             Node neighbor = nodes.get(i);
 

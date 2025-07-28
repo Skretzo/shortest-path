@@ -77,7 +77,7 @@ public class CollisionMap {
         return getNeighbors(node, visited, config, null);
     }
 
-    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, Set<TransportId> excludedTransportIds) {
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, Set<Transport> excludedTransports) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
@@ -93,7 +93,7 @@ public class CollisionMap {
             if (visited.get(transport.getDestination())) continue;
             
             // Skip excluded transports for alternative path calculation
-            if (excludedTransportIds != null && excludedTransportIds.contains(new TransportId(transport))) {
+            if (excludedTransports != null && excludedTransports.contains(transport)) {
                 continue;
             }
             
