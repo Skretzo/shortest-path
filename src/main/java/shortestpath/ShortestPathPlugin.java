@@ -269,7 +269,7 @@ public class ShortestPathPlugin extends Plugin {
             }
             return;
         }
-
+        // Transport option changed; rerun pathfinding
         if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find()) {
             if (pathfinder != null) {
                 restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
