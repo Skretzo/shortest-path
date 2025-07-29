@@ -155,6 +155,13 @@ public class ShortestPathPlugin extends Plugin {
     private Pathfinder pathfinder;
     @Getter
     private PathfinderConfig pathfinderConfig;
+    
+    // Simple cache to avoid recalculating every frame
+    private List<List<Integer>> lastAlternatives = new ArrayList<>();
+    private Pathfinder lastAlternativePathfinder = null;
+    private Set<Integer> lastAlternativeTargets = null;
+    private int lastAlternativeCount = -1;
+    
     @Getter
     private boolean startPointSet = false;
 
@@ -474,6 +481,14 @@ public class ShortestPathPlugin extends Plugin {
             pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
             return new ArrayList<>();
         }
+        
+        // Use cached results if pathfinder, targets, and count haven't changed
+        if (pathfinder == lastAlternativePathfinder && 
+            pathfinder.getTargets().equals(lastAlternativeTargets) && 
+            teleportAlternativesCount == lastAlternativeCount &&
+            !lastAlternatives.isEmpty()) {
+            return lastAlternatives;
+        }
 
         // Generate alternatives using separate pathfinder instances
         List<List<Integer>> alternatives = new ArrayList<>();
@@ -481,17 +496,22 @@ public class ShortestPathPlugin extends Plugin {
         
         // Add main path as first alternative
         alternatives.add(pathfinder.getPath());
-        excludedTransports.addAll(extractTransportsFromPath(pathfinder.getPath()));
+        
+        // Exclude ALL transports used in main path to find genuine alternatives
+        Set<Transport> mainPathTransports = extractTransportsFromPath(pathfinder.getPath());
+        excludedTransports.addAll(mainPathTransports);
         
         // Generate additional alternatives by excluding transports from previous paths
         for (int i = 1; i <= teleportAlternativesCount && excludedTransports.size() < 1000; i++) {
+            
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransports);
             altPathfinder.run();
             
             if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
                 alternatives.add(altPathfinder.getPath());
-                excludedTransports.addAll(extractTransportsFromPath(altPathfinder.getPath()));
+                Set<Transport> altTransports = extractTransportsFromPath(altPathfinder.getPath());
+                excludedTransports.addAll(altTransports);
             } else {
                 break; // No more alternatives found
             }
@@ -499,6 +519,12 @@ public class ShortestPathPlugin extends Plugin {
         
         // Sort by path length (shortest first)
         alternatives.sort((a, b) -> Integer.compare(a.size(), b.size()));
+        
+        // Cache results
+        lastAlternatives = alternatives;
+        lastAlternativePathfinder = pathfinder;
+        lastAlternativeTargets = new HashSet<>(pathfinder.getTargets());
+        lastAlternativeCount = teleportAlternativesCount;
         
         return alternatives;
     }
@@ -509,17 +535,18 @@ public class ShortestPathPlugin extends Plugin {
             return transportSet;
         }
 
-        Map<Integer, Set<Transport>> transports = getTransports();
+        PrimitiveIntHashMap<Set<Transport>> transports = pathfinderConfig.getTransportsPacked();
         for (int i = 0; i < path.size() - 1; i++) {
             int current = path.get(i);
             int next = path.get(i + 1);
             
             Set<Transport> currentTransports = transports.get(current);
             if (currentTransports != null) {
+                // Extract ALL transports that go to this destination (not just the first one)
                 for (Transport transport : currentTransports) {
                     if (transport.getDestination() == next) {
                         transportSet.add(transport);
-                        break;
+                        // Don't break - we want ALL transports to this destination
                     }
                 }
             }
@@ -679,6 +706,10 @@ public class ShortestPathPlugin extends Plugin {
                     pathfinder.cancel();
                 }
                 pathfinder = null;
+                lastAlternatives.clear();
+                lastAlternativePathfinder = null;
+                lastAlternativeTargets = null;
+                lastAlternativeCount = -1;
             }
 
             worldMapPointManager.removeIf(x -> x == marker);
