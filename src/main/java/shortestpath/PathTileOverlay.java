@@ -11,6 +11,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -298,31 +299,26 @@ public class PathTileOverlay extends Overlay {
                     continue;
                 }
 
+                Point canvasPoint = getCanvasPoint(point);
+                if (canvasPoint == null) continue;
                 int vertical_offset = 0;
-                boolean hasShownAlternatives = false;
-                boolean showAlternativesAfterTransports = false;
+                boolean hasTransports = false;
+                
                 for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                     if (pointEnd == WorldPointUtil.UNDEFINED || pointEnd != transport.getDestination()) {
                         continue;
-                    }
-
-                    if (plugin.getPathAlternativesCount() > 0 && !hasShownAlternatives) {
-                        hasShownAlternatives = true;
-                        showAlternativesAfterTransports = true;
                     }
                     
                     String text = getTransportText(transport);
                     if (text == null) continue;
 
-                    Point p = getCanvasPoint(point);
-                    if (p == null) continue;
-
-                    Color textColor = showAlternativesAfterTransports ? plugin.colourBestPath : plugin.colourText;
-                    vertical_offset += drawText(graphics, text, p, vertical_offset, textColor);
+                    hasTransports = true;
+                    Color textColor = plugin.getPathAlternativesCount() > 0 ? plugin.colourBestPath : plugin.colourText;
+                    vertical_offset += drawText(graphics, text, canvasPoint, vertical_offset, textColor);
                 }
                 
-                if (showAlternativesAfterTransports) {
-                    vertical_offset += drawAlternatives(graphics, point, vertical_offset);
+                if (hasTransports && plugin.getPathAlternativesCount() > 0) {
+                    vertical_offset += drawAlternatives(graphics, canvasPoint, vertical_offset);
                 }
             }
         }
@@ -357,7 +353,7 @@ public class PathTileOverlay extends Overlay {
         return height + TRANSPORT_LABEL_GAP;
     }
     
-    private int drawAlternatives(Graphics2D graphics, int point, int verticalOffset) {
+    private int drawAlternatives(Graphics2D graphics, Point canvasPoint, int verticalOffset) {
         List<List<Integer>> alternatives = plugin.getPathAlternatives();
         int mainPathSize = plugin.getPathfinder().getPath().size();
         int alternativesShown = 0;
@@ -368,11 +364,8 @@ public class PathTileOverlay extends Overlay {
             if (altPath != null && !altPath.isEmpty() && altPath.size() != mainPathSize) {
                 String altText = getAlternativeDisplayText(altPath);
                 if (altText != null) {
-                    Point p = getCanvasPoint(point);
-                    if (p != null) {
-                        totalOffset += drawText(graphics, altText, p, verticalOffset + totalOffset, plugin.colourText);
-                        alternativesShown++;
-                    }
+                    totalOffset += drawText(graphics, altText, canvasPoint, verticalOffset + totalOffset, plugin.colourText);
+                    alternativesShown++;
                 }
             }
         }
@@ -387,10 +380,11 @@ public class PathTileOverlay extends Overlay {
         if (path == null || path.size() < 2) return null;
         
         for (int i = 0; i < path.size() - 1; i++) {
-            for (Transport transport : plugin.getTransports().getOrDefault(path.get(i), new HashSet<>())) {
-                if (transport.getDestination() == path.get(i + 1) && transport.getDisplayInfo() != null) {
+            Set<Transport> transports = plugin.getTransports().getOrDefault(path.get(i), new HashSet<>());
+            for (Transport transport : transports) {
+                if (transport.getDestination() == path.get(i + 1)) {
                     String text = transport.getDisplayInfo();
-                    return plugin.showPathLength ? addTileLength(text, path) : text;
+                    return text != null ? (plugin.showPathLength ? addTileLength(text, path) : text) : null;
                 }
             }
         }

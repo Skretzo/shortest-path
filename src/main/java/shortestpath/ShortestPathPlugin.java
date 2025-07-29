@@ -536,19 +536,19 @@ public class ShortestPathPlugin extends Plugin {
         Set<Transport> excludedTransports = extractTransportsFromPath(pathfinder.getPath());
         alternatives.add(new ArrayList<>(pathfinder.getPath()));
         
-        for (int i = 1; i <= pathAlternativesCount && excludedTransports.size() < 1000; i++) {
+        for (int i = 1; i <= pathAlternativesCount; i++) {
             if (Thread.currentThread().isInterrupted()) return;
             
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransports);
             altPathfinder.run();
             
-            if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                alternatives.add(new ArrayList<>(altPathfinder.getPath()));
-                excludedTransports.addAll(extractTransportsFromPath(altPathfinder.getPath()));
-            } else {
+            if (!altPathfinder.isDone() || altPathfinder.getPath() == null || altPathfinder.getPath().isEmpty()) {
                 break;
             }
+            
+            alternatives.add(new ArrayList<>(altPathfinder.getPath()));
+            excludedTransports.addAll(extractTransportsFromPath(altPathfinder.getPath()));
         }
         
         alternatives.sort((a, b) -> Integer.compare(a.size(), b.size()));
@@ -563,34 +563,22 @@ public class ShortestPathPlugin extends Plugin {
     
     private Set<Transport> extractTransportsFromPath(List<Integer> path) {
         Set<Transport> transportSet = new HashSet<>();
-        if (path == null || path.size() < 2) {
-            return transportSet;
-        }
+        if (path == null || path.size() < 2) return transportSet;
 
         PrimitiveIntHashMap<Set<Transport>> transports = pathfinderConfig.getTransportsPacked();
         for (int i = 0; i < path.size() - 1; i++) {
-            int current = path.get(i);
-            int next = path.get(i + 1);
-            
-            Set<Transport> currentTransports = transports.get(current);
+            Set<Transport> currentTransports = transports.get(path.get(i));
             if (currentTransports != null) {
-                // Extract ALL transports that go to this destination (not just the first one)
-                for (Transport transport : currentTransports) {
-                    if (transport.getDestination() == next) {
-                        transportSet.add(transport);
-                        // Don't break - we want ALL transports to this destination
-                    }
-                }
+                int nextPoint = path.get(i + 1);
+                currentTransports.stream()
+                    .filter(transport -> transport.getDestination() == nextPoint)
+                    .forEach(transportSet::add);
             }
         }
-        
         return transportSet;
     }
 
 
-    public static int getPathTileLength(List<Integer> path) {
-        return path != null ? path.size() : 0;
-    }
 
     public static boolean override(String configOverrideKey, boolean defaultValue) {
         if (!configOverride.isEmpty()) {
