@@ -301,77 +301,17 @@ public class PathTileOverlay extends Overlay {
 
                 int vertical_offset = 0;
                 boolean hasShownAlternatives = false;
+                boolean showAlternativesAfterTransports = false;
                 for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                     if (pointEnd == WorldPointUtil.UNDEFINED || pointEnd != transport.getDestination()) {
                         continue;
                     }
 
+                    // Let normal transport display handle equivalent teleports
+                    // Only show alternatives after all equivalent transports are processed
                     if (plugin.teleportAlternativesCount > 0 && !hasShownAlternatives) {
                         hasShownAlternatives = true;
-                        
-                        LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
-                        if (lp == null) {
-                            continue;
-                        }
-
-                        Point p = Perspective.localToCanvas(client, lp, client.getPlane());
-                        if (p == null) {
-                            continue;
-                        }
-                        
-                        // First, show all equivalent teleports (same destination as current transport)
-                        int mainPathLength = plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null ? 
-                                           ShortestPathPlugin.getPathTileLength(plugin.getPathfinder().getPath()) : 0;
-                        
-                        for (Transport equivTransport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
-                            if (equivTransport.getDestination() == pointEnd) {
-                                String equivText = equivTransport.getDisplayInfo();
-                                if (equivText != null && !equivText.isEmpty()) {
-                                    if (plugin.showPathLength) {
-                                        equivText += " (" + mainPathLength + " tiles)";
-                                    }
-                                    
-                                    Rectangle2D equivTextBounds = graphics.getFontMetrics().getStringBounds(equivText, graphics);
-                                    double equivHeight = equivTextBounds.getHeight();
-                                    int equivX = (int) (p.getX() - equivTextBounds.getWidth() / 2);
-                                    int equivY = (int) (p.getY() - equivHeight) - vertical_offset;
-                                    
-                                    graphics.setColor(Color.BLACK);
-                                    graphics.drawString(equivText, equivX + 1, equivY + 1);
-                                    graphics.setColor(plugin.colourBestPath);
-                                    graphics.drawString(equivText, equivX, equivY);
-                                    
-                                    vertical_offset += (int) equivHeight + TRANSPORT_LABEL_GAP;
-                                }
-                            }
-                        }
-                        
-                        // Then show alternatives with different paths
-                        List<List<Integer>> alternatives = plugin.getTeleportAlternatives();
-                        int mainPathSize = plugin.getPathfinder().getPath().size();
-                        
-                        int alternativesShown = 0;
-                        for (int altIndex = 1; altIndex < alternatives.size() && alternativesShown < plugin.teleportAlternativesCount; altIndex++) {
-                            List<Integer> altPath = alternatives.get(altIndex);
-                            if (altPath != null && !altPath.isEmpty() && altPath.size() != mainPathSize) {
-                                String altText = getAlternativeDisplayText(altPath);
-                                if (altText != null && !altText.isEmpty()) {
-                                    Rectangle2D altTextBounds = graphics.getFontMetrics().getStringBounds(altText, graphics);
-                                    double altHeight = altTextBounds.getHeight();
-                                    int altX = (int) (p.getX() - altTextBounds.getWidth() / 2);
-                                    int altY = (int) (p.getY() - altHeight) - vertical_offset;
-                                    
-                                    graphics.setColor(Color.BLACK);
-                                    graphics.drawString(altText, altX + 1, altY + 1);
-                                    graphics.setColor(plugin.colourText);
-                                    graphics.drawString(altText, altX, altY);
-                                    
-                                    vertical_offset += (int) altHeight + TRANSPORT_LABEL_GAP;
-                                    alternativesShown++;
-                                }
-                            }
-                        }
-                        break;
+                        showAlternativesAfterTransports = true;
                     }
                     
                     String text = transport.getDisplayInfo();
@@ -400,10 +340,46 @@ public class PathTileOverlay extends Overlay {
                     int y = (int) (p.getY() - height) - (vertical_offset);
                     graphics.setColor(Color.BLACK);
                     graphics.drawString(text, x + 1, y + 1);
-                    graphics.setColor(plugin.colourText);
+                    // Use best path color for equivalent teleports when alternatives are enabled
+                    Color textColor = showAlternativesAfterTransports ? plugin.colourBestPath : plugin.colourText;
+                    graphics.setColor(textColor);
                     graphics.drawString(text, x, y);
 
                     vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
+                }
+                
+                // Show alternatives after all equivalent teleports have been displayed
+                if (showAlternativesAfterTransports) {
+                    List<List<Integer>> alternatives = plugin.getTeleportAlternatives();
+                    int mainPathSize = plugin.getPathfinder().getPath().size();
+                    int alternativesShown = 0;
+                    
+                    for (int altIndex = 1; altIndex < alternatives.size() && alternativesShown < plugin.teleportAlternativesCount; altIndex++) {
+                        List<Integer> altPath = alternatives.get(altIndex);
+                        if (altPath != null && !altPath.isEmpty() && altPath.size() != mainPathSize) {
+                            String altText = getAlternativeDisplayText(altPath);
+                            if (altText != null && !altText.isEmpty()) {
+                                LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
+                                if (lp != null) {
+                                    Point p = Perspective.localToCanvas(client, lp, client.getPlane());
+                                    if (p != null) {
+                                        Rectangle2D altTextBounds = graphics.getFontMetrics().getStringBounds(altText, graphics);
+                                        double altHeight = altTextBounds.getHeight();
+                                        int altX = (int) (p.getX() - altTextBounds.getWidth() / 2);
+                                        int altY = (int) (p.getY() - altHeight) - vertical_offset;
+                                        
+                                        graphics.setColor(Color.BLACK);
+                                        graphics.drawString(altText, altX + 1, altY + 1);
+                                        graphics.setColor(plugin.colourText);
+                                        graphics.drawString(altText, altX, altY);
+                                        
+                                        vertical_offset += (int) altHeight + TRANSPORT_LABEL_GAP;
+                                        alternativesShown++;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
