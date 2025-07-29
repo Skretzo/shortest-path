@@ -308,7 +308,6 @@ public class PathTileOverlay extends Overlay {
 
                     if (plugin.teleportAlternativesCount > 0 && !hasShownAlternatives) {
                         hasShownAlternatives = true;
-                        List<List<Integer>> alternatives = plugin.getTeleportAlternatives();
                         
                         LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
                         if (lp == null) {
@@ -320,11 +319,41 @@ public class PathTileOverlay extends Overlay {
                             continue;
                         }
                         
-                        // Display main path + alternatives up to the requested count (shortest first)
-                        int maxCount = Math.min(alternatives.size(), plugin.teleportAlternativesCount + 1);
-                        for (int altIndex = 0; altIndex < maxCount; altIndex++) {
+                        // First, show all equivalent teleports (same destination as current transport)
+                        int mainPathLength = plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null ? 
+                                           ShortestPathPlugin.getPathTileLength(plugin.getPathfinder().getPath()) : 0;
+                        
+                        for (Transport equivTransport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
+                            if (equivTransport.getDestination() == pointEnd) {
+                                String equivText = equivTransport.getDisplayInfo();
+                                if (equivText != null && !equivText.isEmpty()) {
+                                    if (plugin.showPathLength) {
+                                        equivText += " (" + mainPathLength + " tiles)";
+                                    }
+                                    
+                                    Rectangle2D equivTextBounds = graphics.getFontMetrics().getStringBounds(equivText, graphics);
+                                    double equivHeight = equivTextBounds.getHeight();
+                                    int equivX = (int) (p.getX() - equivTextBounds.getWidth() / 2);
+                                    int equivY = (int) (p.getY() - equivHeight) - vertical_offset;
+                                    
+                                    graphics.setColor(Color.BLACK);
+                                    graphics.drawString(equivText, equivX + 1, equivY + 1);
+                                    graphics.setColor(plugin.colourBestPath);
+                                    graphics.drawString(equivText, equivX, equivY);
+                                    
+                                    vertical_offset += (int) equivHeight + TRANSPORT_LABEL_GAP;
+                                }
+                            }
+                        }
+                        
+                        // Then show alternatives with different paths
+                        List<List<Integer>> alternatives = plugin.getTeleportAlternatives();
+                        int mainPathSize = plugin.getPathfinder().getPath().size();
+                        
+                        int alternativesShown = 0;
+                        for (int altIndex = 1; altIndex < alternatives.size() && alternativesShown < plugin.teleportAlternativesCount; altIndex++) {
                             List<Integer> altPath = alternatives.get(altIndex);
-                            if (altPath != null && !altPath.isEmpty()) {
+                            if (altPath != null && !altPath.isEmpty() && altPath.size() != mainPathSize) {
                                 String altText = getAlternativeDisplayText(altPath);
                                 if (altText != null && !altText.isEmpty()) {
                                     Rectangle2D altTextBounds = graphics.getFontMetrics().getStringBounds(altText, graphics);
@@ -334,15 +363,15 @@ public class PathTileOverlay extends Overlay {
                                     
                                     graphics.setColor(Color.BLACK);
                                     graphics.drawString(altText, altX + 1, altY + 1);
-                                    Color textColor = (altIndex == 0 && alternatives.size() > 1) ? plugin.colourBestPath : plugin.colourText;
-                                    graphics.setColor(textColor);
+                                    graphics.setColor(plugin.colourText);
                                     graphics.drawString(altText, altX, altY);
                                     
                                     vertical_offset += (int) altHeight + TRANSPORT_LABEL_GAP;
+                                    alternativesShown++;
                                 }
                             }
                         }
-                        continue;
+                        break;
                     }
                     
                     String text = transport.getDisplayInfo();
