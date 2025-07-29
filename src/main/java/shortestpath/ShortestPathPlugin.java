@@ -258,7 +258,6 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
 
-
         cacheConfigValues();
 
         if ("drawDebugPanel".equals(event.getKey())) {

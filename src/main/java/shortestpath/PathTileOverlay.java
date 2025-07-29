@@ -384,7 +384,9 @@ public class PathTileOverlay extends Overlay {
             for (Transport transport : transports) {
                 if (transport.getDestination() == path.get(i + 1)) {
                     String text = transport.getDisplayInfo();
-                    return text != null ? (plugin.showPathLength ? addTileLength(text, path) : text) : null;
+                    if (text == null) return null;
+                    if (plugin.showPathLength) return addTileLength(text, path);
+                    return text;
                 }
             }
         }
