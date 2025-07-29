@@ -103,6 +103,7 @@ public class PathfinderConfig {
     private Map<String, Set<Integer>> destinations;
 
     private final Client client;
+    @Getter
     private final ShortestPathConfig config;
 
     @Getter

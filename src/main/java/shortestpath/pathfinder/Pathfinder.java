@@ -37,6 +37,7 @@ public class Pathfinder implements Runnable {
     private List<Integer> path = (List<Integer>)Collections.EMPTY_LIST;
     private boolean pathNeedsUpdate = false;
     private Node bestLastNode;
+    
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
@@ -98,6 +99,7 @@ public class Pathfinder implements Runnable {
         Node lastNode = bestLastNode;
         return lastNode != null ? lastNode.cost : Integer.MAX_VALUE;
     }
+
 
     private void addNeighbors(Node node) {
         List<Node> nodes = map.getNeighbors(node, visited, config, excludedTransports);

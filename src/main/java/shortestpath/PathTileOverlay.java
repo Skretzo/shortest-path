@@ -21,7 +21,6 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.Pathfinder;
 
 public class PathTileOverlay extends Overlay {
     private final Client client;
@@ -309,7 +308,7 @@ public class PathTileOverlay extends Overlay {
 
                     if (plugin.teleportAlternativesCount > 0 && !hasShownAlternatives) {
                         hasShownAlternatives = true;
-                        List<Pathfinder> alternatives = plugin.getTeleportAlternatives();
+                        List<List<Integer>> alternatives = plugin.getTeleportAlternatives();
                         
                         LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
                         if (lp == null) {
@@ -324,9 +323,9 @@ public class PathTileOverlay extends Overlay {
                         // Display main path + alternatives up to the requested count (shortest first)
                         int maxCount = Math.min(alternatives.size(), plugin.teleportAlternativesCount + 1);
                         for (int altIndex = 0; altIndex < maxCount; altIndex++) {
-                            Pathfinder altPathfinder = alternatives.get(altIndex);
-                            if (altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                                String altText = getAlternativeDisplayText(altPathfinder.getPath());
+                            List<Integer> altPath = alternatives.get(altIndex);
+                            if (altPath != null && !altPath.isEmpty()) {
+                                String altText = getAlternativeDisplayText(altPath);
                                 if (altText != null && !altText.isEmpty()) {
                                     Rectangle2D altTextBounds = graphics.getFontMetrics().getStringBounds(altText, graphics);
                                     double altHeight = altTextBounds.getHeight();

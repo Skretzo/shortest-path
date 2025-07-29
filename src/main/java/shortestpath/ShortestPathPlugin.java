@@ -153,9 +153,6 @@ public class ShortestPathPlugin extends Plugin {
     private static final Map<String, Object> configOverride = new HashMap<>(50);
     @Getter
     private Pathfinder pathfinder;
-    private List<Pathfinder> cachedAlternatives = new ArrayList<>();
-    private boolean alternativesNeedUpdate = true;
-    private Future<?> alternativesFuture;
     @Getter
     private PathfinderConfig pathfinderConfig;
     @Getter
@@ -221,7 +218,6 @@ public class ShortestPathPlugin extends Plugin {
                 } else {
                     pathfinder = new Pathfinder(pathfinderConfig, start, ends);
                     pathfinderFuture = pathfindingExecutor.submit(pathfinder);
-                    alternativesNeedUpdate = true;
                 }
             }
         });
@@ -252,12 +248,6 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
 
-        if ("teleportAlternativesCount".equals(event.getKey())) {
-            int newCount = config.teleportAlternativesCount();
-            if (cachedAlternatives.size() < newCount + 1) {
-                alternativesNeedUpdate = true;
-            }
-        }
 
         cacheConfigValues();
 
@@ -478,7 +468,42 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getMap();
     }
 
-    private Set<Transport> extractTransports(List<Integer> path) {
+
+    public List<List<Integer>> getTeleportAlternatives() {
+        if (teleportAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
+            pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Generate alternatives using separate pathfinder instances
+        List<List<Integer>> alternatives = new ArrayList<>();
+        Set<Transport> excludedTransports = new HashSet<>();
+        
+        // Add main path as first alternative
+        alternatives.add(pathfinder.getPath());
+        excludedTransports.addAll(extractTransportsFromPath(pathfinder.getPath()));
+        
+        // Generate additional alternatives by excluding transports from previous paths
+        for (int i = 1; i <= teleportAlternativesCount && excludedTransports.size() < 1000; i++) {
+            Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
+                                                      pathfinder.getTargets(), excludedTransports);
+            altPathfinder.run();
+            
+            if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
+                alternatives.add(altPathfinder.getPath());
+                excludedTransports.addAll(extractTransportsFromPath(altPathfinder.getPath()));
+            } else {
+                break; // No more alternatives found
+            }
+        }
+        
+        // Sort by path length (shortest first)
+        alternatives.sort((a, b) -> Integer.compare(a.size(), b.size()));
+        
+        return alternatives;
+    }
+    
+    private Set<Transport> extractTransportsFromPath(List<Integer> path) {
         Set<Transport> transportSet = new HashSet<>();
         if (path == null || path.size() < 2) {
             return transportSet;
@@ -503,49 +528,6 @@ public class ShortestPathPlugin extends Plugin {
         return transportSet;
     }
 
-    public List<Pathfinder> getTeleportAlternatives() {
-        if (teleportAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
-            pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        if (!alternativesNeedUpdate && !cachedAlternatives.isEmpty()) {
-            return cachedAlternatives;
-        }
-
-        if (alternativesNeedUpdate && (alternativesFuture == null || alternativesFuture.isDone())) {
-            alternativesFuture = pathfindingExecutor.submit(this::calculateAlternatives);
-        }
-        return new ArrayList<>(cachedAlternatives);
-    }
-
-    private void calculateAlternatives() {
-        Set<Transport> excludedTransports = new HashSet<>();
-        List<Pathfinder> allPaths = new ArrayList<>();
-        allPaths.add(pathfinder);
-        excludedTransports.addAll(extractTransports(pathfinder.getPath()));
-        
-        for (int i = 1; i <= teleportAlternativesCount && excludedTransports.size() < 1000; i++) {
-            Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
-                                                      pathfinder.getTargets(), excludedTransports);
-            altPathfinder.run();
-            
-            if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                allPaths.add(altPathfinder);
-                excludedTransports.addAll(extractTransports(altPathfinder.getPath()));
-            } else {
-                break;
-            }
-        }
-        
-        allPaths.sort((a, b) -> Integer.compare(a.getPath().size(), b.getPath().size()));
-        
-        synchronized (pathfinderMutex) {
-            cachedAlternatives.clear();
-            cachedAlternatives.addAll(allPaths);
-            alternativesNeedUpdate = false;
-        }
-    }
 
     public static int getPathTileLength(List<Integer> path) {
         return path != null ? path.size() : 0;
@@ -697,11 +679,6 @@ public class ShortestPathPlugin extends Plugin {
                     pathfinder.cancel();
                 }
                 pathfinder = null;
-                cachedAlternatives.clear();
-                alternativesNeedUpdate = true;
-                if (alternativesFuture != null) {
-                    alternativesFuture.cancel(true);
-                }
             }
 
             worldMapPointManager.removeIf(x -> x == marker);
