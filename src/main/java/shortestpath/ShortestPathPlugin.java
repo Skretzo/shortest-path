@@ -127,11 +127,12 @@ public class ShortestPathPlugin extends Plugin {
     Color colourPathCalculating;
     Color colourText;
     Color colourTransports;
+    Color colourBestPath;
     int tileCounterStep;
     TileCounter showTileCounter;
     TileStyle pathStyle;
     boolean showPathLength;
-    int teleportAlternativesCount;
+    int pathAlternativesCount;
 
     private Point lastMenuOpenedPoint;
     private WorldMapPoint marker;
@@ -148,15 +149,22 @@ public class ShortestPathPlugin extends Plugin {
 
     private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
     private Future<?> pathfinderFuture;
+    private Future<?> alternativesFuture;
     private final Object pathfinderMutex = new Object();
+    private final Object alternativesMutex = new Object();
     private static final Map<String, Object> configOverride = new HashMap<>(50);
     @Getter
     private Pathfinder pathfinder;
-    private List<Pathfinder> cachedAlternatives = new ArrayList<>();
-    private boolean alternativesNeedUpdate = true;
-    private Future<?> alternativesFuture;
     @Getter
     private PathfinderConfig pathfinderConfig;
+    
+    // Simple cache to avoid recalculating every frame
+    private List<List<Integer>> lastAlternatives = new ArrayList<>();
+    private Pathfinder lastAlternativePathfinder = null;
+    private Set<Integer> lastAlternativeTargets = null;
+    private int lastAlternativeCount = -1;
+    private volatile boolean alternativesComputing = false;
+    
     @Getter
     private boolean startPointSet = false;
 
@@ -220,7 +228,6 @@ public class ShortestPathPlugin extends Plugin {
                 } else {
                     pathfinder = new Pathfinder(pathfinderConfig, start, ends);
                     pathfinderFuture = pathfindingExecutor.submit(pathfinder);
-                    alternativesNeedUpdate = true;
                 }
             }
         });
@@ -249,13 +256,6 @@ public class ShortestPathPlugin extends Plugin {
     public void onConfigChanged(ConfigChanged event) {
         if (!CONFIG_GROUP.equals(event.getGroup())) {
             return;
-        }
-
-        if ("teleportAlternativesCount".equals(event.getKey())) {
-            int newCount = config.teleportAlternativesCount();
-            if (cachedAlternatives.size() < newCount + 1) {
-                alternativesNeedUpdate = true;
-            }
         }
 
         cacheConfigValues();
@@ -477,78 +477,107 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getMap();
     }
 
-    private Set<Transport> extractTransports(List<Integer> path) {
-        Set<Transport> transportSet = new HashSet<>();
-        if (path == null || path.size() < 2) {
-            return transportSet;
-        }
-
-        Map<Integer, Set<Transport>> transports = getTransports();
-        for (int i = 0; i < path.size() - 1; i++) {
-            int current = path.get(i);
-            int next = path.get(i + 1);
-            
-            Set<Transport> currentTransports = transports.get(current);
-            if (currentTransports != null) {
-                for (Transport transport : currentTransports) {
-                    if (transport.getDestination() == next) {
-                        transportSet.add(transport);
-                        break;
-                    }
-                }
-            }
-        }
-        
-        return transportSet;
+    public int getPathAlternativesCount() {
+        return pathAlternativesCount;
     }
 
-    public List<Pathfinder> getTeleportAlternatives() {
-        if (teleportAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
+    public List<List<Integer>> getPathAlternatives() {
+        if (pathAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
             pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
             return new ArrayList<>();
         }
-
-        if (!alternativesNeedUpdate && !cachedAlternatives.isEmpty()) {
-            return cachedAlternatives;
-        }
-
-        if (alternativesNeedUpdate && (alternativesFuture == null || alternativesFuture.isDone())) {
-            alternativesFuture = pathfindingExecutor.submit(this::calculateAlternatives);
-        }
-        return new ArrayList<>(cachedAlternatives);
-    }
-
-    private void calculateAlternatives() {
-        Set<Transport> excludedTransports = new HashSet<>();
-        List<Pathfinder> allPaths = new ArrayList<>();
-        allPaths.add(pathfinder);
-        excludedTransports.addAll(extractTransports(pathfinder.getPath()));
         
-        for (int i = 1; i <= teleportAlternativesCount && excludedTransports.size() < 1000; i++) {
+        synchronized (alternativesMutex) {
+            if (isCacheValid()) {
+                return new ArrayList<>(lastAlternatives);
+            }
+        }
+        
+        if (!alternativesComputing) {
+            startAlternativesComputation();
+        }
+        
+        synchronized (alternativesMutex) {
+            return new ArrayList<>(lastAlternatives);
+        }
+    }
+    
+    private boolean isCacheValid() {
+        return pathfinder == lastAlternativePathfinder && 
+               pathfinder.getTargets().equals(lastAlternativeTargets) && 
+               pathAlternativesCount == lastAlternativeCount &&
+               !lastAlternatives.isEmpty();
+    }
+    
+    private void startAlternativesComputation() {
+        synchronized (alternativesMutex) {
+            if (alternativesComputing) return;
+            alternativesComputing = true;
+            
+            if (alternativesFuture != null && !alternativesFuture.isDone()) {
+                alternativesFuture.cancel(true);
+            }
+        }
+        
+        alternativesFuture = pathfindingExecutor.submit(() -> {
+            try {
+                computePathAlternatives();
+            } finally {
+                alternativesComputing = false;
+            }
+        });
+    }
+    
+    private void computePathAlternatives() {
+        if (pathfinder == null || !pathfinder.isDone() || pathfinder.getPath() == null) return;
+        
+        List<List<Integer>> alternatives = new ArrayList<>();
+        Set<Transport> excludedTransports = extractTransportsFromPath(pathfinder.getPath());
+        alternatives.add(new ArrayList<>(pathfinder.getPath()));
+        
+        for (int i = 1; i <= pathAlternativesCount; i++) {
+            if (Thread.currentThread().isInterrupted()) return;
+            
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransports);
             altPathfinder.run();
             
-            if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                allPaths.add(altPathfinder);
-                excludedTransports.addAll(extractTransports(altPathfinder.getPath()));
-            } else {
+            if (!altPathfinder.isDone() || altPathfinder.getPath() == null || altPathfinder.getPath().isEmpty()) {
                 break;
             }
+            
+            alternatives.add(new ArrayList<>(altPathfinder.getPath()));
+            excludedTransports.addAll(extractTransportsFromPath(altPathfinder.getPath()));
         }
         
-        allPaths.sort((a, b) -> Integer.compare(a.getPath().size(), b.getPath().size()));
+        alternatives.sort((a, b) -> Integer.compare(a.size(), b.size()));
         
-        synchronized (pathfinderMutex) {
-            cachedAlternatives.clear();
-            cachedAlternatives.addAll(allPaths);
-            alternativesNeedUpdate = false;
+        synchronized (alternativesMutex) {
+            lastAlternatives = alternatives;
+            lastAlternativePathfinder = pathfinder;
+            lastAlternativeTargets = new HashSet<>(pathfinder.getTargets());
+            lastAlternativeCount = pathAlternativesCount;
         }
+    }
+    
+    private Set<Transport> extractTransportsFromPath(List<Integer> path) {
+        Set<Transport> transportSet = new HashSet<>();
+        if (path == null || path.size() < 2) return transportSet;
+
+        PrimitiveIntHashMap<Set<Transport>> transports = pathfinderConfig.getTransportsPacked();
+        for (int i = 0; i < path.size() - 1; i++) {
+            Set<Transport> currentTransports = transports.get(path.get(i));
+            if (currentTransports != null) {
+                int nextPoint = path.get(i + 1);
+                currentTransports.stream()
+                    .filter(transport -> transport.getDestination() == nextPoint)
+                    .forEach(transportSet::add);
+            }
+        }
+        return transportSet;
     }
 
-    public static int getPathTileLength(List<Integer> path) {
-        return path != null ? path.size() : 0;
-    }
+
 
     public static boolean override(String configOverrideKey, boolean defaultValue) {
         if (!configOverride.isEmpty()) {
@@ -632,13 +661,14 @@ public class ShortestPathPlugin extends Plugin {
         colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
         colourText = override("colourText", config.colourText());
         colourTransports = override("colourTransports", config.colourTransports());
+        colourBestPath = override("colourBestPath", config.colourBestPath());
 
         tileCounterStep = override("tileCounterStep", config.tileCounterStep());
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
-        showPathLength = config.showPathLength();
-        teleportAlternativesCount = config.teleportAlternativesCount();
+        showPathLength = override("showPathLength", config.showPathLength());
+        pathAlternativesCount = override("pathAlternativesCount", config.pathAlternativesCount());
     }
 
     private String simplify(String text) {
@@ -695,11 +725,10 @@ public class ShortestPathPlugin extends Plugin {
                     pathfinder.cancel();
                 }
                 pathfinder = null;
-                cachedAlternatives.clear();
-                alternativesNeedUpdate = true;
-                if (alternativesFuture != null) {
-                    alternativesFuture.cancel(true);
-                }
+                lastAlternatives.clear();
+                lastAlternativePathfinder = null;
+                lastAlternativeTargets = null;
+                lastAlternativeCount = -1;
             }
 
             worldMapPointManager.removeIf(x -> x == marker);

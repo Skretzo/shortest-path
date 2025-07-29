@@ -362,13 +362,13 @@ public interface ShortestPathConfig extends Config {
         max = 10
     )
     @ConfigItem(
-        keyName = "teleportAlternativesCount",
+        keyName = "pathAlternativesCount",
         name = "Show alt. paths",
         description = "Number of alternative teleport paths to show below the main path (0 = disabled, 1-10 = show alternatives)",
         position = 29,
         section = sectionSettings
     )
-    default int teleportAlternativesCount() {
+    default int pathAlternativesCount() {
         return 0;
     }
 
@@ -491,10 +491,22 @@ public interface ShortestPathConfig extends Config {
         return Color.WHITE;
     }
 
+    @Alpha
+    @ConfigItem(
+        keyName = "colourBestPath",
+        name = "Best path",
+        description = "Colour of the best path text when alternative paths are available",
+        position = 41,
+        section = sectionColours
+    )
+    default Color colourBestPath() {
+        return Color.GREEN;
+    }
+
     @ConfigSection(
         name = "Debug Options",
         description = "Various options for debugging",
-        position = 41,
+        position = 42,
         closedByDefault = true
     )
     String sectionDebug = "sectionDebug";
@@ -503,7 +515,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTransports",
         name = "Draw transports",
         description = "Whether transports should be drawn",
-        position = 42,
+        position = 43,
         section = sectionDebug
     )
     default boolean drawTransports() {
@@ -514,7 +526,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawCollisionMap",
         name = "Draw collision map",
         description = "Whether the collision map should be drawn",
-        position = 43,
+        position = 44,
         section = sectionDebug
     )
     default boolean drawCollisionMap() {
@@ -525,7 +537,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawDebugPanel",
         name = "Show debug panel",
         description = "Toggles displaying the pathfinding debug stats panel",
-        position = 44,
+        position = 45,
         section = sectionDebug
     )
     default boolean drawDebugPanel() {
