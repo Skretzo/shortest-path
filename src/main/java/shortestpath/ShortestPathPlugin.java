@@ -132,7 +132,7 @@ public class ShortestPathPlugin extends Plugin {
     TileCounter showTileCounter;
     TileStyle pathStyle;
     boolean showPathLength;
-    int teleportAlternativesCount;
+    int pathAlternativesCount;
 
     private Point lastMenuOpenedPoint;
     private WorldMapPoint marker;
@@ -477,7 +477,7 @@ public class ShortestPathPlugin extends Plugin {
 
 
     public List<List<Integer>> getTeleportAlternatives() {
-        if (teleportAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
+        if (pathAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
             pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
             return new ArrayList<>();
         }
@@ -485,7 +485,7 @@ public class ShortestPathPlugin extends Plugin {
         // Use cached results if pathfinder, targets, and count haven't changed
         if (pathfinder == lastAlternativePathfinder && 
             pathfinder.getTargets().equals(lastAlternativeTargets) && 
-            teleportAlternativesCount == lastAlternativeCount &&
+            pathAlternativesCount == lastAlternativeCount &&
             !lastAlternatives.isEmpty()) {
             return lastAlternatives;
         }
@@ -502,7 +502,7 @@ public class ShortestPathPlugin extends Plugin {
         excludedTransports.addAll(mainPathTransports);
         
         // Generate additional alternatives by excluding transports from previous paths
-        for (int i = 1; i <= teleportAlternativesCount && excludedTransports.size() < 1000; i++) {
+        for (int i = 1; i <= pathAlternativesCount && excludedTransports.size() < 1000; i++) {
             
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransports);
@@ -524,7 +524,7 @@ public class ShortestPathPlugin extends Plugin {
         lastAlternatives = alternatives;
         lastAlternativePathfinder = pathfinder;
         lastAlternativeTargets = new HashSet<>(pathfinder.getTargets());
-        lastAlternativeCount = teleportAlternativesCount;
+        lastAlternativeCount = pathAlternativesCount;
         
         return alternatives;
     }
@@ -648,8 +648,8 @@ public class ShortestPathPlugin extends Plugin {
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
-        showPathLength = config.showPathLength();
-        teleportAlternativesCount = config.teleportAlternativesCount();
+        showPathLength = override("showPathLength", config.showPathLength());
+        pathAlternativesCount = override("pathAlternativesCount", config.pathAlternativesCount());
     }
 
     private String simplify(String text) {
