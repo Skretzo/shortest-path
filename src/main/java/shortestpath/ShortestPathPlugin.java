@@ -149,7 +149,9 @@ public class ShortestPathPlugin extends Plugin {
 
     private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
     private Future<?> pathfinderFuture;
+    private Future<?> alternativesFuture;
     private final Object pathfinderMutex = new Object();
+    private final Object alternativesMutex = new Object();
     private static final Map<String, Object> configOverride = new HashMap<>(50);
     @Getter
     private Pathfinder pathfinder;
@@ -161,6 +163,7 @@ public class ShortestPathPlugin extends Plugin {
     private Pathfinder lastAlternativePathfinder = null;
     private Set<Integer> lastAlternativeTargets = null;
     private int lastAlternativeCount = -1;
+    private volatile boolean alternativesComputing = false;
     
     @Getter
     private boolean startPointSet = false;
@@ -475,41 +478,90 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getMap();
     }
 
+    public int getPathAlternativesCount() {
+        return pathAlternativesCount;
+    }
 
-    public List<List<Integer>> getTeleportAlternatives() {
+    public List<List<Integer>> getPathAlternatives() {
         if (pathAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
             pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
             return new ArrayList<>();
         }
         
         // Use cached results if pathfinder, targets, and count haven't changed
-        if (pathfinder == lastAlternativePathfinder && 
-            pathfinder.getTargets().equals(lastAlternativeTargets) && 
-            pathAlternativesCount == lastAlternativeCount &&
-            !lastAlternatives.isEmpty()) {
-            return lastAlternatives;
+        synchronized (alternativesMutex) {
+            if (pathfinder == lastAlternativePathfinder && 
+                pathfinder.getTargets().equals(lastAlternativeTargets) && 
+                pathAlternativesCount == lastAlternativeCount &&
+                !lastAlternatives.isEmpty()) {
+                return new ArrayList<>(lastAlternatives);
+            }
         }
-
+        
+        // Start async computation if not already computing
+        if (!alternativesComputing) {
+            startAlternativesComputation();
+        }
+        
+        // Return cached results or empty list if still computing
+        synchronized (alternativesMutex) {
+            return new ArrayList<>(lastAlternatives);
+        }
+    }
+    
+    private void startAlternativesComputation() {
+        synchronized (alternativesMutex) {
+            if (alternativesComputing) {
+                return; // Already computing
+            }
+            alternativesComputing = true;
+            
+            // Cancel any existing alternatives computation
+            if (alternativesFuture != null && !alternativesFuture.isDone()) {
+                alternativesFuture.cancel(true);
+            }
+        }
+        
+        // Start async computation
+        alternativesFuture = pathfindingExecutor.submit(() -> {
+            try {
+                computePathAlternatives();
+            } finally {
+                alternativesComputing = false;
+            }
+        });
+    }
+    
+    private void computePathAlternatives() {
+        if (pathfinder == null || !pathfinder.isDone() || pathfinder.getPath() == null) {
+            return;
+        }
+        
         // Generate alternatives using separate pathfinder instances
         List<List<Integer>> alternatives = new ArrayList<>();
         Set<Transport> excludedTransports = new HashSet<>();
         
         // Add main path as first alternative
-        alternatives.add(pathfinder.getPath());
+        alternatives.add(new ArrayList<>(pathfinder.getPath()));
         
         // Exclude ALL transports used in main path to find genuine alternatives
         Set<Transport> mainPathTransports = extractTransportsFromPath(pathfinder.getPath());
         excludedTransports.addAll(mainPathTransports);
         
         // Generate additional alternatives by excluding transports from previous paths
+        // The 1000 limit prevents infinite loops in complex transport networks where
+        // excluding transports might create circular dependencies or too many variations
         for (int i = 1; i <= pathAlternativesCount && excludedTransports.size() < 1000; i++) {
+            if (Thread.currentThread().isInterrupted()) {
+                return; // Computation was cancelled
+            }
             
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransports);
             altPathfinder.run();
             
             if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
-                alternatives.add(altPathfinder.getPath());
+                alternatives.add(new ArrayList<>(altPathfinder.getPath()));
                 Set<Transport> altTransports = extractTransportsFromPath(altPathfinder.getPath());
                 excludedTransports.addAll(altTransports);
             } else {
@@ -520,13 +572,13 @@ public class ShortestPathPlugin extends Plugin {
         // Sort by path length (shortest first)
         alternatives.sort((a, b) -> Integer.compare(a.size(), b.size()));
         
-        // Cache results
-        lastAlternatives = alternatives;
-        lastAlternativePathfinder = pathfinder;
-        lastAlternativeTargets = new HashSet<>(pathfinder.getTargets());
-        lastAlternativeCount = pathAlternativesCount;
-        
-        return alternatives;
+        // Update cache atomically
+        synchronized (alternativesMutex) {
+            lastAlternatives = alternatives;
+            lastAlternativePathfinder = pathfinder;
+            lastAlternativeTargets = new HashSet<>(pathfinder.getTargets());
+            lastAlternativeCount = pathAlternativesCount;
+        }
     }
     
     private Set<Transport> extractTransportsFromPath(List<Integer> path) {

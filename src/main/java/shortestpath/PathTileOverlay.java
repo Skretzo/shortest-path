@@ -309,7 +309,7 @@ public class PathTileOverlay extends Overlay {
 
                     // Let normal transport display handle equivalent teleports
                     // Only show alternatives after all equivalent transports are processed
-                    if (plugin.pathAlternativesCount > 0 && !hasShownAlternatives) {
+                    if (plugin.getPathAlternativesCount() > 0 && !hasShownAlternatives) {
                         hasShownAlternatives = true;
                         showAlternativesAfterTransports = true;
                     }
@@ -350,11 +350,11 @@ public class PathTileOverlay extends Overlay {
                 
                 // Show alternatives after all equivalent teleports have been displayed
                 if (showAlternativesAfterTransports) {
-                    List<List<Integer>> alternatives = plugin.getTeleportAlternatives();
+                    List<List<Integer>> alternatives = plugin.getPathAlternatives();
                     int mainPathSize = plugin.getPathfinder().getPath().size();
                     int alternativesShown = 0;
                     
-                    for (int altIndex = 1; altIndex < alternatives.size() && alternativesShown < plugin.pathAlternativesCount; altIndex++) {
+                    for (int altIndex = 1; altIndex < alternatives.size() && alternativesShown < plugin.getPathAlternativesCount(); altIndex++) {
                         List<Integer> altPath = alternatives.get(altIndex);
                         if (altPath != null && !altPath.isEmpty() && altPath.size() != mainPathSize) {
                             String altText = getAlternativeDisplayText(altPath);
