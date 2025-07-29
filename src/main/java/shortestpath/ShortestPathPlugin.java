@@ -488,41 +488,38 @@ public class ShortestPathPlugin extends Plugin {
             return new ArrayList<>();
         }
         
-        // Use cached results if pathfinder, targets, and count haven't changed
         synchronized (alternativesMutex) {
-            if (pathfinder == lastAlternativePathfinder && 
-                pathfinder.getTargets().equals(lastAlternativeTargets) && 
-                pathAlternativesCount == lastAlternativeCount &&
-                !lastAlternatives.isEmpty()) {
+            if (isCacheValid()) {
                 return new ArrayList<>(lastAlternatives);
             }
         }
         
-        // Start async computation if not already computing
         if (!alternativesComputing) {
             startAlternativesComputation();
         }
         
-        // Return cached results or empty list if still computing
         synchronized (alternativesMutex) {
             return new ArrayList<>(lastAlternatives);
         }
     }
     
+    private boolean isCacheValid() {
+        return pathfinder == lastAlternativePathfinder && 
+               pathfinder.getTargets().equals(lastAlternativeTargets) && 
+               pathAlternativesCount == lastAlternativeCount &&
+               !lastAlternatives.isEmpty();
+    }
+    
     private void startAlternativesComputation() {
         synchronized (alternativesMutex) {
-            if (alternativesComputing) {
-                return; // Already computing
-            }
+            if (alternativesComputing) return;
             alternativesComputing = true;
             
-            // Cancel any existing alternatives computation
             if (alternativesFuture != null && !alternativesFuture.isDone()) {
                 alternativesFuture.cancel(true);
             }
         }
         
-        // Start async computation
         alternativesFuture = pathfindingExecutor.submit(() -> {
             try {
                 computePathAlternatives();
@@ -533,28 +530,14 @@ public class ShortestPathPlugin extends Plugin {
     }
     
     private void computePathAlternatives() {
-        if (pathfinder == null || !pathfinder.isDone() || pathfinder.getPath() == null) {
-            return;
-        }
+        if (pathfinder == null || !pathfinder.isDone() || pathfinder.getPath() == null) return;
         
-        // Generate alternatives using separate pathfinder instances
         List<List<Integer>> alternatives = new ArrayList<>();
-        Set<Transport> excludedTransports = new HashSet<>();
-        
-        // Add main path as first alternative
+        Set<Transport> excludedTransports = extractTransportsFromPath(pathfinder.getPath());
         alternatives.add(new ArrayList<>(pathfinder.getPath()));
         
-        // Exclude ALL transports used in main path to find genuine alternatives
-        Set<Transport> mainPathTransports = extractTransportsFromPath(pathfinder.getPath());
-        excludedTransports.addAll(mainPathTransports);
-        
-        // Generate additional alternatives by excluding transports from previous paths
-        // The 1000 limit prevents infinite loops in complex transport networks where
-        // excluding transports might create circular dependencies or too many variations
         for (int i = 1; i <= pathAlternativesCount && excludedTransports.size() < 1000; i++) {
-            if (Thread.currentThread().isInterrupted()) {
-                return; // Computation was cancelled
-            }
+            if (Thread.currentThread().isInterrupted()) return;
             
             Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
                                                       pathfinder.getTargets(), excludedTransports);
@@ -562,17 +545,14 @@ public class ShortestPathPlugin extends Plugin {
             
             if (altPathfinder.isDone() && altPathfinder.getPath() != null && !altPathfinder.getPath().isEmpty()) {
                 alternatives.add(new ArrayList<>(altPathfinder.getPath()));
-                Set<Transport> altTransports = extractTransportsFromPath(altPathfinder.getPath());
-                excludedTransports.addAll(altTransports);
+                excludedTransports.addAll(extractTransportsFromPath(altPathfinder.getPath()));
             } else {
-                break; // No more alternatives found
+                break;
             }
         }
         
-        // Sort by path length (shortest first)
         alternatives.sort((a, b) -> Integer.compare(a.size(), b.size()));
         
-        // Update cache atomically
         synchronized (alternativesMutex) {
             lastAlternatives = alternatives;
             lastAlternativePathfinder = pathfinder;
