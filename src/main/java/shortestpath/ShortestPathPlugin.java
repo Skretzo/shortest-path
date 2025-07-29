@@ -127,6 +127,7 @@ public class ShortestPathPlugin extends Plugin {
     Color colourPathCalculating;
     Color colourText;
     Color colourTransports;
+    Color colourBestPath;
     int tileCounterStep;
     TileCounter showTileCounter;
     TileStyle pathStyle;
@@ -632,6 +633,7 @@ public class ShortestPathPlugin extends Plugin {
         colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
         colourText = override("colourText", config.colourText());
         colourTransports = override("colourTransports", config.colourTransports());
+        colourBestPath = override("colourBestPath", config.colourBestPath());
 
         tileCounterStep = override("tileCounterStep", config.tileCounterStep());
 

@@ -335,7 +335,8 @@ public class PathTileOverlay extends Overlay {
                                     
                                     graphics.setColor(Color.BLACK);
                                     graphics.drawString(altText, altX + 1, altY + 1);
-                                    graphics.setColor(plugin.colourText);
+                                    Color textColor = (altIndex == 0 && alternatives.size() > 1) ? plugin.colourBestPath : plugin.colourText;
+                                    graphics.setColor(textColor);
                                     graphics.drawString(altText, altX, altY);
                                     
                                     vertical_offset += (int) altHeight + TRANSPORT_LABEL_GAP;
