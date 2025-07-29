@@ -149,7 +149,6 @@ public class ShortestPathPlugin extends Plugin {
 
     private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
     private Future<?> pathfinderFuture;
-    private Future<?> alternativesFuture;
     private final Object pathfinderMutex = new Object();
     private final Object alternativesMutex = new Object();
     private static final Map<String, Object> configOverride = new HashMap<>(50);
@@ -161,7 +160,6 @@ public class ShortestPathPlugin extends Plugin {
     // Simple cache to avoid recalculating every frame
     private List<List<Integer>> lastAlternatives = new ArrayList<>();
     private Pathfinder lastAlternativePathfinder = null;
-    private Set<Integer> lastAlternativeTargets = null;
     private int lastAlternativeCount = -1;
     private volatile boolean alternativesComputing = false;
     
@@ -504,22 +502,16 @@ public class ShortestPathPlugin extends Plugin {
     
     private boolean isCacheValid() {
         return pathfinder == lastAlternativePathfinder && 
-               pathfinder.getTargets().equals(lastAlternativeTargets) && 
-               pathAlternativesCount == lastAlternativeCount &&
-               !lastAlternatives.isEmpty();
+               pathAlternativesCount == lastAlternativeCount;
     }
     
     private void startAlternativesComputation() {
         synchronized (alternativesMutex) {
             if (alternativesComputing) return;
             alternativesComputing = true;
-            
-            if (alternativesFuture != null && !alternativesFuture.isDone()) {
-                alternativesFuture.cancel(true);
-            }
         }
         
-        alternativesFuture = pathfindingExecutor.submit(() -> {
+        pathfindingExecutor.submit(() -> {
             try {
                 computePathAlternatives();
             } finally {
@@ -555,7 +547,6 @@ public class ShortestPathPlugin extends Plugin {
         synchronized (alternativesMutex) {
             lastAlternatives = alternatives;
             lastAlternativePathfinder = pathfinder;
-            lastAlternativeTargets = new HashSet<>(pathfinder.getTargets());
             lastAlternativeCount = pathAlternativesCount;
         }
     }
@@ -727,7 +718,6 @@ public class ShortestPathPlugin extends Plugin {
                 pathfinder = null;
                 lastAlternatives.clear();
                 lastAlternativePathfinder = null;
-                lastAlternativeTargets = null;
                 lastAlternativeCount = -1;
             }
 
