@@ -11,6 +11,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -298,39 +299,97 @@ public class PathTileOverlay extends Overlay {
                     continue;
                 }
 
+                Point canvasPoint = getCanvasPoint(point);
+                if (canvasPoint == null) continue;
                 int vertical_offset = 0;
+                boolean hasTransports = false;
+                
                 for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                     if (pointEnd == WorldPointUtil.UNDEFINED || pointEnd != transport.getDestination()) {
                         continue;
                     }
+                    
+                    String text = getTransportText(transport);
+                    if (text == null) continue;
 
-                    String text = transport.getDisplayInfo();
-                    if (text == null || text.isEmpty()) {
-                        continue;
-                    }
-
-                    LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
-                    if (lp == null) {
-                        continue;
-                    }
-
-                    Point p = Perspective.localToCanvas(client, lp, client.getPlane());
-                    if (p == null) {
-                        continue;
-                    }
-
-                    Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
-                    double height = textBounds.getHeight();
-                    int x = (int) (p.getX() - textBounds.getWidth() / 2);
-                    int y = (int) (p.getY() - height) - (vertical_offset);
-                    graphics.setColor(Color.BLACK);
-                    graphics.drawString(text, x + 1, y + 1);
-                    graphics.setColor(plugin.colourText);
-                    graphics.drawString(text, x, y);
-
-                    vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
+                    hasTransports = true;
+                    Color textColor = plugin.getPathAlternativesCount() > 0 ? plugin.colourBestPath : plugin.colourText;
+                    vertical_offset += drawText(graphics, text, canvasPoint, vertical_offset, textColor);
+                }
+                
+                if (hasTransports && plugin.getPathAlternativesCount() > 0) {
+                    vertical_offset += drawAlternatives(graphics, canvasPoint, vertical_offset);
                 }
             }
         }
+    }
+    
+    private String getTransportText(Transport transport) {
+        String text = transport.getDisplayInfo();
+        if (text == null || text.isEmpty()) return null;
+        
+        if (plugin.showPathLength && plugin.getPathfinder() != null) {
+            text = addTileLength(text, plugin.getPathfinder().getPath());
+        }
+        return text;
+    }
+    
+    private Point getCanvasPoint(int point) {
+        LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
+        return lp != null ? Perspective.localToCanvas(client, lp, client.getPlane()) : null;
+    }
+    
+    private int drawText(Graphics2D graphics, String text, Point p, int verticalOffset, Color textColor) {
+        Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
+        int height = (int) textBounds.getHeight();
+        int x = (int) (p.getX() - textBounds.getWidth() / 2);
+        int y = (int) (p.getY() - height) - verticalOffset;
+        
+        graphics.setColor(Color.BLACK);
+        graphics.drawString(text, x + 1, y + 1);
+        graphics.setColor(textColor);
+        graphics.drawString(text, x, y);
+        
+        return height + TRANSPORT_LABEL_GAP;
+    }
+    
+    private int drawAlternatives(Graphics2D graphics, Point canvasPoint, int verticalOffset) {
+        List<List<Integer>> alternatives = plugin.getPathAlternatives();
+        int mainPathSize = plugin.getPathfinder().getPath().size();
+        int alternativesShown = 0;
+        int totalOffset = 0;
+        
+        for (int altIndex = 1; altIndex < alternatives.size() && alternativesShown < plugin.getPathAlternativesCount(); altIndex++) {
+            List<Integer> altPath = alternatives.get(altIndex);
+            if (altPath != null && !altPath.isEmpty() && altPath.size() != mainPathSize) {
+                String altText = getAlternativeDisplayText(altPath);
+                if (altText != null) {
+                    totalOffset += drawText(graphics, altText, canvasPoint, verticalOffset + totalOffset, plugin.colourText);
+                    alternativesShown++;
+                }
+            }
+        }
+        return totalOffset;
+    }
+    
+    private String addTileLength(String text, List<Integer> path) {
+        return path != null ? text + " (" + path.size() + " tiles)" : text;
+    }
+    
+    private String getAlternativeDisplayText(List<Integer> path) {
+        if (path == null || path.size() < 2) return null;
+        
+        for (int i = 0; i < path.size() - 1; i++) {
+            Set<Transport> transports = plugin.getTransports().getOrDefault(path.get(i), new HashSet<>());
+            for (Transport transport : transports) {
+                if (transport.getDestination() == path.get(i + 1)) {
+                    String text = transport.getDisplayInfo();
+                    if (text == null) return null;
+                    if (plugin.showPathLength) return addTileLength(text, path);
+                    return text;
+                }
+            }
+        }
+        return null;
     }
 }

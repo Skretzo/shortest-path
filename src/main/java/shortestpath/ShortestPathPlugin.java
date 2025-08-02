@@ -127,9 +127,12 @@ public class ShortestPathPlugin extends Plugin {
     Color colourPathCalculating;
     Color colourText;
     Color colourTransports;
+    Color colourBestPath;
     int tileCounterStep;
     TileCounter showTileCounter;
     TileStyle pathStyle;
+    boolean showPathLength;
+    int pathAlternativesCount;
 
     private Point lastMenuOpenedPoint;
     private WorldMapPoint marker;
@@ -147,11 +150,19 @@ public class ShortestPathPlugin extends Plugin {
     private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
     private Future<?> pathfinderFuture;
     private final Object pathfinderMutex = new Object();
+    private final Object alternativesMutex = new Object();
     private static final Map<String, Object> configOverride = new HashMap<>(50);
     @Getter
     private Pathfinder pathfinder;
     @Getter
     private PathfinderConfig pathfinderConfig;
+    
+    // Simple cache to avoid recalculating every frame
+    private List<List<Integer>> lastAlternatives = new ArrayList<>();
+    private Pathfinder lastAlternativePathfinder = null;
+    private int lastAlternativeCount = -1;
+    private volatile boolean alternativesComputing = false;
+    
     @Getter
     private boolean startPointSet = false;
 
@@ -255,7 +266,6 @@ public class ShortestPathPlugin extends Plugin {
             }
             return;
         }
-
         // Transport option changed; rerun pathfinding
         if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find()) {
             if (pathfinder != null) {
@@ -465,6 +475,101 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getMap();
     }
 
+    public int getPathAlternativesCount() {
+        return pathAlternativesCount;
+    }
+
+    public List<List<Integer>> getPathAlternatives() {
+        if (pathAlternativesCount == 0 || pathfinder == null || !pathfinder.isDone() || 
+            pathfinder.getPath() == null || pathfinder.getPath().isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        synchronized (alternativesMutex) {
+            if (isCacheValid()) {
+                return new ArrayList<>(lastAlternatives);
+            }
+        }
+        
+        if (!alternativesComputing) {
+            startAlternativesComputation();
+        }
+        
+        synchronized (alternativesMutex) {
+            return new ArrayList<>(lastAlternatives);
+        }
+    }
+    
+    private boolean isCacheValid() {
+        return pathfinder == lastAlternativePathfinder && 
+               pathAlternativesCount == lastAlternativeCount;
+    }
+    
+    private void startAlternativesComputation() {
+        synchronized (alternativesMutex) {
+            if (alternativesComputing) return;
+            alternativesComputing = true;
+        }
+        
+        pathfindingExecutor.submit(() -> {
+            try {
+                computePathAlternatives();
+            } finally {
+                alternativesComputing = false;
+            }
+        });
+    }
+    
+    private void computePathAlternatives() {
+        if (pathfinder == null || !pathfinder.isDone() || pathfinder.getPath() == null) return;
+        
+        List<List<Integer>> alternatives = new ArrayList<>();
+        Set<Transport> excludedTransports = extractTransportsFromPath(pathfinder.getPath());
+        alternatives.add(new ArrayList<>(pathfinder.getPath()));
+        
+        for (int i = 1; i <= pathAlternativesCount; i++) {
+            if (Thread.currentThread().isInterrupted()) return;
+            
+            Pathfinder altPathfinder = new Pathfinder(pathfinderConfig, pathfinder.getStart(), 
+                                                      pathfinder.getTargets(), excludedTransports);
+            altPathfinder.run();
+            
+            if (!altPathfinder.isDone() || altPathfinder.getPath() == null || altPathfinder.getPath().isEmpty()) {
+                break;
+            }
+            
+            alternatives.add(new ArrayList<>(altPathfinder.getPath()));
+            excludedTransports.addAll(extractTransportsFromPath(altPathfinder.getPath()));
+        }
+        
+        alternatives.sort((a, b) -> Integer.compare(a.size(), b.size()));
+        
+        synchronized (alternativesMutex) {
+            lastAlternatives = alternatives;
+            lastAlternativePathfinder = pathfinder;
+            lastAlternativeCount = pathAlternativesCount;
+        }
+    }
+    
+    private Set<Transport> extractTransportsFromPath(List<Integer> path) {
+        Set<Transport> transportSet = new HashSet<>();
+        if (path == null || path.size() < 2) return transportSet;
+
+        PrimitiveIntHashMap<Set<Transport>> transports = pathfinderConfig.getTransportsPacked();
+        for (int i = 0; i < path.size() - 1; i++) {
+            Set<Transport> currentTransports = transports.get(path.get(i));
+            if (currentTransports != null) {
+                int nextPoint = path.get(i + 1);
+                currentTransports.stream()
+                    .filter(transport -> transport.getDestination() == nextPoint)
+                    .forEach(transportSet::add);
+            }
+        }
+        return transportSet;
+    }
+
+
+
     public static boolean override(String configOverrideKey, boolean defaultValue) {
         if (!configOverride.isEmpty()) {
             Object value = configOverride.get(configOverrideKey);
@@ -547,11 +652,14 @@ public class ShortestPathPlugin extends Plugin {
         colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
         colourText = override("colourText", config.colourText());
         colourTransports = override("colourTransports", config.colourTransports());
+        colourBestPath = override("colourBestPath", config.colourBestPath());
 
         tileCounterStep = override("tileCounterStep", config.tileCounterStep());
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
+        showPathLength = override("showPathLength", config.showPathLength());
+        pathAlternativesCount = override("pathAlternativesCount", config.pathAlternativesCount());
     }
 
     private String simplify(String text) {
@@ -608,6 +716,9 @@ public class ShortestPathPlugin extends Plugin {
                     pathfinder.cancel();
                 }
                 pathfinder = null;
+                lastAlternatives.clear();
+                lastAlternativePathfinder = null;
+                lastAlternativeCount = -1;
             }
 
             worldMapPointManager.removeIf(x -> x == marker);
