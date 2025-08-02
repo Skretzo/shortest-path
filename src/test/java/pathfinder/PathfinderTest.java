@@ -7,7 +7,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
@@ -58,7 +58,7 @@ public class PathfinderTest {
         when(config.useAgilityShortcuts()).thenReturn(true);
         setupInventory(
             new Item(ItemID.ROPE, 1),
-            new Item(ItemID.CLIMBING_BOOTS, 1));
+            new Item(ItemID.DEATH_CLIMBINGBOOTS, 1));
         testTransportLength(2, TransportType.AGILITY_SHORTCUT);
     }
 
@@ -66,8 +66,8 @@ public class PathfinderTest {
     public void testGrappleShortcuts() {
         when(config.useGrappleShortcuts()).thenReturn(true);
         setupInventory(
-            new Item(ItemID.ADAMANT_CROSSBOW, 1),
-            new Item(ItemID.MITH_GRAPPLE_9419, 1));
+            new Item(ItemID.XBOWS_CROSSBOW_ADAMANTITE, 1),
+            new Item(ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE, 1));
         testTransportLength(2, TransportType.GRAPPLE_SHORTCUT);
     }
 
@@ -75,7 +75,7 @@ public class PathfinderTest {
     public void testBoats() {
         when(config.useBoats()).thenReturn(true);
         setupInventory(
-            new Item(ItemID.COINS_995, 10000),
+            new Item(ItemID.COINS, 10000),
             new Item(ItemID.ECTOTOKEN, 25));
         testTransportLength(2, TransportType.BOAT);
     }
@@ -90,14 +90,14 @@ public class PathfinderTest {
     @Test
     public void testCharterShips() {
         when(config.useCharterShips()).thenReturn(true);
-        setupInventory(new Item(ItemID.COINS_995, 100000));
+        setupInventory(new Item(ItemID.COINS, 100000));
         testTransportLength(2, TransportType.CHARTER_SHIP);
     }
 
     @Test
     public void testShips() {
         when(config.useShips()).thenReturn(true);
-        setupInventory(new Item(ItemID.COINS_995, 10000));
+        setupInventory(new Item(ItemID.COINS, 10000));
         testTransportLength(2, TransportType.SHIP);
     }
 
@@ -128,7 +128,7 @@ public class PathfinderTest {
     @Test
     public void testMinecarts() {
         when(config.useMinecarts()).thenReturn(true);
-        setupInventory(new Item(ItemID.COINS_995, 1000));
+        setupInventory(new Item(ItemID.COINS, 1000));
         testTransportLength(2, TransportType.MINECART);
     }
 
@@ -143,6 +143,12 @@ public class PathfinderTest {
         when(config.useSpiritTrees()).thenReturn(true);
         when(client.getVarbitValue(any(Integer.class))).thenReturn(20);
         testTransportLength(2, TransportType.SPIRIT_TREE);
+    }
+
+    @Test
+    public void testTeleportationBoxes() {
+        when(config.useTeleportationBoxes()).thenReturn(true);
+        testTransportLength(2, TransportType.TELEPORTATION_BOX);
     }
 
     @Test
@@ -214,9 +220,9 @@ public class PathfinderTest {
 
         // With magic level 99 and magic runes
         setupInventory(
-            new Item(ItemID.LAW_RUNE, 1),
-            new Item(ItemID.AIR_RUNE, 3),
-            new Item(ItemID.FIRE_RUNE, 1));
+            new Item(ItemID.LAWRUNE, 1),
+            new Item(ItemID.AIRRUNE, 3),
+            new Item(ItemID.FIRERUNE, 1));
         testTransportLength(2,
             WorldPointUtil.packWorldPoint(3216, 3424, 0),
             WorldPointUtil.packWorldPoint(3213, 3424, 0),
@@ -242,7 +248,7 @@ public class PathfinderTest {
         // Shortest path for impossible charter ships has length 3 and goes
         // via an intermediate charter ship and not directly with length 2
         when(config.useCharterShips()).thenReturn(true);
-        setupInventory(new Item(ItemID.COINS_995, 1000000));
+        setupInventory(new Item(ItemID.COINS, 1000000));
 
         testTransportMinimumLength(3,
             WorldPointUtil.packWorldPoint(1455, 2968, 0), // Aldarin
@@ -461,6 +467,8 @@ public class PathfinderTest {
             WorldPointUtil.packWorldPoint(3039, 10260, 0))); // Lava Maze Dungeon
         assertEquals(false, PathfinderConfig.isInWilderness(
             WorldPointUtil.packWorldPoint(3009, 3531, 0))); // Non-wildy peninsula
+        assertEquals(true, PathfinderConfig.isInWilderness(
+            WorldPointUtil.packWorldPoint(3023, 3626, 1))); // Upstairs in Dark Warriors' Fortress
     }
 
     private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems) {

@@ -78,6 +78,7 @@ public class Destination {
     public static Map<String, Set<Integer>> loadAllFromResources() {
         Map<String, Set<Integer>> destinations = new HashMap<>(10);
         addDestinations(destinations, "/destinations/game_features/altar.tsv");
+        addDestinations(destinations, "/destinations/game_features/bank.tsv");
         addDestinations(destinations, "/destinations/training/anvil.tsv");
         addDestinations(destinations, "/destinations/shopping/apothecary.tsv");
         return destinations;

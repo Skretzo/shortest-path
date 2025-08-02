@@ -436,8 +436,9 @@ public class Transport {
         addTransports(transports, "/transports/quetzals.tsv", TransportType.QUETZAL);
         addTransports(transports, "/transports/spirit_trees.tsv", TransportType.SPIRIT_TREE, 5);
         addTransports(transports, "/transports/teleportation_items.tsv", TransportType.TELEPORTATION_ITEM);
-        addTransports(transports, "/transports/teleportation_minigames.tsv", TransportType.TELEPORTATION_MINIGAME);
+        addTransports(transports, "/transports/teleportation_boxes.tsv", TransportType.TELEPORTATION_BOX);
         addTransports(transports, "/transports/teleportation_levers.tsv", TransportType.TELEPORTATION_LEVER);
+        addTransports(transports, "/transports/teleportation_minigames.tsv", TransportType.TELEPORTATION_MINIGAME);
         addTransports(transports, "/transports/teleportation_portals.tsv", TransportType.TELEPORTATION_PORTAL);
         addTransports(transports, "/transports/teleportation_spells.tsv", TransportType.TELEPORTATION_SPELL);
         addTransports(transports, "/transports/wilderness_obelisks.tsv", TransportType.WILDERNESS_OBELISK);

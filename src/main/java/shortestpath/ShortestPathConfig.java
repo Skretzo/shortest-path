@@ -181,11 +181,23 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
+        keyName = "useTeleportationBoxes",
+        name = "Use teleportation boxes",
+        description = "Whether to include teleportation boxes or mounted items in the path<br>" +
+            "(e.g. the PoH jewellery box or PoH mounted glory amulet)",
+        position = 15,
+        section = sectionSettings
+    )
+    default boolean useTeleportationBoxes() {
+        return true;
+    }
+
+    @ConfigItem(
         keyName = "useTeleportationLevers",
         name = "Use teleportation levers",
         description = "Whether to include teleportation levers in the path<br>" +
             "(e.g. the lever from Edgeville to Wilderness)",
-        position = 15,
+        position = 16,
         section = sectionSettings
     )
     default boolean useTeleportationLevers() {
@@ -196,8 +208,8 @@ public interface ShortestPathConfig extends Config {
         keyName = "useTeleportationPortals",
         name = "Use teleportation portals",
         description = "Whether to include teleportation portals in the path<br>" +
-            "(e.g. the portal from Ferox Enclave to Castle Wars)",
-        position = 16,
+            "(e.g. the portal from Ferox Enclave to Castle Wars or the PoH portals/nexus)",
+        position = 17,
         section = sectionSettings
     )
     default boolean useTeleportationPortals() {
@@ -208,7 +220,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useTeleportationSpells",
         name = "Use teleportation spells",
         description = "Whether to include teleportation spells in the path",
-        position = 17,
+        position = 18,
         section = sectionSettings
     )
     default boolean useTeleportationSpells() {
@@ -220,7 +232,7 @@ public interface ShortestPathConfig extends Config {
         name = "Use teleportation to minigames",
         description = "Whether to include teleportation to minigames/activities/grouping in the path<br>" +
             "(e.g. the Nightmare Zone minigame teleport). These teleports share a 20 minute cooldown.",
-        position = 18,
+        position = 19,
         section = sectionSettings
     )
     default boolean useTeleportationMinigames() {
@@ -231,7 +243,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useWildernessObelisks",
         name = "Use wilderness obelisks",
         description = "Whether to include wilderness obelisks in the path",
-        position = 19,
+        position = 20,
         section = sectionSettings
     )
     default boolean useWildernessObelisks() {
@@ -243,7 +255,7 @@ public interface ShortestPathConfig extends Config {
         name = "Currency threshold",
         description = "The maximum amount of currency to use on a single transportation method." +
             "<br>The currencies affected by the threshold are coins, trading sticks, ecto-tokens and warrior guild tokens.",
-        position = 20,
+        position = 21,
         section = sectionSettings
     )
     default int currencyThreshold() {
@@ -255,7 +267,7 @@ public interface ShortestPathConfig extends Config {
         name = "Cancel instead of recalculating",
         description = "Whether the path should be cancelled rather than recalculated " +
             "when the recalculate distance limit is exceeded",
-        position = 21,
+        position = 22,
         section = sectionSettings
     )
     default boolean cancelInstead() {
@@ -270,7 +282,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "recalculateDistance",
         name = "Recalculate distance",
         description = "Distance from the path the player should be for it to be recalculated (-1 for never)",
-        position = 22,
+        position = 23,
         section = sectionSettings
     )
     default int recalculateDistance() {
@@ -285,7 +297,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "finishDistance",
         name = "Finish distance",
         description = "Distance from the target tile at which the path should be ended (-1 for never)",
-        position = 23,
+        position = 24,
         section = sectionSettings
     )
     default int reachedDistance() {
@@ -296,7 +308,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "showTileCounter",
         name = "Show tile counter",
         description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
-        position = 24,
+        position = 25,
         section = sectionSettings
     )
     default TileCounter showTileCounter() {
@@ -307,7 +319,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "tileCounterStep",
         name = "Tile counter step",
         description = "The number of tiles between the displayed tile counter numbers",
-        position = 25,
+        position = 26,
         section = sectionSettings
     )
     default int tileCounterStep()
@@ -327,7 +339,7 @@ public interface ShortestPathConfig extends Config {
         name = "Calculation cutoff",
         description = "The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>" +
             "made towards the path target before the calculation will be stopped",
-        position = 26,
+        position = 27,
         section = sectionSettings
     )
     default int calculationCutoff()
@@ -339,7 +351,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "showTransportInfo",
         name = "Show transport info",
         description = "Whether to display transport destination hint info, e.g. which chat option and text to click",
-        position = 27,
+        position = 28,
         section = sectionSettings
     )
     default boolean showTransportInfo() {

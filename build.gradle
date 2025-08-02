@@ -23,7 +23,7 @@ dependencies {
 }
 
 group = 'shortestpath'
-version = '1.17.4'
+version = '1.17.7'
 sourceCompatibility = '1.11'
 
 tasks.withType(JavaCompile) {

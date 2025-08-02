@@ -93,22 +93,25 @@
 									
 # Teleport to House tablet - These depend on the current player's home location, determined by varbit 2187.									
 # 0 - None									
+1923 5709 0			8013=1		4	Teleport to House tablet	T	20	
 # 1 - Rimmington									
 2952 3224 0			8013=1		4	Teleport to House tablet	T	20	2187=1
 # 2 - Taverly									
-2892 3465 0			8013=1		4	Teleport to House tablet	T	20	2187=2
+2892 3465 0		10 Construction	8013=1		4	Teleport to House tablet	T	20	2187=2
 # 3 - Pollnivneach									
-3339 3001 0			8013=1		4	Teleport to House tablet	T	20	2187=3
+3339 3001 0		20 Construction	8013=1		4	Teleport to House tablet	T	20	2187=3
 # 4 - Rellekka									
-2669 3629 0			8013=1		4	Teleport to House tablet	T	20	2187=4
+2669 3629 0		30 Construction	8013=1		4	Teleport to House tablet	T	20	2187=4
 # 5 - Brimhaven									
-2756 3176 0			8013=1		4	Teleport to House tablet	T	20	2187=5
+2756 3176 0		40 Construction	8013=1		4	Teleport to House tablet	T	20	2187=5
 # 6 - Yanille									
-2545 3097 0			8013=1		4	Teleport to House tablet	T	20	2187=6
+2545 3097 0		50 Construction	8013=1		4	Teleport to House tablet	T	20	2187=6
 # 7 - Prifddinas									
-3239 6077 0			8013=1		4	Teleport to House tablet	T	20	2187=7
+3239 6077 0		70 Construction	8013=1		4	Teleport to House tablet	T	20	2187=7
 # 8 - Hosidius									
-1740 3517 0			8013=1		4	Teleport to House tablet	T	20	2187=8
+1740 3517 0		25 Construction	8013=1		4	Teleport to House tablet	T	20	2187=8
+# 9 - Aldarin									
+1421 2963 0		35 Construction	8013=1		4	Teleport to House tablet	T	20	2187=9
 									
 #  Teleport tablets									
 3213 3424 0			8007=1		4	Varrock tablet	T	20	
@@ -384,3 +387,8 @@
 3253 3404 0			30363=1		4	Clue compass: Varrock (Rune shop)	F	20	10032>0
 2851 3496 0			30363=1		4	Clue compass: White Wolf Mountain	F	20	10032>0
 3113 3195 0			30363=1		4	Clue compass: Wizards' Tower	F	20	10032>0
+									
+# Giantsoul amulet									
+3174 9898 0			30638=1		4	Giantsoul amulet: 1. Bryophyta	T	20	
+3096 9833 0			30638=1		4	Giantsoul amulet: 2. Obor	T	20	
+2952 9574 0			30638=1		4	Giantsoul amulet: 3. Brand & Eldtrich	T	20	

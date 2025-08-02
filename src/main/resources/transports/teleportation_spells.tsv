@@ -18,6 +18,7 @@
 2965 3378 0	AIR_RUNE=3&&WATER_RUNE=1&&LAW_RUNE=1	37 Magic		4	Falador Teleport	20	4070=0	
 								
 # Teleport to House - These depend on the current player's home location  determined by varbit 2187								
+1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0	
 # 1 - Rimmington								
 2952 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=1	
 # 2 - Taverly								

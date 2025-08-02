@@ -16,13 +16,13 @@ import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarbitID;
 import shortestpath.TeleportationItem;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
@@ -46,6 +46,7 @@ import static shortestpath.TransportType.HOT_AIR_BALLOON;
 import static shortestpath.TransportType.MINECART;
 import static shortestpath.TransportType.QUETZAL;
 import static shortestpath.TransportType.SPIRIT_TREE;
+import static shortestpath.TransportType.TELEPORTATION_BOX;
 import static shortestpath.TransportType.TELEPORTATION_LEVER;
 import static shortestpath.TransportType.TELEPORTATION_MINIGAME;
 import static shortestpath.TransportType.TELEPORTATION_PORTAL;
@@ -70,19 +71,19 @@ public class PathfinderConfig {
     private static final WorldArea NOT_WILDERNESS_3 = new WorldArea(3000, 3534, 5, 5, 0);
     private static final WorldArea NOT_WILDERNESS_4 = new WorldArea(3031, 3525, 2, 2, 0);
     private static final List<Integer> RUNE_POUCHES = Arrays.asList(
-        ItemID.RUNE_POUCH, ItemID.RUNE_POUCH_L,
-        ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_L
+        ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
+        ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
     );
     private static final int[] RUNE_POUCH_RUNE_VARBITS = {
-        Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3, Varbits.RUNE_POUCH_RUNE4,
-        Varbits.RUNE_POUCH_RUNE5, Varbits.RUNE_POUCH_RUNE6
+        VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
+        VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
 	};
     private static final int[] RUNE_POUCH_AMOUNT_VARBITS = {
-        Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3, Varbits.RUNE_POUCH_AMOUNT4,
-        Varbits.RUNE_POUCH_AMOUNT5, Varbits.RUNE_POUCH_AMOUNT6
+        VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
+        VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
 	};
     private static final Set<Integer> CURRENCIES = Set.of(
-        ItemID.COINS_995, ItemID.TRADING_STICKS, ItemID.ECTOTOKEN, ItemID.WARRIOR_GUILD_TOKEN);
+        ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
 
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
@@ -122,6 +123,7 @@ public class PathfinderConfig {
         useMinecarts,
         useQuetzals,
         useSpiritTrees,
+        useTeleportationBoxes,
         useTeleportationLevers,
         useTeleportationMinigames,
         useTeleportationPortals,
@@ -176,6 +178,7 @@ public class PathfinderConfig {
         useQuetzals = ShortestPathPlugin.override("useQuetzals", config.useQuetzals());
         useSpiritTrees = ShortestPathPlugin.override("useSpiritTrees", config.useSpiritTrees());
         useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
+        useTeleportationBoxes = ShortestPathPlugin.override("useTeleportationBoxes", config.useTeleportationBoxes());
         useTeleportationLevers = ShortestPathPlugin.override("useTeleportationLevers", config.useTeleportationLevers());
         useTeleportationMinigames = ShortestPathPlugin.override("useTeleportationMinigames", config.useTeleportationMinigames());
         useTeleportationPortals = ShortestPathPlugin.override("useTeleportationPortals", config.useTeleportationPortals());
@@ -434,6 +437,8 @@ public class PathfinderConfig {
                     }
                     break;
             }
+        } else if (TELEPORTATION_BOX.equals(type) && !useTeleportationBoxes) {
+            return false;
         } else if (TELEPORTATION_LEVER.equals(type) && !useTeleportationLevers) {
             return false;
         } else if (TELEPORTATION_MINIGAME.equals(type) && !useTeleportationMinigames) {
