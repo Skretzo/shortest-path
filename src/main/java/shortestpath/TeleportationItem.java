@@ -10,7 +10,9 @@ public enum TeleportationItem {
     INVENTORY("Inventory"),
     INVENTORY_NON_CONSUMABLE("Inventory (perm)"),
     ALL("All"),
-    ALL_NON_CONSUMABLE("All (perm)");
+    ALL_NON_CONSUMABLE("All (perm)"),
+    INVENTORY_AND_BANK("Inventory and Bank"),
+    INVENTORY_AND_BANK_NON_CONSUMABLE("Inventory and Bank (perm)");
 
     private final String type;
 

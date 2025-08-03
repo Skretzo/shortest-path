@@ -135,6 +135,8 @@ public class PathfinderConfig {
     private Map<Integer, Integer> varbitValues = new HashMap<>();
     private Map<Integer, Integer> varPlayerValues = new HashMap<>();
 
+    public ItemContainer bank;
+
     public PathfinderConfig(Client client, ShortestPathConfig config) {
         this.client = client;
         this.config = config;
@@ -426,10 +428,12 @@ public class PathfinderConfig {
             switch (useTeleportationItems) {
                 case ALL:
                 case INVENTORY:
+                case INVENTORY_AND_BANK:
                     break;
                 case NONE:
                     return false;
                 case INVENTORY_NON_CONSUMABLE:
+                case INVENTORY_AND_BANK_NON_CONSUMABLE:
                 case ALL_NON_CONSUMABLE:
                     if (transport.isConsumable()) {
                         return false;
@@ -501,6 +505,15 @@ public class PathfinderConfig {
         }
         if (equipment != null) {
             for (Item item : equipment.getItems()) {
+                if (item.getId() >= 0 && item.getQuantity() > 0) {
+                    itemsAndQuantities.put(item.getId(), item.getQuantity());
+                }
+            }
+        }
+        if (bank != null &&
+                (TeleportationItem.INVENTORY_AND_BANK.equals(useTeleportationItems) ||
+                        TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(useTeleportationItems))) {
+            for (Item item : bank.getItems()) {
                 if (item.getId() >= 0 && item.getQuantity() > 0) {
                     itemsAndQuantities.put(item.getId(), item.getQuantity());
                 }
