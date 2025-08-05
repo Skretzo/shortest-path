@@ -4539,3 +4539,11 @@
 1795 3107 0	1799 9506 0	Enter Colosseum entrance 50749						
 1799 9506 0	1795 3106 0	Exit Stairs 50750						
 1799 9507 0	1795 3106 0	Exit Stairs 50750						
+
+# Arandar Gates
+2386 3333 0	2386 3335 0	Enter Huge Gate 3944			Regicide			2
+2386 3335 0	2386 3333 0	Enter Huge Gate 3944			Regicide			2
+
+# Lletya Entrance
+2304 3194 0	2306 3194 0	Pass Tree 8742			Mourning's End Part I			
+2306 3194 0	2304 3194 0	Pass Tree 8742			Mourning's End Part I			
