@@ -4545,8 +4545,8 @@
 2386 3335 0	2386 3333 0	Enter Huge Gate 3944			Regicide			2
 								
 # Lletya Entrance								
-2304 3194 0	2306 3194 0	Pass Tree 8742			Mourning's End Part I			2
-2306 3194 0	2304 3194 0	Pass Tree 8742			Mourning's End Part I			2
+2304 3194 0	2306 3194 0	Pass Tree 8742					517>1	5
+2306 3194 0	2304 3194 0	Pass Tree 8742					517>1	5
 								
 # Isafdar								
 2265 3192 0	2268 3192 0	Enter Dense forest 3938						4
