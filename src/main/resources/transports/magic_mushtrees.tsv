@@ -1,0 +1,17 @@
+# Origin	Destination	menuOption menuTarget objectID	Duration	Display info	Quests
+# House on the Hill					
+3764 3879 1		Use Magic Mushtree 30920			Bone Voyage
+3766 3879 1		Use Magic Mushtree 30920			Bone Voyage
+	3764 3879 1		6	1. House on the Hill	
+# Verdant Valley					
+3757 3757 0		Use Magic Mushtree 30924			Bone Voyage
+3757 3756 0		Use Magic Mushtree 30924			Bone Voyage
+	3760 3758 0		6	2. Verdant Valley	
+# Sticky Swamp					
+3676 3755 0		Use Magic Mushtree 30924			Bone Voyage
+3676 3756 0		Use Magic Mushtree 30924			Bone Voyage
+	3676 3755 0		6	3. Sticky Swamp	
+# Mushroom Meadow					
+3676 3871 0		Use Magic Mushtree 30924			Bone Voyage
+3676 3872 0		Use Magic Mushtree 30924			Bone Voyage
+	3676 3871 0		6	4. Mushroom Meadow	

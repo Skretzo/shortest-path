@@ -435,6 +435,7 @@ public class Transport {
         addTransports(transports, "/transports/minecarts.tsv", TransportType.MINECART);
         addTransports(transports, "/transports/quetzals.tsv", TransportType.QUETZAL);
         addTransports(transports, "/transports/spirit_trees.tsv", TransportType.SPIRIT_TREE, 5);
+        addTransports(transports, "/transports/magic_mushtrees.tsv", TransportType.SPIRIT_TREE, 5);
         addTransports(transports, "/transports/teleportation_items.tsv", TransportType.TELEPORTATION_ITEM);
         addTransports(transports, "/transports/teleportation_boxes.tsv", TransportType.TELEPORTATION_BOX);
         addTransports(transports, "/transports/teleportation_levers.tsv", TransportType.TELEPORTATION_LEVER);
