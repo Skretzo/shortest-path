@@ -4549,6 +4549,22 @@
 2304 3194 0	2306 3194 0	Pass Tree 8742					517>1	5
 2306 3194 0	2304 3194 0	Pass Tree 8742					517>1	5
 								
+# Mountain Guide (Varrock Museum)								
+1401 3536 0	1275 3559 0	Mount Quidamortem 7600					5421=1	7
+1401 3536 0	1272 3475 0	South of Quidamortem 7600					5421=1	7
+1275 3559 0	1401 3536 0	The Shayzien Outpost 7600					5421=1	7
+1275 3559 0	1272 3475 0	South of Quidamortem 7600					5421=1	7
+1272 3475 0	1401 3536 0	The Shayzien Outpost 7600					5421=1	7
+1272 3475 0	1275 3559 0	Mount Quidamortem 7600					5421=1	7
+								
 # Miazrqa Rupert the Beard Grim Tales house south of Mind Altar								
 2970 3462 0	2972 3462 0	Climb-over Crumbling wall 24749						2
 2972 3462 0	2970 3462 0	Climb-over Crumbling wall 24749	58 Thieving					2
+
+# Custodia Mountains Cave passage								
+1259 3430 0	1271 3436 0	Pass-through Cave 57219						4
+1271 3436 0	1259 3430 0	Pass-through Cave 57219						4
+								
+# Mountain Guide (Varlamore)								
+1486 3232 0	1361 3309 0	Follow Mountain Guide 14529						5
+1361 3309 0	1486 3232 0	Follow Mountain Guide 145295421=1						5
