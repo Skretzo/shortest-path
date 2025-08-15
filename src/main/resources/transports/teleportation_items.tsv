@@ -13,7 +13,7 @@
 # Fremennik sea boots (1,2,3 have 1 teleport per day, 4 is unlimited)									
 2643 3675 0			13129=1||13130=1||13131=1||13132=1		4	Fremennik sea boots	F	20	
 # Kandarin headgear (3 has 1 teleport per day, 4 is unlimited)									
-2729 3409 0			13137=1||13138=1||13139=1||13140=1		4	Kandarin headgear	F	20	
+2729 3409 0			13139=1||13140=1		4	Kandarin headgear	F	20	
 # Wilderness Sword (3 has 1 teleport per day, 4 is unlimited)									
 3377 3890 0			13110=1||13111=1		4	Wilderness sword	F	20	
 # Western Banner (3 has 1 teleport per day, 4 is unlimited)									
