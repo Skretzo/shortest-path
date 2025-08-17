@@ -407,6 +407,7 @@ public class Transport {
                     transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
                 }
             }
+            
             for (Transport origin : transportOrigins) {
                 for (Transport destination : transportDestinations) {
                     // The radius threshold prevents transport permutations from including (almost) same origin and destination
@@ -416,6 +417,7 @@ public class Transport {
                     }
                 }
             }
+            
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

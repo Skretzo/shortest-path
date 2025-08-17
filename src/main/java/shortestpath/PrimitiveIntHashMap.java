@@ -93,7 +93,15 @@ public class PrimitiveIntHashMap<V> {
             } else if (bucket[i].key == key) {
                 V previous = bucket[i].value;
                 if (previous instanceof Collection<?> && value instanceof Collection<?>) { // append
-                    ((Collection<E>) bucket[i].value).addAll((Collection<E>) value);
+                    try {
+                        Collection<E> prevCollection = (Collection<E>) bucket[i].value;
+                        Collection<E> newCollection = (Collection<E>) value;
+                        prevCollection.addAll(newCollection);
+                    } catch (ClassCastException | UnsupportedOperationException e) {
+                        // If the collections contain incompatible types or the operation is not supported,
+                        // just replace instead of append
+                        bucket[i].value = value;
+                    }
                 } else { // replace
                     bucket[i].value = value;
                 }
@@ -144,7 +152,15 @@ public class PrimitiveIntHashMap<V> {
 
     private IntNode<V>[] growBucket(int bucketIndex) {
         IntNode<V>[] oldBucket = buckets[bucketIndex];
-        IntNode<V>[] newBucket = createBucket(oldBucket.length * 2);
+        // Protect against integer overflow when doubling bucket size
+        int newSize = oldBucket.length;
+        if (newSize <= Integer.MAX_VALUE / 2) {
+            newSize *= 2;
+        } else {
+            // If we can't double, try to grow to maximum possible size
+            newSize = Integer.MAX_VALUE - 8; // Leave some room for VM overhead
+        }
+        IntNode<V>[] newBucket = createBucket(newSize);
         System.arraycopy(oldBucket, 0, newBucket, 0, oldBucket.length);
         buckets[bucketIndex] = newBucket;
         return newBucket;
@@ -206,8 +222,11 @@ public class PrimitiveIntHashMap<V> {
                     }
 
                     if (bInd >= newBucket.length) {
-                        growBucket(bucketIndex)[newBucket.length] = oldBucket[ind];
-                        return;
+                        // No space in the target bucket; grow it and append the entry,
+                        // but continue rehashing remaining entries instead of returning early.
+                        IntNode<V>[] grown = growBucket(bucketIndex);
+                        grown[newBucket.length] = oldBucket[ind];
+                        continue;
                     }
                 }
             }

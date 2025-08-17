@@ -81,12 +81,15 @@ public class CollisionMap {
         neighbors.clear();
 
         @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>)Collections.EMPTY_SET);
+        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition,
+                (Set<Transport>) Collections.EMPTY_SET);
 
         // Transports are pre-filtered by PathfinderConfig.refreshTransports
-        // Thus any transports in the list are guaranteed to be valid per the user's settings
+        // Thus any transports in the list are guaranteed to be valid per the user's
+        // settings
         for (Transport transport : transports) {
-            if (visited.get(transport.getDestination())) continue;
+            if (visited.get(transport.getDestination()))
+                continue;
             neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration()));
         }
 
@@ -121,15 +124,18 @@ public class CollisionMap {
         for (int i = 0; i < traversable.length; i++) {
             OrdinalDirection d = ORDINAL_VALUES[i];
             int neighborPacked = packedPointFromOrdinal(node.packedPosition, d);
-            if (visited.get(neighborPacked)) continue;
+            if (visited.get(neighborPacked))
+                continue;
 
             if (traversable[i]) {
                 neighbors.add(new Node(neighborPacked, node));
             } else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z)) {
                 // The transport starts from a blocked adjacent tile, e.g. fairy ring
-                // Only checks non-teleport transports (includes portals and levers, but not items and spells)
+                // Only checks non-teleport transports (includes portals and levers, but not
+                // items and spells)
                 @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>)Collections.EMPTY_SET);
+                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked,
+                        (Set<Transport>) Collections.EMPTY_SET);
                 for (Transport transport : neighborTransports) {
                     if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || visited.get(transport.getOrigin())) {
                         continue;

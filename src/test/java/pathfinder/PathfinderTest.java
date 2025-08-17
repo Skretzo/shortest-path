@@ -621,13 +621,6 @@ public class PathfinderTest {
     private int calculatePathLength(int origin, int destination) {
         Pathfinder pathfinder = new Pathfinder(pathfinderConfig, origin, Set.of(destination));
         pathfinder.run();
-        // Print the path
-        System.out.println("WorldPoint[] path = {");
-        for (int point : pathfinder.getPath()) {
-            System.out.println("new WorldPoint(" + WorldPointUtil.unpackWorldX(point) + ", " +
-                WorldPointUtil.unpackWorldY(point) + ", " + WorldPointUtil.unpackWorldPlane(point) + "),");
-        }
-        System.out.println("};");
         return pathfinder.getPath().size();
     }
 }

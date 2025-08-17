@@ -48,12 +48,12 @@ import static shortestpath.TransportType.MAGIC_MUSHTREE;
 import static shortestpath.TransportType.MINECART;
 import static shortestpath.TransportType.QUETZAL;
 import static shortestpath.TransportType.SPIRIT_TREE;
+import static shortestpath.TransportType.TELEPORTATION_SPELL;
 import static shortestpath.TransportType.TELEPORTATION_BOX;
 import static shortestpath.TransportType.TELEPORTATION_LEVER;
 import static shortestpath.TransportType.TELEPORTATION_MINIGAME;
 import static shortestpath.TransportType.TELEPORTATION_PORTAL;
 import static shortestpath.TransportType.TELEPORTATION_ITEM;
-import static shortestpath.TransportType.TELEPORTATION_SPELL;
 import static shortestpath.TransportType.WILDERNESS_OBELISK;
 
 public class PathfinderConfig {
@@ -72,6 +72,7 @@ public class PathfinderConfig {
     private static final WorldArea NOT_WILDERNESS_2 = new WorldArea(3005, 3534, 21, 10, 0);
     private static final WorldArea NOT_WILDERNESS_3 = new WorldArea(3000, 3534, 5, 5, 0);
     private static final WorldArea NOT_WILDERNESS_4 = new WorldArea(3031, 3525, 2, 2, 0);
+    
     private static final List<Integer> RUNE_POUCHES = Arrays.asList(
         ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
         ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
@@ -280,6 +281,7 @@ public class PathfinderConfig {
         transports.clear();
         transportsPacked.clear();
         usableTeleports.clear();
+
         for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet()) {
             int point = entry.getKey();
             Set<Transport> usableTransports = new HashSet<>(entry.getValue().size());
