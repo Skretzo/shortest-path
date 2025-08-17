@@ -202,7 +202,7 @@ public class PathfinderTest {
         when(config.useAgilityShortcuts()).thenReturn(true);
         when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
         // Draynor Manor to Champions Guild via several stepping stones, but
-        // enabling Combat bracelet teleport should not priotize over stepping stones
+        // enabling Combat bracelet teleport should not prioritize over stepping stones
         // 5 tiles is using the stepping stones
         // ~40 tiles is using the combat bracelet teleport to Champions Guild
         // >100 tiles is walking around the river via Barbarian Village
@@ -422,23 +422,26 @@ public class PathfinderTest {
          * Info:
          * NB: Primio can only be used between Varrock and Civitas illa Fortis
          * single_quetzal_origin_locations * (number_of_quetzals - 1) + 2
-         *   1 * 10 // Aldarin
-         * + 1 * 10 // Civitas illa Fortis
-         * + 1 * 10 // Hunter Guild
-         * + 1 * 10 // Quetzacalli Gorge
-         * + 1 * 10 // Sunset Coast
-         * + 1 * 10 // The Teomat
-         * + 1 * 10 // Fortis Colosseum
-         * + 1 * 10 // Outer Fortis
-         * + 1 * 10 // Colossal Wyrm Remains
-         * + 1 * 10 // Cam Torum
-         * + 1 * 10 // Salvager Overlook
+         *   1 * 13 // Aldarin
+         * + 1 * 13 // Auburnvale
+         * + 1 * 13 // Civitas illa Fortis
+         * + 1 * 13 // Hunter Guild
+         * + 1 * 13 // Quetzacalli Gorge
+         * + 1 * 13 // Sunset Coast
+         * + 1 * 13 // Tal Teklan
+         * + 1 * 13 // The Teomat
+         * + 1 * 13 // Cam Torum entrance
+         * + 1 * 13 // Colossal Wyrm Remains
+         * + 1 * 13 // Fortis Colosseum
+         * + 1 * 13 // Kastori
+         * + 1 * 13 // Outer Fortis
+         * + 1 * 13 // Salvager Overlook
          * + 1 // Varrock -> Civitas illa Fortis
          * + 1 // Civitas illa Fortis -> Varrock
-         * = 110 + 2
-         * = 112
+         * = 182 + 2
+         * = 184
          */
-        assertEquals(112, actualCount);
+        assertEquals(184, actualCount);
     }
 
     @Test
@@ -618,6 +621,13 @@ public class PathfinderTest {
     private int calculatePathLength(int origin, int destination) {
         Pathfinder pathfinder = new Pathfinder(pathfinderConfig, origin, Set.of(destination));
         pathfinder.run();
+        // Print the path
+        System.out.println("WorldPoint[] path = {");
+        for (int point : pathfinder.getPath()) {
+            System.out.println("new WorldPoint(" + WorldPointUtil.unpackWorldX(point) + ", " +
+                WorldPointUtil.unpackWorldY(point) + ", " + WorldPointUtil.unpackWorldPlane(point) + "),");
+        }
+        System.out.println("};");
         return pathfinder.getPath().size();
     }
 }

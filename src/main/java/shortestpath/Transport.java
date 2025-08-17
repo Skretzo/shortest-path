@@ -293,7 +293,7 @@ public class Transport {
 
     @Override
     public String toString() {
-        return ("(" +
+        return (this.type + " from (" +
             WorldPointUtil.unpackWorldX(origin) + ", " +
             WorldPointUtil.unpackWorldY(origin) + ", " +
             WorldPointUtil.unpackWorldPlane(origin) + ") to ("+

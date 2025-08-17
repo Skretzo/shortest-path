@@ -32,7 +32,7 @@ tasks.withType(JavaCompile) {
 }
 
 test {
-    jvmArgs = ['-Xms1g', '-Xmx4g']
+    jvmArgs = ['-Xms1g', '-Xmx8g']
 }
 
 jacoco {
