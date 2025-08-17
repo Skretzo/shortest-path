@@ -293,7 +293,7 @@ public class Transport {
 
     @Override
     public String toString() {
-        return (this.type + " from (" +
+        return ("(" +
             WorldPointUtil.unpackWorldX(origin) + ", " +
             WorldPointUtil.unpackWorldY(origin) + ", " +
             WorldPointUtil.unpackWorldPlane(origin) + ") to ("+
@@ -371,15 +371,15 @@ public class Transport {
              * A transport with origin A and destination B is one-way and must
              * be duplicated as origin B and destination A to become two-way.
              * Example: key-locked doors
-             * 
+             *
              * A transport with origin A and a missing destination is one-way,
              * but can go from origin A to all destinations with a missing origin.
              * Example: fairy ring AIQ -> <blank>
-             * 
+             *
              * A transport with a missing origin and destination B is one-way,
              * but can go from all origins with a missing destination to destination B.
              * Example: fairy ring <blank> -> AIQ
-             * 
+             *
              * Identical transports from origin A to destination A are skipped, and
              * non-identical transports from origin A to destination A can be skipped
              * by specifying a radius threshold to ignore almost identical coordinates.
@@ -407,7 +407,7 @@ public class Transport {
                     transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
                 }
             }
-            
+
             for (Transport origin : transportOrigins) {
                 for (Transport destination : transportDestinations) {
                     // The radius threshold prevents transport permutations from including (almost) same origin and destination
@@ -417,7 +417,7 @@ public class Transport {
                     }
                 }
             }
-            
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
