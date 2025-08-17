@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
 }
 
 repositories {
@@ -16,7 +17,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.6'
     testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
     testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
@@ -28,4 +29,32 @@ sourceCompatibility = '1.11'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+}
+
+test {
+    jvmArgs = ['-Xms1g', '-Xmx4g']
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/test/jacocoTestReport.xml')
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/test/html')
+    }
+}
+
+// Convenience task to start the RuneLite client with the ShortestPathPlugin
+tasks.register('runelite', JavaExec) {
+    group = 'application'
+    description = 'Runs pathfinder.ShortestPathPluginTest with assertions enabled'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass.set('pathfinder.ShortestPathPluginTest')
+    jvmArgs '-ea'
+    args '--developer-mode'
 }

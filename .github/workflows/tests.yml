@@ -1,0 +1,63 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [ master, test-ci ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Gradle Test (Java 11)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Run tests
+        run: |
+          ./gradlew --version
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+        shell: bash
+
+      - name: Upload JUnit XML results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-xml
+          path: build/test-results/test
+          if-no-files-found: warn
+
+      - name: Upload HTML test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-html
+          path: build/reports/tests/test
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo coverage report (HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html
+          path: build/reports/jacoco/test/html
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo coverage report (XML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml
+          path: build/reports/jacoco/test/jacocoTestReport.xml
+          if-no-files-found: warn
