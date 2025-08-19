@@ -4675,3 +4675,12 @@
 # Mountain Guide between Nemus Retreat and Quetzacalli Gorge									
 1486 3232 0	1361 3309 0	Follow Mountain Guide 14529				17226=1		5	
 1361 3309 0	1486 3232 0	Follow Mountain Guide 14529				17226=1		5	
+									
+# Entrance to the Brimhaven Dungeon									
+2745 3152 0	2713 9564 0	Pay Dungeon entrance 20877		COINS=875				2	
+2744 3152 0	2713 9564 0	Pay Dungeon entrance 20877		COINS=875				2	
+									
+2713 9564 0	2745 3152 0	Leave exit 20878						2	
+									
+# Second Brimhaven Dungeon entrance									
+# TODO if you pay 5000 trading sticks you can enter the dungeon down south									
