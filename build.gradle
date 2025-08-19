@@ -29,3 +29,13 @@ sourceCompatibility = '1.11'
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
+
+// Convenience task to start the RuneLite client with the ShortestPathPlugin
+tasks.register('runelite', JavaExec) {
+    group = 'application'
+    description = 'Runs pathfinder.ShortestPathPluginTest with assertions enabled'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass.set('pathfinder.ShortestPathPluginTest')
+    jvmArgs '-ea'
+    args '--developer-mode'
+}

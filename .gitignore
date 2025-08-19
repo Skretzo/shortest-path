@@ -4,6 +4,8 @@ build/
 out/
 bin/
 
+.vscode/
+
 # For the Collision Map build
 runelite/
 cache/
