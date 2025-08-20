@@ -2110,12 +2110,14 @@
 3613 3342 1	3613 3338 0	Climb-down Staircase 39492							
 3599 3317 0	3603 3317 1	Climb-up Staircase 39491							
 3603 3317 1	3599 3317 0	Climb-down Staircase 39492							
-3667 3375 0	3670 3375 0	Climb Wall 39542							
-3670 3375 0	3667 3375 0	Climb Wall 39542							
-3670 3375 0	3673 3375 0	Climb Wall 39541							
-3673 3375 0	3670 3375 0	Climb Wall 39541							
-3672 3376 0	3670 3375 0	Climb Wall 39541							
-3672 3374 0	3670 3375 0	Climb Wall 39541							
+3667 3375 0	3670 3375 0	Climb Wall 39542	63 Agility			10449=1			
+3670 3375 0	3667 3375 0	Climb Wall 39542	63 Agility			10449=1			
+3670 3375 0	3673 3375 0	Climb Wall 39541	63 Agility			10450=1			
+3673 3375 0	3670 3375 0	Climb Wall 39541	63 Agility			10450=1			
+3672 3376 0	3670 3375 0	Climb Wall 39541	63 Agility			10450=1			
+3672 3374 0	3670 3375 0	Climb Wall 39541	63 Agility			10450=1			
+3565 3379 0	3562 3379 0	Jump-over Rocks 57666	69 Agility		Sins of the Father				
+3562 3379 0	3565 3379 0	Jump-over Inconspicuous rocks (master) 29044	69 Agility		Sins of the Father				
 									
 # The Hollows									
 3480 9837 0	3480 9836 0	Search Wall 5052							
@@ -2324,14 +2326,6 @@
 # Slayer Tower									
 3417 3536 0	3412 9932 3	Climb-down Ladder 30191							
 3412 9932 3	3417 3536 0	Climb-up Ladder 30192							
-3421 3550 0	3421 3550 1	Climb-up Spikey chain 16537							
-3422 3551 0	3422 3551 1	Climb-up Spikey chain 16537							
-3423 3550 0	3423 3550 1	Climb-up Spikey chain 16537							
-3422 3549 0	3422 3549 1	Climb-up Spikey chain 16537							
-3421 3550 1	3421 3550 0	Climb-down Spikey chain 16538							
-3422 3551 1	3422 3551 0	Climb-down Spikey chain 16538							
-3422 3549 1	3422 3549 0	Climb-down Spikey chain 16538							
-3423 3550 1	3423 3550 0	Climb-down Spikey chain 16538							
 3427 3555 1	3427 3556 1	Open Door 2104							
 3427 3556 1	3427 3555 1	Open Door 2104							
 3426 3555 1	3426 3556 1	Open Door 2102							

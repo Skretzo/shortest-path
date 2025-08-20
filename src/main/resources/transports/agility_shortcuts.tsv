@@ -276,14 +276,6 @@
 2888 9823 1	2886 9823 0	Jump-down Rocks 14106	70 Agility				
 3372 2959 0	3373 2955 0	Cross Stepping stone 53241	71 Agility				2
 3373 2955 0	3372 2959 0	Cross Stepping stone 53241	71 Agility				2
-3447 3575 1	3447 3575 2	Climb-up Spikey chain 16537	71 Agility				
-3447 3575 2	3447 3575 1	Climb-down Spikey chain 16538	71 Agility				
-3446 3576 1	3446 3576 2	Climb-up Spikey chain 16537	71 Agility				
-3446 3576 2	3446 3576 1	Climb-down Spikey chain 16538	71 Agility				
-3447 3577 1	3447 3577 2	Climb-up Spikey chain 16537	71 Agility				
-3447 3577 2	3447 3577 1	Climb-down Spikey chain 16538	71 Agility				
-3448 3576 1	3448 3576 2	Climb-up Spikey chain 16537	71 Agility				
-3448 3576 2	3448 3576 1	Climb-down Spikey chain 16538	71 Agility				
 3268 3629 0	3268 3625 0	Cross Stepping stone 53237	72 Agility				2
 3268 3625 0	3268 3629 0	Cross Stepping stone 53237	72 Agility				2
 2429 9807 0	2435 9807 0	Enter Tunnel 30174	72 Agility				
@@ -306,3 +298,26 @@
 2332 3252 0	2338 3253 0	Climb rocks 16514	85 Agility				6
 3500 9510 2	3506 9505 2	Squeeze-through Crevice 16465	86 Agility				
 3506 9505 2	3500 9510 2	Squeeze-through Crevice 16465	86 Agility				
+3765 3883 1	3765 3898 0	Teeth-grip Zip line 17030	74 Agility				10
+
+# Slayer Tower
+3444 3533 0	3442 3531 0	Climb-through Broken window 2173	18 Agility				4	
+3442 3531 0	3444 3533 0	Climb-through Broken window 2173	18 Agility				4	
+3421 3550 0	3421 3550 1	Climb-up Spikey chain 16537	61 Agility						
+3422 3551 0	3422 3551 1	Climb-up Spikey chain 16537	61 Agility						
+3423 3550 0	3423 3550 1	Climb-up Spikey chain 16537	61 Agility						
+3422 3549 0	3422 3549 1	Climb-up Spikey chain 16537	61 Agility						
+3421 3550 1	3421 3550 0	Climb-down Spikey chain 16538	61 Agility						
+3422 3551 1	3422 3551 0	Climb-down Spikey chain 16538	61 Agility						
+3422 3549 1	3422 3549 0	Climb-down Spikey chain 16538	61 Agility						
+3423 3550 1	3423 3550 0	Climb-down Spikey chain 16538	61 Agility						
+3447 3575 1	3447 3575 2	Climb-up Spikey chain 16537	71 Agility				
+3447 3575 2	3447 3575 1	Climb-down Spikey chain 16538	71 Agility				
+3446 3576 1	3446 3576 2	Climb-up Spikey chain 16537	71 Agility				
+3446 3576 2	3446 3576 1	Climb-down Spikey chain 16538	71 Agility				
+3447 3577 1	3447 3577 2	Climb-up Spikey chain 16537	71 Agility				
+3447 3577 2	3447 3577 1	Climb-down Spikey chain 16538	71 Agility				
+3448 3576 1	3448 3576 2	Climb-up Spikey chain 16537	71 Agility				
+3448 3576 2	3448 3576 1	Climb-down Spikey chain 16538	71 Agility				
+3418 3532 0	3420 3534 2	Climb-up Ivy 2176	81 Agility				5	
+3420 3534 2	3418 3532 0	Climb-through Broken window 2173	81 Agility				7	
