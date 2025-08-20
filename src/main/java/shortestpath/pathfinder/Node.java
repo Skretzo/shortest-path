@@ -32,6 +32,22 @@ public class Node {
         return new ArrayList<>(path);
     }
 
+    public List<Integer> getObjectIDs(){
+        List<Integer> path = new LinkedList<>();
+        Node node = this;
+
+        while (node != null) {
+            if (node instanceof TransportNode){
+                int id = ((TransportNode)node).getObjectID();
+                if (id > 0)
+                    path.add(id);
+            }
+            node = node.previous;
+        }
+
+        return new ArrayList<>(path);
+    }
+
     public List<Integer> getPathPacked() {
         List<Integer> path = new LinkedList<>();
         Node node = this;

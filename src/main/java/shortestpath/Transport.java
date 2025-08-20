@@ -35,6 +35,10 @@ public class Transport {
     @Getter
     private int destination = UNDEFINED_DESTINATION;
 
+    /** The ID of the object to interact with to use this transport */
+    @Getter
+    private int objectID;
+
     /** The skill levels required to use this transport */
     @Getter
     private final int[] skillLevels = new int[Skill.values().length];
@@ -135,6 +139,14 @@ public class Transport {
                 Integer.parseInt(destinationArray[0]),
                 Integer.parseInt(destinationArray[1]),
                 Integer.parseInt(destinationArray[2])) : LOCATION_PERMUTATION;
+        }
+
+        if ((value = fieldMap.get("menuOption menuTarget objectID")) != null) {
+            String[] originArray = value.split(DELIM_SPACE);
+            try {
+                objectID = Integer.parseInt(originArray[originArray.length - 1]);
+            }catch(NumberFormatException e) {}
+            catch (ArrayIndexOutOfBoundsException e) {}
         }
 
         if ((value = fieldMap.get("Skills")) != null) {

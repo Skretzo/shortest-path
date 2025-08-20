@@ -1,12 +1,7 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
+
 import lombok.Getter;
 import shortestpath.WorldPointUtil;
 
@@ -32,6 +27,8 @@ public class Pathfinder implements Runnable {
 
     @SuppressWarnings("unchecked") // Casting EMPTY_LIST is safe here
     private List<Integer> path = (List<Integer>)Collections.EMPTY_LIST;
+    @SuppressWarnings("unchecked") // Casting EMPTY_LIST is safe here
+    private List<Integer> ids = (List<Integer>)Collections.EMPTY_LIST;
     private boolean pathNeedsUpdate = false;
     private Node bestLastNode;
     /**
@@ -80,10 +77,26 @@ public class Pathfinder implements Runnable {
 
         if (pathNeedsUpdate) {
             path = lastNode.getPath();
+            ids = lastNode.getObjectIDs();
             pathNeedsUpdate = false;
         }
 
         return path;
+    }
+
+    public List<Integer> getObjectIDs() {
+        Node lastNode = bestLastNode; // For thread safety, read bestLastNode once
+        if (lastNode == null) {
+            return ids;
+        }
+
+        if (pathNeedsUpdate) {
+            path = lastNode.getPath();
+            ids = lastNode.getObjectIDs();
+            pathNeedsUpdate = false;
+        }
+
+        return ids;
     }
 
     private void addNeighbors(Node node) {

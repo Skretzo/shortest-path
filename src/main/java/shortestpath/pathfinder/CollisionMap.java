@@ -87,7 +87,7 @@ public class CollisionMap {
         // Thus any transports in the list are guaranteed to be valid per the user's settings
         for (Transport transport : transports) {
             if (visited.get(transport.getDestination())) continue;
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration()));
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), transport.getObjectID()));
         }
 
         if (isBlocked(x, y, z)) {
