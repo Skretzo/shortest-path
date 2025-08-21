@@ -121,8 +121,7 @@ public class CollisionMap {
         for (int i = 0; i < traversable.length; i++) {
             OrdinalDirection d = ORDINAL_VALUES[i];
             int neighborPacked = packedPointFromOrdinal(node.packedPosition, d);
-            if (visited.get(neighborPacked))
-                continue;
+            if (visited.get(neighborPacked)) continue;
 
             if (traversable[i]) {
                 neighbors.add(new Node(neighborPacked, node));

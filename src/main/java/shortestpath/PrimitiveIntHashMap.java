@@ -152,15 +152,7 @@ public class PrimitiveIntHashMap<V> {
 
     private IntNode<V>[] growBucket(int bucketIndex) {
         IntNode<V>[] oldBucket = buckets[bucketIndex];
-        // Protect against integer overflow when doubling bucket size
-        int newSize = oldBucket.length;
-        if (newSize <= Integer.MAX_VALUE / 2) {
-            newSize *= 2;
-        } else {
-            // If we can't double, try to grow to maximum possible size
-            newSize = Integer.MAX_VALUE - 8; // Leave some room for VM overhead
-        }
-        IntNode<V>[] newBucket = createBucket(newSize);
+        IntNode<V>[] newBucket = createBucket(Math.min(oldBucket.length, Integer.MAX_VALUE / 2 - 4) * 2);
         System.arraycopy(oldBucket, 0, newBucket, 0, oldBucket.length);
         buckets[bucketIndex] = newBucket;
         return newBucket;
