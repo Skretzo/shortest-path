@@ -81,7 +81,7 @@ public class CollisionMap {
         neighbors.clear();
 
         @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>) Collections.EMPTY_SET);
+        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>)Collections.EMPTY_SET);
 
         // Transports are pre-filtered by PathfinderConfig.refreshTransports
         // Thus any transports in the list are guaranteed to be valid per the user's settings
@@ -129,7 +129,7 @@ public class CollisionMap {
                 // The transport starts from a blocked adjacent tile, e.g. fairy ring
                 // Only checks non-teleport transports (includes portals and levers, but not items and spells)
                 @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>) Collections.EMPTY_SET);
+                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>)Collections.EMPTY_SET);
                 for (Transport transport : neighborTransports) {
                     if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || visited.get(transport.getOrigin())) {
                         continue;

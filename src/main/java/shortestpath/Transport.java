@@ -371,15 +371,15 @@ public class Transport {
              * A transport with origin A and destination B is one-way and must
              * be duplicated as origin B and destination A to become two-way.
              * Example: key-locked doors
-             *
+             * 
              * A transport with origin A and a missing destination is one-way,
              * but can go from origin A to all destinations with a missing origin.
              * Example: fairy ring AIQ -> <blank>
-             *
+             * 
              * A transport with a missing origin and destination B is one-way,
              * but can go from all origins with a missing destination to destination B.
              * Example: fairy ring <blank> -> AIQ
-             *
+             * 
              * Identical transports from origin A to destination A are skipped, and
              * non-identical transports from origin A to destination A can be skipped
              * by specifying a radius threshold to ignore almost identical coordinates.
