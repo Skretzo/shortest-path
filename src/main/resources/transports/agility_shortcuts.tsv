@@ -334,3 +334,10 @@
 # Forthos Dungeon
 1820 9946 0	1820 9944 0	Jump-over Strange floor 3483	63 Agility				4
 1820 9944 0	1820 9946 0	Jump-over Strange floor 3483	63 Agility				4
+# Cairn Isle
+2795 2978 0	2791 2978 0	Climb Rocks 2231	15 Agility			
+2795 2979 0	2791 2979 0	Climb Rocks 2231	15 Agility			
+2795 2980 0	2791 2980 0	Climb Rocks 2231	15 Agility				
+2791 2978 0	2795 2978 0	Climb Rocks 2231	15 Agility            
+2791 2979 0	2795 2979 0	Climb Rocks 2231	15 Agility            
+2791 2980 0	2795 2980 0	Climb Rocks 2231	15 Agility
