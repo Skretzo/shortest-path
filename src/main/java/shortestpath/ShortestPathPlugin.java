@@ -364,7 +364,7 @@ public class ShortestPathPlugin extends Plugin {
         if (pathfinder == null) {
             return;
         }
-        if (config.postTransports()) {
+        if (override("postTransports", config.postTransports())) {
             Map<String, Object> data = new HashMap<>();
             List<WorldPoint> transportOrigins = new ArrayList<>();
             List<WorldPoint> transportDestinations = new ArrayList<>();
