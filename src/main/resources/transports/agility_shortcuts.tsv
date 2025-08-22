@@ -47,7 +47,7 @@
 3240 3334 0	3240 3335 0	Jump-over Fence 16518	13 Agility				2
 2820 3635 0	2822 3635 0	Climb Rocks 3748	15 Agility	CLIMBING_BOOTS=1			
 2857 3611 0	2857 3613 0	Climb Rocks 3748	15 Agility	CLIMBING_BOOTS=1			
-2856 3611 0	2856 3613 0	Climb Rocks 3748	15 Agility	CLIMBING_BOOTS=1			
+2856 3611 0	2856 3613 0	Climb Rocks 3748	15 Agility	CLIMBING_BOOTS=1						
 2575 3107 0	2575 3112 0	Climb-under Castle wall 16519	16 Agility				
 2575 3112 0	2575 3107 0	Climb-into Hole 16520	16 Agility				
 3444 3533 0	3442 3531 0	Climb-through Broken window 2173	18 Agility				4
@@ -110,6 +110,8 @@
 1607 3571 0	1603 3571 0	Cross Stepping stone 29730	40 Agility				2
 2580 9520 0	2580 9512 0	Walk-across Balancing ledge 23548	40 Agility				9
 2580 9512 0	2580 9520 0	Walk-across Balancing ledge 23548	40 Agility				9
+2578 9506 0	2572 9506 0	Squeeze-through Obstacle pipe 23140	40 Agility				10
+2548 3119 0	2548 3117 1	Climb-up Trellis 20056	18 Agility				3
 2872 3671 0	2869 3671 0	Climb Rocks 16521	41 Agility				
 2869 3671 0	2872 3671 0	Climb Rocks 16521	41 Agility				
 1391 3323 0	1396 3323 0	Climb Rocks 56994	41 Agility				6
