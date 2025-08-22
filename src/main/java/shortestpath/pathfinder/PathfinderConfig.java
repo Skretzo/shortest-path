@@ -215,8 +215,10 @@ public class PathfinderConfig {
         }
 
         if (!usableWildyTeleports.isEmpty()) {
-            transports.put(packedLocation, usableWildyTeleports);
-            transportsPacked.put(packedLocation, usableWildyTeleports);
+            Set<Transport> oldTransports = transports.getOrDefault(packedLocation, new HashSet<>());
+            oldTransports.addAll(usableWildyTeleports);
+            transports.put(packedLocation, oldTransports);
+            transportsPacked.put(packedLocation, usableWildyTeleports); // appends for collections
         }
     }
 
