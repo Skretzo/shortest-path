@@ -58,7 +58,7 @@ public class Transport {
     /** Info to display for this transport. For spirit trees, fairy rings,
      * and others, this is the destination option to pick. */
     @Getter
-    private String displayInfo;
+    private String displayInfo = null;
 
     /** If this is an item transport, this tracks if it is consumable (as opposed to having infinite uses) */
     @Getter
@@ -67,6 +67,10 @@ public class Transport {
     /** The maximum wilderness level that the transport can be used in */
     @Getter
     private int maxWildernessLevel = -1;
+
+    /** Object information for this transport */
+    @Getter
+    private String objectInfo = null;
 
     /** Any varbits to check for the transport to be valid. All must pass for a transport to be valid */
     @Getter
@@ -107,6 +111,8 @@ public class Transport {
         this.maxWildernessLevel = Math.max(
             origin.maxWildernessLevel,
             destination.maxWildernessLevel);
+
+        this.objectInfo = origin.objectInfo;
 
         this.varbits.addAll(origin.varbits);
         this.varbits.addAll(destination.varbits);
@@ -236,6 +242,10 @@ public class Transport {
             } catch (NumberFormatException e) {
                 log.error("Invalid wilderness level: " + value);
             }
+        }
+
+        if ((value = fieldMap.get("menuOption menuTarget objectID")) != null) {
+            this.objectInfo = value;
         }
 
         if ((value = fieldMap.get("Varbits")) != null) {

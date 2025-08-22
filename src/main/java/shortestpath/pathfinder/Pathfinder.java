@@ -8,6 +8,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import lombok.Getter;
+import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 
 public class Pathfinder implements Runnable {
@@ -20,6 +21,7 @@ public class Pathfinder implements Runnable {
     @Getter
     private final Set<Integer> targets;
 
+    private final ShortestPathPlugin plugin;
     private final PathfinderConfig config;
     private final CollisionMap map;
     private final boolean targetInWilderness;
@@ -44,8 +46,9 @@ public class Pathfinder implements Runnable {
      */
     private int wildernessLevel;
 
-    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets) {
+    public Pathfinder(ShortestPathPlugin plugin, PathfinderConfig config, int start, Set<Integer> targets) {
         stats = new PathfinderStats();
+        this.plugin = plugin;
         this.config = config;
         this.map = config.getMap();
         this.start = start;
@@ -184,6 +187,8 @@ public class Pathfinder implements Runnable {
         pending.clear();
 
         stats.end(); // Include cleanup in stats to get the total cost of pathfinding
+
+        plugin.postPluginMessages();
     }
 
     public static class PathfinderStats {

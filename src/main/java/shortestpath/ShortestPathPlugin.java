@@ -44,6 +44,7 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
@@ -74,6 +75,7 @@ public class ShortestPathPlugin extends Plugin {
     private static final String PLUGIN_MESSAGE_START = "start";
     private static final String PLUGIN_MESSAGE_TARGET = "target";
     private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
+    private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
     private static final String CLEAR = "Clear";
     private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
     private static final String SET = "Set";
@@ -93,6 +95,9 @@ public class ShortestPathPlugin extends Plugin {
 
     @Inject
     private ShortestPathConfig config;
+
+    @Inject
+    private EventBus eventBus;
 
     @Inject
     private OverlayManager overlayManager;
@@ -215,7 +220,7 @@ public class ShortestPathPlugin extends Plugin {
                 if (ends.isEmpty()) {
                     setTarget(WorldPointUtil.UNDEFINED);
                 } else {
-                    pathfinder = new Pathfinder(pathfinderConfig, start, ends);
+                    pathfinder = new Pathfinder(this, pathfinderConfig, start, ends);
                     pathfinderFuture = pathfindingExecutor.submit(pathfinder);
                 }
             }
@@ -352,6 +357,37 @@ public class ShortestPathPlugin extends Plugin {
             this.configOverride.clear();
             cacheConfigValues();
             setTarget(WorldPointUtil.UNDEFINED);
+        }
+    }
+
+    public void postPluginMessages() {
+        if (pathfinder == null) {
+            return;
+        }
+        if (config.postTransports()) {
+            Map<String, Object> data = new HashMap<>();
+            List<WorldPoint> transportOrigins = new ArrayList<>();
+            List<WorldPoint> transportDestinations = new ArrayList<>();
+            List<String> transportObjectInfos = new ArrayList<>();
+            List<String> transportDisplayInfos = new ArrayList<>();
+            List<Integer> currentPath = pathfinder.getPath();
+            for (int i = 1; i < currentPath.size(); i++) {
+                int origin = currentPath.get(i-1);
+                int destination = currentPath.get(i);
+                for (Transport transport : pathfinderConfig.getTransports().getOrDefault(origin, new HashSet<>())) {
+                    if (transport.getDestination() == destination) {
+                        transportOrigins.add(WorldPointUtil.unpackWorldPoint(origin));
+                        transportDestinations.add(WorldPointUtil.unpackWorldPoint(destination));
+                        transportObjectInfos.add(transport.getObjectInfo());
+                        transportDisplayInfos.add(transport.getDisplayInfo());
+                    }
+                }
+            }
+            data.put("origin", transportOrigins);
+            data.put("destination", transportDestinations);
+            data.put("objectInfo", transportObjectInfos);
+            data.put("displayInfo", transportDisplayInfos);
+            eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_TRANSPORTS, data));
         }
     }
 
