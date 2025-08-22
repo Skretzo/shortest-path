@@ -4721,3 +4721,36 @@
 2871 2972 1	2871 2972 0	Climb-down Ladder 16679						2	
 2872 2971 0	2872 2971 1	Climb-up Ladder 16683						2	
 2872 2971 1	2872 2971 0	Climb-down Ladder 16679						2	
+
+# Forthos Dungeon
+1702 3575 0	1830 9973 0	Climb-down Ladder 34862
+1829 9974 0	1702 3575 0	Climb-up Ladder 34863
+1831 9974 0	1702 3575 0	Climb-up Ladder 34863
+1830 9975 0	1702 3575 0	Climb-up Ladder 34863
+1830 9973 0	1702 3575 0	Climb-up Ladder 34863
+1798 9969 0	1670 3569 0	Climb-up Staircase 34864
+1799 9969 0	1670 3569 0	Climb-up Staircase 34864
+1800 9968 0	1670 3569 0	Climb-up Staircase 34864
+1800 9967 0	1670 3569 0	Climb-up Staircase 34864
+1799 9966 0	1670 3569 0	Climb-up Staircase 34864
+1670 3569 0	1800 9968 0	Climb-down Staircase 34865
+1671 3568 0	1800 9968 0	Climb-down Staircase 34865
+1671 3567 0	1800 9968 0	Climb-down Staircase 34865
+1670 3566 0	1800 9968 0	Climb-down Staircase 34865
+# Temple door east is always available
+1824 9973 0	1825 9973 0	Open Temple Door 34843
+# Need to find varbit that controls these doors
+# 1825 9973 0	1824 9973 0	Open Temple Door 34843
+# 1802 9958 0	1802 9956 0	Open Temple Door 34843
+# 1802 9956 0	1802 9958 0	Open Temple Door 34843
+
+# Catacombs/Forthos
+# Need to find varbit that updates when climbing the vines
+# 1803 9968 0	1726 9994 0	Enter Strange passage 28918
+# 1803 9967 0	1726 9994 0	Enter Strange passage 28918
+1726 9994 0	1803 9968 0	Climb-up Vine 28897
+1725 9993 0	1803 9968 0	Climb-up Vine 28897
+1727 9993 0	1803 9968 0	Climb-up Vine 28897
+1726 9992 0	1803 9968 0	Climb-up Vine 28897
+
+
