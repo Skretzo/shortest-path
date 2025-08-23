@@ -4914,3 +4914,12 @@
 2936 2938 0	2936 2940 0	Chop-down Jungle Bush 2893		MACHETE=1			139>49	2	
 2936 2938 0	2936 2936 0	Chop-down Jungle tree 2889		AXE=1			139>49	10	
 2936 2936 0	2936 2938 0	Chop-down Jungle tree 2889		AXE=1			139>49	10	
+									
+# Draynor Village Rooftop Course									
+3103 3279 0	3102 3279 3	Climb Rough wall 11404						4	
+3099 3277 3	3090 3276 3	Cross Tightrope 11405						12	
+3091 3276 3	3092 3266 3	Cross Tightrope  11406						12	
+3089 3265 3	3088 3261 3	Balance Narrow wall 11430						5	
+3088 3257 3	3088 3255 3	Jump-up Wall 11630						4	
+3094 3255 3	3096 3256 3	Jump-up Gap 11631						4	
+3100 3261 3	3103 3261 0	Climb-down Crate 11632						8	
