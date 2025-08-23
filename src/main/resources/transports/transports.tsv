@@ -4923,3 +4923,13 @@
 3088 3257 3	3088 3255 3	Jump-up Wall 11630						4	
 3094 3255 3	3096 3256 3	Jump-up Gap 11631						4	
 3100 3261 3	3103 3261 0	Climb-down Crate 11632						8	
+									
+# Al Kharid Rooftop Course									
+3273 3195 0	3273 3192 3	Climb Rough wall 11633						4	
+3272 3182 3	3272 3172 3	Cross Tightrope 14398						12	
+3268 3166 3	3284 3166 3	Swing-across Cable 14402						5	
+3301 3163 3	3315 3163 1	Teeth-grip Zip line 14403						15	
+3318 3165 1	3317 3174 2	Swing-across Tropical tree 14404						8	
+3316 3179 2	3316 3180 3	Climb Roof top beams 11634						4	
+3314 3186 3	3302 3187 3	Cross Tightrope 14409						15	
+3300 3192 3	3299 3194 0	Jump Gap 14399						2	
