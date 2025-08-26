@@ -1,9 +1,9 @@
 # Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Display info	Consumable	Wilderness level	Varbits
 # Ardougne Cloaks (2 has 3 teleports to farm, 3 has 5 teleports to farm, 4 has unlimited teleports to farm) PS: varbit 6069 is only lowbits, highbits is not transmitted									
 2606 3221 0			13121=1||13122=1||13123=1||13124=1||20760=1		4	Ardougne cloak: Kandarin Monastery	F	20	
-2664 3374 0			13122=1		4	Ardougne cloak: Farm	F	20	6069<3
-2664 3374 0			13123=1		4	Ardougne cloak: Farm	F	20	6069<5
-2664 3374 0			13124=1||20760=1		4	Ardougne cloak: Farm	F	20	
+2664 3374 0			13122=1		4	Ardougne cloak: Ardougne Farm	F	20	6069<3
+2664 3374 0			13123=1		4	Ardougne cloak: Ardougne Farm	F	20	6069<5
+2664 3374 0			13124=1||20760=1		4	Ardougne cloak: Ardougne Farm	F	20	
 # Karamja Gloves									
 2840 9387 0			11140=1||13103=1		4	Karamja gloves: Gem Mine	F	20	
 2869 2982 1			13103=1		4	Karamja gloves 4: Slayer Master	F	20	
