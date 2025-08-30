@@ -347,3 +347,161 @@
 2332 3252 0	2338 3253 0	Climb rocks 16514	85 Agility				6
 3500 9510 2	3506 9505 2	Squeeze-through Crevice 16465	86 Agility				
 3506 9505 2	3500 9510 2	Squeeze-through Crevice 16465	86 Agility				
+							
+							
+# Draynor Village Rooftop Course							
+3103 3279 0	3102 3279 3	Climb Rough wall 11404	1 Agility				4
+3099 3277 3	3090 3276 3	Cross Tightrope 11405	1 Agility				12
+3091 3276 3	3092 3266 3	Cross Tightrope  11406	1 Agility				12
+3089 3265 3	3088 3261 3	Balance Narrow wall 11430	1 Agility				5
+3088 3257 3	3088 3255 3	Jump-up Wall 11630	1 Agility				4
+3094 3255 3	3096 3256 3	Jump-up Gap 11631	1 Agility				4
+3100 3261 3	3103 3261 0	Climb-down Crate 11632	1 Agility				8
+							
+# Al Kharid Rooftop Course							
+3273 3195 0	3273 3192 3	Climb Rough wall 11633	20 Agility				4
+3272 3182 3	3272 3172 3	Cross Tightrope 14398	20 Agility				12
+3268 3166 3	3284 3166 3	Swing-across Cable 14402	20 Agility				5
+3301 3163 3	3315 3163 1	Teeth-grip Zip line 14403	20 Agility				15
+3318 3165 1	3317 3174 2	Swing-across Tropical tree 14404	20 Agility				8
+3316 3179 2	3316 3180 3	Climb Roof top beams 11634	20 Agility				4
+3314 3186 3	3302 3187 3	Cross Tightrope 14409	20 Agility				15
+3300 3192 3	3299 3194 0	Jump Gap 14399	20 Agility				2
+							
+# Varrock Rooftop Course							
+3221 3414 0	3219 3414 3	Climb Rough wall 14412	30 Agility				6
+3214 3414 3	3208 3414 3	Cross Clothes line 14413	30 Agility				6
+3201 3416 3	3197 3416 1	Leap Gap 14414	30 Agility				4
+3194 3416 1	3192 3406 3	Balance Wall 14832	30 Agility				19
+							
+3192 3402 3	3192 3398 3	Leap Gap 14833	30 Agility				8
+3193 3402 3	3193 3398 3	Leap Gap 14833	30 Agility				8
+3194 3402 3	3194 3398 3	Leap Gap 14833	30 Agility				8
+3195 3402 3	3195 3398 3	Leap Gap 14833	30 Agility				8
+3196 3402 3	3196 3398 3	Leap Gap 14833	30 Agility				8
+3197 3402 3	3197 3398 3	Leap Gap 14833	30 Agility				8
+3198 3402 3	3198 3398 3	Leap Gap 14833	30 Agility				8
+							
+3208 3401 3	3218 3399 3	Leap Gap 14834	30 Agility				5
+3208 3400 3	3218 3399 3	Leap Gap 14834	30 Agility				5
+3208 3399 3	3218 3399 3	Leap Gap 14834	30 Agility				5
+3208 3398 3	3218 3399 3	Leap Gap 14834	30 Agility				5
+3208 3397 3	3218 3399 3	Leap Gap 14834	30 Agility				5
+3208 3396 3	3218 3399 3	Leap Gap 14834	30 Agility				5
+							
+3231 3402 3	3236 3403 3	Leap Gap 14835	30 Agility				5
+							
+3236 3408 3	3236 3410 3	Hurdle Ledge 14836	30 Agility				3
+3237 3408 3	3237 3410 3	Hurdle Ledge 14836	30 Agility				3
+3238 3408 3	3238 3410 3	Hurdle Ledge 14836	30 Agility				3
+3239 3408 3	3239 3410 3	Hurdle Ledge 14836	30 Agility				3
+3240 3408 3	3240 3410 3	Hurdle Ledge 14836	30 Agility				3
+							
+3236 3415 3	3236 3417 0	Jump-off Edge 14841	30 Agility				5
+3237 3415 3	3237 3417 0	Jump-off Edge 14841	30 Agility				5
+3238 3415 3	3238 3417 0	Jump-off Edge 14841	30 Agility				5
+3239 3415 3	3239 3417 0	Jump-off Edge 14841	30 Agility				5
+3240 3415 3	3240 3417 0	Jump-off Edge 14841	30 Agility				5
+							
+# Canifis Rooftop Course							
+							
+3508 3488 0	3506 3492 2	Climb Tall tree 14843	40 Agility				7
+							
+3506 3496 2	3502 3504 2	Jump Gap 14844	40 Agility				5
+3505 3496 2	3502 3504 2	Jump Gap 14844	40 Agility				5
+							
+3498 3505 2	3492 3504 2	Jump Gap 14845	40 Agility				8
+3498 3504 2	3492 3504 2	Jump Gap 14845	40 Agility				8
+							
+3487 3499 2	3479 3499 3	Jump Gap 14848	40 Agility				5
+3478 3493 3	3478 3486 2	Jump Gap 14846	40 Agility				4
+							
+3480 3484 2	3489 3476 3	Vault Pole-vault 14894	40 Agility				10
+							
+3502 3476 3	3510 3476 2	Jump Gap 14847	40 Agility				4
+3510 3482 2	3510 3485 0	Jump Gap 14897	40 Agility				4
+							
+							
+# Falador Rooftop Course							
+3036 3341 0	3036 3342 3	Climb Rough wall 14898	50 Agility				3
+3039 3343 3	3047 3344 3	Cross Tightrope 14899	50 Agility				7
+3050 3349 3	3050 3357 3	Cross Hand holds 14901	50 Agility				12
+3048 3358 3	3048 3361 3	Jump Gap 14903	50 Agility				4
+							
+3045 3361 3	3041 3361 3	Jump Gap 14904	50 Agility				3
+3045 3362 3	3041 3362 3	Jump Gap 14904	50 Agility				3
+3045 3363 3	3041 3363 3	Jump Gap 14904	50 Agility				3
+3045 3364 3	3041 3364 3	Jump Gap 14904	50 Agility				3
+							
+3035 3362 3	3028 3354 3	Cross Tightrope 14905	50 Agility				11
+3027 3353 3	3020 3353 3	Cross Tightrope 14911	50 Agility				5
+							
+3016 3352 3	3016 3349 3	Jump Gap 14919	50 Agility				4
+3017 3352 3	3017 3349 3	Jump Gap 14919	50 Agility				4
+3018 3352 3	3018 3349 3	Jump Gap 14919	50 Agility				4
+							
+3017 3345 3	3014 3345 3	Jump Ledge 14920	50 Agility				5
+3017 3346 3	3014 3346 3	Jump Ledge 14920	50 Agility				5
+							
+3011 3344 3	3011 3342 3	Jump Ledge 14921	50 Agility				3
+3012 3344 3	3012 3342 3	Jump Ledge 14921	50 Agility				3
+3013 3344 3	3013 3342 3	Jump Ledge 14921	50 Agility				3
+							
+3012 3335 3	3012 3333 3	Jump Ledge 14922	50 Agility				2
+3013 3335 3	3013 3333 3	Jump Ledge 14922	50 Agility				2
+3013 3335 3	3015 3334 3	Jump Ledge 14922	50 Agility				2
+							
+3017 3332 3	3019 3332 3	Jump Ledge 14924	50 Agility				5
+3017 3333 3	3019 3333 3	Jump Ledge 14924	50 Agility				5
+3017 3334 3	3019 3334 3	Jump Ledge 14924	50 Agility				5
+							
+3024 3332 3	3029 3332 0	Jump Edge 14925	50 Agility				6
+3023 3332 3	3029 3332 0	Jump Edge 14925	50 Agility				6
+3022 3332 3	3029 3332 0	Jump Edge 14925	50 Agility				6
+3022 3333 3	3029 3333 0	Jump Edge 14925	50 Agility				6
+3022 3334 3	3029 3334 0	Jump Edge 14925	50 Agility				6
+3024 3335 3	3029 3335 0	Jump Edge 14925	50 Agility				6
+3023 3335 3	3029 3335 0	Jump Edge 14925	50 Agility				6
+3022 3335 3	3029 3335 0	Jump Edge 14925	50 Agility				6
+							
+# Seers' Village Rooftop Course							
+2729 3489 0	2729 3491 3	Climb-up Wall 14927	60 Agility				5
+							
+2721 3494 3	2713 3494 2	Jump Gap 14928	60 Agility				5
+2721 3495 3	2713 3494 2	Jump Gap 14928	60 Agility				5
+							
+2710 3490 2	2710 3480 2	Cross Tightrope 14932	60 Agility				10
+							
+2710 3477 2	2710 3472 3	Jump Gap 14929	60 Agility				3
+2711 3477 2	2711 3472 3	Jump Gap 14929	60 Agility				3
+2712 3477 2	2712 3472 3	Jump Gap 14929	60 Agility				3
+2713 3477 2	2713 3472 3	Jump Gap 14929	60 Agility				3
+							
+2702 3470 3	2702 3465 2	Jump Gap 14930	60 Agility				3
+2702 3464 2	2704 3464 0	Jump Edge 14931	60 Agility				3
+							
+# Gnome Stronghold Agility Course							
+2474 3436 0	2474 3429 0	Walk-across Log balance 23145	1 Agility				8
+							
+2471 3426 0	2471 3423 1	Climb-over Obstacle net 23134	1 Agility				2
+2472 3426 0	2472 3423 1	Climb-over Obstacle net 23134	1 Agility				2
+2473 3426 0	2473 3423 1	Climb-over Obstacle net 23134	1 Agility				2
+2474 3426 0	2474 3423 1	Climb-over Obstacle net 23134	1 Agility				2
+2475 3426 0	2475 3423 1	Climb-over Obstacle net 23134	1 Agility				2
+2476 3426 0	2476 3423 1	Climb-over Obstacle net 23134	1 Agility				2
+							
+2473 3423 1	2473 3420 2	Climb Tree branch 23559	1 Agility				2
+2477 3420 2	2483 3420 2	Walk-on Balancing rope 23557	1 Agility				8
+							
+2485 3419 2	2487 3420 0	Climb-down Tree branch 23560	1 Agility				2
+2486 3420 2	2487 3420 0	Climb-down Tree branch 23560	1 Agility				2
+							
+2483 3425 0	2483 3428 0	Climb-over Obstacle net 23134	1 Agility				2
+2484 3425 0	2484 3428 0	Climb-over Obstacle net 23134	1 Agility				2
+2485 3425 0	2485 3428 0	Climb-over Obstacle net 23134	1 Agility				2
+2486 3425 0	2486 3428 0	Climb-over Obstacle net 23134	1 Agility				2
+2487 3425 0	2487 3428 0	Climb-over Obstacle net 23134	1 Agility				2
+2488 3425 0	2488 3428 0	Climb-over Obstacle net 23134	1 Agility				2
+							
+2484 3430 0	2484 3437 0	Squeeze-through Obstacle pipe 23139	1 Agility				12
+2487 3430 0	2487 3437 0	Squeeze-through Obstacle pipe 23139	1 Agility				12
