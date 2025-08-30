@@ -2,12 +2,32 @@ package shortestpath;
 
 import java.util.Arrays;
 
+/**
+ * A minimal, growable list implementation for primitive {@code int} values.
+ * <p>
+ * This class avoids boxing overhead present in {@link java.util.List Integer} collections
+ * by storing values in a backing {@code int[]} that grows as needed. It purposefully
+ * implements only the operations required by the pathfinding logic in this plugin; it is
+ * <strong>not</strong> a drop‑in replacement for {@link java.util.ArrayList}.
+ * <p>
+ * The growth policy increases capacity by 50% (similar to {@code ArrayList}) when the
+ * existing array is exhausted. Capacity never shrinks.
+ */
 public class PrimitiveIntList {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     private int[] elementData;
     private int size;
 
+    /**
+     * Creates a new list with the specified initial capacity.
+     *
+     * @param initialCapacity the initial length of the backing array (must be {@code >= 0}).
+     * @param initialize if {@code true}, the {@link #size} is set equal to {@code initialCapacity},
+     *                   effectively pre-filling the logical list with zeroes. If {@code false},
+     *                   the list is created empty.
+     * @throws IllegalArgumentException if {@code initialCapacity < 0}.
+     */
     public PrimitiveIntList(int initialCapacity, boolean initialize) {
         if (initialCapacity < 0) {
             throw new IllegalArgumentException("Illegal capacity: " + initialCapacity);
@@ -18,20 +38,28 @@ public class PrimitiveIntList {
         }
     }
 
+    /**
+     * Creates an empty list with the given backing array capacity.
+     *
+     * @param initialCapacity initial length of the internal array (must be {@code >= 0}).
+     */
     public PrimitiveIntList(int initialCapacity) {
         this(initialCapacity, false);
     }
 
+    /**
+     * Creates an empty list with a default initial capacity of 10.
+     */
     public PrimitiveIntList() {
         this(10);
     }
 
+
     /**
-     * Increases the capacity of this list instance, if necessary,
-     * to ensure that it can hold at least the number of elements
-     * specified by the minimum capacity argument.
+     * Ensures that the backing array can store at least {@code minCapacity} elements.
+     * If the current capacity is already sufficient the call is a no-op.
      *
-     * @param   minCapacity   the desired minimum capacity
+     * @param minCapacity the desired minimum capacity (ignored if {@code <= 0}).
      */
     public void ensureCapacity(int minCapacity) {
         if (minCapacity > 0) {
@@ -65,36 +93,38 @@ public class PrimitiveIntList {
     }
 
     /**
-     * Returns the number of elements in this list.
+     * Returns the number of elements that have been added to (or initialized in) this list.
      *
-     * @return the number of elements in this list
+     * @return current element count (always {@code >= 0}).
      */
     public int size() {
         return size;
     }
 
     /**
-     * Returns <tt>true</tt> if this list contains no elements.
+     * Indicates whether the list currently holds zero elements.
      *
-     * @return <tt>true</tt> if this list contains no elements
+     * @return {@code true} if {@link #size()} is zero; {@code false} otherwise.
      */
     public boolean isEmpty() {
         return size == 0;
     }
 
     /**
-     * Returns <tt>true</tt> if this list contains the specified element.
+     * Tests whether the specified primitive value exists in the list.
      *
-     * @param e element whose presence in this list is to be tested
-     * @return <tt>true</tt> if this list contains the specified element
+     * @param e the value to search for.
+     * @return {@code true} if the value occurs at least once; {@code false} otherwise.
      */
     public boolean contains(int e) {
         return indexOf(e) >= 0;
     }
 
     /**
-     * Returns the index of the first occurrence of the specified element
-     * in this list, or -1 if this list does not contain the element.
+     * Returns the index of the first occurrence of the given value, or {@code -1} if absent.
+     *
+     * @param e the value to locate.
+     * @return zero-based index of the value, or {@code -1} if not found.
      */
     public int indexOf(int e) {
         for (int i = 0; i < size; i++) {
@@ -106,11 +136,11 @@ public class PrimitiveIntList {
     }
 
     /**
-     * Returns the element at the specified position in this list.
+     * Retrieves the value at the specified index.
      *
-     * @param  index index of the element to return
-     * @return the element at the specified position in this list
-     * @throws IndexOutOfBoundsException
+     * @param index zero-based position of the element to return.
+     * @return the value stored at {@code index}.
+     * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}.
      */
     public int get(int index) {
         rangeCheck(index);
@@ -118,13 +148,12 @@ public class PrimitiveIntList {
     }
 
     /**
-     * Replaces the element at the specified position in this list with
-     * the specified element.
+     * Replaces the value at the specified index.
      *
-     * @param index index of the element to replace
-     * @param element element to be stored at the specified position
-     * @return the element previously at the specified position
-     * @throws IndexOutOfBoundsException
+     * @param index zero-based position of the element to overwrite.
+     * @param element the new value.
+     * @return the previous value stored at {@code index}.
+     * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}.
      */
     public int set(int index, int element) {
         rangeCheck(index);
@@ -133,11 +162,12 @@ public class PrimitiveIntList {
         return oldValue;
     }
 
+
     /**
-     * Appends the specified element to the end of this list.
+     * Appends a value to the end of the list, growing the backing array if required.
      *
-     * @param e element to be appended to this list
-     * @return <tt>true</tt>
+     * @param e value to append.
+     * @return always {@code true}
      */
     public boolean add(int e) {
         ensureCapacityInternal(size + 1);
@@ -146,13 +176,11 @@ public class PrimitiveIntList {
     }
 
     /**
-     * Inserts the specified element at the specified position in this
-     * list. Shifts the element currently at that position (if any) and
-     * any subsequent elements to the right (adds one to their indices).
+     * Inserts a value at the specified index, shifting subsequent elements one position to the right.
      *
-     * @param index index at which the specified element is to be inserted
-     * @param element element to be inserted
-     * @throws IndexOutOfBoundsException
+     * @param index zero-based insertion point (may be equal to {@link #size()} to append).
+     * @param element the value to insert.
+     * @throws IndexOutOfBoundsException if {@code index < 0 || index > size}.
      */
     public void add(int index, int element) {
         rangeCheckForAdd(index);
@@ -163,13 +191,11 @@ public class PrimitiveIntList {
     }
 
     /**
-     * Removes the element at the specified position in this list.
-     * Shifts any subsequent elements to the left (subtracts one from their
-     * indices).
+     * Removes the value at the specified index and compacts the list.
      *
-     * @param index the index of the element to be removed
-     * @return the element that was removed from the list
-     * @throws IndexOutOfBoundsException
+     * @param index zero-based index of the element to remove.
+     * @return the removed value.
+     * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}.
      */
     public int removeAt(int index) {
         rangeCheck(index);
@@ -183,12 +209,10 @@ public class PrimitiveIntList {
     }
 
     /**
-     * Removes the first occurrence of the specified element from this list,
-     * if it is present.  If the list does not contain the element, it is
-     * unchanged.
+     * Removes the first occurrence of the specified value, if present.
      *
-     * @param o element to be removed from this list, if present
-     * @return <tt>true</tt> if this list contained the specified element
+     * @param e value to remove.
+     * @return {@code true} if a value was removed; {@code false} otherwise.
      */
     public boolean remove(int e) {
         for (int i = 0; i < size; i++) {
@@ -209,8 +233,8 @@ public class PrimitiveIntList {
     }
 
     /**
-     * Removes all of the elements from this list.  The list will
-     * be empty after this call returns.
+     * Removes all elements from the list and resets {@link #size()} to zero.
+     * The backing array is retained for reuse.
      */
     public void clear() {
         for (int i = 0; i < size; i++) {

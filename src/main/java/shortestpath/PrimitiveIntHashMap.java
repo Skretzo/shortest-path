@@ -3,8 +3,24 @@ package shortestpath;
 import java.util.Arrays;
 import java.util.Collection;
 
-// This class is not intended as a general purpose replacement for a hashmap; it lacks convenience features
-// found in regular maps and has no way to remove elements or get a list of keys/values.
+/**
+ * A lightweight hash map keyed by primitive {@code int} values with open addressed bucket arrays.
+ * <p>
+ * Each top-level slot in {@link #buckets} references an array (the "bucket") of entries. Buckets grow
+ * individually when full, avoiding the cost of rehashing the entire map on every local expansion. When the
+ * aggregate {@linkplain #size entry count} reaches the configured {@linkplain #capacity load threshold}, the
+ * map resizes and rehashes all entries into a larger bucket array whose length is always a power of two.
+ * <p>
+ * This implementation is intentionally minimal and tailored for the plugin's pathfinding needs:
+ * <ul>
+ *   <li>No support for removing entries.</li>
+ *   <li>No iteration views (keys, values, or entry set) are exposed.</li>
+ *   <li>Collisions within a bucket are handled by linear probing inside the bucket array.</li>
+ *   <li>Duplicate key insertion replaces the previous value, or appends collection contents when both the
+ *       old and new values are {@link Collection}s (best effort; falls back to replacement on errors).</li>
+ * </ul>
+ * @param <V> the value type stored for each primitive {@code int} key. Must be non-null.
+ */
 public class PrimitiveIntHashMap<V> {
     private static final int MINIMUM_SIZE = 8;
 
@@ -15,6 +31,7 @@ public class PrimitiveIntHashMap<V> {
     // How full the map should get before growing it again. Smaller values speed up lookup times at the expense of space
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
+    /** Entry node storing a primitive key and associated value. */
     private static class IntNode<V> {
         private int key;
         private V value;
@@ -33,10 +50,23 @@ public class PrimitiveIntHashMap<V> {
     private int mask;
     private final float loadFactor;
 
+    /**
+     * Creates a new map with the specified initial size and the default load factor (0.75).
+     *
+     * @param initialSize initial expected number of elements; rounded to the next power of two internally.
+     */
     public PrimitiveIntHashMap(int initialSize) {
         this(initialSize, DEFAULT_LOAD_FACTOR);
     }
 
+    /**
+     * Creates a new map with the given initial size and load factor.
+     *
+     * @param initialSize initial expected number of elements; rounded up to maintain a power-of-two capacity.
+     * @param loadFactor a value in the range {@code [0.0, 1.0]} determining when the map rehashes. Higher values
+     *                   reduce space overhead but increase average lookup cost.
+     * @throws IllegalArgumentException if {@code loadFactor} is outside the inclusive range 0..1.
+     */
     public PrimitiveIntHashMap(int initialSize, float loadFactor) {
         if (loadFactor < 0.0f || loadFactor > 1.0f) {
             throw new IllegalArgumentException("Load factor must be between 0 and 1");
@@ -48,14 +78,32 @@ public class PrimitiveIntHashMap<V> {
         recreateArrays();
     }
 
+    /**
+     * Returns the number of key/value pairs currently stored.
+     *
+     * @return current entry count (always {@code >= 0}).
+     */
     public int size() {
         return size;
     }
 
+    /**
+     * Retrieves the value mapped to the provided key, or {@code null} if absent.
+     *
+     * @param key primitive key to look up.
+     * @return the mapped value, or {@code null} if the key does not exist.
+     */
     public V get(int key) {
         return getOrDefault(key, null);
     }
 
+    /**
+     * Retrieves the value mapped to the provided key.
+     *
+     * @param key primitive key to look up.
+     * @param defaultValue value to return if the key is not present.
+     * @return the mapped value, or {@code defaultValue} when absent.
+     */
     public V getOrDefault(int key, V defaultValue) {
         int bucket = getBucket(key);
         int index = bucketIndex(key, bucket);
@@ -65,9 +113,19 @@ public class PrimitiveIntHashMap<V> {
         return buckets[bucket][index].value;
     }
 
-    /* Associates the specified value with the specified key in this map.
-     * If the map previously contained a mapping for the key, the old value is
-     * replaced or appended if both the old and new value is a collection.
+    /**
+     * Associates the specified value with the given key.
+     * <p>
+     * If a mapping already exists and both the existing and new values implement {@link Collection}, the method
+     * attempts to append all elements of the new collection into the existing one. If the append fails (e.g., due
+     * to incompatible element types or an unsupported operation) the existing value is replaced entirely.
+     * Otherwise the existing value is simply replaced.
+     *
+     * @param key primitive key to insert or update.
+     * @param value non-null value to associate.
+     * @param <E> inferred element type if both values are collections.
+     * @return the previous value mapped to {@code key} (if any), or {@code null} if inserting a new entry.
+     * @throws IllegalArgumentException if {@code value} is {@code null}.
      */
     @SuppressWarnings("unchecked")
     public <E> V put(int key, V value) {
@@ -115,7 +173,10 @@ public class PrimitiveIntHashMap<V> {
         return null;
     }
 
-    // This hash seems to be most effective for packed WorldPoint's
+    /**
+     * Hash function tuned for packed world point integer encodings. Mixes higher bits downward to
+     * reduce clustering while remaining inexpensive.
+     */
     private static int hash(int value) {
         return value ^ (value >>> 5) ^ (value >>> 25);
     }
@@ -237,7 +298,14 @@ public class PrimitiveIntHashMap<V> {
         return temp;
     }
 
-    // Debug helper to understand how effective a given hash may be at distributing values
+    /**
+     * Calculates the percentage of bucket capacity used prior to first null sentinel entries across all buckets.
+     * <p>
+     * For each non-null bucket, usage counts entries until the first {@code null} slot (which indicates the end
+     * of populated entries for that bucket). The resulting percentage is: {@code usedEntrySlots / totalAllocatedSlots * 100}.
+     *
+     * @return approximate fullness percentage in the range {@code [0.0, 100.0]}.
+     */
     public double calculateFullness() {
         int size = 0;
         int usedSize = 0;
@@ -254,6 +322,9 @@ public class PrimitiveIntHashMap<V> {
         return 100.0 * (double)usedSize / (double)size;
     }
 
+    /**
+     * Removes all entries from the map. Bucket arrays are discarded and recreated lazily on subsequent inserts.
+     */
     public void clear() {
         size = 0;
         Arrays.fill(buckets, null);

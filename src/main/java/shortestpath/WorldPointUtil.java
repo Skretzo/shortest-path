@@ -8,9 +8,26 @@ import net.runelite.api.coords.WorldPoint;
 import static net.runelite.api.Constants.CHUNK_SIZE;
 import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
 
+/**
+ * Utility functions for packing, unpacking, and transforming {@link WorldPoint} coordinates as compact {@code int} values.
+ * <p>
+ * A packed world point encodes {@code x}, {@code y}, and {@code plane} into a single 32-bit integer using:
+ * <pre>
+ * bits 0..14   : x (15 bits)
+ * bits 15..29  : y (15 bits)
+ * bits 30..31  : plane (2 bits)
+ * </pre>
+ * This representation allows efficient storage and hashing of coordinates within the pathfinding data structures.
+ */
 public class WorldPointUtil {
     public static final int UNDEFINED = -1;
 
+    /**
+     * Packs a {@link WorldPoint} into a compact {@code int} encoding.
+     *
+     * @param point world point (may be {@code null}).
+     * @return packed integer value, or {@link #UNDEFINED} if {@code point} is {@code null}.
+     */
     public static int packWorldPoint(WorldPoint point) {
         if (point == null) {
             return -1;
@@ -18,12 +35,26 @@ public class WorldPointUtil {
         return packWorldPoint(point.getX(), point.getY(), point.getPlane());
     }
 
-    // Packs a world point into a single int
-    // First 15 bits are x, next 15 are y, last 2 bits are the plane
+    /**
+     * Packs the provided coordinate triple into a single {@code int}.
+     * First 15 bits are {@code x}, next 15 bits are {@code y}, final 2 bits are the plane.
+     * Values are masked into range; overflow bits are discarded.
+     *
+     * @param x world x (0..32767 effectively supported).
+     * @param y world y (0..32767 effectively supported).
+     * @param plane plane (0..3).
+     * @return packed integer representation.
+     */
     public static int packWorldPoint(int x, int y, int plane) {
         return (x & 0x7FFF) | ((y & 0x7FFF) << 15) | ((plane & 0x3) << 30);
     }
 
+    /**
+     * Unpacks a packed world point into a new {@link WorldPoint} instance.
+     *
+     * @param packedPoint packed coordinate.
+     * @return decoded {@link WorldPoint}.
+     */
     public static WorldPoint unpackWorldPoint(int packedPoint) {
         final int x = unpackWorldX(packedPoint);
         final int y = unpackWorldY(packedPoint);
@@ -31,18 +62,41 @@ public class WorldPointUtil {
         return new WorldPoint(x, y, plane);
     }
 
+    /**
+     * Extracts the x component from a packed world point.
+     * @param packedPoint packed coordinate.
+     * @return x value.
+     */
     public static int unpackWorldX(int packedPoint) {
         return packedPoint & 0x7FFF;
     }
 
+    /**
+     * Extracts the y component from a packed world point.
+     * @param packedPoint packed coordinate.
+     * @return y value.
+     */
     public static int unpackWorldY(int packedPoint) {
         return (packedPoint >> 15) & 0x7FFF;
     }
 
+    /**
+     * Extracts the plane component from a packed world point.
+     * @param packedPoint packed coordinate.
+     * @return plane value (0..3).
+     */
     public static int unpackWorldPlane(int packedPoint) {
         return (packedPoint >> 30) & 0x3;
     }
 
+    /**
+     * Offsets a packed world point by {@code (dx, dy)} on the same plane.
+     *
+     * @param packedPoint base packed point.
+     * @param dx delta x to add.
+     * @param dy delta y to add.
+     * @return packed point after applying deltas.
+     */
     public static int dxdy(int packedPoint, int dx, int dy) {
         int x = unpackWorldX(packedPoint);
         int y = unpackWorldY(packedPoint);
@@ -50,14 +104,28 @@ public class WorldPointUtil {
         return packWorldPoint(x + dx, y + dy, z);
     }
 
+    /**
+     * Computes the distance between two packed points using Chebyshev metric (diagonal = 1).
+     */
     public static int distanceBetween(int previousPacked, int currentPacked) {
         return distanceBetween(previousPacked, currentPacked, 1);
     }
 
+    /**
+     * Computes the 2D distance (ignoring plane) between two packed points using Chebyshev metric (diagonal = 1).
+     */
     public static int distanceBetween2D(int previousPacked, int currentPacked) {
         return distanceBetween2D(previousPacked, currentPacked, 1);
     }
 
+    /**
+     * Computes distance between two packed points with selectable distance metric.
+     *
+     * @param previousPacked first packed point.
+     * @param currentPacked second packed point.
+     * @param diagonal {@code 1} for Chebyshev (max), {@code 2} for Manhattan (sum). Any other value returns {@code Integer.MAX_VALUE}.
+     * @return distance or {@code Integer.MAX_VALUE} if plane differs or metric is unsupported.
+     */
     public static int distanceBetween(int previousPacked, int currentPacked, int diagonal) {
         final int previousX = WorldPointUtil.unpackWorldX(previousPacked);
         final int previousY = WorldPointUtil.unpackWorldY(previousPacked);
@@ -69,6 +137,10 @@ public class WorldPointUtil {
             currentX, currentY, currentZ, diagonal);
     }
 
+    /**
+     * Computes 2D distance (ignoring plane) between two packed points with selectable metric.
+     * @see #distanceBetween(int, int, int, int, int, int, int)
+     */
     public static int distanceBetween2D(int previousPacked, int currentPacked, int diagonal) {
         final int previousX = WorldPointUtil.unpackWorldX(previousPacked);
         final int previousY = WorldPointUtil.unpackWorldY(previousPacked);
@@ -77,6 +149,18 @@ public class WorldPointUtil {
         return distanceBetween2D(previousX, previousY, currentX, currentY, diagonal);
     }
 
+    /**
+     * Computes distance between two coordinates with selectable metric; returns {@code Integer.MAX_VALUE} if planes differ.
+     *
+     * @param previousX x of first point.
+     * @param previousY y of first point.
+     * @param previousZ plane of first point.
+     * @param currentX x of second point.
+     * @param currentY y of second point.
+     * @param currentZ plane of second point.
+     * @param diagonal metric selector ({@code 1}=Chebyshev, {@code 2}=Manhattan).
+     * @return distance or {@code Integer.MAX_VALUE} if planes differ or unsupported metric.
+     */
     public static int distanceBetween(int previousX, int previousY, int previousZ,
         int currentX, int currentY, int currentZ, int diagonal) {
         final int dz = Math.abs(previousZ - currentZ);
@@ -88,6 +172,16 @@ public class WorldPointUtil {
         return distanceBetween2D(previousX, previousY, currentX, currentY, diagonal);
     }
 
+    /**
+     * Computes a 2D distance using either Chebyshev or Manhattan metric.
+     *
+     * @param previousX x of first point.
+     * @param previousY y of first point.
+     * @param currentX x of second point.
+     * @param currentY y of second point.
+     * @param diagonal metric selector ({@code 1}=Chebyshev, {@code 2}=Manhattan).
+     * @return distance or {@code Integer.MAX_VALUE} for unsupported metric.
+     */
     public static int distanceBetween2D(int previousX, int previousY,
         int currentX, int currentY, int diagonal) {
         final int dx = Math.abs(previousX - currentX);
@@ -102,16 +196,26 @@ public class WorldPointUtil {
         return Integer.MAX_VALUE;
     }
 
+    /**
+     * Convenience overload using Chebyshev distance between two {@link WorldPoint}s.
+     */
     public static int distanceBetween(WorldPoint previous, WorldPoint current) {
         return distanceBetween(previous, current, 1);
     }
 
+    /**
+     * Distance between two {@link WorldPoint}s with selectable metric.
+     * @see #distanceBetween(int, int, int, int, int, int, int)
+     */
     public static int distanceBetween(WorldPoint previous, WorldPoint current, int diagonal) {
         return distanceBetween(previous.getX(), previous.getY(), previous.getPlane(),
             current.getX(), current.getY(), current.getPlane(), diagonal);
     }
 
-    // Matches WorldArea.distanceTo
+    /**
+     * Distance from a packed point to a {@link WorldArea} using Chebyshev metric, respecting plane.
+     * Returns {@code Integer.MAX_VALUE} if the plane differs.
+     */
     public static int distanceToArea(int packedPoint, WorldArea area) {
         final int plane = unpackWorldPlane(packedPoint);
         if (area.getPlane() != plane) {
@@ -120,6 +224,10 @@ public class WorldPointUtil {
         return distanceToArea2D(packedPoint, area);
     }
 
+    /**
+     * 2D distance (Chebyshev) from a packed point to a {@link WorldArea} ignoring plane, equivalent to
+     * {@link WorldArea#distanceTo(WorldPoint)} semantics in 2D.
+     */
     public static int distanceToArea2D(int packedPoint, WorldArea area) {
         final int y = unpackWorldY(packedPoint);
         final int x = unpackWorldX(packedPoint);
@@ -147,6 +255,14 @@ public class WorldPointUtil {
         return packWorldPoint(originalX, originalY, z);
     }
 
+    /**
+     * Converts an instanced {@link LocalPoint} to its corresponding packed world point coordinate, resolving the
+     * underlying template chunk mapping and rotation.
+     *
+     * @param client RuneLite client.
+     * @param localPoint local scene coordinate.
+     * @return packed world point.
+     */
     public static int fromLocalInstance(Client client, LocalPoint localPoint) {
         WorldView worldView = client.getWorldView(localPoint.getWorldView());
         int plane = worldView.getPlane();
@@ -184,6 +300,15 @@ public class WorldPointUtil {
         return rotate(x, y, templateChunkPlane, 4 - rotation);
     }
 
+    /**
+     * Converts a packed world point to one or more packed world points representing its locations within an instanced
+     * map (e.g., dungeons or raids). If the current top-level world is not instanced, the result contains exactly the
+     * original point.
+     *
+     * @param client RuneLite client.
+     * @param packedPoint packed world coordinate.
+     * @return list of packed coordinates valid in the current instance.
+     */
     public static PrimitiveIntList toLocalInstance(Client client, int packedPoint) {
         WorldView worldView = client.getTopLevelWorldView();
 
@@ -238,6 +363,14 @@ public class WorldPointUtil {
         return x >= baseX && x < maxX && y >= baseY && y < maxY;
     }
 
+    /**
+     * Converts a packed world point into a {@link LocalPoint} relative to the top-level world view if it resides in
+     * the currently loaded scene and on the same plane; returns {@code null} otherwise.
+     *
+     * @param client RuneLite client.
+     * @param packedPoint packed world point.
+     * @return {@link LocalPoint} or {@code null} if out of scene or plane.
+     */
     public static LocalPoint toLocalPoint(Client client, int packedPoint) {
         WorldView worldView = client.getTopLevelWorldView();
 
