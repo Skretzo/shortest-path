@@ -11,8 +11,26 @@ import java.util.Scanner;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Utility loader for destination coordinate sets grouped by feature category.
+ * <p>
+ * Destination data is stored in tab-separated value (TSV) resources under {@code /destinations/**}. Each file's
+ * first non-empty line is treated as a header (leading comment markers {@code #} or {@code # } are stripped) and
+ * defines column names. Rows beginning with {@code #} or blank lines are ignored. Columns named "Destination" are
+ * parsed as space-delimited triples {@code (x y plane)} that are packed into single {@code int} values via
+ * {@link WorldPointUtil#packWorldPoint(int, int, int)}.
+ */
 @Slf4j
 public class Destination {
+    /**
+     * Parses a TSV resource of destination coordinates and merges them into the provided map.
+     * The key in the destination map is derived from the directory component immediately preceding the file
+     * name (e.g., {@code /destinations/game_features/bank.tsv -> bank}).
+     *
+     * @param destinations accumulator map of category key to a set of packed world point integers.
+     * @param path classpath resource path to a TSV file beginning with a header line.
+     * @throws RuntimeException wrapping {@link IOException} if the resource cannot be read.
+     */
     private static void addDestinations(Map<String, Set<Integer>> destinations, String path) {
         final String DELIM_COLUMN = "\t";
         final String PREFIX_COMMENT = "#";
@@ -75,6 +93,11 @@ public class Destination {
         }
     }
 
+    /**
+     * Loads a predefined subset of destination categories from bundled TSV resources.
+     *
+     * @return a map from destination category key to a set of packed world point integers.
+     */
     public static Map<String, Set<Integer>> loadAllFromResources() {
         Map<String, Set<Integer>> destinations = new HashMap<>(10);
         addDestinations(destinations, "/destinations/game_features/altar.tsv");
