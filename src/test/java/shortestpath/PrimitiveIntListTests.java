@@ -92,7 +92,7 @@ public class PrimitiveIntListTests {
     }
 
         @Test
-    public void ZeroCapacityConstructor() {
+    public void zeroCapacityConstructor() {
         PrimitiveIntList intList = new PrimitiveIntList(0);
         Assert.assertEquals(0, intList.size());
         Assert.assertTrue(intList.isEmpty());

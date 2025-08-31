@@ -8,6 +8,9 @@ import net.runelite.api.coords.WorldPoint;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static net.runelite.api.Constants.CHUNK_SIZE;
 import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
 import static org.junit.Assert.*;
@@ -160,10 +163,10 @@ public class WorldPointUtilTest {
 
         int tileX = 3210;
         int tileY = 3222;
-    // LocalPoint stores scene (local) coordinates relative to base, so subtract base before shifting
-    int localTileX = tileX - 3200;
-    int localTileY = tileY - 3200;
-    LocalPoint lp = new LocalPoint(localTileX << LOCAL_COORD_BITS, localTileY << LOCAL_COORD_BITS, 0);
+        // LocalPoint stores scene (local) coordinates relative to base, so subtract base before shifting
+        int localTileX = tileX - 3200;
+        int localTileY = tileY - 3200;
+        LocalPoint lp = new LocalPoint(localTileX << LOCAL_COORD_BITS, localTileY << LOCAL_COORD_BITS, 0);
         int packed = WorldPointUtil.fromLocalInstance(client, lp);
         assertEquals(tileX, WorldPointUtil.unpackWorldX(packed));
         assertEquals(tileY, WorldPointUtil.unpackWorldY(packed));
@@ -208,5 +211,95 @@ public class WorldPointUtilTest {
         int my = WorldPointUtil.unpackWorldY(mapped);
         assertTrue(mx >= chunkIndexX * CHUNK_SIZE && mx < (chunkIndexX + 1) * CHUNK_SIZE + CHUNK_SIZE); // loose bound
         assertTrue(my >= chunkIndexY * CHUNK_SIZE && my < (chunkIndexY + 1) * CHUNK_SIZE + CHUNK_SIZE);
+    }
+
+    // --- Tests merged from WorldPointTests.java ---
+
+    private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
+
+    @Test
+    public void testDistanceToArea() {
+        List<WorldPoint> testPoints = new ArrayList<>(10);
+        testPoints.add(new WorldPoint(2900, 3500, 0));
+        testPoints.add(new WorldPoint(3000, 3500, 0));
+        testPoints.add(new WorldPoint(3600, 3500, 0));
+        testPoints.add(new WorldPoint(2900, 3622, 0));
+        testPoints.add(new WorldPoint(3000, 3622, 0));
+        testPoints.add(new WorldPoint(3600, 3622, 0));
+        testPoints.add(new WorldPoint(2900, 4300, 0));
+        testPoints.add(new WorldPoint(3000, 4300, 0));
+        testPoints.add(new WorldPoint(3600, 4300, 0));
+        testPoints.add(new WorldPoint(3600, 4200, 1));
+
+        for (WorldPoint point : testPoints) {
+            final int areaDistance = WILDERNESS_ABOVE_GROUND.distanceTo(point);
+            final int packedPoint = WorldPointUtil.packWorldPoint(point);
+            final int worldUtilDistance = WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND);
+            assertEquals("Calculating distance to " + point + " failed", areaDistance, worldUtilDistance);
+        }
+    }
+
+    @Test
+    public void testWorldPointPacking() {
+        WorldPoint point = new WorldPoint(13, 24685, 1);
+
+        final int packedPoint = WorldPointUtil.packWorldPoint(point);
+        assertEquals((1 << 30) | (24685 << 15) | 13, packedPoint);
+        final int unpackedX = WorldPointUtil.unpackWorldX(packedPoint);
+        assertEquals(point.getX(), unpackedX);
+
+        final int unpackedY = WorldPointUtil.unpackWorldY(packedPoint);
+        assertEquals(point.getY(), unpackedY);
+
+        final int unpackedPlane = WorldPointUtil.unpackWorldPlane(packedPoint);
+        assertEquals(point.getPlane(), unpackedPlane);
+
+        WorldPoint unpackedPoint = WorldPointUtil.unpackWorldPoint(packedPoint);
+        assertEquals(point, unpackedPoint);
+    }
+
+    @Test
+    public void testDistanceBetween() {
+        WorldPoint pointA = new WorldPoint(13, 24685, 1);
+        WorldPoint pointB = new WorldPoint(29241, 3384, 1);
+        WorldPoint pointC = new WorldPoint(292, 3384, 0); // Test point on different plane
+
+        assertEquals(0, WorldPointUtil.distanceBetween(pointA, pointA));
+        assertEquals(29228, WorldPointUtil.distanceBetween(pointA, pointB));
+        assertEquals(29228, WorldPointUtil.distanceBetween(pointB, pointA));
+        assertEquals(Integer.MAX_VALUE, WorldPointUtil.distanceBetween(pointA, pointC));
+
+        // with diagonal = 2
+        assertEquals(0, WorldPointUtil.distanceBetween(pointA, pointA, 2));
+        assertEquals(50529, WorldPointUtil.distanceBetween(pointA, pointB, 2));
+        assertEquals(50529, WorldPointUtil.distanceBetween(pointB, pointA, 2));
+        assertEquals(Integer.MAX_VALUE, WorldPointUtil.distanceBetween(pointB, pointC, 2));
+    }
+
+    @Test
+    public void testPackedDistanceBetween() {
+        WorldPoint pointA = new WorldPoint(13, 24685, 1);
+        WorldPoint pointB = new WorldPoint(29241, 3384, 1);
+        WorldPoint pointC = new WorldPoint(292, 3384, 0); // Test point on different plane
+        final int packedPointA = WorldPointUtil.packWorldPoint(pointA);
+        final int packedPointB = WorldPointUtil.packWorldPoint(pointB);
+        final int packedPointC = WorldPointUtil.packWorldPoint(pointC);
+
+        assertEquals(0, WorldPointUtil.distanceBetween(packedPointA, packedPointA));
+        assertEquals(29228, WorldPointUtil.distanceBetween(packedPointA, packedPointB));
+        assertEquals(29228, WorldPointUtil.distanceBetween(packedPointB, packedPointA));
+        assertEquals(Integer.MAX_VALUE, WorldPointUtil.distanceBetween(packedPointA, packedPointC));
+
+        // with diagonal = 2
+        assertEquals(0, WorldPointUtil.distanceBetween(packedPointA, packedPointA, 2));
+        assertEquals(50529, WorldPointUtil.distanceBetween(packedPointA, packedPointB, 2));
+        assertEquals(50529, WorldPointUtil.distanceBetween(packedPointB, packedPointA, 2));
+        assertEquals(Integer.MAX_VALUE, WorldPointUtil.distanceBetween(packedPointB, packedPointC, 2));
+    }
+
+    @Test
+    public void testMaxWorldPoint() {
+        assertEquals(WorldPointUtil.packWorldPoint(-1, -1, -1), -1);
+        assertEquals(WorldPointUtil.packWorldPoint(-1, -1, 1), Integer.MAX_VALUE);
     }
 }
