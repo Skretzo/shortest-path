@@ -53,7 +53,7 @@ public class Pathfinder implements Runnable {
         this.start = start;
         this.targets = targets;
         visited = new VisitedTiles(map);
-        targetInWilderness = PathfinderConfig.isInWilderness(targets);
+        targetInWilderness = WildernessChecker.isInWilderness(targets);
         wildernessLevel = 31;
     }
 
@@ -134,18 +134,18 @@ public class Pathfinder implements Runnable {
                 // path or when going from 31 or higher to 30, or from 21 or higher to 20.
 
                 boolean update = false;
-                
+
                 // These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
                 // likewise, if the node isn't in level 20, it's in 0-19
-                if (wildernessLevel > 30 && !PathfinderConfig.isInLevel30Wilderness(node.packedPosition)) {
+                if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(node.packedPosition)) {
                     wildernessLevel = 30;
                     update = true;
                 }
-                if (wildernessLevel > 20 && !PathfinderConfig.isInLevel20Wilderness(node.packedPosition)) {
+                if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(node.packedPosition)) {
                     wildernessLevel = 20;
                     update = true;
                 }
-                if (wildernessLevel > 0 && !PathfinderConfig.isInWilderness(node.packedPosition)) {
+                if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(node.packedPosition)) {
                     wildernessLevel = 0;
                     update = true;
                 }

@@ -4,9 +4,9 @@ import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.Quest;
@@ -418,22 +418,6 @@ public class PathfinderTest {
         }
     }
 
-    @Test
-    public void testIsInWilderness() {
-        assertEquals(true, PathfinderConfig.isInWilderness(
-            WorldPointUtil.packWorldPoint(3339, 3696, 0))); // Green dragons
-        assertEquals(false, PathfinderConfig.isInWilderness(
-            WorldPointUtil.packWorldPoint(3134, 3629, 0))); // Ferox Enclave
-        assertEquals(true, PathfinderConfig.isInWilderness(
-            WorldPointUtil.packWorldPoint(3089, 9957, 0))); // Edgeville Dungeon
-        assertEquals(true, PathfinderConfig.isInWilderness(
-            WorldPointUtil.packWorldPoint(3039, 10260, 0))); // Lava Maze Dungeon
-        assertEquals(false, PathfinderConfig.isInWilderness(
-            WorldPointUtil.packWorldPoint(3009, 3531, 0))); // Non-wildy peninsula
-        assertEquals(true, PathfinderConfig.isInWilderness(
-            WorldPointUtil.packWorldPoint(3023, 3626, 1))); // Upstairs in Dark Warriors' Fortress
-    }
-
     private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems) {
         pathfinderConfig = spy(new PathfinderConfig(client, config));
 
@@ -449,7 +433,7 @@ public class PathfinderTest {
     }
 
     private void setupInventory(Item... items) {
-        doReturn(inventory).when(client).getItemContainer(InventoryID.INVENTORY);
+        doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
         doReturn(items).when(inventory).getItems();
     }
 

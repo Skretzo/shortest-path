@@ -13,14 +13,12 @@ import net.runelite.api.Constants;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
 import net.runelite.api.GameState;
-import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.coords.WorldArea;
-import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.TeleportationItem;
@@ -58,21 +56,6 @@ import static shortestpath.TransportType.TELEPORTATION_SPELL;
 import static shortestpath.TransportType.WILDERNESS_OBELISK;
 
 public class PathfinderConfig {
-    private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3525, 448, 448, 0);
-    private static final WorldArea WILDERNESS_ABOVE_GROUND_LEVEL_20 = new WorldArea(2944, 3680, 448, 448, 0);
-    private static final WorldArea WILDERNESS_ABOVE_GROUND_LEVEL_30 = new WorldArea(2944, 3760, 448, 448, 0);
-    private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9918, 320, 442, 0);
-    private static final WorldArea WILDERNESS_UNDERGROUND_LEVEL_20 = new WorldArea(2944, 10075, 320, 442, 0);
-    private static final WorldArea WILDERNESS_UNDERGROUND_LEVEL_30 = new WorldArea(2944, 10155, 320, 442, 0);
-    private static final WorldArea FEROX_ENCLAVE_1 = new WorldArea(3123, 3622, 2, 10, 0);
-    private static final WorldArea FEROX_ENCLAVE_2 = new WorldArea(3125, 3617, 16, 23, 0);
-    private static final WorldArea FEROX_ENCLAVE_3 = new WorldArea(3138, 3636, 18, 10, 0);
-    private static final WorldArea FEROX_ENCLAVE_4 = new WorldArea(3141, 3625, 14, 11, 0);
-    private static final WorldArea FEROX_ENCLAVE_5 = new WorldArea(3141, 3619, 7, 6, 0);
-    private static final WorldArea NOT_WILDERNESS_1 = new WorldArea(2997, 3525, 34, 9, 0);
-    private static final WorldArea NOT_WILDERNESS_2 = new WorldArea(3005, 3534, 21, 10, 0);
-    private static final WorldArea NOT_WILDERNESS_3 = new WorldArea(3000, 3534, 5, 5, 0);
-    private static final WorldArea NOT_WILDERNESS_4 = new WorldArea(3031, 3525, 2, 2, 0);
     private static final List<Integer> RUNE_POUCHES = Arrays.asList(
         ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
         ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
@@ -236,7 +219,7 @@ public class PathfinderConfig {
     public void filterLocations(Set<Integer> locations, boolean canReviveFiltered) {
         if (avoidWilderness) {
             locations.removeIf(location -> {
-                boolean inWilderness = PathfinderConfig.isInWilderness(location);
+                boolean inWilderness = WildernessChecker.isInWilderness(location);
                 if (inWilderness) {
                     filteredTargets.add(location);
                 }
@@ -261,7 +244,7 @@ public class PathfinderConfig {
             boolean isDifferent = false;
             for (Integer destination : entry.getValue()) {
                 // We filter based on whether the destination is inside or outside wilderness
-                if (!PathfinderConfig.isInWilderness(destination)) {
+                if (!WildernessChecker.isInWilderness(destination)) {
                     usableDestinations.add(destination);
                     isDifferent = true;
                 }
@@ -323,56 +306,11 @@ public class PathfinderConfig {
         }
     }
 
-    public static boolean isInWilderness(WorldPoint p) {
-        return WILDERNESS_ABOVE_GROUND.distanceTo2D(p) == 0
-            && FEROX_ENCLAVE_1.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_2.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_3.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_4.distanceTo2D(p) != 0
-            && FEROX_ENCLAVE_5.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_1.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_2.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_3.distanceTo2D(p) != 0
-            && NOT_WILDERNESS_4.distanceTo2D(p) != 0
-            || WILDERNESS_UNDERGROUND.distanceTo2D(p) == 0;
-    }
-
-    public static boolean isInWilderness(int packedPoint) {
-        return WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_ABOVE_GROUND) == 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_1) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_2) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_3) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_4) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, FEROX_ENCLAVE_5) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_1) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_2) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_3) != 0
-            && WorldPointUtil.distanceToArea2D(packedPoint, NOT_WILDERNESS_4) != 0
-            || WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_UNDERGROUND) == 0;
-    }
-
-    public static boolean isInWilderness(Set<Integer> packedPoints) {
-        for (int packedPoint : packedPoints) {
-            if (isInWilderness(packedPoint)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean isInLevel20Wilderness(int packedPoint) {
-        return WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_ABOVE_GROUND_LEVEL_20) == 0
-            || WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_20) == 0;
-    }
-
-    public static boolean isInLevel30Wilderness(int packedPoint){
-        return WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_ABOVE_GROUND_LEVEL_30) == 0
-            || WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_UNDERGROUND_LEVEL_30) == 0;
-    }
-
-    public boolean avoidWilderness(int packedPosition, int packedNeightborPosition, boolean targetInWilderness) {
-        return avoidWilderness && !targetInWilderness
-            && !isInWilderness(packedPosition) && isInWilderness(packedNeightborPosition);
+    public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness) {
+        return avoidWilderness
+                && !targetInWilderness
+                && !WildernessChecker.isInWilderness(packedPosition)
+                && WildernessChecker.isInWilderness(packedNeighborPosition);
     }
 
     public QuestState getQuestState(Quest quest) {
@@ -521,8 +459,10 @@ public class PathfinderConfig {
             return true;
         }
         itemsAndQuantities.clear();
-        ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
-        ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
+
+        ItemContainer inventory = client.getItemContainer(InventoryID.INV);
+        ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
+
         if (inventory != null) {
             for (Item item : inventory.getItems()) {
                 if (item.getId() >= 0 && item.getQuantity() > 0) {
