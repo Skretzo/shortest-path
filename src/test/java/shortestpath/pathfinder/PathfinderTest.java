@@ -114,6 +114,37 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testFairyRingsNotUsedWithoutDramenStaff() {
+        when(config.useFairyRings()).thenReturn(true);
+        setupInventory();
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+        when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
+
+        // Refresh config which will populate usable transports
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+        // Ensure none of the usable transports are of type FAIRY_RING
+        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
+            for (Transport t : set) {
+                assertTrue("Fairy ring used unexpectedly: " + t, !TransportType.FAIRY_RING.equals(t.getType()));
+            }
+        }
+    }
+
+    @Test
+    public void testFairyRingsUsedWithLumbridgeDiaryCompleteWithoutDramenStaff() {
+        when(config.useFairyRings()).thenReturn(true);
+        // No Dramen staff in inventory or equipment
+        setupInventory();
+        // Satisfy Fairy2 quest varbit and Lumbridge elite diary complete
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+        when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(1);
+
+        // Use the existing test helper which will refresh config and run checks for all fairy ring transports
+        testTransportLength(2, TransportType.FAIRY_RING);
+    }
+
+    @Test
     public void testGnomeGliders() {
         when(config.useGnomeGliders()).thenReturn(true);
         testTransportLength(2, TransportType.GNOME_GLIDER);
