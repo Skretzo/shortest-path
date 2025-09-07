@@ -46,6 +46,9 @@ public class PathfinderTest {
     ItemContainer inventory;
 
     @Mock
+    ItemContainer equipment;
+
+    @Mock
     ShortestPathPlugin plugin;
 
     @Mock
@@ -141,6 +144,17 @@ public class PathfinderTest {
         when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(1);
 
         // Use the existing test helper which will refresh config and run checks for all fairy ring transports
+        testTransportLength(2, TransportType.FAIRY_RING);
+    }
+
+    @Test
+    public void testFairyRingsUsedWithDramenStaffWornInHand() {
+        when(config.useFairyRings()).thenReturn(true);
+        setupInventory();
+        setupEquipment(new Item(ItemID.DRAMEN_STAFF, 1));
+
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+
         testTransportLength(2, TransportType.FAIRY_RING);
     }
 
@@ -437,6 +451,11 @@ public class PathfinderTest {
     private void setupInventory(Item... items) {
         doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
         doReturn(items).when(inventory).getItems();
+    }
+
+    private void setupEquipment(Item... items) {
+        doReturn(equipment).when(client).getItemContainer(InventoryID.WORN);
+        doReturn(items).when(equipment).getItems();
     }
 
     private void testTransportLength(int expectedLength, int origin, int destination) {
