@@ -29,26 +29,26 @@ All transport TSV files share the same structure: rows are tab-separated fields,
 
 Other columns (for example, `menuOption menuTarget objectID`) may appear and are used by other layers (e.g., UI/interaction) but are ignored by the pathfinding parser.
 
-## Origin
+### Origin
 
 - Format: `x y plane` (three integers) or empty
 - Meaning: starting tile for object-based transports.
 - Special: an empty Origin marks a permutation row that pairs with every row that has an Origin and an empty Destination (see “Two-way and permutation generation”).
 - Example: `3097 3107 0`
 
-## Destination
+### Destination
 
 - Format: `x y plane` (three integers) or empty
 - Meaning: target tile of the transport/teleport.
 - Special: an empty Destination marks a permutation row that pairs with every row that has a Destination and an empty Origin.
 - Example: `3221 3218 0`
 
-## menuOption menuTarget objectID
+### menuOption menuTarget objectID
 
 - Format: free text describing object interaction, frequently ending with an integer object id, e.g. `Open Door 9398` or `Travel Spirit tree 8355`.
 - Meaning: used for object-based transports (doors, ladders, spirit trees). Treat the whole cell as a single string; no fixed token layout is enforced by the pathfinding parser.
 
-## Skills
+### Skills
 
 - Format: one or more `LEVEL SkillName` tokens separated by `;`.
   - single: `25 Magic`
@@ -57,7 +57,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
   - Use exactly one space between the level and the skill name (e.g., `83 Farming`).
   - Skill names must match the client’s enum names exactly (case/spacing), e.g., `Magic`, `Construction`.
 
-## Items
+### Items
 
 - Format: expressions describing required items. Supported patterns:
   - OR group (any of): `ID=qty||ID2=qty` (or single `|`) — example: `3853=1||3855=1`.
@@ -75,36 +75,36 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
   - Left side of `=` can be a numeric item id or a named constant recognized by the client (e.g., `LAW_RUNE`).
   - Equipment/slot tokens: some rows use named slot tokens (for example `HEADSLOT`, `CAPESLOT`, `CAPESLOT`) found in `ItemVariations` to check equipment slots rather than inventory items. These appear as `HEADSLOT=0` to require an empty head slot, and can be combined with `&` to require multiple slot states (e.g., `HEADSLOT=0&CAPESLOT=0`).
 
-## Quests
+### Quests
 
 - Format: one or more quest names separated by `;` (e.g., `Plague City;Song of the Elves`).
 - Notes: quest names must match the client’s `Quest` enum names exactly. Avoid leading/trailing spaces around names.
 
-## Duration
+### Duration
 
 - Format: integer (commonly small: `1`, `4`, `23`, `5`).
 - Meaning: UI/animation duration or travel time in ticks (treated as an opaque integer by the pathfinder).
 - Special: teleports are forced to have a minimum duration of `1` even if left `0` or empty, so their cost isn’t computed by walking distance.
 
-## Display info
+### Display info
 
 - Format: free text label used by the UI (e.g., `Varrock Teleport`, `Burthorpe Games Room Minigame Teleport`, `ZANARIS`).
 - Meaning: human-readable description or selection label.
 
 Notes: display labels sometimes include an index or letter prefix used by in-game menus (for example `1: Emir's Arena` or `A: Warriors' Guild`). These prefixes are part of the label and preserved by the parser.
 
-## Consumable (flag)
+### Consumable (flag)
 
 - Format: `T`, `F`, `yes`, or empty.
 - Meaning: indicates whether using the transport consumes an item/charge.
 - Notes: the parser treats `T` and `yes` (case-insensitive) as true; anything else (including `F` or empty) is false.
 
-## Wilderness level
+### Wilderness level
 
 - Format: integer (often `0` or `20`).
 - Meaning: wilderness restriction or indicator. Kept as an integer; semantics are enforced at runtime.
 
-## Varbits
+### Varbits
 
 - Format: semicolon-separated varbit expressions. Examples:
   - equality: `4070=0`
@@ -113,7 +113,7 @@ Notes: display labels sometimes include an index or letter prefix used by in-gam
   - with at-sign: `892@30`
 - Meaning: conditions read from client state. Each clause is parsed against supported operators and must be of the form `ID<op>VALUE` with numeric `ID` and `VALUE`.
 
-## VarPlayers
+### VarPlayers
 
 - Format: semicolon-separated expressions (same operators as Varbits), e.g., `888@20;4560&2`.
 - Meaning: additional player/state conditions. Each clause must be `ID<op>VALUE` with numeric `ID` and `VALUE`.
