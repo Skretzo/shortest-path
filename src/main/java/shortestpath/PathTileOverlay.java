@@ -18,6 +18,8 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 public class PathTileOverlay extends Overlay {
     private final Client client;

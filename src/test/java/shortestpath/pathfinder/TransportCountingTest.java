@@ -6,11 +6,12 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 
-import shortestpath.Transport;
-import shortestpath.TransportType;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportLoader;
+import shortestpath.transport.TransportType;
 
 public class TransportCountingTest {
-    private static final Map<Integer, Set<Transport>> transports = Transport.loadAllFromResources();
+    private static final Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
 
     @Test
     public void testNumberOfCharterShips() {

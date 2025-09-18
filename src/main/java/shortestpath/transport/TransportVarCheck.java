@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.transport;
 
 import lombok.Getter;
 

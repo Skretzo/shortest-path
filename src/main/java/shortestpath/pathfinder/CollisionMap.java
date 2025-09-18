@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import shortestpath.Transport;
+
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.Transport;
 
 public class CollisionMap {
 

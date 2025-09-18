@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.transport;
 
 public enum TransportType {
     TRANSPORT,

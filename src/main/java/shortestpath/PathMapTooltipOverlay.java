@@ -18,6 +18,7 @@ import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.transport.Transport;
 
 public class PathMapTooltipOverlay extends Overlay {
     private static final int TOOLTIP_OFFSET_HEIGHT = 25;

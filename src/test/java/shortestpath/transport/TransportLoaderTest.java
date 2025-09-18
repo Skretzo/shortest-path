@@ -1,10 +1,11 @@
-package shortestpath;
+package shortestpath.transport;
 
 import org.junit.Test;
 import org.junit.Assert;
 import org.junit.Before;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
+import shortestpath.WorldPointUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +14,7 @@ import java.util.Set;
 /**
  * Comprehensive unit tests for {@link Transport#addTransportsFromContents} method.
  */
-public class TransportTest {
+public class TransportLoaderTest {
 
     private Map<Integer, Set<Transport>> transports;
 
@@ -33,7 +34,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\n" +
                          "3200 3200 0\t3300 3300 0\t5\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int originPacked = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         int destinationPacked = WorldPointUtil.packWorldPoint(3300, 3300, 0);
@@ -59,7 +60,7 @@ public class TransportTest {
                          "# Another comment\n" +
                          "3400 3400 0\t3500 3500 0\t10\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         Assert.assertEquals("Should have exactly 2 origins", 2, transports.size());
         
@@ -86,7 +87,7 @@ public class TransportTest {
                          "3200 3200 0\t3300 3300 0\t5\n" +
                          "3200 3200 0\t3400 3400 0\t10\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Assert.assertTrue("Should contain origin", transports.containsKey(origin));
@@ -94,20 +95,20 @@ public class TransportTest {
         Set<Transport> transportSet = transports.get(origin);
         Assert.assertEquals("Should have exactly two transports", 2, transportSet.size());
 
-        int d1 = WorldPointUtil.packWorldPoint(3300, 3300, 0);
-        int d2 = WorldPointUtil.packWorldPoint(3400, 3400, 0);
-        boolean hasD1 = false, hasD2 = false;
+        int destination1 = WorldPointUtil.packWorldPoint(3300, 3300, 0);
+        int destination2 = WorldPointUtil.packWorldPoint(3400, 3400, 0);
+        boolean hasDestination1 = false, hasDestination2 = false;
         for (Transport t : transportSet) {
-            if (t.getDestination() == d1) {
-                hasD1 = true;
+            if (t.getDestination() == destination1) {
+                hasDestination1 = true;
                 Assert.assertEquals("Duration for first should match", 5, t.getDuration());
-            } else if (t.getDestination() == d2) {
-                hasD2 = true;
+            } else if (t.getDestination() == destination2) {
+                hasDestination2 = true;
                 Assert.assertEquals("Duration for second should match", 10, t.getDuration());
             }
         }
-        Assert.assertTrue("Should contain destination 1", hasD1);
-        Assert.assertTrue("Should contain destination 2", hasD2);
+        Assert.assertTrue("Should contain destination 1", hasDestination1);
+        Assert.assertTrue("Should contain destination 2", hasDestination2);
     }
 
     @Test
@@ -115,7 +116,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\n" +
                          "\t3300 3300 0\t0\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_SPELL, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_SPELL, 0);
         
         // Teleportation spells have undefined origin, so we need to check the transport differently
         // Since origin is undefined, this should create a transport but not add it to the map
@@ -127,7 +128,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\n" +
                          "3200 3200 0\t3300 3300 0\t0\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -143,7 +144,7 @@ public class TransportTest {
                          "\t3300 3300 0\tAIQ\n" +
                          "\t3400 3400 0\tBJR\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
         
         // Should create permutations: AIQ->AIQ, AIQ->BJR, BJR->AIQ, BJR->BJR
         // AIQ->AIQ and BJR->BJR should be filtered out by distance check (same coordinates)
@@ -161,24 +162,24 @@ public class TransportTest {
         Assert.assertEquals("Origin 1 should have two transports", 2, transports1.size());
         Assert.assertEquals("Origin 2 should have two transports", 2, transports2.size());
 
-        int dA = WorldPointUtil.packWorldPoint(3300, 3300, 0);
-        int dB = WorldPointUtil.packWorldPoint(3400, 3400, 0);
-        boolean o1dA = false, o1dB = false;
+        int destinationA = WorldPointUtil.packWorldPoint(3300, 3300, 0);
+        int destinationB = WorldPointUtil.packWorldPoint(3400, 3400, 0);
+        boolean origin1ToDestinationA = false, origin1ToDestinationB = false;
         for (Transport t : transports1) {
             Assert.assertEquals("Type should be fairy ring", TransportType.FAIRY_RING, t.getType());
-            if (t.getDestination() == dA) o1dA = true;
-            if (t.getDestination() == dB) o1dB = true;
+            if (t.getDestination() == destinationA) origin1ToDestinationA = true;
+            if (t.getDestination() == destinationB) origin1ToDestinationB = true;
         }
-        Assert.assertTrue("Origin1 should go to 3300,3300,0", o1dA);
-        Assert.assertTrue("Origin1 should go to 3400,3400,0", o1dB);
-        boolean o2dA = false, o2dB = false;
+        Assert.assertTrue("Origin1 should go to 3300,3300,0", origin1ToDestinationA);
+        Assert.assertTrue("Origin1 should go to 3400,3400,0", origin1ToDestinationB);
+        boolean origin2ToDestinationA = false, origin2ToDestinationB = false;
         for (Transport t : transports2) {
             Assert.assertEquals("Type should be fairy ring", TransportType.FAIRY_RING, t.getType());
-            if (t.getDestination() == dA) o2dA = true;
-            if (t.getDestination() == dB) o2dB = true;
+            if (t.getDestination() == destinationA) origin2ToDestinationA = true;
+            if (t.getDestination() == destinationB) origin2ToDestinationB = true;
         }
-        Assert.assertTrue("Origin2 should go to 3300,3300,0", o2dA);
-        Assert.assertTrue("Origin2 should go to 3400,3400,0", o2dB);
+        Assert.assertTrue("Origin2 should go to 3300,3300,0", origin2ToDestinationA);
+        Assert.assertTrue("Origin2 should go to 3400,3400,0", origin2ToDestinationB);
     }
 
     @Test
@@ -190,7 +191,7 @@ public class TransportTest {
                          "\t3101 3101 0\tLocation1\n" +  // Very close to first origin
                          "\t3400 3400 0\tLocation2\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 5);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 5);
         
         int origin1 = WorldPointUtil.packWorldPoint(3100, 3100, 0);
         int origin2 = WorldPointUtil.packWorldPoint(3200, 3200, 0);
@@ -214,7 +215,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDisplay info\n" +
                          "3100 3100 0\t\tOriginOnly\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
         
         // No destinations available, so no transports should be created
         Assert.assertTrue("No transports should be created without destinations", transports.isEmpty());
@@ -226,7 +227,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDisplay info\n" +
                          "\t3100 3100 0\tDestinationOnly\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
         
         // No origins available, so no transports should be created
         Assert.assertTrue("No transports should be created without origins", transports.isEmpty());
@@ -237,7 +238,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tSkills\n" +
                          "3200 3200 0\t3300 3300 0\t50 Agility;70 Strength\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -253,7 +254,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tSkills\n" +
                          "3200 3200 0\t3300 3300 0\t1500 Total;100 Combat;200 Quest\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -273,7 +274,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tSkills\n" +
                          "3200 3200 0\t3300 3300 0\t\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -289,7 +290,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tSkills\n" +
                          "3200 3200 0\t3300 3300 0\t25 Magic;60 Ranged;1200 Total\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -309,7 +310,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tItems\n" +
                          "3200 3200 0\t3300 3300 0\t995=5\n";  // 5 coins
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -331,7 +332,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tItems\n" +
                          "3200 3200 0\t3300 3300 0\t995=5&561=10\n";  // 5 coins AND 10 nature runes
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -363,7 +364,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tItems\n" +
                          "3200 3200 0\t3300 3300 0\t995=5|561=10\n";  // 5 coins OR 10 nature runes
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -397,7 +398,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tItems\n" +
                          "3200 3200 0\t3300 3300 0\tCOINS=100\n";  // Using item variation name
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -420,7 +421,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tItems\n" +
                          "3200 3200 0\t3300 3300 0\t\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -433,7 +434,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tItems\n" +
                          "3200 3200 0\t3300 3300 0\t995=50&561=5|556=10&557=3\n";  // Complex AND/OR combination
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -454,7 +455,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tQuests\n" +
                          "3200 3200 0\t3300 3300 0\tSea Slug\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -470,7 +471,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tQuests\n" +
                          "3200 3200 0\t3300 3300 0\tSea Slug;Rum Deal\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -487,7 +488,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tQuests\n" +
                          "3200 3200 0\t3300 3300 0\t\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -502,7 +503,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tQuests\n" +
                          "3200 3200 0\t3300 3300 0\tNonExistentQuest\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -517,7 +518,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tVarbits\n" +
                          "3200 3200 0\t3300 3300 0\t123=5\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -534,7 +535,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tVarbits\n" +
                          "3200 3200 0\t3300 3300 0\t123=5;456>10;789<20;999&1;888@60\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -565,7 +566,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tVarPlayers\n" +
                          "3200 3200 0\t3300 3300 0\t555=1;666>5\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -588,7 +589,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tVarbits\tVarPlayers\n" +
                          "3200 3200 0\t3300 3300 0\t\t\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -602,7 +603,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\tDisplay info\tConsumable\tWilderness level\tmenuOption menuTarget objectID\n" +
                          "3200 3200 0\t3300 3300 0\t15\tTest Display\tT\t5\tUse TestObject 12345\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -620,7 +621,7 @@ public class TransportTest {
                          "3200 3200 0\t3300 3300 0\tF\n" +
                          "3300 3300 0\t3400 3400 0\tno\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
         
         for (Set<Transport> transportSet : transports.values()) {
             for (Transport transport : transportSet) {
@@ -635,7 +636,7 @@ public class TransportTest {
                          "3200 3200 0\t3300 3300 0\tinvalid skill\tinvalid=items\tinvalid_duration\tinvalid_wilderness\n";
         
         // Should not throw exception, just use default values
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -655,7 +656,7 @@ public class TransportTest {
     public void testEmptyFile() {
         String contents = "# Origin\tDestination\n";  // Header only, no data rows
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         Assert.assertTrue("Should have no transports for empty file", transports.isEmpty());
     }
@@ -664,7 +665,7 @@ public class TransportTest {
     public void testOnlyHeaderFile() {
         String contents = "# Origin\tDestination\tDuration\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         Assert.assertTrue("Should have no transports for header-only file", transports.isEmpty());
     }
@@ -674,7 +675,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tSkills\n" +
                          "3200 3200 0\t3300 3300 0\n";  // Missing skills field value
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -692,9 +693,9 @@ public class TransportTest {
         String contents2 = "# Origin\tDestination\tDuration\n" +
                           "3200 3200 0\t3300 3300 0\t5\n";
         
-    Transport.addTransportsFromContents(transports, contents1, TransportType.TRANSPORT, 0);
+    TransportLoader.addTransportsFromContents(transports, contents1, TransportType.TRANSPORT, 0);
     Map<Integer, Set<Transport>> transports2 = new HashMap<>();
-    Transport.addTransportsFromContents(transports2, contents2, TransportType.TRANSPORT, 0);
+    TransportLoader.addTransportsFromContents(transports2, contents2, TransportType.TRANSPORT, 0);
 
     int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
     int dest = WorldPointUtil.packWorldPoint(3300, 3300, 0);
@@ -711,7 +712,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tSkills\n" +
                          "3200 3200 0\t3300 3300 0\t70 Ranged;75 Strength\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -725,7 +726,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tSkills\n" +
                          "3200 3200 0\t3300 3300 0\t70 Agility\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -739,7 +740,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\n" +
                          "\t3300 3300 0\t0\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_SPELL, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_SPELL, 0);
         
         // Since this is a teleport with undefined origin, it won't be added to the map
         // But we can verify the behavior by checking a regular teleport item
@@ -748,7 +749,7 @@ public class TransportTest {
                           "3200 3200 0\t3300 3300 0\t0\n";
         
         Map<Integer, Set<Transport>> transports2 = new HashMap<>();
-        Transport.addTransportsFromContents(transports2, contents2, TransportType.TELEPORTATION_ITEM, 0);
+        TransportLoader.addTransportsFromContents(transports2, contents2, TransportType.TELEPORTATION_ITEM, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports2.get(origin));
@@ -762,7 +763,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\n" +
                          "3200 3200 0\t3300 3300 0\t0\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.BOAT, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.BOAT, 0);
         
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
@@ -776,7 +777,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\n" +
                          "\t3300 3300 0\t5\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
         
         // Teleports with undefined origin should not be added to the map
         Assert.assertTrue("No transports should be added for undefined origin", transports.isEmpty());
@@ -787,7 +788,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDuration\n" +
                          "3200 3200 0\t\t5\n";
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
         
         // Teleports with undefined destination should not be added to the map  
         Assert.assertTrue("No transports should be added for undefined destination", transports.isEmpty());
@@ -803,7 +804,7 @@ public class TransportTest {
                          "\t3400 3400 0\tLocation2\n";
         
         // Test with radius threshold of 5
-        Transport.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 5);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 5);
         
         int origin1 = WorldPointUtil.packWorldPoint(3100, 3100, 0);
         int origin2 = WorldPointUtil.packWorldPoint(3200, 3200, 0);
@@ -853,7 +854,7 @@ public class TransportTest {
                          "\t3400 3400 0\tLocation2\n";
         
         // Test with radius threshold of 0 (no filtering)
-        Transport.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
         
         int origin1 = WorldPointUtil.packWorldPoint(3100, 3100, 0);
         int origin2 = WorldPointUtil.packWorldPoint(3200, 3200, 0);
@@ -889,7 +890,7 @@ public class TransportTest {
                          "3100 3100 0\t\tLocation1\n" +
                          "\t3100 3100 0\tLocation1\n";  // Exact same coordinates
         
-        Transport.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
         
         // Should not create transport from location to itself
         Assert.assertTrue("Should not create transport to same location", transports.isEmpty());
@@ -904,7 +905,7 @@ public class TransportTest {
                          "\t3400 3400 0\tLocation2\n";    // Distance much larger
         
         // Test with large radius threshold
-        Transport.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 100);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 100);
         
         int origin1 = WorldPointUtil.packWorldPoint(3100, 3100, 0);
         int origin2 = WorldPointUtil.packWorldPoint(3200, 3200, 0);
@@ -927,7 +928,7 @@ public class TransportTest {
         String contents = "# Origin\tDestination\tDisplay info\n" +
                           "\t\tOnlyLabel\n"; // both origin and destination missing -> permutation-only
 
-        Transport.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
         Assert.assertTrue("No transports should be created for permutation-only row", transports.isEmpty());
     }
 }
