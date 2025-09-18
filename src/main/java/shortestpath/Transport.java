@@ -347,98 +347,103 @@ public class Transport {
         return quests;
     }
 
+    private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType, int radiusThreshold) {
+        try {
+            String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
+            addTransportsFromContents(transports, s, transportType, radiusThreshold);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType) {
         addTransports(transports, path, transportType, 0);
     }
 
-    private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType, int radiusThreshold) {
+    public static void addTransportsFromContents(Map<Integer, Set<Transport>> transports, String contents, TransportType transportType, int radiusThreshold) {
         final String DELIM_COLUMN = "\t";
         final String PREFIX_COMMENT = "#";
 
-        try {
-            String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
-            Scanner scanner = new Scanner(s);
+        Scanner scanner = new Scanner(contents);
 
-            // Header line is the first line in the file and will start with either '#' or '# '
-            String headerLine = scanner.nextLine();
-            headerLine = headerLine.startsWith(PREFIX_COMMENT + " ") ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
-            headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
-            String[] headers = headerLine.split(DELIM_COLUMN);
+        // Header line is the first line in the file and will start with either '#' or '# '
+        String headerLine = scanner.nextLine();
+        headerLine = headerLine.startsWith(PREFIX_COMMENT + " ") ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
+        headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
+        String[] headers = headerLine.split(DELIM_COLUMN);
 
-            Set<Transport> newTransports = new HashSet<>();
+        Set<Transport> newTransports = new HashSet<>();
 
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
 
-                if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
-                    continue;
-                }
-
-                String[] fields = line.split(DELIM_COLUMN);
-                Map<String, String> fieldMap = new HashMap<>();
-                for (int i = 0; i < headers.length; i++) {
-                    if (i < fields.length) {
-                        fieldMap.put(headers[i], fields[i]);
-                    }
-                }
-
-                Transport transport = new Transport(fieldMap, transportType);
-                newTransports.add(transport);
-
+            if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
+                continue;
             }
-            scanner.close();
 
-            /*
-             * A transport with origin A and destination B is one-way and must
-             * be duplicated as origin B and destination A to become two-way.
-             * Example: key-locked doors
-             * 
-             * A transport with origin A and a missing destination is one-way,
-             * but can go from origin A to all destinations with a missing origin.
-             * Example: fairy ring AIQ -> <blank>
-             * 
-             * A transport with a missing origin and destination B is one-way,
-             * but can go from all origins with a missing destination to destination B.
-             * Example: fairy ring <blank> -> AIQ
-             * 
-             * Identical transports from origin A to destination A are skipped, and
-             * non-identical transports from origin A to destination A can be skipped
-             * by specifying a radius threshold to ignore almost identical coordinates.
-             * Example: fairy ring AIQ -> AIQ
-             */
-            Set<Transport> transportOrigins = new HashSet<>();
-            Set<Transport> transportDestinations = new HashSet<>();
-            for (Transport transport : newTransports) {
-                int origin = transport.getOrigin();
-                int destination = transport.getDestination();
-                // Logic to determine ordinary transport vs teleport vs permutation (e.g. fairy ring)
-                if ((origin == UNDEFINED_ORIGIN && destination == UNDEFINED_DESTINATION)
-                    || (origin == LOCATION_PERMUTATION && destination == LOCATION_PERMUTATION)) {
-                    continue;
-                } else if (origin != LOCATION_PERMUTATION && origin != UNDEFINED_ORIGIN
-                    && destination == LOCATION_PERMUTATION) {
-                    transportOrigins.add(transport);
-                } else if (origin == LOCATION_PERMUTATION
-                    && destination != LOCATION_PERMUTATION && destination != UNDEFINED_DESTINATION) {
-                    transportDestinations.add(transport);
-                }
-                if (origin != LOCATION_PERMUTATION
-                    && destination != UNDEFINED_DESTINATION && destination != LOCATION_PERMUTATION
-                    && (origin == UNDEFINED_ORIGIN || origin != destination)) {
-                    transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
+            String[] fields = line.split(DELIM_COLUMN);
+            Map<String, String> fieldMap = new HashMap<>();
+            for (int i = 0; i < headers.length; i++) {
+                if (i < fields.length) {
+                    fieldMap.put(headers[i], fields[i]);
                 }
             }
-            for (Transport origin : transportOrigins) {
-                for (Transport destination : transportDestinations) {
-                    // The radius threshold prevents transport permutations from including (almost) same origin and destination
-                    if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
-                        transports.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
-                            .add(new Transport(origin, destination));
-                    }
+
+            Transport transport = new Transport(fieldMap, transportType);
+            newTransports.add(transport);
+
+        }
+        scanner.close();
+
+        /*
+        * A transport with origin A and destination B is one-way and must
+        * be duplicated as origin B and destination A to become two-way.
+        * Example: key-locked doors
+        * 
+        * A transport with origin A and a missing destination is one-way,
+        * but can go from origin A to all destinations with a missing origin.
+        * Example: fairy ring AIQ -> <blank>
+        * 
+        * A transport with a missing origin and destination B is one-way,
+        * but can go from all origins with a missing destination to destination B.
+        * Example: fairy ring <blank> -> AIQ
+        * 
+        * Identical transports from origin A to destination A are skipped, and
+        * non-identical transports from origin A to destination A can be skipped
+        * by specifying a radius threshold to ignore almost identical coordinates.
+        * Example: fairy ring AIQ -> AIQ
+        */
+        Set<Transport> transportOrigins = new HashSet<>();
+        Set<Transport> transportDestinations = new HashSet<>();
+        for (Transport transport : newTransports) {
+            int origin = transport.getOrigin();
+            int destination = transport.getDestination();
+            // Logic to determine ordinary transport vs teleport vs permutation (e.g. fairy ring)
+            if ((origin == UNDEFINED_ORIGIN && destination == UNDEFINED_DESTINATION)
+                || (origin == LOCATION_PERMUTATION && destination == LOCATION_PERMUTATION)) {
+                continue;
+            } else if (origin != LOCATION_PERMUTATION && origin != UNDEFINED_ORIGIN
+                && destination == LOCATION_PERMUTATION) {
+                transportOrigins.add(transport);
+            } else if (origin == LOCATION_PERMUTATION
+                && destination != LOCATION_PERMUTATION && destination != UNDEFINED_DESTINATION) {
+                transportDestinations.add(transport);
+            }
+            if (origin != LOCATION_PERMUTATION
+                && destination != UNDEFINED_DESTINATION && destination != LOCATION_PERMUTATION
+                && (origin == UNDEFINED_ORIGIN || origin != destination)) {
+                transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
+            }
+        }
+        for (Transport origin : transportOrigins) {
+            for (Transport destination : transportDestinations) {
+                // The radius threshold prevents transport permutations from including (almost) same origin and destination
+                if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
+                    transports.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
+                        .add(new Transport(origin, destination));
                 }
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
