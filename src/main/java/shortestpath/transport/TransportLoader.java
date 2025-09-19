@@ -33,6 +33,7 @@ public class TransportLoader {
     public static void addTransportsFromContents(Map<Integer, Set<Transport>> transports, String contents, TransportType transportType, int radiusThreshold) {
         Scanner scanner = new Scanner(contents);
 
+        // Header line is the first line in the file and will start with either '#' or '# '
         String headerLine = scanner.nextLine();
         headerLine = headerLine.startsWith(PREFIX_COMMENT + " ") ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
         headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
@@ -61,6 +62,24 @@ public class TransportLoader {
         }
         scanner.close();
 
+        /*
+        * A transport with origin A and destination B is one-way and must
+        * be duplicated as origin B and destination A to become two-way.
+        * Example: key-locked doors
+        * 
+        * A transport with origin A and a missing destination is one-way,
+        * but can go from origin A to all destinations with a missing origin.
+        * Example: fairy ring AIQ -> <blank>
+        * 
+        * A transport with a missing origin and destination B is one-way,
+        * but can go from all origins with a missing destination to destination B.
+        * Example: fairy ring <blank> -> AIQ
+        * 
+        * Identical transports from origin A to destination A are skipped, and
+        * non-identical transports from origin A to destination A can be skipped
+        * by specifying a radius threshold to ignore almost identical coordinates.
+        * Example: fairy ring AIQ -> AIQ
+        */
         Set<Transport> transportOrigins = new HashSet<>();
         Set<Transport> transportDestinations = new HashSet<>();
         for (Transport transport : newTransports) {
