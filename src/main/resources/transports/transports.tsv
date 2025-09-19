@@ -4991,3 +4991,20 @@
 2936 2938 0	2936 2940 0	Chop-down Jungle Bush 2893		MACHETE=1			139>49	2	
 2936 2938 0	2936 2936 0	Chop-down Jungle tree 2889		AXE=1			139>49	10	
 2936 2936 0	2936 2938 0	Chop-down Jungle tree 2889		AXE=1			139>49	10	
+
+# Hunter Guild
+1559 3046 0	1556 3046 2	Climb-up Rope 51647							
+1556 3046 2	1559 3046 0	Climb-down Rope 51644							
+1558 3047 0	1558 9451 0	Climb-down Stairs 51641							
+1557 3047 0	1557 9451 0	Climb-down Stairs 51641							
+1558 9451 0	1558 3047 0	Climb-up Stairs 51642							
+1557 9451 0	1557 3047 0	Climb-up Stairs 51642							
+1553 3033 0	1553 3033 1	Climb-up Ladder 52614							
+1553 3033 1	1553 3033 0	Climb-down Ladder 52620							
+1556 3034 1	1556 3034 2	Climb-up Ladder 52614							
+1556 3034 2	1556 3034 1	Climb-down Ladder 52620							
+1533 3051 0	1533 9446 0	Enter cave 51761							
+1533 3050 0	1533 9446 0	Enter cave 51761							
+1533 9447 0	1533 3051 0	Exit cave 51760							
+1533 9446 0	1533 3051 0	Exit cave 51760							
+1533 9445 0	1533 3051 0	Exit cave 51760							
