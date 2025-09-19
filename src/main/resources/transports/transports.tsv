@@ -4991,3 +4991,9 @@
 2936 2938 0	2936 2940 0	Chop-down Jungle Bush 2893		MACHETE=1			139>49	2	
 2936 2938 0	2936 2936 0	Chop-down Jungle tree 2889		AXE=1			139>49	10	
 2936 2936 0	2936 2938 0	Chop-down Jungle tree 2889		AXE=1			139>49	10	
+
+# Almera's House in Baxtorian Falls
+2521 3494 0	2521 3494 1	Climb-up Ladder 16683						2	
+2522 3493 0	2522 3493 1	Climb-up Ladder 16683						2	
+2521 3494 1	2521 3494 0	Climb-down Ladder 16679						2	
+2522 3493 1	2522 3493 0	Climb-down Ladder 16679						2	
