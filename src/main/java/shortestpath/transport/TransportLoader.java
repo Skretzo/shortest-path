@@ -85,6 +85,7 @@ public class TransportLoader {
         for (Transport transport : newTransports) {
             int origin = transport.getOrigin();
             int destination = transport.getDestination();
+            // Logic to determine ordinary transport vs teleport vs permutation (e.g. fairy ring)
             if (
                 ( origin == Transport.UNDEFINED_ORIGIN && destination == Transport.UNDEFINED_DESTINATION)
                 || (origin == Transport.LOCATION_PERMUTATION && destination == Transport.LOCATION_PERMUTATION)) {
@@ -104,6 +105,7 @@ public class TransportLoader {
         }
         for (Transport origin : transportOrigins) {
             for (Transport destination : transportDestinations) {
+                // The radius threshold prevents transport permutations from including (almost) same origin and destination
                 if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
                     transports
                         .computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
