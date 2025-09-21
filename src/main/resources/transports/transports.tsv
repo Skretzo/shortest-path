@@ -4762,8 +4762,8 @@
 2734 9478 0	2760 3061 0	Use Crevice 30201				5629>0		2	
 									
 # Brimhaven Dungeon Vines									
-2691 9512 0	2689 9512 0	Chop-down Vines 29731		AXE=1				2	
-2689 9512 0	2691 9512 0	Chop-down Vines 29731		AXE=1				2	
+2691 9564 0	2689 9564 0	Chop-down Vines 29731		AXE=1				2	
+2689 9564 0	2691 9564 0	Chop-down Vines 29731		AXE=1				2	
 									
 # Shilo Village									
 2835 2987 0	2835 2987 1	Climb-up Ladder 16684						2	
@@ -5034,3 +5034,22 @@
 1533 9447 0	1533 3051 0	Exit Cave 51760						2	
 1533 9446 0	1533 3051 0	Exit Cave 51760						2	
 1533 9445 0	1533 3051 0	Exit Cave 51760						2	
+									
+									
+# Crabclaw Caves									
+# out									
+1646 9848 0	1643 3450 0	Climb Sand pile 31691				6027>6		2	
+1647 9848 0	1643 3450 0	Climb Sand pile 31691				6027>6		2	
+									
+# in									
+1646 3449 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+1646 3450 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+1645 3451 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+1644 3451 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+1643 3450 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+1643 3449 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+1644 3448 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+1645 3448 0	1646 9848 0	Enter Cave 31690				6027>6		2	
+									
+1673 9800 0	1677 9747 0	Climb-down Tunnel entrance 31692						2	
+1677 9747 0	1673 9800 0	Climb-down Tunnel entrance 31692						2	
