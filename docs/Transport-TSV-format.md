@@ -1,6 +1,6 @@
 # Transport TSV format
 
-This document describes the canonical column set and allowed values used across all files in `src/main/resources/transports/` (loaded by `Transport.loadAllFromResources`). It reflects the actual parser behavior in `shortestpath.Transport`.
+This document describes the canonical column set and allowed values used across all files in `src/main/resources/transports/` (loaded by `TransportLoader.loadAllFromResources`). It reflects the actual parser behavior in `shortestpath.Transport`.
 
 All transport TSV files share the same structure: rows are tab-separated fields, comment lines start with `#`, and many columns are optional depending on the transport type. The focus below is on columns and permitted value formats rather than file-specific variants.
 
