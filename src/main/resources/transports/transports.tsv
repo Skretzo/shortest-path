@@ -970,14 +970,6 @@
 1914 5226 0	3081 3421 0	Climb-up Ladder 20784							
 1912 5226 0	3081 3421 0	Climb-up Ladder 20784							
 1913 5227 0	3081 3421 0	Climb-up Ladder 20784							
-3081 3421 0	1859 5243 0	Climb-down Entrance 20790							
-1859 5243 0	3081 3421 0	Climb-up Ladder 20784							
-1860 5244 0	3081 3421 0	Climb-up Ladder 20784							
-1858 5244 0	3081 3421 0	Climb-up Ladder 20784							
-1913 5225 0	3081 3421 0	Climb-up Ladder 20784							
-1914 5226 0	3081 3421 0	Climb-up Ladder 20784							
-1912 5226 0	3081 3421 0	Climb-up Ladder 20784							
-1913 5227 0	3081 3421 0	Climb-up Ladder 20784							
 1902 5223 0	2042 5245 0	Climb-down Ladder 20785							
 1903 5222 0	2042 5245 0	Climb-down Ladder 20785							
 1902 5221 0	2042 5245 0	Climb-down Ladder 20785							
@@ -985,13 +977,6 @@
 2026 5219 0	2123 5252 0	Climb-down Ladder 19004							
 2025 5218 0	2123 5252 0	Climb-down Ladder 19004							
 2122 5251 0	2042 5245 0	Climb-up Dripping vine 23705							
-2026 5217 0	2123 5252 0	Climb-down Ladder 19004							
-2150 5279 0	2123 5252 0	Climb-up Goo covered vine 23703							
-2147 5284 0	2358 5215 0	Climb-down Dripping vine 23706							
-2358 5215 0	2123 5252 0	Climb-up Boney ladder 23921							
-2148 5283 0	2358 5215 0	Climb-down Dripping vine 23706							
-2357 5216 0	2123 5252 0	Climb-up Boney ladder 23921							
-2149 5284 0	2358 5215 0	Climb-down Dripping vine 23706							
 2026 5217 0	2123 5252 0	Climb-down Ladder 19004							
 2150 5279 0	2123 5252 0	Climb-up Goo covered vine 23703							
 2147 5284 0	2358 5215 0	Climb-down Dripping vine 23706							
@@ -1059,9 +1044,7 @@
 3420 3185 0	3420 3185 1	Climb-up Ladder 10493						2	
 3420 3185 1	3420 3185 0	Climb-down Ladder 10494						2	
 									
-# Mage Trainining Arena									
-3363 3300 0	3363 3298 0	Enter Doorway 10721							
-3363 3298 0	3363 3300 0	Enter Doorway 10721							
+# Mage Training Arena								
 3363 3300 0	3363 3298 0	Enter Doorway 10721							
 3363 3298 0	3363 3300 0	Enter Doorway 10721							
 3360 3306 0	3357 3307 1	Climb-up Stairs 10775							
@@ -3264,8 +3247,6 @@
 3403 2926 1	3403 2926 0	Climb-down Ladder 10494						2	
 3371 9312 0	3371 9313 0	Open Door 10431						1	
 3371 9313 0	3371 9312 0	Open Door 10431						1	
-3371 9312 0	3371 9313 0	Open Door 10431						1	
-3371 9313 0	3371 9312 0	Open Door 10431						1	
 3373 9304 0	3375 2904 0	Climb Rope 10434							
 3375 2904 0	3374 9305 0	Climb-down Crevice 10416							
 3374 9305 0	3375 2904 0	Climb Rope 10434							
@@ -4557,7 +4538,6 @@
 2911 3686 0	2909 3686 0	Climb Rocks 3748							
 2909 3687 0	2911 3687 0	Climb Rocks 3748							
 2911 3687 0	2909 3687 0	Climb Rocks 3748							
-2943 3769 0	2950 3767 0	Climb Rocky handholds 26405							
 2943 3769 0	2950 3767 0	Climb Rocky handholds 26405							
 2943 3767 0	2950 3767 0	Climb Rocky handholds 26405							
 2942 3768 0	2950 3767 0	Climb Rocky handholds 26405							
