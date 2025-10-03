@@ -1044,7 +1044,7 @@
 3420 3185 0	3420 3185 1	Climb-up Ladder 10493						2	
 3420 3185 1	3420 3185 0	Climb-down Ladder 10494						2	
 									
-# Mage Training Arena								
+# Mage Training Arena									
 3363 3300 0	3363 3298 0	Enter Doorway 10721							
 3363 3298 0	3363 3300 0	Enter Doorway 10721							
 3360 3306 0	3357 3307 1	Climb-up Stairs 10775							
@@ -5027,3 +5027,44 @@
 1645 3448 0	1646 9848 0	Enter Cave 31690				6027>6		2	
 1673 9800 0	1677 9747 0	Climb-down Tunnel entrance 31692						2	
 1677 9747 0	1673 9800 0	Climb-down Tunnel entrance 31692						2	
+									
+# Trollweiss									
+									
+2822 3745 0	2803 10187 0	Enter Cave entrance 5007						1	
+2822 3744 0	2803 10187 0	Enter Cave entrance 5007						1	
+2822 3743 0	2803 10187 0	Enter Cave entrance 5007						1	
+2804 10187 0	2822 3745 0	Enter Tunnel 5011						1	
+2803 10187 0	2822 3745 0	Enter Tunnel 5011						1	
+2802 10187 0	2822 3745 0	Enter Tunnel 5011						1	
+									
+2772 10232 0	2778 3869 0	Enter Crevasse 5025						1	
+2778 3869 0	2772 10232 0	Enter Tunnel 5009						1	
+2778 3870 0	2772 10232 0	Enter Tunnel 5009						1	
+2779 3871 0	2772 10232 0	Enter Tunnel 5009						1	
+2780 3871 0	2772 10232 0	Enter Tunnel 5009						1	
+2781 3871 0	2772 10232 0	Enter Tunnel 5009						1	
+2782 3870 0	2772 10232 0	Enter Tunnel 5009						1	
+2782 3869 0	2772 10232 0	Enter Tunnel 5009						1	
+2782 3868 0	2772 10232 0	Enter Tunnel 5009						1	
+2781 3867 0	2772 10232 0	Enter Tunnel 5009						1	
+2780 3867 0	2772 10232 0	Enter Tunnel 5009						1	
+2779 3867 0	2772 10232 0	Enter Tunnel 5009						1	
+									
+# Trollweiss Mountain sled ride									
+# 4048 Sled item ID									
+2772 3886 0	2790 3794 0	Slide Slope 5015		4048=1				20	
+2773 3836 0	2790 3794 0	Slide Slope 5015		4048=1				20	
+
+2786 3772 0	2794 3719 0	Slide Slope 5015		4048=1				20	
+2785 3772 0	2794 3719 0	Slide Slope 5015		4048=1				20
+
+# Daero
+
+2484 3486 1	2649 4516 0	Travel Daero 1445 						6
+2649 4518 0	2894 2726 0	Travel Waydar 1446						4
+2654 4495 0	2393 3466 0	Operate Teleportation Device 4869						6
+2896 2727 0	2393 3465 0	Travel Waydar 1446						4
+
+# poison arrows on ape atoll
+
+2724 2747 0	2770 2793 0							10

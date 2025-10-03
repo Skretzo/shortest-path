@@ -3,10 +3,8 @@ package shortestpath.transport;
 import org.junit.Test;
 import org.junit.Assert;
 
-import net.runelite.client.util.WorldUtil;
 import shortestpath.WorldPointUtil;
 
-import java.util.HashMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
