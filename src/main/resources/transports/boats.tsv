@@ -103,16 +103,16 @@
 								
 # Molch Island, Molch, Battlefront, Shayzien								
 1384 3665 0	1369 3639 0	Board Boaty 33614					4	Molch Island
-1384 3665 0	1341 3645 0	Board Boaty 33614					4	Battlefront
+1384 3665 0	1341 3645 0	Board Boaty 33614					4	Molch
 1384 3665 0	1408 3612 0	Board Boaty 33614					4	Shayzien
 1342 3645 0	1369 3639 0	Board Boaty 33614					4	Molch Island
-1342 3645 0	1384 3665 0	Board Boaty 33614					4	Molch
+1342 3645 0	1384 3665 0	Board Boaty 33614					4	Battlefront
 1342 3645 0	1408 3612 0	Board Boaty 33614					4	Shayzien
 1408 3612 0	1369 3639 0	Board Boaty 33614					4	Molch Island
-1408 3612 0	1384 3665 0	Board Boaty 33614					4	Molch
-1408 3612 0	1341 3645 0	Board Boaty 33614					4	Battlefront
-1369 3639 0	1384 3665 0	Board Boaty 33614					4	Molch
-1369 3639 0	1341 3645 0	Board Boaty 33614					4	Battlefront
+1408 3612 0	1384 3665 0	Board Boaty 33614					4	Battlefront
+1408 3612 0	1341 3645 0	Board Boaty 33614					4	Molch
+1369 3639 0	1384 3665 0	Board Boaty 33614					4	Battlefront
+1369 3639 0	1341 3645 0	Board Boaty 33614					4	Molch
 1369 3639 0	1408 3612 0	Board Boaty 33614					4	Shayzien
 								
 # Burgh de Rott, Meiyerditch, Icyene Graveyard, Slepe								
