@@ -239,6 +239,50 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testPickaxeNotUsedWithoutPickaxe() {
+        // Ensure transports requiring a pickaxe are not included when the player has no pickaxe
+        setupInventory();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+        assertTrue(
+            "No transports should be present that require a pickaxe",
+            !hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds())
+        );
+    }
+
+    @Test
+    public void testPickaxeUsedWithPickaxe() {
+        // Ensure transports requiring a pickaxe are included when the player has a pickaxe and sufficient mining level
+        setupInventory(new Item(ItemID.BRONZE_PICKAXE, 1));
+        setupConfig(QuestState.FINISHED, 50, TeleportationItem.NONE); // transport in data requires 50 Mining
+
+        assertTrue("Transports requiring a pickaxe should be present",
+            hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds()));
+    }
+
+    @Test
+    public void testAxeNotUsedWithoutAxe() {
+        // Ensure transports requiring an axe are not included when the player has no axe
+        setupInventory();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+        assertTrue(
+            "No transports should be present that require an axe",
+            !hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds())
+        );
+    }
+
+    @Test
+    public void testAxeUsedWithAxe() {
+        // Ensure transports requiring an axe are included when the player has an axe
+        setupInventory(new Item(ItemID.BRONZE_AXE, 1));
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+        assertTrue("Transports requiring an axe should be present",
+            hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds()));
+    }
+
+    @Test
     public void testTeleportationPortals() {
         when(config.useTeleportationPortals()).thenReturn(true);
         testTransportLength(2, TransportType.TELEPORTATION_PORTAL);
@@ -526,5 +570,30 @@ public class PathfinderTest {
         Pathfinder pathfinder = new Pathfinder(plugin, pathfinderConfig, origin, Set.of(destination));
         pathfinder.run();
         return pathfinder.getPath().size();
+    }
+
+    private boolean hasTransportWithRequiredItem(Map<Integer, Set<Transport>> transports, int[] variationIds) {
+        for (Set<Transport> set : transports.values()) {
+            for (Transport t : set) {
+                TransportItems items = t.getItemRequirements();
+                if (items == null) {
+                    continue;
+                }
+                int[][] reqs = items.getItems();
+                for (int[] inner : reqs) {
+                    if (inner == null) {
+                        continue;
+                    }
+                    for (int id : inner) {
+                        for (int vid : variationIds) {
+                            if (id == vid) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
