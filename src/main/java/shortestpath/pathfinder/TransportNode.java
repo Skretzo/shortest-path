@@ -1,8 +1,8 @@
 package shortestpath.pathfinder;
 
 public class TransportNode extends Node implements Comparable<TransportNode> {
-    public TransportNode(int packedPosition, Node previous, int travelTime) {
-        super(packedPosition, previous, cost(previous, travelTime));
+    public TransportNode(int packedPosition, Node previous, int travelTime, int additionalCost) {
+        super(packedPosition, previous, cost(previous, travelTime + additionalCost));
     }
 
     private static int cost(Node previous, int travelTime) {

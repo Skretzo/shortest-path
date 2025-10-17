@@ -405,9 +405,361 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigSection(
+        name = "Transport Thresholds",
+        description = "Set customizable thresholds for how much faster a transportation method must be to be preferred over other methods",
+        position = 33
+    )
+    String sectionThresholds = "sectionThresholds";
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costAgilityShortcuts",
+        name = "Agility shortcut threshold",
+        description = "How many extra tiles an agility shortcut must save to be preferred over walking or other transports",
+        position = 34,
+        section = sectionThresholds
+    )
+    default int costAgilityShortcuts() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costGrappleShortcuts",
+        name = "Grapple shortcut threshold",
+        description = "How many extra tiles a grapple shortcut must save to be preferred over walking or other transports",
+        position = 35,
+        section = sectionThresholds
+    )
+    default int costGrappleShortcuts() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costBoats",
+        name = "Boat threshold",
+        description = "How many extra tiles a small boat must save to be preferred over walking or other transports",
+        position = 36,
+        section = sectionThresholds
+    )
+    default int costBoats() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costCanoes",
+        name = "Canoe threshold",
+        description = "How many extra tiles a canoe must save to be preferred over walking or other transports",
+        position = 373,
+        section = sectionThresholds
+    )
+    default int costCanoes() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costCharterShips",
+        name = "Charter ship threshold",
+        description = "How many extra tiles a charter ship must save to be preferred over walking or other transports",
+        position = 38,
+        section = sectionThresholds
+    )
+    default int costCharterShips() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costShips",
+        name = "Ship threshold",
+        description = "How many extra tiles a passenger ship must save to be preferred over walking or other transports",
+        position = 39,
+        section = sectionThresholds
+    )
+    default int costShips() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costFairyRings",
+        name = "Fairy ring threshold",
+        description = "How many extra tiles a fairy ring must save to be preferred over walking or other transports",
+        position = 40,
+        section = sectionThresholds
+    )
+    default int costFairyRings() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costGnomeGliders",
+        name = "Gnome glider threshold",
+        description = "How many extra tiles a gnome glider must save to be preferred over walking or other transports",
+        position = 41,
+        section = sectionThresholds
+    )
+    default int costGnomeGliders() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costHotAirBalloons",
+        name = "Hot air balloon threshold",
+        description = "How many extra tiles a hot air balloon must save to be preferred over walking or other transports",
+        position = 42,
+        section = sectionThresholds
+    )
+    default int costHotAirBalloons() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costMagicCarpets",
+        name = "Magic carpets threshold",
+        description = "How many extra tiles a magic carpet must save to be preferred over walking or other transports",
+        position = 43,
+        section = sectionThresholds
+    )
+    default int costMagicCarpets() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costMagicMushtrees",
+        name = "Magic mushtrees threshold",
+        description = "How many extra tiles a magic mushtree must save to be preferred over walking or other transports",
+        position = 44,
+        section = sectionThresholds
+    )
+    default int costMagicMushtrees() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costMinecarts",
+        name = "Minecart threshold",
+        description = "How many extra tiles a minecart must save to be preferred over walking or other transports",
+        position = 45,
+        section = sectionThresholds
+    )
+    default int costMinecarts() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costQuetzals",
+        name = "Quetzal threshold",
+        description = "How many extra tiles a quetzal must save to be preferred over walking or other transports",
+        position = 46,
+        section = sectionThresholds
+    )
+    default int costQuetzals() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costSpiritTrees",
+        name = "Spirit tree threshold",
+        description = "How many extra tiles a spirit tree must save to be preferred over walking or other transports",
+        position = 47,
+        section = sectionThresholds
+    )
+    default int costSpiritTrees() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costNonConsumableTeleportationItems",
+        name = "Teleportation item (non-consumable) threshold",
+        description = "How many extra tiles a non-consumable teleportation item must save to be preferred over walking or other transports",
+        position = 48,
+        section = sectionThresholds
+    )
+    default int costNonConsumableTeleportationItems() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costConsumableTeleportationItems",
+        name = "Teleportation item (consumable) threshold",
+        description = "How many extra tiles a consumable teleportation item must save to be preferred over walking or other transports",
+        position = 49,
+        section = sectionThresholds
+    )
+    default int costConsumableTeleportationItems() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costTeleportationBoxes",
+        name = "Teleportation box threshold",
+        description = "How many extra tiles a teleportation box must save to be preferred over walking or other transports",
+        position = 50,
+        section = sectionThresholds
+    )
+    default int costTeleportationBoxes() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costTeleportationLevers",
+        name = "Teleportation lever threshold",
+        description = "How many extra tiles a teleportation lever must save to be preferred over walking or other transports",
+        position = 51,
+        section = sectionThresholds
+    )
+    default int costTeleportationLevers() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costTeleportationPortals",
+        name = "Teleportation portal threshold",
+        description = "How many extra tiles a teleportation portal must save to be preferred over walking or other transports",
+        position = 52,
+        section = sectionThresholds
+    )
+    default int costTeleportationPortals() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costTeleportationSpells",
+        name = "Teleportation spell threshold",
+        description = "How many extra tiles a teleportation spell must save to be preferred over walking or other transports",
+        position = 53,
+        section = sectionThresholds
+    )
+    default int costTeleportationSpells() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costTeleportationMinigames",
+        name = "Teleportation to minigame threshold",
+        description = "How many extra tiles a minigame teleport must save to be preferred over walking or other transports",
+        position = 54,
+        section = sectionThresholds
+    )
+    default int costTeleportationMinigames() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costWildernessObelisks",
+        name = "Wilderness obelisk threshold",
+        description = "How many extra tiles a wilderness obelisk must save to be preferred over walking or other transports",
+        position = 55,
+        section = sectionThresholds
+    )
+    default int costWildernessObelisks() {
+        return 0;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
+        keyName = "costSeasonalTransports",
+        name = "Seasonal transport threshold",
+        description = "How many extra tiles a seasonal transport must save to be preferred over walking or other transports",
+        position = 56,
+        section = sectionThresholds
+    )
+    default int costSeasonalTransports() {
+        return 0;
+    }
+
+    @ConfigSection(
         name = "Display",
         description = "Options for displaying the path on the world map, minimap and scene tiles",
-        position = 33
+        position = 57
     )
     String sectionDisplay = "sectionDisplay";
 
@@ -415,7 +767,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMap",
         name = "Draw path on world map",
         description = "Whether the path should be drawn on the world map",
-        position = 34,
+        position = 58,
         section = sectionDisplay
     )
     default boolean drawMap() {
@@ -426,7 +778,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMinimap",
         name = "Draw path on minimap",
         description = "Whether the path should be drawn on the minimap",
-        position = 35,
+        position = 59,
         section = sectionDisplay
     )
     default boolean drawMinimap() {
@@ -437,7 +789,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTiles",
         name = "Draw path on tiles",
         description = "Whether the path should be drawn on the game tiles",
-        position = 36,
+        position = 60,
         section = sectionDisplay
     )
     default boolean drawTiles() {
@@ -448,7 +800,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "pathStyle",
         name = "Path style",
         description = "Whether to display the path as tiles or a segmented line",
-        position = 37,
+        position = 61,
         section = sectionDisplay
     )
     default TileStyle pathStyle() {
@@ -458,7 +810,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Colours",
         description = "Colours for the path map, minimap and scene tiles",
-        position = 38
+        position = 62
     )
     String sectionColours = "sectionColours";
 
@@ -467,7 +819,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourPath",
         name = "Path",
         description = "Colour of the path tiles on the world map, minimap and in the game scene",
-        position = 39,
+        position = 63,
         section = sectionColours
     )
     default Color colourPath() {
@@ -480,7 +832,7 @@ public interface ShortestPathConfig extends Config {
         name = "Calculating",
         description = "Colour of the path tiles while the pathfinding calculation is in progress," +
             "<br>and the colour of unused targets if there are more than a single target",
-        position = 40,
+        position = 64,
         section = sectionColours
     )
     default Color colourPathCalculating() {
@@ -492,7 +844,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourTransports",
         name = "Transports",
         description = "Colour of the transport tiles",
-        position = 41,
+        position = 65,
         section = sectionColours
     )
     default Color colourTransports() {
@@ -504,7 +856,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourCollisionMap",
         name = "Collision map",
         description = "Colour of the collision map tiles",
-        position = 42,
+        position = 66,
         section = sectionColours
     )
     default Color colourCollisionMap() {
@@ -516,7 +868,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourText",
         name = "Text",
         description = "Colour of the text of the tile counter and fairy ring codes",
-        position = 43,
+        position = 67,
         section = sectionColours
     )
     default Color colourText() {
@@ -526,7 +878,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Debug Options",
         description = "Various options for debugging",
-        position = 44,
+        position = 68,
         closedByDefault = true
     )
     String sectionDebug = "sectionDebug";
@@ -535,7 +887,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTransports",
         name = "Draw transports",
         description = "Whether transports should be drawn",
-        position = 45,
+        position = 69,
         section = sectionDebug
     )
     default boolean drawTransports() {
@@ -546,7 +898,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawCollisionMap",
         name = "Draw collision map",
         description = "Whether the collision map should be drawn",
-        position = 46,
+        position = 70,
         section = sectionDebug
     )
     default boolean drawCollisionMap() {
@@ -557,7 +909,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawDebugPanel",
         name = "Show debug panel",
         description = "Toggles displaying the pathfinding debug stats panel",
-        position = 47,
+        position = 71,
         section = sectionDebug
     )
     default boolean drawDebugPanel() {
@@ -568,7 +920,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "postTransports",
         name = "Post transports",
         description = "Whether to post the transports used in the current path as a PluginMessage event",
-        position = 48,
+        position = 72,
         section = sectionDebug
     )
     default boolean postTransports() {

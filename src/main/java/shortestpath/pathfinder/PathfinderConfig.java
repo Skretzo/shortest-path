@@ -1,5 +1,6 @@
 package shortestpath.pathfinder;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -131,6 +132,8 @@ public class PathfinderConfig {
         useWildernessObelisks,
         includeBankPath;
     private TeleportationItem useTeleportationItems;
+    private Map<TransportType, Integer> artificialTransportCosts = new EnumMap<>(TransportType.class);
+    private int costConsumableTeleportationItems;
     private int currencyThreshold;
     private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
     private Map<Quest, QuestState> questStates = new HashMap<>();
@@ -193,6 +196,30 @@ public class PathfinderConfig {
         currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
         includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath());
         bankVisited = !includeBankPath;
+        artificialTransportCosts = new EnumMap<>(TransportType.class);
+        artificialTransportCosts.put(TransportType.AGILITY_SHORTCUT, ShortestPathPlugin.override("costAgilityShortcuts", config.costAgilityShortcuts()));
+        artificialTransportCosts.put(TransportType.GRAPPLE_SHORTCUT, ShortestPathPlugin.override("costGrappleShortcuts", config.costGrappleShortcuts()));
+        artificialTransportCosts.put(TransportType.BOAT, ShortestPathPlugin.override("costBoats", config.costBoats()));
+        artificialTransportCosts.put(TransportType.CANOE, ShortestPathPlugin.override("costCanoes", config.costCanoes()));
+        artificialTransportCosts.put(TransportType.CHARTER_SHIP, ShortestPathPlugin.override("costCharterShips", config.costCharterShips()));
+        artificialTransportCosts.put(TransportType.SHIP, ShortestPathPlugin.override("costShips", config.costShips()));
+        artificialTransportCosts.put(TransportType.FAIRY_RING, ShortestPathPlugin.override("costFairyRings", config.costFairyRings()));
+        artificialTransportCosts.put(TransportType.GNOME_GLIDER, ShortestPathPlugin.override("costGnomeGliders", config.costGnomeGliders()));
+        artificialTransportCosts.put(TransportType.HOT_AIR_BALLOON, ShortestPathPlugin.override("costHotAirBalloons", config.costHotAirBalloons()));
+        artificialTransportCosts.put(TransportType.MAGIC_CARPET, ShortestPathPlugin.override("costMagicCarpets", config.costMagicCarpets()));
+        artificialTransportCosts.put(TransportType.MAGIC_MUSHTREE, ShortestPathPlugin.override("costMagicMushtrees", config.costMagicMushtrees()));
+        artificialTransportCosts.put(TransportType.MINECART, ShortestPathPlugin.override("costMinecarts", config.costMinecarts()));
+        artificialTransportCosts.put(TransportType.QUETZAL, ShortestPathPlugin.override("costQuetzals", config.costQuetzals()));
+        artificialTransportCosts.put(TransportType.SEASONAL_TRANSPORTS, ShortestPathPlugin.override("costSeasonalTransports", config.costSeasonalTransports()));
+        artificialTransportCosts.put(TransportType.SPIRIT_TREE, ShortestPathPlugin.override("costSpiritTrees", config.costSpiritTrees()));
+        artificialTransportCosts.put(TransportType.TELEPORTATION_ITEM, ShortestPathPlugin.override("costNonConsumableTeleportationItems", config.costNonConsumableTeleportationItems()));
+        artificialTransportCosts.put(TransportType.TELEPORTATION_BOX, ShortestPathPlugin.override("costTeleportationBoxes", config.costTeleportationBoxes()));
+        artificialTransportCosts.put(TransportType.TELEPORTATION_LEVER, ShortestPathPlugin.override("costTeleportationLevers", config.costTeleportationLevers()));
+        artificialTransportCosts.put(TransportType.TELEPORTATION_MINIGAME, ShortestPathPlugin.override("costTeleportationMinigames", config.costTeleportationMinigames()));
+        artificialTransportCosts.put(TransportType.TELEPORTATION_PORTAL, ShortestPathPlugin.override("costTeleportationPortals", config.costTeleportationPortals()));
+        artificialTransportCosts.put(TransportType.TELEPORTATION_SPELL, ShortestPathPlugin.override("costTeleportationSpells", config.costTeleportationSpells()));
+        artificialTransportCosts.put(TransportType.WILDERNESS_OBELISK, ShortestPathPlugin.override("costWildernessObelisks", config.costWildernessObelisks()));
+        costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             int i = 0;
@@ -250,6 +277,14 @@ public class PathfinderConfig {
             locations.addAll(filteredTargets);
             filteredTargets.clear();
         }
+    }
+
+    /** Returns the user-configured additional cost for a given transport */
+    public int getAdditionalTransportCost(Transport transport) {
+        if (transport.isConsumable() && TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
+            return costConsumableTeleportationItems;
+        }
+        return artificialTransportCosts.getOrDefault(transport.getType(), 0);
     }
 
     private Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations) {
