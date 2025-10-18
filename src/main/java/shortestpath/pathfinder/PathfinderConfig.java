@@ -106,6 +106,8 @@ public class PathfinderConfig {
     private long calculationCutoffMillis;
     @Getter
     private boolean avoidWilderness;
+    @Getter
+    private boolean bankVisited;
     private boolean useAgilityShortcuts,
         useGrappleShortcuts,
         useBoats,
@@ -126,7 +128,8 @@ public class PathfinderConfig {
         useTeleportationMinigames,
         useTeleportationPortals,
         useTeleportationSpells,
-        useWildernessObelisks;
+        useWildernessObelisks,
+        includeBankPath;
     private TeleportationItem useTeleportationItems;
     private int currencyThreshold;
     private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
@@ -188,6 +191,8 @@ public class PathfinderConfig {
         useTeleportationSpells = ShortestPathPlugin.override("useTeleportationSpells", config.useTeleportationSpells());
         useWildernessObelisks = ShortestPathPlugin.override("useWildernessObelisks", config.useWildernessObelisks());
         currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
+        includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath());
+        bankVisited = !includeBankPath;
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
             int i = 0;
@@ -317,11 +322,33 @@ public class PathfinderConfig {
         }
     }
 
+    private void refreshUsableTeleports() {
+        // Only for appending and not for removing teleports
+        for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet()) {
+            if (entry.getKey() == WorldPointUtil.UNDEFINED) { // is a teleport
+                for (Transport transport : entry.getValue()) {
+                    if (useTransport(transport)
+                        && hasRequiredItems(transport, false, false, true, false)) {
+                        usableTeleports.add(transport);
+                    }
+                }
+            }
+        }
+    }
+
     public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness) {
         return avoidWilderness
                 && !targetInWilderness
                 && !WildernessChecker.isInWilderness(packedPosition)
                 && WildernessChecker.isInWilderness(packedNeighborPosition);
+    }
+
+    public void setBankVisited(boolean visited, int packedLocation, int wildernessLevel) {
+        bankVisited = visited;
+        if (bankVisited) {
+            refreshUsableTeleports();
+            refreshTeleports(packedLocation, wildernessLevel);
+        }
     }
 
     public QuestState getQuestState(Quest quest) {
@@ -477,8 +504,16 @@ public class PathfinderConfig {
         return true;
     }
 
-    /** Checks if the player has all the required equipment and inventory items for the transport */
     private boolean hasRequiredItems(Transport transport) {
+        return hasRequiredItems(transport, true, true, true, true);
+    }
+
+    /** Checks if the player has all the required equipment and inventory items for the transport */
+    private boolean hasRequiredItems(Transport transport,
+        boolean checkInventory,
+        boolean checkEquipment,
+        boolean checkBank,
+        boolean checkRunePouch) {
         if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
             TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())) {
             switch (useTeleportationItems) {
@@ -493,53 +528,73 @@ public class PathfinderConfig {
                     break;
             }
         }
-        return hasRequiredItems(transport.getItemRequirements());
+        return hasRequiredItems(transport.getItemRequirements(),
+            checkInventory, checkEquipment, checkBank, checkRunePouch);
+    }
+
+    private boolean hasRequiredItems(TransportItems transportItems) {
+        return hasRequiredItems(transportItems, true, true, true, true);
     }
 
     /** Checks if the player has all the required equipment and inventory items for the transport */
-    private boolean hasRequiredItems(TransportItems transportItems) {
+    private boolean hasRequiredItems(TransportItems transportItems,
+        boolean checkInventory,
+        boolean checkEquipment,
+        boolean checkBank,
+        boolean checkRunePouch) {
         if (transportItems == null) {
             return true;
         }
         itemsAndQuantities.clear();
 
-        ItemContainer inventory = client.getItemContainer(InventoryID.INV);
-        ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
+        if (checkInventory) {
+            ItemContainer inventory = client.getItemContainer(InventoryID.INV);
+            if (inventory != null) {
+                for (Item item : inventory.getItems()) {
+                    if (item.getId() >= 0 && item.getQuantity() > 0) {
+                        itemsAndQuantities.put(item.getId(), item.getQuantity());
+                    }
+                }
+            }
+        }
 
-        if (inventory != null) {
-            for (Item item : inventory.getItems()) {
-                if (item.getId() >= 0 && item.getQuantity() > 0) {
-                    itemsAndQuantities.put(item.getId(), item.getQuantity());
+        if (checkEquipment) {
+            ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
+            if (equipment != null) {
+                for (Item item : equipment.getItems()) {
+                    if (item.getId() >= 0 && item.getQuantity() > 0) {
+                        itemsAndQuantities.put(item.getId(), item.getQuantity());
+                    }
                 }
             }
         }
-        if (equipment != null) {
-            for (Item item : equipment.getItems()) {
-                if (item.getId() >= 0 && item.getQuantity() > 0) {
-                    itemsAndQuantities.put(item.getId(), item.getQuantity());
+
+        if (checkBank) {
+            if (bank != null && bankVisited
+                && (TeleportationItem.INVENTORY_AND_BANK.equals(useTeleportationItems)
+                || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(useTeleportationItems))) {
+                for (Item item : bank.getItems()) {
+                    if (item.getId() >= 0 && item.getQuantity() > 0) {
+                        itemsAndQuantities.put(item.getId(), item.getQuantity());
+                    }
                 }
             }
         }
-        if (bank != null
-            && (TeleportationItem.INVENTORY_AND_BANK.equals(useTeleportationItems)
-            || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(useTeleportationItems))) {
-            for (Item item : bank.getItems()) {
-                if (item.getId() >= 0 && item.getQuantity() > 0) {
-                    itemsAndQuantities.put(item.getId(), item.getQuantity());
+
+        if (checkRunePouch) {
+            if (RUNE_POUCHES.stream().anyMatch(runePouch -> itemsAndQuantities.containsKey(runePouch))) {
+                EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
+                for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++) {
+                    int runeEnumId = client.getVarbitValue(RUNE_POUCH_RUNE_VARBITS[i]);
+                    int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
+                    int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
+                    if (runeId > 0 && runeAmount > 0) {
+                        itemsAndQuantities.put(runeId, runeAmount);
+                    }
                 }
             }
         }
-        if (RUNE_POUCHES.stream().anyMatch(runePouch -> itemsAndQuantities.containsKey(runePouch))) {
-            EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
-            for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++) {
-                int runeEnumId = client.getVarbitValue(RUNE_POUCH_RUNE_VARBITS[i]);
-                int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
-                int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
-                if (runeId > 0 && runeAmount > 0) {
-                    itemsAndQuantities.put(runeId, runeAmount);
-                }
-            }
-        }
+
         boolean usingStaff = false;
         boolean usingOffhand = false;
         for (int i = 0; i < transportItems.getItems().length; i++) {

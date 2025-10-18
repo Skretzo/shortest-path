@@ -74,12 +74,16 @@ public class CollisionMap {
     private final List<Node> neighbors = new ArrayList<>(16);
     private final boolean[] traversable = new boolean[8];
 
-    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config) {
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
 
         neighbors.clear();
+
+        if (!config.isBankVisited() && config.getDestinations("bank").contains(node.packedPosition)) {
+            config.setBankVisited(true, node.packedPosition, wildernessLevel);
+        }
 
         @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
         Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>)Collections.EMPTY_SET);
