@@ -18,7 +18,7 @@ jobs:
       - name: Install csvlint
         run: |
           curl -L https://github.com/Clever/csvlint/releases/download/v0.3.0/csvlint-v0.3.0-linux-amd64.tar.gz | tar xz
-          sudo mv csvlint /usr/local/bin/
+          sudo mv csvlint-v0.3.0-linux-amd64/csvlint /usr/local/bin/
 
       - name: Lint TSV files
         run: |
