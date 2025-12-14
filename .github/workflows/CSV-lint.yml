@@ -20,9 +20,14 @@ jobs:
           curl -L https://github.com/Clever/csvlint/releases/download/v0.3.0/csvlint-v0.3.0-linux-amd64.tar.gz | tar xz
           sudo mv csvlint-v0.3.0-linux-amd64/csvlint /usr/local/bin/
 
-      - name: Lint TSV files
+      - name: TSV Column Consistency
+        shell: bash
         run: |
-          for file in $(find ./src/main/resources -name '*.tsv'); do
-            echo "==> Linting $file"
-            csvlint --delimiter $'\t' "$file"
-          done
+          chmod +x ./scripts/tsv-lint.sh
+          ./scripts/tsv-lint.sh ./src/main/resources
+
+      - name: CSV Lint
+        shell: bash
+        run: |
+          find ./src/main/resources -name '*.tsv' -print0 \
+            | xargs -0 -n 1 csvlint -delimiter $'\t'
