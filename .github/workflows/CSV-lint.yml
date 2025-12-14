@@ -18,7 +18,7 @@ jobs:
       - name: Strip quotes from TSV files
         # Remove all single quotes from any .tsv files so the linter won't fail on unknown delimiters
         run: |
-          find ./src/main/resources -type f -name '*.tsv' -exec sed -i 's/'//g' {} +
+          find ./src/main/resources -type f -name '*.tsv' -exec sed -i "s/'//g" {} +
 
       - name: csvlinter
         uses: kcheriyath/csvlinter@V0.6.0
