@@ -15,14 +15,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Strip quotes from TSV files
-        # Remove all single quotes from any .tsv files so the linter won't fail on unknown delimiters
+      - name: Install csvlint
         run: |
-          find ./src/main/resources -type f -name '*.tsv' -exec sed -i "s/'//g" {} +
+          curl -L https://github.com/Clever/csvlint/releases/download/v0.3.0/csvlint-v0.3.0-linux-amd64.tar.gz | tar xz
+          sudo mv csvlint /usr/local/bin/
 
-      - name: csvlinter
-        uses: kcheriyath/csvlinter@V0.6.0
-        with:
-          find_pattern: "*.tsv"
-          find_path: "./src/main/resources"
-          extra_params: "--delimiter='\t' -lazyquotes"
+      - name: Lint TSV files
+        run: |
+          FAILED=0
+          for file in $(find ./src/main/resources -name '*.tsv'); do
+            echo "==> Linting $file"
+            if ! csvlint -delimiter=$'\t' -lazyquotes "$file"; then
+              echo "==> Linting errors found for $file"
+              FAILED=1
+            fi
+          done
+          if [ $FAILED -ne 0 ]; then
+            echo "==> Linting errors found. Exiting with error."
+            exit 1
+          fi
+          echo "==> All files passed linting."
