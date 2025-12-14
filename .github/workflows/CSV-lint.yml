@@ -20,4 +20,4 @@ jobs:
         with:
           find_pattern: "*.tsv"
           find_path: "./src/main/resources"
-          extra_params: "--delimiter='\t'"
+          extra_params: "--delimiter='\t' -lazyquotes"
