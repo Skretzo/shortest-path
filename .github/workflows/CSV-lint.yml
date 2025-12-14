@@ -22,16 +22,7 @@ jobs:
 
       - name: Lint TSV files
         run: |
-          FAILED=0
           for file in $(find ./src/main/resources -name '*.tsv'); do
             echo "==> Linting $file"
-            if ! csvlint -delimiter=$'\t' -lazyquotes "$file"; then
-              echo "==> Linting errors found for $file"
-              FAILED=1
-            fi
+            csvlint --delimiter $'\t' "$file"
           done
-          if [ $FAILED -ne 0 ]; then
-            echo "==> Linting errors found. Exiting with error."
-            exit 1
-          fi
-          echo "==> All files passed linting."
