@@ -227,101 +227,55 @@ public class CollisionMapDumper
 						{
 							Z = z != tileZ ? z : loc.getPosition().getZ();
 
-							if (object.getMapSceneID() != -1)
+							boolean door = object.getWallOrDoor() != 0 && (object.getName().toLowerCase().contains("door") || object.getName().toLowerCase().contains("gate"));
+							boolean doorway = !door && object.getInteractType() == 0 && type == 0;
+							tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
+							if (exclusion != null)
 							{
-								if (exclusion != null)
+								tile = exclusion;
+							}
+							else if (doorway)
+							{
+								continue;
+							}
+
+							if (type == 0 || type == 2)
+							{
+								if (orientation == 0) // wall on west
 								{
-									tile = exclusion;
+									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 								}
-								else if (object.getInteractType() == 0)
+								else if (orientation == 1) // wall on north
 								{
-									continue;
+									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 								}
-								for (int sx = 0; sx < sizeX; sx++)
+								else if (orientation == 2) // wall on east
 								{
-									for (int sy = 0; sy < sizeY; sy++)
-									{
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-										flagMap.set(X + sx, Y + sy - 1, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx - 1, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-									}
+									flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
+								}
+								else if (orientation == 3) // wall on south
+								{
+									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
 								}
 							}
-							else
+
+							if (type == 2) // double walls
 							{
-								boolean door = object.getWallOrDoor() != 0;
-								boolean doorway = !door && object.getInteractType() == 0 && type == 0;
-								tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
-								if (exclusion != null)
+								if (orientation == 3)
 								{
-									tile = exclusion;
+									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 								}
-								else if (doorway)
+								else if (orientation == 0)
 								{
-									continue;
+									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 								}
-
-								if (type == 0 || type == 2)
+								else if (orientation == 1)
 								{
-									if (orientation == 0) // wall on west
-									{
-										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-									}
-									else if (orientation == 1) // wall on north
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									}
-									else if (orientation == 2) // wall on east
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									}
-									else if (orientation == 3) // wall on south
-									{
-										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
-									}
+									flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
 								}
-
-								/*
-								if (type == 3)
+								else if (orientation == 2)
 								{
-									if (orientation == 0) // corner north-west
-									{
-										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-									}
-									else if (orientation == 1) // corner north-east
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									}
-									else if (orientation == 2) // corner south-east
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									}
-									else if (orientation == 3) // corner south-west
-									{
-										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
-									}
-								}
-								*/
-
-								if (type == 2) // double walls
-								{
-									if (orientation == 3)
-									{
-										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-									}
-									else if (orientation == 0)
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									}
-									else if (orientation == 1)
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									}
-									else if (orientation == 2)
-									{
-										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
-									}
+									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
 								}
 							}
 						}
@@ -329,46 +283,26 @@ public class CollisionMapDumper
 						// Diagonal walls
 						if (type == 9)
 						{
-							if (object.getMapSceneID() != -1)
+							boolean door = object.getWallOrDoor() != 0 && (object.getName().toLowerCase().contains("door") || object.getName().toLowerCase().contains("gate"));
+							tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
+							if (exclusion != null)
 							{
-								if (exclusion != null)
-								{
-									tile = exclusion;
-								}
-								for (int sx = 0; sx < sizeX; sx++)
-								{
-									for (int sy = 0; sy < sizeY; sy++)
-									{
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-										flagMap.set(X + sx, Y + sy - 1, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx - 1, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-									}
-								}
+								tile = exclusion;
 							}
-							else
-							{
-								boolean door = object.getWallOrDoor() != 0;
-								tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
-								if (exclusion != null)
-								{
-									tile = exclusion;
-								}
 
-								if (orientation != 0 && orientation != 2) // diagonal wall pointing north-east
-								{
-									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_EAST, tile);
-								}
-								else // diagonal wall pointing north-west
-								{
-									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X, Y, Z, FlagMap.FLAG_WEST, tile);
-									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-								}
+							if (orientation != 0 && orientation != 2) // diagonal wall pointing north-east
+							{
+								flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
+								flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X - 1, Y, Z, FlagMap.FLAG_EAST, tile);
+							}
+							else // diagonal wall pointing north-west
+							{
+								flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X, Y, Z, FlagMap.FLAG_WEST, tile);
+								flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 							}
 						}
 
