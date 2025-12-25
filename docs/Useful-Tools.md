@@ -55,6 +55,10 @@ this shows you item IDs in the info boxes.
 
 <https://github.com/runelite/runelite/tree/master/runelite-api/src/main/java/net/runelite/api/gameval>
 
+## Runelite report button
+
+The runelite report button plugin lets you select what to show on the report button next the chat filter buttons. Normally it shows the `login timer` but you can change it to show the current game tick. This is usefull while estimating the duration of actions.
+
 ## LibreOffice Calc
 
 Editing the TSV files is a precise endeavor. LibreOffice Calc can help with this.
