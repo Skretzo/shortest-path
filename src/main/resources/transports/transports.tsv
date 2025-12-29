@@ -1577,8 +1577,8 @@
 2865 9572 0	2480 5175 0	Enter Cave entrance 11835							
 									
 # Island West of Brimhaven									
-2709 3209 0	2704 3209 0	Swing-on Ropeswing 23568							
-2705 3205 0	2709 3205 0	Swing-on Ropeswing 23569							
+2709 3209 0	2704 3209 0	Swing-on Ropeswing 23568						5	
+2705 3205 0	2709 3205 0	Swing-on Ropeswing 23569						5	
 									
 # Port Piscarillius									
 1824 3694 1	1824 3691 0	Cross Gangplank 27778						3	
@@ -3264,20 +3264,20 @@
 3374 2907 0	3374 9305 0	Climb-down Crevice 10416							
 									
 # Agility Pyramid									
-3334 2829 0	3338 2829 0	Climb Climbing rocks 11948							
-3338 2829 0	3334 2829 0	Climb Climbing rocks 11948							
-3334 2828 0	3338 2828 0	Climb Climbing rocks 11948							
-3338 2828 0	3334 2828 0	Climb Climbing rocks 11948							
-3334 2827 0	3338 2827 0	Climb Climbing rocks 11948							
-3338 2827 0	3334 2827 0	Climb Climbing rocks 11948							
-3338 2826 0	3334 2826 0	Climb Climbing rocks 11948							
-3334 2826 0	3338 2826 0	Climb Climbing rocks 11948							
-3348 2829 0	3352 2829 0	Climb Climbing rocks 11949							
-3352 2829 0	3348 2829 0	Climb Climbing rocks 11949							
-3348 2828 0	3352 2828 0	Climb Climbing rocks 11949							
-3352 2828 0	3348 2828 0	Climb Climbing rocks 11949							
-3348 2827 0	3352 2827 0	Climb Climbing rocks 11949							
-3352 2827 0	3348 2827 0	Climb Climbing rocks 11949							
+3334 2829 0	3338 2829 0	Climb Climbing rocks 11948						8	
+3338 2829 0	3334 2829 0	Climb Climbing rocks 11948						8	
+3334 2828 0	3338 2828 0	Climb Climbing rocks 11948						8	
+3338 2828 0	3334 2828 0	Climb Climbing rocks 11948						8	
+3334 2827 0	3338 2827 0	Climb Climbing rocks 11948						8	
+3338 2827 0	3334 2827 0	Climb Climbing rocks 11948						8	
+3338 2826 0	3334 2826 0	Climb Climbing rocks 11948						8	
+3334 2826 0	3338 2826 0	Climb Climbing rocks 11948						8	
+3348 2829 0	3352 2829 0	Climb Climbing rocks 11949						8	
+3352 2829 0	3348 2829 0	Climb Climbing rocks 11949						8	
+3348 2828 0	3352 2828 0	Climb Climbing rocks 11949						8	
+3352 2828 0	3348 2828 0	Climb Climbing rocks 11949						8	
+3348 2827 0	3352 2827 0	Climb Climbing rocks 11949						8	
+3352 2827 0	3348 2827 0	Climb Climbing rocks 11949						8	
 									
 # Sophanem									
 3284 2810 0	3283 2809 0	Open Gate 20391						1	
@@ -5050,6 +5050,10 @@
 2896 2727 0	2393 3465 0	Travel Waydar 1446						4	
 2724 2747 0	2770 2793 0							10	
 									
+# Tomb of Bervirius									
+2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
+2764 9376 0	2765 2976 0	Climb Climbing rocks 2236						15	
+									
 # Ice Queen's lair - Rock formations									
 2840 3516 0	2836 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
 2839 3516 0	2836 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
@@ -5152,3 +5156,11 @@
 2858 3519 0	2858 9919 0	Climb-down Ladder 16680						1	
 2859 3520 0	2859 9920 0	Climb-down Ladder 16680						1	
 2860 3519 0	2860 9919 0	Climb-down Ladder 16680						1	
+									
+# Shayzien Lizard Canyon									
+									
+1475 3687 0	1470 3687 0	Climb Handholds 27362						6	
+1470 3687 0	1475 3687 0	Climb Handholds 42009						6	
+									
+1460 3690 0	1456 3690 0	Climb Handholds 27362						6	
+1456 3690 0	1460 3690 0	Climb Handholds 42009						6	
