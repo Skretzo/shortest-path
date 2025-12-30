@@ -807,11 +807,6 @@ public class CollisionMapDumper
 		YANILLE_MAGIC_GUILD_DOOR_1733(1733),
 
 		ZANARIS_SHED_DOOR_2406(2406),
-		
-		// The invisible walls are placed all over the map. There purpose is unknown.
-		// They dont seem to block player movement.
-		// Most anoyingly they block the entrance to the death plateau.
-		INVISIBLE_WALL_38848(38848, FlagMap.TILE_DEFAULT)
 		;
 
 		/**
