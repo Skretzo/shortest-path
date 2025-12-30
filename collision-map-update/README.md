@@ -13,11 +13,10 @@ This workflow automates extraction of the latest Old School RuneScape (OSRS) col
 3. **Prepare Runelite**  
    - The workflow clones the [runelite/runelite](https://github.com/runelite/runelite) repository, which provides the necessary codebase for cache reading and manipulation.
    - It then copies [`CollisionMapDumper.java`](CollisionMapDumper.java) into the Runelite cache module, adding custom logic for extracting collision data.
-   - The [`pom.patch`](pom.patch) file is applied to the Runelite project’s Maven configuration, setting the correct main class and dependencies so the dumper can be built and run as a standalone JAR.
+   - The [`build.gradle.kts.patch`](build.gradle.kts.patch) file is applied to the Runelite project’s Gradle build configuration. This patch adds the [Shadow plugin](https://github.com/GradleUp/shadow) for creating a fat JAR and sets the correct main class so the dumper can be built and run as a standalone JAR.
 
 4. **Build Dumper JAR**  
-   Using Maven, the workflow compiles the modified Runelite cache module and packages it into a single executable JAR file. This JAR includes all required dependencies, making it easy to run the dumper in the next step.
-
+   Using Gradle, the workflow compiles the modified Runelite cache module with the `shadowJar` task and packages it into a single executable JAR file (with `-all` suffix). This JAR includes all required dependencies, making it easy to run the dumper in the next step.
 5. **Extract Collision Map**  
    The dumper JAR is executed, reading the downloaded cache and keys to extract collision data for all regions. The output is a compressed `collision-map.zip` file containing the processed collision map data.
 

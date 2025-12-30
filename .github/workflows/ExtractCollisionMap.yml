@@ -6,6 +6,7 @@ on:
   schedule:
     - cron: '20 23 * * 3' # Every Wednesday at 23:20 UTC
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,20 +42,20 @@ jobs:
         run: |
           cp ./collision-map-update/CollisionMapDumper.java runelite/cache/src/main/java/net/runelite/cache
 
-      - name: Patch Runelite with pom file
+      - name: Patch Runelite build.gradle.kts
         run: |
-          cp ./collision-map-update/pom.patch runelite/cache
+          cp ./collision-map-update/build.gradle.kts.patch runelite/cache
           cd runelite/cache
-          git apply pom.patch
+          git apply build.gradle.kts.patch
 
-      - name: Build Runelite with Maven
+      - name: Build Runelite with Gradle
         run: |
-          cd runelite/cache
-          mvn -B package --file pom.xml -DskipTests
+          cd runelite
+          ./gradlew :cache:shadowJar -x test --dependency-verification=off
 
       - name: Copy jar file to the root directory
         run: |
-          find runelite/cache/target -name "*-jar-with-dependencies.jar" -exec cp {} ./cache.jar \;
+          find runelite/cache/build/libs -name "*-all.jar" -exec cp {} ./cache.jar \;
 
       - name: Export collision map
         run: |

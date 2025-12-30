@@ -57,6 +57,136 @@ import org.apache.commons.cli.ParseException;
  */
 public class CollisionMapDumper
 {
+	// ========================================
+	// Object Type Constants
+	// ========================================
+	
+	/**
+	 * Straight wall types (types 0-3)
+	 */
+	private static final int OBJECT_TYPE_WALL_STRAIGHT = 0;
+	private static final int OBJECT_TYPE_WALL_DIAGONAL_CORNER = 1;
+	private static final int OBJECT_TYPE_WALL_ENTIRE_CORNER = 2;
+	private static final int OBJECT_TYPE_WALL_SQUARE_CORNER = 3;
+	private static final int OBJECT_TYPE_WALL_MAX = 3;
+	
+	/**
+	 * Diagonal wall type
+	 */
+	private static final int OBJECT_TYPE_WALL_DIAGONAL = 9;
+	
+	/**
+	 * Interactable diagonal objects (types 10-11)
+	 */
+	private static final int OBJECT_TYPE_DIAGONAL_INTERACTABLE_MIN = 10;
+	private static final int OBJECT_TYPE_DIAGONAL_INTERACTABLE_MAX = 11;
+	
+	/**
+	 * Game objects / scenery (types 12-21)
+	 */
+	private static final int OBJECT_TYPE_GAME_OBJECT_MIN = 12;
+	private static final int OBJECT_TYPE_GAME_OBJECT_MAX = 21;
+	
+	/**
+	 * Ground decoration type
+	 */
+	private static final int OBJECT_TYPE_GROUND_DECORATION = 22;
+
+	// ========================================
+	// Orientation Constants
+	// ========================================
+	
+	private static final int ORIENTATION_WEST = 0;
+	private static final int ORIENTATION_NORTH = 1;
+	private static final int ORIENTATION_EAST = 2;
+	private static final int ORIENTATION_SOUTH = 3;
+
+	// ========================================
+	// Tile Setting Constants
+	// ========================================
+	
+	/**
+	 * Tile setting indicating blocked movement (water, rooftop walls)
+	 */
+	private static final int TILE_SETTING_BLOCKED = 1;
+	
+	/**
+	 * Tile setting flag for bridge tiles
+	 */
+	private static final int TILE_SETTING_BRIDGE_FLAG = 2;
+	
+	/**
+	 * Tile setting indicating bridge wall
+	 */
+	private static final int TILE_SETTING_BRIDGE_WALL = 3;
+	
+	/**
+	 * Tile setting indicating house wall/roof
+	 */
+	private static final int TILE_SETTING_HOUSE_ROOF = 5;
+	
+	/**
+	 * Tile setting indicating house wall
+	 */
+	private static final int TILE_SETTING_HOUSE_WALL = 7;
+
+	// ========================================
+	// Object Definition Constants
+	// ========================================
+	
+	/**
+	 * InteractType value indicating no interaction/blocking
+	 */
+	private static final int INTERACT_TYPE_NONE = 0;
+	
+	/**
+	 * InteractType value indicating the object blocks movement
+	 */
+	private static final int INTERACT_TYPE_BLOCKS_MOVEMENT = 1;
+	
+	/**
+	 * InteractType default value - interactable but walkable
+	 */
+	private static final int INTERACT_TYPE_DEFAULT = 2;
+	
+	/**
+	 * MapSceneID value indicating no map scene
+	 */
+	private static final int MAP_SCENE_ID_NONE = -1;
+	
+	/**
+	 * WallOrDoor value indicating not a wall/door (passable)
+	 */
+	private static final int WALL_OR_DOOR_NONE = 0;
+	
+	/**
+	 * WallOrDoor value indicating a wall or door (may block)
+	 */
+	private static final int WALL_OR_DOOR_PRESENT = 1;
+
+	// ========================================
+	// Plane Constants
+	// ========================================
+	
+	/**
+	 * The plane used for checking bridge tiles
+	 */
+	private static final int BRIDGE_CHECK_PLANE = 1;
+	
+	/**
+	 * Maximum plane for applying tileZ adjustments
+	 */
+	private static final int MAX_PLANE_FOR_TILE_Z_ADJUSTMENT = 3;
+
+	// ========================================
+	// Underlay/Overlay Constants
+	// ========================================
+	
+	/**
+	 * Underlay/Overlay ID indicating no floor
+	 */
+	private static final int NO_UNDERLAY_OVERLAY_ID = 0;
+	
 	private final RegionLoader regionLoader;
 	private final ObjectManager objectManager;
 
@@ -196,7 +326,7 @@ public class CollisionMapDumper
 				{
 					int regionY = baseY + localY;
 
-					boolean isBridge = (region.getTileSetting(1, localX, localY) & 2) != 0;
+					boolean isBridge = (region.getTileSetting(BRIDGE_CHECK_PLANE, localX, localY) & TILE_SETTING_BRIDGE_FLAG) != 0;
 					int tileZ = z + (isBridge ? 1 : 0);
 
 					for (Location loc : region.getLocations())
@@ -223,17 +353,17 @@ public class CollisionMapDumper
 						int sizeY = (orientation == 1 || orientation == 3) ? object.getSizeX() : object.getSizeY();
 
 						// Walls
-						if (type >= 0 && type <= 3)
+						if (type >= OBJECT_TYPE_WALL_STRAIGHT && type <= OBJECT_TYPE_WALL_MAX)
 						{
 							Z = z != tileZ ? z : loc.getPosition().getZ();
 
-							if (object.getMapSceneID() != -1)
+							if (object.getMapSceneID() != MAP_SCENE_ID_NONE)
 							{
 								if (exclusion != null)
 								{
 									tile = exclusion;
 								}
-								else if (object.getInteractType() == 0)
+								else if (object.getInteractType() == INTERACT_TYPE_NONE)
 								{
 									continue;
 								}
@@ -250,8 +380,8 @@ public class CollisionMapDumper
 							}
 							else
 							{
-								boolean door = object.getWallOrDoor() != 0;
-								boolean doorway = !door && object.getInteractType() == 0 && type == 0;
+								boolean door = object.getWallOrDoor() != WALL_OR_DOOR_NONE;
+								boolean doorway = !door && object.getInteractType() == INTERACT_TYPE_NONE && type == OBJECT_TYPE_WALL_STRAIGHT;
 								tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
 								if (exclusion != null)
 								{
@@ -262,63 +392,63 @@ public class CollisionMapDumper
 									continue;
 								}
 
-								if (type == 0 || type == 2)
+								if (type == OBJECT_TYPE_WALL_STRAIGHT || type == OBJECT_TYPE_WALL_ENTIRE_CORNER)
 								{
-									if (orientation == 0) // wall on west
+									if (orientation == ORIENTATION_WEST) // wall on west
 									{
 										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 									}
-									else if (orientation == 1) // wall on north
+									else if (orientation == ORIENTATION_NORTH) // wall on north
 									{
 										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 									}
-									else if (orientation == 2) // wall on east
+									else if (orientation == ORIENTATION_EAST) // wall on east
 									{
 										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
 									}
-									else if (orientation == 3) // wall on south
+									else if (orientation == ORIENTATION_SOUTH) // wall on south
 									{
 										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
 									}
 								}
 
 								/*
-								if (type == 3)
+								if (type == OBJECT_TYPE_WALL_SQUARE_CORNER)
 								{
-									if (orientation == 0) // corner north-west
+									if (orientation == ORIENTATION_WEST) // corner north-west
 									{
 										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 									}
-									else if (orientation == 1) // corner north-east
+									else if (orientation == ORIENTATION_NORTH) // corner north-east
 									{
 										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 									}
-									else if (orientation == 2) // corner south-east
+									else if (orientation == ORIENTATION_EAST) // corner south-east
 									{
 										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
 									}
-									else if (orientation == 3) // corner south-west
+									else if (orientation == ORIENTATION_SOUTH) // corner south-west
 									{
 										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
 									}
 								}
 								*/
 
-								if (type == 2) // double walls
+								if (type == OBJECT_TYPE_WALL_ENTIRE_CORNER) // double walls
 								{
-									if (orientation == 3)
+									if (orientation == ORIENTATION_SOUTH)
 									{
 										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 									}
-									else if (orientation == 0)
+									else if (orientation == ORIENTATION_WEST)
 									{
 										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 									}
-									else if (orientation == 1)
+									else if (orientation == ORIENTATION_NORTH)
 									{
 										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
 									}
-									else if (orientation == 2)
+									else if (orientation == ORIENTATION_EAST)
 									{
 										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
 									}
@@ -327,9 +457,9 @@ public class CollisionMapDumper
 						}
 
 						// Diagonal walls
-						if (type == 9)
+						if (type == OBJECT_TYPE_WALL_DIAGONAL)
 						{
-							if (object.getMapSceneID() != -1)
+							if (object.getMapSceneID() != MAP_SCENE_ID_NONE)
 							{
 								if (exclusion != null)
 								{
@@ -348,14 +478,14 @@ public class CollisionMapDumper
 							}
 							else
 							{
-								boolean door = object.getWallOrDoor() != 0;
+								boolean door = object.getWallOrDoor() != WALL_OR_DOOR_NONE;
 								tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
 								if (exclusion != null)
 								{
 									tile = exclusion;
 								}
 
-								if (orientation != 0 && orientation != 2) // diagonal wall pointing north-east
+								if (orientation != ORIENTATION_WEST && orientation != ORIENTATION_EAST) // diagonal wall pointing north-east
 								{
 									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 									flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
@@ -373,9 +503,9 @@ public class CollisionMapDumper
 						}
 
 						// Remaining objects
-						if (type == 22 || (type >= 9 && type <= 11) || (type >= 12 && type <= 21))
+						if (type == OBJECT_TYPE_GROUND_DECORATION || (type >= OBJECT_TYPE_WALL_DIAGONAL && type <= OBJECT_TYPE_DIAGONAL_INTERACTABLE_MAX) || (type >= OBJECT_TYPE_GAME_OBJECT_MIN && type <= OBJECT_TYPE_GAME_OBJECT_MAX))
 						{
-							if (object.getInteractType() != 0 && (object.getWallOrDoor() == 1 || (type >= 10 && type <= 21)))
+							if (object.getInteractType() != INTERACT_TYPE_NONE && (object.getWallOrDoor() == WALL_OR_DOOR_PRESENT || (type >= OBJECT_TYPE_DIAGONAL_INTERACTABLE_MIN && type <= OBJECT_TYPE_GAME_OBJECT_MAX)))
 							{
 								if (exclusion != null)
 								{
@@ -397,16 +527,16 @@ public class CollisionMapDumper
 					}
 
 					// Tile without floor / floating in the air ("noclip" tiles, typically found where z > 0)
-					int underlayId = region.getUnderlayId(z < 3 ? tileZ : z, localX, localY);
-					int overlayId = region.getOverlayId(z < 3 ? tileZ : z, localX, localY);
-					boolean noFloor = underlayId == 0 && overlayId == 0;
+					int underlayId = region.getUnderlayId(z < MAX_PLANE_FOR_TILE_Z_ADJUSTMENT ? tileZ : z, localX, localY);
+					int overlayId = region.getOverlayId(z < MAX_PLANE_FOR_TILE_Z_ADJUSTMENT ? tileZ : z, localX, localY);
+					boolean noFloor = underlayId == NO_UNDERLAY_OVERLAY_ID && overlayId == NO_UNDERLAY_OVERLAY_ID;
 
 					// Nomove
-					int floorType = region.getTileSetting(z < 3 ? tileZ : z, localX, localY);
-					if (floorType == 1 || // water, rooftop wall
-						floorType == 3 || // bridge wall
-						floorType == 5 || // house wall/roof
-						floorType == 7 || // house wall
+					int floorType = region.getTileSetting(z < MAX_PLANE_FOR_TILE_Z_ADJUSTMENT ? tileZ : z, localX, localY);
+					if (floorType == TILE_SETTING_BLOCKED || // water, rooftop wall
+						floorType == TILE_SETTING_BRIDGE_WALL || // bridge wall
+						floorType == TILE_SETTING_HOUSE_ROOF || // house wall/roof
+						floorType == TILE_SETTING_HOUSE_WALL || // house wall
 						noFloor)
 					{
 						flagMap.set(regionX, regionY, z, FlagMap.FLAG_NORTH, FlagMap.TILE_BLOCKED);
