@@ -11,11 +11,12 @@ All transport TSV files share the same structure: rows are tab-separated fields,
 - Rows: split on tabs; ignore lines beginning with `#` (other than a commented header) and blank lines.
 - Coordinate fields (Origin/Destination) are three integers separated by single spaces: `x y plane` (example: `3221 3218 0`).
 - Empty cells are preserved. For permutation-style transports (e.g., fairy rings), leave Origin or Destination empty to signal “permutation” ([details below](#two-way-and-permutation-generation)).
+- If a transport is a two-way connection, add two separate rows (one for each direction); the parser does not auto-generate reversals.
 - Optional columns may be empty; keep column positions consistent within a file.
 
 ## Canonical columns recognized by the parser
 
-- [Origin](#origin )
+- [Origin](#origin)
 - [Destination](#destination)
 - [menuOption menuTarget objectID](#menuoption-menutarget-objectid)
 - [Skills](#skills)
@@ -27,7 +28,7 @@ All transport TSV files share the same structure: rows are tab-separated fields,
 - [Wilderness level](#wilderness-level)
 - [Varbits](#varbits)
 - [VarPlayers](#varplayers)
--
+
 Other columns (for example, `menuOption menuTarget objectID`) may appear and are used by other layers (e.g., UI/interaction) but are ignored by the pathfinding parser.
 
 ### Origin
@@ -46,7 +47,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
 
 ### menuOption menuTarget objectID
 
-- Format: The ingame texted displayed in the context menu. The ID is the object ID as given as eighter a gameobject ID, Wall ID or Ground object ID e.g. `Open Door 9398` or `Travel Spirit-tree 8355`.
+- Format: The in-game text displayed in the context menu. The ID is the object ID as given as either a gameobject ID, Wall ID, or Ground object ID (e.g., `Open Door 9398` or `Travel Spirit-tree 8355`).
 
 ### Skills
 
@@ -65,7 +66,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
   - Single token: `8013=1` or `EQUIPMENT_NAME=1`.
   - There are two ways of selecting items:
     - by numeric item ID (e.g., `3853=1` for Games necklace)
-    - by named constant recognized by the client (e.g., `LAW_RUNE=1`) these names are created in the `ItemVariations.java` file and are used to combine multiple item with the same properties (e.g., Runes that count as the same type, Swords with slash, crossbows).
+    - by named constant recognized by the client (e.g., `LAW_RUNE=1`). These names are created in the `ItemVariations.java` file and are used to combine multiple items with the same properties (e.g., runes that count as the same type, swords with slash, crossbows).
 - Parsing specifics:
   - Spaces are removed and the whole token string is uppercased before parsing (item names are effectively case-insensitive).
   - `&&` and `||` are normalized to `&` and `|` respectively; both forms are accepted.
@@ -90,7 +91,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
 - Format: free text label used by the UI (e.g., `Varrock Teleport`, `Burthorpe Games Room Minigame Teleport`, `ZANARIS`).
 - Meaning: human-readable description or selection label.
 
-Notes: display labels sometimes include an index or letter prefix used by in-game menus (for example `1: Emir's Arena` or `A: Warriors' Guild`). These prefixes are the shortcut keys used in the ingame teleport menu and may not be shown as actual ui text.
+Notes: display labels sometimes include an index or letter prefix used by in-game menus (for example `1: Emir's Arena` or `A: Warriors' Guild`). These prefixes are the shortcut keys used in the in-game teleport menu and may not be shown as actual UI text.
 
 ### Consumable (flag)
 
@@ -109,7 +110,7 @@ Notes: display labels sometimes include an index or letter prefix used by in-gam
   - equality: `4070=0`
   - greater-than: `10032>0`
   - bitmask: `4560&2`
-  - with at-sign: `892@30`
+  - with at-sign: `892@30`. This varbit represents a real-time countdown in minutes (wall-clock minutes, not in-game minutes) (e.g., the Lumbridge Home Teleport timer).
 - Meaning: conditions read from client state. Each clause is parsed against supported operators and must be of the form `ID<op>VALUE` with numeric `ID` and `VALUE`.
 
 ### VarPlayers
@@ -119,19 +120,11 @@ Notes: display labels sometimes include an index or letter prefix used by in-gam
 
 Notes: VarPlayers are used across many transport files (not just spells) — for example in quetzals, minigames, and teleportation files — to encode additional player-specific state conditions.
 
-## Two-way and permutation generation
+## Permutation generation
 
-- One-way vs two-way:
-  - A single row with `Origin=A` and `Destination=B` is one-way. If the reverse path is valid, add a second row with `Origin=B` and `Destination=A`—the parser does not auto-generate simple reversals.
+Instead of needing to list every possible origin-destination pair for certain transport types (e.g., fairy rings, spirit trees, teleportation spells), the parser supports a permutation-style format using empty Origin or Destination fields.
 
-- Permutation transports (e.g., fairy rings, spirit trees, gliders, mushtrees):
-  - Use rows with a concrete `Origin` and empty `Destination` to declare “all outgoing edges from this origin”.
-  - Use rows with empty `Origin` and a concrete `Destination` to declare “all incoming edges to this destination”.
-  - The parser pairs every such origin row with every destination row in the same file type to produce edges, skipping pairs whose origin and destination are equal or closer than a small per-type radius threshold.
-    - Current thresholds (tiles) by type: Gnome gliders: 6; Hot air balloons: 7; Magic mushtrees: 5; Spirit trees: 5; others default to 0.
-
-Below is an example fairy ring TSV file with two fairy ring where you can enter.
-and three destinations you can travel to.
+Use rows with a concrete `Origin` and empty `Destination` to declare “all of the following destinations are reachable from this origin” (e.g., the spirit trees or fairy rings).
 
 ```csv
 # Origin	Destination	menuOption menuTarget objectID	Skills	Quests	Varbits	Duration	Display info
@@ -141,6 +134,16 @@ and three destinations you can travel to.
 	2503 3636 0					5	A L P
 	3597 3495 0					5	A L Q
 ```
+
+
+Use rows with empty `Origin` and a concrete `Destination` to declare that “this transport can be used from any origin” (e.g., teleportation spells).
+
+```csv
+# Destination	Items	Skills	Quests	Duration	Display info	Wilderness level	Varbits	VarPlayers
+3221 3218 0				23	Lumbridge Home Teleport	20	4070=0	4560=0;892@30
+```
+
+The parser pairs every such origin row with every destination row in the same file type to produce edges, skipping pairs whose origin and destination are equal or closer than a small per-type radius threshold. Current thresholds (tiles) by type: Gnome gliders: 6; Hot air balloons: 7; Magic mushtrees: 5; Spirit trees: 5; others default to 0.
 
 ## Maintenance notes
 
