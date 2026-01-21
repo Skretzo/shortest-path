@@ -5162,12 +5162,12 @@
 1470 3687 0	1475 3687 0	Climb Handholds 42009						6	
 1460 3690 0	1456 3690 0	Climb Handholds 27362						6	
 1456 3690 0	1460 3690 0	Climb Handholds 42009						6	
-
-
-# Temple of the Eye
-
-3104 9573 0	3615 9470 0	Enter Portal 43841			Temple of the Eye			0
-
-3616 9470 0	3104 9573 0	Enter Portal 43694			Temple of the Eye			0
-3615 9470 0	3104 9573 0	Enter Portal 43694			Temple of the Eye			0
-3614 9470 0	3104 9573 0	Enter Portal 43694			Temple of the Eye			0
+									
+									
+# Temple of the Eye									
+									
+3104 9573 0	3615 9470 0	Enter Portal 43841			Temple of the Eye			0	
+									
+3616 9470 0	3104 9573 0	Enter Portal 43694			Temple of the Eye			0	
+3615 9470 0	3104 9573 0	Enter Portal 43694			Temple of the Eye			0	
+3614 9470 0	3104 9573 0	Enter Portal 43694			Temple of the Eye			0	
