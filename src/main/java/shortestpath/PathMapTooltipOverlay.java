@@ -19,6 +19,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 public class PathMapTooltipOverlay extends Overlay {
     private static final int TOOLTIP_OFFSET_HEIGHT = 25;
@@ -152,6 +153,8 @@ public class PathMapTooltipOverlay extends Overlay {
 
     /**
      * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
+     * If the immediate exit leads to a fairy ring or other notable transport shortly after,
+     * that information is included instead.
      * @param destination The destination point to check
      * @param path The full path
      * @param currentIndex The current index in the path
@@ -170,6 +173,9 @@ public class PathMapTooltipOverlay extends Overlay {
             return null;
         }
 
+        int pohExitIndex = -1;
+        String immediateExitInfo = null;
+
         // Look ahead in the path to find the next transport that exits POH
         for (int i = currentIndex + 1; i < path.size() - 1; i++) {
             int stepLocation = path.get(i);
@@ -185,21 +191,76 @@ public class PathMapTooltipOverlay extends Overlay {
             boolean nextInsidePoh = nextX >= POH_MIN_X && nextX <= POH_MAX_X && nextY >= POH_MIN_Y && nextY <= POH_MAX_Y;
             
             if (stepInsidePoh && !nextInsidePoh) {
+                pohExitIndex = i + 1; // Index of the first step outside POH
                 // Found the exit transport - get its display info
                 for (Transport transport : plugin.getTransports().getOrDefault(stepLocation, new HashSet<>())) {
                     if (nextLocation == transport.getDestination()) {
                         String exitInfo = transport.getDisplayInfo();
                         if (exitInfo != null && !exitInfo.isEmpty()) {
-                            // Clean up the display info (remove "Portal" suffix if present for brevity)
-                            return exitInfo.replace(" Portal", "");
+                            immediateExitInfo = exitInfo.replace(" Portal", "");
                         }
+                        break;
                     }
                 }
+                break;
             }
             
             // If we've left POH without finding a transport, stop looking
             if (!stepInsidePoh) {
                 break;
+            }
+        }
+        
+        // If we found a POH exit, look further ahead to see if there's a fairy ring,
+        // spirit tree, or other notable transport used shortly after
+        if (pohExitIndex > 0 && pohExitIndex < path.size() - 1) {
+            String secondaryTransportInfo = findSecondaryTransport(path, pohExitIndex);
+            if (secondaryTransportInfo != null) {
+                return secondaryTransportInfo;
+            }
+        }
+        
+        return immediateExitInfo;
+    }
+
+    /**
+     * Looks ahead from the POH exit point to find fairy rings, spirit trees, or other
+     * notable transports that might be the real destination reason for going through POH.
+     * @param path The full path
+     * @param startIndex The index to start looking from (first step outside POH)
+     * @return The display info of a secondary transport if found within a reasonable distance, or null
+     */
+    private String findSecondaryTransport(PrimitiveIntList path, int startIndex) {
+        // Look up to 30 steps ahead (reasonable walking distance to a nearby transport)
+        int maxLookahead = Math.min(startIndex + 30, path.size() - 1);
+        
+        for (int i = startIndex; i < maxLookahead; i++) {
+            int stepLocation = path.get(i);
+            int nextLocation = path.get(i + 1);
+            
+            for (Transport transport : plugin.getTransports().getOrDefault(stepLocation, new HashSet<>())) {
+                if (nextLocation == transport.getDestination()) {
+                    TransportType type = transport.getType();
+                    // Check for notable transport types that are likely the real reason for the route
+                    if (TransportType.FAIRY_RING.equals(type)) {
+                        String code = transport.getDisplayInfo();
+                        if (code != null && !code.isEmpty()) {
+                            return "Fairy Ring " + code;
+                        }
+                    } else if (TransportType.SPIRIT_TREE.equals(type)) {
+                        String dest = transport.getDisplayInfo();
+                        if (dest != null && !dest.isEmpty()) {
+                            return "Spirit Tree: " + dest;
+                        }
+                    } else if (TransportType.GNOME_GLIDER.equals(type)) {
+                        String dest = transport.getDisplayInfo();
+                        if (dest != null && !dest.isEmpty()) {
+                            return "Glider: " + dest;
+                        }
+                    }
+                    // For other transports, we just use the immediate POH exit
+                    // as they're likely the actual destination
+                }
             }
         }
         
