@@ -25,6 +25,12 @@ public class PathTileOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
     private static final int TRANSPORT_LABEL_GAP = 3;
+    
+    // POH (Player Owned House) bounds for detecting when path goes through POH
+    private static final int POH_MIN_X = 1792;
+    private static final int POH_MAX_X = 2047;
+    private static final int POH_MIN_Y = 5696;
+    private static final int POH_MAX_Y = 5767;
 
     @Inject
     public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
@@ -151,13 +157,13 @@ public class PathTileOverlay extends Overlay {
             if (TileStyle.LINES.equals(plugin.pathStyle)) {
                 for (int i = 1; i < path.size(); i++) {
                     drawLine(graphics, path.get(i - 1), path.get(i), color, 1 + counter++);
-                    drawTransportInfo(graphics, path.get(i - 1), path.get(i));
+                    drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
                 }
             } else {
                 boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
                 for (int i = 0; i < path.size(); i++) {
                     drawTile(graphics, path.get(i), color, counter++, showTiles);
-                    drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1));
+                    drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1), path, i);
                 }
                 for (int target : plugin.getPathfinder().getTargets()) {
                     if (path.size() > 0 && target != path.get(path.size() - 1)) {
@@ -291,7 +297,7 @@ public class PathTileOverlay extends Overlay {
         }
     }
 
-    private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd) {
+    private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd, PrimitiveIntList path, int pathIndex) {
         if (locationEnd == WorldPointUtil.UNDEFINED || !plugin.showTransportInfo ||
             WorldPointUtil.unpackWorldPlane(location) != client.getPlane()) {
             return;
@@ -304,8 +310,8 @@ public class PathTileOverlay extends Overlay {
         int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
         int tx = WorldPointUtil.unpackWorldX(location);
         int ty = WorldPointUtil.unpackWorldY(location);
-        boolean transportAndPlayerInsidePoh = (tx >= 1792 && tx <= 2047 && ty >= 5696 && ty <= 5767
-            && px >= 1792 && px <= 2047 && py >= 5696 && py <= 5767);
+        boolean transportAndPlayerInsidePoh = (tx >= POH_MIN_X && tx <= POH_MAX_X && ty >= POH_MIN_Y && ty <= POH_MAX_Y
+            && px >= POH_MIN_X && px <= POH_MAX_X && py >= POH_MIN_Y && py <= POH_MAX_Y);
 
         int vertical_offset = 0;
         for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
@@ -316,6 +322,12 @@ public class PathTileOverlay extends Overlay {
             String text = transport.getDisplayInfo();
             if (text == null || text.isEmpty()) {
                 continue;
+            }
+
+            // Check if this transport goes to POH - if so, look ahead to find the exit transport
+            String pohExitInfo = getPohExitInfo(locationEnd, path, pathIndex);
+            if (pohExitInfo != null) {
+                text = text + " (Exit: " + pohExitInfo + ")";
             }
 
             PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
@@ -343,5 +355,57 @@ public class PathTileOverlay extends Overlay {
                 vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
             }
         }
+    }
+
+    /**
+     * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
+     * @param destination The destination point to check
+     * @param path The full path
+     * @param currentIndex The current index in the path
+     * @return The display info of the POH exit transport, or null if not applicable
+     */
+    private String getPohExitInfo(int destination, PrimitiveIntList path, int currentIndex) {
+        int destX = WorldPointUtil.unpackWorldX(destination);
+        int destY = WorldPointUtil.unpackWorldY(destination);
+        
+        // Check if destination is inside POH
+        if (destX < POH_MIN_X || destX > POH_MAX_X || destY < POH_MIN_Y || destY > POH_MAX_Y) {
+            return null;
+        }
+
+        // Look ahead in the path to find the next transport that exits POH
+        for (int i = currentIndex + 1; i < path.size() - 1; i++) {
+            int stepLocation = path.get(i);
+            int nextLocation = path.get(i + 1);
+            
+            int stepX = WorldPointUtil.unpackWorldX(stepLocation);
+            int stepY = WorldPointUtil.unpackWorldY(stepLocation);
+            int nextX = WorldPointUtil.unpackWorldX(nextLocation);
+            int nextY = WorldPointUtil.unpackWorldY(nextLocation);
+            
+            // Check if this step is inside POH but next step is outside (exit transport)
+            boolean stepInsidePoh = stepX >= POH_MIN_X && stepX <= POH_MAX_X && stepY >= POH_MIN_Y && stepY <= POH_MAX_Y;
+            boolean nextInsidePoh = nextX >= POH_MIN_X && nextX <= POH_MAX_X && nextY >= POH_MIN_Y && nextY <= POH_MAX_Y;
+            
+            if (stepInsidePoh && !nextInsidePoh) {
+                // Found the exit transport - get its display info
+                for (Transport transport : plugin.getTransports().getOrDefault(stepLocation, new HashSet<>())) {
+                    if (nextLocation == transport.getDestination()) {
+                        String exitInfo = transport.getDisplayInfo();
+                        if (exitInfo != null && !exitInfo.isEmpty()) {
+                            // Clean up the display info (remove "Portal" suffix if present for brevity)
+                            return exitInfo.replace(" Portal", "");
+                        }
+                    }
+                }
+            }
+            
+            // If we've left POH without finding a transport, stop looking
+            if (!stepInsidePoh) {
+                break;
+            }
+        }
+        
+        return null;
     }
 }
