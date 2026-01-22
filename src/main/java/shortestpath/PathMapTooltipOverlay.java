@@ -197,7 +197,14 @@ public class PathMapTooltipOverlay extends Overlay {
                     if (nextLocation == transport.getDestination()) {
                         String exitInfo = transport.getDisplayInfo();
                         if (exitInfo != null && !exitInfo.isEmpty()) {
-                            immediateExitInfo = exitInfo.replace(" Portal", "");
+                            TransportType exitType = transport.getType();
+                            if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
+                                immediateExitInfo = "Jewelry Box: " + exitInfo;
+                            } else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) {
+                                immediateExitInfo = "Portal Nexus: " + exitInfo.replace(" Portal", "");
+                            } else {
+                                immediateExitInfo = exitInfo.replace(" Portal", "");
+                            }
                         }
                         break;
                     }
@@ -256,6 +263,11 @@ public class PathMapTooltipOverlay extends Overlay {
                         String dest = transport.getDisplayInfo();
                         if (dest != null && !dest.isEmpty()) {
                             return "Glider: " + dest;
+                        }
+                    } else if (TransportType.WILDERNESS_OBELISK.equals(type)) {
+                        String dest = transport.getDisplayInfo();
+                        if (dest != null && !dest.isEmpty()) {
+                            return "Obelisk: " + dest;
                         }
                     }
                     // For other transports, we just use the immediate POH exit
