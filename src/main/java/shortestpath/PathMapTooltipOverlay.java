@@ -199,9 +199,16 @@ public class PathMapTooltipOverlay extends Overlay {
                         if (exitInfo != null && !exitInfo.isEmpty()) {
                             TransportType exitType = transport.getType();
                             if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
-                                immediateExitInfo = "Jewelry Box: " + exitInfo;
+                                String objInfo = transport.getObjectInfo();
+                                if (objInfo != null && objInfo.contains("Xeric's Talisman")) {
+                                    immediateExitInfo = "Xeric's Talisman: " + exitInfo;
+                                } else if (objInfo != null && objInfo.contains("Digsite")) {
+                                    immediateExitInfo = "Digsite Pendant: " + exitInfo;
+                                } else {
+                                    immediateExitInfo = "Jewelry Box: " + exitInfo;
+                                }
                             } else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) {
-                                immediateExitInfo = "Portal Nexus: " + exitInfo.replace(" Portal", "");
+                                immediateExitInfo = "Nexus: " + exitInfo.replace(" Portal", "");
                             } else {
                                 immediateExitInfo = exitInfo.replace(" Portal", "");
                             }
