@@ -5162,3 +5162,22 @@
 1470 3687 0	1475 3687 0	Climb Handholds 42009						6	
 1460 3690 0	1456 3690 0	Climb Handholds 27362						6	
 1456 3690 0	1460 3690 0	Climb Handholds 42009						6	
+									
+# Asgarnia Ice Dungeon									
+3009 3150 0	3009 9550 0	Climb-down Trapdoor 1738						1	
+3009 9550 0	3009 3150 0	Climb-up Ladder 17385						1	
+									
+3007 9550 0	3007 3150 0	Climb-up Ladder 17385						1	
+3008 9549 0	3008 3149 0	Climb-up Ladder 17385						1	
+3008 9551 0	3008 3151 0	Climb-up Ladder 17385						1	
+									
+3055 9562 0	3055 9555 0	Enter Ice Cavern 10596						1	
+3056 9562 0	3056 9555 0	Enter Ice Cavern 10596						1	
+3057 9562 0	3057 9555 0	Enter Ice Cavern 10596						1	
+									
+3055 9555 0	3055 9562 0	Enter Ice Cavern 10595						1	
+3056 9555 0	3056 9562 0	Enter Ice Cavern 10595						1	
+3057 9555 0	3057 9562 0	Enter Ice Cavern 10595						1	
+									
+3060 9555 0	3060 9557 0	Climb Steps 8729						1	
+3060 9557 0	3060 9555 0	Climb Steps 8729						1	
