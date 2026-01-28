@@ -5181,3 +5181,73 @@
 									
 3060 9555 0	3060 9557 0	Climb Steps 8729						1	
 3060 9557 0	3060 9555 0	Climb Steps 8729						1	
+
+
+# Abyss
+
+# there are multiple destination and one is piced at random when used
+# aslo 
+3106 3559 0	 3035 4852 0	Teleport Mage of Zamorak 2581			Enter the Abyss
+
+3039 4805 0	3039 4800 0	Enter Passage 27054
+3039 4805 0	3039 4844 0	Go-trough Passage 26250
+
+3034 47923 0	3221 3219 0	Operate Appendage 27027						4	
+
+
+# Chaos Altar
+3044 4842 0	2269 4840 0	Exit-through Chaos rift 25382
+
+2259 4846 0	2259 4846 1	Climb-up Ladder 16683						1
+2259 4846 1	2259 4846 0	Climb-up Ladder 16683						1
+
+2275 4833 1	2275 4833 2	Climb-up Ladder 16683						1
+2275 4833 2	2275 4833 1	Climb-up Ladder 16683						1
+
+2255 4830 2	2255 4830 3	Climb-up Ladder 16683						1
+2255 4830 3	2255 4830 2	Climb-up Ladder 16683						1
+
+2281 4837 0	3056 3594 0	Use Portal 34757						1
+2275 4847 3	3060 3585 0	Use Portal 34757						1
+2273 4855 3	3066 3591 0	Use Portal 34757						1
+
+# Law Altar
+3049 4839 0	2464 4823 0	Exit-through Law rift 25382
+2464 4818 0	2858 3378 0	Enter Portal 34757						1
+
+# Death Altar
+3050 4837 0	0 0 0	Exit-through Death rift 25382
+
+# Water Altar
+3051 4833 0	2714 4838 0	Exit-through Water rift 25382
+2726 4832 0	3182 3162 0	Enter Portal 34750						1
+
+# Soul Altar
+3050 4829 0	0 0 0	Exit-through Soul rift 25382
+
+# Air Altar
+3047 4825 0	2846 4836 0	Exit-through Air rift 25382
+2842 4828 0	2983 3288 0	Enter Portal 34748						1
+
+# Mind Altar
+3044 4822 0	2784 4843 0	Exit-through Mind rift 25382
+2792 4827 0	2980 3511 0	Enter Portal 34749						1
+
+# Body Altar
+3039 4821 0	2520 4848 0	Exit-through Body rift 25382
+2521 4834 0	3050 3442 0	Enter Portal 34753						1
+
+# Earth Altar
+3031 4825 0	0 0 0	Exit-through Earth rift 25382
+
+# Fire Altar
+3029 4830 0	0 0 0	Exit-through Fire rift 25382
+
+# Blood Altar
+3027 4834 0	0 0 0	Exit-through Blood rift 25382
+
+# Cosmic Altar
+3028 4837 0	0 0 0	Exit-through Cosmic rift 25382
+
+# Nature Altar
+3035 4842 0	0 0 0	Exit-through Nature rift 25382
