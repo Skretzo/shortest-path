@@ -117,6 +117,8 @@ public class PathfinderConfig {
         useCharterShips,
         useShips,
         useFairyRings,
+        usePohFairyRing,
+        usePohSpiritTree,
         useGnomeGliders,
         useHotAirBalloons,
         useMagicCarpets,
@@ -180,6 +182,7 @@ public class PathfinderConfig {
         useCharterShips = ShortestPathPlugin.override("useCharterShips", config.useCharterShips());
         useShips = ShortestPathPlugin.override("useShips", config.useShips());
         useFairyRings = ShortestPathPlugin.override("useFairyRings", config.useFairyRings());
+        usePohFairyRing = ShortestPathPlugin.override("usePohFairyRing", config.usePohFairyRing());
         useGnomeGliders = ShortestPathPlugin.override("useGnomeGliders", config.useGnomeGliders());
         useHotAirBalloons = ShortestPathPlugin.override("useHotAirBalloons", config.useHotAirBalloons());
         useMagicCarpets = ShortestPathPlugin.override("useMagicCarpets", config.useMagicCarpets());
@@ -188,6 +191,7 @@ public class PathfinderConfig {
         useQuetzals = ShortestPathPlugin.override("useQuetzals", config.useQuetzals());
         useSeasonalTransports = ShortestPathPlugin.override("useSeasonalTransports", config.useSeasonalTransports());
         useSpiritTrees = ShortestPathPlugin.override("useSpiritTrees", config.useSpiritTrees());
+        usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
         useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
         useTeleportationBoxes = ShortestPathPlugin.override("useTeleportationBoxes", config.useTeleportationBoxes());
         useTeleportationLevers = ShortestPathPlugin.override("useTeleportationLevers", config.useTeleportationLevers());
@@ -437,8 +441,16 @@ public class PathfinderConfig {
             return false;
         } else if (SHIP.equals(type) && !useShips) {
             return false;
-        } else if (FAIRY_RING.equals(type) && !useFairyRings) {
-            return false;
+        } else if (FAIRY_RING.equals(type)) {
+            if (!useFairyRings) {
+                return false;
+            }
+            // Check if this is the POH fairy ring (origin inside POH bounds)
+            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+            if (ShortestPathPlugin.isInsidePoh(originX, originY) && !usePohFairyRing) {
+                return false;
+            }
         } else if (GNOME_GLIDER.equals(type) && !useGnomeGliders) {
             return false;
         } else if (HOT_AIR_BALLOON.equals(type) && !useHotAirBalloons) {
@@ -474,8 +486,16 @@ public class PathfinderConfig {
                     }
                     break;
             }
-        } else if (SPIRIT_TREE.equals(type) && !useSpiritTrees) {
-            return false;
+        } else if (SPIRIT_TREE.equals(type)) {
+            if (!useSpiritTrees) {
+                return false;
+            }
+            // Check if this is the POH spirit tree (origin inside POH bounds)
+            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+            if (ShortestPathPlugin.isInsidePoh(originX, originY) && !usePohSpiritTree) {
+                return false;
+            }
         } else if (TELEPORTATION_ITEM.equals(type)) {
             switch (useTeleportationItems) {
                 case ALL:

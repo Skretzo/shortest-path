@@ -19,18 +19,11 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
 
 public class PathTileOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
     private static final int TRANSPORT_LABEL_GAP = 3;
-    
-    // POH (Player Owned House) bounds for detecting when path goes through POH
-    private static final int POH_MIN_X = 1792;
-    private static final int POH_MAX_X = 2047;
-    private static final int POH_MIN_Y = 5696;
-    private static final int POH_MAX_Y = 5767;
 
     @Inject
     public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
@@ -310,8 +303,7 @@ public class PathTileOverlay extends Overlay {
         int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
         int tx = WorldPointUtil.unpackWorldX(location);
         int ty = WorldPointUtil.unpackWorldY(location);
-        boolean transportAndPlayerInsidePoh = (tx >= POH_MIN_X && tx <= POH_MAX_X && ty >= POH_MIN_Y && ty <= POH_MAX_Y
-            && px >= POH_MIN_X && px <= POH_MAX_X && py >= POH_MIN_Y && py <= POH_MAX_Y);
+        boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(tx, ty) && ShortestPathPlugin.isInsidePoh(px, py);
 
         int vertical_offset = 0;
         for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
@@ -325,7 +317,7 @@ public class PathTileOverlay extends Overlay {
             }
 
             // Check if this transport goes to POH - if so, look ahead to find the exit transport
-            String pohExitInfo = getPohExitInfo(locationEnd, path, pathIndex);
+            String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
             if (pohExitInfo != null) {
                 text = text + " (Exit: " + pohExitInfo + ")";
             }
@@ -355,136 +347,5 @@ public class PathTileOverlay extends Overlay {
                 vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
             }
         }
-    }
-
-    /**
-     * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
-     * If the immediate exit leads to a fairy ring or other notable transport shortly after,
-     * that information is included instead.
-     * @param destination The destination point to check
-     * @param path The full path
-     * @param currentIndex The current index in the path
-     * @return The display info of the POH exit transport, or null if not applicable
-     */
-    private String getPohExitInfo(int destination, PrimitiveIntList path, int currentIndex) {
-        int destX = WorldPointUtil.unpackWorldX(destination);
-        int destY = WorldPointUtil.unpackWorldY(destination);
-        
-        // Check if destination is inside POH
-        if (destX < POH_MIN_X || destX > POH_MAX_X || destY < POH_MIN_Y || destY > POH_MAX_Y) {
-            return null;
-        }
-
-        int pohExitIndex = -1;
-        String immediateExitInfo = null;
-
-        // Look ahead in the path to find the next transport that exits POH
-        for (int i = currentIndex + 1; i < path.size() - 1; i++) {
-            int stepLocation = path.get(i);
-            int nextLocation = path.get(i + 1);
-            
-            int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-            int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-            int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-            int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-            
-            // Check if this step is inside POH but next step is outside (exit transport)
-            boolean stepInsidePoh = stepX >= POH_MIN_X && stepX <= POH_MAX_X && stepY >= POH_MIN_Y && stepY <= POH_MAX_Y;
-            boolean nextInsidePoh = nextX >= POH_MIN_X && nextX <= POH_MAX_X && nextY >= POH_MIN_Y && nextY <= POH_MAX_Y;
-            
-            if (stepInsidePoh && !nextInsidePoh) {
-                pohExitIndex = i + 1; // Index of the first step outside POH
-                // Found the exit transport - get its display info
-                for (Transport transport : plugin.getTransports().getOrDefault(stepLocation, new HashSet<>())) {
-                    if (nextLocation == transport.getDestination()) {
-                        String exitInfo = transport.getDisplayInfo();
-                        if (exitInfo != null && !exitInfo.isEmpty()) {
-                            TransportType exitType = transport.getType();
-                            if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
-                                String objInfo = transport.getObjectInfo();
-                                if (objInfo != null && objInfo.contains("Xeric's Talisman")) {
-                                    immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-                                } else if (objInfo != null && objInfo.contains("Digsite")) {
-                                    immediateExitInfo = "Digsite Pendant: " + exitInfo;
-                                } else {
-                                    immediateExitInfo = "Jewelry Box: " + exitInfo;
-                                }
-                            } else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) {
-                                immediateExitInfo = "Nexus: " + exitInfo.replace(" Portal", "");
-                            } else {
-                                immediateExitInfo = exitInfo.replace(" Portal", "");
-                            }
-                        }
-                        break;
-                    }
-                }
-                break;
-            }
-            
-            // If we've left POH without finding a transport, stop looking
-            if (!stepInsidePoh) {
-                break;
-            }
-        }
-        
-        // If we found a POH exit, look further ahead to see if there's a fairy ring,
-        // spirit tree, or other notable transport used shortly after
-        if (pohExitIndex > 0 && pohExitIndex < path.size() - 1) {
-            String secondaryTransportInfo = findSecondaryTransport(path, pohExitIndex);
-            if (secondaryTransportInfo != null) {
-                return secondaryTransportInfo;
-            }
-        }
-        
-        return immediateExitInfo;
-    }
-
-    /**
-     * Looks ahead from the POH exit point to find fairy rings, spirit trees, or other
-     * notable transports that might be the real destination reason for going through POH.
-     * @param path The full path
-     * @param startIndex The index to start looking from (first step outside POH)
-     * @return The display info of a secondary transport if found within a reasonable distance, or null
-     */
-    private String findSecondaryTransport(PrimitiveIntList path, int startIndex) {
-        // Look up to 30 steps ahead (reasonable walking distance to a nearby transport)
-        int maxLookahead = Math.min(startIndex + 30, path.size() - 1);
-        
-        for (int i = startIndex; i < maxLookahead; i++) {
-            int stepLocation = path.get(i);
-            int nextLocation = path.get(i + 1);
-            
-            for (Transport transport : plugin.getTransports().getOrDefault(stepLocation, new HashSet<>())) {
-                if (nextLocation == transport.getDestination()) {
-                    TransportType type = transport.getType();
-                    // Check for notable transport types that are likely the real reason for the route
-                    if (TransportType.FAIRY_RING.equals(type)) {
-                        String code = transport.getDisplayInfo();
-                        if (code != null && !code.isEmpty()) {
-                            return "Fairy Ring " + code;
-                        }
-                    } else if (TransportType.SPIRIT_TREE.equals(type)) {
-                        String dest = transport.getDisplayInfo();
-                        if (dest != null && !dest.isEmpty()) {
-                            return "Spirit Tree: " + dest;
-                        }
-                    } else if (TransportType.GNOME_GLIDER.equals(type)) {
-                        String dest = transport.getDisplayInfo();
-                        if (dest != null && !dest.isEmpty()) {
-                            return "Glider: " + dest;
-                        }
-                    } else if (TransportType.WILDERNESS_OBELISK.equals(type)) {
-                        String dest = transport.getDisplayInfo();
-                        if (dest != null && !dest.isEmpty()) {
-                            return "Obelisk: " + dest;
-                        }
-                    }
-                    // For other transports, we just use the immediate POH exit
-                    // as they're likely the actual destination
-                }
-            }
-        }
-        
-        return null;
     }
 }
