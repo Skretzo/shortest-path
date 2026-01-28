@@ -923,7 +923,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigItem(
         keyName = "drawTransports",
         name = "Draw transports",
-        description = "Whether transports should be drawn",
+        description = "Draw all transports on the map and game view.<br>White = available, Orange = unavailable (missing requirements)",
         position = 70,
         section = sectionDebug
     )
@@ -957,7 +957,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "postTransports",
         name = "Post transports",
         description = "Whether to post the transports used in the current path as a PluginMessage event",
-        position = 73,
+        position = 74,
         section = sectionDebug
     )
     default boolean postTransports() {

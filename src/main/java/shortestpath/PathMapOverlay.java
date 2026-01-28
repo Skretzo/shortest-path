@@ -8,6 +8,8 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.widgets.ComponentID;
@@ -66,8 +68,10 @@ public class PathMapOverlay extends Overlay {
         }
 
         if (plugin.drawTransports) {
-            graphics.setColor(Color.WHITE);
-            for (int a : plugin.getTransports().keySet()) {
+            Map<Integer, Set<Transport>> allTransports = plugin.getAllTransports();
+            Map<Integer, Set<Transport>> availableTransports = plugin.getTransports();
+
+            for (int a : allTransports.keySet()) {
                 if (a == Transport.UNDEFINED_ORIGIN) {
                     continue; // skip teleports
                 }
@@ -78,7 +82,9 @@ public class PathMapOverlay extends Overlay {
                     continue;
                 }
 
-                for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>())) {
+                Set<Transport> availableAtOrigin = availableTransports.getOrDefault(a, new HashSet<>());
+
+                for (Transport b : allTransports.getOrDefault(a, new HashSet<>())) {
                     if (b == null || TransportType.isTeleport(b.getType())) {
                         continue; // skip teleports
                     }
@@ -89,6 +95,8 @@ public class PathMapOverlay extends Overlay {
                         continue;
                     }
 
+                    boolean isAvailable = availableAtOrigin.contains(b);
+                    graphics.setColor(isAvailable ? Color.WHITE : Color.ORANGE);
                     graphics.drawLine(mapAX, mapAY, mapBX, mapBY);
                 }
             }
