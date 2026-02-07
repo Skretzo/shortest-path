@@ -595,6 +595,10 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getTransports();
     }
 
+    public Map<Integer, Set<Transport>> getAllTransports() {
+        return pathfinderConfig.getAllTransports();
+    }
+
     public CollisionMap getMap() {
         return pathfinderConfig.getMap();
     }
