@@ -156,7 +156,13 @@ public class PathTileOverlay extends Overlay {
             } else {
                 boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
                 for (int i = 0; i < path.size(); i++) {
-                    drawTile(graphics, path.get(i), color, counter++, showTiles);
+                    // Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
+                    int pathX = WorldPointUtil.unpackWorldX(path.get(i));
+                    int pathY = WorldPointUtil.unpackWorldY(path.get(i));
+                    if (!ShortestPathPlugin.isInsidePoh(pathX, pathY)) {
+                        drawTile(graphics, path.get(i), color, counter, showTiles);
+                    }
+                    counter++;
                     drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1), path, i);
                 }
                 for (int target : plugin.getPathfinder().getTargets()) {
@@ -306,6 +312,45 @@ public class PathTileOverlay extends Overlay {
         int ty = WorldPointUtil.unpackWorldY(location);
         boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(tx, ty) && ShortestPathPlugin.isInsidePoh(px, py);
 
+        // When inside POH, only show the POH exit info once (not per-transport)
+        if (transportAndPlayerInsidePoh) {
+            String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+            if (pohExitInfo == null) {
+                return;
+            }
+
+            // Find the display name of the teleport that brought us to POH
+            String text = null;
+            for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
+                if (locationEnd != transport.getDestination()) {
+                    continue;
+                }
+                text = transport.getDisplayInfo();
+                if (text != null && !text.isEmpty()) {
+                    break;
+                }
+            }
+            if (text == null || text.isEmpty()) {
+                return;
+            }
+            text = text + " (Exit: " + pohExitInfo + ")";
+
+            Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getPlane());
+            if (p == null) {
+                return;
+            }
+
+            Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
+            double height = textBounds.getHeight();
+            int x = (int) (p.getX() - textBounds.getWidth() / 2);
+            int y = (int) (p.getY() - height);
+            graphics.setColor(Color.BLACK);
+            graphics.drawString(text, x + 1, y + 1);
+            graphics.setColor(plugin.colourText);
+            graphics.drawString(text, x, y);
+            return;
+        }
+
         int vertical_offset = 0;
         for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
             if (locationEnd != transport.getDestination()) {
@@ -330,8 +375,7 @@ public class PathTileOverlay extends Overlay {
                     continue;
                 }
 
-                Point p = Perspective.localToCanvas(client,
-                    transportAndPlayerInsidePoh ? playerLocalPoint : lp, client.getPlane());
+                Point p = Perspective.localToCanvas(client, lp, client.getPlane());
                 if (p == null) {
                     continue;
                 }
