@@ -48,6 +48,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
+import shortestpath.JewelleryBoxTier;
 import shortestpath.TeleportationItem;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
@@ -127,15 +128,16 @@ public class PathfinderConfig {
         useQuetzals,
         useSeasonalTransports,
         useSpiritTrees,
-        useTeleportationBoxes,
         useTeleportationLevers,
         useTeleportationMinigames,
         useTeleportationPortals,
         useTeleportationPortalsPoh,
         useTeleportationSpells,
         useWildernessObelisks,
-        includeBankPath;
+        includeBankPath,
+        usePohMountedItems;
     private TeleportationItem useTeleportationItems;
+    private JewelleryBoxTier pohJewelleryBoxTier;
     private Map<TransportType, Integer> artificialTransportCosts = new EnumMap<>(TransportType.class);
     private int costConsumableTeleportationItems;
     private int currencyThreshold;
@@ -193,7 +195,8 @@ public class PathfinderConfig {
         useSpiritTrees = ShortestPathPlugin.override("useSpiritTrees", config.useSpiritTrees());
         usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
         useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
-        useTeleportationBoxes = ShortestPathPlugin.override("useTeleportationBoxes", config.useTeleportationBoxes());
+        pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
+        usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
         useTeleportationLevers = ShortestPathPlugin.override("useTeleportationLevers", config.useTeleportationLevers());
         useTeleportationMinigames = ShortestPathPlugin.override("useTeleportationMinigames", config.useTeleportationMinigames());
         useTeleportationPortals = ShortestPathPlugin.override("useTeleportationPortals", config.useTeleportationPortals());
@@ -540,7 +543,44 @@ public class PathfinderConfig {
                     }
                     break;
             }
-        } else if (TELEPORTATION_BOX.equals(type) && !useTeleportationBoxes) {
+        } else if (TELEPORTATION_BOX.equals(type)) {
+            // Filter by jewellery box tier and mounted items
+            String objectInfo = transport.getObjectInfo();
+            if (objectInfo == null) {
+                return false;
+            }
+            
+            // Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
+            boolean isMountedItem = objectInfo.contains("Amulet of Glory") ||
+                                    objectInfo.contains("Xeric's Talisman") ||
+                                    objectInfo.contains("Digsite") ||
+                                    objectInfo.contains("Mythical cape");
+            
+            if (isMountedItem) {
+                return usePohMountedItems;
+            }
+            
+            // Filter jewellery boxes by tier
+            if (JewelleryBoxTier.NONE.equals(pohJewelleryBoxTier)) {
+                return false;
+            }
+            
+            // Basic box (37492): destinations 1-9
+            if (objectInfo.contains("Basic Jewellery Box 37492")) {
+                return true; // All tiers include basic
+            }
+            
+            // Fancy box (37501): destinations A-J
+            if (objectInfo.contains("Fancy Jewellery Box 37501")) {
+                return JewelleryBoxTier.FANCY.equals(pohJewelleryBoxTier) ||
+                       JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
+            }
+            
+            // Ornate box (37520): destinations K-R
+            if (objectInfo.contains("Ornate Jewellery Box 37520")) {
+                return JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
+            }
+            
             return false;
         } else if (TELEPORTATION_LEVER.equals(type) && !useTeleportationLevers) {
             return false;

@@ -229,14 +229,26 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
-        keyName = "useTeleportationBoxes",
-        name = "Use teleportation boxes",
-        description = "Whether to include teleportation boxes or mounted items in the path<br>" +
-            "(e.g. the PoH jewellery box or PoH mounted glory amulet)",
+        keyName = "pohJewelleryBoxTier",
+        name = "PoH Jewellery Box tier",
+        description = "The tier of jewellery box built in your PoH<br>" +
+            "(Basic: 1-9, Fancy: A-J, Ornate: K-R). Set to None to disable jewellery box.",
         position = 19,
         section = sectionSettings
     )
-    default boolean useTeleportationBoxes() {
+    default JewelleryBoxTier pohJewelleryBoxTier() {
+        return JewelleryBoxTier.ORNATE;
+    }
+
+    @ConfigItem(
+        keyName = "usePohMountedItems",
+        name = "Use PoH mounted items",
+        description = "Whether to include PoH mounted items in the path<br>" +
+            "(e.g. mounted glory, Xeric's talisman, digsite pendant, mythical cape)",
+        position = 20,
+        section = sectionSettings
+    )
+    default boolean usePohMountedItems() {
         return true;
     }
 
@@ -245,7 +257,7 @@ public interface ShortestPathConfig extends Config {
         name = "Use teleportation levers",
         description = "Whether to include teleportation levers in the path<br>" +
             "(e.g. the lever from Edgeville to Wilderness)",
-        position = 20,
+        position = 21,
         section = sectionSettings
     )
     default boolean useTeleportationLevers() {
@@ -257,7 +269,7 @@ public interface ShortestPathConfig extends Config {
         name = "Use teleportation portals",
         description = "Whether to include teleportation portals in the path<br>" +
             "(e.g. the portal from Ferox Enclave to Castle Wars)",
-        position = 21,
+        position = 22,
         section = sectionSettings
     )
     default boolean useTeleportationPortals() {
@@ -268,7 +280,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useTeleportationPortalsPoh",
         name = "Use teleportation portals (POH)",
         description = "Whether to include player-owned-house (POH) teleportation portals/nexus in the path",
-        position = 22,
+        position = 23,
         section = sectionSettings
     )
     default boolean useTeleportationPortalsPoh() {
@@ -279,7 +291,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useTeleportationSpells",
         name = "Use teleportation spells",
         description = "Whether to include teleportation spells in the path",
-        position = 23,
+        position = 24,
         section = sectionSettings
     )
     default boolean useTeleportationSpells() {
@@ -291,7 +303,7 @@ public interface ShortestPathConfig extends Config {
         name = "Use teleportation to minigames",
         description = "Whether to include teleportation to minigames/activities/grouping in the path<br>" +
             "(e.g. the Nightmare Zone minigame teleport). These teleports share a 20 minute cooldown.",
-        position = 24,
+        position = 25,
         section = sectionSettings
     )
     default boolean useTeleportationMinigames() {
@@ -302,7 +314,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useWildernessObelisks",
         name = "Use wilderness obelisks",
         description = "Whether to include wilderness obelisks in the path",
-        position = 25,
+        position = 26,
         section = sectionSettings
     )
     default boolean useWildernessObelisks() {
@@ -313,7 +325,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useSeasonalTransports",
         name = "Use seasonal transports",
         description = "Whether to include seasonal transports like League teleports in the path",
-        position = 26,
+        position = 27,
         section = sectionSettings
     )
     default boolean useSeasonalTransports() {

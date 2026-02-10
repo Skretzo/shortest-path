@@ -665,7 +665,11 @@ public class ShortestPathPlugin extends Plugin {
                             TransportType exitType = transport.getType();
                             if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
                                 String objInfo = transport.getObjectInfo();
-                                if (objInfo != null && objInfo.contains("Xeric's Talisman")) {
+                                if (objInfo != null && objInfo.contains("Amulet of Glory")) {
+                                    immediateExitInfo = "Mounted Glory: " + exitInfo;
+                                } else if (objInfo != null && objInfo.contains("Mythical cape")) {
+                                    immediateExitInfo = "Mythical Cape: " + exitInfo;
+                                } else if (objInfo != null && objInfo.contains("Xeric's Talisman")) {
                                     immediateExitInfo = "Xeric's Talisman: " + exitInfo;
                                 } else if (objInfo != null && objInfo.contains("Digsite")) {
                                     immediateExitInfo = "Digsite Pendant: " + exitInfo;
