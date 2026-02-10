@@ -215,6 +215,7 @@ public class PathfinderTest {
 
     @Test
     public void testTeleportationBoxes() {
+        when(config.usePoh()).thenReturn(true);
         when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.ORNATE);
         when(config.usePohMountedItems()).thenReturn(true);
         testTransportLength(2, TransportType.TELEPORTATION_BOX);
@@ -489,6 +490,7 @@ public class PathfinderTest {
         when(client.getClientThread()).thenReturn(Thread.currentThread());
         when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
         when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
+        when(config.usePoh()).thenReturn(false); // Default POH to disabled
         doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
         doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
         doReturn(questState).when(pathfinderConfig).getQuestState(any(Quest.class));

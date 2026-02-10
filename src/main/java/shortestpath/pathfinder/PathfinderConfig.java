@@ -135,7 +135,8 @@ public class PathfinderConfig {
         useTeleportationSpells,
         useWildernessObelisks,
         includeBankPath,
-        usePohMountedItems;
+        usePohMountedItems,
+        usePoh;
     private TeleportationItem useTeleportationItems;
     private JewelleryBoxTier pohJewelleryBoxTier;
     private Map<TransportType, Integer> artificialTransportCosts = new EnumMap<>(TransportType.class);
@@ -177,6 +178,7 @@ public class PathfinderConfig {
     public void refresh() {
         calculationCutoffMillis = config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
         avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
+        usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
         useAgilityShortcuts = ShortestPathPlugin.override("useAgilityShortcuts", config.useAgilityShortcuts());
         useGrappleShortcuts = ShortestPathPlugin.override("useGrappleShortcuts", config.useGrappleShortcuts());
         useBoats = ShortestPathPlugin.override("useBoats", config.useBoats());
@@ -452,6 +454,15 @@ public class PathfinderConfig {
     }
 
     private boolean useTransport(Transport transport) {
+        // Master POH gate - if POH is disabled, reject all POH transports
+        if (!usePoh) {
+            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+            if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
+                return false;
+            }
+        }
+
         final boolean isQuestLocked = transport.isQuestLocked();
 
         TransportType type = transport.getType();
@@ -551,12 +562,18 @@ public class PathfinderConfig {
             }
             
             // Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
-            boolean isMountedItem = objectInfo.contains("Amulet of Glory") ||
+            boolean isMountedGlory = objectInfo.contains("Amulet of Glory");
+            boolean isMountedItem = isMountedGlory ||
                                     objectInfo.contains("Xeric's Talisman") ||
                                     objectInfo.contains("Digsite") ||
                                     objectInfo.contains("Mythical cape");
             
             if (isMountedItem) {
+                // If mounted glory and ornate jewellery box is enabled, skip the glory
+                // because the ornate box already covers all 4 destinations with correct prefixes
+                if (isMountedGlory && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier)) {
+                    return false;
+                }
                 return usePohMountedItems;
             }
             
