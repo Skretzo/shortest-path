@@ -802,6 +802,19 @@ public class ShortestPathPlugin extends Plugin {
         return defaultValue;
     }
 
+    public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue) {
+        if (!configOverride.isEmpty()) {
+            Object value = configOverride.get(configOverrideKey);
+            if (value instanceof String) {
+                JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
+                if (tier != null) {
+                    return tier;
+                }
+            }
+        }
+        return defaultValue;
+    }
+
     private TileCounter override(String configOverrideKey, TileCounter defaultValue) {
         if (!configOverride.isEmpty()) {
             Object value = configOverride.get(configOverrideKey);
