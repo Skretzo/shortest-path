@@ -674,6 +674,10 @@ public class ShortestPathPlugin extends Plugin {
                                 }
                             } else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) {
                                 immediateExitInfo = "Nexus: " + exitInfo;
+                            } else if (TransportType.FAIRY_RING.equals(exitType)) {
+                                immediateExitInfo = "Fairy Ring " + exitInfo;
+                            } else if (TransportType.SPIRIT_TREE.equals(exitType)) {
+                                immediateExitInfo = "Spirit Tree: " + exitInfo;
                             } else {
                                 immediateExitInfo = exitInfo;
                             }

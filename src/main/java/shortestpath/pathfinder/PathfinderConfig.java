@@ -362,6 +362,30 @@ public class PathfinderConfig {
                 transportsPacked.put(point, usableTransports);
             }
         }
+
+        // Remap all POH transport origins to the house landing tile
+        // POH has no collision data, so BFS cannot walk between tiles inside the house.
+        // By remapping all POH furniture (fairy ring, spirit tree, nexus, jewellery box, etc.)
+        // to the landing tile, the BFS immediately discovers them when arriving via "Teleport to House"
+        int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
+        Set<Transport> pohTransports = new HashSet<>();
+        
+        for (Map.Entry<Integer, Set<Transport>> entry : new HashSet<>(transports.entrySet())) {
+            int origin = entry.getKey();
+            int originX = WorldPointUtil.unpackWorldX(origin);
+            int originY = WorldPointUtil.unpackWorldY(origin);
+            
+            if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
+                pohTransports.addAll(entry.getValue());
+            }
+        }
+        
+        if (!pohTransports.isEmpty()) {
+            Set<Transport> existingAtLanding = transports.getOrDefault(pohLanding, new HashSet<>());
+            existingAtLanding.addAll(pohTransports);
+            transports.put(pohLanding, existingAtLanding);
+            transportsPacked.put(pohLanding, pohTransports);
+        }
     }
 
     private void refreshUsableTeleports() {
