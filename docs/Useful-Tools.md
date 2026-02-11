@@ -1,6 +1,6 @@
 # Useful Tools
 
-## maps
+## Maps
 
 ### Explv's Map
 
@@ -12,7 +12,7 @@ Especially handy for creating lines and areas that can then be copied and pasted
 
 <https://mejrs.github.io/osrs>
 
-Contains beautiful object search functions
+It contains beautiful object search functions.
 
 In the bottom right you will find an icon for a map where you can search by object name and ID.
 
@@ -58,11 +58,11 @@ This shows you item IDs in the info boxes.
 
 ### RuneLite developer mode
 
-Runelites developer mode gives you access to some debug tools. this includes:
+RuneLite's developer mode gives you access to some debug tools. This includes:
 
-- A wiget with the current player location in `x y plane` format
-- A tile marker tool that shows location of the time in `x y plane` format when you hover over a tile
-- A overlay that shows object ids of game-, floor- and wall objects
+- A widget with the current player location in `x y plane` format
+- A tile marker tool that shows the location of the tile in `x y plane` format when you hover over a tile
+- An overlay that shows object ids of game-, floor- and wall objects
 - A logger that shows varbit and varplayer changes
 
 If you already have the shortest-path plugin checked out then you can run `./gradlew runelite` to launch a RuneLite instance with developer mode enabled.
@@ -73,9 +73,9 @@ The RuneLite source files are a great resource for finding IDs, names of quests,
 
 <https://github.com/runelite/runelite/tree/master/runelite-api/src/main/java/net/runelite/api/gameval>
 
-### Runelite report button plugin
+### RuneLite report button plugin
 
-The RuneLite report button plugin lets you select what to show on the report button next to the chat filter buttons. Normally it shows the `login timer`, but you can change it to show the current game tick. This is useful while estimating the duration of actions.
+The RuneLite report button plugin lets you select what to display on the report button next to the chat. Normally it shows the `login timer`, but you can change it to show the current game tick. This is useful while estimating the duration of actions.
 
 ## Spreadsheet Editors
 
