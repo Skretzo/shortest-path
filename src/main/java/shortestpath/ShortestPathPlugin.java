@@ -700,60 +700,7 @@ public class ShortestPathPlugin extends Plugin {
             }
         }
         
-        // If we found a POH exit, look further ahead to see if there's a fairy ring,
-        // spirit tree, or other notable transport used shortly after
-        if (pohExitIndex > 0 && pohExitIndex < path.size() - 1) {
-            String secondaryTransportInfo = findSecondaryTransport(path, pohExitIndex);
-            if (secondaryTransportInfo != null) {
-                return secondaryTransportInfo;
-            }
-        }
-        
         return immediateExitInfo;
-    }
-
-    /**
-     * Looks ahead from the POH exit point to find fairy rings, spirit trees, or other
-     * notable transports that might be the real destination reason for going through POH.
-     * @param path The full path
-     * @param startIndex The index to start looking from (first step outside POH)
-     * @return The display info of a secondary transport if found within a reasonable distance, or null
-     */
-    private String findSecondaryTransport(PrimitiveIntList path, int startIndex) {
-        // Look up to 30 steps ahead (reasonable walking distance to a nearby transport)
-        int maxLookahead = Math.min(startIndex + 30, path.size() - 1);
-        
-        for (int i = startIndex; i < maxLookahead; i++) {
-            int stepLocation = path.get(i);
-            int nextLocation = path.get(i + 1);
-            
-            for (Transport transport : getTransports().getOrDefault(stepLocation, new HashSet<>())) {
-                if (nextLocation == transport.getDestination()) {
-                    TransportType type = transport.getType();
-                    // Check for notable transport types that are likely the real reason for the route
-                    if (TransportType.FAIRY_RING.equals(type)) {
-                        String code = transport.getDisplayInfo();
-                        if (code != null && !code.isEmpty()) {
-                            return "Fairy Ring " + code;
-                        }
-                    } else if (TransportType.SPIRIT_TREE.equals(type)) {
-                        String dest = transport.getDisplayInfo();
-                        if (dest != null && !dest.isEmpty()) {
-                            return "Spirit Tree: " + dest;
-                        }
-                    } else if (TransportType.GNOME_GLIDER.equals(type)) {
-                        String dest = transport.getDisplayInfo();
-                        if (dest != null && !dest.isEmpty()) {
-                            return "Glider: " + dest;
-                        }
-                    }
-                    // For other transports, we just use the immediate POH exit
-                    // as they're likely the actual destination
-                }
-            }
-        }
-        
-        return null;
     }
 
     public static boolean override(String configOverrideKey, boolean defaultValue) {
