@@ -136,7 +136,8 @@ public class PathfinderConfig {
         useWildernessObelisks,
         includeBankPath,
         usePohMountedItems,
-        usePoh;
+        usePoh,
+        usePohObelisk;
     private TeleportationItem useTeleportationItems;
     private JewelleryBoxTier pohJewelleryBoxTier;
     private Map<TransportType, Integer> artificialTransportCosts = new EnumMap<>(TransportType.class);
@@ -199,6 +200,7 @@ public class PathfinderConfig {
         useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
         pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
         usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
+        usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
         useTeleportationLevers = ShortestPathPlugin.override("useTeleportationLevers", config.useTeleportationLevers());
         useTeleportationMinigames = ShortestPathPlugin.override("useTeleportationMinigames", config.useTeleportationMinigames());
         useTeleportationPortals = ShortestPathPlugin.override("useTeleportationPortals", config.useTeleportationPortals());
@@ -609,8 +611,16 @@ public class PathfinderConfig {
             return false;
         } else if (TELEPORTATION_SPELL.equals(type) && !useTeleportationSpells) {
             return false;
-        } else if (WILDERNESS_OBELISK.equals(type) && !useWildernessObelisks) {
-            return false;
+        } else if (WILDERNESS_OBELISK.equals(type)) {
+            if (!useWildernessObelisks) {
+                return false;
+            }
+            // Check if this is the POH obelisk (origin inside POH bounds)
+            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+            if (ShortestPathPlugin.isInsidePoh(originX, originY) && !usePohObelisk) {
+                return false;
+            }
         }
 
         if (!hasRequiredLevels(transport)) {

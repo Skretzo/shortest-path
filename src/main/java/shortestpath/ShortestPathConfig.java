@@ -472,11 +472,23 @@ public interface ShortestPathConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+        keyName = "usePohObelisk",
+        name = "POH wilderness obelisk",
+        description = "Whether to include the POH wilderness obelisk in the path.<br>" +
+            "Enable this if you have built an obelisk in your house (80 Construction or boosted)",
+        position = 38,
+        section = sectionPoh
+    )
+    default boolean usePohObelisk() {
+        return false;
+    }
+
     @ConfigSection(
         name = "Transport Thresholds",
         description = "Set customizable thresholds for how much faster a transportation<br>"+
             "method must be to be preferred over other methods",
-        position = 38,
+        position = 39,
         closedByDefault = true
     )
     String sectionThresholds = "sectionThresholds";

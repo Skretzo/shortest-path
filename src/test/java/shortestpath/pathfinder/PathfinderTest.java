@@ -294,6 +294,8 @@ public class PathfinderTest {
     @Test
     public void testWildernessObelisks() {
         when(config.useWildernessObelisks()).thenReturn(true);
+        when(config.usePoh()).thenReturn(true);
+        when(config.usePohObelisk()).thenReturn(true);
         testTransportLength(2, TransportType.WILDERNESS_OBELISK);
     }
 
