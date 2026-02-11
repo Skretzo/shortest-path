@@ -116,7 +116,7 @@
 3028 3842 0			21166=1||21169=1||21171=1||21173=1||21175=1		4	Burning amulet: Lava Maze	T	20		
 										
 # Teleport to house (tablet) - These depend on the current player's home location, determined by varbit 2187, and teleport inside or outside determined by varbit 4744										
-1923 5709 0			8013=1		4	Teleport to House tablet	T	20	4744=0	
+1923 5709 0			8013=1		4	Teleport to House	T	20	4744=0	
 # 1 - Rimmington										
 2953 3224 0			8013=1		4	Teleport to House tablet	T	20	2187=1;4744=1	
 # 2 - Taverly										

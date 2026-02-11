@@ -682,6 +682,8 @@ public class ShortestPathPlugin extends Plugin {
                                 immediateExitInfo = "Fairy Ring " + exitInfo;
                             } else if (TransportType.SPIRIT_TREE.equals(exitType)) {
                                 immediateExitInfo = "Spirit Tree: " + exitInfo;
+                            } else if (TransportType.WILDERNESS_OBELISK.equals(exitType)) {
+                                immediateExitInfo = "Obelisk: " + exitInfo;
                             } else {
                                 immediateExitInfo = exitInfo;
                             }
@@ -743,11 +745,6 @@ public class ShortestPathPlugin extends Plugin {
                         String dest = transport.getDisplayInfo();
                         if (dest != null && !dest.isEmpty()) {
                             return "Glider: " + dest;
-                        }
-                    } else if (TransportType.WILDERNESS_OBELISK.equals(type)) {
-                        String dest = transport.getDisplayInfo();
-                        if (dest != null && !dest.isEmpty()) {
-                            return "Obelisk: " + dest;
                         }
                     }
                     // For other transports, we just use the immediate POH exit
