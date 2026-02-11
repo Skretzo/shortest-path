@@ -5162,7 +5162,7 @@
 1470 3687 0	1475 3687 0	Climb Handholds 42009						6	
 1460 3690 0	1456 3690 0	Climb Handholds 27362						6	
 1456 3690 0	1460 3690 0	Climb Handholds 42009						6	
-
+									
 # Asgarnia Ice Dungeon									
 3009 3150 0	3009 9550 0	Climb-down Trapdoor 1738						1	
 3009 9550 0	3009 3150 0	Climb-up Ladder 17385						1	
@@ -5181,7 +5181,7 @@
 									
 3060 9555 0	3060 9557 0	Climb Steps 8729						1	
 3060 9557 0	3060 9555 0	Climb Steps 8729						1	
-
+									
 # Abyss									
 									
 # there are multiple destination and one is picked at random when used									
@@ -5189,8 +5189,8 @@
 									
 3039 4805 0	3039 4800 0	Enter Passage 27054							
 									
-# The obsticals are randomly generated so it can be that you can pass through one of the passages but not the other, so we have to list them all out.
-# Todo: The destionation of the passages is not 100% confirmed, but atleast they point into the the second ring of the abyss.								
+# The obsticals are randomly generated so it can be that you can pass through one of the passages but not the other, so we have to list them all out.									
+# Todo: The destionation of the passages is not 100% confirmed, but atleast they point into the the second ring of the abyss.									
 3039 4854 0	3039 4844 0	Go-through Passage 26250							
 3029 4850 0	3033 4843 0	Go-through Passage 26250							
 3021 4843 0	3039 4844 0	Go-through Passage 26250							
@@ -5205,7 +5205,6 @@
 3050 4850 0	3039 4844 0	Go-through Passage 26250							
 									
 3034 4793 0	3221 3219 0	Operate Appendage 27027						4	
-									
 									
 # Chaos Altar									
 3044 4842 0	2269 4840 0	Exit-through Chaos rift 25382							
@@ -5228,7 +5227,7 @@
 2464 4818 0	2858 3378 0	Enter Portal 34755						1	
 									
 # Death Altar									
-# todo: destination is estimated							
+# todo: destination is estimated									
 3050 4837 0	2209 4834 0	Exit-through Death rift 25382			Mourning's End Part II				
 2208 4830 0	1860 4639 0	Enter Portal 34758						1	
 									
