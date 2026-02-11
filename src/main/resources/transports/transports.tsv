@@ -5189,9 +5189,10 @@
 									
 3039 4805 0	3039 4800 0	Enter Passage 27054							
 									
-# todo: these are randomly generated									
+# The obsticals are randomly generated so it can be that you can pass through one of the passages but not the other, so we have to list them all out.
+# Todo: The destionation of the passages is not 100% confirmed, but atleast they point into the the second ring of the abyss.								
 3039 4854 0	3039 4844 0	Go-through Passage 26250							
-3029 4850 0	3039 4844 0	Go-through Passage 26250							
+3029 4850 0	3033 4843 0	Go-through Passage 26250							
 3021 4843 0	3039 4844 0	Go-through Passage 26250							
 3018 4834 0	3039 4844 0	Go-through Passage 26250							
 3018 4822 0	3039 4844 0	Go-through Passage 26250							
@@ -5199,7 +5200,7 @@
 3042 4811 0	3039 4844 0	Go-through Passage 26250							
 3050 4813 0	3039 4844 0	Go-through Passage 26250							
 3058 4822 0	3039 4844 0	Go-through Passage 26250							
-3061 4831 0	3039 4844 0	Go-through Passage 26250							
+3061 4831 0	3052 4831 0	Go-through Passage 26250							
 3059 4840 0	3039 4844 0	Go-through Passage 26250							
 3050 4850 0	3039 4844 0	Go-through Passage 26250							
 									
@@ -5223,14 +5224,13 @@
 2273 4855 3	3066 3591 0	Use Portal 34757						1	
 									
 # Law Altar									
-3049 4839 0	2464 4823 0	Exit-through Law rift 25382			Troll Stronghold				
-2464 4818 0	2858 3378 0	Enter Portal 34757						1	
+3049 4839 0	2464 4826 0	Exit-through Law rift 25382			Troll Stronghold				
+2464 4818 0	2858 3378 0	Enter Portal 34755						1	
 									
 # Death Altar									
-# todo: verify of the destination is correct									
+# todo: destination is estimated							
 3050 4837 0	2209 4834 0	Exit-through Death rift 25382			Mourning's End Part II				
-2208 4829 0	3182 3162 0	Enter Portal 34758						1	
-									
+2208 4830 0	1860 4639 0	Enter Portal 34758						1	
 									
 # Water Altar									
 3051 4833 0	2714 4838 0	Exit-through Water rift 25382							
@@ -5238,7 +5238,7 @@
 									
 # Soul Altar									
 # todo: verify if the destination is correct									
-# todo: requires using dark essence block/fragments on rift after crafting soul runes at Kourend's Soul Altar									
+# todo: unlocks after using dark essence block/fragments on Kourend's Soul Altar									
 3050 4829 0	1816 3856 0	Exit-through Soul rift 25382							
 									
 # Air Altar									
