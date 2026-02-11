@@ -43,7 +43,8 @@
 2740 2738 0		Configure Fairy ring 29495		Monkey Madness I		5	
 2682 3081 0		Configure Fairy ring 29495				5	
 3037 4763 0		Configure Fairy ring 29495				5	
-2027 5700 0		Configure Fairy ring 29228	85 Construction			5	
+# POH fairy ring (controlled by usePohFairyRing setting)
+2027 5700 0		Configure Fairy ring 29228				5	
 3038 5348 0		Configure Fairy ring 29495				5	
 3108 3149 0		Configure Fairy ring 29495				5	
 2658 3230 0		Configure Fairy ring 29495				5	
@@ -98,7 +99,7 @@
 	2740 2738 0			Monkey Madness I		5	C L R
 	2682 3081 0					5	C L S
 	3037 4763 0					5	D I P
-	2027 5700 0		85 Construction			5	D I Q
+	2027 5700 0					5	D I Q
 	3038 5348 0					5	D I R
 	3108 3149 0					5	D I S
 	2658 3230 0					5	D J P
