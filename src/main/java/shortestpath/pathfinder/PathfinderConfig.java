@@ -1,34 +1,9 @@
 package shortestpath.pathfinder;
 
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import static shortestpath.transport.TransportType.AGILITY_SHORTCUT;
-import static shortestpath.transport.TransportType.BOAT;
-import static shortestpath.transport.TransportType.CANOE;
-import static shortestpath.transport.TransportType.CHARTER_SHIP;
-import static shortestpath.transport.TransportType.FAIRY_RING;
-import static shortestpath.transport.TransportType.GNOME_GLIDER;
-import static shortestpath.transport.TransportType.GRAPPLE_SHORTCUT;
-import static shortestpath.transport.TransportType.HOT_AIR_BALLOON;
-import static shortestpath.transport.TransportType.MAGIC_CARPET;
-import static shortestpath.transport.TransportType.MAGIC_MUSHTREE;
-import static shortestpath.transport.TransportType.MINECART;
-import static shortestpath.transport.TransportType.QUETZAL;
-import static shortestpath.transport.TransportType.SEASONAL_TRANSPORTS;
-import static shortestpath.transport.TransportType.SHIP;
-import static shortestpath.transport.TransportType.SPIRIT_TREE;
-import static shortestpath.transport.TransportType.TELEPORTATION_BOX;
-import static shortestpath.transport.TransportType.TELEPORTATION_ITEM;
-import static shortestpath.transport.TransportType.TELEPORTATION_LEVER;
-import static shortestpath.transport.TransportType.TELEPORTATION_MINIGAME;
-import static shortestpath.transport.TransportType.TELEPORTATION_PORTAL;
-import static shortestpath.transport.TransportType.TELEPORTATION_PORTAL_POH;
-import static shortestpath.transport.TransportType.TELEPORTATION_SPELL;
-import static shortestpath.transport.TransportType.WILDERNESS_OBELISK;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +35,7 @@ import shortestpath.transport.Transport;
 import shortestpath.transport.TransportItems;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.TransportTypeConfig;
 import shortestpath.transport.TransportVarPlayer;
 import shortestpath.transport.TransportVarbit;
 
@@ -111,36 +87,18 @@ public class PathfinderConfig {
     private boolean avoidWilderness;
     @Getter
     private boolean bankVisited;
-    private boolean useAgilityShortcuts,
-        useGrappleShortcuts,
-        useBoats,
-        useCanoes,
-        useCharterShips,
-        useShips,
-        useFairyRings,
-        usePohFairyRing,
+
+    // Centralized transport type enable/disable config
+    private TransportTypeConfig transportTypeConfig;
+
+    // POH-specific settings (not tied to a single TransportType)
+    private boolean usePohFairyRing,
         usePohSpiritTree,
-        useGnomeGliders,
-        useHotAirBalloons,
-        useMagicCarpets,
-        useMagicMushtrees,
-        useMinecarts,
-        useQuetzals,
-        useSeasonalTransports,
-        useSpiritTrees,
-        useTeleportationLevers,
-        useTeleportationMinigames,
-        useTeleportationPortals,
-        useTeleportationPortalsPoh,
-        useTeleportationSpells,
-        useWildernessObelisks,
-        includeBankPath,
         usePohMountedItems,
         usePoh,
-        usePohObelisk;
-    private TeleportationItem useTeleportationItems;
+        usePohObelisk,
+        includeBankPath;
     private JewelleryBoxTier pohJewelleryBoxTier;
-    private Map<TransportType, Integer> artificialTransportCosts = new EnumMap<>(TransportType.class);
     private int costConsumableTeleportationItems;
     private int currencyThreshold;
     private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
@@ -153,6 +111,7 @@ public class PathfinderConfig {
     public PathfinderConfig(Client client, ShortestPathConfig config) {
         this.client = client;
         this.config = config;
+        this.transportTypeConfig = new TransportTypeConfig(config);
         this.mapData = SplitFlagMap.fromResources();
         this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
         this.allTransports = TransportLoader.loadAllFromResources();
@@ -180,59 +139,22 @@ public class PathfinderConfig {
         calculationCutoffMillis = config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
         avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
         usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
-        useAgilityShortcuts = ShortestPathPlugin.override("useAgilityShortcuts", config.useAgilityShortcuts());
-        useGrappleShortcuts = ShortestPathPlugin.override("useGrappleShortcuts", config.useGrappleShortcuts());
-        useBoats = ShortestPathPlugin.override("useBoats", config.useBoats());
-        useCanoes = ShortestPathPlugin.override("useCanoes", config.useCanoes());
-        useCharterShips = ShortestPathPlugin.override("useCharterShips", config.useCharterShips());
-        useShips = ShortestPathPlugin.override("useShips", config.useShips());
-        useFairyRings = ShortestPathPlugin.override("useFairyRings", config.useFairyRings());
+
+        // Refresh transport type enabled states
+        transportTypeConfig.refresh();
+        // POH-specific settings
         usePohFairyRing = ShortestPathPlugin.override("usePohFairyRing", config.usePohFairyRing());
-        useGnomeGliders = ShortestPathPlugin.override("useGnomeGliders", config.useGnomeGliders());
-        useHotAirBalloons = ShortestPathPlugin.override("useHotAirBalloons", config.useHotAirBalloons());
-        useMagicCarpets = ShortestPathPlugin.override("useMagicCarpets", config.useMagicCarpets());
-        useMagicMushtrees = ShortestPathPlugin.override("useMagicMushtrees", config.useMagicMushtrees());
-        useMinecarts = ShortestPathPlugin.override("useMinecarts", config.useMinecarts());
-        useQuetzals = ShortestPathPlugin.override("useQuetzals", config.useQuetzals());
-        useSeasonalTransports = ShortestPathPlugin.override("useSeasonalTransports", config.useSeasonalTransports());
-        useSpiritTrees = ShortestPathPlugin.override("useSpiritTrees", config.useSpiritTrees());
         usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
-        useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
-        pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
         usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
         usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
-        useTeleportationLevers = ShortestPathPlugin.override("useTeleportationLevers", config.useTeleportationLevers());
-        useTeleportationMinigames = ShortestPathPlugin.override("useTeleportationMinigames", config.useTeleportationMinigames());
-        useTeleportationPortals = ShortestPathPlugin.override("useTeleportationPortals", config.useTeleportationPortals());
-        useTeleportationPortalsPoh = ShortestPathPlugin.override("useTeleportationPortalsPoh", config.useTeleportationPortalsPoh());
-        useTeleportationSpells = ShortestPathPlugin.override("useTeleportationSpells", config.useTeleportationSpells());
-        useWildernessObelisks = ShortestPathPlugin.override("useWildernessObelisks", config.useWildernessObelisks());
+        pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
+
+        // Other settings (useTeleportationItems is now managed by transportTypeConfig)
         currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
         includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath());
         bankVisited = !includeBankPath;
-        artificialTransportCosts = new EnumMap<>(TransportType.class);
-        artificialTransportCosts.put(TransportType.AGILITY_SHORTCUT, ShortestPathPlugin.override("costAgilityShortcuts", config.costAgilityShortcuts()));
-        artificialTransportCosts.put(TransportType.GRAPPLE_SHORTCUT, ShortestPathPlugin.override("costGrappleShortcuts", config.costGrappleShortcuts()));
-        artificialTransportCosts.put(TransportType.BOAT, ShortestPathPlugin.override("costBoats", config.costBoats()));
-        artificialTransportCosts.put(TransportType.CANOE, ShortestPathPlugin.override("costCanoes", config.costCanoes()));
-        artificialTransportCosts.put(TransportType.CHARTER_SHIP, ShortestPathPlugin.override("costCharterShips", config.costCharterShips()));
-        artificialTransportCosts.put(TransportType.SHIP, ShortestPathPlugin.override("costShips", config.costShips()));
-        artificialTransportCosts.put(TransportType.FAIRY_RING, ShortestPathPlugin.override("costFairyRings", config.costFairyRings()));
-        artificialTransportCosts.put(TransportType.GNOME_GLIDER, ShortestPathPlugin.override("costGnomeGliders", config.costGnomeGliders()));
-        artificialTransportCosts.put(TransportType.HOT_AIR_BALLOON, ShortestPathPlugin.override("costHotAirBalloons", config.costHotAirBalloons()));
-        artificialTransportCosts.put(TransportType.MAGIC_CARPET, ShortestPathPlugin.override("costMagicCarpets", config.costMagicCarpets()));
-        artificialTransportCosts.put(TransportType.MAGIC_MUSHTREE, ShortestPathPlugin.override("costMagicMushtrees", config.costMagicMushtrees()));
-        artificialTransportCosts.put(TransportType.MINECART, ShortestPathPlugin.override("costMinecarts", config.costMinecarts()));
-        artificialTransportCosts.put(TransportType.QUETZAL, ShortestPathPlugin.override("costQuetzals", config.costQuetzals()));
-        artificialTransportCosts.put(TransportType.SEASONAL_TRANSPORTS, ShortestPathPlugin.override("costSeasonalTransports", config.costSeasonalTransports()));
-        artificialTransportCosts.put(TransportType.SPIRIT_TREE, ShortestPathPlugin.override("costSpiritTrees", config.costSpiritTrees()));
-        artificialTransportCosts.put(TransportType.TELEPORTATION_ITEM, ShortestPathPlugin.override("costNonConsumableTeleportationItems", config.costNonConsumableTeleportationItems()));
-        artificialTransportCosts.put(TransportType.TELEPORTATION_BOX, ShortestPathPlugin.override("costTeleportationBoxes", config.costTeleportationBoxes()));
-        artificialTransportCosts.put(TransportType.TELEPORTATION_LEVER, ShortestPathPlugin.override("costTeleportationLevers", config.costTeleportationLevers()));
-        artificialTransportCosts.put(TransportType.TELEPORTATION_MINIGAME, ShortestPathPlugin.override("costTeleportationMinigames", config.costTeleportationMinigames()));
-        artificialTransportCosts.put(TransportType.TELEPORTATION_PORTAL, ShortestPathPlugin.override("costTeleportationPortals", config.costTeleportationPortals()));
-        artificialTransportCosts.put(TransportType.TELEPORTATION_SPELL, ShortestPathPlugin.override("costTeleportationSpells", config.costTeleportationSpells()));
-        artificialTransportCosts.put(TransportType.WILDERNESS_OBELISK, ShortestPathPlugin.override("costWildernessObelisks", config.costWildernessObelisks()));
+
+        // Note: Transport type costs are now managed by transportTypeConfig.getCost()
         costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
 
         if (GameState.LOGGED_IN.equals(client.getGameState())) {
@@ -298,7 +220,7 @@ public class PathfinderConfig {
         if (transport.isConsumable() && TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
             return costConsumableTeleportationItems;
         }
-        return artificialTransportCosts.getOrDefault(transport.getType(), 0);
+        return transportTypeConfig.getCost(transport.getType());
     }
 
     private Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations) {
@@ -328,11 +250,16 @@ public class PathfinderConfig {
             return; // Has to run on the client thread; data will be refreshed when path finding commences
         }
 
-        useFairyRings &= ((client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39)
+        // Apply runtime restrictions based on quests/items
+        transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
+            (client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39)
             && (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1 || hasRequiredItems(DRAMEN_STAFF)));
-        useGnomeGliders &= QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE));
-        useMagicMushtrees &= QuestState.FINISHED.equals(getQuestState(Quest.BONE_VOYAGE));
-        useSpiritTrees &= QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE));
+        transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
+            QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
+        transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
+            QuestState.FINISHED.equals(getQuestState(Quest.BONE_VOYAGE)));
+        transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
+            QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
         transports.clear();
         transportsPacked.clear();
@@ -466,159 +393,26 @@ public class PathfinderConfig {
         }
 
         final boolean isQuestLocked = transport.isQuestLocked();
-
         TransportType type = transport.getType();
 
-        if (AGILITY_SHORTCUT.equals(type) && !useAgilityShortcuts) {
+        // Check if transport type is enabled in config
+        if (!transportTypeConfig.isEnabled(type)) {
             return false;
-        } else if (GRAPPLE_SHORTCUT.equals(type) && !useGrappleShortcuts) {
+        }
+
+        // Handle POH variants for types that have them
+        if (!checkPohVariant(transport, type)) {
             return false;
-        } else if (BOAT.equals(type) && !useBoats) {
+        }
+
+        // Handle special cases for teleportation items and seasonal transports
+        if (!checkTeleportationItemRules(transport, type)) {
             return false;
-        } else if (CANOE.equals(type) && !useCanoes) {
-            return false;
-        } else if (CHARTER_SHIP.equals(type) && !useCharterShips) {
-            return false;
-        } else if (SHIP.equals(type) && !useShips) {
-            return false;
-        } else if (FAIRY_RING.equals(type)) {
-            if (!useFairyRings) {
-                return false;
-            }
-            // Check if this is the POH fairy ring (origin inside POH bounds)
-            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-            if (ShortestPathPlugin.isInsidePoh(originX, originY) && !usePohFairyRing) {
-                return false;
-            }
-        } else if (GNOME_GLIDER.equals(type) && !useGnomeGliders) {
-            return false;
-        } else if (HOT_AIR_BALLOON.equals(type) && !useHotAirBalloons) {
-            return false;
-        } else if (MAGIC_CARPET.equals(type) && !useMagicCarpets) {
-            return false;
-        } else if (MAGIC_MUSHTREE.equals(type) && !useMagicMushtrees) {
-            return false;
-        } else if (MINECART.equals(type) && !useMinecarts) {
-            return false;
-        } else if (QUETZAL.equals(type) && !useQuetzals) {
-            return false;
-        } else if (SEASONAL_TRANSPORTS.equals(type)) {
-            if (!useSeasonalTransports) {
-                return false;
-            }
-            switch (useTeleportationItems) {
-                case ALL:
-                    return true;
-                case ALL_NON_CONSUMABLE:
-                    return !transport.isConsumable();
-                case UNLOCKED:
-                case INVENTORY:
-                case INVENTORY_AND_BANK:
-                    break;
-                case NONE:
-                    return false;
-                case UNLOCKED_NON_CONSUMABLE:
-                case INVENTORY_NON_CONSUMABLE:
-                case INVENTORY_AND_BANK_NON_CONSUMABLE:
-                    if (transport.isConsumable()) {
-                        return false;
-                    }
-                    break;
-            }
-        } else if (SPIRIT_TREE.equals(type)) {
-            if (!useSpiritTrees) {
-                return false;
-            }
-            // Check if this is the POH spirit tree (origin inside POH bounds)
-            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-            if (ShortestPathPlugin.isInsidePoh(originX, originY) && !usePohSpiritTree) {
-                return false;
-            }
-        } else if (TELEPORTATION_ITEM.equals(type)) {
-            switch (useTeleportationItems) {
-                case ALL:
-                    return true;
-                case ALL_NON_CONSUMABLE:
-                    return !transport.isConsumable();
-                case UNLOCKED:
-                case INVENTORY:
-                case INVENTORY_AND_BANK:
-                    break;
-                case NONE:
-                    return false;
-                case UNLOCKED_NON_CONSUMABLE:
-                case INVENTORY_NON_CONSUMABLE:
-                case INVENTORY_AND_BANK_NON_CONSUMABLE:
-                    if (transport.isConsumable()) {
-                        return false;
-                    }
-                    break;
-            }
-        } else if (TELEPORTATION_BOX.equals(type)) {
-            // Filter by jewellery box tier and mounted items
-            String objectInfo = transport.getObjectInfo();
-            if (objectInfo == null) {
-                return false;
-            }
-            
-            // Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
-            boolean isMountedGlory = objectInfo.contains("Amulet of Glory");
-            boolean isMountedItem = isMountedGlory ||
-                                    objectInfo.contains("Xeric's Talisman") ||
-                                    objectInfo.contains("Digsite") ||
-                                    objectInfo.contains("Mythical cape");
-            
-            if (isMountedItem) {
-                // If mounted glory and ornate jewellery box is enabled, skip the glory
-                // because the ornate box already covers all 4 destinations with correct prefixes
-                if (isMountedGlory && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier)) {
-                    return false;
-                }
-                return usePohMountedItems;
-            }
-            
-            // Filter jewellery boxes by tier
-            if (JewelleryBoxTier.NONE.equals(pohJewelleryBoxTier)) {
-                return false;
-            }
-            
-            // Basic box (37492): destinations 1-9
-            if (objectInfo.contains("Basic Jewellery Box 37492")) {
-                return true; // All tiers include basic
-            }
-            
-            // Fancy box (37501): destinations A-J
-            if (objectInfo.contains("Fancy Jewellery Box 37501")) {
-                return JewelleryBoxTier.FANCY.equals(pohJewelleryBoxTier) ||
-                       JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
-            }
-            
-            // Ornate box (37520): destinations K-R
-            if (objectInfo.contains("Ornate Jewellery Box 37520")) {
-                return JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
-            }
-            
-            return false;
-        } else if (TELEPORTATION_LEVER.equals(type) && !useTeleportationLevers) {
-            return false;
-        } else if (TELEPORTATION_MINIGAME.equals(type) && !useTeleportationMinigames) {
-            return false;
-        } else if (TELEPORTATION_PORTAL.equals(type) && !useTeleportationPortals) {
-            return false;
-        } else if (TELEPORTATION_PORTAL_POH.equals(type) && !useTeleportationPortalsPoh) {
-            return false;
-        } else if (TELEPORTATION_SPELL.equals(type) && !useTeleportationSpells) {
-            return false;
-        } else if (WILDERNESS_OBELISK.equals(type)) {
-            if (!useWildernessObelisks) {
-                return false;
-            }
-            // Check if this is the POH obelisk (origin inside POH bounds)
-            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-            if (ShortestPathPlugin.isInsidePoh(originX, originY) && !usePohObelisk) {
+        }
+
+        // Handle jewellery box tier filtering
+        if (TransportType.TELEPORTATION_BOX.equals(type)) {
+            if (!checkJewelleryBoxTier(transport)) {
                 return false;
             }
         }
@@ -640,6 +434,112 @@ public class PathfinderConfig {
         }
 
         return true;
+    }
+
+    /**
+     * Checks POH-specific transport variants (fairy ring, spirit tree, obelisk inside POH).
+     * Returns false if the transport is a POH variant and that variant is disabled.
+     */
+    private boolean checkPohVariant(Transport transport, TransportType type) {
+        int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+        int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+
+        if (!ShortestPathPlugin.isInsidePoh(originX, originY)) {
+            return true; // Not a POH transport
+        }
+
+        // POH fairy ring
+        if (TransportType.FAIRY_RING.equals(type)) {
+            return usePohFairyRing;
+        }
+        // POH spirit tree
+        if (TransportType.SPIRIT_TREE.equals(type)) {
+            return usePohSpiritTree;
+        }
+        // POH obelisk
+        if (TransportType.WILDERNESS_OBELISK.equals(type)) {
+            return usePohObelisk;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks teleportation item rules (consumable vs non-consumable, inventory settings).
+     * Returns false if the transport should be filtered out based on teleportation item settings.
+     */
+    private boolean checkTeleportationItemRules(Transport transport, TransportType type) {
+        if (!TransportType.TELEPORTATION_ITEM.equals(type) && !TransportType.SEASONAL_TRANSPORTS.equals(type)) {
+            return true; // Not a teleportation item type
+        }
+
+        switch (transportTypeConfig.getTeleportationItemSetting()) {
+            case ALL:
+                return true;
+            case ALL_NON_CONSUMABLE:
+                return !transport.isConsumable();
+            case UNLOCKED:
+            case INVENTORY:
+            case INVENTORY_AND_BANK:
+                return true; // Will be checked later by hasRequiredItems
+            case NONE:
+                return false;
+            case UNLOCKED_NON_CONSUMABLE:
+            case INVENTORY_NON_CONSUMABLE:
+            case INVENTORY_AND_BANK_NON_CONSUMABLE:
+                return !transport.isConsumable();
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a TELEPORTATION_BOX transport should be used based on POH settings.
+     * Handles jewellery box tiers and mounted items.
+     */
+    private boolean checkJewelleryBoxTier(Transport transport) {
+        String objectInfo = transport.getObjectInfo();
+        if (objectInfo == null) {
+            return false;
+        }
+
+        // Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
+        boolean isMountedGlory = objectInfo.contains("Amulet of Glory");
+        boolean isMountedItem = isMountedGlory ||
+                                objectInfo.contains("Xeric's Talisman") ||
+                                objectInfo.contains("Digsite") ||
+                                objectInfo.contains("Mythical cape");
+
+        if (isMountedItem) {
+            // If mounted glory and ornate jewellery box is enabled, skip the glory
+            // because the ornate box already covers all 4 destinations with correct prefixes
+            if (isMountedGlory && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier)) {
+                return false;
+            }
+            return usePohMountedItems;
+        }
+
+        // Filter jewellery boxes by tier
+        if (JewelleryBoxTier.NONE.equals(pohJewelleryBoxTier)) {
+            return false;
+        }
+
+        // Basic box (37492): destinations 1-9
+        if (objectInfo.contains("Basic Jewellery Box 37492")) {
+            return true; // All tiers include basic
+        }
+
+        // Fancy box (37501): destinations A-J
+        if (objectInfo.contains("Fancy Jewellery Box 37501")) {
+            return JewelleryBoxTier.FANCY.equals(pohJewelleryBoxTier) ||
+                   JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
+        }
+
+        // Ornate box (37520): destinations K-R
+        if (objectInfo.contains("Ornate Jewellery Box 37520")) {
+            return JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
+        }
+
+        return false;
     }
 
     /** Checks if the player has all the required skill levels for the transport */
@@ -667,7 +567,7 @@ public class PathfinderConfig {
         boolean checkRunePouch) {
         if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
             TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())) {
-            switch (useTeleportationItems) {
+            switch (transportTypeConfig.getTeleportationItemSetting()) {
                 case ALL:
                 case ALL_NON_CONSUMABLE:
                 case UNLOCKED:
@@ -721,9 +621,10 @@ public class PathfinderConfig {
         }
 
         if (checkBank) {
+            TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
             if (bank != null && bankVisited
-                && (TeleportationItem.INVENTORY_AND_BANK.equals(useTeleportationItems)
-                || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(useTeleportationItems))) {
+                && (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+                || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
                 for (Item item : bank.getItems()) {
                     if (item.getId() >= 0 && item.getQuantity() > 0) {
                         itemsAndQuantities.put(item.getId(), item.getQuantity());
@@ -809,3 +710,4 @@ public class PathfinderConfig {
         return combatLevel;
     }
 }
+
