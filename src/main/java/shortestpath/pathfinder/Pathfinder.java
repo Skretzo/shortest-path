@@ -8,7 +8,8 @@ import shortestpath.WorldPointUtil;
 import java.util.*;
 
 public class Pathfinder implements Runnable {
-    private PathfinderStats stats;
+    private final PathfinderStats stats;
+    @Getter
     private volatile boolean done = false;
     private volatile boolean cancelled = false;
 
@@ -31,9 +32,6 @@ public class Pathfinder implements Runnable {
     private PrimitiveIntList path = new PrimitiveIntList();
     private boolean pathNeedsUpdate = false;
     private Node bestLastNode;
-    
-    //Tracks the minimum cost to reach each transport destination that has been queued
-    private final Map<Integer, Integer> pendingTransportCosts = new HashMap<>();
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
@@ -54,10 +52,6 @@ public class Pathfinder implements Runnable {
         visited = new VisitedTiles(map);
         targetInWilderness = WildernessChecker.isInWilderness(targets);
         wildernessLevel = 31;
-    }
-
-    public boolean isDone() {
-        return done;
     }
 
     public void cancel() {
@@ -88,17 +82,20 @@ public class Pathfinder implements Runnable {
     }
 
     private void addNeighbors(Node node) {
-        List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel, pendingTransportCosts);
-        for (int i = 0; i < nodes.size(); ++i) {
-            Node neighbor = nodes.get(i);
-
+        List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel);
+        for (Node neighbor : nodes) {
             if (config.avoidWilderness(node.packedPosition, neighbor.packedPosition, targetInWilderness)) {
                 continue;
             }
 
             if (neighbor instanceof TransportNode) {
-                // Track the cost for this destination - getNeighbors already filtered out higher-cost duplicates
-                pendingTransportCosts.put(neighbor.packedPosition, neighbor.cost);
+                TransportNode tn = (TransportNode) neighbor;
+                // For teleports with cost thresholds, don't mark visited immediately
+                // This allows cheaper paths via platforms to be discovered later
+                // Regular transports (no threshold) are marked visited immediately to prevent queue growth
+                if (!tn.isDelayedVisit()) {
+                    visited.set(neighbor.packedPosition);
+                }
                 pending.add(neighbor);
                 ++stats.transportsChecked;
             } else {
@@ -125,11 +122,13 @@ public class Pathfinder implements Runnable {
 
             if (p != null && (node == null || p.cost < node.cost)) {
                 node = pending.poll();
-                // Check if this transport destination was already reached via a cheaper path
-                if (visited.get(node.packedPosition)) {
-                    continue; // Skip - already visited via cheaper path
+                // For delayed visit transports, check if destination was reached via cheaper path
+                if (p instanceof TransportNode && ((TransportNode) p).isDelayedVisit()) {
+                    if (visited.get(node.packedPosition)) {
+                        continue; // Skip - already visited via cheaper path
+                    }
+                    visited.set(node.packedPosition);
                 }
-                visited.set(node.packedPosition);
             } else {
                 node = boundary.removeFirst();
             }
