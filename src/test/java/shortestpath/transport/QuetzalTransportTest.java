@@ -325,19 +325,18 @@ public class QuetzalTransportTest {
     }
 
     /**
-     * Verifies that QUETZAL_WHISTLE and QUETZAL have different cost keys.
+     * Verifies that QUETZAL_WHISTLE and QUETZAL have different cost getters.
      */
     @Test
-    public void testQuetzalTypesHaveDifferentCostKeys() {
-        String quetzalCostKey = TransportType.QUETZAL.getCostKey();
-        String whistleCostKey = TransportType.QUETZAL_WHISTLE.getCostKey();
+    public void testQuetzalTypesHaveDifferentCostGetters() {
+        // Verify both have cost getters
+        Assert.assertTrue("QUETZAL should have a cost getter", TransportType.QUETZAL.hasCostGetter());
+        Assert.assertTrue("QUETZAL_WHISTLE should have a cost getter", TransportType.QUETZAL_WHISTLE.hasCostGetter());
 
-        System.out.println("QUETZAL costKey: " + quetzalCostKey);
-        System.out.println("QUETZAL_WHISTLE costKey: " + whistleCostKey);
-
-        Assert.assertEquals("QUETZAL should use costQuetzals", "costQuetzals", quetzalCostKey);
-        Assert.assertEquals("QUETZAL_WHISTLE should use costQuetzalWhistle", "costQuetzalWhistle", whistleCostKey);
-        Assert.assertNotEquals("Cost keys should be different", quetzalCostKey, whistleCostKey);
+        // Verify they reference different config methods by checking they're different function instances
+        Assert.assertNotEquals("Cost getters should be different instances",
+            TransportType.QUETZAL.getCostGetter(),
+            TransportType.QUETZAL_WHISTLE.getCostGetter());
     }
 
     /**

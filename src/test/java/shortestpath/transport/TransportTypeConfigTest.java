@@ -3,9 +3,9 @@ package shortestpath.transport;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,9 +16,9 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.TeleportationItem;
 
 /**
- * Tests for TransportTypeConfig reflection-based config wiring.
- * These tests ensure that the reflection mechanism works correctly and that
- * all config keys defined in TransportType have corresponding methods in ShortestPathConfig.
+ * Tests for TransportTypeConfig.
+ * These tests ensure that the functional getter mechanism works correctly and that
+ * all config getters defined in TransportType work with ShortestPathConfig.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class TransportTypeConfigTest {
@@ -27,78 +27,60 @@ public class TransportTypeConfigTest {
     ShortestPathConfig config;
 
     /**
-     * Verifies that every configKey defined in TransportType has a corresponding
-     * method in ShortestPathConfig that returns a boolean.
+     * Verifies that every enabledGetter defined in TransportType returns a boolean
+     * when applied to a config object.
      */
     @Test
-    public void testAllConfigKeysHaveMatchingMethods() {
-        List<String> missingMethods = new ArrayList<>();
-        List<String> wrongReturnType = new ArrayList<>();
+    public void testAllEnabledGettersReturnBoolean() {
+        setupDefaultMocks();
+
+        List<String> errors = new ArrayList<>();
 
         for (TransportType type : TransportType.values()) {
-            String configKey = type.getConfigKey();
-            if (configKey == null) {
-                continue; // No config key for this type, skip
+            Function<ShortestPathConfig, Boolean> getter = type.getEnabledGetter();
+            if (getter == null) {
+                continue; // No enabled getter for this type, skip
             }
 
             try {
-                Method method = ShortestPathConfig.class.getMethod(configKey);
-                Class<?> returnType = method.getReturnType();
-                if (returnType != boolean.class && returnType != Boolean.class) {
-                    wrongReturnType.add(String.format("%s.%s returns %s (expected boolean)",
-                        type.name(), configKey, returnType.getSimpleName()));
-                }
-            } catch (NoSuchMethodException e) {
-                missingMethods.add(String.format("%s.%s", type.name(), configKey));
+                Boolean result = getter.apply(config);
+                assertNotNull("enabledGetter for " + type.name() + " should not return null", result);
+            } catch (Exception e) {
+                errors.add(String.format("%s: %s", type.name(), e.getMessage()));
             }
         }
 
-        if (!missingMethods.isEmpty()) {
-            fail("Missing config methods in ShortestPathConfig for configKeys:\n  " +
-                String.join("\n  ", missingMethods));
-        }
-
-        if (!wrongReturnType.isEmpty()) {
-            fail("Config methods have wrong return type:\n  " +
-                String.join("\n  ", wrongReturnType));
+        if (!errors.isEmpty()) {
+            fail("Errors invoking enabledGetters:\n  " + String.join("\n  ", errors));
         }
     }
 
     /**
-     * Verifies that every costKey defined in TransportType has a corresponding
-     * method in ShortestPathConfig that returns an int.
+     * Verifies that every costGetter defined in TransportType returns an integer
+     * when applied to a config object.
      */
     @Test
-    public void testAllCostKeysHaveMatchingMethods() {
-        List<String> missingMethods = new ArrayList<>();
-        List<String> wrongReturnType = new ArrayList<>();
+    public void testAllCostGettersReturnInteger() {
+        setupDefaultMocks();
+
+        List<String> errors = new ArrayList<>();
 
         for (TransportType type : TransportType.values()) {
-            String costKey = type.getCostKey();
-            if (costKey == null) {
-                continue; // No cost key for this type, skip
+            Function<ShortestPathConfig, Integer> getter = type.getCostGetter();
+            if (getter == null) {
+                continue; // No cost getter for this type, skip
             }
 
             try {
-                Method method = ShortestPathConfig.class.getMethod(costKey);
-                Class<?> returnType = method.getReturnType();
-                if (returnType != int.class && returnType != Integer.class) {
-                    wrongReturnType.add(String.format("%s.%s returns %s (expected int)",
-                        type.name(), costKey, returnType.getSimpleName()));
-                }
-            } catch (NoSuchMethodException e) {
-                missingMethods.add(String.format("%s.%s", type.name(), costKey));
+                Integer result = getter.apply(config);
+                assertNotNull("costGetter for " + type.name() + " should not return null", result);
+            } catch (Exception e) {
+                errors.add(String.format("%s: %s", type.name(), e.getMessage()));
             }
         }
 
-        if (!missingMethods.isEmpty()) {
-            fail("Missing config methods in ShortestPathConfig for costKeys:\n  " +
-                String.join("\n  ", missingMethods));
-        }
-
-        if (!wrongReturnType.isEmpty()) {
-            fail("Config methods have wrong return type:\n  " +
-                String.join("\n  ", wrongReturnType));
+        if (!errors.isEmpty()) {
+            fail("Errors invoking costGetters:\n  " + String.join("\n  ", errors));
         }
     }
 
@@ -353,88 +335,78 @@ public class TransportTypeConfigTest {
     /**
      * Verifies that all TransportType enum values have consistent configuration:
      * - If they have a resourcePath, they should be loadable
-     * - configKey and costKey naming conventions are followed
+     * - Types with enabledGetter should have proper functionality
+     * - Types with costGetter should have proper functionality
      */
     @Test
-    public void testTransportTypeNamingConventions() {
-        List<String> violations = new ArrayList<>();
+    public void testTransportTypeConfiguration() {
+        setupDefaultMocks();
 
         for (TransportType type : TransportType.values()) {
-            String configKey = type.getConfigKey();
-            String costKey = type.getCostKey();
-
-            // Check configKey naming convention (should start with "use")
-            if (configKey != null && !configKey.startsWith("use")) {
-                violations.add(String.format("%s configKey '%s' should start with 'use'",
-                    type.name(), configKey));
+            // Verify enabledGetter works if present
+            if (type.hasEnabledGetter()) {
+                Boolean enabled = type.getEnabledGetter().apply(config);
+                assertNotNull("enabledGetter for " + type.name() + " should return a value", enabled);
             }
 
-            // Check costKey naming convention (should start with "cost")
-            if (costKey != null && !costKey.startsWith("cost")) {
-                violations.add(String.format("%s costKey '%s' should start with 'cost'",
-                    type.name(), costKey));
+            // Verify costGetter works if present
+            if (type.hasCostGetter()) {
+                Integer cost = type.getCostGetter().apply(config);
+                assertNotNull("costGetter for " + type.name() + " should return a value", cost);
             }
-        }
-
-        if (!violations.isEmpty()) {
-            fail("Naming convention violations:\n  " + String.join("\n  ", violations));
         }
     }
 
     /**
-     * Verifies that config methods can be invoked via reflection without errors.
+     * Verifies that config getters can be invoked without errors.
      * This catches issues like method signature mismatches.
      */
     @Test
-    public void testConfigMethodsCanBeInvoked() {
+    public void testConfigGettersCanBeInvoked() {
         setupDefaultMocks();
 
         List<String> invocationErrors = new ArrayList<>();
 
         for (TransportType type : TransportType.values()) {
-            // Test configKey invocation
-            String configKey = type.getConfigKey();
-            if (configKey != null) {
+            // Test enabledGetter invocation
+            if (type.hasEnabledGetter()) {
                 try {
-                    Method method = ShortestPathConfig.class.getMethod(configKey);
-                    method.invoke(config);
+                    type.getEnabledGetter().apply(config);
                 } catch (Exception e) {
-                    invocationErrors.add(String.format("%s.%s: %s",
-                        type.name(), configKey, e.getMessage()));
+                    invocationErrors.add(String.format("%s enabledGetter: %s",
+                        type.name(), e.getMessage()));
                 }
             }
 
-            // Test costKey invocation
-            String costKey = type.getCostKey();
-            if (costKey != null) {
+            // Test costGetter invocation
+            if (type.hasCostGetter()) {
                 try {
-                    Method method = ShortestPathConfig.class.getMethod(costKey);
-                    method.invoke(config);
+                    type.getCostGetter().apply(config);
                 } catch (Exception e) {
-                    invocationErrors.add(String.format("%s.%s: %s",
-                        type.name(), costKey, e.getMessage()));
+                    invocationErrors.add(String.format("%s costGetter: %s",
+                        type.name(), e.getMessage()));
                 }
             }
         }
 
         if (!invocationErrors.isEmpty()) {
-            fail("Errors invoking config methods:\n  " + String.join("\n  ", invocationErrors));
+            fail("Errors invoking config getters:\n  " + String.join("\n  ", invocationErrors));
         }
     }
 
     /**
-     * Verifies that all transport types that have a resource path also have proper config keys.
+     * Verifies that all transport types that have a resource path also have proper config getters.
      * This ensures new transport types are properly configured.
      */
     @Test
     public void testResourcePathTypesHaveProperConfig() {
         for (TransportType type : TransportType.values()) {
             if (type.hasResourcePath()) {
-                // Types with resources should typically have a cost key
+                // Types with resources should typically have a cost getter
                 // (except for special cases like TRANSPORT which is the base type)
-                if (type.getCostKey() == null && type != TransportType.TRANSPORT) {
+                if (!type.hasCostGetter() && type != TransportType.TRANSPORT) {
                     // This is just informational, not necessarily an error
-                    System.out.println("Note: " + type.name() + " has resourcePath but no costKey");
+                    System.out.println("Note: " + type.name() + " has resourcePath but no costGetter");
                 }
             }
         }
