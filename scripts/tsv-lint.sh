@@ -19,16 +19,26 @@ for file in $(find "$RESOURCE_DIR" -name "*.tsv" -type f | sort); do
     while IFS= read -r line || [[ -n "$line" ]]; do
         line_num=$((line_num + 1))
 
-        # Skip empty lines and comment lines
-        if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
+        # Skip empty lines
+        if [[ -z "$line" ]]; then
             continue
         fi
 
         # Count columns (number of tabs + 1)
         num_columns=$(($(printf '%s' "$line" | tr -cd '\t' | wc -c) + 1))
 
+        # Check if this is a header line (starts with #)
+        if [[ "$line" =~ ^[[:space:]]*# ]]; then
+            # Use the first header line to set expected column count
+            if [[ -z "$expected_columns" ]]; then
+                expected_columns=$num_columns
+                header_line=$line_num
+            fi
+            continue
+        fi
+
         if [[ -z "$expected_columns" ]]; then
-            # First non-empty, non-comment line sets the expected column count
+            # No header found, first data line sets the expected column count
             expected_columns=$num_columns
             header_line=$line_num
         elif [[ "$num_columns" -ne "$expected_columns" ]]; then
