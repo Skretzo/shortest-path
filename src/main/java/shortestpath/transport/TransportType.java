@@ -29,7 +29,7 @@ public enum TransportType {
     MAGIC_CARPET("/transports/magic_carpets.tsv", ShortestPathConfig::useMagicCarpets, ShortestPathConfig::costMagicCarpets),
     MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", ShortestPathConfig::useMagicMushtrees, ShortestPathConfig::costMagicMushtrees, 5),
     MINECART("/transports/minecarts.tsv", ShortestPathConfig::useMinecarts, ShortestPathConfig::costMinecarts),
-    QUETZAL("/transports/quetzals.tsv", ShortestPathConfig::useQuetzals, ShortestPathConfig::costQuetzals),
+    QUETZAL("/transports/quetzals.tsv", ShortestPathConfig::useQuetzals, ShortestPathConfig::costQuetzals, 5),
     QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", ShortestPathConfig::useQuetzals, ShortestPathConfig::costQuetzalWhistle) {
         @Override
         public boolean isTeleport() {
