@@ -123,10 +123,6 @@ public class Transport {
         this.varRequirements.addAll(builtTransport.varRequirements);
     }
 
-    Transport(Map<String, String> fieldMap, TransportType transportType) {
-        this(new TransportRecord(fieldMap), transportType);
-    }
-
     Transport(TransportRecord record, TransportType transportType) {
         TransportBuilder builder = new TransportBuilder();
         builder.type(transportType);
