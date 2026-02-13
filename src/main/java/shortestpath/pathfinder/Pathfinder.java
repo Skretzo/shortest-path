@@ -1,15 +1,11 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
-import java.util.Set;
 import lombok.Getter;
 import shortestpath.PrimitiveIntList;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
+
+import java.util.*;
 
 public class Pathfinder implements Runnable {
     private PathfinderStats stats;
@@ -35,10 +31,13 @@ public class Pathfinder implements Runnable {
     private PrimitiveIntList path = new PrimitiveIntList();
     private boolean pathNeedsUpdate = false;
     private Node bestLastNode;
+    
+    //Tracks the minimum cost to reach each transport destination that has been queued
+    private final Map<Integer, Integer> pendingTransportCosts = new HashMap<>();
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
-     *  0 = all teleports can be used (e.g. Chronicle)
+     * 0 = all teleports can be used (e.g. Chronicle)
      * 20 = most teleports can be used (e.g. Varrock Teleport)
      * 30 = some teleports can be used (e.g. Amulet of Glory)
      * 31 = no teleports can be used
@@ -89,7 +88,7 @@ public class Pathfinder implements Runnable {
     }
 
     private void addNeighbors(Node node) {
-        List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel);
+        List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel, pendingTransportCosts);
         for (int i = 0; i < nodes.size(); ++i) {
             Node neighbor = nodes.get(i);
 
@@ -97,11 +96,13 @@ public class Pathfinder implements Runnable {
                 continue;
             }
 
-            visited.set(neighbor.packedPosition);
             if (neighbor instanceof TransportNode) {
+                // Track the cost for this destination - getNeighbors already filtered out higher-cost duplicates
+                pendingTransportCosts.put(neighbor.packedPosition, neighbor.cost);
                 pending.add(neighbor);
                 ++stats.transportsChecked;
             } else {
+                visited.set(neighbor.packedPosition);
                 boundary.addLast(neighbor);
                 ++stats.nodesChecked;
             }
@@ -124,6 +125,11 @@ public class Pathfinder implements Runnable {
 
             if (p != null && (node == null || p.cost < node.cost)) {
                 node = pending.poll();
+                // Check if this transport destination was already reached via a cheaper path
+                if (visited.get(node.packedPosition)) {
+                    continue; // Skip - already visited via cheaper path
+                }
+                visited.set(node.packedPosition);
             } else {
                 node = boundary.removeFirst();
             }
