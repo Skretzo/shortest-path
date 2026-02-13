@@ -72,7 +72,7 @@ public class CollisionMap {
     private final List<Node> neighbors = new ArrayList<>(16);
     private final boolean[] traversable = new boolean[8];
 
-    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, Map<Integer, Integer> pendingTransportCosts) {
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
@@ -88,23 +88,16 @@ public class CollisionMap {
 
         // Transports are pre-filtered by PathfinderConfig.refreshTransports
         // Thus any transports in the list are guaranteed to be valid per the user's settings
-        // Allow adding a transport if:
-        // 1. Destination not visited (not yet processed)
-        // 2. Destination not pending, OR this path is cheaper than the pending one
         for (Transport transport : transports) {
             int dest = transport.getDestination();
             if (visited.get(dest)) {
-                continue; // Already processed via a path
+                continue;
             }
             int additionalCost = config.getAdditionalTransportCost(transport);
-            int totalCost = (node.cost) + transport.getDuration() + additionalCost;
-
-            // Check if we already have pending transport to this destination
-            Integer existingCost = pendingTransportCosts.get(dest);
-            if (existingCost != null && totalCost >= existingCost) {
-                continue; // Already have a cheaper or equal path pending
-            }
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost));
+            // Teleports with cost thresholds should have delayed visited marking
+            // This allows cheaper paths via platform transports to be discovered later
+            boolean delayedVisit = transport.getOrigin() == Transport.UNDEFINED_ORIGIN && additionalCost > 0;
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost, delayedVisit));
         }
 
         if (isBlocked(x, y, z)) {
