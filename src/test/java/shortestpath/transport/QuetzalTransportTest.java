@@ -21,7 +21,7 @@ public class QuetzalTransportTest {
 
     // VarPlayer 4182 bit values for quetzal platforms
     private static final int VARPLAYER_QUETZAL_PLATFORMS = 4182;
-    private static final int BIT_KASTORI = 8;          // 4182&8
+    private static final int BIT_KASTORI = 16384;          // 4182&8
     private static final int BIT_CAM_TORUM = 32;       // 4182&32
     private static final int BIT_COLOSSAL_WYRM = 64;   // 4182&64
     private static final int BIT_OUTER_FORTIS = 128;   // 4182&128
@@ -261,6 +261,140 @@ public class QuetzalTransportTest {
             "\t1411 3361 0\t\t\t\tTwilight's Promise\t6\tAuburnvale\t\t\t\t\n" +
             "\t1697 3140 0\t\t\t\tTwilight's Promise\t6\tCivitas illa Fortis\t\t\t\t\n" +
             "\t1344 3022 0\t\t\t\tTwilight's Promise\t6\tKastori\t\t\t\t4182&8\n";
+    }
+
+    /**
+     * Verifies that all QUETZAL_WHISTLE transports from the actual resource file
+     * have the correct type and VarPlayer requirements.
+     */
+    @Test
+    public void testQuetzalWhistleFromResourcesHasCorrectType() {
+        Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+
+        int kastoriPacked = WorldPointUtil.packWorldPoint(1344, 3022, 0);
+        boolean foundQuetzalWhistleToKastori = false;
+        boolean hasCorrectVarPlayerCheck = false;
+        boolean varRequirementsContainsVarPlayer = false;
+
+        // Find the QUETZAL_WHISTLE transport to Kastori
+        for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+            for (Transport t : entry.getValue()) {
+                if (t.getDestination() == kastoriPacked &&
+                    TransportType.QUETZAL_WHISTLE.equals(t.getType())) {
+                    foundQuetzalWhistleToKastori = true;
+                    System.out.println("Found QUETZAL_WHISTLE to Kastori:");
+                    System.out.println("  Origin: " + t.getOrigin() + " (UNDEFINED=" + Transport.UNDEFINED_ORIGIN + ")");
+                    System.out.println("  VarPlayers (getVarPlayers): " + t.getVarPlayers().size());
+                    System.out.println("  VarRequirements (getVarRequirements): " + t.getVarRequirements().size());
+
+                    for (VarRequirement vp : t.getVarPlayers()) {
+                        System.out.println("    VarPlayer: id=" + vp.getId() + ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
+                        if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS &&
+                            vp.getValue() == BIT_KASTORI &&
+                            vp.getCheckType() == VarCheckType.BIT_SET) {
+                            hasCorrectVarPlayerCheck = true;
+                        }
+                    }
+
+                    // Also verify getVarRequirements() returns the same VarPlayer requirement
+                    for (VarRequirement vr : t.getVarRequirements()) {
+                        System.out.println("    VarRequirement: id=" + vr.getId() + ", isVarbit=" + vr.isVarbit() + ", isVarPlayer=" + vr.isVarPlayer());
+                        if (vr.isVarPlayer() && vr.getId() == VARPLAYER_QUETZAL_PLATFORMS) {
+                            varRequirementsContainsVarPlayer = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        Assert.assertTrue("Should find QUETZAL_WHISTLE transport to Kastori", foundQuetzalWhistleToKastori);
+        Assert.assertTrue("QUETZAL_WHISTLE to Kastori should have VarPlayer 4182&8 check via getVarPlayers()", hasCorrectVarPlayerCheck);
+        Assert.assertTrue("QUETZAL_WHISTLE to Kastori should have VarPlayer 4182 in getVarRequirements()", varRequirementsContainsVarPlayer);
+    }
+
+    /**
+     * Verifies that ALL whistle transports have type QUETZAL_WHISTLE (not QUETZAL).
+     * This ensures the separate cost threshold is applied correctly.
+     */
+    @Test
+    public void testAllWhistleTransportsHaveCorrectType() {
+        Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+
+        int whistleCount = 0;
+        int wrongTypeCount = 0;
+
+        for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+            for (Transport t : entry.getValue()) {
+                String displayInfo = t.getDisplayInfo();
+                if (displayInfo != null && displayInfo.startsWith("Quetzal whistle:")) {
+                    whistleCount++;
+                    if (!TransportType.QUETZAL_WHISTLE.equals(t.getType())) {
+                        wrongTypeCount++;
+                        System.out.println("ERROR: Whistle transport has wrong type: " + displayInfo + " -> " + t.getType());
+                    } else {
+                        System.out.println("OK: " + displayInfo + " -> " + t.getType());
+                    }
+                }
+            }
+        }
+
+        System.out.println("Total whistle transports: " + whistleCount);
+        Assert.assertTrue("Should find whistle transports", whistleCount > 0);
+        Assert.assertEquals("All whistle transports should have QUETZAL_WHISTLE type", 0, wrongTypeCount);
+    }
+
+    /**
+     * Verifies that QUETZAL_WHISTLE and QUETZAL have different cost keys.
+     */
+    @Test
+    public void testQuetzalTypesHaveDifferentCostKeys() {
+        String quetzalCostKey = TransportType.QUETZAL.getCostKey();
+        String whistleCostKey = TransportType.QUETZAL_WHISTLE.getCostKey();
+
+        System.out.println("QUETZAL costKey: " + quetzalCostKey);
+        System.out.println("QUETZAL_WHISTLE costKey: " + whistleCostKey);
+
+        Assert.assertEquals("QUETZAL should use costQuetzals", "costQuetzals", quetzalCostKey);
+        Assert.assertEquals("QUETZAL_WHISTLE should use costQuetzalWhistle", "costQuetzalWhistle", whistleCostKey);
+        Assert.assertNotEquals("Cost keys should be different", quetzalCostKey, whistleCostKey);
+    }
+
+    /**
+     * Verifies that QUETZAL platform transports are loaded correctly.
+     * These are the permutation transports that go between platforms.
+     */
+    @Test
+    public void testQuetzalPlatformTransportsLoaded() {
+        Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+
+        int platformCount = 0;
+        int aldarinOrigins = 0;
+
+        // Aldarin platform location
+        int aldarinPacked = WorldPointUtil.packWorldPoint(1389, 2901, 0);
+
+        for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+            int origin = entry.getKey();
+            for (Transport t : entry.getValue()) {
+                if (TransportType.QUETZAL.equals(t.getType())) {
+                    platformCount++;
+                    if (origin == aldarinPacked) {
+                        aldarinOrigins++;
+                        System.out.println("QUETZAL from Aldarin -> " +
+                            WorldPointUtil.unpackWorldX(t.getDestination()) + "," +
+                            WorldPointUtil.unpackWorldY(t.getDestination()) +
+                            " (displayInfo: " + t.getDisplayInfo() + ")");
+                    }
+                }
+            }
+        }
+
+        System.out.println("Total QUETZAL platform transports: " + platformCount);
+        System.out.println("Transports from Aldarin platform: " + aldarinOrigins);
+
+        Assert.assertTrue("Should find QUETZAL platform transports", platformCount > 0);
+        // From Aldarin, you should be able to reach all other platforms
+        Assert.assertTrue("Should have multiple transports from Aldarin", aldarinOrigins >= 7);
     }
 }
 
