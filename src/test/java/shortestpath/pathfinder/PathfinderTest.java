@@ -514,13 +514,6 @@ public class PathfinderTest {
         TeleportationItem useTeleportationItems, int skillLevel) {
         setupConfig(QuestState.FINISHED, skillLevel, useTeleportationItems);
         assertEquals(expectedLength, calculatePathLength(origin, destination));
-        System.out.println("Successfully completed transport length test from " +
-            "(" + WorldPointUtil.unpackWorldX(origin) +
-            ", " + WorldPointUtil.unpackWorldY(origin) +
-            ", " + WorldPointUtil.unpackWorldPlane(origin) + ") to " +
-            "(" + WorldPointUtil.unpackWorldX(destination) +
-            ", " + WorldPointUtil.unpackWorldY(destination) +
-            ", " + WorldPointUtil.unpackWorldPlane(destination) + ")");
     }
 
     private void testTransportLength(int expectedLength, TransportType transportType) {
@@ -550,21 +543,12 @@ public class PathfinderTest {
         }
 
         assertTrue("No tests were performed", counter > 0);
-        System.out.println(String.format("Successfully completed %d " + transportType + " transport length tests", counter));
     }
 
     private void testTransportMinimumLength(int minimumLength, int origin, int destination) {
         setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
         int actualLength = calculatePathLength(origin, destination);
         assertTrue("An impossible transport was used with length " + actualLength, actualLength >= minimumLength);
-        System.out.println("Successfully completed transport length test from " +
-            "(" + WorldPointUtil.unpackWorldX(origin) +
-            ", " + WorldPointUtil.unpackWorldY(origin) +
-            ", " + WorldPointUtil.unpackWorldPlane(origin) + ") to " +
-            "(" + WorldPointUtil.unpackWorldX(destination) +
-            ", " + WorldPointUtil.unpackWorldY(destination) +
-            ", " + WorldPointUtil.unpackWorldPlane(destination) + ")" +
-            " with actual length = " + actualLength + " >= minimum length = " + minimumLength);
     }
 
     private int calculateTransportLength(Transport transport) {
