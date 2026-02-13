@@ -11,7 +11,7 @@
 1437 3171 0			29271=1||29273=1||29275=1	Twilight's Promise	4	Quetzal whistle: The Teomat	T	20
 # Destinations requiring platform to be built (VarPlayer 4182 bits)
 1779 3111 0			29271=1||29273=1||29275=1	Twilight's Promise	4	Quetzal whistle: Fortis Colosseum	T	20		4182&256
-1344 3022 0			29271=1||29273=1||29275=1	Twilight's Promise	4	Quetzal whistle: Kastori	T	20		4182&8
+1344 3022 0			29271=1||29273=1||29275=1	Twilight's Promise	4	Quetzal whistle: Kastori	T	20		4182&16384
 1700 3037 0			29271=1||29273=1||29275=1	Twilight's Promise	4	Quetzal whistle: Outer Fortis	T	20		4182&128
 1670 2933 0			29271=1||29273=1||29275=1	Twilight's Promise	4	Quetzal whistle: Colossal Wyrm Remains	T	20		4182&64
 1446 3108 0			29271=1||29273=1||29275=1	Twilight's Promise	4	Quetzal whistle: Cam Torum	T	20		4182&32
