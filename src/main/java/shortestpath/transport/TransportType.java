@@ -27,6 +27,12 @@ public enum TransportType {
     MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", "costMagicMushtrees", 5),
     MINECART("/transports/minecarts.tsv", "useMinecarts", "costMinecarts"),
     QUETZAL("/transports/quetzals.tsv", "useQuetzals", "costQuetzals"),
+    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", "costQuetzalWhistle") {
+        @Override
+        public boolean isTeleport() {
+            return true;
+        }
+    },
     SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv", "useSeasonalTransports", "costSeasonalTransports"),
     SPIRIT_TREE("/transports/spirit_trees.tsv", "useSpiritTrees", "costSpiritTrees", 5),
     TELEPORTATION_BOX("/transports/teleportation_boxes.tsv", null, "costTeleportationBoxes"),
