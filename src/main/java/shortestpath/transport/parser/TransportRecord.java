@@ -1,5 +1,7 @@
 package shortestpath.transport.parser;
 
+import lombok.Getter;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,12 +10,17 @@ import java.util.Map;
  * Represents a single row from a TSV transport file.
  * Provides a clean interface to access field values by name.
  */
+@Getter
 public class TransportRecord {
 
+    /**
+     * -- GETTER --
+     *  Gets the underlying field map.
+     */
     private final Map<String, String> fields;
 
     public TransportRecord(Map<String, String> fields) {
-        this.fields = Collections.unmodifiableMap(new HashMap<>(fields));
+        this.fields = Map.copyOf(fields);
     }
 
     /**
@@ -128,13 +135,6 @@ public class TransportRecord {
      */
     public String getVarPlayers() {
         return get(Fields.VAR_PLAYERS);
-    }
-
-    /**
-     * Gets the underlying field map.
-     */
-    public Map<String, String> getFields() {
-        return fields;
     }
 
     /**
