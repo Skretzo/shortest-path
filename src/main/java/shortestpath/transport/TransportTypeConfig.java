@@ -1,12 +1,14 @@
 package shortestpath.transport;
 
-import java.lang.reflect.Method;
-import java.util.EnumMap;
-import java.util.Map;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
+
+import java.lang.reflect.Method;
+import java.util.EnumMap;
+import java.util.Map;
 
 /**
  * Manages the enabled/disabled state and cost thresholds of each TransportType based on config.
@@ -35,6 +37,7 @@ public class TransportTypeConfig {
     private final Map<TransportType, Boolean> enabledStates = new EnumMap<>(TransportType.class);
     private final Map<TransportType, Integer> costThresholds = new EnumMap<>(TransportType.class);
     private final ShortestPathConfig config;
+    @Getter
     private TeleportationItem teleportationItemSetting;
 
     public TransportTypeConfig(ShortestPathConfig config) {
@@ -52,7 +55,8 @@ public class TransportTypeConfig {
 
         for (TransportType type : TransportType.values()) {
             enabledStates.put(type, getEnabledState(type));
-            costThresholds.put(type, getCostThreshold(type));
+            int cost = getCostThreshold(type);
+            costThresholds.put(type, cost);
         }
     }
 
@@ -128,14 +132,6 @@ public class TransportTypeConfig {
      */
     public int getCost(TransportType type) {
         return costThresholds.getOrDefault(type, 0);
-    }
-
-    /**
-     * Gets the current TeleportationItem setting.
-     * Used by PathfinderConfig to determine detailed filtering for teleportation items.
-     */
-    public TeleportationItem getTeleportationItemSetting() {
-        return teleportationItemSetting;
     }
 
     /**
