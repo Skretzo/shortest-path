@@ -151,13 +151,19 @@ public class PathTileOverlay extends Overlay {
             if (TileStyle.LINES.equals(plugin.pathStyle)) {
                 for (int i = 1; i < path.size(); i++) {
                     drawLine(graphics, path.get(i - 1), path.get(i), color, 1 + counter++);
-                    drawTransportInfo(graphics, path.get(i - 1), path.get(i));
+                    drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
                 }
             } else {
                 boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
                 for (int i = 0; i < path.size(); i++) {
-                    drawTile(graphics, path.get(i), color, counter++, showTiles);
-                    drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1));
+                    // Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
+                    int pathX = WorldPointUtil.unpackWorldX(path.get(i));
+                    int pathY = WorldPointUtil.unpackWorldY(path.get(i));
+                    if (!ShortestPathPlugin.isInsidePoh(pathX, pathY)) {
+                        drawTile(graphics, path.get(i), color, counter, showTiles);
+                    }
+                    counter++;
+                    drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1), path, i);
                 }
                 for (int target : plugin.getPathfinder().getTargets()) {
                     if (path.size() > 0 && target != path.get(path.size() - 1)) {
@@ -291,7 +297,7 @@ public class PathTileOverlay extends Overlay {
         }
     }
 
-    private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd) {
+    private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd, PrimitiveIntList path, int pathIndex) {
         if (locationEnd == WorldPointUtil.UNDEFINED || !plugin.showTransportInfo ||
             WorldPointUtil.unpackWorldPlane(location) != client.getPlane()) {
             return;
@@ -304,8 +310,46 @@ public class PathTileOverlay extends Overlay {
         int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
         int tx = WorldPointUtil.unpackWorldX(location);
         int ty = WorldPointUtil.unpackWorldY(location);
-        boolean transportAndPlayerInsidePoh = (tx >= 1792 && tx <= 2047 && ty >= 5696 && ty <= 5767
-            && px >= 1792 && px <= 2047 && py >= 5696 && py <= 5767);
+        boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(tx, ty) && ShortestPathPlugin.isInsidePoh(px, py);
+
+        // When inside POH, only show the POH exit info once (not per-transport)
+        if (transportAndPlayerInsidePoh) {
+            String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+            if (pohExitInfo == null) {
+                return;
+            }
+
+            // Find the display name of the teleport that brought us to POH
+            String text = null;
+            for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
+                if (locationEnd != transport.getDestination()) {
+                    continue;
+                }
+                text = transport.getDisplayInfo();
+                if (text != null && !text.isEmpty()) {
+                    break;
+                }
+            }
+            if (text == null || text.isEmpty()) {
+                return;
+            }
+            text = text + " (Exit: " + pohExitInfo + ")";
+
+            Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getPlane());
+            if (p == null) {
+                return;
+            }
+
+            Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
+            double height = textBounds.getHeight();
+            int x = (int) (p.getX() - textBounds.getWidth() / 2);
+            int y = (int) (p.getY() - height);
+            graphics.setColor(Color.BLACK);
+            graphics.drawString(text, x + 1, y + 1);
+            graphics.setColor(plugin.colourText);
+            graphics.drawString(text, x, y);
+            return;
+        }
 
         int vertical_offset = 0;
         for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
@@ -318,6 +362,12 @@ public class PathTileOverlay extends Overlay {
                 continue;
             }
 
+            // Check if this transport goes to POH - if so, look ahead to find the exit transport
+            String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+            if (pohExitInfo != null) {
+                text = text + " (Exit: " + pohExitInfo + ")";
+            }
+
             PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
             for (int i = 0; i < points.size(); i++) {
                 LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
@@ -325,8 +375,7 @@ public class PathTileOverlay extends Overlay {
                     continue;
                 }
 
-                Point p = Perspective.localToCanvas(client,
-                    transportAndPlayerInsidePoh ? playerLocalPoint : lp, client.getPlane());
+                Point p = Perspective.localToCanvas(client, lp, client.getPlane());
                 if (p == null) {
                     continue;
                 }

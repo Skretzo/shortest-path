@@ -54,13 +54,13 @@ public class PathMapTooltipOverlay extends Overlay {
                 if (path.size() > i + 1) {
                     nextPoint = path.get(i + 1);
                 }
-                if (drawTooltip(graphics, cursorPos, path.get(i), nextPoint, i + 1)) {
+                if (drawTooltip(graphics, cursorPos, path.get(i), nextPoint, i + 1, path, i)) {
                     return null;
                 }
             }
             for (int target : plugin.getPathfinder().getTargets()) {
                 if (path.size() > 0 && target != path.get(path.size() - 1)) {
-                    drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1);
+                    drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1);
                 }
             }
         }
@@ -68,7 +68,7 @@ public class PathMapTooltipOverlay extends Overlay {
         return null;
     }
 
-    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n) {
+    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n, PrimitiveIntList path, int pathIndex) {
         int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
         int startX = plugin.mapWorldPointToGraphicsPointX(point);
         int startY = plugin.mapWorldPointToGraphicsPointY(point);
@@ -93,7 +93,13 @@ public class PathMapTooltipOverlay extends Overlay {
             for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
                 if (nextPoint == transport.getDestination()
                     && transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
-                    rows.add(transport.getDisplayInfo());
+                    String displayInfo = transport.getDisplayInfo();
+                    // Check if this transport goes to POH - if so, look ahead to find the exit transport
+                    String pohExitInfo = plugin.getPohExitInfo(nextPoint, path, pathIndex);
+                    if (pohExitInfo != null) {
+                        displayInfo = displayInfo + " (Exit: " + pohExitInfo + ")";
+                    }
+                    rows.add(displayInfo);
                     break;
                 }
             }

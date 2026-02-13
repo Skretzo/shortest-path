@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import shortestpath.ItemVariations;
+import shortestpath.JewelleryBoxTier;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
@@ -214,7 +215,9 @@ public class PathfinderTest {
 
     @Test
     public void testTeleportationBoxes() {
-        when(config.useTeleportationBoxes()).thenReturn(true);
+        when(config.usePoh()).thenReturn(true);
+        when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.ORNATE);
+        when(config.usePohMountedItems()).thenReturn(true);
         testTransportLength(2, TransportType.TELEPORTATION_BOX);
     }
 
@@ -291,6 +294,8 @@ public class PathfinderTest {
     @Test
     public void testWildernessObelisks() {
         when(config.useWildernessObelisks()).thenReturn(true);
+        when(config.usePoh()).thenReturn(true);
+        when(config.usePohObelisk()).thenReturn(true);
         testTransportLength(2, TransportType.WILDERNESS_OBELISK);
     }
 
@@ -487,6 +492,7 @@ public class PathfinderTest {
         when(client.getClientThread()).thenReturn(Thread.currentThread());
         when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
         when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
+        when(config.usePoh()).thenReturn(false); // Default POH to disabled
         doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
         doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
         doReturn(questState).when(pathfinderConfig).getQuestState(any(Quest.class));
