@@ -1,9 +1,18 @@
 package shortestpath.pathfinder;
 
-public class TransportNode extends Node implements Comparable<TransportNode> {
+import lombok.Getter;
 
-    public TransportNode(int packedPosition, Node previous, int travelTime, int additionalCost) {
+@Getter
+public class TransportNode extends Node implements Comparable<TransportNode> {
+    /**
+     * If true, don't mark destination as visited when added to queue.
+     * Used for teleports where a cheaper path might be discovered later.
+     */
+    private final boolean delayedVisit;
+
+    public TransportNode(int packedPosition, Node previous, int travelTime, int additionalCost, boolean delayedVisit) {
         super(packedPosition, previous, cost(previous, travelTime + additionalCost));
+        this.delayedVisit = delayedVisit;
     }
 
     private static int cost(Node previous, int travelTime) {

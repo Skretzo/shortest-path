@@ -94,7 +94,11 @@ public class CollisionMap {
                 continue;
             }
             int additionalCost = config.getAdditionalTransportCost(transport);
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost));
+            // Only use delayed visit for teleports (no fixed origin) with cost thresholds
+            // This allows cheaper paths to be discovered for expensive teleports
+            // Regular transports mark visited immediately to prevent walking from stealing destinations
+            boolean delayedVisit = transport.getOrigin() == Transport.UNDEFINED_ORIGIN && additionalCost > 0;
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost, delayedVisit));
         }
 
         if (isBlocked(x, y, z)) {
