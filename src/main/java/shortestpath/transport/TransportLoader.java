@@ -85,9 +85,10 @@ public class TransportLoader {
             for (Transport destination : transportDestinations) {
                 // The radius threshold prevents transport permutations from including (almost) same origin and destination
                 if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
+                    Transport combined = new Transport(origin, destination);
                     transports
                         .computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
-                        .add(new Transport(origin, destination));
+                        .add(combined);
                 }
             }
         }
