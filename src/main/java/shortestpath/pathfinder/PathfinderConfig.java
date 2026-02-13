@@ -88,7 +88,7 @@ public class PathfinderConfig {
     private boolean bankVisited;
 
     // Centralized transport type enable/disable config
-    private TransportTypeConfig transportTypeConfig;
+    private final TransportTypeConfig transportTypeConfig;
 
     // POH-specific settings (not tied to a single TransportType)
     private boolean usePohFairyRing,
@@ -101,9 +101,9 @@ public class PathfinderConfig {
     private int costConsumableTeleportationItems;
     private int currencyThreshold;
     private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
-    private Map<Quest, QuestState> questStates = new HashMap<>();
-    private Map<Integer, Integer> varbitValues = new HashMap<>();
-    private Map<Integer, Integer> varPlayerValues = new HashMap<>();
+    private final Map<Quest, QuestState> questStates = new HashMap<>();
+    private final Map<Integer, Integer> varbitValues = new HashMap<>();
+    private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
 
     public ItemContainer bank = null;
 
@@ -219,7 +219,8 @@ public class PathfinderConfig {
         if (transport.isConsumable() && TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
             return costConsumableTeleportationItems;
         }
-        return transportTypeConfig.getCost(transport.getType());
+        int cost = transportTypeConfig.getCost(transport.getType());
+        return cost;
     }
 
     private Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations) {
@@ -303,17 +304,17 @@ public class PathfinderConfig {
         // to the landing tile, the BFS immediately discovers them when arriving via "Teleport to House"
         int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
         Set<Transport> pohTransports = new HashSet<>();
-        
+
         for (Map.Entry<Integer, Set<Transport>> entry : new HashSet<>(transports.entrySet())) {
             int origin = entry.getKey();
             int originX = WorldPointUtil.unpackWorldX(origin);
             int originY = WorldPointUtil.unpackWorldY(origin);
-            
+
             if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
                 pohTransports.addAll(entry.getValue());
             }
         }
-        
+
         if (!pohTransports.isEmpty()) {
             Set<Transport> existingAtLanding = transports.getOrDefault(pohLanding, new HashSet<>());
             existingAtLanding.addAll(pohTransports);
