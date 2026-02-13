@@ -1,11 +1,20 @@
 package shortestpath.transport;
 
 import lombok.Getter;
+import net.runelite.api.Skill;
 
 @Getter
 public enum TransportType {
     TRANSPORT("/transports/transports.tsv"),
-    AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv"),
+    AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv") {
+        @Override
+        public TransportType refine(int[] skillLevels) {
+            if (skillLevels[Skill.RANGED.ordinal()] > 1 || skillLevels[Skill.STRENGTH.ordinal()] > 1) {
+                return GRAPPLE_SHORTCUT;
+            }
+            return this;
+        }
+    },
     GRAPPLE_SHORTCUT(null),
     BOAT("/transports/boats.tsv"),
     CANOE("/transports/canoes.tsv"),
@@ -21,12 +30,27 @@ public enum TransportType {
     SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv"),
     SPIRIT_TREE("/transports/spirit_trees.tsv", 5),
     TELEPORTATION_BOX("/transports/teleportation_boxes.tsv"),
-    TELEPORTATION_ITEM("/transports/teleportation_items.tsv"),
+    TELEPORTATION_ITEM("/transports/teleportation_items.tsv") {
+        @Override
+        public boolean isTeleport() {
+            return true;
+        }
+    },
     TELEPORTATION_LEVER("/transports/teleportation_levers.tsv"),
-    TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv"),
+    TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv") {
+        @Override
+        public boolean isTeleport() {
+            return true;
+        }
+    },
     TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv"),
     TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv"),
-    TELEPORTATION_SPELL("/transports/teleportation_spells.tsv"),
+    TELEPORTATION_SPELL("/transports/teleportation_spells.tsv") {
+        @Override
+        public boolean isTeleport() {
+            return true;
+        }
+    },
     WILDERNESS_OBELISK("/transports/wilderness_obelisks.tsv"),
     ;
 
@@ -56,17 +80,14 @@ public enum TransportType {
      * and not teleports because they have a pre-defined origin and no
      * wilderness level limit.
      */
-    public static boolean isTeleport(TransportType transportType) {
-        if (transportType == null) {
-            return false;
-        }
-        switch (transportType) {
-            case TELEPORTATION_ITEM:
-            case TELEPORTATION_MINIGAME:
-            case TELEPORTATION_SPELL:
-                return true;
-            default:
-                return false;
-        }
+    public boolean isTeleport() {
+        return false;
+    }
+
+    /**
+     * Refines the TransportType based on the required skill levels.
+     */
+    public TransportType refine(int[] skillLevels) {
+        return this;
     }
 }
