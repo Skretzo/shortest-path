@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathPlugin;
@@ -14,8 +14,7 @@ import shortestpath.WorldPointUtil;
 
 @Slf4j
 public class TransportLoader {
-    private static final String DELIM_COLUMN = "\t";
-    private static final String PREFIX_COMMENT = "#";
+    private static final TsvParser tsvParser = new TsvParser();
 
     private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType) {
         addTransports(transports, path, transportType, 0);
@@ -31,36 +30,13 @@ public class TransportLoader {
     }
 
     public static void addTransportsFromContents(Map<Integer, Set<Transport>> transports, String contents, TransportType transportType, int radiusThreshold) {
-        Scanner scanner = new Scanner(contents);
-
-        // Header line is the first line in the file and will start with either '#' or '# '
-        String headerLine = scanner.nextLine();
-        headerLine = headerLine.startsWith(PREFIX_COMMENT + " ") ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
-        headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
-        String[] headers = headerLine.split(DELIM_COLUMN);
+        List<TransportRecord> records = tsvParser.parse(contents);
 
         Set<Transport> newTransports = new HashSet<>();
-
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-
-            if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
-                continue;
-            }
-
-            String[] fields = line.split(DELIM_COLUMN);
-            Map<String, String> fieldMap = new HashMap<>();
-            for (int i = 0; i < headers.length; i++) {
-                if (i < fields.length) {
-                    fieldMap.put(headers[i], fields[i]);
-                }
-            }
-
-            Transport transport = new Transport(fieldMap, transportType);
+        for (TransportRecord record : records) {
+            Transport transport = new Transport(record, transportType);
             newTransports.add(transport);
-
         }
-        scanner.close();
 
         /*
         * A transport with origin A and destination B is one-way and must
