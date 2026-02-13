@@ -6,6 +6,7 @@ import org.junit.Before;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.requirement.TransportItems;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -523,10 +524,10 @@ public class TransportLoaderTest {
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
         
-        Set<TransportVarbit> varbits = transport.getVarbits();
+        var varbits = transport.getVarbits();
         Assert.assertEquals("Should have one varbit requirement", 1, varbits.size());
         
-        TransportVarbit varbit = varbits.iterator().next();
+        var varbit = varbits.iterator().next();
         Assert.assertEquals("Varbit ID should be 123", 123, varbit.getId());
     }
 
@@ -540,12 +541,12 @@ public class TransportLoaderTest {
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
         
-        Set<TransportVarbit> varbits = transport.getVarbits();
+        var varbits = transport.getVarbits();
         Assert.assertEquals("Should have five varbit requirements", 5, varbits.size());
         
         // Verify all expected varbit IDs are present
         boolean hasEqual = false, hasGreater = false, hasSmaller = false, hasBitSet = false, hasCooldown = false;
-        for (TransportVarbit varbit : varbits) {
+        for (var varbit : varbits) {
             switch (varbit.getId()) {
                 case 123: hasEqual = true; break;
                 case 456: hasGreater = true; break;
@@ -571,12 +572,12 @@ public class TransportLoaderTest {
         int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
         Transport transport = getFirstTransport(transports.get(origin));
         
-        Set<TransportVarPlayer> varPlayers = transport.getVarPlayers();
+        var varPlayers = transport.getVarPlayers();
         Assert.assertEquals("Should have two varplayer requirements", 2, varPlayers.size());
         
         // Verify expected varplayer IDs are present
         boolean hasVarPlayer555 = false, hasVarPlayer666 = false;
-        for (TransportVarPlayer varPlayer : varPlayers) {
+        for (var varPlayer : varPlayers) {
             if (varPlayer.getId() == 555) hasVarPlayer555 = true;
             if (varPlayer.getId() == 666) hasVarPlayer666 = true;
         }

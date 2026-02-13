@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.transport.requirement;
 
 import java.util.Arrays;
 import lombok.Getter;

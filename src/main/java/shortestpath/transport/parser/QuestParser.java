@@ -1,9 +1,15 @@
-package shortestpath.transport;
+package shortestpath.transport.parser;
 
 import java.util.HashSet;
 import java.util.Set;
 import net.runelite.api.Quest;
 
+/**
+ * Parses quest requirements from TSV field values.
+ *
+ * <p>Format: Quest names separated by semicolons</p>
+ * <p>Example: {@code Dragon Slayer I;Recipe for Disaster}</p>
+ */
 public class QuestParser implements FieldParser<Set<Quest>> {
     private static final String DELIM_MULTI = ";";
 

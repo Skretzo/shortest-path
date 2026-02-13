@@ -32,12 +32,11 @@ import shortestpath.ItemVariations;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportItems;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
-import shortestpath.transport.TransportVarPlayer;
-import shortestpath.transport.TransportVarbit;
+import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
 public class PathfinderConfig {
     private static final List<Integer> RUNE_POUCHES = Arrays.asList(
@@ -275,11 +274,12 @@ public class PathfinderConfig {
                     }
                 }
 
-                for (TransportVarbit varbitRequirement : transport.getVarbits()) {
-                    varbitValues.put(varbitRequirement.getId(), client.getVarbitValue(varbitRequirement.getId()));
-                }
-                for (TransportVarPlayer varPlayerRequirement : transport.getVarPlayers()) {
-                    varPlayerValues.put(varPlayerRequirement.getId(), client.getVarpValue(varPlayerRequirement.getId()));
+                for (VarRequirement varRequirement : transport.getVarRequirements()) {
+                    if (varRequirement.isVarbit()) {
+                        varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
+                    } else {
+                        varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
+                    }
                 }
 
                 if (useTransport(transport) && hasRequiredItems(transport)) {
@@ -365,8 +365,8 @@ public class PathfinderConfig {
     }
 
     public boolean varbitChecks(Transport transport) {
-        for (TransportVarbit varbitRequirement : transport.getVarbits()) {
-            if (!varbitRequirement.check(varbitValues)) {
+        for (VarRequirement varRequirement : transport.getVarbits()) {
+            if (!varRequirement.check(varbitValues)) {
                 return false;
             }
         }
@@ -374,8 +374,8 @@ public class PathfinderConfig {
     }
 
     public boolean varPlayerChecks(Transport transport) {
-        for (TransportVarPlayer varPlayerRequirement : transport.getVarPlayers()) {
-            if (!varPlayerRequirement.check(varPlayerValues)) {
+        for (VarRequirement varRequirement : transport.getVarPlayers()) {
+            if (!varRequirement.check(varPlayerValues)) {
                 return false;
             }
         }

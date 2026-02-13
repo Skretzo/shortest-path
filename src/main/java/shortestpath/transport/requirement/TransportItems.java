@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.transport.requirement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,3 +139,4 @@ public class TransportItems {
         return requirements.hashCode();
     }
 }
+

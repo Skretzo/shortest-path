@@ -25,9 +25,9 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportItems;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.requirement.TransportItems;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

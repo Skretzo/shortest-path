@@ -1,7 +1,14 @@
-package shortestpath.transport;
+package shortestpath.transport.parser;
 
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.Transport;
 
+/**
+ * Parses world point coordinates from TSV field values.
+ *
+ * <p>Format: {@code x y plane} (space-separated)</p>
+ * <p>Empty values are treated as location permutations (for fairy rings, etc.)</p>
+ */
 public class WorldPointParser implements FieldParser<Integer> {
     private static final String DELIM_SPACE = " ";
 

@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.transport.parser;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -155,5 +155,4 @@ public class TransportRecord {
         return fields;
     }
 }
-
 

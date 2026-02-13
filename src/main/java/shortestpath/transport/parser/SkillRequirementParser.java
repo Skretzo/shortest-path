@@ -1,8 +1,15 @@
-package shortestpath.transport;
+package shortestpath.transport.parser;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Skill;
 
+/**
+ * Parses skill level requirements from TSV field values.
+ *
+ * <p>Format: {@code level skillName} (space-separated), multiple separated by semicolons</p>
+ * <p>Example: {@code 70 Agility;50 Strength}</p>
+ * <p>Special skills: "Total level", "Combat level", "Quest points"</p>
+ */
 @Slf4j
 public class SkillRequirementParser implements FieldParser<int[]> {
     private static final String DELIM_SPACE = " ";

@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.transport.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,6 +8,9 @@ import java.util.Scanner;
 
 /**
  * Parses TSV file contents into TransportRecord objects.
+ *
+ * <p>TSV files should have a header line (optionally starting with #)
+ * followed by data lines. Empty lines and lines starting with # are ignored.</p>
  */
 public class TsvParser {
     private static final String DELIM_COLUMN = "\t";
@@ -77,5 +80,4 @@ public class TsvParser {
         return new TransportRecord(fieldMap);
     }
 }
-
 

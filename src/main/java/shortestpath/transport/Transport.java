@@ -7,6 +7,15 @@ import lombok.Getter;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.parser.FieldParser;
+import shortestpath.transport.parser.ItemRequirementParser;
+import shortestpath.transport.parser.QuestParser;
+import shortestpath.transport.parser.SkillRequirementParser;
+import shortestpath.transport.parser.TransportRecord;
+import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.parser.VarRequirementParser;
+import shortestpath.transport.parser.WorldPointParser;
+import shortestpath.transport.requirement.TransportItems;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -64,13 +73,9 @@ public class Transport {
     @Getter
     private String objectInfo = null;
 
-    /** Any varbits to check for the transport to be valid. All must pass for a transport to be valid */
+    /** Variable requirements (varbits and varplayers) for the transport to be valid. All must pass. */
     @Getter
-    private final Set<TransportVarbit> varbits = new HashSet<>();
-
-    /** Any varplayers to check for the transport to be valid. All must pass for a transport to be valid */
-    @Getter
-    private final Set<TransportVarPlayer> varPlayers = new HashSet<>();
+    private final Set<VarRequirement> varRequirements = new HashSet<>();
 
     /** Creates a new transport from an origin-only transport
      * and a destination-only transport, and merges requirements */
@@ -89,10 +94,8 @@ public class Transport {
             .isConsumable(origin.isConsumable || destination.isConsumable)
             .maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel))
             .objectInfo(origin.objectInfo)
-            .varbits(origin.varbits)
-            .varbits(destination.varbits)
-            .varPlayers(origin.varPlayers)
-            .varPlayers(destination.varPlayers);
+            .varRequirements(origin.varRequirements)
+            .varRequirements(destination.varRequirements);
 
         Transport builtTransport = builder.build();
 
@@ -107,8 +110,7 @@ public class Transport {
         this.isConsumable = builtTransport.isConsumable;
         this.maxWildernessLevel = builtTransport.maxWildernessLevel;
         this.objectInfo = builtTransport.objectInfo;
-        this.varbits.addAll(builtTransport.varbits);
-        this.varPlayers.addAll(builtTransport.varPlayers);
+        this.varRequirements.addAll(builtTransport.varRequirements);
     }
 
     Transport(Map<String, String> fieldMap, TransportType transportType) {
@@ -146,8 +148,7 @@ public class Transport {
         this.isConsumable = builtTransport.isConsumable;
         this.maxWildernessLevel = builtTransport.maxWildernessLevel;
         this.objectInfo = builtTransport.objectInfo;
-        this.varbits.addAll(builtTransport.varbits);
-        this.varPlayers.addAll(builtTransport.varPlayers);
+        this.varRequirements.addAll(builtTransport.varRequirements);
     }
 
     @Override
@@ -166,6 +167,34 @@ public class Transport {
         return !quests.isEmpty();
     }
 
+    /**
+     * Gets varbit requirements (filtered from varRequirements).
+     * For backward compatibility with code that needs separate varbit access.
+     */
+    public Set<VarRequirement> getVarbits() {
+        Set<VarRequirement> varbits = new HashSet<>();
+        for (VarRequirement req : varRequirements) {
+            if (req.isVarbit()) {
+                varbits.add(req);
+            }
+        }
+        return varbits;
+    }
+
+    /**
+     * Gets varplayer requirements (filtered from varRequirements).
+     * For backward compatibility with code that needs separate varplayer access.
+     */
+    public Set<VarRequirement> getVarPlayers() {
+        Set<VarRequirement> varPlayers = new HashSet<>();
+        for (VarRequirement req : varRequirements) {
+            if (req.isVarPlayer()) {
+                varPlayers.add(req);
+            }
+        }
+        return varPlayers;
+    }
+
     public static class TransportBuilder {
         private int origin = UNDEFINED_ORIGIN;
         private int destination = UNDEFINED_DESTINATION;
@@ -178,14 +207,13 @@ public class Transport {
         private boolean isConsumable = false;
         private int maxWildernessLevel = -1;
         private String objectInfo = null;
-        private final Set<TransportVarbit> varbits = new HashSet<>();
-        private final Set<TransportVarPlayer> varPlayers = new HashSet<>();
+        private final Set<VarRequirement> varRequirements = new HashSet<>();
 
         private final FieldParser<int[]> skillParser = new SkillRequirementParser();
         private final FieldParser<TransportItems> itemParser = new ItemRequirementParser();
         private final FieldParser<Set<Quest>> questParser = new QuestParser();
-        private final FieldParser<Set<TransportVarbit>> varbitParser = new TransportVarbitParser();
-        private final FieldParser<Set<TransportVarPlayer>> varPlayerParser = new TransportVarPlayerParser();
+        private final VarRequirementParser varbitParser = VarRequirementParser.forVarbits();
+        private final VarRequirementParser varPlayerParser = VarRequirementParser.forVarPlayers();
         private final FieldParser<Integer> worldPointParser = new WorldPointParser();
 
         public TransportBuilder origin(int origin) {
@@ -302,23 +330,18 @@ public class Transport {
             return this;
         }
 
-        public TransportBuilder varbits(Set<TransportVarbit> varbits) {
-            this.varbits.addAll(varbits);
+        public TransportBuilder varRequirements(Set<VarRequirement> requirements) {
+            this.varRequirements.addAll(requirements);
             return this;
         }
 
         public TransportBuilder varbits(String value) {
-            this.varbits.addAll(varbitParser.parse(value));
-            return this;
-        }
-
-        public TransportBuilder varPlayers(Set<TransportVarPlayer> varPlayers) {
-            this.varPlayers.addAll(varPlayers);
+            this.varRequirements.addAll(varbitParser.parse(value));
             return this;
         }
 
         public TransportBuilder varPlayers(String value) {
-            this.varPlayers.addAll(varPlayerParser.parse(value));
+            this.varRequirements.addAll(varPlayerParser.parse(value));
             return this;
         }
 
@@ -336,8 +359,7 @@ public class Transport {
             transport.isConsumable = this.isConsumable;
             transport.maxWildernessLevel = this.maxWildernessLevel;
             transport.objectInfo = this.objectInfo;
-            transport.varbits.addAll(this.varbits);
-            transport.varPlayers.addAll(this.varPlayers);
+            transport.varRequirements.addAll(this.varRequirements);
 
             // Post-build validation/refinement
             if (transport.type != null && transport.type.isTeleport()) {

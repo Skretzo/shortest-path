@@ -1,11 +1,20 @@
-package shortestpath.transport;
+package shortestpath.transport.parser;
 
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ItemVariations;
 import shortestpath.Util;
+import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
+/**
+ * Parses item requirements from TSV field values.
+ *
+ * <p>Format: {@code ITEM_NAME=quantity} with AND (&amp;) and OR (|) operators</p>
+ * <p>Example: {@code AIR_RUNE=3&FIRE_RUNE=2} (need both)</p>
+ * <p>Example: {@code DRAMEN_STAFF=1|LUNAR_STAFF=1} (need either)</p>
+ */
 @Slf4j
 public class ItemRequirementParser implements FieldParser<TransportItems> {
     private static final String DELIM_STATE = "=";
