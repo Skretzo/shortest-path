@@ -9,7 +9,6 @@ import shortestpath.transport.parser.*;
 import shortestpath.transport.requirement.TransportItems;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
