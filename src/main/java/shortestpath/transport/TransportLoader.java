@@ -117,29 +117,13 @@ public class TransportLoader {
 
     public static HashMap<Integer, Set<Transport>> loadAllFromResources() {
         HashMap<Integer, Set<Transport>> transports = new HashMap<>();
-        addTransports(transports, "/transports/transports.tsv", TransportType.TRANSPORT);
-        addTransports(transports, "/transports/agility_shortcuts.tsv", TransportType.AGILITY_SHORTCUT);
-        addTransports(transports, "/transports/boats.tsv", TransportType.BOAT);
-        addTransports(transports, "/transports/canoes.tsv", TransportType.CANOE);
-        addTransports(transports, "/transports/charter_ships.tsv", TransportType.CHARTER_SHIP);
-        addTransports(transports, "/transports/ships.tsv", TransportType.SHIP);
-        addTransports(transports, "/transports/fairy_rings.tsv", TransportType.FAIRY_RING);
-        addTransports(transports, "/transports/gnome_gliders.tsv", TransportType.GNOME_GLIDER, 6);
-        addTransports(transports, "/transports/hot_air_balloons.tsv", TransportType.HOT_AIR_BALLOON, 7);
-        addTransports(transports, "/transports/magic_carpets.tsv", TransportType.MAGIC_CARPET);
-        addTransports(transports, "/transports/magic_mushtrees.tsv", TransportType.MAGIC_MUSHTREE, 5);
-        addTransports(transports, "/transports/minecarts.tsv", TransportType.MINECART);
-        addTransports(transports, "/transports/quetzals.tsv", TransportType.QUETZAL);
-        addTransports(transports, "/transports/seasonal_transports.tsv", TransportType.SEASONAL_TRANSPORTS);
-        addTransports(transports, "/transports/spirit_trees.tsv", TransportType.SPIRIT_TREE, 5);
-        addTransports(transports, "/transports/teleportation_items.tsv", TransportType.TELEPORTATION_ITEM);
-        addTransports(transports, "/transports/teleportation_boxes.tsv", TransportType.TELEPORTATION_BOX);
-        addTransports(transports, "/transports/teleportation_levers.tsv", TransportType.TELEPORTATION_LEVER);
-        addTransports(transports, "/transports/teleportation_minigames.tsv", TransportType.TELEPORTATION_MINIGAME);
-        addTransports(transports, "/transports/teleportation_portals.tsv", TransportType.TELEPORTATION_PORTAL);
-        addTransports(transports, "/transports/teleportation_portals_poh.tsv", TransportType.TELEPORTATION_PORTAL_POH);
-        addTransports(transports, "/transports/teleportation_spells.tsv", TransportType.TELEPORTATION_SPELL);
-        addTransports(transports, "/transports/wilderness_obelisks.tsv", TransportType.WILDERNESS_OBELISK);
+
+        for (TransportType type : TransportType.values()) {
+            if (type.hasResourcePath()) {
+                addTransports(transports, type.getResourcePath(), type, type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
+            }
+        }
+
         return transports;
     }
 }
