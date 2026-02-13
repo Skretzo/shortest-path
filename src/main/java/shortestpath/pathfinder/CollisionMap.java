@@ -1,12 +1,10 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
+
+import java.util.*;
+
 
 public class CollisionMap {
 
@@ -74,7 +72,7 @@ public class CollisionMap {
     private final List<Node> neighbors = new ArrayList<>(16);
     private final boolean[] traversable = new boolean[8];
 
-    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, Map<Integer, Integer> pendingTransportCosts) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
@@ -86,13 +84,27 @@ public class CollisionMap {
         }
 
         @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>)Collections.EMPTY_SET);
+        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>) Collections.EMPTY_SET);
 
         // Transports are pre-filtered by PathfinderConfig.refreshTransports
         // Thus any transports in the list are guaranteed to be valid per the user's settings
+        // Allow adding a transport if:
+        // 1. Destination not visited (not yet processed)
+        // 2. Destination not pending, OR this path is cheaper than the pending one
         for (Transport transport : transports) {
-            if (visited.get(transport.getDestination())) continue;
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), config.getAdditionalTransportCost(transport)));
+            int dest = transport.getDestination();
+            if (visited.get(dest)) {
+                continue; // Already processed via a path
+            }
+            int additionalCost = config.getAdditionalTransportCost(transport);
+            int totalCost = (node.cost) + transport.getDuration() + additionalCost;
+
+            // Check if we already have pending transport to this destination
+            Integer existingCost = pendingTransportCosts.get(dest);
+            if (existingCost != null && totalCost >= existingCost) {
+                continue; // Already have a cheaper or equal path pending
+            }
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost));
         }
 
         if (isBlocked(x, y, z)) {
@@ -134,7 +146,7 @@ public class CollisionMap {
                 // The transport starts from a blocked adjacent tile, e.g. fairy ring
                 // Only checks non-teleport transports (includes portals and levers, but not items and spells)
                 @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>)Collections.EMPTY_SET);
+                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>) Collections.EMPTY_SET);
                 for (Transport transport : neighborTransports) {
                     if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || visited.get(transport.getOrigin())) {
                         continue;
