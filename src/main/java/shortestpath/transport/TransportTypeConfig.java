@@ -6,29 +6,28 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 
-import java.lang.reflect.Method;
 import java.util.EnumMap;
 import java.util.Map;
 
 /**
  * Manages the enabled/disabled state and cost thresholds of each TransportType based on config.
- * This centralizes the config reading logic and automatically wires config keys
- * from TransportType to ShortestPathConfig methods.
+ * This centralizes the config reading logic and automatically wires config methods
+ * from TransportType to ShortestPathConfig.
  *
  * <p>When adding a new TransportType with config options, you only need to:
  * <ol>
- *   <li>Add the config methods to ShortestPathConfig with matching keyNames</li>
- *   <li>Add the enum entry to TransportType with the configKey and costKey</li>
+ *   <li>Add the config methods to ShortestPathConfig</li>
+ *   <li>Add the enum entry to TransportType with method references for the enabledGetter and costGetter</li>
  * </ol>
- * This class will automatically pick up the new config keys via reflection.
+ * This class will automatically pick up the new config getters.
  *
  * <p><b>Special cases:</b>
  * <ul>
  *   <li>{@link TransportType#TELEPORTATION_ITEM} and {@link TransportType#TELEPORTATION_BOX}
- *       have no configKey because they are controlled by the {@link TeleportationItem} enum
+ *       have no enabledGetter because they are controlled by the {@link TeleportationItem} enum
  *       via {@code useTeleportationItems} config. The per-transport filtering is handled
  *       in {@code PathfinderConfig.checkTeleportationItemRules()}.</li>
- *   <li>{@link TransportType#TRANSPORT} has no configKey because it's the base transport
+ *   <li>{@link TransportType#TRANSPORT} has no enabledGetter because it's the base transport
  *       type and is always enabled.</li>
  * </ul>
  */
@@ -47,7 +46,7 @@ public class TransportTypeConfig {
 
     /**
      * Refreshes all transport type enabled states and cost thresholds from config.
-     * Uses reflection to automatically wire config keys from TransportType to config methods.
+     * Uses the functional getters defined in TransportType to read config values.
      */
     public void refresh() {
         // Cache the teleportation item setting
@@ -62,7 +61,7 @@ public class TransportTypeConfig {
 
     /**
      * Determines the enabled state for a transport type.
-     * Uses the configKey from TransportType to look up the config method via reflection.
+     * Uses the enabledGetter function from TransportType to look up the config value.
      *
      * <p>Special handling for teleportation item types which are controlled by
      * the TeleportationItem enum rather than a simple boolean.
@@ -75,49 +74,27 @@ public class TransportTypeConfig {
             return teleportationItemSetting != TeleportationItem.NONE;
         }
 
-        String configKey = type.getConfigKey();
-
-        // No config key means always enabled (controlled elsewhere or not configurable)
-        if (configKey == null) {
+        // No enabled getter means always enabled (controlled elsewhere or not configurable)
+        if (!type.hasEnabledGetter()) {
             return true;
         }
 
-        try {
-            Method method = ShortestPathConfig.class.getMethod(configKey);
-            boolean configValue = (boolean) method.invoke(config);
-            return ShortestPathPlugin.override(configKey, configValue);
-        } catch (NoSuchMethodException e) {
-            log.warn("Config method not found for transport type {}: {}", type, configKey);
-            return true;
-        } catch (Exception e) {
-            log.warn("Error reading config for transport type {}: {}", type, e.getMessage());
-            return true;
-        }
+        boolean configValue = type.getEnabledGetter().apply(config);
+        return ShortestPathPlugin.override(type, configValue);
     }
 
     /**
      * Determines the cost threshold for a transport type.
-     * Uses the costKey from TransportType to look up the config method via reflection.
+     * Uses the costGetter function from TransportType to look up the config value.
      */
     private int getCostThreshold(TransportType type) {
-        String costKey = type.getCostKey();
-
-        // No cost key means no additional cost
-        if (costKey == null) {
+        // No cost getter means no additional cost
+        if (!type.hasCostGetter()) {
             return 0;
         }
 
-        try {
-            Method method = ShortestPathConfig.class.getMethod(costKey);
-            int configValue = (int) method.invoke(config);
-            return ShortestPathPlugin.override(costKey, configValue);
-        } catch (NoSuchMethodException e) {
-            log.warn("Cost config method not found for transport type {}: {}", type, costKey);
-            return 0;
-        } catch (Exception e) {
-            log.warn("Error reading cost config for transport type {}: {}", type, e.getMessage());
-            return 0;
-        }
+        int configValue = type.getCostGetter().apply(config);
+        return ShortestPathPlugin.override(type, configValue);
     }
 
     /**
