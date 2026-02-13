@@ -19,7 +19,6 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
 
 public class PathTileOverlay extends Overlay {
     private final Client client;
@@ -51,7 +50,7 @@ public class PathTileOverlay extends Overlay {
 
             StringBuilder s = new StringBuilder();
             for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>())) {
-                if (b == null || TransportType.isTeleport(b.getType())) {
+                if (b == null || (b.getType() != null && b.getType().isTeleport())) {
                     continue; // skip teleports
                 }
                 PrimitiveIntList destinations = WorldPointUtil.toLocalInstance(client, b.getDestination());
