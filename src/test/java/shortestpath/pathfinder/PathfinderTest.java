@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import shortestpath.ItemVariations;
-import shortestpath.JewelleryBoxTier;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
@@ -211,14 +210,6 @@ public class PathfinderTest {
         when(config.useSpiritTrees()).thenReturn(true);
         when(client.getVarbitValue(any(Integer.class))).thenReturn(20);
         testTransportLength(2, TransportType.SPIRIT_TREE);
-    }
-
-    @Test
-    public void testTeleportationBoxes() {
-        when(config.usePoh()).thenReturn(true);
-        when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.ORNATE);
-        when(config.usePohMountedItems()).thenReturn(true);
-        testTransportLength(2, TransportType.TELEPORTATION_BOX);
     }
 
     @Test
@@ -544,6 +535,14 @@ public class PathfinderTest {
         for (int origin : transports.keySet()) {
             for (Transport transport : transports.get(origin)) {
                 if (transportType.equals(transport.getType())) {
+                    // Skip POH transports - POH has no collision data, so paths starting
+                    // inside POH cannot be directly calculated. POH transports are remapped
+                    // to the house landing tile in PathfinderConfig.refreshTransports().
+                    int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+                    int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+                    if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
+                        continue;
+                    }
                     counter++;
                     assertEquals(transport.toString(), expectedLength, calculateTransportLength(transport));
                 }
