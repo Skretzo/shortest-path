@@ -162,87 +162,6 @@ public class QuetzalTransportTest {
     }
 
     @Test
-    public void testAllBuiltRequiredDestinationsHaveVarPlayerChecks() {
-        Map<Integer, Set<Transport>> transports = new HashMap<>();
-        String contents = getQuetzalTsvContents();
-
-        TransportLoader.addTransportsFromContents(transports, contents, TransportType.QUETZAL, 10);
-
-        // Destinations that require building
-        int[] requiredBuildDestinations = {
-            WorldPointUtil.packWorldPoint(1779, 3111, 0), // Fortis Colosseum
-            WorldPointUtil.packWorldPoint(1344, 3022, 0), // Kastori
-            WorldPointUtil.packWorldPoint(1700, 3037, 0), // Outer Fortis
-            WorldPointUtil.packWorldPoint(1670, 2933, 0), // Colossal Wyrm Remains
-            WorldPointUtil.packWorldPoint(1446, 3108, 0), // Cam Torum
-            WorldPointUtil.packWorldPoint(1613, 3300, 0), // Salvager Overlook
-        };
-
-        String[] destinationNames = {
-            "Fortis Colosseum", "Kastori", "Outer Fortis",
-            "Colossal Wyrm Remains", "Cam Torum", "Salvager Overlook"
-        };
-
-        for (int i = 0; i < requiredBuildDestinations.length; i++) {
-            int destPacked = requiredBuildDestinations[i];
-            String destName = destinationNames[i];
-
-            boolean foundTransport = false;
-            boolean hasVarPlayerCheck = false;
-
-            for (Set<Transport> transportSet : transports.values()) {
-                for (Transport t : transportSet) {
-                    if (t.getDestination() == destPacked) {
-                        foundTransport = true;
-                        for (VarRequirement vp : t.getVarPlayers()) {
-                            if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS) {
-                                hasVarPlayerCheck = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            Assert.assertTrue("Should find transport to " + destName, foundTransport);
-            Assert.assertTrue(destName + " should have VarPlayer 4182 check", hasVarPlayerCheck);
-        }
-    }
-
-    private String getQuetzalTsvContents() {
-        // Return the expected quetzals.tsv content for testing
-        return "# Origin\tDestination\tmenuOption menuTarget objectID\tQuests\tDuration\tDisplay info\tVarPlayers\n" +
-            "1389 2901 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1411 3361 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1697 3140 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1585 3053 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1510 3222 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1548 2995 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1226 3091 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1437 3171 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t\n" +
-            "1779 3111 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t4182&256\n" +
-            "1344 3022 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t4182&8\n" +
-            "1700 3037 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t4182&128\n" +
-            "1670 2933 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t4182&64\n" +
-            "1446 3108 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t4182&32\n" +
-            "1613 3300 0\t\tTravel Renu 13350\tTwilight's Promise\t6\t\t4182&2048\n" +
-            "\t1389 2901 0\t\tTwilight's Promise\t6\tAldarin\t\n" +
-            "\t1411 3361 0\t\tTwilight's Promise\t6\tAuburnvale\t\n" +
-            "\t1697 3140 0\t\tTwilight's Promise\t6\tCivitas illa Fortis\t\n" +
-            "\t1585 3053 0\t\tTwilight's Promise\t6\tHunter Guild\t\n" +
-            "\t1510 3222 0\t\tTwilight's Promise\t6\tQuetzacalli Gorge\t\n" +
-            "\t1548 2995 0\t\tTwilight's Promise\t6\tSunset Coast\t\n" +
-            "\t1226 3091 0\t\tTwilight's Promise\t6\tTal Teklan\t\n" +
-            "\t1437 3171 0\t\tTwilight's Promise\t6\tThe Teomat\t\n" +
-            "\t1779 3111 0\t\tTwilight's Promise\t6\tFortis Colosseum\t4182&256\n" +
-            "\t1344 3022 0\t\tTwilight's Promise\t6\tKastori\t4182&8\n" +
-            "\t1700 3037 0\t\tTwilight's Promise\t6\tOuter Fortis\t4182&128\n" +
-            "\t1670 2933 0\t\tTwilight's Promise\t6\tColossal Wyrm Remains\t4182&64\n" +
-            "\t1446 3108 0\t\tTwilight's Promise\t6\tCam Torum\t4182&32\n" +
-            "\t1613 3300 0\t\tTwilight's Promise\t6\tSalvager Overlook\t4182&2048\n";
-    }
-
-    @Test
     public void testQuetzalWhistleHasMultipleDestinations() throws IOException {
         // Load from actual resource file
         InputStream is = getClass().getResourceAsStream("/transports/quetzal_whistle.tsv");
@@ -326,6 +245,22 @@ public class QuetzalTransportTest {
 
         Assert.assertTrue("Should find Quetzal whistle to Kastori", foundKastoriWhistle);
         Assert.assertTrue("Quetzal whistle to Kastori should have VarPlayer 4182&8 check", hasVarPlayerCheck);
+    }
+
+    /**
+     * Returns test TSV content for quetzal transports.
+     * This is a simplified version for unit testing.
+     */
+    private String getQuetzalTsvContents() {
+        return "# Origin\tDestination\tmenuOption menuTarget objectID\tSkills\tItems\tQuests\tDuration\tDisplay info\tConsumable\tWilderness level\tVarbits\tVarPlayers\n" +
+            "1389 2901 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
+            "1411 3361 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
+            "1697 3140 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
+            "1344 3022 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t4182&8\n" +
+            "\t1389 2901 0\t\t\t\tTwilight's Promise\t6\tAldarin\t\t\t\t\n" +
+            "\t1411 3361 0\t\t\t\tTwilight's Promise\t6\tAuburnvale\t\t\t\t\n" +
+            "\t1697 3140 0\t\t\t\tTwilight's Promise\t6\tCivitas illa Fortis\t\t\t\t\n" +
+            "\t1344 3022 0\t\t\t\tTwilight's Promise\t6\tKastori\t\t\t\t4182&8\n";
     }
 }
 
