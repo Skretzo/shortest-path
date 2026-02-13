@@ -15,13 +15,9 @@ import java.util.*;
 public class TransportLoader {
     private static final TsvParser tsvParser = new TsvParser();
 
-    private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType) {
-        addTransports(transports, path, transportType, 0);
-    }
-
     private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType, int radiusThreshold) {
         try {
-            String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
+            String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))), StandardCharsets.UTF_8);
             addTransportsFromContents(transports, s, transportType, radiusThreshold);
         } catch (IOException e) {
             throw new RuntimeException(e);
