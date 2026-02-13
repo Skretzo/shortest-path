@@ -245,14 +245,14 @@ public class QuetzalTransportTest {
     @Test
     public void testQuetzalWhistleHasMultipleDestinations() throws IOException {
         // Load from actual resource file
-        InputStream is = getClass().getResourceAsStream("/transports/teleportation_items.tsv");
-        Assert.assertNotNull("teleportation_items.tsv resource should exist", is);
+        InputStream is = getClass().getResourceAsStream("/transports/quetzal_whistle.tsv");
+        Assert.assertNotNull("quetzal_whistle.tsv resource should exist", is);
 
         String contents = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         is.close();
 
         Map<Integer, Set<Transport>> transports = new HashMap<>();
-        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.QUETZAL_WHISTLE, 0);
 
         // Count Quetzal whistle destinations
         int quetzalWhistleDestinations = 0;
@@ -291,14 +291,14 @@ public class QuetzalTransportTest {
     @Test
     public void testQuetzalWhistleKastoriHasVarPlayerCheck() throws IOException {
         // Load from actual resource file
-        InputStream is = getClass().getResourceAsStream("/transports/teleportation_items.tsv");
-        Assert.assertNotNull("teleportation_items.tsv resource should exist", is);
+        InputStream is = getClass().getResourceAsStream("/transports/quetzal_whistle.tsv");
+        Assert.assertNotNull("quetzal_whistle.tsv resource should exist", is);
 
         String contents = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         is.close();
 
         Map<Integer, Set<Transport>> transports = new HashMap<>();
-        TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
+        TransportLoader.addTransportsFromContents(transports, contents, TransportType.QUETZAL_WHISTLE, 0);
 
         int kastoriPacked = WorldPointUtil.packWorldPoint(1344, 3022, 0);
         boolean foundKastoriWhistle = false;
