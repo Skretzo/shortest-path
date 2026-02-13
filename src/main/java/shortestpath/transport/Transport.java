@@ -6,8 +6,6 @@ import java.util.Set;
 import lombok.Getter;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
-import shortestpath.ItemVariations;
-import shortestpath.Util;
 import shortestpath.WorldPointUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,11 +18,6 @@ public class Transport {
     public static final int UNDEFINED_DESTINATION = WorldPointUtil.UNDEFINED;
     /** A location placeholder different from null to use for permutation transports */
     public static final int LOCATION_PERMUTATION = WorldPointUtil.packWorldPoint(-1, -1, 1);
-    private static final String DELIM_SPACE = " ";
-    private static final String DELIM_MULTI = ";";
-    private static final String DELIM_STATE = "=";
-    private static final String DELIM_AND = "&";
-    private static final String DELIM_OR = "|";
 
     /** The starting point of this transport */
     @Getter
@@ -82,233 +75,79 @@ public class Transport {
     /** Creates a new transport from an origin-only transport
      * and a destination-only transport, and merges requirements */
     Transport(Transport origin, Transport destination) {
-        this.origin = origin.origin;
-        this.destination = destination.destination;
+        TransportBuilder builder = new TransportBuilder()
+            .origin(origin.origin)
+            .destination(destination.destination)
+            .type(origin.type)
+            .startSkillLevels(origin.skillLevels)
+            .startSkillLevels(destination.skillLevels)
+            .quests(origin.quests)
+            .quests(destination.quests)
+            .itemRequirements(destination.itemRequirements)
+            .duration(Math.max(origin.duration, destination.duration))
+            .displayInfo(destination.displayInfo)
+            .isConsumable(origin.isConsumable || destination.isConsumable)
+            .maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel))
+            .objectInfo(origin.objectInfo)
+            .varbits(origin.varbits)
+            .varbits(destination.varbits)
+            .varPlayers(origin.varPlayers)
+            .varPlayers(destination.varPlayers);
 
-        for (int i = 0; i < skillLevels.length; i++) {
-            this.skillLevels[i] = Math.max(
-                origin.skillLevels[i],
-                destination.skillLevels[i]);
-        }
+        Transport builtTransport = builder.build();
 
-        this.quests.addAll(origin.quests);
-        this.quests.addAll(destination.quests);
-
-        this.itemRequirements = destination.itemRequirements;
-
-        this.type = origin.type;
-
-        this.duration = Math.max(
-            origin.duration,
-            destination.duration);
-
-        this.displayInfo = destination.displayInfo;
-
-        this.isConsumable |= origin.isConsumable;
-        this.isConsumable |= destination.isConsumable;
-
-        this.maxWildernessLevel = Math.max(
-            origin.maxWildernessLevel,
-            destination.maxWildernessLevel);
-
-        this.objectInfo = origin.objectInfo;
-
-        this.varbits.addAll(origin.varbits);
-        this.varbits.addAll(destination.varbits);
-
-        this.varPlayers.addAll(origin.varPlayers);
-        this.varPlayers.addAll(destination.varPlayers);
+        this.origin = builtTransport.origin;
+        this.destination = builtTransport.destination;
+        System.arraycopy(builtTransport.skillLevels, 0, this.skillLevels, 0, this.skillLevels.length);
+        this.quests = builtTransport.quests;
+        this.itemRequirements = builtTransport.itemRequirements;
+        this.type = builtTransport.type;
+        this.duration = builtTransport.duration;
+        this.displayInfo = builtTransport.displayInfo;
+        this.isConsumable = builtTransport.isConsumable;
+        this.maxWildernessLevel = builtTransport.maxWildernessLevel;
+        this.objectInfo = builtTransport.objectInfo;
+        this.varbits.addAll(builtTransport.varbits);
+        this.varPlayers.addAll(builtTransport.varPlayers);
     }
 
     Transport(Map<String, String> fieldMap, TransportType transportType) {
-        String value;
+        this(new TransportRecord(fieldMap), transportType);
+    }
 
-        // If the origin field is null the transport is a teleportation item or spell
-        // If the origin field has 3 elements it is a coordinate of a transport
-        // Otherwise it is a transport that needs to be expanded into all permutations (e.g. fairy ring)
-        if ((value = fieldMap.get("Origin")) != null) {
-            String[] originArray = value.split(DELIM_SPACE);
-            origin = originArray.length == 3 ? WorldPointUtil.packWorldPoint(
-                Integer.parseInt(originArray[0]),
-                Integer.parseInt(originArray[1]),
-                Integer.parseInt(originArray[2])) : LOCATION_PERMUTATION;
-        }
+    Transport(TransportRecord record, TransportType transportType) {
+        TransportBuilder builder = new TransportBuilder();
+        builder.type(transportType);
 
-        if ((value = fieldMap.get("Destination")) != null) {
-            String[] destinationArray = value.split(DELIM_SPACE);
-            destination = destinationArray.length == 3 ? WorldPointUtil.packWorldPoint(
-                Integer.parseInt(destinationArray[0]),
-                Integer.parseInt(destinationArray[1]),
-                Integer.parseInt(destinationArray[2])) : LOCATION_PERMUTATION;
-        }
+        // Origin/Destination use hasKey because empty string means LOCATION_PERMUTATION
+        if (record.hasKey(TransportRecord.Fields.ORIGIN)) builder.origin(record.getOrigin());
+        if (record.hasKey(TransportRecord.Fields.DESTINATION)) builder.destination(record.getDestination());
+        if (record.has(TransportRecord.Fields.SKILLS)) builder.skillLevels(record.getSkills());
+        if (record.has(TransportRecord.Fields.ITEMS)) builder.itemRequirements(record.getItems());
+        if (record.has(TransportRecord.Fields.QUESTS)) builder.quests(record.getQuests());
+        if (record.has(TransportRecord.Fields.DURATION)) builder.duration(record.getDuration());
+        if (record.has(TransportRecord.Fields.DISPLAY_INFO)) builder.displayInfo(record.getDisplayInfo());
+        if (record.has(TransportRecord.Fields.CONSUMABLE)) builder.isConsumable(record.getConsumable());
+        if (record.has(TransportRecord.Fields.WILDERNESS_LEVEL)) builder.maxWildernessLevel(record.getWildernessLevel());
+        if (record.has(TransportRecord.Fields.OBJECT_INFO)) builder.objectInfo(record.getObjectInfo());
+        if (record.has(TransportRecord.Fields.VARBITS)) builder.varbits(record.getVarbits());
+        if (record.has(TransportRecord.Fields.VAR_PLAYERS)) builder.varPlayers(record.getVarPlayers());
 
-        if ((value = fieldMap.get("Skills")) != null) {
-            String[] skillRequirements = value.split(DELIM_MULTI);
+        Transport builtTransport = builder.build();
 
-            try {
-                for (String requirement : skillRequirements) {
-                    if (requirement.isEmpty()) {
-                        continue;
-                    }
-                    String[] levelAndSkill = requirement.split(DELIM_SPACE);
-                    assert levelAndSkill.length == 2 : "Invalid level and skill: '" + requirement + "'";
-
-                    int level = Integer.parseInt(levelAndSkill[0]);
-                    String skillName = levelAndSkill[1] == null ? "" : levelAndSkill[1];
-
-                    Skill[] skills = Skill.values();
-                    int i = 0;
-                    for (; i < skills.length; i++) {
-                        if (skills[i].getName().equals(skillName)) {
-                            skillLevels[i] = level;
-                        }
-                    }
-                    if (skillName.toLowerCase().startsWith("total")) {
-                        skillLevels[i] = level;
-                    }
-                    i++;
-                    if (skillName.toLowerCase().startsWith("combat")) {
-                        skillLevels[i] = level;
-                    }
-                    i++;
-                    if (skillName.toLowerCase().startsWith("quest")) {
-                        skillLevels[i] = level;
-                    }
-                }
-            } catch (NumberFormatException e) {
-                log.error("Invalid level and skill: " + value);
-            }
-        }
-
-        if ((value = fieldMap.get("Items")) != null && !value.isEmpty()) {
-            value = value.replace(DELIM_SPACE, "");
-            value = value.replace(DELIM_AND + DELIM_AND, DELIM_AND);
-            value = value.replace(DELIM_OR + DELIM_OR, DELIM_OR);
-            value = value.toUpperCase();
-            String[] itemVariationAndQuantityList = value.split(DELIM_AND);
-            try {
-                int n = itemVariationAndQuantityList.length;
-                int[][] items = new int[n][];
-                int[][] staves = new int[n][];
-                int[][] offhands = new int[n][];
-                int[] quantities = new int[n];
-                for (int i = 0; i < n; i++) {
-                    int maxQuantity = -1;
-                    String[] itemVariationsAndQuantities = itemVariationAndQuantityList[i].split("\\" + DELIM_OR);
-                    int[][] multipleItems = new int[itemVariationsAndQuantities.length][];
-                    int[][] multipleStaves = new int[itemVariationsAndQuantities.length][];
-                    int[][] multipleOffhands = new int[itemVariationsAndQuantities.length][];
-                    for (int k = 0; k < itemVariationsAndQuantities.length; k++) {
-                        String[] itemVariationAndQuantity = itemVariationsAndQuantities[k].split(DELIM_STATE);
-                        if (itemVariationAndQuantity.length == 2) {
-                            ItemVariations itemVariations = ItemVariations.fromName(itemVariationAndQuantity[0]);
-                            multipleItems[k] = itemVariations == null ? new int[]{Integer.parseInt(itemVariationAndQuantity[0])} : itemVariations.getIds();
-                            multipleStaves[k] = ItemVariations.staves(itemVariations);
-                            multipleOffhands[k] = ItemVariations.offhands(itemVariations);
-                            maxQuantity = Math.max(maxQuantity, Integer.parseInt(itemVariationAndQuantity[1]));
-                        } else {
-                            throw new NumberFormatException(itemVariationAndQuantityList[i]);
-                        }
-                    }
-                    items[i] = Util.concatenate(multipleItems);
-                    staves[i] = Util.concatenate(multipleStaves);
-                    offhands[i] = Util.concatenate(multipleOffhands);
-                    quantities[i] = maxQuantity;
-                }
-                itemRequirements = new TransportItems(items, staves, offhands, quantities);
-            } catch (NumberFormatException e) {
-                log.error("Invalid item or quantity: " + value);
-            }
-        }
-
-        if ((value = fieldMap.get("Quests")) != null) {
-            this.quests = findQuests(value);
-        }
-
-        if ((value = fieldMap.get("Duration")) != null && !value.isEmpty()) {
-            try {
-                this.duration = Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                log.error("Invalid tick duration: " + value);
-            }
-        }
-        if (TransportType.isTeleport(transportType)) {
-            // Teleports should always have a non-zero wait,
-            // so the pathfinder doesn't calculate the cost by distance
-            this.duration = Math.max(this.duration, 1);
-        }
-
-        if ((value = fieldMap.get("Display info")) != null) {
-            this.displayInfo = value;
-        }
-
-        if ((value = fieldMap.get("Consumable")) != null) {
-            this.isConsumable = "T".equals(value) || "yes".equals(value.toLowerCase());
-        }
-
-        if ((value = fieldMap.get("Wilderness level")) != null && !value.isEmpty()) {
-            try {
-                this.maxWildernessLevel =  Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                log.error("Invalid wilderness level: " + value);
-            }
-        }
-
-        if ((value = fieldMap.get("menuOption menuTarget objectID")) != null) {
-            this.objectInfo = value;
-        }
-
-        if ((value = fieldMap.get("Varbits")) != null) {
-            try {
-                for (String varbitRequirement : value.split(DELIM_MULTI)) {
-                    if (varbitRequirement.isEmpty()) {
-                        continue;
-                    }
-                    String[] varbitParts = null;
-                    for (TransportVarCheck check : TransportVarCheck.values()) {
-                        varbitParts = varbitRequirement.split(check.getCode());
-                        if (varbitParts.length == 2) {
-                            int varbitId = Integer.parseInt(varbitParts[0]);
-                            int varbitValue = Integer.parseInt(varbitParts[1]);
-                            varbits.add(new TransportVarbit(varbitId, varbitValue, check));
-                            break;
-                        }
-                    }
-                    assert varbitParts.length == 2 : "Invalid varbit id and value: '" + varbitRequirement + "'";
-                }
-            } catch (NumberFormatException e) {
-                log.error("Invalid varbit id and value: " + value);
-            }
-        }
-
-        if ((value = fieldMap.get("VarPlayers")) != null) {
-            try {
-                for (String varPlayerRequirement : value.split(DELIM_MULTI)) {
-                    if (varPlayerRequirement.isEmpty()) {
-                        continue;
-                    }
-                    String[] varPlayerParts = null;
-                    for (TransportVarCheck check : TransportVarCheck.values()) {
-                        varPlayerParts = varPlayerRequirement.split(check.getCode());
-                        if (varPlayerParts.length == 2) {
-                            int varPlayerId = Integer.parseInt(varPlayerParts[0]);
-                            int varPlayerValue = Integer.parseInt(varPlayerParts[1]);
-                            varPlayers.add(new TransportVarPlayer(varPlayerId, varPlayerValue, check));
-                            break;
-                        }
-                    }
-                    assert varPlayerParts.length == 2 : "Invalid VarPlayer id and value: '" + varPlayerRequirement + "'";
-                }
-            } catch (NumberFormatException e) {
-                log.error("Invalid VarPlayer id and value: " + value);
-            }
-        }
-
-        this.type = transportType;
-        if (TransportType.AGILITY_SHORTCUT.equals(transportType) &&
-            (getRequiredLevel(Skill.RANGED) > 1 || getRequiredLevel(Skill.STRENGTH) > 1)) {
-            this.type = TransportType.GRAPPLE_SHORTCUT;
-        }
+        this.origin = builtTransport.origin;
+        this.destination = builtTransport.destination;
+        System.arraycopy(builtTransport.skillLevels, 0, this.skillLevels, 0, this.skillLevels.length);
+        this.quests = builtTransport.quests;
+        this.itemRequirements = builtTransport.itemRequirements;
+        this.type = builtTransport.type;
+        this.duration = builtTransport.duration;
+        this.displayInfo = builtTransport.displayInfo;
+        this.isConsumable = builtTransport.isConsumable;
+        this.maxWildernessLevel = builtTransport.maxWildernessLevel;
+        this.objectInfo = builtTransport.objectInfo;
+        this.varbits.addAll(builtTransport.varbits);
+        this.varPlayers.addAll(builtTransport.varPlayers);
     }
 
     @Override
@@ -322,27 +161,196 @@ public class Transport {
             WorldPointUtil.unpackWorldPlane(destination) + ")");
     }
 
-    /** The skill level required to use this transport */
-    private int getRequiredLevel(Skill skill) {
-        return skillLevels[skill.ordinal()];
-    }
-
     /** Whether the transport has one or more quest requirements */
     public boolean isQuestLocked() {
         return !quests.isEmpty();
     }
 
-    private static Set<Quest> findQuests(String questNamesCombined) {
-        String[] questNames = questNamesCombined.split(";");
-        Set<Quest> quests = new HashSet<>();
-        for (String questName : questNames) {
-            for (Quest quest : Quest.values()) {
-                if (quest.getName().equals(questName)) {
-                    quests.add(quest);
-                    break;
+    public static class TransportBuilder {
+        private int origin = UNDEFINED_ORIGIN;
+        private int destination = UNDEFINED_DESTINATION;
+        private final int[] skillLevels = new int[Skill.values().length + 3];
+        private Set<Quest> quests = new HashSet<>();
+        private TransportItems itemRequirements;
+        private TransportType type;
+        private int duration;
+        private String displayInfo = null;
+        private boolean isConsumable = false;
+        private int maxWildernessLevel = -1;
+        private String objectInfo = null;
+        private final Set<TransportVarbit> varbits = new HashSet<>();
+        private final Set<TransportVarPlayer> varPlayers = new HashSet<>();
+
+        private final FieldParser<int[]> skillParser = new SkillRequirementParser();
+        private final FieldParser<TransportItems> itemParser = new ItemRequirementParser();
+        private final FieldParser<Set<Quest>> questParser = new QuestParser();
+        private final FieldParser<Set<TransportVarbit>> varbitParser = new TransportVarbitParser();
+        private final FieldParser<Set<TransportVarPlayer>> varPlayerParser = new TransportVarPlayerParser();
+        private final FieldParser<Integer> worldPointParser = new WorldPointParser();
+
+        public TransportBuilder origin(int origin) {
+            this.origin = origin;
+            return this;
+        }
+
+        public TransportBuilder origin(String value) {
+            this.origin = worldPointParser.parse(value);
+            return this;
+        }
+
+        public TransportBuilder destination(int destination) {
+            this.destination = destination;
+            return this;
+        }
+
+        public TransportBuilder destination(String value) {
+            this.destination = worldPointParser.parse(value);
+            return this;
+        }
+
+        public TransportBuilder skillLevels(String value) {
+            int[] parsedSkills = skillParser.parse(value);
+            for (int i = 0; i < skillLevels.length; i++) {
+                if (parsedSkills[i] > 0) {
+                     skillLevels[i] = parsedSkills[i];
                 }
             }
+            return this;
         }
-        return quests;
+
+        public TransportBuilder startSkillLevels(int[] otherSkillLevels) {
+             for (int i = 0; i < skillLevels.length; i++) {
+                this.skillLevels[i] = Math.max(this.skillLevels[i], otherSkillLevels[i]);
+            }
+            return this;
+        }
+
+        public TransportBuilder quests(Set<Quest> quests) {
+            this.quests.addAll(quests);
+            return this;
+        }
+
+        public TransportBuilder quests(String value) {
+            this.quests.addAll(questParser.parse(value));
+            return this;
+        }
+
+        public TransportBuilder itemRequirements(TransportItems itemRequirements) {
+            this.itemRequirements = itemRequirements;
+            return this;
+        }
+
+        public TransportBuilder itemRequirements(String value) {
+            this.itemRequirements = itemParser.parse(value);
+            return this;
+        }
+
+        public TransportBuilder type(TransportType type) {
+            this.type = type;
+            return this;
+        }
+
+        public TransportBuilder duration(int duration) {
+            this.duration = Math.max(this.duration, duration);
+            return this;
+        }
+
+        public TransportBuilder duration(String value) {
+             if (value != null && !value.isEmpty()) {
+                try {
+                    this.duration = Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    log.error("Invalid tick duration: " + value);
+                }
+            }
+            return this;
+        }
+
+        public TransportBuilder displayInfo(String displayInfo) {
+            this.displayInfo = displayInfo;
+            return this;
+        }
+
+        public TransportBuilder isConsumable(boolean isConsumable) {
+            this.isConsumable |= isConsumable;
+            return this;
+        }
+
+        public TransportBuilder isConsumable(String value) {
+            this.isConsumable = "T".equals(value) || "yes".equalsIgnoreCase(value);
+            return this;
+        }
+
+        public TransportBuilder maxWildernessLevel(int maxWildernessLevel) {
+            this.maxWildernessLevel = Math.max(this.maxWildernessLevel, maxWildernessLevel);
+            return this;
+        }
+
+         public TransportBuilder maxWildernessLevel(String value) {
+             if (value != null && !value.isEmpty()) {
+                try {
+                    this.maxWildernessLevel =  Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    log.error("Invalid wilderness level: " + value);
+                }
+            }
+            return this;
+        }
+
+        public TransportBuilder objectInfo(String objectInfo) {
+            this.objectInfo = objectInfo;
+            return this;
+        }
+
+        public TransportBuilder varbits(Set<TransportVarbit> varbits) {
+            this.varbits.addAll(varbits);
+            return this;
+        }
+
+        public TransportBuilder varbits(String value) {
+            this.varbits.addAll(varbitParser.parse(value));
+            return this;
+        }
+
+        public TransportBuilder varPlayers(Set<TransportVarPlayer> varPlayers) {
+            this.varPlayers.addAll(varPlayers);
+            return this;
+        }
+
+        public TransportBuilder varPlayers(String value) {
+            this.varPlayers.addAll(varPlayerParser.parse(value));
+            return this;
+        }
+
+
+        public Transport build() {
+            Transport transport = new Transport();
+            transport.origin = this.origin;
+            transport.destination = this.destination;
+            System.arraycopy(this.skillLevels, 0, transport.skillLevels, 0, this.skillLevels.length);
+            transport.quests = this.quests;
+            transport.itemRequirements = this.itemRequirements;
+            transport.type = this.type;
+            transport.duration = this.duration;
+            transport.displayInfo = this.displayInfo;
+            transport.isConsumable = this.isConsumable;
+            transport.maxWildernessLevel = this.maxWildernessLevel;
+            transport.objectInfo = this.objectInfo;
+            transport.varbits.addAll(this.varbits);
+            transport.varPlayers.addAll(this.varPlayers);
+
+            // Post-build validation/refinement
+            if (transport.type != null && transport.type.isTeleport()) {
+                transport.duration = Math.max(transport.duration, 1);
+            }
+
+            if (transport.type != null) {
+                transport.type = transport.type.refine(transport.skillLevels);
+            }
+
+            return transport;
+        }
     }
+
+    private Transport() {}
 }
