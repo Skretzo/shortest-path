@@ -89,13 +89,10 @@ public class Pathfinder implements Runnable {
             }
 
             if (neighbor instanceof TransportNode) {
-                TransportNode tn = (TransportNode) neighbor;
-                // For teleports with cost thresholds, don't mark visited immediately
-                // This allows cheaper paths via platforms to be discovered later
-                // Regular transports (no threshold) are marked visited immediately to prevent queue growth
-                if (!tn.isDelayedVisit()) {
-                    visited.set(neighbor.packedPosition);
-                }
+                // Don't mark transport destinations as visited immediately
+                // This ensures lower-cost paths are not blocked by higher-cost transports
+                // that happen to be discovered first (e.g., quetzal whistle vs platform)
+                // The destination will be marked visited when the node is actually processed
                 pending.add(neighbor);
                 ++stats.transportsChecked;
             } else {
@@ -122,13 +119,13 @@ public class Pathfinder implements Runnable {
 
             if (p != null && (node == null || p.cost < node.cost)) {
                 node = pending.poll();
-                // For delayed visit transports, check if destination was reached via cheaper path
-                if (p instanceof TransportNode && ((TransportNode) p).isDelayedVisit()) {
-                    if (visited.get(node.packedPosition)) {
-                        continue; // Skip - already visited via cheaper path
-                    }
-                    visited.set(node.packedPosition);
+                // Check if destination was already reached via cheaper path
+                // This is necessary because we don't mark transport destinations as visited
+                // when adding them to the queue (to allow lower-cost paths to be discovered)
+                if (visited.get(node.packedPosition)) {
+                    continue; // Skip - already visited via cheaper path
                 }
+                visited.set(node.packedPosition);
             } else {
                 node = boundary.removeFirst();
             }

@@ -94,10 +94,7 @@ public class CollisionMap {
                 continue;
             }
             int additionalCost = config.getAdditionalTransportCost(transport);
-            // Teleports with cost thresholds should have delayed visited marking
-            // This allows cheaper paths via platform transports to be discovered later
-            boolean delayedVisit = transport.getOrigin() == Transport.UNDEFINED_ORIGIN && additionalCost > 0;
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost, delayedVisit));
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost));
         }
 
         if (isBlocked(x, y, z)) {
