@@ -94,10 +94,13 @@ public class CollisionMap {
                 continue;
             }
             int additionalCost = config.getAdditionalTransportCost(transport);
-            // Only use delayed visit for teleports (no fixed origin) with cost thresholds
-            // This allows cheaper paths to be discovered for expensive teleports
+            // Use delayed visit for:
+            // 1. Teleports (no fixed origin) - so cheaper paths can be found
+            // 2. Transports that share destinations with teleports (e.g., quetzal platforms)
             // Regular transports mark visited immediately to prevent walking from stealing destinations
-            boolean delayedVisit = transport.getOrigin() == Transport.UNDEFINED_ORIGIN && additionalCost > 0;
+            boolean isTeleport = transport.getOrigin() == Transport.UNDEFINED_ORIGIN;
+            boolean sharesTeleportDest = transport.getType().sharesTeleportDestinations();
+            boolean delayedVisit = isTeleport || sharesTeleportDest;
             neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost, delayedVisit));
         }
 
