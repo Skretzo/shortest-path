@@ -1,12 +1,13 @@
 package shortestpath.transport.parser;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ItemVariations;
 import shortestpath.Util;
 import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Parses item requirements from TSV field values.
@@ -29,9 +30,9 @@ public class ItemRequirementParser implements FieldParser<TransportItems> {
 
         // Normalize the input
         String normalized = value.replace(" ", "")
-            .replace(DELIM_AND + DELIM_AND, DELIM_AND)
-            .replace(DELIM_OR + DELIM_OR, DELIM_OR)
-            .toUpperCase();
+                .replace(DELIM_AND + DELIM_AND, DELIM_AND)
+                .replace(DELIM_OR + DELIM_OR, DELIM_OR)
+                .toUpperCase();
 
         List<ItemRequirement> requirements = new ArrayList<>();
 
@@ -89,10 +90,10 @@ public class ItemRequirementParser implements FieldParser<TransportItems> {
         }
 
         return new ItemRequirement(
-            Util.concatenate(itemIdsList.toArray(new int[0][])),
-            Util.concatenate(stavesList.toArray(new int[0][])),
-            Util.concatenate(offhandsList.toArray(new int[0][])),
-            maxQuantity
+                Util.concatenate(itemIdsList.toArray(new int[0][])),
+                Util.concatenate(stavesList.toArray(new int[0][])),
+                Util.concatenate(offhandsList.toArray(new int[0][])),
+                maxQuantity
         );
     }
 }

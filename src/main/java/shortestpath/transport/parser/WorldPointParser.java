@@ -19,9 +19,9 @@ public class WorldPointParser implements FieldParser<Integer> {
         }
         String[] parts = value.split(DELIM_SPACE);
         return parts.length == 3 ? WorldPointUtil.packWorldPoint(
-            Integer.parseInt(parts[0]),
-            Integer.parseInt(parts[1]),
-            Integer.parseInt(parts[2])) : Transport.LOCATION_PERMUTATION;
+                Integer.parseInt(parts[0]),
+                Integer.parseInt(parts[1]),
+                Integer.parseInt(parts[2])) : Transport.LOCATION_PERMUTATION;
     }
 }
 

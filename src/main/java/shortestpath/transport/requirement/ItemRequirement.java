@@ -1,7 +1,8 @@
 package shortestpath.transport.requirement;
 
-import java.util.Arrays;
 import lombok.Getter;
+
+import java.util.Arrays;
 
 /**
  * Represents an item requirement with its variations and quantity.
@@ -9,16 +10,24 @@ import lombok.Getter;
  */
 @Getter
 public class ItemRequirement {
-    /** The item IDs that satisfy this requirement (variations) */
+    /**
+     * The item IDs that satisfy this requirement (variations)
+     */
     private final int[] itemIds;
 
-    /** Staff IDs that can substitute runes for this requirement */
+    /**
+     * Staff IDs that can substitute runes for this requirement
+     */
     private final int[] staffIds;
 
-    /** Offhand IDs that can substitute for this requirement */
+    /**
+     * Offhand IDs that can substitute for this requirement
+     */
     private final int[] offhandIds;
 
-    /** The quantity required */
+    /**
+     * The quantity required
+     */
     private final int quantity;
 
     public ItemRequirement(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity) {
@@ -48,9 +57,9 @@ public class ItemRequirement {
         if (o == null || getClass() != o.getClass()) return false;
         ItemRequirement that = (ItemRequirement) o;
         return quantity == that.quantity &&
-            Arrays.equals(itemIds, that.itemIds) &&
-            Arrays.equals(staffIds, that.staffIds) &&
-            Arrays.equals(offhandIds, that.offhandIds);
+                Arrays.equals(itemIds, that.itemIds) &&
+                Arrays.equals(staffIds, that.staffIds) &&
+                Arrays.equals(offhandIds, that.offhandIds);
     }
 
     @Override

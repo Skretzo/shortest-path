@@ -1,18 +1,15 @@
 package shortestpath.transport;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.parser.TransportRecord;
 import shortestpath.transport.parser.TsvParser;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Slf4j
 public class TransportLoader {
@@ -41,23 +38,23 @@ public class TransportLoader {
         }
 
         /*
-        * A transport with origin A and destination B is one-way and must
-        * be duplicated as origin B and destination A to become two-way.
-        * Example: key-locked doors
-        * 
-        * A transport with origin A and a missing destination is one-way,
-        * but can go from origin A to all destinations with a missing origin.
-        * Example: fairy ring AIQ -> <blank>
-        * 
-        * A transport with a missing origin and destination B is one-way,
-        * but can go from all origins with a missing destination to destination B.
-        * Example: fairy ring <blank> -> AIQ
-        * 
-        * Identical transports from origin A to destination A are skipped, and
-        * non-identical transports from origin A to destination A can be skipped
-        * by specifying a radius threshold to ignore almost identical coordinates.
-        * Example: fairy ring AIQ -> AIQ
-        */
+         * A transport with origin A and destination B is one-way and must
+         * be duplicated as origin B and destination A to become two-way.
+         * Example: key-locked doors
+         *
+         * A transport with origin A and a missing destination is one-way,
+         * but can go from origin A to all destinations with a missing origin.
+         * Example: fairy ring AIQ -> <blank>
+         *
+         * A transport with a missing origin and destination B is one-way,
+         * but can go from all origins with a missing destination to destination B.
+         * Example: fairy ring <blank> -> AIQ
+         *
+         * Identical transports from origin A to destination A are skipped, and
+         * non-identical transports from origin A to destination A can be skipped
+         * by specifying a radius threshold to ignore almost identical coordinates.
+         * Example: fairy ring AIQ -> AIQ
+         */
         Set<Transport> transportOrigins = new HashSet<>();
         Set<Transport> transportDestinations = new HashSet<>();
         for (Transport transport : newTransports) {
@@ -65,19 +62,19 @@ public class TransportLoader {
             int destination = transport.getDestination();
             // Logic to determine ordinary transport vs teleport vs permutation (e.g. fairy ring)
             if (
-                ( origin == Transport.UNDEFINED_ORIGIN && destination == Transport.UNDEFINED_DESTINATION)
-                || (origin == Transport.LOCATION_PERMUTATION && destination == Transport.LOCATION_PERMUTATION)) {
+                    (origin == Transport.UNDEFINED_ORIGIN && destination == Transport.UNDEFINED_DESTINATION)
+                            || (origin == Transport.LOCATION_PERMUTATION && destination == Transport.LOCATION_PERMUTATION)) {
                 continue;
             } else if (origin != Transport.LOCATION_PERMUTATION && origin != Transport.UNDEFINED_ORIGIN
-                && destination == Transport.LOCATION_PERMUTATION) {
+                    && destination == Transport.LOCATION_PERMUTATION) {
                 transportOrigins.add(transport);
             } else if (origin == Transport.LOCATION_PERMUTATION
-                && destination != Transport.LOCATION_PERMUTATION && destination != Transport.UNDEFINED_DESTINATION) {
+                    && destination != Transport.LOCATION_PERMUTATION && destination != Transport.UNDEFINED_DESTINATION) {
                 transportDestinations.add(transport);
             }
             if (origin != Transport.LOCATION_PERMUTATION
-                && destination != Transport.UNDEFINED_DESTINATION && destination != Transport.LOCATION_PERMUTATION
-                && (origin == Transport.UNDEFINED_ORIGIN || origin != destination)) {
+                    && destination != Transport.UNDEFINED_DESTINATION && destination != Transport.LOCATION_PERMUTATION
+                    && (origin == Transport.UNDEFINED_ORIGIN || origin != destination)) {
                 transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
             }
         }
@@ -87,8 +84,8 @@ public class TransportLoader {
                 if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
                     Transport combined = new Transport(origin, destination);
                     transports
-                        .computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
-                        .add(combined);
+                            .computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
+                            .add(combined);
                 }
             }
         }

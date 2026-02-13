@@ -10,24 +10,6 @@ import java.util.Map;
  */
 public class TransportRecord {
 
-    /** Standard field names used across TSV files */
-    public static final class Fields {
-        public static final String ORIGIN = "Origin";
-        public static final String DESTINATION = "Destination";
-        public static final String SKILLS = "Skills";
-        public static final String ITEMS = "Items";
-        public static final String QUESTS = "Quests";
-        public static final String DURATION = "Duration";
-        public static final String DISPLAY_INFO = "Display info";
-        public static final String CONSUMABLE = "Consumable";
-        public static final String WILDERNESS_LEVEL = "Wilderness level";
-        public static final String OBJECT_INFO = "menuOption menuTarget objectID";
-        public static final String VARBITS = "Varbits";
-        public static final String VAR_PLAYERS = "VarPlayers";
-
-        private Fields() {}
-    }
-
     private final Map<String, String> fields;
 
     public TransportRecord(Map<String, String> fields) {
@@ -153,6 +135,27 @@ public class TransportRecord {
      */
     public Map<String, String> getFields() {
         return fields;
+    }
+
+    /**
+     * Standard field names used across TSV files
+     */
+    public static final class Fields {
+        public static final String ORIGIN = "Origin";
+        public static final String DESTINATION = "Destination";
+        public static final String SKILLS = "Skills";
+        public static final String ITEMS = "Items";
+        public static final String QUESTS = "Quests";
+        public static final String DURATION = "Duration";
+        public static final String DISPLAY_INFO = "Display info";
+        public static final String CONSUMABLE = "Consumable";
+        public static final String WILDERNESS_LEVEL = "Wilderness level";
+        public static final String OBJECT_INFO = "menuOption menuTarget objectID";
+        public static final String VARBITS = "Varbits";
+        public static final String VAR_PLAYERS = "VarPlayers";
+
+        private Fields() {
+        }
     }
 }
 

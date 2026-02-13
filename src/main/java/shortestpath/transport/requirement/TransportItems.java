@@ -1,11 +1,11 @@
 package shortestpath.transport.requirement;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import lombok.Getter;
 
 /**
  * Represents all item requirements for a transport.
@@ -26,10 +26,10 @@ public class TransportItems {
         List<ItemRequirement> reqs = new ArrayList<>();
         for (int i = 0; i < items.length; i++) {
             reqs.add(new ItemRequirement(
-                items[i],
-                staves != null && i < staves.length ? staves[i] : new int[0],
-                offhands != null && i < offhands.length ? offhands[i] : new int[0],
-                quantities[i]
+                    items[i],
+                    staves != null && i < staves.length ? staves[i] : new int[0],
+                    offhands != null && i < offhands.length ? offhands[i] : new int[0],
+                    quantities[i]
             ));
         }
         this.requirements = Collections.unmodifiableList(reqs);
@@ -106,10 +106,10 @@ public class TransportItems {
     @Override
     public String toString() {
         return "[" +
-            toString(getItems()) + ", " +
-            toString(getStaves()) + ", " +
-            toString(getOffhands()) + ", " +
-            Arrays.toString(getQuantities()) + "]";
+                toString(getItems()) + ", " +
+                toString(getStaves()) + ", " +
+                toString(getOffhands()) + ", " +
+                Arrays.toString(getQuantities()) + "]";
     }
 
     private String toString(int[][] array) {
