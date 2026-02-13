@@ -1,7 +1,7 @@
 package shortestpath.transport;
 
-import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Test;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.parser.VarCheckType;
 import shortestpath.transport.parser.VarRequirement;
@@ -21,12 +21,10 @@ public class QuetzalTransportTest {
 
     // VarPlayer 4182 bit values for quetzal platforms
     private static final int VARPLAYER_QUETZAL_PLATFORMS = 4182;
-    private static final int BIT_KASTORI = 16384;          // 4182&8
+    private static final int BIT_KASTORI = 16384;          // 4182&16384
     private static final int BIT_CAM_TORUM = 32;       // 4182&32
     private static final int BIT_COLOSSAL_WYRM = 64;   // 4182&64
     private static final int BIT_OUTER_FORTIS = 128;   // 4182&128
-    private static final int BIT_FORTIS_COLOSSEUM = 256; // 4182&256
-    private static final int BIT_SALVAGER_OVERLOOK = 2048; // 4182&2048
 
     @Test
     public void testQuetzalTransportsAreLoaded() {
@@ -62,13 +60,13 @@ public class QuetzalTransportTest {
             for (Transport t : transportSet) {
                 if (t.getDestination() == kastoriPacked) {
                     System.out.println("Found transport to Kastori from " +
-                        WorldPointUtil.unpackWorldX(t.getOrigin()) + "," +
-                        WorldPointUtil.unpackWorldY(t.getOrigin()));
+                            WorldPointUtil.unpackWorldX(t.getOrigin()) + "," +
+                            WorldPointUtil.unpackWorldY(t.getOrigin()));
                     System.out.println("  VarRequirements: " + t.getVarRequirements().size());
                     System.out.println("  VarPlayers: " + t.getVarPlayers().size());
                     for (VarRequirement vp : t.getVarPlayers()) {
                         System.out.println("    VarPlayer: id=" + vp.getId() +
-                            ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
+                                ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
                         if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS && vp.getValue() == BIT_KASTORI) {
                             foundKastoriWithCheck = true;
                         }
@@ -99,9 +97,9 @@ public class QuetzalTransportTest {
                     foundKastoriDestination = true;
                     Set<VarRequirement> varPlayers = t.getVarPlayers();
                     System.out.println("Kastori transport from " +
-                        WorldPointUtil.unpackWorldX(t.getOrigin()) + "," +
-                        WorldPointUtil.unpackWorldY(t.getOrigin()) +
-                        " has " + varPlayers.size() + " VarPlayer requirements");
+                            WorldPointUtil.unpackWorldX(t.getOrigin()) + "," +
+                            WorldPointUtil.unpackWorldY(t.getOrigin()) +
+                            " has " + varPlayers.size() + " VarPlayer requirements");
 
                     for (VarRequirement vp : varPlayers) {
                         System.out.println("  VarPlayer: id=" + vp.getId() + ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
@@ -126,7 +124,7 @@ public class QuetzalTransportTest {
         VarRequirement kastoriCheck = VarRequirement.varPlayer(VARPLAYER_QUETZAL_PLATFORMS, BIT_KASTORI, VarCheckType.BIT_SET);
 
         Assert.assertFalse("Kastori should be blocked when platform not built",
-            kastoriCheck.check(varPlayerValues));
+                kastoriCheck.check(varPlayerValues));
     }
 
     @Test
@@ -138,7 +136,7 @@ public class QuetzalTransportTest {
         VarRequirement kastoriCheck = VarRequirement.varPlayer(VARPLAYER_QUETZAL_PLATFORMS, BIT_KASTORI, VarCheckType.BIT_SET);
 
         Assert.assertTrue("Kastori should be allowed when platform is built",
-            kastoriCheck.check(varPlayerValues));
+                kastoriCheck.check(varPlayerValues));
     }
 
     @Test
@@ -175,31 +173,14 @@ public class QuetzalTransportTest {
 
         // Count Quetzal whistle destinations
         int quetzalWhistleDestinations = 0;
-        int[] expectedDestinations = {
-            WorldPointUtil.packWorldPoint(1389, 2901, 0), // Aldarin
-            WorldPointUtil.packWorldPoint(1411, 3361, 0), // Auburnvale
-            WorldPointUtil.packWorldPoint(1697, 3140, 0), // Civitas illa Fortis
-            WorldPointUtil.packWorldPoint(1585, 3053, 0), // Hunter Guild
-            WorldPointUtil.packWorldPoint(1510, 3222, 0), // Quetzacalli Gorge
-            WorldPointUtil.packWorldPoint(1548, 2995, 0), // Sunset Coast
-            WorldPointUtil.packWorldPoint(1226, 3091, 0), // Tal Teklan
-            WorldPointUtil.packWorldPoint(1437, 3171, 0), // The Teomat
-            WorldPointUtil.packWorldPoint(1779, 3111, 0), // Fortis Colosseum
-            WorldPointUtil.packWorldPoint(1344, 3022, 0), // Kastori
-            WorldPointUtil.packWorldPoint(1700, 3037, 0), // Outer Fortis
-            WorldPointUtil.packWorldPoint(1670, 2933, 0), // Colossal Wyrm Remains
-            WorldPointUtil.packWorldPoint(1446, 3108, 0), // Cam Torum
-            WorldPointUtil.packWorldPoint(1613, 3300, 0), // Salvager Overlook
-        };
-
         for (Set<Transport> transportSet : transports.values()) {
             for (Transport t : transportSet) {
                 String displayInfo = t.getDisplayInfo();
                 if (displayInfo != null && displayInfo.startsWith("Quetzal whistle:")) {
                     quetzalWhistleDestinations++;
                     System.out.println("Found Quetzal whistle destination: " + displayInfo +
-                        " at " + WorldPointUtil.unpackWorldX(t.getDestination()) + "," +
-                        WorldPointUtil.unpackWorldY(t.getDestination()));
+                            " at " + WorldPointUtil.unpackWorldX(t.getDestination()) + "," +
+                            WorldPointUtil.unpackWorldY(t.getDestination()));
                 }
             }
         }
@@ -233,7 +214,7 @@ public class QuetzalTransportTest {
                         System.out.println("  VarPlayers: " + t.getVarPlayers().size());
                         for (VarRequirement vp : t.getVarPlayers()) {
                             System.out.println("    VarPlayer: id=" + vp.getId() +
-                                ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
+                                    ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
                             if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS && vp.getValue() == BIT_KASTORI) {
                                 hasVarPlayerCheck = true;
                             }
@@ -253,14 +234,14 @@ public class QuetzalTransportTest {
      */
     private String getQuetzalTsvContents() {
         return "# Origin\tDestination\tmenuOption menuTarget objectID\tSkills\tItems\tQuests\tDuration\tDisplay info\tConsumable\tWilderness level\tVarbits\tVarPlayers\n" +
-            "1389 2901 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
-            "1411 3361 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
-            "1697 3140 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
-            "1344 3022 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t4182&8\n" +
-            "\t1389 2901 0\t\t\t\tTwilight's Promise\t6\tAldarin\t\t\t\t\n" +
-            "\t1411 3361 0\t\t\t\tTwilight's Promise\t6\tAuburnvale\t\t\t\t\n" +
-            "\t1697 3140 0\t\t\t\tTwilight's Promise\t6\tCivitas illa Fortis\t\t\t\t\n" +
-            "\t1344 3022 0\t\t\t\tTwilight's Promise\t6\tKastori\t\t\t\t4182&8\n";
+                "1389 2901 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
+                "1411 3361 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
+                "1697 3140 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t\n" +
+                "1344 3022 0\t\tTravel Renu 13350\t\t\tTwilight's Promise\t6\t\t\t\t\t4182&8\n" +
+                "\t1389 2901 0\t\t\t\tTwilight's Promise\t6\tAldarin\t\t\t\t\n" +
+                "\t1411 3361 0\t\t\t\tTwilight's Promise\t6\tAuburnvale\t\t\t\t\n" +
+                "\t1697 3140 0\t\t\t\tTwilight's Promise\t6\tCivitas illa Fortis\t\t\t\t\n" +
+                "\t1344 3022 0\t\t\t\tTwilight's Promise\t6\tKastori\t\t\t\t4182&8\n";
     }
 
     /**
@@ -280,7 +261,7 @@ public class QuetzalTransportTest {
         for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
             for (Transport t : entry.getValue()) {
                 if (t.getDestination() == kastoriPacked &&
-                    TransportType.QUETZAL_WHISTLE.equals(t.getType())) {
+                        TransportType.QUETZAL_WHISTLE.equals(t.getType())) {
                     foundQuetzalWhistleToKastori = true;
                     System.out.println("Found QUETZAL_WHISTLE to Kastori:");
                     System.out.println("  Origin: " + t.getOrigin() + " (UNDEFINED=" + Transport.UNDEFINED_ORIGIN + ")");
@@ -290,8 +271,8 @@ public class QuetzalTransportTest {
                     for (VarRequirement vp : t.getVarPlayers()) {
                         System.out.println("    VarPlayer: id=" + vp.getId() + ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
                         if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS &&
-                            vp.getValue() == BIT_KASTORI &&
-                            vp.getCheckType() == VarCheckType.BIT_SET) {
+                                vp.getValue() == BIT_KASTORI &&
+                                vp.getCheckType() == VarCheckType.BIT_SET) {
                             hasCorrectVarPlayerCheck = true;
                         }
                     }
@@ -381,9 +362,9 @@ public class QuetzalTransportTest {
                     if (origin == aldarinPacked) {
                         aldarinOrigins++;
                         System.out.println("QUETZAL from Aldarin -> " +
-                            WorldPointUtil.unpackWorldX(t.getDestination()) + "," +
-                            WorldPointUtil.unpackWorldY(t.getDestination()) +
-                            " (displayInfo: " + t.getDisplayInfo() + ")");
+                                WorldPointUtil.unpackWorldX(t.getDestination()) + "," +
+                                WorldPointUtil.unpackWorldY(t.getDestination()) +
+                                " (displayInfo: " + t.getDisplayInfo() + ")");
                     }
                 }
             }
