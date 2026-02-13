@@ -113,9 +113,9 @@ public class TransportItems {
     }
 
     private String toString(int[][] array) {
-        String text = "";
+        StringBuilder text = new StringBuilder();
         for (int[] inner : array) {
-            text += (text.isEmpty() ? "" : ", ") + Arrays.toString(inner);
+            text.append((text.length() == 0) ? "" : ", ").append(Arrays.toString(inner));
         }
         return "[" + text + "]";
     }
