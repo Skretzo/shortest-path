@@ -247,6 +247,26 @@ public class TransportTypeConfigTest {
     }
 
     /**
+     * Verifies that QUETZAL and QUETZAL_WHISTLE have separate cost thresholds.
+     * This ensures the quetzal whistle can have a higher cost than platforms.
+     */
+    @Test
+    public void testQuetzalWhistleHasSeparateCostFromQuetzal() {
+        setupDefaultMocks();
+        // Set quetzal platforms to 0 cost (free)
+        when(config.costQuetzals()).thenReturn(0);
+        // Set quetzal whistle to higher cost (consumable, should be penalized)
+        when(config.costQuetzalWhistle()).thenReturn(50);
+
+        TransportTypeConfig typeConfig = new TransportTypeConfig(config);
+
+        assertEquals("QUETZAL (platform) cost should be 0",
+            0, typeConfig.getCost(TransportType.QUETZAL));
+        assertEquals("QUETZAL_WHISTLE cost should be 50",
+            50, typeConfig.getCost(TransportType.QUETZAL_WHISTLE));
+    }
+
+    /**
      * Verifies that types without costKey return 0 cost.
      */
     @Test
@@ -465,6 +485,7 @@ public class TransportTypeConfigTest {
         when(config.costMagicMushtrees()).thenReturn(0);
         when(config.costMinecarts()).thenReturn(0);
         when(config.costQuetzals()).thenReturn(0);
+        when(config.costQuetzalWhistle()).thenReturn(0);
         when(config.costSeasonalTransports()).thenReturn(0);
         when(config.costSpiritTrees()).thenReturn(0);
         when(config.costNonConsumableTeleportationItems()).thenReturn(0);
