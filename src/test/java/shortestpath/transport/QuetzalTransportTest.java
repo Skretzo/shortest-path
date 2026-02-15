@@ -376,5 +376,39 @@ public class QuetzalTransportTest {
         // From Aldarin, you should be able to reach all other platforms
         Assert.assertTrue("Should have multiple transports from Aldarin", aldarinOrigins >= 7);
     }
+
+    /**
+     * Verifies that QUETZAL_WHISTLE transports have item requirements.
+     * The whistle requires having a quetzal whistle item (29271, 29273, or 29275).
+     */
+    @Test
+    public void testQuetzalWhistleHasItemRequirements() {
+        Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+
+        int whistleCount = 0;
+        int whistlesWithItemReqs = 0;
+
+        for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+            for (Transport t : entry.getValue()) {
+                if (TransportType.QUETZAL_WHISTLE.equals(t.getType())) {
+                    whistleCount++;
+                    if (t.getItemRequirements() != null) {
+                        whistlesWithItemReqs++;
+                        System.out.println("Whistle to " + t.getDisplayInfo() + " has item requirements: " +
+                            t.getItemRequirements());
+                    } else {
+                        System.out.println("ERROR: Whistle to " + t.getDisplayInfo() + " has NO item requirements!");
+                    }
+                }
+            }
+        }
+
+        System.out.println("Total whistle transports: " + whistleCount);
+        System.out.println("Whistles with item requirements: " + whistlesWithItemReqs);
+
+        Assert.assertTrue("Should find whistle transports", whistleCount > 0);
+        Assert.assertEquals("All whistle transports should have item requirements",
+            whistleCount, whistlesWithItemReqs);
+    }
 }
 
