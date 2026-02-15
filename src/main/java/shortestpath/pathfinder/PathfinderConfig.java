@@ -622,9 +622,14 @@ public class PathfinderConfig {
 
         if (checkBank) {
             TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
-            if (bank != null && bankVisited
-                && (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-                || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
+            // Check bank items when:
+            // 1. includeBankPath is enabled (to determine if transports could be used after visiting bank), OR
+            // 2. bankVisited is true AND teleport setting allows bank items
+            if (bank != null
+                && (includeBankPath
+                || (bankVisited
+                    && (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+                    || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))))) {
                 for (Item item : bank.getItems()) {
                     if (item.getId() >= 0 && item.getQuantity() > 0) {
                         itemsAndQuantities.put(item.getId(), item.getQuantity());
