@@ -27,18 +27,8 @@ for file in $(find "$RESOURCE_DIR" -name "*.tsv" -type f | sort); do
         # Count columns (number of tabs + 1)
         num_columns=$(($(printf '%s' "$line" | tr -cd '\t' | wc -c) + 1))
 
-        # Check if this is a header line (starts with #)
-        if [[ "$line" =~ ^[[:space:]]*# ]]; then
-            # Use the first header line to set expected column count
-            if [[ -z "$expected_columns" ]]; then
-                expected_columns=$num_columns
-                header_line=$line_num
-            fi
-            continue
-        fi
-
+        # Use the first line (header) to set expected column count
         if [[ -z "$expected_columns" ]]; then
-            # No header found, first data line sets the expected column count
             expected_columns=$num_columns
             header_line=$line_num
         elif [[ "$num_columns" -ne "$expected_columns" ]]; then
