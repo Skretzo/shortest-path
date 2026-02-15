@@ -260,10 +260,14 @@ public class PathfinderConfig {
         }
 
         // Apply runtime restrictions based on quests/items
+        // Cache the varbits needed for fairy ring checks so they can be used by refreshTransportsForBankVisit
+        varbitValues.put(VarbitID.FAIRY2_QUEENCURE_QUEST, client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST));
+        varbitValues.put(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE));
+
         // For fairy rings, use hasItemsInInventoryEquipmentOrBank so the type is enabled when staff is in bank
         transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-                (client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39)
-                        && (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1 || hasItemsInInventoryEquipmentOrBank(DRAMEN_STAFF)));
+                (varbitValues.get(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39)
+                        && (varbitValues.get(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1 || hasItemsInInventoryEquipmentOrBank(DRAMEN_STAFF)));
         transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
                 QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
         transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
@@ -309,28 +313,7 @@ public class PathfinderConfig {
         }
 
         // Remap all POH transport origins to the house landing tile
-        // POH has no collision data, so BFS cannot walk between tiles inside the house.
-        // By remapping all POH furniture (fairy ring, spirit tree, nexus, jewellery box, etc.)
-        // to the landing tile, the BFS immediately discovers them when arriving via "Teleport to House"
-        int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
-        Set<Transport> pohTransports = new HashSet<>();
-
-        for (Map.Entry<Integer, Set<Transport>> entry : new HashSet<>(transports.entrySet())) {
-            int origin = entry.getKey();
-            int originX = WorldPointUtil.unpackWorldX(origin);
-            int originY = WorldPointUtil.unpackWorldY(origin);
-
-            if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
-                pohTransports.addAll(entry.getValue());
-            }
-        }
-
-        if (!pohTransports.isEmpty()) {
-            Set<Transport> existingAtLanding = transports.getOrDefault(pohLanding, new HashSet<>());
-            existingAtLanding.addAll(pohTransports);
-            transports.put(pohLanding, existingAtLanding);
-            transportsPacked.put(pohLanding, pohTransports);
-        }
+        remapPohTransports();
     }
 
     private void refreshUsableTeleports() {
@@ -357,10 +340,107 @@ public class PathfinderConfig {
     public void setBankVisited(boolean visited, int packedLocation, int wildernessLevel) {
         bankVisited = visited;
         if (bankVisited) {
-            // Re-run refreshTransports to add transports that require bank items (like fairy rings with staff in bank)
-            refreshTransports();
+            // Re-run transport refresh to add transports that require bank items (like fairy rings with staff in bank)
+            // Use the non-client-thread version since we're called from the pathfinder thread
+            refreshTransportsForBankVisit();
             refreshUsableTeleports();
             refreshTeleports(packedLocation, wildernessLevel);
+        }
+    }
+
+    /**
+     * Refreshes transports when bank is visited during pathfinding.
+     * This is called from the pathfinder thread.
+     * It only needs to add transports that require bank items - inventory/equipment
+     * transports were already added during the initial refreshTransports() on client thread.
+     */
+    private void refreshTransportsForBankVisit() {
+        // Re-evaluate fairy ring type based on bank items now being available
+        boolean hasFairyRingQuest = varbitValues.getOrDefault(VarbitID.FAIRY2_QUEENCURE_QUEST, 0) > 39;
+        boolean hasLumbridgeDiary = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0) == 1;
+        boolean hasStaffInBank = hasStaffInBank();
+
+        // Only enable fairy rings if we have the staff in bank (inventory/equipment was already checked)
+        if (hasFairyRingQuest && (hasLumbridgeDiary || hasStaffInBank)) {
+            transportTypeConfig.disableUnless(TransportType.FAIRY_RING, true);
+
+            // Add fairy ring transports that weren't added before because staff was in bank
+            for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet()) {
+                int point = entry.getKey();
+                if (point == WorldPointUtil.UNDEFINED) {
+                    continue; // Teleports handled separately
+                }
+
+                for (Transport transport : entry.getValue()) {
+                    if (TransportType.FAIRY_RING.equals(transport.getType())) {
+                        if (useTransport(transport)) {
+                            // Add to existing transports at this point
+                            Set<Transport> existing = transports.getOrDefault(point, new HashSet<>());
+                            existing.add(transport);
+                            transports.put(point, existing);
+                            transportsPacked.put(point, existing);
+                        }
+                    }
+                }
+            }
+
+            // Remap any POH fairy rings
+            remapPohTransports();
+        }
+    }
+
+    /**
+     * Checks if the Dramen/Lunar staff is in the bank.
+     */
+    private boolean hasStaffInBank() {
+        if (bank == null) {
+            return false;
+        }
+        for (int[] staffIds : DRAMEN_STAFF.getStaves()) {
+            if (staffIds != null) {
+                for (int staffId : staffIds) {
+                    for (Item bankItem : bank.getItems()) {
+                        if (bankItem.getId() == staffId && bankItem.getQuantity() > 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Remaps POH transport origins to the house landing tile.
+     * Extracted to be reusable by both refreshTransports and refreshTransportsForBankVisit.
+     */
+    private void remapPohTransports() {
+        int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
+        Set<Transport> pohTransports = new HashSet<>();
+        Set<Integer> pohOriginsToRemove = new HashSet<>();
+
+        for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+            int origin = entry.getKey();
+            int originX = WorldPointUtil.unpackWorldX(origin);
+            int originY = WorldPointUtil.unpackWorldY(origin);
+            if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
+                pohTransports.addAll(entry.getValue());
+                pohOriginsToRemove.add(origin);
+            }
+        }
+
+        // Remove POH origins from transports map (PrimitiveIntHashMap doesn't support remove)
+        for (Integer origin : pohOriginsToRemove) {
+            transports.remove(origin);
+        }
+
+        if (!pohTransports.isEmpty()) {
+            Set<Transport> existingPohTransports = transports.getOrDefault(pohLanding, new HashSet<>());
+            existingPohTransports.addAll(pohTransports);
+            transports.put(pohLanding, existingPohTransports);
+
+            // Also update transportsPacked for the landing tile
+            transportsPacked.put(pohLanding, existingPohTransports);
         }
     }
 
@@ -599,7 +679,9 @@ public class PathfinderConfig {
 
         // Fairy rings require Dramen/Lunar staff unless Lumbridge Elite diary is complete
         if (TransportType.FAIRY_RING.equals(transport.getType())) {
-            if (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
+            // Use cached varbit value to support being called from pathfinder thread
+            int lumbridgeDiaryComplete = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0);
+            if (lumbridgeDiaryComplete != 1) {
                 if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch)) {
                     return false;
                 }
