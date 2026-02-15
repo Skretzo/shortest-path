@@ -13,6 +13,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Before;
@@ -133,6 +134,64 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testFairyRingsUsedWithLunarStaffInBank() {
+        when(config.useFairyRings()).thenReturn(true);
+        when(config.includeBankPath()).thenReturn(true);
+        setupInventory();
+        setupEquipment();
+
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+
+        // Set up config with bank available before refresh
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        // Set the bank with Lunar staff
+        doReturn(new Item[]{new Item(ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF, 1)}).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+        // Initially, fairy ring transports should NOT be available (bank not visited yet)
+        boolean hasFairyRingTransportInitially = false;
+        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
+            for (Transport t : set) {
+                if (TransportType.FAIRY_RING.equals(t.getType())) {
+                    hasFairyRingTransportInitially = true;
+                    break;
+                }
+            }
+            if (hasFairyRingTransportInitially) break;
+        }
+        assertFalse("Fairy ring transports should NOT be available initially (bank not visited yet)",
+            hasFairyRingTransportInitially);
+
+        // Simulate bank visit
+        pathfinderConfig.setBankVisited(true, 0, 0);
+
+        // After bank visit, fairy ring transports should be available
+        boolean hasFairyRingTransportAfterBank = false;
+        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
+            for (Transport t : set) {
+                if (TransportType.FAIRY_RING.equals(t.getType())) {
+                    hasFairyRingTransportAfterBank = true;
+                    break;
+                }
+            }
+            if (hasFairyRingTransportAfterBank) break;
+        }
+        assertTrue("Fairy ring transports should be available after bank is visited with Lunar staff in bank",
+            hasFairyRingTransportAfterBank);
+    }
+
+    @Test
     public void testFairyRingsNotUsedWithoutDramenStaff() {
         when(config.useFairyRings()).thenReturn(true);
         setupInventory();
@@ -195,24 +254,42 @@ public class PathfinderTest {
         doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
         doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
 
-        // Set the bank on the pathfinderConfig BEFORE refresh so bank items are considered
+        // Set the bank on the pathfinderConfig BEFORE refresh so bank items are considered for type eligibility
         doReturn(new Item[]{new Item(ItemID.DRAMEN_STAFF, 1)}).when(bank).getItems();
         pathfinderConfig.bank = bank;
         pathfinderConfig.refresh();
 
-        // Verify that fairy ring transports are available (type is enabled)
-        boolean hasFairyRingTransport = false;
+        // Initially, fairy ring transports should NOT be available (bank not visited yet)
+        // This is correct for bank routing - the pathfinder needs to route to a bank first
+        boolean hasFairyRingTransportInitially = false;
         for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
             for (Transport t : set) {
                 if (TransportType.FAIRY_RING.equals(t.getType())) {
-                    hasFairyRingTransport = true;
+                    hasFairyRingTransportInitially = true;
                     break;
                 }
             }
-            if (hasFairyRingTransport) break;
+            if (hasFairyRingTransportInitially) break;
         }
-        assertTrue("Fairy ring transports should be available when staff is in bank with includeBankPath enabled",
-                hasFairyRingTransport);
+        assertFalse("Fairy ring transports should NOT be available initially (bank not visited yet)",
+            hasFairyRingTransportInitially);
+
+        // Simulate bank visit - this will trigger refreshTransports() internally
+        pathfinderConfig.setBankVisited(true, 0, 0);
+
+        // After bank visit, fairy ring transports should be available
+        boolean hasFairyRingTransportAfterBank = false;
+        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
+            for (Transport t : set) {
+                if (TransportType.FAIRY_RING.equals(t.getType())) {
+                    hasFairyRingTransportAfterBank = true;
+                    break;
+                }
+            }
+            if (hasFairyRingTransportAfterBank) break;
+        }
+        assertTrue("Fairy ring transports should be available after bank is visited",
+            hasFairyRingTransportAfterBank);
     }
 
     @Test
