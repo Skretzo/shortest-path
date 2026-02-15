@@ -169,12 +169,8 @@ public class PathfinderTest {
     @Test
     public void testHotAirBalloons() {
         when(config.useHotAirBalloons()).thenReturn(true);
-        setupInventory(
-            new Item(ItemID.LOGS, 2),
-            new Item(ItemID.OAK_LOGS, 1),
-            new Item(ItemID.WILLOW_LOGS, 1),
-            new Item(ItemID.YEW_LOGS, 1),
-            new Item(ItemID.MAGIC_LOGS, 1));
+        // Logs are no longer required by the plugin - the balloon can be used without them
+        setupInventory();
         testTransportLength(2, TransportType.HOT_AIR_BALLOON);
     }
 
