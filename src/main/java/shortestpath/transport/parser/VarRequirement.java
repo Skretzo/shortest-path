@@ -1,8 +1,7 @@
 package shortestpath.transport.parser;
 
-import lombok.Getter;
-
 import java.util.Map;
+import lombok.Getter;
 
 /**
  * Represents a variable-based requirement for a transport.
@@ -18,6 +17,7 @@ public class VarRequirement {
     private final int id;
     private final int value;
     private final VarCheckType checkType;
+
     public VarRequirement(VarType varType, int id, int value, VarCheckType checkType) {
         this.varType = varType;
         this.id = id;

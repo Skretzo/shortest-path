@@ -1,6 +1,10 @@
 package shortestpath.transport.parser;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 /**
  * Parses TSV file contents into TransportRecord objects.

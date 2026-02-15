@@ -1,10 +1,9 @@
 package shortestpath.transport;
 
+import java.util.function.Function;
 import lombok.Getter;
 import net.runelite.api.Skill;
 import shortestpath.ShortestPathConfig;
-
-import java.util.function.Function;
 
 @Getter
 public enum TransportType {

@@ -1,8 +1,7 @@
 package shortestpath.transport.requirement;
 
-import lombok.Getter;
-
 import java.util.Arrays;
+import lombok.Getter;
 
 /**
  * Represents an item requirement with its variations and quantity.

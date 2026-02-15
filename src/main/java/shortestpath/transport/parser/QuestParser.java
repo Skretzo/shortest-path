@@ -1,9 +1,8 @@
 package shortestpath.transport.parser;
 
-import net.runelite.api.Quest;
-
 import java.util.HashSet;
 import java.util.Set;
+import net.runelite.api.Quest;
 
 /**
  * Parses quest requirements from TSV field values.

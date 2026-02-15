@@ -1,15 +1,21 @@
 package shortestpath.transport;
 
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.parser.*;
+import shortestpath.transport.parser.FieldParser;
+import shortestpath.transport.parser.ItemRequirementParser;
+import shortestpath.transport.parser.QuestParser;
+import shortestpath.transport.parser.SkillRequirementParser;
+import shortestpath.transport.parser.TransportRecord;
+import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.parser.VarRequirementParser;
+import shortestpath.transport.parser.WorldPointParser;
 import shortestpath.transport.requirement.TransportItems;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * This class represents a travel point between two WorldPoints.
@@ -215,9 +221,9 @@ public class Transport {
         private final VarRequirementParser varbitParser = VarRequirementParser.forVarbits();
         private final VarRequirementParser varPlayerParser = VarRequirementParser.forVarPlayers();
         private final FieldParser<Integer> worldPointParser = new WorldPointParser();
+        private final Set<Quest> quests = new HashSet<>();
         private int origin = UNDEFINED_ORIGIN;
         private int destination = UNDEFINED_DESTINATION;
-        private final Set<Quest> quests = new HashSet<>();
         private TransportItems itemRequirements;
         private TransportType type;
         private int duration;
