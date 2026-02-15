@@ -1,17 +1,16 @@
 package shortestpath.transport;
 
-import org.junit.Assert;
-import org.junit.Test;
-import shortestpath.WorldPointUtil;
-import shortestpath.transport.parser.VarCheckType;
-import shortestpath.transport.parser.VarRequirement;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.junit.Assert;
+import org.junit.Test;
+import shortestpath.WorldPointUtil;
+import shortestpath.transport.parser.VarCheckType;
+import shortestpath.transport.parser.VarRequirement;
 
 /**
  * Tests for Quetzal transport VarPlayer checks.
@@ -34,7 +33,6 @@ public class QuetzalTransportTest {
         TransportLoader.addTransportsFromContents(transports, contents, TransportType.QUETZAL, 10);
 
         Assert.assertFalse("Quetzal transports should be loaded", transports.isEmpty());
-        System.out.println("Loaded " + transports.size() + " quetzal origin locations");
     }
 
     @Test
@@ -50,7 +48,6 @@ public class QuetzalTransportTest {
         TransportLoader.addTransportsFromContents(transports, contents, TransportType.QUETZAL, 10);
 
         Assert.assertFalse("Quetzal transports should be loaded from resource", transports.isEmpty());
-        System.out.println("Loaded " + transports.size() + " quetzal origin locations from resource");
 
         // Check that Kastori destination has VarPlayer check
         int kastoriPacked = WorldPointUtil.packWorldPoint(1344, 3022, 0);
@@ -59,14 +56,7 @@ public class QuetzalTransportTest {
         for (Set<Transport> transportSet : transports.values()) {
             for (Transport t : transportSet) {
                 if (t.getDestination() == kastoriPacked) {
-                    System.out.println("Found transport to Kastori from " +
-                            WorldPointUtil.unpackWorldX(t.getOrigin()) + "," +
-                            WorldPointUtil.unpackWorldY(t.getOrigin()));
-                    System.out.println("  VarRequirements: " + t.getVarRequirements().size());
-                    System.out.println("  VarPlayers: " + t.getVarPlayers().size());
                     for (VarRequirement vp : t.getVarPlayers()) {
-                        System.out.println("    VarPlayer: id=" + vp.getId() +
-                                ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
                         if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS && vp.getValue() == BIT_KASTORI) {
                             foundKastoriWithCheck = true;
                         }
@@ -96,13 +86,8 @@ public class QuetzalTransportTest {
                 if (t.getDestination() == kastoriPacked) {
                     foundKastoriDestination = true;
                     Set<VarRequirement> varPlayers = t.getVarPlayers();
-                    System.out.println("Kastori transport from " +
-                            WorldPointUtil.unpackWorldX(t.getOrigin()) + "," +
-                            WorldPointUtil.unpackWorldY(t.getOrigin()) +
-                            " has " + varPlayers.size() + " VarPlayer requirements");
 
                     for (VarRequirement vp : varPlayers) {
-                        System.out.println("  VarPlayer: id=" + vp.getId() + ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
                         if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS) {
                             hasVarPlayerCheck = true;
                         }
@@ -178,9 +163,6 @@ public class QuetzalTransportTest {
                 String displayInfo = t.getDisplayInfo();
                 if (displayInfo != null && displayInfo.startsWith("Quetzal whistle:")) {
                     quetzalWhistleDestinations++;
-                    System.out.println("Found Quetzal whistle destination: " + displayInfo +
-                            " at " + WorldPointUtil.unpackWorldX(t.getDestination()) + "," +
-                            WorldPointUtil.unpackWorldY(t.getDestination()));
                 }
             }
         }
@@ -210,11 +192,7 @@ public class QuetzalTransportTest {
                     String displayInfo = t.getDisplayInfo();
                     if (displayInfo != null && displayInfo.contains("Quetzal whistle")) {
                         foundKastoriWhistle = true;
-                        System.out.println("Found Quetzal whistle to Kastori: " + displayInfo);
-                        System.out.println("  VarPlayers: " + t.getVarPlayers().size());
                         for (VarRequirement vp : t.getVarPlayers()) {
-                            System.out.println("    VarPlayer: id=" + vp.getId() +
-                                    ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
                             if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS && vp.getValue() == BIT_KASTORI) {
                                 hasVarPlayerCheck = true;
                             }
@@ -263,13 +241,8 @@ public class QuetzalTransportTest {
                 if (t.getDestination() == kastoriPacked &&
                         TransportType.QUETZAL_WHISTLE.equals(t.getType())) {
                     foundQuetzalWhistleToKastori = true;
-                    System.out.println("Found QUETZAL_WHISTLE to Kastori:");
-                    System.out.println("  Origin: " + t.getOrigin() + " (UNDEFINED=" + Transport.UNDEFINED_ORIGIN + ")");
-                    System.out.println("  VarPlayers (getVarPlayers): " + t.getVarPlayers().size());
-                    System.out.println("  VarRequirements (getVarRequirements): " + t.getVarRequirements().size());
 
                     for (VarRequirement vp : t.getVarPlayers()) {
-                        System.out.println("    VarPlayer: id=" + vp.getId() + ", value=" + vp.getValue() + ", check=" + vp.getCheckType());
                         if (vp.getId() == VARPLAYER_QUETZAL_PLATFORMS &&
                                 vp.getValue() == BIT_KASTORI &&
                                 vp.getCheckType() == VarCheckType.BIT_SET) {
@@ -279,7 +252,6 @@ public class QuetzalTransportTest {
 
                     // Also verify getVarRequirements() returns the same VarPlayer requirement
                     for (VarRequirement vr : t.getVarRequirements()) {
-                        System.out.println("    VarRequirement: id=" + vr.getId() + ", isVarbit=" + vr.isVarbit() + ", isVarPlayer=" + vr.isVarPlayer());
                         if (vr.isVarPlayer() && vr.getId() == VARPLAYER_QUETZAL_PLATFORMS) {
                             varRequirementsContainsVarPlayer = true;
                         }
@@ -311,15 +283,10 @@ public class QuetzalTransportTest {
                     whistleCount++;
                     if (!TransportType.QUETZAL_WHISTLE.equals(t.getType())) {
                         wrongTypeCount++;
-                        System.out.println("ERROR: Whistle transport has wrong type: " + displayInfo + " -> " + t.getType());
-                    } else {
-                        System.out.println("OK: " + displayInfo + " -> " + t.getType());
                     }
                 }
             }
         }
-
-        System.out.println("Total whistle transports: " + whistleCount);
         Assert.assertTrue("Should find whistle transports", whistleCount > 0);
         Assert.assertEquals("All whistle transports should have QUETZAL_WHISTLE type", 0, wrongTypeCount);
     }
@@ -335,8 +302,8 @@ public class QuetzalTransportTest {
 
         // Verify they reference different config methods by checking they're different function instances
         Assert.assertNotEquals("Cost getters should be different instances",
-            TransportType.QUETZAL.getCostGetter(),
-            TransportType.QUETZAL_WHISTLE.getCostGetter());
+                TransportType.QUETZAL.getCostGetter(),
+                TransportType.QUETZAL_WHISTLE.getCostGetter());
     }
 
     /**
@@ -360,17 +327,10 @@ public class QuetzalTransportTest {
                     platformCount++;
                     if (origin == aldarinPacked) {
                         aldarinOrigins++;
-                        System.out.println("QUETZAL from Aldarin -> " +
-                                WorldPointUtil.unpackWorldX(t.getDestination()) + "," +
-                                WorldPointUtil.unpackWorldY(t.getDestination()) +
-                                " (displayInfo: " + t.getDisplayInfo() + ")");
                     }
                 }
             }
         }
-
-        System.out.println("Total QUETZAL platform transports: " + platformCount);
-        System.out.println("Transports from Aldarin platform: " + aldarinOrigins);
 
         Assert.assertTrue("Should find QUETZAL platform transports", platformCount > 0);
         // From Aldarin, you should be able to reach all other platforms
@@ -394,21 +354,14 @@ public class QuetzalTransportTest {
                     whistleCount++;
                     if (t.getItemRequirements() != null) {
                         whistlesWithItemReqs++;
-                        System.out.println("Whistle to " + t.getDisplayInfo() + " has item requirements: " +
-                            t.getItemRequirements());
-                    } else {
-                        System.out.println("ERROR: Whistle to " + t.getDisplayInfo() + " has NO item requirements!");
                     }
                 }
             }
         }
 
-        System.out.println("Total whistle transports: " + whistleCount);
-        System.out.println("Whistles with item requirements: " + whistlesWithItemReqs);
-
         Assert.assertTrue("Should find whistle transports", whistleCount > 0);
         Assert.assertEquals("All whistle transports should have item requirements",
-            whistleCount, whistlesWithItemReqs);
+                whistleCount, whistlesWithItemReqs);
     }
 }
 
