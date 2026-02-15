@@ -293,6 +293,328 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testTeleportItemsAndFairyRingsAvailableAfterBankVisit() {
+        // Test scenario: Both Dramen staff AND Ardougne cloak are in the bank
+        // After visiting a bank, both fairy rings AND teleport items should be available
+        when(config.useFairyRings()).thenReturn(true);
+        when(config.includeBankPath()).thenReturn(true);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
+        setupInventory();
+        setupEquipment();
+
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        // Bank contains both Dramen staff AND Ardougne cloak (elite)
+        doReturn(new Item[]{
+            new Item(ItemID.DRAMEN_STAFF, 1),
+            new Item(ItemID.ARDY_CAPE_ELITE, 1)
+        }).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+        // Initially, fairy rings should NOT be available (bank not visited)
+        boolean hasFairyRingInitially = false;
+        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
+            for (Transport t : set) {
+                if (TransportType.FAIRY_RING.equals(t.getType())) {
+                    hasFairyRingInitially = true;
+                    break;
+                }
+            }
+            if (hasFairyRingInitially) break;
+        }
+        assertFalse("Fairy ring transports should NOT be available initially", hasFairyRingInitially);
+
+        // Simulate bank visit
+        pathfinderConfig.setBankVisited(true, 0, 0);
+
+        // After bank visit, fairy ring transports should be available
+        boolean hasFairyRingAfterBank = false;
+        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
+            for (Transport t : set) {
+                if (TransportType.FAIRY_RING.equals(t.getType())) {
+                    hasFairyRingAfterBank = true;
+                    break;
+                }
+            }
+            if (hasFairyRingAfterBank) break;
+        }
+        assertTrue("Fairy ring transports should be available after bank visit", hasFairyRingAfterBank);
+
+        // Verify that teleport items are available at the bank location (location 0,0,0 which we used for setBankVisited)
+        // The transports map should now include teleport items at that location
+        Set<Transport> transportsAtBank = pathfinderConfig.getTransports().get(0);
+        boolean hasTeleportItemAtBank = transportsAtBank != null && transportsAtBank.stream()
+            .anyMatch(t -> TransportType.TELEPORTATION_ITEM.equals(t.getType()));
+        assertTrue("Teleport items should be available at bank location after bank visit", hasTeleportItemAtBank);
+    }
+
+    /**
+     * Debug test: Compare paths from Castle Wars to AKQ fairy ring
+     * with staff in inventory vs staff in bank.
+     * Both should use fairy rings if that's the optimal path.
+     */
+    @Test
+    public void testCastleWarsToAKQFairyRingComparison() {
+        int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
+        int akqFairyRing = WorldPointUtil.packWorldPoint(2324, 3619, 0);
+
+        // Enable fairy rings and teleport items
+        when(config.useFairyRings()).thenReturn(true);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
+        // Set consumable threshold to 50 - consumable teleports must save 50+ tiles to be used
+        when(config.costConsumableTeleportationItems()).thenReturn(50);
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+
+        // Test 1: Staff in INVENTORY - should use fairy rings
+        setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
+        setupEquipment();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY_AND_BANK);
+
+        Pathfinder pathfinderWithStaff = new Pathfinder(plugin, pathfinderConfig, castleWars, Set.of(akqFairyRing));
+        pathfinderWithStaff.run();
+        int pathLengthWithStaff = pathfinderWithStaff.getPath().size();
+
+        // Check if fairy rings were used
+        boolean usedFairyRingWithStaff = false;
+        for (int i = 1; i < pathfinderWithStaff.getPath().size(); i++) {
+            int origin = pathfinderWithStaff.getPath().get(i - 1);
+            int dest = pathfinderWithStaff.getPath().get(i);
+            Set<Transport> originTransports = pathfinderConfig.getTransports().get(origin);
+            if (originTransports != null) {
+                for (Transport t : originTransports) {
+                    if (t.getDestination() == dest && TransportType.FAIRY_RING.equals(t.getType())) {
+                        usedFairyRingWithStaff = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        System.out.println("=== Staff in INVENTORY (consumable threshold=50) ===");
+        System.out.println("Path length: " + pathLengthWithStaff);
+        System.out.println("Used fairy ring: " + usedFairyRingWithStaff);
+        printPathWithTransports(pathfinderWithStaff, pathfinderConfig);
+
+        // Test 2: Staff in BANK with includeBankPath enabled, also Ardougne cloak and necklace of passage
+        when(config.includeBankPath()).thenReturn(true);
+        setupInventory(); // No staff in inventory
+        setupEquipment();
+
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        // Bank contains: Dramen staff, Ardougne cloak, AND necklace of passage
+        // The necklace should NOT be used due to the consumable threshold of 50
+        doReturn(new Item[]{
+            new Item(ItemID.DRAMEN_STAFF, 1),
+            new Item(ItemID.ARDY_CAPE_MEDIUM, 1),
+            new Item(ItemID.NECKLACE_OF_PASSAGE_5, 1)
+        }).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+        Pathfinder pathfinderWithBankStaff = new Pathfinder(plugin, pathfinderConfig, castleWars, Set.of(akqFairyRing));
+        pathfinderWithBankStaff.run();
+        int pathLengthWithBankStaff = pathfinderWithBankStaff.getPath().size();
+
+        // Check if fairy rings were used
+        boolean usedFairyRingWithBankStaff = false;
+        for (int i = 1; i < pathfinderWithBankStaff.getPath().size(); i++) {
+            int origin = pathfinderWithBankStaff.getPath().get(i - 1);
+            int dest = pathfinderWithBankStaff.getPath().get(i);
+            Set<Transport> originTransports = pathfinderConfig.getTransports().get(origin);
+            if (originTransports != null) {
+                for (Transport t : originTransports) {
+                    if (t.getDestination() == dest && TransportType.FAIRY_RING.equals(t.getType())) {
+                        usedFairyRingWithBankStaff = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        System.out.println("\n=== Staff in BANK (with Ardougne cloak and necklace of passage, consumable threshold=50) ===");
+        System.out.println("Path length: " + pathLengthWithBankStaff);
+        System.out.println("Used fairy ring: " + usedFairyRingWithBankStaff);
+        printPathWithTransports(pathfinderWithBankStaff, pathfinderConfig);
+
+        // Both paths should use fairy rings if that's optimal
+        assertTrue("Fairy ring should be used when staff is in inventory", usedFairyRingWithStaff);
+        assertTrue("Fairy ring should be used when staff is in bank with includeBankPath", usedFairyRingWithBankStaff);
+    }
+
+    private void printPathWithTransports(Pathfinder pathfinder, PathfinderConfig config) {
+        System.out.println("Transports used:");
+        for (int i = 1; i < pathfinder.getPath().size(); i++) {
+            int prevPos = pathfinder.getPath().get(i - 1);
+            int pos = pathfinder.getPath().get(i);
+            Set<Transport> transports = config.getTransports().get(prevPos);
+            if (transports != null) {
+                for (Transport t : transports) {
+                    if (t.getDestination() == pos) {
+                        int prevX = WorldPointUtil.unpackWorldX(prevPos);
+                        int prevY = WorldPointUtil.unpackWorldY(prevPos);
+                        int x = WorldPointUtil.unpackWorldX(pos);
+                        int y = WorldPointUtil.unpackWorldY(pos);
+                        System.out.println("  Step " + i + ": " + t.getType() + " from (" + prevX + "," + prevY + ") to (" + x + "," + y + ") - " + t.getDisplayInfo());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Diagnose the issue: targeting DJP fairy ring works, but targeting AKQ does not.
+     * When staff is in bank and target is DJP - uses Ardougne cloak correctly.
+     * When staff is in bank and target is AKQ - incorrectly uses necklace of passage.
+     */
+    @Test
+    public void testBankPathDJPvsAKQTarget() {
+        int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
+        int djpFairyRing = WorldPointUtil.packWorldPoint(2658, 3230, 0); // Near Kandarin Monastery
+        int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0); // AKQ destination
+
+        // Enable fairy rings and teleport items
+        when(config.useFairyRings()).thenReturn(true);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
+        when(config.includeBankPath()).thenReturn(true);
+        when(config.costConsumableTeleportationItems()).thenReturn(50);
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+
+        setupInventory(); // No staff in inventory
+        setupEquipment();
+
+        // Setup pathfinder config
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        // Bank contains: Dramen staff, Ardougne cloak, AND necklace of passage
+        doReturn(new Item[]{
+            new Item(ItemID.DRAMEN_STAFF, 1),
+            new Item(ItemID.ARDY_CAPE_ELITE, 1),
+            new Item(ItemID.NECKLACE_OF_PASSAGE_1, 1)
+        }).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+        // Test 1: Target DJP fairy ring (this works according to user)
+        Pathfinder pathfinderToDJP = new Pathfinder(plugin, pathfinderConfig, castleWars, Set.of(djpFairyRing));
+        pathfinderToDJP.run();
+
+        boolean usedNecklaceToDJP = false;
+        boolean usedArdougneCloakToDJP = false;
+        for (int i = 1; i < pathfinderToDJP.getPath().size(); i++) {
+            int origin = pathfinderToDJP.getPath().get(i - 1);
+            int dest = pathfinderToDJP.getPath().get(i);
+            Set<Transport> originTransports = pathfinderConfig.getTransports().get(origin);
+            if (originTransports != null) {
+                for (Transport t : originTransports) {
+                    if (t.getDestination() == dest && TransportType.TELEPORTATION_ITEM.equals(t.getType())) {
+                        if (t.getDisplayInfo() != null && t.getDisplayInfo().contains("Necklace")) {
+                            usedNecklaceToDJP = true;
+                        }
+                        if (t.getDisplayInfo() != null && t.getDisplayInfo().contains("Ardougne")) {
+                            usedArdougneCloakToDJP = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        System.out.println("=== Target: DJP fairy ring (should work) ===");
+        System.out.println("Path length: " + pathfinderToDJP.getPath().size());
+        System.out.println("Used Ardougne cloak: " + usedArdougneCloakToDJP);
+        System.out.println("Used necklace of passage: " + usedNecklaceToDJP);
+        printPathWithTransports(pathfinderToDJP, pathfinderConfig);
+
+        // Test 2: Target AKQ fairy ring (this doesn't work according to user)
+        // Need fresh pathfinderConfig
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        doReturn(new Item[]{
+            new Item(ItemID.DRAMEN_STAFF, 1),
+            new Item(ItemID.ARDY_CAPE_ELITE, 1),
+            new Item(ItemID.NECKLACE_OF_PASSAGE_1, 1)
+        }).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+        Pathfinder pathfinderToAKQ = new Pathfinder(plugin, pathfinderConfig, castleWars, Set.of(akqFairyRing));
+        pathfinderToAKQ.run();
+
+        boolean usedFairyRingToAKQ = false;
+        boolean usedNecklaceToAKQ = false;
+        boolean usedArdougneCloakToAKQ = false;
+        for (int i = 1; i < pathfinderToAKQ.getPath().size(); i++) {
+            int origin = pathfinderToAKQ.getPath().get(i - 1);
+            int dest = pathfinderToAKQ.getPath().get(i);
+            Set<Transport> originTransports = pathfinderConfig.getTransports().get(origin);
+            if (originTransports != null) {
+                for (Transport t : originTransports) {
+                    if (t.getDestination() == dest) {
+                        if (TransportType.FAIRY_RING.equals(t.getType())) {
+                            usedFairyRingToAKQ = true;
+                        }
+                        if (TransportType.TELEPORTATION_ITEM.equals(t.getType())) {
+                            if (t.getDisplayInfo() != null && t.getDisplayInfo().contains("Necklace")) {
+                                usedNecklaceToAKQ = true;
+                            }
+                            if (t.getDisplayInfo() != null && t.getDisplayInfo().contains("Ardougne")) {
+                                usedArdougneCloakToAKQ = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        System.out.println("\n=== Target: AKQ fairy ring (problematic case) ===");
+        System.out.println("Path length: " + pathfinderToAKQ.getPath().size());
+        System.out.println("Used fairy ring: " + usedFairyRingToAKQ);
+        System.out.println("Used Ardougne cloak: " + usedArdougneCloakToAKQ);
+        System.out.println("Used necklace of passage: " + usedNecklaceToAKQ);
+        printPathWithTransports(pathfinderToAKQ, pathfinderConfig);
+
+        // Assertions - both should use Ardougne cloak, not necklace
+        assertTrue("Should use Ardougne cloak to DJP", usedArdougneCloakToDJP);
+        assertFalse("Should NOT use necklace to DJP", usedNecklaceToDJP);
+
+        assertTrue("Should use fairy ring to reach AKQ", usedFairyRingToAKQ);
+        assertTrue("Should use Ardougne cloak to reach AKQ via fairy ring", usedArdougneCloakToAKQ);
+        assertFalse("Should NOT use necklace to AKQ", usedNecklaceToAKQ);
+    }
+
+    @Test
     public void testGnomeGliders() {
         when(config.useGnomeGliders()).thenReturn(true);
         testTransportLength(2, TransportType.GNOME_GLIDER);
