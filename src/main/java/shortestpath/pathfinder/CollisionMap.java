@@ -1,9 +1,11 @@
 package shortestpath.pathfinder;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
-
-import java.util.*;
 
 
 public class CollisionMap {

@@ -1,12 +1,11 @@
 package shortestpath.pathfinder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Set;
 import lombok.Getter;
 import net.runelite.api.Client;
@@ -23,13 +22,13 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.JewelleryBoxTier;
-import shortestpath.TeleportationItem;
-import shortestpath.ShortestPathConfig;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.Destination;
 import shortestpath.ItemVariations;
+import shortestpath.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
+import shortestpath.ShortestPathConfig;
+import shortestpath.ShortestPathPlugin;
+import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;

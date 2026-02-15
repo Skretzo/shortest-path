@@ -1,11 +1,15 @@
 package shortestpath.pathfinder;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Set;
 import lombok.Getter;
 import shortestpath.PrimitiveIntList;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
-
-import java.util.*;
 
 public class Pathfinder implements Runnable {
     private final PathfinderStats stats;
