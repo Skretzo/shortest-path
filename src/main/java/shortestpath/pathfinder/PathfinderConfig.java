@@ -39,28 +39,30 @@ import shortestpath.transport.requirement.TransportItems;
 
 public class PathfinderConfig {
     private static final List<Integer> RUNE_POUCHES = Arrays.asList(
-        ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
-        ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
+            ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
+            ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
     );
     private static final int[] RUNE_POUCH_RUNE_VARBITS = {
-        VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
-        VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
-	};
+            VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
+            VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
+    };
     private static final int[] RUNE_POUCH_AMOUNT_VARBITS = {
-        VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
-        VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
-	};
+            VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
+            VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
+    };
     private static final Set<Integer> CURRENCIES = Set.of(
-        ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
+            ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
     private static final TransportItems DRAMEN_STAFF = new TransportItems(
-        new int[][]{null},
-        new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
-        new int[][]{null},
-        new int[]{1});
+            new int[][]{null},
+            new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
+            new int[][]{null},
+            new int[]{1});
 
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
-    /** All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player. */
+    /**
+     * All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player.
+     */
     private final Map<Integer, Set<Transport>> allTransports;
     private final Set<Transport> usableTeleports;
     private final Map<String, Set<Integer>> allDestinations;
@@ -73,7 +75,9 @@ public class PathfinderConfig {
     // Copy of transports with packed positions for the hotpath; lists are not copied and are the same reference in both maps
     @Getter
     private final PrimitiveIntHashMap<Set<Transport>> transportsPacked;
-    /** Reference that points to either allDestinations or filteredDestinations */
+    /**
+     * Reference that points to either allDestinations or filteredDestinations
+     */
     private Map<String, Set<Integer>> destinations;
 
     private final Client client;
@@ -91,11 +95,11 @@ public class PathfinderConfig {
 
     // POH-specific settings (not tied to a single TransportType)
     private boolean usePohFairyRing,
-        usePohSpiritTree,
-        usePohMountedItems,
-        usePoh,
-        usePohObelisk,
-        includeBankPath;
+            usePohSpiritTree,
+            usePohMountedItems,
+            usePoh,
+            usePohObelisk,
+            includeBankPath;
     private JewelleryBoxTier pohJewelleryBoxTier;
     private int costConsumableTeleportationItems;
     private int currencyThreshold;
@@ -170,7 +174,9 @@ public class PathfinderConfig {
         refreshDestinations();
     }
 
-    /** Specialized method for only updating player-held item and spell transports */
+    /**
+     * Specialized method for only updating player-held item and spell transports
+     */
     public void refreshTeleports(int packedLocation, int wildernessLevel) {
         Set<Transport> usableWildyTeleports = new HashSet<>(usableTeleports.size());
 
@@ -192,7 +198,9 @@ public class PathfinderConfig {
         destinations = avoidWilderness ? filteredDestinations : allDestinations;
     }
 
-    /** Changes to the config might have invalidated some locations, e.g. those in the wilderness */
+    /**
+     * Changes to the config might have invalidated some locations, e.g. those in the wilderness
+     */
     public void filterLocations(Set<Integer> locations, boolean canReviveFiltered) {
         if (avoidWilderness) {
             locations.removeIf(location -> {
@@ -213,7 +221,9 @@ public class PathfinderConfig {
         }
     }
 
-    /** Returns the user-configured additional cost for a given transport */
+    /**
+     * Returns the user-configured additional cost for a given transport
+     */
     public int getAdditionalTransportCost(Transport transport) {
         if (transport.isConsumable() && TransportType.TELEPORTATION_ITEM.equals(transport.getType())) {
             return costConsumableTeleportationItems;
@@ -250,15 +260,16 @@ public class PathfinderConfig {
         }
 
         // Apply runtime restrictions based on quests/items
+        // For fairy rings, use hasItemsInInventoryEquipmentOrBank so the type is enabled when staff is in bank
         transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-            (client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39)
-            && (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1 || hasRequiredItems(DRAMEN_STAFF)));
+                (client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39)
+                        && (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1 || hasItemsInInventoryEquipmentOrBank(DRAMEN_STAFF)));
         transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
-            QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
+                QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
         transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
-            QuestState.FINISHED.equals(getQuestState(Quest.BONE_VOYAGE)));
+                QuestState.FINISHED.equals(getQuestState(Quest.BONE_VOYAGE)));
         transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
-            QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
+                QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
         transports.clear();
         transportsPacked.clear();
@@ -328,7 +339,7 @@ public class PathfinderConfig {
             if (entry.getKey() == WorldPointUtil.UNDEFINED) { // is a teleport
                 for (Transport transport : entry.getValue()) {
                     if (useTransport(transport)
-                        && hasRequiredItems(transport, false, false, true, false)) {
+                            && hasRequiredItems(transport, false, false, true, false)) {
                         usableTeleports.add(transport);
                     }
                 }
@@ -346,6 +357,8 @@ public class PathfinderConfig {
     public void setBankVisited(boolean visited, int packedLocation, int wildernessLevel) {
         bankVisited = visited;
         if (bankVisited) {
+            // Re-run refreshTransports to add transports that require bank items (like fairy rings with staff in bank)
+            refreshTransports();
             refreshUsableTeleports();
             refreshTeleports(packedLocation, wildernessLevel);
         }
@@ -505,9 +518,9 @@ public class PathfinderConfig {
         // Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
         boolean isMountedGlory = objectInfo.contains("Amulet of Glory");
         boolean isMountedItem = isMountedGlory ||
-                                objectInfo.contains("Xeric's Talisman") ||
-                                objectInfo.contains("Digsite") ||
-                                objectInfo.contains("Mythical cape");
+                objectInfo.contains("Xeric's Talisman") ||
+                objectInfo.contains("Digsite") ||
+                objectInfo.contains("Mythical cape");
 
         if (isMountedItem) {
             // If mounted glory and ornate jewellery box is enabled, skip the glory
@@ -531,7 +544,7 @@ public class PathfinderConfig {
         // Fancy box (37501): destinations A-J
         if (objectInfo.contains("Fancy Jewellery Box 37501")) {
             return JewelleryBoxTier.FANCY.equals(pohJewelleryBoxTier) ||
-                   JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
+                    JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
         }
 
         // Ornate box (37520): destinations K-R
@@ -542,7 +555,9 @@ public class PathfinderConfig {
         return false;
     }
 
-    /** Checks if the player has all the required skill levels for the transport */
+    /**
+     * Checks if the player has all the required skill levels for the transport
+     */
     private boolean hasRequiredLevels(Transport transport) {
         int[] requiredLevels = transport.getSkillLevels();
         for (int i = 0; i < boostedSkillLevelsAndMore.length; i++) {
@@ -559,14 +574,16 @@ public class PathfinderConfig {
         return hasRequiredItems(transport, true, true, true, true);
     }
 
-    /** Checks if the player has all the required equipment and inventory items for the transport */
+    /**
+     * Checks if the player has all the required equipment and inventory items for the transport
+     */
     private boolean hasRequiredItems(Transport transport,
-        boolean checkInventory,
-        boolean checkEquipment,
-        boolean checkBank,
-        boolean checkRunePouch) {
+                                     boolean checkInventory,
+                                     boolean checkEquipment,
+                                     boolean checkBank,
+                                     boolean checkRunePouch) {
         if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
-            TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())) {
+                TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())) {
             switch (transportTypeConfig.getTeleportationItemSetting()) {
                 case ALL:
                 case ALL_NON_CONSUMABLE:
@@ -579,20 +596,32 @@ public class PathfinderConfig {
                     break;
             }
         }
+
+        // Fairy rings require Dramen/Lunar staff unless Lumbridge Elite diary is complete
+        if (TransportType.FAIRY_RING.equals(transport.getType())) {
+            if (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
+                if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch)) {
+                    return false;
+                }
+            }
+        }
+
         return hasRequiredItems(transport.getItemRequirements(),
-            checkInventory, checkEquipment, checkBank, checkRunePouch);
+                checkInventory, checkEquipment, checkBank, checkRunePouch);
     }
 
     private boolean hasRequiredItems(TransportItems transportItems) {
         return hasRequiredItems(transportItems, true, true, true, true);
     }
 
-    /** Checks if the player has all the required equipment and inventory items for the transport */
+    /**
+     * Checks if the player has all the required equipment and inventory items for the transport
+     */
     private boolean hasRequiredItems(TransportItems transportItems,
-        boolean checkInventory,
-        boolean checkEquipment,
-        boolean checkBank,
-        boolean checkRunePouch) {
+                                     boolean checkInventory,
+                                     boolean checkEquipment,
+                                     boolean checkBank,
+                                     boolean checkRunePouch) {
         if (transportItems == null) {
             return true;
         }
@@ -622,14 +651,13 @@ public class PathfinderConfig {
 
         if (checkBank) {
             TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
-            // Check bank items when:
-            // 1. includeBankPath is enabled (to determine if transports could be used after visiting bank), OR
-            // 2. bankVisited is true AND teleport setting allows bank items
-            if (bank != null
-                && (includeBankPath
-                || (bankVisited
-                    && (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-                    || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))))) {
+            // Check bank items only when bankVisited is true AND either:
+            // 1. includeBankPath is enabled, OR
+            // 2. teleport setting allows bank items
+            if (bank != null && bankVisited
+                    && (includeBankPath
+                    || TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+                    || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
                 for (Item item : bank.getItems()) {
                     if (item.getId() >= 0 && item.getQuantity() > 0) {
                         itemsAndQuantities.put(item.getId(), item.getQuantity());
@@ -698,7 +726,38 @@ public class PathfinderConfig {
         return true;
     }
 
-    /** Calculates the combat level of the player */
+    /**
+     * Checks if required items are available in inventory, equipment, or bank.
+     * Used for transport TYPE eligibility when includeBankPath is enabled.
+     */
+    private boolean hasItemsInInventoryEquipmentOrBank(TransportItems transportItems) {
+        if (transportItems == null) {
+            return true;
+        }
+        // Check inventory and equipment first
+        if (hasRequiredItems(transportItems, true, true, false, false)) {
+            return true;
+        }
+        // If includeBankPath is enabled, also check if item is in bank
+        if (includeBankPath && bank != null) {
+            for (int[] itemGroup : transportItems.getStaves()) {
+                if (itemGroup != null) {
+                    for (int itemId : itemGroup) {
+                        for (Item bankItem : bank.getItems()) {
+                            if (bankItem.getId() == itemId && bankItem.getQuantity() > 0) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Calculates the combat level of the player
+     */
     private int getCombatLevel() {
         int attack = client.getRealSkillLevel(Skill.ATTACK);
         int strength = client.getRealSkillLevel(Skill.STRENGTH);
