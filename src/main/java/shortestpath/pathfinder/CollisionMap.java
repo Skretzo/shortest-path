@@ -99,7 +99,7 @@ public class CollisionMap {
             // Use delayed visit for:
             // 1. Teleports (no fixed origin) - so cheaper paths can be found
             // 2. Transports that share destinations with teleports (e.g., quetzal platforms)
-            // Regular transports mark visited immediately to prevent walking from stealing destinations
+            //    This ensures the cheaper option wins when both can reach the same destination
             boolean isTeleport = transport.getOrigin() == Transport.UNDEFINED_ORIGIN;
             boolean sharesTeleportDest = transport.getType().sharesTeleportDestinations();
             boolean delayedVisit = isTeleport || sharesTeleportDest;
