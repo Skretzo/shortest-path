@@ -89,6 +89,12 @@ public class PathfinderConfig {
     private boolean avoidWilderness;
     @Getter
     private boolean bankVisited;
+    /**
+     * True if fairy rings require visiting a bank first (staff only in bank, no diary).
+     * When true, fairy ring transports are filtered per-path based on whether the path has visited a bank.
+     */
+    @Getter
+    private boolean requiresBankForFairyRings;
 
     // Centralized transport type enable/disable config
     private final TransportTypeConfig transportTypeConfig;
@@ -270,8 +276,17 @@ public class PathfinderConfig {
         boolean hasFairyRingQuest = varbitValues.get(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39;
         boolean hasLumbridgeDiary = varbitValues.get(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
         boolean hasStaffInInventoryOrEquipment = hasRequiredItems(DRAMEN_STAFF, true, true, false, false);
+        boolean hasStaffInBank = hasStaffInBank();
+
+        // Track whether fairy rings need per-path bank visit filtering
+        // This is true when: quest done, no diary, staff only in bank (not in inventory/equipment)
+        requiresBankForFairyRings = hasFairyRingQuest && !hasLumbridgeDiary
+                && !hasStaffInInventoryOrEquipment && hasStaffInBank && includeBankPath;
+
+        // Enable fairy rings if quest done AND (has diary OR has staff somewhere)
+        // When requiresBankForFairyRings is true, the actual filtering happens per-path in CollisionMap
         transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-                hasFairyRingQuest && (hasLumbridgeDiary || hasStaffInInventoryOrEquipment));
+                hasFairyRingQuest && (hasLumbridgeDiary || hasStaffInInventoryOrEquipment || requiresBankForFairyRings));
         transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
                 QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
         transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
@@ -366,7 +381,7 @@ public class PathfinderConfig {
 
         // Only enable fairy rings if we have the staff in bank (inventory/equipment was already checked)
         if (hasFairyRingQuest && (hasLumbridgeDiary || hasStaffInBank)) {
-            transportTypeConfig.disableUnless(TransportType.FAIRY_RING, true);
+            transportTypeConfig.setEnabled(TransportType.FAIRY_RING, true);
 
             // Add fairy ring transports that weren't added before because staff was in bank
             for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet()) {
@@ -682,11 +697,14 @@ public class PathfinderConfig {
         }
 
         // Fairy rings require Dramen/Lunar staff unless Lumbridge Elite diary is complete
+        // OR requiresBankForFairyRings is true (per-path filtering in CollisionMap)
         if (TransportType.FAIRY_RING.equals(transport.getType())) {
             // Use cached varbit value to support being called from pathfinder thread
             int lumbridgeDiaryComplete = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0);
             if (lumbridgeDiaryComplete != 1) {
-                if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch)) {
+                // If requiresBankForFairyRings is true, skip the item check here
+                // The filtering will happen per-path in CollisionMap.getNeighbors()
+                if (!requiresBankForFairyRings && !hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch)) {
                     return false;
                 }
             }
