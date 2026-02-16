@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 
 public class CollisionMap {
@@ -81,7 +82,12 @@ public class CollisionMap {
 
         neighbors.clear();
 
-        if (!config.isBankVisited() && config.getDestinations("bank").contains(node.packedPosition)) {
+        // Check if this node is at a bank - if so, mark it for path tracking
+        boolean isAtBank = config.getDestinations("bank").contains(node.packedPosition);
+        boolean pathVisitedBank = node.bankVisited || isAtBank;
+
+        // Legacy global bank visited flag - still needed for teleport items from bank
+        if (!config.isBankVisited() && isAtBank) {
             config.setBankVisited(true, node.packedPosition, wildernessLevel);
         }
 
@@ -91,6 +97,13 @@ public class CollisionMap {
         // Transports are pre-filtered by PathfinderConfig.refreshTransports
         // Thus any transports in the list are guaranteed to be valid per the user's settings
         for (Transport transport : transports) {
+            // Skip fairy rings if staff is only in bank and path hasn't visited a bank
+            if (TransportType.FAIRY_RING.equals(transport.getType())
+                    && config.isRequiresBankForFairyRings()
+                    && !pathVisitedBank) {
+                continue;
+            }
+
             int dest = transport.getDestination();
             if (visited.get(dest)) {
                 continue;
@@ -103,7 +116,7 @@ public class CollisionMap {
             boolean isTeleport = transport.getOrigin() == Transport.UNDEFINED_ORIGIN;
             boolean sharesTeleportDest = transport.getType().sharesTeleportDestinations();
             boolean delayedVisit = isTeleport || sharesTeleportDest;
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost, delayedVisit));
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), additionalCost, delayedVisit, pathVisitedBank));
         }
 
         if (isBlocked(x, y, z)) {
@@ -140,7 +153,7 @@ public class CollisionMap {
             if (visited.get(neighborPacked)) continue;
 
             if (traversable[i]) {
-                neighbors.add(new Node(neighborPacked, node));
+                neighbors.add(new Node(neighborPacked, node, Node.cost(neighborPacked, node), pathVisitedBank));
             } else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z)) {
                 // The transport starts from a blocked adjacent tile, e.g. fairy ring
                 // Only checks non-teleport transports (includes portals and levers, but not items and spells)
@@ -150,7 +163,7 @@ public class CollisionMap {
                     if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || visited.get(transport.getOrigin())) {
                         continue;
                     }
-                    neighbors.add(new Node(transport.getOrigin(), node));
+                    neighbors.add(new Node(transport.getOrigin(), node, Node.cost(transport.getOrigin(), node), pathVisitedBank));
                 }
             }
         }
