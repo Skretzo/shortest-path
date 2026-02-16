@@ -104,6 +104,16 @@ public class CollisionMap {
                 continue;
             }
 
+            // When requiresBankForFairyRings is true and we haven't visited a bank yet,
+            // skip teleport items - we need to visit a bank first to pick up the staff,
+            // then we can use teleports. This prevents teleporting away from banks
+            // before picking up required items.
+            if (TransportType.TELEPORTATION_ITEM.equals(transport.getType())
+                    && config.isRequiresBankForFairyRings()
+                    && !pathVisitedBank) {
+                continue;
+            }
+
             int dest = transport.getDestination();
             if (visited.get(dest)) {
                 continue;
