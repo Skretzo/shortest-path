@@ -531,6 +531,87 @@ public class PathfinderTest {
     }
 
     /**
+     * Test scenario: Player has Ardougne cloak in INVENTORY, Dramen staff in BANK.
+     * Route should be: walk to nearest bank → pick up staff → use cloak → fairy ring.
+     * Should NOT suggest picking up a necklace from bank instead.
+     */
+    @Test
+    public void testArdougneCloakInInventoryWithStaffInBank() {
+        int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
+        int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0);
+
+        // Enable fairy rings and teleport items
+        when(config.useFairyRings()).thenReturn(true);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
+        when(config.includeBankPath()).thenReturn(true);
+        when(config.costConsumableTeleportationItems()).thenReturn(50); // Penalize consumables
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+        when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
+
+        // Ardougne cloak ALREADY in INVENTORY (player just picked it up)
+        // Staff is still in bank
+        setupInventory(new Item(ItemID.ARDY_CAPE_ELITE, 1));
+        setupEquipment();
+
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        // Bank contains Dramen staff AND necklace of passage
+        // Since cloak is in inventory and is non-consumable, it should be preferred
+        // over the consumable necklace which has a 50 tick penalty
+        doReturn(new Item[]{
+            new Item(ItemID.DRAMEN_STAFF, 1),
+            new Item(ItemID.NECKLACE_OF_PASSAGE_5, 1)
+        }).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+        Pathfinder pathfinder = new Pathfinder(plugin, pathfinderConfig, castleWars, Set.of(akqFairyRing));
+        pathfinder.run();
+
+        // Check which teleports were used
+        boolean usedArdougneCloak = false;
+        boolean usedNecklace = false;
+        boolean usedFairyRing = false;
+
+        for (int i = 0; i < pathfinder.getPath().size() - 1; i++) {
+            int pos = pathfinder.getPath().get(i);
+            int dest = pathfinder.getPath().get(i + 1);
+            Set<Transport> transports = pathfinderConfig.getTransports().get(pos);
+            if (transports != null) {
+                for (Transport t : transports) {
+                    if (t.getDestination() == dest) {
+                        if (TransportType.FAIRY_RING.equals(t.getType())) {
+                            usedFairyRing = true;
+                        }
+                        if (TransportType.TELEPORTATION_ITEM.equals(t.getType())) {
+                            String info = t.getDisplayInfo();
+                            if (info != null && info.contains("Ardougne")) {
+                                usedArdougneCloak = true;
+                            }
+                            if (info != null && info.contains("Necklace")) {
+                                usedNecklace = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // The cloak (in inventory, non-consumable) should be used
+        // Not the necklace (in bank, consumable with 50 tick penalty)
+        assertTrue("Should use Ardougne cloak (it's in inventory, non-consumable)", usedArdougneCloak);
+        assertFalse("Should NOT use necklace (it's consumable with penalty)", usedNecklace);
+        assertTrue("Should use fairy ring to reach destination", usedFairyRing);
+    }
+
+    /**
      * Test that when Dramen staff is only in the bank, fairy rings are in the transport map
      * but requiresBankForFairyRings is set to enable per-path filtering.
      * This ensures paths that don't visit a bank won't use fairy rings.
