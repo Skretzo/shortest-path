@@ -9,6 +9,8 @@ import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -18,6 +20,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.transport.BankPickupRequirements;
 import shortestpath.transport.Transport;
 
 public class PathTileOverlay extends Overlay {
@@ -351,6 +354,47 @@ public class PathTileOverlay extends Overlay {
         }
 
         int vertical_offset = 0;
+
+        // Check if this is a bank step and items need to be picked up
+        Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
+        if (bankLocations != null && plugin.getPathfinderConfig().bank != null) {
+            List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
+                    client,
+                    plugin.getPathfinderConfig().bank,
+                    plugin.getTransports(),
+                    bankLocations,
+                    path,
+                    pathIndex
+            );
+            if (!bankPickupItems.isEmpty()) {
+                String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
+
+                PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+                for (int i = 0; i < points.size(); i++) {
+                    LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+                    if (lp == null) {
+                        continue;
+                    }
+
+                    Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
+                    if (p == null) {
+                        continue;
+                    }
+
+                    Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(pickupText, graphics);
+                    double height = textBounds.getHeight();
+                    int x = (int) (p.getX() - textBounds.getWidth() / 2);
+                    int y = (int) (p.getY() - height) - vertical_offset;
+                    graphics.setColor(Color.BLACK);
+                    graphics.drawString(pickupText, x + 1, y + 1);
+                    graphics.setColor(plugin.colourText);
+                    graphics.drawString(pickupText, x, y);
+
+                    vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
+                }
+            }
+        }
+
         for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
             if (locationEnd != transport.getDestination()) {
                 continue;
