@@ -119,8 +119,10 @@ public class TransportTypeConfig {
     }
 
     /**
-     * Disables a transport type if the condition is false.
-     * Useful for quest/item requirements.
+     * Disables a transport type unless a condition is met.
+     * If the condition is false, the type is disabled.
+     * If the condition is true, the current enabled state is preserved (not changed).
+     * Useful for quest/item requirements that can only restrict, not enable.
      */
     public void disableUnless(TransportType type, boolean condition) {
         if (!condition) {
