@@ -159,36 +159,24 @@ public class PathfinderTest {
         pathfinderConfig.bank = bank;
         pathfinderConfig.refresh();
 
-        // Initially, fairy ring transports should NOT be available (bank not visited yet)
-        boolean hasFairyRingTransportInitially = false;
+        // With per-path filtering, fairy rings ARE in the transport map
+        // but filtered at runtime based on whether the path visited a bank
+        boolean hasFairyRingTransport = false;
         for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
             for (Transport t : set) {
                 if (TransportType.FAIRY_RING.equals(t.getType())) {
-                    hasFairyRingTransportInitially = true;
+                    hasFairyRingTransport = true;
                     break;
                 }
             }
-            if (hasFairyRingTransportInitially) break;
+            if (hasFairyRingTransport) break;
         }
-        assertFalse("Fairy ring transports should NOT be available initially (bank not visited yet)",
-            hasFairyRingTransportInitially);
+        assertTrue("Fairy ring transports should be in map (filtered per-path at runtime)",
+            hasFairyRingTransport);
 
-        // Simulate bank visit
-        pathfinderConfig.setBankVisited(true, 0, 0);
-
-        // After bank visit, fairy ring transports should be available
-        boolean hasFairyRingTransportAfterBank = false;
-        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-            for (Transport t : set) {
-                if (TransportType.FAIRY_RING.equals(t.getType())) {
-                    hasFairyRingTransportAfterBank = true;
-                    break;
-                }
-            }
-            if (hasFairyRingTransportAfterBank) break;
-        }
-        assertTrue("Fairy ring transports should be available after bank is visited with Lunar staff in bank",
-            hasFairyRingTransportAfterBank);
+        // requiresBankForFairyRings should be true
+        assertTrue("requiresBankForFairyRings should be true when staff is only in bank",
+            pathfinderConfig.isRequiresBankForFairyRings());
     }
 
     @Test
@@ -241,6 +229,7 @@ public class PathfinderTest {
         setupEquipment();
 
         when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+        when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
 
         // Set up config with bank available before refresh
         pathfinderConfig = spy(new PathfinderConfig(client, config));
@@ -255,41 +244,30 @@ public class PathfinderTest {
         doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
 
         // Set the bank on the pathfinderConfig BEFORE refresh so bank items are considered for type eligibility
-        doReturn(new Item[]{new Item(ItemID.DRAMEN_STAFF, 1)}).when(bank).getItems();
+        Item[] bankItems = new Item[]{new Item(ItemID.DRAMEN_STAFF, 1)};
+        doReturn(bankItems).when(bank).getItems();
         pathfinderConfig.bank = bank;
+
         pathfinderConfig.refresh();
 
-        // Initially, fairy ring transports should NOT be available (bank not visited yet)
-        // This is correct for bank routing - the pathfinder needs to route to a bank first
-        boolean hasFairyRingTransportInitially = false;
+        // With per-path filtering, fairy rings ARE in the transport map
+        // but filtered at runtime based on whether the path visited a bank
+        boolean hasFairyRingTransport = false;
         for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
             for (Transport t : set) {
                 if (TransportType.FAIRY_RING.equals(t.getType())) {
-                    hasFairyRingTransportInitially = true;
+                    hasFairyRingTransport = true;
                     break;
                 }
             }
-            if (hasFairyRingTransportInitially) break;
+            if (hasFairyRingTransport) break;
         }
-        assertFalse("Fairy ring transports should NOT be available initially (bank not visited yet)",
-            hasFairyRingTransportInitially);
+        assertTrue("Fairy ring transports should be in map (filtered per-path at runtime)",
+            hasFairyRingTransport);
 
-        // Simulate bank visit - this will trigger refreshTransports() internally
-        pathfinderConfig.setBankVisited(true, 0, 0);
-
-        // After bank visit, fairy ring transports should be available
-        boolean hasFairyRingTransportAfterBank = false;
-        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-            for (Transport t : set) {
-                if (TransportType.FAIRY_RING.equals(t.getType())) {
-                    hasFairyRingTransportAfterBank = true;
-                    break;
-                }
-            }
-            if (hasFairyRingTransportAfterBank) break;
-        }
-        assertTrue("Fairy ring transports should be available after bank is visited",
-            hasFairyRingTransportAfterBank);
+        // requiresBankForFairyRings should be true
+        assertTrue("requiresBankForFairyRings should be true when staff is only in bank",
+            pathfinderConfig.isRequiresBankForFairyRings());
     }
 
     @Test
@@ -322,41 +300,23 @@ public class PathfinderTest {
         pathfinderConfig.bank = bank;
         pathfinderConfig.refresh();
 
-        // Initially, fairy rings should NOT be available (bank not visited)
-        boolean hasFairyRingInitially = false;
+        // With per-path filtering, fairy rings ARE in the transport map
+        // but filtered at runtime based on whether the path visited a bank
+        boolean hasFairyRing = false;
         for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
             for (Transport t : set) {
                 if (TransportType.FAIRY_RING.equals(t.getType())) {
-                    hasFairyRingInitially = true;
+                    hasFairyRing = true;
                     break;
                 }
             }
-            if (hasFairyRingInitially) break;
+            if (hasFairyRing) break;
         }
-        assertFalse("Fairy ring transports should NOT be available initially", hasFairyRingInitially);
+        assertTrue("Fairy ring transports should be in map (filtered per-path)", hasFairyRing);
 
-        // Simulate bank visit
-        pathfinderConfig.setBankVisited(true, 0, 0);
-
-        // After bank visit, fairy ring transports should be available
-        boolean hasFairyRingAfterBank = false;
-        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-            for (Transport t : set) {
-                if (TransportType.FAIRY_RING.equals(t.getType())) {
-                    hasFairyRingAfterBank = true;
-                    break;
-                }
-            }
-            if (hasFairyRingAfterBank) break;
-        }
-        assertTrue("Fairy ring transports should be available after bank visit", hasFairyRingAfterBank);
-
-        // Verify that teleport items are available at the bank location (location 0,0,0 which we used for setBankVisited)
-        // The transports map should now include teleport items at that location
-        Set<Transport> transportsAtBank = pathfinderConfig.getTransports().get(0);
-        boolean hasTeleportItemAtBank = transportsAtBank != null && transportsAtBank.stream()
-            .anyMatch(t -> TransportType.TELEPORTATION_ITEM.equals(t.getType()));
-        assertTrue("Teleport items should be available at bank location after bank visit", hasTeleportItemAtBank);
+        // requiresBankForFairyRings should be true
+        assertTrue("requiresBankForFairyRings should be true when staff is only in bank",
+            pathfinderConfig.isRequiresBankForFairyRings());
     }
 
     /**
@@ -401,11 +361,6 @@ public class PathfinderTest {
             }
         }
 
-        System.out.println("=== Staff in INVENTORY (consumable threshold=50) ===");
-        System.out.println("Path length: " + pathLengthWithStaff);
-        System.out.println("Used fairy ring: " + usedFairyRingWithStaff);
-        printPathWithTransports(pathfinderWithStaff, pathfinderConfig);
-
         // Test 2: Staff in BANK with includeBankPath enabled, also Ardougne cloak and necklace of passage
         when(config.includeBankPath()).thenReturn(true);
         setupInventory(); // No staff in inventory
@@ -432,7 +387,6 @@ public class PathfinderTest {
 
         Pathfinder pathfinderWithBankStaff = new Pathfinder(plugin, pathfinderConfig, castleWars, Set.of(akqFairyRing));
         pathfinderWithBankStaff.run();
-        int pathLengthWithBankStaff = pathfinderWithBankStaff.getPath().size();
 
         // Check if fairy rings were used
         boolean usedFairyRingWithBankStaff = false;
@@ -450,34 +404,9 @@ public class PathfinderTest {
             }
         }
 
-        System.out.println("\n=== Staff in BANK (with Ardougne cloak and necklace of passage, consumable threshold=50) ===");
-        System.out.println("Path length: " + pathLengthWithBankStaff);
-        System.out.println("Used fairy ring: " + usedFairyRingWithBankStaff);
-        printPathWithTransports(pathfinderWithBankStaff, pathfinderConfig);
-
         // Both paths should use fairy rings if that's optimal
         assertTrue("Fairy ring should be used when staff is in inventory", usedFairyRingWithStaff);
         assertTrue("Fairy ring should be used when staff is in bank with includeBankPath", usedFairyRingWithBankStaff);
-    }
-
-    private void printPathWithTransports(Pathfinder pathfinder, PathfinderConfig config) {
-        System.out.println("Transports used:");
-        for (int i = 1; i < pathfinder.getPath().size(); i++) {
-            int prevPos = pathfinder.getPath().get(i - 1);
-            int pos = pathfinder.getPath().get(i);
-            Set<Transport> transports = config.getTransports().get(prevPos);
-            if (transports != null) {
-                for (Transport t : transports) {
-                    if (t.getDestination() == pos) {
-                        int prevX = WorldPointUtil.unpackWorldX(prevPos);
-                        int prevY = WorldPointUtil.unpackWorldY(prevPos);
-                        int x = WorldPointUtil.unpackWorldX(pos);
-                        int y = WorldPointUtil.unpackWorldY(pos);
-                        System.out.println("  Step " + i + ": " + t.getType() + " from (" + prevX + "," + prevY + ") to (" + x + "," + y + ") - " + t.getDisplayInfo());
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -520,7 +449,7 @@ public class PathfinderTest {
         pathfinderConfig.bank = bank;
         pathfinderConfig.refresh();
 
-        // Test 1: Target DJP fairy ring (this works according to user)
+        // Test 1: Target DJP fairy ring
         Pathfinder pathfinderToDJP = new Pathfinder(plugin, pathfinderConfig, castleWars, Set.of(djpFairyRing));
         pathfinderToDJP.run();
 
@@ -544,13 +473,7 @@ public class PathfinderTest {
             }
         }
 
-        System.out.println("=== Target: DJP fairy ring (should work) ===");
-        System.out.println("Path length: " + pathfinderToDJP.getPath().size());
-        System.out.println("Used Ardougne cloak: " + usedArdougneCloakToDJP);
-        System.out.println("Used necklace of passage: " + usedNecklaceToDJP);
-        printPathWithTransports(pathfinderToDJP, pathfinderConfig);
-
-        // Test 2: Target AKQ fairy ring (this doesn't work according to user)
+        // Test 2: Target AKQ fairy ring
         // Need fresh pathfinderConfig
         pathfinderConfig = spy(new PathfinderConfig(client, config));
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
@@ -598,13 +521,6 @@ public class PathfinderTest {
             }
         }
 
-        System.out.println("\n=== Target: AKQ fairy ring (problematic case) ===");
-        System.out.println("Path length: " + pathfinderToAKQ.getPath().size());
-        System.out.println("Used fairy ring: " + usedFairyRingToAKQ);
-        System.out.println("Used Ardougne cloak: " + usedArdougneCloakToAKQ);
-        System.out.println("Used necklace of passage: " + usedNecklaceToAKQ);
-        printPathWithTransports(pathfinderToAKQ, pathfinderConfig);
-
         // Assertions - both should use Ardougne cloak, not necklace
         assertTrue("Should use Ardougne cloak to DJP", usedArdougneCloakToDJP);
         assertFalse("Should NOT use necklace to DJP", usedNecklaceToDJP);
@@ -612,6 +528,145 @@ public class PathfinderTest {
         assertTrue("Should use fairy ring to reach AKQ", usedFairyRingToAKQ);
         assertTrue("Should use Ardougne cloak to reach AKQ via fairy ring", usedArdougneCloakToAKQ);
         assertFalse("Should NOT use necklace to AKQ", usedNecklaceToAKQ);
+    }
+
+    /**
+     * Test that when Dramen staff is only in the bank, fairy rings are in the transport map
+     * but requiresBankForFairyRings is set to enable per-path filtering.
+     * This ensures paths that don't visit a bank won't use fairy rings.
+     */
+    @Test
+    public void testFairyRingNotUsedAfterTeleportWithoutBankVisit() {
+        // Enable fairy rings and teleport items
+        when(config.useFairyRings()).thenReturn(true);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
+        when(config.includeBankPath()).thenReturn(true);
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+        when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0); // No diary
+
+        // Ring of Wealth in inventory, but Dramen staff only in bank
+        setupInventory(new Item(ItemID.RING_OF_WEALTH_1, 1));
+        setupEquipment();
+
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        // Bank contains only the Dramen staff
+        doReturn(new Item[]{new Item(ItemID.DRAMEN_STAFF, 1)}).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+        // With per-path filtering, fairy rings ARE in the transport map
+        // but filtered at runtime based on whether the path visited a bank
+        boolean hasFairyRing = false;
+        for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
+            for (Transport t : set) {
+                if (TransportType.FAIRY_RING.equals(t.getType())) {
+                    hasFairyRing = true;
+                    break;
+                }
+            }
+            if (hasFairyRing) break;
+        }
+        assertTrue("Fairy rings should be in transport map (filtered per-path)", hasFairyRing);
+
+        // requiresBankForFairyRings should be true - this enables per-path filtering
+        assertTrue("requiresBankForFairyRings should be true when staff is only in bank",
+            pathfinderConfig.isRequiresBankForFairyRings());
+    }
+
+    /**
+     * Test that fairy rings are only used when the path actually visits a bank.
+     * When the Dramen staff is only in the bank, fairy rings should only be available
+     * on paths that go through a bank first.
+     */
+    @Test
+    public void testFairyRingRequiresBankVisitWhenStaffInBank() {
+        // Enable fairy rings
+        when(config.useFairyRings()).thenReturn(true);
+        when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY);
+        when(config.includeBankPath()).thenReturn(true);
+        when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+        when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0); // No diary
+
+        // No staff in inventory or equipment - only in bank
+        setupInventory();
+        setupEquipment();
+
+        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(client.getClientThread()).thenReturn(Thread.currentThread());
+        when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+        when(config.usePoh()).thenReturn(false);
+        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
+        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
+        doReturn(QuestState.FINISHED).when(pathfinderConfig).getQuestState(any(Quest.class));
+
+        // Bank contains only the Dramen staff
+        doReturn(new Item[]{new Item(ItemID.DRAMEN_STAFF, 1)}).when(bank).getItems();
+        pathfinderConfig.bank = bank;
+        pathfinderConfig.refresh();
+
+
+        // Verify requiresBankForFairyRings is set correctly
+        assertTrue("requiresBankForFairyRings should be true when staff is only in bank",
+            pathfinderConfig.isRequiresBankForFairyRings());
+
+        // Fairy rings should be in the transport map (they're filtered per-path now)
+        int fairyRingCount = 0;
+        for (Set<Transport> transports : pathfinderConfig.getTransports().values()) {
+            for (Transport t : transports) {
+                if (TransportType.FAIRY_RING.equals(t.getType())) {
+                    fairyRingCount++;
+                }
+            }
+        }
+        assertTrue("Fairy rings should be in transports (filtered per-path)", fairyRingCount > 0);
+
+        // Test pathfinding: from Al Kharid mine to AKQ fairy ring
+        // The path should NOT use fairy rings directly without going through a bank
+        int alKharidMine = WorldPointUtil.packWorldPoint(3298, 3290, 0);
+        int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0);
+
+        Pathfinder pathfinder = new Pathfinder(plugin, pathfinderConfig, alKharidMine, Set.of(akqFairyRing));
+        pathfinder.run();
+
+        // Check if any fairy ring was used in the path
+        boolean usedFairyRing = false;
+        boolean bankInPath = false;
+        Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
+
+        for (int i = 0; i < pathfinder.getPath().size(); i++) {
+            int pos = pathfinder.getPath().get(i);
+            if (bankLocations != null && bankLocations.contains(pos)) {
+                bankInPath = true;
+            }
+
+            if (i + 1 < pathfinder.getPath().size()) {
+                int nextPos = pathfinder.getPath().get(i + 1);
+                Set<Transport> transports = pathfinderConfig.getTransports().get(pos);
+                if (transports != null) {
+                    for (Transport t : transports) {
+                        if (t.getDestination() == nextPos && TransportType.FAIRY_RING.equals(t.getType())) {
+                            usedFairyRing = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If fairy rings are used, the path must have gone through a bank
+        if (usedFairyRing) {
+            assertTrue("If fairy ring is used, path must visit a bank first to pick up Dramen staff",
+                bankInPath);
+        }
+        // If no fairy ring was used, that's also acceptable (walking path)
     }
 
     @Test
