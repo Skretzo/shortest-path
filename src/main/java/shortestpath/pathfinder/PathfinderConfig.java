@@ -264,10 +264,14 @@ public class PathfinderConfig {
         varbitValues.put(VarbitID.FAIRY2_QUEENCURE_QUEST, client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST));
         varbitValues.put(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE));
 
-        // For fairy rings, use hasItemsInInventoryEquipmentOrBank so the type is enabled when staff is in bank
+        // For fairy rings, only enable the type if staff is in inventory/equipment.
+        // If staff is only in bank, the type will be enabled later when bank is visited.
+        // This prevents fairy ring routes that don't go through a bank.
+        boolean hasFairyRingQuest = varbitValues.get(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39;
+        boolean hasLumbridgeDiary = varbitValues.get(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
+        boolean hasStaffInInventoryOrEquipment = hasRequiredItems(DRAMEN_STAFF, true, true, false, false);
         transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-                (varbitValues.get(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39)
-                        && (varbitValues.get(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1 || hasItemsInInventoryEquipmentOrBank(DRAMEN_STAFF)));
+                hasFairyRingQuest && (hasLumbridgeDiary || hasStaffInInventoryOrEquipment));
         transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
                 QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
         transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
