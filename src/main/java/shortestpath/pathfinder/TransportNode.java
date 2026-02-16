@@ -10,8 +10,8 @@ public class TransportNode extends Node implements Comparable<TransportNode> {
      */
     private final boolean delayedVisit;
 
-    public TransportNode(int packedPosition, Node previous, int travelTime, int additionalCost, boolean delayedVisit) {
-        super(packedPosition, previous, cost(previous, travelTime + additionalCost));
+    public TransportNode(int packedPosition, Node previous, int travelTime, int additionalCost, boolean delayedVisit, boolean bankVisited) {
+        super(packedPosition, previous, cost(previous, travelTime + additionalCost), bankVisited);
         this.delayedVisit = delayedVisit;
     }
 
