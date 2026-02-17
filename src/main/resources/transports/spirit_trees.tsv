@@ -158,6 +158,20 @@
 2339 3109 0		Travel Spirit Tree 49595					
 2340 3109 0		Travel Spirit Tree 49595					
 							
+# Laguna Aurorae
+1201 2788 0		Travel Spirit Tree 26262					
+1202 2788 0		Travel Spirit Tree 26262					
+1203 2788 0		Travel Spirit Tree 26262					
+1204 2788 0		Travel Spirit Tree 26262					
+1201 2787 0		Travel Spirit Tree 26262					
+1204 2787 0		Travel Spirit Tree 26262					
+1201 2786 0		Travel Spirit Tree 26262					
+1204 2786 0		Travel Spirit Tree 26262					
+1201 2785 0		Travel Spirit Tree 26262					
+1202 2785 0		Travel Spirit Tree 26262					
+1203 2785 0		Travel Spirit Tree 26262					
+1204 2785 0		Travel Spirit Tree 26262					
+							
 # Tree Gnome Village							
 	2542 3170 0			Tree Gnome Village	3	1: Tree Gnome Village	
 # Gnome Stronghold							
@@ -184,3 +198,5 @@
 	2007 5700 0			Tree Gnome Village	3	C: Your house	
 # Poison Waste							
 	2339 3109 0			The Path of Glouphrie	3	D: Poison Waste	
+# Laguna Aurorae
+	1202 2785 0		58 Sailing	Pandemonium	3	E: Laguna Aurorae	
