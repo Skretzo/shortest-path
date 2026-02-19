@@ -27,7 +27,7 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew --version
-          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace --info
         shell: bash
       - name: Upload JUnit XML results
         if: always()

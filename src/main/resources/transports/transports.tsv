@@ -3201,18 +3201,35 @@
 3074 3653 0	3197 10056 0	Enter Cavern 31555						2	
 3075 3653 0	3197 10056 0	Enter Cavern 31555						2	
 3076 3653 0	3197 10056 0	Enter Cavern 31555						2	
-3069 3740 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3741 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3742 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3743 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3740 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3741 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3742 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3743 0	3187 10128 0	Jump-down Crevice 40386						2	
-3067 3739 0	3187 10128 0	Jump-down Crevice 40386						2	
-3068 3739 0	3187 10128 0	Jump-down Crevice 40386						2	
-3067 3744 0	3187 10128 0	Jump-down Crevice 40386						2	
-3068 3744 0	3187 10128 0	Jump-down Crevice 40386						2	
+									
+# Revenant Caves									
+									
+3069 3740 0	3187 10127 0	Jump-down Crevice 40386						2	
+3069 3741 0	3187 10127 0	Jump-down Crevice 40386						2	
+3069 3742 0	3187 10127 0	Jump-down Crevice 40386						2	
+3069 3743 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3740 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3741 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3742 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3743 0	3187 10127 0	Jump-down Crevice 40386						2	
+3067 3739 0	3187 10127 0	Jump-down Crevice 40386						2	
+3068 3739 0	3187 10127 0	Jump-down Crevice 40386						2	
+3067 3744 0	3187 10127 0	Jump-down Crevice 40386						2	
+3068 3744 0	3187 10127 0	Jump-down Crevice 40386						2	
+									
+3220 10088 0	3220 10084 0	Jump-to Pillar 31561	65 Agility					4	
+3220 10084 0	3220 10088 0	Jump-to Pillar 31561	65 Agility					4	
+									
+3198 10136 0	3202 10132 0	Jump-to Pillar 31562						4	
+3202 10132 0	3198 10136 0	Jump-to Pillar 31562						4	
+									
+3200 10196 0	3204 10196 0	Jump-to Pillar 31561						4	
+3204 10196 0	3200 10196 0	Jump-to Pillar 31561						4	
+									
+3180 10211 0	3180 10207 0	Jump-to Pillar 31561						4	
+3180 10207 0	3180 10211 0	Jump-to Pillar 31561						4	
+									
+									
 3126 3831 0	3241 10233 0	Enter Cavern 31556						2	
 3126 3832 0	3241 10233 0	Enter Cavern 31556						2	
 3126 3833 0	3241 10233 0	Enter Cavern 31556						2	
@@ -5277,3 +5294,55 @@
 # Nature Altar									
 3035 4842 0	2400 4844 0	Exit-through Nature rift 25382							 
 2400 4835 0	2865 3022 0	Use Portal 34756						1	
+									
+# Wintertodt									
+									
+1633 4023 0	1631 4023 0	Jump Gap 29326	60 Agility					2	
+1631 4023 0	1629 4023 0	Jump Gap 29326	60 Agility					2	
+1629 4023 0	1627 4023 0	Jump Gap 29326	60 Agility					2	
+									
+1631 4023 0	1633 4023 0	Jump Gap 29326	60 Agility					2	
+1629 4023 0	1631 4023 0	Jump Gap 29326	60 Agility					2	
+1627 4023 0	1629 4023 0	Jump Gap 29326	60 Agility					2	
+									
+									
+									
+1627 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1628 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1629 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1630 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1631 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1632 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1633 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+									
+									
+1627 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1628 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1629 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1630 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1631 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1632 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1633 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+									
+									
+# Temple of the eye									
+									
+3633 9503 0	3637 9503 0	Climb Rubble 43724						5	
+3637 9503 0	3633 9503 0	Climb Rubble 43726						5	
+									
+3613 9482 0	3613 9484 0	Quick-pass Barrier 43700						5	
+3614 9482 0	3614 9484 0	Quick-pass Barrier 43700						5	
+3615 9482 0	3615 9484 0	Quick-pass Barrier 43700						5	
+3616 9482 0	3616 9484 0	Quick-pass Barrier 43700						5	
+3617 9482 0	3617 9484 0	Quick-pass Barrier 43700						5	
+3613 9484 0	3613 9482 0	Quick-pass Barrier 43700						5	
+3614 9484 0	3614 9482 0	Quick-pass Barrier 43700						5	
+3615 9484 0	3615 9482 0	Quick-pass Barrier 43700						5	
+3616 9484 0	3616 9482 0	Quick-pass Barrier 43700						5	
+3617 9484 0	3617 9482 0	Quick-pass Barrier 43700						5	
+									
+2775 10003 0	2773 10003 0	Jump-over Strange floor 16544	43 Agility					10	
+2773 10003 0	2775 10003 0	Jump-over Strange floor 16544	43 Agility					10	
+									
+2770 10002 0	2768 10002 0	Jump-over Strange floor 16544	43 Agility					10	
+2768 10002 0	2770 10002 0	Jump-over Strange floor 16544	43 Agility					10	
