@@ -10,7 +10,7 @@ All transport TSV files share the same structure: rows are tab-separated fields,
 - Header-driven mapping: column order does not matter — the parser maps fields by the header text.
 - Rows: split on tabs; ignore lines beginning with `#` (other than a commented header) and blank lines.
 - Coordinate fields (Origin/Destination) are three integers separated by single spaces: `x y plane` (example: `3221 3218 0`).
-- Empty cells are preserved. For permutation-style transports (e.g., fairy rings), leave Origin or Destination empty to signal “permutation” ([details below](#two-way-and-permutation-generation)).
+- Empty cells are preserved. For permutation-style transports (e.g., fairy rings), leave Origin or Destination empty to signal “permutation” ([details below](#permutation-generation)).
 - If a transport is a two-way connection, add two separate rows (one for each direction); the parser does not auto-generate reversals.
 - Optional columns may be empty; keep column positions consistent within a file.
 
@@ -24,7 +24,7 @@ All transport TSV files share the same structure: rows are tab-separated fields,
 - [Quests](#quests)
 - [Duration](#duration)
 - [Display info](#display-info)
-- [Consumable](#consumable)
+- [Consumable](#consumable-flag)
 - [Wilderness level](#wilderness-level)
 - [Varbits](#varbits)
 - [VarPlayers](#varplayers)
@@ -35,14 +35,14 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
 
 - Format: `x y plane` (three integers) or empty
 - Meaning: starting tile for object-based transports.
-- Special: an empty Origin marks a permutation row that pairs with every row that has an Origin and an empty Destination (see [Two-way and permutation generation](#two-way-and-permutation-generation)).
+- Special: an empty Origin marks a permutation row that pairs with every row that has an Origin and an empty Destination (see [Permutation generation](#permutation-generation)).
 - Example: `3097 3107 0`
 
 ### Destination
 
 - Format: `x y plane` (three integers) or empty
 - Meaning: target tile of the transport/teleport.
-- Special: an empty Destination marks a permutation row that pairs with every row that has a Destination and an empty Origin. (see [Two-way and permutation generation](#two-way-and-permutation-generation)).
+- Special: an empty Destination marks a permutation row that pairs with every row that has a Destination and an empty Origin. (see [Permutation generation](#permutation-generation)).
 - Example: `3221 3218 0`
 
 ### menuOption menuTarget objectID
@@ -74,11 +74,12 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
   - Left side of `=` can be a numeric item id or a named constant recognized by the client (e.g., `LAW_RUNE`).
   - Equipment/slot tokens: some rows use named slot tokens (for example `HEADSLOT`, `CAPESLOT`, `CAPESLOT`) found in `ItemVariations` to check equipment slots rather than inventory items. These appear as `HEADSLOT=0` to require an empty head slot, and can be combined with `&` to require multiple slot states (e.g., `HEADSLOT=0&CAPESLOT=0`).
 
-
 ### Quests
 
 - Format: one or more quest names separated by `;` (e.g., `Plague City;Song of the Elves`).
 - Notes: quest names must match the client’s `Quest` enum names exactly. Avoid leading/trailing spaces around names.
+
+You can find the quest names in RuneLite’s `Quest` enum in [Quest.java](https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/Quest.java) on the RuneLite GitHub repo.
 
 ### Duration
 
@@ -128,13 +129,12 @@ Use rows with a concrete `Origin` and empty `Destination` to declare “all of t
 
 ```csv
 # Origin	Destination	menuOption menuTarget objectID	Skills	Quests	Varbits	Duration	Display info
-2412 4434 0		Configure Fairy ring 29560				5	
-2996 3114 0		Configure Fairy ring 29495				5	
+2412 4434 0		Configure Fairy ring 29560				5
+2996 3114 0		Configure Fairy ring 29495				5
 	2571 2956 0					5	A K S
 	2503 3636 0					5	A L P
 	3597 3495 0					5	A L Q
 ```
-
 
 Use rows with empty `Origin` and a concrete `Destination` to declare that “this transport can be used from any origin” (e.g., teleportation spells).
 

@@ -4365,8 +4365,8 @@
 1939 4958 0	2931 10196 0	Climb-up Stairs 9138							
 1937 4969 0	1937 4970 0	Open Gate 9141							
 1937 4970 0	1937 4969 0	Open Gate 9141							
-2941 10179 0	2438 5535 0	Enter Doorway 23287							
-2435 5535 0	2941 10179 0	Enter Doorway 23286							
+2941 10179 0	2438 5535 0	Enter Doorway 23287			Another Slice of H.A.M.				
+2435 5535 0	2941 10179 0	Enter Doorway 23286			Another Slice of H.A.M.				
 2488 5536 0	2696 5277 1	Enter Doorway 23285							
 2696 5277 1	2488 5536 0	Enter Doorway 23052							
 									
@@ -5277,3 +5277,7 @@
 # Nature Altar									
 3035 4842 0	2400 4844 0	Exit-through Nature rift 25382							 
 2400 4835 0	2865 3022 0	Use Portal 34756						1	
+									
+# Arzinian mine									
+									
+2824 10169 0	2615 4966 0	Talk-to Dondakan the Dwarf 4891		4567=1	Between a Rock...			4	

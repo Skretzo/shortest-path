@@ -155,3 +155,10 @@
 1281 3385 0	1256 3395 0	Travel Rowboat 57271					5	
 1282 3385 0	1256 3395 0	Travel Rowboat 57271					5	
 1283 3385 0	1256 3395 0	Travel Rowboat 57271					5	
+								
+# Keldagrim boats								
+2841 10129 0	2892 10225 0	Travel Dwarven Boatman 7726					5	
+2888 10226 0	2838 10127 0	Travel Dwarven Boatman 7726					5	
+								
+2837 10128 0	2837 10143 0	Travel Dwarven Ferryman 4896		COINS=2			5	
+2855 10145 0	2863 10133 0	Travel Dwarven Ferryman 4897		COINS=2			5	

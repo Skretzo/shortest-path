@@ -1,5 +1,6 @@
 package shortestpath.transport;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -94,7 +95,7 @@ public class Transport {
         this.quests.addAll(origin.quests);
         this.quests.addAll(destination.quests);
 
-        this.itemRequirements = destination.itemRequirements;
+        this.itemRequirements = mergeItemRequirements(origin.itemRequirements, destination.itemRequirements);
 
         this.type = origin.type;
 
@@ -344,5 +345,32 @@ public class Transport {
             }
         }
         return quests;
+    }
+
+    private static TransportItems mergeItemRequirements(TransportItems originItems, TransportItems destinationItems) {
+        if (originItems == null) {
+            return destinationItems;
+        }
+        if (destinationItems == null) {
+            return originItems;
+        }
+
+        int[][] items = concatenate2D(originItems.getItems(), destinationItems.getItems());
+        int[][] staves = concatenate2D(originItems.getStaves(), destinationItems.getStaves());
+        int[][] offhands = concatenate2D(originItems.getOffhands(), destinationItems.getOffhands());
+
+        int[] quantities = Arrays.copyOf(originItems.getQuantities(),
+            originItems.getQuantities().length + destinationItems.getQuantities().length);
+        System.arraycopy(destinationItems.getQuantities(), 0,
+            quantities, originItems.getQuantities().length,
+            destinationItems.getQuantities().length);
+
+        return new TransportItems(items, staves, offhands, quantities);
+    }
+
+    private static int[][] concatenate2D(int[][] first, int[][] second) {
+        int[][] result = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
     }
 }
