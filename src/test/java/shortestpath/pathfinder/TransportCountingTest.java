@@ -159,21 +159,22 @@ public class TransportCountingTest {
         /*
          * Info:
          * single_tree_origin_locations * (number_of_spirit_trees - 1)
-         *   15 * 12   // Tree Gnome Village
-         * + 14 * 12   // Gnome Stronghold
-         * +  8 * 12   // Battlefield of Khazard
-         * +  8 * 12   // Grand Exchange
-         * +  8 * 12   // Feldip Hills
-         * +  7 * 12   // Prifddinas
-         * + 12 * 12   // Port Sarim
-         * + 12 * 12   // Etceteria
-         * + 12 * 12   // Brimhaven
-         * + 12 * 12   // Hosidius
-         * + 12 * 12   // Farming Guild
-         * +  1 * 12   // Player-owned house
-         * + 12 * 12   // Poison Waste
-         * = 1596
+         *   15 * 13   // Tree Gnome Village
+         * + 14 * 13   // Gnome Stronghold
+         * +  8 * 13   // Battlefield of Khazard
+         * +  8 * 13   // Grand Exchange
+         * +  8 * 13   // Feldip Hills
+         * +  7 * 13   // Prifddinas
+         * + 12 * 13   // Port Sarim
+         * + 12 * 13   // Etceteria
+         * + 12 * 13   // Brimhaven
+         * + 12 * 13   // Hosidius
+         * + 12 * 13   // Farming Guild
+         * +  1 * 13   // Player-owned house
+         * + 12 * 13   // Poison Waste
+         * +  9 * 13   // Laguna Aurorae
+         * = 1846
          */
-        assertEquals(1596, actualCount);
+        assertEquals(1846, actualCount);
     }
 }
