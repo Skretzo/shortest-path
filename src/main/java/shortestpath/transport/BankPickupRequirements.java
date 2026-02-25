@@ -114,17 +114,12 @@ public class BankPickupRequirements {
      * Checks if a teleport item is in the bank and not in inventory/equipment.
      */
     private static String checkTeleportItemInBank(Client client, ItemContainer bank, Transport transport) {
-        if (transport.getItemRequirements() == null) {
-            return null;
-        }
-
-        int[][] items = transport.getItemRequirements().getItems();
-        if (items == null || items.length == 0) {
+        if (transport.getItemRequirements() == null || transport.getItemRequirements().size() == 0) {
             return null;
         }
 
         // Get the first item requirement (the teleport item itself)
-        int[] teleportItemIds = items[0];
+        int[] teleportItemIds = transport.getItemRequirements().getRequirements().get(0).getItemIds();
         if (teleportItemIds == null || teleportItemIds.length == 0) {
             return null;
         }
