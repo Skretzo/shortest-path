@@ -119,10 +119,22 @@ public class TransportItems {
         return "[" + text + "]";
     }
 
+    /**
+     * Merges two TransportItems, combining all requirements from both.
+     * If either is null, returns the other.
+     */
+    public static TransportItems merge(TransportItems first, TransportItems second) {
+        if (first == null) return second;
+        if (second == null) return first;
+        List<ItemRequirement> merged = new ArrayList<>();
+        merged.addAll(first.requirements);
+        merged.addAll(second.requirements);
+        return new TransportItems(merged);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
         TransportItems that = (TransportItems) o;
         if (requirements.size() != that.requirements.size()) return false;
         for (int i = 0; i < requirements.size(); i++) {

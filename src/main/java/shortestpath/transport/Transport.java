@@ -103,7 +103,7 @@ public class Transport {
                 .startSkillLevels(destination.skillLevels)
                 .quests(origin.quests)
                 .quests(destination.quests)
-                .itemRequirements(destination.itemRequirements)
+                .itemRequirements(TransportItems.merge(origin.itemRequirements, destination.itemRequirements))
                 .duration(Math.max(origin.duration, destination.duration))
                 .displayInfo(destination.displayInfo)
                 .isConsumable(origin.isConsumable || destination.isConsumable)
