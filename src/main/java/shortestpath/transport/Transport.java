@@ -185,6 +185,21 @@ public class Transport {
     }
 
     /**
+     * Whether this transport is of the given type.
+     */
+    public boolean isType(TransportType type) {
+        return type.equals(this.type);
+    }
+
+    /**
+     * Whether this transport's display info contains the given substring.
+     * Returns false if displayInfo is null.
+     */
+    public boolean hasDisplayInfo(String substring) {
+        return displayInfo != null && displayInfo.contains(substring);
+    }
+
+    /**
      * Gets varbit requirements (filtered from varRequirements).
      * For backward compatibility with code that needs separate varbit access.
      */
@@ -196,6 +211,18 @@ public class Transport {
             }
         }
         return varbits;
+    }
+
+    /**
+     * Whether this transport has a varbit requirement with the given ID.
+     */
+    public boolean hasVarbit(int varbitId) {
+        for (VarRequirement req : varRequirements) {
+            if (req.isVarbit() && req.getId() == varbitId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
