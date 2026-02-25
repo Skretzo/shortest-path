@@ -35,6 +35,7 @@ import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
 public class PathfinderConfig {
@@ -415,9 +416,9 @@ public class PathfinderConfig {
         if (bank == null) {
             return false;
         }
-        for (int[] staffIds : DRAMEN_STAFF.getStaves()) {
-            if (staffIds != null) {
-                for (int staffId : staffIds) {
+        for (ItemRequirement req : DRAMEN_STAFF.getRequirements()) {
+            if (req.getStaffIds() != null) {
+                for (int staffId : req.getStaffIds()) {
                     for (Item bankItem : bank.getItems()) {
                         if (bankItem.getId() == staffId && bankItem.getQuantity() > 0) {
                             return true;
@@ -786,12 +787,12 @@ public class PathfinderConfig {
 
         boolean usingStaff = false;
         boolean usingOffhand = false;
-        for (int i = 0; i < transportItems.getItems().length; i++) {
+        for (ItemRequirement req : transportItems.getRequirements()) {
             boolean missing = true;
-            if (transportItems.getItems()[i] != null) {
-                for (int itemId : transportItems.getItems()[i]) {
+            int requiredQuantity = req.getQuantity();
+            if (req.getItemIds() != null) {
+                for (int itemId : req.getItemIds()) {
                     int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-                    int requiredQuantity = transportItems.getQuantities()[i];
                     if (requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0) {
                         if (CURRENCIES.contains(itemId) && requiredQuantity > currencyThreshold) {
                             return false;
@@ -801,10 +802,9 @@ public class PathfinderConfig {
                     }
                 }
             }
-            if (missing && !usingStaff && transportItems.getStaves()[i] != null) {
-                for (int itemId : transportItems.getStaves()[i]) {
+            if (missing && !usingStaff && req.getStaffIds() != null) {
+                for (int itemId : req.getStaffIds()) {
                     int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-                    int requiredQuantity = transportItems.getQuantities()[i];
                     if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0) {
                         usingStaff = true;
                         missing = false;
@@ -812,10 +812,9 @@ public class PathfinderConfig {
                     }
                 }
             }
-            if (missing && !usingOffhand && transportItems.getOffhands()[i] != null) {
-                for (int itemId : transportItems.getOffhands()[i]) {
+            if (missing && !usingOffhand && req.getOffhandIds() != null) {
+                for (int itemId : req.getOffhandIds()) {
                     int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-                    int requiredQuantity = transportItems.getQuantities()[i];
                     if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0) {
                         usingOffhand = true;
                         missing = false;
@@ -844,9 +843,9 @@ public class PathfinderConfig {
         }
         // If includeBankPath is enabled, also check if item is in bank
         if (includeBankPath && bank != null) {
-            for (int[] itemGroup : transportItems.getStaves()) {
-                if (itemGroup != null) {
-                    for (int itemId : itemGroup) {
+            for (ItemRequirement req : transportItems.getRequirements()) {
+                if (req.getStaffIds() != null) {
+                    for (int itemId : req.getStaffIds()) {
                         for (Item bankItem : bank.getItems()) {
                             if (bankItem.getId() == itemId && bankItem.getQuantity() > 0) {
                                 return true;
