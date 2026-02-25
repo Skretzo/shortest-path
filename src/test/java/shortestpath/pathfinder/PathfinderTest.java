@@ -34,14 +34,8 @@ import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderTest {
@@ -1429,7 +1423,7 @@ public class PathfinderTest {
     }
 
     private boolean hasVarbit(Transport transport, int varbitId) {
-        for (TransportVarbit varbit : transport.getVarbits()) {
+        for (VarRequirement varbit : transport.getVarbits()) {
             if (varbit.getId() == varbitId) {
                 return true;
             }
