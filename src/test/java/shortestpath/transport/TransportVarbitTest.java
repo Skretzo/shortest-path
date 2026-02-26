@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
+import shortestpath.transport.parser.VarCheckType;
+import shortestpath.transport.parser.VarRequirement;
 
 public class TransportVarbitTest {
 
@@ -13,7 +15,7 @@ public class TransportVarbitTest {
     public void testEqual() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(1, 5);
-        TransportVarbit v = new TransportVarbit(1, 5, TransportVarCheck.EQUAL);
+        VarRequirement v = VarRequirement.varbit(1, 5, VarCheckType.EQUAL);
         assertTrue(v.check(values));
         values.put(1, 4);
         assertFalse(v.check(values));
@@ -23,7 +25,7 @@ public class TransportVarbitTest {
     public void testGreater() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(2, 10);
-        TransportVarbit v = new TransportVarbit(2, 5, TransportVarCheck.GREATER);
+        VarRequirement v = VarRequirement.varbit(2, 5, VarCheckType.GREATER);
         assertTrue(v.check(values));
         values.put(2, 5);
         assertFalse(v.check(values));
@@ -33,7 +35,7 @@ public class TransportVarbitTest {
     public void testSmaller() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(3, 3);
-        TransportVarbit v = new TransportVarbit(3, 5, TransportVarCheck.SMALLER);
+        VarRequirement v = VarRequirement.varbit(3, 5, VarCheckType.SMALLER);
         assertTrue(v.check(values));
         values.put(3, 5);
         assertFalse(v.check(values));
@@ -43,9 +45,9 @@ public class TransportVarbitTest {
     public void testBitSet() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(4, 0b1010);
-        TransportVarbit v = new TransportVarbit(4, 0b0010, TransportVarCheck.BIT_SET);
+        VarRequirement v = VarRequirement.varbit(4, 0b0010, VarCheckType.BIT_SET);
         assertTrue(v.check(values));
-        v = new TransportVarbit(4, 0b0100, TransportVarCheck.BIT_SET);
+        v = VarRequirement.varbit(4, 0b0100, VarCheckType.BIT_SET);
         assertFalse(v.check(values));
     }
 
@@ -55,7 +57,7 @@ public class TransportVarbitTest {
         long nowMinutes = System.currentTimeMillis() / 60000;
         values.put(5, (int)(nowMinutes - 10)); // stored timestamp 10 minutes ago
 
-        TransportVarbit v = new TransportVarbit(5, 5, TransportVarCheck.COOLDOWN_MINUTES);
+        VarRequirement v = VarRequirement.varbit(5, 5, VarCheckType.COOLDOWN_MINUTES);
         assertTrue(v.check(values)); // 10 > 5
 
         values.put(5, (int)(nowMinutes - 3)); // 3 minutes ago

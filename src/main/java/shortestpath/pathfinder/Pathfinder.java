@@ -12,7 +12,8 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 
 public class Pathfinder implements Runnable {
-    private PathfinderStats stats;
+    private final PathfinderStats stats;
+    @Getter
     private volatile boolean done = false;
     private volatile boolean cancelled = false;
 
@@ -38,7 +39,7 @@ public class Pathfinder implements Runnable {
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
-     *  0 = all teleports can be used (e.g. Chronicle)
+     * 0 = all teleports can be used (e.g. Chronicle)
      * 20 = most teleports can be used (e.g. Varrock Teleport)
      * 30 = some teleports can be used (e.g. Amulet of Glory)
      * 31 = no teleports can be used
@@ -55,10 +56,6 @@ public class Pathfinder implements Runnable {
         visited = new VisitedTiles(map);
         targetInWilderness = WildernessChecker.isInWilderness(targets);
         wildernessLevel = 31;
-    }
-
-    public boolean isDone() {
-        return done;
     }
 
     public void cancel() {
@@ -90,18 +87,22 @@ public class Pathfinder implements Runnable {
 
     private void addNeighbors(Node node) {
         List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel);
-        for (int i = 0; i < nodes.size(); ++i) {
-            Node neighbor = nodes.get(i);
-
+        for (Node neighbor : nodes) {
             if (config.avoidWilderness(node.packedPosition, neighbor.packedPosition, targetInWilderness)) {
                 continue;
             }
 
-            visited.set(neighbor.packedPosition);
             if (neighbor instanceof TransportNode) {
+                TransportNode tn = (TransportNode) neighbor;
+                // Only delay visit marking for teleports with cost thresholds
+                // Regular transports mark immediately to prevent walking from stealing destinations
+                if (!tn.isDelayedVisit()) {
+                    visited.set(neighbor.packedPosition);
+                }
                 pending.add(neighbor);
                 ++stats.transportsChecked;
             } else {
+                visited.set(neighbor.packedPosition);
                 boundary.addLast(neighbor);
                 ++stats.nodesChecked;
             }
@@ -124,6 +125,14 @@ public class Pathfinder implements Runnable {
 
             if (p != null && (node == null || p.cost < node.cost)) {
                 node = pending.poll();
+                // For delayed visit transports (teleports with cost thresholds),
+                // check if destination was already reached via cheaper path
+                if (node instanceof TransportNode && ((TransportNode) node).isDelayedVisit()) {
+                    if (visited.get(node.packedPosition)) {
+                        continue; // Skip - already visited via cheaper path
+                    }
+                    visited.set(node.packedPosition);
+                }
             } else {
                 node = boundary.removeFirst();
             }

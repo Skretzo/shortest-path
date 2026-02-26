@@ -6,13 +6,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import static net.runelite.api.Constants.REGION_SIZE;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Util;
-
-import static net.runelite.api.Constants.REGION_SIZE;
 
 public class SplitFlagMap {
     @Getter
