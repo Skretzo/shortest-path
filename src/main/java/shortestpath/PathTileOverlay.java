@@ -9,6 +9,8 @@ import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -35,25 +37,35 @@ public class PathTileOverlay extends Overlay {
         setLayer(OverlayLayer.ABOVE_SCENE);
     }
 
+    private static final Color COLOR_AVAILABLE = Color.WHITE;
+    private static final Color COLOR_UNAVAILABLE = Color.ORANGE;
+
     private void renderTransports(Graphics2D graphics) {
-        for (int a : plugin.getTransports().keySet()) {
+        Map<Integer, Set<Transport>> allTransports = plugin.getAllTransports();
+        Map<Integer, Set<Transport>> availableTransports = plugin.getTransports();
+
+        for (int a : allTransports.keySet()) {
             if (a == Transport.UNDEFINED_ORIGIN) {
                 continue; // skip teleports
             }
 
-            boolean drawStart = false;
-
             Point ca = tileCenter(a);
-
             if (ca == null) {
                 continue;
             }
 
+            boolean drawStart = false;
             StringBuilder s = new StringBuilder();
-            for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>())) {
+            Set<Transport> availableAtOrigin = availableTransports.getOrDefault(a, new HashSet<>());
+
+            for (Transport b : allTransports.getOrDefault(a, new HashSet<>())) {
                 if (b == null || TransportType.isTeleport(b.getType())) {
                     continue; // skip teleports
                 }
+
+                boolean isAvailable = availableAtOrigin.contains(b);
+                graphics.setColor(isAvailable ? COLOR_AVAILABLE : COLOR_UNAVAILABLE);
+
                 PrimitiveIntList destinations = WorldPointUtil.toLocalInstance(client, b.getDestination());
                 for (int i = 0; i < destinations.size(); i++) {
                     int destination = destinations.get(i);
