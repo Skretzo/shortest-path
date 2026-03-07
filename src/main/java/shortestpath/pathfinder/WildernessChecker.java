@@ -1,7 +1,6 @@
 package shortestpath.pathfinder;
 
 import java.util.Set;
-
 import net.runelite.api.coords.WorldArea;
 import shortestpath.WorldPointUtil;
 

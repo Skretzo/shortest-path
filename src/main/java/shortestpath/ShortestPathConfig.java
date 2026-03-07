@@ -706,6 +706,21 @@ public interface ShortestPathConfig extends Config {
         max = 10000
     )
     @ConfigItem(
+        keyName = "costQuetzalWhistle",
+        name = "Quetzal whistle threshold",
+        description = "How many extra tiles the quetzal whistle must save<br>" +
+            "to be preferred over walking or other transports.<br>" +
+            "Set higher than quetzal threshold to prefer platforms when nearby.",
+        position = 54,
+        section = sectionThresholds
+    )
+    default int costQuetzalWhistle() {return 50;}
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
         keyName = "costSpiritTrees",
         name = "Spirit tree threshold",
         description = "How many extra tiles a spirit tree must save<br>" +
