@@ -5050,6 +5050,16 @@
 2896 2727 0	2393 3465 0	Travel Waydar 1446						4	
 2724 2747 0	2770 2793 0							10	
 									
+# Marim									
+2795 2793 0	2795 2797 1	Climb-up Staircase						1	
+2795 2797 1	2795 2793 0	Climb-down Staircase						1	
+2796 2793 0	2796 2797 1	Climb-up Staircase						1	
+2796 2797 1	2796 2793 0	Climb-down Staircase						1	
+2799 2793 0	2799 2797 1	Climb-up Staircase						1	
+2799 2797 1	2799 2793 0	Climb-down Staircase						1	
+2800 2793 0	2800 2797 1	Climb-up Staircase						1	
+2800 2797 1	2800 2793 0	Climb-down Staircase						1	
+									
 # Tomb of Bervirius									
 2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
 2764 9376 0	2765 2976 0	Climb Climbing rocks 2236						15	
