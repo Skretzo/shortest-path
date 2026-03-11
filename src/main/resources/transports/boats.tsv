@@ -162,6 +162,10 @@
 								
 2837 10128 0	2837 10143 0	Travel Dwarven Ferryman 4896		COINS=2			5	
 2855 10145 0	2863 10133 0	Travel Dwarven Ferryman 4897		COINS=2			5	
+								
+# Angler's Retreat Boat								
+2543 2844 0	2471 2724 0	Travel Rowboat 58637				18355=1	5	
+2471 2724 0	2543 2844 0	Travel Rowboat 58636				18355=1	5	
 # Kathy Corkat boat from Piscatoris to Gnome Stronghold (50 coins before Swan Song varbit 2098=200)								
 2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299				2098<200	10	50 coins (paid from bank)
 2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299				2098=200	10	
