@@ -1,7 +1,15 @@
 # Origin	Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Display info
 # Port Sarim, Musa Point							
-3029 3217 0	2956 3146 0	Pay-fare Captain Tobias 3644		COINS=30		10	
-2956 3146 0	3029 3217 0	Pay-Fare Customs officer 3648		COINS=30		10	
+3029 3217 0	2956 3146 0	Musa Point Captain Tobias 14979		COINS=30		10	Musa Point
+2956 3146 0	3029 3217 0	Port Sarim Customs officer 14985		COINS=30		10	Port Sarim
+
+# Port Sarim, Pandemonium							
+3029 3217 0	3064 3003 0	The Pandemonium Captain Tobias 14979		COINS=30	Pandemonium	10	Pandemonium
+3064 3003 0	3029 3217 0	Port Sarim Seaman Morris 8631		COINS=30	Pandemonium	10	Port Sarim
+
+# Musa Point, Pandemonium							
+2956 3146 0	3064 3003 0	The Pandemonium Customs officer 14985		COINS=30	Pandemonium	10	Pandemonium
+3064 3003 0	2956 3146 0	Musa Point Seaman Morris 8631		COINS=30	Pandemonium	10	Musa Point
 							
 # Ardougne, Brimhaven, Rimmington							
 2683 3271 0	2772 3234 0	Brimhaven Captain Barnaby 9250		COINS=30		6	Brimhaven
