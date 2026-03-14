@@ -5289,3 +5289,9 @@
 3317 9612 0	3245 9648 0	Watermill Mistag 7299			Death to the Dorgeshuun			8	Watermill
 3246 9646 0	3313 9613 0	Mines Dartog 7301			Death to the Dorgeshuun			8	Mines
 3246 9646 0	3232 9610 0	Cellar Dartog 997			Death to the Dorgeshuun			8	Cellar
+
+# Elemental Workshop (you don't actually need to complete the quest, but I don't know which VarBit to check)
+2709 3495 0	2709 3496 0	Open Odd-looking wall			Elemental Workshop I			2
+2709 3496 0	2709 3495 0	Open Odd-looking wall			Elemental Workshop I			2
+2709 3498 0	2716 9888 0	Climb-down Staircase 3415			Elemental Workshop I			1
+2716 9888 0	2709 3497 0	Climb-up Staircase 3416			Elemental Workshop I			1
