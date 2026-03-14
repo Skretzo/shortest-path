@@ -4054,8 +4054,9 @@
 2666 3694 1	2666 3694 0	Climb-down Ladder 4189						2	
 									
 # Mountain Camp									
+2764 3666 0	2766 3663 0	Use Rope -> Boulder 5842		ROPE=1				1
 2761 3657 0	2761 3660 0	Climb-over Rockslide 5847				260>19		4	
-2761 3660 0	2761 3657 0	Climb-over Rockslide 5847				260>19		4	
+2761 3660 0	2761 3657 0	Climb-over Rockslide 5847						4	
 									
 # Isle of Stone									
 2465 4010 0	2461 10417 0	Enter Cave 37433							
