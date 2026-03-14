@@ -5295,3 +5295,11 @@
 2709 3496 0	2709 3495 0	Open Odd-looking wall			Elemental Workshop I			2
 2709 3498 0	2716 9888 0	Climb-down Staircase 3415			Elemental Workshop I			1
 2716 9888 0	2709 3497 0	Climb-up Staircase 3416			Elemental Workshop I			1
+
+# Piscatoris Falconry Area
+2371 3622 0	2371 3620 0	Climb-over Stile 19222						5
+2370 3621 0	2371 3620 0	Climb-over Stile 19222						5
+2372 3621 0	2371 3620 0	Climb-over Stile 19222						5
+2371 3619 0	2371 3621 0	Climb-over Stile 19222						5
+2370 3620 0	2371 3621 0	Climb-over Stile 19222						5
+2372 3620 0	2371 3621 0	Climb-over Stile 19222						5
