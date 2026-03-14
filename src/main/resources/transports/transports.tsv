@@ -5280,3 +5280,11 @@
 									
 # Arzinian mine									
 2824 10169 0	2615 4966 0	Talk-to Dondakan the Dwarf 4891		4567=1	Between a Rock...			4	
+
+# Lumbridge Castle Basement Goblins
+3230 9609 0	3313 9613 0	Mines Kazgar 7301			The Lost Tribe			8	Mines
+3230 9609 0	3245 9648 0	Watermill Kazgar 7301			Death to the Dorgeshuun			8	Watermill
+3317 9612 0	3232 9610 0	Cellar Mistag 7299			The Lost Tribe			8	Cellar
+3317 9612 0	3245 9648 0	Watermill Mistag 7299			Death to the Dorgeshuun			8	Watermill
+3246 9646 0	3313 9613 0	Mines Dartog 7301			Death to the Dorgeshuun			8	Mines
+3246 9646 0	3232 9610 0	Cellar Dartog 997			Death to the Dorgeshuun			8	Cellar
