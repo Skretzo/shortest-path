@@ -5365,3 +5365,16 @@
 1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
 1439 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
 1440 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
+									
+# Observatory Tower & Dungeon									
+2457 3186 0	2355 9394 0	Climb-down Stairs 25432							
+2458 3185 0	2355 9394 0	Climb-down Stairs 25432							
+2355 9394 0	2458 3185 0	Climb-up Stairs 25429							
+2335 9350 0	2439 3164 0	Climb-up Stairs 25429							
+2439 3164 0	2335 9350 0	Climb-down Stairs 25434							
+2438 3165 0	2335 9350 0	Climb-down Stairs 25434							
+2438 3163 0	2335 9350 0	Climb-down Stairs 25434							
+2444 3162 0	2442 3159 1	Climb-up Stairs 25431							
+2442 3159 1	2444 3162 0	Climb-down Stairs 25437							
+2443 3160 1	2444 3162 0	Climb-down Stairs 25437							
+2443 3158 1	2444 3162 0	Climb-down Stairs 25437							
