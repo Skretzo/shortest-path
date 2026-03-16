@@ -5337,3 +5337,25 @@
 2343 3662 0	2343 3663 0	Open Colony gate			Swan Song			2	
 2344 3663 0	2344 3662 0	Open Colony gate			Swan Song			2	
 2343 3663 0	2343 3662 0	Open Colony gate			Swan Song			2	
+									
+# Socerer's Tower									
+2701 3407 0	2701 3407 1	Climb-up Ladder 16683							
+2700 3408 0	2701 3407 1	Climb-up Ladder 16683							
+2702 3408 0	2701 3407 1	Climb-up Ladder 16683							
+2701 3407 1	2701 3407 0	Climb-down Ladder 16679							
+2700 3408 1	2701 3407 0	Climb-down Ladder 16679							
+2702 3408 1	2701 3407 0	Climb-down Ladder 16679							
+2704 3404 1	2704 3404 2	Climb-up Ladder 16683							
+2703 3403 1	2704 3404 2	Climb-up Ladder 16683							
+2705 3403 1	2704 3404 2	Climb-up Ladder 16683							
+2704 3402 1	2704 3404 2	Climb-up Ladder 16683							
+2704 3404 2	2704 3404 1	Climb-down Ladder 16679							
+2703 3403 2	2704 3404 1	Climb-down Ladder 16679							
+2705 3403 2	2704 3404 1	Climb-down Ladder 16679							
+2704 3402 2	2704 3404 1	Climb-down Ladder 16679							
+2700 3405 2	2700 3405 3	Climb-up Ladder 16683							
+2699 3406 2	2700 3405 3	Climb-up Ladder 16683							
+2699 3404 2	2700 3405 3	Climb-up Ladder 16683							
+2700 3405 3	2700 3405 2	Climb-down Ladder 16679							
+2699 3406 3	2700 3405 2	Climb-down Ladder 16679							
+2699 3404 3	2700 3405 2	Climb-down Ladder 16679							
