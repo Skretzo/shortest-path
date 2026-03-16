@@ -5329,3 +5329,11 @@
 2628 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
 2630 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
 2629 5071 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
+									
+# Piscatoris Fishing Colony									
+2344 3650 0	2344 3655 0	Enter Hole 12656			Swan Song				
+2344 3655 0	2344 3650 0	Enter Hole 12656			Swan Song				
+2344 3662 0	2344 3663 0	Open Colony gate			Swan Song			2	
+2343 3662 0	2343 3663 0	Open Colony gate			Swan Song			2	
+2344 3663 0	2344 3662 0	Open Colony gate			Swan Song			2	
+2343 3663 0	2343 3662 0	Open Colony gate			Swan Song			2	
