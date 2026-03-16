@@ -5368,3 +5368,11 @@
 2442 3159 1	2444 3162 0	Climb-down Stairs 25437							
 2443 3160 1	2444 3162 0	Climb-down Stairs 25437							
 2443 3158 1	2444 3162 0	Climb-down Stairs 25437							
+									
+# Shilo Village Gem Mine									
+2826 2998 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2825 2999 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2824 2998 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2825 2997 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2838 9387 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
+2839 9388 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
