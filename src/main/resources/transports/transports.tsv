@@ -5386,3 +5386,10 @@
 2825 2997 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
 2838 9387 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
 2839 9388 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
+									
+# Corsair Cave Dungeon									
+2523 2860 0	2012 9004 1	Enter Hole 31791							
+2012 9004 1	2523 2860 0	Climb Vine ladder 31790							
+2483 2889 0	1971 9035 1	Enter Cave 31766			6076=1				
+2484 2889 0	1971 9035 1	Enter Cave 31766			6076=1				
+1971 9035 1	2483 2889 0	Enter Cave 31806			6076=1				
