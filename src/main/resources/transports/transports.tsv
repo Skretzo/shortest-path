@@ -5349,3 +5349,9 @@
 2700 3405 3	2700 3405 2	Climb-down Ladder 16679							
 2699 3406 3	2700 3405 2	Climb-down Ladder 16679							
 2699 3404 3	2700 3405 2	Climb-down Ladder 16679							
+									
+# Cam Torum									
+1435 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
+1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
+1439 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
+1440 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
