@@ -5383,3 +5383,24 @@
 2483 2889 0	1971 9035 1	Enter Cave 31766			6076=1				
 2484 2889 0	1971 9035 1	Enter Cave 31766			6076=1				
 1971 9035 1	2483 2889 0	Enter Cave 31806			6076=1				
+									
+# Myths' Guild									
+2456 2862 0	2456 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2457 2862 0	2457 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2458 2862 0	2458 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2456 2860 0	2456 2862 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2457 2860 0	2457 2862 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2458 2860 0	2458 2862 0	Pass Magical Barrier 31616			Dragon Slayer II				
+1969 8987 1	1967 8987 1	Pass Magical Barrier 31617			Dragon Slayer II				
+1969 8986 1	1967 8986 1	Pass Magical Barrier 31617			Dragon Slayer II				
+1967 8987 1	1969 8987 1	Pass Magical Barrier 31617			Dragon Slayer II				
+1967 8986 1	1969 8986 1	Pass Magical Barrier 31617			Dragon Slayer II				
+2457 2849 0	1936 9009 1	Enter Mythic Statue 31626			Dragon Slayer II				
+1936 9009 1	2457 2849 0	Climb-up Ladder 32205			Dragon Slayer II				
+2457 2839 0	2458 2839 1	Climb-up Stairs 31627			Dragon Slayer II				
+2455 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2456 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2458 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2459 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2449 2847 1	2452 2847 2	Climb-up Stairs 31609			Dragon Slayer II				
+2452 2847 2	2449 2847 1	Climb-down Stairs 31610			Dragon Slayer II				
