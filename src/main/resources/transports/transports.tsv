@@ -5404,3 +5404,9 @@
 2459 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
 2449 2847 1	2452 2847 2	Climb-up Stairs 31609			Dragon Slayer II				
 2452 2847 2	2449 2847 1	Climb-down Stairs 31610			Dragon Slayer II				
+									
+# Brimhaven House									
+2808 3162 0	2808 3162 1	Climb-up Ladder 16683							
+2809 3161 0	2808 3162 1	Climb-up Ladder 16683							
+2808 3162 1	2808 3162 0	Climb-down Ladder 16670							
+2809 3161 1	2808 3162 0	Climb-down Ladder 16670							
