@@ -87,6 +87,7 @@ public class PathfinderConfig {
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
     /** All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player. */
+    @Getter
     private final Map<Integer, Set<Transport>> allTransports;
     private final Set<Transport> usableTeleports;
     private final Map<String, Set<Integer>> allDestinations;
