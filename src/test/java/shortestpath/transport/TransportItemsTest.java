@@ -3,6 +3,7 @@ package shortestpath.transport;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
+import shortestpath.transport.requirement.TransportItems;
 
 public class TransportItemsTest {
 

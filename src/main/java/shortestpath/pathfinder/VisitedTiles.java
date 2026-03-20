@@ -1,7 +1,7 @@
 package shortestpath.pathfinder;
 
-import shortestpath.WorldPointUtil;
 import static net.runelite.api.Constants.REGION_SIZE;
+import shortestpath.WorldPointUtil;
 
 public class VisitedTiles {
     private final SplitFlagMap.RegionExtent regionExtents;
