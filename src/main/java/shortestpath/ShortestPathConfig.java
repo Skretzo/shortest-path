@@ -448,12 +448,454 @@ public interface ShortestPathConfig extends Config {
         return false;
     }
 
+    @ConfigSection(
+        name = "POH Portal Nexus Teleports",
+        description = "Toggle individual portals in your POH portal nexus.<br>" +
+            "Disable portals you have not unlocked in your nexus.",
+        position = 37,
+        closedByDefault = true
+    )
+    String sectionPohNexusPortals = "sectionPohNexusPortals";
+
+    @ConfigItem(
+        keyName = "usePohNexusAnnakarl",
+        name = "Annakarl",
+        description = "Whether to include the Annakarl portal from the POH portal nexus",
+        position = 38,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusAnnakarl() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusArceuusLibrary",
+        name = "Arceuus Library",
+        description = "Whether to include the Arceuus Library portal from the POH portal nexus",
+        position = 39,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusArceuusLibrary() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusArdougne",
+        name = "Ardougne",
+        description = "Whether to include the Ardougne portal from the POH portal nexus",
+        position = 40,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusArdougne() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusBarbarianOutpost",
+        name = "Barbarian Outpost",
+        description = "Whether to include the Barbarian Outpost portal from the POH portal nexus",
+        position = 41,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusBarbarianOutpost() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusBarrows",
+        name = "Barrows",
+        description = "Whether to include the Barrows portal from the POH portal nexus",
+        position = 42,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusBarrows() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusBattlefront",
+        name = "Battlefront",
+        description = "Whether to include the Battlefront portal from the POH portal nexus",
+        position = 43,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusBattlefront() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusCamelot",
+        name = "Camelot / Seers' Village",
+        description = "Whether to include the Camelot/Seers' Village portal from the POH portal nexus.<br>" +
+            "This portal redirects to Camelot or Seers' Village depending on your construction setting.",
+        position = 44,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusCamelot() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusCarrallanger",
+        name = "Carrallanger",
+        description = "Whether to include the Carrallanger portal from the POH portal nexus",
+        position = 45,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusCarrallanger() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusCatherby",
+        name = "Catherby",
+        description = "Whether to include the Catherby portal from the POH portal nexus",
+        position = 46,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusCatherby() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusCemetery",
+        name = "Cemetery",
+        description = "Whether to include the Cemetery portal from the POH portal nexus",
+        position = 47,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusCemetery() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusCivitasIllaFortis",
+        name = "Civitas illa Fortis",
+        description = "Whether to include the Civitas illa Fortis portal from the POH portal nexus",
+        position = 48,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusCivitasIllaFortis() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusDareeyak",
+        name = "Dareeyak",
+        description = "Whether to include the Dareeyak portal from the POH portal nexus",
+        position = 49,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusDareeyak() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusDraynorManor",
+        name = "Draynor Manor",
+        description = "Whether to include the Draynor Manor portal from the POH portal nexus",
+        position = 50,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusDraynorManor() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusFalador",
+        name = "Falador",
+        description = "Whether to include the Falador portal from the POH portal nexus",
+        position = 51,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusFalador() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusFenkenstrainsCastle",
+        name = "Fenkenstrain's Castle",
+        description = "Whether to include the Fenkenstrain's Castle portal from the POH portal nexus",
+        position = 52,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusFenkenstrainsCastle() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusFishingGuild",
+        name = "Fishing Guild",
+        description = "Whether to include the Fishing Guild portal from the POH portal nexus",
+        position = 53,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusFishingGuild() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusGhorrock",
+        name = "Ghorrock",
+        description = "Whether to include the Ghorrock portal from the POH portal nexus",
+        position = 54,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusGhorrock() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusHarmonyIsland",
+        name = "Harmony Island",
+        description = "Whether to include the Harmony Island portal from the POH portal nexus",
+        position = 55,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusHarmonyIsland() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusIcePlateau",
+        name = "Ice Plateau",
+        description = "Whether to include the Ice Plateau portal from the POH portal nexus",
+        position = 56,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusIcePlateau() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusKharyrll",
+        name = "Kharyrll",
+        description = "Whether to include the Kharyrll portal from the POH portal nexus",
+        position = 57,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusKharyrll() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusKourend",
+        name = "Kourend",
+        description = "Whether to include the Kourend portal from the POH portal nexus",
+        position = 58,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusKourend() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusLassar",
+        name = "Lassar",
+        description = "Whether to include the Lassar portal from the POH portal nexus",
+        position = 59,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusLassar() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusLumbridge",
+        name = "Lumbridge",
+        description = "Whether to include the Lumbridge portal from the POH portal nexus",
+        position = 60,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusLumbridge() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusLunarIsle",
+        name = "Lunar Isle",
+        description = "Whether to include the Lunar Isle portal from the POH portal nexus",
+        position = 61,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusLunarIsle() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusMarim",
+        name = "Marim",
+        description = "Whether to include the Marim portal from the POH portal nexus",
+        position = 62,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusMarim() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusMindAltar",
+        name = "Mind Altar",
+        description = "Whether to include the Mind Altar portal from the POH portal nexus",
+        position = 63,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusMindAltar() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusOurania",
+        name = "Ourania",
+        description = "Whether to include the Ourania portal from the POH portal nexus",
+        position = 64,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusOurania() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusPaddewwa",
+        name = "Paddewwa",
+        description = "Whether to include the Paddewwa portal from the POH portal nexus",
+        position = 65,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusPaddewwa() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusPortKhazard",
+        name = "Port Khazard",
+        description = "Whether to include the Port Khazard portal from the POH portal nexus",
+        position = 66,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusPortKhazard() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusRespawn",
+        name = "Respawn",
+        description = "Whether to include the Respawn portal from the POH portal nexus.<br>" +
+            "This portal sends you to your current respawn point.",
+        position = 67,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusRespawn() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusSalveGraveyard",
+        name = "Salve Graveyard",
+        description = "Whether to include the Salve Graveyard portal from the POH portal nexus",
+        position = 68,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusSalveGraveyard() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusSenntisten",
+        name = "Senntisten",
+        description = "Whether to include the Senntisten portal from the POH portal nexus",
+        position = 69,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusSenntisten() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusTrollheim",
+        name = "Trollheim",
+        description = "Whether to include the Trollheim portal from the POH portal nexus",
+        position = 70,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusTrollheim() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusTrollStronghold",
+        name = "Troll Stronghold",
+        description = "Whether to include the Troll Stronghold portal from the POH portal nexus",
+        position = 71,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusTrollStronghold() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusVarrock",
+        name = "Varrock / Grand Exchange",
+        description = "Whether to include the Varrock/Grand Exchange portal from the POH portal nexus.<br>" +
+            "This portal redirects to Varrock or the Grand Exchange depending on your construction setting.",
+        position = 72,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusVarrock() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusWaterbirthIsland",
+        name = "Waterbirth Island",
+        description = "Whether to include the Waterbirth Island portal from the POH portal nexus",
+        position = 73,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusWaterbirthIsland() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusWatchtower",
+        name = "Watchtower / Yanille",
+        description = "Whether to include the Watchtower/Yanille portal from the POH portal nexus.<br>" +
+            "This portal redirects to Watchtower or Yanille depending on your construction setting.",
+        position = 74,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusWatchtower() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusWeiss",
+        name = "Weiss",
+        description = "Whether to include the Weiss portal from the POH portal nexus",
+        position = 75,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusWeiss() {
+        return true;
+    }
+
+    @ConfigItem(
+        keyName = "usePohNexusWestArdougne",
+        name = "West Ardougne",
+        description = "Whether to include the West Ardougne portal from the POH portal nexus",
+        position = 76,
+        section = sectionPohNexusPortals
+    )
+    default boolean usePohNexusWestArdougne() {
+        return true;
+    }
+
     @ConfigItem(
         keyName = "pohJewelleryBoxTier",
         name = "POH jewellery box tier",
         description = "The tier of jewellery box built in your POH<br>" +
             "(Basic: 1-9, Fancy: A-J, Ornate: K-R). Set to None to disable jewellery box.",
-        position = 37,
+        position = 77,
         section = sectionPoh
     )
     default JewelleryBoxTier pohJewelleryBoxTier() {
@@ -465,7 +907,7 @@ public interface ShortestPathConfig extends Config {
         name = "POH mounted items",
         description = "Whether to include POH mounted items in the path<br>" +
             "(e.g. mounted glory, Xeric's talisman, digsite pendant, mythical cape)",
-        position = 38,
+        position = 78,
         section = sectionPoh
     )
     default boolean usePohMountedItems() {
@@ -477,7 +919,7 @@ public interface ShortestPathConfig extends Config {
         name = "POH wilderness obelisk",
         description = "Whether to include the POH wilderness obelisk in the path.<br>" +
             "Enable this if you have built an obelisk in your house (80 Construction or boosted)",
-        position = 39,
+        position = 79,
         section = sectionPoh
     )
     default boolean usePohObelisk() {
@@ -488,7 +930,7 @@ public interface ShortestPathConfig extends Config {
         name = "Transport Thresholds",
         description = "Set customizable thresholds for how much faster a transportation<br>"+
             "method must be to be preferred over other methods",
-        position = 40,
+        position = 80,
         closedByDefault = true
     )
     String sectionThresholds = "sectionThresholds";
@@ -502,7 +944,7 @@ public interface ShortestPathConfig extends Config {
         name = "Agility shortcut threshold",
         description = "How many extra tiles an agility shortcut must save<br>" +
             "to be preferred over walking or other transports",
-        position = 41,
+        position = 81,
         section = sectionThresholds
     )
     default int costAgilityShortcuts() {
@@ -518,7 +960,7 @@ public interface ShortestPathConfig extends Config {
         name = "Grapple shortcut threshold",
         description = "How many extra tiles a grapple shortcut must save<br>" +
             "to be preferred over walking or other transports",
-        position = 42,
+        position = 82,
         section = sectionThresholds
     )
     default int costGrappleShortcuts() {
@@ -534,7 +976,7 @@ public interface ShortestPathConfig extends Config {
         name = "Boat threshold",
         description = "How many extra tiles a small boat must save<br>" +
             "to be preferred over walking or other transports",
-        position = 43,
+        position = 83,
         section = sectionThresholds
     )
     default int costBoats() {
@@ -550,7 +992,7 @@ public interface ShortestPathConfig extends Config {
         name = "Canoe threshold",
         description = "How many extra tiles a canoe must save<br>" +
             "to be preferred over walking or other transports",
-        position = 44,
+        position = 84,
         section = sectionThresholds
     )
     default int costCanoes() {
@@ -566,7 +1008,7 @@ public interface ShortestPathConfig extends Config {
         name = "Charter ship threshold",
         description = "How many extra tiles a charter ship must save<br>" +
             "to be preferred over walking or other transports",
-        position = 45,
+        position = 85,
         section = sectionThresholds
     )
     default int costCharterShips() {
@@ -582,7 +1024,7 @@ public interface ShortestPathConfig extends Config {
         name = "Ship threshold",
         description = "How many extra tiles a passenger ship must save<br>" +
             "to be preferred over walking or other transports",
-        position = 46,
+        position = 86,
         section = sectionThresholds
     )
     default int costShips() {
@@ -598,7 +1040,7 @@ public interface ShortestPathConfig extends Config {
         name = "Fairy ring threshold",
         description = "How many extra tiles a fairy ring must save<br>" +
             "to be preferred over walking or other transports",
-        position = 47,
+        position = 87,
         section = sectionThresholds
     )
     default int costFairyRings() {
@@ -614,7 +1056,7 @@ public interface ShortestPathConfig extends Config {
         name = "Gnome glider threshold",
         description = "How many extra tiles a gnome glider must save<br>" +
             "to be preferred over walking or other transports",
-        position = 48,
+        position = 88,
         section = sectionThresholds
     )
     default int costGnomeGliders() {
@@ -630,7 +1072,7 @@ public interface ShortestPathConfig extends Config {
         name = "Hot air balloon threshold",
         description = "How many extra tiles a hot air balloon must save<br>" +
             "to be preferred over walking or other transports",
-        position = 49,
+        position = 89,
         section = sectionThresholds
     )
     default int costHotAirBalloons() {
@@ -646,7 +1088,7 @@ public interface ShortestPathConfig extends Config {
         name = "Magic carpets threshold",
         description = "How many extra tiles a magic carpet must save<br>" +
             "to be preferred over walking or other transports",
-        position = 50,
+        position = 90,
         section = sectionThresholds
     )
     default int costMagicCarpets() {
@@ -662,7 +1104,7 @@ public interface ShortestPathConfig extends Config {
         name = "Magic mushtrees threshold",
         description = "How many extra tiles a magic mushtree must save<br>" +
             "to be preferred over walking or other transports",
-        position = 51,
+        position = 91,
         section = sectionThresholds
     )
     default int costMagicMushtrees() {
@@ -678,7 +1120,7 @@ public interface ShortestPathConfig extends Config {
         name = "Minecart threshold",
         description = "How many extra tiles a minecart must save<br>" +
             "to be preferred over walking or other transports",
-        position = 52,
+        position = 92,
         section = sectionThresholds
     )
     default int costMinecarts() {
@@ -694,7 +1136,7 @@ public interface ShortestPathConfig extends Config {
         name = "Quetzal threshold",
         description = "How many extra tiles a quetzal must save<br>" +
             "to be preferred over walking or other transports",
-        position = 53,
+        position = 93,
         section = sectionThresholds
     )
     default int costQuetzals() {
@@ -710,7 +1152,7 @@ public interface ShortestPathConfig extends Config {
         name = "Spirit tree threshold",
         description = "How many extra tiles a spirit tree must save<br>" +
             "to be preferred over walking or other transports",
-        position = 54,
+        position = 94,
         section = sectionThresholds
     )
     default int costSpiritTrees() {
@@ -726,7 +1168,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation item (non-consumable) threshold",
         description = "How many extra tiles a non-consumable (permanent) teleportation item<br>" +
             "must save to be preferred over walking or other transports",
-        position = 55,
+        position = 95,
         section = sectionThresholds
     )
     default int costNonConsumableTeleportationItems() {
@@ -742,7 +1184,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation item (consumable) threshold",
         description = "How many extra tiles a consumable (non-permanent) teleportation item<br>" +
             "must save to be preferred over walking or other transports",
-        position = 56,
+        position = 96,
         section = sectionThresholds
     )
     default int costConsumableTeleportationItems() {
@@ -758,7 +1200,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation box threshold",
         description = "How many extra tiles a teleportation box must save<br>" +
             "to be preferred over walking or other transports",
-        position = 57,
+        position = 97,
         section = sectionThresholds
     )
     default int costTeleportationBoxes() {
@@ -774,7 +1216,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation lever threshold",
         description = "How many extra tiles a teleportation lever must save<br>" +
             "to be preferred over walking or other transports",
-        position = 58,
+        position = 98,
         section = sectionThresholds
     )
     default int costTeleportationLevers() {
@@ -790,7 +1232,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation portal threshold",
         description = "How many extra tiles a teleportation portal must save<br>" +
             "to be preferred over walking or other transports",
-        position = 59,
+        position = 99,
         section = sectionThresholds
     )
     default int costTeleportationPortals() {
@@ -806,7 +1248,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation spell threshold",
         description = "How many extra tiles a teleportation spell must save<br>" +
             "to be preferred over walking or other transports",
-        position = 60,
+        position = 100,
         section = sectionThresholds
     )
     default int costTeleportationSpells() {
@@ -822,7 +1264,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation to minigame threshold",
         description = "How many extra tiles a minigame teleport must save<br>" +
             "to be preferred over walking or other transports",
-        position = 61,
+        position = 101,
         section = sectionThresholds
     )
     default int costTeleportationMinigames() {
@@ -838,7 +1280,7 @@ public interface ShortestPathConfig extends Config {
         name = "Wilderness obelisk threshold",
         description = "How many extra tiles a wilderness obelisk must save<br>" +
             "to be preferred over walking or other transports",
-        position = 62,
+        position = 102,
         section = sectionThresholds
     )
     default int costWildernessObelisks() {
@@ -854,7 +1296,7 @@ public interface ShortestPathConfig extends Config {
         name = "Seasonal transport threshold",
         description = "How many extra tiles a seasonal transport must save<br>" +
             "to be preferred over walking or other transports",
-        position = 63,
+        position = 103,
         section = sectionThresholds
     )
     default int costSeasonalTransports() {
@@ -864,7 +1306,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Display",
         description = "Options for displaying the path on the world map, minimap and scene tiles",
-        position = 64
+        position = 104
     )
     String sectionDisplay = "sectionDisplay";
 
@@ -872,7 +1314,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMap",
         name = "Draw path on world map",
         description = "Whether the path should be drawn on the world map",
-        position = 65,
+        position = 105,
         section = sectionDisplay
     )
     default boolean drawMap() {
@@ -883,7 +1325,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMinimap",
         name = "Draw path on minimap",
         description = "Whether the path should be drawn on the minimap",
-        position = 66,
+        position = 106,
         section = sectionDisplay
     )
     default boolean drawMinimap() {
@@ -894,7 +1336,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTiles",
         name = "Draw path on tiles",
         description = "Whether the path should be drawn on the game tiles",
-        position = 67,
+        position = 107,
         section = sectionDisplay
     )
     default boolean drawTiles() {
@@ -905,7 +1347,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "pathStyle",
         name = "Path style",
         description = "Whether to display the path as tiles or a segmented line",
-        position = 68,
+        position = 108,
         section = sectionDisplay
     )
     default TileStyle pathStyle() {
@@ -915,7 +1357,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Colours",
         description = "Colours for the path map, minimap and scene tiles",
-        position = 69
+        position = 109
     )
     String sectionColours = "sectionColours";
 
@@ -924,7 +1366,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourPath",
         name = "Path",
         description = "Colour of the path tiles on the world map, minimap and in the game scene",
-        position = 70,
+        position = 110,
         section = sectionColours
     )
     default Color colourPath() {
@@ -937,7 +1379,7 @@ public interface ShortestPathConfig extends Config {
         name = "Calculating",
         description = "Colour of the path tiles while the pathfinding calculation is in progress," +
             "<br>and the colour of unused targets if there are more than a single target",
-        position = 71,
+        position = 111,
         section = sectionColours
     )
     default Color colourPathCalculating() {
@@ -949,7 +1391,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourTransports",
         name = "Transports",
         description = "Colour of the transport tiles",
-        position = 72,
+        position = 112,
         section = sectionColours
     )
     default Color colourTransports() {
@@ -961,7 +1403,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourCollisionMap",
         name = "Collision map",
         description = "Colour of the collision map tiles",
-        position = 73,
+        position = 113,
         section = sectionColours
     )
     default Color colourCollisionMap() {
@@ -973,7 +1415,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourText",
         name = "Text",
         description = "Colour of the text of the tile counter and fairy ring codes",
-        position = 74,
+        position = 114,
         section = sectionColours
     )
     default Color colourText() {
@@ -983,7 +1425,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Debug Options",
         description = "Various options for debugging",
-        position = 75,
+        position = 115,
         closedByDefault = true
     )
     String sectionDebug = "sectionDebug";
@@ -992,7 +1434,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTransports",
         name = "Draw transports",
         description = "Whether transports should be drawn",
-        position = 76,
+        position = 116,
         section = sectionDebug
     )
     default boolean drawTransports() {
@@ -1003,7 +1445,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawCollisionMap",
         name = "Draw collision map",
         description = "Whether the collision map should be drawn",
-        position = 77,
+        position = 117,
         section = sectionDebug
     )
     default boolean drawCollisionMap() {
@@ -1014,7 +1456,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawDebugPanel",
         name = "Show debug panel",
         description = "Toggles displaying the pathfinding debug stats panel",
-        position = 78,
+        position = 118,
         section = sectionDebug
     )
     default boolean drawDebugPanel() {
@@ -1025,7 +1467,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "postTransports",
         name = "Post transports",
         description = "Whether to post the transports used in the current path as a PluginMessage event",
-        position = 79,
+        position = 119,
         section = sectionDebug
     )
     default boolean postTransports() {
