@@ -29,5 +29,7 @@ jobs:
       - name: CSV Lint
         shell: bash
         run: |
-          find ./src/main/resources -name '*.tsv' -print0 \
-            | xargs -0 -n 1 csvlint -delimiter $'\t'
+          while IFS= read -r -d '' file; do
+            echo "Linting $file"
+            csvlint -delimiter $'\t' "$file"
+          done < <(find ./src/main/resources -name '*.tsv' -print0)
