@@ -40,6 +40,8 @@
 								
 # Camelot Teleport								
 2757 3478 0	AIR_RUNE=5&&LAW_RUNE=1	45 Magic		4	Camelot Teleport	20	4070=0	
+# Varbit 4477 is DIARY_KANDARIN_HARD								
+2726 3485 0	AIR_RUNE=5&&LAW_RUNE=1	45 Magic		4	Camelot Teleport: Seers'	20	4070=0;4477=1	
 								
 # Kourend Castle Teleport								
 1641 3673 0	FIRE_RUNE=1&&WATER_RUNE=1&&LAW_RUNE=2	48 Magic	Client of Kourend	4	Kourend Castle Teleport	20	4070=0	
