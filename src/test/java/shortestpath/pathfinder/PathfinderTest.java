@@ -364,6 +364,29 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testVarrockPalaceTrellisUsableWithGardenOfTranquillity() {
+        testTransportLength(2,
+            WorldPointUtil.packWorldPoint(3228, 3470, 0),
+            WorldPointUtil.packWorldPoint(3228, 3472, 0));
+        testTransportLength(2,
+            WorldPointUtil.packWorldPoint(3228, 3472, 0),
+            WorldPointUtil.packWorldPoint(3228, 3470, 0));
+    }
+
+    @Test
+    public void testVarrockPalaceTrellisNotUsableWithoutGardenOfTranquillity() {
+        setupConfig(QuestState.NOT_STARTED, 99, TeleportationItem.NONE);
+
+        int south = WorldPointUtil.packWorldPoint(3228, 3470, 0);
+        int north = WorldPointUtil.packWorldPoint(3228, 3472, 0);
+
+        assertTrue("Varrock Palace trellis should not be directly usable without Garden of Tranquillity",
+            calculatePathLength(south, north) > 2);
+        assertTrue("Varrock Palace trellis should not be directly usable without Garden of Tranquillity",
+            calculatePathLength(north, south) > 2);
+    }
+
+    @Test
     public void testAgilityShortcutAndTeleportItem() {
         when(config.useAgilityShortcuts()).thenReturn(true);
         when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);

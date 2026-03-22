@@ -5465,3 +5465,7 @@
 # Ape Atoll Dungeon									
 2763 9103 0	2763 2703 0	Climb-up Bamboo Ladder 4781							
 2763 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780							
+									
+# Varrock Palace trellis									
+3228 3470 0	3228 3472 0	Climb Trellis 2149			Garden of Tranquillity			2	
+3228 3472 0	3228 3470 0	Climb Trellis 2149			Garden of Tranquillity			2	
