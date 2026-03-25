@@ -164,6 +164,6 @@
 2855 10145 0	2863 10133 0	Travel Dwarven Ferryman 4897		COINS=2			5	
 
 # Kathy Corkat boat from Piscatoris to Gnome Stronghold	""	""
-2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299		COINS=50
-2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299		RING_OF_CHAROS_(A)=1
-2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299			Swan Song
+2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299		COINS=50			10
+2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299		RING_OF_CHAROS_(A)=1			10
+2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299			Swan Song		10
