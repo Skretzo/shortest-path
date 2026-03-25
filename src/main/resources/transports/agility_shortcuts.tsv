@@ -126,7 +126,7 @@
 3300 3192 3	3299 3194 0	Jump Gap 14399	20 Agility				2
 3142 3513 0	3137 3516 0	Climb-into Underwall tunnel 16530	21 Agility				7
 3137 3516 0	3142 3513 0	Climb-into Underwall tunnel 16529	21 Agility				7
-2449 3155 0	2444 3165 0	Grapple Rocks 31850	23 Agility;24 Ranged;28 Strength		5810=1		
+2449 3155 0	2444 3165 0	Grapple Rocks 31850	23 Agility;24 Ranged;28 Strength		5810=1
 1369 3294 0	1369 3296 0	Climb-over Broken wall 56996	24 Agility				2
 1369 3296 0	1369 3294 0	Climb-over Broken wall 56996	24 Agility				2
 1389 3309 0	1391 3309 0	Climb-over Broken wall 56997	24 Agility				2
@@ -542,3 +542,7 @@
 3180 2434 0	3180 2432 0	Climb Rocks 57927	50 Agility				
 1981 8994 1	1981 8998 1	Jump-to Pillar 31809	15 Agility		6076=1		5
 1981 8999 1	1981 8994 1	Jump-to Pillar 31809	15 Agility		6076=1		6
+3504 3559 0	3504 3562 0	Cross Bridge 57717	69 Agility		4441=2;5023=2		4
+3504 3562 0	3504 3559 0 	Cross Bridge 57716	69 Agility		4441=2;5023=2		4
+3503 3559 0	3503 3562 0	Cross Bridge 57718	69 Agility		4441=2;5023=2		4
+3503 3562 0	3503 3559 0	Cross Bridge 57715	69 Agility		4441=2;5023=2		4
