@@ -1304,7 +1304,15 @@
 2749 3490 2	2749 3490 1	Climb-down Ladder 25606							
 2750 3491 1	2750 3491 2	Climb-up Ladder 26107							
 2750 3491 2	2750 3491 1	Climb-down Ladder 25606							
-									
+
+# Sorcerer's Tower
+2701 3408 0	2701 3408 1	Climb-up Ladder 16683
+2701 3408 1	2701 3408 0	Climb-down Ladder 16679
+2704 3403 1	2704 3403 2	Climb-up Ladder 16683
+2704 3403 2	2704 3403 1	Climb-down Ladder 16679
+2699 3405 2	2699 3405 3	Climb-up Ladder 16683
+2699 3405 3	2699 3405 2	Climb-down Ladder 16679
+
 # Lighthouse									
 2596 3608 0	2598 3608 0	Cross Broken bridge 4615						2	
 2598 3608 0	2596 3608 0	Cross Broken bridge 4616						2	
