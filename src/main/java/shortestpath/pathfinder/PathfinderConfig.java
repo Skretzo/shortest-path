@@ -137,7 +137,12 @@ public class PathfinderConfig {
         includeBankPath,
         usePohMountedItems,
         usePoh,
-        usePohObelisk;
+        usePohObelisk,
+        useSpiritTreeEtceteria,
+        useSpiritTreeBrimhaven,
+        useSpiritTreePortSarim,
+        useSpiritTreeHosidius,
+        useSpiritTreeFarmingGuild;
     private TeleportationItem useTeleportationItems;
     private JewelleryBoxTier pohJewelleryBoxTier;
     private Map<TransportType, Integer> artificialTransportCosts = new EnumMap<>(TransportType.class);
@@ -197,6 +202,11 @@ public class PathfinderConfig {
         useSeasonalTransports = ShortestPathPlugin.override("useSeasonalTransports", config.useSeasonalTransports());
         useSpiritTrees = ShortestPathPlugin.override("useSpiritTrees", config.useSpiritTrees());
         usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
+        useSpiritTreeEtceteria = ShortestPathPlugin.override("useSpiritTreeEtceteria", config.useSpiritTreeEtceteria());
+        useSpiritTreeBrimhaven = ShortestPathPlugin.override("useSpiritTreeBrimhaven", config.useSpiritTreeBrimhaven());
+        useSpiritTreePortSarim = ShortestPathPlugin.override("useSpiritTreePortSarim", config.useSpiritTreePortSarim());
+        useSpiritTreeHosidius = ShortestPathPlugin.override("useSpiritTreeHosidius", config.useSpiritTreeHosidius());
+        useSpiritTreeFarmingGuild = ShortestPathPlugin.override("useSpiritTreeFarmingGuild", config.useSpiritTreeFarmingGuild());
         useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
         pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
         usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
@@ -530,10 +540,24 @@ public class PathfinderConfig {
             if (!useSpiritTrees) {
                 return false;
             }
-            // Check if this is the POH spirit tree (origin inside POH bounds)
+
             int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
             int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+
+            // Check if this is the POH spirit tree (origin inside POH bounds)
             if (ShortestPathPlugin.isInsidePoh(originX, originY) && !usePohSpiritTree) {
+                return false;
+            }
+
+            // Check planted spirit tree origins (travel FROM a planted tree)
+            if (!isPlantedSpiritTreeAllowed(originX, originY)) {
+                return false;
+            }
+
+            // Check planted spirit tree destinations (travel TO a planted tree)
+            int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
+            int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+            if (!isPlantedSpiritTreeAllowed(destX, destY)) {
                 return false;
             }
         } else if (TELEPORTATION_ITEM.equals(type)) {
@@ -807,5 +831,24 @@ public class PathfinderConfig {
         double mage = (13 * ((3 * magic) / 2)) / 40.0;
         int combatLevel = (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
         return combatLevel;
+    }
+
+    private boolean isPlantedSpiritTreeAllowed(int x, int y) {
+        if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260) {
+            return useSpiritTreePortSarim;
+        }
+        if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860) {
+            return useSpiritTreeEtceteria;
+        }
+        if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205) {
+            return useSpiritTreeBrimhaven;
+        }
+        if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544) {
+            return useSpiritTreeHosidius;
+        }
+        if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752) {
+            return useSpiritTreeFarmingGuild;
+        }
+        return true;
     }
 }
