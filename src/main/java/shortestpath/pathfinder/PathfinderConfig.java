@@ -820,4 +820,3 @@ public class PathfinderConfig {
         return availableSpiritTrees.contains(treeName);
     }
 }
-
