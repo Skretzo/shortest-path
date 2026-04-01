@@ -57,11 +57,10 @@ import shortestpath.ItemVariations;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportItems;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.TransportVarPlayer;
-import shortestpath.transport.TransportVarbit;
+import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
 public class PathfinderConfig {
     private static final List<Integer> RUNE_POUCHES = Arrays.asList(
@@ -348,11 +347,12 @@ public class PathfinderConfig {
                     }
                 }
 
-                for (TransportVarbit varbitRequirement : transport.getVarbits()) {
-                    varbitValues.put(varbitRequirement.getId(), client.getVarbitValue(varbitRequirement.getId()));
-                }
-                for (TransportVarPlayer varPlayerRequirement : transport.getVarPlayers()) {
-                    varPlayerValues.put(varPlayerRequirement.getId(), client.getVarpValue(varPlayerRequirement.getId()));
+                for (VarRequirement varRequirement : transport.getVarRequirements()) {
+                    if (varRequirement.isVarbit()) {
+                        varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
+                    } else {
+                        varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
+                    }
                 }
 
                 if (useTransport(transport) && hasRequiredItems(transport)) {
@@ -438,8 +438,8 @@ public class PathfinderConfig {
     }
 
     public boolean varbitChecks(Transport transport) {
-        for (TransportVarbit varbitRequirement : transport.getVarbits()) {
-            if (!varbitRequirement.check(varbitValues)) {
+        for (VarRequirement varRequirement : transport.getVarbits()) {
+            if (!varRequirement.check(varbitValues)) {
                 return false;
             }
         }
@@ -447,8 +447,8 @@ public class PathfinderConfig {
     }
 
     public boolean varPlayerChecks(Transport transport) {
-        for (TransportVarPlayer varPlayerRequirement : transport.getVarPlayers()) {
-            if (!varPlayerRequirement.check(varPlayerValues)) {
+        for (VarRequirement varRequirement : transport.getVarPlayers()) {
+            if (!varRequirement.check(varPlayerValues)) {
                 return false;
             }
         }
@@ -748,12 +748,12 @@ public class PathfinderConfig {
 
         boolean usingStaff = false;
         boolean usingOffhand = false;
-        for (int i = 0; i < transportItems.getItems().length; i++) {
+        for (shortestpath.transport.requirement.ItemRequirement req : transportItems.getRequirements()) {
             boolean missing = true;
-            if (transportItems.getItems()[i] != null) {
-                for (int itemId : transportItems.getItems()[i]) {
+            int requiredQuantity = req.getQuantity();
+            if (req.getItemIds() != null) {
+                for (int itemId : req.getItemIds()) {
                     int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-                    int requiredQuantity = transportItems.getQuantities()[i];
                     if (requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0) {
                         if (CURRENCIES.contains(itemId) && requiredQuantity > currencyThreshold) {
                             return false;
@@ -763,10 +763,9 @@ public class PathfinderConfig {
                     }
                 }
             }
-            if (missing && !usingStaff && transportItems.getStaves()[i] != null) {
-                for (int itemId : transportItems.getStaves()[i]) {
+            if (missing && !usingStaff && req.getStaffIds() != null) {
+                for (int itemId : req.getStaffIds()) {
                     int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-                    int requiredQuantity = transportItems.getQuantities()[i];
                     if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0) {
                         usingStaff = true;
                         missing = false;
@@ -774,10 +773,9 @@ public class PathfinderConfig {
                     }
                 }
             }
-            if (missing && !usingOffhand && transportItems.getOffhands()[i] != null) {
-                for (int itemId : transportItems.getOffhands()[i]) {
+            if (missing && !usingOffhand && req.getOffhandIds() != null) {
+                for (int itemId : req.getOffhandIds()) {
                     int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-                    int requiredQuantity = transportItems.getQuantities()[i];
                     if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0) {
                         usingOffhand = true;
                         missing = false;

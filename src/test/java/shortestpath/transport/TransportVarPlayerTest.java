@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
+import shortestpath.transport.parser.VarCheckType;
+import shortestpath.transport.parser.VarRequirement;
 
 public class TransportVarPlayerTest {
 
@@ -13,7 +15,7 @@ public class TransportVarPlayerTest {
     public void testEqual() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(1, 5);
-        TransportVarPlayer v = new TransportVarPlayer(1, 5, TransportVarCheck.EQUAL);
+        VarRequirement v = VarRequirement.varPlayer(1, 5, VarCheckType.EQUAL);
         assertTrue(v.check(values));
         values.put(1, 4);
         assertFalse(v.check(values));
@@ -23,7 +25,7 @@ public class TransportVarPlayerTest {
     public void testGreater() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(2, 10);
-        TransportVarPlayer v = new TransportVarPlayer(2, 5, TransportVarCheck.GREATER);
+        VarRequirement v = VarRequirement.varPlayer(2, 5, VarCheckType.GREATER);
         assertTrue(v.check(values));
         values.put(2, 5);
         assertFalse(v.check(values));
@@ -33,7 +35,7 @@ public class TransportVarPlayerTest {
     public void testSmaller() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(3, 3);
-        TransportVarPlayer v = new TransportVarPlayer(3, 5, TransportVarCheck.SMALLER);
+        VarRequirement v = VarRequirement.varPlayer(3, 5, VarCheckType.SMALLER);
         assertTrue(v.check(values));
         values.put(3, 5);
         assertFalse(v.check(values));
@@ -43,9 +45,9 @@ public class TransportVarPlayerTest {
     public void testBitSet() {
         Map<Integer, Integer> values = new HashMap<>();
         values.put(4, 0b1010);
-        TransportVarPlayer v = new TransportVarPlayer(4, 0b0010, TransportVarCheck.BIT_SET);
+        VarRequirement v = VarRequirement.varPlayer(4, 0b0010, VarCheckType.BIT_SET);
         assertTrue(v.check(values));
-        v = new TransportVarPlayer(4, 0b0100, TransportVarCheck.BIT_SET);
+        v = VarRequirement.varPlayer(4, 0b0100, VarCheckType.BIT_SET);
         assertFalse(v.check(values));
     }
 
@@ -55,7 +57,7 @@ public class TransportVarPlayerTest {
         long nowMinutes = System.currentTimeMillis() / 60000;
         values.put(5, (int)(nowMinutes - 10));
 
-        TransportVarPlayer v = new TransportVarPlayer(5, 5, TransportVarCheck.COOLDOWN_MINUTES);
+        VarRequirement v = VarRequirement.varPlayer(5, 5, VarCheckType.COOLDOWN_MINUTES);
         assertTrue(v.check(values));
 
         values.put(5, (int)(nowMinutes - 3));
