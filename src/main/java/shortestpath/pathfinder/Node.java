@@ -7,11 +7,18 @@ public class Node {
     public final int packedPosition;
     public final Node previous;
     public final int cost;
+    /** Whether the path to this node has visited a bank */
+    public final boolean bankVisited;
 
     public Node(int packedPosition, Node previous, int cost) {
+        this(packedPosition, previous, cost, previous != null && previous.bankVisited);
+    }
+
+    public Node(int packedPosition, Node previous, int cost, boolean bankVisited) {
         this.packedPosition = packedPosition;
         this.previous = previous;
         this.cost = cost;
+        this.bankVisited = bankVisited;
     }
 
     public Node(int packedPosition, Node previous) {
@@ -36,7 +43,7 @@ public class Node {
         return path;
     }
 
-    private static int cost(int packedPosition, Node previous) {
+    public static int cost(int packedPosition, Node previous) {
         int previousCost = 0;
         int travelTime = 0;
 
