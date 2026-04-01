@@ -28,7 +28,18 @@ public enum TransportType {
     MAGIC_CARPET("/transports/magic_carpets.tsv", ShortestPathConfig::useMagicCarpets, ShortestPathConfig::costMagicCarpets),
     MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", ShortestPathConfig::useMagicMushtrees, ShortestPathConfig::costMagicMushtrees, 5),
     MINECART("/transports/minecarts.tsv", ShortestPathConfig::useMinecarts, ShortestPathConfig::costMinecarts),
-    QUETZAL("/transports/quetzals.tsv", ShortestPathConfig::useQuetzals, ShortestPathConfig::costQuetzals, 5),
+    QUETZAL("/transports/quetzals.tsv", ShortestPathConfig::useQuetzals, ShortestPathConfig::costQuetzals, 5) {
+        @Override
+        public boolean sharesTeleportDestinations() {
+            return true;  // Shares destinations with QUETZAL_WHISTLE
+        }
+    },
+    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", ShortestPathConfig::useQuetzals, ShortestPathConfig::costQuetzalWhistle) {
+        @Override
+        public boolean isTeleport() {
+            return true;
+        }
+    },
     SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv", ShortestPathConfig::useSeasonalTransports, ShortestPathConfig::costSeasonalTransports),
     SPIRIT_TREE("/transports/spirit_trees.tsv", ShortestPathConfig::useSpiritTrees, ShortestPathConfig::costSpiritTrees, 5),
     TELEPORTATION_BOX("/transports/teleportation_boxes.tsv", null, ShortestPathConfig::costTeleportationBoxes),
@@ -95,6 +106,15 @@ public enum TransportType {
      * wilderness level limit.
      */
     public boolean isTeleport() {
+        return false;
+    }
+
+    /**
+     * Indicates whether this transport type shares destinations with a teleport.
+     * When true, delayed visit marking is used so the teleport can still find the destination.
+     * For example, QUETZAL platforms share destinations with QUETZAL_WHISTLE teleports.
+     */
+    public boolean sharesTeleportDestinations() {
         return false;
     }
 
