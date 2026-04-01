@@ -79,7 +79,7 @@ public class PathMapOverlay extends Overlay {
                 }
 
                 for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>())) {
-                    if (b == null || TransportType.isTeleport(b.getType())) {
+                    if (b == null || (b.getType() != null && b.getType().isTeleport())) {
                         continue; // skip teleports
                     }
 

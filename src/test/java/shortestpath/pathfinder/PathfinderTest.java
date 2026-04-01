@@ -26,10 +26,10 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportItems;
+import shortestpath.transport.requirement.TransportItems;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.TransportVarbit;
+import shortestpath.transport.parser.VarRequirement;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -698,7 +698,7 @@ public class PathfinderTest {
     }
 
     private boolean hasVarbit(Transport transport, int varbitId) {
-        for (TransportVarbit varbit : transport.getVarbits()) {
+        for (VarRequirement varbit : transport.getVarbits()) {
             if (varbit.getId() == varbitId) {
                 return true;
             }
