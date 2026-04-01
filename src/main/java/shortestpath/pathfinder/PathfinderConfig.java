@@ -263,10 +263,27 @@ public class PathfinderConfig {
         }
 
         // Apply runtime restrictions based on quests/items
+        // Cache the varbits needed for fairy ring checks so they can be used by refreshTransportsForBankVisit
+        varbitValues.put(VarbitID.FAIRY2_QUEENCURE_QUEST, client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST));
+        varbitValues.put(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE));
+
+        // For fairy rings, only enable the type if staff is in inventory/equipment.
+        // If staff is only in bank, the type will be enabled later when bank is visited.
+        // This prevents fairy ring routes that don't go through a bank.
+        boolean hasFairyRingQuest = varbitValues.get(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39;
+        boolean hasLumbridgeDiary = varbitValues.get(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
+        boolean hasStaffInInventoryOrEquipment = hasRequiredItems(DRAMEN_STAFF, true, true, false, false);
+        boolean hasStaffInBank = hasStaffInBank();
+
+        // Track whether fairy rings need per-path bank visit filtering
+        // This is true when: quest done, no diary, staff only in bank (not in inventory/equipment)
+        requiresBankForFairyRings = hasFairyRingQuest && !hasLumbridgeDiary
+                && !hasStaffInInventoryOrEquipment && hasStaffInBank && includeBankPath;
+
+        // Enable fairy rings if quest done AND (has diary OR has staff somewhere)
+        // When requiresBankForFairyRings is true, the actual filtering happens per-path in CollisionMap
         transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-                client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39
-                        && (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1
-                        || hasRequiredItems(DRAMEN_STAFF, true, true, false, false)));
+                hasFairyRingQuest && (hasLumbridgeDiary || hasStaffInInventoryOrEquipment || requiresBankForFairyRings));
         transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
                 QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
         transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
@@ -339,9 +356,74 @@ public class PathfinderConfig {
     public void setBankVisited(boolean visited, int packedLocation, int wildernessLevel) {
         bankVisited = visited;
         if (bankVisited) {
+            // Re-run transport refresh to add transports that require bank items (like fairy rings with staff in bank)
+            // Use the non-client-thread version since we're called from the pathfinder thread
+            refreshTransportsForBankVisit();
             refreshUsableTeleports();
             refreshTeleports(packedLocation, wildernessLevel);
         }
+    }
+
+    /**
+     * Refreshes transports when bank is visited during pathfinding.
+     * This is called from the pathfinder thread.
+     * It only needs to add transports that require bank items - inventory/equipment
+     * transports were already added during the initial refreshTransports() on client thread.
+     */
+    private void refreshTransportsForBankVisit() {
+        // Re-evaluate fairy ring type based on bank items now being available
+        boolean hasFairyRingQuest = varbitValues.getOrDefault(VarbitID.FAIRY2_QUEENCURE_QUEST, 0) > 39;
+        boolean hasLumbridgeDiary = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0) == 1;
+        boolean hasStaffInBank = hasStaffInBank();
+
+        // Only enable fairy rings if we have the staff in bank (inventory/equipment was already checked)
+        if (hasFairyRingQuest && (hasLumbridgeDiary || hasStaffInBank)) {
+            transportTypeConfig.setEnabled(TransportType.FAIRY_RING, true);
+
+            // Add fairy ring transports that weren't added before because staff was in bank
+            for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet()) {
+                int point = entry.getKey();
+                if (point == WorldPointUtil.UNDEFINED) {
+                    continue; // Teleports handled separately
+                }
+
+                for (Transport transport : entry.getValue()) {
+                    if (TransportType.FAIRY_RING.equals(transport.getType())) {
+                        if (useTransport(transport)) {
+                            // Add to existing transports at this point
+                            Set<Transport> existing = transports.getOrDefault(point, new HashSet<>());
+                            existing.add(transport);
+                            transports.put(point, existing);
+                            transportsPacked.put(point, existing);
+                        }
+                    }
+                }
+            }
+
+            // Remap any POH fairy rings
+            remapPohTransports();
+        }
+    }
+
+    /**
+     * Checks if the Dramen/Lunar staff is in the bank.
+     */
+    private boolean hasStaffInBank() {
+        if (bank == null) {
+            return false;
+        }
+        for (ItemRequirement req : DRAMEN_STAFF.getRequirements()) {
+            if (req.getStaffIds() != null) {
+                for (int staffId : req.getStaffIds()) {
+                    for (Item bankItem : bank.getItems()) {
+                        if (bankItem.getId() == staffId && bankItem.getQuantity() > 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -658,10 +740,14 @@ public class PathfinderConfig {
         }
 
         // Fairy rings require Dramen/Lunar staff unless Lumbridge Elite diary is complete
+        // OR requiresBankForFairyRings is true (per-path filtering in CollisionMap)
         if (TransportType.FAIRY_RING.equals(transport.getType())) {
+            // Use cached varbit value to support being called from pathfinder thread
             int lumbridgeDiaryComplete = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0);
             if (lumbridgeDiaryComplete != 1) {
-                if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch)) {
+                // If requiresBankForFairyRings is true, skip the item check here
+                // The filtering will happen per-path in CollisionMap.getNeighbors()
+                if (!requiresBankForFairyRings && !hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch)) {
                     return false;
                 }
             }
@@ -712,8 +798,12 @@ public class PathfinderConfig {
 
         if (checkBank) {
             TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
+            // Check bank items only when bankVisited is true AND either:
+            // 1. includeBankPath is enabled, OR
+            // 2. teleport setting allows bank items
             if (bank != null && bankVisited
-                    && (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+                    && (includeBankPath
+                    || TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
                     || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
                 for (Item item : bank.getItems()) {
                     if (item.getId() >= 0 && item.getQuantity() > 0) {
@@ -779,6 +869,35 @@ public class PathfinderConfig {
             }
         }
         return true;
+    }
+
+    /**
+     * Checks if required items are available in inventory, equipment, or bank.
+     * Used for transport TYPE eligibility when includeBankPath is enabled.
+     */
+    private boolean hasItemsInInventoryEquipmentOrBank(TransportItems transportItems) {
+        if (transportItems == null) {
+            return true;
+        }
+        // Check inventory and equipment first
+        if (hasRequiredItems(transportItems, true, true, false, false)) {
+            return true;
+        }
+        // If includeBankPath is enabled, also check if item is in bank
+        if (includeBankPath && bank != null) {
+            for (ItemRequirement req : transportItems.getRequirements()) {
+                if (req.getStaffIds() != null) {
+                    for (int itemId : req.getStaffIds()) {
+                        for (Item bankItem : bank.getItems()) {
+                            if (bankItem.getId() == itemId && bankItem.getQuantity() > 0) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**

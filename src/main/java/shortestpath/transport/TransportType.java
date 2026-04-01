@@ -103,6 +103,14 @@ public enum TransportType {
     }
 
     /**
+     * Indicates whether this transport type shares destinations with a teleport type.
+     * When true, delayed visit is used so the cheaper option wins.
+     */
+    public boolean sharesTeleportDestinations() {
+        return false;
+    }
+
+    /**
      * Refines the TransportType based on the required skill levels.
      */
     public TransportType refine(int[] skillLevels) {
