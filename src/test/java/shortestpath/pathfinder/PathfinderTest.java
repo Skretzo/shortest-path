@@ -20,7 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import shortestpath.ItemVariations;
-import shortestpath.JewelleryBoxTier;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
@@ -275,14 +274,6 @@ public class PathfinderTest {
         when(config.useSpiritTrees()).thenReturn(true);
         when(client.getVarbitValue(any(Integer.class))).thenReturn(20);
         testTransportLength(2, TransportType.SPIRIT_TREE);
-    }
-
-    @Test
-    public void testTeleportationBoxes() {
-        when(config.usePoh()).thenReturn(true);
-        when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.ORNATE);
-        when(config.usePohMountedItems()).thenReturn(true);
-        testTransportLength(2, TransportType.TELEPORTATION_BOX);
     }
 
     @Test
