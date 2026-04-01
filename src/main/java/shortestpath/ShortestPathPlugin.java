@@ -713,6 +713,20 @@ public class ShortestPathPlugin extends Plugin {
         return defaultValue;
     }
 
+    /**
+     * Override for TransportType enabled state using the transport type name as the key.
+     */
+    public static boolean override(TransportType type, boolean defaultValue) {
+        return override(type.name(), defaultValue);
+    }
+
+    /**
+     * Override for TransportType cost threshold using the transport type name as the key.
+     */
+    public static int override(TransportType type, int defaultValue) {
+        return override(type.name() + "_COST", defaultValue);
+    }
+
     private Color override(String configOverrideKey, Color defaultValue) {
         if (!configOverride.isEmpty()) {
             Object value = configOverride.get(configOverrideKey);
