@@ -5420,3 +5420,44 @@
 2809 3161 0	2808 3162 1	Climb-up Ladder 16683							
 2808 3162 1	2808 3162 0	Climb-down Ladder 16670							
 2809 3161 1	2808 3162 0	Climb-down Ladder 16670							
+									
+# Prifddinas' Gates									
+## North									
+2238 3386 0	3262 6135 0	Enter City Gate 36518			Song of the Elves			4	
+2239 3386 0	3263 6135 0	Enter City Gate 36518			Song of the Elves			4	
+2240 3386 0	3264 6135 0	Enter City Gate 36519			Song of the Elves			4	
+2241 3386 0	3265 6135 0	Enter City Gate 36519			Song of the Elves			4	
+3262 6135 0	2238 3386 0	Exit City Gate 36522			Song of the Elves			4	
+3263 6135 0	2239 3386 0	Exit City Gate 36522			Song of the Elves			4	
+3264 6135 0	2240 3386 0	Exit City Gate 36523			Song of the Elves			4	
+3265 6135 0	2241 3386 0	Exit City Gate 36523			Song of the Elves			4	
+									
+## South									
+2238 3269 0	3262 6024 0	Enter City Gate 36518			Song of the Elves			4	
+2239 3269 0	3263 6024 0	Enter City Gate 36518			Song of the Elves			4	
+2240 3269 0	3264 6024 0	Enter City Gate 36519			Song of the Elves			4	
+2241 3269 0	3265 6024 0	Enter City Gate 36519			Song of the Elves			4	
+3262 6024 0	2238 3269 0	Exit City Gate 36522			Song of the Elves			4	
+3263 6024 0	2239 3269 0	Exit City Gate 36522			Song of the Elves			4	
+3264 6024 0	2240 3269 0	Exit City Gate 36523			Song of the Elves			4	
+3265 6024 0	2241 3269 0	Exit City Gate 36523			Song of the Elves			4	
+									
+## West									
+2181 3326 0	3208 6078 0	Enter City Gate 36518			Song of the Elves			4	
+2181 3327 0	3208 6079 0	Enter City Gate 36518			Song of the Elves			4	
+2181 3328 0	3208 6080 0	Enter City Gate 36519			Song of the Elves			4	
+2181 3329 0	3208 6081 0	Enter City Gate 36519			Song of the Elves			4	
+3208 6078 0	2181 3326 0	Exit City Gate 36522			Song of the Elves			4	
+3208 6079 0	2181 3327 0	Exit City Gate 36522			Song of the Elves			4	
+3208 6080 0	2181 3328 0	Exit City Gate 36523			Song of the Elves			4	
+3208 6081 0	2181 3329 0	Exit City Gate 36523			Song of the Elves			4	
+									
+## East									
+2298 3326 0	3319 6078 0	Enter City Gate 36518			Song of the Elves			4	
+2298 3327 0	3319 6079 0	Enter City Gate 36518			Song of the Elves			4	
+2298 3328 0	3319 6080 0	Enter City Gate 36519			Song of the Elves			4	
+2298 3329 0	3319 6081 0	Enter City Gate 36519			Song of the Elves			4	
+3319 6078 0	2298 3326 0	Exit City Gate 36522			Song of the Elves			4	
+3319 6079 0	2298 3327 0	Exit City Gate 36522			Song of the Elves			4	
+3319 6080 0	2298 3328 0	Exit City Gate 36523			Song of the Elves			4	
+3319 6081 0	2298 3329 0	Exit City Gate 36523			Song of the Elves			4	
