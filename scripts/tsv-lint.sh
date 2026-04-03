@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # TSV Linter: Checks that each line in TSV files has the same number of columns
 # Usage: ./tsv-lint.sh [directory]
