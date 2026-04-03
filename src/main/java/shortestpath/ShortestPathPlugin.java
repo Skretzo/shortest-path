@@ -575,10 +575,13 @@ public class ShortestPathPlugin extends Plugin {
         Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
         if (favesPanel != null) {
             for (Widget widget : favesPanel.getStaticChildren()) {
-                if (widget != null && (fairyRingCode.equals(widget.getText())
-                    || widget.getText().equals("(Shortest Path) " + fairyRingCode))) {
-                    codeWidget = widget;
-                    break;
+                if (widget != null) {
+                    String widgetText = widget.getText();
+                    if (widgetText != null && (fairyRingCode.equals(widgetText)
+                        || ("(Shortest Path) " + fairyRingCode).equals(widgetText))) {
+                        codeWidget = widget;
+                        break;
+                    }
                 }
             }
         }
@@ -586,10 +589,13 @@ public class ShortestPathPlugin extends Plugin {
         Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
         if (contentsList != null && codeWidget == null) {
             for (Widget widget : contentsList.getDynamicChildren()) {
-                if (widget != null && (fairyRingCode.equals(widget.getText())
-                    || widget.getText().equals("(Shortest Path) " + fairyRingCode))) {
-                    codeWidget = widget;
-                    break;
+                if (widget != null) {
+                    String widgetText = widget.getText();
+                    if (widgetText != null && (fairyRingCode.equals(widgetText)
+                        || ("(Shortest Path) " + fairyRingCode).equals(widgetText))) {
+                        codeWidget = widget;
+                        break;
+                    }
                 }
             }
         }
@@ -607,8 +613,9 @@ public class ShortestPathPlugin extends Plugin {
         contentsList.revalidateScroll();
 
         codeWidget.setTextColor(0x00FF00);
-        if (!codeWidget.getText().contains("(Shortest Path)")) {
-            codeWidget.setText("(Shortest Path) " + codeWidget.getText());
+        String codeWidgetText = codeWidget.getText();
+        if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)")) {
+            codeWidget.setText("(Shortest Path) " + codeWidgetText);
         }
 
         client.runScript(
