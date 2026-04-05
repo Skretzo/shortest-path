@@ -4054,9 +4054,9 @@
 2666 3694 1	2666 3694 0	Climb-down Ladder 4189						2	
 									
 # Mountain Camp									
-2764 3666 0	2766 3663 0	Use Rope -> Boulder 5842		ROPE=1				1
-2761 3657 0	2761 3660 0	Climb-over Rockslide 5847				260>19		4
-2761 3660 0	2761 3657 0	Climb-over Rockslide 5847						4
+2764 3666 0	2766 3663 0	Use Rope -> Boulder 5842		ROPE=1				1	
+2761 3657 0	2761 3660 0	Climb-over Rockslide 5847				260>19		4	
+2761 3660 0	2761 3657 0	Climb-over Rockslide 5847						4	
 									
 # Isle of Stone									
 2465 4010 0	2461 10417 0	Enter Cave 37433							
@@ -5051,17 +5051,17 @@
 2896 2727 0	2393 3465 0	Travel Waydar 1446						4	
 2724 2747 0	2770 2793 0							10	
 									
-# Marim
-2795 2793 0	2795 2797 1	Climb-up Staircase						1
-2795 2797 1	2795 2793 0	Climb-down Staircase						1
-2796 2793 0	2796 2797 1	Climb-up Staircase						1
-2796 2797 1	2796 2793 0	Climb-down Staircase						1
-2799 2793 0	2799 2797 1	Climb-up Staircase						1
-2799 2797 1	2799 2793 0	Climb-down Staircase						1
-2800 2793 0	2800 2797 1	Climb-up Staircase						1
-2800 2797 1	2800 2793 0	Climb-down Staircase						1
+# Marim									
+2795 2793 0	2795 2797 1	Climb-up Staircase						1	
+2795 2797 1	2795 2793 0	Climb-down Staircase						1	
+2796 2793 0	2796 2797 1	Climb-up Staircase						1	
+2796 2797 1	2796 2793 0	Climb-down Staircase						1	
+2799 2793 0	2799 2797 1	Climb-up Staircase						1	
+2799 2797 1	2799 2793 0	Climb-down Staircase						1	
+2800 2793 0	2800 2797 1	Climb-up Staircase						1	
+2800 2797 1	2800 2793 0	Climb-down Staircase						1	
 
-# Tomb of Bervirius
+# Tomb of Bervirius									
 2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
 2764 9376 0	2765 2976 0	Climb Climbing rocks 2236						15	
 									
@@ -5292,7 +5292,7 @@
 # Arzinian mine									
 2824 10169 0	2615 4966 0	Talk-to Dondakan the Dwarf 4891		4567=1	Between a Rock...			4	
 
-# Lumbridge Castle Basement Goblins
+# Lumbridge Castle Basement Goblins									
 3230 9609 0	3313 9613 0	Mines Kazgar 7301			The Lost Tribe			8	Mines
 3230 9609 0	3245 9648 0	Watermill Kazgar 7301			Death to the Dorgeshuun			8	Watermill
 3317 9612 0	3232 9610 0	Cellar Mistag 7299			The Lost Tribe			8	Cellar
@@ -5300,168 +5300,168 @@
 3246 9646 0	3313 9613 0	Mines Dartog 7301			Death to the Dorgeshuun			8	Mines
 3246 9646 0	3232 9610 0	Cellar Dartog 997			Death to the Dorgeshuun			8	Cellar
 
-# Elemental Workshop
-2709 3495 0	2709 3496 0	Open Odd-looking wall		2887=1|4446=1				2
-2709 3496 0	2709 3495 0	Open Odd-looking wall		2887=1|4446=1				2
-2709 3498 0	2716 9888 0	Climb-down Staircase 3415						1
-2716 9888 0	2709 3497 0	Climb-up Staircase 3416						1
+# Elemental Workshop									
+2709 3495 0	2709 3496 0	Open Odd-looking wall		2887=1|4446=1				2	
+2709 3496 0	2709 3495 0	Open Odd-looking wall		2887=1|4446=1				2	
+2709 3498 0	2716 9888 0	Climb-down Staircase 3415						1	
+2716 9888 0	2709 3497 0	Climb-up Staircase 3416						1	
 
-# Piscatoris Falconry Area
-2371 3622 0	2371 3620 0	Climb-over Stile 19222						5
-2370 3621 0	2371 3620 0	Climb-over Stile 19222						5
-2372 3621 0	2371 3620 0	Climb-over Stile 19222						5
-2371 3619 0	2371 3621 0	Climb-over Stile 19222						5
-2370 3620 0	2371 3621 0	Climb-over Stile 19222						5
-2372 3620 0	2371 3621 0	Climb-over Stile 19222						5
+# Piscatoris Falconry Area									
+2371 3622 0	2371 3620 0	Climb-over Stile 19222						5	
+2370 3621 0	2371 3620 0	Climb-over Stile 19222						5	
+2372 3621 0	2371 3620 0	Climb-over Stile 19222						5	
+2371 3619 0	2371 3621 0	Climb-over Stile 19222						5	
+2370 3620 0	2371 3621 0	Climb-over Stile 19222						5	
+2372 3620 0	2371 3621 0	Climb-over Stile 19222						5	
 
-# Trollweiss Mountain Sled
-2772 3836 0	2790 3794 0	Slide Slope 5015		4084=1	Troll Romance			18
-2773 3836 0	2790 3794 0	Slide Slope 5015		4084=1	Troll Romance			18
-2785 3772 0	2794 3719 0	Slide Slope 5015		4084=1	Troll Romance			30
-2786 3772 0	2794 3719 0	Slide Slope 5015		4084=1	Troll Romance			30
+# Trollweiss Mountain Sled									
+2772 3836 0	2790 3794 0	Slide Slope 5015		4084=1	Troll Romance			18	
+2773 3836 0	2790 3794 0	Slide Slope 5015		4084=1	Troll Romance			18	
+2785 3772 0	2794 3719 0	Slide Slope 5015		4084=1	Troll Romance			30	
+2786 3772 0	2794 3719 0	Slide Slope 5015		4084=1	Troll Romance			30	
 
-# Shadow Dungeon
-2547 3422 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I
-2546 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I
-2548 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I
-2547 3420 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I
-2629 5073 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I
-2628 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I
-2630 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I
-2629 5071 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I
+# Shadow Dungeon									
+2547 3422 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
+2546 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
+2548 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
+2547 3420 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
+2629 5073 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
+2628 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
+2630 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
+2629 5071 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
 
-# Piscatoris Fishing Colony
-2344 3650 0	2344 3655 0	Enter Hole 12656			Swan Song
-2344 3655 0	2344 3650 0	Enter Hole 12656			Swan Song
-2344 3662 0	2344 3663 0	Open Colony gate			Swan Song			2
-2343 3662 0	2343 3663 0	Open Colony gate			Swan Song			2
-2344 3663 0	2344 3662 0	Open Colony gate			Swan Song			2
-2343 3663 0	2343 3662 0	Open Colony gate			Swan Song			2
+# Piscatoris Fishing Colony									
+2344 3650 0	2344 3655 0	Enter Hole 12656			Swan Song				
+2344 3655 0	2344 3650 0	Enter Hole 12656			Swan Song				
+2344 3662 0	2344 3663 0	Open Colony gate			Swan Song			2	
+2343 3662 0	2343 3663 0	Open Colony gate			Swan Song			2	
+2344 3663 0	2344 3662 0	Open Colony gate			Swan Song			2	
+2343 3663 0	2343 3662 0	Open Colony gate			Swan Song			2	
 
-# Socerer's Tower
-2701 3407 0	2701 3407 1	Climb-up Ladder 16683
-2700 3408 0	2701 3407 1	Climb-up Ladder 16683
-2702 3408 0	2701 3407 1	Climb-up Ladder 16683
-2701 3407 1	2701 3407 0	Climb-down Ladder 16679
-2700 3408 1	2701 3407 0	Climb-down Ladder 16679
-2702 3408 1	2701 3407 0	Climb-down Ladder 16679
-2704 3404 1	2704 3404 2	Climb-up Ladder 16683
-2703 3403 1	2704 3404 2	Climb-up Ladder 16683
-2705 3403 1	2704 3404 2	Climb-up Ladder 16683
-2704 3402 1	2704 3404 2	Climb-up Ladder 16683
-2704 3404 2	2704 3404 1	Climb-down Ladder 16679
-2703 3403 2	2704 3404 1	Climb-down Ladder 16679
-2705 3403 2	2704 3404 1	Climb-down Ladder 16679
-2704 3402 2	2704 3404 1	Climb-down Ladder 16679
-2700 3405 2	2700 3405 3	Climb-up Ladder 16683
-2699 3406 2	2700 3405 3	Climb-up Ladder 16683
-2699 3404 2	2700 3405 3	Climb-up Ladder 16683
-2700 3405 3	2700 3405 2	Climb-down Ladder 16679
-2699 3406 3	2700 3405 2	Climb-down Ladder 16679
-2699 3404 3	2700 3405 2	Climb-down Ladder 16679
+# Socerer's Tower									
+2701 3407 0	2701 3407 1	Climb-up Ladder 16683							
+2700 3408 0	2701 3407 1	Climb-up Ladder 16683							
+2702 3408 0	2701 3407 1	Climb-up Ladder 16683							
+2701 3407 1	2701 3407 0	Climb-down Ladder 16679							
+2700 3408 1	2701 3407 0	Climb-down Ladder 16679							
+2702 3408 1	2701 3407 0	Climb-down Ladder 16679							
+2704 3404 1	2704 3404 2	Climb-up Ladder 16683							
+2703 3403 1	2704 3404 2	Climb-up Ladder 16683							
+2705 3403 1	2704 3404 2	Climb-up Ladder 16683							
+2704 3402 1	2704 3404 2	Climb-up Ladder 16683							
+2704 3404 2	2704 3404 1	Climb-down Ladder 16679							
+2703 3403 2	2704 3404 1	Climb-down Ladder 16679							
+2705 3403 2	2704 3404 1	Climb-down Ladder 16679							
+2704 3402 2	2704 3404 1	Climb-down Ladder 16679							
+2700 3405 2	2700 3405 3	Climb-up Ladder 16683							
+2699 3406 2	2700 3405 3	Climb-up Ladder 16683							
+2699 3404 2	2700 3405 3	Climb-up Ladder 16683							
+2700 3405 3	2700 3405 2	Climb-down Ladder 16679							
+2699 3406 3	2700 3405 2	Climb-down Ladder 16679							
+2699 3404 3	2700 3405 2	Climb-down Ladder 16679							
 
-# Cam Torum
-1435 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons
-1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons
-1439 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons
-1440 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons
+# Cam Torum									
+1435 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
+1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
+1439 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
+1440 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
 
-# Observatory Tower & Dungeon
-2457 3186 0	2355 9394 0	Climb-down Stairs 25432
-2458 3185 0	2355 9394 0	Climb-down Stairs 25432
-2355 9394 0	2458 3185 0	Climb-up Stairs 25429
-2335 9350 0	2439 3164 0	Climb-up Stairs 25429
-2439 3164 0	2335 9350 0	Climb-down Stairs 25434
-2438 3165 0	2335 9350 0	Climb-down Stairs 25434
-2438 3163 0	2335 9350 0	Climb-down Stairs 25434
-2444 3162 0	2442 3159 1	Climb-up Stairs 25431
-2442 3159 1	2444 3162 0	Climb-down Stairs 25437
-2443 3160 1	2444 3162 0	Climb-down Stairs 25437
-2443 3158 1	2444 3162 0	Climb-down Stairs 25437
+# Observatory Tower & Dungeon									
+2457 3186 0	2355 9394 0	Climb-down Stairs 25432							
+2458 3185 0	2355 9394 0	Climb-down Stairs 25432							
+2355 9394 0	2458 3185 0	Climb-up Stairs 25429							
+2335 9350 0	2439 3164 0	Climb-up Stairs 25429							
+2439 3164 0	2335 9350 0	Climb-down Stairs 25434							
+2438 3165 0	2335 9350 0	Climb-down Stairs 25434							
+2438 3163 0	2335 9350 0	Climb-down Stairs 25434							
+2444 3162 0	2442 3159 1	Climb-up Stairs 25431							
+2442 3159 1	2444 3162 0	Climb-down Stairs 25437							
+2443 3160 1	2444 3162 0	Climb-down Stairs 25437							
+2443 3158 1	2444 3162 0	Climb-down Stairs 25437							
 
-# Shilo Village Gem Mine
-2826 2998 0	2838 9387 0	Climb-down Ladder 23586				3598=1
-2825 2999 0	2838 9387 0	Climb-down Ladder 23586				3598=1
-2824 2998 0	2838 9387 0	Climb-down Ladder 23586				3598=1
-2825 2997 0	2838 9387 0	Climb-down Ladder 23586				3598=1
-2838 9387 0	2826 2998 0	Climb-up Ladder 23584				3598=1
-2839 9388 0	2826 2998 0	Climb-up Ladder 23584				3598=1
+# Shilo Village Gem Mine									
+2826 2998 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2825 2999 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2824 2998 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2825 2997 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
+2838 9387 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
+2839 9388 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
 
-# Corsair Cave Dungeon
-2523 2860 0	2012 9004 1	Enter Hole 31791
-2012 9004 1	2523 2860 0	Climb Vine ladder 31790
-2483 2889 0	1971 9035 1	Enter Cave 31766			6076=1
-2484 2889 0	1971 9035 1	Enter Cave 31766			6076=1
-1971 9035 1	2483 2889 0	Enter Cave 31806			6076=1
+# Corsair Cave Dungeon									
+2523 2860 0	2012 9004 1	Enter Hole 31791							
+2012 9004 1	2523 2860 0	Climb Vine ladder 31790							
+2483 2889 0	1971 9035 1	Enter Cave 31766				6076=1			
+2484 2889 0	1971 9035 1	Enter Cave 31766				6076=1			
+1971 9035 1	2483 2889 0	Enter Cave 31806				6076=1			
 
-# Myths' Guild
-2456 2862 0	2456 2860 0	Pass Magical Barrier 31616			Dragon Slayer II
-2457 2862 0	2457 2860 0	Pass Magical Barrier 31616			Dragon Slayer II
-2458 2862 0	2458 2860 0	Pass Magical Barrier 31616			Dragon Slayer II
-2456 2860 0	2456 2862 0	Pass Magical Barrier 31616			Dragon Slayer II
-2457 2860 0	2457 2862 0	Pass Magical Barrier 31616			Dragon Slayer II
-2458 2860 0	2458 2862 0	Pass Magical Barrier 31616			Dragon Slayer II
-1969 8987 1	1967 8987 1	Pass Magical Barrier 31617			Dragon Slayer II
-1969 8986 1	1967 8986 1	Pass Magical Barrier 31617			Dragon Slayer II
-1967 8987 1	1969 8987 1	Pass Magical Barrier 31617			Dragon Slayer II
-1967 8986 1	1969 8986 1	Pass Magical Barrier 31617			Dragon Slayer II
-2457 2849 0	1936 9009 1	Enter Mythic Statue 31626			Dragon Slayer II
-1936 9009 1	2457 2849 0	Climb-up Ladder 32205			Dragon Slayer II
-2457 2839 0	2458 2839 1	Climb-up Stairs 31627			Dragon Slayer II
-2455 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II
-2456 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II
-2458 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II
-2459 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II
-2449 2847 1	2452 2847 2	Climb-up Stairs 31609			Dragon Slayer II
-2452 2847 2	2449 2847 1	Climb-down Stairs 31610			Dragon Slayer II
+# Myths' Guild									
+2456 2862 0	2456 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2457 2862 0	2457 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2458 2862 0	2458 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2456 2860 0	2456 2862 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2457 2860 0	2457 2862 0	Pass Magical Barrier 31616			Dragon Slayer II				
+2458 2860 0	2458 2862 0	Pass Magical Barrier 31616			Dragon Slayer II				
+1969 8987 1	1967 8987 1	Pass Magical Barrier 31617			Dragon Slayer II				
+1969 8986 1	1967 8986 1	Pass Magical Barrier 31617			Dragon Slayer II				
+1967 8987 1	1969 8987 1	Pass Magical Barrier 31617			Dragon Slayer II				
+1967 8986 1	1969 8986 1	Pass Magical Barrier 31617			Dragon Slayer II				
+2457 2849 0	1936 9009 1	Enter Mythic Statue 31626			Dragon Slayer II				
+1936 9009 1	2457 2849 0	Climb-up Ladder 32205			Dragon Slayer II				
+2457 2839 0	2458 2839 1	Climb-up Stairs 31627			Dragon Slayer II				
+2455 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2456 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2458 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2459 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
+2449 2847 1	2452 2847 2	Climb-up Stairs 31609			Dragon Slayer II				
+2452 2847 2	2449 2847 1	Climb-down Stairs 31610			Dragon Slayer II				
 
-# Brimhaven House
-2808 3162 0	2808 3162 1	Climb-up Ladder 16683
-2809 3161 0	2808 3162 1	Climb-up Ladder 16683
-2808 3162 1	2808 3162 0	Climb-down Ladder 16670
-2809 3161 1	2808 3162 0	Climb-down Ladder 16670
+# Brimhaven House									
+2808 3162 0	2808 3162 1	Climb-up Ladder 16683							
+2809 3161 0	2808 3162 1	Climb-up Ladder 16683							
+2808 3162 1	2808 3162 0	Climb-down Ladder 16670							
+2809 3161 1	2808 3162 0	Climb-down Ladder 16670							
 
-# Prifddinas' Gates
-## North
-2238 3386 0	3262 6135 0	Enter City Gate 36518			Song of the Elves			4
-2239 3386 0	3263 6135 0	Enter City Gate 36518			Song of the Elves			4
-2240 3386 0	3264 6135 0	Enter City Gate 36519			Song of the Elves			4
-2241 3386 0	3265 6135 0	Enter City Gate 36519			Song of the Elves			4
-3262 6135 0	2238 3386 0	Exit City Gate 36522			Song of the Elves			4
-3263 6135 0	2239 3386 0	Exit City Gate 36522			Song of the Elves			4
-3264 6135 0	2240 3386 0	Exit City Gate 36523			Song of the Elves			4
-3265 6135 0	2241 3386 0	Exit City Gate 36523			Song of the Elves			4
+# Prifddinas' Gates									
+## North									
+2238 3386 0	3262 6135 0	Enter City Gate 36518			Song of the Elves			4	
+2239 3386 0	3263 6135 0	Enter City Gate 36518			Song of the Elves			4	
+2240 3386 0	3264 6135 0	Enter City Gate 36519			Song of the Elves			4	
+2241 3386 0	3265 6135 0	Enter City Gate 36519			Song of the Elves			4	
+3262 6135 0	2238 3386 0	Exit City Gate 36522			Song of the Elves			4	
+3263 6135 0	2239 3386 0	Exit City Gate 36522			Song of the Elves			4	
+3264 6135 0	2240 3386 0	Exit City Gate 36523			Song of the Elves			4	
+3265 6135 0	2241 3386 0	Exit City Gate 36523			Song of the Elves			4	
 
-## South
-2238 3269 0	3262 6024 0	Enter City Gate 36518			Song of the Elves			4
-2239 3269 0	3263 6024 0	Enter City Gate 36518			Song of the Elves			4
-2240 3269 0	3264 6024 0	Enter City Gate 36519			Song of the Elves			4
-2241 3269 0	3265 6024 0	Enter City Gate 36519			Song of the Elves			4
-3262 6024 0	2238 3269 0	Exit City Gate 36522			Song of the Elves			4
-3263 6024 0	2239 3269 0	Exit City Gate 36522			Song of the Elves			4
-3264 6024 0	2240 3269 0	Exit City Gate 36523			Song of the Elves			4
-3265 6024 0	2241 3269 0	Exit City Gate 36523			Song of the Elves			4
+## South									
+2238 3269 0	3262 6024 0	Enter City Gate 36518			Song of the Elves			4	
+2239 3269 0	3263 6024 0	Enter City Gate 36518			Song of the Elves			4	
+2240 3269 0	3264 6024 0	Enter City Gate 36519			Song of the Elves			4	
+2241 3269 0	3265 6024 0	Enter City Gate 36519			Song of the Elves			4	
+3262 6024 0	2238 3269 0	Exit City Gate 36522			Song of the Elves			4	
+3263 6024 0	2239 3269 0	Exit City Gate 36522			Song of the Elves			4	
+3264 6024 0	2240 3269 0	Exit City Gate 36523			Song of the Elves			4	
+3265 6024 0	2241 3269 0	Exit City Gate 36523			Song of the Elves			4	
 
-## West
-2181 3326 0	3208 6078 0	Enter City Gate 36518			Song of the Elves			4
-2181 3327 0	3208 6079 0	Enter City Gate 36518			Song of the Elves			4
-2181 3328 0	3208 6080 0	Enter City Gate 36519			Song of the Elves			4
-2181 3329 0	3208 6081 0	Enter City Gate 36519			Song of the Elves			4
-3208 6078 0	2181 3326 0	Exit City Gate 36522			Song of the Elves			4
-3208 6079 0	2181 3327 0	Exit City Gate 36522			Song of the Elves			4
-3208 6080 0	2181 3328 0	Exit City Gate 36523			Song of the Elves			4
-3208 6081 0	2181 3329 0	Exit City Gate 36523			Song of the Elves			4
+## West									
+2181 3326 0	3208 6078 0	Enter City Gate 36518			Song of the Elves			4	
+2181 3327 0	3208 6079 0	Enter City Gate 36518			Song of the Elves			4	
+2181 3328 0	3208 6080 0	Enter City Gate 36519			Song of the Elves			4	
+2181 3329 0	3208 6081 0	Enter City Gate 36519			Song of the Elves			4	
+3208 6078 0	2181 3326 0	Exit City Gate 36522			Song of the Elves			4	
+3208 6079 0	2181 3327 0	Exit City Gate 36522			Song of the Elves			4	
+3208 6080 0	2181 3328 0	Exit City Gate 36523			Song of the Elves			4	
+3208 6081 0	2181 3329 0	Exit City Gate 36523			Song of the Elves			4	
 
-## East
-2298 3326 0	3319 6078 0	Enter City Gate 36518			Song of the Elves			4
-2298 3327 0	3319 6079 0	Enter City Gate 36518			Song of the Elves			4
-2298 3328 0	3319 6080 0	Enter City Gate 36519			Song of the Elves			4
-2298 3329 0	3319 6081 0	Enter City Gate 36519			Song of the Elves			4
-3319 6078 0	2298 3326 0	Exit City Gate 36522			Song of the Elves			4
-3319 6079 0	2298 3327 0	Exit City Gate 36522			Song of the Elves			4
-3319 6080 0	2298 3328 0	Exit City Gate 36523			Song of the Elves			4
-3319 6081 0	2298 3329 0	Exit City Gate 36523			Song of the Elves			4
+## East									
+2298 3326 0	3319 6078 0	Enter City Gate 36518			Song of the Elves			4	
+2298 3327 0	3319 6079 0	Enter City Gate 36518			Song of the Elves			4	
+2298 3328 0	3319 6080 0	Enter City Gate 36519			Song of the Elves			4	
+2298 3329 0	3319 6081 0	Enter City Gate 36519			Song of the Elves			4	
+3319 6078 0	2298 3326 0	Exit City Gate 36522			Song of the Elves			4	
+3319 6079 0	2298 3327 0	Exit City Gate 36522			Song of the Elves			4	
+3319 6080 0	2298 3328 0	Exit City Gate 36523			Song of the Elves			4	
+3319 6081 0	2298 3329 0	Exit City Gate 36523			Song of the Elves			4	
 
-# Ape Atoll Dungeon
+# Ape Atoll Dungeon									
 2763 9103 0	2763 2703 0	Climb-up Bamboo Ladder 4781							
 2763 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780							
