@@ -714,17 +714,19 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /**
-     * Override for TransportType enabled state using the transport type name as the key.
+     * Override for TransportType enabled state using the config key name stored in the enum.
      */
     public static boolean override(TransportType type, boolean defaultValue) {
-        return override(type.name(), defaultValue);
+        String key = type.getEnabledKey();
+        return key != null ? override(key, defaultValue) : defaultValue;
     }
 
     /**
-     * Override for TransportType cost threshold using the transport type name as the key.
+     * Override for TransportType cost threshold using the config key name stored in the enum.
      */
     public static int override(TransportType type, int defaultValue) {
-        return override(type.name() + "_COST", defaultValue);
+        String key = type.getCostKey();
+        return key != null ? override(key, defaultValue) : defaultValue;
     }
 
     private Color override(String configOverrideKey, Color defaultValue) {
