@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
 import net.runelite.api.Client;
@@ -522,12 +523,20 @@ public class ShortestPathPlugin extends Plugin {
         if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG) {
             scrollFairyRingPanel();
         }
-        if (event.getGroupId() == InterfaceID.MENU) {
+
+        // Populate spirit tree cache, but only once.
+        // The values here almost never change, we only need to load it once.
+        if (pathfinderConfig.availableSpiritTrees == null && event.getGroupId() == InterfaceID.MENU) {
             clientThread.invokeLater(this::parseSpiritTreeWidget);
         }
     }
 
+    private static final Pattern SPIRIT_TREE_LABEL_PATTERN = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
+
     private void parseSpiritTreeWidget() {
+        // Referencing
+        // https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
+
         Widget container = client.getWidget(InterfaceID.MENU, 3);
         if (container == null) {
             return;
@@ -538,45 +547,29 @@ public class ShortestPathPlugin extends Plugin {
             return;
         }
 
-        // Verify this is the spirit tree menu by checking for a known tree name
-        boolean isSpiritTreeMenu = false;
-        for (Widget child : children) {
-            if (child.getText() != null && child.getText().contains("Tree Gnome Village")) {
-                isSpiritTreeMenu = true;
-                break;
-            }
-        }
-            if (!isSpiritTreeMenu) {
+        // Tree Gnome Village is always the first row and always available;
+        // quick length check before running the regex
+        // Expected: "<col=735a28>1</col>: Tree Gnome Village" (length 39)
+        String firstText = children[0].getText();
+        if (firstText == null || firstText.length() != 39) {
             return;
         }
 
         Set<String> available = new HashSet<>();
 
         for (Widget child : children) {
-            String text = child.getText();
-            if (text == null || text.isEmpty()) {
+            Matcher matcher = SPIRIT_TREE_LABEL_PATTERN.matcher(child.getText());
+            if (!matcher.matches()) {
                 continue;
             }
 
-            // Format: "<col=735a28>X</col>: Name" (enabled) or "<col=735a28>X</col>: <col=5f5f5f>Name" (disabled)
-            int colonIndex = text.indexOf(": ");
-            if (colonIndex == -1) {
+            // Group 2 is the disabled color tag; if present, the tree is unavailable
+            if (matcher.group(2) != null) {
                 continue;
             }
 
-            String namePart = text.substring(colonIndex + 2);
-
-            // If the name part starts with a grey color tag, the tree is disabled
-            if (namePart.startsWith("<col=5f5f5f>")) {
-                continue;
-            }
-
-            String cleanName = Text.removeTags(namePart).trim();
-            // "Your house" entries may include a bracketed location; normalize to just "Your house"
-            if (cleanName.contains("Your house")) {
-                cleanName = "Your house";
-            }
-            available.add(cleanName);
+            // Group 3 is spirit tree name
+            available.add(matcher.group(3));
         }
 
         pathfinderConfig.availableSpiritTrees = available;
