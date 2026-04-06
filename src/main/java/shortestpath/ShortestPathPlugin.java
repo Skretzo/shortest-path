@@ -522,6 +522,68 @@ public class ShortestPathPlugin extends Plugin {
         if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG) {
             scrollFairyRingPanel();
         }
+        if (event.getGroupId() == InterfaceID.MENU) {
+            clientThread.invokeLater(this::parseSpiritTreeWidget);
+        }
+    }
+
+    private void parseSpiritTreeWidget() {
+        Widget container = client.getWidget(InterfaceID.MENU, 3);
+        if (container == null) {
+            return;
+        }
+
+        Widget[] children = container.getDynamicChildren();
+        if (children == null || children.length == 0) {
+            return;
+        }
+
+        // Verify this is the spirit tree menu by checking for a known tree name
+        boolean isSpiritTreeMenu = false;
+        for (Widget child : children) {
+            if (child.getText() != null && child.getText().contains("Tree Gnome Village")) {
+                isSpiritTreeMenu = true;
+                break;
+            }
+        }
+            if (!isSpiritTreeMenu) {
+            return;
+        }
+
+        Set<String> available = new HashSet<>();
+
+        for (Widget child : children) {
+            String text = child.getText();
+            if (text == null || text.isEmpty()) {
+                continue;
+            }
+
+            // Format: "<col=735a28>X</col>: Name" (enabled) or "<col=735a28>X</col>: <col=5f5f5f>Name" (disabled)
+            int colonIndex = text.indexOf(": ");
+            if (colonIndex == -1) {
+                continue;
+            }
+
+            String namePart = text.substring(colonIndex + 2);
+
+            // If the name part starts with a grey color tag, the tree is disabled
+            if (namePart.startsWith("<col=5f5f5f>")) {
+                continue;
+            }
+
+            String cleanName = Text.removeTags(namePart).trim();
+            // "Your house" entries may include a bracketed location; normalize to just "Your house"
+            if (cleanName.contains("Your house")) {
+                cleanName = "Your house";
+            }
+            available.add(cleanName);
+        }
+
+        pathfinderConfig.availableSpiritTrees = available;
+
+        if (pathfinder != null) {
+            restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+        }
     }
 
     private void scrollFairyRingPanel() {

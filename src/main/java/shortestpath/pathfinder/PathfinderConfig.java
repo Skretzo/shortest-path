@@ -137,12 +137,7 @@ public class PathfinderConfig {
         includeBankPath,
         usePohMountedItems,
         usePoh,
-        usePohObelisk,
-        useSpiritTreeEtceteria,
-        useSpiritTreeBrimhaven,
-        useSpiritTreePortSarim,
-        useSpiritTreeHosidius,
-        useSpiritTreeFarmingGuild;
+        usePohObelisk;
     private TeleportationItem useTeleportationItems;
     private JewelleryBoxTier pohJewelleryBoxTier;
     private Map<TransportType, Integer> artificialTransportCosts = new EnumMap<>(TransportType.class);
@@ -154,6 +149,7 @@ public class PathfinderConfig {
     private Map<Integer, Integer> varPlayerValues = new HashMap<>();
 
     public ItemContainer bank = null;
+    public Set<String> availableSpiritTrees = null;
 
     public PathfinderConfig(Client client, ShortestPathConfig config) {
         this.client = client;
@@ -202,11 +198,6 @@ public class PathfinderConfig {
         useSeasonalTransports = ShortestPathPlugin.override("useSeasonalTransports", config.useSeasonalTransports());
         useSpiritTrees = ShortestPathPlugin.override("useSpiritTrees", config.useSpiritTrees());
         usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
-        useSpiritTreeEtceteria = ShortestPathPlugin.override("useSpiritTreeEtceteria", config.useSpiritTreeEtceteria());
-        useSpiritTreeBrimhaven = ShortestPathPlugin.override("useSpiritTreeBrimhaven", config.useSpiritTreeBrimhaven());
-        useSpiritTreePortSarim = ShortestPathPlugin.override("useSpiritTreePortSarim", config.useSpiritTreePortSarim());
-        useSpiritTreeHosidius = ShortestPathPlugin.override("useSpiritTreeHosidius", config.useSpiritTreeHosidius());
-        useSpiritTreeFarmingGuild = ShortestPathPlugin.override("useSpiritTreeFarmingGuild", config.useSpiritTreeFarmingGuild());
         useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
         pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
         usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
@@ -833,22 +824,23 @@ public class PathfinderConfig {
         return combatLevel;
     }
 
+    static String getPlantedSpiritTreeName(int x, int y) {
+        if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260) return "Port Sarim";
+        if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860) return "Etceteria";
+        if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205) return "Brimhaven";
+        if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544) return "Hosidius";
+        if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752) return "Farming Guild";
+        return null;
+    }
+
     private boolean isPlantedSpiritTreeAllowed(int x, int y) {
-        if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260) {
-            return useSpiritTreePortSarim;
+        String treeName = getPlantedSpiritTreeName(x, y);
+        if (treeName == null) {
+            return true; // Not a planted tree, always allowed
         }
-        if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860) {
-            return useSpiritTreeEtceteria;
+        if (availableSpiritTrees == null) {
+            return false; // Cache not populated yet, default to disallowed
         }
-        if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205) {
-            return useSpiritTreeBrimhaven;
-        }
-        if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544) {
-            return useSpiritTreeHosidius;
-        }
-        if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752) {
-            return useSpiritTreeFarmingGuild;
-        }
-        return true;
+        return availableSpiritTrees.contains(treeName);
     }
 }
