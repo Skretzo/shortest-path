@@ -4,8 +4,8 @@
 #
 # This script is used by the coordinate preview GitHub workflow so the logic for
 # worktree setup, base-task detection, and output generation stays out of YAML.
-# It also centralizes the compatibility guard for older merge-base commits that
-# do not yet define the `dumpTransportCoordinates` Gradle task.
+# The coordinate dump is produced entirely by a Python script that reads the
+# transport .tsv files directly, so no JDK or Gradle invocation is needed.
 
 set -euo pipefail
 
@@ -22,39 +22,23 @@ BASE_DIR="$(mktemp -d)"
 BASE_COORDINATES_PATH="$(mktemp)"
 
 cleanup() {
-  # The workflow checks out the merge-base in a temporary worktree so we can run
-  # the dumper against both revisions without mutating the main checkout.
   git worktree remove --force "$BASE_DIR" >/dev/null 2>&1 || true
   rm -f "$BASE_COORDINATES_PATH"
 }
 trap cleanup EXIT
 
-chmod +x gradlew
 git worktree add "$BASE_DIR" "$MERGE_BASE" >/dev/null
 
-if ! (
-  cd "$BASE_DIR"
-  chmod +x gradlew
-  # Old base commits may not contain the dumper task yet. Probe task output
-  # first so we can skip the preview cleanly instead of failing the workflow.
-  ./gradlew --no-daemon tasks --all | grep -q '^dumpTransportCoordinates'
-); then
-  echo "Base commit does not support dumpTransportCoordinates; skipping preview."
-  {
-    echo "has_changes=false"
-    echo "skip_reason=missing_base_dumper"
-  } >> "$GITHUB_OUTPUT_PATH"
-  exit 0
-fi
+# Dump coordinates at HEAD and at the merge-base.  The Python dumper reads the
+# .tsv files directly so it works against any revision regardless of whether a
+# Gradle task exists there.
+python3 scripts/dump_transport_coordinates.py \
+  --output build/head-coordinates.json
 
-# Build a complete coordinate dump at the current HEAD and at the merge-base.
-# The later Python step reduces this to only coordinates that are new in HEAD.
-./gradlew --no-daemon dumpTransportCoordinates --args="--output build/head-coordinates.json"
-(
-  cd "$BASE_DIR"
-  ./gradlew --no-daemon dumpTransportCoordinates --args="--output build/base-coordinates.json"
-)
-cp "$BASE_DIR/build/base-coordinates.json" "$BASE_COORDINATES_PATH"
+python3 scripts/dump_transport_coordinates.py \
+  --base-dir "$BASE_DIR/src/main/resources/transports" \
+  --output "$BASE_COORDINATES_PATH"
+
 python3 scripts/diff_coordinate_json.py \
   "$BASE_COORDINATES_PATH" \
   build/head-coordinates.json \

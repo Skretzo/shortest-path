@@ -6,10 +6,6 @@ name: Coordinate Preview
 # 2. dumping the same data at the merge-base with the target branch,
 # 3. diffing the two dumps by coordinate, and
 # 4. sending only newly introduced coordinates to the preview action.
-#
-# The extra merge-base check matters because older commits may predate the
-# dumper task entirely. In that case we skip preview generation rather than
-# failing the workflow on historical branches.
 on:
   pull_request:
   workflow_dispatch:
@@ -28,12 +24,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 11
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "11"
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -46,14 +36,8 @@ jobs:
           # Keep the workflow step thin and delegate the real logic to a script.
           # That makes the worktree/diff behavior easier to review and update
           # than a long inline bash block in YAML.
-          chmod +x gradlew
           chmod +x scripts/compute_changed_coordinates.sh
           scripts/compute_changed_coordinates.sh "${{ github.base_ref }}" "$GITHUB_OUTPUT"
-
-      - name: Explain skipped preview
-        if: ${{ steps.compute-coordinates.outputs.skip_reason == 'missing_base_dumper' }}
-        shell: bash
-        run: echo "Coordinate preview skipped because the merge-base commit does not provide dumpTransportCoordinates."
 
       - name: Print changed coordinates
         if: ${{ steps.compute-coordinates.outputs.has_changes == 'true' }}
