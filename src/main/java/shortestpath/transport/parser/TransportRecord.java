@@ -9,6 +9,7 @@ import lombok.Getter;
  */
 @Getter
 public class TransportRecord {
+    private final String sourceReference;
 
     /**
      * -- GETTER --
@@ -17,7 +18,12 @@ public class TransportRecord {
     private final Map<String, String> fields;
 
     public TransportRecord(Map<String, String> fields) {
+        this(fields, null);
+    }
+
+    public TransportRecord(Map<String, String> fields, String sourceReference) {
         this.fields = Map.copyOf(fields);
+        this.sourceReference = sourceReference;
     }
 
     /**
@@ -155,4 +161,3 @@ public class TransportRecord {
         }
     }
 }
-

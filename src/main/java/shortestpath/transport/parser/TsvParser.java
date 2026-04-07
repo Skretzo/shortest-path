@@ -21,6 +21,14 @@ public class TsvParser {
      * The first line must be a header line (optionally starting with #).
      */
     public List<TransportRecord> parse(String contents) {
+        return parse(contents, null);
+    }
+
+    /**
+     * Parses TSV content into a list of TransportRecords and annotates rows with
+     * a source path when provided.
+     */
+    public List<TransportRecord> parse(String contents, String sourcePath) {
         List<TransportRecord> records = new ArrayList<>();
         Scanner scanner = new Scanner(contents);
 
@@ -33,14 +41,16 @@ public class TsvParser {
         String[] headers = parseHeaderLine(scanner.nextLine());
 
         // Parse data lines
+        int lineNumber = 1;
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
+            lineNumber++;
 
             if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
                 continue;
             }
 
-            TransportRecord record = parseLine(line, headers);
+            TransportRecord record = parseLine(line, headers, sourceReference(sourcePath, lineNumber));
             if (record != null) {
                 records.add(record);
             }
@@ -66,7 +76,7 @@ public class TsvParser {
     /**
      * Parses a single data line into a TransportRecord.
      */
-    private TransportRecord parseLine(String line, String[] headers) {
+    private TransportRecord parseLine(String line, String[] headers, String sourceReference) {
         // Use -1 limit to preserve trailing empty strings
         String[] fields = line.split(DELIM_COLUMN, -1);
         Map<String, String> fieldMap = new HashMap<>();
@@ -77,7 +87,13 @@ public class TsvParser {
             }
         }
 
-        return new TransportRecord(fieldMap);
+        return new TransportRecord(fieldMap, sourceReference);
+    }
+
+    private String sourceReference(String sourcePath, int lineNumber) {
+        if (sourcePath == null || sourcePath.isEmpty()) {
+            return null;
+        }
+        return sourcePath + ":" + lineNumber;
     }
 }
-
