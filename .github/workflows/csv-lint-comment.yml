@@ -1,0 +1,151 @@
+name: CSV Lint Comment
+
+# Posts / updates the TSV consistency check comment on PRs.
+# Runs after the unprivileged "CSV Lint" workflow completes, so it has
+# pull-requests:write without ever executing PR code.
+on:
+  workflow_run:
+    workflows: ["CSV Lint"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  comment:
+    name: Post TSV Check Comment
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion != 'cancelled'
+
+    steps:
+      - name: Download lint results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{ github.event.workflow_run.id }},
+            });
+            const match = artifacts.data.artifacts.find(a => a.name === 'tsv-lint-results');
+            if (!match) {
+              core.setFailed('tsv-lint-results artifact not found');
+              return;
+            }
+            const download = await github.rest.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: match.id,
+              archive_format: 'zip',
+            });
+            const fs = require('fs');
+            fs.writeFileSync('${{ github.workspace }}/artifact.zip', Buffer.from(download.data));
+
+      - name: Unpack artifact
+        run: |
+          unzip artifact.zip -d artifact
+
+      - name: Post or update comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const outcome  = fs.readFileSync('artifact/outcome.txt', 'utf8').trim();
+            const raw      = fs.readFileSync('artifact/tsv-output.txt', 'utf8');
+            const prNumber = parseInt(fs.readFileSync('artifact/pr-number.txt', 'utf8').trim(), 10);
+
+            if (isNaN(prNumber) || prNumber <= 0) {
+              core.setFailed(`Invalid PR number: ${prNumber}`);
+              return;
+            }
+
+            const MARKER = '<!-- tsv-consistency-check -->';
+
+            function buildBody(raw, outcome) {
+              if (outcome === 'success') {
+                return `${MARKER}\n## \u2705 TSV Consistency Check\n\nAll transport data files are consistent.`;
+              }
+
+              const lines = raw.split('\n');
+              const failedFiles = {};
+              const passedFiles = [];
+              let cur = null;
+
+              for (const line of lines) {
+                if (line.startsWith('FAIL  ')) {
+                  cur = line.slice(6).trim();
+                  failedFiles[cur] = [];
+                } else if (line.startsWith('ok    ')) {
+                  passedFiles.push(line.slice(6).trim());
+                  cur = null;
+                } else if (cur && line.startsWith('  ')) {
+                  failedFiles[cur].push(line.trim());
+                } else {
+                  cur = null;
+                }
+              }
+
+              const failCount  = Object.keys(failedFiles).length;
+              const issueCount = Object.values(failedFiles).reduce((n, a) => n + a.length, 0);
+
+              if (failCount === 0 && issueCount === 0) return null;
+              const shorten = f => f.replace(/^.*\/src\/main\/resources\//, '');
+
+              let body =
+                `${MARKER}\n## \u274c TSV Consistency Check\n\n` +
+                `Found **${issueCount} issue${issueCount !== 1 ? 's' : ''}** ` +
+                `in **${failCount} file${failCount !== 1 ? 's' : ''}**:\n\n`;
+
+              for (const [file, errors] of Object.entries(failedFiles)) {
+                body += `**\`${shorten(file)}\`**\n\`\`\`\n${errors.join('\n')}\n\`\`\`\n\n`;
+              }
+
+              if (passedFiles.length > 0) {
+                const n = passedFiles.length;
+                body +=
+                  `<details>\n<summary>${n} file${n !== 1 ? 's' : ''} passed \u2705</summary>\n\n` +
+                  passedFiles.map(f => `- \`${shorten(f)}\``).join('\n') +
+                  `\n\n</details>`;
+              }
+
+              return body;
+            }
+
+            const body = buildBody(raw, outcome);
+            if (body === null) {
+              core.warning('TSV check produced no parseable output — skipping comment.');
+              return;
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c => c.body && c.body.includes(MARKER));
+
+            if (outcome === 'success' && !existing) {
+              core.info('TSV check passed and no prior failure comment — skipping.');
+              return;
+            }
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated comment #${existing.id} on PR #${prNumber}.`);
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+              core.info(`Created new comment on PR #${prNumber}.`);
+            }

@@ -12,7 +12,8 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 
 public class Pathfinder implements Runnable {
-    private PathfinderStats stats;
+    private final PathfinderStats stats;
+    @Getter
     private volatile boolean done = false;
     private volatile boolean cancelled = false;
 
@@ -38,7 +39,7 @@ public class Pathfinder implements Runnable {
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
-     *  0 = all teleports can be used (e.g. Chronicle)
+     * 0 = all teleports can be used (e.g. Chronicle)
      * 20 = most teleports can be used (e.g. Varrock Teleport)
      * 30 = some teleports can be used (e.g. Amulet of Glory)
      * 31 = no teleports can be used
@@ -55,10 +56,6 @@ public class Pathfinder implements Runnable {
         visited = new VisitedTiles(map);
         targetInWilderness = WildernessChecker.isInWilderness(targets);
         wildernessLevel = 31;
-    }
-
-    public boolean isDone() {
-        return done;
     }
 
     public void cancel() {

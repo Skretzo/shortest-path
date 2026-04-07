@@ -1,5 +1,10 @@
 name: CSV Lint
 
+# Runs the TSV consistency checker and csvlint against the PR's own code.
+# Uses `pull_request` (not `pull_request_target`) so the PR branch version of
+# scripts and workflow YAML is used — changes to check_tsv.py or this workflow
+# can be tested in PRs.  Comment posting is handled by the separate
+# csv-lint-comment.yml workflow_run workflow.
 on:
   push:
     branches: [master]
@@ -15,19 +20,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: TSV Consistency Check
+        id: tsv-check
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 scripts/check_tsv.py ./src/main/resources 2>&1 | tee tsv-output.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Save PR metadata
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p artifact
+          cp tsv-output.txt artifact/
+          echo "${{ steps.tsv-check.outcome }}" > artifact/outcome.txt
+          echo "${{ github.event.number }}" > artifact/pr-number.txt
+
+      - name: Upload lint results
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsv-lint-results
+          path: artifact/
+
+      - name: Fail if TSV check failed
+        if: steps.tsv-check.outcome == 'failure'
+        run: exit 1
+
       - name: Install csvlint
         run: |
           curl -L https://github.com/Clever/csvlint/releases/download/v0.3.0/csvlint-v0.3.0-linux-amd64.tar.gz | tar xz
           sudo mv csvlint-v0.3.0-linux-amd64/csvlint /usr/local/bin/
-
-      - name: TSV Column Consistency
-        shell: bash
-        run: |
-          chmod +x ./scripts/tsv-lint.sh
-          ./scripts/tsv-lint.sh ./src/main/resources
-
       - name: CSV Lint
         shell: bash
         run: |
-          find ./src/main/resources -name '*.tsv' -print0 \
-            | xargs -0 -n 1 csvlint -delimiter $'\t'
+          while IFS= read -r -d '' file; do
+            echo "Linting $file"
+            csvlint -delimiter $'\t' "$file"
+          done < <(find ./src/main/resources -name '*.tsv' -print0)

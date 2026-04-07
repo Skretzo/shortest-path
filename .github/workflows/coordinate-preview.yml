@@ -1,0 +1,64 @@
+name: Coordinate Preview
+
+# Post a visual coordinate preview comment on pull requests.
+#
+# Uses `pull_request` (not `pull_request_target`) so the PR branch version of
+# scripts and workflow YAML is used — changes to compute_changed_coordinates.sh
+# or this workflow can be tested in PRs.  Comment posting is handled by the
+# separate coordinate-preview-comment.yml workflow_run workflow.
+#
+# Steps:
+# 1. Compute the set of coordinates introduced by the PR (vs. the merge-base).
+# 2. Send only newly introduced coordinates to the remote renderer.
+# 3. Upload the rendered manifest as an artifact for the comment workflow.
+on:
+  pull_request:
+
+jobs:
+  preview:
+    name: Preview Changed Coordinates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Compute changed coordinates
+        id: compute
+        shell: bash
+        run: |
+          chmod +x scripts/compute_changed_coordinates.sh
+          scripts/compute_changed_coordinates.sh "${{ github.event.pull_request.base.ref }}" "$GITHUB_OUTPUT"
+
+      - name: Render coordinate previews
+        if: steps.compute.outputs.has_changes == 'true'
+        uses: mpickering/osrs-coord-preview-action@v1.3
+        with:
+          coordinates-file: build/changed-coordinates.json
+          comment: "false"
+          renderer-url: https://osrs-coordinate-preview-nt7ywvsdgq-nw.a.run.app/render
+          github-token: ${{ github.token }}
+          output-dir: build/preview
+
+      - name: Save PR metadata
+        if: steps.compute.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          mkdir -p artifact
+          cp build/preview/manifest.json artifact/
+          echo "${{ github.event.number }}" > artifact/pr-number.txt
+          echo "true" > artifact/has-changes.txt
+
+      - name: Upload preview results
+        if: steps.compute.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coordinate-preview-results
+          path: artifact/

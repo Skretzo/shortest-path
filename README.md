@@ -13,3 +13,16 @@ Draws the shortest path to a chosen destination on the map (right click a spot o
 
 ## Features, examples and options
 Read the [plugin wiki](../../wiki) for info about features, examples and plugin options.
+
+## Transport coordinate dump
+Generate the transport coordinate JSON with:
+
+```bash
+python3 scripts/dump_transport_coordinates.py
+```
+
+Pass additional arguments when needed:
+
+```bash
+python3 scripts/dump_transport_coordinates.py --pretty --output build/transport-coordinates.json
+```

@@ -8,31 +8,29 @@ public class TransportTypeTest {
 
     @Test
     public void testIsTeleport() {
-        assertTrue(TransportType.isTeleport(TransportType.TELEPORTATION_ITEM));
-        assertTrue(TransportType.isTeleport(TransportType.TELEPORTATION_MINIGAME));
-        assertTrue(TransportType.isTeleport(TransportType.TELEPORTATION_SPELL));
+        assertTrue(TransportType.TELEPORTATION_ITEM.isTeleport());
+        assertTrue(TransportType.TELEPORTATION_MINIGAME.isTeleport());
+        assertTrue(TransportType.TELEPORTATION_SPELL.isTeleport());
 
-        assertFalse(TransportType.isTeleport(TransportType.TRANSPORT));
-        assertFalse(TransportType.isTeleport(TransportType.AGILITY_SHORTCUT));
-        assertFalse(TransportType.isTeleport(TransportType.GRAPPLE_SHORTCUT));
-        assertFalse(TransportType.isTeleport(TransportType.BOAT));
-        assertFalse(TransportType.isTeleport(TransportType.CANOE));
-        assertFalse(TransportType.isTeleport(TransportType.CHARTER_SHIP));
-        assertFalse(TransportType.isTeleport(TransportType.SHIP));
-        assertFalse(TransportType.isTeleport(TransportType.FAIRY_RING));
-        assertFalse(TransportType.isTeleport(TransportType.GNOME_GLIDER));
-        assertFalse(TransportType.isTeleport(TransportType.HOT_AIR_BALLOON));
-        assertFalse(TransportType.isTeleport(TransportType.MAGIC_CARPET));
-        assertFalse(TransportType.isTeleport(TransportType.MAGIC_MUSHTREE));
-        assertFalse(TransportType.isTeleport(TransportType.MINECART));
-        assertFalse(TransportType.isTeleport(TransportType.QUETZAL));
-        assertFalse(TransportType.isTeleport(TransportType.SEASONAL_TRANSPORTS));
-        assertFalse(TransportType.isTeleport(TransportType.SPIRIT_TREE));
-        assertFalse(TransportType.isTeleport(TransportType.TELEPORTATION_BOX));
-        assertFalse(TransportType.isTeleport(TransportType.TELEPORTATION_LEVER));
-        assertFalse(TransportType.isTeleport(TransportType.TELEPORTATION_PORTAL));
-        assertFalse(TransportType.isTeleport(TransportType.WILDERNESS_OBELISK));
-
-        assertFalse(TransportType.isTeleport(null));
+        assertFalse(TransportType.TRANSPORT.isTeleport());
+        assertFalse(TransportType.AGILITY_SHORTCUT.isTeleport());
+        assertFalse(TransportType.GRAPPLE_SHORTCUT.isTeleport());
+        assertFalse(TransportType.BOAT.isTeleport());
+        assertFalse(TransportType.CANOE.isTeleport());
+        assertFalse(TransportType.CHARTER_SHIP.isTeleport());
+        assertFalse(TransportType.SHIP.isTeleport());
+        assertFalse(TransportType.FAIRY_RING.isTeleport());
+        assertFalse(TransportType.GNOME_GLIDER.isTeleport());
+        assertFalse(TransportType.HOT_AIR_BALLOON.isTeleport());
+        assertFalse(TransportType.MAGIC_CARPET.isTeleport());
+        assertFalse(TransportType.MAGIC_MUSHTREE.isTeleport());
+        assertFalse(TransportType.MINECART.isTeleport());
+        assertFalse(TransportType.QUETZAL.isTeleport());
+        assertFalse(TransportType.SEASONAL_TRANSPORTS.isTeleport());
+        assertFalse(TransportType.SPIRIT_TREE.isTeleport());
+        assertFalse(TransportType.TELEPORTATION_BOX.isTeleport());
+        assertFalse(TransportType.TELEPORTATION_LEVER.isTeleport());
+        assertFalse(TransportType.TELEPORTATION_PORTAL.isTeleport());
+        assertFalse(TransportType.WILDERNESS_OBELISK.isTeleport());
     }
 }

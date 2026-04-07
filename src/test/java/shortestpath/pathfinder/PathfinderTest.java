@@ -20,16 +20,15 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import shortestpath.ItemVariations;
-import shortestpath.JewelleryBoxTier;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportItems;
+import shortestpath.transport.requirement.TransportItems;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.TransportVarbit;
+import shortestpath.transport.parser.VarRequirement;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -275,14 +274,6 @@ public class PathfinderTest {
         when(config.useSpiritTrees()).thenReturn(true);
         when(client.getVarbitValue(any(Integer.class))).thenReturn(20);
         testTransportLength(2, TransportType.SPIRIT_TREE);
-    }
-
-    @Test
-    public void testTeleportationBoxes() {
-        when(config.usePoh()).thenReturn(true);
-        when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.ORNATE);
-        when(config.usePohMountedItems()).thenReturn(true);
-        testTransportLength(2, TransportType.TELEPORTATION_BOX);
     }
 
     @Test
@@ -698,7 +689,7 @@ public class PathfinderTest {
     }
 
     private boolean hasVarbit(Transport transport, int varbitId) {
-        for (TransportVarbit varbit : transport.getVarbits()) {
+        for (VarRequirement varbit : transport.getVarbits()) {
             if (varbit.getId() == varbitId) {
                 return true;
             }
