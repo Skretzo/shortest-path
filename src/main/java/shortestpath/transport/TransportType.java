@@ -35,7 +35,7 @@ public enum TransportType {
         }
     },
 
-    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", ShortestPathConfig::useQuetzals, ShortestPathConfig::costQuetzalWhistle) {
+    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzalWhistle", ShortestPathConfig::costQuetzalWhistle) {
         @Override
         public boolean isTeleport() {
             return true;
