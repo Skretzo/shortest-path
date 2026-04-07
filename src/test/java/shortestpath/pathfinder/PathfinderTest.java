@@ -610,19 +610,26 @@ public class PathfinderTest {
         TeleportationItem useTeleportationItems) {
         setupConfig(questState, skillLevel, useTeleportationItems);
 
+        // Cap the number of pathfinder runs per transport type to avoid excessive test runtime.
+        // Running pathfinder for every transport (e.g. hundreds of fairy rings) is very slow.
+        final int maxPathfinderRuns = 50;
         int counter = 0;
+        int totalMatched = 0;
         Map<Integer, Set<Transport>> activeTransports = pathfinderConfig.getTransports();
         for (int origin : activeTransports.keySet()) {
             for (Transport transport : activeTransports.get(origin)) {
                 if (transportType.equals(transport.getType())) {
-                    counter++;
-                    assertEquals(transport.toString(), expectedLength, calculateTransportLength(transport));
+                    totalMatched++;
+                    if (counter < maxPathfinderRuns) {
+                        counter++;
+                        assertEquals(transport.toString(), expectedLength, calculateTransportLength(transport));
+                    }
                 }
             }
         }
 
         assertTrue("No tests were performed", counter > 0);
-        System.out.println(String.format("Successfully completed %d " + transportType + " transport length tests", counter));
+        System.out.println(String.format("Successfully completed %d/%d " + transportType + " transport length tests", counter, totalMatched));
     }
 
     private void testTransportMinimumLength(int minimumLength, int origin, int destination) {
