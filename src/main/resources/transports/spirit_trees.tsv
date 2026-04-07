@@ -71,7 +71,7 @@
 3273 6125 0		Travel Spirit tree 37329					
 3273 6124 0		Travel Spirit tree 37329					
 							
-# Port Sarim	(planged Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)						
+# Port Sarim	(planted Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)						
 3058 3257 0		Travel Spirit Tree 8355					
 3058 3258 0		Travel Spirit Tree 8355					
 3058 3259 0		Travel Spirit Tree 8355					
@@ -85,7 +85,7 @@
 3060 3256 0		Travel Spirit Tree 8355					
 3059 3256 0		Travel Spirit Tree 8355					
 							
-# Etceteria		(planged Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)					
+# Etceteria		(planted Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)					
 2611 3857 0		Travel Spirit Tree 8355					
 2611 3858 0		Travel Spirit Tree 8355					
 2611 3859 0		Travel Spirit Tree 8355					
@@ -99,7 +99,7 @@
 2613 3856 0		Travel Spirit Tree 8355					
 2612 3856 0		Travel Spirit Tree 8355					
 							
-# Brimhaven		(planged Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)					
+# Brimhaven		(planted Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)					
 2800 3202 0		Travel Spirit Tree 8355					
 2800 3203 0		Travel Spirit Tree 8355					
 2800 3204 0		Travel Spirit Tree 8355					
@@ -113,7 +113,7 @@
 2802 3201 0		Travel Spirit Tree 8355					
 2801 3201 0		Travel Spirit Tree 8355					
 							
-# Hosidius		(planged Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)					
+# Hosidius		(planted Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)					
 1691 3541 0		Travel Spirit Tree 8355					
 1691 3542 0		Travel Spirit Tree 8355					
 1691 3543 0		Travel Spirit Tree 8355					
@@ -127,7 +127,7 @@
 1693 3540 0		Travel Spirit Tree 8355					
 1692 3540 0		Travel Spirit Tree 8355					
 							
-# Farming Guild	(planged Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)						
+# Farming Guild	(planted Spirit Tree logic is handled by PathfinderConfig.isPlantedSpiritTreeAllowed, varbits not needed)						
 1251 3749 0		Travel Spirit Tree 8355					
 1251 3750 0		Travel Spirit Tree 8355					
 1251 3751 0		Travel Spirit Tree 8355					
