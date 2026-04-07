@@ -459,6 +459,32 @@ public class PathfinderConfig {
             return false;
         }
 
+        if (TransportType.SPIRIT_TREE.equals(type)) {
+            if (!checkPlantedSpiritTrees(transport)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean checkPlantedSpiritTrees(Transport transport) {
+        int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+        int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+
+        // Check planted spirit tree origins (travel FROM a planted tree)
+        if (!isPlantedSpiritTreeAllowed(originX, originY)) {
+            return false;
+        }
+
+        // Check planted spirit tree destinations (travel TO a planted tree)
+        int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
+        int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+
+        if (!isPlantedSpiritTreeAllowed(destX, destY)) {
+            return false;
+        }
+
         return true;
     }
 
