@@ -1,11 +1,16 @@
 name: CSV Lint
-
 on:
   push:
     branches: [master]
-  pull_request:
+  # pull_request_target (not pull_request) runs in the base-repo context, so
+  # the token has pull-requests:write even for PRs from forks.  We explicitly
+  # check out the PR head SHA below so we validate the contributor's changes.
+  pull_request_target:
     branches: [master]
   workflow_dispatch:
+
+permissions:
+  pull-requests: write   # post / update comments on PRs (including from forks)
 
 jobs:
   csv-lint:
@@ -14,18 +19,123 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # For pull_request_target, default checkout is the base branch — use
+          # the PR head SHA instead so we actually lint the proposed changes.
+          # For push / workflow_dispatch, github.event.pull_request.head.sha is
+          # empty and the expression falls back to github.sha (the pushed commit).
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: TSV Consistency Check
+        id: tsv-check
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 scripts/check_tsv.py ./src/main/resources 2>&1 | tee tsv-output.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Post TSV check comment
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs   = require('fs');
+            const outcome = '${{ steps.tsv-check.outcome }}';
+            const raw     = fs.readFileSync('tsv-output.txt', 'utf8');
+
+            const MARKER = '<!-- tsv-consistency-check -->';
+
+            function buildBody(raw, outcome) {
+              if (outcome === 'success') {
+                return `${MARKER}\n## \u2705 TSV Consistency Check\n\nAll transport data files are consistent.`;
+              }
+
+              const lines = raw.split('\n');
+              const failedFiles = {};
+              const passedFiles = [];
+              let cur = null;
+
+              for (const line of lines) {
+                if (line.startsWith('FAIL  ')) {
+                  cur = line.slice(6).trim();
+                  failedFiles[cur] = [];
+                } else if (line.startsWith('ok    ')) {
+                  passedFiles.push(line.slice(6).trim());
+                  cur = null;
+                } else if (cur && line.startsWith('  ')) {
+                  failedFiles[cur].push(line.trim());
+                } else {
+                  cur = null;
+                }
+              }
+
+              const failCount  = Object.keys(failedFiles).length;
+              const issueCount = Object.values(failedFiles).reduce((n, a) => n + a.length, 0);
+              const shorten    = f => f.replace(/^.*\/src\/main\/resources\//, '');
+
+              let body =
+                `${MARKER}\n## \u274c TSV Consistency Check\n\n` +
+                `Found **${issueCount} issue${issueCount !== 1 ? 's' : ''}** ` +
+                `in **${failCount} file${failCount !== 1 ? 's' : ''}**:\n\n`;
+
+              for (const [file, errors] of Object.entries(failedFiles)) {
+                body += `**\`${shorten(file)}\`**\n\`\`\`\n${errors.join('\n')}\n\`\`\`\n\n`;
+              }
+
+              if (passedFiles.length > 0) {
+                const n = passedFiles.length;
+                body +=
+                  `<details>\n<summary>${n} file${n !== 1 ? 's' : ''} passed \u2705</summary>\n\n` +
+                  passedFiles.map(f => `- \`${shorten(f)}\``).join('\n') +
+                  `\n\n</details>`;
+              }
+
+              return body;
+            }
+
+            const body     = buildBody(raw, outcome);
+            const prNumber = context.payload.pull_request.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c => c.body && c.body.includes(MARKER));
+
+            // No failures and no previous comment to update — nothing to do.
+            if (outcome === 'success' && !existing) {
+              core.info('TSV check passed and no prior failure comment — skipping.');
+              return;
+            }
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated comment #${existing.id} on PR #${prNumber}.`);
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+              core.info(`Created new comment on PR #${prNumber}.`);
+            }
+
+      - name: Fail if TSV check failed
+        if: steps.tsv-check.outcome == 'failure'
+        run: exit 1
 
       - name: Install csvlint
         run: |
           curl -L https://github.com/Clever/csvlint/releases/download/v0.3.0/csvlint-v0.3.0-linux-amd64.tar.gz | tar xz
           sudo mv csvlint-v0.3.0-linux-amd64/csvlint /usr/local/bin/
-
-      - name: TSV Column Consistency
-        shell: bash
-        run: |
-          chmod +x ./scripts/tsv-lint.sh
-          ./scripts/tsv-lint.sh ./src/main/resources
-
       - name: CSV Lint
         shell: bash
         run: |
