@@ -13,9 +13,6 @@ def runeLiteVersion = 'latest.release'
 
 dependencies {
     compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
-    implementation 'com.google.code.gson:gson:2.11.0'
-    runtimeOnly group: 'net.runelite', name:'client', version: runeLiteVersion
-    runtimeOnly 'org.slf4j:slf4j-simple:2.0.16'
 
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
@@ -60,11 +57,4 @@ tasks.register('runelite', JavaExec) {
     mainClass.set('shortestpath.ShortestPathPluginTest')
     jvmArgs '-ea'
     args '--developer-mode'
-}
-
-tasks.register('dumpTransportCoordinates', JavaExec) {
-    group = 'application'
-    description = 'Dumps transport coordinates as JSON for coordinate preview tooling'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass.set('shortestpath.transport.TransportCoordinateDumpCli')
 }
