@@ -1,0 +1,70 @@
+name: Coordinate Preview
+
+# This workflow renders a visual preview for coordinates introduced by a pull
+# request. It does that by:
+# 1. dumping all previewable coordinates at the PR head,
+# 2. dumping the same data at the merge-base with the target branch,
+# 3. diffing the two dumps by coordinate, and
+# 4. sending only newly introduced coordinates to the preview action.
+#
+# The extra merge-base check matters because older commits may predate the
+# dumper task entirely. In that case we skip preview generation rather than
+# failing the workflow on historical branches.
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  preview-coordinates:
+    name: Preview Changed Coordinates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "11"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - id: compute-coordinates
+        name: Compute changed coordinates
+        shell: bash
+        run: |
+          # Keep the workflow step thin and delegate the real logic to a script.
+          # That makes the worktree/diff behavior easier to review and update
+          # than a long inline bash block in YAML.
+          chmod +x gradlew
+          chmod +x scripts/compute_changed_coordinates.sh
+          scripts/compute_changed_coordinates.sh "${{ github.base_ref }}" "$GITHUB_OUTPUT"
+
+      - name: Explain skipped preview
+        if: ${{ steps.compute-coordinates.outputs.skip_reason == 'missing_base_dumper' }}
+        shell: bash
+        run: echo "Coordinate preview skipped because the merge-base commit does not provide dumpTransportCoordinates."
+
+      - name: Print changed coordinates
+        if: ${{ steps.compute-coordinates.outputs.has_changes == 'true' }}
+        shell: bash
+        run: cat build/changed-coordinates.json
+
+      - name: Preview coordinates
+        if: ${{ steps.compute-coordinates.outputs.has_changes == 'true' }}
+        uses: mpickering/osrs-coord-preview-action@v1.3
+        with:
+          coordinates-file: build/changed-coordinates.json
+          comment: "true"
+          renderer-url: https://osrs-coordinate-preview-nt7ywvsdgq-nw.a.run.app/render
+          github-token: ${{ github.token }}
