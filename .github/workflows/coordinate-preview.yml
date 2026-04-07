@@ -1,27 +1,36 @@
 name: Coordinate Preview
 
-# This workflow renders a visual preview for coordinates introduced by a pull
-# request. It does that by:
-# 1. dumping all previewable coordinates at the PR head,
-# 2. dumping the same data at the merge-base with the target branch,
-# 3. diffing the two dumps by coordinate, and
-# 4. sending only newly introduced coordinates to the preview action.
+# Post a visual coordinate preview comment on pull requests.
+#
+# Uses pull_request_target (not pull_request) so that the workflow runs in the
+# base-repo context with pull-requests:write even for PRs from forks.  We
+# explicitly check out the PR head SHA so we run against the contributor's
+# changes; since we only grant pull-requests:write, the worst-case impact of a
+# modified script is posting a comment.
+#
+# Steps:
+# 1. Compute the set of coordinates introduced by the PR (vs. the merge-base).
+# 2. Send only newly introduced coordinates to the remote renderer.
+# 3. Build a PR comment from the rendered manifest and post (or update) it.
 on:
-  pull_request:
-  workflow_dispatch:
+  pull_request_target:
+
+permissions:
+  pull-requests: write   # post / update comments on PRs (including from forks)
+  contents: read         # checkout
 
 jobs:
-  preview-coordinates:
+  preview:
     name: Preview Changed Coordinates
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          # Explicitly check out the PR head so we validate the contributor's
+          # changes.  fetch-depth: 0 is required for git merge-base / worktree.
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -29,26 +38,86 @@ jobs:
         with:
           python-version: "3.x"
 
-      - id: compute-coordinates
-        name: Compute changed coordinates
+      - name: Compute changed coordinates
+        id: compute
         shell: bash
         run: |
-          # Keep the workflow step thin and delegate the real logic to a script.
-          # That makes the worktree/diff behavior easier to review and update
-          # than a long inline bash block in YAML.
           chmod +x scripts/compute_changed_coordinates.sh
           scripts/compute_changed_coordinates.sh "${{ github.base_ref }}" "$GITHUB_OUTPUT"
 
-      - name: Print changed coordinates
-        if: ${{ steps.compute-coordinates.outputs.has_changes == 'true' }}
-        shell: bash
-        run: cat build/changed-coordinates.json
-
-      - name: Preview coordinates
-        if: ${{ steps.compute-coordinates.outputs.has_changes == 'true' }}
+      - name: Render coordinate previews
+        if: steps.compute.outputs.has_changes == 'true'
         uses: mpickering/osrs-coord-preview-action@v1.3
         with:
           coordinates-file: build/changed-coordinates.json
-          comment: "true"
+          comment: "false"
           renderer-url: https://osrs-coordinate-preview-nt7ywvsdgq-nw.a.run.app/render
           github-token: ${{ github.token }}
+          output-dir: build/preview
+
+      - name: Post PR comment
+        if: steps.compute.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          # Build the comment body from the rendered manifest.  The logic here
+          # mirrors comment.ts in mpickering/osrs-coord-preview-action so the
+          # output is identical to what the action would post directly.
+          python3 - <<'PYEOF'
+          import json
+
+          with open("build/preview/manifest.json") as f:
+              manifest = json.load(f)
+
+          MARKER = "<!-- osrs-coordinate-preview -->"
+          IMAGE_WIDTH = 220
+
+          lines = [
+              MARKER,
+              "## OSRS coordinate previews",
+              "",
+              f"Rendered {manifest['renderCount']} preview(s); {manifest['failedCount']} failure(s).",
+              "",
+              "| Preview | Item | Coordinate | Source |",
+              "| --- | --- | --- | --- |",
+          ]
+
+          def esc_cell(s):
+              return str(s).replace("|", "\\|").replace("\n", " ")
+
+          def esc_attr(s):
+              return str(s).replace('"', "&quot;")
+
+          for item in manifest["items"]:
+              title = item.get("label") or item["id"]
+              source = item.get("source") or ""
+              coord = item.get("coordinate", "")
+              if item["status"] == "success" and item.get("imageUrl"):
+                  url = item["imageUrl"]
+                  preview = f'<a href="{url}"><img src="{url}" alt="{esc_attr(title)}" width="{IMAGE_WIDTH}" /></a>'
+              elif item["status"] == "failure":
+                  preview = esc_cell(f"failed: {item.get('error', '')}")
+              else:
+                  preview = ""
+              lines.append(f"| {preview} | {esc_cell(title)} | {esc_cell(coord)} | {esc_cell(source)} |")
+
+          with open("build/comment-body.json", "w") as f:
+              json.dump({"body": "\n".join(lines)}, f)
+          PYEOF
+
+          # Post or update the comment, identified by the marker string.
+          REPO="${GITHUB_REPOSITORY}"
+          EXISTING_ID=$(gh api \
+            "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --jq '[.[] | select(.body | contains("<!-- osrs-coordinate-preview -->"))] | first | .id // empty' \
+          )
+          if [ -n "$EXISTING_ID" ]; then
+            gh api "repos/$REPO/issues/comments/$EXISTING_ID" \
+              -X PATCH --input build/comment-body.json
+          else
+            gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+              -X POST --input build/comment-body.json
+          fi
