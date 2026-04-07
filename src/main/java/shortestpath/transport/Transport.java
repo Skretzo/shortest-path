@@ -48,6 +48,11 @@ public class Transport {
      */
     @Getter
     private int destination = UNDEFINED_DESTINATION;
+
+    public void setDestination(int packedDestination) {
+        this.destination = packedDestination;
+    }
+
     /**
      * The quests required to use this transport
      */

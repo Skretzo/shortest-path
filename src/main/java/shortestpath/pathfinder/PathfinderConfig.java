@@ -119,6 +119,7 @@ public class PathfinderConfig {
         this.mapData = SplitFlagMap.fromResources();
         this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
         this.allTransports = TransportLoader.loadAllFromResources();
+        remapPohDestinations();
         this.usableTeleports = new HashSet<>(allTransports.size() / 20);
         this.transports = new HashMap<>(allTransports.size() / 2);
         this.transportsPacked = new PrimitiveIntHashMap<>(allTransports.size() / 2);
@@ -340,6 +341,26 @@ public class PathfinderConfig {
         if (bankVisited) {
             refreshUsableTeleports();
             refreshTeleports(packedLocation, wildernessLevel);
+        }
+    }
+
+    /**
+     * Remaps POH transport destinations to the house landing tile.
+     * Transports that arrive inside the POH (e.g., fairy ring DIQ, spirit tree "Your house")
+     * are remapped so chaining with other POH transports is possible.
+     * Called once at load time since Transport objects in allTransports are shared references.
+     */
+    private void remapPohDestinations() {
+        int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
+        for (Set<Transport> transports : allTransports.values()) {
+            for (Transport transport : transports) {
+                int destination = transport.getDestination();
+                int destX = WorldPointUtil.unpackWorldX(destination);
+                int destY = WorldPointUtil.unpackWorldY(destination);
+                if (destination != pohLanding && ShortestPathPlugin.isInsidePoh(destX, destY)) {
+                    transport.setDestination(pohLanding);
+                }
+            }
         }
     }
 
