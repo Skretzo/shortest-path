@@ -526,18 +526,32 @@ public class ShortestPathPlugin extends Plugin {
 
         // Populate spirit tree cache, but only once.
         // The values here almost never change, we only need to load it once.
-        if (pathfinderConfig.availableSpiritTrees == null && event.getGroupId() == InterfaceID.MENU) {
-            clientThread.invokeLater(this::parseSpiritTreeWidget);
+        if (pathfinderConfig.availableSpiritTrees == null) {
+            switch (event.getGroupId()) {
+                case InterfaceID.MENU:
+                    clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
+                    break;
+                case InterfaceID.MENU_NEW:
+                    clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
+                    break;
+            }
         }
     }
 
-    private static final Pattern SPIRIT_TREE_LABEL_PATTERN = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
+    private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
+    private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 
-    private void parseSpiritTreeWidget() {
+    private void parseSpiritTreeWidget(boolean useNewMenu) {
         // Referencing
         // https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
 
-        Widget container = client.getWidget(InterfaceID.MENU, 3);
+        Widget container;
+        if (useNewMenu) {
+            container = client.getWidget(InterfaceID.MENU_NEW, 9);
+        } else {
+            container = client.getWidget(InterfaceID.MENU, 3);
+        }
+
         if (container == null) {
             return;
         }
@@ -549,16 +563,19 @@ public class ShortestPathPlugin extends Plugin {
 
         // Tree Gnome Village is always the first row and always available;
         // quick length check before running the regex
-        // Expected: "<col=735a28>1</col>: Tree Gnome Village" (length 39)
+        // Expected (old): "<col=735a28>1</col>: Tree Gnome Village" (length 39)
+        // Expected (new): "<col=ffffff>1</col>: Tree Gnome Village" (length 39)
         String firstText = children[0].getText();
         if (firstText == null || firstText.length() != 39) {
             return;
         }
 
+        Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
+
         Set<String> available = new HashSet<>();
 
         for (Widget child : children) {
-            Matcher matcher = SPIRIT_TREE_LABEL_PATTERN.matcher(child.getText());
+            Matcher matcher = pattern.matcher(child.getText());
             if (!matcher.matches()) {
                 continue;
             }
