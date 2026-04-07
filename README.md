@@ -18,11 +18,11 @@ Read the [plugin wiki](../../wiki) for info about features, examples and plugin 
 Generate the transport coordinate JSON with:
 
 ```bash
-./gradlew dumpTransportCoordinates
+python3 scripts/dump_transport_coordinates.py
 ```
 
-Pass CLI args through Gradle when needed:
+Pass additional arguments when needed:
 
 ```bash
-./gradlew dumpTransportCoordinates --args="--pretty --output build/transport-coordinates.json"
+python3 scripts/dump_transport_coordinates.py --pretty --output build/transport-coordinates.json
 ```
