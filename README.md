@@ -13,3 +13,16 @@ Draws the shortest path to a chosen destination on the map (right click a spot o
 
 ## Features, examples and options
 Read the [plugin wiki](../../wiki) for info about features, examples and plugin options.
+
+## Transport coordinate dump
+Generate the transport coordinate JSON with:
+
+```bash
+./gradlew dumpTransportCoordinates
+```
+
+Pass CLI args through Gradle when needed:
+
+```bash
+./gradlew dumpTransportCoordinates --args="--pretty --output build/transport-coordinates.json"
+```
