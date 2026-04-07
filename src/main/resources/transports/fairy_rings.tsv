@@ -101,8 +101,8 @@
 	2740 2738 0			Monkey Madness I		5	C L R
 	2682 3081 0					5	C L S
 	3037 4763 0					5	D I P
-# Player-owned house (arrives at POH landing tile to enable chaining with other POH transports - normally 2027 5700)							
-	1923 5709 0					5	D I Q
+# Player-owned house							
+	2027 5700 0					5	D I Q
 	3038 5348 0					5	D I R
 	3108 3149 0					5	D I S
 	2658 3230 0					5	D J P
