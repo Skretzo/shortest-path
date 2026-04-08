@@ -162,7 +162,6 @@
 								
 2837 10128 0	2837 10143 0	Travel Dwarven Ferryman 4896		COINS=2			5	
 2855 10145 0	2863 10133 0	Travel Dwarven Ferryman 4897		COINS=2			5	
-
-# Kathy Corkat boat from Piscatoris to Gnome Stronghold
-2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299					10	Requires 50 coins, but payment can be taken directly from the bank.
-2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299			Swan Song		10
+# Kathy Corkat boat from Piscatoris to Gnome Stronghold (50 coins before Swan Song varbit 2098=200)								
+2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299				2098<200	10	50 coins (paid from bank)
+2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299				2098=200	10	
