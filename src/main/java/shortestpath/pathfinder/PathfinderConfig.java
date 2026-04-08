@@ -90,6 +90,8 @@ public class PathfinderConfig {
     private boolean avoidWilderness;
     @Getter
     private boolean bankVisited;
+    @Getter
+    private boolean requiresBankForFairyRings;
 
     // Centralized transport type enable/disable config
     private final TransportTypeConfig transportTypeConfig;
