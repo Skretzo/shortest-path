@@ -5,7 +5,8 @@
 # This script is used by the coordinate preview GitHub workflow so the logic for
 # worktree setup, base-task detection, and output generation stays out of YAML.
 # The coordinate dump is produced entirely by a Python script that reads the
-# transport .tsv files directly, so no JDK or Gradle invocation is needed.
+# transport and destination .tsv files directly, so no JDK or Gradle invocation
+# is needed.
 
 set -euo pipefail
 
@@ -33,14 +34,17 @@ trap cleanup EXIT
 
 git worktree add "$BASE_DIR" "$MERGE_BASE" >/dev/null
 
-# Dump coordinates at HEAD and at the merge-base.  The Python dumper reads the
+# Dump coordinates at HEAD and at the merge-base. The Python dumper reads the
 # .tsv files directly so it works against any revision regardless of whether a
 # Gradle task exists there.
 python3 scripts/dump_transport_coordinates.py \
+  --transport-dir src/main/resources/transports \
+  --destination-dir src/main/resources/destinations \
   --output build/head-coordinates.json
 
 python3 scripts/dump_transport_coordinates.py \
-  --base-dir "$BASE_DIR/src/main/resources/transports" \
+  --transport-dir "$BASE_DIR/src/main/resources/transports" \
+  --destination-dir "$BASE_DIR/src/main/resources/destinations" \
   --output "$BASE_COORDINATES_PATH"
 
 python3 scripts/diff_coordinate_json.py \

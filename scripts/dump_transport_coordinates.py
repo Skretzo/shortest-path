@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Dump all transport coordinates as JSON for coordinate preview tooling.
+"""Dump transport and destination coordinates as JSON for coordinate preview tooling.
 
-Reads every *.tsv file from the transport resources directory and emits a JSON
-array where each element represents one previewable tile coordinate:
+Reads every *.tsv file from the transport and destination resources directories
+and emits a JSON array where each element represents one previewable tile
+coordinate:
 
     [{"id": "coord-<hash>", "entries": [{"label": "...", "source": "..."}], "coordinate": "X/Y/P"}, ...]
 
@@ -25,6 +26,7 @@ ORIGIN_COLUMN = "Origin"
 DESTINATION_COLUMN = "Destination"
 DISPLAY_INFO_COLUMN = "Display info"
 OBJECT_INFO_COLUMN = "menuOption menuTarget objectID"
+INFO_COLUMN = "Info"
 MERGED_VALUE_SEPARATOR = "; "
 
 
@@ -64,6 +66,11 @@ def merge_entries(existing: list[dict], label: str, source: str) -> list[dict]:
         if entry["label"] == label:
             return existing
     return [*existing, {"label": label, "source": source}]
+
+
+def destination_type_name(path: Path) -> str:
+    """Convert 'game_features/bank.tsv' -> 'Bank'."""
+    return " ".join(word.capitalize() for word in path.stem.split("_"))
 
 
 def build_label(type_name: str, role: str, display_info: str, object_info: str) -> str:
@@ -110,10 +117,26 @@ def parse_tsv(path: Path) -> list:
     return records
 
 
-def export_coordinates(base_dir: Path) -> list:
-    """Return a list of coordinate items from all *.tsv files in base_dir."""
-    items: dict = {}  # keyed by coordinate string, insertion-ordered
+def merge_item(items: dict, coord, label: str, source: str) -> None:
+    x, y, p = coord
+    coord_str = coordinate_string(x, y, p)
 
+    if coord_str not in items:
+        items[coord_str] = {
+            "entries": [{"label": label, "source": source}],
+            "coordinate": coord_str,
+        }
+        return
+
+    existing = items[coord_str]
+    items[coord_str] = {
+        "entries": merge_entries(existing["entries"], label, source),
+        "coordinate": coord_str,
+    }
+
+
+def export_transport_coordinates(base_dir: Path, items: dict) -> None:
+    """Merge transport coordinate items from all *.tsv files in base_dir."""
     for tsv_path in sorted(base_dir.glob("*.tsv")):
         rel_source_prefix = f"transports/{tsv_path.name}"
         type_name = transport_type_name(tsv_path.name)
@@ -130,21 +153,34 @@ def export_coordinates(base_dir: Path) -> list:
                 coord = parse_coordinate(record.get(col, ""))
                 if coord is None:
                     continue
-                x, y, p = coord
-                coord_str = coordinate_string(x, y, p)
                 label = build_label(type_name, role, display_info, object_info)
+                merge_item(items, coord, label, source)
 
-                if coord_str not in items:
-                    items[coord_str] = {
-                        "entries": [{"label": label, "source": source}],
-                        "coordinate": coord_str,
-                    }
-                else:
-                    existing = items[coord_str]
-                    items[coord_str] = {
-                        "entries": merge_entries(existing["entries"], label, source),
-                        "coordinate": coord_str,
-                    }
+def export_destination_coordinates(base_dir: Path, items: dict) -> None:
+    """Merge destination coordinate items from all *.tsv files under base_dir."""
+    for tsv_path in sorted(base_dir.rglob("*.tsv")):
+        rel_source_prefix = tsv_path.relative_to(base_dir.parent).as_posix()
+        type_name = destination_type_name(tsv_path)
+
+        for record in parse_tsv(tsv_path):
+            info = (record.get(INFO_COLUMN, "") or "").strip()
+            source = f"{rel_source_prefix}:{record['_line']}"
+            coord = parse_coordinate(record.get(DESTINATION_COLUMN, ""))
+            if coord is None:
+                continue
+
+            label = f"Destination: {type_name}"
+            if info:
+                label += f" - {info}"
+            merge_item(items, coord, label, source)
+
+
+def export_coordinates(transport_dir: Path, destination_dir: Path) -> list:
+    """Return merged coordinate items from transport and destination resources."""
+    items: dict = {}  # keyed by coordinate string, insertion-ordered
+
+    export_transport_coordinates(transport_dir, items)
+    export_destination_coordinates(destination_dir, items)
 
     result = []
     for item in items.values():
@@ -165,9 +201,14 @@ def main() -> int:
         description="Dump transport coordinates as JSON for the coordinate preview workflow."
     )
     parser.add_argument(
-        "--base-dir",
+        "--transport-dir",
         default="src/main/resources/transports",
         help="Directory containing transport .tsv files (default: src/main/resources/transports)",
+    )
+    parser.add_argument(
+        "--destination-dir",
+        default="src/main/resources/destinations",
+        help="Directory containing destination .tsv files (default: src/main/resources/destinations)",
     )
     parser.add_argument("--output", help="Write JSON to this file instead of stdout")
     parser.add_argument(
@@ -175,12 +216,20 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    base_dir = Path(args.base_dir)
-    if not base_dir.is_dir():
-        print(f"Error: transport directory not found: {base_dir}", file=sys.stderr)
+    transport_dir = Path(args.transport_dir)
+    if not transport_dir.is_dir():
+        print(f"Error: transport directory not found: {transport_dir}", file=sys.stderr)
         return 1
 
-    result = export_coordinates(base_dir)
+    destination_dir = Path(args.destination_dir)
+    if not destination_dir.is_dir():
+        print(
+            f"Error: destination directory not found: {destination_dir}",
+            file=sys.stderr,
+        )
+        return 1
+
+    result = export_coordinates(transport_dir, destination_dir)
     json_str = json.dumps(result, indent=2 if args.pretty else None)
 
     if args.output:
