@@ -4,13 +4,19 @@
 Reads every *.tsv file from the transport resources directory and emits a JSON
 array where each element represents one previewable tile coordinate:
 
-    [{"id": "coord-X-Y-P", "label": "...", "coordinate": "X/Y/P", "source": "transports/file.tsv:LINE"}, ...]
+    [{"id": "coord-<hash>", "entries": [{"label": "...", "source": "..."}], "coordinate": "X/Y/P"}, ...]
 
-Coordinates that appear in multiple rows are merged into a single entry by
-concatenating their labels and source references with "; ".
+Coordinates that appear in multiple rows are merged into a single entry. Labels
+stay structured in this intermediate JSON so diffing can reason about additions
+and removals without re-parsing a display string. Each label keeps its first
+source line alongside it so the final rendered `label` and `source` strings can
+be reordered in lockstep. The emitted id is a stable hash of the rendered
+preview identity (coordinate + merged labels), so it changes when the visible
+meaning of a tile changes but not when only source line references move.
 """
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -39,8 +45,9 @@ def coordinate_string(x: int, y: int, p: int) -> str:
     return f"{x}/{y}/{p}"
 
 
-def coordinate_id(x: int, y: int, p: int) -> str:
-    return f"coord-{x}-{y}-{p}"
+def coordinate_id(coordinate: str, label: str) -> str:
+    digest = hashlib.sha1(f"{coordinate}|{label}".encode("utf-8")).hexdigest()[:12]
+    return f"coord-{digest}"
 
 
 def transport_type_name(filename: str) -> str:
@@ -48,12 +55,15 @@ def transport_type_name(filename: str) -> str:
     return " ".join(word.capitalize() for word in Path(filename).stem.split("_"))
 
 
-def merge_values(existing: str, new: str) -> str:
-    if not existing:
-        return new
-    if not new or existing == new:
+def merge_entries(existing: list[dict], label: str, source: str) -> list[dict]:
+    label = (label or "").strip()
+    source = (source or "").strip()
+    if not label:
         return existing
-    return existing + MERGED_VALUE_SEPARATOR + new
+    for entry in existing:
+        if entry["label"] == label:
+            return existing
+    return [*existing, {"label": label, "source": source}]
 
 
 def build_label(type_name: str, role: str, display_info: str, object_info: str) -> str:
@@ -126,21 +136,28 @@ def export_coordinates(base_dir: Path) -> list:
 
                 if coord_str not in items:
                     items[coord_str] = {
-                        "id": coordinate_id(x, y, p),
-                        "label": label,
+                        "entries": [{"label": label, "source": source}],
                         "coordinate": coord_str,
-                        "source": source,
                     }
                 else:
                     existing = items[coord_str]
                     items[coord_str] = {
-                        "id": existing["id"],
-                        "label": merge_values(existing["label"], label),
+                        "entries": merge_entries(existing["entries"], label, source),
                         "coordinate": coord_str,
-                        "source": merge_values(existing["source"], source),
                     }
 
-    return list(items.values())
+    result = []
+    for item in items.values():
+        merged_label = MERGED_VALUE_SEPARATOR.join(
+            entry["label"] for entry in item["entries"]
+        )
+        result.append({
+            "id": coordinate_id(item["coordinate"], merged_label),
+            "entries": item["entries"],
+            "coordinate": item["coordinate"],
+        })
+
+    return result
 
 
 def main() -> int:
