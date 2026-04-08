@@ -121,8 +121,7 @@ public class TransportCountingTest {
         }
         /*
          * Info:
-         * NB: Primio can only be used between Varrock and Civitas illa Fortis
-         * single_quetzal_origin_locations * (number_of_quetzals - 1) + 2
+         * single_quetzal_origin_locations * (number_of_quetzals - 1)
          *   1 * 13 // Aldarin
          * + 1 * 13 // Auburnvale
          * + 1 * 13 // Civitas illa Fortis
@@ -137,12 +136,9 @@ public class TransportCountingTest {
          * + 1 * 13 // Kastori
          * + 1 * 13 // Outer Fortis
          * + 1 * 13 // Salvager Overlook
-         * + 1 // Varrock -> Civitas illa Fortis
-         * + 1 // Civitas illa Fortis -> Varrock
-         * = 182 + 2
-         * = 184
+         * = 182
          */
-        assertEquals(184, actualCount);
+        assertEquals(182, actualCount);
     }
 
     @Test
