@@ -3,14 +3,13 @@ package shortestpath.pathfinder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
-import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import org.junit.Before;
@@ -20,10 +19,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import shortestpath.ItemVariations;
-import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.ShortestPathConfig;
 import shortestpath.transport.Transport;
 import shortestpath.transport.requirement.TransportItems;
 import shortestpath.transport.TransportLoader;
@@ -34,7 +33,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -563,22 +561,36 @@ public class PathfinderTest {
         }
     }
 
+    // Setup a configuration with
+    // * A fixed QuestState for all quests
+    // * A fixed skill level for all skills
+    // * A toggle about wheher to use teleportation items.
     private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems) {
-        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        // NOTE: Not mocked since PathfinderConfig is repeatedly queried in the hot loop.
+        pathfinderConfig = new TestPathfinderConfig(client, config, questState
+                                                                  , true // Ignore Varbit checks
+                                                                  , true // Ignore Varplayer checks
+                                                                  );
 
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
         when(client.getClientThread()).thenReturn(Thread.currentThread());
         when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
         when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
-        doReturn(true).when(pathfinderConfig).varbitChecks(any(Transport.class));
-        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
-        doReturn(questState).when(pathfinderConfig).getQuestState(any(Quest.class));
 
         pathfinderConfig.refresh();
     }
 
+    // Setup a configuration with
+    // * A fixed QuestState for all quests
+    // * A fixed skill level for all skills
+    // * A toggle about wheher to use teleportation items.
+    // * Fixed set of varbit values
     private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems, Map<Integer, Integer> varbitValues) {
-        pathfinderConfig = spy(new PathfinderConfig(client, config));
+        // NOTE: Not mocked since PathfinderConfig is repeatedly queried in the hot loop.
+        pathfinderConfig = new TestPathfinderConfig(client, config, questState
+                                                                  , false // Use proper varbit checking
+                                                                  , true  // Ignore varplayer checks
+                                                                  );
 
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
         when(client.getClientThread()).thenReturn(Thread.currentThread());
@@ -587,8 +599,6 @@ public class PathfinderTest {
         for (Map.Entry<Integer, Integer> entry : varbitValues.entrySet()) {
             when(client.getVarbitValue(entry.getKey())).thenReturn(entry.getValue());
         }
-        doReturn(true).when(pathfinderConfig).varPlayerChecks(any(Transport.class));
-        doReturn(questState).when(pathfinderConfig).getQuestState(any(Quest.class));
 
         pathfinderConfig.refresh();
     }
