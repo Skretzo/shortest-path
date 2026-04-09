@@ -57,9 +57,11 @@ public class WorldPointUtilTest {
         int a = WorldPointUtil.packWorldPoint(10, 10, 0);
         int b = WorldPointUtil.packWorldPoint(15, 13, 0); // dx=5 dy=3
         assertEquals(5, WorldPointUtil.distanceBetween(a, b)); // Chebyshev
+        assertEquals(5, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.CHEBYSHEV_DISTANCE_METRIC)); // Chebyshev
         assertEquals(5, WorldPointUtil.distanceBetween2D(a, b)); // Chebyshev 2D
-        assertEquals(5 + 3, WorldPointUtil.distanceBetween(a, b, 2)); // Manhattan
-        assertEquals(Integer.MAX_VALUE, WorldPointUtil.distanceBetween(a, b, 99));
+        assertEquals(5 + 3, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.MANHATTAN_DISTANCE_METRIC)); // Manhattan
+        assertEquals(5 * 5 + 3 * 3, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC)); // Euclidean squared
+        assertEquals(5 * 5 + 3 * 3, WorldPointUtil.distanceBetween(a, b, 99));
     }
 
     @Test
@@ -74,7 +76,8 @@ public class WorldPointUtilTest {
         WorldPoint a = new WorldPoint(100, 150, 0);
         WorldPoint b = new WorldPoint(103, 160, 0); // dx=3 dy=10
         assertEquals(10, WorldPointUtil.distanceBetween(a, b)); // Chebyshev
-        assertEquals(13, WorldPointUtil.distanceBetween(a, b, 2)); // Manhattan
+        assertEquals(10 + 3, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.MANHATTAN_DISTANCE_METRIC)); // Manhattan
+        assertEquals(10 * 10 + 3 * 3, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC)); // Euclidean squared
     }
 
     @Test
