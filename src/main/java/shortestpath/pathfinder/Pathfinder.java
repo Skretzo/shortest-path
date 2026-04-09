@@ -110,8 +110,10 @@ public class Pathfinder implements Runnable {
         stats.start();
         boundary.addFirst(new Node(start, null));
 
-        int bestDistance = Integer.MAX_VALUE;
-        long bestHeuristic = Integer.MAX_VALUE;
+        int bestRemainingX = Integer.MAX_VALUE;
+        int bestRemainingY = Integer.MAX_VALUE;
+        int bestTravelledDistance = Integer.MAX_VALUE;
+        double bestRemainingDistance = Integer.MAX_VALUE;
         long cutoffDurationMillis = config.getCalculationCutoffMillis();
         long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 
@@ -158,13 +160,22 @@ public class Pathfinder implements Runnable {
             }
 
             for (int target : targets) {
-                int distance = WorldPointUtil.distanceBetween(node.packedPosition, target);
-                long heuristic = distance + (long) WorldPointUtil.distanceBetween(node.packedPosition, target, 2);
-                if (heuristic < bestHeuristic || (heuristic <= bestHeuristic && distance < bestDistance)) {
+                int remainingX = WorldPointUtil.unpackWorldX(node.packedPosition);
+                int remainingY = WorldPointUtil.unpackWorldY(node.packedPosition);
+                int dx = WorldPointUtil.unpackWorldX(target) - remainingX;
+                int dy = WorldPointUtil.unpackWorldY(target) - remainingY;
+                double remainingDistance = Math.sqrt(dx * dx + dy * dy);
+                int travelledDistance = node.cost;
+                if ((remainingDistance < bestRemainingDistance) ||
+                    (remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
+                    (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && remainingX < bestRemainingX) ||
+                    (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && remainingX == bestRemainingX && remainingY < bestRemainingY)) {
+                    bestRemainingDistance = remainingDistance;
+                    bestTravelledDistance = travelledDistance;
+                    bestRemainingX = remainingX;
+                    bestRemainingY = remainingY;
                     bestLastNode = node;
                     pathNeedsUpdate = true;
-                    bestDistance = distance;
-                    bestHeuristic = heuristic;
                     cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
                 }
             }
