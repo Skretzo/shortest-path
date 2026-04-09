@@ -113,7 +113,7 @@ public class Pathfinder implements Runnable {
         int bestRemainingX = Integer.MAX_VALUE;
         int bestRemainingY = Integer.MAX_VALUE;
         int bestTravelledDistance = Integer.MAX_VALUE;
-        double bestRemainingDistance = Integer.MAX_VALUE;
+        int bestRemainingDistance = Integer.MAX_VALUE;
         long cutoffDurationMillis = config.getCalculationCutoffMillis();
         long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 
@@ -159,12 +159,20 @@ public class Pathfinder implements Runnable {
                 break;
             }
 
+            // Pathfinding to an unreachable target is slightly different from normal pathfinding.
+            // Straight-line movement before diagonal movement is no longer prioritized, because the
+            // original target is moved to the closest reachable tile. To avoid having to move the
+            // original target we instead do the following to favour the closest reachable tile:
+            // - 1) Pick the path with the minimum Euclidean distance (no need to use square root though)
+            // - 2) If a tie occurs, pick the path with minimum travelled distance
+            // - 3) If another tie occurs, pick the path with minimum x-coordinate
+            // - 4) If another tie occurs, pick the path with minimum y-coordinate
             for (int target : targets) {
                 int remainingX = WorldPointUtil.unpackWorldX(node.packedPosition);
                 int remainingY = WorldPointUtil.unpackWorldY(node.packedPosition);
                 int dx = WorldPointUtil.unpackWorldX(target) - remainingX;
                 int dy = WorldPointUtil.unpackWorldY(target) - remainingY;
-                double remainingDistance = Math.sqrt(dx * dx + dy * dy);
+                int remainingDistance = dx * dx + dy * dy;
                 int travelledDistance = node.cost;
                 if ((remainingDistance < bestRemainingDistance) ||
                     (remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
