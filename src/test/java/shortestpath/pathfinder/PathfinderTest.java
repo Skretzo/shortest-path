@@ -94,7 +94,7 @@ public class PathfinderTest {
 
         assertScenarioPathLength(
             "Banked mith grapple should not leak to non-bank grapple branch",
-            66, 
+            66,
             WorldPointUtil.packWorldPoint(3025, 3365, 0),
             WorldPointUtil.packWorldPoint(3026, 3393, 0));
     }
@@ -1282,7 +1282,7 @@ public class PathfinderTest {
         }
 
         assertTrue("No tests were performed", counter > 0);
-        System.out.println(String.format("Successfully completed %d " + transportType + " transport length tests", counter));
+        System.out.printf("Successfully completed %d " + transportType + " transport length tests%n", counter);
     }
 
     /**
