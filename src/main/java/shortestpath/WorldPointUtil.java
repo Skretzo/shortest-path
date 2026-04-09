@@ -22,6 +22,9 @@ import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
  * This representation allows efficient storage and hashing of coordinates within the pathfinding data structures.
  */
 public class WorldPointUtil {
+    public static final int CHEBYSHEV_DISTANCE_METRIC = 1;
+    public static final int EUCLIDEAN_SQUARED_DISTANCE_METRIC = 1414213562;
+    public static final int MANHATTAN_DISTANCE_METRIC = 2;
     public static final int UNDEFINED = -1;
 
     /**
@@ -125,8 +128,8 @@ public class WorldPointUtil {
      *
      * @param previousPacked first packed point.
      * @param currentPacked second packed point.
-     * @param diagonal {@code 1} for Chebyshev (max), {@code 2} for Manhattan (sum). Any other value returns {@code Integer.MAX_VALUE}.
-     * @return distance or {@code Integer.MAX_VALUE} if plane differs or metric is unsupported.
+     * @param diagonal {@code 1} for Chebyshev (max), {@code 2} for Manhattan (sum). Otherwise returns Euclidean squared distance.
+     * @return distance or {@code Integer.MAX_VALUE} if plane differs.
      */
     public static int distanceBetween(int previousPacked, int currentPacked, int diagonal) {
         final int previousX = WorldPointUtil.unpackWorldX(previousPacked);
@@ -160,12 +163,12 @@ public class WorldPointUtil {
      * @param currentX x of second point.
      * @param currentY y of second point.
      * @param currentZ plane of second point.
-     * @param diagonal metric selector ({@code 1}=Chebyshev, {@code 2}=Manhattan).
-     * @return distance or {@code Integer.MAX_VALUE} if planes differ or unsupported metric.
+     * @param diagonal metric selector ({@code 1}=Chebyshev, {@code 2}=Manhattan, otherwise Euclidean squared distance).
+     * @return distance or {@code Integer.MAX_VALUE} if planes differ.
      */
     public static int distanceBetween(int previousX, int previousY, int previousZ,
         int currentX, int currentY, int currentZ, int diagonal) {
-        final int dz = Math.abs(previousZ - currentZ);
+        final int dz = previousZ - currentZ;
 
         if (dz != 0) {
             return Integer.MAX_VALUE;
@@ -175,27 +178,27 @@ public class WorldPointUtil {
     }
 
     /**
-     * Computes a 2D distance using either Chebyshev or Manhattan metric.
+     * Computes a 2D distance using either Chebyshev, Manhattan or Euclidean squared distance metric.
      *
      * @param previousX x of first point.
      * @param previousY y of first point.
      * @param currentX x of second point.
      * @param currentY y of second point.
-     * @param diagonal metric selector ({@code 1}=Chebyshev, {@code 2}=Manhattan).
-     * @return distance or {@code Integer.MAX_VALUE} for unsupported metric.
+     * @param diagonal metric selector ({@code 1}=Chebyshev, {@code 2}=Manhattan, otherwise Euclidean squared distance).
+     * @return distance.
      */
     public static int distanceBetween2D(int previousX, int previousY,
         int currentX, int currentY, int diagonal) {
-        final int dx = Math.abs(previousX - currentX);
-        final int dy = Math.abs(previousY - currentY);
+        final int dx = previousX - currentX;
+        final int dy = previousY - currentY;
 
-        if (diagonal == 1) {
-            return Math.max(dx, dy);
-        } else if (diagonal == 2) {
-            return dx + dy;
+        if (diagonal == CHEBYSHEV_DISTANCE_METRIC) {
+            return Math.max(Math.abs(dx), Math.abs(dy));
+        } else if (diagonal == MANHATTAN_DISTANCE_METRIC) {
+            return Math.abs(dx) + Math.abs(dy);
         }
 
-        return Integer.MAX_VALUE;
+        return dx * dx + dy * dy;
     }
 
     /**

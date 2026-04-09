@@ -168,12 +168,10 @@ public class Pathfinder implements Runnable {
             // - 3) If another tie occurs, pick the path with minimum x-coordinate
             // - 4) If another tie occurs, pick the path with minimum y-coordinate
             for (int target : targets) {
+                int remainingDistance = WorldPointUtil.distanceBetween(target, node.packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
+                int travelledDistance = node.cost;
                 int remainingX = WorldPointUtil.unpackWorldX(node.packedPosition);
                 int remainingY = WorldPointUtil.unpackWorldY(node.packedPosition);
-                int dx = WorldPointUtil.unpackWorldX(target) - remainingX;
-                int dy = WorldPointUtil.unpackWorldY(target) - remainingY;
-                int remainingDistance = dx * dx + dy * dy;
-                int travelledDistance = node.cost;
                 if ((remainingDistance < bestRemainingDistance) ||
                     (remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
                     (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && remainingX < bestRemainingX) ||
