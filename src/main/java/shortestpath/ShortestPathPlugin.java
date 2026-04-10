@@ -152,6 +152,7 @@ public class ShortestPathPlugin extends Plugin {
     boolean drawTiles;
     boolean drawTransports;
     boolean showTransportInfo;
+    boolean showBankPickupInfo;
     Color colourCollisionMap;
     Color colourPath;
     Color colourPathCalculating;
@@ -741,10 +742,6 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getTransports();
     }
 
-    public PathfinderConfig getPathfinderConfig() {
-        return pathfinderConfig;
-    }
-
     /** This reconstructs the candidate transports for a rendered path edge from the current path state.
     *
     *  The important detail is that path display logic is edge-based, not node-based:
@@ -1018,6 +1015,7 @@ public class ShortestPathPlugin extends Plugin {
         drawTiles = override("drawTiles", config.drawTiles());
         drawTransports = override("drawTransports", config.drawTransports());
         showTransportInfo = override("showTransportInfo", config.showTransportInfo());
+        showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
 
         colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
         colourPath = override("colourPath", config.colourPath());

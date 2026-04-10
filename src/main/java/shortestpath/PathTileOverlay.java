@@ -396,6 +396,11 @@ public class PathTileOverlay extends Overlay {
 
                     vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
                 }
+
+                // When enabled, bank pickup info replaces the default transport hint text
+                if (plugin.showBankPickupInfo) {
+                    return;
+                }
             }
         }
 

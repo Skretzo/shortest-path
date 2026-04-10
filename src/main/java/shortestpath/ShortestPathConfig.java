@@ -1068,6 +1068,17 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
+        keyName = "showBankPickupInfo",
+        name = "Show bank pickup info",
+        description = "Whether bank item pickup requirements should replace the default transport hint text",
+        position = 80,
+        section = sectionDebug
+    )
+    default boolean showBankPickupInfo() {
+        return false;
+    }
+
+    @ConfigItem(
         keyName = "builtTeleportationBoxes",
         name = "",
         description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
