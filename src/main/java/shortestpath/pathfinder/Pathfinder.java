@@ -116,6 +116,29 @@ public class Pathfinder implements Runnable {
         );
     }
 
+    public PathfinderResult getResult() {
+        PathfinderStats currentStats = getStats();
+        if (currentStats == null) {
+            return null;
+        }
+
+        PrimitiveIntList currentPath = getPath();
+        boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
+        int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
+        int closestReachedPoint = bestLastNode != null ? bestLastNode.packedPosition : start;
+        return new PathfinderResult(
+            start,
+            target,
+            reached,
+            currentPath,
+            closestReachedPoint,
+            currentStats.getNodesChecked(),
+            currentStats.getTransportsChecked(),
+            currentStats.getElapsedTimeNanos(),
+            terminationReason
+        );
+    }
+
     private void addNeighbors(Node node) {
         List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness);
         for (Node neighbor : nodes) {
