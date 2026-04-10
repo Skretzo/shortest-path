@@ -8,7 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
-import java.util.HashSet;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -50,7 +50,7 @@ public class PathTileOverlay extends Overlay {
             }
 
             StringBuilder s = new StringBuilder();
-            for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>())) {
+            for (Transport b : plugin.getTransports().getOrDefault(a, Set.of())) {
                 if (b == null || (b.getType() != null && b.getType().isTeleport())) {
                     continue; // skip teleports
                 }
@@ -150,21 +150,24 @@ public class PathTileOverlay extends Overlay {
             int counter = 0;
             if (TileStyle.LINES.equals(plugin.pathStyle)) {
                 for (int i = 1; i < path.size(); i++) {
-                    drawLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(), color, 1 + counter++);
-                    drawTransportInfo(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(), path, i - 1);
+                    PathStep currentStep = path.get(i - 1);
+                    PathStep nextStep = path.get(i);
+                    drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color, 1 + counter++);
+                    drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
                 }
             } else {
                 boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
                 for (int i = 0; i < path.size(); i++) {
                     // Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
-                    int pathPoint = path.get(i).getPackedPosition();
+                    PathStep currentStep = path.get(i);
+                    int pathPoint = currentStep.getPackedPosition();
                     int pathX = WorldPointUtil.unpackWorldX(pathPoint);
                     int pathY = WorldPointUtil.unpackWorldY(pathPoint);
                     if (!ShortestPathPlugin.isInsidePoh(pathX, pathY)) {
                         drawTile(graphics, pathPoint, color, counter, showTiles);
                     }
                     counter++;
-                    drawTransportInfo(graphics, pathPoint, (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1).getPackedPosition(), path, i);
+                    drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
                 }
                 for (int target : plugin.getPathfinder().getTargets()) {
                     if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition()) {
@@ -298,11 +301,13 @@ public class PathTileOverlay extends Overlay {
         }
     }
 
-    private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd, java.util.List<PathStep> path, int pathIndex) {
-        if (locationEnd == WorldPointUtil.UNDEFINED || !plugin.showTransportInfo ||
+    private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, java.util.List<PathStep> path, int pathIndex) {
+        int location = currentStep.getPackedPosition();
+        if (nextStep == null || !plugin.showTransportInfo ||
             WorldPointUtil.unpackWorldPlane(location) != client.getPlane()) {
             return;
         }
+        int locationEnd = nextStep.getPackedPosition();
 
         // Workaround for weird pathing inside PoH to instead show info on the player tile
         LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
@@ -312,6 +317,7 @@ public class PathTileOverlay extends Overlay {
         int tx = WorldPointUtil.unpackWorldX(location);
         int ty = WorldPointUtil.unpackWorldY(location);
         boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(tx, ty) && ShortestPathPlugin.isInsidePoh(px, py);
+        Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);
 
         // When inside POH, only show the POH exit info once (not per-transport)
         if (transportAndPlayerInsidePoh) {
@@ -320,12 +326,9 @@ public class PathTileOverlay extends Overlay {
                 return;
             }
 
-            // Find the display name of the teleport that brought us to POH
+            // Find the display name of the teleport that brought us to POH using bank-aware lookup
             String text = null;
-            for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
-                if (locationEnd != transport.getDestination()) {
-                    continue;
-                }
+            for (Transport transport : candidateTransports) {
                 text = transport.getDisplayInfo();
                 if (text != null && !text.isEmpty()) {
                     break;
@@ -353,11 +356,7 @@ public class PathTileOverlay extends Overlay {
         }
 
         int vertical_offset = 0;
-        for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
-            if (locationEnd != transport.getDestination()) {
-                continue;
-            }
-
+        for (Transport transport : candidateTransports) {
             String text = transport.getDisplayInfo();
             if (text == null || text.isEmpty()) {
                 continue;
