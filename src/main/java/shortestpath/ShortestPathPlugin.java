@@ -741,6 +741,10 @@ public class ShortestPathPlugin extends Plugin {
         return pathfinderConfig.getTransports();
     }
 
+    public PathfinderConfig getPathfinderConfig() {
+        return pathfinderConfig;
+    }
+
     /** This reconstructs the candidate transports for a rendered path edge from the current path state.
     *
     *  The important detail is that path display logic is edge-based, not node-based:
