@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import shortestpath.ItemVariations;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.ShortestPathConfig;
@@ -49,9 +48,6 @@ public class PathfinderTest {
 
     @Mock
     ItemContainer equipment;
-
-    @Mock
-    ShortestPathPlugin plugin;
 
     @Mock
     ShortestPathConfig config;
@@ -677,7 +673,7 @@ public class PathfinderTest {
     }
 
     private int calculatePathLength(int origin, int destination) {
-        Pathfinder pathfinder = new Pathfinder(plugin, pathfinderConfig, origin, Set.of(destination));
+        Pathfinder pathfinder = new Pathfinder(pathfinderConfig, origin, Set.of(destination));
         pathfinder.run();
         return pathfinder.getPath().size();
     }
