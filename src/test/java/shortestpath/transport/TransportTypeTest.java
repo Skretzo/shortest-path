@@ -11,6 +11,7 @@ public class TransportTypeTest {
         assertTrue(TransportType.TELEPORTATION_ITEM.isTeleport());
         assertTrue(TransportType.TELEPORTATION_MINIGAME.isTeleport());
         assertTrue(TransportType.TELEPORTATION_SPELL.isTeleport());
+        assertTrue(TransportType.QUETZAL_WHISTLE.isTeleport());
 
         assertFalse(TransportType.TRANSPORT.isTeleport());
         assertFalse(TransportType.AGILITY_SHORTCUT.isTeleport());
@@ -32,5 +33,17 @@ public class TransportTypeTest {
         assertFalse(TransportType.TELEPORTATION_LEVER.isTeleport());
         assertFalse(TransportType.TELEPORTATION_PORTAL.isTeleport());
         assertFalse(TransportType.WILDERNESS_OBELISK.isTeleport());
+    }
+
+    @Test
+    public void testSharesTeleportDestinations() {
+        assertTrue(TransportType.QUETZAL.sharesTeleportDestinations());
+        assertTrue(TransportType.QUETZAL_WHISTLE.sharesTeleportDestinations());
+
+        assertFalse(TransportType.TRANSPORT.sharesTeleportDestinations());
+        assertFalse(TransportType.TELEPORTATION_ITEM.sharesTeleportDestinations());
+        assertFalse(TransportType.TELEPORTATION_SPELL.sharesTeleportDestinations());
+        assertFalse(TransportType.FAIRY_RING.sharesTeleportDestinations());
+        assertFalse(TransportType.SPIRIT_TREE.sharesTeleportDestinations());
     }
 }

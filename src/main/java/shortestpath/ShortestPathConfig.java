@@ -706,11 +706,27 @@ public interface ShortestPathConfig extends Config {
         max = 10000
     )
     @ConfigItem(
+        keyName = "costQuetzalWhistle",
+        name = "Quetzal whistle threshold",
+        description = "How many extra tiles a quetzal whistle teleport must save<br>" +
+            "to be preferred over walking or other transports",
+        position = 54,
+        section = sectionThresholds
+    )
+    default int costQuetzalWhistle() {
+        return 50;
+    }
+
+    @Range(
+        min = 0,
+        max = 10000
+    )
+    @ConfigItem(
         keyName = "costSpiritTrees",
         name = "Spirit tree threshold",
         description = "How many extra tiles a spirit tree must save<br>" +
             "to be preferred over walking or other transports",
-        position = 54,
+        position = 55,
         section = sectionThresholds
     )
     default int costSpiritTrees() {
@@ -726,7 +742,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation item (non-consumable) threshold",
         description = "How many extra tiles a non-consumable (permanent) teleportation item<br>" +
             "must save to be preferred over walking or other transports",
-        position = 55,
+        position = 56,
         section = sectionThresholds
     )
     default int costNonConsumableTeleportationItems() {
@@ -742,7 +758,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation item (consumable) threshold",
         description = "How many extra tiles a consumable (non-permanent) teleportation item<br>" +
             "must save to be preferred over walking or other transports",
-        position = 56,
+        position = 57,
         section = sectionThresholds
     )
     default int costConsumableTeleportationItems() {
@@ -758,7 +774,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation box threshold",
         description = "How many extra tiles a teleportation box must save<br>" +
             "to be preferred over walking or other transports",
-        position = 57,
+        position = 58,
         section = sectionThresholds
     )
     default int costTeleportationBoxes() {
@@ -774,7 +790,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation lever threshold",
         description = "How many extra tiles a teleportation lever must save<br>" +
             "to be preferred over walking or other transports",
-        position = 58,
+        position = 59,
         section = sectionThresholds
     )
     default int costTeleportationLevers() {
@@ -790,7 +806,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation portal threshold",
         description = "How many extra tiles a teleportation portal must save<br>" +
             "to be preferred over walking or other transports",
-        position = 59,
+        position = 60,
         section = sectionThresholds
     )
     default int costTeleportationPortals() {
@@ -806,7 +822,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation spell threshold",
         description = "How many extra tiles a teleportation spell must save<br>" +
             "to be preferred over walking or other transports",
-        position = 60,
+        position = 61,
         section = sectionThresholds
     )
     default int costTeleportationSpells() {
@@ -822,7 +838,7 @@ public interface ShortestPathConfig extends Config {
         name = "Teleportation to minigame threshold",
         description = "How many extra tiles a minigame teleport must save<br>" +
             "to be preferred over walking or other transports",
-        position = 61,
+        position = 62,
         section = sectionThresholds
     )
     default int costTeleportationMinigames() {
@@ -838,7 +854,7 @@ public interface ShortestPathConfig extends Config {
         name = "Wilderness obelisk threshold",
         description = "How many extra tiles a wilderness obelisk must save<br>" +
             "to be preferred over walking or other transports",
-        position = 62,
+        position = 63,
         section = sectionThresholds
     )
     default int costWildernessObelisks() {
@@ -854,7 +870,7 @@ public interface ShortestPathConfig extends Config {
         name = "Seasonal transport threshold",
         description = "How many extra tiles a seasonal transport must save<br>" +
             "to be preferred over walking or other transports",
-        position = 63,
+        position = 64,
         section = sectionThresholds
     )
     default int costSeasonalTransports() {
@@ -864,7 +880,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Display",
         description = "Options for displaying the path on the world map, minimap and scene tiles",
-        position = 64
+        position = 65
     )
     String sectionDisplay = "sectionDisplay";
 
@@ -872,7 +888,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMap",
         name = "Draw path on world map",
         description = "Whether the path should be drawn on the world map",
-        position = 65,
+        position = 66,
         section = sectionDisplay
     )
     default boolean drawMap() {
@@ -883,7 +899,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawMinimap",
         name = "Draw path on minimap",
         description = "Whether the path should be drawn on the minimap",
-        position = 66,
+        position = 67,
         section = sectionDisplay
     )
     default boolean drawMinimap() {
@@ -894,7 +910,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTiles",
         name = "Draw path on tiles",
         description = "Whether the path should be drawn on the game tiles",
-        position = 67,
+        position = 68,
         section = sectionDisplay
     )
     default boolean drawTiles() {
@@ -905,7 +921,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "pathStyle",
         name = "Path style",
         description = "Whether to display the path as tiles or a segmented line",
-        position = 68,
+        position = 69,
         section = sectionDisplay
     )
     default TileStyle pathStyle() {
@@ -915,7 +931,7 @@ public interface ShortestPathConfig extends Config {
     @ConfigSection(
         name = "Colours",
         description = "Colours for the path map, minimap and scene tiles",
-        position = 69
+        position = 70
     )
     String sectionColours = "sectionColours";
 

@@ -137,12 +137,27 @@ public class TransportCountingTest {
          * + 1 * 13 // Kastori
          * + 1 * 13 // Outer Fortis
          * + 1 * 13 // Salvager Overlook
-         * + 1 // Varrock -> Civitas illa Fortis
-         * + 1 // Civitas illa Fortis -> Varrock
-         * = 182 + 2
-         * = 184
+         * = 182
          */
-        assertEquals(184, actualCount);
+        assertEquals(182, actualCount);
+    }
+
+    @Test
+    public void testNumberOfQuetzalWhistles() {
+        int actualCount = 0;
+        for (int origin : transports.keySet()) {
+            for (Transport transport : transports.get(origin)) {
+                if (TransportType.QUETZAL_WHISTLE.equals(transport.getType())) {
+                    actualCount++;
+                }
+            }
+        }
+        /*
+         * 8 always-available destinations (after Twilight's Promise)
+         * + 6 destinations requiring a built platform
+         * = 14
+         */
+        assertEquals(14, actualCount);
     }
 
     @Test

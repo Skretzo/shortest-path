@@ -4716,6 +4716,10 @@
 1486 3232 0	1361 3309 0	Follow Mountain Guide 14529				17226=1		5	
 1361 3309 0	1486 3232 0	Follow Mountain Guide 14529				17226=1		5	
 									
+# Primio quetzal between Varrock and Civitas illa Fortis									
+3280 3412 0	1700 3141 0	Travel Primio 12888			Children of the Sun			6	Civitas illa Fortis
+1703 3140 0	3280 3412 0	Travel Primio 12889			Children of the Sun			6	Varrock
+									
 # Entrance to the Brimhaven Dungeon									
 2744 3152 0	2713 9564 0	Enter Dungeon entrance 20876		COINS=875				2	
 2744 3152 0	2713 9564 0	Enter Dungeon entrance 20876				5628=1		2	

@@ -720,11 +720,10 @@ public class PathfinderTest {
 
     /**
      * Tests that the Primio quetzal (Varrock ↔ Civitas) works correctly.
-     * This is a fixed route NOT accessible by the whistle.
+     * This is a fixed route in transports.tsv, NOT part of the quetzal platform system.
      */
     @Test
     public void testPrimioQuetzal() {
-        when(config.useQuetzals()).thenReturn(true);
         setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
         // Varrock Primio platform to Civitas
