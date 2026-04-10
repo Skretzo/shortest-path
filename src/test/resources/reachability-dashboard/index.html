@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pathfinder Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="layout">
+    <section class="sidebar">
+      <h1>Pathfinder Dashboard</h1>
+      <p id="summary">Loading report...</p>
+      <label class="search">
+        <span>Report bundle</span>
+        <select id="bundle-select">
+          <option>Loading bundles...</option>
+        </select>
+      </label>
+      <label class="search">
+        <span>Search scenarios</span>
+        <input id="run-search" type="search" placeholder="e.g. conch bank grapple">
+      </label>
+      <label class="toggle">
+        <input id="unreached-only" type="checkbox">
+        <span>Show unreached only</span>
+      </label>
+      <div class="nav-buttons">
+        <button id="prev-run" type="button">Previous</button>
+        <button id="next-run" type="button">Next</button>
+      </div>
+      <pre id="run-details">Select a run to inspect its route.</pre>
+      <button id="center-target" type="button">Center on target</button>
+      <ol id="run-list"></ol>
+    </section>
+    <section class="map-panel">
+      <div id="map"></div>
+      <button id="map-help-button" class="map-help-button" type="button" aria-label="Open map help">?</button>
+      <div id="map-help-overlay" class="map-help-overlay" hidden>
+        <div class="map-help-dialog" role="dialog" aria-modal="true" aria-labelledby="map-help-title">
+          <div class="map-help-header">
+            <h2 id="map-help-title">Map controls</h2>
+            <button id="map-help-close" class="map-help-close" type="button" aria-label="Close map help">Close</button>
+          </div>
+          <div id="map-help-content"></div>
+        </div>
+      </div>
+      <div id="transport-info" hidden>Select a transport point to inspect it.</div>
+      <div id="map-coordinates">-, -, -</div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>

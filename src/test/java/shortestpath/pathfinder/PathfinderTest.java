@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
+import shortestpath.dashboard.PathfinderTestDashboardCollector;
 import shortestpath.ItemVariations;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
@@ -1171,7 +1172,6 @@ public class PathfinderTest {
                 break;
             }
         }
-        expected = null;
         if (actual != null) {
             expected = new TransportItems(
                 new int[][]{
@@ -1397,16 +1397,28 @@ public class PathfinderTest {
     }
 
     private Pathfinder assertScenarioPathLengthAndGet(String label, int expectedLength, int origin, int destination) {
-        Pathfinder pathfinder = runScenario(label, origin, destination);
+        Pathfinder pathfinder = runPathfinder(origin, destination);
         int actualLength = pathfinder.getPath().size();
-        assertEquals(label, expectedLength, actualLength);
+        try {
+            assertEquals(label, expectedLength, actualLength);
+            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, true, null);
+        } catch (AssertionError e) {
+            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, false, e.getMessage());
+            throw e;
+        }
         return pathfinder;
     }
 
     private void assertScenarioMinimumPathLength(String label, int minimumLength, int origin, int destination) {
-        Pathfinder pathfinder = runScenario(label, origin, destination);
+        Pathfinder pathfinder = runPathfinder(origin, destination);
         int actualLength = pathfinder.getPath().size();
-        assertTrue("Scenario " + label + " had length " + actualLength + " < " + minimumLength, actualLength >= minimumLength);
+        try {
+            assertTrue("Scenario " + label + " had length " + actualLength + " < " + minimumLength, actualLength >= minimumLength);
+            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, true, null);
+        } catch (AssertionError e) {
+            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, false, e.getMessage());
+            throw e;
+        }
     }
 
     private void assertScenarioPathLengthWithBank(String label, int expectedLength, int origin, int destination,
@@ -1454,10 +1466,15 @@ public class PathfinderTest {
         pathfinder.run();
         return pathfinder;
     }
-    
-    // In a future commit, these tests will be rendered onto a debugging dashboard.
+
     private Pathfinder runScenario(String label, int origin, int destination) {
         Pathfinder pathfinder = runPathfinder(origin, destination);
+        PathfinderTestDashboardCollector.record(
+                label,
+                pathfinder.getResult(),
+                pathfinderConfig,
+                null,
+                null);
         return pathfinder;
     }
 

@@ -19,6 +19,8 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.6'
+    testImplementation 'org.apache.commons:commons-csv:1.11.0'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
     testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
@@ -31,8 +33,88 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
+def dashboardOutputRoot = layout.buildDirectory.dir('reports/pathfinder-dashboard')
+def clueStepsDashboardDataset = providers.gradleProperty('clueStepsDashboardDataset')
+    .orElse('/reachability/clue_locations_full.csv')
+def targetsDashboardDataset = providers.gradleProperty('targetsDashboardDataset')
+    .orElse('/reachability/targets.csv')
+
+def logDashboardLocation = { String taskName ->
+    File dashboardDir = dashboardOutputRoot.get().asFile
+    logger.lifecycle("")
+    logger.lifecycle("${taskName} dashboard written.")
+    logger.lifecycle("Serve it locally with:")
+    logger.lifecycle("  python -m http.server --directory ${dashboardDir.absolutePath} 8000")
+    logger.lifecycle("Then open: http://localhost:8000")
+}
 test {
     jvmArgs = ['-Xms1g', '-Xmx8g']
+}
+
+tasks.register('clueStepsDashboard', Test) {
+    group = 'verification'
+    description = 'Builds the clue steps dashboard bundle'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/reachability/ReachabilityDashboardTest.class'
+    ignoreFailures = true
+    systemProperty 'runReachabilityVerification', 'true'
+    systemProperty 'reachability.dataset', clueStepsDashboardDataset.get()
+    systemProperty 'reachability.bundleId', 'clue-steps-default'
+    systemProperty 'reachability.reportTitle', 'Clue Steps'
+    systemProperty 'reachability.reportSubtitle', 'Clue steps sweep from bank start'
+    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    doLast {
+        logDashboardLocation(name)
+    }
+}
+
+tasks.register('targetsDashboard', Test) {
+    group = 'verification'
+    description = 'Builds the lightweight reported-targets dashboard bundle'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/reachability/ReachabilityDashboardTest.class'
+    ignoreFailures = true
+    systemProperty 'runReachabilityVerification', 'true'
+    systemProperty 'reachability.dataset', targetsDashboardDataset.get()
+    systemProperty 'reachability.bundleId', 'reported-targets'
+    systemProperty 'reachability.reportTitle', 'Reported Targets'
+    systemProperty 'reachability.reportSubtitle', 'Lightweight regression targets from targets.csv'
+    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    doLast {
+        logDashboardLocation(name)
+    }
+}
+
+tasks.register('scenarioDashboard', Test) {
+    group = 'verification'
+    description = 'Builds the pathfinder scenario dashboard bundle'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/pathfinder/PathfinderTest.class'
+    ignoreFailures = true
+    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    doLast {
+        logDashboardLocation(name)
+    }
+}
+
+tasks.register('dashboardSite') {
+    group = 'verification'
+    description = 'Builds the shared dashboard site containing all dashboard bundles'
+    dependsOn tasks.named('scenarioDashboard')
+    dependsOn tasks.named('clueStepsDashboard')
+    dependsOn tasks.named('targetsDashboard')
+    doLast {
+        logDashboardLocation(name)
+    }
 }
 
 jacoco {
