@@ -1,14 +1,14 @@
 package shortestpath.pathfinder;
 
 import lombok.Getter;
-import shortestpath.PrimitiveIntList;
+import java.util.List;
 
 @Getter
 public class PathfinderResult {
     private final int start;
     private final int target;
     private final boolean reached;
-    private final PrimitiveIntList path;
+    private final List<PathStep> pathSteps;
     private final int closestReachedPoint;
     private final int nodesChecked;
     private final int transportsChecked;
@@ -19,7 +19,7 @@ public class PathfinderResult {
         int start,
         int target,
         boolean reached,
-        PrimitiveIntList path,
+        List<PathStep> pathSteps,
         int closestReachedPoint,
         int nodesChecked,
         int transportsChecked,
@@ -29,7 +29,7 @@ public class PathfinderResult {
         this.start = start;
         this.target = target;
         this.reached = reached;
-        this.path = path;
+        this.pathSteps = pathSteps;
         this.closestReachedPoint = closestReachedPoint;
         this.nodesChecked = nodesChecked;
         this.transportsChecked = transportsChecked;

@@ -205,6 +205,13 @@ public class Transport {
     }
 
     /**
+     * Whether this transport can be used at the given wilderness level.
+     */
+    public boolean isUsableAtWildernessLevel(int wildernessLevel) {
+        return !type.isTeleport() || wildernessLevel <= maxWildernessLevel;
+    }
+
+    /**
      * Gets varbit requirements (filtered from varRequirements).
      * For backward compatibility with code that needs separate varbit access.
      */
