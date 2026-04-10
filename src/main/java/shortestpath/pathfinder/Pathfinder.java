@@ -39,6 +39,8 @@ public class Pathfinder implements Runnable {
     private int bestTravelledDistance = Integer.MAX_VALUE;
     private int bestX = Integer.MAX_VALUE;
     private int bestY = Integer.MAX_VALUE;
+    private int reachedTarget = WorldPointUtil.UNDEFINED;
+    private PathTerminationReason terminationReason;
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
@@ -92,6 +94,29 @@ public class Pathfinder implements Runnable {
         return path;
     }
 
+    public PathfinderResult getResult() {
+        PathfinderStats currentStats = getStats();
+        if (currentStats == null) {
+            return null;
+        }
+
+        PrimitiveIntList currentPath = getPath();
+        boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
+        int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
+        int closestReachedPoint = bestLastNode != null ? bestLastNode.packedPosition : start;
+        return new PathfinderResult(
+            start,
+            target,
+            reached,
+            currentPath,
+            closestReachedPoint,
+            currentStats.getNodesChecked(),
+            currentStats.getTransportsChecked(),
+            currentStats.getElapsedTimeNanos(),
+            terminationReason
+        );
+    }
+
     private void addNeighbors(Node node) {
         List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel);
         for (int i = 0; i < nodes.size(); ++i) {
@@ -133,7 +158,7 @@ public class Pathfinder implements Runnable {
             if ((remainingDistance < bestRemainingDistance) ||
                 (remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
                 (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x < bestX) ||
-                (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && y == bestX && y < bestY)) {
+                (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x == bestX && y < bestY)) {
                 bestRemainingDistance = remainingDistance;
                 bestTravelledDistance = travelledDistance;
                 bestX = x;
@@ -201,6 +226,8 @@ public class Pathfinder implements Runnable {
             if (targets.contains(node.packedPosition)) {
                 bestLastNode = node;
                 pathNeedsUpdate = true;
+                reachedTarget = node.packedPosition;
+                terminationReason = PathTerminationReason.TARGET_REACHED;
                 break;
             }
 
@@ -209,10 +236,17 @@ public class Pathfinder implements Runnable {
             }
 
             if (System.currentTimeMillis() > cutoffTimeMillis) {
+                terminationReason = PathTerminationReason.CUTOFF_REACHED;
                 break;
             }
 
             addNeighbors(node);
+        }
+
+        if (cancelled) {
+            terminationReason = PathTerminationReason.CANCELLED;
+        } else if (terminationReason == null) {
+            terminationReason = PathTerminationReason.SEARCH_EXHAUSTED;
         }
 
         done = !cancelled;
