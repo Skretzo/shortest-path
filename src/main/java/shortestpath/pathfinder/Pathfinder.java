@@ -8,7 +8,6 @@ import java.util.Queue;
 import java.util.Set;
 import lombok.Getter;
 import shortestpath.PrimitiveIntList;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 
 public class Pathfinder implements Runnable {
@@ -22,10 +21,10 @@ public class Pathfinder implements Runnable {
     @Getter
     private final Set<Integer> targets;
 
-    private final ShortestPathPlugin plugin;
     private final PathfinderConfig config;
     private final CollisionMap map;
     private final boolean targetInWilderness;
+    private final Runnable completionCallback;
 
     // Capacities should be enough to store all nodes without requiring the queue to grow
     // They were found by checking the max queue size
@@ -50,16 +49,20 @@ public class Pathfinder implements Runnable {
      */
     private int wildernessLevel;
 
-    public Pathfinder(ShortestPathPlugin plugin, PathfinderConfig config, int start, Set<Integer> targets) {
+    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback) {
         stats = new PathfinderStats();
-        this.plugin = plugin;
         this.config = config;
         this.map = config.getMap();
         this.start = start;
         this.targets = targets;
+        this.completionCallback = completionCallback;
         visited = new VisitedTiles(map);
         targetInWilderness = WildernessChecker.isInWilderness(targets);
         wildernessLevel = 31;
+    }
+
+    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets) {
+        this(config, start, targets, null);
     }
 
     public void cancel() {
@@ -220,7 +223,9 @@ public class Pathfinder implements Runnable {
 
         stats.end(); // Include cleanup in stats to get the total cost of pathfinding
 
-        plugin.postPluginMessages();
+        if (completionCallback != null) {
+            completionCallback.run();
+        }
     }
 
     public static class PathfinderStats {
