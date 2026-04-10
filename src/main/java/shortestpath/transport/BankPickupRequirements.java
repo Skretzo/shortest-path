@@ -2,13 +2,13 @@ package shortestpath.transport;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import shortestpath.ItemVariations;
+import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathStep;
 
 /**
@@ -22,7 +22,7 @@ public class BankPickupRequirements {
      *
      * @param client The game client
      * @param bank The bank ItemContainer
-     * @param transports Map of transports by origin location
+     * @param pathfinderConfig The pathfinder config for bank-aware transport lookups
      * @param bankLocations Set of bank location coordinates
      * @param path The current path
      * @param pathIndex The current step index in the path
@@ -31,7 +31,7 @@ public class BankPickupRequirements {
     public static List<String> getRequiredBankItems(
             Client client,
             ItemContainer bank,
-            Map<Integer, Set<Transport>> transports,
+            PathfinderConfig pathfinderConfig,
             Set<Integer> bankLocations,
             List<PathStep> path,
             int pathIndex) {
@@ -56,7 +56,9 @@ public class BankPickupRequirements {
         for (int i = pathIndex; i < path.size() - 1; i++) {
             int stepPoint = path.get(i).getPackedPosition();
             int nextPoint = path.get(i + 1).getPackedPosition();
-            Set<Transport> stepTransports = transports.get(stepPoint);
+            boolean banked = path.get(i + 1).isBankVisited();
+            Set<Transport> stepTransports = pathfinderConfig.getTransportAvailability(banked)
+                    .getTransportsByOrigin().get(stepPoint);
             if (stepTransports != null) {
                 for (Transport t : stepTransports) {
                     if (t.getDestination() == nextPoint) {

@@ -362,7 +362,7 @@ public class PathTileOverlay extends Overlay {
             List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
                     client,
                     plugin.getPathfinderConfig().bank,
-                    plugin.getTransports(),
+                    plugin.getPathfinderConfig(),
                     bankLocations,
                     path,
                     pathIndex
@@ -392,6 +392,11 @@ public class PathTileOverlay extends Overlay {
                     graphics.drawString(pickupText, x, y);
 
                     vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
+                }
+
+                // When enabled, bank pickup info replaces the default transport hint text
+                if (plugin.showBankPickupInfo) {
+                    return;
                 }
             }
         }
