@@ -81,7 +81,7 @@ public class CollisionMap {
         }
     }
 
-    // Get neighbours for a walkable tile: 
+    // Get neighbours for a walkable tile:
     //      * Neighbouring tiles we can walk to
     //      * A transition into banked state, if the current tile is a bank.
     //      * Transition into abstract global teleport nodes, if we haven't tried that yet.
