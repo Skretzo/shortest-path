@@ -9,6 +9,7 @@ import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -320,9 +321,10 @@ public class PathTileOverlay extends Overlay {
                 return;
             }
 
-            // Find the display name of the teleport that brought us to POH
+            // Find the display name of the teleport that brought us to POH using bank-aware lookup
             String text = null;
-            for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
+            boolean bankVisited = path.get(pathIndex).isBankVisited();
+            for (Transport transport : plugin.getPathfinderConfig().getTransportsPacked(bankVisited).getOrDefault(location, Set.of())) {
                 if (locationEnd != transport.getDestination()) {
                     continue;
                 }
@@ -353,7 +355,8 @@ public class PathTileOverlay extends Overlay {
         }
 
         int vertical_offset = 0;
-        for (Transport transport : plugin.getTransports().getOrDefault(location, new HashSet<>())) {
+        boolean bankVisitedAtStep = path.get(pathIndex).isBankVisited();
+        for (Transport transport : plugin.getPathfinderConfig().getTransportsPacked(bankVisitedAtStep).getOrDefault(location, Set.of())) {
             if (locationEnd != transport.getDestination()) {
                 continue;
             }

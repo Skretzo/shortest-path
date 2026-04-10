@@ -600,11 +600,9 @@ public class ShortestPathPlugin extends Plugin {
 
     private void scrollFairyRingPanel() {
         List<PathStep> path = null;
-        Map<Integer, Set<Transport>> transports = null;
 
         if (pathfinder == null
-            || (path = pathfinder.getPath()) == null
-            || (transports = getTransports()) == null) {
+            || (path = pathfinder.getPath()) == null) {
             return;
         }
 
@@ -613,13 +611,12 @@ public class ShortestPathPlugin extends Plugin {
         for (int i = 1; i < path.size(); i++) {
             int destination = path.get(i).getPackedPosition();
             int origin = path.get(i - 1).getPackedPosition();
-            Set<Transport> candidateTransports = transports.get(origin);
-            if (candidateTransports != null) {
-                for (Transport transport : candidateTransports) {
-                    if (transport.getDestination() == destination
-                        && TransportType.FAIRY_RING.equals(transport.getType())) {
-                        fairyRingCode = transport.getDisplayInfo();
-                    }
+            boolean bankVisited = path.get(i - 1).isBankVisited();
+            Set<Transport> candidateTransports = pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, Set.of());
+            for (Transport transport : candidateTransports) {
+                if (transport.getDestination() == destination
+                    && TransportType.FAIRY_RING.equals(transport.getType())) {
+                    fairyRingCode = transport.getDisplayInfo();
                 }
             }
         }
