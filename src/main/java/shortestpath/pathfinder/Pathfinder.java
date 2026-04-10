@@ -35,6 +35,8 @@ public class Pathfinder implements Runnable {
     private PrimitiveIntList path = new PrimitiveIntList();
     private boolean pathNeedsUpdate = false;
     private Node bestLastNode;
+    private int reachedTarget = WorldPointUtil.UNDEFINED;
+    private PathTerminationReason terminationReason;
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
@@ -86,6 +88,29 @@ public class Pathfinder implements Runnable {
         }
 
         return path;
+    }
+
+    public PathfinderResult getResult() {
+        PathfinderStats currentStats = getStats();
+        if (currentStats == null) {
+            return null;
+        }
+
+        PrimitiveIntList currentPath = getPath();
+        boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
+        int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
+        int closestReachedPoint = bestLastNode != null ? bestLastNode.packedPosition : start;
+        return new PathfinderResult(
+            start,
+            target,
+            reached,
+            currentPath,
+            closestReachedPoint,
+            currentStats.getNodesChecked(),
+            currentStats.getTransportsChecked(),
+            currentStats.getElapsedTimeNanos(),
+            terminationReason
+        );
     }
 
     private void addNeighbors(Node node) {
@@ -157,6 +182,8 @@ public class Pathfinder implements Runnable {
             if (targets.contains(node.packedPosition)) {
                 bestLastNode = node;
                 pathNeedsUpdate = true;
+                reachedTarget = node.packedPosition;
+                terminationReason = PathTerminationReason.TARGET_REACHED;
                 break;
             }
 
@@ -173,10 +200,17 @@ public class Pathfinder implements Runnable {
             }
 
             if (System.currentTimeMillis() > cutoffTimeMillis) {
+                terminationReason = PathTerminationReason.CUTOFF_REACHED;
                 break;
             }
 
             addNeighbors(node);
+        }
+
+        if (cancelled) {
+            terminationReason = PathTerminationReason.CANCELLED;
+        } else if (terminationReason == null) {
+            terminationReason = PathTerminationReason.SEARCH_EXHAUSTED;
         }
 
         done = !cancelled;
