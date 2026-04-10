@@ -28,7 +28,23 @@ public enum TransportType {
     MAGIC_CARPET("/transports/magic_carpets.tsv", "useMagicCarpets", ShortestPathConfig::useMagicCarpets, "costMagicCarpets", ShortestPathConfig::costMagicCarpets),
     MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", ShortestPathConfig::useMagicMushtrees, "costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, 5),
     MINECART("/transports/minecarts.tsv", "useMinecarts", ShortestPathConfig::useMinecarts, "costMinecarts", ShortestPathConfig::costMinecarts),
-    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5),
+    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5) {
+        @Override
+        public boolean sharesTeleportDestinations() {
+            return true;
+        }
+    },
+    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzalWhistle", ShortestPathConfig::costQuetzalWhistle) {
+        @Override
+        public boolean isTeleport() {
+            return true;
+        }
+
+        @Override
+        public boolean sharesTeleportDestinations() {
+            return true;
+        }
+    },
     SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv", "useSeasonalTransports", ShortestPathConfig::useSeasonalTransports, "costSeasonalTransports", ShortestPathConfig::costSeasonalTransports),
     SPIRIT_TREE("/transports/spirit_trees.tsv", "useSpiritTrees", ShortestPathConfig::useSpiritTrees, "costSpiritTrees", ShortestPathConfig::costSpiritTrees, 5),
     TELEPORTATION_BOX("/transports/teleportation_boxes.tsv", null, null, "costTeleportationBoxes", ShortestPathConfig::costTeleportationBoxes),
@@ -99,6 +115,16 @@ public enum TransportType {
      * wilderness level limit.
      */
     public boolean isTeleport() {
+        return false;
+    }
+
+    /**
+     * Whether this transport type shares destinations with a teleport type.
+     * When true, delayed visit marking is used during pathfinding so the
+     * cheaper option wins when both a transport and a teleport can reach
+     * the same destination.
+     */
+    public boolean sharesTeleportDestinations() {
         return false;
     }
 

@@ -119,13 +119,20 @@ public class Pathfinder implements Runnable {
                 continue;
             }
 
-            visited.set(neighbor.packedPosition, neighbor.bankVisited);
-            if (neighbor instanceof TransportNode) {
+            if (neighbor instanceof TransportNode && ((TransportNode) neighbor).delayedVisit) {
+                // Delayed visit: do not mark visited yet; let the priority queue
+                // pick the cheapest route to this destination when dequeuing.
                 pending.add(neighbor);
                 ++stats.transportsChecked;
             } else {
-                boundary.addLast(neighbor);
-                ++stats.nodesChecked;
+                visited.set(neighbor.packedPosition, neighbor.bankVisited);
+                if (neighbor instanceof TransportNode) {
+                    pending.add(neighbor);
+                    ++stats.transportsChecked;
+                } else {
+                    boundary.addLast(neighbor);
+                    ++stats.nodesChecked;
+                }
             }
         }
     }
@@ -146,6 +153,15 @@ public class Pathfinder implements Runnable {
 
             if (p != null && (node == null || p.cost < node.cost)) {
                 node = pending.poll();
+
+                // For delayed-visit nodes, check if the destination was already
+                // reached by a cheaper path while this node was queued.
+                if (node instanceof TransportNode && ((TransportNode) node).delayedVisit) {
+                    if (visited.get(node.packedPosition, node.bankVisited)) {
+                        continue;
+                    }
+                    visited.set(node.packedPosition, node.bankVisited);
+                }
             } else {
                 node = boundary.removeFirst();
             }

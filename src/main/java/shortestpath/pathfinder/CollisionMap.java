@@ -88,8 +88,9 @@ public class CollisionMap {
         // Firstly check if there are any transports or teleports which are applicable from the current tile.
         Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());
         for (Transport transport : transports) {
+            boolean delayedVisit = transport.getType().sharesTeleportDestinations();
             // Do not consider a transport if we have already visited its target tile.
-            if (visited.get(transport.getDestination(), pathBankVisited)) {
+            if (!delayedVisit && visited.get(transport.getDestination(), pathBankVisited)) {
                 continue;
             }
             // NB: Do not need to check for wilderness level for transports, since transports have specific origin tile.
@@ -98,13 +99,15 @@ public class CollisionMap {
                 node,
                 transport.getDuration(),
                 config.getAdditionalTransportCost(transport),
-                pathBankVisited));
+                pathBankVisited,
+                delayedVisit));
         }
 
         // MP: Future optimisation here, the path state should only consider using teleports at the first point they are available.
         // On each iteration, the entire list of teleports is traversed to discover that we have already reached the destination.
         for (Transport transport : config.getUsableTeleports(pathBankVisited)) {
-            if (visited.get(transport.getDestination(), pathBankVisited)) {
+            boolean delayedVisit = transport.getType().sharesTeleportDestinations();
+            if (!delayedVisit && visited.get(transport.getDestination(), pathBankVisited)) {
                 continue;
             }
             if (!transport.isUsableAtWildernessLevel(wildernessLevel)) { continue; }
@@ -113,7 +116,8 @@ public class CollisionMap {
                 node,
                 transport.getDuration(),
                 config.getAdditionalTransportCost(transport),
-                pathBankVisited));
+                pathBankVisited,
+                delayedVisit));
         }
 
         // Then add tiles which we can walk to, which go into the FIFO boundary queue.
