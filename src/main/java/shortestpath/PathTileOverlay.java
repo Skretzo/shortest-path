@@ -87,7 +87,7 @@ public class PathTileOverlay extends Overlay {
 
     private void renderCollisionMap(Graphics2D graphics) {
         CollisionMap map = plugin.getMap();
-        for (Tile[] row : client.getScene().getTiles()[client.getPlane()]) {
+        for (Tile[] row : client.getTopLevelWorldView().getScene().getTiles()[client.getTopLevelWorldView().getPlane()]) {
             for (Tile tile : row) {
                 if (tile == null) {
                     continue;
@@ -135,17 +135,17 @@ public class PathTileOverlay extends Overlay {
 
         if (plugin.drawTiles && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
             Color colorCalculating = new Color(
-                plugin.colourPathCalculating.getRed(),
-                plugin.colourPathCalculating.getGreen(),
-                plugin.colourPathCalculating.getBlue(),
-                plugin.colourPathCalculating.getAlpha() / 2);
+                    plugin.colourPathCalculating.getRed(),
+                    plugin.colourPathCalculating.getGreen(),
+                    plugin.colourPathCalculating.getBlue(),
+                    plugin.colourPathCalculating.getAlpha() / 2);
             Color color = plugin.getPathfinder().isDone()
-                ? new Color(
+                    ? new Color(
                     plugin.colourPath.getRed(),
                     plugin.colourPath.getGreen(),
                     plugin.colourPath.getBlue(),
                     plugin.colourPath.getAlpha() / 2)
-                : colorCalculating;
+                    : colorCalculating;
 
             java.util.List<PathStep> path = plugin.getPathfinder().getPath();
             int counter = 0;
@@ -183,7 +183,7 @@ public class PathTileOverlay extends Overlay {
             return null;
         }
 
-        if (WorldPointUtil.unpackWorldPlane(b) != client.getPlane()) {
+        if (WorldPointUtil.unpackWorldPlane(b) != client.getTopLevelWorldView().getPlane()) {
             return null;
         }
 
@@ -244,7 +244,7 @@ public class PathTileOverlay extends Overlay {
         int start = starts.get(0);
         int end = ends.get(0);
 
-        final int z = client.getPlane();
+        final int z = client.getTopLevelWorldView().getPlane();
         if (WorldPointUtil.unpackWorldPlane(start) != z) {
             return;
         }
@@ -294,14 +294,14 @@ public class PathTileOverlay extends Overlay {
             String counterText = Integer.toString(counter);
             graphics.setColor(plugin.colourText);
             graphics.drawString(
-                counterText,
-                (int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
+                    counterText,
+                    (int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
         }
     }
 
     private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd, java.util.List<PathStep> path, int pathIndex) {
         if (locationEnd == WorldPointUtil.UNDEFINED || !plugin.showTransportInfo ||
-            WorldPointUtil.unpackWorldPlane(location) != client.getPlane()) {
+                WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
             return;
         }
 
@@ -338,7 +338,7 @@ public class PathTileOverlay extends Overlay {
             }
             text = text + " (Exit: " + pohExitInfo + ")";
 
-            Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getPlane());
+            Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getTopLevelWorldView().getPlane());
             if (p == null) {
                 return;
             }
@@ -355,6 +355,47 @@ public class PathTileOverlay extends Overlay {
         }
 
         int vertical_offset = 0;
+
+        // Check if this is a bank step and items need to be picked up
+        Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
+        if (bankLocations != null && plugin.getPathfinderConfig().bank != null) {
+            List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
+                    client,
+                    plugin.getPathfinderConfig().bank,
+                    plugin.getTransports(),
+                    bankLocations,
+                    path,
+                    pathIndex
+            );
+            if (!bankPickupItems.isEmpty()) {
+                String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
+
+                PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+                for (int i = 0; i < points.size(); i++) {
+                    LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+                    if (lp == null) {
+                        continue;
+                    }
+
+                    Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
+                    if (p == null) {
+                        continue;
+                    }
+
+                    Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(pickupText, graphics);
+                    double height = textBounds.getHeight();
+                    int x = (int) (p.getX() - textBounds.getWidth() / 2);
+                    int y = (int) (p.getY() - height) - vertical_offset;
+                    graphics.setColor(Color.BLACK);
+                    graphics.drawString(pickupText, x + 1, y + 1);
+                    graphics.setColor(plugin.colourText);
+                    graphics.drawString(pickupText, x, y);
+
+                    vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
+                }
+            }
+        }
+
         boolean bankVisitedAtStep = path.get(pathIndex).isBankVisited();
         for (Transport transport : plugin.getPathfinderConfig().getTransportsPacked(bankVisitedAtStep).getOrDefault(location, Set.of())) {
             if (locationEnd != transport.getDestination()) {
@@ -379,7 +420,7 @@ public class PathTileOverlay extends Overlay {
                     continue;
                 }
 
-                Point p = Perspective.localToCanvas(client, lp, client.getPlane());
+                Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
                 if (p == null) {
                     continue;
                 }
