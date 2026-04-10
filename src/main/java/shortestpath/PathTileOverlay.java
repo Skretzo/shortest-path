@@ -18,6 +18,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 
 public class PathTileOverlay extends Overlay {
@@ -145,27 +146,28 @@ public class PathTileOverlay extends Overlay {
                     plugin.colourPath.getAlpha() / 2)
                 : colorCalculating;
 
-            PrimitiveIntList path = plugin.getPathfinder().getPath();
+            java.util.List<PathStep> path = plugin.getPathfinder().getPath();
             int counter = 0;
             if (TileStyle.LINES.equals(plugin.pathStyle)) {
                 for (int i = 1; i < path.size(); i++) {
-                    drawLine(graphics, path.get(i - 1), path.get(i), color, 1 + counter++);
-                    drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
+                    drawLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(), color, 1 + counter++);
+                    drawTransportInfo(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(), path, i - 1);
                 }
             } else {
                 boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
                 for (int i = 0; i < path.size(); i++) {
                     // Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
-                    int pathX = WorldPointUtil.unpackWorldX(path.get(i));
-                    int pathY = WorldPointUtil.unpackWorldY(path.get(i));
+                    int pathPoint = path.get(i).getPackedPosition();
+                    int pathX = WorldPointUtil.unpackWorldX(pathPoint);
+                    int pathY = WorldPointUtil.unpackWorldY(pathPoint);
                     if (!ShortestPathPlugin.isInsidePoh(pathX, pathY)) {
-                        drawTile(graphics, path.get(i), color, counter, showTiles);
+                        drawTile(graphics, pathPoint, color, counter, showTiles);
                     }
                     counter++;
-                    drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1), path, i);
+                    drawTransportInfo(graphics, pathPoint, (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1).getPackedPosition(), path, i);
                 }
                 for (int target : plugin.getPathfinder().getTargets()) {
-                    if (path.size() > 0 && target != path.get(path.size() - 1)) {
+                    if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition()) {
                         drawTile(graphics, target, colorCalculating, -1, showTiles);
                     }
                 }
@@ -296,7 +298,7 @@ public class PathTileOverlay extends Overlay {
         }
     }
 
-    private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd, PrimitiveIntList path, int pathIndex) {
+    private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd, java.util.List<PathStep> path, int pathIndex) {
         if (locationEnd == WorldPointUtil.UNDEFINED || !plugin.showTransportInfo ||
             WorldPointUtil.unpackWorldPlane(location) != client.getPlane()) {
             return;

@@ -7,7 +7,8 @@ public class VisitedTiles {
     private final SplitFlagMap.RegionExtent regionExtents;
     private final int widthInclusive;
 
-    private final VisitedRegion[] visitedRegions;
+    private final VisitedRegion[] visitedRegionsWithoutBank;
+    private final VisitedRegion[] visitedRegionsWithBank;
     private final byte[] visitedRegionPlanes;
 
     public VisitedTiles(CollisionMap map) {
@@ -15,18 +16,20 @@ public class VisitedTiles {
         widthInclusive = regionExtents.getWidth() + 1;
         final int heightInclusive = regionExtents.getHeight() + 1;
 
-        visitedRegions = new VisitedRegion[widthInclusive * heightInclusive];
+        visitedRegionsWithoutBank = new VisitedRegion[widthInclusive * heightInclusive];
+        visitedRegionsWithBank = new VisitedRegion[widthInclusive * heightInclusive];
         visitedRegionPlanes = map.getPlanes();
     }
 
-    public boolean get(int packedPoint) {
+    public boolean get(int packedPoint, boolean bankVisited) {
         final int x = WorldPointUtil.unpackWorldX(packedPoint);
         final int y = WorldPointUtil.unpackWorldY(packedPoint);
         final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
-        return get(x, y, plane);
+        return get(x, y, plane, bankVisited);
     }
 
-    public boolean get(int x, int y, int plane) {
+    public boolean get(int x, int y, int plane, boolean bankVisited) {
+        VisitedRegion[] visitedRegions = bankVisited ? visitedRegionsWithBank : visitedRegionsWithoutBank;
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= visitedRegions.length) {
             return true; // Region is out of bounds; report that it's been visited to avoid exploring it further
@@ -40,14 +43,15 @@ public class VisitedTiles {
         return region.get(x % REGION_SIZE, y % REGION_SIZE, plane);
     }
 
-    public boolean set(int packedPoint) {
+    public boolean set(int packedPoint, boolean bankVisited) {
         final int x = WorldPointUtil.unpackWorldX(packedPoint);
         final int y = WorldPointUtil.unpackWorldY(packedPoint);
         final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
-        return set(x, y, plane);
+        return set(x, y, plane, bankVisited);
     }
 
-    public boolean set(int x, int y, int plane) {
+    public boolean set(int x, int y, int plane, boolean bankVisited) {
+        VisitedRegion[] visitedRegions = bankVisited ? visitedRegionsWithBank : visitedRegionsWithoutBank;
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= visitedRegions.length) {
             return false; // Region is out of bounds; report that it's been visited to avoid exploring it further
@@ -63,10 +67,9 @@ public class VisitedTiles {
     }
 
     public void clear() {
-        for (int i = 0; i < visitedRegions.length; ++i) {
-            if (visitedRegions[i] != null) {
-                visitedRegions[i] = null;
-            }
+        for (int i = 0; i < visitedRegionsWithoutBank.length; ++i) {
+            visitedRegionsWithoutBank[i] = null;
+            visitedRegionsWithBank[i] = null;
         }
     }
 

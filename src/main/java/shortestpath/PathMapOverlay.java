@@ -7,6 +7,8 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
+import java.util.Map;
+import java.util.Set;
 import java.util.HashSet;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
@@ -16,8 +18,8 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
 
 public class PathMapOverlay extends Overlay {
     private final Client client;
@@ -96,19 +98,19 @@ public class PathMapOverlay extends Overlay {
 
         if (plugin.getPathfinder() != null) {
             Color colour = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
-            PrimitiveIntList path = plugin.getPathfinder().getPath();
+            java.util.List<PathStep> path = plugin.getPathfinder().getPath();
             Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
                 graphics.setColor(colour);
-                int point = path.get(i);
-                int lastPoint = (i > 0) ? path.get(i - 1) : point;
+                int point = path.get(i).getPackedPosition();
+                int lastPoint = (i > 0) ? path.get(i - 1).getPackedPosition() : point;
                 if (WorldPointUtil.distanceBetween(point, lastPoint) > 1) {
                     drawOnMap(graphics, lastPoint, point, true, cursorPos);
                 }
                 drawOnMap(graphics, point, true, cursorPos);
             }
             for (int target : plugin.getPathfinder().getTargets()) {
-                if (path.size() > 0 && target != path.get(path.size() - 1)) {
+                if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition()) {
                     graphics.setColor(plugin.colourPathCalculating);
                     drawOnMap(graphics, target, true, cursorPos);
                 }

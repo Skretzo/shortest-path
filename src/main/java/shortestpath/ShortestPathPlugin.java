@@ -65,6 +65,7 @@ import net.runelite.client.util.Text;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -233,7 +234,7 @@ public class ShortestPathPlugin extends Plugin {
                 if (ends.isEmpty()) {
                     setTarget(WorldPointUtil.UNDEFINED);
                 } else {
-                    pathfinder = new Pathfinder(this, pathfinderConfig, start, ends);
+                    pathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
                     pathfinderFuture = pathfindingExecutor.submit(pathfinder);
                 }
             }
@@ -245,14 +246,14 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     public boolean isNearPath(int location) {
-        PrimitiveIntList path = null;
+        List<PathStep> path = null;
         if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
             config.recalculateDistance() < 0 || lastLocation == (lastLocation = location)) {
             return true;
         }
 
         for (int i = 0; i < path.size(); i++) {
-            if (WorldPointUtil.distanceBetween(location, path.get(i)) < config.recalculateDistance()) {
+            if (WorldPointUtil.distanceBetween(location, path.get(i).getPackedPosition()) < config.recalculateDistance()) {
                 return true;
             }
         }
@@ -384,11 +385,12 @@ public class ShortestPathPlugin extends Plugin {
             List<WorldPoint> transportDestinations = new ArrayList<>();
             List<String> transportObjectInfos = new ArrayList<>();
             List<String> transportDisplayInfos = new ArrayList<>();
-            PrimitiveIntList currentPath = pathfinder.getPath();
+            List<PathStep> currentPath = pathfinder.getPath();
             for (int i = 1; i < currentPath.size(); i++) {
-                int origin = currentPath.get(i-1);
-                int destination = currentPath.get(i);
-                for (Transport transport : pathfinderConfig.getTransports().getOrDefault(origin, new HashSet<>())) {
+                int origin = currentPath.get(i - 1).getPackedPosition();
+                int destination = currentPath.get(i).getPackedPosition();
+                boolean banked = currentPath.get(i).isBankVisited();
+                for (Transport transport : pathfinderConfig.getTransportAvailability(banked).getTransportsByOrigin().getOrDefault(origin, new HashSet<>())) {
                     if (transport.getDestination() == destination) {
                         transportOrigins.add(WorldPointUtil.unpackWorldPoint(origin));
                         transportDestinations.add(WorldPointUtil.unpackWorldPoint(destination));
@@ -457,10 +459,10 @@ public class ShortestPathPlugin extends Plugin {
                     }
                 }
                 int selectedTile = getSelectedWorldPoint();
-                PrimitiveIntList path = null;
+                List<PathStep> path = null;
                 if ((path = pathfinder.getPath()) != null) {
                     for (int i = 0; i < path.size(); i++) {
-                        if (path.get(i) == selectedTile) {
+                        if (path.get(i).getPackedPosition() == selectedTile) {
                             addMenuEntry(event, CLEAR, PATH, 1);
                             break;
                         }
@@ -597,7 +599,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     private void scrollFairyRingPanel() {
-        PrimitiveIntList path = null;
+        List<PathStep> path = null;
         Map<Integer, Set<Transport>> transports = null;
 
         if (pathfinder == null
@@ -609,8 +611,8 @@ public class ShortestPathPlugin extends Plugin {
         String fairyRingCode = null;
 
         for (int i = 1; i < path.size(); i++) {
-            int destination = path.get(i);
-            int origin = path.get(i - 1);
+            int destination = path.get(i).getPackedPosition();
+            int origin = path.get(i - 1).getPackedPosition();
             Set<Transport> candidateTransports = transports.get(origin);
             if (candidateTransports != null) {
                 for (Transport transport : candidateTransports) {
@@ -670,12 +672,22 @@ public class ShortestPathPlugin extends Plugin {
         );
     }
 
-    public Map<Integer, Set<Transport>> getTransports() {
-        return pathfinderConfig.getTransports();
-    }
-
     public CollisionMap getMap() {
         return pathfinderConfig.getMap();
+    }
+
+    /**
+     * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
+     *
+     * It collapses banked/unbanked transport availability into a single view via
+     * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
+     *
+     * Do not use this for reasoning about which transports are available at a specific
+     * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
+     * path's PathStep state instead.
+     */
+    public Map<Integer, Set<Transport>> getTransports() {
+        return pathfinderConfig.getTransports();
     }
 
     /**
@@ -697,7 +709,7 @@ public class ShortestPathPlugin extends Plugin {
      * @param currentIndex The current index in the path
      * @return The display info of the POH exit transport, or null if not applicable
      */
-    public String getPohExitInfo(int destination, PrimitiveIntList path, int currentIndex) {
+    public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex) {
         if (path == null || currentIndex < 0) {
             return null;
         }
@@ -715,8 +727,8 @@ public class ShortestPathPlugin extends Plugin {
 
         // Look ahead in the path to find the next transport that exits POH
         for (int i = currentIndex + 1; i < path.size() - 1; i++) {
-            int stepLocation = path.get(i);
-            int nextLocation = path.get(i + 1);
+            int stepLocation = path.get(i).getPackedPosition();
+            int nextLocation = path.get(i + 1).getPackedPosition();
             
             int stepX = WorldPointUtil.unpackWorldX(stepLocation);
             int stepY = WorldPointUtil.unpackWorldY(stepLocation);
