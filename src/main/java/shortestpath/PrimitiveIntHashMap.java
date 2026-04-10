@@ -97,6 +97,23 @@ public class PrimitiveIntHashMap<V> {
         return getOrDefault(key, null);
     }
 
+    public int[] keys() {
+        int[] keys = new int[size];
+        int index = 0;
+        for (IntNode<V>[] bucket : buckets) {
+            if (bucket == null) {
+                continue;
+            }
+            for (IntNode<V> node : bucket) {
+                if (node == null) {
+                    break;
+                }
+                keys[index++] = node.key;
+            }
+        }
+        return keys;
+    }
+
     /**
      * Retrieves the value mapped to the provided key.
      *

@@ -5,6 +5,7 @@ public class TestShortestPathConfig implements ShortestPathConfig {
     private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
     private String builtTeleportationBoxes = "";
     private String builtTeleportationPortalsPoh = "";
+    private boolean includeBankPath = false;
 
     public void setCalculationCutoffValue(int calculationCutoff) {
         this.calculationCutoff = calculationCutoff;
@@ -22,6 +23,15 @@ public class TestShortestPathConfig implements ShortestPathConfig {
     @Override
     public TeleportationItem useTeleportationItems() {
         return useTeleportationItems;
+    }
+
+    public void setIncludeBankPathValue(boolean includeBankPath) {
+        this.includeBankPath = includeBankPath;
+    }
+
+    @Override
+    public boolean includeBankPath() {
+        return includeBankPath;
     }
 
     @Override
