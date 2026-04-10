@@ -7,7 +7,6 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import lombok.Getter;
-import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 
 public class Pathfinder implements Runnable {
@@ -32,7 +31,7 @@ public class Pathfinder implements Runnable {
     private final Queue<Node> pending = new PriorityQueue<>(256);
     private final VisitedTiles visited;
 
-    private PrimitiveIntList path = new PrimitiveIntList();
+    private List<PathStep> pathSteps = List.of();
     private boolean pathNeedsUpdate = false;
     private Node bestLastNode;
     private int bestRemainingDistance = Integer.MAX_VALUE;
@@ -80,18 +79,18 @@ public class Pathfinder implements Runnable {
         return null;
     }
 
-    public PrimitiveIntList getPath() {
+    public List<PathStep> getPath() {
         Node lastNode = bestLastNode; // For thread safety, read bestLastNode once
         if (lastNode == null) {
-            return path;
+            return pathSteps;
         }
 
         if (pathNeedsUpdate) {
-            path = lastNode.getPath();
+            pathSteps = lastNode.getPathSteps();
             pathNeedsUpdate = false;
         }
 
-        return path;
+        return pathSteps;
     }
 
     public PathfinderResult getResult() {
@@ -100,7 +99,7 @@ public class Pathfinder implements Runnable {
             return null;
         }
 
-        PrimitiveIntList currentPath = getPath();
+        List<PathStep> currentPath = getPath();
         boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
         int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
         int closestReachedPoint = bestLastNode != null ? bestLastNode.packedPosition : start;
@@ -124,7 +123,7 @@ public class Pathfinder implements Runnable {
                 continue;
             }
 
-            visited.set(neighbor.packedPosition);
+            visited.set(neighbor.packedPosition, neighbor.bankVisited);
             if (neighbor instanceof TransportNode) {
                 pending.add(neighbor);
                 ++stats.transportsChecked;
@@ -171,32 +170,20 @@ public class Pathfinder implements Runnable {
     }
 
     /**
-     * Update teleports based on wilderness level
+     * Update wilderness level based on the current node position.
      */
     private void updateWildernessLevel(Node node) {
         if (wildernessLevel > 0) {
-            // We don't need to remove teleports when going from 20 to 21 or higher,
-            // because the teleport is either used at the very start of the
-            // path or when going from 31 or higher to 30, or from 21 or higher to 20.
-
-            boolean update = false;
-
             // These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
             // likewise, if the node isn't in level 20, it's in 0-19
             if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(node.packedPosition)) {
                 wildernessLevel = 30;
-                update = true;
             }
             if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(node.packedPosition)) {
                 wildernessLevel = 20;
-                update = true;
             }
             if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(node.packedPosition)) {
                 wildernessLevel = 0;
-                update = true;
-            }
-            if (update) {
-                config.refreshTeleports(node.packedPosition, wildernessLevel);
             }
         }
     }
@@ -204,7 +191,7 @@ public class Pathfinder implements Runnable {
     @Override
     public void run() {
         stats.start();
-        boundary.addFirst(new Node(start, null));
+        boundary.addFirst(new Node(start, null, 0, false));
 
         long cutoffDurationMillis = config.getCalculationCutoffMillis();
         long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
