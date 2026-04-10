@@ -740,9 +740,9 @@ public class ShortestPathPlugin extends Plugin {
             boolean nextInsidePoh = isInsidePoh(nextX, nextY);
             
             if (stepInsidePoh && !nextInsidePoh) {
-                pohExitIndex = i + 1; // Index of the first step outside POH
-                // Found the exit transport - get its display info
-                for (Transport transport : getTransports().getOrDefault(stepLocation, new HashSet<>())) {
+                // Found the exit transport - get its display info using bank-aware lookup
+                boolean bankVisited = path.get(i).isBankVisited();
+                for (Transport transport : pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(stepLocation, Set.of())) {
                     if (nextLocation == transport.getDestination()) {
                         String exitInfo = transport.getDisplayInfo();
                         if (exitInfo != null && !exitInfo.isEmpty()) {
