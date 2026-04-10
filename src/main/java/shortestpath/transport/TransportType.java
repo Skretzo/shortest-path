@@ -28,31 +28,53 @@ public enum TransportType {
     MAGIC_CARPET("/transports/magic_carpets.tsv", "useMagicCarpets", ShortestPathConfig::useMagicCarpets, "costMagicCarpets", ShortestPathConfig::costMagicCarpets),
     MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", ShortestPathConfig::useMagicMushtrees, "costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, 5),
     MINECART("/transports/minecarts.tsv", "useMinecarts", ShortestPathConfig::useMinecarts, "costMinecarts", ShortestPathConfig::costMinecarts),
-    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5),
+    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5) {
+        @Override
+        public boolean sharesTeleportDestinations() {
+            return true;  // Shares destinations with QUETZAL_WHISTLE
+        }
+    },
+
+    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzalWhistle", ShortestPathConfig::costQuetzalWhistle) {
+        @Override
+        public boolean isTeleport() {
+            return true;
+        }
+    },
+
     SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv", "useSeasonalTransports", ShortestPathConfig::useSeasonalTransports, "costSeasonalTransports", ShortestPathConfig::costSeasonalTransports),
+
     SPIRIT_TREE("/transports/spirit_trees.tsv", "useSpiritTrees", ShortestPathConfig::useSpiritTrees, "costSpiritTrees", ShortestPathConfig::costSpiritTrees, 5),
+
     TELEPORTATION_BOX("/transports/teleportation_boxes.tsv", null, null, "costTeleportationBoxes", ShortestPathConfig::costTeleportationBoxes),
+
     TELEPORTATION_ITEM("/transports/teleportation_items.tsv", null, null, "costNonConsumableTeleportationItems", ShortestPathConfig::costNonConsumableTeleportationItems) {
         @Override
         public boolean isTeleport() {
             return true;
         }
     },
+
     TELEPORTATION_LEVER("/transports/teleportation_levers.tsv", "useTeleportationLevers", ShortestPathConfig::useTeleportationLevers, "costTeleportationLevers", ShortestPathConfig::costTeleportationLevers),
+
     TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv", "useTeleportationMinigames", ShortestPathConfig::useTeleportationMinigames, "costTeleportationMinigames", ShortestPathConfig::costTeleportationMinigames) {
         @Override
         public boolean isTeleport() {
             return true;
         }
     },
+
     TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv", "useTeleportationPortals", ShortestPathConfig::useTeleportationPortals, "costTeleportationPortals", ShortestPathConfig::costTeleportationPortals),
+
     TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv", "useTeleportationPortalsPoh", ShortestPathConfig::useTeleportationPortalsPoh, null, null),
+
     TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", ShortestPathConfig::useTeleportationSpells, "costTeleportationSpells", ShortestPathConfig::costTeleportationSpells) {
         @Override
         public boolean isTeleport() {
             return true;
         }
     },
+
     WILDERNESS_OBELISK("/transports/wilderness_obelisks.tsv", "useWildernessObelisks", ShortestPathConfig::useWildernessObelisks, "costWildernessObelisks", ShortestPathConfig::costWildernessObelisks),
     ;
 
@@ -99,6 +121,15 @@ public enum TransportType {
      * wilderness level limit.
      */
     public boolean isTeleport() {
+        return false;
+    }
+
+    /**
+     * Indicates whether this transport type shares destinations with a teleport.
+     * When true, delayed visit marking is used so the teleport can still find the destination.
+     * For example, QUETZAL platforms share destinations with QUETZAL_WHISTLE teleports.
+     */
+    public boolean sharesTeleportDestinations() {
         return false;
     }
 
