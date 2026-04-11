@@ -36,6 +36,10 @@ public class Pathfinder implements Runnable {
     private PrimitiveIntList path = new PrimitiveIntList();
     private boolean pathNeedsUpdate = false;
     private Node bestLastNode;
+    private int bestRemainingDistance = Integer.MAX_VALUE;
+    private int bestTravelledDistance = Integer.MAX_VALUE;
+    private int bestX = Integer.MAX_VALUE;
+    private int bestY = Integer.MAX_VALUE;
     /**
      * Teleportation transports are updated when this changes.
      * Can be either:
@@ -105,15 +109,77 @@ public class Pathfinder implements Runnable {
         }
     }
 
+    /**
+     * Pathfinding to an unreachable target is slightly different from normal pathfinding.
+     * Straight-line movement before diagonal movement is no longer prioritized, because the
+     * original target is moved to the closest reachable tile. To avoid having to move the
+     * original target we instead do the following to favour the closest reachable tile:
+     * - 1) Pick the path with the minimum Euclidean distance (no need to use square root though)
+     * - 2) If a tie occurs, pick the path with minimum travelled distance
+     * - 3) If another tie occurs, pick the path with minimum x-coordinate
+     * - 4) If another tie occurs, pick the path with minimum y-coordinate
+     */
+    private boolean updateBestPathWhenUnreachable(Node node) {
+        boolean update = false;
+
+        for (int target : targets) {
+            int remainingDistance = WorldPointUtil.distanceBetween(target, node.packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
+            int travelledDistance = node.cost;
+            int x = WorldPointUtil.unpackWorldX(node.packedPosition);
+            int y = WorldPointUtil.unpackWorldY(node.packedPosition);
+            if ((remainingDistance < bestRemainingDistance) ||
+                (remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
+                (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x < bestX) ||
+                (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && y == bestX && y < bestY)) {
+                bestRemainingDistance = remainingDistance;
+                bestTravelledDistance = travelledDistance;
+                bestX = x;
+                bestY = y;
+                bestLastNode = node;
+                pathNeedsUpdate = true;
+                update = true;
+            }
+        }
+
+        return update;
+    }
+
+    /**
+     * Update teleports based on wilderness level
+     */
+    private void updateWildernessLevel(Node node) {
+        if (wildernessLevel > 0) {
+            // We don't need to remove teleports when going from 20 to 21 or higher,
+            // because the teleport is either used at the very start of the
+            // path or when going from 31 or higher to 30, or from 21 or higher to 20.
+
+            boolean update = false;
+
+            // These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
+            // likewise, if the node isn't in level 20, it's in 0-19
+            if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(node.packedPosition)) {
+                wildernessLevel = 30;
+                update = true;
+            }
+            if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(node.packedPosition)) {
+                wildernessLevel = 20;
+                update = true;
+            }
+            if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(node.packedPosition)) {
+                wildernessLevel = 0;
+                update = true;
+            }
+            if (update) {
+                config.refreshTeleports(node.packedPosition, wildernessLevel);
+            }
+        }
+    }
+
     @Override
     public void run() {
         stats.start();
         boundary.addFirst(new Node(start, null));
 
-        int bestRemainingX = Integer.MAX_VALUE;
-        int bestRemainingY = Integer.MAX_VALUE;
-        int bestTravelledDistance = Integer.MAX_VALUE;
-        int bestRemainingDistance = Integer.MAX_VALUE;
         long cutoffDurationMillis = config.getCalculationCutoffMillis();
         long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 
@@ -127,31 +193,7 @@ public class Pathfinder implements Runnable {
                 node = boundary.removeFirst();
             }
 
-            if (wildernessLevel > 0) {
-                // We don't need to remove teleports when going from 20 to 21 or higher,
-                // because the teleport is either used at the very start of the
-                // path or when going from 31 or higher to 30, or from 21 or higher to 20.
-
-                boolean update = false;
-
-                // These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
-                // likewise, if the node isn't in level 20, it's in 0-19
-                if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(node.packedPosition)) {
-                    wildernessLevel = 30;
-                    update = true;
-                }
-                if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(node.packedPosition)) {
-                    wildernessLevel = 20;
-                    update = true;
-                }
-                if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(node.packedPosition)) {
-                    wildernessLevel = 0;
-                    update = true;
-                }
-                if (update) {
-                    config.refreshTeleports(node.packedPosition, wildernessLevel);
-                }
-            }
+            updateWildernessLevel(node);
 
             if (targets.contains(node.packedPosition)) {
                 bestLastNode = node;
@@ -159,31 +201,8 @@ public class Pathfinder implements Runnable {
                 break;
             }
 
-            // Pathfinding to an unreachable target is slightly different from normal pathfinding.
-            // Straight-line movement before diagonal movement is no longer prioritized, because the
-            // original target is moved to the closest reachable tile. To avoid having to move the
-            // original target we instead do the following to favour the closest reachable tile:
-            // - 1) Pick the path with the minimum Euclidean distance (no need to use square root though)
-            // - 2) If a tie occurs, pick the path with minimum travelled distance
-            // - 3) If another tie occurs, pick the path with minimum x-coordinate
-            // - 4) If another tie occurs, pick the path with minimum y-coordinate
-            for (int target : targets) {
-                int remainingDistance = WorldPointUtil.distanceBetween(target, node.packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
-                int travelledDistance = node.cost;
-                int remainingX = WorldPointUtil.unpackWorldX(node.packedPosition);
-                int remainingY = WorldPointUtil.unpackWorldY(node.packedPosition);
-                if ((remainingDistance < bestRemainingDistance) ||
-                    (remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
-                    (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && remainingX < bestRemainingX) ||
-                    (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && remainingX == bestRemainingX && remainingY < bestRemainingY)) {
-                    bestRemainingDistance = remainingDistance;
-                    bestTravelledDistance = travelledDistance;
-                    bestRemainingX = remainingX;
-                    bestRemainingY = remainingY;
-                    bestLastNode = node;
-                    pathNeedsUpdate = true;
-                    cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
-                }
+            if (updateBestPathWhenUnreachable(node)) {
+                cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
             }
 
             if (System.currentTimeMillis() > cutoffTimeMillis) {
