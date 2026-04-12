@@ -5321,10 +5321,10 @@
 2786 3772 0	2794 3719 0	Slide Slope 5015		4084=1	Troll Romance			30	
 
 # Shadow Dungeon									
-2547 3422 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
-2546 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
-2548 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
-2547 3420 0	2630 5071 0	Climb-down Ladder 6560		4657=1	Desert Treasure I				
+2547 3422 0	2630 5071 0	Climb-down Ladder 6560		4657=1|28329=1|28327=1	Desert Treasure I
+2546 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1|28329=1|28327=1	Desert Treasure I
+2548 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1|28329=1|28327=1	Desert Treasure I
+2547 3420 0	2630 5071 0	Climb-down Ladder 6560		4657=1|28329=1|28327=1	Desert Treasure I				
 2629 5073 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
 2628 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
 2630 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
