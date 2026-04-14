@@ -1,6 +1,6 @@
 # Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Display info	Consumable	Wilderness level	Varbits	VarPlayers
 # Banker's Briefcase Bank Chests										
-1399 9313 0			30361=1		4	Banker's Briefcase: Alchemical Society	F	60	10051>0
+1399 9313 0			30361=1		4	Banker's Briefcase: Alchemical Society	F	60	10051>0	
 2780 2782 0			30361=1		4	Banker's Briefcase: Ape Atoll	F	60	10051>0	
 2537 3573 0			30361=1		4	Banker's Briefcase: Barbarian Assault	F	60	10051>0	
 1948 4956 0			30361=1		4	Banker's Briefcase: Blast Furnace	F	60	10051>0	
@@ -46,7 +46,7 @@
 2338 3808 0			30361=1		4	Banker's Briefcase: Neitiznot	F	60	10051>0	
 2339 3808 0			30361=1		4	Banker's Briefcase: Neitiznot	F	60	10051>0	
 2661 3163 0			30361=1		4	Banker's Briefcase: Port Khazard	F	60	10051>0	
-2809 2521 0			30361=1		4	Banker's Briefcase: Red Rock	F	60	10051>0
+2809 2521 0			30361=1		4	Banker's Briefcase: Red Rock	F	60	10051>0	
 3039 4969 0			30361=1		4	Banker's Briefcase: Rogues' Den	F	60	10051>0	
 2979 5798 0			30361=1		4	Banker's Briefcase: Ruins of Camdozaal	F	60	10051>0	
 3155 2835 0			30361=1		4	Banker's Briefcase: Ruins of Unkah	F	60	10051>0	
@@ -164,7 +164,7 @@
 1589 3476 0			30361=1		4	Banker's Briefcase: Woodcutting Guild	F	60	10051>0	
 1649 3494 0			30361=1		4	Banker's Briefcase: Woodcutting Guild	F	60	10051>0	
 2611 3088 0			30361=1		4	Banker's Briefcase: Yanille	F	60	10051>0	
-2382 4462 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0
+2382 4462 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0	
 
 # Evil Eye										
 
