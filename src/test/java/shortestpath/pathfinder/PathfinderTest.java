@@ -1,17 +1,14 @@
 package shortestpath.pathfinder;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import net.runelite.api.GameState;
-import net.runelite.api.Client;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
+
+import net.runelite.api.*;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
-import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -418,6 +415,30 @@ public class PathfinderTest {
         testTransportLength(2,
             WorldPointUtil.packWorldPoint(3216, 3424, 0),
             WorldPointUtil.packWorldPoint(3213, 3424, 0),
+            TeleportationItem.INVENTORY,
+            99);
+    }
+
+    @Test
+    public void testBankersBriefcase() {
+        when(config.useSeasonalTransports()).thenReturn(true);
+        when(client.getWorldType()).thenReturn(EnumSet.of(WorldType.SEASONAL));
+        // TODO: Update with new gameval varbit IDs when released
+        when(client.getVarbitValue(VarbitID.LEAGUE_AREA_SELECTION_3)).thenReturn(1234); // Asgarnia
+        when(client.getVarbitValue(VarbitID.LEAGUE_RELIC_SELECTION_2)).thenReturn(1234); // Banker's Briefcase
+        setupInventory(new Item(net.runelite.api.ItemID.BANKERS_BRIEFCASE, 1));
+        int[] test = {
+                VarbitID.LEAGUE_AREA_SELECTION_0,
+                VarbitID.LEAGUE_AREA_SELECTION_1,
+                VarbitID.LEAGUE_AREA_SELECTION_2,
+                VarbitID.LEAGUE_AREA_SELECTION_3,
+                VarbitID.LEAGUE_AREA_SELECTION_4,
+                VarbitID.LEAGUE_AREA_SELECTION_5
+        };
+
+        testTransportLength(1,
+            WorldPointUtil.packWorldPoint(3052, 3491, 0),
+            WorldPointUtil.packWorldPoint(3013, 3356, 0),
             TeleportationItem.INVENTORY,
             99);
     }
