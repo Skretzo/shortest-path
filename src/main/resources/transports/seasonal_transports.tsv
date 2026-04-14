@@ -181,9 +181,9 @@
 2728 3494 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Seers' Village	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 1487 3591 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Shayzien	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 2801 5170 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Sophanem	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
-1244,3121 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Tal Teklan	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
-3097,3027 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Node	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
-3183,2419 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Summer Shore	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1244 3121 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Tal Teklan	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3097 3027 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Node	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3183 2419 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Summer Shore	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 2441 3487 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Tree Gnome Stronghold (Grand Tree)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 2444 3425 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Tree Gnome Stronghold (South)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 3120 3124 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Tutorial Island	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
@@ -192,7 +192,7 @@
 3649 3207 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ver Sinhaza	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 2665 2652 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Void Knights' Outpost	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 2842 3543 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Warriors' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
-2614 3091 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Yanille	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb
+2614 3091 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Yanille	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb	
 # Evil Eye										
 
 # Map of Alacrity										
