@@ -1,171 +1,198 @@
 # Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Display info	Consumable	Wilderness level	Varbits	VarPlayers
 # Banker's Briefcase Bank Chests										
-1399 9313 0			30361=1		4	Banker's Briefcase: Alchemical Society	F	60	10051>0	
-2780 2782 0			30361=1		4	Banker's Briefcase: Ape Atoll	F	60	10051>0	
-2537 3573 0			30361=1		4	Banker's Briefcase: Barbarian Assault	F	60	10051>0	
-1948 4956 0			30361=1		4	Banker's Briefcase: Blast Furnace	F	60	10051>0	
-1476 3877 0			30361=1		4	Banker's Briefcase: Blast mine	F	60	10051>0	
-1495 3874 0			30361=1		4	Banker's Briefcase: Blast mine	F	60	10051>0	
-1479 3851 0			30361=1		4	Banker's Briefcase: Blast mine	F	60	10051>0	
-1501 3856 0			30361=1		4	Banker's Briefcase: Blast mine	F	60	10051>0	
-2755 3479 0			30361=1		4	Banker's Briefcase: Camelot	F	60	10051>0	
-2444 3083 0			30361=1		4	Banker's Briefcase: Castle Wars	F	60	10051>0	
-2936 3280 0			30361=1		4	Banker's Briefcase: Crafting Guild	F	60	10051>0	
-3426 4070 0			30361=1		4	Banker's Briefcase: Daimon's Crater	F	60	10051>0	
-3420 4057 0			30361=1		4	Banker's Briefcase: Daimon's Crater	F	60	10051>0	
-1936 2754 0			30361=1		4	Banker's Briefcase: Deepfin Point	F	60	10051>0	
-3092 3469 0			30361=1		4	Banker's Briefcase: Edgeville	F	60	10051>0	
-2979 3344 0			30361=1		4	Banker's Briefcase: Falador	F	60	10051>0	
-1253 3742 0			30361=1		4	Banker's Briefcase: Farming Guild	F	60	10051>0	
-3130 3632 0			30361=1		4	Banker's Briefcase: Ferox Enclave	F	60	10051>0	
-1805 9501 0			30361=1		4	Banker's Briefcase: Fortis Colosseum	F	60	10051>0	
-3820 3809 0			30361=1		4	Banker's Briefcase: Fossil Island Volcano	F	60	10051>0	
-3375 11493 0			30361=1		4	Banker's Briefcase: Giants' Foundry	F	60	10051>0	
-2395 5985 0			30361=1		4	Banker's Briefcase: Hallowed Sepulchre	F	60	10051>0	
-2405 5986 0			30361=1		4	Banker's Briefcase: Hallowed Sepulchre	F	60	10051>0	
-1718 3465 0			30361=1		4	Banker's Briefcase: Hosidius beach	F	60	10051>0	
-1675 3615 0			30361=1		4	Banker's Briefcase: Hosidius Kitchen	F	60	10051>0	
-1542 3039 0			30361=1		4	Banker's Briefcase: Hunter Guild	F	60	10051>0	
-1513 3421 0			30361=1		4	Banker's Briefcase: Land's End	F	60	10051>0	
-2732 3382 2			30361=1		4	Banker's Briefcase: Legends' Guild	F	60	10051>0	
-2731 3379 2			30361=1		4	Banker's Briefcase: Legends' Guild	F	60	10051>0	
-2733 3379 2			30361=1		4	Banker's Briefcase: Legends' Guild	F	60	10051>0	
-3220 3217 0			30361=1		4	Banker's Briefcase: Lumbridge	F	60	10051>0	
-2534 4711 0			30361=1		4	Banker's Briefcase: Mage Arena	F	60	10051>0	
-3367 3318 1			30361=1		4	Banker's Briefcase: Mage Training Arena	F	60	10051>0	
-3012 9718 0			30361=1		4	Banker's Briefcase: Mining Guild	F	60	10051>0	
-2445 5181 0			30361=1		4	Banker's Briefcase: Mor Ul Rek	F	60	10051>0	
-2544 5141 0			30361=1		4	Banker's Briefcase: Mor Ul Rek	F	60	10051>0	
-3761 5666 0			30361=1		4	Banker's Briefcase: Motherlode Mine	F	60	10051>0	
-1324 3825 0			30361=1		4	Banker's Briefcase: Mount Karuulm	F	60	10051>0	
-1254 3572 0			30361=1		4	Banker's Briefcase: Mount Quidamortem	F	60	10051>0	
-3742 3805 0			30361=1		4	Banker's Briefcase: Museum Camp	F	60	10051>0	
-2465 2849 1			30361=1		4	Banker's Briefcase: Myths' Guild	F	60	10051>0	
-2334 3808 0			30361=1		4	Banker's Briefcase: Neitiznot	F	60	10051>0	
-2335 3808 0			30361=1		4	Banker's Briefcase: Neitiznot	F	60	10051>0	
-2338 3808 0			30361=1		4	Banker's Briefcase: Neitiznot	F	60	10051>0	
-2339 3808 0			30361=1		4	Banker's Briefcase: Neitiznot	F	60	10051>0	
-2661 3163 0			30361=1		4	Banker's Briefcase: Port Khazard	F	60	10051>0	
-2809 2521 0			30361=1		4	Banker's Briefcase: Red Rock	F	60	10051>0	
-3039 4969 0			30361=1		4	Banker's Briefcase: Rogues' Den	F	60	10051>0	
-2979 5798 0			30361=1		4	Banker's Briefcase: Ruins of Camdozaal	F	60	10051>0	
-3155 2835 0			30361=1		4	Banker's Briefcase: Ruins of Unkah	F	60	10051>0	
-3309 3120 0			30361=1		4	Banker's Briefcase: Shantay Pass	F	60	10051>0	
-1486 3645 0			30361=1		4	Banker's Briefcase: Shayzien Encampment	F	60	10051>0	
-1483 3645 0			30361=1		4	Banker's Briefcase: Shayzien Encampment	F	60	10051>0	
-2212 2860 0			30361=1		4	Banker's Briefcase: Soul Wars	F	60	10051>0	
-1454 3859 0			30361=1		4	Banker's Briefcase: Sulphur mine	F	60	10051>0	
-3619 9473 0			30361=1		4	Banker's Briefcase: Temple of the Eye	F	60	10051>0	
-3810 3020 0			30361=1		4	Banker's Briefcase: Trouble Brewing	F	60	10051>0	
-1809 3567 0			30361=1		4	Banker's Briefcase: Vinery	F	60	10051>0	
-1641 3944 0			30361=1		4	Banker's Briefcase: Wintertodt	F	60	10051>0	
-1592 3475 0			30361=1		4	Banker's Briefcase: Woodcutting Guild	F	60	10051>0	
-1551 9872 0			30361=1		4	Banker's Briefcase: Woodcutting Guild Ent dungeon	F	60	10051>0	
-2380 4460 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0	
-2380 4459 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0	
-2380 4458 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0	
-2380 4457 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0	
-2380 4456 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0	
+1399 9313 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Alchemical Society	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+2780 2782 0			<bankBriefcaseId>=1	Monkey Madness I	4	Banker's Briefcase: Ape Atoll	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2537 3573 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Barbarian Assault	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+1948 4956 0			<bankBriefcaseId>=1	The Giant Dwarf	4	Banker's Briefcase: Blast Furnace	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+1476 3877 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Blast mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1495 3874 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Blast mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1479 3851 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Blast mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1501 3856 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Blast mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2444 3083 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Castle Wars	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2936 3280 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Crafting Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+1253 3742 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Farming Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+3130 3632 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ferox Enclave	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<wildernessVarb>||<area2Varb>=<wildernessVarb>||<area3Varb>=<wildernessVarb>	
+1805 9501 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Fortis Colosseum	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+3820 3809 0			<bankBriefcaseId>=1	Bone Voyage	4	Banker's Briefcase: Fossil Island Volcano	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3375 11493 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Giants' Foundry	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<desertVarb>||<area2Varb>=<desertVarb>||<area3Varb>=<desertVarb>	
+2395 5985 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Hallowed Sepulchre	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+2405 5986 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Hallowed Sepulchre	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+1718 3465 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Hosidius beach	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1675 3615 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Hosidius Kitchen	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1542 3039 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Hunter Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1513 3421 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Land's End	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2732 3382 2			<bankBriefcaseId>=1		4	Banker's Briefcase: Legends' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2731 3379 2			<bankBriefcaseId>=1		4	Banker's Briefcase: Legends' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2733 3379 2			<bankBriefcaseId>=1		4	Banker's Briefcase: Legends' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2534 4711 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mage Arena	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<wildernessVarb>||<area2Varb>=<wildernessVarb>||<area3Varb>=<wildernessVarb>	
+3367 3318 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Mage Training Arena	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<desertVarb>||<area2Varb>=<desertVarb>||<area3Varb>=<desertVarb>	
+3012 9718 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mining Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+2445 5181 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mor Ul Rek	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<karamjaVarb>||<area2Varb>=<karamjaVarb>||<area3Varb>=<karamjaVarb>	
+2544 5141 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mor Ul Rek	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<karamjaVarb>||<area2Varb>=<karamjaVarb>||<area3Varb>=<karamjaVarb>	
+3761 5666 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Motherlode Mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+1324 3825 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mount Karuulm	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1254 3572 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mount Quidamortem	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+3742 3805 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Museum Camp	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2465 2849 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Myths' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2334 3808 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Neitiznot	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2335 3808 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Neitiznot	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2338 3808 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Neitiznot	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2339 3808 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Neitiznot	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2661 3163 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Khazard	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+3039 4969 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Rogues' Den	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+2979 5798 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ruins of Camdozaal	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+3155 2835 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ruins of Unkah	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<desertVarb>||<area2Varb>=<desertVarb>||<area3Varb>=<desertVarb>	
+3309 3120 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Shantay Pass	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<desertVarb>||<area2Varb>=<desertVarb>||<area3Varb>=<desertVarb>	
+1486 3645 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Shayzien Encampment	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1483 3645 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Shayzien Encampment	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2212 2860 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Soul Wars	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1454 3859 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Sulphur mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>
+3619 9473 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Temple of the Eye	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<desertVarb>||<area2Varb>=<desertVarb>||<area3Varb>=<desertVarb>	
+3810 3020 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Trouble Brewing	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+1809 3567 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Vinery	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1641 3944 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Wintertodt	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1592 3475 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Woodcutting Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1551 9872 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Woodcutting Guild Ent dungeon	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2380 4460 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Zanaris	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2380 4459 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Zanaris	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2380 4458 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Zanaris	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2380 4457 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Zanaris	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2380 4456 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Zanaris	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
 # Banker's Briefcase Deposit Boxes										
-1744 5475 0			30361=1		4	Banker's Briefcase: Clan Hall	F	60	10051>0	
-2569 2862 0			30361=1		4	Banker's Briefcase: Corsair Cove	F	60	10051>0	
-3309 3124 0			30361=1		4	Banker's Briefcase: Shantay Pass	F	60	10051>0	
-3094 3240 0			30361=1		4	Banker's Briefcase: Draynor Village	F	60	10051>0	
-3383 3273 0			30361=1		4	Banker's Briefcase: Emir's Arena	F	60	10051>0	
-3098 3499 0			30361=1		4	Banker's Briefcase: Edgeville	F	60	10051>0	
-3018 3358 0			30361=1		4	Banker's Briefcase: Falador	F	60	10051>0	
-2943 3368 0			30361=1		4	Banker's Briefcase: Falador	F	60	10051>0	
-3174 3493 0			30361=1		4	Banker's Briefcase: Grand Exchange	F	60	10051>0	
-3210 3217 2			30361=1		4	Banker's Briefcase: Lumbridge	F	60	10051>0	
-3045 3234 0			30361=1		4	Banker's Briefcase: Port Sarim	F	60	10051>0	
-3029 3210 0			30361=1		4	Banker's Briefcase: Port Sarim	F	60	10051>0	
-3180 3433 0			30361=1		4	Banker's Briefcase: Varrock	F	60	10051>0	
-1395 2925 0			30361=1		4	Banker's Briefcase: Aldarin	F	60	10051>0	
-1502 3410 0			30361=1		4	Banker's Briefcase: Aldarin	F	60	10051>0	
-1444 2966 0			30361=1		4	Banker's Briefcase: Aldarin dock	F	60	10051>0	
-1626 3737 0			30361=1		4	Banker's Briefcase: Arceuus	F	60	10051>0	
-2654 3280 0			30361=1		4	Banker's Briefcase: Ardougne	F	60	10051>0	
-2612 3333 0			30361=1		4	Banker's Briefcase: Ardougne	F	60	10051>0	
-2674 3276 0			30361=1		4	Banker's Briefcase: Ardougne	F	60	10051>0	
-1418 3350 0			30361=1		4	Banker's Briefcase: Auburnvale	F	60	10051>0	
-2537 3572 0			30361=1		4	Banker's Briefcase: Barbarian Assault	F	60	10051>0	
-1950 4956 0			30361=1		4	Banker's Briefcase: Blast Furnace	F	60	10051>0	
-3498 3210 0			30361=1		4	Banker's Briefcase: Burgh de Rott	F	60	10051>0	
-1449 9570 1			30361=1		4	Banker's Briefcase: Cam Torum	F	60	10051>0	
-3509 3474 0			30361=1		4	Banker's Briefcase: Canifis	F	60	10051>0	
-2806 3439 0			30361=1		4	Banker's Briefcase: Catherby	F	60	10051>0	
-2796 3415 0			30361=1		4	Banker's Briefcase: Catherby	F	60	10051>0	
-1781 3100 0			30361=1		4	Banker's Briefcase: Civitas illa Fortis east bank	F	60	10051>0	
-1646 3112 0			30361=1		4	Banker's Briefcase: Civitas illa Fortis west bank	F	60	10051>0	
-2929 3286 0			30361=1		4	Banker's Briefcase: Crafting Guild	F	60	10051>0	
-3602 3366 0			30361=1		4	Banker's Briefcase: Darkmeyer	F	60	10051>0	
-1937 2763 0			30361=1		4	Banker's Briefcase: Deepfin Point	F	60	10051>0	
-2705 5345 0			30361=1		4	Banker's Briefcase: Dorgesh-Kaan	F	60	10051>0	
-3013 9720 0			30361=1		4	Banker's Briefcase: Dwarven Mine	F	60	10051>0	
-2619 3896 0			30361=1		4	Banker's Briefcase: Etceteria	F	60	10051>0	
-2617 3852 0			30361=1		4	Banker's Briefcase: Etceteria	F	60	10051>0	
-1254 3740 0			30361=1		4	Banker's Briefcase: Farming Guild	F	60	10051>0	
-1237 3757 0			30361=1		4	Banker's Briefcase: Farming Guild	F	60	10051>0	
-2588 3416 0			30361=1		4	Banker's Briefcase: Fishing Guild	F	60	10051>0	
-1782 3136 0			30361=1		4	Banker's Briefcase: Fortis Cothon	F	60	10051>0	
-3038 6129 1			30361=1		4	Banker's Briefcase: The Gauntlet lobby	F	60	10051>0	
-3182 2368 0			30361=1		4	Banker's Briefcase: The Great Conch dock	F	60	10051>0	
-3201 2467 0			30361=1		4	Banker's Briefcase: The Great Conch near The Sacred Grove	F	60	10051>0	
-2202 3409 0			30361=1		4	Banker's Briefcase: Gwenith	F	60	10051>0	
-1753 3596 0			30361=1		4	Banker's Briefcase: Hosidius	F	60	10051>0	
-2210 2861 0			30361=1		4	Banker's Briefcase: Isle of Souls	F	60	10051>0	
-2402 3790 0			30361=1		4	Banker's Briefcase: Jatizso	F	60	10051>0	
-2834 10209 0			30361=1		4	Banker's Briefcase: Keldagrim	F	60	10051>0	
-1610 3683 2			30361=1		4	Banker's Briefcase: Kourend Castle	F	60	10051>0	
-1507 3421 0			30361=1		4	Banker's Briefcase: Land's End	F	60	10051>0	
-1502 3410 0			30361=1		4	Banker's Briefcase: Land's End	F	60	10051>0	
-2731 3376 2			30361=1		4	Banker's Briefcase: Legends' Guild	F	60	10051>0	
-2350 3162 0			30361=1		4	Banker's Briefcase: Lletya	F	60	10051>0	
-1533 3741 0			30361=1		4	Banker's Briefcase: Lovakengj	F	60	10051>0	
-2102 3917 0			30361=1		4	Banker's Briefcase: Lunar Isle	F	60	10051>0	
-2151 3884 0			30361=1		4	Banker's Briefcase: Lunar Isle	F	60	10051>0	
-3108 10351 0			30361=1		4	Banker's Briefcase: Mage Arena	F	60	10051>0	
-1383 2869 0			30361=1		4	Banker's Briefcase: Mistrock	F	60	10051>0	
-2451 5179 0			30361=1		4	Banker's Briefcase: Mor Ul Rek	F	60	10051>0	
-2541 5144 0			30361=1		4	Banker's Briefcase: Mor Ul Rek	F	60	10051>0	
-3679 2984 0			30361=1		4	Banker's Briefcase: Mos Le'Harmless	F	60	10051>0	
-3759 5664 0			30361=1		4	Banker's Briefcase: Motherlode Mine	F	60	10051>0	
-1322 3824 0			30361=1		4	Banker's Briefcase: Mount Karuulm	F	60	10051>0	
-1252 3571 0			30361=1		4	Banker's Briefcase: Mount Quidamortem	F	60	10051>0	
-2462 2845 1			30361=1		4	Banker's Briefcase: Myths' Guild	F	60	10051>0	
-3429 2894 0			30361=1		4	Banker's Briefcase: Nardah	F	60	10051>0	
-2305 3774 0			30361=1		4	Banker's Briefcase: Neitiznot	F	60	10051>0	
-3060 2988 0			30361=1		4	Banker's Briefcase: The Pandemonium	F	60	10051>0	
-2330 3686 0			30361=1		4	Banker's Briefcase: Piscatoris Fishing Colony	F	60	10051>0	
-2664 3159 0			30361=1		4	Banker's Briefcase: Port Khazard	F	60	10051>0	
-3686 3471 0			30361=1		4	Banker's Briefcase: Port Phasmatys	F	60	10051>0	
-1806 3785 0			30361=1		4	Banker's Briefcase: Port Piscarilius	F	60	10051>0	
-1847 3691 0			30361=1		4	Banker's Briefcase: Port Piscarilius	F	60	10051>0	
-1872 3302 0			30361=1		4	Banker's Briefcase: Port Roberts	F	60	10051>0	
-1881 3311 0			30361=1		4	Banker's Briefcase: Port Roberts	F	60	10051>0	
-1886 3295 0			30361=1		4	Banker's Briefcase: Port Roberts	F	60	10051>0	
-3295 6062 0			30361=1		4	Banker's Briefcase: Prifddinas	F	60	10051>0	
-3259 6105 0			30361=1		4	Banker's Briefcase: Prifddinas	F	60	10051>0	
-2166 3326 0			30361=1		4	Banker's Briefcase: West of Prifddinas	F	60	10051>0	
-1518 3226 0			30361=1		4	Banker's Briefcase: Quetzacalli Gorge	F	60	10051>0	
-3041 4964 1			30361=1		4	Banker's Briefcase: Rogues' Den	F	60	10051>0	
-3159 2834 0			30361=1		4	Banker's Briefcase: Ruins of Unkah	F	60	10051>0	
-1702 3527 0			30361=1		4	Banker's Briefcase: Saltpetre mine	F	60	10051>0	
-2730 3492 0			30361=1		4	Banker's Briefcase: Seers' Village	F	60	10051>0	
-1501 3613 0			30361=1		4	Banker's Briefcase: Shayzien	F	60	10051>0	
-2852 2951 0			30361=1		4	Banker's Briefcase: Shilo Village	F	60	10051>0	
-1244 3122 0			30361=1		4	Banker's Briefcase: Tal Teklan	F	60	10051>0	
-3655 3209 0			30361=1		4	Banker's Briefcase: Ver Sinhaza	F	60	10051>0	
-2669 2655 0			30361=1		4	Banker's Briefcase: Void Knights' Outpost	F	60	10051>0	
-2656 2671 0			30361=1		4	Banker's Briefcase: Void Knights' Outpost	F	60	10051>0	
-3820 3808 0			30361=1		4	Banker's Briefcase: Outside the Volcanic Mine	F	60	10051>0	
-2846 3536 0			30361=1		4	Banker's Briefcase: Warriors' Guild	F	60	10051>0	
-1636 3948 0			30361=1		4	Banker's Briefcase: Wintertodt Camp	F	60	10051>0	
-1589 3476 0			30361=1		4	Banker's Briefcase: Woodcutting Guild	F	60	10051>0	
-1649 3494 0			30361=1		4	Banker's Briefcase: Woodcutting Guild	F	60	10051>0	
-2611 3088 0			30361=1		4	Banker's Briefcase: Yanille	F	60	10051>0	
-2382 4462 0			30361=1		4	Banker's Briefcase: Zanaris	F	60	10051>0	
-
+3045 3234 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Sarim	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+3029 3210 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Sarim	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+3180 3433 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Varrock	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1395 2925 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Aldarin	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1502 3410 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Aldarin	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1444 2966 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Aldarin dock	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1626 3737 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Arceuus	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2654 3280 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ardougne	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2612 3333 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ardougne	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2674 3276 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ardougne	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+1418 3350 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Auburnvale	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1950 4956 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Blast Furnace	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+3498 3210 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Burgh de Rott	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+1449 9570 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Cam Torum	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+3509 3474 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Canifis	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+2806 3439 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Catherby	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2796 3415 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Catherby	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+1781 3100 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Civitas illa Fortis east bank	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1646 3112 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Civitas illa Fortis west bank	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+2929 3286 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Crafting Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+3602 3366 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Darkmeyer	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+1937 2763 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Deepfin Point	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2705 5345 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Dorgesh-Kaan	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3013 9720 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Dwarven Mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+2619 3896 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Etceteria	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2617 3852 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Etceteria	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+1254 3740 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Farming Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1237 3757 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Farming Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2588 3416 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Fishing Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+1782 3136 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Fortis Cothon	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+3038 6129 1			<bankBriefcaseId>=1		4	Banker's Briefcase: The Gauntlet lobby	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<tirannwnVarb>||<area2Varb>=<tirannwnVarb>||<area3Varb>=<tirannwnVarb>	
+3182 2368 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Great Conch dock	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+3201 2467 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Great Conch near The Sacred Grove	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2202 3409 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Gwenith	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<tirannwnVarb>||<area2Varb>=<tirannwnVarb>||<area3Varb>=<tirannwnVarb>	
+1753 3596 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Hosidius	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2210 2861 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Isle of Souls	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2402 3790 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Jatizso	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2834 10209 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Keldagrim	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+1610 3683 2			<bankBriefcaseId>=1		4	Banker's Briefcase: Kourend Castle	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1507 3421 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Land's End	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1502 3410 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Land's End	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2731 3376 2			<bankBriefcaseId>=1		4	Banker's Briefcase: Legends' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2350 3162 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Lletya	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<tirannwnVarb>||<area2Varb>=<tirannwnVarb>||<area3Varb>=<tirannwnVarb>	
+1533 3741 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Lovakengj	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2102 3917 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Lunar Isle	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2151 3884 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Lunar Isle	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+3108 10351 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mage Arena	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<wildernessVarb>||<area2Varb>=<wildernessVarb>||<area3Varb>=<wildernessVarb>	
+1383 2869 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mistrock	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+2451 5179 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mor Ul Rek	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<karamjaVarb>||<area2Varb>=<karamjaVarb>||<area3Varb>=<karamjaVarb>	
+2541 5144 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mor Ul Rek	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<karamjaVarb>||<area2Varb>=<karamjaVarb>||<area3Varb>=<karamjaVarb>	
+3679 2984 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mos Le'Harmless	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+3759 5664 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Motherlode Mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+1322 3824 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mount Karuulm	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1252 3571 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mount Quidamortem	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2462 2845 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Myths' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+3429 2894 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Nardah	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<desertVarb>||<area2Varb>=<desertVarb>||<area3Varb>=<desertVarb>	
+2305 3774 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Neitiznot	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<fremennikVarb>||<area2Varb>=<fremennikVarb>||<area3Varb>=<fremennikVarb>	
+2330 3686 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Piscatoris Fishing Colony	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2664 3159 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Khazard	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+3686 3471 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Phasmatys	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+1806 3785 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Piscarilius	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1847 3691 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Piscarilius	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1872 3302 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Roberts	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1881 3311 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Roberts	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+1886 3295 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Roberts	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+3295 6062 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Prifddinas	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<tirannwnVarb>||<area2Varb>=<tirannwnVarb>||<area3Varb>=<tirannwnVarb>	
+3259 6105 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Prifddinas	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<tirannwnVarb>||<area2Varb>=<tirannwnVarb>||<area3Varb>=<tirannwnVarb>	
+2166 3326 0			<bankBriefcaseId>=1		4	Banker's Briefcase: West of Prifddinas	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<tirannwnVarb>||<area2Varb>=<tirannwnVarb>||<area3Varb>=<tirannwnVarb>	
+1518 3226 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Quetzacalli Gorge	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+3041 4964 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Rogues' Den	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+3159 2834 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ruins of Unkah	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<desertVarb>||<area2Varb>=<desertVarb>||<area3Varb>=<desertVarb>	
+1702 3527 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Saltpetre mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2730 3492 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Seers' Village	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+1501 3613 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Shayzien	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2852 2951 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Shilo Village	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<karamjaVarb>||<area2Varb>=<karamjaVarb>||<area3Varb>=<karamjaVarb>	
+1244 3122 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Tal Teklan	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<varlamoreVarb>||<area2Varb>=<varlamoreVarb>||<area3Varb>=<varlamoreVarb>	
+3655 3209 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ver Sinhaza	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<morytaniaVarb>||<area2Varb>=<morytaniaVarb>||<area3Varb>=<morytaniaVarb>	
+2669 2655 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Void Knights' Outpost	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+2656 2671 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Void Knights' Outpost	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+3820 3808 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Outside the Volcanic Mine	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2846 3536 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Warriors' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<asgarniaVarb>||<area2Varb>=<asgarniaVarb>||<area3Varb>=<asgarniaVarb>	
+1636 3948 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Wintertodt Camp	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1589 3476 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Woodcutting Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+1649 3494 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Woodcutting Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kourendVarb>||<area2Varb>=<kourendVarb>||<area3Varb>=<kourendVarb>	
+2611 3088 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Yanille	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<kandarinVarb>||<area2Varb>=<kandarinVarb>||<area3Varb>=<kandarinVarb>	
+2382 4462 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Zanaris	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+# Banker's Briefcase Banks
+3268 3164 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Al Kharid	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1623 3740 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Arceuus	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1414 3353 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Auburnvale	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3494 3211 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Burgh de Rott	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3513 3478 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Canifis	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2807 3442 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Catherby	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1745 5477 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Clan Hall	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3147 3449 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Cooks' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2569 2865 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Corsair Cove	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3603 3368 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Darkmeyer	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2700 5347 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Dorgesh-Kaan	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3091 3242 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Draynor Village	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2618 3331 0			<bankBriefcaseId>=1		4	Banker's Briefcase: East Ardougne North Bank	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2656 3280 0			<bankBriefcaseId>=1		4	Banker's Briefcase: East Ardougne South Bank	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3095 3489 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Edgeville	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3010 3354 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Falador East	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2945 3367 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Falador West	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1248 3759 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Farming Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2585 3418 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Fishing Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1747 3598 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Hosidius	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2836 10206 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Keldagrim	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1610 3680 2			<bankBriefcaseId>=1		4	Banker's Briefcase: Kourend Castle	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1435 3822 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Lovakengj north bank	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1520 3741 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Lovakengj south bank	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3209 3221 2			<bankBriefcaseId>=1		4	Banker's Briefcase: Lumbridge Castle	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2097 3920 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Lunar Isle	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3681 2981 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Mos Le'Harmless	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3426 2889 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Nardah	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3690 3465 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Phasmatys	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1796 3791 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Port Piscarilius	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3255 6104 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Prifddinas (North)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3296 6058 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Prifddinas (South)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2728 3494 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Seers' Village	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1487 3591 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Shayzien	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2801 5170 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Sophanem	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+1244,3121 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Tal Teklan	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3097,3027 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Node	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3183,2419 0			<bankBriefcaseId>=1		4	Banker's Briefcase: The Summer Shore	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2441 3487 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Tree Gnome Stronghold (Grand Tree)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2444 3425 1			<bankBriefcaseId>=1		4	Banker's Briefcase: Tree Gnome Stronghold (South)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3120 3124 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Tutorial Island	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3252 3419 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Varrock (East)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3186 3438 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Varrock (West)	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+3649 3207 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Ver Sinhaza	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2665 2652 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Void Knights' Outpost	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2842 3543 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Warriors' Guild	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb>	
+2614 3091 0			<bankBriefcaseId>=1		4	Banker's Briefcase: Yanille	F	60	<relic3Varb>=<bankHeist>&&<area1Varb>=<misthalinVarb>||<area2Varb>=<misthalinVarb>||<area3Varb>=<misthalinVarb
 # Evil Eye										
 
 # Map of Alacrity										
