@@ -70,6 +70,8 @@ public class VisitedTiles {
         boolean visited = get(node);
         if (node.bankVisited) {
             abstractVisitedWithBank[node.abstractKind.ordinal()] = true;
+            // A banked abstract state dominates the equivalent unbanked state.
+            abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
         } else {
             abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
         }
@@ -77,18 +79,27 @@ public class VisitedTiles {
     }
 
     public boolean set(int x, int y, int plane, boolean bankVisited) {
-        VisitedRegion[] visitedRegions = bankVisited ? visitedRegionsWithBank : visitedRegionsWithoutBank;
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
-        if (regionIndex < 0 || regionIndex >= visitedRegions.length) {
+        if (regionIndex < 0 || regionIndex >= visitedRegionsWithoutBank.length) {
             return false; // Region is out of bounds; report that it's been visited to avoid exploring it further
         }
 
+        if (bankVisited) {
+            boolean unique = setInRegion(visitedRegionsWithBank, regionIndex, x, y, plane);
+            // A banked tile dominates the equivalent unbanked tile, so populate both buckets.
+            setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+            return unique;
+        }
+
+        return setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+    }
+
+    private boolean setInRegion(VisitedRegion[] visitedRegions, int regionIndex, int x, int y, int plane) {
         VisitedRegion region = visitedRegions[regionIndex];
         if (region == null) {
             region = new VisitedRegion(visitedRegionPlanes[regionIndex]);
             visitedRegions[regionIndex] = region;
         }
-
         return region.set(x % REGION_SIZE, y % REGION_SIZE, plane);
     }
 
