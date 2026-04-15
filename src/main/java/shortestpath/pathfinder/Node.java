@@ -32,7 +32,6 @@ public class Node {
     // Only set for ABSTRACT nodes. TILE nodes leave this null.
     public final AbstractNodeKind abstractKind;
 
-    // A constructor which propagates the previous Node's banked state at the new position.
     public Node(int packedPosition, Node previous, int cost) {
         this(packedPosition, previous, cost, previous != null && previous.bankVisited);
     }
