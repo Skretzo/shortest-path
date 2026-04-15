@@ -117,7 +117,7 @@ public class Pathfinder implements Runnable {
     }
 
     private void addNeighbors(Node node) {
-        List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel);
+        List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness);
         for (Node neighbor : nodes) {
             if (node.isTile() && neighbor.isTile()
                 && config.avoidWilderness(node.packedPosition, neighbor.packedPosition, targetInWilderness)) {

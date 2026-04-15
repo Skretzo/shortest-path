@@ -72,11 +72,12 @@ public class CollisionMap {
     private final List<Node> neighbors = new ArrayList<>(16);
     private final boolean[] traversable = new boolean[8];
 
-    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel,
+        boolean targetInWilderness) {
         if (node.isTile()) {
             return getTileNeighbors(node, visited, config, wildernessLevel);
         } else {
-            return getAbstractNodeNeighbors(node, visited, config);
+            return getAbstractNodeNeighbors(node, visited, config, targetInWilderness);
         }
     }
 
@@ -173,13 +174,18 @@ public class CollisionMap {
     }
 
     // The only abstract nodes are currently for global teleports
-    private List<Node> getAbstractNodeNeighbors(Node node, VisitedTiles visited, PathfinderConfig config) {
+    private List<Node> getAbstractNodeNeighbors(Node node, VisitedTiles visited, PathfinderConfig config,
+        boolean targetInWilderness) {
         neighbors.clear();
+        int sourceTile = node.getClosestTilePosition();
         for (Transport transport : config.getUsableTeleports(node.bankVisited)) {
             if (visited.get(transport.getDestination(), node.bankVisited)) {
                 continue;
             }
             if (!transport.isUsableAtWildernessLevel(node.abstractKind.maxWildernessLevel())) {
+                continue;
+            }
+            if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness)) {
                 continue;
             }
             neighbors.add(new TransportNode(
