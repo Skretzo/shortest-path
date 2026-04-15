@@ -19,6 +19,7 @@ public class WildernessCheckerTest {
     private static final int WILDERNESS_DARK_WARRIORS_FORTRESS = WorldPointUtil.packWorldPoint(3023, 3626, 1);
     private static final int WILDERNESS_REVENANT_CAVES = WorldPointUtil.packWorldPoint(3198, 10074, 0);
     private static final int WILDERNESS_SLAYER_CAVE = WorldPointUtil.packWorldPoint(3406, 10144, 0);
+    private static final int WILDERNESS_SLAYER_CAVE_SOUTH = WorldPointUtil.packWorldPoint(3385,10054, 0);
     private static final int WILDERNESS_GOD_WARS_DUNGEON = WorldPointUtil.packWorldPoint(3044, 10134, 0);
     private static final int WILDERNESS_GOD_WARS_DUNGEON_UPSTAIRS = WorldPointUtil.packWorldPoint(3065, 10155, 3);
 
@@ -37,6 +38,7 @@ public class WildernessCheckerTest {
         assertTrue(WildernessChecker.isInWilderness(WILDERNESS_SLAYER_CAVE));
         assertTrue(WildernessChecker.isInWilderness(WILDERNESS_GOD_WARS_DUNGEON));
         assertTrue(WildernessChecker.isInWilderness(WILDERNESS_GOD_WARS_DUNGEON_UPSTAIRS));
+        assertTrue(WildernessChecker.isInWilderness(WILDERNESS_SLAYER_CAVE_SOUTH));
 
         assertFalse(WildernessChecker.isInWilderness(NON_WILDERNESS_PENINSULA));
         assertFalse(WildernessChecker.isInWilderness(WILDERNESS_FEROX_ENCLAVE));
@@ -68,7 +70,8 @@ public class WildernessCheckerTest {
     public void testInLevel20Wilderness() {
         assertTrue(WildernessChecker.isInLevel20Wilderness(WILDERNESS_BANDIT_CAMP));
         assertTrue(WildernessChecker.isInLevel20Wilderness(WILDERNESS_GOD_WARS_DUNGEON));
-        assertFalse(WildernessChecker.isInLevel20Wilderness(WILDERNESS_SLAYER_CAVE));
+        assertTrue(WildernessChecker.isInLevel20Wilderness(WILDERNESS_SLAYER_CAVE)); // Northern entrance at level 29 wilderness
+        assertFalse(WildernessChecker.isInLevel20Wilderness(WILDERNESS_SLAYER_CAVE_SOUTH));
     }
 
     @Test
