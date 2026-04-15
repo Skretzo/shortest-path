@@ -982,6 +982,72 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testAvoidWildernessSuppressesBurningAmuletRoute() {
+        int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
+        int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
+
+        when(config.avoidWilderness()).thenReturn(true);
+        setupInventory(new Item(ItemID.BURNING_AMULET_5, 1));
+        setupEquipment();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        Pathfinder pathfinder = assertScenarioPathLengthAndGet(
+            "Wizards' Guild -> Edgeville with burning amulet and avoid wilderness",
+            876,
+            origin,
+            destination);
+
+        assertTrue("Route should still reach the destination while avoiding wilderness", pathfinder.getResult().isReached());
+        assertFalse("Burning amulet should not be used when avoid wilderness is enabled",
+            usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Burning amulet"));
+        assertFalse("Ardougne lever should not be used when avoid wilderness is enabled",
+            usedTransportType(pathfinder, TransportType.TELEPORTATION_LEVER));
+    }
+
+    @Test
+    public void testArdougneLeverUsedWithoutItemsWhenWildernessAllowed() {
+        int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
+        int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
+
+        when(config.avoidWilderness()).thenReturn(false);
+        when(config.useTeleportationLevers()).thenReturn(true);
+        setupInventory();
+        setupEquipment();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+        Pathfinder pathfinder = assertScenarioPathLengthAndGet(
+            "Wizards' Guild -> Edgeville with no items and wilderness allowed",
+            769,
+            origin,
+            destination);
+
+        assertTrue("Route should still reach the destination when wilderness is allowed", pathfinder.getResult().isReached());
+        assertTrue("Ardougne lever should be used when wilderness is allowed and no better item teleport exists",
+            usedTransportType(pathfinder, TransportType.TELEPORTATION_LEVER));
+    }
+
+    @Test
+    public void testBurningAmuletRouteAllowedWhenNotAvoidingWilderness() {
+        int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
+        int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
+
+        when(config.avoidWilderness()).thenReturn(false);
+        setupInventory(new Item(ItemID.BURNING_AMULET_5, 1));
+        setupEquipment();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        Pathfinder pathfinder = assertScenarioPathLengthAndGet(
+            "Wizards' Guild -> Edgeville with burning amulet and wilderness allowed",
+            162,
+            origin,
+            destination);
+
+        assertTrue("Route should reach the destination when wilderness is allowed", pathfinder.getResult().isReached());
+        assertTrue("Burning amulet should be used when wilderness is allowed",
+            usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Burning amulet"));
+    }
+
+    @Test
     public void testCaves() {
         // Eadgar's Cave
         testTransportLength(2,
