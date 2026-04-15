@@ -896,6 +896,92 @@ public class PathfinderTest {
     }
 
     @Test
+    public void testWildernessRouteWithoutTeleportsWalksOut() {
+        int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
+        int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
+
+        when(config.useAgilityShortcuts()).thenReturn(true);
+        setupInventory();
+        setupEquipment();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+        Pathfinder pathfinder = runScenario("Deep wilderness -> Grand Exchange with no teleports", deepWilderness, grandExchange);
+
+        assertFalse("No teleportation item should be used when none are available",
+            usedTransportType(pathfinder, TransportType.TELEPORTATION_ITEM));
+        assertFalse("No teleportation spell should be used when none are available",
+            usedTransportType(pathfinder, TransportType.TELEPORTATION_SPELL));
+        assertTrue("Walking route should still reach the destination", pathfinder.getResult().isReached());
+
+        assertEquals(328, pathfinder.getPath().size());
+    }
+
+    @Test
+    public void testWildernessRouteUsesGloryAfterLeavingLevel30() {
+        int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
+        int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
+
+        when(config.useAgilityShortcuts()).thenReturn(true);
+
+        setupInventory(new Item(ItemID.AMULET_OF_GLORY_6, 1));
+        setupEquipment();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+        Pathfinder withGlory = runScenario("Deep wilderness -> Grand Exchange with glory", deepWilderness, grandExchange);
+
+        assertTrue("Charged glory should be used once the route reaches a legal wilderness level",
+            usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
+
+        assertEquals(139, withGlory.getPath().size());
+    }
+
+    @Test
+    public void testWildernessRouteUsesGrandExchangeVarrockTeleportAfterLeavingLevel20() {
+        int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
+        int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
+        Map<Integer, Integer> varbits = new HashMap<>();
+        varbits.put(VarbitID.VARROCK_DIARY_MEDIUM_COMPLETE, 1); // Grand Exchange teleport unlocked
+
+        when(config.useAgilityShortcuts()).thenReturn(true);
+        setupInventory(
+            new Item(ItemID.LAWRUNE, 1),
+            new Item(ItemID.AIRRUNE, 3),
+            new Item(ItemID.FIRERUNE, 1));
+        setupEquipment();
+        when(config.useTeleportationSpells()).thenReturn(true);
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
+        Pathfinder withVarrockTeleport = runScenario("Deep wilderness -> Grand Exchange with GE Varrock Teleport", deepWilderness, grandExchange);
+
+        assertEquals(182, withVarrockTeleport.getPath().size());
+        assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
+            usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: GE"));
+    }
+
+    @Test
+    public void testWildernessRouteWithGloryAndRunesDoesNotUseSpellTooEarly() {
+        // At this start point the route should use glory first because it becomes legal earlier and is closer to the eventual goal.
+        int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
+        int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
+        Map<Integer, Integer> varbits = new HashMap<>();
+        varbits.put(VarbitID.VARROCK_DIARY_MEDIUM_COMPLETE, 1); // Grand Exchange teleport unlocked
+
+        when(config.useAgilityShortcuts()).thenReturn(true);
+        when(config.useTeleportationSpells()).thenReturn(true);
+        setupInventory(
+            new Item(ItemID.AMULET_OF_GLORY_6, 1),
+            new Item(ItemID.LAWRUNE, 1),
+            new Item(ItemID.AIRRUNE, 3),
+            new Item(ItemID.FIRERUNE, 1));
+        setupEquipment();
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY, varbits);
+
+        Pathfinder pathfinder = runScenario("Deep wilderness -> Grand Exchange with glory and GE runes", deepWilderness, grandExchange);
+
+        assertEquals(103, pathfinder.getPath().size());
+        assertTrue("Glory should be used when both glory and GE runes are available but the spell is still wilderness-locked",
+            usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
+    }
+
+    @Test
     public void testCaves() {
         // Eadgar's Cave
         testTransportLength(2,
