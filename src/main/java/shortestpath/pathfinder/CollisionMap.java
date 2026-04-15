@@ -8,7 +8,6 @@ import shortestpath.transport.Transport;
 
 
 public class CollisionMap {
-
     // Enum.values() makes copies every time which hurts performance in the hotpath
     private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 
@@ -74,6 +73,18 @@ public class CollisionMap {
     private final boolean[] traversable = new boolean[8];
 
     public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
+        if (node.isTile()) {
+            return getTileNeighbors(node, visited, config, wildernessLevel);
+        } else {
+            return getAbstractNodeNeighbors(node, visited, config);
+        }
+    }
+
+    // Get neighbours for a walkable tile: 
+    //      * Neighbouring tiles we can walk to
+    //      * A transition into banked state, if the current tile is a bank.
+    //      * Transition into abstract global teleport nodes, if we haven't tried that yet.
+    private List<Node> getTileNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
@@ -101,19 +112,10 @@ public class CollisionMap {
                 pathBankVisited));
         }
 
-        // MP: Future optimisation here, the path state should only consider using teleports at the first point they are available.
-        // On each iteration, the entire list of teleports is traversed to discover that we have already reached the destination.
-        for (Transport transport : config.getUsableTeleports(pathBankVisited)) {
-            if (visited.get(transport.getDestination(), pathBankVisited)) {
-                continue;
-            }
-            if (!transport.isUsableAtWildernessLevel(wildernessLevel)) { continue; }
-            neighbors.add(new TransportNode(
-                transport.getDestination(),
-                node,
-                transport.getDuration(),
-                config.getAdditionalTransportCost(transport),
-                pathBankVisited));
+        // Global teleports are only considered from an abstract node, so each wilderness/bank state expands them once.
+        Node globalTeleports = Node.abstractNode(AbstractNodeKind.fromWildernessLevel(wildernessLevel), node, pathBankVisited);
+        if (!visited.get(globalTeleports)) {
+            neighbors.add(globalTeleports);
         }
 
         // Then add tiles which we can walk to, which go into the FIFO boundary queue.
@@ -167,6 +169,26 @@ public class CollisionMap {
             }
         }
 
+        return neighbors;
+    }
+
+    // The only abstract nodes are currently for global teleports
+    private List<Node> getAbstractNodeNeighbors(Node node, VisitedTiles visited, PathfinderConfig config) {
+        neighbors.clear();
+        for (Transport transport : config.getUsableTeleports(node.bankVisited)) {
+            if (visited.get(transport.getDestination(), node.bankVisited)) {
+                continue;
+            }
+            if (!transport.isUsableAtWildernessLevel(node.abstractKind.maxWildernessLevel())) {
+                continue;
+            }
+            neighbors.add(new TransportNode(
+                transport.getDestination(),
+                node,
+                transport.getDuration(),
+                config.getAdditionalTransportCost(transport),
+                node.bankVisited));
+        }
         return neighbors;
     }
 }

@@ -102,7 +102,7 @@ public class Pathfinder implements Runnable {
         List<PathStep> currentPath = getPath();
         boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
         int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
-        int closestReachedPoint = bestLastNode != null ? bestLastNode.packedPosition : start;
+        int closestReachedPoint = bestLastNode != null ? bestLastNode.getClosestTilePosition() : start;
         return new PathfinderResult(
             start,
             target,
@@ -119,11 +119,12 @@ public class Pathfinder implements Runnable {
     private void addNeighbors(Node node) {
         List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel);
         for (Node neighbor : nodes) {
-            if (config.avoidWilderness(node.packedPosition, neighbor.packedPosition, targetInWilderness)) {
+            if (node.isTile() && neighbor.isTile()
+                && config.avoidWilderness(node.packedPosition, neighbor.packedPosition, targetInWilderness)) {
                 continue;
             }
 
-            visited.set(neighbor.packedPosition, neighbor.bankVisited);
+            visited.set(neighbor);
             if (neighbor instanceof TransportNode) {
                 pending.add(neighbor);
                 ++stats.transportsChecked;
@@ -206,9 +207,11 @@ public class Pathfinder implements Runnable {
                 node = boundary.removeFirst();
             }
 
-            updateWildernessLevel(node);
+            if (node.isTile()) {
+                updateWildernessLevel(node);
+            }
 
-            if (targets.contains(node.packedPosition)) {
+            if (node.isTile() && targets.contains(node.packedPosition)) {
                 bestLastNode = node;
                 pathNeedsUpdate = true;
                 reachedTarget = node.packedPosition;
@@ -216,7 +219,7 @@ public class Pathfinder implements Runnable {
                 break;
             }
 
-            if (updateBestPathWhenUnreachable(node)) {
+            if (node.isTile() && updateBestPathWhenUnreachable(node)) {
                 cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
             }
 

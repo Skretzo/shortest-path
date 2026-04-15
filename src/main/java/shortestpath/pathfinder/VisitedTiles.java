@@ -10,6 +10,9 @@ public class VisitedTiles {
     private final VisitedRegion[] visitedRegionsWithoutBank;
     private final VisitedRegion[] visitedRegionsWithBank;
     private final byte[] visitedRegionPlanes;
+    // Abstract nodes are visited separately from tile nodes because they represent global search states, not map positions.
+    private final boolean[] abstractVisitedWithoutBank = new boolean[AbstractNodeKind.values().length];
+    private final boolean[] abstractVisitedWithBank = new boolean[AbstractNodeKind.values().length];
 
     public VisitedTiles(CollisionMap map) {
         regionExtents = SplitFlagMap.getRegionExtents();
@@ -50,6 +53,29 @@ public class VisitedTiles {
         return set(x, y, plane, bankVisited);
     }
 
+    public boolean get(Node node) {
+        if (node.isTile()) {
+            return get(node.packedPosition, node.bankVisited);
+        }
+        return node.bankVisited
+            ? abstractVisitedWithBank[node.abstractKind.ordinal()]
+            : abstractVisitedWithoutBank[node.abstractKind.ordinal()];
+    }
+
+    public boolean set(Node node) {
+        if (node.isTile()) {
+            return set(node.packedPosition, node.bankVisited);
+        }
+
+        boolean visited = get(node);
+        if (node.bankVisited) {
+            abstractVisitedWithBank[node.abstractKind.ordinal()] = true;
+        } else {
+            abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
+        }
+        return !visited;
+    }
+
     public boolean set(int x, int y, int plane, boolean bankVisited) {
         VisitedRegion[] visitedRegions = bankVisited ? visitedRegionsWithBank : visitedRegionsWithoutBank;
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
@@ -70,6 +96,10 @@ public class VisitedTiles {
         for (int i = 0; i < visitedRegionsWithoutBank.length; ++i) {
             visitedRegionsWithoutBank[i] = null;
             visitedRegionsWithBank[i] = null;
+        }
+        for (int i = 0; i < abstractVisitedWithoutBank.length; i++) {
+            abstractVisitedWithoutBank[i] = false;
+            abstractVisitedWithBank[i] = false;
         }
     }
 
