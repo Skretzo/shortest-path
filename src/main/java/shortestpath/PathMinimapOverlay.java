@@ -42,7 +42,7 @@ public class PathMinimapOverlay extends Overlay {
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
         PrimitiveIntList pathPoints = plugin.getPathfinder().getPath();
-        Color pathColor = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
+        Color pathColor = plugin.getPathColor();
         for (int i = 0; i < pathPoints.size(); i++) {
             int pathPoint = pathPoints.get(i);
             if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getPlane()) {

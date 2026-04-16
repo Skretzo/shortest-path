@@ -76,7 +76,7 @@ import shortestpath.transport.TransportType;
 )
 public class ShortestPathPlugin extends Plugin {
     protected static final String CONFIG_GROUP = "shortestpath";
-    
+
     // POH (Player Owned House) bounds for detecting when path goes through POH
     // Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
     private static final int POH_MIN_X = 1856;
@@ -145,9 +145,11 @@ public class ShortestPathPlugin extends Plugin {
     Color colourCollisionMap;
     Color colourPath;
     Color colourPathCalculating;
+    Color colourPathUnreachable;
     Color colourText;
     Color colourTransports;
     int tileCounterStep;
+    int unreachableTargetDistance;
     TileCounter showTileCounter;
     TileStyle pathStyle;
 
@@ -258,6 +260,42 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         return false;
+    }
+
+    public Color getPathColor() {
+        if (pathfinder == null || !pathfinder.isDone()) {
+            return colourPathCalculating;
+        }
+
+        PrimitiveIntList path = pathfinder.getPath();
+        if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+            return colourPath;
+        }
+
+        if (isPathUnreachable()) {
+            return colourPathUnreachable;
+        }
+
+        return colourPath;
+    }
+
+    public boolean isPathUnreachable() {
+        if (pathfinder == null || !pathfinder.isDone()) {
+            return false;
+        }
+
+        PrimitiveIntList path = pathfinder.getPath();
+        if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+            return false;
+        }
+
+        int endPoint = path.get(path.size() - 1);
+        int closestTargetDistance = Integer.MAX_VALUE;
+        for (int target : pathfinder.getTargets()) {
+            closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
+        }
+
+        return closestTargetDistance > unreachableTargetDistance;
     }
 
     @Subscribe
@@ -701,10 +739,10 @@ public class ShortestPathPlugin extends Plugin {
         if (path == null || currentIndex < 0) {
             return null;
         }
-        
+
         int destX = WorldPointUtil.unpackWorldX(destination);
         int destY = WorldPointUtil.unpackWorldY(destination);
-        
+
         // Check if destination is inside POH
         if (!isInsidePoh(destX, destY)) {
             return null;
@@ -717,16 +755,16 @@ public class ShortestPathPlugin extends Plugin {
         for (int i = currentIndex + 1; i < path.size() - 1; i++) {
             int stepLocation = path.get(i);
             int nextLocation = path.get(i + 1);
-            
+
             int stepX = WorldPointUtil.unpackWorldX(stepLocation);
             int stepY = WorldPointUtil.unpackWorldY(stepLocation);
             int nextX = WorldPointUtil.unpackWorldX(nextLocation);
             int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-            
+
             // Check if this step is inside POH but next step is outside (exit transport)
             boolean stepInsidePoh = isInsidePoh(stepX, stepY);
             boolean nextInsidePoh = isInsidePoh(nextX, nextY);
-            
+
             if (stepInsidePoh && !nextInsidePoh) {
                 pohExitIndex = i + 1; // Index of the first step outside POH
                 // Found the exit transport - get its display info
@@ -765,13 +803,13 @@ public class ShortestPathPlugin extends Plugin {
                 }
                 break;
             }
-            
+
             // If we've left POH without finding a transport, stop looking
             if (!stepInsidePoh) {
                 break;
             }
         }
-        
+
         return immediateExitInfo;
     }
 
@@ -884,10 +922,12 @@ public class ShortestPathPlugin extends Plugin {
         colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
         colourPath = override("colourPath", config.colourPath());
         colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
+        colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
         colourText = override("colourText", config.colourText());
         colourTransports = override("colourTransports", config.colourTransports());
 
         tileCounterStep = override("tileCounterStep", config.tileCounterStep());
+        unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
