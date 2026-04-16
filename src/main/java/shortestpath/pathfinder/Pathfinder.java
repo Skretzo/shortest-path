@@ -130,7 +130,7 @@ public class Pathfinder implements Runnable {
             if ((remainingDistance < bestRemainingDistance) ||
                 (remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
                 (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x < bestX) ||
-                (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && y == bestX && y < bestY)) {
+                (remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x == bestX && y < bestY)) {
                 bestRemainingDistance = remainingDistance;
                 bestTravelledDistance = travelledDistance;
                 bestX = x;
