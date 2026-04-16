@@ -136,17 +136,16 @@ public class PathTileOverlay extends Overlay {
 
         if (plugin.drawTiles && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
             Color colorCalculating = new Color(
-                    plugin.colourPathCalculating.getRed(),
-                    plugin.colourPathCalculating.getGreen(),
-                    plugin.colourPathCalculating.getBlue(),
-                    plugin.colourPathCalculating.getAlpha() / 2);
-            Color color = plugin.getPathfinder().isDone()
-                    ? new Color(
-                    plugin.colourPath.getRed(),
-                    plugin.colourPath.getGreen(),
-                    plugin.colourPath.getBlue(),
-                    plugin.colourPath.getAlpha() / 2)
-                    : colorCalculating;
+                plugin.colourPathCalculating.getRed(),
+                plugin.colourPathCalculating.getGreen(),
+                plugin.colourPathCalculating.getBlue(),
+                plugin.colourPathCalculating.getAlpha() / 2);
+            Color pathColor = plugin.getPathColor();
+            Color color = new Color(
+                pathColor.getRed(),
+                pathColor.getGreen(),
+                pathColor.getBlue(),
+                pathColor.getAlpha() / 2);
 
             java.util.List<PathStep> path = plugin.getPathfinder().getPath();
             int counter = 0;

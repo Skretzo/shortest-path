@@ -156,9 +156,11 @@ public class ShortestPathPlugin extends Plugin {
     Color colourCollisionMap;
     Color colourPath;
     Color colourPathCalculating;
+    Color colourPathUnreachable;
     Color colourText;
     Color colourTransports;
     int tileCounterStep;
+    int unreachableTargetDistance;
     TileCounter showTileCounter;
     TileStyle pathStyle;
 
@@ -291,6 +293,29 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         return false;
+    }
+
+    public Color getPathColor() {
+        if (pathfinder == null || !pathfinder.isDone()) {
+            return colourPathCalculating;
+        }
+
+        PrimitiveIntList path = pathfinder.getPath();
+        if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+            return colourPath;
+        }
+
+        int endPoint = path.get(path.size() - 1);
+        int closestTargetDistance = Integer.MAX_VALUE;
+        for (int target : pathfinder.getTargets()) {
+            closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
+        }
+
+        if (closestTargetDistance > unreachableTargetDistance) {
+            return colourPathUnreachable;
+        }
+
+        return colourPath;
     }
 
     @Subscribe
@@ -1020,10 +1045,12 @@ public class ShortestPathPlugin extends Plugin {
         colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
         colourPath = override("colourPath", config.colourPath());
         colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
+        colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
         colourText = override("colourText", config.colourText());
         colourTransports = override("colourTransports", config.colourTransports());
 
         tileCounterStep = override("tileCounterStep", config.tileCounterStep());
+        unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());

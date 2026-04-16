@@ -7,8 +7,6 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
-import java.util.Map;
-import java.util.Set;
 import java.util.HashSet;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
@@ -97,7 +95,7 @@ public class PathMapOverlay extends Overlay {
         }
 
         if (plugin.getPathfinder() != null) {
-            Color colour = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
+			Color colour = plugin.getPathColor();
             java.util.List<PathStep> path = plugin.getPathfinder().getPath();
             Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
