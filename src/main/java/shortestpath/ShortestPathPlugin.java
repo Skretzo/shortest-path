@@ -65,6 +65,7 @@ import net.runelite.client.util.Text;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -76,7 +77,7 @@ import shortestpath.transport.TransportType;
 )
 public class ShortestPathPlugin extends Plugin {
     protected static final String CONFIG_GROUP = "shortestpath";
-    
+
     // POH (Player Owned House) bounds for detecting when path goes through POH
     // Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
     private static final int POH_MIN_X = 1856;
@@ -233,7 +234,7 @@ public class ShortestPathPlugin extends Plugin {
                 if (ends.isEmpty()) {
                     setTarget(WorldPointUtil.UNDEFINED);
                 } else {
-                    pathfinder = new Pathfinder(this, pathfinderConfig, start, ends);
+                    pathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
                     pathfinderFuture = pathfindingExecutor.submit(pathfinder);
                 }
             }
@@ -245,14 +246,14 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     public boolean isNearPath(int location) {
-        PrimitiveIntList path = null;
+        List<PathStep> path = null;
         if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
             config.recalculateDistance() < 0 || lastLocation == (lastLocation = location)) {
             return true;
         }
 
         for (int i = 0; i < path.size(); i++) {
-            if (WorldPointUtil.distanceBetween(location, path.get(i)) < config.recalculateDistance()) {
+            if (WorldPointUtil.distanceBetween(location, path.get(i).getPackedPosition()) < config.recalculateDistance()) {
                 return true;
             }
         }
@@ -384,17 +385,15 @@ public class ShortestPathPlugin extends Plugin {
             List<WorldPoint> transportDestinations = new ArrayList<>();
             List<String> transportObjectInfos = new ArrayList<>();
             List<String> transportDisplayInfos = new ArrayList<>();
-            PrimitiveIntList currentPath = pathfinder.getPath();
+            List<PathStep> currentPath = pathfinder.getPath();
             for (int i = 1; i < currentPath.size(); i++) {
-                int origin = currentPath.get(i-1);
-                int destination = currentPath.get(i);
-                for (Transport transport : pathfinderConfig.getTransports().getOrDefault(origin, new HashSet<>())) {
-                    if (transport.getDestination() == destination) {
-                        transportOrigins.add(WorldPointUtil.unpackWorldPoint(origin));
-                        transportDestinations.add(WorldPointUtil.unpackWorldPoint(destination));
-                        transportObjectInfos.add(transport.getObjectInfo());
-                        transportDisplayInfos.add(transport.getDisplayInfo());
-                    }
+                PathStep currentStep = currentPath.get(i - 1);
+                PathStep nextStep = currentPath.get(i);
+                for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+                    transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
+                    transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
+                    transportObjectInfos.add(transport.getObjectInfo());
+                    transportDisplayInfos.add(transport.getDisplayInfo());
                 }
             }
             data.put("origin", transportOrigins);
@@ -457,10 +456,10 @@ public class ShortestPathPlugin extends Plugin {
                     }
                 }
                 int selectedTile = getSelectedWorldPoint();
-                PrimitiveIntList path = null;
+                List<PathStep> path = null;
                 if ((path = pathfinder.getPath()) != null) {
                     for (int i = 0; i < path.size(); i++) {
-                        if (path.get(i) == selectedTile) {
+                        if (path.get(i).getPackedPosition() == selectedTile) {
                             addMenuEntry(event, CLEAR, PATH, 1);
                             break;
                         }
@@ -597,27 +596,21 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     private void scrollFairyRingPanel() {
-        PrimitiveIntList path = null;
-        Map<Integer, Set<Transport>> transports = null;
+        List<PathStep> path = null;
 
         if (pathfinder == null
-            || (path = pathfinder.getPath()) == null
-            || (transports = getTransports()) == null) {
+            || (path = pathfinder.getPath()) == null) {
             return;
         }
 
         String fairyRingCode = null;
 
         for (int i = 1; i < path.size(); i++) {
-            int destination = path.get(i);
-            int origin = path.get(i - 1);
-            Set<Transport> candidateTransports = transports.get(origin);
-            if (candidateTransports != null) {
-                for (Transport transport : candidateTransports) {
-                    if (transport.getDestination() == destination
-                        && TransportType.FAIRY_RING.equals(transport.getType())) {
-                        fairyRingCode = transport.getDisplayInfo();
-                    }
+            PathStep currentStep = path.get(i - 1);
+            PathStep nextStep = path.get(i);
+            for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+                if (TransportType.FAIRY_RING.equals(transport.getType())) {
+                    fairyRingCode = transport.getDisplayInfo();
                 }
             }
         }
@@ -670,12 +663,69 @@ public class ShortestPathPlugin extends Plugin {
         );
     }
 
+    public CollisionMap getMap() {
+        return pathfinderConfig.getMap();
+    }
+
+    /**
+     * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
+     *
+     * It collapses banked/unbanked transport availability into a single view via
+     * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
+     *
+     * Do not use this for reasoning about which transports are available at a specific
+     * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
+     * path's PathStep state instead.
+     */
     public Map<Integer, Set<Transport>> getTransports() {
         return pathfinderConfig.getTransports();
     }
 
-    public CollisionMap getMap() {
-        return pathfinderConfig.getMap();
+    /** This reconstructs the candidate transports for a rendered path edge from the current path state.
+    *
+    *  The important detail is that path display logic is edge-based, not node-based:
+    *  - origin position comes from currentStep
+    *  - destination position comes from nextStep
+    *  - the applicable transport set may depend on whether the edge transitions into banked state
+    *
+    *  That last point is the awkward one. Banking is not represented as its own explicit path edge;
+    *  instead the "becomes banked" state change is conflated into the movement/transport edge that
+    *  reaches the banked destination step. As a result, callers cannot safely resolve transports from
+    *  a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
+    *  nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
+    *  transports for the edge between them.
+    *
+    *  This is still only a fallback for display code and remains inherently ambiguous when multiple
+    *  valid transports share the same origin/destination pair under the same edge state. The more
+    *  structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
+    *  carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
+    *  adjacent path steps.
+    *
+    *  Note that this function also performs filtering by the transport target, so callers of this
+    *  function can directly iterate over the returned transports.
+    */
+    public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep) {
+        if (currentStep == null || nextStep == null) {
+            return Set.of();
+        }
+        boolean bankVisited = currentStep.isBankVisited()
+            || (nextStep != null && nextStep.isBankVisited());
+        // Get the transports which start from the position of starting step.
+        Set<Transport> stepTransports = new HashSet<>(
+            pathfinderConfig.getTransportsPacked(bankVisited)
+                .getOrDefault(currentStep.getPackedPosition(), Set.of()));
+        // Add the teleports, which might be used from anywhere.
+        stepTransports.addAll(pathfinderConfig.getUsableTeleports(bankVisited));
+        // Remove transports which do not target the correct location.
+        stepTransports.removeIf(transport -> transport.getDestination() != nextStep.getPackedPosition());
+        return stepTransports;
+    }
+
+    public PathStep nextPathStep(List<PathStep> path, int index) {
+        if (path == null || index < 0 || index + 1 >= path.size()) {
+            return null;
+        }
+        return path.get(index + 1);
     }
 
     /**
@@ -697,14 +747,14 @@ public class ShortestPathPlugin extends Plugin {
      * @param currentIndex The current index in the path
      * @return The display info of the POH exit transport, or null if not applicable
      */
-    public String getPohExitInfo(int destination, PrimitiveIntList path, int currentIndex) {
+    public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex) {
         if (path == null || currentIndex < 0) {
             return null;
         }
-        
+
         int destX = WorldPointUtil.unpackWorldX(destination);
         int destY = WorldPointUtil.unpackWorldY(destination);
-        
+
         // Check if destination is inside POH
         if (!isInsidePoh(destX, destY)) {
             return null;
@@ -715,63 +765,62 @@ public class ShortestPathPlugin extends Plugin {
 
         // Look ahead in the path to find the next transport that exits POH
         for (int i = currentIndex + 1; i < path.size() - 1; i++) {
-            int stepLocation = path.get(i);
-            int nextLocation = path.get(i + 1);
-            
+            int stepLocation = path.get(i).getPackedPosition();
+            int nextLocation = path.get(i + 1).getPackedPosition();
+
             int stepX = WorldPointUtil.unpackWorldX(stepLocation);
             int stepY = WorldPointUtil.unpackWorldY(stepLocation);
             int nextX = WorldPointUtil.unpackWorldX(nextLocation);
             int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-            
+
             // Check if this step is inside POH but next step is outside (exit transport)
             boolean stepInsidePoh = isInsidePoh(stepX, stepY);
             boolean nextInsidePoh = isInsidePoh(nextX, nextY);
-            
+
             if (stepInsidePoh && !nextInsidePoh) {
-                pohExitIndex = i + 1; // Index of the first step outside POH
-                // Found the exit transport - get its display info
-                for (Transport transport : getTransports().getOrDefault(stepLocation, new HashSet<>())) {
-                    if (nextLocation == transport.getDestination()) {
-                        String exitInfo = transport.getDisplayInfo();
-                        if (exitInfo != null && !exitInfo.isEmpty()) {
-                            TransportType exitType = transport.getType();
-                            if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
-                                String objInfo = transport.getObjectInfo();
-                                if (objInfo != null && objInfo.contains("Amulet of Glory")) {
-                                    immediateExitInfo = "Mounted Glory: " + exitInfo;
-                                } else if (objInfo != null && objInfo.contains("Mythical cape")) {
-                                    immediateExitInfo = "Mythical Cape: " + exitInfo;
-                                } else if (objInfo != null && objInfo.contains("Xeric's Talisman")) {
-                                    immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-                                } else if (objInfo != null && objInfo.contains("Digsite")) {
-                                    immediateExitInfo = "Digsite Pendant: " + exitInfo;
-                                } else {
-                                    immediateExitInfo = "Jewelry Box: " + exitInfo;
-                                }
-                            } else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) {
-                                immediateExitInfo = "Nexus: " + exitInfo;
-                            } else if (TransportType.FAIRY_RING.equals(exitType)) {
-                                immediateExitInfo = "Fairy Ring " + exitInfo;
-                            } else if (TransportType.SPIRIT_TREE.equals(exitType)) {
-                                immediateExitInfo = "Spirit Tree: " + exitInfo;
-                            } else if (TransportType.WILDERNESS_OBELISK.equals(exitType)) {
-                                immediateExitInfo = "Obelisk: " + exitInfo;
+                // Found the exit transport - get its display info using bank-aware lookup
+                PathStep currentStep = path.get(i);
+                PathStep nextStep = path.get(i + 1);
+                for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+                    String exitInfo = transport.getDisplayInfo();
+                    if (exitInfo != null && !exitInfo.isEmpty()) {
+                        TransportType exitType = transport.getType();
+                        if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
+                            String objInfo = transport.getObjectInfo();
+                            if (objInfo != null && objInfo.contains("Amulet of Glory")) {
+                                immediateExitInfo = "Mounted Glory: " + exitInfo;
+                            } else if (objInfo != null && objInfo.contains("Mythical cape")) {
+                                immediateExitInfo = "Mythical Cape: " + exitInfo;
+                            } else if (objInfo != null && objInfo.contains("Xeric's Talisman")) {
+                                immediateExitInfo = "Xeric's Talisman: " + exitInfo;
+                            } else if (objInfo != null && objInfo.contains("Digsite")) {
+                                immediateExitInfo = "Digsite Pendant: " + exitInfo;
                             } else {
-                                immediateExitInfo = exitInfo;
+                                immediateExitInfo = "Jewelry Box: " + exitInfo;
                             }
+                        } else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) {
+                            immediateExitInfo = "Nexus: " + exitInfo;
+                        } else if (TransportType.FAIRY_RING.equals(exitType)) {
+                            immediateExitInfo = "Fairy Ring " + exitInfo;
+                        } else if (TransportType.SPIRIT_TREE.equals(exitType)) {
+                            immediateExitInfo = "Spirit Tree: " + exitInfo;
+                        } else if (TransportType.WILDERNESS_OBELISK.equals(exitType)) {
+                            immediateExitInfo = "Obelisk: " + exitInfo;
+                        } else {
+                            immediateExitInfo = exitInfo;
                         }
-                        break;
                     }
+                    break;
                 }
                 break;
             }
-            
+
             // If we've left POH without finding a transport, stop looking
             if (!stepInsidePoh) {
                 break;
             }
         }
-        
+
         return immediateExitInfo;
     }
 

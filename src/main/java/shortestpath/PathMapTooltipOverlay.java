@@ -7,8 +7,8 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.widgets.ComponentID;
@@ -18,6 +18,7 @@ import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 
 public class PathMapTooltipOverlay extends Overlay {
@@ -47,19 +48,19 @@ public class PathMapTooltipOverlay extends Overlay {
         }
 
         if (plugin.getPathfinder() != null) {
-            PrimitiveIntList path = plugin.getPathfinder().getPath();
+            List<PathStep> path = plugin.getPathfinder().getPath();
             Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
                 int nextPoint = WorldPointUtil.UNDEFINED;
                 if (path.size() > i + 1) {
-                    nextPoint = path.get(i + 1);
+                    nextPoint = path.get(i + 1).getPackedPosition();
                 }
-                if (drawTooltip(graphics, cursorPos, path.get(i), nextPoint, i + 1, path, i)) {
+                if (drawTooltip(graphics, cursorPos, path.get(i).getPackedPosition(), nextPoint, i + 1, path, i)) {
                     return null;
                 }
             }
             for (int target : plugin.getPathfinder().getTargets()) {
-                if (path.size() > 0 && target != path.get(path.size() - 1)) {
+                if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition()) {
                     drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1);
                 }
             }
@@ -68,7 +69,7 @@ public class PathMapTooltipOverlay extends Overlay {
         return null;
     }
 
-    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n, PrimitiveIntList path, int pathIndex) {
+    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n, List<PathStep> path, int pathIndex) {
         int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
         int startX = plugin.mapWorldPointToGraphicsPointX(point);
         int startY = plugin.mapWorldPointToGraphicsPointY(point);
@@ -90,9 +91,10 @@ public class PathMapTooltipOverlay extends Overlay {
         List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
             n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getPathfinder().getPath().size())));
         if (nextPoint != WorldPointUtil.UNDEFINED) {
-            for (Transport transport : plugin.getTransports().getOrDefault(point, new HashSet<>())) {
-                if (nextPoint == transport.getDestination()
-                    && transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
+            PathStep currentStep = path.get(pathIndex);
+            PathStep nextStep = plugin.nextPathStep(path, pathIndex);
+            for (Transport transport : plugin.transportsForEdge(currentStep, nextStep)) {
+                if (transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
                     String displayInfo = transport.getDisplayInfo();
                     // Check if this transport goes to POH - if so, look ahead to find the exit transport
                     String pohExitInfo = plugin.getPohExitInfo(nextPoint, path, pathIndex);

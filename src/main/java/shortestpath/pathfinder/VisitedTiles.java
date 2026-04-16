@@ -7,26 +7,32 @@ public class VisitedTiles {
     private final SplitFlagMap.RegionExtent regionExtents;
     private final int widthInclusive;
 
-    private final VisitedRegion[] visitedRegions;
+    private final VisitedRegion[] visitedRegionsWithoutBank;
+    private final VisitedRegion[] visitedRegionsWithBank;
     private final byte[] visitedRegionPlanes;
+    // Abstract nodes are visited separately from tile nodes because they represent global search states, not map positions.
+    private final boolean[] abstractVisitedWithoutBank = new boolean[AbstractNodeKind.values().length];
+    private final boolean[] abstractVisitedWithBank = new boolean[AbstractNodeKind.values().length];
 
     public VisitedTiles(CollisionMap map) {
         regionExtents = SplitFlagMap.getRegionExtents();
         widthInclusive = regionExtents.getWidth() + 1;
         final int heightInclusive = regionExtents.getHeight() + 1;
 
-        visitedRegions = new VisitedRegion[widthInclusive * heightInclusive];
+        visitedRegionsWithoutBank = new VisitedRegion[widthInclusive * heightInclusive];
+        visitedRegionsWithBank = new VisitedRegion[widthInclusive * heightInclusive];
         visitedRegionPlanes = map.getPlanes();
     }
 
-    public boolean get(int packedPoint) {
+    public boolean get(int packedPoint, boolean bankVisited) {
         final int x = WorldPointUtil.unpackWorldX(packedPoint);
         final int y = WorldPointUtil.unpackWorldY(packedPoint);
         final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
-        return get(x, y, plane);
+        return get(x, y, plane, bankVisited);
     }
 
-    public boolean get(int x, int y, int plane) {
+    public boolean get(int x, int y, int plane, boolean bankVisited) {
+        VisitedRegion[] visitedRegions = bankVisited ? visitedRegionsWithBank : visitedRegionsWithoutBank;
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= visitedRegions.length) {
             return true; // Region is out of bounds; report that it's been visited to avoid exploring it further
@@ -40,33 +46,71 @@ public class VisitedTiles {
         return region.get(x % REGION_SIZE, y % REGION_SIZE, plane);
     }
 
-    public boolean set(int packedPoint) {
+    public boolean set(int packedPoint, boolean bankVisited) {
         final int x = WorldPointUtil.unpackWorldX(packedPoint);
         final int y = WorldPointUtil.unpackWorldY(packedPoint);
         final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
-        return set(x, y, plane);
+        return set(x, y, plane, bankVisited);
     }
 
-    public boolean set(int x, int y, int plane) {
+    public boolean get(Node node) {
+        if (node.isTile()) {
+            return get(node.packedPosition, node.bankVisited);
+        }
+        return node.bankVisited
+            ? abstractVisitedWithBank[node.abstractKind.ordinal()]
+            : abstractVisitedWithoutBank[node.abstractKind.ordinal()];
+    }
+
+    public boolean set(Node node) {
+        if (node.isTile()) {
+            return set(node.packedPosition, node.bankVisited);
+        }
+
+        boolean visited = get(node);
+        if (node.bankVisited) {
+            abstractVisitedWithBank[node.abstractKind.ordinal()] = true;
+            // A banked abstract state dominates the equivalent unbanked state.
+            abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
+        } else {
+            abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
+        }
+        return !visited;
+    }
+
+    public boolean set(int x, int y, int plane, boolean bankVisited) {
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
-        if (regionIndex < 0 || regionIndex >= visitedRegions.length) {
+        if (regionIndex < 0 || regionIndex >= visitedRegionsWithoutBank.length) {
             return false; // Region is out of bounds; report that it's been visited to avoid exploring it further
         }
 
+        if (bankVisited) {
+            boolean unique = setInRegion(visitedRegionsWithBank, regionIndex, x, y, plane);
+            // A banked tile dominates the equivalent unbanked tile, so populate both buckets.
+            setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+            return unique;
+        }
+
+        return setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+    }
+
+    private boolean setInRegion(VisitedRegion[] visitedRegions, int regionIndex, int x, int y, int plane) {
         VisitedRegion region = visitedRegions[regionIndex];
         if (region == null) {
             region = new VisitedRegion(visitedRegionPlanes[regionIndex]);
             visitedRegions[regionIndex] = region;
         }
-
         return region.set(x % REGION_SIZE, y % REGION_SIZE, plane);
     }
 
     public void clear() {
-        for (int i = 0; i < visitedRegions.length; ++i) {
-            if (visitedRegions[i] != null) {
-                visitedRegions[i] = null;
-            }
+        for (int i = 0; i < visitedRegionsWithoutBank.length; ++i) {
+            visitedRegionsWithoutBank[i] = null;
+            visitedRegionsWithBank[i] = null;
+        }
+        for (int i = 0; i < abstractVisitedWithoutBank.length; i++) {
+            abstractVisitedWithoutBank[i] = false;
+            abstractVisitedWithBank[i] = false;
         }
     }
 
