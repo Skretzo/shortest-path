@@ -137,13 +137,12 @@ public class PathTileOverlay extends Overlay {
                 plugin.colourPathCalculating.getGreen(),
                 plugin.colourPathCalculating.getBlue(),
                 plugin.colourPathCalculating.getAlpha() / 2);
-            Color color = plugin.getPathfinder().isDone()
-                ? new Color(
-                    plugin.colourPath.getRed(),
-                    plugin.colourPath.getGreen(),
-                    plugin.colourPath.getBlue(),
-                    plugin.colourPath.getAlpha() / 2)
-                : colorCalculating;
+            Color pathColor = plugin.getPathColor();
+            Color color = new Color(
+                pathColor.getRed(),
+                pathColor.getGreen(),
+                pathColor.getBlue(),
+                pathColor.getAlpha() / 2);
 
             PrimitiveIntList path = plugin.getPathfinder().getPath();
             int counter = 0;

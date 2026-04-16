@@ -339,11 +339,27 @@ public interface ShortestPathConfig extends Config {
         return 5;
     }
 
+    @Range(
+        min = 0,
+        max = 20000
+    )
+    @ConfigItem(
+        keyName = "unreachableTargetDistanceThreshold",
+        name = "Unreachable target distance",
+        description = "Distance from the target at which a finished path is considered not to reach the target." +
+        "<br>Useful for determining if a path is potentially invalid.",
+        position = 28,
+        section = sectionSettings
+    )
+    default int unreachableTargetDistance() {
+        return 20;
+    }
+
     @ConfigItem(
         keyName = "showTileCounter",
         name = "Show tile counter",
         description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
-        position = 28,
+        position = 29,
         section = sectionSettings
     )
     default TileCounter showTileCounter() {
@@ -354,7 +370,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "tileCounterStep",
         name = "Tile counter step",
         description = "The number of tiles between the displayed tile counter numbers",
-        position = 29,
+        position = 30,
         section = sectionSettings
     )
     default int tileCounterStep()
@@ -374,7 +390,7 @@ public interface ShortestPathConfig extends Config {
         name = "Calculation cutoff",
         description = "The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>" +
             "made towards the path target before the calculation will be stopped",
-        position = 30,
+        position = 31,
         section = sectionSettings
     )
     default int calculationCutoff()
@@ -386,7 +402,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "showTransportInfo",
         name = "Show transport info",
         description = "Whether to display transport destination hint info, e.g. which chat option and text to click",
-        position = 31,
+        position = 32,
         section = sectionSettings
     )
     default boolean showTransportInfo() {
@@ -946,10 +962,22 @@ public interface ShortestPathConfig extends Config {
 
     @Alpha
     @ConfigItem(
+        keyName = "colourPathUnreachable",
+        name = "Unreachable",
+        description = "Colour of the path tiles when pathfinding has finished but the target is still too far away",
+        position = 72,
+        section = sectionColours
+    )
+    default Color colourPathUnreachable() {
+        return new Color(200, 40, 240);
+    }
+
+    @Alpha
+    @ConfigItem(
         keyName = "colourTransports",
         name = "Transports",
         description = "Colour of the transport tiles",
-        position = 72,
+        position = 73,
         section = sectionColours
     )
     default Color colourTransports() {
@@ -961,7 +989,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourCollisionMap",
         name = "Collision map",
         description = "Colour of the collision map tiles",
-        position = 73,
+        position = 74,
         section = sectionColours
     )
     default Color colourCollisionMap() {
@@ -973,7 +1001,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "colourText",
         name = "Text",
         description = "Colour of the text of the tile counter and fairy ring codes",
-        position = 74,
+        position = 75,
         section = sectionColours
     )
     default Color colourText() {

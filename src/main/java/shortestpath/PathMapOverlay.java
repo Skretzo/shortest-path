@@ -95,7 +95,7 @@ public class PathMapOverlay extends Overlay {
         }
 
         if (plugin.getPathfinder() != null) {
-            Color colour = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
+            Color colour = plugin.getPathColor();
             PrimitiveIntList path = plugin.getPathfinder().getPath();
             Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
