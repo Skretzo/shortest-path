@@ -305,17 +305,30 @@ public class ShortestPathPlugin extends Plugin {
             return colourPath;
         }
 
+        if (isPathUnreachable()) {
+            return colourPathUnreachable;
+        }
+
+        return colourPath;
+    }
+
+    public boolean isPathUnreachable() {
+        if (pathfinder == null || !pathfinder.isDone()) {
+            return false;
+        }
+
+        PrimitiveIntList path = pathfinder.getPath();
+        if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+            return false;
+        }
+
         int endPoint = path.get(path.size() - 1);
         int closestTargetDistance = Integer.MAX_VALUE;
         for (int target : pathfinder.getTargets()) {
             closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
         }
 
-        if (closestTargetDistance > unreachableTargetDistance) {
-            return colourPathUnreachable;
-        }
-
-        return colourPath;
+        return closestTargetDistance > unreachableTargetDistance;
     }
 
     @Subscribe
