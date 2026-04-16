@@ -352,7 +352,7 @@ public interface ShortestPathConfig extends Config {
         section = sectionSettings
     )
     default int unreachableTargetDistance() {
-        return 20;
+        return 2;
     }
 
     @ConfigItem(
