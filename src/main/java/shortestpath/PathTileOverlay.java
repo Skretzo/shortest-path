@@ -24,6 +24,8 @@ public class PathTileOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
     private static final int TRANSPORT_LABEL_GAP = 3;
+    private static final String UNREACHABLE_TEXT = "Destination could not be reached";
+    private int playerTileLabelOffset = 0;
 
     @Inject
     public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
@@ -123,6 +125,8 @@ public class PathTileOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        playerTileLabelOffset = 0;
+
         if (plugin.drawTransports) {
             renderTransports(graphics);
         }
@@ -161,13 +165,22 @@ public class PathTileOverlay extends Overlay {
                         drawTile(graphics, path.get(i), color, counter, showTiles);
                     }
                     counter++;
-                    drawTransportInfo(graphics, path.get(i), (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1), path, i);
+                    drawTransportInfo(
+                        graphics,
+                        path.get(i),
+                        (i + 1 == path.size()) ? WorldPointUtil.UNDEFINED : path.get(i + 1),
+                        path,
+                        i);
                 }
                 for (int target : plugin.getPathfinder().getTargets()) {
                     if (path.size() > 0 && target != path.get(path.size() - 1)) {
                         drawTile(graphics, target, colorCalculating, -1, showTiles);
                     }
                 }
+            }
+
+            if (plugin.isPathUnreachable()) {
+                playerTileLabelOffset += drawLabelOnPlayerTile(graphics, UNREACHABLE_TEXT, playerTileLabelOffset);
             }
         }
 
@@ -295,6 +308,32 @@ public class PathTileOverlay extends Overlay {
         }
     }
 
+    private int drawLabelAtCanvasPoint(Graphics2D graphics, Point point, String text, int verticalOffset) {
+        if (point == null || text == null || text.isEmpty()) {
+            return 0;
+        }
+
+        Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
+        double height = textBounds.getHeight();
+        int x = (int) (point.getX() - textBounds.getWidth() / 2);
+        int y = (int) (point.getY() - height) - verticalOffset;
+        graphics.setColor(Color.BLACK);
+        graphics.drawString(text, x + 1, y + 1);
+        graphics.setColor(plugin.colourText);
+        graphics.drawString(text, x, y);
+
+        return (int) height + TRANSPORT_LABEL_GAP;
+    }
+
+    private int drawLabelOnPlayerTile(Graphics2D graphics, String text, int verticalOffset) {
+        if (client.getLocalPlayer() == null) {
+            return 0;
+        }
+
+        Point playerPoint = Perspective.localToCanvas(client, client.getLocalPlayer().getLocalLocation(), client.getPlane());
+        return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
+    }
+
     private void drawTransportInfo(Graphics2D graphics, int location, int locationEnd, PrimitiveIntList path, int pathIndex) {
         if (locationEnd == WorldPointUtil.UNDEFINED || !plugin.showTransportInfo ||
             WorldPointUtil.unpackWorldPlane(location) != client.getPlane()) {
@@ -332,20 +371,7 @@ public class PathTileOverlay extends Overlay {
                 return;
             }
             text = text + " (Exit: " + pohExitInfo + ")";
-
-            Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getPlane());
-            if (p == null) {
-                return;
-            }
-
-            Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
-            double height = textBounds.getHeight();
-            int x = (int) (p.getX() - textBounds.getWidth() / 2);
-            int y = (int) (p.getY() - height);
-            graphics.setColor(Color.BLACK);
-            graphics.drawString(text, x + 1, y + 1);
-            graphics.setColor(plugin.colourText);
-            graphics.drawString(text, x, y);
+            playerTileLabelOffset += drawLabelOnPlayerTile(graphics, text, playerTileLabelOffset);
             return;
         }
 
@@ -378,16 +404,7 @@ public class PathTileOverlay extends Overlay {
                     continue;
                 }
 
-                Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
-                double height = textBounds.getHeight();
-                int x = (int) (p.getX() - textBounds.getWidth() / 2);
-                int y = (int) (p.getY() - height) - vertical_offset;
-                graphics.setColor(Color.BLACK);
-                graphics.drawString(text, x + 1, y + 1);
-                graphics.setColor(plugin.colourText);
-                graphics.drawString(text, x, y);
-
-                vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
+                playerTileLabelOffset += drawLabelAtCanvasPoint(graphics, p, text, playerTileLabelOffset);
             }
         }
     }
