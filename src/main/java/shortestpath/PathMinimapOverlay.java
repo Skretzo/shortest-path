@@ -13,6 +13,7 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.pathfinder.PathStep;
 
 public class PathMinimapOverlay extends Overlay {
     private final Client client;
@@ -41,10 +42,10 @@ public class PathMinimapOverlay extends Overlay {
         }
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-        PrimitiveIntList pathPoints = plugin.getPathfinder().getPath();
+        java.util.List<PathStep> pathPoints = plugin.getPathfinder().getPath();
         Color pathColor = plugin.getPathfinder().isDone() ? plugin.colourPath : plugin.colourPathCalculating;
         for (int i = 0; i < pathPoints.size(); i++) {
-            int pathPoint = pathPoints.get(i);
+            int pathPoint = pathPoints.get(i).getPackedPosition();
             if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getPlane()) {
                 continue;
             }
@@ -52,7 +53,7 @@ public class PathMinimapOverlay extends Overlay {
             drawOnMinimap(graphics, pathPoint, pathColor);
         }
         for (int target : plugin.getPathfinder().getTargets()) {
-            if (pathPoints.size() > 0 && target != pathPoints.get(pathPoints.size() - 1)) {
+            if (pathPoints.size() > 0 && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition()) {
                 drawOnMinimap(graphics, target, plugin.colourPathCalculating);
             }
         }

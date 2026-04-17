@@ -1,15 +1,13 @@
 package shortestpath.pathfinder;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 
-public class CollisionMap {
 
+public class CollisionMap {
     // Enum.values() makes copies every time which hurts performance in the hotpath
     private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 
@@ -74,27 +72,54 @@ public class CollisionMap {
     private final List<Node> neighbors = new ArrayList<>(16);
     private final boolean[] traversable = new boolean[8];
 
-    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel,
+        boolean targetInWilderness) {
+        if (node.isTile()) {
+            return getTileNeighbors(node, visited, config, wildernessLevel);
+        } else {
+            return getAbstractNodeNeighbors(node, visited, config, targetInWilderness);
+        }
+    }
+
+    // Get neighbours for a walkable tile: 
+    //      * Neighbouring tiles we can walk to
+    //      * A transition into banked state, if the current tile is a bank.
+    //      * Transition into abstract global teleport nodes, if we haven't tried that yet.
+    private List<Node> getTileNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
 
         neighbors.clear();
 
-        if (!config.isBankVisited() && config.getDestinations("bank").contains(node.packedPosition)) {
-            config.setBankVisited(true, node.packedPosition, wildernessLevel);
-        }
+        // Either we have already visited a bank, if the current tile is a bank switch into the bankVisited state for the
+        // rest of the path.
+        boolean pathBankVisited = node.bankVisited
+            || (config.isBankPathEnabled() && config.getDestinations("bank").contains(node.packedPosition));
 
-        @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>)Collections.EMPTY_SET);
-
-        // Transports are pre-filtered by PathfinderConfig.refreshTransports
-        // Thus any transports in the list are guaranteed to be valid per the user's settings
+        // Firstly check if there are any transports or teleports which are applicable from the current tile.
+        Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());
         for (Transport transport : transports) {
-            if (visited.get(transport.getDestination())) continue;
-            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), config.getAdditionalTransportCost(transport)));
+            // Do not consider a transport if we have already visited its target tile.
+            if (visited.get(transport.getDestination(), pathBankVisited)) {
+                continue;
+            }
+            // NB: Do not need to check for wilderness level for transports, since transports have specific origin tile.
+            neighbors.add(new TransportNode(
+                transport.getDestination(),
+                node,
+                transport.getDuration(),
+                config.getAdditionalTransportCost(transport),
+                pathBankVisited));
         }
 
+        // Global teleports are only considered from an abstract node, so each wilderness/bank state expands them once.
+        Node globalTeleports = Node.abstractNode(AbstractNodeKind.fromWildernessLevel(wildernessLevel), node, pathBankVisited);
+        if (!visited.get(globalTeleports)) {
+            neighbors.add(globalTeleports);
+        }
+
+        // Then add tiles which we can walk to, which go into the FIFO boundary queue.
         if (isBlocked(x, y, z)) {
             boolean westBlocked = isBlocked(x - 1, y, z);
             boolean eastBlocked = isBlocked(x + 1, y, z);
@@ -126,24 +151,50 @@ public class CollisionMap {
         for (int i = 0; i < traversable.length; i++) {
             OrdinalDirection d = ORDINAL_VALUES[i];
             int neighborPacked = packedPointFromOrdinal(node.packedPosition, d);
-            if (visited.get(neighborPacked)) continue;
+            if (visited.get(neighborPacked, pathBankVisited)) continue;
 
             if (traversable[i]) {
-                neighbors.add(new Node(neighborPacked, node));
+                neighbors.add(new Node(neighborPacked, node, Node.cost(neighborPacked, node), pathBankVisited));
             } else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z)) {
                 // The transport starts from a blocked adjacent tile, e.g. fairy ring
                 // Only checks non-teleport transports (includes portals and levers, but not items and spells)
-                @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>)Collections.EMPTY_SET);
+                Set<Transport> neighborTransports = config.getTransportsPacked(pathBankVisited).getOrDefault(neighborPacked, Set.of());
                 for (Transport transport : neighborTransports) {
-                    if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || visited.get(transport.getOrigin())) {
+                    if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN
+                        || !(transport.isUsableAtWildernessLevel(wildernessLevel))
+                        || visited.get(transport.getOrigin(), pathBankVisited)) {
                         continue;
                     }
-                    neighbors.add(new Node(transport.getOrigin(), node));
+                    neighbors.add(new Node(transport.getOrigin(), node, Node.cost(transport.getOrigin(), node), pathBankVisited));
                 }
             }
         }
 
+        return neighbors;
+    }
+
+    // The only abstract nodes are currently for global teleports
+    private List<Node> getAbstractNodeNeighbors(Node node, VisitedTiles visited, PathfinderConfig config,
+        boolean targetInWilderness) {
+        neighbors.clear();
+        int sourceTile = node.getClosestTilePosition();
+        for (Transport transport : config.getUsableTeleports(node.bankVisited)) {
+            if (visited.get(transport.getDestination(), node.bankVisited)) {
+                continue;
+            }
+            if (!transport.isUsableAtWildernessLevel(node.abstractKind.maxWildernessLevel())) {
+                continue;
+            }
+            if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness)) {
+                continue;
+            }
+            neighbors.add(new TransportNode(
+                transport.getDestination(),
+                node,
+                transport.getDuration(),
+                config.getAdditionalTransportCost(transport),
+                node.bankVisited));
+        }
         return neighbors;
     }
 }

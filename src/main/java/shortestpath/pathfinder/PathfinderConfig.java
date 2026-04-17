@@ -65,17 +65,19 @@ public class PathfinderConfig {
      * All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player.
      */
     private final Map<Integer, Set<Transport>> allTransports;
-    private final Set<Transport> usableTeleports;
     private final Map<String, Set<Integer>> allDestinations;
     private final Map<String, Set<Integer>> filteredDestinations;
     private final Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
     private final List<Integer> filteredTargets = new ArrayList<>(4);
 
-    @Getter
-    private final Map<Integer, Set<Transport>> transports;
-    // Copy of transports with packed positions for the hotpath; lists are not copied and are the same reference in both maps
-    @Getter
-    private final PrimitiveIntHashMap<Set<Transport>> transportsPacked;
+    /*
+     * Which transports are available for the current user configuration in the
+     * unbanked/banked state.
+     *  - transportAvailabilityWithoutBank answers the question, which transport can a player take right now?
+     *  - transportAvailabilityWithBank answers the question, which transports can a player take if they visit a bank?
+     */
+    private TransportAvailability transportAvailabilityWithoutBank;
+    private TransportAvailability transportAvailabilityWithBank;
     /**
      * Reference that points to either allDestinations or filteredDestinations
      */
@@ -88,8 +90,6 @@ public class PathfinderConfig {
     private long calculationCutoffMillis;
     @Getter
     private boolean avoidWilderness;
-    @Getter
-    private boolean bankVisited;
 
     // Centralized transport type enable/disable config
     private final TransportTypeConfig transportTypeConfig;
@@ -120,9 +120,8 @@ public class PathfinderConfig {
         this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
         this.allTransports = TransportLoader.loadAllFromResources();
         remapPohDestinations();
-        this.usableTeleports = new HashSet<>(allTransports.size() / 20);
-        this.transports = new HashMap<>(allTransports.size() / 2);
-        this.transportsPacked = new PrimitiveIntHashMap<>(allTransports.size() / 2);
+        this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.size()).build();
+        this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.size()).build();
         this.allDestinations = Destination.loadAllFromResources();
         this.filteredDestinations = filterDestinations(allDestinations);
         this.destinations = allDestinations;
@@ -130,6 +129,36 @@ public class PathfinderConfig {
 
     public CollisionMap getMap() {
         return map.get();
+    }
+
+    /**
+     * WARNING: This method collapses the banked/unbanked transport distinction into a single view.
+     *
+     * It exists only for legacy display-oriented callers such as overlays which want a coarse
+     * "currently relevant" set of transports to render. It must not be used for path-state-sensitive
+     * logic, because transport availability now depends on whether a path has visited a bank.
+     *
+     * Use {@link #getTransportAvailability(boolean)}, {@link #getTransportsPacked(boolean)}, or
+     * {@link #getUsableTeleports(boolean)} for pathfinding and path analysis code.
+     */
+    public Map<Integer, Set<Transport>> getTransports() {
+        return getTransportAvailability(includeBankPath).getTransportsByOrigin();
+    }
+
+    public PrimitiveIntHashMap<Set<Transport>> getTransportsPacked(boolean bankVisited) {
+        return getTransportAvailability(bankVisited).getTransportsPacked();
+    }
+
+    public Set<Transport> getUsableTeleports(boolean bankVisited) {
+        return getTransportAvailability(bankVisited).getUsableTeleports();
+    }
+
+    public TransportAvailability getTransportAvailability(boolean bankVisited) {
+        return bankVisited ? transportAvailabilityWithBank : transportAvailabilityWithoutBank;
+    }
+
+    public boolean isBankPathEnabled() {
+        return includeBankPath;
     }
 
     public boolean hasDestination(String destinationType) {
@@ -157,7 +186,6 @@ public class PathfinderConfig {
         // Other settings (useTeleportationItems is now managed by transportTypeConfig)
         currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
         includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath());
-        bankVisited = !includeBankPath;
 
         // Note: Transport type costs are now managed by transportTypeConfig.getCost()
         costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
@@ -175,26 +203,6 @@ public class PathfinderConfig {
         }
 
         refreshDestinations();
-    }
-
-    /**
-     * Specialized method for only updating player-held item and spell transports
-     */
-    public void refreshTeleports(int packedLocation, int wildernessLevel) {
-        Set<Transport> usableWildyTeleports = new HashSet<>(usableTeleports.size());
-
-        for (Transport teleport : usableTeleports) {
-            if (wildernessLevel <= teleport.getMaxWildernessLevel()) {
-                usableWildyTeleports.add(teleport);
-            }
-        }
-
-        if (!usableWildyTeleports.isEmpty()) {
-            Set<Transport> oldTransports = transports.getOrDefault(packedLocation, new HashSet<>());
-            oldTransports.addAll(usableWildyTeleports);
-            transports.put(packedLocation, oldTransports);
-            transportsPacked.put(packedLocation, usableWildyTeleports); // appends for collections
-        }
     }
 
     private void refreshDestinations() {
@@ -262,11 +270,9 @@ public class PathfinderConfig {
             return; // Has to run on the client thread; data will be refreshed when path finding commences
         }
 
-        // Apply runtime restrictions based on quests/items
+        // Fairy ring staff/diary requirements are enforced later in hasRequiredItems().
         transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-                client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39
-                        && (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1
-                        || hasRequiredItems(DRAMEN_STAFF, true, true, false, false)));
+                client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39);
         transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
                 QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
         transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
@@ -274,12 +280,9 @@ public class PathfinderConfig {
         transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
                 QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
-        transports.clear();
-        transportsPacked.clear();
-        usableTeleports.clear();
+        TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.size());
+        TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.size());
         for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet()) {
-            int point = entry.getKey();
-            Set<Transport> usableTransports = new HashSet<>(entry.getValue().size());
             for (Transport transport : entry.getValue()) {
                 for (Quest quest : transport.getQuests()) {
                     try {
@@ -296,37 +299,25 @@ public class PathfinderConfig {
                     }
                 }
 
-                if (useTransport(transport) && hasRequiredItems(transport)) {
-                    if (point == WorldPointUtil.UNDEFINED) {
-                        usableTeleports.add(transport);
-                    } else {
-                        usableTransports.add(transport);
-                    }
+                if (!useTransport(transport)) {
+                    continue;
                 }
-            }
 
-            if (point != WorldPointUtil.UNDEFINED && !usableTransports.isEmpty()) {
-                transports.put(point, usableTransports);
-                transportsPacked.put(point, usableTransports);
-            }
-        }
-
-        // Remap all POH transport origins to the house landing tile
-        remapPohTransports();
-    }
-
-    private void refreshUsableTeleports() {
-        // Only for appending and not for removing teleports
-        for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet()) {
-            if (entry.getKey() == WorldPointUtil.UNDEFINED) { // is a teleport
-                for (Transport transport : entry.getValue()) {
-                    if (useTransport(transport)
-                            && hasRequiredItems(transport, false, false, true, false)) {
-                        usableTeleports.add(transport);
-                    }
+                boolean usableWithoutBank = hasRequiredItems(transport, true, true, false, true);
+                boolean usableWithBank = hasRequiredItems(transport, true, true, includeBankPath, true);
+                if (usableWithoutBank) {
+                    withoutBank.add(transport);
+                }
+                if (usableWithBank) {
+                    withBank.add(transport);
                 }
             }
         }
+
+        withoutBank.remapPohTransports();
+        withBank.remapPohTransports();
+        transportAvailabilityWithoutBank = withoutBank.build();
+        transportAvailabilityWithBank = withBank.build();
     }
 
     public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness) {
@@ -334,14 +325,6 @@ public class PathfinderConfig {
                 && !targetInWilderness
                 && !WildernessChecker.isInWilderness(packedPosition)
                 && WildernessChecker.isInWilderness(packedNeighborPosition);
-    }
-
-    public void setBankVisited(boolean visited, int packedLocation, int wildernessLevel) {
-        bankVisited = visited;
-        if (bankVisited) {
-            refreshUsableTeleports();
-            refreshTeleports(packedLocation, wildernessLevel);
-        }
     }
 
     /**
@@ -361,40 +344,6 @@ public class PathfinderConfig {
                     transport.setDestination(pohLanding);
                 }
             }
-        }
-    }
-
-    /**
-     * Remaps POH transport origins to the house landing tile.
-     * Extracted to be reusable by both refreshTransports and refreshTransportsForBankVisit.
-     */
-    private void remapPohTransports() {
-        int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
-        Set<Transport> pohTransports = new HashSet<>();
-        Set<Integer> pohOriginsToRemove = new HashSet<>();
-
-        for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
-            int origin = entry.getKey();
-            int originX = WorldPointUtil.unpackWorldX(origin);
-            int originY = WorldPointUtil.unpackWorldY(origin);
-            if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
-                pohTransports.addAll(entry.getValue());
-                pohOriginsToRemove.add(origin);
-            }
-        }
-
-        // Remove POH origins from transports map (PrimitiveIntHashMap doesn't support remove)
-        for (Integer origin : pohOriginsToRemove) {
-            transports.remove(origin);
-        }
-
-        if (!pohTransports.isEmpty()) {
-            Set<Transport> existingPohTransports = transports.getOrDefault(pohLanding, new HashSet<>());
-            existingPohTransports.addAll(pohTransports);
-            transports.put(pohLanding, existingPohTransports);
-
-            // Also update transportsPacked for the landing tile
-            transportsPacked.put(pohLanding, existingPohTransports);
         }
     }
 
@@ -712,7 +661,7 @@ public class PathfinderConfig {
 
         if (checkBank) {
             TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
-            if (bank != null && bankVisited
+            if (bank != null
                     && (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
                     || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
                 for (Item item : bank.getItems()) {
@@ -820,4 +769,3 @@ public class PathfinderConfig {
         return availableSpiritTrees.contains(treeName);
     }
 }
-
