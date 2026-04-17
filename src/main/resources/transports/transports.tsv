@@ -5040,11 +5040,11 @@
 2780 3867 0	2772 10232 0	Enter Tunnel 5009						1	
 2779 3867 0	2772 10232 0	Enter Tunnel 5009						1	
 									
-# Trollweiss Mountain sled ride (sled = 4048)									
-2772 3886 0	2790 3794 0	Slide Slope 5015		4048=1				20	
-2773 3836 0	2790 3794 0	Slide Slope 5015		4048=1				20	
-2786 3772 0	2794 3719 0	Slide Slope 5015		4048=1				20	
-2785 3772 0	2794 3719 0	Slide Slope 5015		4048=1				20	
+# Trollweiss Mountain sled ride (sled = 4084)									
+2772 3836 0	2790 3794 0	Slide Slope 5015		4084=1				18	
+2773 3836 0	2790 3794 0	Slide Slope 5015		4084=1				18	
+2786 3772 0	2794 3719 0	Slide Slope 5015		4084=1				30	
+2785 3772 0	2794 3719 0	Slide Slope 5015		4084=1				30	
 									
 # Daero									
 2484 3486 1	2649 4516 0	Travel Daero 1445						6	
@@ -5315,12 +5315,6 @@
 2371 3619 0	2371 3621 0	Climb-over Stile 19222						5	
 2370 3620 0	2371 3621 0	Climb-over Stile 19222						5	
 2372 3620 0	2371 3621 0	Climb-over Stile 19222						5	
-
-# Trollweiss Mountain Sled									
-2772 3836 0	2790 3794 0	Slide Slope 5015		4084=1	Troll Romance			18	
-2773 3836 0	2790 3794 0	Slide Slope 5015		4084=1	Troll Romance			18	
-2785 3772 0	2794 3719 0	Slide Slope 5015		4084=1	Troll Romance			30	
-2786 3772 0	2794 3719 0	Slide Slope 5015		4084=1	Troll Romance			30	
 
 # Shadow Dungeon									
 2547 3422 0	2630 5071 0	Climb-down Ladder 6560		4657=1|28329=1|28327=1	Desert Treasure I				
