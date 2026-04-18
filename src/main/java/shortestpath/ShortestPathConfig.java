@@ -1,13 +1,8 @@
 package shortestpath;
 
 import java.awt.Color;
-import net.runelite.client.config.Alpha;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
-import net.runelite.client.config.Range;
-import net.runelite.client.config.Units;
+
+import net.runelite.client.config.*;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config {
@@ -981,9 +976,25 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigSection(
+            name = "Hotkeys",
+            description = "Options for keyboard shortcuts",
+            position = 75
+    )
+    String sectionHotkeys = "sectionHotkeys";
+
+    @ConfigItem(
+            keyName = "clearPathHotkey",
+            name = "Clear current path",
+            description = "Hotkey to clear the current path",
+            position = 76,
+            section = sectionHotkeys
+    )
+    default Keybind clearPathHotkey() { return Keybind.NOT_SET; };
+
+    @ConfigSection(
         name = "Debug Options",
         description = "Various options for debugging",
-        position = 75,
+        position = 77,
         closedByDefault = true
     )
     String sectionDebug = "sectionDebug";
@@ -992,7 +1003,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawTransports",
         name = "Draw transports",
         description = "Whether transports should be drawn",
-        position = 76,
+        position = 78,
         section = sectionDebug
     )
     default boolean drawTransports() {
@@ -1003,7 +1014,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawCollisionMap",
         name = "Draw collision map",
         description = "Whether the collision map should be drawn",
-        position = 77,
+        position = 79,
         section = sectionDebug
     )
     default boolean drawCollisionMap() {
@@ -1014,7 +1025,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "drawDebugPanel",
         name = "Show debug panel",
         description = "Toggles displaying the pathfinding debug stats panel",
-        position = 78,
+        position = 80,
         section = sectionDebug
     )
     default boolean drawDebugPanel() {
@@ -1025,7 +1036,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "postTransports",
         name = "Post transports",
         description = "Whether to post the transports used in the current path as a PluginMessage event",
-        position = 79,
+        position = 81,
         section = sectionDebug
     )
     default boolean postTransports() {
