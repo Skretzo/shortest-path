@@ -1,13 +1,8 @@
 package shortestpath;
 
 import java.awt.Color;
-import net.runelite.client.config.Alpha;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
-import net.runelite.client.config.Range;
-import net.runelite.client.config.Units;
+
+import net.runelite.client.config.*;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config {
@@ -17,6 +12,15 @@ public interface ShortestPathConfig extends Config {
         position = 0
     )
     String sectionSettings = "sectionSettings";
+
+    @ConfigItem(
+            keyName = "clearPathHotkey",
+            name = "Clear path hotkey",
+            description = "Hotkey to clear the current path",
+            position = 0,
+            section = sectionSettings
+    )
+    default Keybind clearPathHotkey() { return Keybind.NOT_SET; };
 
     @ConfigItem(
         keyName = "avoidWilderness",

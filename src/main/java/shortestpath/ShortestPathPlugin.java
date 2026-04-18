@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.event.KeyEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -53,6 +54,8 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.SpriteManager;
+import net.runelite.client.input.KeyListener;
+import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.JagexColors;
@@ -136,6 +139,9 @@ public class ShortestPathPlugin extends Plugin {
     @Inject
     private WorldMapPointManager worldMapPointManager;
 
+    @Inject
+    private KeyManager keyManager;
+
     boolean drawCollisionMap;
     boolean drawMap;
     boolean drawMinimap;
@@ -197,6 +203,8 @@ public class ShortestPathPlugin extends Plugin {
         if (config.drawDebugPanel()) {
             overlayManager.add(debugOverlayPanel);
         }
+
+        keyManager.registerKeyListener(clearPathKeylistener);
     }
 
     @Override
@@ -211,6 +219,8 @@ public class ShortestPathPlugin extends Plugin {
             pathfindingExecutor.shutdownNow();
             pathfindingExecutor = null;
         }
+
+        keyManager.unregisterKeyListener(clearPathKeylistener);
     }
 
     public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered) {
@@ -537,6 +547,23 @@ public class ShortestPathPlugin extends Plugin {
             }
         }
     }
+
+    private final KeyListener clearPathKeylistener = new KeyListener() {
+        @Override
+        public void keyTyped(KeyEvent e) {
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if(config.clearPathHotkey().matches(e)){
+                setTarget(WorldPointUtil.UNDEFINED);
+            }
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+        }
+    };
 
     private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
     private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
