@@ -174,6 +174,23 @@ public class ShortestPathPlugin extends Plugin {
     private Future<?> pathfinderFuture;
     private final Object pathfinderMutex = new Object();
     private static final Map<String, Object> configOverride = new HashMap<>(50);
+    private final KeyListener clearPathKeylistener = new KeyListener() {
+        @Override
+        public void keyTyped(KeyEvent e) {
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if(config.clearPathHotkey().matches(e)){
+                setTarget(WorldPointUtil.UNDEFINED);
+            }
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+        }
+    };
+
     @Getter
     private Pathfinder pathfinder;
     @Getter
@@ -547,23 +564,6 @@ public class ShortestPathPlugin extends Plugin {
             }
         }
     }
-
-    private final KeyListener clearPathKeylistener = new KeyListener() {
-        @Override
-        public void keyTyped(KeyEvent e) {
-        }
-
-        @Override
-        public void keyPressed(KeyEvent e) {
-            if(config.clearPathHotkey().matches(e)){
-                setTarget(WorldPointUtil.UNDEFINED);
-            }
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-        }
-    };
 
     private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
     private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
