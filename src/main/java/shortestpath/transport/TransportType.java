@@ -28,20 +28,10 @@ public enum TransportType {
     MAGIC_CARPET("/transports/magic_carpets.tsv", "useMagicCarpets", ShortestPathConfig::useMagicCarpets, "costMagicCarpets", ShortestPathConfig::costMagicCarpets),
     MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", ShortestPathConfig::useMagicMushtrees, "costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, 5),
     MINECART("/transports/minecarts.tsv", "useMinecarts", ShortestPathConfig::useMinecarts, "costMinecarts", ShortestPathConfig::costMinecarts),
-    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5) {
-        @Override
-        public boolean sharesTeleportDestinations() {
-            return true;
-        }
-    },
+    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5),
     QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzalWhistle", ShortestPathConfig::costQuetzalWhistle) {
         @Override
         public boolean isTeleport() {
-            return true;
-        }
-
-        @Override
-        public boolean sharesTeleportDestinations() {
             return true;
         }
     },
@@ -115,16 +105,6 @@ public enum TransportType {
      * wilderness level limit.
      */
     public boolean isTeleport() {
-        return false;
-    }
-
-    /**
-     * Whether this transport type shares destinations with a teleport type.
-     * When true, delayed visit marking is used during pathfinding so the
-     * cheaper option wins when both a transport and a teleport can reach
-     * the same destination.
-     */
-    public boolean sharesTeleportDestinations() {
         return false;
     }
 

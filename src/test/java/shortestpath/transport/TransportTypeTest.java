@@ -35,15 +35,4 @@ public class TransportTypeTest {
         assertFalse(TransportType.WILDERNESS_OBELISK.isTeleport());
     }
 
-    @Test
-    public void testSharesTeleportDestinations() {
-        assertTrue(TransportType.QUETZAL.sharesTeleportDestinations());
-        assertTrue(TransportType.QUETZAL_WHISTLE.sharesTeleportDestinations());
-
-        assertFalse(TransportType.TRANSPORT.sharesTeleportDestinations());
-        assertFalse(TransportType.TELEPORTATION_ITEM.sharesTeleportDestinations());
-        assertFalse(TransportType.TELEPORTATION_SPELL.sharesTeleportDestinations());
-        assertFalse(TransportType.FAIRY_RING.sharesTeleportDestinations());
-        assertFalse(TransportType.SPIRIT_TREE.sharesTeleportDestinations());
-    }
 }

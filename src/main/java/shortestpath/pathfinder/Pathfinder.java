@@ -203,15 +203,6 @@ public class Pathfinder implements Runnable {
 
             if (p != null && (node == null || p.cost < node.cost)) {
                 node = pending.poll();
-
-                // For delayed-visit nodes, check if the destination was already
-                // reached by a cheaper path while this node was queued.
-                if (node instanceof TransportNode && ((TransportNode) node).delayedVisit) {
-                    if (visited.get(node.packedPosition, node.bankVisited)) {
-                        continue;
-                    }
-                    visited.set(node.packedPosition, node.bankVisited);
-                }
             } else {
                 node = boundary.removeFirst();
             }

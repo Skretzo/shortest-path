@@ -100,9 +100,8 @@ public class CollisionMap {
         // Firstly check if there are any transports or teleports which are applicable from the current tile.
         Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());
         for (Transport transport : transports) {
-            boolean delayedVisit = transport.getType().sharesTeleportDestinations();
             // Do not consider a transport if we have already visited its target tile.
-            if (!delayedVisit && visited.get(transport.getDestination(), pathBankVisited)) {
+            if (visited.get(transport.getDestination(), pathBankVisited)) {
                 continue;
             }
             // NB: Do not need to check for wilderness level for transports, since transports have specific origin tile.
@@ -111,8 +110,7 @@ public class CollisionMap {
                 node,
                 transport.getDuration(),
                 config.getAdditionalTransportCost(transport),
-                pathBankVisited,
-                delayedVisit));
+                pathBankVisited));
         }
 
         // Global teleports are only considered from an abstract node, so each wilderness/bank state expands them once.
