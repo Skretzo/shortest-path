@@ -989,7 +989,9 @@ public interface ShortestPathConfig extends Config {
             position = 76,
             section = sectionHotkeys
     )
-    default Keybind clearPathHotkey() { return Keybind.NOT_SET; };
+    default Keybind clearPathHotkey() {
+        return Keybind.NOT_SET;
+    };
 
     @ConfigSection(
         name = "Debug Options",
