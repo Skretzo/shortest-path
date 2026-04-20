@@ -26,7 +26,7 @@ jobs:
 
       - name: Run checkstyle
         continue-on-error: true
-        run: ./gradlew check --stacktrace
+        run: ./gradlew check
         shell: bash
 
       - name: Upload Checkstyle HTML report
