@@ -709,12 +709,12 @@ public interface ShortestPathConfig extends Config {
         keyName = "costQuetzalWhistle",
         name = "Quetzal whistle threshold",
         description = "How many extra tiles a quetzal whistle teleport must save<br>" +
-            "to be preferred over walking or other transports",
+            "to be preferred over using a landing site",
         position = 54,
         section = sectionThresholds
     )
     default int costQuetzalWhistle() {
-        return 50;
+        return 15;
     }
 
     @Range(
