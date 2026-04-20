@@ -55,7 +55,8 @@ public final class PathfinderTestDashboardCollector {
                 "Pathfinder Dashboard",
                 "Routes captured from PathfinderTest",
                 System.currentTimeMillis() - STARTED,
-                RUNS);
+                RUNS,
+                REPORT_WRITER.createTransportLayerPointsAlwaysAvailable());
 
             String bundleName = System.getProperty(
                 DashboardBundlePublisher.BUNDLE_NAME_PROPERTY, "pathfinder-tests");
