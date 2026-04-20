@@ -41,6 +41,8 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
+import net.runelite.api.events.PostClientTick;
+import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.widgets.ComponentID;
@@ -176,6 +178,7 @@ public class ShortestPathPlugin extends Plugin {
     private PathfinderConfig pathfinderConfig;
     @Getter
     private boolean startPointSet = false;
+    private boolean fairyRingPanelOpen = false;
 
     @Provides
     public ShortestPathConfig provideConfig(ConfigManager configManager) {
@@ -521,7 +524,7 @@ public class ShortestPathPlugin extends Plugin {
     @Subscribe
     public void onWidgetLoaded(WidgetLoaded event) {
         if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG) {
-            scrollFairyRingPanel();
+            fairyRingPanelOpen = true;
         }
 
         // Populate spirit tree cache, but only once.
@@ -535,6 +538,20 @@ public class ShortestPathPlugin extends Plugin {
                     clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
                     break;
             }
+        }
+    }
+
+    @Subscribe
+    public void onWidgetClosed(WidgetClosed event) {
+        if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG) {
+            fairyRingPanelOpen = false;
+        }
+    }
+
+    @Subscribe
+    public void onPostClientTick(PostClientTick event) {
+        if (fairyRingPanelOpen && pathfinder != null) {
+            scrollFairyRingPanel();
         }
     }
 
@@ -624,9 +641,13 @@ public class ShortestPathPlugin extends Plugin {
         Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
         if (favesPanel != null) {
             for (Widget widget : favesPanel.getStaticChildren()) {
-                if (widget != null && fairyRingCode.equals(widget.getText())) {
-                    codeWidget = widget;
-                    break;
+                if (widget != null) {
+                    String widgetText = widget.getText();
+                    if (widgetText != null && (fairyRingCode.equals(widgetText)
+                        || ("(Shortest Path) " + fairyRingCode).equals(widgetText))) {
+                        codeWidget = widget;
+                        break;
+                    }
                 }
             }
         }
@@ -634,14 +655,28 @@ public class ShortestPathPlugin extends Plugin {
         Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
         if (contentsList != null && codeWidget == null) {
             for (Widget widget : contentsList.getDynamicChildren()) {
-                if (widget != null && fairyRingCode.equals(widget.getText())) {
-                    codeWidget = widget;
-                    break;
+                if (widget != null) {
+                    String widgetText = widget.getText();
+                    if (widgetText != null && (fairyRingCode.equals(widgetText)
+                        || ("(Shortest Path) " + fairyRingCode).equals(widgetText))) {
+                        codeWidget = widget;
+                        break;
+                    }
                 }
             }
         }
 
         if (codeWidget == null) {
+            return;
+        }
+
+        codeWidget.setTextColor(0x00FF00);
+        String codeWidgetText = codeWidget.getText();
+        if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)")) {
+            codeWidget.setText("(Shortest Path) " + codeWidgetText);
+        }
+
+        if (contentsList == null) {
             return;
         }
 
@@ -652,9 +687,6 @@ public class ShortestPathPlugin extends Plugin {
 
         contentsList.setScrollY(panelScrollY);
         contentsList.revalidateScroll();
-
-        codeWidget.setTextColor(0x00FF00);
-        codeWidget.setText("(Shortest Path) " + codeWidget.getText());
 
         client.runScript(
             ScriptID.UPDATE_SCROLLBAR,
