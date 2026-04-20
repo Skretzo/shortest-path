@@ -437,7 +437,6 @@ public class TransportTypeConfigTest {
         when(config.costMagicMushtrees()).thenReturn(0);
         when(config.costMinecarts()).thenReturn(0);
         when(config.costQuetzals()).thenReturn(0);
-        when(config.costQuetzalWhistle()).thenReturn(0);
         when(config.costSeasonalTransports()).thenReturn(0);
         when(config.costSpiritTrees()).thenReturn(0);
         when(config.costNonConsumableTeleportationItems()).thenReturn(0);
