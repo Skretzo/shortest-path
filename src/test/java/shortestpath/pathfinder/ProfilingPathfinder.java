@@ -238,6 +238,9 @@ public class ProfilingPathfinder {
         subStart = System.nanoTime();
 
         Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());
+        int inheritedDifferential = (node instanceof TransportNode && ((TransportNode) node).delayedVisit)
+            ? ((TransportNode) node).differentialCost
+            : 0;
         for (Transport transport : transports) {
             profile.transportEvaluations++;
             boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
@@ -245,9 +248,10 @@ public class ProfilingPathfinder {
                 profile.visitedSkipped++;
                 continue;
             }
+            int chainPenalty = (delayedVisit && inheritedDifferential > 0) ? inheritedDifferential : 0;
             neighbors.add(new TransportNode(
                 transport.getDestination(), node,
-                transport.getDuration(), config.getAdditionalTransportCost(transport),
+                transport.getDuration(), config.getAdditionalTransportCost(transport) + chainPenalty,
                 pathBankVisited,
                 delayedVisit,
                 delayedVisit ? config.getDifferentialCost(transport) : 0));
@@ -354,12 +358,13 @@ public class ProfilingPathfinder {
             if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness)) {
                 continue;
             }
+            int differentialCost = delayedVisit ? config.getDifferentialCost(transport) : 0;
             neighbors.add(new TransportNode(
                 transport.getDestination(), node,
                 transport.getDuration(), config.getAdditionalTransportCost(transport),
                 node.bankVisited,
                 delayedVisit,
-                delayedVisit ? config.getDifferentialCost(transport) : 0));
+                differentialCost));
         }
         return neighbors;
     }
