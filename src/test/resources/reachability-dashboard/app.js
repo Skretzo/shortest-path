@@ -1,18 +1,48 @@
-// URL configuration and stable DOM references used across the dashboard.
-const params = new URLSearchParams(window.location.search);
-const reportUrl = params.get("report");
-const bundleIdFromQuery = params.get("bundle");
-const bundleIndexUrl = "bundles/index.json";
+// ── Configuration constants ───────────────────────────────────────────
 const tileBaseUrl = "https://maps.runescape.wiki/osrs/versions/2026-03-04_a/tiles/rendered";
 const MAP_ID = -1;
 const MIN_ZOOM = -4;
 const MIN_NATIVE_ZOOM = -2;
 const MAX_ZOOM = 4;
 const MAX_NATIVE_ZOOM = 3;
+
+const TRANSPORT_PALETTE = {
+  entry:    { INVENTORY_VALID: "#2d6a4f", BANK_VALID: "#93c5a2", INVALID: "#6b7280" },
+  exit:     { INVENTORY_VALID: "#d1495b", BANK_VALID: "#f2a6af", INVALID: "#6b7280" },
+  teleport: { INVENTORY_VALID: "#7c3aed", BANK_VALID: "#c4b5fd", INVALID: "#6b7280" }
+};
+
+const MARKER_COLORS = {
+  start: "#1d4ed8",
+  target: "#2d6a4f",
+  closest: "#d97706",
+  bank: "#f59e0b"
+};
+const MARKER_COLOR_DEFAULT = "#475569";
+
+const HIGHLIGHT_STYLE = {
+  radius: 8,
+  color: "#f59e0b",
+  fillColor: "#fde68a",
+  fillOpacity: 0.9,
+  weight: 3
+};
+
+const HOVERED_TILE_STYLE = {
+  color: "#fde047",
+  weight: 1.5,
+  fillColor: "#fde047",
+  fillOpacity: 0.1,
+  interactive: false
+};
+
+// ── DOM references ────────────────────────────────────────────────────
 const summaryEl = document.getElementById("summary");
-const bundleSelectEl = document.getElementById("bundle-select");
 const runListEl = document.getElementById("run-list");
 const runDetailsEl = document.getElementById("run-details");
+const runInfoDetailsEl = document.getElementById("run-info-details");
+const runInfoPanel = document.getElementById("run-info-panel");
+const runInfoToggle = document.getElementById("run-info-toggle");
 const runSearchEl = document.getElementById("run-search");
 const unreachedOnlyEl = document.getElementById("unreached-only");
 const centerTargetEl = document.getElementById("center-target");
@@ -20,21 +50,25 @@ const prevRunEl = document.getElementById("prev-run");
 const nextRunEl = document.getElementById("next-run");
 const mapCoordinatesEl = document.getElementById("map-coordinates");
 const transportInfoEl = document.getElementById("transport-info");
-const mapHelpButtonEl = document.getElementById("map-help-button");
-const mapHelpOverlayEl = document.getElementById("map-help-overlay");
-const mapHelpCloseEl = document.getElementById("map-help-close");
-const mapHelpContentEl = document.getElementById("map-help-content");
+const bundleSelectEl = document.getElementById("bundle-select");
+const sidebarEl = document.getElementById("sidebar");
+const sidebarToggle = document.getElementById("sidebar-toggle");
 
-// Mutable dashboard state shared by rendering and interaction handlers.
+// ── Mutable state ─────────────────────────────────────────────────────
+/** Base URL for the currently loaded bundle (empty string for root report.json) */
+let currentBundleBase = "";
+window.currentBundleBase = currentBundleBase;
+
 let currentPlane = 0;
-let availableBundles = [];
 let selectedRun = null;
 let allRuns = [];
 let reportTransportLayers = [];
 let selectedTransportOverlay = null;
 let hoveredTileOverlay = null;
+let markerLayers = [];
+let transportOverlayLayers = [];
 
-// Leaflet tile setup for the RuneScape Wiki raster format and simple world CRS.
+// ── Map setup ─────────────────────────────────────────────────────────
 const WikiTileLayer = L.TileLayer.extend({
   getTileUrl(coords) {
     return `${tileBaseUrl}/${MAP_ID}/${coords.z}/${currentPlane}_${coords.x}_${-(1 + coords.y)}.png`;
@@ -57,6 +91,7 @@ const map = L.map("map", {
   maxBounds: [[-1000, -1000], [13800, 13800]],
   maxBoundsViscosity: 0.5
 });
+window._dashboardMap = map;
 
 map.attributionControl.addAttribution('&copy; <a href="https://runescape.wiki/">RuneScape Wiki</a>');
 
@@ -75,32 +110,8 @@ const transportLayerState = {
   teleport: false
 };
 
-const mapHelpSections = [
-  {
-    title: "Scenario inspection",
-    items: [
-      "Click a scenario in the left-hand list to draw its route and populate the details panel.",
-      "Use Previous and Next to move through the currently filtered scenario list.",
-      "Center on target recenters the map on the selected run's target tile."
-    ]
-  },
-  {
-    title: "Map interaction",
-    items: [
-      "Move the mouse across the map to preview the hovered tile and read its coordinates.",
-      "Ctrl-click a tile to copy its world coordinate as x, y, plane.",
-      "Click an entry, exit, or teleport overlay marker to highlight that transport and inspect its metadata."
-    ]
-  },
-  {
-    title: "Transport layers",
-    items: [
-      "Use the Transport Layers control in the top-right corner to toggle entries, exits, and teleports.",
-      "Entry and exit overlays are filtered to the currently selected plane.",
-      "Transport colors distinguish inventory-valid, bank-valid, and invalid states."
-    ]
-  }
-];
+// Extension layer toggles registered by plugins (e.g. profiler heatmap)
+const extensionLayerToggles = [];
 
 const TransportLayerControl = L.Control.extend({
   options: {
@@ -109,8 +120,8 @@ const TransportLayerControl = L.Control.extend({
 
   onAdd() {
     const container = L.DomUtil.create("div", "leaflet-bar leaflet-control transport-layer-control");
-    const fieldset = L.DomUtil.create("fieldset", "", container);
-    const legend = L.DomUtil.create("legend", "", fieldset);
+    this._fieldset = L.DomUtil.create("fieldset", "", container);
+    const legend = L.DomUtil.create("legend", "", this._fieldset);
     legend.textContent = "Transport Layers";
 
     [
@@ -118,7 +129,7 @@ const TransportLayerControl = L.Control.extend({
       { key: "exit", label: "Exits" },
       { key: "teleport", label: "Teleports" }
     ].forEach(item => {
-      const label = L.DomUtil.create("label", "", fieldset);
+      const label = L.DomUtil.create("label", "", this._fieldset);
       const input = L.DomUtil.create("input", "", label);
       input.type = "checkbox";
       input.checked = transportLayerState[item.key];
@@ -131,18 +142,46 @@ const TransportLayerControl = L.Control.extend({
       });
     });
 
+    // Add any extension toggles registered before control was created
+    extensionLayerToggles.forEach(toggle => this._addToggle(toggle));
+
     L.DomEvent.disableClickPropagation(container);
     L.DomEvent.disableScrollPropagation(container);
     return container;
+  },
+
+  _addToggle(toggle) {
+    const label = L.DomUtil.create("label", "", this._fieldset);
+    const input = L.DomUtil.create("input", "", label);
+    input.type = "checkbox";
+    input.checked = toggle.checked || false;
+    const text = L.DomUtil.create("span", "", label);
+    text.textContent = toggle.label;
+    L.DomEvent.disableClickPropagation(label);
+    L.DomEvent.on(input, "change", () => {
+      toggle.onChange(input.checked);
+    });
+    toggle._input = input;
+  },
+
+  addToggle(toggle) {
+    if (this._fieldset) {
+      this._addToggle(toggle);
+    }
   }
 });
 
-map.addControl(new TransportLayerControl());
+const transportLayerControl = new TransportLayerControl();
+map.addControl(transportLayerControl);
 
-let markerLayers = [];
-let transportOverlayLayers = [];
+// Public API for extensions to add map layer toggles
+window.addMapLayerToggle = function(toggle) {
+  extensionLayerToggles.push(toggle);
+  transportLayerControl.addToggle(toggle);
+};
 
-// Coordinate helpers translate between world points and Leaflet's simple CRS.
+// ── Coordinate utilities ──────────────────────────────────────────────
+
 function worldToLatLng(point) {
   return [point.y + 0.5, point.x + 0.5];
 }
@@ -165,7 +204,6 @@ function updateMapCoordinates(point, copied = false) {
     : formatCoordinateText(point);
 }
 
-// Overlay helpers manage transient tile highlights and route markers.
 function renderHoveredTile(point) {
   if (hoveredTileOverlay) {
     map.removeLayer(hoveredTileOverlay);
@@ -174,13 +212,7 @@ function renderHoveredTile(point) {
   hoveredTileOverlay = L.rectangle([
     [point.y, point.x],
     [point.y + 1, point.x + 1]
-  ], {
-    color: "#fde047",
-    weight: 1.5,
-    fillColor: "#fde047",
-    fillOpacity: 0.1,
-    interactive: false
-  }).addTo(map);
+  ], HOVERED_TILE_STYLE).addTo(map);
 }
 
 function clearLayers() {
@@ -210,26 +242,8 @@ function addMarker(point, label, color, radius = 6) {
   markerLayers.push(marker);
 }
 
-// Transport overlay rendering turns transport metadata into clickable map affordances.
 function transportLayerColor(kind, validity) {
-  const palette = {
-    entry: {
-      INVENTORY_VALID: "#2d6a4f",
-      BANK_VALID: "#93c5a2",
-      INVALID: "#6b7280"
-    },
-    exit: {
-      INVENTORY_VALID: "#d1495b",
-      BANK_VALID: "#f2a6af",
-      INVALID: "#6b7280"
-    },
-    teleport: {
-      INVENTORY_VALID: "#7c3aed",
-      BANK_VALID: "#c4b5fd",
-      INVALID: "#6b7280"
-    }
-  };
-  return (palette[kind] && palette[kind][validity]) || "#6b7280";
+  return (TRANSPORT_PALETTE[kind] && TRANSPORT_PALETTE[kind][validity]) || "#6b7280";
 }
 
 function transportLayerStyle(validity) {
@@ -277,20 +291,12 @@ function highlightTransport(layer, clickedKind) {
   if (layer.origin) {
     overlayLayers.push(L.circleMarker(worldToLatLng(layer.origin), {
       renderer: transportRenderer,
-      radius: 8,
-      color: "#f59e0b",
-      fillColor: "#fde68a",
-      fillOpacity: 0.9,
-      weight: 3
+      ...HIGHLIGHT_STYLE
     }));
   }
   overlayLayers.push(L.circleMarker(worldToLatLng(layer.destination), {
     renderer: transportRenderer,
-    radius: 8,
-    color: "#f59e0b",
-    fillColor: "#fde68a",
-    fillOpacity: 0.9,
-    weight: 3
+    ...HIGHLIGHT_STYLE
   }));
   if (layer.origin) {
     overlayLayers.push(L.polyline([worldToLatLng(layer.origin), worldToLatLng(layer.destination)], {
@@ -356,7 +362,6 @@ function renderTransportOverlays() {
   });
 }
 
-// Run list and route rendering own the scenario-centric sidebar and path visualization.
 function statusLabel(run) {
   const route = run.reached ? "reached" : "unreached";
   if (run.assertionPassed === true) return `pass, ${route}`;
@@ -369,11 +374,7 @@ function formatPoint(point) {
 }
 
 function markerColor(kind) {
-  if (kind === "start") return "#1d4ed8";
-  if (kind === "target") return "#2d6a4f";
-  if (kind === "closest") return "#d97706";
-  if (kind === "bank") return "#f59e0b";
-  return "#475569";
+  return MARKER_COLORS[kind] || MARKER_COLOR_DEFAULT;
 }
 
 function pathSegmentColor(reached, bankVisited) {
@@ -447,6 +448,14 @@ function buildDetails(run) {
       const label = step.displayInfo || step.objectInfo || step.type;
       details.push(`- step ${step.stepIndex}: ${step.type} -> ${label}`);
     });
+  }
+
+  if (run.collisionWindow) {
+    details.push("");
+    details.push(
+      `Collision window: ${run.collisionWindow.width}x${run.collisionWindow.height}` +
+      ` @ (${run.collisionWindow.originX}, ${run.collisionWindow.originY}, ${run.collisionWindow.plane})`
+    );
   }
 
   return details.join("\n");
@@ -561,7 +570,11 @@ function renderRunList() {
   runs.forEach(run => {
     const item = document.createElement("li");
     const button = document.createElement("button");
-    button.textContent = `[${statusLabel(run)}] ${run.name}`;
+    const dot = document.createElement("span");
+    dot.className = "run-status-dot " + (run.reached ? "run-status-dot--reached" : "run-status-dot--unreached");
+    dot.title = statusLabel(run);
+    button.appendChild(dot);
+    button.appendChild(document.createTextNode(run.name));
     if (selectedRun === run) {
       button.classList.add("selected");
     }
@@ -575,6 +588,10 @@ function renderRunList() {
 
   updateRunNavigation();
 }
+
+// ── Extension hook for optional panels (e.g. profiler) ──────────────
+// Extensions register via window.dashboardExtensions.push({ renderRun: fn })
+window.dashboardExtensions = [];
 
 function renderRun(run) {
   selectedRun = run;
@@ -603,53 +620,22 @@ function renderRun(run) {
     addMarker(marker.point, marker.label, markerColor(marker.kind), radius);
   });
 
-  runDetailsEl.textContent = buildDetails(run);
+  const details = buildDetails(run);
+  runDetailsEl.textContent = details;
+  runInfoDetailsEl.textContent = details;
+  runInfoPanel.classList.remove("run-info-hidden");
   renderTransportOverlays();
+  window.dashboardExtensions.forEach(ext => ext.renderRun(run));
 }
 
-// Help overlay rendering explains the intended interactive map workflow.
-function renderMapHelp() {
-  mapHelpContentEl.innerHTML = "";
-
-  mapHelpSections.forEach(section => {
-    const heading = document.createElement("h3");
-    heading.textContent = section.title;
-    mapHelpContentEl.appendChild(heading);
-
-    const list = document.createElement("ul");
-    section.items.forEach(item => {
-      const entry = document.createElement("li");
-      entry.textContent = item;
-      list.appendChild(entry);
-    });
-    mapHelpContentEl.appendChild(list);
-  });
-}
-
-function setMapHelpVisible(visible) {
-  mapHelpOverlayEl.hidden = !visible;
-}
-
-// Data loading keeps the selected bundle, report payload, and URL state aligned.
-function updateBundleQuery(bundleId) {
-  const nextParams = new URLSearchParams(window.location.search);
-  if (bundleId) {
-    nextParams.set("bundle", bundleId);
-  } else {
-    nextParams.delete("bundle");
-  }
-  const query = nextParams.toString();
-  window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
-}
-
-function renderReport(report, selectedBundleTitle) {
+function renderReport(report) {
   const runs = report.runs || [];
   reportTransportLayers = report.transportLayers || [];
   allRuns = runs;
   selectedRun = null;
   clearLayers();
   summaryEl.textContent =
-    `${selectedBundleTitle ? `${selectedBundleTitle}\n` : ""}` +
+    `${report.title ? `${report.title}\n` : ""}` +
     `${report.summary.successfulRuns}/${report.summary.totalRuns} reached, ` +
     `${report.summary.failedRuns} unreached` +
     (report.subtitle ? `\n${report.subtitle}` : "");
@@ -666,127 +652,97 @@ function renderReport(report, selectedBundleTitle) {
   renderRunList();
 }
 
-async function loadReport(url, selectedBundleTitle) {
+async function loadReport(url) {
+  currentBundleBase = url.substring(0, url.lastIndexOf("/") + 1);
+  window.currentBundleBase = currentBundleBase;
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to load ${url}`);
   }
   const report = await response.json();
-  renderReport(report, selectedBundleTitle);
+  renderReport(report);
 }
 
-async function loadBundle(bundle) {
-  if (bundleSelectEl) {
-    bundleSelectEl.value = bundle.id;
+async function initDashboard() {
+  const indexResp = await fetch("bundles/index.json");
+  if (!indexResp.ok) {
+    throw new Error("No bundles/index.json found. Run a dashboard task first.");
   }
-  updateBundleQuery(bundle.id);
-  await loadReport(bundle.reportPath, bundle.title);
-}
-
-async function loadBundleIndex() {
-  if (reportUrl) {
-    if (bundleSelectEl) {
-      bundleSelectEl.disabled = true;
-    }
-    await loadReport(reportUrl, null);
-    return;
+  const index = await indexResp.json();
+  if (!index.bundles || index.bundles.length === 0) {
+    throw new Error("No bundles registered in index.json.");
   }
 
-  const response = await fetch(bundleIndexUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to load ${bundleIndexUrl}`);
-  }
-  const index = await response.json();
-  const bundles = index.bundles || [];
-  availableBundles = bundles;
-  if (!bundleSelectEl) {
-    throw new Error("Bundle selector element is missing");
-  }
+  // Populate bundle selector
   bundleSelectEl.innerHTML = "";
-
-  if (bundles.length === 0) {
-    throw new Error("No report bundles found");
+  for (const bundle of index.bundles) {
+    const opt = document.createElement("option");
+    opt.value = bundle.reportPath;
+    opt.textContent = bundle.title || bundle.name;
+    bundleSelectEl.appendChild(opt);
   }
-
-  bundles.forEach(bundle => {
-    const option = document.createElement("option");
-    option.value = bundle.id;
-    option.textContent = bundle.title || bundle.id;
-    bundleSelectEl.appendChild(option);
+  if (index.bundles.length > 1) {
+    bundleSelectEl.hidden = false;
+  }
+  bundleSelectEl.addEventListener("change", () => {
+    loadReport("bundles/" + bundleSelectEl.value).catch(error => {
+      summaryEl.textContent = error.message;
+    });
   });
-  bundleSelectEl.disabled = false;
 
-  const selectedBundle = bundles.find(bundle => bundle.id === bundleIdFromQuery) || bundles[0];
-  await loadBundle(selectedBundle);
+  // Check URL for ?bundle= parameter
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("bundle");
+  const initial = requested
+    ? index.bundles.find(b => b.name === requested)
+    : index.bundles[0];
+  if (initial) {
+    bundleSelectEl.value = initial.reportPath;
+    await loadReport("bundles/" + initial.reportPath);
+  } else {
+    bundleSelectEl.value = index.bundles[0].reportPath;
+    await loadReport("bundles/" + index.bundles[0].reportPath);
+  }
 }
 
-loadBundleIndex().catch(error => {
+initDashboard().catch(error => {
   summaryEl.textContent = error.message;
   runDetailsEl.textContent = "Unable to render dashboard.";
 });
 
-renderMapHelp();
+// ── Event listeners ───────────────────────────────────────────────────
 
-if (bundleSelectEl) {
-  bundleSelectEl.addEventListener("change", async () => {
-    try {
-      const bundle = availableBundles.find(entry => entry.id === bundleSelectEl.value);
-      if (!bundle) {
-        throw new Error(`Unknown bundle: ${bundleSelectEl.value}`);
-      }
-      await loadBundle(bundle);
-    } catch (error) {
-      summaryEl.textContent = error.message;
-    }
-  });
+// Run info panel toggle (right side of map)
+runInfoToggle.addEventListener("click", () => {
+  const collapsed = runInfoPanel.classList.toggle("collapsed");
+  runInfoToggle.innerHTML = (collapsed ? "&#9656;" : "&#9666;") + " Scenario";
+});
+
+// Sidebar toggle
+sidebarToggle.addEventListener("click", () => {
+  const collapsed = sidebarEl.classList.toggle("collapsed");
+  sidebarToggle.querySelector("span").innerHTML = collapsed ? "&#9654;" : "&#9664;";
+  setTimeout(() => map.invalidateSize(), 250);
+});
+
+function onFilterChange() {
+  const runs = filteredRuns();
+  renderRunList();
+  if (runs.length === 0) {
+    selectedRun = null;
+    runDetailsEl.textContent = "No matching scenarios.";
+    clearLayers();
+    return;
+  }
+
+  if (!selectedRun || !runs.includes(selectedRun)) {
+    renderRun(runs[0]);
+    renderRunList();
+  }
 }
 
-mapHelpButtonEl.addEventListener("click", () => {
-  setMapHelpVisible(true);
-});
-
-mapHelpCloseEl.addEventListener("click", () => {
-  setMapHelpVisible(false);
-});
-
-mapHelpOverlayEl.addEventListener("click", event => {
-  if (event.target === mapHelpOverlayEl) {
-    setMapHelpVisible(false);
-  }
-});
-
-// Event wiring below keeps filters, navigation, and map gestures in sync.
-runSearchEl.addEventListener("input", () => {
-  const runs = filteredRuns();
-  renderRunList();
-  if (runs.length === 0) {
-    selectedRun = null;
-    runDetailsEl.textContent = "No matching scenarios.";
-    clearLayers();
-    return;
-  }
-
-  if (!selectedRun || !runs.includes(selectedRun)) {
-    renderRun(runs[0]);
-    renderRunList();
-  }
-});
-
-unreachedOnlyEl.addEventListener("change", () => {
-  const runs = filteredRuns();
-  renderRunList();
-  if (runs.length === 0) {
-    selectedRun = null;
-    runDetailsEl.textContent = "No matching scenarios.";
-    clearLayers();
-    return;
-  }
-
-  if (!selectedRun || !runs.includes(selectedRun)) {
-    renderRun(runs[0]);
-    renderRunList();
-  }
-});
+runSearchEl.addEventListener("input", onFilterChange);
+unreachedOnlyEl.addEventListener("change", onFilterChange);
 
 centerTargetEl.addEventListener("click", () => {
   if (!selectedRun) {
@@ -842,11 +798,5 @@ map.on("click", async event => {
   updateMapCoordinates(point, copied);
   if (copied) {
     console.log(`Copied coordinate: ${formatCoordinateText(point)}`);
-  }
-});
-
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && !mapHelpOverlayEl.hidden) {
-    setMapHelpVisible(false);
   }
 });

@@ -9,48 +9,52 @@
 </head>
 <body>
   <main class="layout">
-    <section class="sidebar">
-      <h1>Pathfinder Dashboard</h1>
-      <p id="summary">Loading report...</p>
-      <label class="search">
-        <span>Report bundle</span>
-        <select id="bundle-select">
-          <option>Loading bundles...</option>
-        </select>
-      </label>
-      <label class="search">
-        <span>Search scenarios</span>
-        <input id="run-search" type="search" placeholder="e.g. conch bank grapple">
-      </label>
-      <label class="toggle">
-        <input id="unreached-only" type="checkbox">
-        <span>Show unreached only</span>
-      </label>
-      <div class="nav-buttons">
-        <button id="prev-run" type="button">Previous</button>
-        <button id="next-run" type="button">Next</button>
+    <section class="sidebar" id="sidebar">
+      <div class="sidebar-content">
+        <h1>Pathfinder Dashboard</h1>
+        <p id="summary">Loading report...</p>
+        <select id="bundle-select" class="bundle-select" hidden></select>
+        <label class="search">
+          <span>Search scenarios</span>
+          <input id="run-search" type="search" placeholder="e.g. conch bank grapple">
+        </label>
+        <label class="toggle">
+          <input id="unreached-only" type="checkbox">
+          <span>Show unreached only</span>
+        </label>
+        <div class="nav-buttons">
+          <button id="prev-run" type="button">Previous</button>
+          <button id="next-run" type="button">Next</button>
+        </div>
+        <pre id="run-details" hidden>Select a run to inspect its route.</pre>
+        <ol id="run-list"></ol>
       </div>
-      <pre id="run-details">Select a run to inspect its route.</pre>
-      <button id="center-target" type="button">Center on target</button>
-      <ol id="run-list"></ol>
+      <button class="sidebar-handle" id="sidebar-toggle" type="button"><span>&#9664;</span></button>
     </section>
     <section class="map-panel">
       <div id="map"></div>
-      <button id="map-help-button" class="map-help-button" type="button" aria-label="Open map help">?</button>
-      <div id="map-help-overlay" class="map-help-overlay" hidden>
-        <div class="map-help-dialog" role="dialog" aria-modal="true" aria-labelledby="map-help-title">
-          <div class="map-help-header">
-            <h2 id="map-help-title">Map controls</h2>
-            <button id="map-help-close" class="map-help-close" type="button" aria-label="Close map help">Close</button>
-          </div>
-          <div id="map-help-content"></div>
+      <div class="run-info-panel run-info-hidden" id="run-info-panel">
+        <button class="run-info-toggle" id="run-info-toggle" type="button">&#9666; Scenario</button>
+        <div class="run-info-body" id="run-info-body">
+          <pre id="run-info-details"></pre>
+          <button id="center-target" type="button">Center on target</button>
         </div>
       </div>
       <div id="transport-info" hidden>Select a transport point to inspect it.</div>
       <div id="map-coordinates">-, -, -</div>
     </section>
   </main>
+  <div class="profiler-drawer collapsed" id="profiler-drawer" hidden>
+    <button class="profiler-drawer-handle" id="profiler-drawer-toggle" type="button">&#9650; Profiler</button>
+    <div class="profiler-drawer-body" id="profiler-panels">
+      <div class="profiler-panel profiler-panel-merged"><div class="profiler-col"><h2>Overview</h2><pre id="run-overview"></pre></div><div class="profiler-col"><h2>Counters</h2><pre id="counters-view"></pre></div></div>
+      <div class="profiler-panel"><h2>Time Series</h2><canvas id="timeseries-chart"></canvas></div>
+      <div class="profiler-panel"><h2>Phase Breakdown</h2><div id="phase-chart" class="bar-chart-container"></div></div>
+      <div class="profiler-panel"><h2>Sub-Phase Breakdown</h2><p class="subphase-explainer">Breakdown of the "Add neighbors" phase — where time is spent expanding tile and transport neighbors each iteration.</p><div id="subphase-chart" class="bar-chart-container"></div></div>
+    </div>
+  </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="app.js"></script>
+  <script src="profiler.js"></script>
 </body>
 </html>
