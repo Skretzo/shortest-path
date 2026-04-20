@@ -99,6 +99,13 @@ public class CollisionMap {
 
         // Firstly check if there are any transports or teleports which are applicable from the current tile.
         Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());
+        // If this tile was itself reached via a delayed-visit teleport (e.g. QUETZAL_WHISTLE), propagate its
+        // differential cost to any competing delayed-visit transports emitted from here. This prevents the
+        // pathfinder from choosing a chain (e.g. whistle → landing site A → fly to B) over a direct teleport
+        // to B, because the chain inherits the teleport's penalty and is therefore always more expensive.
+        int inheritedDifferential = (node instanceof TransportNode && ((TransportNode) node).delayedVisit)
+            ? ((TransportNode) node).differentialCost
+            : 0;
         for (Transport transport : transports) {
             boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
             // Do not consider a transport if we have already visited its target tile.
@@ -107,12 +114,16 @@ public class CollisionMap {
             if (!delayedVisit && visited.get(transport.getDestination(), pathBankVisited)) {
                 continue;
             }
+            // Inherit the parent teleport's differential as a real cost on chained shared-destination transports,
+            // so that chaining (e.g. fly to landing site A then use station to B) is always more expensive than
+            // a direct teleport to B.
+            int chainPenalty = (delayedVisit && inheritedDifferential > 0) ? inheritedDifferential : 0;
             // NB: Do not need to check for wilderness level for transports, since transports have specific origin tile.
             neighbors.add(new TransportNode(
                 transport.getDestination(),
                 node,
                 transport.getDuration(),
-                config.getAdditionalTransportCost(transport),
+                config.getAdditionalTransportCost(transport) + chainPenalty,
                 pathBankVisited,
                 delayedVisit,
                 delayedVisit ? config.getDifferentialCost(transport) : 0));

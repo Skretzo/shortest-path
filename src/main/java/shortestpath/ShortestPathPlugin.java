@@ -11,6 +11,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -718,6 +719,31 @@ public class ShortestPathPlugin extends Plugin {
         stepTransports.addAll(pathfinderConfig.getUsableTeleports(bankVisited));
         // Remove transports which do not target the correct location.
         stepTransports.removeIf(transport -> transport.getDestination() != nextStep.getPackedPosition());
+        // Remove teleports that share destinations with a local transport type on this edge.
+        // For example, if the path uses a QUETZAL (local) transport, suppress QUETZAL_WHISTLE hints.
+        // Also suppress them when the edge distance is within the shared type's radius threshold,
+        // which occurs when the path is simply walking to a landing site (not teleporting to it).
+        Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
+        for (Transport t : stepTransports) {
+            if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null) {
+                localTypes.add(t.getType());
+            }
+        }
+        int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
+        stepTransports.removeIf(t -> {
+            if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null) {
+                return false; // keep local transports
+            }
+            TransportType sharedType = t.getType().sharesDestinationsWith();
+            if (sharedType == null) {
+                return false; // not a shared-destination teleport, keep it
+            }
+            // Suppress if a local transport of the shared type is present on this edge (Issue 1),
+            // or if the edge is within the shared type's radius threshold, meaning the path is
+            // walking to the landing site rather than teleporting there (Issue 2).
+            return localTypes.contains(sharedType)
+                || (sharedType.getRadiusThreshold() != null && edgeDistance <= sharedType.getRadiusThreshold());
+        });
         return stepTransports;
     }
 
