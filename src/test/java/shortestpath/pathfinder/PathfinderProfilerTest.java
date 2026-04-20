@@ -50,10 +50,14 @@ public class PathfinderProfilerTest {
         int target = WorldPointUtil.packWorldPoint(3213, 3428, 0);
 
         Pathfinder unprofiled = new Pathfinder(pathfinderConfig, start, Set.of(target));
+        long unprofiledStart = System.nanoTime();
         unprofiled.run();
+        long unprofiledNanos = System.nanoTime() - unprofiledStart;
 
         ProfilingPathfinder profiled = new ProfilingPathfinder(pathfinderConfig, start, Set.of(target));
+        long profiledStart = System.nanoTime();
         profiled.run();
+        long profiledNanos = System.nanoTime() - profiledStart;
 
         PathfinderResult unprofiledResult = unprofiled.getResult();
         PathfinderResult profiledResult = profiled.getResult();
@@ -76,5 +80,11 @@ public class PathfinderProfilerTest {
         assertTrue("Should have checked some nodes", profile.getTileNeighborsAdded() > 0);
         assertTrue("addNeighbors time should be positive", profile.getAddNeighborsNanos() > 0);
         assertTrue("Peak boundary size should be positive", profile.getPeakBoundarySize() > 0);
+
+        // Profiling overhead should be reasonable (< 2x unprofiled runtime)
+        assertTrue("Profiling overhead too high: profiled=" + profiledNanos / 1_000_000 +
+            "ms, unprofiled=" + unprofiledNanos / 1_000_000 + "ms (ratio=" +
+            String.format("%.2f", (double) profiledNanos / unprofiledNanos) + "x)",
+            profiledNanos < unprofiledNanos * 2);
     }
 }
