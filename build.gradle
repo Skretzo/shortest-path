@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'jacoco'
     id 'me.champeau.jmh' version '0.7.2'
+    id 'checkstyle'
 }
 
 repositories {
