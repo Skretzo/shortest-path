@@ -28,11 +28,26 @@ public enum TransportType {
     MAGIC_CARPET("/transports/magic_carpets.tsv", "useMagicCarpets", ShortestPathConfig::useMagicCarpets, "costMagicCarpets", ShortestPathConfig::costMagicCarpets),
     MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", ShortestPathConfig::useMagicMushtrees, "costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, 5),
     MINECART("/transports/minecarts.tsv", "useMinecarts", ShortestPathConfig::useMinecarts, "costMinecarts", ShortestPathConfig::costMinecarts),
-    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5),
-    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzalWhistle", ShortestPathConfig::costQuetzalWhistle) {
+    QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5) {
+        @Override
+        public TransportType sharesDestinationsWith() {
+            return QUETZAL_WHISTLE;
+        }
+    },
+    QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzalWhistle", ShortestPathConfig::costQuetzals) {
         @Override
         public boolean isTeleport() {
             return true;
+        }
+
+        @Override
+        public TransportType sharesDestinationsWith() {
+            return QUETZAL;
+        }
+
+        @Override
+        public Function<ShortestPathConfig, Integer> differentialCostFunction() {
+            return ShortestPathConfig::costQuetzalWhistle;
         }
     },
     SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv", "useSeasonalTransports", ShortestPathConfig::useSeasonalTransports, "costSeasonalTransports", ShortestPathConfig::costSeasonalTransports),
@@ -107,6 +122,26 @@ public enum TransportType {
     public boolean isTeleport() {
         return false;
     }
+
+
+    /**
+     * Stores which transport type this transport shares destinations with, if any.
+     * Used for delayed visit pathfinding so both types can compete in the priority queue.
+     */
+    public TransportType sharesDestinationsWith() {
+        return null;
+    }
+
+    /**
+     * Additional cost applied on top of the base cost when this transport type
+     * shares destinations with another type. Represents the differential cost
+     * (e.g. how many extra tiles the whistle must save over a landing site
+     * to justify using a charge).
+     */
+    public Function<ShortestPathConfig, Integer> differentialCostFunction() {
+        return null;
+    }
+
 
     /**
      * Refines the TransportType based on the required skill levels.
