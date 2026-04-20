@@ -1,6 +1,7 @@
 package shortestpath.transport.requirement;
 
 import java.util.Arrays;
+
 import lombok.Getter;
 
 /**
@@ -9,7 +10,8 @@ import lombok.Getter;
  * SMOKE_RUNE, etc.
  */
 @Getter
-public class ItemRequirement {
+public class ItemRequirement
+{
 	/**
 	 * The item IDs that satisfy this requirement (variations)
 	 */
@@ -30,7 +32,8 @@ public class ItemRequirement {
 	 */
 	private final int quantity;
 
-	public ItemRequirement(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity) {
+	public ItemRequirement(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity)
+	{
 		this.itemIds = itemIds;
 		this.staffIds = staffIds;
 		this.offhandIds = offhandIds;
@@ -40,32 +43,36 @@ public class ItemRequirement {
 	/**
 	 * Creates an ItemRequirement from a single item ID and quantity.
 	 */
-	public static ItemRequirement of(int itemId, int quantity) {
-		return new ItemRequirement(new int[] { itemId }, new int[0], new int[0], quantity);
+	public static ItemRequirement of(int itemId, int quantity)
+	{
+		return new ItemRequirement(new int[] {itemId}, new int[0], new int[0], quantity);
 	}
 
 	/**
 	 * Creates an ItemRequirement from multiple item IDs (variations) and quantity.
 	 */
-	public static ItemRequirement of(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity) {
+	public static ItemRequirement of(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity)
+	{
 		return new ItemRequirement(itemIds, staffIds, offhandIds, quantity);
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(Object o)
+	{
 		if (this == o)
 			return true;
 		if (o == null || getClass() != o.getClass())
 			return false;
 		ItemRequirement that = (ItemRequirement) o;
 		return quantity == that.quantity &&
-				Arrays.equals(itemIds, that.itemIds) &&
-				Arrays.equals(staffIds, that.staffIds) &&
-				Arrays.equals(offhandIds, that.offhandIds);
+			Arrays.equals(itemIds, that.itemIds) &&
+			Arrays.equals(staffIds, that.staffIds) &&
+			Arrays.equals(offhandIds, that.offhandIds);
 	}
 
 	@Override
-	public int hashCode() {
+	public int hashCode()
+	{
 		int result = Arrays.hashCode(itemIds);
 		result = 31 * result + Arrays.hashCode(staffIds);
 		result = 31 * result + Arrays.hashCode(offhandIds);

@@ -3,9 +3,11 @@ package shortestpath;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PrimitiveIntListTests {
+public class PrimitiveIntListTests
+{
 	@Test
-	public void tryAddAndGet() {
+	public void tryAddAndGet()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(10);
 		intList.add(11);
@@ -15,7 +17,8 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test
-	public void tryGrow() {
+	public void tryGrow()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList(4);
 		intList.add(10);
 		intList.add(11);
@@ -24,14 +27,16 @@ public class PrimitiveIntListTests {
 		intList.add(14);
 		Assert.assertEquals(5, intList.size());
 		int sum = 0;
-		for (int i = 0; i < intList.size(); i++) {
+		for (int i = 0; i < intList.size(); i++)
+		{
 			sum += intList.get(i);
 		}
 		Assert.assertEquals(10 + 11 + 12 + 13 + 14, sum);
 	}
 
 	@Test
-	public void tryInitialize() {
+	public void tryInitialize()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList(3, true);
 		Assert.assertEquals(3, intList.size());
 		Assert.assertEquals(0, intList.get(0));
@@ -46,19 +51,22 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test
-	public void tryIterate() {
+	public void tryIterate()
+	{
 		int sum = 0;
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(10);
 		intList.add(11);
-		for (int i = 0; i < intList.size(); i++) {
+		for (int i = 0; i < intList.size(); i++)
+		{
 			sum += intList.get(i);
 		}
 		Assert.assertEquals(10 + 11, sum);
 	}
 
 	@Test
-	public void tryRemove() {
+	public void tryRemove()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(10);
 		intList.add(11);
@@ -69,14 +77,16 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test
-	public void defaultConstructor() {
+	public void defaultConstructor()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		Assert.assertEquals(0, intList.size());
 		Assert.assertTrue(intList.isEmpty());
 	}
 
 	@Test
-	public void capacityOnlyConstructor() {
+	public void capacityOnlyConstructor()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList(5);
 		// The list is not initialized so the size is 0
 		Assert.assertEquals(0, intList.size());
@@ -87,19 +97,22 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void negativeCapacityConstructor() {
+	public void negativeCapacityConstructor()
+	{
 		new PrimitiveIntList(-1);
 	}
 
 	@Test
-	public void zeroCapacityConstructor() {
+	public void zeroCapacityConstructor()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList(0);
 		Assert.assertEquals(0, intList.size());
 		Assert.assertTrue(intList.isEmpty());
 	}
 
 	@Test
-	public void addAtIndex() {
+	public void addAtIndex()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1);
 		intList.add(2);
@@ -114,19 +127,22 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test(expected = IndexOutOfBoundsException.class)
-	public void addAtIndexOutOfBoundsHigh() {
+	public void addAtIndexOutOfBoundsHigh()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1, 5);
 	}
 
 	@Test(expected = IndexOutOfBoundsException.class)
-	public void addAtIndexOutOfBoundsNegative() {
+	public void addAtIndexOutOfBoundsNegative()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(-1, 5);
 	}
 
 	@Test
-	public void setReturnsOldValue() {
+	public void setReturnsOldValue()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(10);
 		int old = intList.set(0, 20);
@@ -135,7 +151,8 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test
-	public void containsAndIndexOf() {
+	public void containsAndIndexOf()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(5);
 		intList.add(6);
@@ -147,7 +164,8 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test
-	public void removeNotPresent() {
+	public void removeNotPresent()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1);
 		Assert.assertFalse(intList.remove(2));
@@ -155,7 +173,8 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test
-	public void clearEmptiesList() {
+	public void clearEmptiesList()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1);
 		intList.add(2);
@@ -168,28 +187,32 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test(expected = IndexOutOfBoundsException.class)
-	public void getOutOfBounds() {
+	public void getOutOfBounds()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1);
 		intList.get(1); // size == 1 so index 1 invalid
 	}
 
 	@Test(expected = IndexOutOfBoundsException.class)
-	public void setOutOfBounds() {
+	public void setOutOfBounds()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1);
 		intList.set(1, 2);
 	}
 
 	@Test(expected = IndexOutOfBoundsException.class)
-	public void removeAtOutOfBounds() {
+	public void removeAtOutOfBounds()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1);
 		intList.removeAt(1);
 	}
 
 	@Test
-	public void ensureCapacityNoOpAndGrowth() {
+	public void ensureCapacityNoOpAndGrowth()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList();
 		// ensureCapacity(0) should be a no-op and size unchanged
 		intList.ensureCapacity(0);
@@ -198,7 +221,8 @@ public class PrimitiveIntListTests {
 		// Pre-grow to capacity for 500 elements
 		intList.ensureCapacity(500);
 		// Add 500 elements and assert size; this should work without errors
-		for (int i = 0; i < 500; i++) {
+		for (int i = 0; i < 500; i++)
+		{
 			intList.add(i);
 		}
 		Assert.assertEquals(500, intList.size());
@@ -209,7 +233,8 @@ public class PrimitiveIntListTests {
 	}
 
 	@Test
-	public void ensureCapacityIdempotentForSmaller() {
+	public void ensureCapacityIdempotentForSmaller()
+	{
 		PrimitiveIntList intList = new PrimitiveIntList(4);
 		intList.add(1);
 		intList.add(2);

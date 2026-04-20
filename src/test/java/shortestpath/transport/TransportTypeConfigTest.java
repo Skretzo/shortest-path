@@ -22,7 +22,8 @@ import shortestpath.TeleportationItem;
  * all config getters defined in TransportType work with ShortestPathConfig.
  */
 @RunWith(MockitoJUnitRunner.class)
-public class TransportTypeConfigTest {
+public class TransportTypeConfigTest
+{
 
 	@Mock
 	ShortestPathConfig config;
@@ -32,26 +33,33 @@ public class TransportTypeConfigTest {
 	 * when applied to a config object.
 	 */
 	@Test
-	public void testAllEnabledGettersReturnBoolean() {
+	public void testAllEnabledGettersReturnBoolean()
+	{
 		setupDefaultMocks();
 
 		List<String> errors = new ArrayList<>();
 
-		for (TransportType type : TransportType.values()) {
+		for (TransportType type : TransportType.values())
+		{
 			Function<ShortestPathConfig, Boolean> getter = type.getEnabledGetter();
-			if (getter == null) {
+			if (getter == null)
+			{
 				continue; // No enabled getter for this type, skip
 			}
 
-			try {
+			try
+			{
 				Boolean result = getter.apply(config);
 				assertNotNull("enabledGetter for " + type.name() + " should not return null", result);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				errors.add(String.format("%s: %s", type.name(), e.getMessage()));
 			}
 		}
 
-		if (!errors.isEmpty()) {
+		if (!errors.isEmpty())
+		{
 			fail("Errors invoking enabledGetters:\n  " + String.join("\n  ", errors));
 		}
 	}
@@ -61,26 +69,33 @@ public class TransportTypeConfigTest {
 	 * when applied to a config object.
 	 */
 	@Test
-	public void testAllCostGettersReturnInteger() {
+	public void testAllCostGettersReturnInteger()
+	{
 		setupDefaultMocks();
 
 		List<String> errors = new ArrayList<>();
 
-		for (TransportType type : TransportType.values()) {
+		for (TransportType type : TransportType.values())
+		{
 			Function<ShortestPathConfig, Integer> getter = type.getCostGetter();
-			if (getter == null) {
+			if (getter == null)
+			{
 				continue; // No cost getter for this type, skip
 			}
 
-			try {
+			try
+			{
 				Integer result = getter.apply(config);
 				assertNotNull("costGetter for " + type.name() + " should not return null", result);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				errors.add(String.format("%s: %s", type.name(), e.getMessage()));
 			}
 		}
 
-		if (!errors.isEmpty()) {
+		if (!errors.isEmpty())
+		{
 			fail("Errors invoking costGetters:\n  " + String.join("\n  ", errors));
 		}
 	}
@@ -90,7 +105,8 @@ public class TransportTypeConfigTest {
 	 * exceptions.
 	 */
 	@Test
-	public void testTransportTypeConfigConstruction() {
+	public void testTransportTypeConfigConstruction()
+	{
 		// Setup default returns for all config methods
 		setupDefaultMocks();
 
@@ -103,7 +119,8 @@ public class TransportTypeConfigTest {
 	 * Verifies that isEnabled returns the correct value based on mocked config.
 	 */
 	@Test
-	public void testIsEnabledReturnsConfigValue() {
+	public void testIsEnabledReturnsConfigValue()
+	{
 		// Setup default mocks first, then override specific values
 		setupDefaultMocks();
 		when(config.useAgilityShortcuts()).thenReturn(true);
@@ -113,11 +130,11 @@ public class TransportTypeConfigTest {
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
 		assertTrue("AGILITY_SHORTCUT should be enabled",
-				typeConfig.isEnabled(TransportType.AGILITY_SHORTCUT));
+			typeConfig.isEnabled(TransportType.AGILITY_SHORTCUT));
 		assertFalse("GRAPPLE_SHORTCUT should be disabled",
-				typeConfig.isEnabled(TransportType.GRAPPLE_SHORTCUT));
+			typeConfig.isEnabled(TransportType.GRAPPLE_SHORTCUT));
 		assertTrue("BOAT should be enabled",
-				typeConfig.isEnabled(TransportType.BOAT));
+			typeConfig.isEnabled(TransportType.BOAT));
 	}
 
 	/**
@@ -127,7 +144,8 @@ public class TransportTypeConfigTest {
 	 * useTeleportationItems config.
 	 */
 	@Test
-	public void testTypesWithoutConfigKeyAreEnabled() {
+	public void testTypesWithoutConfigKeyAreEnabled()
+	{
 		setupDefaultMocks();
 		// When TeleportationItem is not NONE, teleport item types should be enabled
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
@@ -136,15 +154,15 @@ public class TransportTypeConfigTest {
 
 		// TRANSPORT has no configKey, should always be enabled
 		assertTrue("TRANSPORT (no configKey) should be enabled",
-				typeConfig.isEnabled(TransportType.TRANSPORT));
+			typeConfig.isEnabled(TransportType.TRANSPORT));
 
 		// TELEPORTATION_ITEM should be enabled when TeleportationItem != NONE
 		assertTrue("TELEPORTATION_ITEM should be enabled when TeleportationItem is ALL",
-				typeConfig.isEnabled(TransportType.TELEPORTATION_ITEM));
+			typeConfig.isEnabled(TransportType.TELEPORTATION_ITEM));
 
 		// TELEPORTATION_BOX should be enabled when TeleportationItem != NONE
 		assertTrue("TELEPORTATION_BOX should be enabled when TeleportationItem is ALL",
-				typeConfig.isEnabled(TransportType.TELEPORTATION_BOX));
+			typeConfig.isEnabled(TransportType.TELEPORTATION_BOX));
 	}
 
 	/**
@@ -152,28 +170,30 @@ public class TransportTypeConfigTest {
 	 * TeleportationItem is set to NONE.
 	 */
 	@Test
-	public void testTeleportationItemTypesDisabledWhenNone() {
+	public void testTeleportationItemTypesDisabledWhenNone()
+	{
 		setupDefaultMocks();
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
 		assertFalse("TELEPORTATION_ITEM should be disabled when TeleportationItem is NONE",
-				typeConfig.isEnabled(TransportType.TELEPORTATION_ITEM));
+			typeConfig.isEnabled(TransportType.TELEPORTATION_ITEM));
 
 		assertFalse("TELEPORTATION_BOX should be disabled when TeleportationItem is NONE",
-				typeConfig.isEnabled(TransportType.TELEPORTATION_BOX));
+			typeConfig.isEnabled(TransportType.TELEPORTATION_BOX));
 
 		// TRANSPORT should still be enabled (no TeleportationItem dependency)
 		assertTrue("TRANSPORT should still be enabled",
-				typeConfig.isEnabled(TransportType.TRANSPORT));
+			typeConfig.isEnabled(TransportType.TRANSPORT));
 	}
 
 	/**
 	 * Verifies that TeleportationItem setting is properly returned.
 	 */
 	@Test
-	public void testGetTeleportationItemSetting() {
+	public void testGetTeleportationItemSetting()
+	{
 		setupDefaultMocks();
 
 		// Test with ALL
@@ -196,18 +216,20 @@ public class TransportTypeConfigTest {
 	 * Verifies that all TeleportationItem enum values are handled correctly.
 	 */
 	@Test
-	public void testAllTeleportationItemValuesHandled() {
+	public void testAllTeleportationItemValuesHandled()
+	{
 		setupDefaultMocks();
 
-		for (TeleportationItem item : TeleportationItem.values()) {
+		for (TeleportationItem item : TeleportationItem.values())
+		{
 			when(config.useTeleportationItems()).thenReturn(item);
 			TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
 			boolean expectedEnabled = (item != TeleportationItem.NONE);
 			assertEquals("TELEPORTATION_ITEM with " + item + " setting",
-					expectedEnabled, typeConfig.isEnabled(TransportType.TELEPORTATION_ITEM));
+				expectedEnabled, typeConfig.isEnabled(TransportType.TELEPORTATION_ITEM));
 			assertEquals("TELEPORTATION_BOX with " + item + " setting",
-					expectedEnabled, typeConfig.isEnabled(TransportType.TELEPORTATION_BOX));
+				expectedEnabled, typeConfig.isEnabled(TransportType.TELEPORTATION_BOX));
 		}
 	}
 
@@ -215,7 +237,8 @@ public class TransportTypeConfigTest {
 	 * Verifies that getCost returns the correct value based on mocked config.
 	 */
 	@Test
-	public void testGetCostReturnsConfigValue() {
+	public void testGetCostReturnsConfigValue()
+	{
 		// Setup default mocks first, then override specific values
 		setupDefaultMocks();
 		when(config.costAgilityShortcuts()).thenReturn(100);
@@ -225,35 +248,37 @@ public class TransportTypeConfigTest {
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
 		assertEquals("AGILITY_SHORTCUT cost should be 100",
-				100, typeConfig.getCost(TransportType.AGILITY_SHORTCUT));
+			100, typeConfig.getCost(TransportType.AGILITY_SHORTCUT));
 		assertEquals("BOAT cost should be 50",
-				50, typeConfig.getCost(TransportType.BOAT));
+			50, typeConfig.getCost(TransportType.BOAT));
 		assertEquals("FAIRY_RING cost should be 0",
-				0, typeConfig.getCost(TransportType.FAIRY_RING));
+			0, typeConfig.getCost(TransportType.FAIRY_RING));
 	}
 
 	/**
 	 * Verifies that types without costKey return 0 cost.
 	 */
 	@Test
-	public void testTypesWithoutCostKeyReturnZero() {
+	public void testTypesWithoutCostKeyReturnZero()
+	{
 		setupDefaultMocks();
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
 		// TRANSPORT has no costKey
 		assertEquals("TRANSPORT (no costKey) should have 0 cost",
-				0, typeConfig.getCost(TransportType.TRANSPORT));
+			0, typeConfig.getCost(TransportType.TRANSPORT));
 
 		// TELEPORTATION_PORTAL_POH has no costKey
 		assertEquals("TELEPORTATION_PORTAL_POH (no costKey) should have 0 cost",
-				0, typeConfig.getCost(TransportType.TELEPORTATION_PORTAL_POH));
+			0, typeConfig.getCost(TransportType.TELEPORTATION_PORTAL_POH));
 	}
 
 	/**
 	 * Verifies that disableUnless works correctly.
 	 */
 	@Test
-	public void testDisableUnless() {
+	public void testDisableUnless()
+	{
 		when(config.useFairyRings()).thenReturn(true);
 		setupDefaultMocks();
 
@@ -265,21 +290,22 @@ public class TransportTypeConfigTest {
 		// Disable with false condition
 		typeConfig.disableUnless(TransportType.FAIRY_RING, false);
 		assertFalse("FAIRY_RING should be disabled after disableUnless(false)",
-				typeConfig.isEnabled(TransportType.FAIRY_RING));
+			typeConfig.isEnabled(TransportType.FAIRY_RING));
 
 		// Reset and test with true condition
 		typeConfig.refresh();
 		assertTrue(typeConfig.isEnabled(TransportType.FAIRY_RING));
 		typeConfig.disableUnless(TransportType.FAIRY_RING, true);
 		assertTrue("FAIRY_RING should remain enabled after disableUnless(true)",
-				typeConfig.isEnabled(TransportType.FAIRY_RING));
+			typeConfig.isEnabled(TransportType.FAIRY_RING));
 	}
 
 	/**
 	 * Verifies that setEnabled works correctly.
 	 */
 	@Test
-	public void testSetEnabled() {
+	public void testSetEnabled()
+	{
 		when(config.useBoats()).thenReturn(true);
 		setupDefaultMocks();
 
@@ -289,18 +315,19 @@ public class TransportTypeConfigTest {
 
 		typeConfig.setEnabled(TransportType.BOAT, false);
 		assertFalse("BOAT should be disabled after setEnabled(false)",
-				typeConfig.isEnabled(TransportType.BOAT));
+			typeConfig.isEnabled(TransportType.BOAT));
 
 		typeConfig.setEnabled(TransportType.BOAT, true);
 		assertTrue("BOAT should be enabled after setEnabled(true)",
-				typeConfig.isEnabled(TransportType.BOAT));
+			typeConfig.isEnabled(TransportType.BOAT));
 	}
 
 	/**
 	 * Verifies that refresh reloads values from config.
 	 */
 	@Test
-	public void testRefreshReloadsFromConfig() {
+	public void testRefreshReloadsFromConfig()
+	{
 		// Setup default mocks first, then override specific value
 		setupDefaultMocks();
 		when(config.useCanoes()).thenReturn(false);
@@ -313,7 +340,7 @@ public class TransportTypeConfigTest {
 		typeConfig.refresh();
 
 		assertTrue("CANOE should be enabled after refresh with new config value",
-				typeConfig.isEnabled(TransportType.CANOE));
+			typeConfig.isEnabled(TransportType.CANOE));
 	}
 
 	/**
@@ -323,18 +350,22 @@ public class TransportTypeConfigTest {
 	 * - Types with costGetter should have proper functionality
 	 */
 	@Test
-	public void testTransportTypeConfiguration() {
+	public void testTransportTypeConfiguration()
+	{
 		setupDefaultMocks();
 
-		for (TransportType type : TransportType.values()) {
+		for (TransportType type : TransportType.values())
+		{
 			// Verify enabledGetter works if present
-			if (type.hasEnabledGetter()) {
+			if (type.hasEnabledGetter())
+			{
 				Boolean enabled = type.getEnabledGetter().apply(config);
 				assertNotNull("enabledGetter for " + type.name() + " should return a value", enabled);
 			}
 
 			// Verify costGetter works if present
-			if (type.hasCostGetter()) {
+			if (type.hasCostGetter())
+			{
 				Integer cost = type.getCostGetter().apply(config);
 				assertNotNull("costGetter for " + type.name() + " should return a value", cost);
 			}
@@ -346,34 +377,45 @@ public class TransportTypeConfigTest {
 	 * This catches issues like method signature mismatches.
 	 */
 	@Test
-	public void testConfigGettersCanBeInvoked() {
+	public void testConfigGettersCanBeInvoked()
+	{
 		setupDefaultMocks();
 
 		List<String> invocationErrors = new ArrayList<>();
 
-		for (TransportType type : TransportType.values()) {
+		for (TransportType type : TransportType.values())
+		{
 			// Test enabledGetter invocation
-			if (type.hasEnabledGetter()) {
-				try {
+			if (type.hasEnabledGetter())
+			{
+				try
+				{
 					type.getEnabledGetter().apply(config);
-				} catch (Exception e) {
+				}
+				catch (Exception e)
+				{
 					invocationErrors.add(String.format("%s enabledGetter: %s",
-							type.name(), e.getMessage()));
+						type.name(), e.getMessage()));
 				}
 			}
 
 			// Test costGetter invocation
-			if (type.hasCostGetter()) {
-				try {
+			if (type.hasCostGetter())
+			{
+				try
+				{
 					type.getCostGetter().apply(config);
-				} catch (Exception e) {
+				}
+				catch (Exception e)
+				{
 					invocationErrors.add(String.format("%s costGetter: %s",
-							type.name(), e.getMessage()));
+						type.name(), e.getMessage()));
 				}
 			}
 		}
 
-		if (!invocationErrors.isEmpty()) {
+		if (!invocationErrors.isEmpty())
+		{
 			fail("Errors invoking config getters:\n  " + String.join("\n  ", invocationErrors));
 		}
 	}
@@ -384,12 +426,16 @@ public class TransportTypeConfigTest {
 	 * This ensures new transport types are properly configured.
 	 */
 	@Test
-	public void testResourcePathTypesHaveProperConfig() {
-		for (TransportType type : TransportType.values()) {
-			if (type.hasResourcePath()) {
+	public void testResourcePathTypesHaveProperConfig()
+	{
+		for (TransportType type : TransportType.values())
+		{
+			if (type.hasResourcePath())
+			{
 				// Types with resources should typically have a cost getter
 				// (except for special cases like TRANSPORT which is the base type)
-				if (!type.hasCostGetter() && type != TransportType.TRANSPORT) {
+				if (!type.hasCostGetter() && type != TransportType.TRANSPORT)
+				{
 					// This is just informational, not necessarily an error
 					System.out.println("Note: " + type.name() + " has resourcePath but no costGetter");
 				}
@@ -401,7 +447,8 @@ public class TransportTypeConfigTest {
 	 * Sets up default mock returns for all config methods.
 	 * This prevents NPEs when TransportTypeConfig tries to read unmocked methods.
 	 */
-	private void setupDefaultMocks() {
+	private void setupDefaultMocks()
+	{
 		// TeleportationItem setting (default to ALL for most tests)
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
 

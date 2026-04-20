@@ -5,10 +5,12 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import shortestpath.transport.parser.VarCheckType;
 
-public class TransportVarCheckTest {
+public class TransportVarCheckTest
+{
 
 	@Test
-	public void codesMatch() {
+	public void codesMatch()
+	{
 		assertEquals("&", VarCheckType.BIT_SET.getCode());
 		assertEquals("@", VarCheckType.COOLDOWN_MINUTES.getCode());
 		assertEquals("=", VarCheckType.EQUAL.getCode());

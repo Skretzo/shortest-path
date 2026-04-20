@@ -1,6 +1,7 @@
 package shortestpath.pathfinder;
 
-public enum AbstractNodeKind {
+public enum AbstractNodeKind
+{
 	// These four abstract teleport states mirror the wilderness buckets that change
 	// which teleports are legal.
 	GLOBAL_TELEPORTS_OVER_30,
@@ -8,21 +9,27 @@ public enum AbstractNodeKind {
 	GLOBAL_TELEPORTS_OVER_0,
 	GLOBAL_TELEPORTS_NORMAL;
 
-	public static AbstractNodeKind fromWildernessLevel(int wildernessLevel) {
-		if (wildernessLevel > 30) {
+	public static AbstractNodeKind fromWildernessLevel(int wildernessLevel)
+	{
+		if (wildernessLevel > 30)
+		{
 			return GLOBAL_TELEPORTS_OVER_30;
 		}
-		if (wildernessLevel > 20) {
+		if (wildernessLevel > 20)
+		{
 			return GLOBAL_TELEPORTS_OVER_20;
 		}
-		if (wildernessLevel > 0) {
+		if (wildernessLevel > 0)
+		{
 			return GLOBAL_TELEPORTS_OVER_0;
 		}
 		return GLOBAL_TELEPORTS_NORMAL;
 	}
 
-	public int maxWildernessLevel() {
-		switch (this) {
+	public int maxWildernessLevel()
+	{
+		switch (this)
+		{
 			case GLOBAL_TELEPORTS_OVER_30:
 				return 31;
 			case GLOBAL_TELEPORTS_OVER_20:

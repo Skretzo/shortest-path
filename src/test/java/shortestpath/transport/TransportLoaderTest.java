@@ -17,25 +17,29 @@ import java.util.Set;
  * Comprehensive unit tests for {@link Transport#addTransportsFromContents}
  * method.
  */
-public class TransportLoaderTest {
+public class TransportLoaderTest
+{
 
 	private Map<Integer, Set<Transport>> transports;
 
 	@Before
-	public void setUp() {
+	public void setUp()
+	{
 		transports = new HashMap<>();
 	}
 
 	// Helper method to get the first transport from a set
-	private Transport getFirstTransport(Set<Transport> transportSet) {
+	private Transport getFirstTransport(Set<Transport> transportSet)
+	{
 		Assert.assertFalse("Transport set should not be empty", transportSet.isEmpty());
 		return transportSet.iterator().next();
 	}
 
 	@Test
-	public void testBasicTransportParsing() {
+	public void testBasicTransportParsing()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t3300 3300 0\t5\n";
+			"3200 3200 0\t3300 3300 0\t5\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -54,14 +58,15 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testEmptyAndCommentLines() {
+	public void testEmptyAndCommentLines()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"# This is a comment\n" +
-				"\n" +
-				"3200 3200 0\t3300 3300 0\t5\n" +
-				"\n" +
-				"# Another comment\n" +
-				"3400 3400 0\t3500 3500 0\t10\n";
+			"# This is a comment\n" +
+			"\n" +
+			"3200 3200 0\t3300 3300 0\t5\n" +
+			"\n" +
+			"# Another comment\n" +
+			"3400 3400 0\t3500 3500 0\t10\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -85,10 +90,11 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testMultipleTransportsFromSameOrigin() {
+	public void testMultipleTransportsFromSameOrigin()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t3300 3300 0\t5\n" +
-				"3200 3200 0\t3400 3400 0\t10\n";
+			"3200 3200 0\t3300 3300 0\t5\n" +
+			"3200 3200 0\t3400 3400 0\t10\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -101,11 +107,15 @@ public class TransportLoaderTest {
 		int destination1 = WorldPointUtil.packWorldPoint(3300, 3300, 0);
 		int destination2 = WorldPointUtil.packWorldPoint(3400, 3400, 0);
 		boolean hasDestination1 = false, hasDestination2 = false;
-		for (Transport t : transportSet) {
-			if (t.getDestination() == destination1) {
+		for (Transport t : transportSet)
+		{
+			if (t.getDestination() == destination1)
+			{
 				hasDestination1 = true;
 				Assert.assertEquals("Duration for first should match", 5, t.getDuration());
-			} else if (t.getDestination() == destination2) {
+			}
+			else if (t.getDestination() == destination2)
+			{
 				hasDestination2 = true;
 				Assert.assertEquals("Duration for second should match", 10, t.getDuration());
 			}
@@ -115,9 +125,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testTeleportDurationAdjustment() {
+	public void testTeleportDurationAdjustment()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"\t3300 3300 0\t0\n";
+			"\t3300 3300 0\t0\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_SPELL, 0);
 
@@ -129,9 +140,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testNonTeleportDurationNotAdjusted() {
+	public void testNonTeleportDurationNotAdjusted()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t3300 3300 0\t0\n";
+			"3200 3200 0\t3300 3300 0\t0\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -141,14 +153,15 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testPermutationTransports() {
+	public void testPermutationTransports()
+	{
 		// Simulating fairy ring transport where origins and destinations are
 		// permutations
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"3100 3100 0\t\tAIQ\n" +
-				"3200 3200 0\t\tBJR\n" +
-				"\t3300 3300 0\tAIQ\n" +
-				"\t3400 3400 0\tBJR\n";
+			"3100 3100 0\t\tAIQ\n" +
+			"3200 3200 0\t\tBJR\n" +
+			"\t3300 3300 0\tAIQ\n" +
+			"\t3400 3400 0\tBJR\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 
@@ -172,7 +185,8 @@ public class TransportLoaderTest {
 		int destinationA = WorldPointUtil.packWorldPoint(3300, 3300, 0);
 		int destinationB = WorldPointUtil.packWorldPoint(3400, 3400, 0);
 		boolean origin1ToDestinationA = false, origin1ToDestinationB = false;
-		for (Transport t : transports1) {
+		for (Transport t : transports1)
+		{
 			Assert.assertEquals("Type should be fairy ring", TransportType.FAIRY_RING, t.getType());
 			if (t.getDestination() == destinationA)
 				origin1ToDestinationA = true;
@@ -182,7 +196,8 @@ public class TransportLoaderTest {
 		Assert.assertTrue("Origin1 should go to 3300,3300,0", origin1ToDestinationA);
 		Assert.assertTrue("Origin1 should go to 3400,3400,0", origin1ToDestinationB);
 		boolean origin2ToDestinationA = false, origin2ToDestinationB = false;
-		for (Transport t : transports2) {
+		for (Transport t : transports2)
+		{
 			Assert.assertEquals("Type should be fairy ring", TransportType.FAIRY_RING, t.getType());
 			if (t.getDestination() == destinationA)
 				origin2ToDestinationA = true;
@@ -194,13 +209,14 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testPermutationTransportsWithRadius() {
+	public void testPermutationTransportsWithRadius()
+	{
 		// Test that close coordinates are filtered out based on radius threshold
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"3100 3100 0\t\tLocation1\n" +
-				"3200 3200 0\t\tLocation2\n" +
-				"\t3101 3101 0\tLocation1\n" + // Very close to first origin
-				"\t3400 3400 0\tLocation2\n";
+			"3100 3100 0\t\tLocation1\n" +
+			"3200 3200 0\t\tLocation2\n" +
+			"\t3101 3101 0\tLocation1\n" + // Very close to first origin
+			"\t3400 3400 0\tLocation2\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 5);
 
@@ -221,10 +237,11 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testOriginOnlyTransport() {
+	public void testOriginOnlyTransport()
+	{
 		// Test transport with origin but no destination (should not be added to map)
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"3100 3100 0\t\tOriginOnly\n";
+			"3100 3100 0\t\tOriginOnly\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 
@@ -233,10 +250,11 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testDestinationOnlyTransport() {
+	public void testDestinationOnlyTransport()
+	{
 		// Test transport with destination but no origin (should not be added to map)
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"\t3100 3100 0\tDestinationOnly\n";
+			"\t3100 3100 0\tDestinationOnly\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 
@@ -245,9 +263,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testSkillRequirementsParsing() {
+	public void testSkillRequirementsParsing()
+	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-				"3200 3200 0\t3300 3300 0\t50 Agility;70 Strength\n";
+			"3200 3200 0\t3300 3300 0\t50 Agility;70 Strength\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
 
@@ -261,9 +280,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testSpecialSkillRequirements() {
+	public void testSpecialSkillRequirements()
+	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-				"3200 3200 0\t3300 3300 0\t1500 Total;100 Combat;200 Quest\n";
+			"3200 3200 0\t3300 3300 0\t1500 Total;100 Combat;200 Quest\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -281,9 +301,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testEmptySkillRequirements() {
+	public void testEmptySkillRequirements()
+	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-				"3200 3200 0\t3300 3300 0\t\n";
+			"3200 3200 0\t3300 3300 0\t\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -291,15 +312,17 @@ public class TransportLoaderTest {
 		Transport transport = getFirstTransport(transports.get(origin));
 
 		// All skill levels should be 0 (default)
-		for (int level : transport.getSkillLevels()) {
+		for (int level : transport.getSkillLevels())
+		{
 			Assert.assertEquals("All skill levels should be 0", 0, level);
 		}
 	}
 
 	@Test
-	public void testMixedSkillRequirements() {
+	public void testMixedSkillRequirements()
+	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-				"3200 3200 0\t3300 3300 0\t25 Magic;60 Ranged;1200 Total\n";
+			"3200 3200 0\t3300 3300 0\t25 Magic;60 Ranged;1200 Total\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -317,9 +340,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testSimpleItemRequirements() {
+	public void testSimpleItemRequirements()
+	{
 		String contents = "# Origin\tDestination\tItems\n" +
-				"3200 3200 0\t3300 3300 0\t995=5\n"; // 5 coins
+			"3200 3200 0\t3300 3300 0\t995=5\n"; // 5 coins
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -339,9 +363,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testMultipleItemRequirementsWithAnd() {
+	public void testMultipleItemRequirementsWithAnd()
+	{
 		String contents = "# Origin\tDestination\tItems\n" +
-				"3200 3200 0\t3300 3300 0\t995=5&561=10\n"; // 5 coins AND 10 nature runes
+			"3200 3200 0\t3300 3300 0\t995=5&561=10\n"; // 5 coins AND 10 nature runes
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -357,11 +382,15 @@ public class TransportLoaderTest {
 
 		// Find coins and nature runes in the requirements
 		boolean foundCoins = false, foundNatureRunes = false;
-		for (int i = 0; i < requiredItems.length; i++) {
-			if (requiredItems[i][0] == 995) {
+		for (int i = 0; i < requiredItems.length; i++)
+		{
+			if (requiredItems[i][0] == 995)
+			{
 				foundCoins = true;
 				Assert.assertEquals("Coins quantity should be 5", 5, quantities[i]);
-			} else if (requiredItems[i][0] == 561) {
+			}
+			else if (requiredItems[i][0] == 561)
+			{
 				foundNatureRunes = true;
 				Assert.assertEquals("Nature runes quantity should be 10", 10, quantities[i]);
 			}
@@ -371,9 +400,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testItemRequirementsWithOr() {
+	public void testItemRequirementsWithOr()
+	{
 		String contents = "# Origin\tDestination\tItems\n" +
-				"3200 3200 0\t3300 3300 0\t995=5|561=10\n"; // 5 coins OR 10 nature runes
+			"3200 3200 0\t3300 3300 0\t995=5|561=10\n"; // 5 coins OR 10 nature runes
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -393,7 +423,8 @@ public class TransportLoaderTest {
 
 		// Should contain both coins and nature runes
 		boolean hasCoins = false, hasNatureRunes = false;
-		for (int itemId : itemGroup) {
+		for (int itemId : itemGroup)
+		{
 			if (itemId == 995)
 				hasCoins = true;
 			if (itemId == 561)
@@ -407,9 +438,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testItemVariationsRequirements() {
+	public void testItemVariationsRequirements()
+	{
 		String contents = "# Origin\tDestination\tItems\n" +
-				"3200 3200 0\t3300 3300 0\tCOINS=100\n"; // Using item variation name
+			"3200 3200 0\t3300 3300 0\tCOINS=100\n"; // Using item variation name
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -430,9 +462,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testEmptyItemRequirements() {
+	public void testEmptyItemRequirements()
+	{
 		String contents = "# Origin\tDestination\tItems\n" +
-				"3200 3200 0\t3300 3300 0\t\n";
+			"3200 3200 0\t3300 3300 0\t\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -443,9 +476,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testComplexItemRequirements() {
+	public void testComplexItemRequirements()
+	{
 		String contents = "# Origin\tDestination\tItems\n" +
-				"3200 3200 0\t3300 3300 0\t995=50&561=5|556=10&557=3\n"; // Complex AND/OR combination
+			"3200 3200 0\t3300 3300 0\t995=50&561=5|556=10&557=3\n"; // Complex AND/OR combination
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -464,9 +498,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testSingleQuestRequirement() {
+	public void testSingleQuestRequirement()
+	{
 		String contents = "# Origin\tDestination\tQuests\n" +
-				"3200 3200 0\t3300 3300 0\tSea Slug\n";
+			"3200 3200 0\t3300 3300 0\tSea Slug\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -480,9 +515,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testMultipleQuestRequirements() {
+	public void testMultipleQuestRequirements()
+	{
 		String contents = "# Origin\tDestination\tQuests\n" +
-				"3200 3200 0\t3300 3300 0\tSea Slug;Rum Deal\n";
+			"3200 3200 0\t3300 3300 0\tSea Slug;Rum Deal\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -497,9 +533,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testNoQuestRequirements() {
+	public void testNoQuestRequirements()
+	{
 		String contents = "# Origin\tDestination\tQuests\n" +
-				"3200 3200 0\t3300 3300 0\t\n";
+			"3200 3200 0\t3300 3300 0\t\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -512,9 +549,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testInvalidQuestName() {
+	public void testInvalidQuestName()
+	{
 		String contents = "# Origin\tDestination\tQuests\n" +
-				"3200 3200 0\t3300 3300 0\tNonExistentQuest\n";
+			"3200 3200 0\t3300 3300 0\tNonExistentQuest\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -527,9 +565,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testVarbitRequirementsEqual() {
+	public void testVarbitRequirementsEqual()
+	{
 		String contents = "# Origin\tDestination\tVarbits\n" +
-				"3200 3200 0\t3300 3300 0\t123=5\n";
+			"3200 3200 0\t3300 3300 0\t123=5\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -544,9 +583,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testVarbitRequirementsMultipleTypes() {
+	public void testVarbitRequirementsMultipleTypes()
+	{
 		String contents = "# Origin\tDestination\tVarbits\n" +
-				"3200 3200 0\t3300 3300 0\t123=5;456>10;789<20;999&1;888@60\n";
+			"3200 3200 0\t3300 3300 0\t123=5;456>10;789<20;999&1;888@60\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -558,8 +598,10 @@ public class TransportLoaderTest {
 
 		// Verify all expected varbit IDs are present
 		boolean hasEqual = false, hasGreater = false, hasSmaller = false, hasBitSet = false, hasCooldown = false;
-		for (VarRequirement varbit : varbits) {
-			switch (varbit.getId()) {
+		for (VarRequirement varbit : varbits)
+		{
+			switch (varbit.getId())
+			{
 				case 123:
 					hasEqual = true;
 					break;
@@ -585,9 +627,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testVarPlayerRequirements() {
+	public void testVarPlayerRequirements()
+	{
 		String contents = "# Origin\tDestination\tVarPlayers\n" +
-				"3200 3200 0\t3300 3300 0\t555=1;666>5\n";
+			"3200 3200 0\t3300 3300 0\t555=1;666>5\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -599,7 +642,8 @@ public class TransportLoaderTest {
 
 		// Verify expected varplayer IDs are present
 		boolean hasVarPlayer555 = false, hasVarPlayer666 = false;
-		for (VarRequirement varPlayer : varPlayers) {
+		for (VarRequirement varPlayer : varPlayers)
+		{
 			if (varPlayer.getId() == 555)
 				hasVarPlayer555 = true;
 			if (varPlayer.getId() == 666)
@@ -610,9 +654,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testEmptyVarRequirements() {
+	public void testEmptyVarRequirements()
+	{
 		String contents = "# Origin\tDestination\tVarbits\tVarPlayers\n" +
-				"3200 3200 0\t3300 3300 0\t\t\n";
+			"3200 3200 0\t3300 3300 0\t\t\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -624,10 +669,11 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testAdditionalTransportFields() {
+	public void testAdditionalTransportFields()
+	{
 		String contents = "# Origin\tDestination\tDuration\tDisplay info\tConsumable\tWilderness level\tmenuOption menuTarget objectID\n"
-				+
-				"3200 3200 0\t3300 3300 0\t15\tTest Display\tT\t5\tUse TestObject 12345\n";
+			+
+			"3200 3200 0\t3300 3300 0\t15\tTest Display\tT\t5\tUse TestObject 12345\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
 
@@ -642,24 +688,28 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testConsumableFalseValues() {
+	public void testConsumableFalseValues()
+	{
 		String contents = "# Origin\tDestination\tConsumable\n" +
-				"3200 3200 0\t3300 3300 0\tF\n" +
-				"3300 3300 0\t3400 3400 0\tno\n";
+			"3200 3200 0\t3300 3300 0\tF\n" +
+			"3300 3300 0\t3400 3400 0\tno\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
 
-		for (Set<Transport> transportSet : transports.values()) {
-			for (Transport transport : transportSet) {
+		for (Set<Transport> transportSet : transports.values())
+		{
+			for (Transport transport : transportSet)
+			{
 				Assert.assertFalse("Should not be consumable", transport.isConsumable());
 			}
 		}
 	}
 
 	@Test
-	public void testMalformedData() {
+	public void testMalformedData()
+	{
 		String contents = "# Origin\tDestination\tSkills\tItems\tDuration\tWilderness level\n" +
-				"3200 3200 0\t3300 3300 0\tinvalid skill\tinvalid=items\tinvalid_duration\tinvalid_wilderness\n";
+			"3200 3200 0\t3300 3300 0\tinvalid skill\tinvalid=items\tinvalid_duration\tinvalid_wilderness\n";
 
 		// Should not throw exception, just use default values
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
@@ -673,13 +723,15 @@ public class TransportLoaderTest {
 		Assert.assertNull("Item requirements should be null", transport.getItemRequirements());
 
 		// All skill levels should be 0
-		for (int level : transport.getSkillLevels()) {
+		for (int level : transport.getSkillLevels())
+		{
 			Assert.assertEquals("Skill levels should be 0", 0, level);
 		}
 	}
 
 	@Test
-	public void testEmptyFile() {
+	public void testEmptyFile()
+	{
 		String contents = "# Origin\tDestination\n"; // Header only, no data rows
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
@@ -688,7 +740,8 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testOnlyHeaderFile() {
+	public void testOnlyHeaderFile()
+	{
 		String contents = "# Origin\tDestination\tDuration\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
@@ -697,9 +750,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testMissingFields() {
+	public void testMissingFields()
+	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-				"3200 3200 0\t3300 3300 0\n"; // Missing skills field value
+			"3200 3200 0\t3300 3300 0\n"; // Missing skills field value
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -712,12 +766,13 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testHeaderWithDifferentCommentFormats() {
+	public void testHeaderWithDifferentCommentFormats()
+	{
 		String contents1 = "#Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t3300 3300 0\t5\n";
+			"3200 3200 0\t3300 3300 0\t5\n";
 
 		String contents2 = "# Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t3300 3300 0\t5\n";
+			"3200 3200 0\t3300 3300 0\t5\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents1, TransportType.TRANSPORT, 0);
 		Map<Integer, Set<Transport>> transports2 = new HashMap<>();
@@ -730,15 +785,16 @@ public class TransportLoaderTest {
 		Assert.assertTrue("First should contain origin", transports.containsKey(origin));
 		Assert.assertTrue("Second should contain origin", transports2.containsKey(origin));
 		Assert.assertEquals("First transport destination should match", dest,
-				getFirstTransport(transports.get(origin)).getDestination());
+			getFirstTransport(transports.get(origin)).getDestination());
 		Assert.assertEquals("Second transport destination should match", dest,
-				getFirstTransport(transports2.get(origin)).getDestination());
+			getFirstTransport(transports2.get(origin)).getDestination());
 	}
 
 	@Test
-	public void testAgilityShortcutToGrappleShortcutConversion() {
+	public void testAgilityShortcutToGrappleShortcutConversion()
+	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-				"3200 3200 0\t3300 3300 0\t70 Ranged;75 Strength\n";
+			"3200 3200 0\t3300 3300 0\t70 Ranged;75 Strength\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
 
@@ -751,9 +807,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testAgilityShortcutRemainsAgility() {
+	public void testAgilityShortcutRemainsAgility()
+	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-				"3200 3200 0\t3300 3300 0\t70 Agility\n";
+			"3200 3200 0\t3300 3300 0\t70 Agility\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.AGILITY_SHORTCUT, 0);
 
@@ -765,9 +822,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testTeleportDurationMinimum() {
+	public void testTeleportDurationMinimum()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"\t3300 3300 0\t0\n";
+			"\t3300 3300 0\t0\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_SPELL, 0);
 
@@ -775,7 +833,7 @@ public class TransportLoaderTest {
 		// But we can verify the behavior by checking a regular teleport item
 
 		String contents2 = "# Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t3300 3300 0\t0\n";
+			"3200 3200 0\t3300 3300 0\t0\n";
 
 		Map<Integer, Set<Transport>> transports2 = new HashMap<>();
 		TransportLoader.addTransportsFromContents(transports2, contents2, TransportType.TELEPORTATION_ITEM, 0);
@@ -788,9 +846,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testNonTeleportDurationNotModified() {
+	public void testNonTeleportDurationNotModified()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t3300 3300 0\t0\n";
+			"3200 3200 0\t3300 3300 0\t0\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.BOAT, 0);
 
@@ -802,9 +861,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testUndefinedOriginTeleport() {
+	public void testUndefinedOriginTeleport()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"\t3300 3300 0\t5\n";
+			"\t3300 3300 0\t5\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
 
@@ -813,9 +873,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testUndefinedDestinationTeleport() {
+	public void testUndefinedDestinationTeleport()
+	{
 		String contents = "# Origin\tDestination\tDuration\n" +
-				"3200 3200 0\t\t5\n";
+			"3200 3200 0\t\t5\n";
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TELEPORTATION_ITEM, 0);
 
@@ -824,13 +885,14 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testRadiusThresholdFiltering() {
+	public void testRadiusThresholdFiltering()
+	{
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"3100 3100 0\t\tLocation1\n" +
-				"3200 3200 0\t\tLocation2\n" +
-				"\t3102 3102 0\tLocation1\n" + // Distance 2.8 from first origin
-				"\t3105 3105 0\tLocation1\n" + // Distance 7.1 from first origin
-				"\t3400 3400 0\tLocation2\n";
+			"3100 3100 0\t\tLocation1\n" +
+			"3200 3200 0\t\tLocation2\n" +
+			"\t3102 3102 0\tLocation1\n" + // Distance 2.8 from first origin
+			"\t3105 3105 0\tLocation1\n" + // Distance 7.1 from first origin
+			"\t3400 3400 0\tLocation2\n";
 
 		// Test with radius threshold of 5
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 5);
@@ -855,7 +917,8 @@ public class TransportLoaderTest {
 		int farDestination = WorldPointUtil.packWorldPoint(3400, 3400, 0);
 
 		boolean o1hasClose = false, o1hasMid = false, o1hasFar = false;
-		for (Transport t : transports1) {
+		for (Transport t : transports1)
+		{
 			if (t.getDestination() == closeDestination)
 				o1hasClose = true;
 			if (t.getDestination() == midDestination)
@@ -868,7 +931,8 @@ public class TransportLoaderTest {
 		Assert.assertTrue("Origin1 should include far destination", o1hasFar);
 
 		boolean o2hasClose = false, o2hasMid = false, o2hasFar = false;
-		for (Transport t : transports2) {
+		for (Transport t : transports2)
+		{
 			if (t.getDestination() == closeDestination)
 				o2hasClose = true;
 			if (t.getDestination() == midDestination)
@@ -882,12 +946,13 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testZeroRadiusThreshold() {
+	public void testZeroRadiusThreshold()
+	{
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"3100 3100 0\t\tLocation1\n" +
-				"3200 3200 0\t\tLocation2\n" +
-				"\t3101 3101 0\tLocation1\n" + // Very close
-				"\t3400 3400 0\tLocation2\n";
+			"3100 3100 0\t\tLocation1\n" +
+			"3200 3200 0\t\tLocation2\n" +
+			"\t3101 3101 0\tLocation1\n" + // Very close
+			"\t3400 3400 0\tLocation2\n";
 
 		// Test with radius threshold of 0 (no filtering)
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
@@ -906,13 +971,15 @@ public class TransportLoaderTest {
 		int nearDest = WorldPointUtil.packWorldPoint(3101, 3101, 0);
 		int farDest = WorldPointUtil.packWorldPoint(3400, 3400, 0);
 		boolean o1near = false, o1far = false, o2near = false, o2far = false;
-		for (Transport t : transports1) {
+		for (Transport t : transports1)
+		{
 			if (t.getDestination() == nearDest)
 				o1near = true;
 			if (t.getDestination() == farDest)
 				o1far = true;
 		}
-		for (Transport t : transports2) {
+		for (Transport t : transports2)
+		{
 			if (t.getDestination() == nearDest)
 				o2near = true;
 			if (t.getDestination() == farDest)
@@ -925,10 +992,11 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testExactSameCoordinatesFiltered() {
+	public void testExactSameCoordinatesFiltered()
+	{
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"3100 3100 0\t\tLocation1\n" +
-				"\t3100 3100 0\tLocation1\n"; // Exact same coordinates
+			"3100 3100 0\t\tLocation1\n" +
+			"\t3100 3100 0\tLocation1\n"; // Exact same coordinates
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 
@@ -937,12 +1005,13 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testLargeRadiusThreshold() {
+	public void testLargeRadiusThreshold()
+	{
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"3100 3100 0\t\tLocation1\n" +
-				"3200 3200 0\t\tLocation2\n" +
-				"\t3150 3150 0\tLocation1\n" + // Distance ~70
-				"\t3400 3400 0\tLocation2\n"; // Distance much larger
+			"3100 3100 0\t\tLocation1\n" +
+			"3200 3200 0\t\tLocation2\n" +
+			"\t3150 3150 0\tLocation1\n" + // Distance ~70
+			"\t3400 3400 0\tLocation2\n"; // Distance much larger
 
 		// Test with large radius threshold
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.SPIRIT_TREE, 100);
@@ -964,9 +1033,10 @@ public class TransportLoaderTest {
 	}
 
 	@Test
-	public void testPermutationOnlyRowsAreIgnored() {
+	public void testPermutationOnlyRowsAreIgnored()
+	{
 		String contents = "# Origin\tDestination\tDisplay info\n" +
-				"\t\tOnlyLabel\n"; // both origin and destination missing -> permutation-only
+			"\t\tOnlyLabel\n"; // both origin and destination missing -> permutation-only
 
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 		Assert.assertTrue("No transports should be created for permutation-only row", transports.isEmpty());

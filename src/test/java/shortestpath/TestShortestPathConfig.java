@@ -1,6 +1,7 @@
 package shortestpath;
 
-public class TestShortestPathConfig implements ShortestPathConfig {
+public class TestShortestPathConfig implements ShortestPathConfig
+{
 	private int calculationCutoff = 5;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	private String builtTeleportationBoxes = "";
@@ -8,59 +9,71 @@ public class TestShortestPathConfig implements ShortestPathConfig {
 	private boolean includeBankPath = false;
 	private boolean useTeleportationMinigames = true;
 
-	public void setCalculationCutoffValue(int calculationCutoff) {
+	public void setCalculationCutoffValue(int calculationCutoff)
+	{
 		this.calculationCutoff = calculationCutoff;
 	}
 
 	@Override
-	public int calculationCutoff() {
+	public int calculationCutoff()
+	{
 		return calculationCutoff;
 	}
 
-	public void setUseTeleportationItemsValue(TeleportationItem useTeleportationItems) {
+	public void setUseTeleportationItemsValue(TeleportationItem useTeleportationItems)
+	{
 		this.useTeleportationItems = useTeleportationItems;
 	}
 
 	@Override
-	public TeleportationItem useTeleportationItems() {
+	public TeleportationItem useTeleportationItems()
+	{
 		return useTeleportationItems;
 	}
 
-	public void setIncludeBankPathValue(boolean includeBankPath) {
+	public void setIncludeBankPathValue(boolean includeBankPath)
+	{
 		this.includeBankPath = includeBankPath;
 	}
 
 	@Override
-	public boolean includeBankPath() {
+	public boolean includeBankPath()
+	{
 		return includeBankPath;
 	}
 
-	public void setUseTeleportationMinigamesValue(boolean useTeleportationMinigames) {
+	public void setUseTeleportationMinigamesValue(boolean useTeleportationMinigames)
+	{
 		this.useTeleportationMinigames = useTeleportationMinigames;
 	}
 
 	@Override
-	public boolean useTeleportationMinigames() {
+	public boolean useTeleportationMinigames()
+	{
 		return useTeleportationMinigames;
 	}
 
 	@Override
-	public void setBuiltTeleportationBoxes(String content) {
+	public void setBuiltTeleportationBoxes(String content)
+	{
 		builtTeleportationBoxes = content;
 	}
 
 	@Override
-	public String builtTeleportationBoxes() {
+	public String builtTeleportationBoxes()
+	{
 		return builtTeleportationBoxes;
 	}
 
 	@Override
-	public void setBuiltTeleportationPortalsPoh(String content) {
+	public void setBuiltTeleportationPortalsPoh(String content)
+	{
 		builtTeleportationPortalsPoh = content;
 	}
 
 	@Override
-	public String builtTeleportationPortalsPoh() {
+	public String builtTeleportationPortalsPoh()
+	{
 		return builtTeleportationPortalsPoh;
 	}
 }

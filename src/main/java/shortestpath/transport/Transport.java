@@ -2,6 +2,7 @@ package shortestpath.transport;
 
 import java.util.HashSet;
 import java.util.Set;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
@@ -21,7 +22,8 @@ import shortestpath.transport.requirement.TransportItems;
  * This class represents a travel point between two WorldPoints.
  */
 @Slf4j
-public class Transport {
+public class Transport
+{
 	public static final int UNDEFINED_ORIGIN = WorldPointUtil.UNDEFINED;
 	public static final int UNDEFINED_DESTINATION = WorldPointUtil.UNDEFINED;
 	/**
@@ -51,7 +53,8 @@ public class Transport {
 	@Getter
 	private int destination = UNDEFINED_DESTINATION;
 
-	public void setDestination(int packedDestination) {
+	public void setDestination(int packedDestination)
+	{
 		this.destination = packedDestination;
 	}
 
@@ -102,23 +105,24 @@ public class Transport {
 	 * Creates a new transport from an origin-only transport
 	 * and a destination-only transport, and merges requirements
 	 */
-	Transport(Transport origin, Transport destination) {
+	Transport(Transport origin, Transport destination)
+	{
 		TransportBuilder builder = new TransportBuilder()
-				.origin(origin.origin)
-				.destination(destination.destination)
-				.type(origin.type)
-				.startSkillLevels(origin.skillLevels)
-				.startSkillLevels(destination.skillLevels)
-				.quests(origin.quests)
-				.quests(destination.quests)
-				.itemRequirements(TransportItems.merge(origin.itemRequirements, destination.itemRequirements))
-				.duration(Math.max(origin.duration, destination.duration))
-				.displayInfo(destination.displayInfo)
-				.isConsumable(origin.isConsumable || destination.isConsumable)
-				.maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel))
-				.objectInfo(origin.objectInfo)
-				.varRequirements(origin.varRequirements)
-				.varRequirements(destination.varRequirements);
+			.origin(origin.origin)
+			.destination(destination.destination)
+			.type(origin.type)
+			.startSkillLevels(origin.skillLevels)
+			.startSkillLevels(destination.skillLevels)
+			.quests(origin.quests)
+			.quests(destination.quests)
+			.itemRequirements(TransportItems.merge(origin.itemRequirements, destination.itemRequirements))
+			.duration(Math.max(origin.duration, destination.duration))
+			.displayInfo(destination.displayInfo)
+			.isConsumable(origin.isConsumable || destination.isConsumable)
+			.maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel))
+			.objectInfo(origin.objectInfo)
+			.varRequirements(origin.varRequirements)
+			.varRequirements(destination.varRequirements);
 
 		Transport builtTransport = builder.build();
 
@@ -136,7 +140,8 @@ public class Transport {
 		this.varRequirements.addAll(builtTransport.varRequirements);
 	}
 
-	Transport(TransportRecord record, TransportType transportType) {
+	Transport(TransportRecord record, TransportType transportType)
+	{
 		TransportBuilder builder = new TransportBuilder();
 		builder.type(transportType);
 
@@ -182,31 +187,35 @@ public class Transport {
 		this.varRequirements.addAll(builtTransport.varRequirements);
 	}
 
-	private Transport() {
+	private Transport()
+	{
 	}
 
 	@Override
-	public String toString() {
+	public String toString()
+	{
 		return ("(" +
-				WorldPointUtil.unpackWorldX(origin) + ", " +
-				WorldPointUtil.unpackWorldY(origin) + ", " +
-				WorldPointUtil.unpackWorldPlane(origin) + ") to (" +
-				WorldPointUtil.unpackWorldX(destination) + ", " +
-				WorldPointUtil.unpackWorldY(destination) + ", " +
-				WorldPointUtil.unpackWorldPlane(destination) + ")");
+			WorldPointUtil.unpackWorldX(origin) + ", " +
+			WorldPointUtil.unpackWorldY(origin) + ", " +
+			WorldPointUtil.unpackWorldPlane(origin) + ") to (" +
+			WorldPointUtil.unpackWorldX(destination) + ", " +
+			WorldPointUtil.unpackWorldY(destination) + ", " +
+			WorldPointUtil.unpackWorldPlane(destination) + ")");
 	}
 
 	/**
 	 * Whether the transport has one or more quest requirements
 	 */
-	public boolean isQuestLocked() {
+	public boolean isQuestLocked()
+	{
 		return !quests.isEmpty();
 	}
 
 	/**
 	 * Whether this transport is of the given type.
 	 */
-	public boolean isType(TransportType type) {
+	public boolean isType(TransportType type)
+	{
 		return type.equals(this.type);
 	}
 
@@ -214,14 +223,16 @@ public class Transport {
 	 * Whether this transport's display info contains the given substring.
 	 * Returns false if displayInfo is null.
 	 */
-	public boolean hasDisplayInfo(String substring) {
+	public boolean hasDisplayInfo(String substring)
+	{
 		return displayInfo != null && displayInfo.contains(substring);
 	}
 
 	/**
 	 * Whether this transport can be used at the given wilderness level.
 	 */
-	public boolean isUsableAtWildernessLevel(int wildernessLevel) {
+	public boolean isUsableAtWildernessLevel(int wildernessLevel)
+	{
 		return !type.isTeleport() || wildernessLevel <= maxWildernessLevel;
 	}
 
@@ -229,10 +240,13 @@ public class Transport {
 	 * Gets varbit requirements (filtered from varRequirements).
 	 * For backward compatibility with code that needs separate varbit access.
 	 */
-	public Set<VarRequirement> getVarbits() {
+	public Set<VarRequirement> getVarbits()
+	{
 		Set<VarRequirement> varbits = new HashSet<>();
-		for (VarRequirement req : varRequirements) {
-			if (req.isVarbit()) {
+		for (VarRequirement req : varRequirements)
+		{
+			if (req.isVarbit())
+			{
 				varbits.add(req);
 			}
 		}
@@ -242,9 +256,12 @@ public class Transport {
 	/**
 	 * Whether this transport has a varbit requirement with the given ID.
 	 */
-	public boolean hasVarbit(int varbitId) {
-		for (VarRequirement req : varRequirements) {
-			if (req.isVarbit() && req.getId() == varbitId) {
+	public boolean hasVarbit(int varbitId)
+	{
+		for (VarRequirement req : varRequirements)
+		{
+			if (req.isVarbit() && req.getId() == varbitId)
+			{
 				return true;
 			}
 		}
@@ -255,17 +272,21 @@ public class Transport {
 	 * Gets varplayer requirements (filtered from varRequirements).
 	 * For backward compatibility with code that needs separate varplayer access.
 	 */
-	public Set<VarRequirement> getVarPlayers() {
+	public Set<VarRequirement> getVarPlayers()
+	{
 		Set<VarRequirement> varPlayers = new HashSet<>();
-		for (VarRequirement req : varRequirements) {
-			if (req.isVarPlayer()) {
+		for (VarRequirement req : varRequirements)
+		{
+			if (req.isVarPlayer())
+			{
 				varPlayers.add(req);
 			}
 		}
 		return varPlayers;
 	}
 
-	public static class TransportBuilder {
+	public static class TransportBuilder
+	{
 		private final int[] skillLevels = new int[Skill.values().length + 3];
 		private final Set<VarRequirement> varRequirements = new HashSet<>();
 		private final FieldParser<int[]> skillParser = new SkillRequirementParser();
@@ -285,136 +306,170 @@ public class Transport {
 		private int maxWildernessLevel = -1;
 		private String objectInfo = null;
 
-		public TransportBuilder origin(int origin) {
+		public TransportBuilder origin(int origin)
+		{
 			this.origin = origin;
 			return this;
 		}
 
-		public TransportBuilder origin(String value) {
+		public TransportBuilder origin(String value)
+		{
 			this.origin = worldPointParser.parse(value);
 			return this;
 		}
 
-		public TransportBuilder destination(int destination) {
+		public TransportBuilder destination(int destination)
+		{
 			this.destination = destination;
 			return this;
 		}
 
-		public TransportBuilder destination(String value) {
+		public TransportBuilder destination(String value)
+		{
 			this.destination = worldPointParser.parse(value);
 			return this;
 		}
 
-		public TransportBuilder skillLevels(String value) {
+		public TransportBuilder skillLevels(String value)
+		{
 			int[] parsedSkills = skillParser.parse(value);
-			for (int i = 0; i < skillLevels.length; i++) {
-				if (parsedSkills[i] > 0) {
+			for (int i = 0; i < skillLevels.length; i++)
+			{
+				if (parsedSkills[i] > 0)
+				{
 					skillLevels[i] = parsedSkills[i];
 				}
 			}
 			return this;
 		}
 
-		public TransportBuilder startSkillLevels(int[] otherSkillLevels) {
-			for (int i = 0; i < skillLevels.length; i++) {
+		public TransportBuilder startSkillLevels(int[] otherSkillLevels)
+		{
+			for (int i = 0; i < skillLevels.length; i++)
+			{
 				this.skillLevels[i] = Math.max(this.skillLevels[i], otherSkillLevels[i]);
 			}
 			return this;
 		}
 
-		public TransportBuilder quests(Set<Quest> quests) {
+		public TransportBuilder quests(Set<Quest> quests)
+		{
 			this.quests.addAll(quests);
 			return this;
 		}
 
-		public TransportBuilder quests(String value) {
+		public TransportBuilder quests(String value)
+		{
 			this.quests.addAll(questParser.parse(value));
 			return this;
 		}
 
-		public TransportBuilder itemRequirements(TransportItems itemRequirements) {
+		public TransportBuilder itemRequirements(TransportItems itemRequirements)
+		{
 			this.itemRequirements = itemRequirements;
 			return this;
 		}
 
-		public TransportBuilder itemRequirements(String value) {
+		public TransportBuilder itemRequirements(String value)
+		{
 			this.itemRequirements = itemParser.parse(value);
 			return this;
 		}
 
-		public TransportBuilder type(TransportType type) {
+		public TransportBuilder type(TransportType type)
+		{
 			this.type = type;
 			return this;
 		}
 
-		public TransportBuilder duration(int duration) {
+		public TransportBuilder duration(int duration)
+		{
 			this.duration = Math.max(this.duration, duration);
 			return this;
 		}
 
-		public TransportBuilder duration(String value) {
-			if (value != null && !value.isEmpty()) {
-				try {
+		public TransportBuilder duration(String value)
+		{
+			if (value != null && !value.isEmpty())
+			{
+				try
+				{
 					this.duration = Integer.parseInt(value);
-				} catch (NumberFormatException e) {
+				}
+				catch (NumberFormatException e)
+				{
 					log.error("Invalid tick duration: " + value);
 				}
 			}
 			return this;
 		}
 
-		public TransportBuilder displayInfo(String displayInfo) {
+		public TransportBuilder displayInfo(String displayInfo)
+		{
 			this.displayInfo = displayInfo;
 			return this;
 		}
 
-		public TransportBuilder isConsumable(boolean isConsumable) {
+		public TransportBuilder isConsumable(boolean isConsumable)
+		{
 			this.isConsumable |= isConsumable;
 			return this;
 		}
 
-		public TransportBuilder isConsumable(String value) {
+		public TransportBuilder isConsumable(String value)
+		{
 			this.isConsumable = "T".equals(value) || "yes".equalsIgnoreCase(value);
 			return this;
 		}
 
-		public TransportBuilder maxWildernessLevel(int maxWildernessLevel) {
+		public TransportBuilder maxWildernessLevel(int maxWildernessLevel)
+		{
 			this.maxWildernessLevel = Math.max(this.maxWildernessLevel, maxWildernessLevel);
 			return this;
 		}
 
-		public TransportBuilder maxWildernessLevel(String value) {
-			if (value != null && !value.isEmpty()) {
-				try {
+		public TransportBuilder maxWildernessLevel(String value)
+		{
+			if (value != null && !value.isEmpty())
+			{
+				try
+				{
 					this.maxWildernessLevel = Integer.parseInt(value);
-				} catch (NumberFormatException e) {
+				}
+				catch (NumberFormatException e)
+				{
 					log.error("Invalid wilderness level: " + value);
 				}
 			}
 			return this;
 		}
 
-		public TransportBuilder objectInfo(String objectInfo) {
+		public TransportBuilder objectInfo(String objectInfo)
+		{
 			this.objectInfo = objectInfo;
 			return this;
 		}
 
-		public TransportBuilder varRequirements(Set<VarRequirement> requirements) {
+		public TransportBuilder varRequirements(Set<VarRequirement> requirements)
+		{
 			this.varRequirements.addAll(requirements);
 			return this;
 		}
 
-		public TransportBuilder varbits(String value) {
+		public TransportBuilder varbits(String value)
+		{
 			this.varRequirements.addAll(varbitParser.parse(value));
 			return this;
 		}
 
-		public TransportBuilder varPlayers(String value) {
+		public TransportBuilder varPlayers(String value)
+		{
 			this.varRequirements.addAll(varPlayerParser.parse(value));
 			return this;
 		}
 
-		public Transport build() {
+		public Transport build()
+		{
 			Transport transport = new Transport();
 			transport.origin = this.origin;
 			transport.destination = this.destination;
@@ -430,11 +485,13 @@ public class Transport {
 			transport.varRequirements.addAll(this.varRequirements);
 
 			// Post-build validation/refinement
-			if (transport.type != null && transport.type.isTeleport()) {
+			if (transport.type != null && transport.type.isTeleport())
+			{
 				transport.duration = Math.max(transport.duration, 1);
 			}
 
-			if (transport.type != null) {
+			if (transport.type != null)
+			{
 				transport.type = transport.type.refine(transport.skillLevels);
 			}
 

@@ -2,10 +2,13 @@ package shortestpath.pathfinder;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import shortestpath.WorldPointUtil;
 
-public class Node {
-	public enum Type {
+public class Node
+{
+	public enum Type
+	{
 		// A concrete world tile that can appear in the rendered path.
 		// Search starts on a TILE node, walking/transport expansion stays on TILE
 		// nodes,
@@ -35,16 +38,24 @@ public class Node {
 	// Only set for ABSTRACT nodes. TILE nodes leave this null.
 	public final AbstractNodeKind abstractKind;
 
-	public Node(int packedPosition, Node previous, int cost) {
+	public Node(int packedPosition, Node previous, int cost)
+	{
 		this(packedPosition, previous, cost, previous != null && previous.bankVisited);
 	}
 
-	public Node(int packedPosition, Node previous, int cost, boolean bankVisited) {
+	public Node(int packedPosition, Node previous, int cost, boolean bankVisited)
+	{
 		this(packedPosition, previous, cost, bankVisited, Type.TILE, null);
 	}
 
-	private Node(int packedPosition, Node previous, int cost, boolean bankVisited, Type type,
-			AbstractNodeKind abstractKind) {
+	private Node(
+		int packedPosition,
+		Node previous,
+		int cost,
+		boolean bankVisited,
+		Type type,
+		AbstractNodeKind abstractKind)
+	{
 		this.packedPosition = packedPosition;
 		this.previous = previous;
 		this.cost = cost;
@@ -53,32 +64,39 @@ public class Node {
 		this.abstractKind = abstractKind;
 	}
 
-	public static Node abstractNode(AbstractNodeKind abstractKind, Node previous, boolean bankVisited) {
+	public static Node abstractNode(AbstractNodeKind abstractKind, Node previous, boolean bankVisited)
+	{
 		// Abstract nodes model global search states, not physical positions, so they
 		// carry no packed world point.
 		return new Node(WorldPointUtil.UNDEFINED, previous, previous != null ? previous.cost : 0, bankVisited,
-				Type.ABSTRACT, abstractKind);
+			Type.ABSTRACT, abstractKind);
 	}
 
-	public List<PathStep> getPathSteps() {
+	public List<PathStep> getPathSteps()
+	{
 		Node node = this;
 		int n = 0;
 
-		while (node != null) {
-			if (node.isTile()) {
+		while (node != null)
+		{
+			if (node.isTile())
+			{
 				n++;
 			}
 			node = node.previous;
 		}
 
 		List<PathStep> pathSteps = new ArrayList<>(n);
-		for (int i = 0; i < n; i++) {
+		for (int i = 0; i < n; i++)
+		{
 			pathSteps.add(null);
 		}
 
 		node = this;
-		while (node != null) {
-			if (node.isTile()) {
+		while (node != null)
+		{
+			if (node.isTile())
+			{
 				pathSteps.set(--n, new PathStep(node.packedPosition, node.bankVisited));
 			}
 			node = node.previous;
@@ -87,25 +105,31 @@ public class Node {
 		return pathSteps;
 	}
 
-	public boolean isTile() {
+	public boolean isTile()
+	{
 		return type == Type.TILE;
 	}
 
-	public int getClosestTilePosition() {
+	public int getClosestTilePosition()
+	{
 		Node node = this;
-		while (node != null && !node.isTile()) {
+		while (node != null && !node.isTile())
+		{
 			node = node.previous;
 		}
 		return node != null ? node.packedPosition : WorldPointUtil.UNDEFINED;
 	}
 
-	public static int cost(int packedPosition, Node previous) {
+	public static int cost(int packedPosition, Node previous)
+	{
 		int previousCost = 0;
 		int travelTime = 0;
 
-		if (previous != null) {
+		if (previous != null)
+		{
 			previousCost = previous.cost;
-			if (previous.isTile()) {
+			if (previous.isTile())
+			{
 				// Travel wait time in TransportNode and distance is compared as if the player
 				// is walking 1 tile/tick.
 				// TODO: reduce the distance if the player is currently running and has enough

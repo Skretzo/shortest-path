@@ -11,7 +11,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
-public class WildernessCheckerTest {
+public class WildernessCheckerTest
+{
 
 	private static final int WILDERNESS_GREEN_DRAGONS = WorldPointUtil.packWorldPoint(3339, 3696, 0);
 	private static final int WILDERNESS_EDGEVILLE_DUNGEON = WorldPointUtil.packWorldPoint(3089, 9957, 0);
@@ -29,7 +30,8 @@ public class WildernessCheckerTest {
 	private static final int WILDERNESS_BANDIT_CAMP = WorldPointUtil.packWorldPoint(3037, 3700, 0);
 
 	@Test
-	public void testIsInWilderness() {
+	public void testIsInWilderness()
+	{
 		assertTrue(WildernessChecker.isInWilderness(WILDERNESS_GREEN_DRAGONS));
 		assertTrue(WildernessChecker.isInWilderness(WILDERNESS_EDGEVILLE_DUNGEON));
 		assertTrue(WildernessChecker.isInWilderness(WILDERNESS_LAVA_MAZE_DUNGEON));
@@ -45,7 +47,8 @@ public class WildernessCheckerTest {
 	}
 
 	@Test
-	public void testisInWildernessSet() {
+	public void testisInWildernessSet()
+	{
 		Set<Integer> packedPoints = new HashSet<>();
 
 		// All wilderness areas
@@ -67,16 +70,18 @@ public class WildernessCheckerTest {
 	}
 
 	@Test
-	public void testInLevel20Wilderness() {
+	public void testInLevel20Wilderness()
+	{
 		assertTrue(WildernessChecker.isInLevel20Wilderness(WILDERNESS_BANDIT_CAMP));
 		assertTrue(WildernessChecker.isInLevel20Wilderness(WILDERNESS_GOD_WARS_DUNGEON));
 		assertTrue(WildernessChecker.isInLevel20Wilderness(WILDERNESS_SLAYER_CAVE)); // Northern entrance at level 29
-																																									// wilderness
+		// wilderness
 		assertFalse(WildernessChecker.isInLevel20Wilderness(WILDERNESS_SLAYER_CAVE_SOUTH));
 	}
 
 	@Test
-	public void testInLevel30Wilderness() {
+	public void testInLevel30Wilderness()
+	{
 		assertTrue(WildernessChecker.isInLevel30Wilderness(WILDERNESS_LAVA_MAZE_DUNGEON));
 	}
 }

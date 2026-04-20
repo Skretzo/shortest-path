@@ -32,7 +32,8 @@ import java.util.Collection;
  * @param <V> the value type stored for each primitive {@code int} key. Must be
  *            non-null.
  */
-public class PrimitiveIntHashMap<V> {
+public class PrimitiveIntHashMap<V>
+{
 	private static final int MINIMUM_SIZE = 8;
 
 	// Unless the hash function is really unbalanced, most things should fit within
@@ -44,12 +45,16 @@ public class PrimitiveIntHashMap<V> {
 	// lookup times at the expense of space
 	private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-	/** Entry node storing a primitive key and associated value. */
-	private static class IntNode<V> {
+	/**
+	 * Entry node storing a primitive key and associated value.
+	 */
+	private static class IntNode<V>
+	{
 		private int key;
 		private V value;
 
-		private IntNode(int key, V value) {
+		private IntNode(int key, V value)
+		{
 			this.key = key;
 			this.value = value;
 		}
@@ -71,7 +76,8 @@ public class PrimitiveIntHashMap<V> {
 	 * @param initialSize initial expected number of elements; rounded to the next
 	 *                    power of two internally.
 	 */
-	public PrimitiveIntHashMap(int initialSize) {
+	public PrimitiveIntHashMap(int initialSize)
+	{
 		this(initialSize, DEFAULT_LOAD_FACTOR);
 	}
 
@@ -86,8 +92,10 @@ public class PrimitiveIntHashMap<V> {
 	 * @throws IllegalArgumentException if {@code loadFactor} is outside the
 	 *                                  inclusive range 0..1.
 	 */
-	public PrimitiveIntHashMap(int initialSize, float loadFactor) {
-		if (loadFactor < 0.0f || loadFactor > 1.0f) {
+	public PrimitiveIntHashMap(int initialSize, float loadFactor)
+	{
+		if (loadFactor < 0.0f || loadFactor > 1.0f)
+		{
 			throw new IllegalArgumentException("Load factor must be between 0 and 1");
 		}
 
@@ -102,7 +110,8 @@ public class PrimitiveIntHashMap<V> {
 	 *
 	 * @return current entry count (always {@code >= 0}).
 	 */
-	public int size() {
+	public int size()
+	{
 		return size;
 	}
 
@@ -112,19 +121,25 @@ public class PrimitiveIntHashMap<V> {
 	 * @param key primitive key to look up.
 	 * @return the mapped value, or {@code null} if the key does not exist.
 	 */
-	public V get(int key) {
+	public V get(int key)
+	{
 		return getOrDefault(key, null);
 	}
 
-	public int[] keys() {
+	public int[] keys()
+	{
 		int[] keys = new int[size];
 		int index = 0;
-		for (IntNode<V>[] bucket : buckets) {
-			if (bucket == null) {
+		for (IntNode<V>[] bucket : buckets)
+		{
+			if (bucket == null)
+			{
 				continue;
 			}
-			for (IntNode<V> node : bucket) {
-				if (node == null) {
+			for (IntNode<V> node : bucket)
+			{
+				if (node == null)
+				{
 					break;
 				}
 				keys[index++] = node.key;
@@ -140,10 +155,12 @@ public class PrimitiveIntHashMap<V> {
 	 * @param defaultValue value to return if the key is not present.
 	 * @return the mapped value, or {@code defaultValue} when absent.
 	 */
-	public V getOrDefault(int key, V defaultValue) {
+	public V getOrDefault(int key, V defaultValue)
+	{
 		int bucket = getBucket(key);
 		int index = bucketIndex(key, bucket);
-		if (index == -1) {
+		if (index == -1)
+		{
 			return defaultValue;
 		}
 		return buckets[bucket][index].value;
@@ -164,44 +181,57 @@ public class PrimitiveIntHashMap<V> {
 	 * @param value non-null value to associate.
 	 * @param <E>   inferred element type if both values are collections.
 	 * @return the previous value mapped to {@code key} (if any), or {@code null} if
-	 *         inserting a new entry.
+	 * inserting a new entry.
 	 * @throws IllegalArgumentException if {@code value} is {@code null}.
 	 */
 	@SuppressWarnings("unchecked")
-	public <E> V put(int key, V value) {
-		if (value == null) {
+	public <E> V put(int key, V value)
+	{
+		if (value == null)
+		{
 			throw new IllegalArgumentException("Cannot insert a null value");
 		}
 
 		int bucketIndex = getBucket(key);
 		IntNode<V>[] bucket = buckets[bucketIndex];
 
-		if (bucket == null) {
+		if (bucket == null)
+		{
 			buckets[bucketIndex] = createBucket(DEFAULT_BUCKET_SIZE);
 			buckets[bucketIndex][0] = new IntNode<>(key, value);
 			incrementSize();
 			return null;
 		}
 
-		for (int i = 0; i < bucket.length; ++i) {
-			if (bucket[i] == null) {
+		for (int i = 0; i < bucket.length; ++i)
+		{
+			if (bucket[i] == null)
+			{
 				bucket[i] = new IntNode<>(key, value);
 				incrementSize();
 				return null;
-			} else if (bucket[i].key == key) {
+			}
+			else if (bucket[i].key == key)
+			{
 				V previous = bucket[i].value;
-				if (previous instanceof Collection<?> && value instanceof Collection<?>) { // append
-					try {
+				if (previous instanceof Collection<?> && value instanceof Collection<?>)
+				{ // append
+					try
+					{
 						Collection<E> prevCollection = (Collection<E>) bucket[i].value;
 						Collection<E> newCollection = (Collection<E>) value;
 						prevCollection.addAll(newCollection);
-					} catch (ClassCastException | UnsupportedOperationException e) {
+					}
+					catch (ClassCastException | UnsupportedOperationException e)
+					{
 						// If the collections contain incompatible types or the operation is not
 						// supported,
 						// just replace instead of append
 						bucket[i].value = value;
 					}
-				} else { // replace
+				}
+				else
+				{ // replace
 					bucket[i].value = value;
 				}
 				return previous;
@@ -219,25 +249,32 @@ public class PrimitiveIntHashMap<V> {
 	 * bits downward to
 	 * reduce clustering while remaining inexpensive.
 	 */
-	private static int hash(int value) {
+	private static int hash(int value)
+	{
 		return value ^ (value >>> 5) ^ (value >>> 25);
 	}
 
-	private int getBucket(int key) {
+	private int getBucket(int key)
+	{
 		return (hash(key) & 0x7FFFFFFF) & mask;
 	}
 
-	private int bucketIndex(int key, int bucketIndex) {
+	private int bucketIndex(int key, int bucketIndex)
+	{
 		IntNode<V>[] bucket = buckets[bucketIndex];
-		if (bucket == null) {
+		if (bucket == null)
+		{
 			return -1;
 		}
 
-		for (int i = 0; i < bucket.length; ++i) {
-			if (bucket[i] == null) {
+		for (int i = 0; i < bucket.length; ++i)
+		{
+			if (bucket[i] == null)
+			{
 				break;
 			}
-			if (bucket[i].key == key) {
+			if (bucket[i].key == key)
+			{
 				return i;
 			}
 		}
@@ -246,14 +283,17 @@ public class PrimitiveIntHashMap<V> {
 		return -1;
 	}
 
-	private void incrementSize() {
+	private void incrementSize()
+	{
 		size++;
-		if (size >= capacity) {
+		if (size >= capacity)
+		{
 			rehash();
 		}
 	}
 
-	private IntNode<V>[] growBucket(int bucketIndex) {
+	private IntNode<V>[] growBucket(int bucketIndex)
+	{
 		IntNode<V>[] oldBucket = buckets[bucketIndex];
 		IntNode<V>[] newBucket = createBucket(Math.min(oldBucket.length, Integer.MAX_VALUE / 2 - 4) * 2);
 		System.arraycopy(oldBucket, 0, newBucket, 0, oldBucket.length);
@@ -261,16 +301,20 @@ public class PrimitiveIntHashMap<V> {
 		return newBucket;
 	}
 
-	private int getNewMaxSize(int size) {
+	private int getNewMaxSize(int size)
+	{
 		int nextPow2 = -1 >>> Integer.numberOfLeadingZeros(size);
-		if (nextPow2 >= (Integer.MAX_VALUE >>> 1)) {
+		if (nextPow2 >= (Integer.MAX_VALUE >>> 1))
+		{
 			return (Integer.MAX_VALUE >>> 1) + 1;
 		}
 		return nextPow2 + 1;
 	}
 
-	private void setNewSize(int size) {
-		if (size < MINIMUM_SIZE) {
+	private void setNewSize(int size)
+	{
+		if (size < MINIMUM_SIZE)
+		{
 			size = MINIMUM_SIZE - 1;
 		}
 
@@ -279,45 +323,57 @@ public class PrimitiveIntHashMap<V> {
 		capacity = (int) (maxSize * loadFactor);
 	}
 
-	private void growCapacity() {
+	private void growCapacity()
+	{
 		setNewSize(maxSize);
 	}
 
 	// Grow the bucket array then rehash all the values into new buckets and discard
 	// the old ones
-	private void rehash() {
+	private void rehash()
+	{
 		growCapacity();
 
 		IntNode<V>[][] oldBuckets = buckets;
 		recreateArrays();
 
-		for (int i = 0; i < oldBuckets.length; ++i) {
+		for (int i = 0; i < oldBuckets.length; ++i)
+		{
 			IntNode<V>[] oldBucket = oldBuckets[i];
-			if (oldBucket == null) {
+			if (oldBucket == null)
+			{
 				continue;
 			}
 
-			for (int ind = 0; ind < oldBucket.length; ++ind) {
-				if (oldBucket[ind] == null) {
+			for (int ind = 0; ind < oldBucket.length; ++ind)
+			{
+				if (oldBucket[ind] == null)
+				{
 					break;
 				}
 
 				int bucketIndex = getBucket(oldBucket[ind].key);
 				IntNode<V>[] newBucket = buckets[bucketIndex];
-				if (newBucket == null) {
+				if (newBucket == null)
+				{
 					newBucket = createBucket(DEFAULT_BUCKET_SIZE);
 					newBucket[0] = oldBucket[ind];
 					buckets[bucketIndex] = newBucket;
-				} else {
+				}
+				else
+				{
 					int bInd;
-					for (bInd = 0; bInd < newBucket.length; ++bInd) {
-						if (newBucket[bInd] == null) {
+					for (bInd = 0; bInd < newBucket.length; ++bInd)
+					{
+						if (newBucket[bInd] == null)
+						{
 							newBucket[bInd] = oldBucket[ind];
 							break;
 						}
 					}
 
-					if (bInd >= newBucket.length) {
+					if (bInd >= newBucket.length)
+					{
 						// No space in the target bucket; grow it and append the entry,
 						// but continue rehashing remaining entries instead of returning early.
 						IntNode<V>[] grown = growBucket(bucketIndex);
@@ -329,14 +385,16 @@ public class PrimitiveIntHashMap<V> {
 		}
 	}
 
-	private void recreateArrays() {
-		@SuppressWarnings({ "unchecked", "SuspiciousArrayCast" })
+	private void recreateArrays()
+	{
+		@SuppressWarnings({"unchecked", "SuspiciousArrayCast"})
 		IntNode<V>[][] temp = (IntNode<V>[][]) new IntNode[maxSize][];
 		buckets = temp;
 	}
 
-	private IntNode<V>[] createBucket(int size) {
-		@SuppressWarnings({ "unchecked", "SuspiciousArrayCast" })
+	private IntNode<V>[] createBucket(int size)
+	{
+		@SuppressWarnings({"unchecked", "SuspiciousArrayCast"})
 		IntNode<V>[] temp = (IntNode<V>[]) new IntNode[size];
 		return temp;
 	}
@@ -352,15 +410,19 @@ public class PrimitiveIntHashMap<V> {
 	 *
 	 * @return approximate fullness percentage in the range {@code [0.0, 100.0]}.
 	 */
-	public double calculateFullness() {
+	public double calculateFullness()
+	{
 		int size = 0;
 		int usedSize = 0;
-		for (int i = 0; i < buckets.length; ++i) {
+		for (int i = 0; i < buckets.length; ++i)
+		{
 			if (buckets[i] == null)
 				continue;
 			size += buckets[i].length;
-			for (int j = 0; j < buckets[i].length; ++j) {
-				if (buckets[i][j] == null) {
+			for (int j = 0; j < buckets[i].length; ++j)
+			{
+				if (buckets[i][j] == null)
+				{
 					usedSize += j;
 					break;
 				}
@@ -373,7 +435,8 @@ public class PrimitiveIntHashMap<V> {
 	 * Removes all entries from the map. Bucket arrays are discarded and recreated
 	 * lazily on subsequent inserts.
 	 */
-	public void clear() {
+	public void clear()
+	{
 		size = 0;
 		Arrays.fill(buckets, null);
 	}

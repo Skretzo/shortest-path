@@ -1,6 +1,7 @@
 package shortestpath.pathfinder;
 
-public enum OrdinalDirection {
+public enum OrdinalDirection
+{
 	WEST(-1, 0),
 	EAST(1, 0),
 	SOUTH(0, -1),
@@ -13,7 +14,8 @@ public enum OrdinalDirection {
 	final int x;
 	final int y;
 
-	OrdinalDirection(int x, int y) {
+	OrdinalDirection(int x, int y)
+	{
 		this.x = x;
 		this.y = y;
 	}

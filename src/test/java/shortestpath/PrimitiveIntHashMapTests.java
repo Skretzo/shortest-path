@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,33 +22,39 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PrimitiveIntHashMapTests {
+public class PrimitiveIntHashMapTests
+{
 	@Test(expected = IllegalArgumentException.class)
-	public void checkNullValueProhibited() {
+	public void checkNullValueProhibited()
+	{
 		PrimitiveIntHashMap<Boolean> map = new PrimitiveIntHashMap<>(8);
 		map.put(0, null);
 	}
 
 	@Test
-	public void tryInsertTransports() {
+	public void tryInsertTransports()
+	{
 		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
 		PrimitiveIntHashMap<Set<Transport>> map = new PrimitiveIntHashMap<>(transports.size());
 
-		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())
+		{
 			int packedPoint = entry.getKey();
 			map.put(packedPoint, entry.getValue());
 		}
 
 		// Append empty set
-		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())
+		{
 			int packedPoint = entry.getKey();
 			map.put(packedPoint, entry.getValue());
 			Assert.assertEquals("Appending empty should not overwrite", map.put(packedPoint, new HashSet<>()),
-					map.get(packedPoint));
+				map.get(packedPoint));
 		}
 
 		// Append non-empty set
-		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())
+		{
 			int packedPoint = entry.getKey();
 			map.put(packedPoint, entry.getValue());
 			int sizeBefore = map.get(packedPoint).size();
@@ -58,57 +65,68 @@ public class PrimitiveIntHashMapTests {
 			Assert.assertEquals("Appending non-empty should not overwrite", sizeBefore + 1, sizeAfter);
 		}
 
-		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())
+		{
 			int packedPoint = entry.getKey();
 			Assert.assertEquals("World Point " + entry.getKey() + " did not map to the correct value", entry.getValue(),
-					map.get(packedPoint));
+				map.get(packedPoint));
 		}
 	}
 
 	@Test
-	public void tryGrowMap() {
+	public void tryGrowMap()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			map.put(i, i);
 		}
 
 		Assert.assertEquals(1024, map.size());
 
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			Assert.assertEquals(i, map.get(i).intValue());
 		}
 	}
 
 	@Test
-	public void checkNonexistentEntries() {
+	public void checkNonexistentEntries()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
 		Assert.assertNull(map.get(667215));
 	}
 
 	@Test
-	public void tryOverwriteValues() {
+	public void tryOverwriteValues()
+	{
 		final int keyStart = 9875643; // Use keys that aren't 0 or all low bits
 
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(2048);
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			map.put(i + keyStart, i);
 		}
 
 		// Overwrite values
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			map.put(i + keyStart, i + 1);
 		}
 
 		// Now check overwritten values stuck
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			Assert.assertEquals(i + 1, map.get(i + keyStart).intValue());
 		}
 	}
 
 	@Test
-	public void checkClearMap() {
+	public void checkClearMap()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			map.put(i, i);
 		}
 
@@ -121,27 +139,32 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void checkInsertOrderIrrelevant() {
+	public void checkInsertOrderIrrelevant()
+	{
 		final int keyStart = 9875643; // Use keys that aren't 0 or all low bits
 		PrimitiveIntHashMap<Integer> mapForward = new PrimitiveIntHashMap<>(8);
 		PrimitiveIntHashMap<Integer> mapReversed = new PrimitiveIntHashMap<>(8);
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			mapForward.put(i + keyStart, i);
 			mapReversed.put(1023 - i + keyStart, 1023 - i);
 		}
 
-		for (int i = 0; i < 1024; ++i) {
+		for (int i = 0; i < 1024; ++i)
+		{
 			Assert.assertEquals(mapForward.get(i + keyStart), mapReversed.get(i + keyStart));
 		}
 	}
 
 	// Copy of the map's private hash to synthesize collisions in tests
-	private static int testHash(int value) {
+	private static int testHash(int value)
+	{
 		return value ^ (value >>> 5) ^ (value >>> 25);
 	}
 
 	@Test
-	public void sizeAndBasicPutGet() {
+	public void sizeAndBasicPutGet()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(8);
 		assertEquals(0, map.size());
 		assertNull(map.get(42));
@@ -160,7 +183,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void getOrDefaultWorks() {
+	public void getOrDefaultWorks()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(4);
 		assertEquals(Integer.valueOf(99), map.getOrDefault(123, 99));
 		map.put(123, 7);
@@ -168,13 +192,15 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void putNullDisallowed() {
+	public void putNullDisallowed()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(4);
 		map.put(5, null);
 	}
 
 	@Test
-	public void negativeKeysSupported() {
+	public void negativeKeysSupported()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(4);
 		map.put(-1, "neg1");
 		map.put(Integer.MIN_VALUE, "min");
@@ -183,21 +209,25 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void clearResetsState() {
+	public void clearResetsState()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(16);
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 10; i++)
+		{
 			map.put(i, "v" + i);
 		}
 		assertTrue(map.size() > 0);
 		map.clear();
 		assertEquals(0, map.size());
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 10; i++)
+		{
 			assertNull(map.get(i));
 		}
 	}
 
 	@Test
-	public void collectionValuesAppendOnDuplicateKey() {
+	public void collectionValuesAppendOnDuplicateKey()
+	{
 		PrimitiveIntHashMap<List<Integer>> map = new PrimitiveIntHashMap<>(8);
 		List<Integer> a = new ArrayList<>(Arrays.asList(1, 2));
 		List<Integer> b = new ArrayList<>(Arrays.asList(3, 4, 5));
@@ -213,26 +243,30 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void rehashPreservesEntries() {
+	public void rehashPreservesEntries()
+	{
 		// Use default load factor so rehashes will happen as size grows
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(8);
 
 		int n = 10_000;
-		for (int i = 0; i < n; i++) {
+		for (int i = 0; i < n; i++)
+		{
 			map.put(i, "v" + i);
 		}
 		assertEquals(n, map.size());
 
 		// verify random subset
 		Random rnd = new Random(123);
-		for (int i = 0; i < 2000; i++) {
+		for (int i = 0; i < 2000; i++)
+		{
 			int k = rnd.nextInt(n);
 			assertEquals("v" + k, map.get(k));
 		}
 	}
 
 	@Test
-	public void heavyCollisionsGrowBucketWithoutRehash() {
+	public void heavyCollisionsGrowBucketWithoutRehash()
+	{
 		// With loadFactor=1.0 and initial size < MINIMUM_SIZE, maxSize becomes 8 and
 		// capacity is 8.
 		// We'll place 6 entries into the SAME bucket so the internal bucket needs to
@@ -242,7 +276,8 @@ public class PrimitiveIntHashMapTests {
 
 		int targetBucket = 0; // any bucket works; pick 0
 		List<Integer> collidingKeys = new ArrayList<>();
-		for (int k = 0; collidingKeys.size() < 6 && k < 100_000; k++) {
+		for (int k = 0; collidingKeys.size() < 6 && k < 100_000; k++)
+		{
 			int bucket = (testHash(k) & 0x7FFFFFFF) & mask;
 			if (bucket == targetBucket)
 				collidingKeys.add(k);
@@ -250,18 +285,21 @@ public class PrimitiveIntHashMapTests {
 		assertEquals(6, collidingKeys.size());
 
 		int i = 0;
-		for (int key : collidingKeys) {
+		for (int key : collidingKeys)
+		{
 			assertNull(map.put(key, "v" + (i++)));
 		}
 		assertEquals(6, map.size());
-		for (int idx = 0; idx < collidingKeys.size(); idx++) {
+		for (int idx = 0; idx < collidingKeys.size(); idx++)
+		{
 			int key = collidingKeys.get(idx);
 			assertEquals("v" + idx, map.get(key));
 		}
 	}
 
 	@Test
-	public void calculateFullnessWithinBounds() {
+	public void calculateFullnessWithinBounds()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
 		double f0 = map.calculateFullness();
 		assertTrue("empty map fullness should be NaN", Double.isNaN(f0));
@@ -273,17 +311,24 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void constructorRejectsInvalidLoadFactor() {
-		try {
+	public void constructorRejectsInvalidLoadFactor()
+	{
+		try
+		{
 			new PrimitiveIntHashMap<>(8, -0.1f);
 			fail("Expected IllegalArgumentException");
-		} catch (IllegalArgumentException expected) {
+		}
+		catch (IllegalArgumentException expected)
+		{
 		}
 
-		try {
+		try
+		{
 			new PrimitiveIntHashMap<>(8, 1.1f);
 			fail("Expected IllegalArgumentException");
-		} catch (IllegalArgumentException expected) {
+		}
+		catch (IllegalArgumentException expected)
+		{
 		}
 
 		// Edge values allowed
@@ -292,7 +337,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void replacingDoesNotIncreaseSize() {
+	public void replacingDoesNotIncreaseSize()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(8);
 		assertNull(map.put(10, "a"));
 		int s1 = map.size();
@@ -303,17 +349,20 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void manyRandomInsertionsAndLookups() {
+	public void manyRandomInsertionsAndLookups()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(32);
 		Random rnd = new Random(42);
 		Set<Integer> keys = new HashSet<>();
 
-		for (int i = 0; i < 50_000; i++) {
+		for (int i = 0; i < 50_000; i++)
+		{
 			int k = rnd.nextInt();
 			// avoid null values
 			int v = i;
 			Integer prev = map.put(k, v);
-			if (!keys.add(k)) {
+			if (!keys.add(k))
+			{
 				// replacement path: previous value must be non-null
 				assertNotNull(prev);
 			}
@@ -324,7 +373,8 @@ public class PrimitiveIntHashMapTests {
 
 		// sample lookups
 		int checked = 0;
-		for (int k : keys) {
+		for (int k : keys)
+		{
 			assertNotNull(map.get(k));
 			if (++checked > 2000)
 				break;
@@ -332,7 +382,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void zeroLoadFactorCreatesMinimumCapacity() {
+	public void zeroLoadFactorCreatesMinimumCapacity()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(4, 0.0f);
 		// With loadFactor 0.0, capacity should be 0, but map should still be usable
 		assertNull(map.put(1, "test"));
@@ -341,7 +392,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void emptyCollectionAppending() {
+	public void emptyCollectionAppending()
+	{
 		PrimitiveIntHashMap<List<Integer>> map = new PrimitiveIntHashMap<>(8);
 		List<Integer> originalList = new ArrayList<>(Arrays.asList(1, 2, 3));
 		List<Integer> emptyList = new ArrayList<>();
@@ -357,7 +409,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void mixedCollectionAndNonCollectionReplace() {
+	public void mixedCollectionAndNonCollectionReplace()
+	{
 		PrimitiveIntHashMap<Object> map = new PrimitiveIntHashMap<>(8);
 		List<Integer> list = new ArrayList<>(Arrays.asList(1, 2));
 
@@ -376,7 +429,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void calculateFullnessEdgeCases() {
+	public void calculateFullnessEdgeCases()
+	{
 		// Test with completely empty map
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
 		assertTrue("Empty map fullness should be NaN", Double.isNaN(map.calculateFullness()));
@@ -389,7 +443,8 @@ public class PrimitiveIntHashMapTests {
 		// Test with all buckets having exactly one element
 		map.clear();
 		// Fill exactly one slot in each bucket if possible
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 8; i++)
+		{
 			map.put(i * 1000, i); // Use keys that likely hash to different buckets
 		}
 		fullness = map.calculateFullness();
@@ -397,7 +452,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void integerOverflowKeys() {
+	public void integerOverflowKeys()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(16);
 
 		// Test keys near integer overflow boundaries
@@ -418,32 +474,38 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void extremeCollisionScenario() {
+	public void extremeCollisionScenario()
+	{
 		// Force many collisions by using a small initial size and load factor 1.0
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(2, 1.0f);
 
 		// Add many items that will definitely cause collisions and bucket growth
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 100; i++)
+		{
 			map.put(i, "value" + i);
 		}
 
 		// Verify all values are still accessible
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 100; i++)
+		{
 			assertEquals("value" + i, map.get(i));
 		}
 		assertEquals(100, map.size());
 	}
 
 	@Test
-	public void largeCollectionAppending() {
+	public void largeCollectionAppending()
+	{
 		PrimitiveIntHashMap<List<Integer>> map = new PrimitiveIntHashMap<>(8);
 		List<Integer> list1 = new ArrayList<>();
-		for (int i = 0; i < 10000; i++) {
+		for (int i = 0; i < 10000; i++)
+		{
 			list1.add(i);
 		}
 
 		List<Integer> list2 = new ArrayList<>();
-		for (int i = 10000; i < 20000; i++) {
+		for (int i = 10000; i < 20000; i++)
+		{
 			list2.add(i);
 		}
 
@@ -458,7 +520,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void rehashDuringCollectionAppend() {
+	public void rehashDuringCollectionAppend()
+	{
 		// Create a map that will trigger rehash when a specific key is added
 		PrimitiveIntHashMap<List<Integer>> map = new PrimitiveIntHashMap<>(4, 0.75f);
 
@@ -477,7 +540,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void sameKeyDifferentHashBehavior() {
+	public void sameKeyDifferentHashBehavior()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(8);
 
 		// Test that same key always returns same value regardless of hash collisions
@@ -491,11 +555,13 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void clearAfterComplexOperations() {
+	public void clearAfterComplexOperations()
+	{
 		PrimitiveIntHashMap<List<String>> map = new PrimitiveIntHashMap<>(4);
 
 		// Perform complex operations that cause growth and collection appending
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 50; i++)
+		{
 			List<String> list = new ArrayList<>(Arrays.asList("item" + i));
 			map.put(i % 10, list); // This will cause appending for repeated keys
 		}
@@ -516,7 +582,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void incompatibleCollectionTypes() {
+	public void incompatibleCollectionTypes()
+	{
 		PrimitiveIntHashMap<Object> map = new PrimitiveIntHashMap<>(8);
 
 		// Put a list of strings
@@ -526,11 +593,14 @@ public class PrimitiveIntHashMapTests {
 		// Try to append a list of integers - this should handle the ClassCastException
 		// gracefully
 		List<Integer> intList = new ArrayList<>(Arrays.asList(1, 2, 3));
-		try {
+		try
+		{
 			Object prev = map.put(10, intList);
 			// If we get here, the implementation should have handled the type mismatch
 			assertSame(stringList, prev);
-		} catch (ClassCastException e) {
+		}
+		catch (ClassCastException e)
+		{
 			// This is also acceptable behavior - the implementation throws when types don't
 			// match
 			// In this case, verify the original value is still there
@@ -539,25 +609,29 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void bucketGrowthIntegerOverflow() {
+	public void bucketGrowthIntegerOverflow()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(8);
 
 		// This test ensures that bucket growth doesn't cause integer overflow
 		// We can't easily test the actual overflow case, but we can test large bucket
 		// growth
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 1000; i++)
+		{
 			map.put(i, "value" + i);
 		}
 
 		// Verify all values are still accessible after many bucket growth operations
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 1000; i++)
+		{
 			assertEquals("value" + i, map.get(i));
 		}
 		assertEquals(1000, map.size());
 	}
 
 	@Test
-	public void constructorHandlesNegativeInitialSize() {
+	public void constructorHandlesNegativeInitialSize()
+	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(-5);
 		assertNull(map.get(1));
 		map.put(1, "a");
@@ -568,7 +642,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void appendToUnmodifiableCollectionReplaces() {
+	public void appendToUnmodifiableCollectionReplaces()
+	{
 		PrimitiveIntHashMap<List<String>> map = new PrimitiveIntHashMap<>(8);
 		List<String> fixed = Arrays.asList("x", "y"); // fixed-size list => addAll throws UnsupportedOperationException
 		List<String> replacement = new ArrayList<>(Arrays.asList("a", "b", "c"));
@@ -585,7 +660,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void getOrDefaultAllowsNullDefault() {
+	public void getOrDefaultAllowsNullDefault()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
 		assertNull(map.getOrDefault(999, null));
 		map.put(999, 123);
@@ -593,7 +669,8 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void selfCollectionAppendDuplicatesSafely() {
+	public void selfCollectionAppendDuplicatesSafely()
+	{
 		PrimitiveIntHashMap<List<Integer>> map = new PrimitiveIntHashMap<>(8);
 		List<Integer> list = new ArrayList<>(Arrays.asList(1, 2));
 		map.put(7, list);
@@ -608,13 +685,16 @@ public class PrimitiveIntHashMapTests {
 	}
 
 	@Test
-	public void zeroLoadFactorStress() {
+	public void zeroLoadFactorStress()
+	{
 		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8, 0.0f);
 		// Keep this small to avoid exponential rehash growth with loadFactor=0.0
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 16; i++)
+		{
 			map.put(i, i);
 		}
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 16; i++)
+		{
 			assertEquals(Integer.valueOf(i), map.get(i));
 		}
 		assertEquals(16, map.size());

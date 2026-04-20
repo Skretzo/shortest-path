@@ -2,12 +2,15 @@ package shortestpath.pathfinder;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
 
-public class VisitedTilesTest {
+public class VisitedTilesTest
+{
 	@Test
-	public void settingBankedTileAlsoMarksUnbankedTileVisited() {
+	public void settingBankedTileAlsoMarksUnbankedTileVisited()
+	{
 		VisitedTiles visited = new VisitedTiles(collisionMap());
 		int tile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 
@@ -19,7 +22,8 @@ public class VisitedTilesTest {
 	}
 
 	@Test
-	public void settingBankedAbstractNodeAlsoMarksUnbankedAbstractNodeVisited() {
+	public void settingBankedAbstractNodeAlsoMarksUnbankedAbstractNodeVisited()
+	{
 		VisitedTiles visited = new VisitedTiles(collisionMap());
 		Node banked = Node.abstractNode(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, null, true);
 		Node unbanked = Node.abstractNode(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, null, false);
@@ -32,7 +36,8 @@ public class VisitedTilesTest {
 	}
 
 	@Test
-	public void settingUnbankedNodeDoesNotMarkBankedNodeVisited() {
+	public void settingUnbankedNodeDoesNotMarkBankedNodeVisited()
+	{
 		VisitedTiles visited = new VisitedTiles(collisionMap());
 		int tile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Node unbanked = Node.abstractNode(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, null, false);
@@ -47,7 +52,8 @@ public class VisitedTilesTest {
 		assertFalse(visited.get(banked));
 	}
 
-	private static CollisionMap collisionMap() {
+	private static CollisionMap collisionMap()
+	{
 		return new CollisionMap(SplitFlagMap.fromResources());
 	}
 }
