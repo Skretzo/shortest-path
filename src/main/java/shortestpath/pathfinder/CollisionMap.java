@@ -100,8 +100,11 @@ public class CollisionMap {
         // Firstly check if there are any transports or teleports which are applicable from the current tile.
         Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());
         for (Transport transport : transports) {
+            boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
             // Do not consider a transport if we have already visited its target tile.
-            if (visited.get(transport.getDestination(), pathBankVisited)) {
+            // For transports that share destinations with a teleport, skip this check
+            // so both can compete in the priority queue (delayed visit).
+            if (!delayedVisit && visited.get(transport.getDestination(), pathBankVisited)) {
                 continue;
             }
             // NB: Do not need to check for wilderness level for transports, since transports have specific origin tile.
@@ -110,7 +113,9 @@ public class CollisionMap {
                 node,
                 transport.getDuration(),
                 config.getAdditionalTransportCost(transport),
-                pathBankVisited));
+                pathBankVisited,
+                delayedVisit,
+                delayedVisit ? config.getDifferentialCost(transport) : 0));
         }
 
         // Global teleports are only considered from an abstract node, so each wilderness/bank state expands them once.
@@ -179,7 +184,8 @@ public class CollisionMap {
         neighbors.clear();
         int sourceTile = node.getClosestTilePosition();
         for (Transport transport : config.getUsableTeleports(node.bankVisited)) {
-            if (visited.get(transport.getDestination(), node.bankVisited)) {
+            boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
+            if (!delayedVisit && visited.get(transport.getDestination(), node.bankVisited)) {
                 continue;
             }
             if (!transport.isUsableAtWildernessLevel(node.abstractKind.maxWildernessLevel())) {
@@ -193,7 +199,9 @@ public class CollisionMap {
                 node,
                 transport.getDuration(),
                 config.getAdditionalTransportCost(transport),
-                node.bankVisited));
+                node.bankVisited,
+                delayedVisit,
+                delayedVisit ? config.getDifferentialCost(transport) : 0));
         }
         return neighbors;
     }
