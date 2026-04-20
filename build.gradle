@@ -38,14 +38,22 @@ def dashboardDataset = providers.gradleProperty('dashboardDataset')
     .orElse('/reachability/routes.csv')
 def dashboardScenario = providers.gradleProperty('dashboardScenario')
     .orElse('')
-def dashboardTitle = providers.gradleProperty('dashboardTitle')
-    .orElse('Pathfinder Dashboard')
 def dashboardSubtitle = providers.gradleProperty('dashboardSubtitle')
     .orElse('')
 def dashboardProfile = providers.gradleProperty('dashboardProfile')
     .orElse('true')
+// Derive bundle name and title from the dataset filename + profile flag.
+// e.g. /reachability/clue_locations_full.csv -PdashboardProfile=true
+//   → bundle: clue-locations-full-profiled, title: Clue Locations Full Profiled
+// Override either with -PdashboardBundle=... or -PdashboardTitle=...
+def _filename = dashboardDataset.get().tokenize('/').last()
+def _stem     = _filename.contains('.') ? _filename.substring(0, _filename.lastIndexOf('.')) : _filename
+def _slug     = _stem.replace('_', '-').toLowerCase()
+def _profiled  = dashboardProfile.get() == 'true'
 def dashboardBundle = providers.gradleProperty('dashboardBundle')
-    .orElse('routes')
+    .orElse(_profiled ? "${_slug}-profiled" : _slug)
+def dashboardTitle = providers.gradleProperty('dashboardTitle')
+    .orElse(_stem.tokenize('_').collect { it.capitalize() }.join(' ') + (_profiled ? ' Profiled' : ''))
 
 def logDashboardLocation = { String taskName ->
     File dashboardDir = dashboardOutputRoot.get().asFile
@@ -61,7 +69,7 @@ test {
 
 tasks.register('dashboard', Test) {
     group = 'verification'
-    description = 'Builds the pathfinder dashboard. Use -PdashboardDataset=... to set the input file, -PdashboardScenario=profiler for profiling.'
+    description = 'Builds the pathfinder dashboard. Required: -PdashboardDataset=... (default: /reachability/routes.csv), -PdashboardProfile=true|false (default: true). Bundle name and title are derived automatically; override with -PdashboardBundle=... or -PdashboardTitle=...'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     useJUnit()
