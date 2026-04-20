@@ -178,12 +178,12 @@ public class PathfinderDashboardReportWriter {
             int destination = destinationStep.getPackedPosition();
             boolean bankVisited = destinationStep.isBankVisited();
 
-            Set<Transport> originTransports = new java.util.HashSet<>(
-                config.getTransportsPacked(bankVisited).getOrDefault(origin, Set.of()));
-            originTransports.addAll(config.getUsableTeleports(bankVisited));
-
-            for (Transport transport : originTransports) {
+            // Physical transports at the origin tile — these are always shown.
+            Set<Transport> physicalTransports = config.getTransportsPacked(bankVisited).getOrDefault(origin, Set.of());
+            boolean physicalCoversDestination = false;
+            for (Transport transport : physicalTransports) {
                 if (transport.getDestination() == destination) {
+                    physicalCoversDestination = true;
                     PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
                     step.stepIndex = i;
                     step.type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
@@ -192,6 +192,26 @@ public class PathfinderDashboardReportWriter {
                     step.origin = worldPoint(origin);
                     step.destination = worldPoint(destination);
                     steps.add(step);
+                }
+            }
+
+            // Usable teleports (abstract-node transports) — skip if:
+            //  (a) a physical transport at this origin already covers the destination (physical wins
+            //      the dequeue race because usable teleports carry a differential-cost PQ penalty), or
+            //  (b) the step is only 1 tile, which means it is a walking step and the matching
+            //      teleport destination is a coincidence, not an actual teleport use.
+            if (!physicalCoversDestination && WorldPointUtil.distanceBetween2D(origin, destination) > 1) {
+                for (Transport transport : config.getUsableTeleports(bankVisited)) {
+                    if (transport.getDestination() == destination) {
+                        PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
+                        step.stepIndex = i;
+                        step.type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
+                        step.displayInfo = transport.getDisplayInfo();
+                        step.objectInfo = transport.getObjectInfo();
+                        step.origin = worldPoint(origin);
+                        step.destination = worldPoint(destination);
+                        steps.add(step);
+                    }
                 }
             }
         }

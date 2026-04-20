@@ -502,7 +502,9 @@ public class PathfinderConfig {
      * Returns false if the transport should be filtered out based on teleportation item settings.
      */
     private boolean checkTeleportationItemRules(Transport transport, TransportType type) {
-        if (!TransportType.TELEPORTATION_ITEM.equals(type) && !TransportType.SEASONAL_TRANSPORTS.equals(type)) {
+        if (!TransportType.TELEPORTATION_ITEM.equals(type)
+                && !TransportType.SEASONAL_TRANSPORTS.equals(type)
+                && !TransportType.QUETZAL_WHISTLE.equals(type)) {
             return true; // Not a teleportation item type
         }
 
@@ -603,7 +605,8 @@ public class PathfinderConfig {
                                      boolean checkBank,
                                      boolean checkRunePouch) {
         if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
-                TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())) {
+                TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
+                TransportType.QUETZAL_WHISTLE.equals(transport.getType())) {
             switch (transportTypeConfig.getTeleportationItemSetting()) {
                 case ALL:
                 case ALL_NON_CONSUMABLE:
