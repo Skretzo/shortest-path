@@ -1,0 +1,26 @@
+name,category,start_x,start_y,start_plane,x,y,plane,teleports
+Lumbridge → Draynor Village,walk,3222,3218,0,3105,3251,0,NONE
+Varrock → Barbarian Village,walk,3213,3428,0,3082,3420,0,NONE
+Falador → Rimmington,walk,2964,3378,0,2957,3214,0,NONE
+Lumbridge → Varrock,teleport,3222,3218,0,3213,3428,0,ALL
+Lumbridge → Ardougne,teleport,3222,3218,0,2662,3305,0,ALL
+Edgeville → Legends Guild,fairy-ring,3087,3496,0,2729,3348,0,ALL
+GE → Canifis,fairy-ring,3165,3487,0,3507,3496,0,ALL
+Varrock → Gnome Stronghold,spirit-tree,3213,3428,0,2461,3382,0,ALL
+Gnome Stronghold → Digsite,gnome-glider,2461,3382,0,3370,3425,0,ALL
+Port Sarim → Musa Point,ship,3038,3192,0,2956,3146,0,ALL
+Rellekka → Waterbirth Island,boat,2660,3657,0,2544,3759,0,ALL
+Port Phasmatys → Mos Le'Harmless,boat,3702,3503,0,3671,2931,0,ALL
+Brimhaven → Port Khazard,charter-ship,2760,3178,0,2674,3141,0,ALL
+Lumbridge → Edgeville,canoe,3222,3218,0,3087,3496,0,NONE
+Shantay Pass → Pollnivneach,magic-carpet,3304,3124,0,3360,2970,0,ALL
+GE → Keldagrim,minecart,3165,3487,0,2838,10170,0,ALL
+Varrock → Civitas illa Fortis,quetzal,3213,3428,0,1700,3141,0,ALL
+Edgeville → Mage Arena,wilderness,3087,3496,0,3105,3951,0,ALL
+Deep Wilderness → GE,wilderness,3340,3828,0,3158,3509,0,NONE
+Falador → White Knight 2F,multi-plane,2964,3378,0,2961,3339,2,ALL
+Castle Wars → GE,cross-map,2442,3096,0,3162,3489,0,ALL
+Port Sarim → Land's End,cross-map,3038,3192,0,1496,3403,0,ALL
+GE → Zul-Andra,cross-map,3165,3487,0,2200,3056,0,ALL
+Al Kharid → Hosidius,cross-map,3298,3290,0,1750,3590,0,ALL
+Ardougne → Deep Wilderness,teleport-lever,2562,3311,0,3154,3924,0,ALL
