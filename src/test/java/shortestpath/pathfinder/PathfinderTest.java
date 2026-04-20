@@ -1400,11 +1400,6 @@ public class PathfinderTest {
     }
 
     private void testTransportLength(int expectedLength, int origin, int destination,
-        TeleportationItem useTeleportationItems) {
-        testTransportLength(expectedLength, origin, destination, useTeleportationItems, 99);
-    }
-
-    private void testTransportLength(int expectedLength, int origin, int destination,
         TeleportationItem useTeleportationItems, int skillLevel) {
         setupConfig(QuestState.FINISHED, skillLevel, useTeleportationItems);
         assertEquals(expectedLength, calculatePathLength(origin, destination));
@@ -1440,30 +1435,6 @@ public class PathfinderTest {
         System.out.printf("Successfully completed %d " + transportType + " transport length tests%n", counter);
     }
 
-    /**
-     * Tests a single transport of the given type for efficiency.
-     * Unlike testTransportLength which tests all transports of a type,
-     * this only tests the first matching transport found.
-     */
-    private void testSingleTransport(int expectedLength, TransportType transportType) {
-        setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
-
-        for (int origin : transports.keySet()) {
-            for (Transport transport : transports.get(origin)) {
-                if (transportType.equals(transport.getType())) {
-                    // Skip POH transports
-                    int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-                    int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-                    if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
-                        continue;
-                    }
-                    assertEquals(transport.toString(), expectedLength, calculateTransportLength(transport));
-                    return; // Only test one transport
-                }
-            }
-        }
-        fail("No transport of type " + transportType + " found");
-    }
 
     /**
      * Verifies that ALL transports of the given type are present in the usable transports,
@@ -1532,11 +1503,6 @@ public class PathfinderTest {
     private void testSingleTransportScenario(String label, int expectedLength, TransportType transportType) {
         setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
         Transport transport = findSampleTransport(transportType);
-        assertScenarioPathLength(label, expectedLength, transport.getOrigin(), transport.getDestination());
-    }
-
-    private void testConfiguredTransportScenario(String label, int expectedLength, TransportType transportType) {
-        Transport transport = findConfiguredTransport(transportType);
         assertScenarioPathLength(label, expectedLength, transport.getOrigin(), transport.getDestination());
     }
 
