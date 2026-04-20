@@ -115,6 +115,8 @@ public final class PathfinderDashboardModels {
         public int blockedTileTransportChecks;
         public int bankTransitions;
         public int wildernessLevelChanges;
+        public int delayedVisitEnqueued;
+        public int delayedVisitSkipped;
         public int peakBoundarySize;
         public int peakPendingSize;
     }

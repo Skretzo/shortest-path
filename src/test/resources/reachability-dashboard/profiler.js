@@ -599,6 +599,8 @@
       "Blocked-tile transport:     " + formatK(c.blockedTileTransportChecks),
       "Bank transitions:           " + c.bankTransitions,
       "Wilderness level changes:   " + c.wildernessLevelChanges,
+      "Delayed-visit enqueued:     " + formatK(c.delayedVisitEnqueued),
+      "Delayed-visit skipped:      " + formatK(c.delayedVisitSkipped),
       "Peak boundary queue:        " + formatK(c.peakBoundarySize),
       "Peak pending queue:         " + formatK(c.peakPendingSize)
     ];

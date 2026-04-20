@@ -47,6 +47,8 @@ public class ProfilerReportWriter extends PathfinderDashboardReportWriter {
         run.counters.blockedTileTransportChecks = profile.getBlockedTileTransportChecks();
         run.counters.bankTransitions = profile.getBankTransitions();
         run.counters.wildernessLevelChanges = profile.getWildernessLevelChanges();
+        run.counters.delayedVisitEnqueued = profile.getDelayedVisitEnqueued();
+        run.counters.delayedVisitSkipped = profile.getDelayedVisitSkipped();
         run.counters.peakBoundarySize = profile.getPeakBoundarySize();
         run.counters.peakPendingSize = profile.getPeakPendingSize();
 

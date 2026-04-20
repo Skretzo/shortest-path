@@ -88,6 +88,7 @@ public class ProfilingPathfinder {
                 // reached by a cheaper path while this node was queued.
                 if (node instanceof TransportNode && ((TransportNode) node).delayedVisit) {
                     if (visited.get(node.packedPosition, node.bankVisited)) {
+                        profile.delayedVisitSkipped++;
                         profile.queueSelectionNanos += System.nanoTime() - phaseStart;
                         continue;
                     }
@@ -192,6 +193,8 @@ public class ProfilingPathfinder {
             // They will be checked and marked when dequeued from pending.
             if (!(neighbor instanceof TransportNode && ((TransportNode) neighbor).delayedVisit)) {
                 visited.set(neighbor);
+            } else {
+                profile.delayedVisitEnqueued++;
             }
             if (neighbor instanceof TransportNode) {
                 pending.add((TransportNode) neighbor);

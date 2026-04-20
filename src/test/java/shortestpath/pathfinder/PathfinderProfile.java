@@ -37,6 +37,8 @@ public class PathfinderProfile {
     int blockedTileTransportChecks;
     int bankTransitions;
     int wildernessLevelChanges;
+    int delayedVisitEnqueued;
+    int delayedVisitSkipped;
     int peakBoundarySize;
     int peakPendingSize;
 
@@ -97,6 +99,8 @@ public class PathfinderProfile {
     public int getBlockedTileTransportChecks() { return blockedTileTransportChecks; }
     public int getBankTransitions() { return bankTransitions; }
     public int getWildernessLevelChanges() { return wildernessLevelChanges; }
+    public int getDelayedVisitEnqueued() { return delayedVisitEnqueued; }
+    public int getDelayedVisitSkipped() { return delayedVisitSkipped; }
     public int getPeakBoundarySize() { return peakBoundarySize; }
     public int getPeakPendingSize() { return peakPendingSize; }
     public List<ProfileSample> getSamples() { return samples; }
