@@ -256,24 +256,6 @@ public class ReachabilityDashboardTest {
         return null;
     }
 
-    private Transport findTransport(shortestpath.pathfinder.Node source, int sourceTile, int destination, boolean bankVisited) {
-        if (source != null && source.isTile()) {
-            for (Transport transport : pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(sourceTile, Set.of())) {
-                if (transport.getDestination() == destination) {
-                    return transport;
-                }
-            }
-            return null;
-        }
-
-        for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited)) {
-            if (transport.getDestination() == destination) {
-                return transport;
-            }
-        }
-        return null;
-    }
-
     private String describeTransport(Transport transport) {
         String displayInfo = transport.getDisplayInfo();
         if (displayInfo != null && !displayInfo.isBlank()) {
