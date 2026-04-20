@@ -1,66 +1,66 @@
 package shortestpath;
 
 public class TestShortestPathConfig implements ShortestPathConfig {
-    private int calculationCutoff = 5;
-    private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
-    private String builtTeleportationBoxes = "";
-    private String builtTeleportationPortalsPoh = "";
-    private boolean includeBankPath = false;
-    private boolean useTeleportationMinigames = true;
+	private int calculationCutoff = 5;
+	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
+	private String builtTeleportationBoxes = "";
+	private String builtTeleportationPortalsPoh = "";
+	private boolean includeBankPath = false;
+	private boolean useTeleportationMinigames = true;
 
-    public void setCalculationCutoffValue(int calculationCutoff) {
-        this.calculationCutoff = calculationCutoff;
-    }
+	public void setCalculationCutoffValue(int calculationCutoff) {
+		this.calculationCutoff = calculationCutoff;
+	}
 
-    @Override
-    public int calculationCutoff() {
-        return calculationCutoff;
-    }
+	@Override
+	public int calculationCutoff() {
+		return calculationCutoff;
+	}
 
-    public void setUseTeleportationItemsValue(TeleportationItem useTeleportationItems) {
-        this.useTeleportationItems = useTeleportationItems;
-    }
+	public void setUseTeleportationItemsValue(TeleportationItem useTeleportationItems) {
+		this.useTeleportationItems = useTeleportationItems;
+	}
 
-    @Override
-    public TeleportationItem useTeleportationItems() {
-        return useTeleportationItems;
-    }
+	@Override
+	public TeleportationItem useTeleportationItems() {
+		return useTeleportationItems;
+	}
 
-    public void setIncludeBankPathValue(boolean includeBankPath) {
-        this.includeBankPath = includeBankPath;
-    }
+	public void setIncludeBankPathValue(boolean includeBankPath) {
+		this.includeBankPath = includeBankPath;
+	}
 
-    @Override
-    public boolean includeBankPath() {
-        return includeBankPath;
-    }
+	@Override
+	public boolean includeBankPath() {
+		return includeBankPath;
+	}
 
-    public void setUseTeleportationMinigamesValue(boolean useTeleportationMinigames) {
-        this.useTeleportationMinigames = useTeleportationMinigames;
-    }
+	public void setUseTeleportationMinigamesValue(boolean useTeleportationMinigames) {
+		this.useTeleportationMinigames = useTeleportationMinigames;
+	}
 
-    @Override
-    public boolean useTeleportationMinigames() {
-        return useTeleportationMinigames;
-    }
+	@Override
+	public boolean useTeleportationMinigames() {
+		return useTeleportationMinigames;
+	}
 
-    @Override
-    public void setBuiltTeleportationBoxes(String content) {
-        builtTeleportationBoxes = content;
-    }
+	@Override
+	public void setBuiltTeleportationBoxes(String content) {
+		builtTeleportationBoxes = content;
+	}
 
-    @Override
-    public String builtTeleportationBoxes() {
-        return builtTeleportationBoxes;
-    }
+	@Override
+	public String builtTeleportationBoxes() {
+		return builtTeleportationBoxes;
+	}
 
-    @Override
-    public void setBuiltTeleportationPortalsPoh(String content) {
-        builtTeleportationPortalsPoh = content;
-    }
+	@Override
+	public void setBuiltTeleportationPortalsPoh(String content) {
+		builtTeleportationPortalsPoh = content;
+	}
 
-    @Override
-    public String builtTeleportationPortalsPoh() {
-        return builtTeleportationPortalsPoh;
-    }
+	@Override
+	public String builtTeleportationPortalsPoh() {
+		return builtTeleportationPortalsPoh;
+	}
 }
