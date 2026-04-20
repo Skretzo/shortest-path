@@ -7,12 +7,11 @@ package shortestpath.transport.parser;
  * @param <T> The type of object produced by this parser
  */
 public interface FieldParser<T> {
-    /**
-     * Parses a string value into the target type.
-     *
-     * @param value The string value to parse, may be null or empty
-     * @return The parsed value
-     */
-    T parse(String value);
+	/**
+	 * Parses a string value into the target type.
+	 *
+	 * @param value The string value to parse, may be null or empty
+	 * @return The parsed value
+	 */
+	T parse(String value);
 }
-
