@@ -739,6 +739,162 @@ public class PathfinderTest {
         assertEquals(2, calculatePathLength(civitasPrimioOrigin, varrockPrimioDest));
     }
 
+    /**
+     * Tests that when standing at a quetzal platform, the platform is used
+     * instead of the whistle, even when the whistle is available.
+     * The platform is free while the whistle has charges, so platform should be preferred.
+     */
+    @Test
+    public void testQuetzalPlatformPreferredOverWhistle() {
+        when(config.useQuetzals()).thenReturn(true);
+
+        // Setup whistle in inventory
+        setupInventory(new Item(29271, 1)); // Quetzal whistle
+
+        // With whistle cost threshold, platform should be preferred
+        when(config.costQuetzalWhistle()).thenReturn(10);
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        // From Aldarin platform (1389, 2901) to Hunter Guild platform (1585, 3053)
+        // Both are Renu destinations accessible by platform
+        int aldarinPlatform = WorldPointUtil.packWorldPoint(1389, 2901, 0);
+        int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
+
+        int pathLength = calculatePathLength(aldarinPlatform, hunterGuild);
+        assertEquals("Platform should be used when standing at platform origin", 2, pathLength);
+    }
+
+    /**
+     * Tests that the whistle is NOT used when standing close to a platform.
+     * Walking to the nearby platform and flying is cheaper than using a whistle charge.
+     */
+    @Test
+    public void testWhistleNotUsedWhenNearPlatform() {
+        when(config.useQuetzals()).thenReturn(true);
+
+        // Setup whistle in inventory
+        setupInventory(new Item(29271, 1)); // Quetzal whistle
+
+        // Even with zero additional whistle cost
+        when(config.costQuetzalWhistle()).thenReturn(0);
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        // Start 1 tile from Aldarin platform (1389, 2901), going to Hunter Guild (1585, 3053)
+        // Platform path: walk 1 tile + 6 tick flight = cost 7, path length 3 (start, platform, dest)
+        // Whistle path: 4 tick teleport + 0 additional = cost 4, path length 2 (start, dest)
+        // Whistle is cheaper here, so it should be used with cost 0
+        // But with cost > 0, platform should win
+        int nearAldarinPlatform = WorldPointUtil.packWorldPoint(1390, 2901, 0); // 1 tile away
+        int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
+
+        int pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
+        // With costQuetzalWhistle=0, whistle (cost 4) beats platform (cost 7), so path length = 2
+        assertEquals("Whistle should be used when it's cheaper and has no extra cost", 2, pathLength);
+
+        // Now with a higher whistle cost, platform should win
+        when(config.costQuetzalWhistle()).thenReturn(10);
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
+        // Whistle cost: 4 + 10 = 14, Platform cost: 1 walk + 6 flight = 7
+        // Platform wins, path = start -> platform -> dest = 3
+        assertEquals("Platform should be used when whistle cost threshold makes it more expensive", 3, pathLength);
+    }
+
+    /**
+     * Tests that disabling quetzals via useQuetzals=false also disables the whistle,
+     * since both QUETZAL and QUETZAL_WHISTLE share the useQuetzals toggle.
+     */
+    @Test
+    public void testQuetzalDisabledDisablesWhistle() {
+        when(config.useQuetzals()).thenReturn(false);
+
+        setupInventory(new Item(29271, 1)); // Quetzal whistle
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        // From Aldarin platform (1389, 2901) to Hunter Guild platform (1585, 3053)
+        // With quetzals disabled, neither platform nor whistle should be used
+        int aldarinPlatform = WorldPointUtil.packWorldPoint(1389, 2901, 0);
+        int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
+
+        int pathLength = calculatePathLength(aldarinPlatform, hunterGuild);
+        assertTrue("Without quetzals, path should be much longer than 2 (walking)", pathLength > 2);
+    }
+
+    /**
+     * Tests that the platform is used when the whistle item is not in inventory.
+     * Without the whistle item, only the platform route should be available.
+     */
+    @Test
+    public void testPlatformUsedWhenWhistleNotInInventory() {
+        when(config.useQuetzals()).thenReturn(true);
+
+        // No whistle in inventory
+        setupInventory(); // empty inventory
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        // From Aldarin platform (1389, 2901) to Hunter Guild platform (1585, 3053)
+        int aldarinPlatform = WorldPointUtil.packWorldPoint(1389, 2901, 0);
+        int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
+
+        int pathLength = calculatePathLength(aldarinPlatform, hunterGuild);
+        assertEquals("Platform should be used when whistle is not in inventory", 2, pathLength);
+    }
+
+    /**
+     * Tests the cost boundary where the whistle differential tips the balance.
+     * From 1 tile away: platform compareCost = 1 walk + 6 flight = 7.
+     * Whistle base cost = 4 ticks, compareCost = 4 + differential.
+     * With differential=4: whistle compareCost=8 > platform=7, platform wins (path=3).
+     * With differential=2: whistle compareCost=6 < platform=7, whistle wins (path=2).
+     */
+    @Test
+    public void testQuetzalWhistleCostBoundary() {
+        when(config.useQuetzals()).thenReturn(true);
+
+        setupInventory(new Item(29271, 1)); // Quetzal whistle
+        int nearAldarinPlatform = WorldPointUtil.packWorldPoint(1390, 2901, 0); // 1 tile away
+        int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
+
+        // Differential=4: whistle compareCost=8 > platform=7, platform should win
+        when(config.costQuetzalWhistle()).thenReturn(4);
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        int pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
+        assertEquals("Platform should win when whistle differential makes it more expensive", 3, pathLength);
+
+        // Differential=2: whistle compareCost=6 < platform=7, whistle should win
+        when(config.costQuetzalWhistle()).thenReturn(2);
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
+        assertEquals("Whistle should win when differential keeps it cheaper than platform", 2, pathLength);
+    }
+
+    /**
+     * Tests that the whistle works standalone from far away where no quetzal platform is nearby.
+     * This is the primary real-world use case: teleporting from a remote location to Varlamore.
+     * Uses Falador as the origin (far from any quetzal platform, including Primio near Varrock).
+     */
+    @Test
+    public void testWhistleUsedFromFarAway() {
+        when(config.useQuetzals()).thenReturn(true);
+
+        setupInventory(new Item(29271, 1)); // Quetzal whistle
+        // Zero differential so the whistle is clearly the cheapest option
+        when(config.costQuetzalWhistle()).thenReturn(0);
+        setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+        // From Falador center (2965, 3380) to Hunter Guild platform (1585, 3053)
+        // No quetzal platform is near Falador; the Primio platform is at (3280, 3412) — over 300 tiles away
+        int faladorCenter = WorldPointUtil.packWorldPoint(2965, 3380, 0);
+        int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
+
+        int pathLength = calculatePathLength(faladorCenter, hunterGuild);
+        // Whistle teleport (compareCost=4) is cheapest: path = start -> dest = 2
+        assertEquals("Whistle should be used when far from any platform", 2, pathLength);
+    }
+
     @Test
     public void testSpiritTrees() {
         when(config.useSpiritTrees()).thenReturn(true);
@@ -1595,4 +1751,4 @@ public class PathfinderTest {
         return stepTransports;
     }
 
-  }
+}
