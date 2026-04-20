@@ -1,0 +1,11 @@
+name,category,start_x,start_y,start_plane,x,y,plane,teleports
+Varrock → Auburnvale,quetzal-whistle,3213,3428,0,1411,3361,0,ALL
+Lumbridge → Hunter Guild,quetzal-whistle,3222,3218,0,1585,3053,0,ALL
+GE → Civitas illa Fortis,quetzal-whistle,3165,3487,0,1697,3140,0,ALL
+Varrock → Aldarin,quetzal-whistle,3213,3428,0,1389,2901,0,ALL
+Ardougne → Sunset Coast,quetzal-whistle,2662,3305,0,1548,2995,0,ALL
+Hunter Guild → Auburnvale,quetzal,1585,3053,0,1411,3361,0,ALL
+Civitas illa Fortis → Hunter Guild,quetzal,1697,3140,0,1585,3053,0,ALL
+Auburnvale → Civitas illa Fortis,quetzal,1411,3361,0,1697,3140,0,ALL
+Sunset Coast → Aldarin,quetzal,1548,2995,0,1389,2901,0,ALL
+Hunter Guild → Outer Fortis,quetzal,1585,3053,0,1700,3037,0,ALL
