@@ -205,6 +205,11 @@ public class CollisionMap {
             if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness)) {
                 continue;
             }
+            // The differential cost is only used for priority-queue ordering (compareCost), not
+            // propagated as real cost, so applying it unconditionally is safe: a nearby partner
+            // station can still win the dequeue race, and a far-away whistle still resolves as the
+            // cheapest path because no competitor has a lower real cost to the same destination.
+            int differentialCost = delayedVisit ? config.getDifferentialCost(transport) : 0;
             neighbors.add(new TransportNode(
                 transport.getDestination(),
                 node,
@@ -212,7 +217,7 @@ public class CollisionMap {
                 config.getAdditionalTransportCost(transport),
                 node.bankVisited,
                 delayedVisit,
-                delayedVisit ? config.getDifferentialCost(transport) : 0));
+                differentialCost));
         }
         return neighbors;
     }
