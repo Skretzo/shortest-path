@@ -4,21 +4,27 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Map;
 import java.util.Set;
+
 import org.junit.Test;
 
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 
-public class TransportCountingTest {
+public class TransportCountingTest
+{
 	private static final Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
 
 	@Test
-	public void testNumberOfCharterShips() {
+	public void testNumberOfCharterShips()
+	{
 		int actualCount = 0;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (TransportType.CHARTER_SHIP.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.CHARTER_SHIP.equals(transport.getType()))
+				{
 					actualCount++;
 				}
 			}
@@ -35,13 +41,17 @@ public class TransportCountingTest {
 	}
 
 	@Test
-	public void testNumberOfGnomeGliders() {
+	public void testNumberOfGnomeGliders()
+	{
 		// All permutations of gnome glider transports are resolved from origins and
 		// destinations
 		int actualCount = 0;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (TransportType.GNOME_GLIDER.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.GNOME_GLIDER.equals(transport.getType()))
+				{
 					actualCount++;
 				}
 			}
@@ -62,13 +72,17 @@ public class TransportCountingTest {
 	}
 
 	@Test
-	public void testNumberOfHotAirBalloons() {
+	public void testNumberOfHotAirBalloons()
+	{
 		// All permutations of hot air balloon transports are resolved from origins and
 		// destinations
 		int actualCount = 0;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (TransportType.HOT_AIR_BALLOON.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.HOT_AIR_BALLOON.equals(transport.getType()))
+				{
 					actualCount++;
 				}
 			}
@@ -88,13 +102,17 @@ public class TransportCountingTest {
 	}
 
 	@Test
-	public void testNumberOfMagicMushtrees() {
+	public void testNumberOfMagicMushtrees()
+	{
 		// All permutations of magic mushtree transports are resolved from origins and
 		// destinations
 		int actualCount = 0;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (TransportType.MAGIC_MUSHTREE.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.MAGIC_MUSHTREE.equals(transport.getType()))
+				{
 					actualCount++;
 				}
 			}
@@ -112,12 +130,16 @@ public class TransportCountingTest {
 	}
 
 	@Test
-	public void testNumberOfQuetzals() {
+	public void testNumberOfQuetzals()
+	{
 		// All but 2 permutations of quetzal transports are resolved from origins and destinations
 		int actualCount = 0;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (TransportType.QUETZAL.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.QUETZAL.equals(transport.getType()))
+				{
 					actualCount++;
 				}
 			}
@@ -146,11 +168,15 @@ public class TransportCountingTest {
 	}
 
 	@Test
-	public void testNumberOfQuetzalWhistles() {
+	public void testNumberOfQuetzalWhistles()
+	{
 		int actualCount = 0;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (TransportType.QUETZAL_WHISTLE.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
+				{
 					actualCount++;
 				}
 			}
@@ -164,13 +190,17 @@ public class TransportCountingTest {
 	}
 
 	@Test
-	public void testNumberOfSpiritTrees() {
+	public void testNumberOfSpiritTrees()
+	{
 		// All permutations of spirit tree transports are resolved from origins and
 		// destinations
 		int actualCount = 0;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (TransportType.SPIRIT_TREE.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.SPIRIT_TREE.equals(transport.getType()))
+				{
 					actualCount++;
 				}
 			}

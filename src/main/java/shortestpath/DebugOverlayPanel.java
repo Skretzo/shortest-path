@@ -18,12 +18,14 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.List;
 
-public class DebugOverlayPanel extends OverlayPanel {
+public class DebugOverlayPanel extends OverlayPanel
+{
 	private final ShortestPathPlugin plugin;
 	private final SeparatorLine separator;
 
 	@Inject
-	public DebugOverlayPanel(ShortestPathPlugin plugin) {
+	public DebugOverlayPanel(ShortestPathPlugin plugin)
+	{
 		super(plugin);
 		this.plugin = plugin;
 
@@ -33,28 +35,31 @@ public class DebugOverlayPanel extends OverlayPanel {
 		setPosition(OverlayPosition.TOP_LEFT);
 	}
 
-	private LineComponent makeLine(String left, String right) {
+	private LineComponent makeLine(String left, String right)
+	{
 		return LineComponent.builder()
-				.left(left)
-				.right(right)
-				.build();
+			.left(left)
+			.right(right)
+			.build();
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics) {
+	public Dimension render(Graphics2D graphics)
+	{
 		Pathfinder pathfinder = plugin.getPathfinder();
 		Pathfinder.PathfinderStats stats;
-		if (pathfinder == null || (stats = pathfinder.getStats()) == null) {
+		if (pathfinder == null || (stats = pathfinder.getStats()) == null)
+		{
 			return null;
 		}
 
 		List<LayoutableRenderableEntity> components = panelComponent.getChildren();
 
 		components.add(
-				TitleComponent.builder()
-						.text("Shortest Path Debug")
-						.color(Color.ORANGE)
-						.build());
+			TitleComponent.builder()
+				.text("Shortest Path Debug")
+				.color(Color.ORANGE)
+				.build());
 
 		components.add(separator);
 
@@ -82,7 +87,8 @@ public class DebugOverlayPanel extends OverlayPanel {
 	}
 
 	@Setter
-	private static class SeparatorLine implements LayoutableRenderableEntity {
+	private static class SeparatorLine implements LayoutableRenderableEntity
+	{
 		private Color color = Color.GRAY;
 		private Point preferredLocation = new Point();
 		private Dimension preferredSize = new Dimension(ComponentConstants.STANDARD_WIDTH, 4);
@@ -91,14 +97,16 @@ public class DebugOverlayPanel extends OverlayPanel {
 		private final Rectangle bounds = new Rectangle();
 
 		@Override
-		public Dimension render(Graphics2D graphics) {
+		public Dimension render(Graphics2D graphics)
+		{
 			final int separatorX = preferredLocation.x;
 			final int separatorY = preferredLocation.y + 4;
 			final int width = preferredSize.width;
 			final int height = Math.max(preferredSize.height, 2);
 
 			// Draw bar
-			if (color != null && color.getAlpha() != 0) {
+			if (color != null && color.getAlpha() != 0)
+			{
 				graphics.setColor(color);
 				graphics.fillRect(separatorX, separatorY, width, height);
 			}

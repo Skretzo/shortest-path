@@ -3,6 +3,7 @@ package shortestpath.pathfinder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
 import net.runelite.api.GameState;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
@@ -13,15 +14,20 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import static org.mockito.ArgumentMatchers.any;
+
 import org.mockito.Mock;
+
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,7 +43,8 @@ import shortestpath.transport.requirement.TransportItems;
 import shortestpath.ShortestPathPlugin;
 
 @RunWith(MockitoJUnitRunner.class)
-public class PathfinderTest {
+public class PathfinderTest
+{
 	private static final Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
 
 	private PathfinderConfig pathfinderConfig;
@@ -58,13 +65,15 @@ public class PathfinderTest {
 	ShortestPathConfig config;
 
 	@Before
-	public void before() {
+	public void before()
+	{
 		when(config.calculationCutoff()).thenReturn(30);
 		when(config.currencyThreshold()).thenReturn(10000000);
 	}
 
 	@Test
-	public void testAgilityShortcuts() {
+	public void testAgilityShortcuts()
+	{
 		when(config.useAgilityShortcuts()).thenReturn(true);
 		setupInventory(
 			new Item(ItemID.ROPE, 1),
@@ -73,7 +82,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testGrappleShortcuts() {
+	public void testGrappleShortcuts()
+	{
 		when(config.useGrappleShortcuts()).thenReturn(true);
 		setupInventory(
 			new Item(ItemID.XBOWS_CROSSBOW_ADAMANTITE, 1),
@@ -82,7 +92,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testGrappleBranchDoesNotLeakBankedMithGrapple() {
+	public void testGrappleBranchDoesNotLeakBankedMithGrapple()
+	{
 		// The crossbow is already on hand, but the mith grapple is only in the bank.
 		// This should expose any branch leakage where one explored bank path makes the
 		// grapple shortcut appear usable on a different branch that never banked.
@@ -101,7 +112,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testBoats() {
+	public void testBoats()
+	{
 		when(config.useBoats()).thenReturn(true);
 		setupInventory(
 			new Item(ItemID.COINS, 10000),
@@ -110,21 +122,24 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testCanoes() {
+	public void testCanoes()
+	{
 		when(config.useCanoes()).thenReturn(true);
 		setupInventory(new Item(ItemID.BRONZE_AXE, 1));
 		testTransportLength(2, TransportType.CANOE);
 	}
 
 	@Test
-	public void testCharterShips() {
+	public void testCharterShips()
+	{
 		when(config.useCharterShips()).thenReturn(true);
 		setupInventory(new Item(ItemID.COINS, 100000));
 		testTransportLength(2, TransportType.CHARTER_SHIP);
 	}
 
 	@Test
-	public void testCatherbyCharterReusedAfterBankVisitWithBankedCoins() {
+	public void testCatherbyCharterReusedAfterBankVisitWithBankedCoins()
+	{
 		// Start on the Catherby charter tile with no coins on hand. The route must bank,
 		// then come back and reuse that same charter origin tile once coins are available.
 		int catherbyCharter = WorldPointUtil.packWorldPoint(2792, 3414, 0);
@@ -144,7 +159,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testCatherbyBankBranchDoesNotLeakCoinsToCharterBranch() {
+	public void testCatherbyBankBranchDoesNotLeakCoinsToCharterBranch()
+	{
 		// Start near Catherby bank rather than on the dock itself. One search branch can touch
 		// the bank, while another heads straight to the charter ship. Banked coins must not leak
 		// from the bank branch into the non-bank charter branch.
@@ -162,14 +178,16 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testShips() {
+	public void testShips()
+	{
 		when(config.useShips()).thenReturn(true);
 		setupInventory(new Item(ItemID.COINS, 10000));
 		testTransportLength(2, TransportType.SHIP);
 	}
 
 	@Test
-	public void testFairyRings() {
+	public void testFairyRings()
+	{
 		when(config.useFairyRings()).thenReturn(true);
 		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
@@ -179,7 +197,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testLunarStaffFairyRings() {
+	public void testLunarStaffFairyRings()
+	{
 		when(config.useFairyRings()).thenReturn(true);
 		setupInventory(new Item(ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
@@ -189,7 +208,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testFairyRingsNotUsedWithoutDramenStaff() {
+	public void testFairyRingsNotUsedWithoutDramenStaff()
+	{
 		when(config.useFairyRings()).thenReturn(true);
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
@@ -199,15 +219,18 @@ public class PathfinderTest {
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		// Ensure none of the usable transports are of type FAIRY_RING
-		for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-			for (Transport t : set) {
+		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		{
+			for (Transport t : set)
+			{
 				assertTrue("Fairy ring used unexpectedly: " + t, !TransportType.FAIRY_RING.equals(t.getType()));
 			}
 		}
 	}
 
 	@Test
-	public void testFairyRingsNotUsedWithoutQuestProgressOrEliteDiary() {
+	public void testFairyRingsNotUsedWithoutQuestProgressOrEliteDiary()
+	{
 		when(config.useFairyRings()).thenReturn(true);
 		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(0);
@@ -215,8 +238,10 @@ public class PathfinderTest {
 
 		setupConfig(QuestState.NOT_STARTED, 99, TeleportationItem.NONE);
 
-		for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-			for (Transport t : set) {
+		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		{
+			for (Transport t : set)
+			{
 				assertTrue("Fairy ring used unexpectedly without quest progress or diary: " + t,
 					!TransportType.FAIRY_RING.equals(t.getType()));
 			}
@@ -224,7 +249,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testFairyRingsUsedWithLumbridgeDiaryCompleteWithoutDramenStaff() {
+	public void testFairyRingsUsedWithLumbridgeDiaryCompleteWithoutDramenStaff()
+	{
 		when(config.useFairyRings()).thenReturn(true);
 		// No Dramen staff in inventory or equipment
 		setupInventory();
@@ -236,7 +262,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testFairyRingsUsedWithDramenStaffWornInHand() {
+	public void testFairyRingsUsedWithDramenStaffWornInHand()
+	{
 		when(config.useFairyRings()).thenReturn(true);
 		setupInventory();
 		setupEquipment(new Item(ItemID.DRAMEN_STAFF, 1));
@@ -247,7 +274,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testTeleportItemsAndFairyRingsAvailableAfterBankVisit() {
+	public void testTeleportItemsAndFairyRingsAvailableAfterBankVisit()
+	{
 		// Test scenario: Both Dramen staff AND Ardougne cloak are in the bank
 		// After visiting a bank, both fairy rings AND teleport items should be available
 		when(config.useFairyRings()).thenReturn(true);
@@ -266,9 +294,12 @@ public class PathfinderTest {
 		// With per-path filtering, fairy rings ARE in the transport map
 		// but filtered at runtime based on whether the path visited a bank
 		boolean hasFairyRing = false;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-			for (Transport t : set) {
-				if (TransportType.FAIRY_RING.equals(t.getType())) {
+		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		{
+			for (Transport t : set)
+			{
+				if (TransportType.FAIRY_RING.equals(t.getType()))
+				{
 					hasFairyRing = true;
 					break;
 				}
@@ -285,7 +316,8 @@ public class PathfinderTest {
 	 * Both should use fairy rings if that's the optimal path.
 	 */
 	@Test
-	public void testCastleWarsToAKQWithStaffInInventory() {
+	public void testCastleWarsToAKQWithStaffInInventory()
+	{
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2324, 3619, 0);
 
@@ -306,7 +338,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testCastleWarsToAKQWithStaffInBank() {
+	public void testCastleWarsToAKQWithStaffInBank()
+	{
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2324, 3619, 0);
 
@@ -336,7 +369,8 @@ public class PathfinderTest {
 	 * When staff is in bank and target is AKQ - incorrectly uses necklace of passage.
 	 */
 	@Test
-	public void testBankPathDJPvsAKQTarget() {
+	public void testBankPathDJPvsAKQTarget()
+	{
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
 		int djpFairyRing = WorldPointUtil.packWorldPoint(2658, 3230, 0); // Near Kandarin Monastery
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0); // AKQ destination
@@ -380,7 +414,8 @@ public class PathfinderTest {
 	 * Should NOT suggest picking up a necklace from bank instead.
 	 */
 	@Test
-	public void testArdougneCloakInInventoryWithStaffInBank() {
+	public void testArdougneCloakInInventoryWithStaffInBank()
+	{
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0);
 
@@ -416,7 +451,8 @@ public class PathfinderTest {
 	 * This ensures paths that don't visit a bank won't use fairy rings.
 	 */
 	@Test
-	public void testFairyRingNotUsedAfterTeleportWithoutBankVisit() {
+	public void testFairyRingNotUsedAfterTeleportWithoutBankVisit()
+	{
 		// Enable fairy rings and teleport items
 		when(config.useFairyRings()).thenReturn(true);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
@@ -434,9 +470,12 @@ public class PathfinderTest {
 		// With per-path filtering, fairy rings ARE in the transport map
 		// but filtered at runtime based on whether the path visited a bank
 		boolean hasFairyRing = false;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-			for (Transport t : set) {
-				if (TransportType.FAIRY_RING.equals(t.getType())) {
+		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		{
+			for (Transport t : set)
+			{
+				if (TransportType.FAIRY_RING.equals(t.getType()))
+				{
 					hasFairyRing = true;
 					break;
 				}
@@ -451,7 +490,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testTeleportItemInInventoryUsableBeforeFirstBankVisit() {
+	public void testTeleportItemInInventoryUsableBeforeFirstBankVisit()
+	{
 		// A bank-only Dramen staff should not suppress a teleport item that is already on hand.
 		// The route is allowed to spend the Ring of wealth before it reaches the first bank.
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3096, 0);
@@ -482,7 +522,8 @@ public class PathfinderTest {
 	 * on paths that go through a bank first.
 	 */
 	@Test
-	public void testFairyRingRequiresBankVisitWhenStaffInBank() {
+	public void testFairyRingRequiresBankVisitWhenStaffInBank()
+	{
 		// Enable fairy rings
 		when(config.useFairyRings()).thenReturn(true);
 		when(config.includeBankPath()).thenReturn(true);
@@ -507,7 +548,8 @@ public class PathfinderTest {
 		boolean usedFairyRing = usedTransportType(pathfinder, TransportType.FAIRY_RING);
 
 		// If fairy rings are used, the path must have gone through a bank
-		if (usedFairyRing) {
+		if (usedFairyRing)
+		{
 			assertTrue("If fairy ring is used, path must visit a bank first to pick up Dramen staff",
 				pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
 		}
@@ -515,7 +557,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testGreatConchBankToMcGruborsWoodMaximumLength() {
+	public void testGreatConchBankToMcGruborsWoodMaximumLength()
+	{
 		// Baseline bank-enabled Great Conch route: fairy rings and a combat bracelet are only
 		// available from the bank, so the chosen path should reflect those post-bank unlocks.
 		when(config.includeBankPath()).thenReturn(true);
@@ -535,7 +578,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testGreatConchTileReuseToMcGruborsWoodWithBankedStaff() {
+	public void testGreatConchTileReuseToMcGruborsWoodWithBankedStaff()
+	{
 		// Target the tile-reuse case directly: the path re-enters the same corridor after banking,
 		// and only the post-bank revisit has access to the banked Dramen staff route options.
 		when(config.includeBankPath()).thenReturn(true);
@@ -555,7 +599,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testGreatConchToMcGruborsWoodMaximumLengthWithoutBanking() {
+	public void testGreatConchToMcGruborsWoodMaximumLengthWithoutBanking()
+	{
 		// Non-bank baseline for the same route family. The Dramen staff starts in inventory, so
 		// the path can use fairy rings immediately without any bank visit or post-bank unlock.
 		when(config.useAgilityShortcuts()).thenReturn(true);
@@ -572,7 +617,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testFairyRingBranchDoesNotLeakBankedDramenStaff() {
+	public void testFairyRingBranchDoesNotLeakBankedDramenStaff()
+	{
 		// Start near a bank branch and a fairy-ring branch. The Dramen staff is only in the bank,
 		// so a branch that has not banked must not gain fairy-ring access just because another
 		// explored branch touched a bank.
@@ -592,7 +638,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testCowbellAmuletInBankUsedAfterBankVisit() {
+	public void testCowbellAmuletInBankUsedAfterBankVisit()
+	{
 		// A teleport item that exists only in the bank should become usable after the route banks.
 		// This checks the positive side of the bank-state transition for teleport items.
 		when(config.includeBankPath()).thenReturn(true);
@@ -614,13 +661,15 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testGnomeGliders() {
+	public void testGnomeGliders()
+	{
 		when(config.useGnomeGliders()).thenReturn(true);
 		testTransportLength(2, TransportType.GNOME_GLIDER);
 	}
 
 	@Test
-	public void testHotAirBalloons() {
+	public void testHotAirBalloons()
+	{
 		when(config.useHotAirBalloons()).thenReturn(true);
 		setupInventory(
 			new Item(ItemID.LOGS, 2),
@@ -632,7 +681,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testMagicCarpets() {
+	public void testMagicCarpets()
+	{
 		when(config.useMagicCarpets()).thenReturn(true);
 		setupInventory(
 			new Item(ItemID.COINS, 200));
@@ -640,20 +690,23 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testMagicMushtrees() {
+	public void testMagicMushtrees()
+	{
 		when(config.useMagicMushtrees()).thenReturn(true);
 		testTransportLength(2, TransportType.MAGIC_MUSHTREE);
 	}
 
 	@Test
-	public void testMinecarts() {
+	public void testMinecarts()
+	{
 		when(config.useMinecarts()).thenReturn(true);
 		setupInventory(new Item(ItemID.COINS, 1000));
 		testTransportLength(2, TransportType.MINECART);
 	}
 
 	@Test
-	public void testLovakenjMinecartNetworkPaidBeforeQuest() {
+	public void testLovakenjMinecartNetworkPaidBeforeQuest()
+	{
 		// Before The Forsaken Tower quest completion (varbit 7796 < 11),
 		// Lovakengj minecart rides cost 20 coins
 		when(config.useMinecarts()).thenReturn(true);
@@ -685,7 +738,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testLovakenjMinecartNetworkFreeAfterQuest() {
+	public void testLovakenjMinecartNetworkFreeAfterQuest()
+	{
 		// After The Forsaken Tower quest completion (varbit 7796 = 11),
 		// rides are free (no coins required)
 		when(config.useMinecarts()).thenReturn(true);
@@ -698,7 +752,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testLovakenjMinecartNetworkReverseNotUsableWithoutCoinsBeforeQuest() {
+	public void testLovakenjMinecartNetworkReverseNotUsableWithoutCoinsBeforeQuest()
+	{
 		// Before The Forsaken Tower completion (varbit 7796 < 11), reverse minecart travel
 		// should still require payment and therefore not be a direct 2-step transport with 0 coins.
 		when(config.useMinecarts()).thenReturn(true);
@@ -714,7 +769,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testQuetzals() {
+	public void testQuetzals()
+	{
 		when(config.useQuetzals()).thenReturn(true);
 		testTransportLength(2, TransportType.QUETZAL);
 	}
@@ -724,7 +780,8 @@ public class PathfinderTest {
 	 * This is a fixed route in transports.tsv, NOT part of the quetzal platform system.
 	 */
 	@Test
-	public void testPrimioQuetzal() {
+	public void testPrimioQuetzal()
+	{
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		// Varrock Primio platform to Civitas
@@ -746,7 +803,8 @@ public class PathfinderTest {
 	 * The platform is free while the whistle has charges, so platform should be preferred.
 	 */
 	@Test
-	public void testQuetzalPlatformPreferredOverWhistle() {
+	public void testQuetzalPlatformPreferredOverWhistle()
+	{
 		when(config.useQuetzals()).thenReturn(true);
 
 		// Setup whistle in inventory
@@ -770,7 +828,8 @@ public class PathfinderTest {
 	 * Walking to the nearby platform and flying is cheaper than using a whistle charge.
 	 */
 	@Test
-	public void testWhistleNotUsedWhenNearPlatform() {
+	public void testWhistleNotUsedWhenNearPlatform()
+	{
 		when(config.useQuetzals()).thenReturn(true);
 
 		// Setup whistle in inventory
@@ -807,7 +866,8 @@ public class PathfinderTest {
 	 * since both QUETZAL and QUETZAL_WHISTLE share the useQuetzals toggle.
 	 */
 	@Test
-	public void testQuetzalDisabledDisablesWhistle() {
+	public void testQuetzalDisabledDisablesWhistle()
+	{
 		when(config.useQuetzals()).thenReturn(false);
 
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
@@ -827,7 +887,8 @@ public class PathfinderTest {
 	 * Without the whistle item, only the platform route should be available.
 	 */
 	@Test
-	public void testPlatformUsedWhenWhistleNotInInventory() {
+	public void testPlatformUsedWhenWhistleNotInInventory()
+	{
 		when(config.useQuetzals()).thenReturn(true);
 
 		// No whistle in inventory
@@ -850,7 +911,8 @@ public class PathfinderTest {
 	 * With differential=2: whistle compareCost=6 < platform=7, whistle wins (path=2).
 	 */
 	@Test
-	public void testQuetzalWhistleCostBoundary() {
+	public void testQuetzalWhistleCostBoundary()
+	{
 		when(config.useQuetzals()).thenReturn(true);
 
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
@@ -878,7 +940,8 @@ public class PathfinderTest {
 	 * Uses Falador as the origin (far from any quetzal platform, including Primio near Varrock).
 	 */
 	@Test
-	public void testWhistleUsedFromFarAway() {
+	public void testWhistleUsedFromFarAway()
+	{
 		when(config.useQuetzals()).thenReturn(true);
 
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
@@ -897,20 +960,23 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testSpiritTrees() {
+	public void testSpiritTrees()
+	{
 		when(config.useSpiritTrees()).thenReturn(true);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(20);
 		testTransportLength(2, TransportType.SPIRIT_TREE);
 	}
 
 	@Test
-	public void testTeleportationLevers() {
+	public void testTeleportationLevers()
+	{
 		when(config.useTeleportationLevers()).thenReturn(true);
 		testTransportLength(2, TransportType.TELEPORTATION_LEVER);
 	}
 
 	@Test
-	public void testTeleportationMinigames() {
+	public void testTeleportationMinigames()
+	{
 		when(config.useTeleportationMinigames()).thenReturn(true);
 		when(config.useTeleportationSpells()).thenReturn(false);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
@@ -924,7 +990,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testPickaxeNotUsedWithoutPickaxe() {
+	public void testPickaxeNotUsedWithoutPickaxe()
+	{
 		// Ensure transports requiring a pickaxe are not included when the player has no pickaxe
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
@@ -936,7 +1003,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testPickaxeUsedWithPickaxe() {
+	public void testPickaxeUsedWithPickaxe()
+	{
 		// Ensure transports requiring a pickaxe are included when the player has a pickaxe and sufficient mining level
 		setupInventory(new Item(ItemID.BRONZE_PICKAXE, 1));
 		setupConfig(QuestState.FINISHED, 50, TeleportationItem.NONE); // transport in data requires 50 Mining
@@ -946,7 +1014,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testAxeNotUsedWithoutAxe() {
+	public void testAxeNotUsedWithoutAxe()
+	{
 		// Ensure transports requiring an axe are not included when the player has no axe
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
@@ -958,7 +1027,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testAxeUsedWithAxe() {
+	public void testAxeUsedWithAxe()
+	{
 		// Ensure transports requiring an axe are included when the player has an axe
 		setupInventory(new Item(ItemID.BRONZE_AXE, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
@@ -968,13 +1038,15 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testTeleportationPortals() {
+	public void testTeleportationPortals()
+	{
 		when(config.useTeleportationPortals()).thenReturn(true);
 		testTransportLength(2, TransportType.TELEPORTATION_PORTAL);
 	}
 
 	@Test
-	public void testWildernessObelisks() {
+	public void testWildernessObelisks()
+	{
 		when(config.useWildernessObelisks()).thenReturn(true);
 		when(config.usePoh()).thenReturn(true);
 		when(config.usePohObelisk()).thenReturn(true);
@@ -982,7 +1054,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testVarrockPalaceTrellisUsableWithGardenOfTranquillity() {
+	public void testVarrockPalaceTrellisUsableWithGardenOfTranquillity()
+	{
 		testTransportLength(2,
 			WorldPointUtil.packWorldPoint(3228, 3470, 0),
 			WorldPointUtil.packWorldPoint(3228, 3472, 0));
@@ -992,7 +1065,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testVarrockPalaceTrellisNotUsableWithoutGardenOfTranquillity() {
+	public void testVarrockPalaceTrellisNotUsableWithoutGardenOfTranquillity()
+	{
 		setupConfig(QuestState.NOT_STARTED, 99, TeleportationItem.NONE);
 
 		int south = WorldPointUtil.packWorldPoint(3228, 3470, 0);
@@ -1005,7 +1079,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testAgilityShortcutAndTeleportItem() {
+	public void testAgilityShortcutAndTeleportItem()
+	{
 		when(config.useAgilityShortcuts()).thenReturn(true);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
 		// Draynor Manor to Champions Guild via several stepping stones, but
@@ -1020,7 +1095,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testChronicle() {
+	public void testChronicle()
+	{
 		// South of river south of Champions Guild to Chronicle teleport destination
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
 		assertEquals(2, calculatePathLength(
@@ -1029,7 +1105,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testVarrockTeleport() {
+	public void testVarrockTeleport()
+	{
 		// Test that Varrock Teleport is used when it's cheaper than walking
 		when(config.useTeleportationSpells()).thenReturn(true);
 
@@ -1041,9 +1118,9 @@ public class PathfinderTest {
 
 		// Test 2: With magic level and runes, starting far enough that teleport is cheaper
 		setupInventory(
-				new Item(ItemID.LAWRUNE, 1),
-				new Item(ItemID.AIRRUNE, 3),
-				new Item(ItemID.FIRERUNE, 1));
+			new Item(ItemID.LAWRUNE, 1),
+			new Item(ItemID.AIRRUNE, 3),
+			new Item(ItemID.FIRERUNE, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		// Starting 10 tiles away - teleport (4 ticks) is definitely cheaper than walking (10 ticks)
@@ -1053,7 +1130,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testWildernessRouteWithoutTeleportsWalksOut() {
+	public void testWildernessRouteWithoutTeleportsWalksOut()
+	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
 		int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
 
@@ -1074,7 +1152,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testWildernessRouteUsesGloryAfterLeavingLevel30() {
+	public void testWildernessRouteUsesGloryAfterLeavingLevel30()
+	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
 		int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
 
@@ -1092,7 +1171,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testWildernessRouteUsesGrandExchangeVarrockTeleportAfterLeavingLevel20() {
+	public void testWildernessRouteUsesGrandExchangeVarrockTeleportAfterLeavingLevel20()
+	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
 		int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
 		Map<Integer, Integer> varbits = new HashMap<>();
@@ -1114,7 +1194,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testWildernessRouteWithGloryAndRunesDoesNotUseSpellTooEarly() {
+	public void testWildernessRouteWithGloryAndRunesDoesNotUseSpellTooEarly()
+	{
 		// At this start point the route should use glory first because it becomes legal earlier and is closer to the eventual goal.
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
 		int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
@@ -1139,7 +1220,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testAvoidWildernessSuppressesBurningAmuletRoute() {
+	public void testAvoidWildernessSuppressesBurningAmuletRoute()
+	{
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
 
@@ -1162,7 +1244,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testArdougneLeverUsedWithoutItemsWhenWildernessAllowed() {
+	public void testArdougneLeverUsedWithoutItemsWhenWildernessAllowed()
+	{
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
 
@@ -1184,7 +1267,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testBurningAmuletRouteAllowedWhenNotAvoidingWilderness() {
+	public void testBurningAmuletRouteAllowedWhenNotAvoidingWilderness()
+	{
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
 
@@ -1205,7 +1289,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testCaves() {
+	public void testCaves()
+	{
 		// Eadgar's Cave
 		testTransportLength(2,
 			WorldPointUtil.packWorldPoint(2892, 3671, 0),
@@ -1231,7 +1316,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testPathViaOtherPlane() {
+	public void testPathViaOtherPlane()
+	{
 		// Shortest path from east to west Keldagrim is via the first floor
 		// of the Keldagrim Palace, and not via the bridge to the north
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
@@ -1245,7 +1331,8 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testImpossibleCharterShips() {
+	public void testImpossibleCharterShips()
+	{
 		// Shortest path for impossible charter ships has length 3 and goes
 		// via an intermediate charter ship and not directly with length 2
 		when(config.useCharterShips()).thenReturn(true);
@@ -1296,17 +1383,21 @@ public class PathfinderTest {
 	}
 
 	@Test
-	public void testTransportItems() {
+	public void testTransportItems()
+	{
 		// Varrock Teleport
 		TransportItems actual = null;
-		for (Transport transport : transports.get(Transport.UNDEFINED_ORIGIN)) {
-			if ("Varrock Teleport".equals(transport.getDisplayInfo())) {
+		for (Transport transport : transports.get(Transport.UNDEFINED_ORIGIN))
+		{
+			if ("Varrock Teleport".equals(transport.getDisplayInfo()))
+			{
 				actual = transport.getItemRequirements();
 				break;
 			}
 		}
 		TransportItems expected = null;
-		if (actual != null) {
+		if (actual != null)
+		{
 			expected = new TransportItems(
 				new int[][]{
 					ItemVariations.AIR_RUNE.getIds(),
@@ -1322,14 +1413,17 @@ public class PathfinderTest {
 
 		// Trollheim Teleport
 		actual = null;
-		for (Transport transport : transports.get(Transport.UNDEFINED_ORIGIN)) {
-			if ("Trollheim Teleport".equals(transport.getDisplayInfo())) {
+		for (Transport transport : transports.get(Transport.UNDEFINED_ORIGIN))
+		{
+			if ("Trollheim Teleport".equals(transport.getDisplayInfo()))
+			{
 				actual = transport.getItemRequirements();
 				break;
 			}
 		}
 		expected = null;
-		if (actual != null) {
+		if (actual != null)
+		{
 			expected = new TransportItems(
 				new int[][]{
 					ItemVariations.FIRE_RUNE.getIds(),
@@ -1349,12 +1443,16 @@ public class PathfinderTest {
 	// * A fixed QuestState for all quests
 	// * A fixed skill level for all skills
 	// * A toggle about wheher to use teleportation items.
-	private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems) {
+	private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems)
+	{
 		// NOTE: Not mocked since PathfinderConfig is repeatedly queried in the hot loop.
-		pathfinderConfig = new TestPathfinderConfig(client, config, questState
-																  , true // Ignore Varbit checks
-																  , true // Ignore Varplayer checks
-																  );
+		pathfinderConfig = new TestPathfinderConfig(
+			client,
+			config,
+			questState,
+			true,  // Ignore Varbit checks
+			true  // Ignore Varplayer checks
+		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
@@ -1369,40 +1467,52 @@ public class PathfinderTest {
 	// * A fixed skill level for all skills
 	// * A toggle about wheher to use teleportation items.
 	// * Fixed set of varbit values
-	private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems, Map<Integer, Integer> varbitValues) {
+	private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems, Map<Integer, Integer> varbitValues)
+	{
 		// NOTE: Not mocked since PathfinderConfig is repeatedly queried in the hot loop.
-		pathfinderConfig = new TestPathfinderConfig(client, config, questState
-																  , false // Use proper varbit checking
-																  , true  // Ignore varplayer checks
-																  );
+		pathfinderConfig = new TestPathfinderConfig(
+			client, config,
+			questState,
+			false,  // Use proper varbit checking
+			true  // Ignore varplayer checks
+		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
-		for (Map.Entry<Integer, Integer> entry : varbitValues.entrySet()) {
+		for (Map.Entry<Integer, Integer> entry : varbitValues.entrySet())
+		{
 			when(client.getVarbitValue(entry.getKey())).thenReturn(entry.getValue());
 		}
 
 		pathfinderConfig.refresh();
 	}
 
-	private void setupInventory(Item... items) {
+	private void setupInventory(Item... items)
+	{
 		doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
 		doReturn(items).when(inventory).getItems();
 	}
 
-	private void setupEquipment(Item... items) {
+	private void setupEquipment(Item... items)
+	{
 		doReturn(equipment).when(client).getItemContainer(InventoryID.WORN);
 		doReturn(items).when(equipment).getItems();
 	}
 
-	private void testTransportLength(int expectedLength, int origin, int destination) {
+	private void testTransportLength(int expectedLength, int origin, int destination)
+	{
 		testTransportLength(expectedLength, origin, destination, TeleportationItem.NONE, 99);
 	}
 
-	private void testTransportLength(int expectedLength, int origin, int destination,
-		TeleportationItem useTeleportationItems, int skillLevel) {
+	private void testTransportLength(
+		int expectedLength,
+		int origin,
+		int destination,
+		TeleportationItem useTeleportationItems,
+		int skillLevel)
+	{
 		setupConfig(QuestState.FINISHED, skillLevel, useTeleportationItems);
 		assertEquals(expectedLength, calculatePathLength(origin, destination));
 		System.out.println("Successfully completed transport length test from " +
@@ -1414,19 +1524,28 @@ public class PathfinderTest {
 			", " + WorldPointUtil.unpackWorldPlane(destination) + ")");
 	}
 
-	private void testTransportLength(int expectedLength, TransportType transportType) {
+	private void testTransportLength(int expectedLength, TransportType transportType)
+	{
 		testTransportLength(expectedLength, transportType, QuestState.FINISHED, 99, TeleportationItem.NONE);
 	}
 
-	private void testTransportLength(int expectedLength, TransportType transportType, QuestState questState, int skillLevel,
-		TeleportationItem useTeleportationItems) {
+	private void testTransportLength(
+		int expectedLength,
+		TransportType transportType,
+		QuestState questState,
+		int skillLevel,
+		TeleportationItem useTeleportationItems)
+		{
 		setupConfig(questState, skillLevel, useTeleportationItems);
 
 		int counter = 0;
 		Map<Integer, Set<Transport>> activeTransports = pathfinderConfig.getTransports();
-		for (int origin : activeTransports.keySet()) {
-			for (Transport transport : activeTransports.get(origin)) {
-				if (transportType.equals(transport.getType())) {
+		for (int origin : activeTransports.keySet())
+		{
+			for (Transport transport : activeTransports.get(origin))
+			{
+				if (transportType.equals(transport.getType()))
+				{
 					counter++;
 					assertEquals(transport.toString(), expectedLength, calculateTransportLength(transport));
 				}
@@ -1442,22 +1561,28 @@ public class PathfinderTest {
 	 * but only calculates a path for one of them (for efficiency).
 	 * This provides comprehensive coverage that all transports are enabled while being fast.
 	 */
-	private void testAllTransportsAvailableWithSinglePath(TransportType transportType) {
+	private void testAllTransportsAvailableWithSinglePath(TransportType transportType)
+	{
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		// Count expected transports from the full transport list
 		int expectedCount = 0;
 		Transport sampleTransport = null;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (transportType.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (transportType.equals(transport.getType()))
+				{
 					int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 					int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-					if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
+					if (ShortestPathPlugin.isInsidePoh(originX, originY))
+					{
 						continue;
 					}
 					expectedCount++;
-					if (sampleTransport == null) {
+					if (sampleTransport == null)
+					{
 						sampleTransport = transport;
 					}
 				}
@@ -1466,9 +1591,12 @@ public class PathfinderTest {
 
 		// Count actual transports in the configured (usable) transports
 		int actualCount = 0;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-			for (Transport t : set) {
-				if (transportType.equals(t.getType())) {
+		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		{
+			for (Transport t : set)
+			{
+				if (transportType.equals(t.getType()))
+				{
 					actualCount++;
 				}
 			}
@@ -1478,12 +1606,14 @@ public class PathfinderTest {
 		assertTrue("At least one transport should exist", expectedCount > 0);
 
 		// Test path calculation on just one transport to verify pathfinding works
-		if (sampleTransport != null) {
+		if (sampleTransport != null)
+		{
 			assertEquals(sampleTransport.toString(), 2, calculateTransportLength(sampleTransport));
 		}
 	}
 
-	private void testTransportMinimumLength(int minimumLength, int origin, int destination) {
+	private void testTransportMinimumLength(int minimumLength, int origin, int destination)
+	{
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
 		int actualLength = calculatePathLength(origin, destination);
 		assertTrue("An impossible transport was used with length " + actualLength, actualLength >= minimumLength);
@@ -1497,11 +1627,13 @@ public class PathfinderTest {
 			" with actual length = " + actualLength + " >= minimum length = " + minimumLength);
 	}
 
-	private int calculateTransportLength(Transport transport) {
+	private int calculateTransportLength(Transport transport)
+	{
 		return calculatePathLength(transport.getOrigin(), transport.getDestination());
 	}
 
-	private void testSingleTransportScenario(String label, int expectedLength, TransportType transportType) {
+	private void testSingleTransportScenario(String label, int expectedLength, TransportType transportType)
+	{
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		Transport transport = findSampleTransport(transportType);
 		assertScenarioPathLength(label, expectedLength, transport.getOrigin(), transport.getDestination());
@@ -1514,36 +1646,50 @@ public class PathfinderTest {
 	// transport-vs-walking choices, tile/plane reuse, or other route-selection
 	// behaviours. Broad transport coverage, static connectivity smoke tests, and
 	// feature-availability checks are not scenarios even if they use coordinates.
-	private void assertScenarioPathLength(String label, int expectedLength, int origin, int destination) {
+	private void assertScenarioPathLength(String label, int expectedLength, int origin, int destination)
+	{
 		assertScenarioPathLengthAndGet(label, expectedLength, origin, destination);
 	}
 
-	private Pathfinder assertScenarioPathLengthAndGet(String label, int expectedLength, int origin, int destination) {
+	private Pathfinder assertScenarioPathLengthAndGet(String label, int expectedLength, int origin, int destination)
+	{
 		Pathfinder pathfinder = runPathfinder(origin, destination);
 		int actualLength = pathfinder.getPath().size();
 		assertEquals(label, expectedLength, actualLength);
 		return pathfinder;
 	}
 
-	private void assertScenarioMinimumPathLength(String label, int minimumLength, int origin, int destination) {
+	private void assertScenarioMinimumPathLength(String label, int minimumLength, int origin, int destination)
+	{
 		Pathfinder pathfinder = runPathfinder(origin, destination);
 		int actualLength = pathfinder.getPath().size();
 		assertTrue("Scenario " + label + " had length " + actualLength + " < " + minimumLength, actualLength >= minimumLength);
 	}
 
-	private void assertScenarioPathLengthWithBank(String label, int expectedLength, int origin, int destination,
-												  TeleportationItem useTeleportationItems, Item... bankItems) {
+	private void assertScenarioPathLengthWithBank(
+		String label,
+		int expectedLength,
+		int origin,
+		int destination,
+		TeleportationItem useTeleportationItems,
+		Item... bankItems)
+	{
 		setupConfigWithBank(useTeleportationItems, bankItems);
 		assertScenarioPathLength(label, expectedLength, origin, destination);
 	}
 
-	private Transport findSampleTransport(TransportType transportType) {
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (transportType.equals(transport.getType())) {
+	private Transport findSampleTransport(TransportType transportType)
+	{
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (transportType.equals(transport.getType()))
+				{
 					int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 					int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-					if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
+					if (ShortestPathPlugin.isInsidePoh(originX, originY))
+					{
 						continue;
 					}
 					return transport;
@@ -1554,36 +1700,48 @@ public class PathfinderTest {
 		return null;
 	}
 
-	private int calculatePathLength(int origin, int destination) {
+	private int calculatePathLength(int origin, int destination)
+	{
 		Pathfinder pathfinder = runPathfinder(origin, destination);
 		return pathfinder.getPath().size();
 	}
 
-	private Pathfinder runPathfinder(int origin, int destination) {
+	private Pathfinder runPathfinder(int origin, int destination)
+	{
 		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, origin, Set.of(destination));
 		pathfinder.run();
 		return pathfinder;
 	}
 
-	private Pathfinder runScenario(String label, int origin, int destination) {
+	private Pathfinder runScenario(String label, int origin, int destination)
+	{
 		return runPathfinder(origin, destination);
 	}
 
-	private boolean hasTransportWithRequiredItem(Map<Integer, Set<Transport>> transports, int[] variationIds) {
-		for (Set<Transport> set : transports.values()) {
-			for (Transport t : set) {
+	private boolean hasTransportWithRequiredItem(Map<Integer, Set<Transport>> transports, int[] variationIds)
+	{
+		for (Set<Transport> set : transports.values())
+		{
+			for (Transport t : set)
+			{
 				TransportItems items = t.getItemRequirements();
-				if (items == null) {
+				if (items == null)
+				{
 					continue;
 				}
 				int[][] reqs = items.getItems();
-				for (int[] inner : reqs) {
-					if (inner == null) {
+				for (int[] inner : reqs)
+				{
+					if (inner == null)
+					{
 						continue;
 					}
-					for (int id : inner) {
-						for (int vid : variationIds) {
-							if (id == vid) {
+					for (int id : inner)
+					{
+						for (int vid : variationIds)
+						{
+							if (id == vid)
+							{
 								return true;
 							}
 						}
@@ -1596,11 +1754,15 @@ public class PathfinderTest {
 
 	/** Counts the number of Lovakengj Minecart Network transports in the active transport set.
 	 * These are identified by having varbit 7796 among their requirements. */
-	private int countLovakenjMinecarts() {
+	private int countLovakenjMinecarts()
+	{
 		int count = 0;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values()) {
-			for (Transport t : set) {
-				if (t.isType(TransportType.MINECART) && t.hasVarbit(7796)) {
+		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		{
+			for (Transport t : set)
+			{
+				if (t.isType(TransportType.MINECART) && t.hasVarbit(7796))
+				{
 					count++;
 				}
 			}
@@ -1608,11 +1770,13 @@ public class PathfinderTest {
 		return count;
 	}
 
-	private void setupConfigWithBank(Item... bankItems) {
+	private void setupConfigWithBank(Item... bankItems)
+	{
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK, bankItems);
 	}
 
-	private void setupConfigWithBank(TeleportationItem useTeleportationItems, Item... bankItems) {
+	private void setupConfigWithBank(TeleportationItem useTeleportationItems, Item... bankItems)
+	{
 		pathfinderConfig = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
@@ -1625,15 +1789,19 @@ public class PathfinderTest {
 	}
 
 	/** Returns true if the given transport type was used anywhere along the path. */
-	private boolean usedTransportType(Pathfinder pathfinder, TransportType type) {
-		for (int i = 1; i < pathfinder.getPath().size(); i++) {
+	private boolean usedTransportType(Pathfinder pathfinder, TransportType type)
+	{
+		for (int i = 1; i < pathfinder.getPath().size(); i++)
+		{
 			PathStep originStep = pathfinder.getPath().get(i - 1);
 			int origin = originStep.getPackedPosition();
 			int dest = pathfinder.getPath().get(i).getPackedPosition();
 
 			Set<Transport> stepTransports = transportsForStep(origin, originStep.isBankVisited());
-			for (Transport t : stepTransports) {
-				if (t.getDestination() == dest && t.isType(type)) {
+			for (Transport t : stepTransports)
+			{
+				if (t.getDestination() == dest && t.isType(type))
+				{
 					return true;
 				}
 			}
@@ -1645,34 +1813,43 @@ public class PathfinderTest {
 	 * Returns true if a transport of the given type whose displayInfo contains the given
 	 * substring was used anywhere along the path.
 	 */
-	private boolean usedTransportWithDisplayInfo(Pathfinder pathfinder, TransportType type, String displayInfoSubstring) {
+	private boolean usedTransportWithDisplayInfo(Pathfinder pathfinder, TransportType type, String displayInfoSubstring)
+	{
 		return usedTransportWithDisplayInfo(pathfinder, type, displayInfoSubstring, false, false);
 	}
 
-	private boolean usedTransportWithDisplayInfoAfterFirstBank(Pathfinder pathfinder, TransportType type, String displayInfoSubstring) {
+	private boolean usedTransportWithDisplayInfoAfterFirstBank(Pathfinder pathfinder, TransportType type, String displayInfoSubstring)
+	{
 		return usedTransportWithDisplayInfo(pathfinder, type, displayInfoSubstring, false, true);
 	}
 
-	private boolean usedTransportWithDisplayInfoBeforeFirstBank(Pathfinder pathfinder, TransportType type, String displayInfoSubstring) {
+	private boolean usedTransportWithDisplayInfoBeforeFirstBank(Pathfinder pathfinder, TransportType type, String displayInfoSubstring)
+	{
 		return usedTransportWithDisplayInfo(pathfinder, type, displayInfoSubstring, true, false);
 	}
 
 	private boolean usedTransportWithDisplayInfo(Pathfinder pathfinder, TransportType type, String displayInfoSubstring,
-		boolean stopAtFirstBank, boolean startAfterFirstBank) {
-		for (int i = 1; i < pathfinder.getPath().size(); i++) {
+		boolean stopAtFirstBank, boolean startAfterFirstBank)
+		{
+		for (int i = 1; i < pathfinder.getPath().size(); i++)
+		{
 			PathStep originStep = pathfinder.getPath().get(i - 1);
 			PathStep destStep = pathfinder.getPath().get(i);
 			boolean bankVisited = destStep.isBankVisited();
 			int origin = originStep.getPackedPosition();
-			if (stopAtFirstBank && bankVisited) {
+			if (stopAtFirstBank && bankVisited)
+			{
 				return false;
 			}
-			if (startAfterFirstBank && !bankVisited) {
+			if (startAfterFirstBank && !bankVisited)
+			{
 				continue;
 			}
 
-			for (Transport t : transportsForStep(origin, bankVisited)) {
-				if (t.getDestination() == destStep.getPackedPosition() && t.isType(type) && t.hasDisplayInfo(displayInfoSubstring)) {
+			for (Transport t : transportsForStep(origin, bankVisited))
+			{
+				if (t.getDestination() == destStep.getPackedPosition() && t.isType(type) && t.hasDisplayInfo(displayInfoSubstring))
+				{
 					return true;
 				}
 			}
@@ -1680,7 +1857,8 @@ public class PathfinderTest {
 		return false;
 	}
 
-	private Set<Transport> transportsForStep(int origin, boolean bankVisited) {
+	private Set<Transport> transportsForStep(int origin, boolean bankVisited)
+	{
 		Set<Transport> stepTransports = new java.util.HashSet<>(
 			pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, Set.of()));
 		stepTransports.addAll(pathfinderConfig.getUsableTeleports(bankVisited));
@@ -1692,7 +1870,8 @@ public class PathfinderTest {
 	 * (not the colosseum lobby chest) before using a ring of dueling to Ferox.
 	 */
 	@Test
-	public void auburnvaleToFeroxBanksAtAuburnvaleWhenColosseumGloryNotMet() {
+	public void auburnvaleToFeroxBanksAtAuburnvaleWhenColosseumGloryNotMet()
+	{
 		when(config.calculationCutoff()).thenReturn(500);
 		when(config.includeBankPath()).thenReturn(true);
 		// Bank chest at Fortis Colosseum requires COLOSSEUM_GLORY &gt; 1999

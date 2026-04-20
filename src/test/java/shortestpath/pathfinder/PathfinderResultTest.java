@@ -1,6 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.util.Set;
+
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
@@ -15,9 +16,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PathfinderResultTest {
+public class PathfinderResultTest
+{
 	@Test
-	public void reachedTargetProducesReachedResult() {
+	public void reachedTargetProducesReachedResult()
+	{
 		Pathfinder pathfinder = new Pathfinder(configWithCutoff(100), point(3200, 3200), Set.of(point(3201, 3200)));
 
 		pathfinder.run();
@@ -28,7 +31,8 @@ public class PathfinderResultTest {
 	}
 
 	@Test
-	public void zeroCutoffProducesCutoffResult() {
+	public void zeroCutoffProducesCutoffResult()
+	{
 		Pathfinder pathfinder = new Pathfinder(configWithCutoff(0), point(3200, 3200), Set.of(point(3300, 3300)));
 
 		pathfinder.run();
@@ -37,7 +41,8 @@ public class PathfinderResultTest {
 		assertEquals(PathTerminationReason.CUTOFF_REACHED, result.getTerminationReason());
 	}
 
-	private static PathfinderConfig configWithCutoff(int cutoffTicks) {
+	private static PathfinderConfig configWithCutoff(int cutoffTicks)
+	{
 		Client client = mock(Client.class);
 		TestShortestPathConfig config = new TestShortestPathConfig();
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
@@ -52,7 +57,8 @@ public class PathfinderResultTest {
 		return pathfinderConfig;
 	}
 
-	private static int point(int x, int y) {
+	private static int point(int x, int y)
+	{
 		return WorldPointUtil.packWorldPoint(x, y, 0);
 	}
 }

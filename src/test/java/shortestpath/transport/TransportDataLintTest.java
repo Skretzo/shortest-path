@@ -17,10 +17,12 @@ import java.util.Arrays;
  * Unit tests for validating transport data integrity.
  * These tests validate the consistency and correctness of transport data files.
  */
-public class TransportDataLintTest {
+public class TransportDataLintTest
+{
 
 	@Test
-	public void testNoDuplicateOriginDestinationPairs() {
+	public void testNoDuplicateOriginDestinationPairs()
+	{
 		// Load all transport data from resources
 		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
 
@@ -29,11 +31,13 @@ public class TransportDataLintTest {
 		Map<String, String> duplicateInfo = new HashMap<>();
 		List<String> duplicatesFound = new ArrayList<>();
 
-		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet()) {
+		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())
+		{
 			int origin = entry.getKey();
 			Set<Transport> transportSet = entry.getValue();
 
-			for (Transport transport : transportSet) {
+			for (Transport transport : transportSet)
+			{
 				int destination = transport.getDestination();
 
 				// Create a comprehensive signature that includes all transport properties
@@ -49,50 +53,55 @@ public class TransportDataLintTest {
 				// only the display info is different between those two options so we need to
 				// include it in the signature.
 				String signature = String.format(
-						"%s -> %s [%s] '%s' Consumable:%s Items:%s Quests:%s Varbits:%s VarPlayers:%s ObjectInfo:%s",
-						WorldPointUtil.unpackWorldX(origin) + " " + WorldPointUtil.unpackWorldY(origin) + " "
-								+ WorldPointUtil.unpackWorldPlane(origin),
-						WorldPointUtil.unpackWorldX(destination) + " " + WorldPointUtil.unpackWorldY(destination) + " "
-								+ WorldPointUtil.unpackWorldPlane(destination),
-						transport.getType(),
-						transport.getDisplayInfo() != null ? transport.getDisplayInfo() : "",
-						transport.isConsumable(),
-						transport.getItemRequirements() != null ? transport.getItemRequirements().toString() : "none",
-						transport.getQuests().toString(),
-						transport.getVarbits().toString(),
-						transport.getVarPlayers().toString(),
-						transport.getObjectInfo() != null ? transport.getObjectInfo() : "none");
+					"%s -> %s [%s] '%s' Consumable:%s Items:%s Quests:%s Varbits:%s VarPlayers:%s ObjectInfo:%s",
+					WorldPointUtil.unpackWorldX(origin) + " " + WorldPointUtil.unpackWorldY(origin) + " "
+						+ WorldPointUtil.unpackWorldPlane(origin),
+					WorldPointUtil.unpackWorldX(destination) + " " + WorldPointUtil.unpackWorldY(destination) + " "
+						+ WorldPointUtil.unpackWorldPlane(destination),
+					transport.getType(),
+					transport.getDisplayInfo() != null ? transport.getDisplayInfo() : "",
+					transport.isConsumable(),
+					transport.getItemRequirements() != null ? transport.getItemRequirements().toString() : "none",
+					transport.getQuests().toString(),
+					transport.getVarbits().toString(),
+					transport.getVarPlayers().toString(),
+					transport.getObjectInfo() != null ? transport.getObjectInfo() : "none");
 
 				// Check if this exact transport signature already exists
-				if (transportSignatures.contains(signature)) {
+				if (transportSignatures.contains(signature))
+				{
 					String existingInfo = duplicateInfo.get(signature);
 					String newInfo = String.format("MaxWilderness: %d, Skills: %s",
-							transport.getMaxWildernessLevel(),
-							Arrays.toString(transport.getSkillLevels()));
+						transport.getMaxWildernessLevel(),
+						Arrays.toString(transport.getSkillLevels()));
 
 					duplicatesFound.add(String.format("Exact duplicate transport: %s\n" +
 							"First occurrence: %s\n" +
 							"Duplicate occurrence: %s\n",
-							signature, existingInfo, newInfo));
-				} else {
+						signature, existingInfo, newInfo));
+				}
+				else
+				{
 					// Add this signature to our tracking set
 					transportSignatures.add(signature);
 
 					// Store information about this transport for error reporting
 					String info = String.format("MaxWilderness: %d, Skills: %s",
-							transport.getMaxWildernessLevel(),
-							Arrays.toString(transport.getSkillLevels()));
+						transport.getMaxWildernessLevel(),
+						Arrays.toString(transport.getSkillLevels()));
 					duplicateInfo.put(signature, info);
 				}
 			}
 		}
 
 		// Report results
-		if (!duplicatesFound.isEmpty()) {
+		if (!duplicatesFound.isEmpty())
+		{
 			StringBuilder message = new StringBuilder();
 			message.append(String.format("Found %d duplicate transport entries in the data files:\n\n",
-					duplicatesFound.size()));
-			for (String duplicate : duplicatesFound) {
+				duplicatesFound.size()));
+			for (String duplicate : duplicatesFound)
+			{
 				message.append(duplicate).append("\n");
 			}
 			Assert.fail(message.toString());
@@ -100,6 +109,6 @@ public class TransportDataLintTest {
 
 		// If we get here, no exact duplicates were found
 		System.out.printf("Successfully validated %d unique transport signatures across all transport data files.\n",
-				transportSignatures.size());
+			transportSignatures.size());
 	}
 }

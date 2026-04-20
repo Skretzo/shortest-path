@@ -1,6 +1,7 @@
 package shortestpath;
 
 import com.google.inject.Inject;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -10,6 +11,7 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
 import java.util.Set;
+
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -23,14 +25,16 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.BankPickupRequirements;
 import shortestpath.transport.Transport;
 
-public class PathTileOverlay extends Overlay {
+public class PathTileOverlay extends Overlay
+{
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private static final int TRANSPORT_LABEL_GAP = 3;
 	private int playerTileLabelOffset = 0;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
+	public PathTileOverlay(Client client, ShortestPathPlugin plugin)
+	{
 		this.client = client;
 		this.plugin = plugin;
 		setPosition(OverlayPosition.DYNAMIC);
@@ -38,9 +42,12 @@ public class PathTileOverlay extends Overlay {
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
 
-	private void renderTransports(Graphics2D graphics) {
-		for (int a : plugin.getTransports().keySet()) {
-			if (a == Transport.UNDEFINED_ORIGIN) {
+	private void renderTransports(Graphics2D graphics)
+	{
+		for (int a : plugin.getTransports().keySet())
+		{
+			if (a == Transport.UNDEFINED_ORIGIN)
+			{
 				continue; // skip teleports
 			}
 
@@ -48,37 +55,49 @@ public class PathTileOverlay extends Overlay {
 
 			Point ca = tileCenter(a);
 
-			if (ca == null) {
+			if (ca == null)
+			{
 				continue;
 			}
 
 			StringBuilder s = new StringBuilder();
-			for (Transport b : plugin.getTransports().getOrDefault(a, Set.of())) {
-				if (b == null || (b.getType() != null && b.getType().isTeleport())) {
+			for (Transport b : plugin.getTransports().getOrDefault(a, Set.of()))
+			{
+				if (b == null || (b.getType() != null && b.getType().isTeleport()))
+				{
 					continue; // skip teleports
 				}
 				PrimitiveIntList destinations = WorldPointUtil.toLocalInstance(client, b.getDestination());
-				for (int i = 0; i < destinations.size(); i++) {
+				for (int i = 0; i < destinations.size(); i++)
+				{
 					int destination = destinations.get(i);
-					if (destination == Transport.UNDEFINED_DESTINATION) {
+					if (destination == Transport.UNDEFINED_DESTINATION)
+					{
 						continue;
 					}
 					Point cb = tileCenter(destination);
-					if (cb != null) {
+					if (cb != null)
+					{
 						graphics.drawLine(ca.getX(), ca.getY(), cb.getX(), cb.getY());
 						drawStart = true;
 					}
-					if (WorldPointUtil.unpackWorldPlane(destination) > WorldPointUtil.unpackWorldPlane(a)) {
+					if (WorldPointUtil.unpackWorldPlane(destination) > WorldPointUtil.unpackWorldPlane(a))
+					{
 						s.append("+");
-					} else if (WorldPointUtil.unpackWorldPlane(destination) < WorldPointUtil.unpackWorldPlane(a)) {
+					}
+					else if (WorldPointUtil.unpackWorldPlane(destination) < WorldPointUtil.unpackWorldPlane(a))
+					{
 						s.append("-");
-					} else {
+					}
+					else
+					{
 						s.append("=");
 					}
 				}
 			}
 
-			if (drawStart) {
+			if (drawStart)
+			{
 				drawTile(graphics, a, plugin.colourTransports, -1, true);
 			}
 
@@ -87,17 +106,22 @@ public class PathTileOverlay extends Overlay {
 		}
 	}
 
-	private void renderCollisionMap(Graphics2D graphics) {
+	private void renderCollisionMap(Graphics2D graphics)
+	{
 		CollisionMap map = plugin.getMap();
-		for (Tile[] row : client.getTopLevelWorldView().getScene().getTiles()[client.getTopLevelWorldView().getPlane()]) {
-			for (Tile tile : row) {
-				if (tile == null) {
+		for (Tile[] row : client.getTopLevelWorldView().getScene().getTiles()[client.getTopLevelWorldView().getPlane()])
+		{
+			for (Tile tile : row)
+			{
+				if (tile == null)
+					{
 					continue;
 				}
 
 				Polygon tilePolygon = Perspective.getCanvasTilePoly(client, tile.getLocalLocation());
 
-				if (tilePolygon == null) {
+				if (tilePolygon == null)
+				{
 					continue;
 				}
 
@@ -107,18 +131,20 @@ public class PathTileOverlay extends Overlay {
 				int z = WorldPointUtil.unpackWorldPlane(location);
 
 				String s = (!map.n(x, y, z) ? "n" : "") +
-						(!map.s(x, y, z) ? "s" : "") +
-						(!map.e(x, y, z) ? "e" : "") +
-						(!map.w(x, y, z) ? "w" : "");
+					(!map.s(x, y, z) ? "s" : "") +
+					(!map.e(x, y, z) ? "e" : "") +
+					(!map.w(x, y, z) ? "w" : "");
 
-				if (map.isBlocked(x, y, z)) {
+				if (map.isBlocked(x, y, z))
+				{
 					graphics.setColor(plugin.colourCollisionMap);
 					graphics.fill(tilePolygon);
 				}
-				if (!s.isEmpty() && !s.equals("nsew")) {
+				if (!s.isEmpty() && !s.equals("nsew"))
+				{
 					graphics.setColor(Color.WHITE);
 					int stringX = (int) (tilePolygon.getBounds().getCenterX()
-							- graphics.getFontMetrics().getStringBounds(s, graphics).getWidth() / 2);
+						- graphics.getFontMetrics().getStringBounds(s, graphics).getWidth() / 2);
 					int stringY = (int) tilePolygon.getBounds().getCenterY();
 					graphics.drawString(s, stringX, stringY);
 				}
@@ -127,18 +153,22 @@ public class PathTileOverlay extends Overlay {
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics) {
+	public Dimension render(Graphics2D graphics)
+	{
 		playerTileLabelOffset = 0;
 
-		if (plugin.drawTransports) {
+		if (plugin.drawTransports)
+		{
 			renderTransports(graphics);
 		}
 
-		if (plugin.drawCollisionMap) {
+		if (plugin.drawCollisionMap)
+		{
 			renderCollisionMap(graphics);
 		}
 
-		if (plugin.drawTiles && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null) {
+		if (plugin.drawTiles && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null)
+		{
 			Color colorCalculating = new Color(
 				plugin.colourPathCalculating.getRed(),
 				plugin.colourPathCalculating.getGreen(),
@@ -153,35 +183,44 @@ public class PathTileOverlay extends Overlay {
 
 			java.util.List<PathStep> path = plugin.getPathfinder().getPath();
 			int counter = 0;
-			if (TileStyle.LINES.equals(plugin.pathStyle)) {
-				for (int i = 1; i < path.size(); i++) {
+			if (TileStyle.LINES.equals(plugin.pathStyle))
+			{
+				for (int i = 1; i < path.size(); i++)
+				{
 					PathStep currentStep = path.get(i - 1);
 					PathStep nextStep = path.get(i);
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color, 1 + counter++);
 					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 				}
-			} else {
+			}
+			else
+			{
 				boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
-				for (int i = 0; i < path.size(); i++) {
+				for (int i = 0; i < path.size(); i++)
+				{
 					// Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
 					PathStep currentStep = path.get(i);
 					int pathPoint = currentStep.getPackedPosition();
 					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
 					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
-					if (!ShortestPathPlugin.isInsidePoh(pathX, pathY)) {
+					if (!ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					{
 						drawTile(graphics, pathPoint, color, counter, showTiles);
 					}
 					counter++;
 					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
 				}
-				for (int target : plugin.getPathfinder().getTargets()) {
-					if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition()) {
+				for (int target : plugin.getPathfinder().getTargets())
+				{
+					if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition())
+					{
 						drawTile(graphics, target, colorCalculating, -1, showTiles);
 					}
 				}
 			}
 
-			if (plugin.isPathUnreachable()) {
+			if (plugin.isPathUnreachable())
+			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
 			}
 		}
@@ -189,22 +228,27 @@ public class PathTileOverlay extends Overlay {
 		return null;
 	}
 
-	private Point tileCenter(int b) {
-		if (b == WorldPointUtil.UNDEFINED || client == null) {
+	private Point tileCenter(int b)
+	{
+		if (b == WorldPointUtil.UNDEFINED || client == null)
+		{
 			return null;
 		}
 
-		if (WorldPointUtil.unpackWorldPlane(b) != client.getTopLevelWorldView().getPlane()) {
+		if (WorldPointUtil.unpackWorldPlane(b) != client.getTopLevelWorldView().getPlane())
+		{
 			return null;
 		}
 
 		LocalPoint lp = WorldPointUtil.toLocalPoint(client, b);
-		if (lp == null) {
+		if (lp == null)
+		{
 			return null;
 		}
 
 		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-		if (poly == null) {
+		if (poly == null)
+		{
 			return null;
 		}
 
@@ -213,29 +257,36 @@ public class PathTileOverlay extends Overlay {
 		return new Point(cx, cy);
 	}
 
-	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw) {
-		if (client == null) {
+	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw)
+	{
+		if (client == null)
+		{
 			return;
 		}
 
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++) {
+		for (int i = 0; i < points.size(); i++)
+		{
 			int point = points.get(i);
-			if (point == WorldPointUtil.UNDEFINED) {
+			if (point == WorldPointUtil.UNDEFINED)
+			{
 				continue;
 			}
 
 			LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
-			if (lp == null) {
+			if (lp == null)
+			{
 				continue;
 			}
 
 			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-			if (poly == null) {
+			if (poly == null)
+			{
 				continue;
 			}
 
-			if (draw) {
+			if (draw)
+			{
 				graphics.setColor(color);
 				graphics.fill(poly);
 			}
@@ -244,11 +295,13 @@ public class PathTileOverlay extends Overlay {
 		}
 	}
 
-	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter) {
+	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter)
+	{
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
 		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
 
-		if (starts.isEmpty() || ends.isEmpty()) {
+		if (starts.isEmpty() || ends.isEmpty())
+		{
 			return;
 		}
 
@@ -256,14 +309,16 @@ public class PathTileOverlay extends Overlay {
 		int end = ends.get(0);
 
 		final int z = client.getTopLevelWorldView().getPlane();
-		if (WorldPointUtil.unpackWorldPlane(start) != z) {
+		if (WorldPointUtil.unpackWorldPlane(start) != z)
+		{
 			return;
 		}
 
 		LocalPoint lpStart = WorldPointUtil.toLocalPoint(client, start);
 		LocalPoint lpEnd = WorldPointUtil.toLocalPoint(client, end);
 
-		if (lpStart == null || lpEnd == null) {
+		if (lpStart == null || lpEnd == null)
+		{
 			return;
 		}
 
@@ -273,7 +328,8 @@ public class PathTileOverlay extends Overlay {
 		Point p1 = Perspective.localToCanvas(client, lpStart.getX(), lpStart.getY(), startHeight);
 		Point p2 = Perspective.localToCanvas(client, lpEnd.getX(), lpEnd.getY(), endHeight);
 
-		if (p1 == null || p2 == null) {
+		if (p1 == null || p2 == null)
+		{
 			return;
 		}
 
@@ -283,35 +339,43 @@ public class PathTileOverlay extends Overlay {
 		graphics.setStroke(new BasicStroke(4));
 		graphics.draw(line);
 
-		if (counter == 1) {
+		if (counter == 1)
+		{
 			drawCounter(graphics, p1.getX(), p1.getY(), 0);
 		}
 		drawCounter(graphics, p2.getX(), p2.getY(), counter);
 	}
 
-	private void drawCounter(Graphics2D graphics, double x, double y, int counter) {
-		if (counter >= 0 && !TileCounter.DISABLED.equals(plugin.showTileCounter)) {
+	private void drawCounter(Graphics2D graphics, double x, double y, int counter)
+	{
+		if (counter >= 0 && !TileCounter.DISABLED.equals(plugin.showTileCounter))
+		{
 			int n = plugin.tileCounterStep > 0 ? plugin.tileCounterStep : 1;
 			int s = plugin.getPathfinder().getPath().size();
-			if ((counter % n != 0) && (s != (counter + 1))) {
+			if ((counter % n != 0) && (s != (counter + 1)))
+			{
 				return;
 			}
-			if (TileCounter.REMAINING.equals(plugin.showTileCounter)) {
+			if (TileCounter.REMAINING.equals(plugin.showTileCounter))
+			{
 				counter = s - counter - 1;
 			}
-			if (n > 1 && counter == 0) {
+			if (n > 1 && counter == 0)
+			{
 				return;
 			}
 			String counterText = Integer.toString(counter);
 			graphics.setColor(plugin.colourText);
 			graphics.drawString(
-					counterText,
-					(int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
+				counterText,
+				(int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
 		}
 	}
 
-	private int drawLabelAtCanvasPoint(Graphics2D graphics, Point point, String text, int verticalOffset) {
-		if (point == null || text == null || text.isEmpty()) {
+	private int drawLabelAtCanvasPoint(Graphics2D graphics, Point point, String text, int verticalOffset)
+	{
+		if (point == null || text == null || text.isEmpty())
+		{
 			return 0;
 		}
 
@@ -327,8 +391,10 @@ public class PathTileOverlay extends Overlay {
 		return (int) height + TRANSPORT_LABEL_GAP;
 	}
 
-	private int drawLabelOnPlayerTile(Graphics2D graphics, String text, int verticalOffset) {
-		if (client.getLocalPlayer() == null) {
+	private int drawLabelOnPlayerTile(Graphics2D graphics, String text, int verticalOffset)
+	{
+		if (client.getLocalPlayer() == null)
+		{
 			return 0;
 		}
 
@@ -336,11 +402,13 @@ public class PathTileOverlay extends Overlay {
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, java.util.List<PathStep> path, int pathIndex) {
+	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, java.util.List<PathStep> path, int pathIndex)
+	{
 		int location = currentStep.getPackedPosition();
 		if (nextStep == null || !plugin.showTransportInfo || plugin.isPathUnreachable() ||
 			!plugin.getPathfinder().isDone() ||
-			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
+			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane())
+		{
 			return;
 		}
 		int locationEnd = nextStep.getPackedPosition();
@@ -354,32 +422,38 @@ public class PathTileOverlay extends Overlay {
 		int tx = WorldPointUtil.unpackWorldX(location);
 		int ty = WorldPointUtil.unpackWorldY(location);
 		boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(tx, ty)
-				&& ShortestPathPlugin.isInsidePoh(px, py);
+			&& ShortestPathPlugin.isInsidePoh(px, py);
 		Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);
 
 		// When inside POH, only show the POH exit info once (not per-transport)
-		if (transportAndPlayerInsidePoh) {
+		if (transportAndPlayerInsidePoh)
+		{
 			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
-			if (pohExitInfo == null) {
+			if (pohExitInfo == null)
+			{
 				return;
 			}
 
 			// Find the display name of the teleport that brought us to POH using bank-aware
 			// lookup
 			String text = null;
-			for (Transport transport : candidateTransports) {
+			for (Transport transport : candidateTransports)
+			{
 				text = transport.getDisplayInfo();
-				if (text != null && !text.isEmpty()) {
+				if (text != null && !text.isEmpty())
+				{
 					break;
 				}
 			}
-			if (text == null || text.isEmpty()) {
+			if (text == null || text.isEmpty())
+			{
 				return;
 			}
 			text = text + " (Exit: " + pohExitInfo + ")";
 
 			Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getTopLevelWorldView().getPlane());
-			if (p == null) {
+			if (p == null)
+			{
 				return;
 			}
 
@@ -398,7 +472,8 @@ public class PathTileOverlay extends Overlay {
 
 		// Check if this is a bank step and items need to be picked up
 		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
-		if (bankLocations != null && plugin.getPathfinderConfig().bank != null) {
+		if (bankLocations != null && plugin.getPathfinderConfig().bank != null)
+		{
 			List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
 					client,
 					plugin.getPathfinderConfig().bank,
@@ -407,18 +482,22 @@ public class PathTileOverlay extends Overlay {
 					path,
 					pathIndex
 			);
-			if (!bankPickupItems.isEmpty()) {
+			if (!bankPickupItems.isEmpty())
+			{
 				String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
 
 				PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-				for (int i = 0; i < points.size(); i++) {
+				for (int i = 0; i < points.size(); i++)
+				{
 					LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-					if (lp == null) {
+					if (lp == null)
+					{
 						continue;
 					}
 
 					Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
-					if (p == null) {
+					if (p == null)
+					{
 						continue;
 					}
 
@@ -436,34 +515,41 @@ public class PathTileOverlay extends Overlay {
 
 				// By default, bank pickup info replaces the default transport hint text;
 				// enable the option to show both
-				if (!plugin.showBankPickupInfo) {
+				if (!plugin.showBankPickupInfo)
+				{
 					return;
 				}
 			}
 		}
 
-		for (Transport transport : candidateTransports) {
+		for (Transport transport : candidateTransports)
+		{
 			String text = transport.getDisplayInfo();
-			if (text == null || text.isEmpty()) {
+			if (text == null || text.isEmpty())
+			{
 				continue;
 			}
 
 			// Check if this transport goes to POH - if so, look ahead to find the exit
 			// transport
 			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
-			if (pohExitInfo != null) {
+			if (pohExitInfo != null)
+			{
 				text = text + " (Exit: " + pohExitInfo + ")";
 			}
 
 			PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-			for (int i = 0; i < points.size(); i++) {
+			for (int i = 0; i < points.size(); i++)
+			{
 				LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-				if (lp == null) {
+				if (lp == null)
+				{
 					continue;
 				}
 
 				Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
-				if (p == null) {
+				if (p == null)
+				{
 					continue;
 				}
 

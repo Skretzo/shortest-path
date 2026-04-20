@@ -4,10 +4,12 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-public class TransportTypeTest {
+public class TransportTypeTest
+{
 
 	@Test
-	public void testIsTeleport() {
+	public void testIsTeleport()
+	{
 		assertTrue(TransportType.TELEPORTATION_ITEM.isTeleport());
 		assertTrue(TransportType.TELEPORTATION_MINIGAME.isTeleport());
 		assertTrue(TransportType.TELEPORTATION_SPELL.isTeleport());

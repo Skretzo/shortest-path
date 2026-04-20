@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Util;
@@ -16,27 +17,38 @@ import shortestpath.transport.parser.TransportRecord;
 import shortestpath.transport.parser.TsvParser;
 
 @Slf4j
-public class TransportLoader {
+public class TransportLoader
+{
 	private static final TsvParser tsvParser = new TsvParser();
 
-	private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType,
-			int radiusThreshold) {
-		try {
+	private static void addTransports(
+		Map<Integer, Set<Transport>> transports, String path, TransportType transportType,
+		int radiusThreshold)
+	{
+		try
+		{
 			String s = new String(
-					Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
-					StandardCharsets.UTF_8);
+				Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
+				StandardCharsets.UTF_8);
 			addTransportsFromContents(transports, s, transportType, radiusThreshold);
-		} catch (IOException e) {
+		}
+		catch (IOException e)
+		{
 			throw new RuntimeException(e);
 		}
 	}
 
-	public static void addTransportsFromContents(Map<Integer, Set<Transport>> transports, String contents,
-			TransportType transportType, int radiusThreshold) {
+	public static void addTransportsFromContents(
+		Map<Integer, Set<Transport>> transports,
+		String contents,
+		TransportType transportType,
+		int radiusThreshold)
+	{
 		List<TransportRecord> records = tsvParser.parse(contents);
 
 		Set<Transport> newTransports = new HashSet<>();
-		for (TransportRecord record : records) {
+		for (TransportRecord record : records)
+		{
 			Transport transport = new Transport(record, transportType);
 			newTransports.add(transport);
 		}
@@ -61,48 +73,61 @@ public class TransportLoader {
 		 */
 		Set<Transport> transportOrigins = new HashSet<>();
 		Set<Transport> transportDestinations = new HashSet<>();
-		for (Transport transport : newTransports) {
+		for (Transport transport : newTransports)
+		{
 			int origin = transport.getOrigin();
 			int destination = transport.getDestination();
 			// Logic to determine ordinary transport vs teleport vs permutation (e.g. fairy
 			// ring)
 			if ((origin == Transport.UNDEFINED_ORIGIN && destination == Transport.UNDEFINED_DESTINATION)
-					|| (origin == Transport.LOCATION_PERMUTATION && destination == Transport.LOCATION_PERMUTATION)) {
+				|| (origin == Transport.LOCATION_PERMUTATION && destination == Transport.LOCATION_PERMUTATION))
+			{
 				continue;
-			} else if (origin != Transport.LOCATION_PERMUTATION && origin != Transport.UNDEFINED_ORIGIN
-					&& destination == Transport.LOCATION_PERMUTATION) {
+			}
+			else if (origin != Transport.LOCATION_PERMUTATION && origin != Transport.UNDEFINED_ORIGIN
+				&& destination == Transport.LOCATION_PERMUTATION)
+			{
 				transportOrigins.add(transport);
-			} else if (origin == Transport.LOCATION_PERMUTATION
-					&& destination != Transport.LOCATION_PERMUTATION && destination != Transport.UNDEFINED_DESTINATION) {
+			}
+			else if (origin == Transport.LOCATION_PERMUTATION
+				&& destination != Transport.LOCATION_PERMUTATION && destination != Transport.UNDEFINED_DESTINATION)
+			{
 				transportDestinations.add(transport);
 			}
 			if (origin != Transport.LOCATION_PERMUTATION
-					&& destination != Transport.UNDEFINED_DESTINATION && destination != Transport.LOCATION_PERMUTATION
-					&& (origin == Transport.UNDEFINED_ORIGIN || origin != destination)) {
+				&& destination != Transport.UNDEFINED_DESTINATION && destination != Transport.LOCATION_PERMUTATION
+				&& (origin == Transport.UNDEFINED_ORIGIN || origin != destination))
+			{
 				transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
 			}
 		}
-		for (Transport origin : transportOrigins) {
-			for (Transport destination : transportDestinations) {
+		for (Transport origin : transportOrigins)
+		{
+			for (Transport destination : transportDestinations)
+			{
 				// The radius threshold prevents transport permutations from including (almost)
 				// same origin and destination
-				if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
+				if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold)
+				{
 					Transport combined = new Transport(origin, destination);
 					transports
-							.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
-							.add(combined);
+						.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
+						.add(combined);
 				}
 			}
 		}
 	}
 
-	public static HashMap<Integer, Set<Transport>> loadAllFromResources() {
+	public static HashMap<Integer, Set<Transport>> loadAllFromResources()
+	{
 		HashMap<Integer, Set<Transport>> transports = new HashMap<>();
 
-		for (TransportType type : TransportType.values()) {
-			if (type.hasResourcePath()) {
+		for (TransportType type : TransportType.values())
+		{
+			if (type.hasResourcePath())
+			{
 				addTransports(transports, type.getResourcePath(), type,
-						type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
+					type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
 			}
 		}
 

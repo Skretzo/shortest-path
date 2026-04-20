@@ -14,7 +14,8 @@ import java.util.Scanner;
  * followed by data lines. Empty lines and lines starting with # are ignored.
  * </p>
  */
-public class TsvParser {
+public class TsvParser
+{
 	private static final String DELIM_COLUMN = "\t";
 	private static final String PREFIX_COMMENT = "#";
 
@@ -22,11 +23,13 @@ public class TsvParser {
 	 * Parses TSV content into a list of TransportRecords.
 	 * The first line must be a header line (optionally starting with #).
 	 */
-	public List<TransportRecord> parse(String contents) {
+	public List<TransportRecord> parse(String contents)
+	{
 		List<TransportRecord> records = new ArrayList<>();
 		Scanner scanner = new Scanner(contents);
 
-		if (!scanner.hasNextLine()) {
+		if (!scanner.hasNextLine())
+		{
 			scanner.close();
 			return records;
 		}
@@ -35,15 +38,18 @@ public class TsvParser {
 		String[] headers = parseHeaderLine(scanner.nextLine());
 
 		// Parse data lines
-		while (scanner.hasNextLine()) {
+		while (scanner.hasNextLine())
+		{
 			String line = scanner.nextLine();
 
-			if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
+			if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
+			{
 				continue;
 			}
 
 			TransportRecord record = parseLine(line, headers);
-			if (record != null) {
+			if (record != null)
+			{
 				records.add(record);
 			}
 		}
@@ -55,11 +61,15 @@ public class TsvParser {
 	/**
 	 * Parses the header line, stripping the comment prefix if present.
 	 */
-	private String[] parseHeaderLine(String headerLine) {
+	private String[] parseHeaderLine(String headerLine)
+	{
 		String normalized = headerLine;
-		if (normalized.startsWith(PREFIX_COMMENT + " ")) {
+		if (normalized.startsWith(PREFIX_COMMENT + " "))
+		{
 			normalized = normalized.substring(2);
-		} else if (normalized.startsWith(PREFIX_COMMENT)) {
+		}
+		else if (normalized.startsWith(PREFIX_COMMENT))
+		{
 			normalized = normalized.substring(1);
 		}
 		return normalized.split(DELIM_COLUMN);
@@ -68,13 +78,16 @@ public class TsvParser {
 	/**
 	 * Parses a single data line into a TransportRecord.
 	 */
-	private TransportRecord parseLine(String line, String[] headers) {
+	private TransportRecord parseLine(String line, String[] headers)
+	{
 		// Use -1 limit to preserve trailing empty strings
 		String[] fields = line.split(DELIM_COLUMN, -1);
 		Map<String, String> fieldMap = new HashMap<>();
 
-		for (int i = 0; i < headers.length; i++) {
-			if (i < fields.length) {
+		for (int i = 0; i < headers.length; i++)
+		{
+			if (i < fields.length)
+			{
 				fieldMap.put(headers[i], fields[i]);
 			}
 		}

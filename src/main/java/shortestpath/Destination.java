@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
@@ -32,7 +33,8 @@ import shortestpath.transport.parser.VarRequirementParser;
  * {@link WorldPointUtil#packWorldPoint(int, int, int)}.
  */
 @Slf4j
-public class Destination {
+public class Destination
+{
 	private static final FieldParser<int[]> SKILL_PARSER = new SkillRequirementParser();
 	private static final FieldParser<Set<Quest>> QUEST_PARSER = new QuestParser();
 	private static final FieldParser<Set<VarRequirement>> VARBIT_PARSER = VarRequirementParser.forVarbits();
@@ -46,60 +48,73 @@ public class Destination {
 	 * @param path classpath resource path to a TSV file beginning with a header line.
 	 * @throws RuntimeException wrapping {@link IOException} if the resource cannot be read.
 	 */
-	private static void addDestinations(Map<String, Set<Integer>> destinations, String path) {
+	private static void addDestinations(Map<String, Set<Integer>> destinations, String path)
+	{
 		final String DELIM_COLUMN = "\t";
 		final String PREFIX_COMMENT = "#";
 		final String FILE_EXTENSION = ".";
 		final String DELIM_PATH = "/";
 		final String DELIM = " ";
 
-		try {
+		try
+		{
 			String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)),
-					StandardCharsets.UTF_8);
+				StandardCharsets.UTF_8);
 			Scanner scanner = new Scanner(s);
 
 			// Header line is the first line in the file and will start with either '#' or
 			// '# '
 			String headerLine = scanner.nextLine();
 			headerLine = headerLine.startsWith(PREFIX_COMMENT + " ")
-					? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT)
-					: headerLine;
+				? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT)
+				: headerLine;
 			headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
 			String[] headers = headerLine.split(DELIM_COLUMN);
 
 			String[] parts = path.replace(FILE_EXTENSION, DELIM_PATH).split(DELIM_PATH);
 			String entry = parts[parts.length - 2];
 
-			while (scanner.hasNextLine()) {
+			while (scanner.hasNextLine())
+			{
 				String line = scanner.nextLine();
 
-				if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
+				if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
+				{
 					continue;
 				}
 
 				String[] fields = line.split(DELIM_COLUMN);
 				Map<String, List<String>> fieldMap = new HashMap<>();
-				for (int i = 0; i < headers.length; i++) {
-					if (i < fields.length) {
+				for (int i = 0; i < headers.length; i++)
+				{
+					if (i < fields.length)
+					{
 						List<String> values = fieldMap.getOrDefault(headers[i], new ArrayList<>());
 						values.add(fields[i]);
 						fieldMap.put(headers[i], values);
 					}
 				}
-				for (String field : fieldMap.keySet()) {
-					if ("Destination".equals(field)) {
-						for (String value : fieldMap.get(field)) {
-							try {
+				for (String field : fieldMap.keySet())
+				{
+					if ("Destination".equals(field))
+					{
+						for (String value : fieldMap.get(field))
+						{
+							try
+							{
 								String[] destinationArray = value.split(DELIM);
-								if (destinationArray.length == 3) {
+								if (destinationArray.length == 3)
+								{
 									Set<Integer> entryDestinations = destinations.getOrDefault(entry, new HashSet<>());
 									entryDestinations.add(WorldPointUtil.packWorldPoint(
-											Integer.parseInt(destinationArray[0]),
-											Integer.parseInt(destinationArray[1]),
-											Integer.parseInt(destinationArray[2])));
+										Integer.parseInt(destinationArray[0]),
+										Integer.parseInt(destinationArray[1]),
+										Integer.parseInt(destinationArray[2])));
 									destinations.put(entry, entryDestinations);
 								}
-							} catch (NumberFormatException e) {
+							}
+							catch (NumberFormatException e)
+							{
 								log.error("Invalid destination coordinate", e);
 							}
 						}
@@ -107,7 +122,9 @@ public class Destination {
 				}
 			}
 			scanner.close();
-		} catch (IOException e) {
+		}
+		catch (IOException e)
+		{
 			throw new RuntimeException(e);
 		}
 	}
@@ -117,7 +134,8 @@ public class Destination {
 	 *
 	 * @return a map from destination category key to a set of packed world point integers.
 	 */
-	public static Map<String, Set<Integer>> loadAllFromResources() {
+	public static Map<String, Set<Integer>> loadAllFromResources()
+	{
 		Map<String, Set<Integer>> destinations = new HashMap<>(10);
 		addDestinations(destinations, "/destinations/game_features/altar.tsv");
 		addDestinations(destinations, "/destinations/game_features/bank.tsv");
@@ -131,22 +149,26 @@ public class Destination {
 	 * Skills, Quests, Varbits, and VarPlayers (same TSV format as transports).
 	 * Tiles with no requirement rows behave as {@link DestinationRequirements#EMPTY}.
 	 */
-	public static Map<Integer, DestinationRequirements> loadBankRequirementsFromResources() {
+	public static Map<Integer, DestinationRequirements> loadBankRequirementsFromResources()
+	{
 		Map<Integer, DestinationRequirements> requirements = new HashMap<>();
 		final String path = "/destinations/game_features/bank.tsv";
 		final String DELIM_COLUMN = "\t";
 		final String PREFIX_COMMENT = "#";
 		final String DELIM = " ";
 
-		try {
+		try
+		{
 			String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
-			try (Scanner scanner = new Scanner(s)) {
+			try (Scanner scanner = new Scanner(s))
+			{
 				String headerLine = scanner.nextLine();
 				headerLine = headerLine.startsWith(PREFIX_COMMENT + " ")
 					? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
 				headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
 				String[] headers = headerLine.split(DELIM_COLUMN);
-				for (int i = 0; i < headers.length; i++) {
+				for (int i = 0; i < headers.length; i++)
+				{
 					headers[i] = headers[i].trim();
 				}
 
@@ -155,31 +177,39 @@ public class Destination {
 				int questsCol = indexOf(headers, "Quests");
 				int varbitsCol = indexOf(headers, "Varbits");
 				int varPlayersCol = indexOf(headers, "VarPlayers");
-				if (destCol < 0) {
+				if (destCol < 0)
+				{
 					return requirements;
 				}
 
-				while (scanner.hasNextLine()) {
+				while (scanner.hasNextLine())
+				{
 					String line = scanner.nextLine();
-					if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
+					if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
+					{
 						continue;
 					}
 					String[] fields = line.split(DELIM_COLUMN, -1);
-					if (fields.length <= destCol) {
+					if (fields.length <= destCol)
+					{
 						continue;
 					}
 					String destField = fields[destCol].trim();
 					String[] destinationArray = destField.split(DELIM);
-					if (destinationArray.length != 3) {
+					if (destinationArray.length != 3)
+					{
 						continue;
 					}
 					int packed;
-					try {
+					try
+					{
 						packed = WorldPointUtil.packWorldPoint(
 							Integer.parseInt(destinationArray[0]),
 							Integer.parseInt(destinationArray[1]),
 							Integer.parseInt(destinationArray[2]));
-					} catch (NumberFormatException e) {
+					}
+					catch (NumberFormatException e)
+					{
 						log.error("Invalid destination coordinate in bank.tsv", e);
 						continue;
 					}
@@ -198,29 +228,37 @@ public class Destination {
 					requirements.merge(packed, rowReq, DestinationRequirements::merge);
 				}
 			}
-		} catch (IOException e) {
+		}
+		catch (IOException e)
+		{
 			throw new RuntimeException(e);
 		}
 		return requirements;
 	}
 
-	private static int indexOf(String[] headers, String name) {
-		for (int i = 0; i < headers.length; i++) {
-			if (name.equals(headers[i])) {
+	private static int indexOf(String[] headers, String name)
+	{
+		for (int i = 0; i < headers.length; i++)
+		{
+			if (name.equals(headers[i]))
+			{
 				return i;
 			}
 		}
 		return -1;
 	}
 
-	private static String fieldAt(String[] fields, int col) {
-		if (col < 0 || col >= fields.length) {
+	private static String fieldAt(String[] fields, int col)
+	{
+		if (col < 0 || col >= fields.length)
+		{
 			return "";
 		}
 		return fields[col];
 	}
 
-	private static String blankToNull(String s) {
+	private static String blankToNull(String s)
+	{
 		return s == null || s.isBlank() ? null : s;
 	}
 }

@@ -1,6 +1,7 @@
 package shortestpath;
 
 import java.awt.Color;
+
 import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -11,7 +12,8 @@ import net.runelite.client.config.Units;
 import net.runelite.client.config.Keybind;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
-public interface ShortestPathConfig extends Config {
+public interface ShortestPathConfig extends Config
+{
 	@ConfigSection(
 		name = "Settings",
 		description = "Options for the pathfinding",
@@ -27,7 +29,8 @@ public interface ShortestPathConfig extends Config {
 		position = 1,
 		section = sectionSettings
 	)
-	default boolean avoidWilderness() {
+	default boolean avoidWilderness()
+	{
 		return true;
 	}
 
@@ -39,7 +42,8 @@ public interface ShortestPathConfig extends Config {
 		position = 2,
 		section = sectionSettings
 	)
-	default boolean useAgilityShortcuts() {
+	default boolean useAgilityShortcuts()
+	{
 		return true;
 	}
 
@@ -51,7 +55,8 @@ public interface ShortestPathConfig extends Config {
 		position = 3,
 		section = sectionSettings
 	)
-	default boolean useGrappleShortcuts() {
+	default boolean useGrappleShortcuts()
+	{
 		return false;
 	}
 
@@ -63,7 +68,8 @@ public interface ShortestPathConfig extends Config {
 		position = 4,
 		section = sectionSettings
 	)
-	default boolean useBoats() {
+	default boolean useBoats()
+	{
 		return true;
 	}
 
@@ -74,7 +80,8 @@ public interface ShortestPathConfig extends Config {
 		position = 5,
 		section = sectionSettings
 	)
-	default boolean useCanoes() {
+	default boolean useCanoes()
+	{
 		return false;
 	}
 
@@ -85,7 +92,8 @@ public interface ShortestPathConfig extends Config {
 		position = 6,
 		section = sectionSettings
 	)
-	default boolean useCharterShips() {
+	default boolean useCharterShips()
+	{
 		return false;
 	}
 
@@ -97,7 +105,8 @@ public interface ShortestPathConfig extends Config {
 		position = 7,
 		section = sectionSettings
 	)
-	default boolean useShips() {
+	default boolean useShips()
+	{
 		return true;
 	}
 
@@ -109,7 +118,8 @@ public interface ShortestPathConfig extends Config {
 		position = 8,
 		section = sectionSettings
 	)
-	default boolean useFairyRings() {
+	default boolean useFairyRings()
+	{
 		return true;
 	}
 
@@ -120,7 +130,8 @@ public interface ShortestPathConfig extends Config {
 		position = 9,
 		section = sectionSettings
 	)
-	default boolean useGnomeGliders() {
+	default boolean useGnomeGliders()
+	{
 		return true;
 	}
 
@@ -131,7 +142,8 @@ public interface ShortestPathConfig extends Config {
 		position = 10,
 		section = sectionSettings
 	)
-	default boolean useHotAirBalloons() {
+	default boolean useHotAirBalloons()
+	{
 		return false;
 	}
 
@@ -142,7 +154,8 @@ public interface ShortestPathConfig extends Config {
 		position = 11,
 		section = sectionSettings
 	)
-	default boolean useMagicCarpets() {
+	default boolean useMagicCarpets()
+	{
 		return true;
 	}
 
@@ -154,7 +167,8 @@ public interface ShortestPathConfig extends Config {
 		position = 12,
 		section = sectionSettings
 	)
-	default boolean useMagicMushtrees() {
+	default boolean useMagicMushtrees()
+	{
 		return true;
 	}
 
@@ -166,7 +180,8 @@ public interface ShortestPathConfig extends Config {
 		position = 13,
 		section = sectionSettings
 	)
-	default boolean useMinecarts() {
+	default boolean useMinecarts()
+	{
 		return true;
 	}
 
@@ -177,7 +192,8 @@ public interface ShortestPathConfig extends Config {
 		position = 14,
 		section = sectionSettings
 	)
-	default boolean useQuetzals() {
+	default boolean useQuetzals()
+	{
 		return true;
 	}
 
@@ -188,7 +204,8 @@ public interface ShortestPathConfig extends Config {
 		position = 15,
 		section = sectionSettings
 	)
-	default boolean useSpiritTrees() {
+	default boolean useSpiritTrees()
+	{
 		return true;
 	}
 
@@ -201,7 +218,8 @@ public interface ShortestPathConfig extends Config {
 		position = 16,
 		section = sectionSettings
 	)
-	default TeleportationItem useTeleportationItems() {
+	default TeleportationItem useTeleportationItems()
+	{
 		return TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	}
 
@@ -213,7 +231,8 @@ public interface ShortestPathConfig extends Config {
 		position = 17,
 		section = sectionSettings
 	)
-	default boolean useTeleportationLevers() {
+	default boolean useTeleportationLevers()
+	{
 		return true;
 	}
 
@@ -225,7 +244,8 @@ public interface ShortestPathConfig extends Config {
 		position = 18,
 		section = sectionSettings
 	)
-	default boolean useTeleportationPortals() {
+	default boolean useTeleportationPortals()
+	{
 		return true;
 	}
 
@@ -236,7 +256,8 @@ public interface ShortestPathConfig extends Config {
 		position = 19,
 		section = sectionSettings
 	)
-	default boolean useTeleportationSpells() {
+	default boolean useTeleportationSpells()
+	{
 		return true;
 	}
 
@@ -248,7 +269,8 @@ public interface ShortestPathConfig extends Config {
 		position = 20,
 		section = sectionSettings
 	)
-	default boolean useTeleportationMinigames() {
+	default boolean useTeleportationMinigames()
+	{
 		return true;
 	}
 
@@ -259,7 +281,8 @@ public interface ShortestPathConfig extends Config {
 		position = 21,
 		section = sectionSettings
 	)
-	default boolean useWildernessObelisks() {
+	default boolean useWildernessObelisks()
+	{
 		return true;
 	}
 
@@ -270,7 +293,8 @@ public interface ShortestPathConfig extends Config {
 		position = 22,
 		section = sectionSettings
 	)
-	default boolean useSeasonalTransports() {
+	default boolean useSeasonalTransports()
+	{
 		return false;
 	}
 
@@ -282,7 +306,8 @@ public interface ShortestPathConfig extends Config {
 		position = 23,
 		section = sectionSettings
 	)
-	default boolean includeBankPath() {
+	default boolean includeBankPath()
+	{
 		return false;
 	}
 
@@ -294,7 +319,8 @@ public interface ShortestPathConfig extends Config {
 		position = 24,
 		section = sectionSettings
 	)
-	default int currencyThreshold() {
+	default int currencyThreshold()
+	{
 		return 100000;
 	}
 
@@ -306,7 +332,8 @@ public interface ShortestPathConfig extends Config {
 		position = 25,
 		section = sectionSettings
 	)
-	default boolean cancelInstead() {
+	default boolean cancelInstead()
+	{
 		return false;
 	}
 
@@ -321,7 +348,8 @@ public interface ShortestPathConfig extends Config {
 		position = 26,
 		section = sectionSettings
 	)
-	default int recalculateDistance() {
+	default int recalculateDistance()
+	{
 		return 10;
 	}
 
@@ -336,7 +364,8 @@ public interface ShortestPathConfig extends Config {
 		position = 27,
 		section = sectionSettings
 	)
-	default int reachedDistance() {
+	default int reachedDistance()
+	{
 		return 5;
 	}
 
@@ -352,7 +381,8 @@ public interface ShortestPathConfig extends Config {
 		position = 28,
 		section = sectionSettings
 	)
-	default int unreachableTargetDistance() {
+	default int unreachableTargetDistance()
+	{
 		return 2;
 	}
 
@@ -363,7 +393,8 @@ public interface ShortestPathConfig extends Config {
 		position = 29,
 		section = sectionSettings
 	)
-	default TileCounter showTileCounter() {
+	default TileCounter showTileCounter()
+	{
 		return TileCounter.DISABLED;
 	}
 
@@ -406,7 +437,8 @@ public interface ShortestPathConfig extends Config {
 		position = 32,
 		section = sectionSettings
 	)
-	default boolean showTransportInfo() {
+	default boolean showTransportInfo()
+	{
 		return true;
 	}
 
@@ -417,7 +449,8 @@ public interface ShortestPathConfig extends Config {
 		position = 32,
 		section = sectionSettings
 	)
-	default boolean showBankPickupInfo() {
+	default boolean showBankPickupInfo()
+	{
 		return false;
 	}
 
@@ -437,7 +470,8 @@ public interface ShortestPathConfig extends Config {
 		position = 34,
 		section = sectionPoh
 	)
-	default boolean usePoh() {
+	default boolean usePoh()
+	{
 		return false;
 	}
 
@@ -449,7 +483,8 @@ public interface ShortestPathConfig extends Config {
 		position = 35,
 		section = sectionPoh
 	)
-	default boolean usePohFairyRing() {
+	default boolean usePohFairyRing()
+	{
 		return false;
 	}
 
@@ -461,7 +496,8 @@ public interface ShortestPathConfig extends Config {
 		position = 36,
 		section = sectionPoh
 	)
-	default boolean usePohSpiritTree() {
+	default boolean usePohSpiritTree()
+	{
 		return false;
 	}
 
@@ -472,7 +508,8 @@ public interface ShortestPathConfig extends Config {
 		position = 37,
 		section = sectionPoh
 	)
-	default boolean useTeleportationPortalsPoh() {
+	default boolean useTeleportationPortalsPoh()
+	{
 		return false;
 	}
 
@@ -484,7 +521,8 @@ public interface ShortestPathConfig extends Config {
 		position = 38,
 		section = sectionPoh
 	)
-	default JewelleryBoxTier pohJewelleryBoxTier() {
+	default JewelleryBoxTier pohJewelleryBoxTier()
+	{
 		return JewelleryBoxTier.ORNATE;
 	}
 
@@ -496,7 +534,8 @@ public interface ShortestPathConfig extends Config {
 		position = 39,
 		section = sectionPoh
 	)
-	default boolean usePohMountedItems() {
+	default boolean usePohMountedItems()
+	{
 		return true;
 	}
 
@@ -508,13 +547,14 @@ public interface ShortestPathConfig extends Config {
 		position = 40,
 		section = sectionPoh
 	)
-	default boolean usePohObelisk() {
+	default boolean usePohObelisk()
+	{
 		return false;
 	}
 
 	@ConfigSection(
 		name = "Transport Thresholds",
-		description = "Set customizable thresholds for how much faster a transportation<br>"+
+		description = "Set customizable thresholds for how much faster a transportation<br>" +
 			"method must be to be preferred over other methods",
 		position = 41,
 		closedByDefault = true
@@ -533,7 +573,8 @@ public interface ShortestPathConfig extends Config {
 		position = 42,
 		section = sectionThresholds
 	)
-	default int costAgilityShortcuts() {
+	default int costAgilityShortcuts()
+	{
 		return 0;
 	}
 
@@ -549,7 +590,8 @@ public interface ShortestPathConfig extends Config {
 		position = 43,
 		section = sectionThresholds
 	)
-	default int costGrappleShortcuts() {
+	default int costGrappleShortcuts()
+	{
 		return 0;
 	}
 
@@ -565,7 +607,8 @@ public interface ShortestPathConfig extends Config {
 		position = 44,
 		section = sectionThresholds
 	)
-	default int costBoats() {
+	default int costBoats()
+	{
 		return 0;
 	}
 
@@ -581,7 +624,8 @@ public interface ShortestPathConfig extends Config {
 		position = 45,
 		section = sectionThresholds
 	)
-	default int costCanoes() {
+	default int costCanoes()
+	{
 		return 0;
 	}
 
@@ -597,7 +641,8 @@ public interface ShortestPathConfig extends Config {
 		position = 46,
 		section = sectionThresholds
 	)
-	default int costCharterShips() {
+	default int costCharterShips()
+	{
 		return 0;
 	}
 
@@ -613,7 +658,8 @@ public interface ShortestPathConfig extends Config {
 		position = 47,
 		section = sectionThresholds
 	)
-	default int costShips() {
+	default int costShips()
+	{
 		return 0;
 	}
 
@@ -629,7 +675,8 @@ public interface ShortestPathConfig extends Config {
 		position = 48,
 		section = sectionThresholds
 	)
-	default int costFairyRings() {
+	default int costFairyRings()
+	{
 		return 0;
 	}
 
@@ -645,7 +692,8 @@ public interface ShortestPathConfig extends Config {
 		position = 49,
 		section = sectionThresholds
 	)
-	default int costGnomeGliders() {
+	default int costGnomeGliders()
+	{
 		return 0;
 	}
 
@@ -661,7 +709,8 @@ public interface ShortestPathConfig extends Config {
 		position = 50,
 		section = sectionThresholds
 	)
-	default int costHotAirBalloons() {
+	default int costHotAirBalloons()
+	{
 		return 0;
 	}
 
@@ -677,7 +726,8 @@ public interface ShortestPathConfig extends Config {
 		position = 51,
 		section = sectionThresholds
 	)
-	default int costMagicCarpets() {
+	default int costMagicCarpets()
+	{
 		return 0;
 	}
 
@@ -693,7 +743,8 @@ public interface ShortestPathConfig extends Config {
 		position = 52,
 		section = sectionThresholds
 	)
-	default int costMagicMushtrees() {
+	default int costMagicMushtrees()
+	{
 		return 0;
 	}
 
@@ -709,7 +760,8 @@ public interface ShortestPathConfig extends Config {
 		position = 53,
 		section = sectionThresholds
 	)
-	default int costMinecarts() {
+	default int costMinecarts()
+	{
 		return 0;
 	}
 
@@ -725,7 +777,8 @@ public interface ShortestPathConfig extends Config {
 		position = 54,
 		section = sectionThresholds
 	)
-	default int costQuetzals() {
+	default int costQuetzals()
+	{
 		return 0;
 	}
 
@@ -741,7 +794,8 @@ public interface ShortestPathConfig extends Config {
 		position = 55,
 		section = sectionThresholds
 	)
-	default int costQuetzalWhistle() {
+	default int costQuetzalWhistle()
+	{
 		return 15;
 	}
 
@@ -757,7 +811,8 @@ public interface ShortestPathConfig extends Config {
 		position = 56,
 		section = sectionThresholds
 	)
-	default int costSpiritTrees() {
+	default int costSpiritTrees()
+	{
 		return 0;
 	}
 
@@ -773,7 +828,8 @@ public interface ShortestPathConfig extends Config {
 		position = 57,
 		section = sectionThresholds
 	)
-	default int costNonConsumableTeleportationItems() {
+	default int costNonConsumableTeleportationItems()
+	{
 		return 0;
 	}
 
@@ -789,7 +845,8 @@ public interface ShortestPathConfig extends Config {
 		position = 58,
 		section = sectionThresholds
 	)
-	default int costConsumableTeleportationItems() {
+	default int costConsumableTeleportationItems()
+	{
 		return 0;
 	}
 
@@ -805,7 +862,8 @@ public interface ShortestPathConfig extends Config {
 		position = 59,
 		section = sectionThresholds
 	)
-	default int costTeleportationBoxes() {
+	default int costTeleportationBoxes()
+	{
 		return 0;
 	}
 
@@ -821,7 +879,8 @@ public interface ShortestPathConfig extends Config {
 		position = 60,
 		section = sectionThresholds
 	)
-	default int costTeleportationLevers() {
+	default int costTeleportationLevers()
+	{
 		return 0;
 	}
 
@@ -837,7 +896,8 @@ public interface ShortestPathConfig extends Config {
 		position = 61,
 		section = sectionThresholds
 	)
-	default int costTeleportationPortals() {
+	default int costTeleportationPortals()
+	{
 		return 0;
 	}
 
@@ -853,7 +913,8 @@ public interface ShortestPathConfig extends Config {
 		position = 62,
 		section = sectionThresholds
 	)
-	default int costTeleportationSpells() {
+	default int costTeleportationSpells()
+	{
 		return 0;
 	}
 
@@ -869,7 +930,8 @@ public interface ShortestPathConfig extends Config {
 		position = 63,
 		section = sectionThresholds
 	)
-	default int costTeleportationMinigames() {
+	default int costTeleportationMinigames()
+	{
 		return 0;
 	}
 
@@ -885,7 +947,8 @@ public interface ShortestPathConfig extends Config {
 		position = 64,
 		section = sectionThresholds
 	)
-	default int costWildernessObelisks() {
+	default int costWildernessObelisks()
+	{
 		return 0;
 	}
 
@@ -901,7 +964,8 @@ public interface ShortestPathConfig extends Config {
 		position = 65,
 		section = sectionThresholds
 	)
-	default int costSeasonalTransports() {
+	default int costSeasonalTransports()
+	{
 		return 0;
 	}
 
@@ -919,7 +983,8 @@ public interface ShortestPathConfig extends Config {
 		position = 67,
 		section = sectionDisplay
 	)
-	default boolean drawMap() {
+	default boolean drawMap()
+	{
 		return true;
 	}
 
@@ -930,7 +995,8 @@ public interface ShortestPathConfig extends Config {
 		position = 68,
 		section = sectionDisplay
 	)
-	default boolean drawMinimap() {
+	default boolean drawMinimap()
+	{
 		return true;
 	}
 
@@ -941,7 +1007,8 @@ public interface ShortestPathConfig extends Config {
 		position = 69,
 		section = sectionDisplay
 	)
-	default boolean drawTiles() {
+	default boolean drawTiles()
+	{
 		return true;
 	}
 
@@ -952,7 +1019,8 @@ public interface ShortestPathConfig extends Config {
 		position = 70,
 		section = sectionDisplay
 	)
-	default TileStyle pathStyle() {
+	default TileStyle pathStyle()
+	{
 		return TileStyle.TILES;
 	}
 
@@ -971,7 +1039,8 @@ public interface ShortestPathConfig extends Config {
 		position = 72,
 		section = sectionColours
 	)
-	default Color colourPath() {
+	default Color colourPath()
+	{
 		return new Color(255, 0, 0);
 	}
 
@@ -984,7 +1053,8 @@ public interface ShortestPathConfig extends Config {
 		position = 73,
 		section = sectionColours
 	)
-	default Color colourPathCalculating() {
+	default Color colourPathCalculating()
+	{
 		return new Color(0, 0, 255);
 	}
 
@@ -996,7 +1066,8 @@ public interface ShortestPathConfig extends Config {
 		position = 72,
 		section = sectionColours
 	)
-	default Color colourPathUnreachable() {
+	default Color colourPathUnreachable()
+	{
 		return new Color(200, 40, 240);
 	}
 
@@ -1008,7 +1079,8 @@ public interface ShortestPathConfig extends Config {
 		position = 73,
 		section = sectionColours
 	)
-	default Color colourTransports() {
+	default Color colourTransports()
+	{
 		return new Color(0, 255, 0, 128);
 	}
 
@@ -1020,7 +1092,8 @@ public interface ShortestPathConfig extends Config {
 		position = 74,
 		section = sectionColours
 	)
-	default Color colourCollisionMap() {
+	default Color colourCollisionMap()
+	{
 		return new Color(0, 128, 255, 128);
 	}
 
@@ -1032,7 +1105,8 @@ public interface ShortestPathConfig extends Config {
 		position = 75,
 		section = sectionColours
 	)
-	default Color colourText() {
+	default Color colourText()
+	{
 		return Color.WHITE;
 	}
 
@@ -1043,14 +1117,15 @@ public interface ShortestPathConfig extends Config {
 	)
 	String sectionHotkeys = "sectionHotkeys";
 
-  @ConfigItem(
+	@ConfigItem(
 		keyName = "clearPathHotkey",
 		name = "Clear current path",
 		description = "Hotkey to clear the current path",
-		  position = 78,
+		position = 78,
 		section = sectionHotkeys
 	)
-	default Keybind clearPathHotkey() {
+	default Keybind clearPathHotkey()
+	{
 		return Keybind.NOT_SET;
 	};
 
@@ -1069,7 +1144,8 @@ public interface ShortestPathConfig extends Config {
 		position = 80,
 		section = sectionDebug
 	)
-	default boolean drawTransports() {
+	default boolean drawTransports()
+	{
 		return false;
 	}
 
@@ -1080,7 +1156,8 @@ public interface ShortestPathConfig extends Config {
 		position = 81,
 		section = sectionDebug
 	)
-	default boolean drawCollisionMap() {
+	default boolean drawCollisionMap()
+	{
 		return false;
 	}
 
@@ -1091,7 +1168,8 @@ public interface ShortestPathConfig extends Config {
 		position = 82,
 		section = sectionDebug
 	)
-	default boolean drawDebugPanel() {
+	default boolean drawDebugPanel()
+	{
 		return false;
 	}
 
@@ -1102,7 +1180,8 @@ public interface ShortestPathConfig extends Config {
 		position = 83,
 		section = sectionDebug
 	)
-	default boolean postTransports() {
+	default boolean postTransports()
+	{
 		return false;
 	}
 
@@ -1112,7 +1191,8 @@ public interface ShortestPathConfig extends Config {
 		description = "Text shown on the player tile when the destination cannot be reached",
 		hidden = true
 	)
-	default String unreachableText() {
+	default String unreachableText()
+	{
 		return "Destination could not be reached";
 	}
 
@@ -1122,7 +1202,8 @@ public interface ShortestPathConfig extends Config {
 		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
 		hidden = true
 	)
-	default String builtTeleportationBoxes() {
+	default String builtTeleportationBoxes()
+	{
 		return "";
 	}
 
@@ -1140,7 +1221,8 @@ public interface ShortestPathConfig extends Config {
 		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
 		hidden = true
 	)
-	default String builtTeleportationPortalsPoh() {
+	default String builtTeleportationPortalsPoh()
+	{
 		return "";
 	}
 

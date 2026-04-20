@@ -9,10 +9,12 @@ import org.junit.Test;
 import shortestpath.transport.parser.VarCheckType;
 import shortestpath.transport.parser.VarRequirement;
 
-public class TransportVarPlayerTest {
+public class TransportVarPlayerTest
+{
 
 	@Test
-	public void testEqual() {
+	public void testEqual()
+	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(1, 5);
 		VarRequirement v = VarRequirement.varPlayer(1, 5, VarCheckType.EQUAL);
@@ -22,7 +24,8 @@ public class TransportVarPlayerTest {
 	}
 
 	@Test
-	public void testGreater() {
+	public void testGreater()
+	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(2, 10);
 		VarRequirement v = VarRequirement.varPlayer(2, 5, VarCheckType.GREATER);
@@ -32,7 +35,8 @@ public class TransportVarPlayerTest {
 	}
 
 	@Test
-	public void testSmaller() {
+	public void testSmaller()
+	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(3, 3);
 		VarRequirement v = VarRequirement.varPlayer(3, 5, VarCheckType.SMALLER);
@@ -42,7 +46,8 @@ public class TransportVarPlayerTest {
 	}
 
 	@Test
-	public void testBitSet() {
+	public void testBitSet()
+	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(4, 0b1010);
 		VarRequirement v = VarRequirement.varPlayer(4, 0b0010, VarCheckType.BIT_SET);
@@ -52,7 +57,8 @@ public class TransportVarPlayerTest {
 	}
 
 	@Test
-	public void testCooldownMinutes() {
+	public void testCooldownMinutes()
+	{
 		Map<Integer, Integer> values = new HashMap<>();
 		long nowMinutes = System.currentTimeMillis() / 60000;
 		values.put(5, (int) (nowMinutes - 10));

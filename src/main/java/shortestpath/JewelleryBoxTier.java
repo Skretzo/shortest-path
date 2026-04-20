@@ -5,7 +5,8 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum JewelleryBoxTier {
+public enum JewelleryBoxTier
+{
 	NONE("None"),
 	BASIC("Basic"),
 	FANCY("Fancy"),
@@ -15,13 +16,17 @@ public enum JewelleryBoxTier {
 	private final String type;
 
 	@Override
-	public String toString() {
+	public String toString()
+	{
 		return type;
 	}
 
-	public static JewelleryBoxTier fromType(String type) {
-		for (JewelleryBoxTier tier : values()) {
-			if (tier.type.equals(type)) {
+	public static JewelleryBoxTier fromType(String type)
+	{
+		for (JewelleryBoxTier tier : values())
+		{
+			if (tier.type.equals(type))
+			{
 				return tier;
 			}
 		}

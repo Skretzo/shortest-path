@@ -3,6 +3,7 @@ package shortestpath;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
+
 import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -25,6 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -76,10 +78,11 @@ import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
 @PluginDescriptor(name = "Shortest Path", description = "Draws the shortest path to a chosen destination on the map<br>"
-		+
-		"Right click on the world map or shift right click a tile to use", tags = { "pathfinder", "map", "waypoint",
-				"navigation" })
-public class ShortestPathPlugin extends Plugin {
+	+
+	"Right click on the world map or shift right click a tile to use", tags = {"pathfinder", "map", "waypoint",
+	"navigation"})
+public class ShortestPathPlugin extends Plugin
+{
 	protected static final String CONFIG_GROUP = "shortestpath";
 
 	// POH (Player Owned House) bounds for detecting when path goes through POH
@@ -180,20 +183,25 @@ public class ShortestPathPlugin extends Plugin {
 	private Future<?> pathfinderFuture;
 	private final Object pathfinderMutex = new Object();
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
-	private final KeyListener clearPathKeylistener = new KeyListener() {
+	private final KeyListener clearPathKeylistener = new KeyListener()
+	{
 		@Override
-		public void keyTyped(KeyEvent e) {
+		public void keyTyped(KeyEvent e)
+		{
 		}
 
 		@Override
-		public void keyPressed(KeyEvent e) {
-			if(config.clearPathHotkey().matches(e)){
+		public void keyPressed(KeyEvent e)
+		{
+			if (config.clearPathHotkey().matches(e))
+			{
 				setTarget(WorldPointUtil.UNDEFINED);
 			}
 		}
 
 		@Override
-		public void keyReleased(KeyEvent e) {
+		public void keyReleased(KeyEvent e)
+		{
 		}
 	};
 
@@ -206,16 +214,19 @@ public class ShortestPathPlugin extends Plugin {
 	private boolean fairyRingPanelOpen = false;
 
 	@Provides
-	public ShortestPathConfig provideConfig(ConfigManager configManager) {
+	public ShortestPathConfig provideConfig(ConfigManager configManager)
+	{
 		return configManager.getConfig(ShortestPathConfig.class);
 	}
 
 	@Override
-	protected void startUp() {
+	protected void startUp()
+	{
 		cacheConfigValues();
 
 		pathfinderConfig = new PathfinderConfig(client, config);
-		if (GameState.LOGGED_IN.equals(client.getGameState())) {
+		if (GameState.LOGGED_IN.equals(client.getGameState()))
+		{
 			clientThread.invokeLater(pathfinderConfig::refresh);
 		}
 
@@ -224,7 +235,8 @@ public class ShortestPathPlugin extends Plugin {
 		overlayManager.add(pathMapOverlay);
 		overlayManager.add(pathMapTooltipOverlay);
 
-		if (config.drawDebugPanel()) {
+		if (config.drawDebugPanel())
+		{
 			overlayManager.add(debugOverlayPanel);
 		}
 
@@ -232,14 +244,16 @@ public class ShortestPathPlugin extends Plugin {
 	}
 
 	@Override
-	protected void shutDown() {
+	protected void shutDown()
+	{
 		overlayManager.remove(pathOverlay);
 		overlayManager.remove(pathMinimapOverlay);
 		overlayManager.remove(pathMapOverlay);
 		overlayManager.remove(pathMapTooltipOverlay);
 		overlayManager.remove(debugOverlayPanel);
 
-		if (pathfindingExecutor != null) {
+		if (pathfindingExecutor != null)
+		{
 			pathfindingExecutor.shutdownNow();
 			pathfindingExecutor = null;
 		}
@@ -247,26 +261,35 @@ public class ShortestPathPlugin extends Plugin {
 		keyManager.unregisterKeyListener(clearPathKeylistener);
 	}
 
-	public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered) {
-		synchronized (pathfinderMutex) {
-			if (pathfinder != null) {
+	public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered)
+	{
+		synchronized (pathfinderMutex)
+		{
+			if (pathfinder != null)
+			{
 				pathfinder.cancel();
 				pathfinderFuture.cancel(true);
 			}
 
-			if (pathfindingExecutor == null) {
+			if (pathfindingExecutor == null)
+			{
 				ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
 				pathfindingExecutor = Executors.newSingleThreadExecutor(shortestPathNaming);
 			}
 		}
 
-		getClientThread().invokeLater(() -> {
+		getClientThread().invokeLater(() ->
+		{
 			pathfinderConfig.refresh();
 			pathfinderConfig.filterLocations(ends, canReviveFiltered);
-			synchronized (pathfinderMutex) {
-				if (ends.isEmpty()) {
+			synchronized (pathfinderMutex)
+			{
+				if (ends.isEmpty())
+				{
 					setTarget(WorldPointUtil.UNDEFINED);
-				} else {
+				}
+				else
+				{
 					pathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
 					pathfinderFuture = pathfindingExecutor.submit(pathfinder);
 				}
@@ -274,19 +297,24 @@ public class ShortestPathPlugin extends Plugin {
 		});
 	}
 
-	public void restartPathfinding(int start, Set<Integer> ends) {
+	public void restartPathfinding(int start, Set<Integer> ends)
+	{
 		restartPathfinding(start, ends, true);
 	}
 
-	public boolean isNearPath(int location) {
+	public boolean isNearPath(int location)
+	{
 		List<PathStep> path = null;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			config.recalculateDistance() < 0 || lastLocation == (lastLocation = location)) {
+			config.recalculateDistance() < 0 || lastLocation == (lastLocation = location))
+		{
 			return true;
 		}
 
-		for (int i = 0; i < path.size(); i++) {
-			if (WorldPointUtil.distanceBetween(location, path.get(i).getPackedPosition()) < config.recalculateDistance()) {
+		for (int i = 0; i < path.size(); i++)
+		{
+			if (WorldPointUtil.distanceBetween(location, path.get(i).getPackedPosition()) < config.recalculateDistance())
+			{
 				return true;
 			}
 		}
@@ -294,36 +322,44 @@ public class ShortestPathPlugin extends Plugin {
 		return false;
 	}
 
-	public Color getPathColor() {
-		if (pathfinder == null || !pathfinder.isDone()) {
+	public Color getPathColor()
+	{
+		if (pathfinder == null || !pathfinder.isDone())
+		{
 			return colourPathCalculating;
 		}
 
 		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
+		{
 			return colourPath;
 		}
 
-		if (isPathUnreachable()) {
+		if (isPathUnreachable())
+		{
 			return colourPathUnreachable;
 		}
 
 		return colourPath;
 	}
 
-	public boolean isPathUnreachable() {
-		if (pathfinder == null || !pathfinder.isDone()) {
+	public boolean isPathUnreachable()
+	{
+		if (pathfinder == null || !pathfinder.isDone())
+		{
 			return false;
 		}
 
 		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
+		{
 			return false;
 		}
 
 		int endPoint = path.get(path.size() - 1).getPackedPosition();
 		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : pathfinder.getTargets()) {
+		for (int target : pathfinder.getTargets())
+		{
 			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
 		}
 
@@ -331,36 +367,46 @@ public class ShortestPathPlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onConfigChanged(ConfigChanged event) {
-		if (!CONFIG_GROUP.equals(event.getGroup())) {
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!CONFIG_GROUP.equals(event.getGroup()))
+		{
 			return;
 		}
 
 		cacheConfigValues();
 
-		if ("drawDebugPanel".equals(event.getKey())) {
-			if (config.drawDebugPanel()) {
+		if ("drawDebugPanel".equals(event.getKey()))
+		{
+			if (config.drawDebugPanel())
+			{
 				overlayManager.add(debugOverlayPanel);
-			} else {
+			}
+			else
+			{
 				overlayManager.remove(debugOverlayPanel);
 			}
 			return;
 		}
 
 		// Transport option changed; rerun pathfinding
-		if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find()) {
-			if (pathfinder != null) {
+		if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find())
+		{
+			if (pathfinder != null)
+			{
 				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
 			}
 		}
 	}
 
 	@Subscribe
-	public void onGameStateChanged(GameStateChanged event) {
+	public void onGameStateChanged(GameStateChanged event)
+	{
 		if (pathfinderConfig == null
 			|| !GameState.LOGGING_IN.equals(lastLastGameState)
 			|| !GameState.LOADING.equals(lastLastGameState = lastGameState)
-			|| !GameState.LOGGED_IN.equals(lastGameState = event.getGameState())) {
+			|| !GameState.LOGGED_IN.equals(lastGameState = event.getGameState()))
+		{
 			lastLastGameState = lastGameState;
 			lastGameState = event.getGameState();
 			return;
@@ -370,65 +416,85 @@ public class ShortestPathPlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onPluginMessage(PluginMessage event) {
-		if (!CONFIG_GROUP.equals(event.getNamespace())) {
+	public void onPluginMessage(PluginMessage event)
+	{
+		if (!CONFIG_GROUP.equals(event.getNamespace()))
+		{
 			return;
 		}
 
 		String action = event.getName();
-		if (PLUGIN_MESSAGE_PATH.equals(action)) {
+		if (PLUGIN_MESSAGE_PATH.equals(action))
+		{
 			Map<String, Object> data = event.getData();
 			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
 			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
 			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
 
 			@SuppressWarnings("unchecked")
-			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?,?>) ? ((Map<String, Object>) objConfigOverride) : null;
-			if (configOverride != null && !configOverride.isEmpty()) {
+			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
+			if (configOverride != null && !configOverride.isEmpty())
+			{
 				this.configOverride.clear();
-				for (String key : configOverride.keySet()) {
+				for (String key : configOverride.keySet())
+				{
 					this.configOverride.put(key, configOverride.get(key));
 				}
 				cacheConfigValues();
 			}
 
-			if (objStart == null && objTarget == null) {
+			if (objStart == null && objTarget == null)
+			{
 				return;
 			}
 
 			int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
 				: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
-			if (start == WorldPointUtil.UNDEFINED) {
-				if (client.getLocalPlayer() == null) {
+			if (start == WorldPointUtil.UNDEFINED)
+			{
+				if (client.getLocalPlayer() == null)
+				{
 					return;
 				}
 				start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
 			}
 
 			Set<Integer> targets = new HashSet<>();
-			if (objTarget instanceof Integer) {
+			if (objTarget instanceof Integer)
+			{
 				int packedPoint = (Integer) objTarget;
-				if (packedPoint == WorldPointUtil.UNDEFINED) {
+				if (packedPoint == WorldPointUtil.UNDEFINED)
+				{
 					return;
 				}
 				targets.add(packedPoint);
-			} else if (objTarget instanceof WorldPoint) {
+			}
+			else if (objTarget instanceof WorldPoint)
+			{
 				int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
-				if (packedPoint == WorldPointUtil.UNDEFINED) {
+				if (packedPoint == WorldPointUtil.UNDEFINED)
+				{
 					return;
 				}
 				targets.add(packedPoint);
-			} else if (objTarget instanceof Set<?>) {
+			}
+			else if (objTarget instanceof Set<?>)
+			{
 				@SuppressWarnings("unchecked")
 				Set<Object> objTargets = (Set<Object>) objTarget;
-				for (Object obj : objTargets) {
+				for (Object obj : objTargets)
+				{
 					int packedPoint = WorldPointUtil.UNDEFINED;
-					if (obj instanceof Integer) {
+					if (obj instanceof Integer)
+					{
 						packedPoint = (Integer) obj;
-					} else if (obj instanceof WorldPoint) {
+					}
+					else if (obj instanceof WorldPoint)
+					{
 						packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
 					}
-					if (packedPoint == WorldPointUtil.UNDEFINED) {
+					if (packedPoint == WorldPointUtil.UNDEFINED)
+					{
 						return;
 					}
 					targets.add(packedPoint);
@@ -437,28 +503,35 @@ public class ShortestPathPlugin extends Plugin {
 
 			boolean useOld = targets.isEmpty() && pathfinder != null;
 			restartPathfinding(start, useOld ? pathfinder.getTargets() : targets, useOld);
-		} else if (PLUGIN_MESSAGE_CLEAR.equals(action)) {
+		}
+		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
+		{
 			this.configOverride.clear();
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
 		}
 	}
 
-	public void postPluginMessages() {
-		if (pathfinder == null) {
+	public void postPluginMessages()
+	{
+		if (pathfinder == null)
+		{
 			return;
 		}
-		if (override("postTransports", config.postTransports())) {
+		if (override("postTransports", config.postTransports()))
+		{
 			Map<String, Object> data = new HashMap<>();
 			List<WorldPoint> transportOrigins = new ArrayList<>();
 			List<WorldPoint> transportDestinations = new ArrayList<>();
 			List<String> transportObjectInfos = new ArrayList<>();
 			List<String> transportDisplayInfos = new ArrayList<>();
 			List<PathStep> currentPath = pathfinder.getPath();
-			for (int i = 1; i < currentPath.size(); i++) {
+			for (int i = 1; i < currentPath.size(); i++)
+			{
 				PathStep currentStep = currentPath.get(i - 1);
 				PathStep nextStep = currentPath.get(i);
-				for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+				for (Transport transport : transportsForEdge(currentStep, nextStep))
+				{
 					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
 					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
 					transportObjectInfos.add(transport.getObjectInfo());
@@ -474,33 +547,42 @@ public class ShortestPathPlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onMenuOpened(MenuOpened event) {
+	public void onMenuOpened(MenuOpened event)
+	{
 		lastMenuOpenedPoint = client.getMouseCanvasPosition();
 	}
 
 	@Subscribe
-	public void onGameTick(GameTick tick) {
-		for (int i = 0; i < pendingTasks.size(); i++) {
-			if (pendingTasks.get(i).check(client.getTickCount())) {
+	public void onGameTick(GameTick tick)
+	{
+		for (int i = 0; i < pendingTasks.size(); i++)
+		{
+			if (pendingTasks.get(i).check(client.getTickCount()))
+			{
 				pendingTasks.remove(i--).run();
 			}
 		}
 
 		Player localPlayer = client.getLocalPlayer();
-		if (localPlayer == null || pathfinder == null) {
+		if (localPlayer == null || pathfinder == null)
+		{
 			return;
 		}
 
 		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
-		for (int target : pathfinder.getTargets()) {
-			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance()) {
+		for (int target : pathfinder.getTargets())
+		{
+			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
+			{
 				setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
 		}
 
-		if (!startPointSet && !isNearPath(currentLocation)) {
-			if (config.cancelInstead()) {
+		if (!startPointSet && !isNearPath(currentLocation))
+		{
+			if (config.cancelInstead())
+			{
 				setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
@@ -509,26 +591,35 @@ public class ShortestPathPlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onMenuEntryAdded(MenuEntryAdded event) {
+	public void onMenuEntryAdded(MenuEntryAdded event)
+	{
 		if (client.isKeyPressed(KeyCode.KC_SHIFT)
-			&& event.getType() == MenuAction.WALK.getId()) {
+			&& event.getType() == MenuAction.WALK.getId())
+		{
 			addMenuEntry(event, SET, TARGET, 1);
-			if (pathfinder != null) {
-				if (pathfinder.getTargets().size() >= 1) {
+			if (pathfinder != null)
+			{
+				if (pathfinder.getTargets().size() >= 1)
+				{
 					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
 				}
-				for (int target : pathfinder.getTargets()) {
-					if (target != WorldPointUtil.UNDEFINED) {
+				for (int target : pathfinder.getTargets())
+				{
+					if (target != WorldPointUtil.UNDEFINED)
+					{
 						addMenuEntry(event, SET, START, 1);
 						break;
 					}
 				}
 				int selectedTile = getSelectedWorldPoint();
 				List<PathStep> path = null;
-				if ((path = pathfinder.getPath()) != null) {
-					for (int i = 0; i < path.size(); i++) {
-						if (path.get(i).getPackedPosition() == selectedTile) {
+				if ((path = pathfinder.getPath()) != null)
+				{
+					for (int i = 0; i < path.size(); i++)
+					{
+						if (path.get(i).getPackedPosition() == selectedTile)
+						{
 							addMenuEntry(event, CLEAR, PATH, 1);
 							break;
 						}
@@ -539,25 +630,32 @@ public class ShortestPathPlugin extends Plugin {
 
 		final Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
 
-		if (map != null) {
+		if (map != null)
+		{
 			if (map.getBounds().contains(
 				client.getMouseCanvasPosition().getX(),
-				client.getMouseCanvasPosition().getY())) {
+				client.getMouseCanvasPosition().getY()))
+			{
 				addMenuEntry(event, SET, TARGET, 0);
-				if (pathfinder != null) {
-					if (pathfinder.getTargets().size() >= 1) {
+				if (pathfinder != null)
+				{
+					if (pathfinder.getTargets().size() >= 1)
+					{
 						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
 					}
-					for (int target : pathfinder.getTargets()) {
-						if (target != WorldPointUtil.UNDEFINED) {
+					for (int target : pathfinder.getTargets())
+					{
+						if (target != WorldPointUtil.UNDEFINED)
+						{
 							addMenuEntry(event, SET, START, 0);
 							addMenuEntry(event, CLEAR, PATH, 0);
 						}
 					}
 				}
 			}
-			if (event.getOption().equals(FLASH_ICONS) && pathfinderConfig.hasDestination(simplify(event.getTarget()))) {
+			if (event.getOption().equals(FLASH_ICONS) && pathfinderConfig.hasDestination(simplify(event.getTarget())))
+			{
 				addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
 			}
 		}
@@ -567,35 +665,43 @@ public class ShortestPathPlugin extends Plugin {
 		if (minimap != null && pathfinder != null
 			&& minimap.contains(
 				client.getMouseCanvasPosition().getX(),
-				client.getMouseCanvasPosition().getY())) {
+				client.getMouseCanvasPosition().getY()))
+		{
 			addMenuEntry(event, CLEAR, PATH, 0);
 		}
 
 		if (minimap != null && pathfinder != null
 			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
-			|| "Close Floating panel".equals(Text.removeTags(event.getOption())))) {
+			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
+		{
 			addMenuEntry(event, CLEAR, PATH, 1);
 		}
 	}
 
 	@Subscribe
-	public void onItemContainerChanged(ItemContainerChanged event) {
-		if (event.getContainerId() != InventoryID.BANK) {
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (event.getContainerId() != InventoryID.BANK)
+		{
 			return;
 		}
 		pathfinderConfig.bank = event.getItemContainer();
 	}
 
 	@Subscribe
-	public void onWidgetLoaded(WidgetLoaded event) {
-		if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG) {
+	public void onWidgetLoaded(WidgetLoaded event)
+	{
+		if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
+		{
 			fairyRingPanelOpen = true;
 		}
 
 		// Populate spirit tree cache, but only once.
 		// The values here almost never change, we only need to load it once.
-		if (pathfinderConfig.availableSpiritTrees == null) {
-			switch (event.getGroupId()) {
+		if (pathfinderConfig.availableSpiritTrees == null)
+		{
+			switch (event.getGroupId())
+			{
 				case InterfaceID.MENU:
 					clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
 					break;
@@ -607,15 +713,19 @@ public class ShortestPathPlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onWidgetClosed(WidgetClosed event) {
-		if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG) {
+	public void onWidgetClosed(WidgetClosed event)
+	{
+		if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
+		{
 			fairyRingPanelOpen = false;
 		}
 	}
 
 	@Subscribe
-	public void onPostClientTick(PostClientTick event) {
-		if (fairyRingPanelOpen && pathfinder != null) {
+	public void onPostClientTick(PostClientTick event)
+	{
+		if (fairyRingPanelOpen && pathfinder != null)
+		{
 			scrollFairyRingPanel();
 		}
 	}
@@ -623,23 +733,29 @@ public class ShortestPathPlugin extends Plugin {
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 
-	private void parseSpiritTreeWidget(boolean useNewMenu) {
+	private void parseSpiritTreeWidget(boolean useNewMenu)
+	{
 		// Referencing
 		// https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
 
 		Widget container;
-		if (useNewMenu) {
+		if (useNewMenu)
+		{
 			container = client.getWidget(InterfaceID.MENU_NEW, 9);
-		} else {
+		}
+else
+		{
 			container = client.getWidget(InterfaceID.MENU, 3);
 		}
 
-		if (container == null) {
+		if (container == null)
+		{
 			return;
 		}
 
 		Widget[] children = container.getDynamicChildren();
-		if (children == null || children.length == 0) {
+		if (children == null || children.length == 0)
+		{
 			return;
 		}
 
@@ -648,7 +764,8 @@ public class ShortestPathPlugin extends Plugin {
 		// Expected (old): "<col=735a28>1</col>: Tree Gnome Village" (length 39)
 		// Expected (new): "<col=ffffff>1</col>: Tree Gnome Village" (length 39)
 		String firstText = children[0].getText();
-		if (firstText == null || firstText.length() != 39) {
+		if (firstText == null || firstText.length() != 39)
+		{
 			return;
 		}
 
@@ -656,14 +773,17 @@ public class ShortestPathPlugin extends Plugin {
 
 		Set<String> available = new HashSet<>();
 
-		for (Widget child : children) {
+		for (Widget child : children)
+		{
 			Matcher matcher = pattern.matcher(child.getText());
-			if (!matcher.matches()) {
+			if (!matcher.matches())
+			{
 				continue;
 			}
 
 			// Group 2 is the disabled color tag; if present, the tree is unavailable
-			if (matcher.group(2) != null) {
+			if (matcher.group(2) != null)
+			{
 				continue;
 			}
 
@@ -673,43 +793,54 @@ public class ShortestPathPlugin extends Plugin {
 
 		pathfinderConfig.availableSpiritTrees = available;
 
-		if (pathfinder != null) {
+		if (pathfinder != null)
+		{
 			restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
 		}
 	}
 
-	private void scrollFairyRingPanel() {
+	private void scrollFairyRingPanel()
+	{
 		List<PathStep> path = null;
 
 		if (pathfinder == null
-			|| (path = pathfinder.getPath()) == null) {
+			|| (path = pathfinder.getPath()) == null)
+		{
 			return;
 		}
 
 		String fairyRingCode = null;
 
-		for (int i = 1; i < path.size(); i++) {
+		for (int i = 1; i < path.size(); i++)
+		{
 			PathStep currentStep = path.get(i - 1);
 			PathStep nextStep = path.get(i);
-			for (Transport transport : transportsForEdge(currentStep, nextStep)) {
-				if (TransportType.FAIRY_RING.equals(transport.getType())) {
+			for (Transport transport : transportsForEdge(currentStep, nextStep))
+			{
+				if (TransportType.FAIRY_RING.equals(transport.getType()))
+				{
 					fairyRingCode = transport.getDisplayInfo();
 				}
 			}
 		}
-		if (fairyRingCode == null) {
+		if (fairyRingCode == null)
+		{
 			return;
 		}
 
 		Widget codeWidget = null;
 
 		Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
-		if (favesPanel != null) {
-			for (Widget widget : favesPanel.getStaticChildren()) {
-				if (widget != null) {
+		if (favesPanel != null)
+		{
+			for (Widget widget : favesPanel.getStaticChildren())
+			{
+				if (widget != null)
+				{
 					String widgetText = widget.getText();
 					if (widgetText != null && (fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText))) {
+						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
+					{
 						codeWidget = widget;
 						break;
 					}
@@ -718,12 +849,16 @@ public class ShortestPathPlugin extends Plugin {
 		}
 
 		Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
-		if (contentsList != null && codeWidget == null) {
-			for (Widget widget : contentsList.getDynamicChildren()) {
-				if (widget != null) {
+		if (contentsList != null && codeWidget == null)
+		{
+			for (Widget widget : contentsList.getDynamicChildren())
+			{
+				if (widget != null)
+				{
 					String widgetText = widget.getText();
 					if (widgetText != null && (fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText))) {
+						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
+					{
 						codeWidget = widget;
 						break;
 					}
@@ -731,17 +866,20 @@ public class ShortestPathPlugin extends Plugin {
 			}
 		}
 
-		if (codeWidget == null) {
+		if (codeWidget == null)
+		{
 			return;
 		}
 
 		codeWidget.setTextColor(0x00FF00);
 		String codeWidgetText = codeWidget.getText();
-		if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)")) {
+		if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)"))
+		{
 			codeWidget.setText("(Shortest Path) " + codeWidgetText);
 		}
 
-		if (contentsList == null) {
+		if (contentsList == null)
+		{
 			return;
 		}
 
@@ -761,13 +899,14 @@ public class ShortestPathPlugin extends Plugin {
 		);
 	}
 
-	public CollisionMap getMap() {
+	public CollisionMap getMap()
+	{
 		return pathfinderConfig.getMap();
 	}
 
 	/**
 	 * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
-	 *
+	 * <p>
 	 * It collapses banked/unbanked transport availability into a single view via
 	 * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
 	 *
@@ -775,7 +914,8 @@ public class ShortestPathPlugin extends Plugin {
 	 * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
 	 * path's PathStep state instead.
 	 */
-	public Map<Integer, Set<Transport>> getTransports() {
+	public Map<Integer, Set<Transport>> getTransports()
+	{
 		return pathfinderConfig.getTransports();
 	}
 
@@ -802,8 +942,10 @@ public class ShortestPathPlugin extends Plugin {
 	*  Note that this function also performs filtering by the transport target, so callers of this
 	*  function can directly iterate over the returned transports.
 	*/
-	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep) {
-		if (currentStep == null || nextStep == null) {
+	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
+	{
+		if (currentStep == null || nextStep == null)
+		{
 			return Set.of();
 		}
 		boolean bankVisited = currentStep.isBankVisited()
@@ -821,18 +963,23 @@ public class ShortestPathPlugin extends Plugin {
 		// Also suppress them when the edge distance is within the shared type's radius threshold,
 		// which occurs when the path is simply walking to a landing site (not teleporting to it).
 		Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
-		for (Transport t : stepTransports) {
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null) {
+		for (Transport t : stepTransports)
+		{
+			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null)
+			{
 				localTypes.add(t.getType());
 			}
 		}
 		int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
-		stepTransports.removeIf(t -> {
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null) {
+		stepTransports.removeIf(t ->
+			{
+			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null)
+			{
 				return false; // keep local transports
 			}
 			TransportType sharedType = t.getType().sharesDestinationsWith();
-			if (sharedType == null) {
+			if (sharedType == null)
+			{
 				return false; // not a shared-destination teleport, keep it
 			}
 			// Suppress if a local transport of the shared type is present on this edge (Issue 1),
@@ -844,8 +991,10 @@ public class ShortestPathPlugin extends Plugin {
 		return stepTransports;
 	}
 
-	public PathStep nextPathStep(List<PathStep> path, int index) {
-		if (path == null || index < 0 || index + 1 >= path.size()) {
+	public PathStep nextPathStep(List<PathStep> path, int index)
+	{
+		if (path == null || index < 0 || index + 1 >= path.size())
+		{
 			return null;
 		}
 		return path.get(index + 1);
@@ -857,7 +1006,8 @@ public class ShortestPathPlugin extends Plugin {
 	 * @param y The world Y coordinate
 	 * @return true if inside POH, false otherwise
 	 */
-	public static boolean isInsidePoh(int x, int y) {
+	public static boolean isInsidePoh(int x, int y)
+	{
 		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
 	}
 
@@ -870,8 +1020,10 @@ public class ShortestPathPlugin extends Plugin {
 	 * @param currentIndex The current index in the path
 	 * @return The display info of the POH exit transport, or null if not applicable
 	 */
-	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex) {
-		if (path == null || currentIndex < 0) {
+	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
+	{
+		if (path == null || currentIndex < 0)
+		{
 			return null;
 		}
 
@@ -879,7 +1031,8 @@ public class ShortestPathPlugin extends Plugin {
 		int destY = WorldPointUtil.unpackWorldY(destination);
 
 		// Check if destination is inside POH
-		if (!isInsidePoh(destX, destY)) {
+		if (!isInsidePoh(destX, destY))
+		{
 			return null;
 		}
 
@@ -887,7 +1040,8 @@ public class ShortestPathPlugin extends Plugin {
 		String immediateExitInfo = null;
 
 		// Look ahead in the path to find the next transport that exits POH
-		for (int i = currentIndex + 1; i < path.size() - 1; i++) {
+		for (int i = currentIndex + 1; i < path.size() - 1; i++)
+		{
 			int stepLocation = path.get(i).getPackedPosition();
 			int nextLocation = path.get(i + 1).getPackedPosition();
 
@@ -900,36 +1054,59 @@ public class ShortestPathPlugin extends Plugin {
 			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
 			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
 
-			if (stepInsidePoh && !nextInsidePoh) {
+			if (stepInsidePoh && !nextInsidePoh)
+			{
 				// Found the exit transport - get its display info using bank-aware lookup
 				PathStep currentStep = path.get(i);
 				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+				for (Transport transport : transportsForEdge(currentStep, nextStep))
+				{
 					String exitInfo = transport.getDisplayInfo();
-					if (exitInfo != null && !exitInfo.isEmpty()) {
+					if (exitInfo != null && !exitInfo.isEmpty())
+					{
 						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
+						if (TransportType.TELEPORTATION_BOX.equals(exitType))
+						{
 							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory")) {
+							if (objInfo != null && objInfo.contains("Amulet of Glory"))
+							{
 								immediateExitInfo = "Mounted Glory: " + exitInfo;
-							} else if (objInfo != null && objInfo.contains("Mythical cape")) {
+							}
+							else if (objInfo != null && objInfo.contains("Mythical cape"))
+							{
 								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							} else if (objInfo != null && objInfo.contains("Xeric's Talisman")) {
+							}
+							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
+							{
 								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							} else if (objInfo != null && objInfo.contains("Digsite")) {
+							}
+							else if (objInfo != null && objInfo.contains("Digsite"))
+							{
 								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							} else {
+							}
+							else
+							{
 								immediateExitInfo = "Jewelry Box: " + exitInfo;
 							}
-						} else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) {
+						}
+						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
+						{
 							immediateExitInfo = "Nexus: " + exitInfo;
-						} else if (TransportType.FAIRY_RING.equals(exitType)) {
+						}
+						else if (TransportType.FAIRY_RING.equals(exitType))
+						{
 							immediateExitInfo = "Fairy Ring " + exitInfo;
-						} else if (TransportType.SPIRIT_TREE.equals(exitType)) {
+						}
+						else if (TransportType.SPIRIT_TREE.equals(exitType))
+						{
 							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						} else if (TransportType.WILDERNESS_OBELISK.equals(exitType)) {
+						}
+						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
+						{
 							immediateExitInfo = "Obelisk: " + exitInfo;
-						} else {
+						}
+						else
+						{
 							immediateExitInfo = exitInfo;
 						}
 					}
@@ -939,7 +1116,8 @@ public class ShortestPathPlugin extends Plugin {
 			}
 
 			// If we've left POH without finding a transport, stop looking
-			if (!stepInsidePoh) {
+			if (!stepInsidePoh)
+			{
 				break;
 			}
 		}
@@ -947,10 +1125,13 @@ public class ShortestPathPlugin extends Plugin {
 		return immediateExitInfo;
 	}
 
-	public static boolean override(String configOverrideKey, boolean defaultValue) {
-		if (!configOverride.isEmpty()) {
+	public static boolean override(String configOverrideKey, boolean defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
 			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Boolean) {
+			if (value instanceof Boolean)
+			{
 				return (boolean) value;
 			}
 		}
@@ -960,7 +1141,8 @@ public class ShortestPathPlugin extends Plugin {
 	/**
 	 * Override for TransportType enabled state using the config key name stored in the enum.
 	 */
-	public static boolean override(TransportType type, boolean defaultValue) {
+	public static boolean override(TransportType type, boolean defaultValue)
+	{
 		String key = type.getEnabledKey();
 		return key != null ? override(key, defaultValue) : defaultValue;
 	}
@@ -968,37 +1150,48 @@ public class ShortestPathPlugin extends Plugin {
 	/**
 	 * Override for TransportType cost threshold using the config key name stored in the enum.
 	 */
-	public static int override(TransportType type, int defaultValue) {
+	public static int override(TransportType type, int defaultValue)
+	{
 		String key = type.getCostKey();
 		return key != null ? override(key, defaultValue) : defaultValue;
 	}
 
-	private Color override(String configOverrideKey, Color defaultValue) {
-		if (!configOverride.isEmpty()) {
+	private Color override(String configOverrideKey, Color defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
 			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Color) {
+			if (value instanceof Color)
+			{
 				return (Color) value;
 			}
 		}
 		return defaultValue;
 	}
 
-	public static int override(String configOverrideKey, int defaultValue) {
-		if (!configOverride.isEmpty()) {
+	public static int override(String configOverrideKey, int defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
 			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Integer) {
+			if (value instanceof Integer)
+			{
 				return (int) value;
 			}
 		}
 		return defaultValue;
 	}
 
-	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue) {
-		if (!configOverride.isEmpty()) {
+	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
 			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String) {
+			if (value instanceof String)
+			{
 				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
-				if (teleportationItem != null) {
+				if (teleportationItem != null)
+				{
 					return teleportationItem;
 				}
 			}
@@ -1006,12 +1199,16 @@ public class ShortestPathPlugin extends Plugin {
 		return defaultValue;
 	}
 
-	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue) {
-		if (!configOverride.isEmpty()) {
+	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
 			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String) {
+			if (value instanceof String)
+			{
 				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-				if (tier != null) {
+				if (tier != null)
+				{
 					return tier;
 				}
 			}
@@ -1019,12 +1216,16 @@ public class ShortestPathPlugin extends Plugin {
 		return defaultValue;
 	}
 
-	private TileCounter override(String configOverrideKey, TileCounter defaultValue) {
-		if (!configOverride.isEmpty()) {
+	private TileCounter override(String configOverrideKey, TileCounter defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
 			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String) {
+			if (value instanceof String)
+			{
 				TileCounter tileCounter = TileCounter.fromType((String) value);
-				if (tileCounter != null) {
+				if (tileCounter != null)
+				{
 					return tileCounter;
 				}
 			}
@@ -1032,12 +1233,16 @@ public class ShortestPathPlugin extends Plugin {
 		return defaultValue;
 	}
 
-	private TileStyle override(String configOverrideKey, TileStyle defaultValue) {
-		if (!configOverride.isEmpty()) {
+	private TileStyle override(String configOverrideKey, TileStyle defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
 			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String) {
+			if (value instanceof String)
+			{
 				TileStyle tileStyle = TileStyle.fromType((String) value);
-				if (tileStyle != null) {
+				if (tileStyle != null)
+				{
 					return tileStyle;
 				}
 			}
@@ -1045,7 +1250,8 @@ public class ShortestPathPlugin extends Plugin {
 		return defaultValue;
 	}
 
-	private void cacheConfigValues() {
+	private void cacheConfigValues()
+	{
 		drawCollisionMap = override("drawCollisionMap", config.drawCollisionMap());
 		drawMap = override("drawMap", config.drawMap());
 		drawMinimap = override("drawMinimap", config.drawMinimap());
@@ -1069,34 +1275,50 @@ public class ShortestPathPlugin extends Plugin {
 		pathStyle = override("pathStyle", config.pathStyle());
 	}
 
-	private String simplify(String text) {
+	private String simplify(String text)
+	{
 		return Text.removeTags(text).toLowerCase()
 			.replaceAll("[^a-zA-Z ]", "")
 			.replaceAll("[ ]", "_")
 			.replace("__", "_");
 	}
 
-	private void onMenuOptionClicked(MenuEntry entry) {
-		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET)) {
+	private void onMenuOptionClicked(MenuEntry entry)
+	{
+		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
+		{
 			setTarget(getSelectedWorldPoint());
-		} else if (entry.getOption().equals(SET) && pathfinder != null && entry.getTarget().equals(TARGET +
-			ColorUtil.wrapWithColorTag(" " + (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET))) {
+		}
+		else if (entry.getOption().equals(SET) && pathfinder != null && entry.getTarget().equals(TARGET +
+			ColorUtil.wrapWithColorTag(" " + (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET)))
+		{
 			setTarget(getSelectedWorldPoint(), true);
-		} else if (entry.getOption().equals(SET) && entry.getTarget().equals(START)) {
+		}
+		else if (entry.getOption().equals(SET) && entry.getTarget().equals(START))
+		{
 			setStart(getSelectedWorldPoint());
-		} else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) {
+		}
+		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
+		{
 			setTarget(WorldPointUtil.UNDEFINED);
-		} else if (entry.getOption().equals(FIND_CLOSEST)) {
+		}
+		else if (entry.getOption().equals(FIND_CLOSEST))
+		{
 			setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
 		}
 	}
 
-	private int getSelectedWorldPoint() {
-		if (client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null) {
-			if (client.getSelectedSceneTile() != null) {
+	private int getSelectedWorldPoint()
+	{
+		if (client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null)
+		{
+			if (client.getSelectedSceneTile() != null)
+			{
 				return WorldPointUtil.fromLocalInstance(client, client.getSelectedSceneTile().getLocalLocation());
 			}
-		} else {
+		}
+		else
+		{
 			return client.isMenuOpen()
 				? calculateMapPoint(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
 				: calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
@@ -1104,22 +1326,29 @@ public class ShortestPathPlugin extends Plugin {
 		return WorldPointUtil.UNDEFINED;
 	}
 
-	private void setTarget(int target) {
+	private void setTarget(int target)
+	{
 		setTarget(target, false);
 	}
 
-	private void setTarget(int target, boolean append) {
+	private void setTarget(int target, boolean append)
+	{
 		Set<Integer> targets = new HashSet<>();
-		if (target != WorldPointUtil.UNDEFINED) {
+		if (target != WorldPointUtil.UNDEFINED)
+		{
 			targets.add(target);
 		}
 		setTargets(targets, append);
 	}
 
-	private void setTargets(Set<Integer> targets, boolean append) {
-		if (targets == null || targets.isEmpty()) {
-			synchronized (pathfinderMutex) {
-				if (pathfinder != null) {
+	private void setTargets(Set<Integer> targets, boolean append)
+	{
+		if (targets == null || targets.isEmpty())
+		{
+			synchronized (pathfinderMutex)
+			{
+				if (pathfinder != null)
+				{
 					pathfinder.cancel();
 				}
 				pathfinder = null;
@@ -1128,13 +1357,17 @@ public class ShortestPathPlugin extends Plugin {
 			worldMapPointManager.removeIf(x -> x == marker);
 			marker = null;
 			startPointSet = false;
-		} else {
+		}
+		else
+		{
 			Player localPlayer = client.getLocalPlayer();
-			if (!startPointSet && localPlayer == null) {
+			if (!startPointSet && localPlayer == null)
+			{
 				return;
 			}
 			worldMapPointManager.removeIf(x -> x == marker);
-			if (targets.size() == 1) {
+			if (targets.size() == 1)
+			{
 				marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(targets.iterator().next()), MARKER_IMAGE);
 				marker.setName("Target");
 				marker.setTarget(marker.getWorldPoint());
@@ -1144,26 +1377,31 @@ public class ShortestPathPlugin extends Plugin {
 
 			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
 			lastLocation = start;
-			if (startPointSet && pathfinder != null) {
+			if (startPointSet && pathfinder != null)
+			{
 				start = pathfinder.getStart();
 			}
 			Set<Integer> destinations = new HashSet<>(targets);
-			if (pathfinder != null && append) {
+			if (pathfinder != null && append)
+			{
 				destinations.addAll(pathfinder.getTargets());
 			}
 			restartPathfinding(start, destinations, append);
 		}
 	}
 
-	private void setStart(int start) {
-		if (pathfinder == null) {
+	private void setStart(int start)
+	{
+		if (pathfinder == null)
+		{
 			return;
 		}
 		startPointSet = true;
 		restartPathfinding(start, pathfinder.getTargets());
 	}
 
-	public int calculateMapPoint(int pointX, int pointY) {
+	public int calculateMapPoint(int pointX, int pointY)
+	{
 		WorldMap worldMap = client.getWorldMap();
 		float zoom = worldMap.getWorldMapZoom();
 		int mapPoint = WorldPointUtil.packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
@@ -1171,7 +1409,8 @@ public class ShortestPathPlugin extends Plugin {
 		int middleY = mapWorldPointToGraphicsPointY(mapPoint);
 
 		if (pointX == Integer.MIN_VALUE || pointY == Integer.MIN_VALUE ||
-			middleX == Integer.MIN_VALUE || middleY == Integer.MIN_VALUE) {
+			middleX == Integer.MIN_VALUE || middleY == Integer.MIN_VALUE)
+		{
 			return WorldPointUtil.UNDEFINED;
 		}
 
@@ -1181,13 +1420,15 @@ public class ShortestPathPlugin extends Plugin {
 		return WorldPointUtil.dxdy(mapPoint, dx, dy);
 	}
 
-	public int mapWorldPointToGraphicsPointX(int packedWorldPoint) {
+	public int mapWorldPointToGraphicsPointX(int packedWorldPoint)
+	{
 		WorldMap worldMap = client.getWorldMap();
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
 		Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
-		if (map != null) {
+		if (map != null)
+		{
 			Rectangle worldMapRect = map.getBounds();
 
 			int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
@@ -1205,13 +1446,15 @@ public class ShortestPathPlugin extends Plugin {
 		return Integer.MIN_VALUE;
 	}
 
-	public int mapWorldPointToGraphicsPointY(int packedWorldPoint) {
+	public int mapWorldPointToGraphicsPointY(int packedWorldPoint)
+	{
 		WorldMap worldMap = client.getWorldMap();
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
 		Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
-		if (map != null) {
+		if (map != null)
+		{
 			Rectangle worldMapRect = map.getBounds();
 
 			int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
@@ -1231,10 +1474,12 @@ public class ShortestPathPlugin extends Plugin {
 		return Integer.MIN_VALUE;
 	}
 
-	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
+	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
+	{
 		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenuEntries()));
 
-		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target))) {
+		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
+		{
 			return;
 		}
 
@@ -1248,9 +1493,12 @@ public class ShortestPathPlugin extends Plugin {
 			.onClick(this::onMenuOptionClicked);
 	}
 
-	private Widget getMinimapDrawWidget() {
-		if (client.isResized()) {
-			if (client.getVarbitValue(Varbits.SIDE_PANELS) == 1) {
+	private Widget getMinimapDrawWidget()
+	{
+		if (client.isResized())
+		{
+			if (client.getVarbitValue(Varbits.SIDE_PANELS) == 1)
+			{
 				return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_BOTTOM_LINE_MINIMAP_DRAW_AREA);
 			}
 			return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_MINIMAP_DRAW_AREA);
@@ -1258,10 +1506,12 @@ public class ShortestPathPlugin extends Plugin {
 		return client.getWidget(ComponentID.FIXED_VIEWPORT_MINIMAP_DRAW_AREA);
 	}
 
-	private Shape getMinimapClipAreaSimple() {
+	private Shape getMinimapClipAreaSimple()
+	{
 		Widget minimapDrawArea = getMinimapDrawWidget();
 
-		if (minimapDrawArea == null || minimapDrawArea.isHidden()) {
+		if (minimapDrawArea == null || minimapDrawArea.isHidden())
+		{
 			return null;
 		}
 
@@ -1270,69 +1520,85 @@ public class ShortestPathPlugin extends Plugin {
 		return new Ellipse2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
 	}
 
-	public Shape getMinimapClipArea() {
+	public Shape getMinimapClipArea()
+	{
 		Widget minimapWidget = getMinimapDrawWidget();
 
-		if (minimapWidget == null || minimapWidget.isHidden() || !minimapRectangle.equals(minimapRectangle = minimapWidget.getBounds())) {
+		if (minimapWidget == null || minimapWidget.isHidden() || !minimapRectangle.equals(minimapRectangle = minimapWidget.getBounds()))
+		{
 			minimapClipFixed = null;
 			minimapClipResizeable = null;
 			minimapSpriteFixed = null;
 			minimapSpriteResizeable = null;
 		}
 
-		if (minimapWidget == null || minimapWidget.isHidden()) {
+		if (minimapWidget == null || minimapWidget.isHidden())
+		{
 			return null;
 		}
 
-		if (client.isResized()) {
-			if (minimapClipResizeable != null) {
+		if (client.isResized())
+		{
+			if (minimapClipResizeable != null)
+			{
 				return minimapClipResizeable;
 			}
-			if (minimapSpriteResizeable == null) {
+			if (minimapSpriteResizeable == null)
+			{
 				minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZEABLE_MODE_MINIMAP_ALPHA_MASK, 0);
 			}
-			if (minimapSpriteResizeable != null) {
+			if (minimapSpriteResizeable != null)
+			{
 				minimapClipResizeable = bufferedImageToPolygon(minimapSpriteResizeable);
 				return minimapClipResizeable;
 			}
 			return getMinimapClipAreaSimple();
 		}
-		if (minimapClipFixed != null) {
+		if (minimapClipFixed != null)
+		{
 			return minimapClipFixed;
 		}
-		if (minimapSpriteFixed == null) {
+		if (minimapSpriteFixed == null)
+		{
 			minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MODE_MINIMAP_ALPHA_MASK, 0);
 		}
-		if (minimapSpriteFixed != null) {
+		if (minimapSpriteFixed != null)
+		{
 			minimapClipFixed = bufferedImageToPolygon(minimapSpriteFixed);
 			return minimapClipFixed;
 		}
 		return getMinimapClipAreaSimple();
 	}
 
-	private Polygon bufferedImageToPolygon(BufferedImage image) {
+	private Polygon bufferedImageToPolygon(BufferedImage image)
+	{
 		Color outsideColour = null;
 		Color previousColour;
 		final int width = image.getWidth();
 		final int height = image.getHeight();
 		List<java.awt.Point> points = new ArrayList<>();
-		for (int y = 0; y < height; y++) {
+		for (int y = 0; y < height; y++)
+		{
 			previousColour = outsideColour;
-			for (int x = 0; x < width; x++) {
+			for (int x = 0; x < width; x++)
+			{
 				int rgb = image.getRGB(x, y);
 				int a = (rgb & 0xff000000) >>> 24;
 				int r = (rgb & 0x00ff0000) >> 16;
 				int g = (rgb & 0x0000ff00) >> 8;
 				int b = (rgb & 0x000000ff) >> 0;
 				Color colour = new Color(r, g, b, a);
-				if (x == 0 && y == 0) {
+				if (x == 0 && y == 0)
+				{
 					outsideColour = colour;
 					previousColour = colour;
 				}
-				if (!colour.equals(outsideColour) && previousColour.equals(outsideColour)) {
+				if (!colour.equals(outsideColour) && previousColour.equals(outsideColour))
+				{
 					points.add(new java.awt.Point(x, y));
 				}
-				if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour)) {
+				if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour))
+				{
 					points.add(0, new java.awt.Point(x, y));
 				}
 				previousColour = colour;
@@ -1341,7 +1607,8 @@ public class ShortestPathPlugin extends Plugin {
 		int offsetX = minimapRectangle.x;
 		int offsetY = minimapRectangle.y;
 		Polygon polygon = new Polygon();
-		for (java.awt.Point point : points) {
+		for (java.awt.Point point : points)
+		{
 			polygon.addPoint(point.x + offsetX, point.y + offsetY);
 		}
 		return polygon;

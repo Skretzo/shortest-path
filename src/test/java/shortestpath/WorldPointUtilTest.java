@@ -18,10 +18,12 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for {@link WorldPointUtil}.
  */
-public class WorldPointUtilTest {
+public class WorldPointUtilTest
+{
 
 	@Test
-	public void packAndUnpackRoundTrip() {
+	public void packAndUnpackRoundTrip()
+	{
 		WorldPoint p = new WorldPoint(1234, 5678, 2);
 		int packed = WorldPointUtil.packWorldPoint(p);
 		assertEquals(1234, WorldPointUtil.unpackWorldX(packed));
@@ -33,7 +35,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void packMasksHighBits() {
+	public void packMasksHighBits()
+	{
 		int x = 40000; // exceeds 15 bits
 		int y = 50000; // exceeds 15 bits
 		int plane = 7; // exceeds 2 bits
@@ -44,7 +47,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void dxdyOffsetsCorrectly() {
+	public void dxdyOffsetsCorrectly()
+	{
 		int base = WorldPointUtil.packWorldPoint(3200, 3200, 1);
 		int moved = WorldPointUtil.dxdy(base, 5, -7);
 		assertEquals(3200 + 5, WorldPointUtil.unpackWorldX(moved));
@@ -53,7 +57,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void distanceChebyshevAndManhattan() {
+	public void distanceChebyshevAndManhattan()
+	{
 		int a = WorldPointUtil.packWorldPoint(10, 10, 0);
 		int b = WorldPointUtil.packWorldPoint(15, 13, 0); // dx=5 dy=3
 		assertEquals(5, WorldPointUtil.distanceBetween(a, b)); // Chebyshev
@@ -61,29 +66,32 @@ public class WorldPointUtilTest {
 		assertEquals(5, WorldPointUtil.distanceBetween2D(a, b)); // Chebyshev 2D
 		assertEquals(5 + 3, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.MANHATTAN_DISTANCE_METRIC)); // Manhattan
 		assertEquals(5 * 5 + 3 * 3, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC)); // Euclidean
-																																																													// squared
+		// squared
 		assertEquals(5 * 5 + 3 * 3, WorldPointUtil.distanceBetween(a, b, 99));
 	}
 
 	@Test
-	public void distanceDifferentPlanesReturnsMax() {
+	public void distanceDifferentPlanesReturnsMax()
+	{
 		int a = WorldPointUtil.packWorldPoint(10, 10, 0);
 		int b = WorldPointUtil.packWorldPoint(11, 11, 1);
 		assertEquals(Integer.MAX_VALUE, WorldPointUtil.distanceBetween(a, b));
 	}
 
 	@Test
-	public void distanceWorldPointOverloads() {
+	public void distanceWorldPointOverloads()
+	{
 		WorldPoint a = new WorldPoint(100, 150, 0);
 		WorldPoint b = new WorldPoint(103, 160, 0); // dx=3 dy=10
 		assertEquals(10, WorldPointUtil.distanceBetween(a, b)); // Chebyshev
 		assertEquals(10 + 3, WorldPointUtil.distanceBetween(a, b, WorldPointUtil.MANHATTAN_DISTANCE_METRIC)); // Manhattan
 		assertEquals(10 * 10 + 3 * 3,
-				WorldPointUtil.distanceBetween(a, b, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC)); // Euclidean squared
+			WorldPointUtil.distanceBetween(a, b, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC)); // Euclidean squared
 	}
 
 	@Test
-	public void distanceToAreaInsideAndOutside() {
+	public void distanceToAreaInsideAndOutside()
+	{
 		WorldArea area = new WorldArea(3000, 4000, 5, 4, 0); // x:[3000..3004], y:[4000..4003]
 		int inside = WorldPointUtil.packWorldPoint(3002, 4001, 0);
 		int leftOutside = WorldPointUtil.packWorldPoint(2995, 4002, 0);
@@ -103,7 +111,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void toLocalPointWithinScene() {
+	public void toLocalPointWithinScene()
+	{
 		Client client = Mockito.mock(Client.class);
 		WorldView worldView = Mockito.mock(WorldView.class);
 		Mockito.when(client.getTopLevelWorldView()).thenReturn(worldView);
@@ -124,7 +133,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void toLocalPointOutOfSceneOrPlane() {
+	public void toLocalPointOutOfSceneOrPlane()
+	{
 		Client client = Mockito.mock(Client.class);
 		WorldView worldView = Mockito.mock(WorldView.class);
 		Mockito.when(client.getTopLevelWorldView()).thenReturn(worldView);
@@ -145,7 +155,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void toLocalInstanceNonInstanceWorld() {
+	public void toLocalInstanceNonInstanceWorld()
+	{
 		Client client = Mockito.mock(Client.class);
 		WorldView top = Mockito.mock(WorldView.class);
 		Mockito.when(client.getTopLevelWorldView()).thenReturn(top);
@@ -157,7 +168,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void fromLocalInstanceNonInstanceWorld() {
+	public void fromLocalInstanceNonInstanceWorld()
+	{
 		Client client = Mockito.mock(Client.class);
 		WorldView view = Mockito.mock(WorldView.class);
 		Mockito.when(client.getWorldView(0)).thenReturn(view);
@@ -180,7 +192,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void toLocalInstanceSimpleInstanceMatch() {
+	public void toLocalInstanceSimpleInstanceMatch()
+	{
 		// Build a minimal instance template where a single chunk maps to a template
 		// containing our point
 		Client client = Mockito.mock(Client.class);
@@ -205,7 +218,7 @@ public class WorldPointUtilTest {
 		int rotation = 0;
 		int plane = 0;
 		int chunkData = (plane << 24) | ((templateChunkX / CHUNK_SIZE) << 14) | ((templateChunkY / CHUNK_SIZE) << 3)
-				| (rotation << 1);
+			| (rotation << 1);
 		chunks[0][chunkIndexX][chunkIndexY] = chunkData;
 		Mockito.when(top.getInstanceTemplateChunks()).thenReturn(chunks);
 		Mockito.when(top.getPlane()).thenReturn(0);
@@ -226,7 +239,8 @@ public class WorldPointUtilTest {
 	private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
 
 	@Test
-	public void testDistanceToArea() {
+	public void testDistanceToArea()
+	{
 		List<WorldPoint> testPoints = new ArrayList<>(10);
 		testPoints.add(new WorldPoint(2900, 3500, 0));
 		testPoints.add(new WorldPoint(3000, 3500, 0));
@@ -239,7 +253,8 @@ public class WorldPointUtilTest {
 		testPoints.add(new WorldPoint(3600, 4300, 0));
 		testPoints.add(new WorldPoint(3600, 4200, 1));
 
-		for (WorldPoint point : testPoints) {
+		for (WorldPoint point : testPoints)
+		{
 			final int areaDistance = WILDERNESS_ABOVE_GROUND.distanceTo(point);
 			final int packedPoint = WorldPointUtil.packWorldPoint(point);
 			final int worldUtilDistance = WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND);
@@ -248,7 +263,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void testWorldPointPacking() {
+	public void testWorldPointPacking()
+	{
 		WorldPoint point = new WorldPoint(13, 24685, 1);
 
 		final int packedPoint = WorldPointUtil.packWorldPoint(point);
@@ -267,7 +283,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void testDistanceBetween() {
+	public void testDistanceBetween()
+	{
 		WorldPoint pointA = new WorldPoint(13, 24685, 1);
 		WorldPoint pointB = new WorldPoint(29241, 3384, 1);
 		WorldPoint pointC = new WorldPoint(292, 3384, 0); // Test point on different plane
@@ -285,7 +302,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void testPackedDistanceBetween() {
+	public void testPackedDistanceBetween()
+	{
 		WorldPoint pointA = new WorldPoint(13, 24685, 1);
 		WorldPoint pointB = new WorldPoint(29241, 3384, 1);
 		WorldPoint pointC = new WorldPoint(292, 3384, 0); // Test point on different plane
@@ -306,7 +324,8 @@ public class WorldPointUtilTest {
 	}
 
 	@Test
-	public void testMaxWorldPoint() {
+	public void testMaxWorldPoint()
+	{
 		assertEquals(WorldPointUtil.packWorldPoint(-1, -1, -1), -1);
 		assertEquals(WorldPointUtil.packWorldPoint(-1, -1, 1), Integer.MAX_VALUE);
 	}

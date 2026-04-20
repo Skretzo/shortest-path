@@ -8,7 +8,8 @@ import java.io.InputStream;
  * General utility helpers for I/O and primitive array manipulation used by the
  * shortest path plugin.
  */
-public class Util {
+public class Util
+{
 	/**
 	 * Reads all bytes from the provided {@link InputStream} until EOF.
 	 * This method does not close the stream; the caller retains responsibility for
@@ -16,17 +17,20 @@ public class Util {
 	 *
 	 * @param in the input stream to read from.
 	 * @return a newly allocated byte array containing all bytes read (may be empty,
-	 *         never {@code null}).
+	 * never {@code null}).
 	 * @throws IOException if an I/O error occurs while reading.
 	 */
-	public static byte[] readAllBytes(InputStream in) throws IOException {
+	public static byte[] readAllBytes(InputStream in) throws IOException
+	{
 		ByteArrayOutputStream result = new ByteArrayOutputStream();
 		byte[] buffer = new byte[1024];
 
-		while (true) {
+		while (true)
+		{
 			int read = in.read(buffer, 0, buffer.length);
 
-			if (read == -1) {
+			if (read == -1)
+			{
 				return result.toByteArray();
 			}
 
@@ -44,21 +48,27 @@ public class Util {
 	 * @param arrays an array of {@code int[]} segments to concatenate (may contain
 	 *               {@code null}).
 	 * @return a new combined array, or {@code null} if there are no elements to
-	 *         copy.
+	 * copy.
 	 */
-	public static int[] concatenate(int[][] arrays) {
+	public static int[] concatenate(int[][] arrays)
+	{
 		int n = 0;
-		for (int i = 0; i < arrays.length; i++) {
+		for (int i = 0; i < arrays.length; i++)
+		{
 			n += (arrays[i] == null) ? 0 : arrays[i].length;
 		}
-		if (n == 0) {
+		if (n == 0)
+		{
 			return null;
 		}
 		int[] array = new int[n];
 		int k = 0;
-		for (int i = 0; i < arrays.length; i++) {
-			if (arrays[i] != null) {
-				for (int j = 0; j < arrays[i].length; j++) {
+		for (int i = 0; i < arrays.length; i++)
+		{
+			if (arrays[i] != null)
+			{
+				for (int j = 0; j < arrays[i].length; j++)
+				{
 					array[k++] = arrays[i][j];
 				}
 			}

@@ -15,17 +15,20 @@ import shortestpath.transport.Transport;
 //  * varbitChecks: Ignore any varbitChecks.
 //  * varPlayerChecks: Ignore any varPlayerChecks.
 // Other methods are delegated to a normal PathfinderConfig.
-public class TestPathfinderConfig extends PathfinderConfig {
+public class TestPathfinderConfig extends PathfinderConfig
+{
 	private final QuestState questState;
 	private final boolean bypassVarbitChecks;
 	private final boolean bypassVarPlayerChecks;
 
-	public TestPathfinderConfig(Client client, ShortestPathConfig config) {
+	public TestPathfinderConfig(Client client, ShortestPathConfig config)
+	{
 		this(client, config, QuestState.FINISHED, true, true);
 	}
 
 	public TestPathfinderConfig(Client client, ShortestPathConfig config, QuestState questState,
-			boolean bypassVarbitChecks, boolean bypassVarPlayerChecks) {
+								boolean bypassVarbitChecks, boolean bypassVarPlayerChecks)
+	{
 		super(client, config);
 		this.questState = questState;
 		this.bypassVarbitChecks = bypassVarbitChecks;
@@ -33,17 +36,20 @@ public class TestPathfinderConfig extends PathfinderConfig {
 	}
 
 	@Override
-	public QuestState getQuestState(Quest quest) {
+	public QuestState getQuestState(Quest quest)
+	{
 		return questState;
 	}
 
 	@Override
-	public boolean varbitChecks(Transport transport) {
+	public boolean varbitChecks(Transport transport)
+	{
 		return bypassVarbitChecks || super.varbitChecks(transport);
 	}
 
 	@Override
-	public boolean varPlayerChecks(Transport transport) {
+	public boolean varPlayerChecks(Transport transport)
+	{
 		return bypassVarPlayerChecks || super.varPlayerChecks(transport);
 	}
 }

@@ -6,13 +6,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
 import static net.runelite.api.Constants.REGION_SIZE;
+
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Util;
 
-public class SplitFlagMap {
+public class SplitFlagMap
+{
 	@Getter
 	private static RegionExtent regionExtents;
 
@@ -22,13 +26,15 @@ public class SplitFlagMap {
 	private final FlagMap[] regionMaps;
 	private final int widthInclusive;
 
-	public SplitFlagMap(Map<Integer, byte[]> compressedRegions) {
+	public SplitFlagMap(Map<Integer, byte[]> compressedRegions)
+	{
 		widthInclusive = regionExtents.getWidth() + 1;
 		final int heightInclusive = regionExtents.getHeight() + 1;
 		regionMaps = new FlagMap[widthInclusive * heightInclusive];
 		regionMapPlaneCounts = new byte[regionMaps.length];
 
-		for (Map.Entry<Integer, byte[]> entry : compressedRegions.entrySet()) {
+		for (Map.Entry<Integer, byte[]> entry : compressedRegions.entrySet())
+		{
 			final int pos = entry.getKey();
 			final int x = unpackX(pos);
 			final int y = unpackY(pos);
@@ -39,41 +45,50 @@ public class SplitFlagMap {
 		}
 	}
 
-	public boolean get(int x, int y, int z, int flag) {
+	public boolean get(int x, int y, int z, int flag)
+	{
 		final int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
-		if (index < 0 || index >= regionMaps.length || regionMaps[index] == null) {
+		if (index < 0 || index >= regionMaps.length || regionMaps[index] == null)
+		{
 			return false;
 		}
 
 		return regionMaps[index].get(x, y, z, flag);
 	}
 
-	private int getIndex(int regionX, int regionY) {
+	private int getIndex(int regionX, int regionY)
+	{
 		return (regionX - regionExtents.getMinX()) + (regionY - regionExtents.getMinY()) * widthInclusive;
 	}
 
-	public static int unpackX(int position) {
+	public static int unpackX(int position)
+	{
 		return position & 0xFFFF;
 	}
 
-	public static int unpackY(int position) {
+	public static int unpackY(int position)
+	{
 		return (position >> 16) & 0xFFFF;
 	}
 
-	public static int packPosition(int x, int y) {
+	public static int packPosition(int x, int y)
+	{
 		return (x & 0xFFFF) | ((y & 0xFFFF) << 16);
 	}
 
-	public static SplitFlagMap fromResources() {
+	public static SplitFlagMap fromResources()
+	{
 		Map<Integer, byte[]> compressedRegions = new HashMap<>();
-		try (ZipInputStream in = new ZipInputStream(ShortestPathPlugin.class.getResourceAsStream("/collision-map.zip"))) {
+		try (ZipInputStream in = new ZipInputStream(ShortestPathPlugin.class.getResourceAsStream("/collision-map.zip")))
+		{
 			int minX = Integer.MAX_VALUE;
 			int minY = Integer.MAX_VALUE;
 			int maxX = 0;
 			int maxY = 0;
 
 			ZipEntry entry;
-			while ((entry = in.getNextEntry()) != null) {
+			while ((entry = in.getNextEntry()) != null)
+			{
 				String[] n = entry.getName().split("_");
 				final int x = Integer.parseInt(n[0]);
 				final int y = Integer.parseInt(n[1]);
@@ -86,7 +101,9 @@ public class SplitFlagMap {
 			}
 
 			regionExtents = new RegionExtent(minX, minY, maxX, maxY);
-		} catch (IOException e) {
+		}
+		catch (IOException e)
+		{
 			throw new UncheckedIOException(e);
 		}
 
@@ -95,14 +112,17 @@ public class SplitFlagMap {
 
 	@RequiredArgsConstructor
 	@Getter
-	public static class RegionExtent {
+	public static class RegionExtent
+	{
 		public final int minX, minY, maxX, maxY;
 
-		public int getWidth() {
+		public int getWidth()
+		{
 			return maxX - minX;
 		}
 
-		public int getHeight() {
+		public int getHeight()
+		{
 			return maxY - minY;
 		}
 	}
