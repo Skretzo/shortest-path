@@ -10,6 +10,7 @@ public class PathfinderDashboardAssetWriter {
     private static final String[] ASSETS = {
         "/reachability-dashboard/index.html",
         "/reachability-dashboard/app.js",
+        "/reachability-dashboard/profiler.js",
         "/reachability-dashboard/styles.css"
     };
 

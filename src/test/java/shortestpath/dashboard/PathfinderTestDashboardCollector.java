@@ -7,12 +7,9 @@ import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 
 public final class PathfinderTestDashboardCollector {
-    private static final String BUNDLE_ID = "pathfinder-tests";
     private static final String OUTPUT_ROOT_PROPERTY = DashboardBundlePublisher.OUTPUT_ROOT_PROPERTY;
     private static final PathfinderDashboardReportWriter REPORT_WRITER = new PathfinderDashboardReportWriter();
-    private static final DashboardBundlePublisher BUNDLE_PUBLISHER = new DashboardBundlePublisher();
-    // Scenario tests append run records incrementally as assertions execute, then rewrite the same bundle so the
-    // dashboard can be inspected even partway through a test run.
+    private static final DashboardBundlePublisher PUBLISHER = new DashboardBundlePublisher();
     private static final List<PathfinderDashboardModels.RunRecord> RUNS = new ArrayList<>();
     private static final long STARTED = System.currentTimeMillis();
 
@@ -54,18 +51,15 @@ public final class PathfinderTestDashboardCollector {
 
     private static void writeReport() {
         try {
-            // PathfinderTest has many different scenario configurations, so its transport overlay is a generic
-            // "show everything" layer rather than one availability snapshot from a single config state.
-            BUNDLE_PUBLISHER.publishBundle(
-                BUNDLE_ID,
+            PathfinderDashboardModels.Report report = REPORT_WRITER.createReport(
                 "Pathfinder Dashboard",
                 "Routes captured from PathfinderTest",
-                REPORT_WRITER.createReport(
-                    "Pathfinder Dashboard",
-                    "Routes captured from PathfinderTest",
-                    System.currentTimeMillis() - STARTED,
-                    RUNS,
-                    REPORT_WRITER.createTransportLayerPointsAlwaysAvailable()));
+                System.currentTimeMillis() - STARTED,
+                RUNS);
+
+            String bundleName = System.getProperty(
+                DashboardBundlePublisher.BUNDLE_NAME_PROPERTY, "pathfinder-tests");
+            PUBLISHER.publishBundle(bundleName, report);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write pathfinder test dashboard", e);
         }

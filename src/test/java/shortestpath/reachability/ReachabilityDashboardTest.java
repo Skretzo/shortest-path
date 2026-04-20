@@ -1,7 +1,6 @@
 package shortestpath.reachability;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -21,11 +20,13 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.dashboard.DashboardBundlePublisher;
 import shortestpath.dashboard.PathfinderDashboardModels;
-import shortestpath.dashboard.PathfinderDashboardReportWriter;
+import shortestpath.dashboard.ProfilerReportWriter;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.PathfinderProfile;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.ProfilingPathfinder;
 import shortestpath.pathfinder.TestPathfinderConfig;
 import shortestpath.transport.Transport;
 
@@ -35,24 +36,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ReachabilityDashboardTest {
-    // Overrides the input dataset path. Resource paths start with `/`; other values are filesystem paths.
     private static final String DATASET_PROPERTY = "reachability.dataset";
-    // Overrides the bundle directory name written under `build/reports/pathfinder-dashboard/bundles/`.
-    private static final String BUNDLE_ID_PROPERTY = "reachability.bundleId";
-    // Overrides the human-readable title shown for this dashboard bundle in the UI.
     private static final String REPORT_TITLE_PROPERTY = "reachability.reportTitle";
-    // Overrides the shorter descriptive subtitle shown for this dashboard bundle in the UI.
     private static final String REPORT_SUBTITLE_PROPERTY = "reachability.reportSubtitle";
-    private static final String DEFAULT_DATASET = "/reachability/clue_locations_full.csv";
+    private static final String DEFAULT_DATASET = "/reachability/routes.csv";
     // A very large number of targets will take a long time to run, and sometimes during testing you
     // want to just test rendering etc on fewer targets.
     private static final int MAX_TARGETS = Integer.getInteger("reachability.maxTargets", 10000);
-    // Selects a predefined reachability scenario, which controls the start point and pathfinder setup.
     private static final String SCENARIO_PROPERTY = "reachability.scenario";
+    private static final String PROFILE_PROPERTY = "reachability.profile";
+    private static final String BUNDLE_NAME_PROPERTY = DashboardBundlePublisher.BUNDLE_NAME_PROPERTY;
     private static final ReachabilityScenario DEFAULT_SCENARIO = ReachabilityScenario.DEFAULT;
 
     private final ReachabilityTargetLoader targetLoader = new ReachabilityTargetLoader();
-    private final PathfinderDashboardReportWriter reportWriter = new PathfinderDashboardReportWriter();
+    private final ProfilerReportWriter reportWriter = new ProfilerReportWriter();
     private final DashboardBundlePublisher bundlePublisher = new DashboardBundlePublisher();
 
     private Client client;
@@ -66,11 +63,8 @@ public class ReachabilityDashboardTest {
         config = new TestShortestPathConfig();
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
         when(client.getClientThread()).thenReturn(Thread.currentThread());
-        // A maxed account
         when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
         when(client.getTotalLevel()).thenReturn(2277);
-        // With access to fairy rings (this should not be necessary but fairy ring support is globally disabled if
-        // these are not set).
         when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(1);
         when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
         scenario = ReachabilityScenario.fromSystemProperty(System.getProperty(SCENARIO_PROPERTY));
@@ -84,42 +78,62 @@ public class ReachabilityDashboardTest {
         pathfinderConfig.refresh();
     }
 
-    // Check for each target in the dataset, can we reach it?
     @Test
     public void allTargetsReachableFromBankStart() throws IOException {
         Assume.assumeTrue("Enable with -DrunReachabilityVerification=true",
             Boolean.getBoolean("runReachabilityVerification"));
 
         String dataset = System.getProperty(DATASET_PROPERTY, DEFAULT_DATASET);
+        boolean profile = Boolean.parseBoolean(System.getProperty(PROFILE_PROPERTY, "true"));
+        String bundleName = System.getProperty(BUNDLE_NAME_PROPERTY, "routes");
         List<ReachabilityTarget> allTargets = loadTargets(dataset);
         List<ReachabilityTarget> targets = allTargets.subList(0, Math.min(MAX_TARGETS, allTargets.size()));
         List<PathfinderDashboardModels.RunRecord> runs = new ArrayList<>();
         Map<String, String> routeSummary = new LinkedHashMap<>();
         long started = System.currentTimeMillis();
         Path siteRoot = bundlePublisher.getOutputRoot();
-        String bundleId = System.getProperty(BUNDLE_ID_PROPERTY, scenario.bundleId);
         String reportTitle = System.getProperty(REPORT_TITLE_PROPERTY, scenario.reportTitle);
         String reportSubtitle = System.getProperty(REPORT_SUBTITLE_PROPERTY, scenario.reportSubtitle);
-        Path outputDirectory = siteRoot.resolve("bundles").resolve(bundleId);
-        Path reportPath = outputDirectory.resolve("report.json");
+        Path reportPath = siteRoot.resolve("bundles").resolve(bundleName).resolve("report.json");
 
-        // Reachability is a batch producer: it computes all run records first, then publishes one complete bundle
-        // at the end of the sweep rather than incrementally rewriting the bundle after each target.
+        TeleportationItem currentTeleports = scenario.teleportationItemSetting;
+        int targetIndex = 0;
+
         for (ReachabilityTarget target : targets) {
-            Pathfinder pathfinder = new Pathfinder(
-                pathfinderConfig,
-                scenario.start,
-                Set.of(target.getPackedPoint()),
-                null);
-            pathfinder.run();
-            PathfinderResult result = pathfinder.getResult();
+            targetIndex++;
+            System.out.printf("[%d/%d] %s%n", targetIndex, targets.size(), target.getDescription());
+            System.out.flush();
+            // Reconfigure pathfinder if this target overrides teleport settings
+            if (target.hasTeleportOverride() && target.getTeleportOverride() != currentTeleports) {
+                currentTeleports = target.getTeleportOverride();
+                config.setUseTeleportationItemsValue(currentTeleports);
+                pathfinderConfig = new TestPathfinderConfig(client, config);
+                scenario.configurePathfinder(pathfinderConfig);
+                pathfinderConfig.refresh();
+            }
+
+            int start = target.hasStartPoint() ? target.getStartPoint() : scenario.start;
+            String category = target.getCategory() != null ? target.getCategory() : "reachability";
+
+            PathfinderResult result;
+            PathfinderProfile profileData = null;
+            if (profile) {
+                ProfilingPathfinder profiler = new ProfilingPathfinder(
+                    pathfinderConfig, start, Set.of(target.getPackedPoint()));
+                profiler.run();
+                result = profiler.getResult();
+                profileData = profiler.getProfile();
+            } else {
+                Pathfinder pathfinder = new Pathfinder(
+                    pathfinderConfig, start, Set.of(target.getPackedPoint()));
+                pathfinder.run();
+                result = pathfinder.getResult();
+            }
             List<PathStep> path = result != null ? result.getPathSteps() : List.of();
             int pathLength = path.size();
             double elapsedMillis = result != null ? (result.getElapsedNanos() / 1_000_000.0) : 0.0;
             int nodesChecked = result != null ? result.getNodesChecked() : 0;
             int transportsChecked = result != null ? result.getTransportsChecked() : 0;
-            // TODO: We should really have this logic in the main pathfinder to help with routing to adjacent but
-            // blocked tiles.
             boolean reached = isReachedOrAdjacent(result, target);
 
             routeSummary.put(
@@ -137,39 +151,42 @@ public class ReachabilityDashboardTest {
 
             if (result != null) {
                 List<String> details = List.of(
-                    "Dataset: " + dataset,
+                    "Dataset: " + datasetLabel(dataset),
                     "Description: " + target.getDescription(),
                     "Expected reachable: true");
-                runs.add(reportWriter.createRunRecord(
+                PathfinderDashboardModels.RunRecord run = reportWriter.createRunRecord(
                     target.getDescription(),
-                    "reachability",
+                    category,
                     details,
                     result,
                     pathfinderConfig,
                     reached,
                     null,
-                    null));
+                    null);
+                if (profileData != null) {
+                    reportWriter.populateProfilerData(run, profileData);
+                }
+                bundlePublisher.externalizeRunHeatmap(bundleName, runs.size(), run);
+                runs.add(run);
             }
         }
 
-        Files.createDirectories(outputDirectory);
-        // Publishing updates both `bundles/<bundleId>/report.json` and the shared `bundles/index.json` registry,
-        // which is what makes this report show up in the common dashboard frontend.
-        bundlePublisher.publishBundle(
-            bundleId,
+        PathfinderDashboardModels.Report report = reportWriter.createReport(
             reportTitle,
             reportSubtitle,
-            reportWriter.createReport(
-                "Pathfinder Dashboard",
-                reportSubtitle,
-                System.currentTimeMillis() - started,
-                runs,
-                reportWriter.createTransportLayerPoints(pathfinderConfig)));
+            System.currentTimeMillis() - started,
+            runs,
+            reportWriter.createTransportLayerPoints(pathfinderConfig));
+
+        bundlePublisher.publishBundle(bundleName, report);
 
         System.out.println("Reachability route summary:");
         System.out.println(" - scenario: " + scenario.id);
         System.out.println(" - tested targets: " + targets.size() + "/" + allTargets.size());
         System.out.println(" - dataset: " + dataset);
+        for (Map.Entry<String, String> entry : routeSummary.entrySet()) {
+            System.out.println(" - " + entry.getKey() + ": " + entry.getValue());
+        }
 
         long unreachable = runs.stream().filter(run -> !run.reached).count();
         assertTrue("Unreachable targets found. See " + reportPath + " and " + siteRoot.resolve("index.html"),
@@ -180,10 +197,17 @@ public class ReachabilityDashboardTest {
         if (dataset.startsWith("/")) {
             return targetLoader.loadFromResource(dataset);
         }
-        return targetLoader.loadFromFile(Paths.get(dataset));
+        return targetLoader.loadFromCsv(Paths.get(dataset));
     }
 
-    // This accounts for when the target tile is adjacent to a walkable tile (for instance, a searchable crate).
+    private static String datasetLabel(String dataset) {
+        if (dataset.startsWith("/")) {
+            return dataset;
+        }
+        Path path = Paths.get(dataset);
+        return path.getFileName() != null ? path.getFileName().toString() : dataset;
+    }
+
     static boolean isReachedOrAdjacent(PathfinderResult result, ReachabilityTarget target) {
         if (result == null || result.getPathSteps().isEmpty()) {
             return false;
@@ -232,6 +256,24 @@ public class ReachabilityDashboardTest {
         return null;
     }
 
+    private Transport findTransport(shortestpath.pathfinder.Node source, int sourceTile, int destination, boolean bankVisited) {
+        if (source != null && source.isTile()) {
+            for (Transport transport : pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(sourceTile, Set.of())) {
+                if (transport.getDestination() == destination) {
+                    return transport;
+                }
+            }
+            return null;
+        }
+
+        for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited)) {
+            if (transport.getDestination() == destination) {
+                return transport;
+            }
+        }
+        return null;
+    }
+
     private String describeTransport(Transport transport) {
         String displayInfo = transport.getDisplayInfo();
         if (displayInfo != null && !displayInfo.isBlank()) {
@@ -252,33 +294,35 @@ public class ReachabilityDashboardTest {
             WorldPointUtil.unpackWorldY(packedPoint),
             WorldPointUtil.unpackWorldPlane(packedPoint));
     }
-    
-    // Default scenario, a maxed account with all teleports able to be used instantly. Useful for a global reachability check.
     private enum ReachabilityScenario {
         DEFAULT(
             "default",
             WorldPointUtil.packWorldPoint(3185, 3436, 0),
             TeleportationItem.ALL,
             false,
-            "clue-steps-default",
             "Clue Steps Default",
-            "Clue steps sweep from bank start");
+            "Clue steps sweep from bank start"),
+        PROFILER(
+            "profiler",
+            WorldPointUtil.packWorldPoint(3222, 3218, 0),
+            TeleportationItem.ALL,
+            false,
+            "Profiler",
+            "Performance profiling scenarios");
 
         private final String id;
         private final int start;
         private final TeleportationItem teleportationItemSetting;
         private final boolean includeBankPath;
-        private final String bundleId;
         private final String reportTitle;
         private final String reportSubtitle;
 
         ReachabilityScenario(String id, int start, TeleportationItem teleportationItemSetting,
-            boolean includeBankPath, String bundleId, String reportTitle, String reportSubtitle) {
+            boolean includeBankPath, String reportTitle, String reportSubtitle) {
             this.id = id;
             this.start = start;
             this.teleportationItemSetting = teleportationItemSetting;
             this.includeBankPath = includeBankPath;
-            this.bundleId = bundleId;
             this.reportTitle = reportTitle;
             this.reportSubtitle = reportSubtitle;
         }

@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'jacoco'
+    id 'me.champeau.jmh' version '0.7.2'
 }
 
 repositories {
@@ -19,7 +20,6 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.6'
-    testImplementation 'org.apache.commons:commons-csv:1.11.0'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
     testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
@@ -34,10 +34,18 @@ tasks.withType(JavaCompile) {
 }
 
 def dashboardOutputRoot = layout.buildDirectory.dir('reports/pathfinder-dashboard')
-def clueStepsDashboardDataset = providers.gradleProperty('clueStepsDashboardDataset')
-    .orElse('/reachability/clue_locations_full.csv')
-def targetsDashboardDataset = providers.gradleProperty('targetsDashboardDataset')
-    .orElse('/reachability/targets.csv')
+def dashboardDataset = providers.gradleProperty('dashboardDataset')
+    .orElse('/reachability/routes.csv')
+def dashboardScenario = providers.gradleProperty('dashboardScenario')
+    .orElse('')
+def dashboardTitle = providers.gradleProperty('dashboardTitle')
+    .orElse('Pathfinder Dashboard')
+def dashboardSubtitle = providers.gradleProperty('dashboardSubtitle')
+    .orElse('')
+def dashboardProfile = providers.gradleProperty('dashboardProfile')
+    .orElse('true')
+def dashboardBundle = providers.gradleProperty('dashboardBundle')
+    .orElse('routes')
 
 def logDashboardLocation = { String taskName ->
     File dashboardDir = dashboardOutputRoot.get().asFile
@@ -51,9 +59,59 @@ test {
     jvmArgs = ['-Xms1g', '-Xmx8g']
 }
 
+tasks.register('dashboard', Test) {
+    group = 'verification'
+    description = 'Builds the pathfinder dashboard. Use -PdashboardDataset=... to set the input file, -PdashboardScenario=profiler for profiling.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/reachability/ReachabilityDashboardTest.class'
+    ignoreFailures = true
+    systemProperty 'runReachabilityVerification', 'true'
+    systemProperty 'reachability.dataset', dashboardDataset.get()
+    systemProperty 'reachability.reportTitle', dashboardTitle.get()
+    systemProperty 'reachability.reportSubtitle', dashboardSubtitle.get()
+    systemProperty 'reachability.profile', dashboardProfile.get()
+    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    def scenarioValue = dashboardScenario.get()
+    if (scenarioValue && !scenarioValue.isEmpty()) {
+        systemProperty 'reachability.scenario', scenarioValue
+    }
+    systemProperty 'dashboard.bundleName', dashboardBundle.get()
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    testLogging {
+        showStandardStreams = true
+    }
+    doLast {
+        logDashboardLocation(name)
+    }
+}
+
+tasks.register('scenarioDashboard', Test) {
+    group = 'verification'
+    description = 'Builds the pathfinder scenario dashboard from PathfinderTest'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/pathfinder/PathfinderTest.class'
+    ignoreFailures = true
+    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    systemProperty 'dashboard.bundleName', 'pathfinder-tests'
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    doLast {
+        logDashboardLocation(name)
+    }
+}
+
+// Convenience task properties for multi-bundle builds
+def clueStepsDashboardDataset = providers.gradleProperty('clueStepsDashboardDataset')
+    .orElse('/reachability/clue_locations_full.csv')
+def targetsDashboardDataset = providers.gradleProperty('targetsDashboardDataset')
+    .orElse('/reachability/targets.tsv')
+
 tasks.register('clueStepsDashboard', Test) {
     group = 'verification'
-    description = 'Builds the clue steps dashboard bundle'
+    description = 'Builds the clue-steps dashboard bundle'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     useJUnit()
@@ -61,10 +119,11 @@ tasks.register('clueStepsDashboard', Test) {
     ignoreFailures = true
     systemProperty 'runReachabilityVerification', 'true'
     systemProperty 'reachability.dataset', clueStepsDashboardDataset.get()
-    systemProperty 'reachability.bundleId', 'clue-steps-default'
-    systemProperty 'reachability.reportTitle', 'Clue Steps'
+    systemProperty 'reachability.reportTitle', 'Clue Steps Default'
     systemProperty 'reachability.reportSubtitle', 'Clue steps sweep from bank start'
+    systemProperty 'reachability.profile', 'false'
     systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    systemProperty 'dashboard.bundleName', 'clue-steps-default'
     jvmArgs = ['-Xms1g', '-Xmx8g']
     doLast {
         logDashboardLocation(name)
@@ -73,7 +132,7 @@ tasks.register('clueStepsDashboard', Test) {
 
 tasks.register('targetsDashboard', Test) {
     group = 'verification'
-    description = 'Builds the lightweight reported-targets dashboard bundle'
+    description = 'Builds the reported-targets dashboard bundle'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     useJUnit()
@@ -81,25 +140,11 @@ tasks.register('targetsDashboard', Test) {
     ignoreFailures = true
     systemProperty 'runReachabilityVerification', 'true'
     systemProperty 'reachability.dataset', targetsDashboardDataset.get()
-    systemProperty 'reachability.bundleId', 'reported-targets'
     systemProperty 'reachability.reportTitle', 'Reported Targets'
-    systemProperty 'reachability.reportSubtitle', 'Lightweight regression targets from targets.csv'
+    systemProperty 'reachability.reportSubtitle', 'Lightweight regression list from targets.tsv'
+    systemProperty 'reachability.profile', 'false'
     systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    doLast {
-        logDashboardLocation(name)
-    }
-}
-
-tasks.register('scenarioDashboard', Test) {
-    group = 'verification'
-    description = 'Builds the pathfinder scenario dashboard bundle'
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnit()
-    include 'shortestpath/pathfinder/PathfinderTest.class'
-    ignoreFailures = true
-    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    systemProperty 'dashboard.bundleName', 'reported-targets'
     jvmArgs = ['-Xms1g', '-Xmx8g']
     doLast {
         logDashboardLocation(name)
@@ -108,10 +153,8 @@ tasks.register('scenarioDashboard', Test) {
 
 tasks.register('dashboardSite') {
     group = 'verification'
-    description = 'Builds the shared dashboard site containing all dashboard bundles'
-    dependsOn tasks.named('scenarioDashboard')
-    dependsOn tasks.named('clueStepsDashboard')
-    dependsOn tasks.named('targetsDashboard')
+    description = 'Builds the shared dashboard site with all bundles'
+    dependsOn 'scenarioDashboard', 'clueStepsDashboard', 'targetsDashboard'
     doLast {
         logDashboardLocation(name)
     }
@@ -139,4 +182,18 @@ tasks.register('runelite', JavaExec) {
     mainClass.set('shortestpath.ShortestPathPluginTest')
     jvmArgs '-ea'
     args '--developer-mode'
+}
+
+jmh {
+    warmupIterations = 3
+    iterations = 5
+    fork = 2
+    jvmArgs = ['-Xms2g', '-Xmx8g']
+    resultFormat = 'JSON'
+    resultsFile = layout.buildDirectory.file('reports/jmh/results.json')
+}
+
+dependencies {
+    jmhImplementation sourceSets.test.output
+    jmhImplementation sourceSets.test.runtimeClasspath
 }
