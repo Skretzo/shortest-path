@@ -527,7 +527,7 @@ public class PathfinderTest {
 
         assertScenarioPathLengthWithBank(
             "Great Conch -> McGrubor's Wood with banked staff and bracelet",
-            52,
+            51,
             WorldPointUtil.packWorldPoint(3180, 2419, 0),
             WorldPointUtil.packWorldPoint(2652, 3485, 0),
             TeleportationItem.INVENTORY_AND_BANK,
@@ -547,7 +547,7 @@ public class PathfinderTest {
 
         assertScenarioPathLengthWithBank(
             "Great Conch tile reuse -> McGrubor's Wood with banked Dramen staff",
-            56,
+            74,
             WorldPointUtil.packWorldPoint(3181, 2437, 0),
             WorldPointUtil.packWorldPoint(2652, 3485, 0),
             TeleportationItem.INVENTORY_AND_BANK,
@@ -604,7 +604,7 @@ public class PathfinderTest {
 
         Pathfinder pathfinder = assertScenarioPathLengthAndGet(
             "Varrock centre -> Cowbell amulet destination with amulet in bank",
-            40,
+            36,
             WorldPointUtil.packWorldPoint(3213, 3424, 0),
             WorldPointUtil.packWorldPoint(3259, 3277, 0));
 

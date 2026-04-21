@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
+import net.runelite.cache.EntityOpsDefinition;
 import net.runelite.cache.ObjectManager;
 import net.runelite.cache.definitions.ObjectDefinition;
 import net.runelite.cache.fs.Store;
@@ -29,8 +30,9 @@ import org.junit.Test;
 
 /**
  * Dumps every landscape placement of bank-related objects from an OSRS cache
- * to a TSV. Intended for use by {@code scripts/reconcile_bank_tiles.py} which
- * snaps {@code bank.tsv} rows to exact stand tiles.
+ * to a TSV. Intended for use by {@code scripts/rebuild_bank_tsv.py} which
+ * adds stand-tile rows to {@code bank.tsv} for cache placements that aren't
+ * already represented.
  *
  * Enabled by setting {@code -DbankTiles.dump=true} and providing:
  *   -DbankTiles.cacheDir=/path/to/cache
@@ -58,6 +60,11 @@ public class BankTileDumperTest {
         Pattern.compile("(?i)^deposit box$"),
         Pattern.compile("(?i)^grand exchange booth$"),
         Pattern.compile("(?i)^clan hall bank chest$"),
+        // Varlamore introduced "Bank table" as an interactive counter that
+        // acts like a booth (Civitas illa Fortis east/west, Aldarin,
+        // Quetzacalli Gorge; object IDs 52396/52397). Include it so the
+        // rebuild pipeline sees these as first-class bank placements.
+        Pattern.compile("(?i)^bank table$"),
     };
 
     @Test
@@ -127,14 +134,48 @@ public class BankTileDumperTest {
             if (name == null || "null".equalsIgnoreCase(name)) {
                 continue;
             }
+            boolean nameMatch = false;
             for (Pattern p : patterns) {
                 if (p.matcher(name).matches()) {
-                    ids.add(def.getId());
+                    nameMatch = true;
                     break;
                 }
             }
+            if (!nameMatch) {
+                continue;
+            }
+            // Many banks have purely decorative "Bank table" scenery
+            // (IDs 590, 591, 2094, ...) that share the name with
+            // Varlamore's interactive Bank tables (52396 / 52397).
+            // Only the interactive variants have a "Bank" or "Collect"
+            // menu option. Require one of those ops to avoid dumping
+            // decorations next to real booths.
+            if (!hasBankAction(def)) {
+                continue;
+            }
+            ids.add(def.getId());
         }
         return ids;
+    }
+
+    private static boolean hasBankAction(ObjectDefinition def) {
+        EntityOpsDefinition ops = def.getOps();
+        if (ops == null || ops.ops == null) {
+            return false;
+        }
+        for (EntityOpsDefinition.Op op : ops.ops) {
+            if (op == null || op.text == null) {
+                continue;
+            }
+            String t = op.text;
+            if (t.equalsIgnoreCase("Bank")
+                || t.equalsIgnoreCase("Use-quickly")
+                || t.equalsIgnoreCase("Collect")
+                || t.equalsIgnoreCase("Deposit")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static List<Row> collectRows(RegionLoader regionLoader, ObjectManager objectManager,

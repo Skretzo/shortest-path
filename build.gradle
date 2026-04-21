@@ -96,9 +96,10 @@ tasks.register('dashboard', Test) {
     }
 }
 
-// Dumps bank-related object placements (Bank booth / Bank chest / deposit box / GE booth)
-// from an OSRS cache to a TSV. Pair with scripts/reconcile_bank_tiles.py to snap bank.tsv
-// rows to exact stand tiles.
+// Dumps bank-related object placements (Bank booth / Bank chest / Bank table /
+// deposit box / GE booth) from an OSRS cache to a TSV. Pair with
+// scripts/rebuild_bank_tsv.py to add stand-tile rows to bank.tsv for any
+// cache placements that aren't already represented.
 //
 // Usage:
 //   collision-map-update/download-latest-cache.sh         # produces ./cache and ./keys.json
@@ -140,10 +141,9 @@ tasks.register('bankTileDump', Test) {
     doLast {
         logger.lifecycle("")
         logger.lifecycle("Bank tile placements written to ${bankTileOutput.get()}")
-        logger.lifecycle("Reconcile against bank.tsv with:")
-        logger.lifecycle("  python3 scripts/reconcile_bank_tiles.py \\")
-        logger.lifecycle("    --placements ${bankTileOutput.get()} \\")
-        logger.lifecycle("    --bank-tsv src/main/resources/destinations/game_features/bank.tsv")
+        logger.lifecycle("Merge into bank.tsv with:")
+        logger.lifecycle("  cp ${bankTileOutput.get()} build/bank-tiles/bank_tile_placements.tsv")
+        logger.lifecycle("  python3 scripts/rebuild_bank_tsv.py")
     }
 }
 
