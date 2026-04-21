@@ -11,9 +11,9 @@
 1928 5731 0	1632 3837 0	Enter Arceuus Library Portal 41416		1	Arceuus Library Portal
 1928 5731 0	1632 3837 0	Enter Arceuus Library Portal 41417		1	Arceuus Library Portal
 1928 5731 0	1632 3837 0	Enter Arceuus Library Portal 41418		1	Arceuus Library Portal
-1928 5731 0	2544 3570 0	Enter Barbarian Outpost Portal 60795		1	Barbarian Outpost Portal
-1928 5731 0	2544 3570 0	Enter Barbarian Outpost Portal 60805		1	Barbarian Outpost Portal
-1928 5731 0	2544 3570 0	Enter Barbarian Outpost Portal 60815		1	Barbarian Outpost Portal
+1928 5731 0	2543 3569 0	Enter Barbarian Outpost Portal 60795		1	Barbarian Outpost Portal
+1928 5731 0	2543 3569 0	Enter Barbarian Outpost Portal 60805		1	Barbarian Outpost Portal
+1928 5731 0	2543 3569 0	Enter Barbarian Outpost Portal 60815		1	Barbarian Outpost Portal
 1928 5731 0	3564 3315 0	Enter Barrows Portal 37591		1	Barrows Portal
 1928 5731 0	3564 3315 0	Enter Barrows Portal 37603		1	Barrows Portal
 1928 5731 0	3564 3315 0	Enter Barrows Portal 37615		1	Barrows Portal
@@ -26,9 +26,9 @@
 1928 5731 0	2757 3479 0	Camelot Camelot Portal 33094	4560=0	1	Camelot Portal
 1928 5731 0	2757 3479 0	Camelot Camelot Portal 33100	4560=0	1	Camelot Portal
 1928 5731 0	2757 3479 0	Camelot Camelot Portal 33106	4560=0	1	Camelot Portal
-1928 5731 0	2726 3485 0	Seers' Village Seers' Village Portal 33095	4560=1	1	Seers' Village Portal
-1928 5731 0	2726 3485 0	Seers' Village Seers' Village Portal 33101	4560=1	1	Seers' Village Portal
-1928 5731 0	2726 3485 0	Seers' Village Seers' Village Portal 33107	4560=1	1	Seers' Village Portal
+1928 5731 0	2726 3487 0	Seers' Village Seers' Village Portal 33095	4560=1	1	Seers' Village Portal
+1928 5731 0	2726 3487 0	Seers' Village Seers' Village Portal 33101	4560=1	1	Seers' Village Portal
+1928 5731 0	2726 3487 0	Seers' Village Seers' Village Portal 33107	4560=1	1	Seers' Village Portal
 1928 5731 0	3158 3666 0	Enter Carrallanger Portal 33434		1	Carrallanger Portal
 1928 5731 0	3158 3666 0	Enter Carrallanger Portal 33437		1	Carrallanger Portal
 1928 5731 0	3158 3666 0	Enter Carrallanger Portal 33440		1	Carrallanger Portal
@@ -41,9 +41,9 @@
 1928 5731 0	2981 3764 0	Enter Cemetery Portal 37590		1	Cemetery Portal
 1928 5731 0	2981 3764 0	Enter Cemetery Portal 37602		1	Cemetery Portal
 1928 5731 0	2981 3764 0	Enter Cemetery Portal 37614		1	Cemetery Portal
-1928 5731 0	2970 3698 0	Enter Dareeyak Portal 60793		1	Dareeyak Portal
-1928 5731 0	2970 3698 0	Enter Dareeyak Portal 60803		1	Dareeyak Portal
-1928 5731 0	2970 3698 0	Enter Dareeyak Portal 60813		1	Dareeyak Portal
+1928 5731 0	2968 3696 0	Enter Dareeyak Portal 60793		1	Dareeyak Portal
+1928 5731 0	2968 3696 0	Enter Dareeyak Portal 60803		1	Dareeyak Portal
+1928 5731 0	2968 3696 0	Enter Dareeyak Portal 60813		1	Dareeyak Portal
 1928 5731 0	3109 3351 0	Enter Draynor Manor Portal 37583		1	Draynor Manor Portal
 1928 5731 0	3109 3351 0	Enter Draynor Manor Portal 37595		1	Draynor Manor Portal
 1928 5731 0	3109 3351 0	Enter Draynor Manor Portal 37607		1	Draynor Manor Portal
@@ -65,9 +65,9 @@
 1928 5731 0	3797 2866 0	Enter Harmony Island Portal 37589		1	Harmony Island Portal
 1928 5731 0	3797 2866 0	Enter Harmony Island Portal 37601		1	Harmony Island Portal
 1928 5731 0	3797 2866 0	Enter Harmony Island Portal 37613		1	Harmony Island Portal
-1928 5731 0	2977 3940 0	Enter Ice Plateau Portal 60797		1	Ice Plateau Portal
-1928 5731 0	2977 3940 0	Enter Ice Plateau Portal 60807		1	Ice Plateau Portal
-1928 5731 0	2977 3940 0	Enter Ice Plateau Portal 60817		1	Ice Plateau Portal
+1928 5731 0	2975 3938 0	Enter Ice Plateau Portal 60797		1	Ice Plateau Portal
+1928 5731 0	2975 3938 0	Enter Ice Plateau Portal 60807		1	Ice Plateau Portal
+1928 5731 0	2975 3938 0	Enter Ice Plateau Portal 60817		1	Ice Plateau Portal
 1928 5731 0	3494 3473 0	Enter Kharyrll Portal 29338		1	Kharyrll Portal
 1928 5731 0	3494 3473 0	Enter Kharyrll Portal 29346		1	Kharyrll Portal
 1928 5731 0	3494 3473 0	Enter Kharyrll Portal 29354		1	Kharyrll Portal
@@ -89,15 +89,15 @@
 1928 5731 0	2979 3510 0	Enter Mind Altar Portal 37585		1	Mind Altar Portal
 1928 5731 0	2979 3510 0	Enter Mind Altar Portal 37597		1	Mind Altar Portal
 1928 5731 0	2979 3510 0	Enter Mind Altar Portal 37609		1	Mind Altar Portal
-1928 5731 0	2469 3247 0	Enter Ourania Portal 60794		1	Ourania Portal
-1928 5731 0	2469 3247 0	Enter Ourania Portal 60804		1	Ourania Portal
-1928 5731 0	2469 3247 0	Enter Ourania Portal 60814		1	Ourania Portal
-1928 5731 0	3098 9882 0	Enter Paddewwa Portal 60791		1	Paddewwa Portal
-1928 5731 0	3098 9882 0	Enter Paddewwa Portal 60801		1	Paddewwa Portal
-1928 5731 0	3098 9882 0	Enter Paddewwa Portal 60811		1	Paddewwa Portal
-1928 5731 0	2637 3168 0	Enter Port Khazard Portal 60796		1	Port Khazard Portal
-1928 5731 0	2637 3168 0	Enter Port Khazard Portal 60806		1	Port Khazard Portal
-1928 5731 0	2637 3168 0	Enter Port Khazard Portal 60816		1	Port Khazard Portal
+1928 5731 0	2468 3246 0	Enter Ourania Portal 60794		1	Ourania Portal
+1928 5731 0	2468 3246 0	Enter Ourania Portal 60804		1	Ourania Portal
+1928 5731 0	2468 3246 0	Enter Ourania Portal 60814		1	Ourania Portal
+1928 5731 0	3097 9881 0	Enter Paddewwa Portal 60791		1	Paddewwa Portal
+1928 5731 0	3097 9881 0	Enter Paddewwa Portal 60801		1	Paddewwa Portal
+1928 5731 0	3097 9881 0	Enter Paddewwa Portal 60811		1	Paddewwa Portal
+1928 5731 0	2636 3167 0	Enter Port Khazard Portal 60796		1	Port Khazard Portal
+1928 5731 0	2636 3167 0	Enter Port Khazard Portal 60806		1	Port Khazard Portal
+1928 5731 0	2636 3167 0	Enter Port Khazard Portal 60816		1	Port Khazard Portal
 1928 5731 0	3221 3218 0	Enter Respawn Portal 60798		1	Respawn Portal (Lumbridge)
 1928 5731 0	2964 3378 0	Enter Respawn Portal 60798	668=1	1	Respawn Portal (Falador)
 1928 5731 0	2757 3479 0	Enter Respawn Portal 60798	3910=1	1	Respawn Portal (Camelot)
@@ -112,9 +112,9 @@
 1928 5731 0	3320 3337 0	Enter Senntisten Portal 29340		1	Senntisten Portal
 1928 5731 0	3320 3337 0	Enter Senntisten Portal 29348		1	Senntisten Portal
 1928 5731 0	3320 3337 0	Enter Senntisten Portal 29356		1	Senntisten Portal
-1928 5731 0	2891 3680 0	Enter Trollheim Portal 60790		1	Trollheim Portal
-1928 5731 0	2891 3680 0	Enter Trollheim Portal 60800		1	Trollheim Portal
-1928 5731 0	2891 3680 0	Enter Trollheim Portal 60810		1	Trollheim Portal
+1928 5731 0	2890 3679 0	Enter Trollheim Portal 60790		1	Trollheim Portal
+1928 5731 0	2890 3679 0	Enter Trollheim Portal 60800		1	Trollheim Portal
+1928 5731 0	2890 3679 0	Enter Trollheim Portal 60810		1	Trollheim Portal
 1928 5731 0	2845 3694 0	Enter Troll Stronghold Portal 33179	4493=0	1	Troll Stronghold Portal
 1928 5731 0	2845 3694 0	Enter Troll Stronghold Portal 33180	4493=0	1	Troll Stronghold Portal
 1928 5731 0	2845 3694 0	Enter Troll Stronghold Portal 33181	4493=0	1	Troll Stronghold Portal
@@ -135,7 +135,7 @@
 1928 5731 0	2500 3290 0	Enter West Ardougne Portal 37612		1	West Ardougne Portal
 1864 5732 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33096	4548=0	1	Watchtower Portal
 1864 5732 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33108	4548=0	1	Watchtower Portal
-1864 5732 0	2546 3114 0	Watchtower Yanille Portal 33102	4548=0	1	Yanille Portal
+1864 5732 0	2546 3114 0	Watchtower Yanille Portal 33102	4548=0	1	Watchtower Portal
 1864 5732 0	2584 3097 0	Yanille Yanille Portal 33097	4548=1	1	Yanille Portal
 1864 5732 0	2584 3097 0	Yanille Yanille Portal 33103	4548=1	1	Yanille Portal
 1864 5732 0	2584 3097 0	Yanille Yanille Portal 33109	4548=1	1	Yanille Portal

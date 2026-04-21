@@ -1107,7 +1107,7 @@ public class PathfinderTest {
         setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
         Pathfinder withVarrockTeleport = runScenario("Deep wilderness -> Grand Exchange with GE Varrock Teleport", deepWilderness, grandExchange);
 
-        assertEquals(182, withVarrockTeleport.getPath().size());
+        assertEquals(181, withVarrockTeleport.getPath().size());
         assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
             usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: GE"));
     }
@@ -1132,7 +1132,7 @@ public class PathfinderTest {
 
         Pathfinder pathfinder = runScenario("Deep wilderness -> Grand Exchange with glory and GE runes", deepWilderness, grandExchange);
 
-        assertEquals(103, pathfinder.getPath().size());
+        assertEquals(102, pathfinder.getPath().size());
         assertTrue("Glory should be used when both glory and GE runes are available but the spell is still wilderness-locked",
             usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
     }
