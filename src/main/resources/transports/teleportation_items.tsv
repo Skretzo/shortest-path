@@ -1,9 +1,9 @@
 # Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Display info	Consumable	Wilderness level	Varbits	VarPlayers
 # Ardougne cloaks (2 has 3 teleports to farm, 3 has 5 teleports to farm, 4 has unlimited teleports to farm) PS: varbit 6069 is only lowbits, highbits is not transmitted										
-2606 3221 0			13121=1||13122=1||13123=1||13124=1||20760=1		4	Ardougne cloak: Kandarin Monastery	F	20	4458=1	
-2664 3374 0			13122=1		4	Ardougne cloak: Ardougne Farm	T	20	4459=1;6069<3	
-2664 3374 0			13123=1		4	Ardougne cloak: Ardougne Farm	T	20	4460=1;6069<5	
-2664 3374 0			13124=1||20760=1		4	Ardougne cloak: Ardougne Farm	F	20	4461=1	
+2607 3221 0			13121=1||13122=1||13123=1||13124=1||20760=1		4	Ardougne cloak: Kandarin Monastery	F	20	4458=1	
+2665 3374 0			13122=1		4	Ardougne cloak: Ardougne Farm	T	20	4459=1;6069<3	
+2665 3374 0			13123=1		4	Ardougne cloak: Ardougne Farm	T	20	4460=1;6069<5	
+2665 3374 0			13124=1||20760=1		4	Ardougne cloak: Ardougne Farm	F	20	4461=1	
 # Karamja gloves										
 2840 9387 0			11140=1||13103=1		4	Karamja gloves: Gem Mine	F	20	3611=2	
 2869 2982 1			13103=1		4	Karamja gloves 4: Slayer Master	F	20	4566=1	
@@ -22,27 +22,27 @@
 2643 3675 0			13131=1		4	Fremennik sea boots: Teleport	T	20	4491=1;5005<5	
 2643 3675 0			13132=1		4	Fremennik sea boots: Teleport	F	20	4494=1	
 # Kandarin headgear (3 has 1 teleport per day, 4 is unlimited)										
-2729 3409 0			13139=1		4	Kandarin headgear 3: Teleport	T	20	4477=1;4561=0	
-2729 3409 0			13140=1		4	Kandarin headgear 4: Teleport	F	20	4478=1	
+2730 3420 0			13139=1		4	Kandarin headgear 3: Teleport	T	20	4477=1;4561=0	
+2730 3420 0			13140=1		4	Kandarin headgear 4: Teleport	F	20	4478=1	
 # Wilderness sword (3 has 1 teleport per day, 4 is unlimited)										
 3377 3890 0			13110=1		4	Wilderness sword 3: Teleport	T	20	4468=1;4541=0	
 3377 3890 0			13111=1		4	Wilderness sword 4: Teleport	F	20	4469=1	
 # Western banner (3 has 1 teleport per day, 4 is unlimited)										
-2339 3649 0			13143=1		4	Western banner 3: Teleport	T	20	4473=1;4564=0	
-2339 3649 0			13144=1		4	Western banner 4: Teleport	F	20	4474=1	
+2332 3681 0			13143=1		4	Western banner 3: Teleport	T	20	4473=1;4564=0	
+2332 3681 0			13144=1		4	Western banner 4: Teleport	F	20	4474=1	
 # Explorer's ring (2 has 3 teleports per day, 3 and 4 are unlimited)										
 3052 3291 0			13126=1		4	Explorer's ring 2: Teleport	T	20	4496=1;4552<3	
 3052 3291 0			13127=1||13128=1		4	Explorer's ring: Teleport	F	20	4497=1	
 # Rada's blessing (Kourend Woodland, 1 has 3 teleports, 2 has 5 teleports, 3 and 4 have unlimited. For Mount Karuulum, 3 has 3 teleports and 4 has unlimited)										
-1554 3457 0			22941=1		4	Rada's blessing: Kourend Woodland	T	20	7925=1;7937<3	
-1554 3457 0			22943=1		4	Rada's blessing: Kourend Woodland	T	20	7926=1;7937<5	
-1554 3457 0			22945=1||22947=1		4	Rada's blessing: Kourend Woodland	F	20	7927=1	
-1311 3799 0			22945=1		4	Rada's blessing: Mount Karuulm	T	20	7927=1;7938<3	
-1311 3799 0			22947=1		4	Rada's blessing: Mount Karuulm	F	20	7928=1	
+1554 3461 0			22941=1		4	Rada's blessing: Kourend Woodland	T	20	7925=1;7937<3	
+1554 3461 0			22943=1		4	Rada's blessing: Kourend Woodland	T	20	7926=1;7937<5	
+1554 3461 0			22945=1||22947=1		4	Rada's blessing: Kourend Woodland	F	20	7927=1	
+1311 3806 0			22945=1		4	Rada's blessing: Mount Karuulm	T	20	7927=1;7938<3	
+1311 3806 0			22947=1		4	Rada's blessing: Mount Karuulm	F	20	7928=1	
 										
 # Games necklace										
 2520 3571 0			3853=1||3855=1||3857=1||3859=1||3861=1||3863=1||3865=1||3867=1		4	Games necklace: Barbarian Outpost	T	20		
-2898 3553 0			3853=1||3855=1||3857=1||3859=1||3861=1||3863=1||3865=1||3867=1		4	Games necklace: Burthorpe	T	20		
+2899 3553 0			3853=1||3855=1||3857=1||3859=1||3861=1||3863=1||3865=1||3867=1		4	Games necklace: Burthorpe	T	20		
 2965 4254 2			3853=1||3855=1||3857=1||3859=1||3861=1||3863=1||3865=1||3867=1		4	Games necklace: Corporeal Beast	T	20		
 3245 9500 2			3853=1||3855=1||3857=1||3859=1||3861=1||3863=1||3865=1||3867=1		4	Games necklace: Tears of Guthix	T	20	451>1	
 1631 3940 0			3853=1||3855=1||3857=1||3859=1||3861=1||3863=1||3865=1||3867=1		4	Games necklace: Wintertodt	T	20	5619>0	
@@ -87,16 +87,16 @@
 2824 10168 0			11988=1||11986=1||11984=1||11982=1||11980=1||20790=1||20789=1||20788=1||20787=1||20786=1	Between a Rock...	4	Ring of wealth: Dondakan	T	30	299=10	
 										
 # Slayer ring (1-8)										
-2432 3423 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1		4	Slayer ring: Stronghold	T	30		
+2431 3422 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1		4	Slayer ring: Stronghold	T	30		
 3421 3537 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Priest in Peril	4	Slayer ring: Slayer Tower	T	30		
-2802 10000 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1		4	Slayer ring: Fremennik	T	30		
+2802 9999 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1		4	Slayer ring: Fremennik	T	30		
 3185 4601 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Haunted Mine	4	Slayer ring: Tarn's Lair	T	30		
 2028 4636 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Mourning's End Part II	4	Slayer ring: Dark Beasts	T	30		
 										
 # Slayer ring (eternal)										
-2432 3423 0			21268=1		4	Slayer ring: Stronghold	F	30		
+2431 3422 0			21268=1		4	Slayer ring: Stronghold	F	30		
 3421 3537 0			21268=1	Priest in Peril	4	Slayer ring: Slayer Tower	F	30		
-2802 10000 0			21268=1		4	Slayer ring: Fremennik	F	30		
+2802 9999 0			21268=1		4	Slayer ring: Fremennik	F	30		
 3185 4601 0			21268=1	Haunted Mine	4	Slayer ring: Tarn's Lair	F	30		
 2028 4636 0			21268=1	Mourning's End Part II	4	Slayer ring: Dark Beasts	F	30		
 										
@@ -107,7 +107,7 @@
 										
 # Necklace of passage (1-5)										
 3114 3179 0			21146=1||21149=1||21151=1||21153=1||21155=1		4	Necklace of passage: Wizards' Tower	T	20		
-2428 3350 0			21146=1||21149=1||21151=1||21153=1||21155=1		4	Necklace of passage: The Outpost	T	20		
+2430 3349 0			21146=1||21149=1||21151=1||21153=1||21155=1		4	Necklace of passage: The Outpost	T	20		
 3405 3158 0			21146=1||21149=1||21151=1||21153=1||21155=1		4	Necklace of passage: Eagle's Eyrie	T	20		
 										
 # Burning amulet										
@@ -139,12 +139,12 @@
 #  Teleport tablets										
 3213 3424 0			8007=1		4	Varrock tablet	T	20		
 # Varbit 4480 is DIARY_VARROCK_MEDIUM										
-3164 3478 0			8007=1		4	Varrock tablet: GE	T	20	4480=1	
-2965 3378 0			8009=1		4	Falador tablet	T	20		
+3165 3479 0			8007=1		4	Varrock tablet: GE	T	20	4480=1	
+2964 3378 0			8009=1		4	Falador tablet	T	20		
 3221 3218 0			8008=1		4	Lumbridge tablet	T	20		
-2757 3478 0			8010=1		4	Camelot tablet	T	20		
-2661 3302 0			8011=1	Plague City	4	Ardougne tablet	T	20		
-2549 3112 0			8012=1	Watchtower	4	Watchtower tablet	T	20		
+2757 3479 0			8010=1		4	Camelot tablet	T	20		
+2662 3305 0			8011=1	Plague City	4	Ardougne tablet	T	20		
+2546 3112 0			8012=1	Watchtower	4	Watchtower tablet	T	20		
 # Varbit 4460 is DIARY_ARDOUGNE_HARD										
 2584 3097 0			8012=1	Watchtower	4	Watchtower tablet: Yanille	T	20	4460=1	
 2953 3224 0			11741=1		4	Rimmington tablet	T	20		
@@ -156,32 +156,32 @@
 2890 3679 0			11747=1		4	Trollheim tablet	T	20		
 1743 3517 0			19651=1		4	Hosidius tablet	T	20		
 3239 6077 0			23771=1		4	Prifddinas tablet	T	20		
-3100 9883 0			12781=1	Desert Treasure I	4	Paddewwa tablet	T	20		
+3097 9881 0			12781=1	Desert Treasure I	4	Paddewwa tablet	T	20		
 3320 3337 0			12782=1	Desert Treasure I	4	Senntisten tablet	T	20		
 3494 3473 0			12779=1	Desert Treasure I	4	Kharyrll tablet	T	20		
-3002 3470 0			12780=1	Desert Treasure I	4	Lassar tablet	T	20		
+3004 3470 0			12780=1	Desert Treasure I	4	Lassar tablet	T	20		
 2968 3696 0			12777=1	Desert Treasure I	4	Dareeyak tablet	T	20		
 3158 3666 0			12776=1	Desert Treasure I	4	Carrallanger tablet	T	20		
-3287 3888 0			12775=1	Desert Treasure I	4	Annakarl tablet	T	20		
-2974 3873 0			12778=1	Desert Treasure I	4	Ghorrock tablet	T	20		
+3288 3888 0			12775=1	Desert Treasure I	4	Annakarl tablet	T	20		
+2976 3875 0			12778=1	Desert Treasure I	4	Ghorrock tablet	T	20		
 2113 3915 0			24949=1	Lunar Diplomacy	4	Moonclan tablet	T	20		
 2468 3246 0			24951=1	Lunar Diplomacy	4	Ourania tablet	T	20		
-2546 3756 0			24953=1		4	Waterbirth tablet	T	20		
+2546 3755 0			24953=1		4	Waterbirth tablet	T	20		
 2543 3569 0			24955=1		4	Barbarian tablet	T	20		
 2636 3167 0			24957=1		4	Khazard tablet	T	20		
 2613 3391 0			24959=1		4	Fishing guild tablet	T	20		
 2801 3449 0			24961=1		4	Catherby tablet	T	20		
 2975 3938 0			24963=1		4	Ice plateau tablet	T	20		
-1633 3838 0			19613=1		4	Arceuus Library tablet	T	20		
-3110 3350 0			19615=1		4	Draynor Manor tablet	T	20		
+1632 3837 0			19613=1		4	Arceuus Library tablet	T	20		
+3109 3351 0			19615=1		4	Draynor Manor tablet	T	20		
 1347 3740 0			22949=1		4	Battlefront tablet	T	20		
-2980 3509 0			19617=1		4	Mind Altar tablet	T	20		
-3432 3461 0			19619=1	Priest in Peril	4	Salve Graveyard tablet	T	20		
+2979 3510 0			19617=1		4	Mind Altar tablet	T	20		
+3433 3461 0			19619=1	Priest in Peril	4	Salve Graveyard tablet	T	20		
 3548 3529 0			19621=1	Priest in Peril	4	Fenkenstrain's Castle tablet	T	20		
-2500 3291 0			19623=1	Biohazard	4	West Ardougne tablet	T	20		
-3797 2867 0			19625=1	The Great Brain Robbery	4	Harmony Island tablet	T	20		
-2980 3763 0			19627=1		4	Cemetery tablet	T	20		
-3565 3314 0			19629=1	Priest in Peril	4	Barrows tablet	T	20		
+2500 3290 0			19623=1	Biohazard	4	West Ardougne tablet	T	20		
+3797 2866 0			19625=1	The Great Brain Robbery	4	Harmony Island tablet	T	20		
+2981 3764 0			19627=1		4	Cemetery tablet	T	20		
+3564 3315 0			19629=1	Priest in Peril	4	Barrows tablet	T	20		
 2771 9102 0			19631=1	Monkey Madness I	4	Ape Atoll tablet	T	20		
 3811 3813 0			21541=1		4	Volcanic Mine tablet	T	20		
 3352 3782 0			24251=1		4	Wilderness Crabs tablet	T	20		
@@ -316,7 +316,7 @@
 										
 # Quest items										
 # Ectophial - includes the empty version										
-3659 3523 0			4251=1||4252=1		4	Ectophial	F	20		
+3660 3522 0			4251=1||4252=1		4	Ectophial	F	20		
 2330 3171 0			6099=1||6100=1||6101=1||6102=1||13102=1		4	Teleport crystal: Lletya	T	20		
 3264 6066 0			6099=1||6100=1||6101=1||6102=1||13102=1	Song of the Elves	4	Teleport crystal: Prifddinas	T	20		
 2330 3171 0			23946=1		4	Eternal teleport crystal: Lletya	F	20		
