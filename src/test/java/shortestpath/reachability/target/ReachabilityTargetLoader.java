@@ -1,21 +1,32 @@
-package shortestpath.reachability;
+package shortestpath.reachability.target;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import shortestpath.TeleportationItem;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
+import shortestpath.reachability.mode.RouteMode;
+import shortestpath.reachability.mode.RouteModes;
 
-class ReachabilityTargetLoader {
-    List<ReachabilityTarget> loadFromResource(String resourcePath) throws IOException {
+public final class ReachabilityTargetLoader {
+    private final RouteModes routeModes;
+
+    public ReachabilityTargetLoader() {
+        this(RouteModes.defaults());
+    }
+
+    public ReachabilityTargetLoader(RouteModes routeModes) {
+        this.routeModes = routeModes;
+    }
+
+    public List<ReachabilityTarget> loadFromResource(String resourcePath) throws IOException {
         try (InputStream in = ReachabilityTargetLoader.class.getResourceAsStream(resourcePath)) {
             if (in == null) {
                 throw new IOException("Missing resource: " + resourcePath);
@@ -44,7 +55,7 @@ class ReachabilityTargetLoader {
         }
     }
 
-    List<ReachabilityTarget> loadFromCsv(Path csvPath) throws IOException {
+    public List<ReachabilityTarget> loadFromCsv(Path csvPath) throws IOException {
         Map<Integer, ReachabilityTarget> dedupedTargets = new LinkedHashMap<>();
         try (Scanner scanner = new Scanner(Files.newBufferedReader(csvPath, StandardCharsets.UTF_8))) {
             if (!scanner.hasNextLine()) {
@@ -73,9 +84,10 @@ class ReachabilityTargetLoader {
                     Integer.parseInt(fields[planeIndex]));
                 dedupedTargets.putIfAbsent(
                     packedPoint,
-                    new ReachabilityTarget(
-                        fields[clueTypeIndex] + " " + formatPoint(packedPoint),
-                        packedPoint));
+                    ReachabilityTarget.builder()
+                        .description(fields[clueTypeIndex] + " " + formatPoint(packedPoint))
+                        .packedPoint(packedPoint)
+                        .build());
             }
         }
 
@@ -106,9 +118,10 @@ class ReachabilityTargetLoader {
                 Integer.parseInt(fields[planeIndex]));
             dedupedTargets.putIfAbsent(
                 packedPoint,
-                new ReachabilityTarget(
-                    fields[clueTypeIndex] + " " + formatPoint(packedPoint),
-                    packedPoint));
+                ReachabilityTarget.builder()
+                    .description(fields[clueTypeIndex] + " " + formatPoint(packedPoint))
+                    .packedPoint(packedPoint)
+                    .build());
         }
 
         return new ArrayList<>(dedupedTargets.values());
@@ -153,13 +166,18 @@ class ReachabilityTargetLoader {
 
             String category = categoryIndex >= 0 ? fields[categoryIndex] : null;
 
-            TeleportationItem teleportOverride = null;
+            RouteMode modeOverride = null;
             if (teleportsIndex >= 0 && !fields[teleportsIndex].isEmpty()) {
-                teleportOverride = TeleportationItem.valueOf(fields[teleportsIndex]);
+                modeOverride = routeModes.get(fields[teleportsIndex].trim());
             }
 
-            targets.add(new ReachabilityTarget(
-                fields[nameIndex], packedPoint, category, startPoint, teleportOverride));
+            targets.add(ReachabilityTarget.builder()
+                .description(fields[nameIndex])
+                .packedPoint(packedPoint)
+                .category(category)
+                .startPoint(startPoint)
+                .modeOverride(modeOverride)
+                .build());
         }
 
         return targets;
@@ -183,12 +201,13 @@ class ReachabilityTargetLoader {
             }
 
             String[] fields = line.split("\t", -1);
-            targets.add(new ReachabilityTarget(
-                fields[descriptionIndex],
-                WorldPointUtil.packWorldPoint(
+            targets.add(ReachabilityTarget.builder()
+                .description(fields[descriptionIndex])
+                .packedPoint(WorldPointUtil.packWorldPoint(
                     Integer.parseInt(fields[xIndex]),
                     Integer.parseInt(fields[yIndex]),
-                    Integer.parseInt(fields[planeIndex]))));
+                    Integer.parseInt(fields[planeIndex])))
+                .build());
         }
 
         return targets;
