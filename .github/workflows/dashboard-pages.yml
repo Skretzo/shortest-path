@@ -32,12 +32,12 @@ jobs:
         run: ./gradlew clean dashboardSite -PclueStepsDashboardDataset=/reachability/clue_locations_full.csv -PtargetsDashboardDataset=/reachability/targets.csv --stacktrace
         shell: bash
 
-      - name: Build profiled routes dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/reachability/routes.csv -PdashboardProfile=true --stacktrace
-        shell: bash
-
       - name: Build quetzal whistle routes dashboard
         run: ./gradlew dashboard -PdashboardDataset=/reachability/quetzal_whistle_routes.csv -PdashboardProfile=true --stacktrace
+        shell: bash
+
+      - name: Build profiled routes dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/reachability/routes.csv -PdashboardProfile=true --stacktrace
         shell: bash
 
       - name: Upload dashboard bundle artifact
