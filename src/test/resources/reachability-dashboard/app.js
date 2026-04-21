@@ -39,7 +39,6 @@ const HOVERED_TILE_STYLE = {
 // ── DOM references ────────────────────────────────────────────────────
 const summaryEl = document.getElementById("summary");
 const runListEl = document.getElementById("run-list");
-const runDetailsEl = document.getElementById("run-details");
 const runInfoDetailsEl = document.getElementById("run-info-details");
 const runInfoPanel = document.getElementById("run-info-panel");
 const runInfoToggle = document.getElementById("run-info-toggle");
@@ -446,85 +445,76 @@ function buildPathSegments(path) {
   return segments;
 }
 
-function buildScenarioPanel(run) {
+function buildDetails(run) {
   const lines = [];
+
   if (run.routeModeId) {
-    lines.push("Route mode");
-    lines.push(`  id: ${run.routeModeId}`);
+    lines.push("Route mode", `  id: ${run.routeModeId}`);
     if (run.teleportationItems) {
       lines.push(`  teleportationItems: ${run.teleportationItems}`);
     }
-    if (run.includeBankPath !== undefined && run.includeBankPath !== null) {
+    if (run.includeBankPath != null) {
       lines.push(`  includeBankPath: ${run.includeBankPath}`);
     }
-    if (run.lumbridgeDiaryEliteStub !== undefined && run.lumbridgeDiaryEliteStub !== null) {
+    if (run.lumbridgeDiaryEliteStub != null) {
       lines.push(`  lumbridgeDiaryElite (stub): ${run.lumbridgeDiaryEliteStub}`);
     }
   }
-  if (run.bankVisitedOnPath !== undefined && run.bankVisitedOnPath !== null) {
+  if (run.bankVisitedOnPath != null) {
     lines.push(`Bank visited on path: ${run.bankVisitedOnPath}`);
   }
   if (run.bankEvents && run.bankEvents.length > 0) {
     lines.push("Bank events");
     run.bankEvents.forEach(ev => {
-      const label = ev.bankName || "Bank";
-      lines.push(`  - ${label} @ step ${ev.stepIndex} ${formatPoint(ev.location)}`);
+      lines.push(`  - ${ev.bankName || "Bank"} @ step ${ev.stepIndex} ${formatPoint(ev.location)}`);
     });
   }
-  return lines.length > 0 ? lines.join("\n") + "\n\n" : "";
-}
+  if (lines.length > 0) lines.push("");
 
-function buildDetails(run) {
-  const scenarioBlock = buildScenarioPanel(run);
-  const details = [
+  lines.push(
     `Name: ${run.name}`,
     `Category: ${run.category || "default"}`,
-    `Assertion: ${run.assertionPassed === true ? "passed" : run.assertionPassed === false ? "failed" : "n/a"}`,
+    `Assertion: ${run.assertionPassed === true ? "passed" : run.assertionPassed === false ? "failed" : "n/a"}`
+  );
+  if (run.assertionMessage) {
+    lines.push(`Assertion message: ${run.assertionMessage}`);
+  }
+  lines.push(
     `Reached: ${run.reached}`,
     `Termination: ${run.terminationReason}`,
     `Path length: ${run.path.length}`,
     `Nodes checked: ${run.stats.nodesChecked}`,
     `Transports checked: ${run.stats.transportsChecked}`,
-    `Elapsed: ${(run.stats.elapsedNanos / 1_000_000).toFixed(2)} ms`,
+    `Elapsed: ${formatElapsed(run.stats.elapsedNanos)}`,
     `Start: ${formatPoint(run.start)}`,
     `Target: ${formatPoint(run.target)}`,
     `Closest reached: ${formatPoint(run.closestReachedPoint)}`
-  ];
-
-  if (run.assertionMessage) {
-    details.splice(3, 0, `Assertion message: ${run.assertionMessage}`);
-  }
+  );
 
   if (run.details && run.details.length > 0) {
-    details.push("");
-    details.push("Scenario details:");
-    run.details.forEach(detail => details.push(`- ${detail}`));
+    lines.push("", "Scenario details:");
+    run.details.forEach(detail => lines.push(`- ${detail}`));
   }
 
   if (run.markers && run.markers.length > 0) {
-    details.push("");
-    details.push("Markers:");
-    run.markers.forEach(marker => details.push(`- ${marker.label}: ${formatPoint(marker.point)}`));
+    lines.push("", "Markers:");
+    run.markers.forEach(marker => lines.push(`- ${marker.label}: ${formatPoint(marker.point)}`));
   }
 
   if (run.transports && run.transports.length > 0) {
-    details.push("");
-    details.push("Transports used:");
+    lines.push("", "Transports used:");
     run.transports.forEach(step => {
       const label = step.displayInfo || step.objectInfo || step.type;
-      details.push(`- step ${step.stepIndex}: ${step.type} -> ${label}`);
+      lines.push(`- step ${step.stepIndex}: ${step.type} -> ${label}`);
     });
   }
 
   if (run.collisionWindow) {
-    details.push("");
-    details.push(
-      `Collision window: ${run.collisionWindow.width}x${run.collisionWindow.height}` +
-      ` @ (${run.collisionWindow.originX}, ${run.collisionWindow.originY}, ${run.collisionWindow.plane})`
-    );
+    const { width, height, originX, originY, plane } = run.collisionWindow;
+    lines.push("", `Collision window: ${width}x${height} @ (${originX}, ${originY}, ${plane})`);
   }
 
-  return scenarioBlock + details.join("\n");
+  return lines.join("\n");
 }
 
 // ── Structured overview / path tab rendering ──────────────────────────
@@ -571,11 +561,59 @@ function makeChip(kind, labelText, subText, onClick) {
     step.textContent = subText;
     chip.appendChild(step);
   }
+  chip.title = subText ? `${labelText} · ${subText}` : labelText;
   chip.addEventListener("click", e => {
     e.stopPropagation();
     onClick();
   });
   return chip;
+}
+
+function renderBankEvents(container, run, sectionTitle, { showPickups = false } = {}) {
+  const events = run.bankEvents || [];
+  container.appendChild(makeSectionTitle(`${sectionTitle} (${events.length})`));
+
+  const chips = document.createElement("div");
+  chips.className = "run-info-chips";
+  events.forEach(ev => {
+    const label = ev.bankName || "Bank";
+    const chip = makeChip("bank", label, `step ${ev.stepIndex}`, () => flyAndFlash(ev.location));
+    if (ev.pickups && ev.pickups.length) {
+      chip.title = `Picked up from bank: ${ev.pickups.join(", ")}`;
+    } else if (ev.transportsAfterBank && ev.transportsAfterBank.length) {
+      chip.title = `Transports after bank: ${ev.transportsAfterBank.join(" → ")}`;
+    }
+    chips.appendChild(chip);
+  });
+  container.appendChild(chips);
+
+  if (!showPickups) return;
+  const withPickups = events.filter(ev => ev.pickups && ev.pickups.length);
+  if (withPickups.length === 0) return;
+
+  const pickupsSection = document.createElement("div");
+  pickupsSection.className = "run-info-pickups";
+  const singleEvent = events.length === 1;
+  withPickups.forEach(ev => {
+    const row = document.createElement("div");
+    row.className = "run-info-pickups-row";
+    const label = document.createElement("div");
+    label.className = "run-info-pickups-label";
+    label.textContent = singleEvent
+      ? "Picked up from bank:"
+      : `From ${ev.bankName || `step ${ev.stepIndex}`}:`;
+    const list = document.createElement("ul");
+    list.className = "run-info-pickups-list";
+    ev.pickups.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      list.appendChild(li);
+    });
+    row.appendChild(label);
+    row.appendChild(list);
+    pickupsSection.appendChild(row);
+  });
+  container.appendChild(pickupsSection);
 }
 
 function flyAndFlash(point) {
@@ -632,14 +670,7 @@ function buildOverviewPane(run) {
   runInfoOverviewEl.appendChild(kv);
 
   if (run.bankEvents && run.bankEvents.length > 0) {
-    runInfoOverviewEl.appendChild(makeSectionTitle(`Banks visited (${run.bankEvents.length})`));
-    const chips = document.createElement("div");
-    chips.className = "run-info-chips";
-    run.bankEvents.forEach(ev => {
-      const label = ev.bankName || "Bank";
-      chips.appendChild(makeChip("bank", label, `step ${ev.stepIndex}`, () => flyAndFlash(ev.location)));
-    });
-    runInfoOverviewEl.appendChild(chips);
+    renderBankEvents(runInfoOverviewEl, run, "Banks visited", { showPickups: false });
   } else if (run.bankVisitedOnPath === false && run.routeModeId === "BANK") {
     const empty = document.createElement("div");
     empty.className = "run-info-empty";
@@ -663,14 +694,7 @@ function buildPathPane(run) {
   runInfoPathEl.appendChild(kv);
 
   if (run.bankEvents && run.bankEvents.length > 0) {
-    runInfoPathEl.appendChild(makeSectionTitle(`Bank events (${run.bankEvents.length})`));
-    const chips = document.createElement("div");
-    chips.className = "run-info-chips";
-    run.bankEvents.forEach(ev => {
-      const label = ev.bankName || "Bank";
-      chips.appendChild(makeChip("bank", label, `step ${ev.stepIndex}`, () => flyAndFlash(ev.location)));
-    });
-    runInfoPathEl.appendChild(chips);
+    renderBankEvents(runInfoPathEl, run, "Bank events", { showPickups: true });
   }
 
   if (run.transports && run.transports.length > 0) {
@@ -829,10 +853,7 @@ function renderRunList() {
     if (selectedRun === run) {
       button.classList.add("selected");
     }
-    button.addEventListener("click", () => {
-      renderRun(run);
-      renderRunList();
-    });
+    button.addEventListener("click", () => selectRun(run));
     item.appendChild(button);
     runListEl.appendChild(item);
   });
@@ -871,15 +892,26 @@ function renderRun(run) {
     addMarker(marker.point, marker.label, markerColor(marker.kind), radius);
   });
 
-  const details = buildDetails(run);
-  runDetailsEl.textContent = details;
-  runInfoDetailsEl.textContent = details;
+  runInfoDetailsEl.textContent = buildDetails(run);
   buildOverviewPane(run);
   buildPathPane(run);
   runInfoPanel.classList.remove("run-info-hidden");
   setPathLegendVisible(Boolean(run.bankVisitedOnPath) || (run.bankEvents && run.bankEvents.length > 0));
   renderTransportOverlays();
   window.dashboardExtensions.forEach(ext => ext.renderRun(run));
+}
+
+function selectRun(run) {
+  renderRun(run);
+  renderRunList();
+}
+
+function navigateRun(delta) {
+  const runs = filteredRuns();
+  const index = selectedRun ? runs.indexOf(selectedRun) : -1;
+  const next = index + delta;
+  if (index === -1 || next < 0 || next >= runs.length) return;
+  selectRun(runs[next]);
 }
 
 function renderReport(report) {
@@ -915,15 +947,14 @@ function renderReport(report) {
   }
 
   if (runs.length === 0) {
-    runDetailsEl.textContent = "No runs in report.json";
+    summaryEl.textContent = summaryEl.textContent + "\nNo runs in report.json";
     runListEl.innerHTML = "";
     return;
   }
 
   currentPlane = runs[0].target.plane;
   baseLayer.redraw();
-  renderRun(runs[0]);
-  renderRunList();
+  selectRun(runs[0]);
 }
 
 async function loadReport(url) {
@@ -964,24 +995,15 @@ async function initDashboard() {
     });
   });
 
-  // Check URL for ?bundle= parameter
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("bundle");
-  const initial = requested
-    ? index.bundles.find(b => b.name === requested)
-    : index.bundles[0];
-  if (initial) {
-    bundleSelectEl.value = initial.reportPath;
-    await loadReport("bundles/" + initial.reportPath);
-  } else {
-    bundleSelectEl.value = index.bundles[0].reportPath;
-    await loadReport("bundles/" + index.bundles[0].reportPath);
-  }
+  const initial = (requested && index.bundles.find(b => b.name === requested)) || index.bundles[0];
+  bundleSelectEl.value = initial.reportPath;
+  await loadReport("bundles/" + initial.reportPath);
 }
 
 initDashboard().catch(error => {
   summaryEl.textContent = error.message;
-  runDetailsEl.textContent = "Unable to render dashboard.";
 });
 
 // ── Event listeners ───────────────────────────────────────────────────
@@ -997,26 +1019,28 @@ runInfoTabButtons.forEach(btn => {
   btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
 });
 
-// Sidebar toggle — on narrow viewports the sidebar defaults to collapsed via CSS,
-// so we toggle the explicit "expanded" class; on wider viewports we toggle "collapsed".
+// Sidebar toggle — on narrow viewports the sidebar defaults to collapsed via CSS
+// (.sidebar:not(.expanded) rule), so we toggle the explicit "expanded" class there;
+// on wider viewports we toggle "collapsed".
 const narrowSidebarQuery = window.matchMedia("(max-width: 1100px)");
-sidebarToggle.addEventListener("click", () => {
-  let showing;
-  if (narrowSidebarQuery.matches) {
-    showing = sidebarEl.classList.toggle("expanded");
-  } else {
-    showing = !sidebarEl.classList.toggle("collapsed");
-  }
-  sidebarToggle.querySelector("span").innerHTML = showing ? "&#9664;" : "&#9654;";
-  setTimeout(() => map.invalidateSize(), 250);
-});
+const sidebarToggleIcon = sidebarToggle.querySelector("span");
 
-function syncSidebarToggleIcon() {
-  const showing = narrowSidebarQuery.matches
+function sidebarIsShowing() {
+  return narrowSidebarQuery.matches
     ? sidebarEl.classList.contains("expanded")
     : !sidebarEl.classList.contains("collapsed");
-  sidebarToggle.querySelector("span").innerHTML = showing ? "&#9664;" : "&#9654;";
 }
+
+function syncSidebarToggleIcon() {
+  sidebarToggleIcon.innerHTML = sidebarIsShowing() ? "&#9664;" : "&#9654;";
+}
+
+sidebarToggle.addEventListener("click", () => {
+  const cls = narrowSidebarQuery.matches ? "expanded" : "collapsed";
+  sidebarEl.classList.toggle(cls);
+  syncSidebarToggleIcon();
+  setTimeout(() => map.invalidateSize(), 250);
+});
 narrowSidebarQuery.addEventListener("change", syncSidebarToggleIcon);
 syncSidebarToggleIcon();
 
@@ -1025,14 +1049,11 @@ function onFilterChange() {
   renderRunList();
   if (runs.length === 0) {
     selectedRun = null;
-    runDetailsEl.textContent = "No matching scenarios.";
     clearLayers();
     return;
   }
-
   if (!selectedRun || !runs.includes(selectedRun)) {
-    renderRun(runs[0]);
-    renderRunList();
+    selectRun(runs[0]);
   }
 }
 
@@ -1040,34 +1061,12 @@ runSearchEl.addEventListener("input", onFilterChange);
 unreachedOnlyEl.addEventListener("change", onFilterChange);
 
 centerTargetEl.addEventListener("click", () => {
-  if (!selectedRun) {
-    return;
-  }
-
+  if (!selectedRun) return;
   map.setView(worldToLatLng(selectedRun.target), Math.max(map.getZoom(), 2));
 });
 
-prevRunEl.addEventListener("click", () => {
-  const runs = filteredRuns();
-  const selectedIndex = selectedRun ? runs.indexOf(selectedRun) : -1;
-  if (selectedIndex <= 0) {
-    return;
-  }
-
-  renderRun(runs[selectedIndex - 1]);
-  renderRunList();
-});
-
-nextRunEl.addEventListener("click", () => {
-  const runs = filteredRuns();
-  const selectedIndex = selectedRun ? runs.indexOf(selectedRun) : -1;
-  if (selectedIndex === -1 || selectedIndex >= runs.length - 1) {
-    return;
-  }
-
-  renderRun(runs[selectedIndex + 1]);
-  renderRunList();
-});
+prevRunEl.addEventListener("click", () => navigateRun(-1));
+nextRunEl.addEventListener("click", () => navigateRun(1));
 
 map.on("mousemove", event => {
   const point = latLngToWorldPoint(event.latlng);
