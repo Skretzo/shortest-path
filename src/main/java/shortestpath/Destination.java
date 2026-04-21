@@ -10,6 +10,13 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Quest;
+import net.runelite.api.Skill;
+import shortestpath.transport.parser.FieldParser;
+import shortestpath.transport.parser.QuestParser;
+import shortestpath.transport.parser.SkillRequirementParser;
+import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.parser.VarRequirementParser;
 
 /**
  * Utility loader for destination coordinate sets grouped by feature category.
@@ -22,6 +29,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class Destination {
+    private static final FieldParser<int[]> SKILL_PARSER = new SkillRequirementParser();
+    private static final FieldParser<Set<Quest>> QUEST_PARSER = new QuestParser();
+    private static final FieldParser<Set<VarRequirement>> VARBIT_PARSER = VarRequirementParser.forVarbits();
+    private static final FieldParser<Set<VarRequirement>> VARPLAYER_PARSER = VarRequirementParser.forVarPlayers();
     /**
      * Parses a TSV resource of destination coordinates and merges them into the provided map.
      * The key in the destination map is derived from the directory component immediately preceding the file
@@ -105,5 +116,103 @@ public class Destination {
         addDestinations(destinations, "/destinations/training/anvil.tsv");
         addDestinations(destinations, "/destinations/shopping/apothecary.tsv");
         return destinations;
+    }
+
+    /**
+     * Per-packed-point requirements for bank tiles, parsed from {@code bank.tsv} columns
+     * Skills, Quests, Varbits, and VarPlayers (same TSV format as transports).
+     * Tiles with no requirement rows behave as {@link DestinationRequirements#EMPTY}.
+     */
+    public static Map<Integer, DestinationRequirements> loadBankRequirementsFromResources() {
+        Map<Integer, DestinationRequirements> requirements = new HashMap<>();
+        final String path = "/destinations/game_features/bank.tsv";
+        final String DELIM_COLUMN = "\t";
+        final String PREFIX_COMMENT = "#";
+        final String DELIM = " ";
+
+        try {
+            String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
+            try (Scanner scanner = new Scanner(s)) {
+                String headerLine = scanner.nextLine();
+                headerLine = headerLine.startsWith(PREFIX_COMMENT + " ")
+                    ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
+                headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
+                String[] headers = headerLine.split(DELIM_COLUMN);
+                for (int i = 0; i < headers.length; i++) {
+                    headers[i] = headers[i].trim();
+                }
+
+                int destCol = indexOf(headers, "Destination");
+                int skillsCol = indexOf(headers, "Skills");
+                int questsCol = indexOf(headers, "Quests");
+                int varbitsCol = indexOf(headers, "Varbits");
+                int varPlayersCol = indexOf(headers, "VarPlayers");
+                if (destCol < 0) {
+                    return requirements;
+                }
+
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) {
+                        continue;
+                    }
+                    String[] fields = line.split(DELIM_COLUMN, -1);
+                    if (fields.length <= destCol) {
+                        continue;
+                    }
+                    String destField = fields[destCol].trim();
+                    String[] destinationArray = destField.split(DELIM);
+                    if (destinationArray.length != 3) {
+                        continue;
+                    }
+                    int packed;
+                    try {
+                        packed = WorldPointUtil.packWorldPoint(
+                            Integer.parseInt(destinationArray[0]),
+                            Integer.parseInt(destinationArray[1]),
+                            Integer.parseInt(destinationArray[2]));
+                    } catch (NumberFormatException e) {
+                        log.error("Invalid destination coordinate in bank.tsv", e);
+                        continue;
+                    }
+
+                    String skillsStr = fieldAt(fields, skillsCol);
+                    String questsStr = fieldAt(fields, questsCol);
+                    String varbitsStr = fieldAt(fields, varbitsCol);
+                    String varPlayersStr = fieldAt(fields, varPlayersCol);
+
+                    int[] skillLevels = skillsCol >= 0 ? SKILL_PARSER.parse(blankToNull(skillsStr)) : new int[Skill.values().length + 3];
+                    Set<Quest> quests = questsCol >= 0 ? QUEST_PARSER.parse(blankToNull(questsStr)) : Set.of();
+                    Set<VarRequirement> varbits = varbitsCol >= 0 ? VARBIT_PARSER.parse(blankToNull(varbitsStr)) : Set.of();
+                    Set<VarRequirement> varPlayers = varPlayersCol >= 0 ? VARPLAYER_PARSER.parse(blankToNull(varPlayersStr)) : Set.of();
+
+                    DestinationRequirements rowReq = new DestinationRequirements(skillLevels, quests, varbits, varPlayers);
+                    requirements.merge(packed, rowReq, DestinationRequirements::merge);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return requirements;
+    }
+
+    private static int indexOf(String[] headers, String name) {
+        for (int i = 0; i < headers.length; i++) {
+            if (name.equals(headers[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String fieldAt(String[] fields, int col) {
+        if (col < 0 || col >= fields.length) {
+            return "";
+        }
+        return fields[col];
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s;
     }
 }

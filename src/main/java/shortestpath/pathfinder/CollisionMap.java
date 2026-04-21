@@ -95,7 +95,7 @@ public class CollisionMap {
         // Either we have already visited a bank, if the current tile is a bank switch into the bankVisited state for the
         // rest of the path.
         boolean pathBankVisited = node.bankVisited
-            || (config.isBankPathEnabled() && config.getDestinations("bank").contains(node.packedPosition));
+            || (config.isBankPathEnabled() && config.bankAccessible(node.packedPosition));
 
         // Firstly check if there are any transports or teleports which are applicable from the current tile.
         Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());

@@ -227,7 +227,7 @@ public class ProfilingPathfinder {
         long subStart = System.nanoTime();
 
         boolean pathBankVisited = node.bankVisited
-            || (config.isBankPathEnabled() && config.getDestinations("bank").contains(node.packedPosition));
+            || (config.isBankPathEnabled() && config.bankAccessible(node.packedPosition));
 
         profile.bankCheckNanos += System.nanoTime() - subStart;
         if (pathBankVisited && !node.bankVisited) {

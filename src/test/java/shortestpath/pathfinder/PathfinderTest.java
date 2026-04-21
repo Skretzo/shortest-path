@@ -11,6 +11,7 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -23,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.dashboard.PathfinderTestDashboardCollector;
 import shortestpath.ItemVariations;
@@ -525,7 +527,7 @@ public class PathfinderTest {
 
         assertScenarioPathLengthWithBank(
             "Great Conch -> McGrubor's Wood with banked staff and bracelet",
-            54,
+            51,
             WorldPointUtil.packWorldPoint(3180, 2419, 0),
             WorldPointUtil.packWorldPoint(2652, 3485, 0),
             TeleportationItem.INVENTORY_AND_BANK,
@@ -545,7 +547,7 @@ public class PathfinderTest {
 
         assertScenarioPathLengthWithBank(
             "Great Conch tile reuse -> McGrubor's Wood with banked Dramen staff",
-            78,
+            74,
             WorldPointUtil.packWorldPoint(3181, 2437, 0),
             WorldPointUtil.packWorldPoint(2652, 3485, 0),
             TeleportationItem.INVENTORY_AND_BANK,
@@ -1706,6 +1708,44 @@ public class PathfinderTest {
             pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, Set.of()));
         stepTransports.addAll(pathfinderConfig.getUsableTeleports(bankVisited));
         return stepTransports;
+    }
+
+    /**
+     * With Fortis Colosseum bank gated by glory, the path from Auburnvale should bank at local booths
+     * (not the colosseum lobby chest) before using a ring of dueling to Ferox.
+     */
+    @Test
+    public void auburnvaleToFeroxBanksAtAuburnvaleWhenColosseumGloryNotMet() {
+        when(config.calculationCutoff()).thenReturn(500);
+        when(config.includeBankPath()).thenReturn(true);
+        // Bank chest at Fortis Colosseum requires COLOSSEUM_GLORY &gt; 1999
+        when(client.getVarpValue(eq(VarPlayerID.COLOSSEUM_GLORY))).thenReturn(0);
+        setupConfigWithBank(new Item(ItemID.RING_OF_DUELING_8, 1));
+
+        int auburnvaleStart = WorldPointUtil.packWorldPoint(1411, 3361, 0);
+        int ferox = WorldPointUtil.packWorldPoint(3134, 3629, 0);
+        Set<Integer> auburnvaleBankTiles = Set.of(
+            WorldPointUtil.packWorldPoint(1416, 3350, 0),
+            WorldPointUtil.packWorldPoint(1413, 3353, 0),
+            WorldPointUtil.packWorldPoint(1419, 3353, 0),
+            WorldPointUtil.packWorldPoint(1416, 3356, 0));
+        int fortisColosseumBank = WorldPointUtil.packWorldPoint(1804, 9501, 0);
+
+        Pathfinder pathfinder = new Pathfinder(pathfinderConfig, auburnvaleStart, Set.of(ferox));
+        pathfinder.run();
+        assertTrue("expected path to Ferox", pathfinder.getResult() != null && pathfinder.getResult().isReached());
+
+        // PathStep.bankVisited flips true on tiles *after* using bank inventory; the bank booth tile itself
+        // may still carry bankVisited=false — assert we pass through Auburnvale booths and later use bank state.
+        assertTrue(
+            "path should walk onto an Auburnvale bank tile",
+            pathfinder.getPath().stream().anyMatch(s -> auburnvaleBankTiles.contains(s.getPackedPosition())));
+        assertTrue(
+            "path should enter post-bank inventory state (for ring of dueling from bank)",
+            pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+        assertFalse(
+            "Fortis Colosseum bank tile should not appear on the shortest path when glory gates it off",
+            pathfinder.getPath().stream().anyMatch(s -> s.getPackedPosition() == fortisColosseumBank));
     }
 
 }
