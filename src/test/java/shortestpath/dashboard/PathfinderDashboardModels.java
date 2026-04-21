@@ -10,6 +10,15 @@ public final class PathfinderDashboardModels {
         public String generatedAt;
         public String title;
         public String subtitle;
+        /** Reachability / scenario dashboards: scenario id (e.g. {@code default}). */
+        public String scenarioId;
+        /** Default start world point for the scenario when not overridden per target. */
+        public WorldPointJson scenarioDefaultStart;
+        /**
+         * Distinct bank location names from {@code /destinations/game_features/bank.tsv} (Info column), when the report
+         * generator populates it (e.g. reachability dashboard).
+         */
+        public List<String> bankNamesFromData;
         public Summary summary;
         public List<TransportLayerTransport> transportLayers;
         public List<RunRecord> runs;
@@ -37,6 +46,20 @@ public final class PathfinderDashboardModels {
         public List<TransportStep> transports;
         public List<Marker> markers;
         public List<String> details;
+
+        /** Reachability: route mode id from the route CSV / scenario (e.g. {@code ALL}, {@code BANK}). */
+        public String routeModeId;
+        /** Teleportation item policy name (matches {@code TeleportationItem} enum). */
+        public String teleportationItems;
+        /** Whether the pathfinder was configured to allow routing via a bank first. */
+        public Boolean includeBankPath;
+        /** Stub value for elite Lumbridge diary varbit in tests (affects fairy-ring staff rules). */
+        public Integer lumbridgeDiaryEliteStub;
+
+        /** True if any path step has {@code bankVisited} (post-bank inventory state). */
+        public Boolean bankVisitedOnPath;
+        /** Each transition from unbanked to banked state along the path (bank tile + label when known). */
+        public List<BankEvent> bankEvents;
 
         // Optional profiler fields (null when not profiled)
         public PhaseBreakdown phases;
@@ -83,6 +106,16 @@ public final class PathfinderDashboardModels {
         public int y;
         public int plane;
         public boolean bankVisited;
+    }
+
+    /** A point where the path transitions into the "bank visited" inventory state. */
+    public static class BankEvent {
+        /** Index of the path step at the bank tile (before leaving with banked items). */
+        public int stepIndex;
+        /** Bank tile world position. */
+        public WorldPointJson location;
+        /** Name from {@code bank.tsv} when the tile matches, else null. */
+        public String bankName;
     }
 
     // ── Profiler models (optional per-run data) ─────────────────────

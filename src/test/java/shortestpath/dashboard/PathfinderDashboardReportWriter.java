@@ -38,6 +38,28 @@ public class PathfinderDashboardReportWriter {
         return report;
     }
 
+    /**
+     * Same as {@link #createReport(String, String, long, List, List)} with optional reachability scenario metadata.
+     */
+    public PathfinderDashboardModels.Report createReport(
+        String title,
+        String subtitle,
+        long elapsedMillis,
+        List<PathfinderDashboardModels.RunRecord> runs,
+        List<PathfinderDashboardModels.TransportLayerTransport> transportLayers,
+        String scenarioId,
+        PathfinderDashboardModels.WorldPointJson scenarioDefaultStart) {
+        PathfinderDashboardModels.Report report = createReport(title, subtitle, elapsedMillis, runs, transportLayers);
+        report.scenarioId = scenarioId;
+        report.scenarioDefaultStart = scenarioDefaultStart;
+        return report;
+    }
+
+    /** Packed world point for JSON (no {@code bankVisited} semantics). */
+    public static PathfinderDashboardModels.WorldPointJson worldPointJsonPacked(int packedPoint) {
+        return worldPoint(packedPoint);
+    }
+
     public PathfinderDashboardModels.RunRecord createRunRecord(
         String name,
         String category,
@@ -83,6 +105,7 @@ public class PathfinderDashboardReportWriter {
         run.transports = transportSteps(result.getPathSteps(), config);
         run.markers = markers(result, config);
         run.details = details;
+        addBankPathMetadata(run, result.getPathSteps());
         return run;
     }
 
@@ -225,15 +248,56 @@ public class PathfinderDashboardReportWriter {
         addMarker(markers, "closest", "Closest reached", result.getClosestReachedPoint());
 
         List<PathStep> path = result.getPathSteps();
+        for (BankTransition transition : collectBankTransitions(path)) {
+            String bankName = BankDestinationLabels.labelForPackedNearest(transition.packedBankTile, 2);
+            String label = bankName != null
+                ? "Bank: " + bankName + " (step " + transition.transitionIndex + ")"
+                : "Bank visited at step " + transition.transitionIndex;
+            addMarker(markers, "bank", label, transition.packedBankTile);
+        }
+        return markers;
+    }
+
+    private static void addBankPathMetadata(PathfinderDashboardModels.RunRecord run, List<PathStep> path) {
+        if (path == null || path.isEmpty()) {
+            run.bankVisitedOnPath = false;
+            run.bankEvents = null;
+            return;
+        }
+        boolean any = path.stream().anyMatch(PathStep::isBankVisited);
+        run.bankVisitedOnPath = any;
+        List<PathfinderDashboardModels.BankEvent> events = new ArrayList<>();
+        for (BankTransition transition : collectBankTransitions(path)) {
+            PathfinderDashboardModels.BankEvent ev = new PathfinderDashboardModels.BankEvent();
+            ev.stepIndex = transition.transitionIndex;
+            ev.location = worldPoint(transition.packedBankTile);
+            ev.bankName = BankDestinationLabels.labelForPackedNearest(transition.packedBankTile, 2);
+            events.add(ev);
+        }
+        run.bankEvents = events.isEmpty() ? null : events;
+    }
+
+    private static final class BankTransition {
+        final int transitionIndex;
+        final int packedBankTile;
+
+        BankTransition(int transitionIndex, int packedBankTile) {
+            this.transitionIndex = transitionIndex;
+            this.packedBankTile = packedBankTile;
+        }
+    }
+
+    private static List<BankTransition> collectBankTransitions(List<PathStep> path) {
+        List<BankTransition> out = new ArrayList<>();
         for (int i = 0; i < path.size(); i++) {
             PathStep step = path.get(i);
             boolean transitionedIntoBankState = step.isBankVisited() && (i == 0 || !path.get(i - 1).isBankVisited());
             if (transitionedIntoBankState) {
                 int transitionIndex = Math.max(0, i - 1);
-                addMarker(markers, "bank", "Bank visited at step " + transitionIndex, path.get(transitionIndex).getPackedPosition());
+                out.add(new BankTransition(transitionIndex, path.get(transitionIndex).getPackedPosition()));
             }
         }
-        return markers;
+        return out;
     }
 
     private static void addMarker(List<PathfinderDashboardModels.Marker> markers, String kind, String label, int packedPoint) {
