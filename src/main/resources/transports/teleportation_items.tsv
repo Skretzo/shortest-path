@@ -395,8 +395,8 @@
 # Sailors' amulet (Charged)										
 # TODO: gate Port Roberts and Deepfin Point teleports on the Sailors' Marker inspection varbit.										
 # Confirmed from cache dump (see SailingAmenityVarbitDumperTest):										
-#   Item 32398 "Sailors' amulet (inert)"   interfaceOptions: [null, Wear, null, Inspect, Destroy]										
-#   Item 32399 "Sailors' amulet" (charged) interfaceOptions: [null, Wear, Teleport, Check, Destroy]										
+#   Item 32398 Sailors amulet (inert)   interfaceOptions: [null, Wear, null, Inspect, Destroy]										
+#   Item 32399 Sailors amulet (charged) interfaceOptions: [null, Wear, Teleport, Check, Destroy]										
 #     subops[2] = [The Pandemonium, Port Roberts, _, _, Deepfin Point, ...]										
 #     param[2257] = 7040 (cs2 script that handles the Teleport submenu and checks the unlock varbit).										
 # The unlock varbit itself lives only in that cs2 script and can't be decoded by the bundled										
