@@ -28,8 +28,16 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build shared dashboard site
-        run: ./gradlew clean dashboardSite -PclueStepsDashboardDataset=/reachability/clue_locations_full.csv -PtargetsDashboardDataset=/reachability/targets.csv --stacktrace
+      - name: Build scenario dashboard
+        run: ./gradlew clean scenarioDashboard --stacktrace
+        shell: bash
+
+      - name: Build clue steps dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/reachability/clue_locations_full.csv -PdashboardProfile=false --stacktrace
+        shell: bash
+
+      - name: Build targets dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/reachability/targets.csv -PdashboardProfile=false --stacktrace
         shell: bash
 
       - name: Build quetzal whistle routes dashboard

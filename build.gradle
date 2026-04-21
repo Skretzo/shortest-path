@@ -23,7 +23,12 @@ dependencies {
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
     testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
-    testImplementation group: 'net.runelite', name:'cache', version: runeLiteVersion
+    testImplementation(group: 'net.runelite', name:'cache', version: runeLiteVersion) {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+
+    jmhImplementation sourceSets.test.output
+    jmhImplementation sourceSets.test.runtimeClasspath
 }
 
 group = 'shortestpath'
@@ -33,6 +38,47 @@ sourceCompatibility = '1.11'
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
+
+// ─── Testing ─────────────────────────────────────────────────────────────────
+
+test {
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/test/jacocoTestReport.xml')
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/test/html')
+    }
+}
+
+// Runs the RuneLite client with the ShortestPathPlugin loaded.
+tasks.register('runelite', JavaExec) {
+    group = 'application'
+    description = 'Runs shortestpath.ShortestPathPluginTest with assertions enabled'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass.set('shortestpath.ShortestPathPluginTest')
+    jvmArgs '-ea'
+    args '--developer-mode'
+}
+
+jmh {
+    warmupIterations = 3
+    iterations = 5
+    fork = 2
+    jvmArgs = ['-Xms2g', '-Xmx8g']
+    resultFormat = 'JSON'
+    resultsFile = layout.buildDirectory.file('reports/jmh/results.json')
+}
+
+// ─── Dashboards ──────────────────────────────────────────────────────────────
 
 def dashboardOutputRoot = layout.buildDirectory.dir('reports/pathfinder-dashboard')
 def dashboardDataset = providers.gradleProperty('dashboardDataset')
@@ -44,70 +90,82 @@ def dashboardSubtitle = providers.gradleProperty('dashboardSubtitle')
 def dashboardProfile = providers.gradleProperty('dashboardProfile')
     .orElse('true')
 // Derive bundle name and title from the dataset filename + profile flag.
-// e.g. /reachability/clue_locations_full.csv -PdashboardProfile=true
+// e.g. dataset=/reachability/clue_locations_full.csv, profile=true
 //   → bundle: clue-locations-full-profiled, title: Clue Locations Full Profiled
-// Override either with -PdashboardBundle=... or -PdashboardTitle=...
-def _filename = dashboardDataset.get().tokenize('/').last()
-def _stem     = _filename.contains('.') ? _filename.substring(0, _filename.lastIndexOf('.')) : _filename
-def _slug     = _stem.replace('_', '-').toLowerCase()
-def _profiled  = dashboardProfile.get() == 'true'
+// Override with -PdashboardBundle=... or -PdashboardTitle=...
+def filename = dashboardDataset.get().tokenize('/').last()
+def stem     = filename.contains('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename
+def slug     = stem.replace('_', '-').toLowerCase()
+def profiled = dashboardProfile.get() == 'true'
 def dashboardBundle = providers.gradleProperty('dashboardBundle')
-    .orElse(_profiled ? "${_slug}-profiled" : _slug)
+    .orElse(profiled ? "${slug}-profiled" : slug)
 def dashboardTitle = providers.gradleProperty('dashboardTitle')
-    .orElse(_stem.tokenize('_').collect { it.capitalize() }.join(' ') + (_profiled ? ' Profiled' : ''))
+    .orElse(stem.tokenize('_').collect { it.capitalize() }.join(' ') + (profiled ? ' Profiled' : ''))
 
 def logDashboardLocation = { String taskName ->
-    File dashboardDir = dashboardOutputRoot.get().asFile
     logger.lifecycle("")
     logger.lifecycle("${taskName} dashboard written.")
     logger.lifecycle("Serve it locally with:")
-    logger.lifecycle("  python -m http.server --directory ${dashboardDir.absolutePath} 8000")
+    logger.lifecycle("  python -m http.server --directory ${dashboardOutputRoot.get().asFile.absolutePath} 8000")
     logger.lifecycle("Then open: http://localhost:8000")
 }
-test {
-    jvmArgs = ['-Xms1g', '-Xmx8g']
+
+// Shared configuration for all dashboard Test tasks.
+def configureDashboard = { Test t ->
+    t.group = 'verification'
+    t.testClassesDirs = sourceSets.test.output.classesDirs
+    t.classpath = sourceSets.test.runtimeClasspath
+    t.useJUnit()
+    t.ignoreFailures = true
+    t.jvmArgs = ['-Xms1g', '-Xmx8g']
+    t.testLogging.showStandardStreams = true
+    t.doLast { logDashboardLocation(t.name) }
+}
+
+// Additional shared setup for tasks that run ReachabilityDashboardTest.
+def configureReachabilityDashboard = { Test t ->
+    configureDashboard(t)
+    t.include 'shortestpath/reachability/ReachabilityDashboardTest.class'
+    t.systemProperty 'runReachabilityVerification', 'true'
+    t.systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+}
+
+tasks.register('scenarioDashboard', Test) {
+    description = 'Builds the pathfinder scenario dashboard from PathfinderTest'
+    configureDashboard(it)
+    include 'shortestpath/pathfinder/PathfinderTest.class'
+    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    systemProperty 'dashboard.bundleName', 'pathfinder-tests'
 }
 
 tasks.register('dashboard', Test) {
-    group = 'verification'
-    description = 'Builds the pathfinder dashboard. Required: -PdashboardDataset=... (default: /reachability/routes.csv), -PdashboardProfile=true|false (default: true). Bundle name and title are derived automatically; override with -PdashboardBundle=... or -PdashboardTitle=...'
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnit()
-    include 'shortestpath/reachability/ReachabilityDashboardTest.class'
-    ignoreFailures = true
-    systemProperty 'runReachabilityVerification', 'true'
+    description = 'Builds the pathfinder dashboard. ' +
+        'Required: -PdashboardDataset=... (default: /reachability/routes.csv), ' +
+        '-PdashboardProfile=true|false (default: true). ' +
+        'Bundle name and title are derived automatically; override with -PdashboardBundle=... or -PdashboardTitle=...'
+    configureReachabilityDashboard(it)
     systemProperty 'reachability.dataset', dashboardDataset.get()
     systemProperty 'reachability.reportTitle', dashboardTitle.get()
     systemProperty 'reachability.reportSubtitle', dashboardSubtitle.get()
     systemProperty 'reachability.profile', dashboardProfile.get()
-    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
     def scenarioValue = dashboardScenario.get()
     if (scenarioValue && !scenarioValue.isEmpty()) {
         systemProperty 'reachability.scenario', scenarioValue
     }
     systemProperty 'dashboard.bundleName', dashboardBundle.get()
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    testLogging {
-        showStandardStreams = true
-    }
-    doLast {
-        logDashboardLocation(name)
-    }
 }
+
+
+// ─── Cache dumpers ────────────────────────────────────────────────────────────
 
 // Dumps bank-related object placements (Bank booth / Bank chest / Bank table /
 // deposit box / GE booth) from an OSRS cache to a TSV. Pair with
-// scripts/rebuild_bank_tsv.py to add stand-tile rows to bank.tsv for any
-// cache placements that aren't already represented.
+// scripts/rebuild_bank_tsv.py to add stand-tile rows to bank.tsv.
 //
 // Usage:
-//   collision-map-update/download-latest-cache.sh         # produces ./cache and ./keys.json
-//   sed -i '' 's/mapsquare/region/g; s/key/keys/g' keys.json   # macOS; drop -i '' on Linux
-//   ./gradlew bankTileDump \
-//     -PbankTileCacheDir=$PWD/cache \
-//     -PbankTileXteaPath=$PWD/keys.json \
-//     [-PbankTileOutput=$PWD/bank_tile_placements.tsv]
+//   collision-map-update/download-latest-cache.sh      # produces ./cache and ./keys.json
+//   sed -i '' 's/mapsquare/region/g; s/key/keys/g' keys.json
+//   ./gradlew bankTileDump -PbankTileCacheDir=$PWD/cache -PbankTileXteaPath=$PWD/keys.json
 def bankTileCacheDir = providers.gradleProperty('bankTileCacheDir').orElse('')
 def bankTileXteaPath = providers.gradleProperty('bankTileXteaPath').orElse('')
 def bankTileOutput = providers.gradleProperty('bankTileOutput')
@@ -147,10 +205,9 @@ tasks.register('bankTileDump', Test) {
     }
 }
 
-// Ad-hoc diagnostic: dump Sailing-island amenity object definitions
-// (varbit/varp transforms) plus every placement from an OSRS cache.
-// Used to identify the construction-gated bank-chest varbits for
-// bank.tsv. No output file — prints to the gradle task log.
+// Dumps Sailing-island amenity object definitions (varbit/varp transforms) plus
+// every placement from an OSRS cache. Used to identify the construction-gated
+// bank-chest varbits for bank.tsv. No output file — prints to the task log.
 def sailingAmenityCacheDir = providers.gradleProperty('sailingAmenityCacheDir').orElse('')
 def sailingAmenityXteaPath = providers.gradleProperty('sailingAmenityXteaPath').orElse('')
 
@@ -177,113 +234,4 @@ tasks.register('sailingAmenityVarbitDump', Test) {
     }
 }
 
-tasks.register('scenarioDashboard', Test) {
-    group = 'verification'
-    description = 'Builds the pathfinder scenario dashboard from PathfinderTest'
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnit()
-    include 'shortestpath/pathfinder/PathfinderTest.class'
-    ignoreFailures = true
-    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-    systemProperty 'dashboard.bundleName', 'pathfinder-tests'
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    doLast {
-        logDashboardLocation(name)
-    }
-}
 
-// Convenience task properties for multi-bundle builds
-def clueStepsDashboardDataset = providers.gradleProperty('clueStepsDashboardDataset')
-    .orElse('/reachability/clue_locations_full.csv')
-def targetsDashboardDataset = providers.gradleProperty('targetsDashboardDataset')
-    .orElse('/reachability/targets.tsv')
-
-tasks.register('clueStepsDashboard', Test) {
-    group = 'verification'
-    description = 'Builds the clue-steps dashboard bundle'
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnit()
-    include 'shortestpath/reachability/ReachabilityDashboardTest.class'
-    ignoreFailures = true
-    systemProperty 'runReachabilityVerification', 'true'
-    systemProperty 'reachability.dataset', clueStepsDashboardDataset.get()
-    systemProperty 'reachability.reportTitle', 'Clue Steps Default'
-    systemProperty 'reachability.reportSubtitle', 'Clue steps sweep from bank start'
-    systemProperty 'reachability.profile', 'false'
-    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-    systemProperty 'dashboard.bundleName', 'clue-steps-default'
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    doLast {
-        logDashboardLocation(name)
-    }
-}
-
-tasks.register('targetsDashboard', Test) {
-    group = 'verification'
-    description = 'Builds the reported-targets dashboard bundle'
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnit()
-    include 'shortestpath/reachability/ReachabilityDashboardTest.class'
-    ignoreFailures = true
-    systemProperty 'runReachabilityVerification', 'true'
-    systemProperty 'reachability.dataset', targetsDashboardDataset.get()
-    systemProperty 'reachability.reportTitle', 'Reported Targets'
-    systemProperty 'reachability.reportSubtitle', 'Lightweight regression list from targets.tsv'
-    systemProperty 'reachability.profile', 'false'
-    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-    systemProperty 'dashboard.bundleName', 'reported-targets'
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    doLast {
-        logDashboardLocation(name)
-    }
-}
-
-tasks.register('dashboardSite') {
-    group = 'verification'
-    description = 'Builds the shared dashboard site with all bundles'
-    dependsOn 'scenarioDashboard', 'clueStepsDashboard', 'targetsDashboard'
-    doLast {
-        logDashboardLocation(name)
-    }
-}
-
-jacoco {
-    toolVersion = "0.8.11"
-}
-
-tasks.named('jacocoTestReport') {
-    dependsOn tasks.named('test')
-    reports {
-        xml.required = true
-        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/test/jacocoTestReport.xml')
-        html.required = true
-        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/test/html')
-    }
-}
-
-// Convenience task to start the RuneLite client with the ShortestPathPlugin
-tasks.register('runelite', JavaExec) {
-    group = 'application'
-    description = 'Runs shortestpath.ShortestPathPluginTest with assertions enabled'
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass.set('shortestpath.ShortestPathPluginTest')
-    jvmArgs '-ea'
-    args '--developer-mode'
-}
-
-jmh {
-    warmupIterations = 3
-    iterations = 5
-    fork = 2
-    jvmArgs = ['-Xms2g', '-Xmx8g']
-    resultFormat = 'JSON'
-    resultsFile = layout.buildDirectory.file('reports/jmh/results.json')
-}
-
-dependencies {
-    jmhImplementation sourceSets.test.output
-    jmhImplementation sourceSets.test.runtimeClasspath
-}
