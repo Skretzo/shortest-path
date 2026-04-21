@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +24,7 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
+import shortestpath.DestinationRequirements;
 import shortestpath.ItemVariations;
 import shortestpath.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
@@ -67,6 +69,10 @@ public class PathfinderConfig {
     private final Map<Integer, Set<Transport>> allTransports;
     private final Map<String, Set<Integer>> allDestinations;
     private final Map<String, Set<Integer>> filteredDestinations;
+    /** Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers. */
+    private final Map<Integer, DestinationRequirements> bankRequirements;
+    /** Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}. */
+    private Set<Integer> accessibleBankTiles = Set.of();
     private final Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
     private final List<Integer> filteredTargets = new ArrayList<>(4);
 
@@ -125,6 +131,7 @@ public class PathfinderConfig {
         this.allDestinations = Destination.loadAllFromResources();
         this.filteredDestinations = filterDestinations(allDestinations);
         this.destinations = allDestinations;
+        this.bankRequirements = Destination.loadBankRequirementsFromResources();
     }
 
     public CollisionMap getMap() {
@@ -169,6 +176,13 @@ public class PathfinderConfig {
         return destinations.get(destinationType);
     }
 
+    /**
+     * Whether standing on this tile may flip the path into {@code bankVisited} (inventory-from-bank) state.
+     */
+    public boolean bankAccessible(int packedPosition) {
+        return accessibleBankTiles.contains(packedPosition);
+    }
+
     public void refresh() {
         calculationCutoffMillis = config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
         avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
@@ -203,10 +217,63 @@ public class PathfinderConfig {
         }
 
         refreshDestinations();
+        rebuildAccessibleBankTiles();
     }
 
     private void refreshDestinations() {
         destinations = avoidWilderness ? filteredDestinations : allDestinations;
+    }
+
+    private void rebuildAccessibleBankTiles() {
+        Set<Integer> bankLocs = destinations.get("bank");
+        if (bankLocs == null) {
+            accessibleBankTiles = Set.of();
+            return;
+        }
+        if (!GameState.LOGGED_IN.equals(client.getGameState())) {
+            accessibleBankTiles = Collections.unmodifiableSet(new HashSet<>(bankLocs));
+            return;
+        }
+        Set<Integer> acc = new HashSet<>(bankLocs.size());
+        for (Integer p : bankLocs) {
+            DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
+            if (satisfiesBankDestinationRequirements(req)) {
+                acc.add(p);
+            }
+        }
+        accessibleBankTiles = Collections.unmodifiableSet(acc);
+    }
+
+    /**
+     * Quest/skill/var gates for bank tiles (not used for transport overlays).
+     */
+    private boolean satisfiesBankDestinationRequirements(DestinationRequirements dr) {
+        if (dr == null || dr.isEmpty()) {
+            return true;
+        }
+        int[] requiredLevels = dr.getSkillLevels();
+        for (int i = 0; i < boostedSkillLevelsAndMore.length; i++) {
+            int need = i < requiredLevels.length ? requiredLevels[i] : 0;
+            if (boostedSkillLevelsAndMore[i] < need) {
+                return false;
+            }
+        }
+        for (Quest quest : dr.getQuests()) {
+            if (!QuestState.FINISHED.equals(getQuestState(quest))) {
+                return false;
+            }
+        }
+        for (VarRequirement req : dr.getVarbits()) {
+            if (!req.checkValue(client.getVarbitValue(req.getId()))) {
+                return false;
+            }
+        }
+        for (VarRequirement req : dr.getVarPlayers()) {
+            if (!req.checkValue(client.getVarpValue(req.getId()))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
