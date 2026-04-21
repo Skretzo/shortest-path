@@ -147,6 +147,36 @@ tasks.register('bankTileDump', Test) {
     }
 }
 
+// Ad-hoc diagnostic: dump Sailing-island amenity object definitions
+// (varbit/varp transforms) plus every placement from an OSRS cache.
+// Used to identify the construction-gated bank-chest varbits for
+// bank.tsv. No output file — prints to the gradle task log.
+def sailingAmenityCacheDir = providers.gradleProperty('sailingAmenityCacheDir').orElse('')
+def sailingAmenityXteaPath = providers.gradleProperty('sailingAmenityXteaPath').orElse('')
+
+tasks.register('sailingAmenityVarbitDump', Test) {
+    group = 'verification'
+    description = 'Dumps Sailing island amenity object defs + placements from an OSRS cache. ' +
+        'Required: -PsailingAmenityCacheDir=<cache dir>, -PsailingAmenityXteaPath=<keys.json>.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/dump/SailingAmenityVarbitDumperTest.class'
+    systemProperty 'sailing.amenity.dump', 'true'
+    systemProperty 'sailing.amenity.cacheDir', sailingAmenityCacheDir.get()
+    systemProperty 'sailing.amenity.xteaPath', sailingAmenityXteaPath.get()
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    testLogging {
+        showStandardStreams = true
+    }
+    doFirst {
+        if (sailingAmenityCacheDir.get().isEmpty() || sailingAmenityXteaPath.get().isEmpty()) {
+            throw new GradleException(
+                "sailingAmenityVarbitDump requires -PsailingAmenityCacheDir and -PsailingAmenityXteaPath.")
+        }
+    }
+}
+
 tasks.register('scenarioDashboard', Test) {
     group = 'verification'
     description = 'Builds the pathfinder scenario dashboard from PathfinderTest'
