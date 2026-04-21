@@ -4,15 +4,20 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import shortestpath.ItemVariations;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
+import shortestpath.transport.TransportType;
+import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
 public class PathfinderDashboardReportWriter {
     // This class is the translation layer from pathfinder/test domain objects into the JSON model consumed by the
@@ -36,6 +41,28 @@ public class PathfinderDashboardReportWriter {
         report.transportLayers = transportLayers;
         report.runs = runs;
         return report;
+    }
+
+    /**
+     * Same as {@link #createReport(String, String, long, List, List)} with optional reachability scenario metadata.
+     */
+    public PathfinderDashboardModels.Report createReport(
+        String title,
+        String subtitle,
+        long elapsedMillis,
+        List<PathfinderDashboardModels.RunRecord> runs,
+        List<PathfinderDashboardModels.TransportLayerTransport> transportLayers,
+        String scenarioId,
+        PathfinderDashboardModels.WorldPointJson scenarioDefaultStart) {
+        PathfinderDashboardModels.Report report = createReport(title, subtitle, elapsedMillis, runs, transportLayers);
+        report.scenarioId = scenarioId;
+        report.scenarioDefaultStart = scenarioDefaultStart;
+        return report;
+    }
+
+    /** Packed world point for JSON (no {@code bankVisited} semantics). */
+    public static PathfinderDashboardModels.WorldPointJson worldPointJsonPacked(int packedPoint) {
+        return worldPoint(packedPoint);
     }
 
     public PathfinderDashboardModels.RunRecord createRunRecord(
@@ -83,6 +110,7 @@ public class PathfinderDashboardReportWriter {
         run.transports = transportSteps(result.getPathSteps(), config);
         run.markers = markers(result, config);
         run.details = details;
+        addBankPathMetadata(run, result.getPathSteps());
         return run;
     }
 
@@ -171,7 +199,14 @@ public class PathfinderDashboardReportWriter {
 
     private static List<PathfinderDashboardModels.TransportStep> transportSteps(List<PathStep> path, PathfinderConfig config) {
         List<PathfinderDashboardModels.TransportStep> steps = new ArrayList<>();
+        // Per-step seen-set. Some transports (e.g. home-teleport spells) are defined as multiple
+        // CSV rows that differ only in varbit guards for random cast-animation variants; tests
+        // bypass varbit checks so every variant would be emitted. Collapse entries that agree on
+        // everything the dashboard renders. We still keep genuinely distinct candidates (e.g.
+        // Varrock tablet vs Varrock Teleport spell) because they differ by type / displayInfo.
+        Set<String> seen = new HashSet<>();
         for (int i = 1; i < path.size(); i++) {
+            seen.clear();
             PathStep originStep = path.get(i - 1);
             PathStep destinationStep = path.get(i);
             int origin = originStep.getPackedPosition();
@@ -184,14 +219,7 @@ public class PathfinderDashboardReportWriter {
             for (Transport transport : physicalTransports) {
                 if (transport.getDestination() == destination) {
                     physicalCoversDestination = true;
-                    PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
-                    step.stepIndex = i;
-                    step.type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
-                    step.displayInfo = transport.getDisplayInfo();
-                    step.objectInfo = transport.getObjectInfo();
-                    step.origin = worldPoint(origin);
-                    step.destination = worldPoint(destination);
-                    steps.add(step);
+                    addTransportStep(steps, seen, i, origin, destination, transport);
                 }
             }
 
@@ -203,19 +231,274 @@ public class PathfinderDashboardReportWriter {
             if (!physicalCoversDestination && WorldPointUtil.distanceBetween2D(origin, destination) > 1) {
                 for (Transport transport : config.getUsableTeleports(bankVisited)) {
                     if (transport.getDestination() == destination) {
-                        PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
-                        step.stepIndex = i;
-                        step.type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
-                        step.displayInfo = transport.getDisplayInfo();
-                        step.objectInfo = transport.getObjectInfo();
-                        step.origin = worldPoint(origin);
-                        step.destination = worldPoint(destination);
-                        steps.add(step);
+                        addTransportStep(steps, seen, i, origin, destination, transport);
                     }
                 }
             }
         }
         return steps;
+    }
+
+    private static void addTransportStep(
+            List<PathfinderDashboardModels.TransportStep> steps, Set<String> seen,
+            int stepIndex, int origin, int destination, Transport transport) {
+        String type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
+        String key = type + "|" + transport.getDisplayInfo() + "|" + transport.getObjectInfo()
+                + "|" + origin + "|" + destination;
+        if (!seen.add(key)) {
+            return;
+        }
+        PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
+        step.stepIndex = stepIndex;
+        step.type = type;
+        step.displayInfo = transport.getDisplayInfo();
+        step.objectInfo = transport.getObjectInfo();
+        step.origin = worldPoint(origin);
+        step.destination = worldPoint(destination);
+        step.itemRequirements = itemLabelsForTransport(transport);
+        steps.add(step);
+    }
+
+    /**
+     * Human-readable item requirements for a transport, derived from the TSV item column plus
+     * a synthesized staff entry for fairy rings (the Lumbridge-elite rule lives in
+     * {@link shortestpath.pathfinder.PathfinderConfig}, not in the transport data itself).
+     */
+    static List<PathfinderDashboardModels.Pickup> itemLabelsForTransport(Transport transport) {
+        List<PathfinderDashboardModels.Pickup> pickups = new ArrayList<>();
+        if (transport.getType() == TransportType.FAIRY_RING) {
+            // Always synthesize: the reachability dashboard only surfaces pickups on bank runs,
+            // where the Lumbridge elite diary is stubbed off, so a fairy-ring staff is needed.
+            // Spell out both acceptable staves — the pathfinder's DRAMEN_STAFF check accepts the
+            // Lunar Moonclan liminal staff too, and calling it out avoids confusion.
+            pickups.add(pickup("Dramen staff or Lunar staff", List.of()));
+        }
+        TransportItems items = transport.getItemRequirements();
+        if (items != null) {
+            for (ItemRequirement req : items.getRequirements()) {
+                PathfinderDashboardModels.Pickup p = formatItemRequirement(req);
+                if (p != null) {
+                    pickups.add(p);
+                }
+            }
+        }
+        return pickups;
+    }
+
+    private static PathfinderDashboardModels.Pickup pickup(String label, List<String> equivalents) {
+        PathfinderDashboardModels.Pickup p = new PathfinderDashboardModels.Pickup();
+        p.label = label;
+        p.equivalents = equivalents;
+        return p;
+    }
+
+    /**
+     * Formats a single {@link ItemRequirement} into a {@link PathfinderDashboardModels.Pickup}
+     * with a primary display label ({@code "N× Label"}, quantity only when > 1) plus a list of
+     * equivalent items that also satisfy the requirement.
+     *
+     * <p>The parser builds the requirement's {@code itemIds} array by concatenating each
+     * {@link ItemVariations#getIds()} of every OR-alternative in declaration order (see
+     * {@link shortestpath.transport.parser.ItemRequirementParser}). This method reverses that:
+     * it walks the array left-to-right, matching the longest prefix against a variation's full
+     * id list, so {@code WATER_RUNE=2} renders with a primary label of "2× Water rune" rather
+     * than a confusing "Water rune or Air rune or Earth rune or Fire rune" (combo runes like
+     * mist/mud/steam appear in several variations for substitution purposes). The interchangeable
+     * combo runes instead surface in the equivalents list, together with the element's staves
+     * and tomes from {@link ItemVariations#staves} and {@link ItemVariations#offhands}, so the
+     * dashboard can expose which substitutes are (and aren't) modelled.
+     *
+     * <p>TSV entries using a raw item id (e.g. {@code 8007=1}) fall back to the
+     * {@link net.runelite.api.gameval.ItemID} constant's humanised name with no equivalents.
+     */
+    private static PathfinderDashboardModels.Pickup formatItemRequirement(ItemRequirement req) {
+        int[] ids = req.getItemIds();
+        if (ids == null || ids.length == 0) {
+            return null;
+        }
+        LinkedHashSet<String> primaries = new LinkedHashSet<>();
+        LinkedHashSet<String> equivalents = new LinkedHashSet<>();
+        int i = 0;
+        while (i < ids.length) {
+            ItemVariations match = longestVariationPrefixAt(ids, i);
+            if (match != null) {
+                primaries.add(humanizeVariation(match));
+                collectEquivalents(match, equivalents);
+                i += match.getIds().length;
+            } else {
+                primaries.add(resolveItemName(ids[i]));
+                i += 1;
+            }
+        }
+        // Don't list the primary label(s) as their own equivalents.
+        primaries.forEach(equivalents::remove);
+        String joined = String.join(" or ", primaries);
+        int qty = req.getQuantity();
+        String label = qty > 1 ? (qty + "× " + joined) : joined;
+        return pickup(label, new ArrayList<>(equivalents));
+    }
+
+    /**
+     * Appends every interchangeable item for {@code variation} to {@code into}:
+     * <ul>
+     *   <li>Sibling ids within the variation (e.g. {@code WATER_RUNE} includes the combo
+     *       runes {@code MIST/MUD/STEAM}, shown with their own friendlier names).</li>
+     *   <li>Elemental staves via {@link ItemVariations#staves}.</li>
+     *   <li>Elemental tomes via {@link ItemVariations#offhands}.</li>
+     * </ul>
+     * Each candidate id is resolved through the normal label pipeline so unmapped staves fall
+     * back to their humanised {@code ItemID} constant name — making it easy to spot entries that
+     * are missing from {@link ItemVariations}.
+     */
+    private static void collectEquivalents(ItemVariations variation, LinkedHashSet<String> into) {
+        int[] siblings = variation.getIds();
+        // Skip index 0 (the canonical id already rendered as the primary label).
+        for (int k = 1; k < siblings.length; k++) {
+            into.add(resolveItemName(siblings[k]));
+        }
+        appendIdsAsLabels(ItemVariations.staves(variation), into);
+        appendIdsAsLabels(ItemVariations.offhands(variation), into);
+    }
+
+    private static void appendIdsAsLabels(int[] ids, LinkedHashSet<String> into) {
+        if (ids == null) {
+            return;
+        }
+        for (int id : ids) {
+            into.add(resolveItemName(id));
+        }
+    }
+
+    /** Returns the {@link ItemVariations} whose full id list matches the slice of {@code ids}
+     * starting at {@code offset}, preferring the longest match. Returns {@code null} when no
+     * variation matches. */
+    private static ItemVariations longestVariationPrefixAt(int[] ids, int offset) {
+        ItemVariations best = null;
+        int bestLen = 0;
+        for (ItemVariations v : ItemVariations.values()) {
+            int[] vIds = v.getIds();
+            if (vIds.length <= bestLen || vIds.length > ids.length - offset) {
+                continue;
+            }
+            boolean eq = true;
+            for (int k = 0; k < vIds.length; k++) {
+                if (ids[offset + k] != vIds[k]) {
+                    eq = false;
+                    break;
+                }
+            }
+            if (eq) {
+                best = v;
+                bestLen = vIds.length;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Human-readable name for a single item id.
+     *
+     * <p>Resolution order is tuned for the equivalents audit use-case:
+     * <ol>
+     *   <li>The variation that declares {@code id} as its <em>first</em> (canonical) id —
+     *       e.g. {@code MISTRUNE → MIST_RUNE} ("Mist rune"), {@code MYSTIC_MIST_BATTLESTAFF →
+     *       MYSTIC_MIST_STAFF} ("Mystic mist staff"). This avoids the first-declared-variation
+     *       collision that would otherwise surface combo runes as basic types ("Air rune") and
+     *       merge mystic variants into their non-mystic counterparts.</li>
+     *   <li>Reflected {@link net.runelite.api.gameval.ItemID} constant name, humanised — catches
+     *       items that have no canonical variation (e.g. {@code AIR_BATTLESTAFF}, which only
+     *       appears as a sibling in {@code STAFF_OF_AIR}, and raw TSV ids like
+     *       {@code POH_TABLET_VARROCKTELEPORT}). This makes gaps in {@link ItemVariations} easy
+     *       to spot — a missing entry still renders with a sensible, RuneScape-y label.</li>
+     *   <li>{@code "Item <id>"} as a last resort.</li>
+     * </ol>
+     */
+    private static String resolveItemName(int id) {
+        ItemVariations canonical = ITEM_ID_TO_CANONICAL_VARIATION.get(id);
+        if (canonical != null) {
+            return humanizeVariation(canonical);
+        }
+        String constant = ITEM_ID_CONSTANT_NAMES.get(id);
+        if (constant != null) {
+            return humanizeItemConstant(constant);
+        }
+        return "Item " + id;
+    }
+
+    private static String humanizeVariation(ItemVariations variation) {
+        return capitalize(variation.name().toLowerCase().replace('_', ' '));
+    }
+
+    /** Cleans cryptic {@code ItemID} constant names (e.g. {@code POH_TABLET_VARROCKTELEPORT} →
+     * "Varrock teleport tablet") while falling back to a plain lower-cased form otherwise. */
+    private static String humanizeItemConstant(String constant) {
+        if (constant.startsWith("POH_TABLET_") && constant.endsWith("TELEPORT")) {
+            String place = constant.substring("POH_TABLET_".length(), constant.length() - "TELEPORT".length());
+            return capitalize(place.toLowerCase()) + " teleport tablet";
+        }
+        if (constant.startsWith("TELETAB_")) {
+            return capitalize(constant.substring("TELETAB_".length()).toLowerCase().replace('_', ' ')) + " teleport tablet";
+        }
+        if (constant.startsWith("NZONE_TELETAB_")) {
+            return capitalize(constant.substring("NZONE_TELETAB_".length()).toLowerCase().replace('_', ' ')) + " teleport tablet";
+        }
+        if (constant.equals("SKILLCAPE_AD") || constant.equals("SKILLCAPE_AD_TRIMMED")) {
+            return "Achievement diary cape";
+        }
+        if (constant.startsWith("RING_OF_DUELING")) {
+            return "Ring of dueling";
+        }
+        if (constant.startsWith("GAMES_NECKLACE")) {
+            return "Games necklace";
+        }
+        if (constant.startsWith("AMULET_OF_GLORY")) {
+            return "Amulet of glory";
+        }
+        return capitalize(constant.toLowerCase().replace('_', ' '));
+    }
+
+    private static String capitalize(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    private static final Map<Integer, ItemVariations> ITEM_ID_TO_CANONICAL_VARIATION = buildCanonicalVariationMap();
+    private static final Map<Integer, String> ITEM_ID_CONSTANT_NAMES = buildItemIdConstantNames();
+
+    /**
+     * Maps an item id to the variation that declares it as its <em>first</em> (canonical) id.
+     * Unlike a first-wins map over every id of every variation, this lets each combo rune /
+     * mystic stave be resolved to its own dedicated variation when one exists (see
+     * {@link #resolveItemName(int)} for rationale).
+     */
+    private static Map<Integer, ItemVariations> buildCanonicalVariationMap() {
+        Map<Integer, ItemVariations> map = new HashMap<>();
+        for (ItemVariations v : ItemVariations.values()) {
+            int[] ids = v.getIds();
+            if (ids.length == 0) continue;
+            map.putIfAbsent(ids[0], v);
+        }
+        return map;
+    }
+
+    private static Map<Integer, String> buildItemIdConstantNames() {
+        Map<Integer, String> map = new HashMap<>();
+        try {
+            Class<?> clazz = Class.forName("net.runelite.api.gameval.ItemID");
+            for (java.lang.reflect.Field f : clazz.getFields()) {
+                if (f.getType() != int.class || !java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+                    continue;
+                }
+                int id = f.getInt(null);
+                // First-wins so the earliest-declared constant owns the id (item + placeholder share ids).
+                map.putIfAbsent(id, f.getName());
+            }
+        } catch (ReflectiveOperationException e) {
+            // Leave map empty — the resolver will fall back to "Item <id>".
+        }
+        return map;
     }
 
     private static List<PathfinderDashboardModels.Marker> markers(PathfinderResult result, PathfinderConfig config) {
@@ -225,15 +508,118 @@ public class PathfinderDashboardReportWriter {
         addMarker(markers, "closest", "Closest reached", result.getClosestReachedPoint());
 
         List<PathStep> path = result.getPathSteps();
+        for (BankTransition transition : collectBankTransitions(path)) {
+            String bankName = BankDestinationLabels.labelForPackedNearest(transition.packedBankTile, 2);
+            String label = bankName != null
+                ? "Bank: " + bankName + " (step " + transition.transitionIndex + ")"
+                : "Bank visited at step " + transition.transitionIndex;
+            addMarker(markers, "bank", label, transition.packedBankTile);
+        }
+        return markers;
+    }
+
+    private static void addBankPathMetadata(PathfinderDashboardModels.RunRecord run, List<PathStep> path) {
+        if (path == null || path.isEmpty()) {
+            run.bankVisitedOnPath = false;
+            run.bankEvents = null;
+            return;
+        }
+        boolean any = path.stream().anyMatch(PathStep::isBankVisited);
+        run.bankVisitedOnPath = any;
+        List<BankTransition> transitions = collectBankTransitions(path);
+        List<PathfinderDashboardModels.BankEvent> events = new ArrayList<>();
+        for (int idx = 0; idx < transitions.size(); idx++) {
+            BankTransition transition = transitions.get(idx);
+            int segmentEndExclusive = idx + 1 < transitions.size()
+                    ? transitions.get(idx + 1).transitionIndex
+                    : Integer.MAX_VALUE;
+            PathfinderDashboardModels.BankEvent ev = new PathfinderDashboardModels.BankEvent();
+            ev.stepIndex = transition.transitionIndex;
+            ev.location = worldPoint(transition.packedBankTile);
+            ev.bankName = BankDestinationLabels.labelForPackedNearest(transition.packedBankTile, 2);
+            ev.transportsAfterBank = transportLabelsInRange(
+                    run.transports, transition.transitionIndex, segmentEndExclusive);
+            ev.pickups = pickupsInRange(
+                    run.transports, transition.transitionIndex, segmentEndExclusive);
+            events.add(ev);
+        }
+        run.bankEvents = events.isEmpty() ? null : events;
+    }
+
+    /**
+     * Returns distinct display labels for transports whose stepIndex falls in
+     * {@code (afterStepExclusive, endStepExclusive)}. Preserves first-seen order so the caller
+     * can answer "what was picked up from the bank, and in what order?". Transports in BANK-mode
+     * tests all implicitly consume banked items (inventory starts empty).
+     */
+    private static List<String> transportLabelsInRange(
+            List<PathfinderDashboardModels.TransportStep> transports,
+            int afterStepExclusive, int endStepExclusive) {
+        if (transports == null || transports.isEmpty()) {
+            return null;
+        }
+        LinkedHashSet<String> labels = new LinkedHashSet<>();
+        for (PathfinderDashboardModels.TransportStep step : transports) {
+            if (step.stepIndex <= afterStepExclusive || step.stepIndex >= endStepExclusive) {
+                continue;
+            }
+            String label = step.displayInfo != null ? step.displayInfo
+                         : step.objectInfo != null  ? step.objectInfo
+                         : step.type;
+            if (label != null) {
+                labels.add(label);
+            }
+        }
+        return labels.isEmpty() ? null : new ArrayList<>(labels);
+    }
+
+    /**
+     * Flattens and dedupes (by primary label) the item-requirement pickups of every transport
+     * whose stepIndex falls in {@code (afterStepExclusive, endStepExclusive)}. First-seen order
+     * is preserved so the list mirrors the order in which items would be pulled from the bank.
+     * The {@link PathfinderDashboardModels.Pickup#equivalents} list from the first occurrence
+     * of a label wins (all occurrences produce the same equivalents for a given primary).
+     */
+    private static List<PathfinderDashboardModels.Pickup> pickupsInRange(
+            List<PathfinderDashboardModels.TransportStep> transports,
+            int afterStepExclusive, int endStepExclusive) {
+        if (transports == null || transports.isEmpty()) {
+            return null;
+        }
+        Map<String, PathfinderDashboardModels.Pickup> byLabel = new java.util.LinkedHashMap<>();
+        for (PathfinderDashboardModels.TransportStep step : transports) {
+            if (step.stepIndex <= afterStepExclusive || step.stepIndex >= endStepExclusive) {
+                continue;
+            }
+            if (step.itemRequirements == null) continue;
+            for (PathfinderDashboardModels.Pickup p : step.itemRequirements) {
+                byLabel.putIfAbsent(p.label, p);
+            }
+        }
+        return byLabel.isEmpty() ? null : new ArrayList<>(byLabel.values());
+    }
+
+    private static final class BankTransition {
+        final int transitionIndex;
+        final int packedBankTile;
+
+        BankTransition(int transitionIndex, int packedBankTile) {
+            this.transitionIndex = transitionIndex;
+            this.packedBankTile = packedBankTile;
+        }
+    }
+
+    private static List<BankTransition> collectBankTransitions(List<PathStep> path) {
+        List<BankTransition> out = new ArrayList<>();
         for (int i = 0; i < path.size(); i++) {
             PathStep step = path.get(i);
             boolean transitionedIntoBankState = step.isBankVisited() && (i == 0 || !path.get(i - 1).isBankVisited());
             if (transitionedIntoBankState) {
                 int transitionIndex = Math.max(0, i - 1);
-                addMarker(markers, "bank", "Bank visited at step " + transitionIndex, path.get(transitionIndex).getPackedPosition());
+                out.add(new BankTransition(transitionIndex, path.get(transitionIndex).getPackedPosition()));
             }
         }
-        return markers;
+        return out;
     }
 
     private static void addMarker(List<PathfinderDashboardModels.Marker> markers, String kind, String label, int packedPoint) {

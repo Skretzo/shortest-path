@@ -75,6 +75,10 @@
     return n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
   }
 
+  function formatPoint(p) {
+    return "(" + p.x + ", " + p.y + ", " + p.plane + ")";
+  }
+
   // ── Shared floating tooltip ──────────────────────────────────────
 
   const floatingTip = document.createElement("div");
@@ -218,13 +222,21 @@
     });
 
     // ── Crosshair interaction ───────────────────────────────────────
+    // Overlay & tooltip sit inside the same positioned parent as the chart canvas,
+    // pinned to the chart's box (not the panel's), so coordinates line up regardless
+    // of sibling headings or panel padding. Drawing uses CSS coords (ctx scaled by
+    // dpr) — identical to the chart renderer — so dots track the plotted lines.
     let crosshairCleanup = canvas._crosshairCleanup;
     if (crosshairCleanup) crosshairCleanup();
 
     const overlay = document.createElement("canvas");
     overlay.className = "crosshair-overlay";
-    overlay.width = canvas.width;
-    overlay.height = canvas.height;
+    overlay.width = w * dpr;
+    overlay.height = h * dpr;
+    overlay.style.width = w + "px";
+    overlay.style.height = h + "px";
+    overlay.style.left = canvas.offsetLeft + "px";
+    overlay.style.top = canvas.offsetTop + "px";
 
     const tooltip = document.createElement("div");
     tooltip.className = "crosshair-tooltip";
@@ -236,18 +248,17 @@
     function onMouseMove(e) {
       const rect = canvas.getBoundingClientRect();
       const oCtx = overlay.getContext("2d");
+      oCtx.setTransform(1, 0, 0, 1, 0, 0);
       oCtx.clearRect(0, 0, overlay.width, overlay.height);
       oCtx.scale(dpr, dpr);
 
       const cssX = e.clientX - rect.left;
       const worldX = (cssX - margin.left) / chartW * maxIter;
       if (worldX < 0 || worldX > maxIter) {
-        oCtx.setTransform(1, 0, 0, 1, 0, 0);
         tooltip.style.display = "none";
         return;
       }
 
-      // Find nearest sample
       let nearest = samples[0];
       let bestDist = Infinity;
       for (const s of samples) {
@@ -256,7 +267,6 @@
       }
 
       const sx = xScale(nearest.iteration);
-      // Crosshair line
       oCtx.strokeStyle = "rgba(0,0,0,0.3)";
       oCtx.lineWidth = 1;
       oCtx.setLineDash([4, 3]);
@@ -266,7 +276,6 @@
       oCtx.stroke();
       oCtx.setLineDash([]);
 
-      // Dots
       [
         { val: nearest.boundarySize, color: TIMESERIES_COLORS.boundary },
         { val: nearest.pendingSize, color: TIMESERIES_COLORS.pending }
@@ -277,9 +286,6 @@
         oCtx.fill();
       });
 
-      oCtx.setTransform(1, 0, 0, 1, 0, 0);
-
-      // DOM tooltip
       tooltip.innerHTML =
         "Iter: " + formatK(nearest.iteration) + "<br>" +
         "Boundary: " + formatK(nearest.boundarySize) + "<br>" +
@@ -287,8 +293,8 @@
       tooltip.style.display = "block";
       const tipRect = tooltip.getBoundingClientRect();
       const parentRect = canvas.parentElement.getBoundingClientRect();
-      const tipX = (sx / w * rect.width) + rect.left - parentRect.left + 12;
-      const tipY = margin.top / h * rect.height + 8;
+      const tipX = canvas.offsetLeft + sx + 12;
+      const tipY = canvas.offsetTop + margin.top + 8;
       const flipX = tipX + tipRect.width > parentRect.width - 8;
       tooltip.style.left = (flipX ? tipX - tipRect.width - 24 : tipX) + "px";
       tooltip.style.top = tipY + "px";
@@ -296,6 +302,7 @@
 
     function onMouseLeave() {
       const oCtx = overlay.getContext("2d");
+      oCtx.setTransform(1, 0, 0, 1, 0, 0);
       oCtx.clearRect(0, 0, overlay.width, overlay.height);
       tooltip.style.display = "none";
     }
@@ -370,22 +377,23 @@
       const index = this._heatIndex;
       if (!index) return canvas;
 
-      // Compute world bounds for this Leaflet tile.
-      // In CRS.Simple: pixel = latlng * 2^z, tile = floor(pixel / tileSize).
-      // Our world uses lat=y, lng=x.  CRS.Simple flips y: pixel_y = -lat * scale.
-      const scale = Math.pow(2, coords.z);
-      const worldPerTile = size / scale;
-
-      const wxMin = coords.x * worldPerTile;
-      const wyMin = -(coords.y + 1) * worldPerTile;
-      const wxMax = wxMin + worldPerTile;
-      const wyMax = wyMin + worldPerTile;
+      // World bounds for this tile (lng = world x, lat = world y) — must match map CRS, not raw tile indices.
+      const b = this._tileCoordsToBounds(coords);
+      const wxMin = b.getWest();
+      const wxMax = b.getEast();
+      const wyMin = b.getSouth();
+      const wyMax = b.getNorth();
+      const worldW = wxMax - wxMin;
+      const worldH = wyMax - wyMin;
+      if (worldW <= 0 || worldH <= 0) {
+        return canvas;
+      }
 
       // Determine which spatial-index chunks overlap this tile
       const cxMin = Math.floor(wxMin / CHUNK_SIZE);
-      const cxMax = Math.floor((wxMax - 1) / CHUNK_SIZE);
+      const cxMax = Math.floor((wxMax - 1e-9) / CHUNK_SIZE);
       const cyMin = Math.floor(wyMin / CHUNK_SIZE);
-      const cyMax = Math.floor((wyMax - 1) / CHUNK_SIZE);
+      const cyMax = Math.floor((wyMax - 1e-9) / CHUNK_SIZE);
 
       const ctx = canvas.getContext("2d");
       const imageData = ctx.createImageData(size, size);
@@ -411,11 +419,11 @@
               [r, g, b] = heatColor(t);
             }
 
-            // Map world coords to canvas pixel rectangle
-            const pxStart = Math.floor((pt.x - wxMin) / worldPerTile * size);
-            const pyStart = Math.floor((wyMax - pt.y - 1) / worldPerTile * size);
-            const pxEnd = Math.max(pxStart + 1, Math.floor((pt.x + 1 - wxMin) / worldPerTile * size));
-            const pyEnd = Math.max(pyStart + 1, Math.floor((wyMax - pt.y) / worldPerTile * size));
+            // Map world coords to canvas pixels (north = larger y)
+            const pxStart = Math.floor((pt.x - wxMin) / worldW * size);
+            const pyStart = Math.floor((wyMax - pt.y - 1) / worldH * size);
+            const pxEnd = Math.max(pxStart + 1, Math.floor((pt.x + 1 - wxMin) / worldW * size));
+            const pyEnd = Math.max(pyStart + 1, Math.floor((wyMax - pt.y) / worldH * size));
 
             for (let py = Math.max(0, pyStart); py < Math.min(size, pyEnd); py++) {
               for (let px = Math.max(0, pxStart); px < Math.min(size, pxEnd); px++) {
@@ -582,8 +590,8 @@
       "Transports checked: " + formatK(run.stats.transportsChecked),
       "Total elapsed:      " + msFromNanos(run.stats.elapsedNanos) + " ms",
       "",
-      "Start:  (" + run.start.x + ", " + run.start.y + ", " + run.start.plane + ")",
-      "Target: (" + run.target.x + ", " + run.target.y + ", " + run.target.plane + ")"
+      "Start:  " + formatPoint(run.start),
+      "Target: " + formatPoint(run.target)
     ];
     runOverviewEl.textContent = lines.join("\n");
   }
@@ -613,7 +621,11 @@
     renderRun(run) {
       const hasProfiler = run.phases && run.counters;
       drawerEl.hidden = !hasProfiler;
-      if (!hasProfiler) return;
+      if (!hasProfiler) {
+        clearHeatmap();
+        removeLegend();
+        return;
+      }
 
       renderRunOverview(run);
       renderCounters(run);

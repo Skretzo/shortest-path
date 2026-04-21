@@ -8,26 +8,36 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.VarbitID;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assume;
-import shortestpath.TeleportationItem;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
+import shortestpath.dashboard.BankDestinationLabels;
 import shortestpath.dashboard.DashboardBundlePublisher;
 import shortestpath.dashboard.PathfinderDashboardModels;
+import shortestpath.dashboard.PathfinderDashboardReportWriter;
 import shortestpath.dashboard.ProfilerReportWriter;
+import shortestpath.reachability.mode.RouteMode;
+import shortestpath.reachability.mode.RouteModeContext;
+import shortestpath.reachability.mode.RouteModes;
+import shortestpath.reachability.scenario.ReachabilityScenario;
+import shortestpath.reachability.scenario.ReachabilityScenarios;
+import shortestpath.reachability.target.ReachabilityTarget;
+import shortestpath.reachability.target.ReachabilityTargetLoader;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderProfile;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.ProfilingPathfinder;
-import shortestpath.pathfinder.TestPathfinderConfig;
 import shortestpath.transport.Transport;
 
 import static org.junit.Assert.assertTrue;
@@ -36,6 +46,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ReachabilityDashboardTest {
+    // A bank containing every item ID 0..24999 (qty 1000 each) is used for BANK-mode
+    // routes so that all teleportation items are considered available after a bank visit
+    // but not before (because the inventory is empty in tests).
+    private static final Item[] UNIVERSAL_BANK_ITEMS;
+    static {
+        UNIVERSAL_BANK_ITEMS = new Item[25000];
+        for (int i = 0; i < 25000; i++) {
+            UNIVERSAL_BANK_ITEMS[i] = new Item(i, 1000);
+        }
+    }
+
     private static final String DATASET_PROPERTY = "reachability.dataset";
     private static final String REPORT_TITLE_PROPERTY = "reachability.reportTitle";
     private static final String REPORT_SUBTITLE_PROPERTY = "reachability.reportSubtitle";
@@ -46,16 +67,16 @@ public class ReachabilityDashboardTest {
     private static final String SCENARIO_PROPERTY = "reachability.scenario";
     private static final String PROFILE_PROPERTY = "reachability.profile";
     private static final String BUNDLE_NAME_PROPERTY = DashboardBundlePublisher.BUNDLE_NAME_PROPERTY;
-    private static final ReachabilityScenario DEFAULT_SCENARIO = ReachabilityScenario.DEFAULT;
 
-    private final ReachabilityTargetLoader targetLoader = new ReachabilityTargetLoader();
+    private final ReachabilityTargetLoader targetLoader = new ReachabilityTargetLoader(RouteModes.defaults());
     private final ProfilerReportWriter reportWriter = new ProfilerReportWriter();
     private final DashboardBundlePublisher bundlePublisher = new DashboardBundlePublisher();
 
     private Client client;
     private TestShortestPathConfig config;
-    private PathfinderConfig pathfinderConfig;
     private ReachabilityScenario scenario;
+    private ItemContainer universalBankContainer;
+    private RouteModeContext routeModeContext;
 
     @Before
     public void setUp() {
@@ -67,15 +88,15 @@ public class ReachabilityDashboardTest {
         when(client.getTotalLevel()).thenReturn(2277);
         when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(1);
         when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
-        scenario = ReachabilityScenario.fromSystemProperty(System.getProperty(SCENARIO_PROPERTY));
+        scenario = ReachabilityScenarios.fromSystemProperty(System.getProperty(SCENARIO_PROPERTY));
         config.setCalculationCutoffValue(500);
-        config.setUseTeleportationItemsValue(scenario.teleportationItemSetting);
-        config.setIncludeBankPathValue(scenario.includeBankPath);
-        scenario.configureClient(client);
 
-        pathfinderConfig = new TestPathfinderConfig(client, config);
-        scenario.configurePathfinder(pathfinderConfig);
-        pathfinderConfig.refresh();
+        universalBankContainer = mock(ItemContainer.class);
+        when(universalBankContainer.getItems()).thenReturn(UNIVERSAL_BANK_ITEMS);
+
+        routeModeContext = new RouteModeContext(client, config, scenario, universalBankContainer);
+        scenario.defaultMode().apply(routeModeContext);
+        scenario.configureClient(client);
     }
 
     @Test
@@ -92,27 +113,26 @@ public class ReachabilityDashboardTest {
         Map<String, String> routeSummary = new LinkedHashMap<>();
         long started = System.currentTimeMillis();
         Path siteRoot = bundlePublisher.getOutputRoot();
-        String reportTitle = System.getProperty(REPORT_TITLE_PROPERTY, scenario.reportTitle);
-        String reportSubtitle = System.getProperty(REPORT_SUBTITLE_PROPERTY, scenario.reportSubtitle);
+        String reportTitle = System.getProperty(REPORT_TITLE_PROPERTY, scenario.reportTitle());
+        String reportSubtitle = System.getProperty(REPORT_SUBTITLE_PROPERTY, scenario.reportSubtitle());
         Path reportPath = siteRoot.resolve("bundles").resolve(bundleName).resolve("report.json");
 
-        TeleportationItem currentTeleports = scenario.teleportationItemSetting;
+        RouteMode currentMode = scenario.defaultMode();
         int targetIndex = 0;
+        PathfinderConfig pathfinderConfig = routeModeContext.pathfinder();
 
         for (ReachabilityTarget target : targets) {
             targetIndex++;
             System.out.printf("[%d/%d] %s%n", targetIndex, targets.size(), target.getDescription());
             System.out.flush();
-            // Reconfigure pathfinder if this target overrides teleport settings
-            if (target.hasTeleportOverride() && target.getTeleportOverride() != currentTeleports) {
-                currentTeleports = target.getTeleportOverride();
-                config.setUseTeleportationItemsValue(currentTeleports);
-                pathfinderConfig = new TestPathfinderConfig(client, config);
-                scenario.configurePathfinder(pathfinderConfig);
-                pathfinderConfig.refresh();
+            RouteMode newMode = target.hasModeOverride() ? target.getModeOverride() : currentMode;
+            if (newMode != currentMode) {
+                currentMode = newMode;
+                currentMode.apply(routeModeContext);
+                pathfinderConfig = routeModeContext.pathfinder();
             }
 
-            int start = target.hasStartPoint() ? target.getStartPoint() : scenario.start;
+            int start = target.hasStartPoint() ? target.getStartPoint() : scenario.startPoint();
             String category = target.getCategory() != null ? target.getCategory() : "reachability";
 
             PathfinderResult result;
@@ -136,19 +156,6 @@ public class ReachabilityDashboardTest {
             int transportsChecked = result != null ? result.getTransportsChecked() : 0;
             boolean reached = isReachedOrAdjacent(result, target);
 
-            routeSummary.put(
-                target.getDescription(),
-                String.format(
-                    "%.2f ms, %d steps, %d nodes, %d transports, %s%s | start: %s | end: %s",
-                    elapsedMillis,
-                    pathLength,
-                    nodesChecked,
-                    transportsChecked,
-                    result != null ? result.getTerminationReason() : "NO_RESULT",
-                    reached ? "" : " [UNREACHABLE: " + (result != null ? result.getTerminationReason() : "NO_RESULT") + "]",
-                    formatRouteSnippet(result, true),
-                    formatRouteSnippet(result, false)));
-
             if (result != null) {
                 List<String> details = List.of(
                     "Dataset: " + datasetLabel(dataset),
@@ -163,11 +170,31 @@ public class ReachabilityDashboardTest {
                     reached,
                     null,
                     null);
+                ReachabilityRunMetadata.apply(run, currentMode, config);
                 if (profileData != null) {
                     reportWriter.populateProfilerData(run, profileData);
                 }
                 bundlePublisher.externalizeRunHeatmap(bundleName, runs.size(), run);
                 runs.add(run);
+                routeSummary.put(
+                    target.getDescription(),
+                    String.format(
+                        "%.2f ms, %d steps, %d nodes, %d transports, %s%s | mode: %s | bankVisited: %s | banks: %s | start: %s | end: %s",
+                        elapsedMillis,
+                        pathLength,
+                        nodesChecked,
+                        transportsChecked,
+                        result.getTerminationReason(),
+                        reached ? "" : " [UNREACHABLE: " + result.getTerminationReason() + "]",
+                        currentMode.id(),
+                        run.bankVisitedOnPath,
+                        formatBankEventsSummary(run),
+                        formatRouteSnippet(result, true),
+                        formatRouteSnippet(result, false)));
+            } else {
+                routeSummary.put(
+                    target.getDescription(),
+                    String.format("NO_RESULT | mode: %s", currentMode.id()));
             }
         }
 
@@ -176,12 +203,15 @@ public class ReachabilityDashboardTest {
             reportSubtitle,
             System.currentTimeMillis() - started,
             runs,
-            reportWriter.createTransportLayerPoints(pathfinderConfig));
+            reportWriter.createTransportLayerPoints(pathfinderConfig),
+            scenario.id(),
+            PathfinderDashboardReportWriter.worldPointJsonPacked(scenario.startPoint()));
+        report.bankNamesFromData = BankDestinationLabels.uniqueSortedBankNames();
 
         bundlePublisher.publishBundle(bundleName, report);
 
         System.out.println("Reachability route summary:");
-        System.out.println(" - scenario: " + scenario.id);
+        System.out.println(" - scenario: " + scenario.id());
         System.out.println(" - tested targets: " + targets.size() + "/" + allTargets.size());
         System.out.println(" - dataset: " + dataset);
         for (Map.Entry<String, String> entry : routeSummary.entrySet()) {
@@ -247,7 +277,7 @@ public class ReachabilityDashboardTest {
     }
 
     private String describeTransport(int origin, int destination) {
-        for (Transport transport : pathfinderConfig.getTransports().getOrDefault(origin, Set.of())) {
+        for (Transport transport : routeModeContext.pathfinder().getTransports().getOrDefault(origin, Set.of())) {
             if (transport.getDestination() == destination) {
                 return describeTransport(transport);
             }
@@ -276,57 +306,16 @@ public class ReachabilityDashboardTest {
             WorldPointUtil.unpackWorldY(packedPoint),
             WorldPointUtil.unpackWorldPlane(packedPoint));
     }
-    private enum ReachabilityScenario {
-        DEFAULT(
-            "default",
-            WorldPointUtil.packWorldPoint(3185, 3436, 0),
-            TeleportationItem.ALL,
-            false,
-            "Clue Steps Default",
-            "Clue steps sweep from bank start"),
-        PROFILER(
-            "profiler",
-            WorldPointUtil.packWorldPoint(3222, 3218, 0),
-            TeleportationItem.ALL,
-            false,
-            "Profiler",
-            "Performance profiling scenarios");
 
-        private final String id;
-        private final int start;
-        private final TeleportationItem teleportationItemSetting;
-        private final boolean includeBankPath;
-        private final String reportTitle;
-        private final String reportSubtitle;
-
-        ReachabilityScenario(String id, int start, TeleportationItem teleportationItemSetting,
-            boolean includeBankPath, String reportTitle, String reportSubtitle) {
-            this.id = id;
-            this.start = start;
-            this.teleportationItemSetting = teleportationItemSetting;
-            this.includeBankPath = includeBankPath;
-            this.reportTitle = reportTitle;
-            this.reportSubtitle = reportSubtitle;
+    private static String formatBankEventsSummary(PathfinderDashboardModels.RunRecord run) {
+        if (run.bankEvents == null || run.bankEvents.isEmpty()) {
+            return "none";
         }
-
-        private static ReachabilityScenario fromSystemProperty(String value) {
-            if (value == null || value.isBlank()) {
-                return DEFAULT_SCENARIO;
-            }
-            for (ReachabilityScenario scenario : values()) {
-                if (scenario.id.equalsIgnoreCase(value)) {
-                    return scenario;
-                }
-            }
-            throw new IllegalArgumentException("Unknown reachability scenario: " + value);
-        }
-
-        private void configureClient(Client client) {
-            // No scenario-specific client setup yet.
-        }
-
-        private void configurePathfinder(PathfinderConfig pathfinderConfig) {
-            // No scenario-specific pathfinder setup yet.
-        }
+        return run.bankEvents.stream()
+            .map(ev -> {
+                String name = ev.bankName != null ? ev.bankName : "unknown";
+                return name + " (step " + ev.stepIndex + ")";
+            })
+            .collect(Collectors.joining(", "));
     }
 }

@@ -50,7 +50,7 @@ public final class DashboardBundlePublisher {
      * Publish a named bundle. Writes:
      *   bundles/{name}/report.json     (runs without inline heatmap data)
      *   bundles/{name}/heatmaps/N.json (one per run whose heatmap was not already externalised)
-     *   bundles/index.json             (updated registry)
+     *   bundles/index.json             (updated registry; newest bundle first)
      *
      * Heatmaps that were already written via {@link #externalizeRunHeatmap} are skipped.
      */
@@ -104,14 +104,14 @@ public final class DashboardBundlePublisher {
             index.bundles = new ArrayList<>();
         }
 
-        // Replace existing entry or add new
+        // Replace existing entry or add new; prepend so the latest publish is first in the UI.
         index.bundles.removeIf(e -> bundleName.equals(e.name));
         PathfinderDashboardModels.BundleEntry entry = new PathfinderDashboardModels.BundleEntry();
         entry.name = bundleName;
         entry.title = report.title != null ? report.title : bundleName;
         entry.generatedAt = report.generatedAt;
         entry.reportPath = bundleName + "/report.json";
-        index.bundles.add(entry);
+        index.bundles.add(0, entry);
 
         writeJson(indexPath, index);
     }

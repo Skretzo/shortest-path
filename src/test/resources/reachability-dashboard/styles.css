@@ -40,33 +40,6 @@ html, body {
   color: var(--color-text);
 }
 
-/* ── Navigation bar ────────────────────────────────────────────────── */
-
-.dashboard-nav {
-  display: flex;
-  gap: 0;
-  background: #2c2825;
-  padding: 0 16px;
-  font-size: 13px;
-}
-
-.dashboard-nav a {
-  color: rgba(255, 255, 255, 0.7);
-  text-decoration: none;
-  padding: 10px 16px;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.dashboard-nav a:hover {
-  color: #fff;
-}
-
-.dashboard-nav a.active {
-  color: #fff;
-  border-bottom-color: var(--color-accent);
-}
-
 /* ── Layout ────────────────────────────────────────────────────────── */
 
 .layout {
@@ -84,6 +57,16 @@ html, body {
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--border-color-light);
+  }
+}
+
+/* On narrow viewports default the sidebar to collapsed; user can still open it. */
+@media (max-width: 1100px) {
+  .sidebar:not(.expanded) .sidebar-content {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
   }
 }
 
@@ -200,20 +183,6 @@ html, body {
 
 /* ── Navigation buttons ────────────────────────────────────────────── */
 
-#center-target {
-  width: 100%;
-  margin: 0 0 16px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-primary);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  cursor: pointer;
-}
-
-#center-target:hover {
-  background: var(--bg-hover);
-}
-
 .nav-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -280,14 +249,6 @@ html, body {
 #run-list button.selected {
   border-color: var(--color-selected-border);
   background: var(--color-selected-bg);
-}
-
-#run-details {
-  white-space: pre-wrap;
-  background: var(--bg-code);
-  color: var(--color-light);
-  padding: 12px;
-  border-radius: var(--radius-md);
 }
 
 /* ── Map panel ─────────────────────────────────────────────────────── */
@@ -380,11 +341,19 @@ html, body {
   z-index: 500;
   display: flex;
   flex-direction: row;
-  max-width: 320px;
+  width: 360px;
+  max-width: calc(100% - 40px);
+  /* Cap panel height so the Raw tab never stretches past a readable size.
+     Use the smaller of 480px and 60% of the map so it still fits tall screens. */
+  max-height: min(480px, 60%);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-panel);
   pointer-events: auto;
+}
+
+.run-info-panel.collapsed {
+  width: auto;
 }
 
 .run-info-hidden {
@@ -414,12 +383,16 @@ html, body {
 
 .run-info-body {
   background: var(--bg-dark);
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   font-size: 11px;
+  color: var(--color-light);
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .run-info-panel.collapsed .run-info-body {
@@ -428,11 +401,217 @@ html, body {
 
 .run-info-body pre {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.4;
+  font: 11px/1.5 var(--font-mono);
   white-space: pre-wrap;
   word-break: break-word;
   color: var(--color-light);
+}
+
+/* ── Run info tabs ─────────────────────────────────────────────────── */
+
+.run-info-tabs {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.run-info-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 5px 6px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s, color 0.12s;
+}
+
+.run-info-tab:hover {
+  color: var(--color-light);
+}
+
+.run-info-tab.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--color-light);
+}
+
+.run-info-tab-pane {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.run-info-tab-pane[hidden] {
+  display: none;
+}
+
+/* ── Overview tab (key/value grid + name header) ───────────────────── */
+
+.run-info-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-light);
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.run-info-name .run-info-status {
+  display: inline-block;
+  margin-right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.run-info-status--reached   { background: #22a35a; }
+.run-info-status--unreached { background: #d94040; }
+
+.run-info-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  row-gap: 3px;
+  font: 11px/1.4 var(--font-mono);
+}
+
+.run-info-kv dt {
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.run-info-kv dd {
+  color: var(--color-light);
+  margin: 0;
+  word-break: break-word;
+}
+
+.run-info-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 2px 0 0;
+}
+
+/* ── Chips (bank events, transports) ───────────────────────────────── */
+
+.run-info-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.run-info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-light);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font: 11px/1.2 var(--font-mono);
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.run-info-chip:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.run-info-chip .chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.run-info-chip--bank .chip-dot     { background: #f59e0b; }
+.run-info-chip--teleport .chip-dot { background: #7c3aed; }
+.run-info-chip--entry .chip-dot    { background: #2d6a4f; }
+.run-info-chip--exit .chip-dot     { background: #d1495b; }
+
+.run-info-chip-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.run-info-chip-step {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.run-info-empty {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.run-info-pickups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 0 2px;
+  font: 11px/1.4 var(--font-mono);
+}
+
+.run-info-pickups-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: rgba(255, 255, 255, 0.78);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.run-info-pickups-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.run-info-pickups-list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.run-info-pickups-list li {
+  padding: 1px 0;
+}
+
+.pickup-label {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.pickup-equivalents {
+  margin-top: 1px;
+  margin-left: 2px;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.35;
+}
+
+.pickup-equivalents-note {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.pickup-equivalents-list {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .run-info-body #center-target {
@@ -542,10 +721,6 @@ html, body {
   height: 260px;
 }
 
-.profiler-panel-wide canvas {
-  height: 300px;
-}
-
 .profiler-panel-merged {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -649,10 +824,6 @@ html, body {
 
 .crosshair-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
 }
 
@@ -722,4 +893,24 @@ html, body {
   height: 14px;
   border-radius: 3px;
   background: rgb(200, 0, 200);
+}
+
+/* ── Path colour legend entries ─────────────────────────────────────── */
+
+.path-legend-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: #666;
+}
+
+.path-legend-swatch {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
 }
