@@ -2377,7 +2377,7 @@
 3046 9756 0	3046 9757 0	Open Door 30364						1	
 # Surface entrance:									
 3019 9741 0	3019 9741 0 	Climb-down Ladder 30367	60 Mining					2	
-3019 9741 0	3019 9741 1	Climb-up Ladder 17386						2	
+3019 9741 0	3019 9741 0	Climb-up Ladder 17386						2	
 3021 3339 0	3021 9739 0 	Climb-down Ladder 30367	60 Mining					2	
 3021 9739 0	3021 3339 0 	Climb-up Ladder 17386						2	
 3019 3337 0	3019 9737 0	Climb-down Ladder 30367	60 Mining					2	
