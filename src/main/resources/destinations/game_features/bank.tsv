@@ -1,5 +1,5 @@
 # Destination	Info	Skills	Quests	Varbits	VarPlayers
-# Sailing island chests that require construction (exact Varbits TBD): Onyx Crest, Charred Island, Sunbleak, Buccaneers Haven, Deepfin Mine (E/W when build-gated)					
+# Sailing island construction-built bank chests: varbit == 1 once the chest is built. Object IDs 58627..58632 multi-loc transforms between 58662 (space) and 58663 (built chest).					
 3269 3164 0	Al Kharid				
 3269 3166 0	Al Kharid				
 3269 3167 0	Al Kharid				
@@ -34,7 +34,7 @@
 1499 3857 0	Blast Mine				
 1501 3871 0	Blast Mine				
 1478 3873 0	Blast Mine				
-2096 3687 0	Buccaneers' Haven	76 Sailing			
+2096 3687 0	Buccaneers' Haven			18369=1	
 3495 3211 0	Burgh de Rott		In Aid of the Myreque		
 1452 9567 1	Cam Torum		Perilous Moons		
 1454 9567 1	Cam Torum		Perilous Moons		
@@ -54,7 +54,7 @@
 3333 5194 0	Chambers of Xeric				
 3304 5199 0	Chambers of Xeric				
 3279 5200 0	Chambers of Xeric				
-2654 2387 0	Charred Island	60 Sailing			
+2654 2387 0	Charred Island			18353=1	
 1745 5476 0	Clan Hall				
 1746 5476 0	Clan Hall				
 1747 5476 0	Clan Hall				
@@ -70,8 +70,8 @@
 3604 3367 0	Darkmeyer		Sins of the Father		
 3605 3367 0	Darkmeyer		Sins of the Father		
 3607 3367 0	Darkmeyer		Sins of the Father		
-2011 9186 0	Deepfin Mine	67 Sailing			
-2093 9198 0	Deepfin Mine	67 Sailing			
+2011 9186 0	Deepfin Mine			18361=1	
+2093 9198 0	Deepfin Mine			18362=1	
 1935 2754 0	Deepfin Point	67 Sailing			
 2701 5347 0	Dorgesh-Kaan		Death to the Dorgeshuun		
 2701 5348 0	Dorgesh-Kaan		Death to the Dorgeshuun		
@@ -189,7 +189,7 @@
 2338 3807 0	Neitiznot		The Fremennik Isles		
 2339 3807 0	Neitiznot		The Fremennik Isles		
 1387 3309 0	Nemus Retreat		Children of the Sun		
-2984 2268 0	Onyx Crest	47 Sailing			
+2984 2268 0	Onyx Crest			18363=1	
 3013 5625 0	Ourania				
 2330 3690 0	Piscatoris		Swan Song		
 2661 3162 0	Port Khazard				
@@ -243,7 +243,7 @@
 1454 3858 0	Sulphur Mine				
 1501 3871 0	Sulphur Mine				
 1477 3874 0	Sulphur Mine				
-2195 2314 0	Sunbleak Island	72 Sailing			
+2195 2314 0	Sunbleak Island			18358=1	
 1243 3121 0	Tal Teklan		Children of the Sun		
 3195 4569 0	Tarn's Lair		Haunted Mine		
 3618 9473 0	Temple of the Eye		Temple of the Eye		
