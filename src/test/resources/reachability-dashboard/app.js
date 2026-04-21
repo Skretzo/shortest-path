@@ -44,8 +44,10 @@ const runInfoPanel = document.getElementById("run-info-panel");
 const runInfoToggle = document.getElementById("run-info-toggle");
 const runInfoOverviewEl = document.getElementById("run-info-overview");
 const runInfoPathEl = document.getElementById("run-info-path");
+const runInfoBankEl = document.getElementById("run-info-bank");
 const runInfoTabButtons = Array.from(document.querySelectorAll(".run-info-tab"));
 const runInfoTabPanes = Array.from(document.querySelectorAll(".run-info-tab-pane"));
+const bankTabButton = runInfoTabButtons.find(btn => btn.dataset.tab === "bank");
 const runSearchEl = document.getElementById("run-search");
 const unreachedOnlyEl = document.getElementById("unreached-only");
 const centerTargetEl = document.getElementById("center-target");
@@ -569,25 +571,54 @@ function makeChip(kind, labelText, subText, onClick) {
   return chip;
 }
 
-function renderBankEvents(container, run, sectionTitle, { showPickups = false } = {}) {
-  const events = run.bankEvents || [];
-  container.appendChild(makeSectionTitle(`${sectionTitle} (${events.length})`));
-
+function bankChipsFor(run) {
   const chips = document.createElement("div");
   chips.className = "run-info-chips";
-  events.forEach(ev => {
+  (run.bankEvents || []).forEach(ev => {
     const label = ev.bankName || "Bank";
     const chip = makeChip("bank", label, `step ${ev.stepIndex}`, () => flyAndFlash(ev.location));
     if (ev.pickups && ev.pickups.length) {
-      chip.title = `Picked up from bank: ${ev.pickups.join(", ")}`;
+      chip.title = `Picked up from bank: ${ev.pickups.map(p => p.label).join(", ")}`;
     } else if (ev.transportsAfterBank && ev.transportsAfterBank.length) {
       chip.title = `Transports after bank: ${ev.transportsAfterBank.join(" → ")}`;
     }
     chips.appendChild(chip);
   });
-  container.appendChild(chips);
+  return chips;
+}
 
-  if (!showPickups) return;
+function renderBankChipSection(container, run, sectionTitle) {
+  const events = run.bankEvents || [];
+  container.appendChild(makeSectionTitle(`${sectionTitle} (${events.length})`));
+  container.appendChild(bankChipsFor(run));
+}
+
+// Renders a single pickup as: "- 2× Water rune" with an optional nested equivalents sub-list
+// ("also accepts: Mist rune, Mud rune, Staff of water, …"). Equivalents are compact and muted;
+// missing staves fall through to their reflected ItemID constant name so auditing is straightforward.
+function appendPickupItem(listEl, pickup) {
+  const li = document.createElement("li");
+  const label = document.createElement("span");
+  label.className = "pickup-label";
+  label.textContent = pickup.label;
+  li.appendChild(label);
+  if (pickup.equivalents && pickup.equivalents.length) {
+    const equiv = document.createElement("div");
+    equiv.className = "pickup-equivalents";
+    const note = document.createElement("span");
+    note.className = "pickup-equivalents-note";
+    note.textContent = "also accepts: ";
+    equiv.appendChild(note);
+    const value = document.createElement("span");
+    value.className = "pickup-equivalents-list";
+    value.textContent = pickup.equivalents.join(", ");
+    equiv.appendChild(value);
+    li.appendChild(equiv);
+  }
+  listEl.appendChild(li);
+}
+
+function renderPickupsFor(container, events) {
   const withPickups = events.filter(ev => ev.pickups && ev.pickups.length);
   if (withPickups.length === 0) return;
 
@@ -604,11 +635,7 @@ function renderBankEvents(container, run, sectionTitle, { showPickups = false } 
       : `From ${ev.bankName || `step ${ev.stepIndex}`}:`;
     const list = document.createElement("ul");
     list.className = "run-info-pickups-list";
-    ev.pickups.forEach(item => {
-      const li = document.createElement("li");
-      li.textContent = item;
-      list.appendChild(li);
-    });
+    ev.pickups.forEach(p => appendPickupItem(list, p));
     row.appendChild(label);
     row.appendChild(list);
     pickupsSection.appendChild(row);
@@ -670,7 +697,7 @@ function buildOverviewPane(run) {
   runInfoOverviewEl.appendChild(kv);
 
   if (run.bankEvents && run.bankEvents.length > 0) {
-    renderBankEvents(runInfoOverviewEl, run, "Banks visited", { showPickups: false });
+    renderBankChipSection(runInfoOverviewEl, run, "Banks visited");
   } else if (run.bankVisitedOnPath === false && run.routeModeId === "BANK") {
     const empty = document.createElement("div");
     empty.className = "run-info-empty";
@@ -694,7 +721,7 @@ function buildPathPane(run) {
   runInfoPathEl.appendChild(kv);
 
   if (run.bankEvents && run.bankEvents.length > 0) {
-    renderBankEvents(runInfoPathEl, run, "Bank events", { showPickups: true });
+    renderBankChipSection(runInfoPathEl, run, "Bank events");
   }
 
   if (run.transports && run.transports.length > 0) {
@@ -723,12 +750,35 @@ function buildPathPane(run) {
   }
 }
 
+// Bank tab is shown only when the run has at least one bank event that actually picked up items.
+// Renders bank chips plus the per-bank pickup list with interchangeable equivalents (combo runes,
+// staves, tomes). Equivalents sourced from ItemVariations so missing entries surface as raw
+// humanised ItemID constants, making gaps in the data auditable at a glance.
+function buildBankPane(run) {
+  clearEl(runInfoBankEl);
+  const events = (run.bankEvents || []).filter(ev => ev.pickups && ev.pickups.length);
+  const hasContent = events.length > 0;
+  if (bankTabButton) bankTabButton.hidden = !hasContent;
+  if (!hasContent) {
+    return false;
+  }
+  renderBankChipSection(runInfoBankEl, run, "Bank events");
+  renderPickupsFor(runInfoBankEl, events);
+  return true;
+}
+
 function setActiveTab(tabId) {
+  // If the requested tab is hidden (e.g. the Bank tab when the run has no pickups), fall back to
+  // the first visible tab — otherwise clicking a run that was viewed on "bank" would leave the
+  // scenario panel blank on runs without pickups.
+  const target = runInfoTabButtons.find(btn => btn.dataset.tab === tabId && !btn.hidden)
+              || runInfoTabButtons.find(btn => !btn.hidden);
+  const activeId = target ? target.dataset.tab : tabId;
   runInfoTabButtons.forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.tab === tabId);
+    btn.classList.toggle("active", btn.dataset.tab === activeId);
   });
   runInfoTabPanes.forEach(pane => {
-    pane.hidden = pane.dataset.tab !== tabId;
+    pane.hidden = pane.dataset.tab !== activeId;
   });
 }
 
@@ -895,6 +945,10 @@ function renderRun(run) {
   runInfoDetailsEl.textContent = buildDetails(run);
   buildOverviewPane(run);
   buildPathPane(run);
+  buildBankPane(run);
+  // If the currently-active tab was hidden by buildBankPane (e.g. switched runs), normalise.
+  const activeBtn = runInfoTabButtons.find(btn => btn.classList.contains("active"));
+  if (activeBtn && activeBtn.hidden) setActiveTab("overview");
   runInfoPanel.classList.remove("run-info-hidden");
   setPathLegendVisible(Boolean(run.bankVisitedOnPath) || (run.bankEvents && run.bankEvents.length > 0));
   renderTransportOverlays();

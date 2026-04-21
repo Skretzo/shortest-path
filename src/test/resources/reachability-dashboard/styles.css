@@ -593,6 +593,27 @@ html, body {
   padding: 1px 0;
 }
 
+.pickup-label {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.pickup-equivalents {
+  margin-top: 1px;
+  margin-left: 2px;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.35;
+}
+
+.pickup-equivalents-note {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.pickup-equivalents-list {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .run-info-body #center-target {
   width: 100%;
   flex-shrink: 0;
