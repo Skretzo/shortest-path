@@ -17,6 +17,7 @@ final class BankMode extends AbstractRouteMode {
     protected void configureConfig(TestShortestPathConfig cfg) {
         cfg.setUseTeleportationItemsValue(TeleportationItem.INVENTORY_AND_BANK);
         cfg.setIncludeBankPathValue(true);
+        cfg.setUseTeleportationMinigamesValue(false);
     }
 
     @Override

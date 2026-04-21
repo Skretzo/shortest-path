@@ -613,6 +613,9 @@ function buildOverviewPane(run) {
   if (run.includeBankPath != null) {
     appendKV(kv, "Bank route", run.includeBankPath ? "on" : "off");
   }
+  if (run.useTeleportationMinigames != null) {
+    appendKV(kv, "Minigame teleports", run.useTeleportationMinigames ? "on" : "off");
+  }
   appendKV(kv, "Reached", run.reached ? "yes" : "no");
   appendKV(kv, "Assertion",
     run.assertionPassed === true ? "passed" :

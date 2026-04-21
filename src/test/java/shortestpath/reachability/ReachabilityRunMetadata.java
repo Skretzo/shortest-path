@@ -19,5 +19,6 @@ public final class ReachabilityRunMetadata {
         run.teleportationItems = config.useTeleportationItems().name();
         run.includeBankPath = config.includeBankPath();
         run.lumbridgeDiaryEliteStub = mode.lumbridgeDiaryEliteStub();
+        run.useTeleportationMinigames = config.useTeleportationMinigames();
     }
 }

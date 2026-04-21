@@ -6,6 +6,7 @@ public class TestShortestPathConfig implements ShortestPathConfig {
     private String builtTeleportationBoxes = "";
     private String builtTeleportationPortalsPoh = "";
     private boolean includeBankPath = false;
+    private boolean useTeleportationMinigames = true;
 
     public void setCalculationCutoffValue(int calculationCutoff) {
         this.calculationCutoff = calculationCutoff;
@@ -32,6 +33,15 @@ public class TestShortestPathConfig implements ShortestPathConfig {
     @Override
     public boolean includeBankPath() {
         return includeBankPath;
+    }
+
+    public void setUseTeleportationMinigamesValue(boolean useTeleportationMinigames) {
+        this.useTeleportationMinigames = useTeleportationMinigames;
+    }
+
+    @Override
+    public boolean useTeleportationMinigames() {
+        return useTeleportationMinigames;
     }
 
     @Override

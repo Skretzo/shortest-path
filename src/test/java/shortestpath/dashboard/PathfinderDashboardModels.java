@@ -55,6 +55,8 @@ public final class PathfinderDashboardModels {
         public Boolean includeBankPath;
         /** Stub value for elite Lumbridge diary varbit in tests (affects fairy-ring staff rules). */
         public Integer lumbridgeDiaryEliteStub;
+        /** Whether minigame teleports were enabled in this run (false for BANK mode). */
+        public Boolean useTeleportationMinigames;
 
         /** True if any path step has {@code bankVisited} (post-bank inventory state). */
         public Boolean bankVisitedOnPath;
