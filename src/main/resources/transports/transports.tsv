@@ -5469,3 +5469,23 @@
 # Varrock Palace trellis									
 3228 3470 0	3228 3472 0	Climb Trellis 2149			Garden of Tranquillity			2	
 3228 3472 0	3228 3470 0	Climb Trellis 2149			Garden of Tranquillity			2	
+									
+# Aldarin									
+1455 2968 0	1458 2968 1	Cross Gangplank 55332						3	
+1458 2968 1	1455 2968 0	Cross Gangplank 55333						3	
+									
+# Sunset Coast									
+1514 2971 0	1514 2968 1	Cross Gangplank 50736						3	
+1514 2968 1	1514 2971 0	Cross Gangplank 50737						3	
+									
+# Civitas Illa Fortis									
+1743 3136 0	1747 3136 1	Cross Gangplank 50734						3	
+1747 3136 1	1743 3136 0	Cross Gangplank 50735						3	
+									
+# Prifddinas									
+2157 3330 0	2157 3333 1	Cross Gangplank 34948						3	
+2157 3333 1	2157 3330 0	Cross Gangplank 34949						3	
+									
+# Port Tyras									
+2142 3122 0	2142 3125 1	Cross Gangplank 17408						3	
+2142 3125 1	2142 3122 0	Cross Gangplank 17409						3	
