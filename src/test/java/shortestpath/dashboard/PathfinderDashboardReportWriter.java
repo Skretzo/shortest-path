@@ -2,17 +2,23 @@ package shortestpath.dashboard;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import shortestpath.ItemVariations;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
+import shortestpath.transport.TransportType;
+import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
 public class PathfinderDashboardReportWriter {
     // This class is the translation layer from pathfinder/test domain objects into the JSON model consumed by the
@@ -194,7 +200,14 @@ public class PathfinderDashboardReportWriter {
 
     private static List<PathfinderDashboardModels.TransportStep> transportSteps(List<PathStep> path, PathfinderConfig config) {
         List<PathfinderDashboardModels.TransportStep> steps = new ArrayList<>();
+        // Per-step seen-set. Some transports (e.g. home-teleport spells) are defined as multiple
+        // CSV rows that differ only in varbit guards for random cast-animation variants; tests
+        // bypass varbit checks so every variant would be emitted. Collapse entries that agree on
+        // everything the dashboard renders. We still keep genuinely distinct candidates (e.g.
+        // Varrock tablet vs Varrock Teleport spell) because they differ by type / displayInfo.
+        Set<String> seen = new HashSet<>();
         for (int i = 1; i < path.size(); i++) {
+            seen.clear();
             PathStep originStep = path.get(i - 1);
             PathStep destinationStep = path.get(i);
             int origin = originStep.getPackedPosition();
@@ -207,14 +220,7 @@ public class PathfinderDashboardReportWriter {
             for (Transport transport : physicalTransports) {
                 if (transport.getDestination() == destination) {
                     physicalCoversDestination = true;
-                    PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
-                    step.stepIndex = i;
-                    step.type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
-                    step.displayInfo = transport.getDisplayInfo();
-                    step.objectInfo = transport.getObjectInfo();
-                    step.origin = worldPoint(origin);
-                    step.destination = worldPoint(destination);
-                    steps.add(step);
+                    addTransportStep(steps, seen, i, origin, destination, transport);
                 }
             }
 
@@ -226,19 +232,170 @@ public class PathfinderDashboardReportWriter {
             if (!physicalCoversDestination && WorldPointUtil.distanceBetween2D(origin, destination) > 1) {
                 for (Transport transport : config.getUsableTeleports(bankVisited)) {
                     if (transport.getDestination() == destination) {
-                        PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
-                        step.stepIndex = i;
-                        step.type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
-                        step.displayInfo = transport.getDisplayInfo();
-                        step.objectInfo = transport.getObjectInfo();
-                        step.origin = worldPoint(origin);
-                        step.destination = worldPoint(destination);
-                        steps.add(step);
+                        addTransportStep(steps, seen, i, origin, destination, transport);
                     }
                 }
             }
         }
         return steps;
+    }
+
+    private static void addTransportStep(
+            List<PathfinderDashboardModels.TransportStep> steps, Set<String> seen,
+            int stepIndex, int origin, int destination, Transport transport) {
+        String type = transport.getType() != null ? transport.getType().name() : "TRANSPORT";
+        String key = type + "|" + transport.getDisplayInfo() + "|" + transport.getObjectInfo()
+                + "|" + origin + "|" + destination;
+        if (!seen.add(key)) {
+            return;
+        }
+        PathfinderDashboardModels.TransportStep step = new PathfinderDashboardModels.TransportStep();
+        step.stepIndex = stepIndex;
+        step.type = type;
+        step.displayInfo = transport.getDisplayInfo();
+        step.objectInfo = transport.getObjectInfo();
+        step.origin = worldPoint(origin);
+        step.destination = worldPoint(destination);
+        step.itemRequirements = itemLabelsForTransport(transport);
+        steps.add(step);
+    }
+
+    /**
+     * Human-readable item requirements for a transport, derived from the TSV item column plus
+     * a synthesized staff entry for fairy rings (the Lumbridge-elite rule lives in
+     * {@link shortestpath.pathfinder.PathfinderConfig}, not in the transport data itself).
+     */
+    static List<String> itemLabelsForTransport(Transport transport) {
+        List<String> labels = new ArrayList<>();
+        if (transport.getType() == TransportType.FAIRY_RING) {
+            // Always synthesize: the reachability dashboard only surfaces pickups on bank runs,
+            // where the Lumbridge elite diary is stubbed off, so a fairy-ring staff is needed.
+            // Spell out both acceptable staves — the pathfinder's DRAMEN_STAFF check accepts the
+            // Lunar Moonclan liminal staff too, and calling it out avoids confusion.
+            labels.add("Dramen staff or Lunar staff");
+        }
+        TransportItems items = transport.getItemRequirements();
+        if (items != null) {
+            for (ItemRequirement req : items.getRequirements()) {
+                String label = formatItemRequirement(req);
+                if (label != null) {
+                    labels.add(label);
+                }
+            }
+        }
+        return labels;
+    }
+
+    /**
+     * Formats a single {@link ItemRequirement} as {@code "N× Label"} (quantity only when > 1).
+     * Reverse-maps item IDs to {@link ItemVariations} names and joins multiple alternatives with
+     * " or " (e.g. "Dramen staff or Lunar staff"). TSV entries that use a raw item id (e.g.
+     * {@code 8007=1} for a Varrock teleport tablet) fall back to the {@code ItemID} constant's
+     * humanised name.
+     */
+    private static String formatItemRequirement(ItemRequirement req) {
+        int[] ids = req.getItemIds();
+        if (ids == null || ids.length == 0) {
+            return null;
+        }
+        LinkedHashSet<String> names = new LinkedHashSet<>();
+        for (int id : ids) {
+            String name = resolveItemName(id);
+            if (name != null) {
+                names.add(name);
+            }
+        }
+        if (names.isEmpty()) {
+            names.add("item " + Arrays.toString(ids));
+        }
+        String joined = String.join(" or ", names);
+        int qty = req.getQuantity();
+        return qty > 1 ? (qty + "× " + joined) : joined;
+    }
+
+    /** Human-readable name for a single item id: {@link ItemVariations} first, then a cleaned
+     * {@link net.runelite.api.gameval.ItemID} constant name, then {@code "Item <id>"}. */
+    private static String resolveItemName(int id) {
+        ItemVariations variation = ITEM_ID_TO_VARIATION.get(id);
+        if (variation != null) {
+            return humanizeVariation(variation);
+        }
+        String constant = ITEM_ID_CONSTANT_NAMES.get(id);
+        if (constant != null) {
+            return humanizeItemConstant(constant);
+        }
+        return "Item " + id;
+    }
+
+    private static String humanizeVariation(ItemVariations variation) {
+        return capitalize(variation.name().toLowerCase().replace('_', ' '));
+    }
+
+    /** Cleans cryptic {@code ItemID} constant names (e.g. {@code POH_TABLET_VARROCKTELEPORT} →
+     * "Varrock teleport tablet") while falling back to a plain lower-cased form otherwise. */
+    private static String humanizeItemConstant(String constant) {
+        if (constant.startsWith("POH_TABLET_") && constant.endsWith("TELEPORT")) {
+            String place = constant.substring("POH_TABLET_".length(), constant.length() - "TELEPORT".length());
+            return capitalize(place.toLowerCase()) + " teleport tablet";
+        }
+        if (constant.startsWith("TELETAB_")) {
+            return capitalize(constant.substring("TELETAB_".length()).toLowerCase().replace('_', ' ')) + " teleport tablet";
+        }
+        if (constant.startsWith("NZONE_TELETAB_")) {
+            return capitalize(constant.substring("NZONE_TELETAB_".length()).toLowerCase().replace('_', ' ')) + " teleport tablet";
+        }
+        if (constant.equals("SKILLCAPE_AD") || constant.equals("SKILLCAPE_AD_TRIMMED")) {
+            return "Achievement diary cape";
+        }
+        if (constant.startsWith("RING_OF_DUELING")) {
+            return "Ring of dueling";
+        }
+        if (constant.startsWith("GAMES_NECKLACE")) {
+            return "Games necklace";
+        }
+        if (constant.startsWith("AMULET_OF_GLORY")) {
+            return "Amulet of glory";
+        }
+        return capitalize(constant.toLowerCase().replace('_', ' '));
+    }
+
+    private static String capitalize(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    private static final Map<Integer, ItemVariations> ITEM_ID_TO_VARIATION = buildItemIdToVariation();
+    private static final Map<Integer, String> ITEM_ID_CONSTANT_NAMES = buildItemIdConstantNames();
+
+    private static Map<Integer, ItemVariations> buildItemIdToVariation() {
+        Map<Integer, ItemVariations> map = new HashMap<>();
+        for (ItemVariations v : ItemVariations.values()) {
+            for (int id : v.getIds()) {
+                // First-wins so the primary variation (declared first) owns the id.
+                map.putIfAbsent(id, v);
+            }
+        }
+        return map;
+    }
+
+    private static Map<Integer, String> buildItemIdConstantNames() {
+        Map<Integer, String> map = new HashMap<>();
+        try {
+            Class<?> clazz = Class.forName("net.runelite.api.gameval.ItemID");
+            for (java.lang.reflect.Field f : clazz.getFields()) {
+                if (f.getType() != int.class || !java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+                    continue;
+                }
+                int id = f.getInt(null);
+                // First-wins so the earliest-declared constant owns the id (item + placeholder share ids).
+                map.putIfAbsent(id, f.getName());
+            }
+        } catch (ReflectiveOperationException e) {
+            // Leave map empty — the resolver will fall back to "Item <id>".
+        }
+        return map;
     }
 
     private static List<PathfinderDashboardModels.Marker> markers(PathfinderResult result, PathfinderConfig config) {
@@ -266,15 +423,74 @@ public class PathfinderDashboardReportWriter {
         }
         boolean any = path.stream().anyMatch(PathStep::isBankVisited);
         run.bankVisitedOnPath = any;
+        List<BankTransition> transitions = collectBankTransitions(path);
         List<PathfinderDashboardModels.BankEvent> events = new ArrayList<>();
-        for (BankTransition transition : collectBankTransitions(path)) {
+        for (int idx = 0; idx < transitions.size(); idx++) {
+            BankTransition transition = transitions.get(idx);
+            int segmentEndExclusive = idx + 1 < transitions.size()
+                    ? transitions.get(idx + 1).transitionIndex
+                    : Integer.MAX_VALUE;
             PathfinderDashboardModels.BankEvent ev = new PathfinderDashboardModels.BankEvent();
             ev.stepIndex = transition.transitionIndex;
             ev.location = worldPoint(transition.packedBankTile);
             ev.bankName = BankDestinationLabels.labelForPackedNearest(transition.packedBankTile, 2);
+            ev.transportsAfterBank = transportLabelsInRange(
+                    run.transports, transition.transitionIndex, segmentEndExclusive);
+            ev.pickups = pickupsInRange(
+                    run.transports, transition.transitionIndex, segmentEndExclusive);
             events.add(ev);
         }
         run.bankEvents = events.isEmpty() ? null : events;
+    }
+
+    /**
+     * Returns distinct display labels for transports whose stepIndex falls in
+     * {@code (afterStepExclusive, endStepExclusive)}. Preserves first-seen order so the caller
+     * can answer "what was picked up from the bank, and in what order?". Transports in BANK-mode
+     * tests all implicitly consume banked items (inventory starts empty).
+     */
+    private static List<String> transportLabelsInRange(
+            List<PathfinderDashboardModels.TransportStep> transports,
+            int afterStepExclusive, int endStepExclusive) {
+        if (transports == null || transports.isEmpty()) {
+            return null;
+        }
+        LinkedHashSet<String> labels = new LinkedHashSet<>();
+        for (PathfinderDashboardModels.TransportStep step : transports) {
+            if (step.stepIndex <= afterStepExclusive || step.stepIndex >= endStepExclusive) {
+                continue;
+            }
+            String label = step.displayInfo != null ? step.displayInfo
+                         : step.objectInfo != null  ? step.objectInfo
+                         : step.type;
+            if (label != null) {
+                labels.add(label);
+            }
+        }
+        return labels.isEmpty() ? null : new ArrayList<>(labels);
+    }
+
+    /**
+     * Flattens and dedupes the item-requirement labels of every transport whose stepIndex falls
+     * in {@code (afterStepExclusive, endStepExclusive)}. First-seen order is preserved so the
+     * list mirrors the order in which items would be pulled from the bank.
+     */
+    private static List<String> pickupsInRange(
+            List<PathfinderDashboardModels.TransportStep> transports,
+            int afterStepExclusive, int endStepExclusive) {
+        if (transports == null || transports.isEmpty()) {
+            return null;
+        }
+        LinkedHashSet<String> items = new LinkedHashSet<>();
+        for (PathfinderDashboardModels.TransportStep step : transports) {
+            if (step.stepIndex <= afterStepExclusive || step.stepIndex >= endStepExclusive) {
+                continue;
+            }
+            if (step.itemRequirements != null) {
+                items.addAll(step.itemRequirements);
+            }
+        }
+        return items.isEmpty() ? null : new ArrayList<>(items);
     }
 
     private static final class BankTransition {

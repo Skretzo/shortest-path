@@ -86,6 +86,13 @@ public final class PathfinderDashboardModels {
         public String objectInfo;
         public WorldPointJson origin;
         public WorldPointJson destination;
+        /**
+         * Human-readable item requirements for this transport (e.g. "Dramen staff",
+         * "3× Air rune or Dust rune"). Empty when the transport has no item requirements.
+         * Fairy rings synthesize a "Dramen staff" entry since the rule lives in the pathfinder
+         * and not in the TSV data.
+         */
+        public List<String> itemRequirements;
     }
 
     public static class Marker {
@@ -118,6 +125,19 @@ public final class PathfinderDashboardModels {
         public WorldPointJson location;
         /** Name from {@code bank.tsv} when the tile matches, else null. */
         public String bankName;
+        /**
+         * Distinct transport labels used on the path after this bank event (in order, deduped).
+         * Each transport in this segment required items that came from the bank, since the test
+         * inventory is empty. Useful for answering "what did this run pick up from the bank?".
+         * Null if no transport follows the bank event on the path.
+         */
+        public List<String> transportsAfterBank;
+        /**
+         * Distinct human-readable items picked up from this bank event (in order, deduped).
+         * Aggregated from the {@code itemRequirements} of every transport in this segment.
+         * Null when the segment has no transports or no item requirements.
+         */
+        public List<String> pickups;
     }
 
     // ── Profiler models (optional per-run data) ─────────────────────
