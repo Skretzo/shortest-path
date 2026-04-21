@@ -5045,16 +5045,8 @@
 1248 3723 0	1248 3722 0	Open Door 34463						1	
 1249 3722 0	1249 3723 0	Open Door 34464	45 Farming					1	
 1249 3723 0	1249 3722 0	Open Door 34464						1	
-# Intermediate tier (west wing) - 65 Farming required. Passage is an invisible wall; no object to click.									
-1244 3730 0	1243 3730 0		65 Farming					1	
-1243 3729 0	1244 3730 0							1	
-1244 3726 0	1243 3728 0		65 Farming					1	
-1243 3728 0	1244 3726 0							1	
-# Advanced tier (north wing) - 85 Farming required. Passage is an invisible wall; no object to click.									
-1248 3744 0	1248 3745 0		85 Farming					1	
-1248 3745 0	1248 3744 0							1	
-1249 3744 0	1249 3745 0		85 Farming					1	
-1249 3745 0	1249 3744 0							1	
+# Intermediate (65 Farming) and advanced (85 Farming) tier passages are enforced server-side only									
+# (no collision wall in the map) so they cannot be modelled as transport gates.									
 									
 # Crabclaw Caves									
 1646 9848 0	1643 3450 0	Climb Sand pile 31691				6027>6		2	
