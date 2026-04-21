@@ -23,6 +23,7 @@ dependencies {
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
     testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+    testImplementation group: 'net.runelite', name:'cache', version: runeLiteVersion
 }
 
 group = 'shortestpath'
@@ -92,6 +93,57 @@ tasks.register('dashboard', Test) {
     }
     doLast {
         logDashboardLocation(name)
+    }
+}
+
+// Dumps bank-related object placements (Bank booth / Bank chest / deposit box / GE booth)
+// from an OSRS cache to a TSV. Pair with scripts/reconcile_bank_tiles.py to snap bank.tsv
+// rows to exact stand tiles.
+//
+// Usage:
+//   collision-map-update/download-latest-cache.sh         # produces ./cache and ./keys.json
+//   sed -i '' 's/mapsquare/region/g; s/key/keys/g' keys.json   # macOS; drop -i '' on Linux
+//   ./gradlew bankTileDump \
+//     -PbankTileCacheDir=$PWD/cache \
+//     -PbankTileXteaPath=$PWD/keys.json \
+//     [-PbankTileOutput=$PWD/bank_tile_placements.tsv]
+def bankTileCacheDir = providers.gradleProperty('bankTileCacheDir').orElse('')
+def bankTileXteaPath = providers.gradleProperty('bankTileXteaPath').orElse('')
+def bankTileOutput = providers.gradleProperty('bankTileOutput')
+    .orElse(layout.buildDirectory.file('bank-tiles/bank_tile_placements.tsv').get().asFile.absolutePath)
+
+tasks.register('bankTileDump', Test) {
+    group = 'verification'
+    description = 'Dumps bank-related object placements from an OSRS cache to a TSV. ' +
+        'Required: -PbankTileCacheDir=<cache dir>, -PbankTileXteaPath=<keys.json>. ' +
+        'Optional: -PbankTileOutput=<tsv path>.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/dump/BankTileDumperTest.class'
+    systemProperty 'bankTiles.dump', 'true'
+    systemProperty 'bankTiles.cacheDir', bankTileCacheDir.get()
+    systemProperty 'bankTiles.xteaPath', bankTileXteaPath.get()
+    systemProperty 'bankTiles.output', bankTileOutput.get()
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    testLogging {
+        showStandardStreams = true
+    }
+    doFirst {
+        if (bankTileCacheDir.get().isEmpty() || bankTileXteaPath.get().isEmpty()) {
+            throw new GradleException(
+                "bankTileDump requires -PbankTileCacheDir and -PbankTileXteaPath. " +
+                "Run collision-map-update/download-latest-cache.sh first to produce ./cache and ./keys.json, " +
+                "then patch keys.json (mapsquare->region, key->keys).")
+        }
+    }
+    doLast {
+        logger.lifecycle("")
+        logger.lifecycle("Bank tile placements written to ${bankTileOutput.get()}")
+        logger.lifecycle("Reconcile against bank.tsv with:")
+        logger.lifecycle("  python3 scripts/reconcile_bank_tiles.py \\")
+        logger.lifecycle("    --placements ${bankTileOutput.get()} \\")
+        logger.lifecycle("    --bank-tsv src/main/resources/destinations/game_features/bank.tsv")
     }
 }
 
