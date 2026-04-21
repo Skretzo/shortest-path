@@ -2,7 +2,6 @@ package shortestpath.dashboard;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -265,60 +264,159 @@ public class PathfinderDashboardReportWriter {
      * a synthesized staff entry for fairy rings (the Lumbridge-elite rule lives in
      * {@link shortestpath.pathfinder.PathfinderConfig}, not in the transport data itself).
      */
-    static List<String> itemLabelsForTransport(Transport transport) {
-        List<String> labels = new ArrayList<>();
+    static List<PathfinderDashboardModels.Pickup> itemLabelsForTransport(Transport transport) {
+        List<PathfinderDashboardModels.Pickup> pickups = new ArrayList<>();
         if (transport.getType() == TransportType.FAIRY_RING) {
             // Always synthesize: the reachability dashboard only surfaces pickups on bank runs,
             // where the Lumbridge elite diary is stubbed off, so a fairy-ring staff is needed.
             // Spell out both acceptable staves — the pathfinder's DRAMEN_STAFF check accepts the
             // Lunar Moonclan liminal staff too, and calling it out avoids confusion.
-            labels.add("Dramen staff or Lunar staff");
+            pickups.add(pickup("Dramen staff or Lunar staff", List.of()));
         }
         TransportItems items = transport.getItemRequirements();
         if (items != null) {
             for (ItemRequirement req : items.getRequirements()) {
-                String label = formatItemRequirement(req);
-                if (label != null) {
-                    labels.add(label);
+                PathfinderDashboardModels.Pickup p = formatItemRequirement(req);
+                if (p != null) {
+                    pickups.add(p);
                 }
             }
         }
-        return labels;
+        return pickups;
+    }
+
+    private static PathfinderDashboardModels.Pickup pickup(String label, List<String> equivalents) {
+        PathfinderDashboardModels.Pickup p = new PathfinderDashboardModels.Pickup();
+        p.label = label;
+        p.equivalents = equivalents;
+        return p;
     }
 
     /**
-     * Formats a single {@link ItemRequirement} as {@code "N× Label"} (quantity only when > 1).
-     * Reverse-maps item IDs to {@link ItemVariations} names and joins multiple alternatives with
-     * " or " (e.g. "Dramen staff or Lunar staff"). TSV entries that use a raw item id (e.g.
-     * {@code 8007=1} for a Varrock teleport tablet) fall back to the {@code ItemID} constant's
-     * humanised name.
+     * Formats a single {@link ItemRequirement} into a {@link PathfinderDashboardModels.Pickup}
+     * with a primary display label ({@code "N× Label"}, quantity only when > 1) plus a list of
+     * equivalent items that also satisfy the requirement.
+     *
+     * <p>The parser builds the requirement's {@code itemIds} array by concatenating each
+     * {@link ItemVariations#getIds()} of every OR-alternative in declaration order (see
+     * {@link shortestpath.transport.parser.ItemRequirementParser}). This method reverses that:
+     * it walks the array left-to-right, matching the longest prefix against a variation's full
+     * id list, so {@code WATER_RUNE=2} renders with a primary label of "2× Water rune" rather
+     * than a confusing "Water rune or Air rune or Earth rune or Fire rune" (combo runes like
+     * mist/mud/steam appear in several variations for substitution purposes). The interchangeable
+     * combo runes instead surface in the equivalents list, together with the element's staves
+     * and tomes from {@link ItemVariations#staves} and {@link ItemVariations#offhands}, so the
+     * dashboard can expose which substitutes are (and aren't) modelled.
+     *
+     * <p>TSV entries using a raw item id (e.g. {@code 8007=1}) fall back to the
+     * {@link net.runelite.api.gameval.ItemID} constant's humanised name with no equivalents.
      */
-    private static String formatItemRequirement(ItemRequirement req) {
+    private static PathfinderDashboardModels.Pickup formatItemRequirement(ItemRequirement req) {
         int[] ids = req.getItemIds();
         if (ids == null || ids.length == 0) {
             return null;
         }
-        LinkedHashSet<String> names = new LinkedHashSet<>();
-        for (int id : ids) {
-            String name = resolveItemName(id);
-            if (name != null) {
-                names.add(name);
+        LinkedHashSet<String> primaries = new LinkedHashSet<>();
+        LinkedHashSet<String> equivalents = new LinkedHashSet<>();
+        int i = 0;
+        while (i < ids.length) {
+            ItemVariations match = longestVariationPrefixAt(ids, i);
+            if (match != null) {
+                primaries.add(humanizeVariation(match));
+                collectEquivalents(match, equivalents);
+                i += match.getIds().length;
+            } else {
+                primaries.add(resolveItemName(ids[i]));
+                i += 1;
             }
         }
-        if (names.isEmpty()) {
-            names.add("item " + Arrays.toString(ids));
-        }
-        String joined = String.join(" or ", names);
+        // Don't list the primary label(s) as their own equivalents.
+        primaries.forEach(equivalents::remove);
+        String joined = String.join(" or ", primaries);
         int qty = req.getQuantity();
-        return qty > 1 ? (qty + "× " + joined) : joined;
+        String label = qty > 1 ? (qty + "× " + joined) : joined;
+        return pickup(label, new ArrayList<>(equivalents));
     }
 
-    /** Human-readable name for a single item id: {@link ItemVariations} first, then a cleaned
-     * {@link net.runelite.api.gameval.ItemID} constant name, then {@code "Item <id>"}. */
+    /**
+     * Appends every interchangeable item for {@code variation} to {@code into}:
+     * <ul>
+     *   <li>Sibling ids within the variation (e.g. {@code WATER_RUNE} includes the combo
+     *       runes {@code MIST/MUD/STEAM}, shown with their own friendlier names).</li>
+     *   <li>Elemental staves via {@link ItemVariations#staves}.</li>
+     *   <li>Elemental tomes via {@link ItemVariations#offhands}.</li>
+     * </ul>
+     * Each candidate id is resolved through the normal label pipeline so unmapped staves fall
+     * back to their humanised {@code ItemID} constant name — making it easy to spot entries that
+     * are missing from {@link ItemVariations}.
+     */
+    private static void collectEquivalents(ItemVariations variation, LinkedHashSet<String> into) {
+        int[] siblings = variation.getIds();
+        // Skip index 0 (the canonical id already rendered as the primary label).
+        for (int k = 1; k < siblings.length; k++) {
+            into.add(resolveItemName(siblings[k]));
+        }
+        appendIdsAsLabels(ItemVariations.staves(variation), into);
+        appendIdsAsLabels(ItemVariations.offhands(variation), into);
+    }
+
+    private static void appendIdsAsLabels(int[] ids, LinkedHashSet<String> into) {
+        if (ids == null) {
+            return;
+        }
+        for (int id : ids) {
+            into.add(resolveItemName(id));
+        }
+    }
+
+    /** Returns the {@link ItemVariations} whose full id list matches the slice of {@code ids}
+     * starting at {@code offset}, preferring the longest match. Returns {@code null} when no
+     * variation matches. */
+    private static ItemVariations longestVariationPrefixAt(int[] ids, int offset) {
+        ItemVariations best = null;
+        int bestLen = 0;
+        for (ItemVariations v : ItemVariations.values()) {
+            int[] vIds = v.getIds();
+            if (vIds.length <= bestLen || vIds.length > ids.length - offset) {
+                continue;
+            }
+            boolean eq = true;
+            for (int k = 0; k < vIds.length; k++) {
+                if (ids[offset + k] != vIds[k]) {
+                    eq = false;
+                    break;
+                }
+            }
+            if (eq) {
+                best = v;
+                bestLen = vIds.length;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Human-readable name for a single item id.
+     *
+     * <p>Resolution order is tuned for the equivalents audit use-case:
+     * <ol>
+     *   <li>The variation that declares {@code id} as its <em>first</em> (canonical) id —
+     *       e.g. {@code MISTRUNE → MIST_RUNE} ("Mist rune"), {@code MYSTIC_MIST_BATTLESTAFF →
+     *       MYSTIC_MIST_STAFF} ("Mystic mist staff"). This avoids the first-declared-variation
+     *       collision that would otherwise surface combo runes as basic types ("Air rune") and
+     *       merge mystic variants into their non-mystic counterparts.</li>
+     *   <li>Reflected {@link net.runelite.api.gameval.ItemID} constant name, humanised — catches
+     *       items that have no canonical variation (e.g. {@code AIR_BATTLESTAFF}, which only
+     *       appears as a sibling in {@code STAFF_OF_AIR}, and raw TSV ids like
+     *       {@code POH_TABLET_VARROCKTELEPORT}). This makes gaps in {@link ItemVariations} easy
+     *       to spot — a missing entry still renders with a sensible, RuneScape-y label.</li>
+     *   <li>{@code "Item <id>"} as a last resort.</li>
+     * </ol>
+     */
     private static String resolveItemName(int id) {
-        ItemVariations variation = ITEM_ID_TO_VARIATION.get(id);
-        if (variation != null) {
-            return humanizeVariation(variation);
+        ItemVariations canonical = ITEM_ID_TO_CANONICAL_VARIATION.get(id);
+        if (canonical != null) {
+            return humanizeVariation(canonical);
         }
         String constant = ITEM_ID_CONSTANT_NAMES.get(id);
         if (constant != null) {
@@ -366,16 +464,21 @@ public class PathfinderDashboardReportWriter {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
-    private static final Map<Integer, ItemVariations> ITEM_ID_TO_VARIATION = buildItemIdToVariation();
+    private static final Map<Integer, ItemVariations> ITEM_ID_TO_CANONICAL_VARIATION = buildCanonicalVariationMap();
     private static final Map<Integer, String> ITEM_ID_CONSTANT_NAMES = buildItemIdConstantNames();
 
-    private static Map<Integer, ItemVariations> buildItemIdToVariation() {
+    /**
+     * Maps an item id to the variation that declares it as its <em>first</em> (canonical) id.
+     * Unlike a first-wins map over every id of every variation, this lets each combo rune /
+     * mystic stave be resolved to its own dedicated variation when one exists (see
+     * {@link #resolveItemName(int)} for rationale).
+     */
+    private static Map<Integer, ItemVariations> buildCanonicalVariationMap() {
         Map<Integer, ItemVariations> map = new HashMap<>();
         for (ItemVariations v : ItemVariations.values()) {
-            for (int id : v.getIds()) {
-                // First-wins so the primary variation (declared first) owns the id.
-                map.putIfAbsent(id, v);
-            }
+            int[] ids = v.getIds();
+            if (ids.length == 0) continue;
+            map.putIfAbsent(ids[0], v);
         }
         return map;
     }
@@ -471,26 +574,29 @@ public class PathfinderDashboardReportWriter {
     }
 
     /**
-     * Flattens and dedupes the item-requirement labels of every transport whose stepIndex falls
-     * in {@code (afterStepExclusive, endStepExclusive)}. First-seen order is preserved so the
-     * list mirrors the order in which items would be pulled from the bank.
+     * Flattens and dedupes (by primary label) the item-requirement pickups of every transport
+     * whose stepIndex falls in {@code (afterStepExclusive, endStepExclusive)}. First-seen order
+     * is preserved so the list mirrors the order in which items would be pulled from the bank.
+     * The {@link PathfinderDashboardModels.Pickup#equivalents} list from the first occurrence
+     * of a label wins (all occurrences produce the same equivalents for a given primary).
      */
-    private static List<String> pickupsInRange(
+    private static List<PathfinderDashboardModels.Pickup> pickupsInRange(
             List<PathfinderDashboardModels.TransportStep> transports,
             int afterStepExclusive, int endStepExclusive) {
         if (transports == null || transports.isEmpty()) {
             return null;
         }
-        LinkedHashSet<String> items = new LinkedHashSet<>();
+        Map<String, PathfinderDashboardModels.Pickup> byLabel = new java.util.LinkedHashMap<>();
         for (PathfinderDashboardModels.TransportStep step : transports) {
             if (step.stepIndex <= afterStepExclusive || step.stepIndex >= endStepExclusive) {
                 continue;
             }
-            if (step.itemRequirements != null) {
-                items.addAll(step.itemRequirements);
+            if (step.itemRequirements == null) continue;
+            for (PathfinderDashboardModels.Pickup p : step.itemRequirements) {
+                byLabel.putIfAbsent(p.label, p);
             }
         }
-        return items.isEmpty() ? null : new ArrayList<>(items);
+        return byLabel.isEmpty() ? null : new ArrayList<>(byLabel.values());
     }
 
     private static final class BankTransition {

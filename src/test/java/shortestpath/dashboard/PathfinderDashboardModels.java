@@ -88,11 +88,14 @@ public final class PathfinderDashboardModels {
         public WorldPointJson destination;
         /**
          * Human-readable item requirements for this transport (e.g. "Dramen staff",
-         * "3× Air rune or Dust rune"). Empty when the transport has no item requirements.
-         * Fairy rings synthesize a "Dramen staff" entry since the rule lives in the pathfinder
-         * and not in the TSV data.
+         * "3× Air rune"). Each entry carries the primary display label plus a list of
+         * equivalent items (combo runes, elemental staves, tomes) that also satisfy the
+         * requirement — useful for auditing which equivalents are modelled in
+         * {@link shortestpath.ItemVariations}. Empty when the transport has no item requirements.
+         * Fairy rings synthesize a "Dramen staff or Lunar staff" entry since the rule lives in
+         * the pathfinder and not in the TSV data.
          */
-        public List<String> itemRequirements;
+        public List<Pickup> itemRequirements;
     }
 
     public static class Marker {
@@ -133,11 +136,27 @@ public final class PathfinderDashboardModels {
          */
         public List<String> transportsAfterBank;
         /**
-         * Distinct human-readable items picked up from this bank event (in order, deduped).
-         * Aggregated from the {@code itemRequirements} of every transport in this segment.
-         * Null when the segment has no transports or no item requirements.
+         * Distinct human-readable items picked up from this bank event (in order, deduped by
+         * primary label). Aggregated from the {@code itemRequirements} of every transport in
+         * this segment. Each entry carries both the primary label (e.g. "2× Water rune") and
+         * a list of equivalent items (combo runes / staves / tomes) that would also satisfy
+         * the requirement, so the dashboard can surface the full set of interchangeable bank
+         * items for audit purposes. Null when the segment has no transports or no item
+         * requirements.
          */
-        public List<String> pickups;
+        public List<Pickup> pickups;
+    }
+
+    /**
+     * A single required / picked-up item, with its interchangeable equivalents. Equivalents are
+     * sibling rune variants (mist/mud/steam/dust/lava/smoke), elemental staves
+     * ({@link shortestpath.ItemVariations#staves}), and tomes
+     * ({@link shortestpath.ItemVariations#offhands}). Pure non-rune requirements (e.g. "Dramen
+     * staff") have an empty equivalents list.
+     */
+    public static class Pickup {
+        public String label;
+        public List<String> equivalents;
     }
 
     // ── Profiler models (optional per-run data) ─────────────────────
