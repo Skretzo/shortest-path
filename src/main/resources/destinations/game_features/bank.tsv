@@ -60,9 +60,12 @@
 1747 5476 0	Clan Hall				
 1748 5476 0	Clan Hall				
 3147 3450 0	Cooks' Guild	99 Cooking			
+3147 3450 0	Cooks' Guild			4481=1	
 3148 3450 0	Cooks' Guild	99 Cooking			
+3148 3450 0	Cooks' Guild			4481=1	
 2569 2864 0	Corsair Cove		The Corsair Curse		
 2935 3280 0	Crafting Guild	99 Crafting			
+2935 3280 0	Crafting Guild			4464=1	
 3218 9623 0	Culinaromancer's Chest		Recipe for Disaster		
 3420 4058 0	Daimon's Crater				
 3426 4069 0	Daimon's Crater				
@@ -100,8 +103,9 @@
 2948 3368 0	Falador				
 2949 3368 0	Falador				
 1253 3741 0	Farming Guild				
-1248 3758 0	Farming Guild				
-1249 3758 0	Farming Guild				
+# Added skill checks for north Farming Guild banks. There is no collsion wall where the skill check can be enforced in the pathfinder, it's server side.					
+1248 3758 0	Farming Guild	85 Farming			
+1249 3758 0	Farming Guild	85 Farming			
 3130 3631 0	Ferox Enclave				
 2586 3418 0	Fishing Guild				
 2586 3419 0	Fishing Guild				
