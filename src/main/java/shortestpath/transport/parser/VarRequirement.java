@@ -50,7 +50,13 @@ public class VarRequirement {
         if (currentValue == null) {
             return false;
         }
+        return checkValue(currentValue);
+    }
 
+    /**
+     * Same logic as {@link #check(Map)} but with the variable value already resolved (e.g. from the client).
+     */
+    public boolean checkValue(int currentValue) {
         switch (checkType) {
             case EQUAL:
                 return currentValue == value;
