@@ -43,6 +43,10 @@ const runDetailsEl = document.getElementById("run-details");
 const runInfoDetailsEl = document.getElementById("run-info-details");
 const runInfoPanel = document.getElementById("run-info-panel");
 const runInfoToggle = document.getElementById("run-info-toggle");
+const runInfoOverviewEl = document.getElementById("run-info-overview");
+const runInfoPathEl = document.getElementById("run-info-path");
+const runInfoTabButtons = Array.from(document.querySelectorAll(".run-info-tab"));
+const runInfoTabPanes = Array.from(document.querySelectorAll(".run-info-tab-pane"));
 const runSearchEl = document.getElementById("run-search");
 const unreachedOnlyEl = document.getElementById("unreached-only");
 const centerTargetEl = document.getElementById("center-target");
@@ -173,6 +177,39 @@ const TransportLayerControl = L.Control.extend({
 
 const transportLayerControl = new TransportLayerControl();
 map.addControl(transportLayerControl);
+
+// ── Path colour legend (mounted only when a run actually has a bank leg) ─
+const PathLegendControl = L.Control.extend({
+  options: { position: "topright" },
+  onAdd() {
+    const div = L.DomUtil.create("div", "heatmap-legend leaflet-control");
+    const title = L.DomUtil.create("div", "heatmap-legend-title", div);
+    title.textContent = "Path";
+    [
+      { color: pathSegmentColor(true, false), label: "Before bank" },
+      { color: pathSegmentColor(true, true),  label: "After bank" }
+    ].forEach(({ color, label }) => {
+      const row = L.DomUtil.create("div", "path-legend-entry", div);
+      const swatch = L.DomUtil.create("span", "path-legend-swatch", row);
+      swatch.style.background = color;
+      const text = L.DomUtil.create("span", "", row);
+      text.textContent = label;
+    });
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  }
+});
+const pathLegendControl = new PathLegendControl();
+let pathLegendMounted = false;
+function setPathLegendVisible(visible) {
+  if (visible && !pathLegendMounted) {
+    pathLegendControl.addTo(map);
+    pathLegendMounted = true;
+  } else if (!visible && pathLegendMounted) {
+    map.removeControl(pathLegendControl);
+    pathLegendMounted = false;
+  }
+}
 
 // Public API for extensions to add map layer toggles
 window.addMapLayerToggle = function(toggle) {
@@ -409,7 +446,36 @@ function buildPathSegments(path) {
   return segments;
 }
 
+function buildScenarioPanel(run) {
+  const lines = [];
+  if (run.routeModeId) {
+    lines.push("Route mode");
+    lines.push(`  id: ${run.routeModeId}`);
+    if (run.teleportationItems) {
+      lines.push(`  teleportationItems: ${run.teleportationItems}`);
+    }
+    if (run.includeBankPath !== undefined && run.includeBankPath !== null) {
+      lines.push(`  includeBankPath: ${run.includeBankPath}`);
+    }
+    if (run.lumbridgeDiaryEliteStub !== undefined && run.lumbridgeDiaryEliteStub !== null) {
+      lines.push(`  lumbridgeDiaryElite (stub): ${run.lumbridgeDiaryEliteStub}`);
+    }
+  }
+  if (run.bankVisitedOnPath !== undefined && run.bankVisitedOnPath !== null) {
+    lines.push(`Bank visited on path: ${run.bankVisitedOnPath}`);
+  }
+  if (run.bankEvents && run.bankEvents.length > 0) {
+    lines.push("Bank events");
+    run.bankEvents.forEach(ev => {
+      const label = ev.bankName || "Bank";
+      lines.push(`  - ${label} @ step ${ev.stepIndex} ${formatPoint(ev.location)}`);
+    });
+  }
+  return lines.length > 0 ? lines.join("\n") + "\n\n" : "";
+}
+
 function buildDetails(run) {
+  const scenarioBlock = buildScenarioPanel(run);
   const details = [
     `Name: ${run.name}`,
     `Category: ${run.category || "default"}`,
@@ -458,7 +524,185 @@ function buildDetails(run) {
     );
   }
 
-  return details.join("\n");
+  return scenarioBlock + details.join("\n");
+}
+
+// ── Structured overview / path tab rendering ──────────────────────────
+
+function clearEl(el) {
+  while (el.firstChild) {
+    el.removeChild(el.firstChild);
+  }
+}
+
+function appendKV(dl, key, value) {
+  if (value === undefined || value === null || value === "") {
+    return;
+  }
+  const dt = document.createElement("dt");
+  dt.textContent = key;
+  const dd = document.createElement("dd");
+  dd.textContent = String(value);
+  dl.appendChild(dt);
+  dl.appendChild(dd);
+}
+
+function makeSectionTitle(text) {
+  const el = document.createElement("div");
+  el.className = "run-info-section-title";
+  el.textContent = text;
+  return el;
+}
+
+function makeChip(kind, labelText, subText, onClick) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = `run-info-chip run-info-chip--${kind}`;
+  const dot = document.createElement("span");
+  dot.className = "chip-dot";
+  chip.appendChild(dot);
+  const label = document.createElement("span");
+  label.className = "run-info-chip-label";
+  label.textContent = labelText;
+  chip.appendChild(label);
+  if (subText) {
+    const step = document.createElement("span");
+    step.className = "run-info-chip-step";
+    step.textContent = subText;
+    chip.appendChild(step);
+  }
+  chip.addEventListener("click", e => {
+    e.stopPropagation();
+    onClick();
+  });
+  return chip;
+}
+
+function flyAndFlash(point) {
+  currentPlane = point.plane;
+  baseLayer.redraw();
+  map.flyTo(worldToLatLng(point), Math.max(map.getZoom(), 2), { duration: 0.4 });
+  renderHoveredTile(point);
+}
+
+function formatElapsed(nanos) {
+  if (nanos == null) return "n/a";
+  return `${(nanos / 1_000_000).toFixed(2)} ms`;
+}
+
+function buildOverviewPane(run) {
+  clearEl(runInfoOverviewEl);
+
+  const name = document.createElement("div");
+  name.className = "run-info-name";
+  const statusDot = document.createElement("span");
+  statusDot.className = "run-info-status " +
+    (run.reached ? "run-info-status--reached" : "run-info-status--unreached");
+  name.appendChild(statusDot);
+  name.appendChild(document.createTextNode(run.name));
+  runInfoOverviewEl.appendChild(name);
+
+  const kv = document.createElement("dl");
+  kv.className = "run-info-kv";
+  if (run.routeModeId) {
+    appendKV(kv, "Mode", run.routeModeId);
+  }
+  if (run.teleportationItems) {
+    appendKV(kv, "Teleports", run.teleportationItems);
+  }
+  if (run.includeBankPath != null) {
+    appendKV(kv, "Bank route", run.includeBankPath ? "on" : "off");
+  }
+  appendKV(kv, "Reached", run.reached ? "yes" : "no");
+  appendKV(kv, "Assertion",
+    run.assertionPassed === true ? "passed" :
+    run.assertionPassed === false ? "failed" : "n/a");
+  if (run.assertionMessage) {
+    appendKV(kv, "Assertion msg", run.assertionMessage);
+  }
+  appendKV(kv, "Termination", run.terminationReason);
+  appendKV(kv, "Path length", run.path ? run.path.length : 0);
+  appendKV(kv, "Elapsed", formatElapsed(run.stats && run.stats.elapsedNanos));
+  if (run.category) {
+    appendKV(kv, "Category", run.category);
+  }
+  runInfoOverviewEl.appendChild(kv);
+
+  if (run.bankEvents && run.bankEvents.length > 0) {
+    runInfoOverviewEl.appendChild(makeSectionTitle(`Banks visited (${run.bankEvents.length})`));
+    const chips = document.createElement("div");
+    chips.className = "run-info-chips";
+    run.bankEvents.forEach(ev => {
+      const label = ev.bankName || "Bank";
+      chips.appendChild(makeChip("bank", label, `step ${ev.stepIndex}`, () => flyAndFlash(ev.location)));
+    });
+    runInfoOverviewEl.appendChild(chips);
+  } else if (run.bankVisitedOnPath === false && run.routeModeId === "BANK") {
+    const empty = document.createElement("div");
+    empty.className = "run-info-empty";
+    empty.textContent = "Bank mode, but no bank was visited on the resolved path.";
+    runInfoOverviewEl.appendChild(empty);
+  }
+}
+
+function buildPathPane(run) {
+  clearEl(runInfoPathEl);
+
+  const kv = document.createElement("dl");
+  kv.className = "run-info-kv";
+  appendKV(kv, "Start", formatPoint(run.start));
+  appendKV(kv, "Target", formatPoint(run.target));
+  if (run.closestReachedPoint) {
+    appendKV(kv, "Closest", formatPoint(run.closestReachedPoint));
+  }
+  appendKV(kv, "Nodes", run.stats && run.stats.nodesChecked);
+  appendKV(kv, "Transports", run.stats && run.stats.transportsChecked);
+  runInfoPathEl.appendChild(kv);
+
+  if (run.bankEvents && run.bankEvents.length > 0) {
+    runInfoPathEl.appendChild(makeSectionTitle(`Bank events (${run.bankEvents.length})`));
+    const chips = document.createElement("div");
+    chips.className = "run-info-chips";
+    run.bankEvents.forEach(ev => {
+      const label = ev.bankName || "Bank";
+      chips.appendChild(makeChip("bank", label, `step ${ev.stepIndex}`, () => flyAndFlash(ev.location)));
+    });
+    runInfoPathEl.appendChild(chips);
+  }
+
+  if (run.transports && run.transports.length > 0) {
+    runInfoPathEl.appendChild(makeSectionTitle(`Transports used (${run.transports.length})`));
+    const chips = document.createElement("div");
+    chips.className = "run-info-chips";
+    run.transports.forEach(step => {
+      const label = step.displayInfo || step.objectInfo || step.type;
+      const kind = (step.type || "").toLowerCase().includes("teleport") ? "teleport" : "exit";
+      chips.appendChild(makeChip(kind, label, `step ${step.stepIndex}`, () => {
+        if (step.destination) {
+          flyAndFlash(step.destination);
+        } else if (step.origin) {
+          flyAndFlash(step.origin);
+        }
+      }));
+    });
+    runInfoPathEl.appendChild(chips);
+  }
+
+  if (!run.bankEvents?.length && !run.transports?.length) {
+    const empty = document.createElement("div");
+    empty.className = "run-info-empty";
+    empty.textContent = "No transports or bank stops on this path.";
+    runInfoPathEl.appendChild(empty);
+  }
+}
+
+function setActiveTab(tabId) {
+  runInfoTabButtons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  runInfoTabPanes.forEach(pane => {
+    pane.hidden = pane.dataset.tab !== tabId;
+  });
 }
 
 async function copyCoordinate(point) {
@@ -489,12 +733,16 @@ function normalizeSearchText(text) {
 }
 
 function buildRunSearchText(run) {
+  const bankSearch = (run.bankEvents || []).map(ev => `${ev.bankName || ""} step ${ev.stepIndex}`).join(" ");
   const parts = [
     run.name,
     run.category,
+    run.routeModeId,
+    run.teleportationItems,
     run.terminationReason,
     ...(run.details || []),
-    ...(run.transports || []).map(step => `${step.type} ${step.displayInfo || step.objectInfo || ""}`)
+    ...(run.transports || []).map(step => `${step.type} ${step.displayInfo || step.objectInfo || ""}`),
+    bankSearch
   ];
   return normalizeSearchText(parts.join(" "));
 }
@@ -623,7 +871,10 @@ function renderRun(run) {
   const details = buildDetails(run);
   runDetailsEl.textContent = details;
   runInfoDetailsEl.textContent = details;
+  buildOverviewPane(run);
+  buildPathPane(run);
   runInfoPanel.classList.remove("run-info-hidden");
+  setPathLegendVisible(Boolean(run.bankVisitedOnPath) || (run.bankEvents && run.bankEvents.length > 0));
   renderTransportOverlays();
   window.dashboardExtensions.forEach(ext => ext.renderRun(run));
 }
@@ -634,11 +885,31 @@ function renderReport(report) {
   allRuns = runs;
   selectedRun = null;
   clearLayers();
-  summaryEl.textContent =
-    `${report.title ? `${report.title}\n` : ""}` +
+  const summaryLines = [];
+  if (report.title) {
+    summaryLines.push(report.title);
+  }
+  if (report.scenarioId) {
+    summaryLines.push(
+      `Scenario: ${report.scenarioId}` +
+      (report.scenarioDefaultStart ? ` @ ${formatPoint(report.scenarioDefaultStart)}` : "")
+    );
+  }
+  summaryLines.push(
     `${report.summary.successfulRuns}/${report.summary.totalRuns} reached, ` +
-    `${report.summary.failedRuns} unreached` +
-    (report.subtitle ? `\n${report.subtitle}` : "");
+    `${report.summary.failedRuns} unreached`
+  );
+  if (report.subtitle) {
+    summaryLines.push(report.subtitle);
+  }
+  summaryEl.textContent = summaryLines.join("\n");
+  if (report.bankNamesFromData && report.bankNamesFromData.length) {
+    summaryEl.title =
+      `${report.bankNamesFromData.length} known banks (bank.tsv):\n` +
+      report.bankNamesFromData.join(", ");
+  } else {
+    summaryEl.removeAttribute("title");
+  }
 
   if (runs.length === 0) {
     runDetailsEl.textContent = "No runs in report.json";
@@ -718,12 +989,33 @@ runInfoToggle.addEventListener("click", () => {
   runInfoToggle.innerHTML = (collapsed ? "&#9656;" : "&#9666;") + " Scenario";
 });
 
-// Sidebar toggle
+// Tab bar inside the run info panel
+runInfoTabButtons.forEach(btn => {
+  btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+});
+
+// Sidebar toggle — on narrow viewports the sidebar defaults to collapsed via CSS,
+// so we toggle the explicit "expanded" class; on wider viewports we toggle "collapsed".
+const narrowSidebarQuery = window.matchMedia("(max-width: 1100px)");
 sidebarToggle.addEventListener("click", () => {
-  const collapsed = sidebarEl.classList.toggle("collapsed");
-  sidebarToggle.querySelector("span").innerHTML = collapsed ? "&#9654;" : "&#9664;";
+  let showing;
+  if (narrowSidebarQuery.matches) {
+    showing = sidebarEl.classList.toggle("expanded");
+  } else {
+    showing = !sidebarEl.classList.toggle("collapsed");
+  }
+  sidebarToggle.querySelector("span").innerHTML = showing ? "&#9664;" : "&#9654;";
   setTimeout(() => map.invalidateSize(), 250);
 });
+
+function syncSidebarToggleIcon() {
+  const showing = narrowSidebarQuery.matches
+    ? sidebarEl.classList.contains("expanded")
+    : !sidebarEl.classList.contains("collapsed");
+  sidebarToggle.querySelector("span").innerHTML = showing ? "&#9664;" : "&#9654;";
+}
+narrowSidebarQuery.addEventListener("change", syncSidebarToggleIcon);
+syncSidebarToggleIcon();
 
 function onFilterChange() {
   const runs = filteredRuns();

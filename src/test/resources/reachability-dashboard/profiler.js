@@ -370,22 +370,23 @@
       const index = this._heatIndex;
       if (!index) return canvas;
 
-      // Compute world bounds for this Leaflet tile.
-      // In CRS.Simple: pixel = latlng * 2^z, tile = floor(pixel / tileSize).
-      // Our world uses lat=y, lng=x.  CRS.Simple flips y: pixel_y = -lat * scale.
-      const scale = Math.pow(2, coords.z);
-      const worldPerTile = size / scale;
-
-      const wxMin = coords.x * worldPerTile;
-      const wyMin = -(coords.y + 1) * worldPerTile;
-      const wxMax = wxMin + worldPerTile;
-      const wyMax = wyMin + worldPerTile;
+      // World bounds for this tile (lng = world x, lat = world y) — must match map CRS, not raw tile indices.
+      const b = this._tileCoordsToBounds(coords);
+      const wxMin = b.getWest();
+      const wxMax = b.getEast();
+      const wyMin = b.getSouth();
+      const wyMax = b.getNorth();
+      const worldW = wxMax - wxMin;
+      const worldH = wyMax - wyMin;
+      if (worldW <= 0 || worldH <= 0) {
+        return canvas;
+      }
 
       // Determine which spatial-index chunks overlap this tile
       const cxMin = Math.floor(wxMin / CHUNK_SIZE);
-      const cxMax = Math.floor((wxMax - 1) / CHUNK_SIZE);
+      const cxMax = Math.floor((wxMax - 1e-9) / CHUNK_SIZE);
       const cyMin = Math.floor(wyMin / CHUNK_SIZE);
-      const cyMax = Math.floor((wyMax - 1) / CHUNK_SIZE);
+      const cyMax = Math.floor((wyMax - 1e-9) / CHUNK_SIZE);
 
       const ctx = canvas.getContext("2d");
       const imageData = ctx.createImageData(size, size);
@@ -411,11 +412,11 @@
               [r, g, b] = heatColor(t);
             }
 
-            // Map world coords to canvas pixel rectangle
-            const pxStart = Math.floor((pt.x - wxMin) / worldPerTile * size);
-            const pyStart = Math.floor((wyMax - pt.y - 1) / worldPerTile * size);
-            const pxEnd = Math.max(pxStart + 1, Math.floor((pt.x + 1 - wxMin) / worldPerTile * size));
-            const pyEnd = Math.max(pyStart + 1, Math.floor((wyMax - pt.y) / worldPerTile * size));
+            // Map world coords to canvas pixels (north = larger y)
+            const pxStart = Math.floor((pt.x - wxMin) / worldW * size);
+            const pyStart = Math.floor((wyMax - pt.y - 1) / worldH * size);
+            const pxEnd = Math.max(pxStart + 1, Math.floor((pt.x + 1 - wxMin) / worldW * size));
+            const pyEnd = Math.max(pyStart + 1, Math.floor((wyMax - pt.y) / worldH * size));
 
             for (let py = Math.max(0, pyStart); py < Math.min(size, pyEnd); py++) {
               for (let px = Math.max(0, pxStart); px < Math.min(size, pxEnd); px++) {
@@ -613,7 +614,11 @@
     renderRun(run) {
       const hasProfiler = run.phases && run.counters;
       drawerEl.hidden = !hasProfiler;
-      if (!hasProfiler) return;
+      if (!hasProfiler) {
+        clearHeatmap();
+        removeLegend();
+        return;
+      }
 
       renderRunOverview(run);
       renderCounters(run);
