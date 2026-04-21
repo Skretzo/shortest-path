@@ -265,7 +265,7 @@ def main() -> int:
 
     out_lines = [
         "# Destination\tInfo\tSkills\tQuests\tVarbits\tVarPlayers",
-        "# Sailing island chests that require construction (exact Varbits TBD): Onyx Crest, Charred Island, Sunbleak, Buccaneers Haven, Deepfin Mine (E/W when build-gated)",
+        "# Sailing island chests that require construction (exact Varbits TBD): Onyx Crest, Charred Island, Sunbleak, Buccaneers Haven, Deepfin Mine (E/W when build-gated)\t\t\t\t\t",
     ]
     for (x, y, p, name) in sorted_keys:
         s, q, vb, vp = name_reqs.get(name, ("", "", "", ""))
