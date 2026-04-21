@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -66,6 +67,16 @@ public class BankTileDumperTest {
         // rebuild pipeline sees these as first-class bank placements.
         Pattern.compile("(?i)^bank table$"),
     };
+
+    // Object IDs force-included regardless of name. Use for interactive
+    // banks whose cache name is something generic like "Chest" and
+    // therefore wouldn't survive the name filter, but which genuinely
+    // expose a "Bank" menu action in-game.
+    //   12309 - Culinaromancer's Chest (Lumbridge cellar, Recipe for Disaster)
+    private static final Set<Integer> FORCE_INCLUDE_IDS = new HashSet<>(Arrays.asList(
+        12309, // Culinaromancer's Chest (Lumbridge cellar, Recipe for Disaster)
+        58094  // Bank crab at The Pandemonium (Sailing)
+    ));
 
     @Test
     public void dumpBankTilePlacements() throws IOException {
@@ -130,6 +141,10 @@ public class BankTileDumperTest {
     private static Set<Integer> collectMatchingIds(ObjectManager objectManager, Pattern[] patterns) {
         Set<Integer> ids = new HashSet<>();
         for (ObjectDefinition def : objectManager.getObjects()) {
+            if (FORCE_INCLUDE_IDS.contains(def.getId())) {
+                ids.add(def.getId());
+                continue;
+            }
             String name = def.getName();
             if (name == null || "null".equalsIgnoreCase(name)) {
                 continue;

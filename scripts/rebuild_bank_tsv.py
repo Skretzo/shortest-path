@@ -85,8 +85,10 @@ INSTANCE_Y_THRESHOLD = 4800
 
 # Regions that contain bank objects that must never appear in bank.tsv.
 # Tutorial Island (region 12336) is permanently inaccessible after the
-# tutorial, so its bank booths are excluded.
-EXCLUDED_REGIONS: set[int] = {12336}
+# tutorial. The Node (region 12335) is a Group Ironman onboarding area
+# inaccessible outside of GIM mode, so its Bank booth at (3098, 3027) is
+# also excluded.
+EXCLUDED_REGIONS: set[int] = {12335, 12336}
 
 # Banks that have NO bank booth / bank chest object in the cache because
 # they are serviced by Banker NPCs only. NPC spawns are not in the client
