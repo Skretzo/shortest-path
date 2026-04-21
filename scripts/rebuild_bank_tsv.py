@@ -51,6 +51,11 @@ RADIUS = 100
 # quest rooms) and are skipped unless they mapped to a known bank name.
 INSTANCE_Y_THRESHOLD = 4800
 
+# Regions that contain bank objects that must never appear in bank.tsv.
+# Tutorial Island (region 12336) is permanently inaccessible after the
+# tutorial, so its bank booths are excluded.
+EXCLUDED_REGIONS: set[int] = {12336}
+
 # Banks that have NO bank booth / bank chest object in the cache because
 # they are serviced by Banker NPCs only. NPC spawns are not in the client
 # cache, so these entries live exclusively in bank.tsv and are preserved
@@ -184,6 +189,8 @@ def load_placements():
     with PLACEMENTS_TSV.open() as f:
         for row in csv.DictReader(f, delimiter="\t"):
             if "deposit" in row["name"].lower():
+                continue
+            if int(row["regionId"]) in EXCLUDED_REGIONS:
                 continue
             out.append({
                 "id": int(row["id"]),
