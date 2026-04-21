@@ -24,3 +24,7 @@ Port Sarim → Land's End,cross-map,3038,3192,0,1496,3403,0,ALL
 GE → Zul-Andra,cross-map,3165,3487,0,2200,3056,0,ALL
 Al Kharid → Hosidius,cross-map,3298,3290,0,1750,3590,0,ALL
 Ardougne → Deep Wilderness,teleport-lever,2562,3311,0,3154,3924,0,ALL
+Lumbridge → Varrock (bank teleport),teleport,3222,3218,0,3213,3428,0,BANK
+Lumbridge → Ardougne (bank teleport),teleport,3222,3218,0,2662,3305,0,BANK
+GE → Canifis (bank fairy-ring),fairy-ring,3165,3487,0,3507,3496,0,BANK
+Auburnvale → Ferox Enclave,cross-map,1411,3361,0,3134,3629,0,BANK
