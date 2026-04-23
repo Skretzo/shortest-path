@@ -10,6 +10,7 @@ import net.runelite.api.gameval.InventoryID;
 import shortestpath.ItemVariations;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.TransportAvailability;
 
 /**
  * Determines what items need to be picked up from the bank for a given path.
@@ -48,28 +49,32 @@ public class BankPickupRequirements {
             return requiredItems;
         }
 
-        // Check what transports are used after this bank step
+        // Check what transports are used after this bank step, up to (but not including) the next bank
         boolean usesFairyRing = false;
-        boolean usesTeleportItem = false;
-        Transport teleportTransport = null;
+        List<Transport> teleportTransports = new ArrayList<>();
 
         for (int i = pathIndex; i < path.size() - 1; i++) {
             int stepPoint = path.get(i).getPackedPosition();
             int nextPoint = path.get(i + 1).getPackedPosition();
             boolean banked = path.get(i + 1).isBankVisited();
-            Set<Transport> stepTransports = pathfinderConfig.getTransportAvailability(banked)
-                    .getTransportsByOrigin().get(stepPoint);
+            TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
+            Set<Transport> stepTransports = availability.getTransportsByOrigin().get(stepPoint);
             if (stepTransports != null) {
                 for (Transport t : stepTransports) {
                     if (t.getDestination() == nextPoint) {
                         if (TransportType.FAIRY_RING.equals(t.getType())) {
                             usesFairyRing = true;
                         }
-                        if (TransportType.TELEPORTATION_ITEM.equals(t.getType()) && teleportTransport == null) {
-                            usesTeleportItem = true;
-                            teleportTransport = t;
+                        if (TransportType.TELEPORTATION_ITEM.equals(t.getType())) {
+                            teleportTransports.add(t);
                         }
                     }
+                }
+            }
+            // Teleportation items with no fixed origin (e.g. Royal seed pod) live in usableTeleports
+            for (Transport t : availability.getUsableTeleports()) {
+                if (t.getDestination() == nextPoint && TransportType.TELEPORTATION_ITEM.equals(t.getType())) {
+                    teleportTransports.add(t);
                 }
             }
         }
@@ -82,12 +87,10 @@ public class BankPickupRequirements {
             }
         }
 
-        // Check if teleport item needs to be picked up
-        if (usesTeleportItem && teleportTransport != null) {
-            String teleportPickup = checkTeleportItemInBank(client, bank, teleportTransport);
-            if (teleportPickup != null) {
-                requiredItems.add(teleportPickup);
-            }
+        // Check if teleport items need to be picked up (all teleport transports along the path)
+        for (Transport teleportTransport : teleportTransports) {
+            List<String> teleportPickups = checkTeleportItemsInBank(client, bank, teleportTransport);
+            requiredItems.addAll(teleportPickups);
         }
 
         return requiredItems;
@@ -113,38 +116,38 @@ public class BankPickupRequirements {
     }
 
     /**
-     * Checks if a teleport item is in the bank and not in inventory/equipment.
+     * Checks which item requirements for a teleport transport are in the bank but not yet in
+     * inventory/equipment. Returns a display name for each such item.
      */
-    private static String checkTeleportItemInBank(Client client, ItemContainer bank, Transport transport) {
+    private static List<String> checkTeleportItemsInBank(Client client, ItemContainer bank, Transport transport) {
+        List<String> result = new ArrayList<>();
         if (transport.getItemRequirements() == null || transport.getItemRequirements().size() == 0) {
-            return null;
+            return result;
         }
 
-        // Get the first item requirement (the teleport item itself)
-        int[] teleportItemIds = transport.getItemRequirements().getRequirements().get(0).getItemIds();
-        if (teleportItemIds == null || teleportItemIds.length == 0) {
-            return null;
-        }
+        for (shortestpath.transport.requirement.ItemRequirement req : transport.getItemRequirements().getRequirements()) {
+            int[] itemIds = req.getItemIds();
+            if (itemIds == null || itemIds.length == 0) {
+                continue;
+            }
 
-        // Check if already in inventory or equipment
-        if (hasItemInInventoryOrEquipment(client, teleportItemIds)) {
-            return null;
-        }
+            // Already carried — no need to pick it up
+            if (hasItemInInventoryOrEquipment(client, itemIds)) {
+                continue;
+            }
 
-        // Check if in bank
-        if (hasItemInBank(bank, teleportItemIds)) {
-            String displayInfo = transport.getDisplayInfo();
-            if (displayInfo != null) {
-                // Extract just the item name (before the colon)
-                int colonIndex = displayInfo.indexOf(':');
-                if (colonIndex > 0) {
-                    return displayInfo.substring(0, colonIndex).trim();
+            // In bank — player needs to withdraw it
+            if (hasItemInBank(bank, itemIds)) {
+                String displayInfo = transport.getDisplayInfo();
+                if (displayInfo != null) {
+                    // Extract just the item name (the part before the colon, e.g. "Amulet of glory: Edgeville")
+                    int colonIndex = displayInfo.indexOf(':');
+                    result.add(colonIndex > 0 ? displayInfo.substring(0, colonIndex).trim() : displayInfo);
                 }
-                return displayInfo;
             }
         }
 
-        return null;
+        return result;
     }
 
     private static boolean hasItemInInventoryOrEquipment(Client client, int[] itemIds) {
