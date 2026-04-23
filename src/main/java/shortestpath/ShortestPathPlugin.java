@@ -152,6 +152,7 @@ public class ShortestPathPlugin extends Plugin {
     boolean drawTiles;
     boolean drawTransports;
     boolean showTransportInfo;
+    boolean showBankPickupInfo;
     Color colourCollisionMap;
     Color colourPath;
     Color colourPathCalculating;
@@ -1014,6 +1015,7 @@ public class ShortestPathPlugin extends Plugin {
         drawTiles = override("drawTiles", config.drawTiles());
         drawTransports = override("drawTransports", config.drawTransports());
         showTransportInfo = override("showTransportInfo", config.showTransportInfo());
+        showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
 
         colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
         colourPath = override("colourPath", config.colourPath());
