@@ -161,6 +161,7 @@ public class ShortestPathPlugin extends Plugin {
     Color colourTransports;
     int tileCounterStep;
     int unreachableTargetDistance;
+    String unreachableText;
     TileCounter showTileCounter;
     TileStyle pathStyle;
 
@@ -300,7 +301,7 @@ public class ShortestPathPlugin extends Plugin {
             return colourPathCalculating;
         }
 
-        PrimitiveIntList path = pathfinder.getPath();
+        List<PathStep> path = pathfinder.getPath();
         if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
             return colourPath;
         }
@@ -317,12 +318,12 @@ public class ShortestPathPlugin extends Plugin {
             return false;
         }
 
-        PrimitiveIntList path = pathfinder.getPath();
+        List<PathStep> path = pathfinder.getPath();
         if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
             return false;
         }
 
-        int endPoint = path.get(path.size() - 1);
+        int endPoint = path.get(path.size() - 1).getPackedPosition();
         int closestTargetDistance = Integer.MAX_VALUE;
         for (int target : pathfinder.getTargets()) {
             closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
@@ -1064,6 +1065,7 @@ public class ShortestPathPlugin extends Plugin {
 
         tileCounterStep = override("tileCounterStep", config.tileCounterStep());
         unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+        unreachableText = config.unreachableText();
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
