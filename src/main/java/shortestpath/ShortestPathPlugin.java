@@ -156,9 +156,12 @@ public class ShortestPathPlugin extends Plugin {
     Color colourCollisionMap;
     Color colourPath;
     Color colourPathCalculating;
+    Color colourPathUnreachable;
     Color colourText;
     Color colourTransports;
     int tileCounterStep;
+    int unreachableTargetDistance;
+    String unreachableText;
     TileCounter showTileCounter;
     TileStyle pathStyle;
 
@@ -291,6 +294,42 @@ public class ShortestPathPlugin extends Plugin {
         }
 
         return false;
+    }
+
+    public Color getPathColor() {
+        if (pathfinder == null || !pathfinder.isDone()) {
+            return colourPathCalculating;
+        }
+
+        List<PathStep> path = pathfinder.getPath();
+        if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+            return colourPath;
+        }
+
+        if (isPathUnreachable()) {
+            return colourPathUnreachable;
+        }
+
+        return colourPath;
+    }
+
+    public boolean isPathUnreachable() {
+        if (pathfinder == null || !pathfinder.isDone()) {
+            return false;
+        }
+
+        List<PathStep> path = pathfinder.getPath();
+        if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty()) {
+            return false;
+        }
+
+        int endPoint = path.get(path.size() - 1).getPackedPosition();
+        int closestTargetDistance = Integer.MAX_VALUE;
+        for (int target : pathfinder.getTargets()) {
+            closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
+        }
+
+        return closestTargetDistance > unreachableTargetDistance;
     }
 
     @Subscribe
@@ -1020,10 +1059,13 @@ public class ShortestPathPlugin extends Plugin {
         colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
         colourPath = override("colourPath", config.colourPath());
         colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
+        colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
         colourText = override("colourText", config.colourText());
         colourTransports = override("colourTransports", config.colourTransports());
 
         tileCounterStep = override("tileCounterStep", config.tileCounterStep());
+        unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+        unreachableText = config.unreachableText();
 
         showTileCounter = override("showTileCounter", config.showTileCounter());
         pathStyle = override("pathStyle", config.pathStyle());
