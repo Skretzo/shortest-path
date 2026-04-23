@@ -5507,3 +5507,43 @@
 # Varrock Palace trellis									
 3228 3470 0	3228 3472 0	Climb Trellis 2149			Garden of Tranquillity			2	
 3228 3472 0	3228 3470 0	Climb Trellis 2149			Garden of Tranquillity			2	
+									
+# Aldarin									
+1455 2968 0	1458 2968 1	Cross Gangplank 55332						3	
+1458 2968 1	1455 2968 0	Cross Gangplank 55333						3	
+									
+# Sunset Coast									
+1514 2971 0	1514 2968 1	Cross Gangplank 50736						3	
+1514 2968 1	1514 2971 0	Cross Gangplank 50737						3	
+									
+# Civitas Illa Fortis									
+1743 3136 0	1747 3136 1	Cross Gangplank 50734						3	
+1747 3136 1	1743 3136 0	Cross Gangplank 50735						3	
+									
+# Prifddinas									
+2157 3330 0	2157 3333 1	Cross Gangplank 34948						3	
+2157 3333 1	2157 3330 0	Cross Gangplank 34949						3	
+									
+# Port Tyras									
+2142 3122 0	2142 3125 1	Cross Gangplank 17408						3	
+2142 3125 1	2142 3122 0	Cross Gangplank 17409						3	
+
+# Port Khazard									
+2674 3141 1	2674 3144 0	Cross Gangplank 17403						3	
+2674 3144 0	2674 3141 1	Cross Gangplank 17402						3	
+
+# Karamja Shipyard									
+2998 3032 1	3001 3032 0	Cross Gangplank 17397						3	
+3001 3032 0	2998 3032 1	Cross Gangplank 17396						3	
+
+# Corsair Cove									
+2591 2851 1	2589 2851 0	Cross Gangplank 31756						3	
+2589 2851 0	2591 2851 1	Cross Gangplank 31756						3	
+
+# Port Piscarilius									
+1811 3679 1	1808 3679 0	Cross Gangplank 50064						3	
+1808 3679 0	1811 3679 1	Cross Gangplank 50063						3	
+
+# The Pandemonium									
+3060 3000 1	3063 3000 0	Cross Gangplank 60523						3	
+3063 3000 0	3060 3000 1	Cross Gangplank 60522						3	
