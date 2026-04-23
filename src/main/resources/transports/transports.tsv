@@ -2370,6 +2370,21 @@
 3728 5692 0	3060 9766 0	Exit Tunnel 26655							
 3060 9766 0	3728 5692 0	Enter Cave 26654							
 									
+# Mining Guild									
+# Two entrances, both require 60 Mining									
+# Underground tunnels:									
+3046 9757 0	3046 9756 0	Open Door 30364	60 Mining					1    	
+3046 9756 0	3046 9757 0	Open Door 30364						1	
+# Surface entrance:									
+3019 9741 0	3019 9741 0 	Climb-down Ladder 30367	60 Mining					2	
+3019 9741 0	3019 9741 0	Climb-up Ladder 17386						2	
+3021 3339 0	3021 9739 0 	Climb-down Ladder 30367	60 Mining					2	
+3021 9739 0	3021 3339 0 	Climb-up Ladder 17386						2	
+3019 3337 0	3019 9737 0	Climb-down Ladder 30367	60 Mining					2	
+3019 9737 0	3019 3337 0	Climb-up Ladder 17386						2	
+3017 3339 0	3017 9739 0	Climb-down Ladder 30367	60 Mining					2	
+3017 9739 0	3017 3339 0	Climb-up Ladder 17386						2	
+									
 # Rimmington									
 2964 3216 0	2968 3215 1	Climb-up Staircase 18991						1	
 2968 3215 1	2964 3215 0	Climb-down Staircase 18992						1	
@@ -4567,7 +4582,8 @@
 2621 9795 0	2623 3391 0	Climb-over Mud pile 13							
 2625 3391 0	2619 9797 0	Enter Cave Entrance 2							
 2622 3391 0	2619 9797 0	Enter Cave Entrance 2							
-2611 3393 0	2611 3394 0	Open Door 20925						1	
+# Fishing guild entrance									
+2611 3393 0	2611 3394 0	Open Door 20925	68 Fishing					1	
 2611 3394 0	2611 3393 0	Open Door 20925						1	
 2630 3385 0	2630 3385 1	Climb-up Ladder 16683						2	
 2630 3385 1	2630 3385 0	Climb-down Ladder 16684						2	
@@ -4883,6 +4899,19 @@
 1631 3570 0	1634 3570 0	Climb-over Stile 7527						3	
 1634 3570 0	1631 3570 0	Climb-over Stile 7527						3	
 									
+# Woodcutting Guild (Hosidius)									
+# Gates around the guild perimeter require 60 Woodcutting to enter (boostable).									
+# East gate:									
+1658 3505 0	1657 3505 0	Open Gate 28851	60 Woodcutting					2	
+1657 3505 0	1658 3505 0	Open Gate 28851						2	
+1658 3504 0	1657 3504 0	Open Gate 28851	60 Woodcutting					2	
+1657 3504 0	1658 3504 0	Open Gate 28851						2	
+# West gate:									
+1562 3488 0	1563 3488 0 	Open Gate 28852	60 Woodcutting					2	
+1563 3488 0	1562 3488 0 	Open Gate 28852						2	
+1562 3487 0	1563 3487 0 	Open Gate 28852	60 Woodcutting					2	
+1563 3487 0	1562 3487 0 	Open Gate 28852						2	
+									
 # Jiggig									
 2455 3049 0	2457 3049 0	Climb-over Crushed barricade 6881				496=1		2	
 2457 3049 0	2455 3049 0	Climb-over Crushed barricade 6881				496=1		2	
@@ -5009,6 +5038,15 @@
 1533 9447 0	1533 3051 0	Exit Cave 51760						2	
 1533 9446 0	1533 3051 0	Exit Cave 51760						2	
 1533 9445 0	1533 3051 0	Exit Cave 51760						2	
+									
+# Farming Guild (Kebos Lowlands)									
+# Main entrance gate - 45 Farming required. Coords inferred from skills necklace teleport endpoints (outside: 1248,3719 / inside: 1248,3725).									
+1248 3722 0	1248 3723 0	Open Door 34463	45 Farming					1	
+1248 3723 0	1248 3722 0	Open Door 34463						1	
+1249 3722 0	1249 3723 0	Open Door 34464	45 Farming					1	
+1249 3723 0	1249 3722 0	Open Door 34464						1	
+# Intermediate (65 Farming) and advanced (85 Farming) tier passages are enforced server-side only									
+# (no collision wall in the map) so they cannot be modelled as transport gates.									
 									
 # Crabclaw Caves									
 1646 9848 0	1643 3450 0	Climb Sand pile 31691				6027>6		2	

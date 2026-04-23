@@ -65,7 +65,7 @@
 2933 3295 0			11105=1||11107=1||11109=1||11111=1||11968=1||11970=1		4	Skills necklace: Crafting Guild	T	30		
 3144 3438 0			11105=1||11107=1||11109=1||11111=1||11968=1||11970=1		4	Skills necklace: Cooking Guild	T	30		
 1662 3505 0			11105=1||11107=1||11109=1||11111=1||11968=1||11970=1		4	Skills necklace: Woodcutting Guild	T	30		
-1248 3719 0		1 Farming	11105=1||11107=1||11109=1||11111=1||11968=1||11970=1		4	Skills necklace: Farming Guild	T	30		
+1248 3719 0			11105=1||11107=1||11109=1||11111=1||11968=1||11970=1		4	Skills necklace: Farming Guild	T	30		
 1248 3725 0		45 Farming	11105=1||11107=1||11109=1||11111=1||11968=1||11970=1		4	Skills necklace: Farming Guild	T	30		
 										
 # Amulet of glory (1-6, 1t-6t) (uncharged is 1704, trimmed 10362)										
@@ -393,6 +393,18 @@
 2952 9574 0			30638=1		4	Giantsoul amulet: 3. Branda and Eldric	T	20		
 										
 # Sailors' amulet (Charged)										
+# TODO: gate Port Roberts and Deepfin Point teleports on the Sailors' Marker inspection varbit.										
+# Confirmed from cache dump (see SailingAmenityVarbitDumperTest):										
+#   Item 32398 Sailors amulet (inert)   interfaceOptions: [null, Wear, null, Inspect, Destroy]										
+#   Item 32399 Sailors amulet (charged) interfaceOptions: [null, Wear, Teleport, Check, Destroy]										
+#     subops[2] = [The Pandemonium, Port Roberts, _, _, Deepfin Point, ...]										
+#     param[2257] = 7040 (cs2 script that handles the Teleport submenu and checks the unlock varbit).										
+# The unlock varbit itself lives only in that cs2 script and can't be decoded by the bundled										
+# runelite-cache 1.12.24 loader against the current cache rev. Find it in-game by inspecting the										
+# Sailors' Marker with RuneLite's varbit inspector open. Marker scenery object IDs + world tiles:										
+#   59985 Port Roberts     @ 1902 3304 1										
+#   59988 Deepfin Point    @ 1936 2766 1										
+#   59986 Red Rock         @ 2803 2523 1 (not currently accessible)										
 3058 2975 0			32399=1		4	Sailors' amulet: The Pandemonium	T	20		
 1889 3292 0			32399=1		4	Sailors' amulet: Port Roberts	T	20		
 1943 2757 0			32399=1		4	Sailors' amulet: Deepfin Point	T	20		

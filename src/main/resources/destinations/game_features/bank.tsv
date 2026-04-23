@@ -60,9 +60,12 @@
 1747 5476 0	Clan Hall				
 1748 5476 0	Clan Hall				
 3147 3450 0	Cooks' Guild	99 Cooking			
+3147 3450 0	Cooks' Guild			4481=1	
 3148 3450 0	Cooks' Guild	99 Cooking			
+3148 3450 0	Cooks' Guild			4481=1	
 2569 2864 0	Corsair Cove		The Corsair Curse		
 2935 3280 0	Crafting Guild	99 Crafting			
+2935 3280 0	Crafting Guild			4464=1	
 3218 9623 0	Culinaromancer's Chest		Recipe for Disaster		
 3420 4058 0	Daimon's Crater				
 3426 4069 0	Daimon's Crater				
@@ -72,7 +75,7 @@
 3607 3367 0	Darkmeyer		Sins of the Father		
 2011 9186 0	Deepfin Mine			18361=1	
 2093 9198 0	Deepfin Mine			18362=1	
-1935 2754 0	Deepfin Point	67 Sailing			
+1935 2754 0	Deepfin Point				
 2701 5347 0	Dorgesh-Kaan		Death to the Dorgeshuun		
 2701 5348 0	Dorgesh-Kaan		Death to the Dorgeshuun		
 2701 5349 0	Dorgesh-Kaan		Death to the Dorgeshuun		
@@ -99,14 +102,15 @@
 2947 3368 0	Falador				
 2948 3368 0	Falador				
 2949 3368 0	Falador				
-1253 3741 0	Farming Guild	60 Farming			
-1248 3758 0	Farming Guild	60 Farming			
-1249 3758 0	Farming Guild	60 Farming			
+1253 3741 0	Farming Guild				
+# Added skill checks for north Farming Guild banks. There is no collsion wall where the skill check can be enforced in the pathfinder, it's server side.					
+1248 3758 0	Farming Guild	85 Farming			
+1249 3758 0	Farming Guild	85 Farming			
 3130 3631 0	Ferox Enclave				
-2586 3418 0	Fishing Guild	68 Fishing			
-2586 3419 0	Fishing Guild	68 Fishing			
-2586 3421 0	Fishing Guild	68 Fishing			
-2586 3422 0	Fishing Guild	68 Fishing			
+2586 3418 0	Fishing Guild				
+2586 3419 0	Fishing Guild				
+2586 3421 0	Fishing Guild				
+2586 3422 0	Fishing Guild				
 1804 9501 0	Fortis Colosseum				4130>1999
 1779 3094 0	Fortis east bank		Children of the Sun		
 1780 3094 0	Fortis east bank		Children of the Sun		
@@ -168,7 +172,7 @@
 2099 3919 0	Lunar Isle		Lunar Diplomacy		
 2534 4712 0	Mage Arena		Mage Arena I		
 3365 3318 1	Mage Training Arena				
-3013 9718 0	Mining Guild	60 Mining			
+3013 9718 0	Mining Guild				
 1380 2866 0	Mistrock		Children of the Sun		
 1382 2866 0	Mistrock		Children of the Sun		
 2543 5141 0	Mor Ul Rek				
@@ -176,7 +180,7 @@
 3680 2981 0	Mos Le'Harmless		Cabin Fever		
 3680 2982 0	Mos Le'Harmless		Cabin Fever		
 3680 2983 0	Mos Le'Harmless		Cabin Fever		
-3760 5666 0	Motherlode Mine	30 Mining			
+3760 5666 0	Motherlode Mine				
 1324 3824 0	Mount Karuulm				
 1254 3571 0	Mount Quidamortem				
 2465 2848 1	Myths' Guild		Dragon Slayer II		
@@ -201,10 +205,10 @@
 1800 3790 0	Port Piscarilius				
 1804 3790 0	Port Piscarilius				
 1808 3790 0	Port Piscarilius				
-1881 3315 1	Port Roberts	50 Sailing			
-1882 3315 1	Port Roberts	50 Sailing			
-1883 3315 1	Port Roberts	50 Sailing			
-1884 3315 1	Port Roberts	50 Sailing			
+1881 3315 1	Port Roberts				
+1882 3315 1	Port Roberts				
+1883 3315 1	Port Roberts				
+1884 3315 1	Port Roberts				
 3295 6058 0	Prifddinas		Song of the Elves		
 3295 6059 0	Prifddinas		Song of the Elves		
 3295 6060 0	Prifddinas		Song of the Elves		
@@ -281,8 +285,8 @@
 2668 2653 0	Void Knights' Outpost				
 2843 3543 0	Warriors' Guild				
 1640 3944 0	Wintertodt Camp				
-1592 3476 0	Woodcutting Guild	60 Woodcutting			
-1551 9873 0	Woodcutting Guild	60 Woodcutting			
+1592 3476 0	Woodcutting Guild				
+1551 9873 0	Woodcutting Guild				
 2613 3091 0	Yanille				
 2613 3092 0	Yanille				
 2613 3094 0	Yanille				
