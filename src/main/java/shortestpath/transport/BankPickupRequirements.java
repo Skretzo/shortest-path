@@ -1,7 +1,9 @@
 package shortestpath.transport;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
@@ -49,9 +51,9 @@ public class BankPickupRequirements {
             return requiredItems;
         }
 
-        // Check what transports are used after this bank step, up to (but not including) the next bank
+        // Check what transports are used after this bank step
         boolean usesFairyRing = false;
-        List<Transport> teleportTransports = new ArrayList<>();
+        List<Transport> transportsWithItems = new ArrayList<>();
 
         for (int i = pathIndex; i < path.size() - 1; i++) {
             int stepPoint = path.get(i).getPackedPosition();
@@ -64,98 +66,99 @@ public class BankPickupRequirements {
                     if (t.getDestination() == nextPoint) {
                         if (TransportType.FAIRY_RING.equals(t.getType())) {
                             usesFairyRing = true;
-                        }
-                        if (TransportType.TELEPORTATION_ITEM.equals(t.getType())) {
-                            teleportTransports.add(t);
+                        } else if (t.getItemRequirements() != null && t.getItemRequirements().size() > 0) {
+                            transportsWithItems.add(t);
                         }
                     }
                 }
             }
-            // Teleportation items with no fixed origin (e.g. Royal seed pod) live in usableTeleports
+            // Transports with no fixed origin (e.g. Royal seed pod, Quetzal whistle) live in usableTeleports
             for (Transport t : availability.getUsableTeleports()) {
-                if (t.getDestination() == nextPoint && TransportType.TELEPORTATION_ITEM.equals(t.getType())) {
-                    teleportTransports.add(t);
+                if (t.getDestination() == nextPoint
+                        && t.getItemRequirements() != null && t.getItemRequirements().size() > 0) {
+                    transportsWithItems.add(t);
                 }
             }
         }
 
-        // Check if Dramen/Lunar staff needs to be picked up for fairy rings
+        // Accumulate: bank item ID → total quantity needed for the trip
+        LinkedHashMap<Integer, Long> itemQtyNeeded = new LinkedHashMap<>();
+
+        // Dramen/Lunar staff for fairy rings
         if (usesFairyRing) {
-            String staffPickup = checkDramenStaffInBank(client, bank);
-            if (staffPickup != null) {
-                requiredItems.add(staffPickup);
+            int[] staffIds = ItemVariations.DRAMEN_STAFF.getIds();
+            if (!hasItemInInventoryOrEquipment(client, staffIds, 1)) {
+                int foundId = findItemIdInBank(bank, staffIds, 1);
+                if (foundId != -1) {
+                    itemQtyNeeded.put(foundId, 1L);
+                }
             }
         }
 
-        // Check if teleport items need to be picked up (all teleport transports along the path)
-        for (Transport teleportTransport : teleportTransports) {
-            List<String> teleportPickups = checkTeleportItemsInBank(client, bank, teleportTransport);
-            requiredItems.addAll(teleportPickups);
+        // Accumulate item requirements for all transports along the path
+        for (Transport transport : transportsWithItems) {
+            if (transport.getItemRequirements() == null) {
+                continue;
+            }
+            for (shortestpath.transport.requirement.ItemRequirement req : transport.getItemRequirements().getRequirements()) {
+                int[] itemIds = req.getItemIds();
+                if (itemIds == null || itemIds.length == 0) {
+                    continue;
+                }
+                int reqQty = req.getQuantity() > 0 ? req.getQuantity() : 1;
+                if (hasItemInInventoryOrEquipment(client, itemIds, reqQty)) {
+                    continue;
+                }
+                int foundId = findItemIdInBank(bank, itemIds, reqQty);
+                if (foundId != -1) {
+                    itemQtyNeeded.merge(foundId, (long) reqQty, Long::sum);
+                }
+            }
+        }
+
+        // Format display strings, re-checking bank against the accumulated total quantity
+        for (Map.Entry<Integer, Long> entry : itemQtyNeeded.entrySet()) {
+            int itemId = entry.getKey();
+            long totalQty = entry.getValue();
+            if (!hasItemInBank(bank, new int[]{itemId}, (int) Math.min(totalQty, Integer.MAX_VALUE))) {
+                continue;
+            }
+            String itemName = client.getItemDefinition(itemId).getName();
+            if (itemName == null || itemName.isEmpty() || "null".equals(itemName)) {
+                itemName = "Unknown item";
+            }
+            boolean isCurrency = PathfinderConfig.CURRENCIES.contains(itemId);
+            if (isCurrency && totalQty > 1) {
+                itemName += " (" + String.format("%,d", totalQty) + ")";
+            }
+            requiredItems.add(itemName);
         }
 
         return requiredItems;
     }
 
     /**
-     * Checks if the Dramen/Lunar staff is in the bank and not in inventory/equipment.
+     * Returns the item ID from {@code itemIds} that is present in the bank with at least
+     * {@code requiredQty}, or -1 if none qualifies.
      */
-    private static String checkDramenStaffInBank(Client client, ItemContainer bank) {
-        int[] staffIds = ItemVariations.DRAMEN_STAFF.getIds();
-
-        // Check if already in inventory or equipment
-        if (hasItemInInventoryOrEquipment(client, staffIds)) {
-            return null;
-        }
-
-        // Check if in bank
-        if (hasItemInBank(bank, staffIds)) {
-            return "Dramen/Lunar staff";
-        }
-
-        return null;
-    }
-
-    /**
-     * Checks which item requirements for a teleport transport are in the bank but not yet in
-     * inventory/equipment. Returns a display name for each such item.
-     */
-    private static List<String> checkTeleportItemsInBank(Client client, ItemContainer bank, Transport transport) {
-        List<String> result = new ArrayList<>();
-        if (transport.getItemRequirements() == null || transport.getItemRequirements().size() == 0) {
-            return result;
-        }
-
-        for (shortestpath.transport.requirement.ItemRequirement req : transport.getItemRequirements().getRequirements()) {
-            int[] itemIds = req.getItemIds();
-            if (itemIds == null || itemIds.length == 0) {
-                continue;
-            }
-
-            // Already carried — no need to pick it up
-            if (hasItemInInventoryOrEquipment(client, itemIds)) {
-                continue;
-            }
-
-            // In bank — player needs to withdraw it
-            if (hasItemInBank(bank, itemIds)) {
-                String displayInfo = transport.getDisplayInfo();
-                if (displayInfo != null) {
-                    // Extract just the item name (the part before the colon, e.g. "Amulet of glory: Edgeville")
-                    int colonIndex = displayInfo.indexOf(':');
-                    result.add(colonIndex > 0 ? displayInfo.substring(0, colonIndex).trim() : displayInfo);
+    private static int findItemIdInBank(ItemContainer bank, int[] itemIds, int requiredQty) {
+        for (Item bankItem : bank.getItems()) {
+            for (int itemId : itemIds) {
+                if (bankItem.getId() == itemId && bankItem.getQuantity() >= requiredQty) {
+                    return itemId;
                 }
             }
         }
-
-        return result;
+        return -1;
     }
 
-    private static boolean hasItemInInventoryOrEquipment(Client client, int[] itemIds) {
+
+    private static boolean hasItemInInventoryOrEquipment(Client client, int[] itemIds, int requiredQty) {
         ItemContainer inventory = client.getItemContainer(InventoryID.INV);
         if (inventory != null) {
             for (Item item : inventory.getItems()) {
                 for (int itemId : itemIds) {
-                    if (item.getId() == itemId) {
+                    if (item.getId() == itemId && item.getQuantity() >= requiredQty) {
                         return true;
                     }
                 }
@@ -167,7 +170,7 @@ public class BankPickupRequirements {
             for (Item item : equipment.getItems()) {
                 for (int itemId : itemIds) {
                     if (item.getId() == itemId) {
-                        return true;
+                        return true; // equipped items don't have a meaningful quantity
                     }
                 }
             }
@@ -176,10 +179,10 @@ public class BankPickupRequirements {
         return false;
     }
 
-    private static boolean hasItemInBank(ItemContainer bank, int[] itemIds) {
+    private static boolean hasItemInBank(ItemContainer bank, int[] itemIds, int requiredQty) {
         for (Item bankItem : bank.getItems()) {
             for (int itemId : itemIds) {
-                if (bankItem.getId() == itemId && bankItem.getQuantity() > 0) {
+                if (bankItem.getId() == itemId && bankItem.getQuantity() >= requiredQty) {
                     return true;
                 }
             }
