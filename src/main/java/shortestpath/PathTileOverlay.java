@@ -27,7 +27,6 @@ public class PathTileOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
     private static final int TRANSPORT_LABEL_GAP = 3;
-    private static final String UNREACHABLE_TEXT = "Destination could not be reached";
     private int playerTileLabelOffset = 0;
 
     @Inject
@@ -182,7 +181,7 @@ public class PathTileOverlay extends Overlay {
             }
 
             if (plugin.isPathUnreachable()) {
-                playerTileLabelOffset += drawLabelOnPlayerTile(graphics, UNREACHABLE_TEXT, playerTileLabelOffset);
+                playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
             }
         }
 
@@ -337,9 +336,9 @@ public class PathTileOverlay extends Overlay {
     }
 
     private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, java.util.List<PathStep> path, int pathIndex) {
-        int location = currentStep.getPackedPosition();
-        if (nextStep == null || !plugin.showTransportInfo ||
-            WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
+		int location = currentStep.getPackedPosition();
+		if (nextStep == null || !plugin.showTransportInfo || plugin.isPathUnreachable() ||
+			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
             return;
         }
         int locationEnd = nextStep.getPackedPosition();

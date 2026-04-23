@@ -1107,6 +1107,16 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
+        keyName = "unreachableText",
+        name = "",
+        description = "Text shown on the player tile when the destination cannot be reached",
+        hidden = true
+    )
+    default String unreachableText() {
+        return "Destination could not be reached";
+    }
+
+    @ConfigItem(
         keyName = "builtTeleportationBoxes",
         name = "",
         description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
