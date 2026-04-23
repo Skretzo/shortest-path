@@ -338,6 +338,7 @@ public class PathTileOverlay extends Overlay {
     private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, java.util.List<PathStep> path, int pathIndex) {
 		int location = currentStep.getPackedPosition();
 		if (nextStep == null || !plugin.showTransportInfo || plugin.isPathUnreachable() ||
+			!plugin.getPathfinder().isDone() ||
 			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
             return;
         }
