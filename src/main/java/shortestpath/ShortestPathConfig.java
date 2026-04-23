@@ -982,18 +982,18 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigSection(
-            name = "Hotkeys",
-            description = "Options for keyboard shortcuts",
-            position = 75
+        name = "Hotkeys",
+        description = "Options for keyboard shortcuts",
+        position = 75
     )
     String sectionHotkeys = "sectionHotkeys";
 
-    @ConfigItem(
-            keyName = "clearPathHotkey",
-            name = "Clear current path",
-            description = "Hotkey to clear the current path",
-            position = 76,
-            section = sectionHotkeys
+  @ConfigItem(
+        keyName = "clearPathHotkey",
+        name = "Clear current path",
+        description = "Hotkey to clear the current path",
+          position = 76,
+        section = sectionHotkeys
     )
     default Keybind clearPathHotkey() {
         return Keybind.NOT_SET;
