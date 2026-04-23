@@ -53,7 +53,7 @@ public class PathfinderConfig {
             VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
             VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
     };
-    private static final Set<Integer> CURRENCIES = Set.of(
+    public static final Set<Integer> CURRENCIES = Set.of(
             ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
     private static final TransportItems DRAMEN_STAFF = new TransportItems(
             new int[][]{null},
