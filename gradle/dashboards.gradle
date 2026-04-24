@@ -29,6 +29,7 @@ def logDashboardLocation = { String taskName ->
 }
 
 tasks.register('dashboard', Test) {
+    doNotTrackState('Dashboard always re-runs to pick up the latest dataset and config.')
     group = 'verification'
     description = 'Builds the pathfinder dashboard from DashboardTest scenarios. ' +
             'Options (all via -P): dashboardDataset (default: /dashboard/routes.csv), ' +
@@ -38,6 +39,10 @@ tasks.register('dashboard', Test) {
     useJUnit()
     include 'shortestpath/dashboard/DashboardTest.class'
     ignoreFailures = true
+    reports {
+        junitXml.required = false
+        html.required = false
+    }
     jvmArgs = ['-Xms1g', '-Xmx8g']
     testLogging.showStandardStreams = true
     systemProperty 'runDashboardVerification', 'true'
@@ -54,3 +59,32 @@ tasks.register('dashboard', Test) {
     doLast { logDashboardLocation('dashboard') }
 }
 
+tasks.register('captureExpectedLengths', Test) {
+    doNotTrackState('Capture always re-runs to write updated expected lengths.')
+    group = 'verification'
+    description = 'Runs one dataset and writes actual path lengths into expected_length in the source CSV. ' +
+            'Options: dashboardDataset (default: /dashboard/routes.csv), dashboardProfile (default: true).'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/dashboard/DashboardTest.class'
+    ignoreFailures = true
+    reports {
+        junitXml.required = false
+        html.required = false
+    }
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    testLogging.showStandardStreams = true
+    systemProperty 'runDashboardVerification', 'true'
+    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
+    systemProperty 'dashboard.bundleName', dashboardBundle.get()
+    systemProperty 'dashboard.dataset', dashboardDataset.get()
+    systemProperty 'dashboard.profile', dashboardProfile.get()
+    systemProperty 'dashboard.sourceResourcesDir', sourceSets.test.resources.srcDirs.first().absolutePath
+    if (!dashboardTitle.get().isEmpty()) {
+        systemProperty 'dashboard.title', dashboardTitle.get()
+    }
+    if (!dashboardSubtitle.get().isEmpty()) {
+        systemProperty 'dashboard.subtitle', dashboardSubtitle.get()
+    }
+}

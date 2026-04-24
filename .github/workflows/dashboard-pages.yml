@@ -1,7 +1,9 @@
 name: Dashboard Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI Tests"]
+    types: [completed]
     branches: [master]
   workflow_dispatch:
 
@@ -15,6 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,24 +31,20 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build pathfinder dashboard
-        run: ./gradlew clean pathfinderDashboard --stacktrace
+      - name: Build routes dashboard
+        run: ./gradlew dashboard --stacktrace
         shell: bash
 
-      - name: Build clue steps dashboard
-        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/clue_locations_full.csv -PdashboardProfile=false --stacktrace
+      - name: Build clue locations dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/dashboard/clue_locations_full.csv -PdashboardProfile=false --stacktrace
         shell: bash
 
-      - name: Build targets dashboard
-        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/targets.csv -PdashboardProfile=false --stacktrace
+      - name: Build unit tests dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/dashboard/unit-tests.csv --stacktrace
         shell: bash
 
       - name: Build quetzal whistle routes dashboard
-        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/quetzal_whistle_routes.csv -PdashboardProfile=true --stacktrace
-        shell: bash
-
-      - name: Build profiled routes dashboard
-        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/routes.csv -PdashboardProfile=true --stacktrace
+        run: ./gradlew dashboard -PdashboardDataset=/dashboard/quetzal_whistle_routes.csv --stacktrace
         shell: bash
 
       - name: Upload dashboard bundle artifact

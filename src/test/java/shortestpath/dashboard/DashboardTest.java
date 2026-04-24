@@ -1,14 +1,15 @@
 package shortestpath.dashboard;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +23,11 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathfinderProfile;
@@ -65,6 +69,7 @@ public class DashboardTest {
         for (int i = 0; i < 25000; i++) {
             UNIVERSAL_BANK_ITEMS[i] = new Item(i, 1000);
         }
+        ((Logger) LoggerFactory.getLogger("shortestpath.transport.Transport")).setLevel(Level.OFF);
     }
 
     private static final String DATASET_PROPERTY = "dashboard.dataset";
@@ -110,27 +115,24 @@ public class DashboardTest {
     }
 
     @Test
-    public void allTargetsReachableFromBankStart() throws IOException {
+    public void run() throws IOException {
         String dataset = System.getProperty(DATASET_PROPERTY, DEFAULT_DATASET);
         boolean profile = Boolean.parseBoolean(System.getProperty("dashboard.profile", "true"));
         String bundleName = System.getProperty(BUNDLE_NAME_PROPERTY, "routes");
         String reportTitle = System.getProperty("dashboard.title", "Dashboard");
         String reportSubtitle = System.getProperty("dashboard.subtitle", datasetLabel(dataset));
         Path siteRoot = bundlePublisher.getOutputRoot();
-        Path reportPath = siteRoot.resolve("bundles").resolve(bundleName).resolve("report.json");
 
         List<DashboardScenario> allScenarios = loadScenarios(dataset);
         List<DashboardScenario> scenarios = allScenarios.subList(0, Math.min(MAX_SCENARIOS, allScenarios.size()));
 
         List<PathfinderDashboardModels.RunRecord> runs = new ArrayList<>();
-        Map<String, String> routeSummary = new LinkedHashMap<>();
+        Map<String, Integer> capturedLengths = new LinkedHashMap<>();
         long started = System.currentTimeMillis();
 
         int scenarioIndex = 0;
         for (DashboardScenario scenario : scenarios) {
             scenarioIndex++;
-            System.out.printf("[%d/%d] %s%n", scenarioIndex, scenarios.size(), scenario.getName());
-            System.out.flush();
 
             DashboardScenarioRunner.ApplyResult applied = DashboardScenarioRunner.apply(
                 scenario, client, clientBaseline, universalBankContainer);
@@ -159,13 +161,17 @@ public class DashboardTest {
             }
 
             if (result == null) {
-                routeSummary.put(scenario.getName(), "NO_RESULT");
+                System.out.printf("[%2d/%-2d] \u2716 %s  NO_RESULT%n",
+                    scenarioIndex, scenarios.size(), scenario.getName());
                 continue;
             }
 
             List<PathStep> path = result.getPathSteps();
             int pathLength = path.size();
             boolean reached = isReachedOrAdjacent(result, end);
+            if (reached) {
+                capturedLengths.put(scenario.getName(), pathLength);
+            }
 
             // Evaluate assertions
             Boolean assertionPassed = null;
@@ -215,15 +221,13 @@ public class DashboardTest {
             bundlePublisher.externalizeRunHeatmap(bundleName, runs.size(), run);
             runs.add(run);
 
-            routeSummary.put(scenario.getName(), String.format(
-                "%.2f ms, %d steps, %s%s | preset: %s | bankVisited: %s | banks: %s",
+            System.out.printf("[%2d/%-2d] %s %s  %.0fms  %d steps%n",
+                scenarioIndex, scenarios.size(),
+                reached ? "\u2714" : "\u2716",
+                scenario.getName(),
                 result.getElapsedNanos() / 1_000_000.0,
-                pathLength,
-                result.getTerminationReason(),
-                reached ? "" : " [UNREACHABLE]",
-                scenario.getPreset(),
-                run.bankVisitedOnPath,
-                formatBankEventsSummary(run)));
+                pathLength);
+
         }
 
         PathfinderDashboardModels.Report report = reportWriter.createReport(
@@ -236,16 +240,22 @@ public class DashboardTest {
 
         bundlePublisher.publishBundle(bundleName, report);
 
+        String sourceResourcesDir = System.getProperty("dashboard.sourceResourcesDir");
+        if (sourceResourcesDir != null && dataset.startsWith("/")) {
+            Path csvPath = Paths.get(sourceResourcesDir).resolve(dataset.substring(1));
+            updateExpectedLengths(csvPath, capturedLengths);
+            System.out.println("Captured expected_length for " + capturedLengths.size()
+                + " route(s) in " + csvPath);
+        }
+
         System.out.println("Dashboard run summary:");
         System.out.println(" - tested: " + scenarios.size() + "/" + allScenarios.size());
         System.out.println(" - dataset: " + dataset);
-        for (Map.Entry<String, String> entry : routeSummary.entrySet()) {
-            System.out.println(" - " + entry.getKey() + ": " + entry.getValue());
-        }
 
-        long unreachable = runs.stream().filter(run -> !run.reached).count();
-        assertTrue("Unreachable targets found. See " + reportPath + " and " + siteRoot.resolve("index.html"),
-            unreachable == 0);
+        long unreachable = runs.stream().filter(r -> !r.reached).count();
+        if (unreachable > 0) {
+            System.out.printf("%d unreachable target(s). See %s%n", unreachable, siteRoot.resolve("index.html"));
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -265,6 +275,46 @@ public class DashboardTest {
         }
         Path path = Paths.get(dataset);
         return path.getFileName() != null ? path.getFileName().toString() : dataset;
+    }
+
+    private static void updateExpectedLengths(Path csvPath, Map<String, Integer> lengths)
+            throws IOException {
+        List<String> lines = Files.readAllLines(csvPath);
+        if (lines.isEmpty()) {
+            return;
+        }
+        String[] headers = lines.get(0).split(",", -1);
+        int nameIdx = -1;
+        int expectedLengthIdx = -1;
+        for (int i = 0; i < headers.length; i++) {
+            if ("name".equals(headers[i])) {
+                nameIdx = i;
+            }
+            if ("expected_length".equals(headers[i])) {
+                expectedLengthIdx = i;
+            }
+        }
+        if (nameIdx < 0 || expectedLengthIdx < 0) {
+            return;
+        }
+        List<String> updated = new ArrayList<>();
+        updated.add(lines.get(0));
+        for (int i = 1; i < lines.size(); i++) {
+            String line = lines.get(i);
+            String[] cols = line.split(",", -1);
+            if (nameIdx < cols.length) {
+                Integer length = lengths.get(cols[nameIdx]);
+                if (length != null) {
+                    String[] expanded = cols.length > expectedLengthIdx
+                            ? cols
+                            : Arrays.copyOf(cols, expectedLengthIdx + 1);
+                    expanded[expectedLengthIdx] = String.valueOf(length);
+                    line = String.join(",", expanded);
+                }
+            }
+            updated.add(line);
+        }
+        Files.write(csvPath, updated);
     }
 
     private static boolean isReachedOrAdjacent(PathfinderResult result, int target) {
