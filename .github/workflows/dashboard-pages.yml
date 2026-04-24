@@ -33,20 +33,20 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build routes dashboard
-        run: ./gradlew dashboard --stacktrace
-        shell: bash
-
       - name: Build clue locations dashboard
         run: ./gradlew dashboard -PdashboardDataset=/dashboard/clue_locations_full.csv -PdashboardProfile=false --stacktrace
+        shell: bash
+
+      - name: Build quetzal whistle routes dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/dashboard/quetzal_whistle_routes.csv --stacktrace
         shell: bash
 
       - name: Build unit tests dashboard
         run: ./gradlew dashboard -PdashboardDataset=/dashboard/unit-tests.csv --stacktrace
         shell: bash
 
-      - name: Build quetzal whistle routes dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/dashboard/quetzal_whistle_routes.csv --stacktrace
+      - name: Build routes dashboard
+        run: ./gradlew dashboard --stacktrace
         shell: bash
 
       - name: Upload dashboard bundle artifact
