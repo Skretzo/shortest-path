@@ -9,10 +9,10 @@ import java.util.Map;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.QuestState;
 import shortestpath.TeleportationItem;
 import shortestpath.pathfinder.TestPathfinderConfig;
 
@@ -109,7 +109,8 @@ public final class DashboardScenarioRunner {
         applyConfigOverrides(scenario.getConfigOverrides(), config);
 
         // Step 9: build TestPathfinderConfig
-        TestPathfinderConfig pfConfig = new TestPathfinderConfig(client, config);
+        TestPathfinderConfig pfConfig = new TestPathfinderConfig(client, config, QuestState.FINISHED,
+            config.isBypassVarbitChecks(), true);
 
         // Assign bank container
         boolean isBankPreset = "BANK".equalsIgnoreCase(scenario.getPreset());
@@ -180,6 +181,7 @@ public final class DashboardScenarioRunner {
                 case "useWildernessObelisks": config.setUseWildernessObelisks(parseBoolean(value)); break;
                 case "useSeasonalTransports": config.setUseSeasonalTransports(parseBoolean(value)); break;
                 case "includeBankPath": config.setIncludeBankPath(parseBoolean(value)); break;
+                case "bypassVarbitChecks": config.setBypassVarbitChecks(parseBoolean(value)); break;
                 case "currencyThreshold": config.setCurrencyThreshold(Integer.parseInt(value)); break;
                 case "calculationCutoff": config.setCalculationCutoff(Integer.parseInt(value)); break;
                 case "usePoh": config.setUsePoh(parseBoolean(value)); break;

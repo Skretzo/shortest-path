@@ -56,6 +56,33 @@ public final class DashboardPresets {
             cfg.setUseTeleportationItems(TeleportationItem.INVENTORY_NON_CONSUMABLE);
             cfg.setIncludeBankPath(false);
         });
+
+        // Mirrors the PathfinderTest Mockito mock baseline: every ShortestPathConfig boolean
+        // method returns false, TeleportationItem returns NONE, and calculationCutoff = 30.
+        // Use this preset so that unit-test CSV rows reproduce the exact same PathfinderConfig
+        // state as the corresponding PathfinderTest scenario, with only the options that the
+        // test explicitly enables listed in config_overrides.
+        PRESETS.put("UNIT_TEST", cfg -> {
+            cfg.setAvoidWilderness(false);
+            cfg.setUseAgilityShortcuts(false);
+            cfg.setUseBoats(false);
+            cfg.setUseShips(false);
+            cfg.setUseFairyRings(false);
+            cfg.setUseGnomeGliders(false);
+            cfg.setUseMagicCarpets(false);
+            cfg.setUseMagicMushtrees(false);
+            cfg.setUseMinecarts(false);
+            cfg.setUseQuetzals(false);
+            cfg.setUseSpiritTrees(false);
+            cfg.setUseTeleportationLevers(false);
+            cfg.setUseTeleportationPortals(false);
+            cfg.setUseTeleportationSpells(false);
+            cfg.setUseTeleportationMinigames(false);
+            cfg.setUseWildernessObelisks(false);
+            cfg.setUseTeleportationItems(TeleportationItem.NONE);
+            cfg.setIncludeBankPath(false);
+            cfg.setCalculationCutoff(30);
+        });
     }
 
     private DashboardPresets() {
@@ -84,7 +111,9 @@ public final class DashboardPresets {
      */
     public static int lumbridgeDiaryEliteStub(String presetName) {
         String key = presetName == null ? "NONE" : presetName.toUpperCase(Locale.ROOT);
-        if ("BANK".equals(key)) {
+        // BANK and UNIT_TEST both stub diary=0 (not complete), matching their respective baselines:
+        // BANK matches legacy BankMode; UNIT_TEST matches Mockito's default int return of 0.
+        if ("BANK".equals(key) || "UNIT_TEST".equals(key)) {
             return DIARY_DISABLED;
         }
         return DIARY_ENABLED;

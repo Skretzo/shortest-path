@@ -57,6 +57,7 @@ public class DashboardPathfinderConfig implements ShortestPathConfig {
     // Pathfinder behaviour
     // -------------------------------------------------------------------------
     private boolean includeBankPath = false;
+    private boolean bypassVarbitChecks = true;
     private int currencyThreshold = 10_000_000;
     private int calculationCutoff = 500;
 
@@ -214,6 +215,8 @@ public class DashboardPathfinderConfig implements ShortestPathConfig {
     public void setUseSeasonalTransports(boolean v) { useSeasonalTransports = v; }
 
     public void setIncludeBankPath(boolean v) { includeBankPath = v; }
+    public boolean isBypassVarbitChecks() { return bypassVarbitChecks; }
+    public void setBypassVarbitChecks(boolean v) { bypassVarbitChecks = v; }
     public void setCurrencyThreshold(int v) { currencyThreshold = v; }
     public void setCalculationCutoff(int v) { calculationCutoff = v; }
 
