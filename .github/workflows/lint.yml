@@ -26,7 +26,7 @@ jobs:
 
       - name: Run checkstyle
         continue-on-error: true
-        run: ./gradlew checkstyleMain checkstyleTest
+        run: ./gradlew checkstyleMain checkstyleTest checkstyleJmh
         shell: bash
 
       - name: Upload Checkstyle HTML report
