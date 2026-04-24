@@ -14,7 +14,7 @@ repositories {
 def runeLiteVersion = 'latest.release'
 
 dependencies {
-    compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+    compileOnly "net.runelite:client:$runeLiteVersion"
 
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
@@ -22,9 +22,9 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.6'
     testImplementation 'com.google.code.gson:gson:2.10.1'
-    testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
-    testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
-    testImplementation(group: 'net.runelite', name:'cache', version: runeLiteVersion) {
+    testImplementation "net.runelite:client:$runeLiteVersion"
+    testImplementation "net.runelite:jshell:$runeLiteVersion"
+    testImplementation("net.runelite:cache:$runeLiteVersion") {
         exclude group: 'org.slf4j', module: 'slf4j-simple'
     }
 
@@ -34,23 +34,34 @@ dependencies {
 
 group = 'shortestpath'
 version = '1.19.0'
-sourceCompatibility = '1.11'
 
-tasks.withType(JavaCompile) {
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.withType(Checkstyle).configureEach {
+    enabled = project.hasProperty('checkstyle')
+    ignoreFailures = true
 }
 
 // ─── Testing ─────────────────────────────────────────────────────────────────
 
 test {
     jvmArgs = ['-Xms1g', '-Xmx8g']
+    exclude 'shortestpath/dump/**'
 }
 
 jacoco {
     toolVersion = "0.8.11"
 }
 
-tasks.named('jacocoTestReport') {
+tasks.named('jacocoTestReport', JacocoReport) {
     dependsOn tasks.named('test')
     reports {
         xml.required = true
@@ -79,160 +90,7 @@ jmh {
     resultsFile = layout.buildDirectory.file('reports/jmh/results.json')
 }
 
-// ─── Dashboards ──────────────────────────────────────────────────────────────
-
-def dashboardOutputRoot = layout.buildDirectory.dir('reports/pathfinder-dashboard')
-def dashboardDataset = providers.gradleProperty('dashboardDataset')
-    .orElse('/reachability/routes.csv')
-def dashboardScenario = providers.gradleProperty('dashboardScenario')
-    .orElse('')
-def dashboardSubtitle = providers.gradleProperty('dashboardSubtitle')
-    .orElse('')
-def dashboardProfile = providers.gradleProperty('dashboardProfile')
-    .orElse('true')
-// Derive bundle name and title from the dataset filename + profile flag.
-// e.g. dataset=/reachability/clue_locations_full.csv, profile=true
-//   → bundle: clue-locations-full-profiled, title: Clue Locations Full Profiled
-// Override with -PdashboardBundle=... or -PdashboardTitle=...
-def filename = dashboardDataset.get().tokenize('/').last()
-def stem     = filename.contains('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename
-def slug     = stem.replace('_', '-').toLowerCase()
-def profiled = dashboardProfile.get() == 'true'
-def dashboardBundle = providers.gradleProperty('dashboardBundle')
-    .orElse(profiled ? "${slug}-profiled" : slug)
-def dashboardTitle = providers.gradleProperty('dashboardTitle')
-    .orElse(stem.tokenize('_').collect { it.capitalize() }.join(' ') + (profiled ? ' Profiled' : ''))
-
-def logDashboardLocation = { String taskName ->
-    logger.lifecycle("")
-    logger.lifecycle("${taskName} dashboard written.")
-    logger.lifecycle("Serve it locally with:")
-    logger.lifecycle("  python -m http.server --directory ${dashboardOutputRoot.get().asFile.absolutePath} 8000")
-    logger.lifecycle("Then open: http://localhost:8000")
-}
-
-// Shared configuration for all dashboard Test tasks.
-def configureDashboard = { Test t ->
-    t.group = 'verification'
-    t.testClassesDirs = sourceSets.test.output.classesDirs
-    t.classpath = sourceSets.test.runtimeClasspath
-    t.useJUnit()
-    t.ignoreFailures = true
-    t.jvmArgs = ['-Xms1g', '-Xmx8g']
-    t.testLogging.showStandardStreams = true
-    t.doLast { logDashboardLocation(t.name) }
-}
-
-// Additional shared setup for tasks that run ReachabilityDashboardTest.
-def configureReachabilityDashboard = { Test t ->
-    configureDashboard(t)
-    t.include 'shortestpath/reachability/ReachabilityDashboardTest.class'
-    t.systemProperty 'runReachabilityVerification', 'true'
-    t.systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-}
-
-tasks.register('scenarioDashboard', Test) {
-    description = 'Builds the pathfinder scenario dashboard from PathfinderTest'
-    configureDashboard(it)
-    include 'shortestpath/pathfinder/PathfinderTest.class'
-    systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-    systemProperty 'dashboard.bundleName', 'pathfinder-tests'
-}
-
-tasks.register('dashboard', Test) {
-    description = 'Builds the pathfinder dashboard. ' +
-        'Required: -PdashboardDataset=... (default: /reachability/routes.csv), ' +
-        '-PdashboardProfile=true|false (default: true). ' +
-        'Bundle name and title are derived automatically; override with -PdashboardBundle=... or -PdashboardTitle=...'
-    configureReachabilityDashboard(it)
-    systemProperty 'reachability.dataset', dashboardDataset.get()
-    systemProperty 'reachability.reportTitle', dashboardTitle.get()
-    systemProperty 'reachability.reportSubtitle', dashboardSubtitle.get()
-    systemProperty 'reachability.profile', dashboardProfile.get()
-    def scenarioValue = dashboardScenario.get()
-    if (scenarioValue && !scenarioValue.isEmpty()) {
-        systemProperty 'reachability.scenario', scenarioValue
-    }
-    systemProperty 'dashboard.bundleName', dashboardBundle.get()
-}
-
-
-// ─── Cache dumpers ────────────────────────────────────────────────────────────
-
-// Dumps bank-related object placements (Bank booth / Bank chest / Bank table /
-// deposit box / GE booth) from an OSRS cache to a TSV. Pair with
-// scripts/rebuild_bank_tsv.py to add stand-tile rows to bank.tsv.
-//
-// Usage:
-//   collision-map-update/download-latest-cache.sh      # produces ./cache and ./keys.json
-//   sed -i '' 's/mapsquare/region/g; s/key/keys/g' keys.json
-//   ./gradlew bankTileDump -PbankTileCacheDir=$PWD/cache -PbankTileXteaPath=$PWD/keys.json
-def bankTileCacheDir = providers.gradleProperty('bankTileCacheDir').orElse('')
-def bankTileXteaPath = providers.gradleProperty('bankTileXteaPath').orElse('')
-def bankTileOutput = providers.gradleProperty('bankTileOutput')
-    .orElse(layout.buildDirectory.file('bank-tiles/bank_tile_placements.tsv').get().asFile.absolutePath)
-
-tasks.register('bankTileDump', Test) {
-    group = 'verification'
-    description = 'Dumps bank-related object placements from an OSRS cache to a TSV. ' +
-        'Required: -PbankTileCacheDir=<cache dir>, -PbankTileXteaPath=<keys.json>. ' +
-        'Optional: -PbankTileOutput=<tsv path>.'
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnit()
-    include 'shortestpath/dump/BankTileDumperTest.class'
-    systemProperty 'bankTiles.dump', 'true'
-    systemProperty 'bankTiles.cacheDir', bankTileCacheDir.get()
-    systemProperty 'bankTiles.xteaPath', bankTileXteaPath.get()
-    systemProperty 'bankTiles.output', bankTileOutput.get()
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    testLogging {
-        showStandardStreams = true
-    }
-    doFirst {
-        if (bankTileCacheDir.get().isEmpty() || bankTileXteaPath.get().isEmpty()) {
-            throw new GradleException(
-                "bankTileDump requires -PbankTileCacheDir and -PbankTileXteaPath. " +
-                "Run collision-map-update/download-latest-cache.sh first to produce ./cache and ./keys.json, " +
-                "then patch keys.json (mapsquare->region, key->keys).")
-        }
-    }
-    doLast {
-        logger.lifecycle("")
-        logger.lifecycle("Bank tile placements written to ${bankTileOutput.get()}")
-        logger.lifecycle("Merge into bank.tsv with:")
-        logger.lifecycle("  cp ${bankTileOutput.get()} build/bank-tiles/bank_tile_placements.tsv")
-        logger.lifecycle("  python3 scripts/rebuild_bank_tsv.py")
-    }
-}
-
-// Dumps Sailing-island amenity object definitions (varbit/varp transforms) plus
-// every placement from an OSRS cache. Used to identify the construction-gated
-// bank-chest varbits for bank.tsv. No output file — prints to the task log.
-def sailingAmenityCacheDir = providers.gradleProperty('sailingAmenityCacheDir').orElse('')
-def sailingAmenityXteaPath = providers.gradleProperty('sailingAmenityXteaPath').orElse('')
-
-tasks.register('sailingAmenityVarbitDump', Test) {
-    group = 'verification'
-    description = 'Dumps Sailing island amenity object defs + placements from an OSRS cache. ' +
-        'Required: -PsailingAmenityCacheDir=<cache dir>, -PsailingAmenityXteaPath=<keys.json>.'
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnit()
-    include 'shortestpath/dump/SailingAmenityVarbitDumperTest.class'
-    systemProperty 'sailing.amenity.dump', 'true'
-    systemProperty 'sailing.amenity.cacheDir', sailingAmenityCacheDir.get()
-    systemProperty 'sailing.amenity.xteaPath', sailingAmenityXteaPath.get()
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    testLogging {
-        showStandardStreams = true
-    }
-    doFirst {
-        if (sailingAmenityCacheDir.get().isEmpty() || sailingAmenityXteaPath.get().isEmpty()) {
-            throw new GradleException(
-                "sailingAmenityVarbitDump requires -PsailingAmenityCacheDir and -PsailingAmenityXteaPath.")
-        }
-    }
-}
+apply from: 'gradle/dashboards.gradle'
+apply from: 'gradle/cache-dumpers.gradle'
 
 
