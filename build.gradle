@@ -1,7 +1,6 @@
 plugins {
     id 'java'
     id 'jacoco'
-    id 'me.champeau.jmh' version '0.7.2'
     id 'checkstyle'
 }
 
@@ -28,8 +27,6 @@ dependencies {
         exclude group: 'org.slf4j', module: 'slf4j-simple'
     }
 
-    jmhImplementation sourceSets.test.output
-    jmhImplementation sourceSets.test.runtimeClasspath
 }
 
 group = 'shortestpath'
@@ -80,15 +77,6 @@ tasks.register('runelite', JavaExec) {
     mainClass.set('shortestpath.ShortestPathPluginTest')
     jvmArgs '-ea'
     args '--developer-mode'
-}
-
-jmh {
-    warmupIterations = 3
-    iterations = 5
-    fork = 2
-    jvmArgs = ['-Xms2g', '-Xmx8g']
-    resultFormat = 'JSON'
-    resultsFile = layout.buildDirectory.file('reports/jmh/results.json')
 }
 
 apply from: 'gradle/dashboards.gradle'
