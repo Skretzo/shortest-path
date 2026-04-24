@@ -1,4 +1,4 @@
-// ─── Cache dumpers ────────────────────────────────────────────────────────────
+// --- Cache dumpers ---
 
 // Dumps bank-related object placements (Bank booth / Bank chest / Bank table /
 // deposit box / GE booth) from an OSRS cache to a TSV. Pair with

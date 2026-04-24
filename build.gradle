@@ -50,7 +50,7 @@ tasks.withType(Checkstyle).configureEach {
     ignoreFailures = true
 }
 
-// ─── Testing ─────────────────────────────────────────────────────────────────
+// --- Testing ---
 
 test {
     jvmArgs = ['-Xms1g', '-Xmx8g']

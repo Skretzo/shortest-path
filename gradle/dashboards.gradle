@@ -1,4 +1,4 @@
-// ─── Dashboards ──────────────────────────────────────────────────────────────
+// --- Dashboards ---
 
 def dashboardOutputRoot = layout.buildDirectory.dir('reports/pathfinder-dashboard')
 def dashboardDataset = providers.gradleProperty('dashboardDataset')
