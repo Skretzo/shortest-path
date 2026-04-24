@@ -28,24 +28,24 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build scenario dashboard
-        run: ./gradlew clean scenarioDashboard --stacktrace
+      - name: Build pathfinder dashboard
+        run: ./gradlew clean pathfinderDashboard --stacktrace
         shell: bash
 
       - name: Build clue steps dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/reachability/clue_locations_full.csv -PdashboardProfile=false --stacktrace
+        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/clue_locations_full.csv -PdashboardProfile=false --stacktrace
         shell: bash
 
       - name: Build targets dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/reachability/targets.csv -PdashboardProfile=false --stacktrace
+        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/targets.csv -PdashboardProfile=false --stacktrace
         shell: bash
 
       - name: Build quetzal whistle routes dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/reachability/quetzal_whistle_routes.csv -PdashboardProfile=true --stacktrace
+        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/quetzal_whistle_routes.csv -PdashboardProfile=true --stacktrace
         shell: bash
 
       - name: Build profiled routes dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/reachability/routes.csv -PdashboardProfile=true --stacktrace
+        run: ./gradlew reachabilityDashboard -PdashboardDataset=/reachability/routes.csv -PdashboardProfile=true --stacktrace
         shell: bash
 
       - name: Upload dashboard bundle artifact

@@ -1,0 +1,77 @@
+// ─── Cache dumpers ────────────────────────────────────────────────────────────
+
+// Dumps bank-related object placements (Bank booth / Bank chest / Bank table /
+// deposit box / GE booth) from an OSRS cache to a TSV. Pair with
+// scripts/rebuild_bank_tsv.py to add stand-tile rows to bank.tsv.
+//
+// Usage:
+//   collision-map-update/download-latest-cache.sh      # produces ./cache and ./keys.json
+//   sed -i '' 's/mapsquare/region/g; s/key/keys/g' keys.json
+//   ./gradlew bankTileDump -PbankTileCacheDir=$PWD/cache -PbankTileXteaPath=$PWD/keys.json
+def bankTileCacheDir = providers.gradleProperty('bankTileCacheDir').orElse('')
+def bankTileXteaPath = providers.gradleProperty('bankTileXteaPath').orElse('')
+def bankTileOutput = providers.gradleProperty('bankTileOutput')
+        .orElse(layout.buildDirectory.file('bank-tiles/bank_tile_placements.tsv').get().asFile.absolutePath)
+
+tasks.register('bankTileDump', Test) {
+    group = 'cache dumpers'
+    description = 'Dumps bank-related object placements from an OSRS cache to a TSV. ' +
+            'Required: -PbankTileCacheDir=<cache dir>, -PbankTileXteaPath=<keys.json>. ' +
+            'Optional: -PbankTileOutput=<tsv path>.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/dump/BankTileDumperTest.class'
+    systemProperty 'bankTiles.dump', 'true'
+    systemProperty 'bankTiles.cacheDir', bankTileCacheDir.get()
+    systemProperty 'bankTiles.xteaPath', bankTileXteaPath.get()
+    systemProperty 'bankTiles.output', bankTileOutput.get()
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    testLogging {
+        showStandardStreams = true
+    }
+    doFirst {
+        if (bankTileCacheDir.get().isEmpty() || bankTileXteaPath.get().isEmpty()) {
+            throw new GradleException("bankTileDump requires -PbankTileCacheDir and -PbankTileXteaPath. " +
+                    "Run collision-map-update/download-latest-cache.sh first to produce ./cache and ./keys.json, " +
+                    "then patch keys.json (mapsquare->region, key->keys).")
+        }
+    }
+    doLast {
+        logger.lifecycle("")
+        logger.lifecycle("Bank tile placements written to ${bankTileOutput.get()}")
+        logger.lifecycle("Merge into bank.tsv with:")
+        logger.lifecycle("  cp ${bankTileOutput.get()} build/bank-tiles/bank_tile_placements.tsv")
+        logger.lifecycle("  python3 scripts/rebuild_bank_tsv.py")
+    }
+}
+
+// Dumps Sailing-island amenity object definitions (varbit/varp transforms) plus
+// every placement from an OSRS cache. Used to identify the construction-gated
+// bank-chest varbits for bank.tsv. No output file — prints to the task log.
+def sailingAmenityCacheDir = providers.gradleProperty('sailingAmenityCacheDir').orElse('')
+def sailingAmenityXteaPath = providers.gradleProperty('sailingAmenityXteaPath').orElse('')
+
+tasks.register('sailingAmenityVarbitDump', Test) {
+    group = 'cache dumpers'
+    description = 'Dumps Sailing island amenity object defs + placements from an OSRS cache. ' +
+            'Required: -PsailingAmenityCacheDir=<cache dir>, -PsailingAmenityXteaPath=<keys.json>.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/dump/SailingAmenityVarbitDumperTest.class'
+    systemProperty 'sailing.amenity.dump', 'true'
+    systemProperty 'sailing.amenity.cacheDir', sailingAmenityCacheDir.get()
+    systemProperty 'sailing.amenity.xteaPath', sailingAmenityXteaPath.get()
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    testLogging {
+        showStandardStreams = true
+    }
+    doFirst {
+        if (sailingAmenityCacheDir.get().isEmpty() || sailingAmenityXteaPath.get().isEmpty()) {
+            throw new GradleException("sailingAmenityVarbitDump requires -PsailingAmenityCacheDir " +
+                    "and -PsailingAmenityXteaPath.")
+        }
+    }
+}
+
