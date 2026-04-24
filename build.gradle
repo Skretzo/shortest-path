@@ -55,6 +55,7 @@ tasks.withType(Checkstyle).configureEach {
 test {
     jvmArgs = ['-Xms1g', '-Xmx8g']
     exclude 'shortestpath/dump/**'
+    exclude 'shortestpath/dashboard/DashboardTest.class'
 }
 
 jacoco {

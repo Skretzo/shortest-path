@@ -26,7 +26,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.junit.MockitoJUnitRunner;
-import shortestpath.dashboard.PathfinderTestDashboardCollector;
 import shortestpath.ItemVariations;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
@@ -1522,26 +1521,14 @@ public class PathfinderTest {
     private Pathfinder assertScenarioPathLengthAndGet(String label, int expectedLength, int origin, int destination) {
         Pathfinder pathfinder = runPathfinder(origin, destination);
         int actualLength = pathfinder.getPath().size();
-        try {
-            assertEquals(label, expectedLength, actualLength);
-            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, true, null);
-        } catch (AssertionError e) {
-            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, false, e.getMessage());
-            throw e;
-        }
+        assertEquals(label, expectedLength, actualLength);
         return pathfinder;
     }
 
     private void assertScenarioMinimumPathLength(String label, int minimumLength, int origin, int destination) {
         Pathfinder pathfinder = runPathfinder(origin, destination);
         int actualLength = pathfinder.getPath().size();
-        try {
-            assertTrue("Scenario " + label + " had length " + actualLength + " < " + minimumLength, actualLength >= minimumLength);
-            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, true, null);
-        } catch (AssertionError e) {
-            PathfinderTestDashboardCollector.record(label, pathfinder.getResult(), pathfinderConfig, false, e.getMessage());
-            throw e;
-        }
+        assertTrue("Scenario " + label + " had length " + actualLength + " < " + minimumLength, actualLength >= minimumLength);
     }
 
     private void assertScenarioPathLengthWithBank(String label, int expectedLength, int origin, int destination,
@@ -1578,18 +1565,8 @@ public class PathfinderTest {
         return pathfinder;
     }
 
-    // In a future commit, these tests will be rendered onto a debugging dashboard.
     private Pathfinder runScenario(String label, int origin, int destination) {
-        Pathfinder pathfinder = runPathfinder(origin, destination);
-        if (pathfinder.getResult() != null) {
-            PathfinderTestDashboardCollector.record(
-                label,
-                pathfinder.getResult(),
-                pathfinderConfig,
-                null,
-                null);
-        }
-        return pathfinder;
+        return runPathfinder(origin, destination);
     }
 
     private boolean hasTransportWithRequiredItem(Map<Integer, Set<Transport>> transports, int[] variationIds) {

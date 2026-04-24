@@ -2,15 +2,13 @@
 
 def dashboardOutputRoot = layout.buildDirectory.dir('reports/pathfinder-dashboard')
 def dashboardDataset = providers.gradleProperty('dashboardDataset')
-        .orElse('/reachability/routes.csv')
-def dashboardScenario = providers.gradleProperty('dashboardScenario')
-        .orElse('')
+        .orElse('/dashboard/routes.csv')
 def dashboardSubtitle = providers.gradleProperty('dashboardSubtitle')
         .orElse('')
 def dashboardProfile = providers.gradleProperty('dashboardProfile')
         .orElse('true')
 // Derive bundle name and title from the dataset filename + profile flag.
-// e.g. dataset=/reachability/clue_locations_full.csv, profile=true
+// e.g. dataset=/dashboard/clue_locations_full.csv, profile=true
 //   → bundle: clue-locations-full-profiled, title: Clue Locations Full Profiled
 // Override with -PdashboardBundle=... or -PdashboardTitle=...
 def filename = dashboardDataset.get().tokenize('/').last()
@@ -30,49 +28,29 @@ def logDashboardLocation = { String taskName ->
     logger.lifecycle("Then open: http://localhost:8000")
 }
 
-// Shared configuration for all dashboard Test tasks.
-def configureDashboard = { Test t ->
-    t.group = 'dashboards'
-    t.testClassesDirs = sourceSets.test.output.classesDirs
-    t.classpath = sourceSets.test.runtimeClasspath
-    t.useJUnit()
-    t.ignoreFailures = true
-    t.jvmArgs = ['-Xms1g', '-Xmx8g']
-    t.testLogging.showStandardStreams = true
-    t.doLast { logDashboardLocation(t.name) }
-}
-
-// Additional shared setup for tasks that run ReachabilityDashboardTest.
-def configureReachabilityDashboard = { Test t ->
-    configureDashboard(t)
-    t.include 'shortestpath/reachability/ReachabilityDashboardTest.class'
-    t.systemProperty 'runReachabilityVerification', 'true'
-    t.systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-}
-
-tasks.register('pathfinderDashboard', Test) {
-    description = 'Builds the dashboard from PathfinderTest scenarios'
-    configureDashboard(it)
-    include 'shortestpath/pathfinder/PathfinderTest.class'
+tasks.register('dashboard', Test) {
+    group = 'verification'
+    description = 'Builds the pathfinder dashboard from DashboardTest scenarios. ' +
+            'Options (all via -P): dashboardDataset (default: /dashboard/routes.csv), ' +
+            'dashboardBundle, dashboardTitle, dashboardSubtitle, dashboardProfile (default: true).'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnit()
+    include 'shortestpath/dashboard/DashboardTest.class'
+    ignoreFailures = true
+    jvmArgs = ['-Xms1g', '-Xmx8g']
+    testLogging.showStandardStreams = true
+    systemProperty 'runDashboardVerification', 'true'
     systemProperty 'dashboard.outputRoot', dashboardOutputRoot.get().asFile.absolutePath
-    systemProperty 'dashboard.bundleName', 'pathfinder-tests'
-}
-
-tasks.register('reachabilityDashboard', Test) {
-    description = 'Builds the pathfinder dashboard. ' +
-            'Required: -PdashboardDataset=... (default: /reachability/routes.csv), ' +
-            '-PdashboardProfile=true|false (default: true). ' +
-            'Bundle name and title are derived automatically; override with -PdashboardBundle=... ' +
-            'or -PdashboardTitle=...'
-    configureReachabilityDashboard(it)
-    systemProperty 'reachability.dataset', dashboardDataset.get()
-    systemProperty 'reachability.reportTitle', dashboardTitle.get()
-    systemProperty 'reachability.reportSubtitle', dashboardSubtitle.get()
-    systemProperty 'reachability.profile', dashboardProfile.get()
-    def scenarioValue = dashboardScenario.get()
-    if (scenarioValue && !scenarioValue.isEmpty()) {
-        systemProperty 'reachability.scenario', scenarioValue
-    }
     systemProperty 'dashboard.bundleName', dashboardBundle.get()
+    systemProperty 'dashboard.dataset', dashboardDataset.get()
+    systemProperty 'dashboard.profile', dashboardProfile.get()
+    if (!dashboardTitle.get().isEmpty()) {
+        systemProperty 'dashboard.title', dashboardTitle.get()
+    }
+    if (!dashboardSubtitle.get().isEmpty()) {
+        systemProperty 'dashboard.subtitle', dashboardSubtitle.get()
+    }
+    doLast { logDashboardLocation('dashboard') }
 }
 
