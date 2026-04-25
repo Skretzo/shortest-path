@@ -14,3 +14,7 @@ ij_groovy_binary_operation_wrap = normal
 [*.tsv]
 indent_style = tab
 trim_trailing_whitespace = false
+
+[*.java]
+indent_style = tab
+trim_trailing_whitespace = false
