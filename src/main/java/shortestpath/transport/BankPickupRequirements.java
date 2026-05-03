@@ -2,6 +2,7 @@ package shortestpath.transport;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -60,9 +61,6 @@ public class BankPickupRequirements {
             return requiredItems;
         }
 
-        // Snapshot what the player already has on them (inventory + equipment + rune pouch).
-        Map<Integer, Integer> playerHas = collectPlayerItems(client);
-
         // Snapshot bank contents.
         Map<Integer, Integer> bankHas = new HashMap<>();
         for (Item bankItem : bank.getItems()) {
@@ -70,6 +68,13 @@ public class BankPickupRequirements {
                 bankHas.merge(bankItem.getId(), bankItem.getQuantity(), Integer::sum);
             }
         }
+
+        // Map runeId → pouchId for any rune pouch sitting in the bank.
+        // Used so computeBankPickups can show "pick up rune pouch" instead of individual runes.
+        Map<Integer, Integer> bankPouchRunes = buildBankPouchRunes(client, bankHas);
+
+        // Snapshot what the player already has on them (inventory + equipment + rune pouch in hand).
+        Map<Integer, Integer> playerHas = collectPlayerItems(client);
 
         // Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
         // A LinkedHashSet preserves order while deduplicating identical phrases across edges.
@@ -138,11 +143,11 @@ public class BankPickupRequirements {
                 continue;
             }
 
-            // Otherwise, surface every alternative the bank can fully supply, joined by " or ".
+            // Otherwise, surface every alternative the bank can fully supply, joined, bankPouchRunes by " or ".
             // Deduplicate alternatives that resolve to the exact same set of bank items.
             LinkedHashSet<String> altStrings = new LinkedHashSet<>();
             for (Transport t : nonFairy) {
-                Map<Integer, Long> pickups = computeBankPickups(t, playerHas, bankHas);
+                Map<Integer, Long> pickups = computeBankPickups(t, playerHas, bankHas, bankPouchRunes);
                 if (pickups == null || pickups.isEmpty()) {
                     continue; // bank can't satisfy this alternative
                 }
@@ -228,7 +233,7 @@ public class BankPickupRequirements {
      * Returns true if every requirement of the transport is already met by the player's
      * inventory/equipment/rune-pouch (taking item-id, staff and offhand variations into account).
      */
-    private static boolean transportSatisfiedBy(Transport transport, Map<Integer, Integer> playerHas) {
+    public static boolean transportSatisfiedBy(Transport transport, Map<Integer, Integer> playerHas) {
         if (transport.getItemRequirements() == null) {
             return true;
         }
@@ -247,11 +252,15 @@ public class BankPickupRequirements {
     /**
      * For an unsatisfied transport, returns the items (id → qty) that need to be picked up
      * from the bank to satisfy it, or null if the bank can't supply them.
+     * When a required rune is only available via a bank rune pouch, the pouch itself is
+     * returned as the pickup item (qty 1, deduped across multiple rune requirements).
      */
     private static Map<Integer, Long> computeBankPickups(Transport transport,
                                                          Map<Integer, Integer> playerHas,
-                                                         Map<Integer, Integer> bankHas) {
+                                                         Map<Integer, Integer> bankHas,
+                                                         Map<Integer, Integer> bankPouchRunes) {
         Map<Integer, Long> pickups = new LinkedHashMap<>();
+        Set<Integer> addedPouches = new HashSet<>(); // tracks pouch IDs already added to pickups
         if (transport.getItemRequirements() == null) {
             return pickups;
         }
@@ -263,29 +272,76 @@ public class BankPickupRequirements {
                     || hasAnyItem(playerHas, req.getOffhandIds(), 1)) {
                 continue;
             }
-            // Try to satisfy from bank: prefer the primary item ids, then staves, then offhands.
-            int foundId = findItemIdInBank(bankHas, req.getItemIds(), qty);
-            int foundQty = qty;
-            if (foundId == -1) {
-                foundId = findItemIdInBank(bankHas, req.getStaffIds(), 1);
-                foundQty = 1;
+            // Prefer bank rune pouch over individual runes. This avoids surfacing combination
+            // rune variants (mist, dust, etc.) when the pouch already covers the requirement.
+            boolean satisfied = false;
+            if (req.getItemIds() != null) {
+                for (int itemId : req.getItemIds()) {
+                    Integer pouchId = bankPouchRunes.get(itemId);
+                    if (pouchId != null) {
+                        if (!addedPouches.contains(pouchId)) {
+                            addedPouches.add(pouchId);
+                            pickups.put(pouchId, 1L);
+                        }
+                        satisfied = true;
+                        break;
+                    }
+                }
             }
+            if (satisfied) {
+                continue;
+            }
+            // Try to satisfy from bank directly. Use the canonical (first) item ID for display
+            // so we show "Air rune" rather than a combination rune variant like "Mist rune".
+            int foundId = findItemIdInBank(bankHas, req.getItemIds(), qty);
+            if (foundId != -1) {
+                pickups.merge(req.getItemIds()[0], (long) qty, Long::sum);
+                continue;
+            }
+            foundId = findItemIdInBank(bankHas, req.getStaffIds(), 1);
             if (foundId == -1) {
                 foundId = findItemIdInBank(bankHas, req.getOffhandIds(), 1);
-                foundQty = 1;
             }
             if (foundId == -1) {
                 return null; // bank can't satisfy this requirement
             }
-            pickups.merge(foundId, (long) foundQty, Long::sum);
+            pickups.merge(foundId, 1L, Long::sum);
         }
         return pickups;
     }
 
     /**
-     * Collects the items the player currently has accessible (inventory + equipment + rune pouch).
+     * Builds a map of runeId → pouchId for every rune stored inside any rune pouch in the bank.
+     * The varbits that encode pouch contents are always current regardless of pouch location.
      */
-    private static Map<Integer, Integer> collectPlayerItems(Client client) {
+    private static Map<Integer, Integer> buildBankPouchRunes(Client client, Map<Integer, Integer> bankHas) {
+        Map<Integer, Integer> bankPouchRunes = new HashMap<>();
+        for (Integer pouchId : PathfinderConfig.RUNE_POUCHES) {
+            if (!bankHas.containsKey(pouchId)) {
+                continue;
+            }
+            EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
+            if (runePouchEnum == null) {
+                break;
+            }
+            for (int i = 0; i < PathfinderConfig.RUNE_POUCH_RUNE_VARBITS.length; i++) {
+                int runeEnumId = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS[i]);
+                int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
+                int runeAmount = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS[i]);
+                if (runeId > 0 && runeAmount > 0) {
+                    bankPouchRunes.put(runeId, pouchId);
+                }
+            }
+            break; // one pouch per bank
+        }
+        return bankPouchRunes;
+    }
+
+    /**
+     * Snapshots what the player already has on them (inventory + equipment + rune pouch
+     * contents if the pouch is in inventory or equipped).
+     */
+    public static Map<Integer, Integer> collectPlayerItems(Client client) {
         Map<Integer, Integer> totals = new HashMap<>();
 
         ItemContainer inventory = client.getItemContainer(InventoryID.INV);
@@ -306,7 +362,7 @@ public class BankPickupRequirements {
             }
         }
 
-        // Rune pouch contents (only readable when a pouch is in inventory).
+        // Rune pouch contents — only when the pouch is actually on the player.
         boolean hasPouch = false;
         for (Integer pouchId : PathfinderConfig.RUNE_POUCHES) {
             if (totals.containsKey(pouchId)) {
