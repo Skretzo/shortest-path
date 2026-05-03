@@ -117,12 +117,21 @@ public class ShortestPathPlugin extends Plugin
 	boolean drawTransports;
 	boolean showTransportInfo;
 	boolean showBankPickupInfo;
+	boolean highlightBankPickupItems;
+
+	// Bank pickup cache — invalidated when path, bank, or inventory changes.
+	private shortestpath.transport.BankPickupRequirements.BankPickupResult bankPickupCache;
+	private List<PathStep> bankPickupCachePath;
+	private int bankPickupCacheIndex = -1;
+	private boolean bankPickupDirty = true;
+
 	Color colourCollisionMap;
 	Color colourPath;
 	Color colourPathCalculating;
 	Color colourPathUnreachable;
 	Color colourText;
 	Color colourTransports;
+	Color colourBankPickupHighlight;
 	int tileCounterStep;
 	int unreachableTargetDistance;
 	String unreachableText;
@@ -147,6 +156,8 @@ public class ShortestPathPlugin extends Plugin
 	private PathMapOverlay pathMapOverlay;
 	@Inject
 	private PathMapTooltipOverlay pathMapTooltipOverlay;
+	@Inject
+	private BankItemHighlightOverlay bankItemHighlightOverlay;
 	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
@@ -307,6 +318,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(pathMinimapOverlay);
 		overlayManager.add(pathMapOverlay);
 		overlayManager.add(pathMapTooltipOverlay);
+		overlayManager.add(bankItemHighlightOverlay);
 
 		if (config.drawDebugPanel())
 		{
@@ -323,6 +335,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(pathMinimapOverlay);
 		overlayManager.remove(pathMapOverlay);
 		overlayManager.remove(pathMapTooltipOverlay);
+		overlayManager.remove(bankItemHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 
 		if (pathfindingExecutor != null)
@@ -363,6 +376,7 @@ public class ShortestPathPlugin extends Plugin
 				}
 				else
 				{
+					bankPickupDirty = true;
 					pathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
 					pathfinderFuture = pathfindingExecutor.submit(pathfinder);
 				}
@@ -770,11 +784,40 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		if (event.getContainerId() != InventoryID.BANK)
+		int id = event.getContainerId();
+		if (id == InventoryID.BANK)
 		{
-			return;
+			pathfinderConfig.bank = event.getItemContainer();
 		}
-		pathfinderConfig.bank = event.getItemContainer();
+		if (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN)
+		{
+			bankPickupDirty = true;
+		}
+	}
+
+	/**
+	 * Returns the cached bank pickup result for the given path step, recomputing only when
+	 * the path, bank contents, or player inventory has changed since the last call.
+	 */
+	public shortestpath.transport.BankPickupRequirements.BankPickupResult getBankPickup(
+			List<PathStep> path, int pathIndex)
+	{
+		Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
+		if (pathfinderConfig.bank == null || bankLocations == null
+				|| path == null || pathIndex < 0 || pathIndex >= path.size())
+		{
+			return null;
+		}
+		if (!bankPickupDirty && path == bankPickupCachePath && pathIndex == bankPickupCacheIndex)
+		{
+			return bankPickupCache;
+		}
+		bankPickupCachePath = path;
+		bankPickupCacheIndex = pathIndex;
+		bankPickupDirty = false;
+		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
+				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex);
+		return bankPickupCache;
 	}
 
 	@Subscribe
@@ -1256,6 +1299,7 @@ public class ShortestPathPlugin extends Plugin
 		drawTransports = override("drawTransports", config.drawTransports());
 		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
+		highlightBankPickupItems = override("highlightBankPickupItems", config.highlightBankPickupItems());
 
 		colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
 		colourPath = override("colourPath", config.colourPath());
@@ -1263,6 +1307,7 @@ public class ShortestPathPlugin extends Plugin
 		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
 		colourText = override("colourText", config.colourText());
 		colourTransports = override("colourTransports", config.colourTransports());
+		colourBankPickupHighlight = override("colourBankPickupHighlight", config.colourBankPickupHighlight());
 
 		tileCounterStep = override("tileCounterStep", config.tileCounterStep());
 		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
