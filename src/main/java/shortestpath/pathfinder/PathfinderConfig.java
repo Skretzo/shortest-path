@@ -461,7 +461,9 @@ public class PathfinderConfig {
         if (!usePoh) {
             int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
             int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-            if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
+            int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
+            int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+            if (ShortestPathPlugin.isInsidePoh(originX, originY) || ShortestPathPlugin.isInsidePoh(destX, destY)) {
                 return false;
             }
         }
@@ -543,8 +545,10 @@ public class PathfinderConfig {
     private boolean checkPohVariant(Transport transport, TransportType type) {
         int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
         int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+        int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
+        int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 
-        if (!ShortestPathPlugin.isInsidePoh(originX, originY)) {
+        if (!ShortestPathPlugin.isInsidePoh(originX, originY) && !ShortestPathPlugin.isInsidePoh(destX, destY)) {
             return true; // Not a POH transport
         }
 
