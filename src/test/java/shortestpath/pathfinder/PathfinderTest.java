@@ -171,6 +171,8 @@ public class PathfinderTest {
     @Test
     public void testFairyRings() {
         when(config.useFairyRings()).thenReturn(true);
+        when(config.usePoh()).thenReturn(true);
+        when(config.usePohFairyRing()).thenReturn(true);
         setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
         when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
@@ -181,6 +183,8 @@ public class PathfinderTest {
     @Test
     public void testLunarStaffFairyRings() {
         when(config.useFairyRings()).thenReturn(true);
+        when(config.usePoh()).thenReturn(true);
+        when(config.usePohFairyRing()).thenReturn(true);
         setupInventory(new Item(ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF, 1));
         when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
@@ -1451,11 +1455,6 @@ public class PathfinderTest {
         for (int origin : transports.keySet()) {
             for (Transport transport : transports.get(origin)) {
                 if (transportType.equals(transport.getType())) {
-                    int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-                    int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-                    if (ShortestPathPlugin.isInsidePoh(originX, originY)) {
-                        continue;
-                    }
                     expectedCount++;
                     if (sampleTransport == null) {
                         sampleTransport = transport;
