@@ -41,15 +41,15 @@ import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
 public class PathfinderConfig {
-    private static final List<Integer> RUNE_POUCHES = Arrays.asList(
+    public static final List<Integer> RUNE_POUCHES = Arrays.asList(
             ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
             ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
     );
-    private static final int[] RUNE_POUCH_RUNE_VARBITS = {
+    public static final int[] RUNE_POUCH_RUNE_VARBITS = {
             VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
             VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
     };
-    private static final int[] RUNE_POUCH_AMOUNT_VARBITS = {
+    public static final int[] RUNE_POUCH_AMOUNT_VARBITS = {
             VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
             VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
     };
