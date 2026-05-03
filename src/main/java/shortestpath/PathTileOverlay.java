@@ -438,7 +438,17 @@ public class PathTileOverlay extends Overlay {
             }
         }
 
-        for (Transport transport : candidateTransports) {
+        // Only show transports the player can currently use; fall back to all if none are usable.
+        java.util.Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+        java.util.List<Transport> usableTransports = new java.util.ArrayList<>();
+        for (Transport t : candidateTransports) {
+            if (BankPickupRequirements.transportSatisfiedBy(t, playerHas)) {
+                usableTransports.add(t);
+            }
+        }
+        java.util.Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
+
+        for (Transport transport : transportsToShow) {
             String text = transport.getDisplayInfo();
             if (text == null || text.isEmpty()) {
                 continue;
