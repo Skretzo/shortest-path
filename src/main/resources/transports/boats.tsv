@@ -163,9 +163,27 @@
 2837 10128 0	2837 10143 0	Travel Dwarven Ferryman 4896		COINS=2			5	
 2855 10145 0	2863 10133 0	Travel Dwarven Ferryman 4897		COINS=2			5	
 								
-# Angler's Retreat Boat								
-2543 2844 0	2471 2724 0	Travel Rowboat 58637				18355=1	5	
-2471 2724 0	2543 2844 0	Travel Rowboat 58636				18355=1	5	
 # Kathy Corkat boat from Piscatoris to Gnome Stronghold (50 coins before Swan Song varbit 2098=200)								
 2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299				2098<200	10	50 coins (paid from bank)
 2357 3641 0	2368 3486 0	Travel Kathy Corkat 4299				2098=200	10	
+								
+# Sailing Row Boats Amenities								
+# Vatrachos Island Boat								
+1774 2964 0	1877 2975 0	Travel Rowboat 58635				18351=1	17	
+1877 2975 0	1774 2964 0	Travel Rowboat 58634				18351=1	17	
+
+# Angler's Retreat Boat								
+2543 2844 0	2471 2724 0	Travel Rowboat 58637				18355=1	17	
+2471 2724 0	2543 2844 0	Travel Rowboat 58636				18355=1	17	
+								
+# Tear of the Soul Boat								
+2293 2798 0	2321 2782 0	Travel Rowboat 58639				18356=1	17	
+2321 2782 0	2293 2798 0	Travel Rowboat 58638				18356=1	17	
+								
+# Ynysdail Boat								
+2230 3467 0	2218 3427 0	Travel Rowboat 58643				18370=1	17	
+2218 3427 0	2230 3467 0	Travel Rowboat 58642				18370=1	17	
+
+# Buccaneer's Haven Boat								
+2203 3803 0	2087 3692 0	Travel Rowboat 58641				18371=1	17	
+2087 3692 0	2203 3803 0	Travel Rowboat 58640				18371=1	17	
