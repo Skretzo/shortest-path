@@ -31,183 +31,281 @@ import shortestpath.transport.requirement.ItemRequirement;
 public final class BankPickupRequirements
 {
 
-	/**
-	 * Gets a list of items that need to be picked up from the bank at a given path step.
-	 *
-	 * @param client           The game client
-	 * @param bank             The bank ItemContainer
-	 * @param pathfinderConfig The pathfinder config for bank-aware transport lookups
-	 * @param bankLocations    Set of bank location coordinates
-	 * @param path             The current path
-	 * @param pathIndex        The current step index in the path
-	 * @return List of item names to pick up, or empty list if none needed
-	 */
-	public static List<String> getRequiredBankItems(
-		Client client,
-		ItemContainer bank,
-		PathfinderConfig pathfinderConfig,
-		Set<Integer> bankLocations,
-		List<PathStep> path,
-		int pathIndex)
+	/** Combined result of a bank pickup computation: display phrases and item IDs for highlighting. */
+	public static class BankPickupResult
 	{
+		public final List<String> phrases;
+		public final Set<Integer> bankItemIds;
 
-		List<String> requiredItems = new ArrayList<>();
-
-		if (bank == null || path == null || pathIndex < 0 || pathIndex >= path.size())
+		BankPickupResult(List<String> phrases, Set<Integer> bankItemIds)
 		{
-			return requiredItems;
+			this.phrases = phrases;
+			this.bankItemIds = bankItemIds;
 		}
 
-		// Check if this is a bank step
-		int currentPoint = path.get(pathIndex).getPackedPosition();
-		if (!bankLocations.contains(currentPoint))
+		/**
+		 * Computes the bank pickup requirements for a given bank step in the path.
+		 * Returns both the human-readable pickup phrases (for display) and the item IDs
+		 * (for bank slot highlighting) in a single pass over the remaining path.
+		 *
+		 * @param client           The game client
+		 * @param bank             The bank ItemContainer
+		 * @param pathfinderConfig The pathfinder config for bank-aware transport lookups
+		 * @param bankLocations    Set of bank location coordinates
+		 * @param path             The current path
+		 * @param pathIndex        The current step index in the path
+		 * @return BankPickupResult with phrases and item IDs, or an empty result if not at a bank step
+		 */
+		public static BankPickupResult compute(
+			Client client,
+			ItemContainer bank,
+			PathfinderConfig pathfinderConfig,
+			Set<Integer> bankLocations,
+			List<PathStep> path,
+			int pathIndex)
 		{
-			return requiredItems;
-		}
+			List<String> resultPhrases = new ArrayList<>();
+			Set<Integer> resultIds = new HashSet<>();
 
-		// Snapshot bank contents.
-		Map<Integer, Integer> bankHas = new HashMap<>();
-		for (Item bankItem : bank.getItems())
-		{
-			if (bankItem.getId() >= 0 && bankItem.getQuantity() > 0)
+			if (bank == null || path == null || pathIndex < 0 || pathIndex >= path.size())
 			{
-				bankHas.merge(bankItem.getId(), bankItem.getQuantity(), Integer::sum);
+				return new BankPickupResult(resultPhrases, resultIds);
 			}
-		}
 
-		// Map runeId → pouchId for any rune pouch sitting in the bank.
-		// Used so computeBankPickups can show "pick up rune pouch" instead of individual runes.
-		Map<Integer, Integer> bankPouchRunes = buildBankPouchRunes(client, bankHas);
-
-		// Snapshot what the player already has on them (inventory + equipment + rune pouch in hand).
-		Map<Integer, Integer> playerHas = collectPlayerItems(client);
-
-		// Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
-		// A LinkedHashSet preserves order while deduplicating identical phrases across edges.
-		LinkedHashSet<String> phrases = new LinkedHashSet<>();
-		boolean usesFairyRing = false;
-
-		// Walk each edge in the remaining path and collect alternative transports per edge.
-		for (int i = pathIndex; i < path.size() - 1; i++)
-		{
-			int stepPoint = path.get(i).getPackedPosition();
-			int nextPoint = path.get(i + 1).getPackedPosition();
-			boolean banked = path.get(i + 1).isBankVisited();
-			TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
-
-			List<Transport> edgeAlternatives = new ArrayList<>();
-			Set<Transport> originSet = availability.getTransportsByOrigin().get(stepPoint);
-			if (originSet != null)
+			// Only compute for bank steps.
+			int currentPoint = path.get(pathIndex).getPackedPosition();
+			if (!bankLocations.contains(currentPoint))
 			{
-				for (Transport t : originSet)
+				return new BankPickupResult(resultPhrases, resultIds);
+			}
+
+			// Snapshot bank contents.
+			Map<Integer, Integer> bankHas = new HashMap<>();
+			for (Item bankItem : bank.getItems())
+			{
+				if (bankItem.getId() >= 0 && bankItem.getQuantity() > 0)
+				{
+					bankHas.merge(bankItem.getId(), bankItem.getQuantity(), Integer::sum);
+				}
+			}
+
+			// Map runeId to pouchId for any rune pouch sitting in the bank.
+			Map<Integer, Integer> bankPouchRunes = BankPickupRequirements.buildBankPouchRunes(client, bankHas);
+
+			// Snapshot what the player already has (inventory + equipment + rune pouch in hand).
+			Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+
+			// Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
+			LinkedHashSet<String> phrases = new LinkedHashSet<>();
+			Set<Integer> itemIds = new HashSet<>();
+			boolean usesFairyRing = false;
+
+			// Walk each edge in the remaining path in a single pass.
+			for (int i = pathIndex; i < path.size() - 1; i++)
+			{
+				int stepPoint = path.get(i).getPackedPosition();
+				int nextPoint = path.get(i + 1).getPackedPosition();
+				boolean banked = path.get(i + 1).isBankVisited();
+				TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
+
+				List<Transport> edgeAlternatives = new ArrayList<>();
+				Set<Transport> originSet = availability.getTransportsByOrigin().get(stepPoint);
+				if (originSet != null)
+				{
+					for (Transport t : originSet)
+					{
+						if (t.getDestination() == nextPoint)
+						{
+							edgeAlternatives.add(t);
+						}
+					}
+				}
+				for (Transport t : availability.getUsableTeleports())
 				{
 					if (t.getDestination() == nextPoint)
 					{
 						edgeAlternatives.add(t);
 					}
 				}
-			}
-			for (Transport t : availability.getUsableTeleports())
-			{
-				if (t.getDestination() == nextPoint)
+				if (edgeAlternatives.isEmpty())
 				{
-					edgeAlternatives.add(t);
+					continue;
 				}
-			}
-			if (edgeAlternatives.isEmpty())
-			{
-				continue;
+
+				// Fairy rings handled once globally via the staff requirement below.
+				List<Transport> nonFairy = new ArrayList<>();
+				for (Transport t : edgeAlternatives)
+				{
+					if (TransportType.FAIRY_RING.equals(t.getType()))
+					{
+						usesFairyRing = true;
+					}
+					else
+					{
+						nonFairy.add(t);
+					}
+				}
+				if (nonFairy.isEmpty())
+				{
+					continue;
+				}
+
+				// If at least one alternative requires no items, nothing to pick up for this edge.
+				boolean anyAlternativeIsFree = false;
+				for (Transport t : nonFairy)
+				{
+					if (t.getItemRequirements() == null || t.getItemRequirements().size() == 0)
+					{
+						anyAlternativeIsFree = true;
+						break;
+					}
+				}
+				if (anyAlternativeIsFree)
+				{
+					continue;
+				}
+
+				// If any alternative is fully satisfied by the player already, no pickup needed.
+				boolean satisfied = false;
+				for (Transport t : nonFairy)
+				{
+					if (BankPickupRequirements.transportSatisfiedBy(t, playerHas))
+					{
+						satisfied = true;
+						break;
+					}
+				}
+				if (satisfied)
+				{
+					continue;
+				}
+
+				// Build phrases (alternatives the bank can fully supply) and collect item IDs in one pass.
+				LinkedHashSet<String> altStrings = new LinkedHashSet<>();
+				for (Transport t : nonFairy)
+				{
+					Map<Integer, Long> pickups = BankPickupRequirements.computeBankPickups(t, playerHas, bankHas, bankPouchRunes);
+					if (pickups != null && !pickups.isEmpty())
+					{
+						// Bank can fully satisfy this alternative: contribute to display phrase.
+						altStrings.add(BankPickupRequirements.formatPickups(client, pickups));
+					}
+					// Always collect actual bank item IDs for highlighting.
+					// computeBankPickups uses canonical IDs (e.g. air rune) for display, but the bank
+					// may only hold a variant (e.g. mist rune), so we resolve the real ID separately.
+					BankPickupRequirements.collectPartialBankItemIds(t, playerHas, bankHas, bankPouchRunes, itemIds);
+				}
+				if (!altStrings.isEmpty())
+				{
+					phrases.add(String.join(" or ", altStrings));
+				}
 			}
 
-			// Fairy rings handled once globally via the staff requirement below.
-			List<Transport> nonFairy = new ArrayList<>();
-			for (Transport t : edgeAlternatives)
+			// Fairy ring staff (Dramen / Lunar) is a single OR requirement across the whole trip.
+			if (usesFairyRing)
 			{
-				if (TransportType.FAIRY_RING.equals(t.getType()))
+				int[] staffIds = ItemVariations.DRAMEN_STAFF.getIds();
+				if (!BankPickupRequirements.hasAnyItem(playerHas, staffIds, 1))
 				{
-					usesFairyRing = true;
+					// Use the canonical ID (Dramen staff) for the display phrase.
+					int foundId = BankPickupRequirements.findItemIdInBank(bankHas, staffIds, 1);
+					if (foundId != -1)
+					{
+						Map<Integer, Long> single = new LinkedHashMap<>();
+						single.put(staffIds[0], 1L);
+						phrases.add(BankPickupRequirements.formatPickups(client, single));
+						// Highlight all staff variants present in the bank.
+						for (int staffId : staffIds)
+						{
+							if (bankHas.getOrDefault(staffId, 0) >= 1)
+							{
+								itemIds.add(staffId);
+							}
+						}
+					}
 				}
-				else
-				{
-					nonFairy.add(t);
-				}
-			}
-			if (nonFairy.isEmpty())
-			{
-				continue;
 			}
 
-			// If at least one alternative requires no items, nothing to pick up for this edge.
-			boolean anyAlternativeIsFree = false;
-			for (Transport t : nonFairy)
-			{
-				if (t.getItemRequirements() == null || t.getItemRequirements().size() == 0)
-				{
-					anyAlternativeIsFree = true;
-					break;
-				}
-			}
-			if (anyAlternativeIsFree)
-			{
-				continue;
-			}
-
-			// If any alternative is fully satisfied by the player already, no pickup needed.
-			boolean satisfied = false;
-			for (Transport t : nonFairy)
-			{
-				if (transportSatisfiedBy(t, playerHas))
-				{
-					satisfied = true;
-					break;
-				}
-			}
-			if (satisfied)
-			{
-				continue;
-			}
-
-			// Otherwise, surface every alternative the bank can fully supply, joined, bankPouchRunes by " or ".
-			// Deduplicate alternatives that resolve to the exact same set of bank items.
-			LinkedHashSet<String> altStrings = new LinkedHashSet<>();
-			for (Transport t : nonFairy)
-			{
-				Map<Integer, Long> pickups = computeBankPickups(t, playerHas, bankHas, bankPouchRunes);
-				if (pickups == null || pickups.isEmpty())
-				{
-					continue; // bank can't satisfy this alternative
-				}
-				altStrings.add(formatPickups(client, pickups));
-			}
-			if (altStrings.isEmpty())
-			{
-				continue;
-			}
-			phrases.add(String.join(" or ", altStrings));
+			resultPhrases.addAll(phrases);
+			resultIds.addAll(itemIds);
+			return new BankPickupResult(resultPhrases, resultIds);
 		}
-
-		// Fairy ring staff (Dramen / Lunar) is a single OR requirement across the whole trip.
-		if (usesFairyRing)
-		{
-			int[] staffIds = ItemVariations.DRAMEN_STAFF.getIds();
-			if (!hasAnyItem(playerHas, staffIds, 1))
-			{
-				int foundId = findItemIdInBank(bankHas, staffIds, 1);
-				if (foundId != -1)
-				{
-					Map<Integer, Long> single = new LinkedHashMap<>();
-					single.put(foundId, 1L);
-					phrases.add(formatPickups(client, single));
-				}
-			}
-		}
-
-		requiredItems.addAll(phrases);
-		return requiredItems;
 	}
 
 	/**
-	 * Formats a pickup map (item id → quantity) as a comma-separated, human-readable string.
+	 * Collects item IDs from the bank that partially satisfy a transport's requirements.
+	 * Called when the bank cannot fully satisfy the transport (so no phrase is generated),
+	 * but we still want to highlight any relevant items the bank does have.
+	 */
+	private static void collectPartialBankItemIds(Transport transport,
+		Map<Integer, Integer> playerHas,
+		Map<Integer, Integer> bankHas,
+		Map<Integer, Integer> bankPouchRunes,
+		Set<Integer> itemIds)
+	{
+		if (transport.getItemRequirements() == null)
+		{
+			return;
+		}
+		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
+		{
+			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
+			if (hasAnyItem(playerHas, req.getItemIds(), qty)
+				|| hasAnyItem(playerHas, req.getStaffIds(), 1)
+				|| hasAnyItem(playerHas, req.getOffhandIds(), 1))
+			{
+				continue;
+			}
+			// Add all rune pouches in bank that cover any required rune variant.
+			if (req.getItemIds() != null)
+			{
+				for (int itemId : req.getItemIds())
+				{
+					Integer pouchId = bankPouchRunes.get(itemId);
+					if (pouchId != null)
+					{
+						itemIds.add(pouchId);
+					}
+				}
+			}
+			// Add all item variants (e.g. mist/dust/smoke rune for air rune) present in bank.
+			if (req.getItemIds() != null)
+			{
+				for (int id : req.getItemIds())
+				{
+					if (bankHas.getOrDefault(id, 0) >= qty)
+					{
+						itemIds.add(id);
+					}
+				}
+			}
+			// Add all staff variants (e.g. all air battlestaff types) present in bank.
+			if (req.getStaffIds() != null)
+			{
+				for (int id : req.getStaffIds())
+				{
+					if (bankHas.getOrDefault(id, 0) >= 1)
+					{
+						itemIds.add(id);
+					}
+				}
+			}
+			// Add all offhand variants (e.g. tome of fire) present in bank.
+			if (req.getOffhandIds() != null)
+			{
+				for (int id : req.getOffhandIds())
+				{
+					if (bankHas.getOrDefault(id, 0) >= 1)
+					{
+						itemIds.add(id);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Formats a pickup map (item id to quantity) as a comma-separated, human-readable string.
 	 */
 	private static String formatPickups(Client client, Map<Integer, Long> pickups)
 	{
@@ -303,7 +401,7 @@ public final class BankPickupRequirements
 	}
 
 	/**
-	 * For an unsatisfied transport, returns the items (id → qty) that need to be picked up
+	 * For an unsatisfied transport, returns the items (id to qty) that need to be picked up
 	 * from the bank to satisfy it, or null if the bank can't supply them.
 	 * When a required rune is only available via a bank rune pouch, the pouch itself is
 	 * returned as the pickup item (qty 1, deduped across multiple rune requirements).
@@ -376,7 +474,7 @@ public final class BankPickupRequirements
 	}
 
 	/**
-	 * Builds a map of runeId → pouchId for every rune stored inside any rune pouch in the bank.
+	 * Builds a map of runeId to pouchId for every rune stored inside any rune pouch in the bank.
 	 * The varbits that encode pouch contents are always current regardless of pouch location.
 	 */
 	private static Map<Integer, Integer> buildBankPouchRunes(Client client, Map<Integer, Integer> bankHas)
@@ -440,7 +538,7 @@ public final class BankPickupRequirements
 			}
 		}
 
-		// Rune pouch contents — only when the pouch is actually on the player.
+		// Rune pouch contents only when the pouch is actually on the player.
 		boolean hasPouch = false;
 		for (Integer pouchId : PathfinderConfig.RUNE_POUCHES)
 		{
