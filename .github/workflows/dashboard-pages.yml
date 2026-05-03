@@ -28,7 +28,7 @@ jobs:
           submodules: recursive
 
       - name: Update shortest-path submodule to latest master
-        run: git submodule update --remote --merge shortest-path
+        run: git submodule update --remote shortest-path
         shell: bash
 
       - name: Set up JDK 11
