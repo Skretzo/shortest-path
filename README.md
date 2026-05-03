@@ -29,5 +29,5 @@ python3 scripts/dump_transport_coordinates.py --pretty --output build/transport-
 
 ## Developer tooling
 
-Developer dashboards and OSRS cache dumpers live in [shortest-path-tooling](https://github.com/FIrgolitsch/shortest-path-tooling).
+Developer dashboards and OSRS cache dumpers live in [shortest-path-tooling](https://github.com/osrs-pathfinding/shortest-path-tooling).
 The published dashboard is available on GitHub Pages: `https://skretzo.github.io/shortest-path/`

@@ -24,7 +24,7 @@ jobs:
       - name: Checkout shortest-path-tooling with submodules
         uses: actions/checkout@v4
         with:
-          repository: FIrgolitsch/shortest-path-tooling
+          repository: osrs-pathfinding/shortest-path-tooling
           submodules: recursive
 
       - name: Update shortest-path submodule to latest master
