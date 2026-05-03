@@ -1107,7 +1107,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default Color colourBankPickupHighlight()
 	{
-		return new Color(0, 255, 255, 100);
+		return new Color(0, 255, 255, 255);
 	}
 
 	@ConfigSection(
