@@ -1,0 +1,10 @@
+# Whitespace and formatting-only commits that should be ignored by git blame.
+# See: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Or:  git blame --ignore-revs-file .git-blame-ignore-revs <file>
+
+# linter: Convert all spaces to tabs
+7ccdae2f82238eba700ec130e3efa86dd5d78c8f
+
+# Address linting issues across all java files
+7a4df5be3c28e4eaebe76bc9b2ec459190bacd91
+
