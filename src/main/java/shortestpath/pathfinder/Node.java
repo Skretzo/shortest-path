@@ -7,29 +7,6 @@ import shortestpath.WorldPointUtil;
 
 public class Node
 {
-	public enum Type
-	{
-		// A concrete world tile that can appear in the rendered path.
-		// Search starts on a TILE node, walking/transport expansion stays on TILE
-		// nodes,
-		// and bank state is still tracked on each tile node because it affects which
-		// transports are legal from that point onward.
-		TILE,
-		// An abstract search-state node with no world position.
-		// The search reaches one of these from a TILE node when it wants to consider a
-		// global action set such as teleports. That abstract node is keyed by
-		// AbstractNodeKind plus bankVisited, so it is only expanded once for each
-		// relevant search state. Expanding the ABSTRACT node emits the legal teleports
-		// for that state back into concrete TILE destination nodes. This avoids
-		// scanning
-		// the full global teleport list from every visited tile while still allowing
-		// the
-		// search to reconsider teleports when the state meaningfully changes
-		// (for example when wilderness level drops into a new bucket, or when a future
-		// abstract-node family is added).
-		ABSTRACT
-	}
-
 	public final int packedPosition;
 	public final Node previous;
 	public final int cost;
@@ -65,6 +42,27 @@ public class Node
 		// carry no packed world point.
 		return new Node(WorldPointUtil.UNDEFINED, previous, previous != null ? previous.cost : 0, bankVisited,
 			Type.ABSTRACT, abstractKind);
+	}
+
+	public static int cost(int packedPosition, Node previous)
+	{
+		int previousCost = 0;
+		int travelTime = 0;
+
+		if (previous != null)
+		{
+			previousCost = previous.cost;
+			if (previous.isTile())
+			{
+				// Travel wait time in TransportNode and distance is compared as if the player
+				// is walking 1 tile/tick.
+				// TODO: reduce the distance if the player is currently running and has enough
+				// run energy for the distance?
+				travelTime = WorldPointUtil.distanceBetween(previous.packedPosition, packedPosition);
+			}
+		}
+
+		return previousCost + travelTime;
 	}
 
 	public List<PathStep> getPathSteps()
@@ -115,24 +113,26 @@ public class Node
 		return node != null ? node.packedPosition : WorldPointUtil.UNDEFINED;
 	}
 
-	public static int cost(int packedPosition, Node previous)
+	public enum Type
 	{
-		int previousCost = 0;
-		int travelTime = 0;
-
-		if (previous != null)
-		{
-			previousCost = previous.cost;
-			if (previous.isTile())
-			{
-				// Travel wait time in TransportNode and distance is compared as if the player
-				// is walking 1 tile/tick.
-				// TODO: reduce the distance if the player is currently running and has enough
-				// run energy for the distance?
-				travelTime = WorldPointUtil.distanceBetween(previous.packedPosition, packedPosition);
-			}
-		}
-
-		return previousCost + travelTime;
+		// A concrete world tile that can appear in the rendered path.
+		// Search starts on a TILE node, walking/transport expansion stays on TILE
+		// nodes,
+		// and bank state is still tracked on each tile node because it affects which
+		// transports are legal from that point onward.
+		TILE,
+		// An abstract search-state node with no world position.
+		// The search reaches one of these from a TILE node when it wants to consider a
+		// global action set such as teleports. That abstract node is keyed by
+		// AbstractNodeKind plus bankVisited, so it is only expanded once for each
+		// relevant search state. Expanding the ABSTRACT node emits the legal teleports
+		// for that state back into concrete TILE destination nodes. This avoids
+		// scanning
+		// the full global teleport list from every visited tile while still allowing
+		// the
+		// search to reconsider teleports when the state meaningfully changes
+		// (for example when wilderness level drops into a new bucket, or when a future
+		// abstract-node family is added).
+		ABSTRACT
 	}
 }

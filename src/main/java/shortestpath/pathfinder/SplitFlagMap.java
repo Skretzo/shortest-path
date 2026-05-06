@@ -45,27 +45,6 @@ public class SplitFlagMap
 		}
 	}
 
-	public byte getRegionPlaneCounts(int index)
-	{
-		return regionMapPlaneCounts[index];
-	}
-
-	public boolean get(int x, int y, int z, int flag)
-	{
-		final int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
-		if (index < 0 || index >= regionMaps.length || regionMaps[index] == null)
-		{
-			return false;
-		}
-
-		return regionMaps[index].get(x, y, z, flag);
-	}
-
-	private int getIndex(int regionX, int regionY)
-	{
-		return (regionX - regionExtents.getMinX()) + (regionY - regionExtents.getMinY()) * widthInclusive;
-	}
-
 	public static int unpackX(int position)
 	{
 		return position & 0xFFFF;
@@ -113,6 +92,27 @@ public class SplitFlagMap
 		}
 
 		return new SplitFlagMap(compressedRegions);
+	}
+
+	public byte getRegionPlaneCounts(int index)
+	{
+		return regionMapPlaneCounts[index];
+	}
+
+	public boolean get(int x, int y, int z, int flag)
+	{
+		final int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
+		if (index < 0 || index >= regionMaps.length || regionMaps[index] == null)
+		{
+			return false;
+		}
+
+		return regionMaps[index].get(x, y, z, flag);
+	}
+
+	private int getIndex(int regionX, int regionY)
+	{
+		return (regionX - regionExtents.getMinX()) + (regionY - regionExtents.getMinY()) * widthInclusive;
 	}
 
 	@RequiredArgsConstructor

@@ -45,13 +45,14 @@ public class Destination
 	private static final String FILE_EXTENSION = ".";
 	private static final String DELIM_PATH = "/";
 	private static final String DELIM = " ";
+
 	/**
 	 * Parses a TSV resource of destination coordinates and merges them into the provided map.
 	 * The key in the destination map is derived from the directory component immediately preceding the file
 	 * name (e.g., {@code /destinations/game_features/bank.tsv -> bank}).
 	 *
 	 * @param destinations accumulator map of category key to a set of packed world point integers.
-	 * @param path classpath resource path to a TSV file beginning with a header line.
+	 * @param path         classpath resource path to a TSV file beginning with a header line.
 	 * @throws RuntimeException wrapping {@link IOException} if the resource cannot be read.
 	 */
 	private static void addDestinations(Map<String, Set<Integer>> destinations, String path)

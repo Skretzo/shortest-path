@@ -34,8 +34,6 @@ import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.ScriptID;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -47,6 +45,8 @@ import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.SpriteID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
@@ -104,47 +104,11 @@ public class ShortestPathPlugin extends Plugin
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|use\\w+|cost\\w+)$");
-
-	@Inject
-	private Client client;
-
-	@Getter
-	@Inject
-	private ClientThread clientThread;
-
-	@Inject
-	private ShortestPathConfig config;
-
-	@Inject
-	private EventBus eventBus;
-
-	@Inject
-	private OverlayManager overlayManager;
-
-	@Inject
-	private PathTileOverlay pathOverlay;
-
-	@Inject
-	private PathMinimapOverlay pathMinimapOverlay;
-
-	@Inject
-	private PathMapOverlay pathMapOverlay;
-
-	@Inject
-	private PathMapTooltipOverlay pathMapTooltipOverlay;
-
-	@Inject
-	private DebugOverlayPanel debugOverlayPanel;
-
-	@Inject
-	private SpriteManager spriteManager;
-
-	@Inject
-	private WorldMapPointManager worldMapPointManager;
-
-	@Inject
-	private KeyManager keyManager;
-
+	private static final Map<String, Object> configOverride = new HashMap<>(50);
+	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
+	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
+	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
+	private final Object pathfinderMutex = new Object();
 	boolean drawCollisionMap;
 	boolean drawMap;
 	boolean drawMinimap;
@@ -163,7 +127,33 @@ public class ShortestPathPlugin extends Plugin
 	String unreachableText;
 	TileCounter showTileCounter;
 	TileStyle pathStyle;
-
+	@Inject
+	private Client client;
+	@Getter
+	@Inject
+	private ClientThread clientThread;
+	@Inject
+	private ShortestPathConfig config;
+	@Inject
+	private EventBus eventBus;
+	@Inject
+	private OverlayManager overlayManager;
+	@Inject
+	private PathTileOverlay pathOverlay;
+	@Inject
+	private PathMinimapOverlay pathMinimapOverlay;
+	@Inject
+	private PathMapOverlay pathMapOverlay;
+	@Inject
+	private PathMapTooltipOverlay pathMapTooltipOverlay;
+	@Inject
+	private DebugOverlayPanel debugOverlayPanel;
+	@Inject
+	private SpriteManager spriteManager;
+	@Inject
+	private WorldMapPointManager worldMapPointManager;
+	@Inject
+	private KeyManager keyManager;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -172,15 +162,16 @@ public class ShortestPathPlugin extends Plugin
 	private BufferedImage minimapSpriteFixed;
 	private BufferedImage minimapSpriteResizeable;
 	private Rectangle minimapRectangle = new Rectangle();
-
 	private GameState lastGameState = null;
 	private GameState lastLastGameState = null;
-	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
-
 	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
 	private Future<?> pathfinderFuture;
-	private final Object pathfinderMutex = new Object();
-	private static final Map<String, Object> configOverride = new HashMap<>(50);
+	@Getter
+	private Pathfinder pathfinder;
+	@Getter
+	private PathfinderConfig pathfinderConfig;
+	@Getter
+	private boolean startPointSet = false;
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -202,14 +193,97 @@ public class ShortestPathPlugin extends Plugin
 		{
 		}
 	};
-
-	@Getter
-	private Pathfinder pathfinder;
-	@Getter
-	private PathfinderConfig pathfinderConfig;
-	@Getter
-	private boolean startPointSet = false;
 	private boolean fairyRingPanelOpen = false;
+
+	/**
+	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
+	 *
+	 * @param x The world X coordinate
+	 * @param y The world Y coordinate
+	 * @return true if inside POH, false otherwise
+	 */
+	public static boolean isInsidePoh(int x, int y)
+	{
+		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
+	}
+
+	public static boolean override(String configOverrideKey, boolean defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof Boolean)
+			{
+				return (boolean) value;
+			}
+		}
+		return defaultValue;
+	}
+
+	/**
+	 * Override for TransportType enabled state using the config key name stored in the enum.
+	 */
+	public static boolean override(TransportType type, boolean defaultValue)
+	{
+		String key = type.getEnabledKey();
+		return key != null ? override(key, defaultValue) : defaultValue;
+	}
+
+	/**
+	 * Override for TransportType cost threshold using the config key name stored in the enum.
+	 */
+	public static int override(TransportType type, int defaultValue)
+	{
+		String key = type.getCostKey();
+		return key != null ? override(key, defaultValue) : defaultValue;
+	}
+
+	public static int override(String configOverrideKey, int defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof Integer)
+			{
+				return (int) value;
+			}
+		}
+		return defaultValue;
+	}
+
+	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof String)
+			{
+				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
+				if (teleportationItem != null)
+				{
+					return teleportationItem;
+				}
+			}
+		}
+		return defaultValue;
+	}
+
+	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
+	{
+		if (!configOverride.isEmpty())
+		{
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof String)
+			{
+				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
+				if (tier != null)
+				{
+					return tier;
+				}
+			}
+		}
+		return defaultValue;
+	}
 
 	@Provides
 	public ShortestPathConfig provideConfig(ConfigManager configManager)
@@ -662,8 +736,8 @@ public class ShortestPathPlugin extends Plugin
 
 		if (minimap != null && pathfinder != null
 			&& minimap.contains(
-				client.getMouseCanvasPosition().getX(),
-				client.getMouseCanvasPosition().getY()))
+			client.getMouseCanvasPosition().getX(),
+			client.getMouseCanvasPosition().getY()))
 		{
 			addMenuEntry(event, CLEAR, PATH, 0);
 		}
@@ -728,9 +802,6 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
-
 	private void parseSpiritTreeWidget(boolean useNewMenu)
 	{
 		// Referencing
@@ -741,7 +812,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			container = client.getWidget(InterfaceID.MENU_NEW, 9);
 		}
-else
+		else
 		{
 			container = client.getWidget(InterfaceID.MENU, 3);
 		}
@@ -917,29 +988,30 @@ else
 		return pathfinderConfig.getTransports();
 	}
 
-	/** This reconstructs the candidate transports for a rendered path edge from the current path state.
-	* <p>
-	*  The important detail is that path display logic is edge-based, not node-based:
-	*  - origin position comes from currentStep
-	*  - destination position comes from nextStep
-	*  - the applicable transport set may depend on whether the edge transitions into banked state
-	* <p>
-	*  That last point is the awkward one. Banking is not represented as its own explicit path edge;
-	*  instead the "becomes banked" state change is conflated into the movement/transport edge that
-	*  reaches the banked destination step. As a result, callers cannot safely resolve transports from
-	*  a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
-	*  nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
-	*  transports for the edge between them.
-	* <p>
-	*  This is still only a fallback for display code and remains inherently ambiguous when multiple
-	*  valid transports share the same origin/destination pair under the same edge state. The more
-	*  structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
-	*  carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
-	*  adjacent path steps.
-	* <p>
-	*  Note that this function also performs filtering by the transport target, so callers of this
-	*  function can directly iterate over the returned transports.
-	*/
+	/**
+	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
+	 * <p>
+	 * The important detail is that path display logic is edge-based, not node-based:
+	 * - origin position comes from currentStep
+	 * - destination position comes from nextStep
+	 * - the applicable transport set may depend on whether the edge transitions into banked state
+	 * <p>
+	 * That last point is the awkward one. Banking is not represented as its own explicit path edge;
+	 * instead the "becomes banked" state change is conflated into the movement/transport edge that
+	 * reaches the banked destination step. As a result, callers cannot safely resolve transports from
+	 * a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
+	 * nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
+	 * transports for the edge between them.
+	 * <p>
+	 * This is still only a fallback for display code and remains inherently ambiguous when multiple
+	 * valid transports share the same origin/destination pair under the same edge state. The more
+	 * structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
+	 * carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
+	 * adjacent path steps.
+	 * <p>
+	 * Note that this function also performs filtering by the transport target, so callers of this
+	 * function can directly iterate over the returned transports.
+	 */
 	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
 	{
 		if (currentStep == null || nextStep == null)
@@ -969,7 +1041,7 @@ else
 		}
 		int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
 		stepTransports.removeIf(t ->
-			{
+		{
 			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null)
 			{
 				return false; // keep local transports
@@ -998,22 +1070,12 @@ else
 	}
 
 	/**
-	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
-	 * @param x The world X coordinate
-	 * @param y The world Y coordinate
-	 * @return true if inside POH, false otherwise
-	 */
-	public static boolean isInsidePoh(int x, int y)
-	{
-		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
-	}
-
-	/**
 	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
 	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
 	 * that information is included instead.
-	 * @param destination The destination point to check
-	 * @param path The full path
+	 *
+	 * @param destination  The destination point to check
+	 * @param path         The full path
 	 * @param currentIndex The current index in the path
 	 * @return The display info of the POH exit transport, or null if not applicable
 	 */
@@ -1121,37 +1183,6 @@ else
 		return immediateExitInfo;
 	}
 
-	public static boolean override(String configOverrideKey, boolean defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Boolean)
-			{
-				return (boolean) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	/**
-	 * Override for TransportType enabled state using the config key name stored in the enum.
-	 */
-	public static boolean override(TransportType type, boolean defaultValue)
-	{
-		String key = type.getEnabledKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	/**
-	 * Override for TransportType cost threshold using the config key name stored in the enum.
-	 */
-	public static int override(TransportType type, int defaultValue)
-	{
-		String key = type.getCostKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
 	private Color override(String configOverrideKey, Color defaultValue)
 	{
 		if (!configOverride.isEmpty())
@@ -1160,53 +1191,6 @@ else
 			if (value instanceof Color)
 			{
 				return (Color) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	public static int override(String configOverrideKey, int defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Integer)
-			{
-				return (int) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
-				if (teleportationItem != null)
-				{
-					return teleportationItem;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-				if (tier != null)
-				{
-					return tier;
-				}
 			}
 		}
 		return defaultValue;

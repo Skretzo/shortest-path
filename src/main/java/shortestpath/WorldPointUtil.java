@@ -1,15 +1,14 @@
 package shortestpath;
 
 import net.runelite.api.Client;
+import static net.runelite.api.Constants.CHUNK_SIZE;
+import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
 import net.runelite.api.Player;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
-
-import static net.runelite.api.Constants.CHUNK_SIZE;
-import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
 
 /**
  * Utility functions for packing, unpacking, and transforming {@link WorldPoint}
@@ -229,7 +228,7 @@ public class WorldPointUtil
 	 * @return distance.
 	 */
 	public static int distanceBetween2D(int previousX, int previousY,
-										int currentX, int currentY, int diagonal)
+		int currentX, int currentY, int diagonal)
 	{
 		final int dx = previousX - currentX;
 		final int dy = previousY - currentY;

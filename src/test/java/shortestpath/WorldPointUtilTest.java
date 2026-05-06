@@ -1,25 +1,29 @@
 package shortestpath;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.runelite.api.Client;
+import static net.runelite.api.Constants.CHUNK_SIZE;
+import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static net.runelite.api.Constants.CHUNK_SIZE;
-import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
-import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link WorldPointUtil}.
  */
 public class WorldPointUtilTest
 {
+
+	private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
 
 	@Test
 	public void packAndUnpackRoundTrip()
@@ -191,6 +195,8 @@ public class WorldPointUtilTest
 		assertEquals(0, WorldPointUtil.unpackWorldPlane(packed));
 	}
 
+	// --- Tests merged from WorldPointTests.java ---
+
 	@SuppressWarnings("ConstantValue")
 	@Test
 	public void toLocalInstanceSimpleInstanceMatch()
@@ -234,10 +240,6 @@ public class WorldPointUtilTest
 		assertTrue(mx >= chunkIndexX * CHUNK_SIZE && mx < (chunkIndexX + 1) * CHUNK_SIZE + CHUNK_SIZE); // loose bound
 		assertTrue(my >= chunkIndexY * CHUNK_SIZE && my < (chunkIndexY + 1) * CHUNK_SIZE + CHUNK_SIZE);
 	}
-
-	// --- Tests merged from WorldPointTests.java ---
-
-	private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
 
 	@Test
 	public void testDistanceToArea()

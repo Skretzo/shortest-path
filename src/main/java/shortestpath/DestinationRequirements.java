@@ -14,7 +14,9 @@ import shortestpath.transport.parser.VarRequirement;
  */
 public final class DestinationRequirements
 {
-	/** All-zero skill array; no skill requirements. */
+	/**
+	 * All-zero skill array; no skill requirements.
+	 */
 	public static final DestinationRequirements EMPTY = new DestinationRequirements();
 
 	@Getter
@@ -35,35 +37,15 @@ public final class DestinationRequirements
 	}
 
 	public DestinationRequirements(
-			int[] skillLevels,
-			Set<Quest> quests,
-			Set<VarRequirement> varbits,
-			Set<VarRequirement> varPlayers)
+		int[] skillLevels,
+		Set<Quest> quests,
+		Set<VarRequirement> varbits,
+		Set<VarRequirement> varPlayers)
 	{
 		this.skillLevels = skillLevels != null ? skillLevels : new int[Skill.values().length + 3];
 		this.quests = quests != null ? quests : Collections.emptySet();
 		this.varbits = varbits != null ? varbits : Collections.emptySet();
 		this.varPlayers = varPlayers != null ? varPlayers : Collections.emptySet();
-	}
-
-	public boolean isEmpty()
-	{
-		if (!quests.isEmpty())
-		{
-			return false;
-		}
-		if (!varbits.isEmpty() || !varPlayers.isEmpty())
-		{
-			return false;
-		}
-		for (int level : skillLevels)
-		{
-			if (level > 0)
-			{
-				return false;
-			}
-		}
-		return true;
 	}
 
 	/**
@@ -91,5 +73,25 @@ public final class DestinationRequirements
 		Set<VarRequirement> vp = new HashSet<>(a.varPlayers);
 		vp.addAll(b.varPlayers);
 		return new DestinationRequirements(skills, q, vb, vp);
+	}
+
+	public boolean isEmpty()
+	{
+		if (!quests.isEmpty())
+		{
+			return false;
+		}
+		if (!varbits.isEmpty() || !varPlayers.isEmpty())
+		{
+			return false;
+		}
+		for (int level : skillLevels)
+		{
+			if (level > 0)
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 }

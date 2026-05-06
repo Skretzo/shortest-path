@@ -3,9 +3,8 @@ package shortestpath.pathfinder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import net.runelite.api.GameState;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.QuestState;
@@ -14,58 +13,47 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
-
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import static org.mockito.ArgumentMatchers.any;
-
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
-
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
+import shortestpath.ShortestPathConfig;
+import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
-import shortestpath.ShortestPathConfig;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.requirement.TransportItems;
-import shortestpath.ShortestPathPlugin;
 
 @SuppressWarnings("SameParameterValue")
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderTest
 {
 	private static final Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
-
-	private PathfinderConfig pathfinderConfig;
-
 	@Mock
 	Client client;
-
 	@Mock
 	ItemContainer inventory;
-
 	@Mock
 	ItemContainer equipment;
-
 	@Mock
 	ItemContainer bank;
-
 	@Mock
 	ShortestPathConfig config;
+	private PathfinderConfig pathfinderConfig;
 
 	@Before
 	public void before()
@@ -310,7 +298,10 @@ public class PathfinderTest
 					break;
 				}
 			}
-			if (hasFairyRing) break;
+			if (hasFairyRing)
+			{
+				break;
+			}
 		}
 		assertTrue("Fairy ring transports should be in map (filtered per-path)", hasFairyRing);
 
@@ -486,7 +477,10 @@ public class PathfinderTest
 					break;
 				}
 			}
-			if (hasFairyRing) break;
+			if (hasFairyRing)
+			{
+				break;
+			}
 		}
 		assertTrue("Fairy rings should be in transport map (filtered per-path)", hasFairyRing);
 
@@ -1534,7 +1528,7 @@ public class PathfinderTest
 		QuestState questState,
 		int skillLevel,
 		TeleportationItem useTeleportationItems)
-		{
+	{
 		setupConfig(questState, skillLevel, useTeleportationItems);
 
 		int counter = 0;
@@ -1567,9 +1561,12 @@ public class PathfinderTest
 		// Count expected transports from the full transport list
 		int expectedCount = 0;
 		Transport sampleTransport = null;
-		for (int origin : transports.keySet()) {
-			for (Transport transport : transports.get(origin)) {
-				if (transportType.equals(transport.getType())) {
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (transportType.equals(transport.getType()))
+				{
 					expectedCount++;
 					if (sampleTransport == null)
 					{
@@ -1740,8 +1737,10 @@ public class PathfinderTest
 		return false;
 	}
 
-	/** Counts the number of Lovakengj Minecart Network transports in the active transport set.
-	 * These are identified by having varbit 7796 among their requirements. */
+	/**
+	 * Counts the number of Lovakengj Minecart Network transports in the active transport set.
+	 * These are identified by having varbit 7796 among their requirements.
+	 */
 	private int countLovakenjMinecarts()
 	{
 		int count = 0;
@@ -1776,7 +1775,9 @@ public class PathfinderTest
 		pathfinderConfig.refresh();
 	}
 
-	/** Returns true if the given transport type was used anywhere along the path. */
+	/**
+	 * Returns true if the given transport type was used anywhere along the path.
+	 */
 	private boolean usedTransportType(Pathfinder pathfinder, TransportType type)
 	{
 		for (int i = 1; i < pathfinder.getPath().size(); i++)
@@ -1818,7 +1819,7 @@ public class PathfinderTest
 
 	private boolean usedTransportWithDisplayInfo(Pathfinder pathfinder, TransportType type, String displayInfoSubstring,
 		boolean stopAtFirstBank, boolean startAfterFirstBank)
-		{
+	{
 		for (int i = 1; i < pathfinder.getPath().size(); i++)
 		{
 			PathStep originStep = pathfinder.getPath().get(i - 1);
@@ -1896,7 +1897,9 @@ public class PathfinderTest
 	// PathfinderConfig.computeCombatLevel
 	// -----------------------------------------------------------------------
 
-	/** Level 3: all combat stats at minimum. */
+	/**
+	 * Level 3: all combat stats at minimum.
+	 */
 	@Test
 	public void combatLevelMinStats()
 	{
@@ -1904,7 +1907,9 @@ public class PathfinderTest
 		assertEquals(3, PathfinderConfig.computeCombatLevel(1, 1, 1, 10, 1, 1, 1));
 	}
 
-	/** Level 126: max melee account. */
+	/**
+	 * Level 126
+	 */
 	@Test
 	public void combatLevelMaxMelee()
 	{
@@ -1912,7 +1917,9 @@ public class PathfinderTest
 		assertEquals(126, PathfinderConfig.computeCombatLevel(99, 99, 99, 99, 1, 1, 99));
 	}
 
-	/** Magic as the dominant combat style (99 magic, minimal else). */
+	/**
+	 * Magic as the dominant combat style (99 magic, minimal else).
+	 */
 	@Test
 	public void combatLevelMageDominant()
 	{
@@ -1920,14 +1927,18 @@ public class PathfinderTest
 		assertEquals(50, PathfinderConfig.computeCombatLevel(1, 1, 1, 10, 99, 1, 1));
 	}
 
-	/** Ranged as the dominant combat style (99 ranged, minimal else) — mirrors mage formula. */
+	/**
+	 * Ranged as the dominant combat style (99 ranged, minimal else) — mirrors mage formula.
+	 */
 	@Test
 	public void combatLevelRangeDominant()
 	{
 		assertEquals(50, PathfinderConfig.computeCombatLevel(1, 1, 1, 10, 1, 99, 1));
 	}
 
-	/** Typical mid-level account: 70 attack/strength/defence/hp, 43 prayer → level 85. */
+	/**
+	 * Typical mid-level account: 70 attack/strength/defence/hp, 43 prayer → level 85.
+	 */
 	@Test
 	public void combatLevelTypicalMeleeAccount()
 	{
@@ -1935,7 +1946,9 @@ public class PathfinderTest
 		assertEquals(85, PathfinderConfig.computeCombatLevel(70, 70, 70, 70, 1, 1, 43));
 	}
 
-	/** Higher prayer must not lower the combat level. */
+	/**
+	 * Higher prayer must not lower the combat level.
+	 */
 	@Test
 	public void combatLevelHigherPrayerRaisesLevel()
 	{

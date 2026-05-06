@@ -44,22 +44,7 @@ public class PrimitiveIntHashMap<V>
 	// How full the map should get before growing it again. Smaller values speed up
 	// lookup times at the expense of space
 	private static final float DEFAULT_LOAD_FACTOR = 0.75f;
-
-	/**
-	 * Entry node storing a primitive key and associated value.
-	 */
-	private static class IntNode<V>
-	{
-		private final int key;
-		private V value;
-
-		private IntNode(int key, V value)
-		{
-			this.key = key;
-			this.value = value;
-		}
-	}
-
+	private final float loadFactor;
 	// If buckets become too large then it may be worth converting large buckets
 	// into an array-backed binary tree
 	private IntNode<V>[][] buckets;
@@ -67,7 +52,6 @@ public class PrimitiveIntHashMap<V>
 	private int capacity;
 	private int maxSize;
 	private int mask;
-	private final float loadFactor;
 
 	/**
 	 * Creates a new map with the specified initial size and the default load factor
@@ -106,6 +90,16 @@ public class PrimitiveIntHashMap<V>
 	}
 
 	/**
+	 * Hash function tuned for packed world point integer encodings. Mixes higher
+	 * bits downward to
+	 * reduce clustering while remaining inexpensive.
+	 */
+	private static int hash(int value)
+	{
+		return value ^ (value >>> 5) ^ (value >>> 25);
+	}
+
+	/**
 	 * Returns the number of key/value pairs currently stored.
 	 *
 	 * @return current entry count (always {@code >= 0}).
@@ -129,7 +123,7 @@ public class PrimitiveIntHashMap<V>
 	/**
 	 * Retrieves the value mapped to the provided key.
 	 *
-	 * @param key primitive key to look up.
+	 * @param key          primitive key to look up.
 	 * @param defaultValue value to return if the key is not present.
 	 * @return the mapped value, or {@code defaultValue} when absent.
 	 */
@@ -220,16 +214,6 @@ public class PrimitiveIntHashMap<V>
 		growBucket(bucketIndex)[bucket.length] = new IntNode<>(key, value);
 		incrementSize();
 		return null;
-	}
-
-	/**
-	 * Hash function tuned for packed world point integer encodings. Mixes higher
-	 * bits downward to
-	 * reduce clustering while remaining inexpensive.
-	 */
-	private static int hash(int value)
-	{
-		return value ^ (value >>> 5) ^ (value >>> 25);
 	}
 
 	private int getBucket(int key)
@@ -393,7 +377,9 @@ public class PrimitiveIntHashMap<V>
 		for (IntNode<V>[] bucket : buckets)
 		{
 			if (bucket == null)
+			{
 				continue;
+			}
 			size += bucket.length;
 			for (int j = 0; j < bucket.length; ++j)
 			{
@@ -415,5 +401,20 @@ public class PrimitiveIntHashMap<V>
 	{
 		size = 0;
 		Arrays.fill(buckets, null);
+	}
+
+	/**
+	 * Entry node storing a primitive key and associated value.
+	 */
+	private static class IntNode<V>
+	{
+		private final int key;
+		private V value;
+
+		private IntNode(int key, V value)
+		{
+			this.key = key;
+			this.value = value;
+		}
 	}
 }

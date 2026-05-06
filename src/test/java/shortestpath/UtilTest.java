@@ -50,7 +50,7 @@ public class UtilTest
 	public void readAllBytesPropagatesIOException() throws IOException
 	{
 		// InputStream that throws after first read
-		InputStream failing = new FilterInputStream(new ByteArrayInputStream(new byte[] {1, 2, 3}))
+		InputStream failing = new FilterInputStream(new ByteArrayInputStream(new byte[]{1, 2, 3}))
 		{
 			private boolean first = true;
 
@@ -74,14 +74,14 @@ public class UtilTest
 	@Test
 	public void concatenateAllNullOrEmptyReturnsNull()
 	{
-		Assert.assertNull(Util.concatenate(new int[][] {null, new int[0], null}));
+		Assert.assertNull(Util.concatenate(new int[][]{null, new int[0], null}));
 	}
 
 	@Test
 	public void concatenateSingleArrayIdentity()
 	{
 		int[] a = {1, 2, 3};
-		Assert.assertArrayEquals(a, Util.concatenate(new int[][] {a}));
+		Assert.assertArrayEquals(a, Util.concatenate(new int[][]{a}));
 	}
 
 	@Test
@@ -89,8 +89,8 @@ public class UtilTest
 	{
 		int[] a = {1, 2};
 		int[] c = {3};
-		int[] result = Util.concatenate(new int[][] {a, null, c});
-		Assert.assertArrayEquals(new int[] {1, 2, 3}, result);
+		int[] result = Util.concatenate(new int[][]{a, null, c});
+		Assert.assertArrayEquals(new int[]{1, 2, 3}, result);
 	}
 
 	@Test
@@ -99,8 +99,8 @@ public class UtilTest
 		int[] a = {1};
 		int[] b = {2, 3};
 		int[] c = {4, 5, 6};
-		int[] result = Util.concatenate(new int[][] {a, b, c});
-		Assert.assertArrayEquals(new int[] {1, 2, 3, 4, 5, 6}, result);
+		int[] result = Util.concatenate(new int[][]{a, b, c});
+		Assert.assertArrayEquals(new int[]{1, 2, 3, 4, 5, 6}, result);
 	}
 
 	@Test
@@ -121,7 +121,9 @@ public class UtilTest
 			{
 				arrays[i] = new int[len];
 				for (int j = 0; j < len; j++)
+				{
 					arrays[i][j] = i * 100 + j;
+				}
 				total += len;
 			}
 		}
@@ -136,7 +138,9 @@ public class UtilTest
 			for (int[] arr : arrays)
 			{
 				if (arr == null)
+				{
 					continue;
+				}
 				for (int v : arr)
 				{
 					Assert.assertNotNull(combined);

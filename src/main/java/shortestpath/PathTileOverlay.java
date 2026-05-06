@@ -30,9 +30,9 @@ import shortestpath.transport.Transport;
 
 public class PathTileOverlay extends Overlay
 {
+	private static final int TRANSPORT_LABEL_GAP = 3;
 	private final Client client;
 	private final ShortestPathPlugin plugin;
-	private static final int TRANSPORT_LABEL_GAP = 3;
 	private int playerTileLabelOffset = 0;
 
 	@Inject
@@ -117,7 +117,7 @@ public class PathTileOverlay extends Overlay
 			for (Tile tile : row)
 			{
 				if (tile == null)
-					{
+				{
 					continue;
 				}
 
@@ -497,12 +497,12 @@ public class PathTileOverlay extends Overlay
 		if (bankLocations != null && plugin.getPathfinderConfig().bank != null)
 		{
 			List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
-					client,
-					plugin.getPathfinderConfig().bank,
-					plugin.getPathfinderConfig(),
-					bankLocations,
-					path,
-					pathIndex
+				client,
+				plugin.getPathfinderConfig().bank,
+				plugin.getPathfinderConfig(),
+				bankLocations,
+				path,
+				pathIndex
 			);
 			if (!bankPickupItems.isEmpty())
 			{

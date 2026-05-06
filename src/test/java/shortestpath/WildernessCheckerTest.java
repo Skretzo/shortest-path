@@ -1,14 +1,13 @@
 package shortestpath;
 
+import java.util.HashSet;
+import java.util.Set;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.pathfinder.WildernessChecker;
-
-import static org.junit.Assert.*;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WildernessCheckerTest

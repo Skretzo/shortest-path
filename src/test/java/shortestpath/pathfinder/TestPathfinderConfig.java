@@ -27,7 +27,7 @@ public class TestPathfinderConfig extends PathfinderConfig
 	}
 
 	public TestPathfinderConfig(Client client, ShortestPathConfig config, QuestState questState,
-								boolean bypassVarbitChecks, boolean bypassVarPlayerChecks)
+		boolean bypassVarbitChecks, boolean bypassVarPlayerChecks)
 	{
 		super(client, config);
 		this.questState = questState;

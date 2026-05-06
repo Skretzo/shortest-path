@@ -15,12 +15,6 @@ public enum JewelleryBoxTier
 
 	private final String type;
 
-	@Override
-	public String toString()
-	{
-		return type;
-	}
-
 	public static JewelleryBoxTier fromType(String type)
 	{
 		for (JewelleryBoxTier tier : values())
@@ -31,5 +25,11 @@ public enum JewelleryBoxTier
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public String toString()
+	{
+		return type;
 	}
 }

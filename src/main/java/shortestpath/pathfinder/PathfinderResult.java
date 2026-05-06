@@ -1,8 +1,7 @@
 package shortestpath.pathfinder;
 
-import lombok.Getter;
-
 import java.util.List;
+import lombok.Getter;
 
 @Getter
 public class PathfinderResult

@@ -1,12 +1,9 @@
 package shortestpath.pathfinder;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Map;
 import java.util.Set;
-
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;

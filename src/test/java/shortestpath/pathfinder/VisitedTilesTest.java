@@ -8,6 +8,11 @@ import shortestpath.WorldPointUtil;
 
 public class VisitedTilesTest
 {
+	private static CollisionMap collisionMap()
+	{
+		return new CollisionMap(SplitFlagMap.fromResources());
+	}
+
 	@Test
 	public void settingBankedTileAlsoMarksUnbankedTileVisited()
 	{
@@ -50,10 +55,5 @@ public class VisitedTilesTest
 		assertTrue(visited.set(unbanked));
 		assertTrue(visited.get(unbanked));
 		assertFalse(visited.get(banked));
-	}
-
-	private static CollisionMap collisionMap()
-	{
-		return new CollisionMap(SplitFlagMap.fromResources());
 	}
 }

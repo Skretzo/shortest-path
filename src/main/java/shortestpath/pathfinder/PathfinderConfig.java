@@ -45,26 +45,26 @@ import shortestpath.transport.requirement.TransportItems;
 public class PathfinderConfig
 {
 	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
-			ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
-			ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
+		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
+		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
 	);
 	public static final int[] RUNE_POUCH_RUNE_VARBITS =
-	{
-		VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
-		VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
-	};
+		{
+			VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
+			VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
+		};
 	public static final int[] RUNE_POUCH_AMOUNT_VARBITS =
-	{
+		{
 			VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
 			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
-	};
+		};
 	public static final Set<Integer> CURRENCIES = Set.of(
-			ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
+		ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
 	private static final TransportItems DRAMEN_STAFF = new TransportItems(
-			new int[][]{null},
-			new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
-			new int[][]{null},
-			new int[]{1});
+		new int[][]{null},
+		new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
+		new int[][]{null},
+		new int[]{1});
 
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
@@ -74,18 +74,31 @@ public class PathfinderConfig
 	private final Map<Integer, Set<Transport>> allTransports;
 	private final Map<String, Set<Integer>> allDestinations;
 	private final Map<String, Set<Integer>> filteredDestinations;
-	/** Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers. */
+	/**
+	 * Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers.
+	 */
 	private final Map<Integer, DestinationRequirements> bankRequirements;
-	/** Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}. */
-	private Set<Integer> accessibleBankTiles = Set.of();
 	private final Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
 	private final List<Integer> filteredTargets = new ArrayList<>(4);
-
-	/*
+	private final Client client;
+	private final ShortestPathConfig config;
+	// Centralized transport type enable/disable config
+	private final TransportTypeConfig transportTypeConfig;
+	private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
+	private final Map<Quest, QuestState> questStates = new HashMap<>();
+	private final Map<Integer, Integer> varbitValues = new HashMap<>();
+	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
+	public ItemContainer bank = null;
+	public Set<String> availableSpiritTrees = null;
+	/**
+	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
+	 */
+	private Set<Integer> accessibleBankTiles = Set.of();
+	/**
 	 * Which transports are available for the current user configuration in the
 	 * unbanked/banked state.
-	 *  - transportAvailabilityWithoutBank answers the question, which transport can a player take right now?
-	 *  - transportAvailabilityWithBank answers the question, which transports can a player take if they visit a bank?
+	 * - transportAvailabilityWithoutBank answers the question, which transport can a player take right now?
+	 * - transportAvailabilityWithBank answers the question, which transports can a player take if they visit a bank?
 	 */
 	private TransportAvailability transportAvailabilityWithoutBank;
 	private TransportAvailability transportAvailabilityWithBank;
@@ -93,18 +106,10 @@ public class PathfinderConfig
 	 * Reference that points to either allDestinations or filteredDestinations
 	 */
 	private Map<String, Set<Integer>> destinations;
-
-	private final Client client;
-	private final ShortestPathConfig config;
-
 	@Getter
 	private long calculationCutoffMillis;
 	@Getter
 	private boolean avoidWilderness;
-
-	// Centralized transport type enable/disable config
-	private final TransportTypeConfig transportTypeConfig;
-
 	// POH-specific settings (not tied to a single TransportType)
 	private boolean usePohFairyRing,
 		usePohSpiritTree,
@@ -115,13 +120,6 @@ public class PathfinderConfig
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
-	private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
-	private final Map<Quest, QuestState> questStates = new HashMap<>();
-	private final Map<Integer, Integer> varbitValues = new HashMap<>();
-	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
-
-	public ItemContainer bank = null;
-	public Set<String> availableSpiritTrees = null;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -138,6 +136,44 @@ public class PathfinderConfig
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
 		this.bankRequirements = Destination.loadBankRequirementsFromResources();
+	}
+
+	/**
+	 * Pure combat-level formula, extracted for testability.
+	 */
+	static int computeCombatLevel(int attack, int strength, int defence, int hitpoints, int magic, int ranged, int prayer)
+	{
+		// Integer division is intentional here — it matches the OSRS floor(x/2) steps in the formula.
+		double base = 0.25 * (defence + hitpoints + Math.floorDiv(prayer, 2));
+		double melee = (13 * (attack + strength)) / 40.0;
+		double range = (13 * (3 * Math.floorDiv(ranged, 2))) / 40.0;
+		double mage = (13 * (3 * Math.floorDiv(magic, 2))) / 40.0;
+		return (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
+	}
+
+	static String getPlantedSpiritTreeName(int x, int y)
+	{
+		if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260)
+		{
+			return "Port Sarim";
+		}
+		if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860)
+		{
+			return "Etceteria";
+		}
+		if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205)
+		{
+			return "Brimhaven";
+		}
+		if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544)
+		{
+			return "Hosidius";
+		}
+		if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752)
+		{
+			return "Farming Guild";
+		}
+		return null;
 	}
 
 	public CollisionMap getMap()
@@ -667,8 +703,8 @@ public class PathfinderConfig
 	private boolean checkTeleportationItemRules(Transport transport, TransportType type)
 	{
 		if (!TransportType.TELEPORTATION_ITEM.equals(type)
-				&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
-				&& !TransportType.QUETZAL_WHISTLE.equals(type))
+			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
+			&& !TransportType.QUETZAL_WHISTLE.equals(type))
 		{
 			return true; // Not a teleportation item type
 		}
@@ -779,8 +815,8 @@ public class PathfinderConfig
 		boolean checkRunePouch)
 	{
 		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
-				TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
-				TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
+			TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
+			TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
 		{
 			switch (transportTypeConfig.getTeleportationItemSetting())
 			{
@@ -863,8 +899,8 @@ public class PathfinderConfig
 		{
 			TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
 			if (bank != null
-					&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-					|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting)))
+				&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting)))
 			{
 				for (Item item : bank.getItems())
 				{
@@ -963,29 +999,6 @@ public class PathfinderConfig
 		int ranged = client.getRealSkillLevel(Skill.RANGED);
 		int prayer = client.getRealSkillLevel(Skill.PRAYER);
 		return computeCombatLevel(attack, strength, defence, hitpoints, magic, ranged, prayer);
-	}
-
-	/**
-	 * Pure combat-level formula, extracted for testability.
-	 */
-	static int computeCombatLevel(int attack, int strength, int defence, int hitpoints, int magic, int ranged, int prayer)
-	{
-		// Integer division is intentional here — it matches the OSRS floor(x/2) steps in the formula.
-		double base = 0.25 * (defence + hitpoints + Math.floorDiv(prayer, 2));
-		double melee = (13 * (attack + strength)) / 40.0;
-		double range = (13 * (3 * Math.floorDiv(ranged, 2))) / 40.0;
-		double mage = (13 * (3 * Math.floorDiv(magic, 2))) / 40.0;
-		return (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
-	}
-
-	static String getPlantedSpiritTreeName(int x, int y)
-	{
-		if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260) return "Port Sarim";
-		if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860) return "Etceteria";
-		if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205) return "Brimhaven";
-		if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544) return "Hosidius";
-		if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752) return "Farming Guild";
-		return null;
 	}
 
 	private boolean isPlantedSpiritTreeAllowed(int x, int y)

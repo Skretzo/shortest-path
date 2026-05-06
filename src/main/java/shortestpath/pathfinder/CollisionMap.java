@@ -13,15 +13,26 @@ public class CollisionMap
 	private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 
 	private final SplitFlagMap collisionData;
-
-	public byte getRegionPlaneCounts(int regionIndex)
-	{
-		return collisionData.getRegionPlaneCounts(regionIndex);
-	}
+	// This is only safe if pathfinding is single-threaded
+	private final List<Node> neighbors = new ArrayList<>(16);
+	private final boolean[] traversable = new boolean[8];
 
 	public CollisionMap(SplitFlagMap collisionData)
 	{
 		this.collisionData = collisionData;
+	}
+
+	private static int packedPointFromOrdinal(int startPacked, OrdinalDirection direction)
+	{
+		final int x = WorldPointUtil.unpackWorldX(startPacked);
+		final int y = WorldPointUtil.unpackWorldY(startPacked);
+		final int plane = WorldPointUtil.unpackWorldPlane(startPacked);
+		return WorldPointUtil.packWorldPoint(x + direction.x, y + direction.y, plane);
+	}
+
+	public byte getRegionPlaneCounts(int regionIndex)
+	{
+		return collisionData.getRegionPlaneCounts(regionIndex);
 	}
 
 	private boolean get(int x, int y, int z, int flag)
@@ -73,18 +84,6 @@ public class CollisionMap
 	{
 		return !n(x, y, z) && !s(x, y, z) && !e(x, y, z) && !w(x, y, z);
 	}
-
-	private static int packedPointFromOrdinal(int startPacked, OrdinalDirection direction)
-	{
-		final int x = WorldPointUtil.unpackWorldX(startPacked);
-		final int y = WorldPointUtil.unpackWorldY(startPacked);
-		final int plane = WorldPointUtil.unpackWorldPlane(startPacked);
-		return WorldPointUtil.packWorldPoint(x + direction.x, y + direction.y, plane);
-	}
-
-	// This is only safe if pathfinding is single-threaded
-	private final List<Node> neighbors = new ArrayList<>(16);
-	private final boolean[] traversable = new boolean[8];
 
 	public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness)
 	{
@@ -195,7 +194,9 @@ public class CollisionMap
 			OrdinalDirection d = ORDINAL_VALUES[i];
 			int neighborPacked = packedPointFromOrdinal(node.packedPosition, d);
 			if (visited.get(neighborPacked, pathBankVisited))
+			{
 				continue;
+			}
 
 			if (traversable[i])
 			{

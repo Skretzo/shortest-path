@@ -8,23 +8,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-
 import org.junit.Assert;
-import static org.junit.Assert.assertFalse;
-import org.junit.Test;
-
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.Test;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportLoader;
 
 public class PrimitiveIntHashMapTests
 {
+	// Copy of the map's private hash to synthesize collisions in tests
+	private static int testHash(int value)
+	{
+		return value ^ (value >>> 5) ^ (value >>> 25);
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void checkNullValueProhibited()
 	{
@@ -157,12 +160,6 @@ public class PrimitiveIntHashMapTests
 		}
 	}
 
-	// Copy of the map's private hash to synthesize collisions in tests
-	private static int testHash(int value)
-	{
-		return value ^ (value >>> 5) ^ (value >>> 25);
-	}
-
 	@Test
 	public void sizeAndBasicPutGet()
 	{
@@ -281,7 +278,9 @@ public class PrimitiveIntHashMapTests
 		{
 			int bucket = (testHash(k) & 0x7FFFFFFF) & mask;
 			if (bucket == targetBucket)
+			{
 				collidingKeys.add(k);
+			}
 		}
 		assertEquals(6, collidingKeys.size());
 
@@ -306,7 +305,9 @@ public class PrimitiveIntHashMapTests
 		assertTrue("empty map fullness should be NaN", Double.isNaN(f0));
 
 		for (int i = 0; i < 100; i++)
+		{
 			map.put(i, i);
+		}
 		double f1 = map.calculateFullness();
 		assertTrue("fullness in [0,100]", f1 >= 0.0 && f1 <= 100.0);
 	}
@@ -377,7 +378,9 @@ public class PrimitiveIntHashMapTests
 		{
 			assertNotNull(map.get(k));
 			if (++checked > 2000)
+			{
 				break;
+			}
 		}
 	}
 

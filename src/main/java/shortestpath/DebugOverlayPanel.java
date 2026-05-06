@@ -1,5 +1,12 @@
 package shortestpath;
 
+import com.google.inject.Inject;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -9,14 +16,6 @@ import net.runelite.client.ui.overlay.components.LayoutableRenderableEntity;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 import shortestpath.pathfinder.Pathfinder;
-
-import com.google.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.util.List;
 
 public class DebugOverlayPanel extends OverlayPanel
 {
@@ -89,12 +88,11 @@ public class DebugOverlayPanel extends OverlayPanel
 	@Setter
 	private static class SeparatorLine implements LayoutableRenderableEntity
 	{
+		@Getter
+		private final Rectangle bounds = new Rectangle();
 		private Color color = Color.GRAY;
 		private Point preferredLocation = new Point();
 		private Dimension preferredSize = new Dimension(ComponentConstants.STANDARD_WIDTH, 4);
-
-		@Getter
-		private final Rectangle bounds = new Rectangle();
 
 		@Override
 		public Dimension render(Graphics2D graphics)

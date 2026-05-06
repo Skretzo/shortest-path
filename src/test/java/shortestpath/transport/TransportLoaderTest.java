@@ -1,17 +1,16 @@
 package shortestpath.transport;
 
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.Before;
-import net.runelite.api.Quest;
-import net.runelite.api.Skill;
-import shortestpath.WorldPointUtil;
-import shortestpath.transport.parser.VarRequirement;
-import shortestpath.transport.requirement.TransportItems;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import net.runelite.api.Quest;
+import net.runelite.api.Skill;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import shortestpath.WorldPointUtil;
+import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
 /**
  * Comprehensive unit tests for {@link Transport}
@@ -189,9 +188,13 @@ public class TransportLoaderTest
 		{
 			Assert.assertEquals("Type should be fairy ring", TransportType.FAIRY_RING, t.getType());
 			if (t.getDestination() == destinationA)
+			{
 				origin1ToDestinationA = true;
+			}
 			if (t.getDestination() == destinationB)
+			{
 				origin1ToDestinationB = true;
+			}
 		}
 		Assert.assertTrue("Origin1 should go to 3300,3300,0", origin1ToDestinationA);
 		Assert.assertTrue("Origin1 should go to 3400,3400,0", origin1ToDestinationB);
@@ -200,9 +203,13 @@ public class TransportLoaderTest
 		{
 			Assert.assertEquals("Type should be fairy ring", TransportType.FAIRY_RING, t.getType());
 			if (t.getDestination() == destinationA)
+			{
 				origin2ToDestinationA = true;
+			}
 			if (t.getDestination() == destinationB)
+			{
 				origin2ToDestinationB = true;
+			}
 		}
 		Assert.assertTrue("Origin2 should go to 3300,3300,0", origin2ToDestinationA);
 		Assert.assertTrue("Origin2 should go to 3400,3400,0", origin2ToDestinationB);
@@ -426,9 +433,13 @@ public class TransportLoaderTest
 		for (int itemId : itemGroup)
 		{
 			if (itemId == 995)
+			{
 				hasCoins = true;
+			}
 			if (itemId == 561)
+			{
 				hasNatureRunes = true;
+			}
 		}
 		Assert.assertTrue("Should contain coins", hasCoins);
 		Assert.assertTrue("Should contain nature runes", hasNatureRunes);
@@ -645,9 +656,13 @@ public class TransportLoaderTest
 		for (VarRequirement varPlayer : varPlayers)
 		{
 			if (varPlayer.getId() == 555)
+			{
 				hasVarPlayer555 = true;
+			}
 			if (varPlayer.getId() == 666)
+			{
 				hasVarPlayer666 = true;
+			}
 		}
 		Assert.assertTrue("Should have varplayer 555", hasVarPlayer555);
 		Assert.assertTrue("Should have varplayer 666", hasVarPlayer666);
@@ -920,11 +935,17 @@ public class TransportLoaderTest
 		for (Transport t : transports1)
 		{
 			if (t.getDestination() == closeDestination)
+			{
 				o1hasClose = true;
+			}
 			if (t.getDestination() == midDestination)
+			{
 				o1hasMid = true;
+			}
 			if (t.getDestination() == farDestination)
+			{
 				o1hasFar = true;
+			}
 		}
 		Assert.assertFalse("Origin1 should not include very close destination", o1hasClose);
 		Assert.assertFalse("Origin1 should not include mid destination at equal threshold", o1hasMid);
@@ -934,11 +955,17 @@ public class TransportLoaderTest
 		for (Transport t : transports2)
 		{
 			if (t.getDestination() == closeDestination)
+			{
 				o2hasClose = true;
+			}
 			if (t.getDestination() == midDestination)
+			{
 				o2hasMid = true;
+			}
 			if (t.getDestination() == farDestination)
+			{
 				o2hasFar = true;
+			}
 		}
 		Assert.assertTrue("Origin2 should include close destination (not close to origin2)", o2hasClose);
 		Assert.assertTrue("Origin2 should include mid destination", o2hasMid);
@@ -974,16 +1001,24 @@ public class TransportLoaderTest
 		for (Transport t : transports1)
 		{
 			if (t.getDestination() == nearDest)
+			{
 				o1near = true;
+			}
 			if (t.getDestination() == farDest)
+			{
 				o1far = true;
+			}
 		}
 		for (Transport t : transports2)
 		{
 			if (t.getDestination() == nearDest)
+			{
 				o2near = true;
+			}
 			if (t.getDestination() == farDest)
+			{
 				o2far = true;
+			}
 		}
 		Assert.assertTrue("Origin1 should include near destination", o1near);
 		Assert.assertTrue("Origin1 should include far destination", o1far);

@@ -14,25 +14,21 @@ public class Pathfinder implements Runnable
 {
 	private final PathfinderStats stats;
 	@Getter
-	private volatile boolean done = false;
-	private volatile boolean cancelled = false;
-
-	@Getter
 	private final int start;
 	@Getter
 	private final Set<Integer> targets;
-
 	private final PathfinderConfig config;
 	private final CollisionMap map;
 	private final boolean targetInWilderness;
 	private final Runnable completionCallback;
-
 	// Capacities should be enough to store all nodes without requiring the queue to grow
 	// They were found by checking the max queue size
 	private final Deque<Node> boundary = new ArrayDeque<>(4096);
 	private final Queue<TransportNode> pending = new PriorityQueue<>(256);
 	private final VisitedTiles visited;
-
+	@Getter
+	private volatile boolean done = false;
+	private volatile boolean cancelled = false;
 	private List<PathStep> pathSteps = List.of();
 	private boolean pathNeedsUpdate = false;
 	private Node bestLastNode;

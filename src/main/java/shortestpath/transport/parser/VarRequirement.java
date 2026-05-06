@@ -95,17 +95,6 @@ public class VarRequirement
 	}
 
 	@Override
-	public boolean equals(Object o)
-	{
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
-		VarRequirement that = (VarRequirement) o;
-		return id == that.id && value == that.value && varType == that.varType && checkType == that.checkType;
-	}
-
-	@Override
 	public int hashCode()
 	{
 		int result = varType.hashCode();
@@ -113,6 +102,21 @@ public class VarRequirement
 		result = 31 * result + value;
 		result = 31 * result + checkType.hashCode();
 		return result;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+		VarRequirement that = (VarRequirement) o;
+		return id == that.id && value == that.value && varType == that.varType && checkType == that.checkType;
 	}
 
 	@Override

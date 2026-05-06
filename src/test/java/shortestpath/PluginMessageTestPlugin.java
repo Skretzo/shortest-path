@@ -57,6 +57,15 @@ public class PluginMessageTestPlugin extends Plugin
 	@Inject
 	private EventBus eventBus;
 
+	private static int packWorldPoint(WorldPoint wp)
+	{
+		if (wp == null)
+		{
+			return -1;
+		}
+		return (wp.getX() & 0x7FFF) | ((wp.getY() & 0x7FFF) << 15) | ((wp.getPlane() & 0x3) << 30);
+	}
+
 	@Subscribe
 	public void onMenuOpened(MenuOpened event)
 	{
@@ -277,14 +286,5 @@ public class PluginMessageTestPlugin extends Plugin
 			return yGraphDiff;
 		}
 		return Integer.MIN_VALUE;
-	}
-
-	private static int packWorldPoint(WorldPoint wp)
-	{
-		if (wp == null)
-		{
-			return -1;
-		}
-		return (wp.getX() & 0x7FFF) | ((wp.getY() & 0x7FFF) << 15) | ((wp.getPlane() & 0x3) << 30);
 	}
 }

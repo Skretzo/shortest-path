@@ -100,7 +100,7 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 			else
 			{
 				// Try parsing as raw item ID
-				itemIdsList.add(new int[] {Integer.parseInt(itemName)});
+				itemIdsList.add(new int[]{Integer.parseInt(itemName)});
 				stavesList.add(new int[0]);
 				offhandsList.add(new int[0]);
 			}

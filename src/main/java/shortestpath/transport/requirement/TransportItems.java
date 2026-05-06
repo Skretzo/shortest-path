@@ -39,6 +39,26 @@ public class TransportItems
 	}
 
 	/**
+	 * Merges two TransportItems, combining all requirements from both.
+	 * If either is null, returns the other.
+	 */
+	public static TransportItems merge(TransportItems first, TransportItems second)
+	{
+		if (first == null)
+		{
+			return second;
+		}
+		if (second == null)
+		{
+			return first;
+		}
+		List<ItemRequirement> merged = new ArrayList<>();
+		merged.addAll(first.requirements);
+		merged.addAll(second.requirements);
+		return new TransportItems(merged);
+	}
+
+	/**
 	 * Gets the number of item requirements.
 	 */
 	public int size()
@@ -87,16 +107,6 @@ public class TransportItems
 		return quantities;
 	}
 
-	@Override
-	public String toString()
-	{
-		return "[" +
-			toString(getItems()) + ", " +
-			toString(getStaves()) + ", " +
-			toString(getOffhands()) + ", " +
-			Arrays.toString(getQuantities()) + "]";
-	}
-
 	private String toString(int[][] array)
 	{
 		StringBuilder text = new StringBuilder();
@@ -107,32 +117,28 @@ public class TransportItems
 		return "[" + text + "]";
 	}
 
-	/**
-	 * Merges two TransportItems, combining all requirements from both.
-	 * If either is null, returns the other.
-	 */
-	public static TransportItems merge(TransportItems first, TransportItems second)
+	@Override
+	public int hashCode()
 	{
-		if (first == null)
-			return second;
-		if (second == null)
-			return first;
-		List<ItemRequirement> merged = new ArrayList<>();
-		merged.addAll(first.requirements);
-		merged.addAll(second.requirements);
-		return new TransportItems(merged);
+		return requirements.hashCode();
 	}
 
 	@Override
 	public boolean equals(Object o)
 	{
 		if (this == o)
+		{
 			return true;
+		}
 		if (o == null || getClass() != o.getClass())
+		{
 			return false;
+		}
 		TransportItems that = (TransportItems) o;
 		if (requirements.size() != that.requirements.size())
+		{
 			return false;
+		}
 		for (int i = 0; i < requirements.size(); i++)
 		{
 			if (!requirements.get(i).equals(that.requirements.get(i)))
@@ -144,8 +150,12 @@ public class TransportItems
 	}
 
 	@Override
-	public int hashCode()
+	public String toString()
 	{
-		return requirements.hashCode();
+		return "[" +
+			toString(getItems()) + ", " +
+			toString(getStaves()) + ", " +
+			toString(getOffhands()) + ", " +
+			Arrays.toString(getQuantities()) + "]";
 	}
 }

@@ -41,20 +41,6 @@ public class ItemRequirement
 	}
 
 	@Override
-	public boolean equals(Object o)
-	{
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
-		ItemRequirement that = (ItemRequirement) o;
-		return quantity == that.quantity &&
-			Arrays.equals(itemIds, that.itemIds) &&
-			Arrays.equals(staffIds, that.staffIds) &&
-			Arrays.equals(offhandIds, that.offhandIds);
-	}
-
-	@Override
 	public int hashCode()
 	{
 		int result = Arrays.hashCode(itemIds);
@@ -62,5 +48,23 @@ public class ItemRequirement
 		result = 31 * result + Arrays.hashCode(offhandIds);
 		result = 31 * result + quantity;
 		return result;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+		ItemRequirement that = (ItemRequirement) o;
+		return quantity == that.quantity &&
+			Arrays.equals(itemIds, that.itemIds) &&
+			Arrays.equals(staffIds, that.staffIds) &&
+			Arrays.equals(offhandIds, that.offhandIds);
 	}
 }

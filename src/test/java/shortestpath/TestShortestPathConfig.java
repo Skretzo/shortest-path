@@ -10,12 +10,6 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.calculationCutoff = calculationCutoff;
 	}
 
-	@Override
-	public int calculationCutoff()
-	{
-		return calculationCutoff;
-	}
-
 	public void setUseTeleportationItemsValue(TeleportationItem useTeleportationItems)
 	{
 		this.useTeleportationItems = useTeleportationItems;
@@ -28,15 +22,21 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean useTeleportationMinigames()
+	{
+		return true;
+	}
+
+	@Override
 	public boolean includeBankPath()
 	{
 		return false;
 	}
 
 	@Override
-	public boolean useTeleportationMinigames()
+	public int calculationCutoff()
 	{
-		return true;
+		return calculationCutoff;
 	}
 
 }

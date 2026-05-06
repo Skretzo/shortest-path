@@ -1,7 +1,9 @@
 package shortestpath.transport;
 
-import static org.junit.Assert.*;
-
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import shortestpath.transport.requirement.TransportItems;
 
@@ -11,10 +13,10 @@ public class TransportItemsTest
 	@Test
 	public void gettersAndToStringWork()
 	{
-		int[][] items = new int[][] {new int[] {1, 2}, new int[] {3}};
-		int[][] staves = new int[][] {new int[] {10}, new int[] {20, 30}};
-		int[][] offhands = new int[][] {new int[] {100}, new int[] {200}};
-		int[] quantities = new int[] {5, 10};
+		int[][] items = new int[][]{new int[]{1, 2}, new int[]{3}};
+		int[][] staves = new int[][]{new int[]{10}, new int[]{20, 30}};
+		int[][] offhands = new int[][]{new int[]{100}, new int[]{200}};
+		int[] quantities = new int[]{5, 10};
 
 		TransportItems ti = new TransportItems(items, staves, offhands, quantities);
 
@@ -35,15 +37,15 @@ public class TransportItemsTest
 	@Test
 	public void equalsAndHashCodeByContents()
 	{
-		int[][] items1 = new int[][] {new int[] {1, 2}, new int[] {3}};
-		int[][] staves1 = new int[][] {new int[] {10}, new int[] {20, 30}};
-		int[][] offhands1 = new int[][] {new int[] {100}, new int[] {200}};
-		int[] quantities1 = new int[] {5, 10};
+		int[][] items1 = new int[][]{new int[]{1, 2}, new int[]{3}};
+		int[][] staves1 = new int[][]{new int[]{10}, new int[]{20, 30}};
+		int[][] offhands1 = new int[][]{new int[]{100}, new int[]{200}};
+		int[] quantities1 = new int[]{5, 10};
 
-		int[][] items2 = new int[][] {new int[] {1, 2}, new int[] {3}};
-		int[][] staves2 = new int[][] {new int[] {10}, new int[] {20, 30}};
-		int[][] offhands2 = new int[][] {new int[] {100}, new int[] {200}};
-		int[] quantities2 = new int[] {5, 10};
+		int[][] items2 = new int[][]{new int[]{1, 2}, new int[]{3}};
+		int[][] staves2 = new int[][]{new int[]{10}, new int[]{20, 30}};
+		int[][] offhands2 = new int[][]{new int[]{100}, new int[]{200}};
+		int[] quantities2 = new int[]{5, 10};
 
 		TransportItems a = new TransportItems(items1, staves1, offhands1, quantities1);
 		TransportItems b = new TransportItems(items2, staves2, offhands2, quantities2);
@@ -54,7 +56,7 @@ public class TransportItemsTest
 		assertEquals(a.hashCode(), b.hashCode());
 
 		// Changing any content should make them not equal
-		int[] quantitiesDifferent = new int[] {5, 11};
+		int[] quantitiesDifferent = new int[]{5, 11};
 		TransportItems d = new TransportItems(items2, staves2, offhands2, quantitiesDifferent);
 		assertNotEquals(a, d);
 	}

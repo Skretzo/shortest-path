@@ -144,29 +144,53 @@ public class Transport
 
 		// Origin/Destination use hasKey because empty string means LOCATION_PERMUTATION
 		if (record.hasKey(TransportRecord.Fields.ORIGIN))
+		{
 			builder.origin(record.getOrigin());
+		}
 		if (record.hasKey(TransportRecord.Fields.DESTINATION))
+		{
 			builder.destination(record.getDestination());
+		}
 		if (record.has(TransportRecord.Fields.SKILLS))
+		{
 			builder.skillLevels(record.getSkills());
+		}
 		if (record.has(TransportRecord.Fields.ITEMS))
+		{
 			builder.itemRequirements(record.getItems());
+		}
 		if (record.has(TransportRecord.Fields.QUESTS))
+		{
 			builder.quests(record.getQuests());
+		}
 		if (record.has(TransportRecord.Fields.DURATION))
+		{
 			builder.duration(record.getDuration());
+		}
 		if (record.has(TransportRecord.Fields.DISPLAY_INFO))
+		{
 			builder.displayInfo(record.getDisplayInfo());
+		}
 		if (record.has(TransportRecord.Fields.CONSUMABLE))
+		{
 			builder.isConsumable(record.getConsumable());
+		}
 		if (record.has(TransportRecord.Fields.WILDERNESS_LEVEL))
+		{
 			builder.maxWildernessLevel(record.getWildernessLevel());
+		}
 		if (record.has(TransportRecord.Fields.OBJECT_INFO))
+		{
 			builder.objectInfo(record.getObjectInfo());
+		}
 		if (record.has(TransportRecord.Fields.VARBITS))
+		{
 			builder.varbits(record.getVarbits());
+		}
 		if (record.has(TransportRecord.Fields.VAR_PLAYERS))
+		{
 			builder.varPlayers(record.getVarPlayers());
+		}
 
 		Transport builtTransport = builder.build();
 

@@ -1,7 +1,7 @@
 package shortestpath;
 
-import net.runelite.api.gameval.ItemID;
 import lombok.Getter;
+import net.runelite.api.gameval.ItemID;
 
 public enum ItemVariations
 {

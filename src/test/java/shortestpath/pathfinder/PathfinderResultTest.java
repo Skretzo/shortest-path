@@ -1,23 +1,42 @@
 package shortestpath.pathfinder;
 
 import java.util.Set;
-
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import shortestpath.TeleportationItem;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class PathfinderResultTest
 {
+	private static PathfinderConfig configWithCutoff(int cutoffTicks)
+	{
+		Client client = mock(Client.class);
+		TestShortestPathConfig config = new TestShortestPathConfig();
+		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+		when(client.getTotalLevel()).thenReturn(2277);
+		config.setCalculationCutoffValue(cutoffTicks);
+		config.setUseTeleportationItemsValue(TeleportationItem.ALL);
+
+		PathfinderConfig pathfinderConfig = new TestPathfinderConfig(client, config);
+		pathfinderConfig.refresh();
+		return pathfinderConfig;
+	}
+
+	private static int point(int x, int y)
+	{
+		return WorldPointUtil.packWorldPoint(x, y, 0);
+	}
+
 	@Test
 	public void reachedTargetProducesReachedResult()
 	{
@@ -39,26 +58,5 @@ public class PathfinderResultTest
 		PathfinderResult result = pathfinder.getResult();
 
 		assertEquals(PathTerminationReason.CUTOFF_REACHED, result.getTerminationReason());
-	}
-
-	private static PathfinderConfig configWithCutoff(int cutoffTicks)
-	{
-		Client client = mock(Client.class);
-		TestShortestPathConfig config = new TestShortestPathConfig();
-		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
-		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-		when(client.getTotalLevel()).thenReturn(2277);
-		config.setCalculationCutoffValue(cutoffTicks);
-		config.setUseTeleportationItemsValue(TeleportationItem.ALL);
-
-		PathfinderConfig pathfinderConfig = new TestPathfinderConfig(client, config);
-		pathfinderConfig.refresh();
-		return pathfinderConfig;
-	}
-
-	private static int point(int x, int y)
-	{
-		return WorldPointUtil.packWorldPoint(x, y, 0);
 	}
 }

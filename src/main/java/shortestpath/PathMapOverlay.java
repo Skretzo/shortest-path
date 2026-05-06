@@ -167,7 +167,7 @@ public class PathMapOverlay extends Overlay
 
 		if (WorldPointUtil.distanceBetween(point, offsetPoint) > 1)
 		{
-			graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {9}, 0));
+			graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0));
 			graphics.drawLine(startX, startY, endX, endY);
 		}
 		else
