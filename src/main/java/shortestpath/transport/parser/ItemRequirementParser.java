@@ -2,6 +2,7 @@ package shortestpath.transport.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ItemVariations;
@@ -71,7 +72,7 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 	 */
 	private ItemRequirement parseRequirement(String part)
 	{
-		String[] orParts = part.split("\\" + DELIM_OR);
+		String[] orParts = part.split(Pattern.quote(DELIM_OR));
 
 		List<int[]> itemIdsList = new ArrayList<>();
 		List<int[]> stavesList = new ArrayList<>();
