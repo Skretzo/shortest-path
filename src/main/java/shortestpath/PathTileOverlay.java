@@ -398,7 +398,7 @@ public class PathTileOverlay extends Overlay
 			return 0;
 		}
 
-		Point playerPoint = Perspective.localToCanvas(client, client.getLocalPlayer().getLocalLocation(), client.getPlane());
+		Point playerPoint = Perspective.localToCanvas(client, client.getLocalPlayer().getLocalLocation(), client.getTopLevelWorldView().getPlane());
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 

@@ -36,8 +36,8 @@ import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.ScriptID;
-import net.runelite.api.SpriteID;
-import net.runelite.api.Varbits;
+import net.runelite.api.gameval.SpriteID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -47,9 +47,8 @@ import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
-import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
@@ -628,7 +627,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 		}
 
-		final Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
 
 		if (map != null)
 		{
@@ -1310,11 +1309,11 @@ else
 
 	private int getSelectedWorldPoint()
 	{
-		if (client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null)
+		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
 		{
-			if (client.getSelectedSceneTile() != null)
+			if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
 			{
-				return WorldPointUtil.fromLocalInstance(client, client.getSelectedSceneTile().getLocalLocation());
+				return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
 			}
 		}
 		else
@@ -1426,7 +1425,7 @@ else
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
-		Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
 		if (map != null)
 		{
 			Rectangle worldMapRect = map.getBounds();
@@ -1476,14 +1475,14 @@ else
 
 	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
 	{
-		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenuEntries()));
+		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
 
 		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
 		{
 			return;
 		}
 
-		client.createMenuEntry(position)
+		client.getMenu().createMenuEntry(position)
 			.setOption(option)
 			.setTarget(target)
 			.setParam0(event.getActionParam0())
@@ -1497,13 +1496,13 @@ else
 	{
 		if (client.isResized())
 		{
-			if (client.getVarbitValue(Varbits.SIDE_PANELS) == 1)
+			if (client.getVarbitValue(VarbitID.RESIZABLE_STONE_ARRANGEMENT) == 1)
 			{
-				return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_BOTTOM_LINE_MINIMAP_DRAW_AREA);
+				return client.getWidget(InterfaceID.ToplevelPreEoc.MINIMAP);
 			}
-			return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_MINIMAP_DRAW_AREA);
+			return client.getWidget(InterfaceID.ToplevelOsrsStretch.MINIMAP);
 		}
-		return client.getWidget(ComponentID.FIXED_VIEWPORT_MINIMAP_DRAW_AREA);
+		return client.getWidget(InterfaceID.Toplevel.MINIMAP);
 	}
 
 	private Shape getMinimapClipAreaSimple()
@@ -1545,7 +1544,7 @@ else
 			}
 			if (minimapSpriteResizeable == null)
 			{
-				minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZEABLE_MODE_MINIMAP_ALPHA_MASK, 0);
+				minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZE_MAP_MASK, 0);
 			}
 			if (minimapSpriteResizeable != null)
 			{
@@ -1560,7 +1559,7 @@ else
 		}
 		if (minimapSpriteFixed == null)
 		{
-			minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MODE_MINIMAP_ALPHA_MASK, 0);
+			minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MAP_MASK, 0);
 		}
 		if (minimapSpriteFixed != null)
 		{

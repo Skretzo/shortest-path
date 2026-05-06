@@ -15,7 +15,7 @@ import net.runelite.api.MenuEntry;
 import net.runelite.api.Point;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.MenuOpened;
-import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.eventbus.EventBus;
@@ -72,41 +72,41 @@ public class PluginMessageTestPlugin extends Plugin
 		{
 			if (MenuAction.WALK.equals(menuEntry.getType()))
 			{
-				addMenuEntry(event, SET, TARGET_INT, 1);
-				addMenuEntry(event, SET, TARGET_WP, 1);
-				addMenuEntry(event, SET, CONFIG_COLOUR_PATH, 1);
+				addMenuEntry(SET, TARGET_INT, 1);
+				addMenuEntry(SET, TARGET_WP, 1);
+				addMenuEntry(SET, CONFIG_COLOUR_PATH, 1);
 				if (!targets.isEmpty())
 				{
-					addMenuEntry(event, SET, START_INT, 1);
-					addMenuEntry(event, SET, START_WP, 1);
+					addMenuEntry(SET, START_INT, 1);
+					addMenuEntry(SET, START_WP, 1);
 				}
-				addMenuEntry(event, CLEAR, PATH, 1);
+				addMenuEntry(CLEAR, PATH, 1);
 				break;
 			}
 		}
 
-		final Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
 
 		if (map != null
 			&& map.getBounds().contains(
 			client.getMouseCanvasPosition().getX(),
 			client.getMouseCanvasPosition().getY()))
 		{
-			addMenuEntry(event, SET, TARGET_INT, 0);
-			addMenuEntry(event, SET, TARGET_WP, 0);
-			addMenuEntry(event, SET, CONFIG_COLOUR_PATH, 0);
+			addMenuEntry(SET, TARGET_INT, 0);
+			addMenuEntry(SET, TARGET_WP, 0);
+			addMenuEntry(SET, CONFIG_COLOUR_PATH, 0);
 			if (!targets.isEmpty())
 			{
-				addMenuEntry(event, SET, START_INT, 0);
-				addMenuEntry(event, SET, START_WP, 0);
-				addMenuEntry(event, CLEAR, PATH, 0);
+				addMenuEntry(SET, START_INT, 0);
+				addMenuEntry(SET, START_WP, 0);
+				addMenuEntry(CLEAR, PATH, 0);
 			}
 		}
 	}
 
-	private void addMenuEntry(MenuOpened event, String option, String target, int position)
+	private void addMenuEntry(String option, String target, int position)
 	{
-		client.createMenuEntry(position)
+		client.getMenu().createMenuEntry(position)
 			.setOption(option)
 			.setTarget(target)
 			.setType(MenuAction.RUNELITE)
@@ -189,11 +189,11 @@ public class PluginMessageTestPlugin extends Plugin
 
 	private WorldPoint getSelectedWorldPoint()
 	{
-		if (client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null)
+		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
 		{
-			if (client.getSelectedSceneTile() != null)
+			if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
 			{
-				return WorldPoint.fromLocalInstance(client, client.getSelectedSceneTile().getLocalLocation());
+				return WorldPoint.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
 			}
 		}
 		else
@@ -232,7 +232,7 @@ public class PluginMessageTestPlugin extends Plugin
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
-		Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
 		if (map != null)
 		{
 			Rectangle worldMapRect = map.getBounds();
@@ -258,7 +258,7 @@ public class PluginMessageTestPlugin extends Plugin
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
-		Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
 		if (map != null)
 		{
 			Rectangle worldMapRect = map.getBounds();
