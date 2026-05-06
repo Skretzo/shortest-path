@@ -114,6 +114,7 @@ public class PrimitiveIntHashMap<V>
 	 *
 	 * @return array of all keys in unspecified order; length equals {@link #size()}.
 	 */
+	@SuppressWarnings("unused")
 	public int[] keys()
 	{
 		int[] keys = new int[size];

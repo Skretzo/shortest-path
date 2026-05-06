@@ -1177,6 +1177,7 @@ public interface ShortestPathConfig extends Config
 		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
 		hidden = true
 	)
+	@SuppressWarnings("unused")
 	default String builtTeleportationBoxes()
 	{
 		return "";
@@ -1188,6 +1189,7 @@ public interface ShortestPathConfig extends Config
 		description = "",
 		hidden = true
 	)
+	@SuppressWarnings("unused")
 	void setBuiltTeleportationBoxes(String content);
 
 	@ConfigItem(
@@ -1196,6 +1198,7 @@ public interface ShortestPathConfig extends Config
 		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
 		hidden = true
 	)
+	@SuppressWarnings("unused")
 	default String builtTeleportationPortalsPoh()
 	{
 		return "";
@@ -1207,6 +1210,7 @@ public interface ShortestPathConfig extends Config
 		description = "",
 		hidden = true
 	)
+	@SuppressWarnings("unused")
 	void setBuiltTeleportationPortalsPoh(String content);
 
 }

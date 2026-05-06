@@ -6,16 +6,19 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	private boolean includeBankPath = false;
 
+	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
 	{
 		this.calculationCutoff = calculationCutoff;
 	}
 
+	@SuppressWarnings("unused")
 	public void setUseTeleportationItemsValue(TeleportationItem useTeleportationItems)
 	{
 		this.useTeleportationItems = useTeleportationItems;
 	}
 
+	@SuppressWarnings("unused")
 	public void setIncludeBankPathValue(boolean includeBankPath)
 	{
 		this.includeBankPath = includeBankPath;
