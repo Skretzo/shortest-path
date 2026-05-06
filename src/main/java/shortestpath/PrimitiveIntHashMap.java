@@ -110,6 +110,33 @@ public class PrimitiveIntHashMap<V>
 	}
 
 	/**
+	 * Returns all keys present in the map as a freshly allocated {@code int[]}.
+	 *
+	 * @return array of all keys in unspecified order; length equals {@link #size()}.
+	 */
+	public int[] keys()
+	{
+		int[] keys = new int[size];
+		int index = 0;
+		for (IntNode<V>[] bucket : buckets)
+		{
+			if (bucket == null)
+			{
+				continue;
+			}
+			for (IntNode<V> node : bucket)
+			{
+				if (node == null)
+				{
+					break;
+				}
+				keys[index++] = node.key;
+			}
+		}
+		return keys;
+	}
+
+	/**
 	 * Retrieves the value mapped to the provided key, or {@code null} if absent.
 	 *
 	 * @param key primitive key to look up.
