@@ -6,11 +6,6 @@ public class TransportNode extends Node implements Comparable<TransportNode>
 	/** Extra cost used only for priority queue ordering, not propagated to children */
 	final int differentialCost;
 
-	public TransportNode(int packedPosition, Node previous, int travelTime, int additionalCost, boolean bankVisited, boolean delayedVisit)
-	{
-		this(packedPosition, previous, travelTime, additionalCost, bankVisited, delayedVisit, 0);
-	}
-
 	public TransportNode(int packedPosition, Node previous, int travelTime, int additionalCost, boolean bankVisited, boolean delayedVisit, int differentialCost)
 	{
 		super(packedPosition, previous, cost(previous, travelTime + additionalCost), bankVisited);

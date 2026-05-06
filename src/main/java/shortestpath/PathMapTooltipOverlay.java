@@ -1,7 +1,6 @@
 package shortestpath;
 
 import com.google.inject.Inject;
-
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -69,7 +68,7 @@ public class PathMapTooltipOverlay extends Overlay
 			}
 			for (int target : plugin.getPathfinder().getTargets())
 			{
-				if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition())
+				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
 					drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1);
 				}
@@ -129,8 +128,11 @@ public class PathMapTooltipOverlay extends Overlay
 		graphics.setFont(FontManager.getRunescapeFont());
 		FontMetrics fm = graphics.getFontMetrics();
 		int tooltipHeight = fm.getHeight();
-		int tooltipWidth = rows.stream().map(fm::stringWidth).max(Integer::compareTo).get();
-
+		int tooltipWidth = 0;
+		if (rows.stream().map(fm::stringWidth).max(Integer::compare).isPresent())
+		{
+			tooltipWidth = rows.stream().map(fm::stringWidth).max(Integer::compareTo).get();
+		}
 		int clippedHeight = tooltipHeight * rows.size() + TOOLTIP_PADDING_HEIGHT * 2;
 		int clippedWidth = tooltipWidth + TOOLTIP_PADDING_WIDTH * 2;
 

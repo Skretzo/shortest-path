@@ -191,6 +191,7 @@ public class WorldPointUtilTest
 		assertEquals(0, WorldPointUtil.unpackWorldPlane(packed));
 	}
 
+	@SuppressWarnings("ConstantValue")
 	@Test
 	public void toLocalInstanceSimpleInstanceMatch()
 	{
@@ -211,8 +212,8 @@ public class WorldPointUtilTest
 		// Target world point inside template chunk at chunk indices (1,1)
 		int worldX = 100; // arbitrary
 		int worldY = 200;
-		int templateChunkX = (worldX & ~(CHUNK_SIZE - 1));
-		int templateChunkY = (worldY & ~(CHUNK_SIZE - 1));
+		int templateChunkX = (worldX & -CHUNK_SIZE);
+		int templateChunkY = (worldY & -CHUNK_SIZE);
 		int chunkIndexX = 1;
 		int chunkIndexY = 1;
 		int rotation = 0;
@@ -225,7 +226,7 @@ public class WorldPointUtilTest
 
 		int packed = WorldPointUtil.packWorldPoint(worldX, worldY, 0);
 		PrimitiveIntList list = WorldPointUtil.toLocalInstance(client, packed);
-		assertTrue("Expected at least one mapping", list.size() >= 1);
+		assertFalse("Expected at least one mapping", list.isEmpty());
 		// The produced local instance point should be within the instance chunk bounds
 		int mapped = list.get(0);
 		int mx = WorldPointUtil.unpackWorldX(mapped);
@@ -326,7 +327,7 @@ public class WorldPointUtilTest
 	@Test
 	public void testMaxWorldPoint()
 	{
-		assertEquals(WorldPointUtil.packWorldPoint(-1, -1, -1), -1);
-		assertEquals(WorldPointUtil.packWorldPoint(-1, -1, 1), Integer.MAX_VALUE);
+		assertEquals(-1, WorldPointUtil.packWorldPoint(-1, -1, -1));
+		assertEquals(Integer.MAX_VALUE, WorldPointUtil.packWorldPoint(-1, -1, 1));
 	}
 }

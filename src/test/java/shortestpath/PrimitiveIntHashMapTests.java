@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.Set;
 
 import org.junit.Assert;
+import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 
 import shortestpath.transport.Transport;
@@ -359,14 +360,13 @@ public class PrimitiveIntHashMapTests
 		{
 			int k = rnd.nextInt();
 			// avoid null values
-			int v = i;
-			Integer prev = map.put(k, v);
+			Integer prev = map.put(k, i);
 			if (!keys.add(k))
 			{
 				// replacement path: previous value must be non-null
 				assertNotNull(prev);
 			}
-			assertEquals(Integer.valueOf(v), map.get(k));
+			assertEquals(Integer.valueOf(i), map.get(k));
 		}
 
 		assertEquals(keys.size(), map.size());
@@ -526,8 +526,8 @@ public class PrimitiveIntHashMapTests
 		PrimitiveIntHashMap<List<Integer>> map = new PrimitiveIntHashMap<>(4, 0.75f);
 
 		// Add items until we're close to the rehash threshold
-		map.put(1, new ArrayList<>(Arrays.asList(1)));
-		map.put(2, new ArrayList<>(Arrays.asList(2)));
+		map.put(1, new ArrayList<>(List.of(1)));
+		map.put(2, new ArrayList<>(List.of(2)));
 
 		// This should trigger a rehash when the collection is appended
 		List<Integer> appendList = new ArrayList<>(Arrays.asList(100, 200));
@@ -535,7 +535,7 @@ public class PrimitiveIntHashMapTests
 
 		assertNotNull(prev);
 		assertEquals(Arrays.asList(1, 100, 200), map.get(1));
-		assertEquals(Arrays.asList(2), map.get(2));
+		assertEquals(List.of(2), map.get(2));
 		assertEquals(2, map.size());
 	}
 
@@ -562,13 +562,13 @@ public class PrimitiveIntHashMapTests
 		// Perform complex operations that cause growth and collection appending
 		for (int i = 0; i < 50; i++)
 		{
-			List<String> list = new ArrayList<>(Arrays.asList("item" + i));
+			List<String> list = new ArrayList<>(List.of("item" + i));
 			map.put(i % 10, list); // This will cause appending for repeated keys
 		}
 
 		assertTrue(map.size() > 0);
 		double fullness = map.calculateFullness();
-		assertTrue(!Double.isNaN(fullness));
+		assertFalse(Double.isNaN(fullness));
 
 		// Clear should reset everything
 		map.clear();
@@ -576,9 +576,9 @@ public class PrimitiveIntHashMapTests
 		assertTrue(Double.isNaN(map.calculateFullness()));
 
 		// Should be able to use normally after clear
-		map.put(1, new ArrayList<>(Arrays.asList("after clear")));
+		map.put(1, new ArrayList<>(List.of("after clear")));
 		assertEquals(1, map.size());
-		assertEquals(Arrays.asList("after clear"), map.get(1));
+		assertEquals(List.of("after clear"), map.get(1));
 	}
 
 	@Test

@@ -241,7 +241,7 @@ public class Pathfinder implements Runnable
 
 				// For delayed-visit nodes, check if the destination was already
 				// reached by a cheaper path while this node was queued.
-				if (node instanceof TransportNode && ((TransportNode) node).delayedVisit)
+				if (node != null && ((TransportNode) node).delayedVisit)
 				{
 					if (visited.get(node.packedPosition, node.bankVisited))
 					{
@@ -254,7 +254,10 @@ public class Pathfinder implements Runnable
 			{
 				node = boundary.removeFirst();
 			}
-
+			if (node == null)
+			{
+				continue;
+			}
 			if (node.isTile())
 			{
 				updateWildernessLevel(node);

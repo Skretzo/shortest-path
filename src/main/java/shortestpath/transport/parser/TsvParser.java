@@ -48,10 +48,7 @@ public class TsvParser
 			}
 
 			TransportRecord record = parseLine(line, headers);
-			if (record != null)
-			{
-				records.add(record);
-			}
+			records.add(record);
 		}
 
 		scanner.close();

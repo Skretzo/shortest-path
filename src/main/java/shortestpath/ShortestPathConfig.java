@@ -11,6 +11,7 @@ import net.runelite.client.config.Range;
 import net.runelite.client.config.Units;
 import net.runelite.client.config.Keybind;
 
+@SuppressWarnings("SameReturnValue")
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config
 {
@@ -370,7 +371,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 20000
 	)
 	@ConfigItem(
@@ -562,7 +562,6 @@ public interface ShortestPathConfig extends Config
 	String sectionThresholds = "sectionThresholds";
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -579,7 +578,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -596,7 +594,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -613,7 +610,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -630,7 +626,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -647,7 +642,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -664,7 +658,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -681,7 +674,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -698,7 +690,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -715,7 +706,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -732,7 +722,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -749,7 +738,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -766,7 +754,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -783,7 +770,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -800,7 +786,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -817,7 +802,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -834,7 +818,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -851,7 +834,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -868,7 +850,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -885,7 +866,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -902,7 +882,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -919,7 +898,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -936,7 +914,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -953,7 +930,6 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
-		min = 0,
 		max = 10000
 	)
 	@ConfigItem(
@@ -1127,7 +1103,7 @@ public interface ShortestPathConfig extends Config
 	default Keybind clearPathHotkey()
 	{
 		return Keybind.NOT_SET;
-	};
+	}
 
 	@ConfigSection(
 		name = "Debug Options",
@@ -1196,41 +1172,4 @@ public interface ShortestPathConfig extends Config
 		return "Destination could not be reached";
 	}
 
-	@ConfigItem(
-		keyName = "builtTeleportationBoxes",
-		name = "",
-		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
-		hidden = true
-	)
-	default String builtTeleportationBoxes()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-		keyName = "builtTeleportationBoxes",
-		name = "",
-		description = "",
-		hidden = true
-	)
-	void setBuiltTeleportationBoxes(String content);
-
-	@ConfigItem(
-		keyName = "builtTeleportationPortalsPoh",
-		name = "",
-		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
-		hidden = true
-	)
-	default String builtTeleportationPortalsPoh()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-		keyName = "builtTeleportationPortalsPoh",
-		name = "",
-		description = "",
-		hidden = true
-	)
-	void setBuiltTeleportationPortalsPoh(String content);
 }

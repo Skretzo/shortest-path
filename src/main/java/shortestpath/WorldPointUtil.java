@@ -300,8 +300,8 @@ public class WorldPointUtil
 
 	private static int rotate(int originalX, int originalY, int z, int rotation)
 	{
-		int chunkX = originalX & ~(CHUNK_SIZE - 1);
-		int chunkY = originalY & ~(CHUNK_SIZE - 1);
+		int chunkX = originalX & -CHUNK_SIZE;
+		int chunkY = originalY & -CHUNK_SIZE;
 		int x = originalX & (CHUNK_SIZE - 1);
 		int y = originalY & (CHUNK_SIZE - 1);
 		switch (rotation)
@@ -314,6 +314,26 @@ public class WorldPointUtil
 				return packWorldPoint(chunkX + (CHUNK_SIZE - 1 - y), chunkY + x, z);
 		}
 		return packWorldPoint(originalX, originalY, z);
+	}
+
+	private static int unpackChunkRotation(int chunkData)
+	{
+		return chunkData >> 1 & 0x3;
+	}
+
+	private static int unpackChunkTemplateY(int chunkData)
+	{
+		return (chunkData >> 3 & 0x7FF) * CHUNK_SIZE;
+	}
+
+	private static int unpackChunkTemplateX(int chunkData)
+	{
+		return (chunkData >> 14 & 0x3FF) * CHUNK_SIZE;
+	}
+
+	private static int unpackChunkTemplatePlane(int chunkData)
+	{
+		return chunkData >> 24 & 0x3;
 	}
 
 	public static int fromLocalInstance(Client client, Player localPlayer)
@@ -364,10 +384,10 @@ public class WorldPointUtil
 		// get the template chunk for the chunk
 		int templateChunk = instanceTemplateChunks[plane][chunkX][chunkY];
 
-		int rotation = templateChunk >> 1 & 0x3;
-		int templateChunkY = (templateChunk >> 3 & 0x7FF) * CHUNK_SIZE;
-		int templateChunkX = (templateChunk >> 14 & 0x3FF) * CHUNK_SIZE;
-		int templateChunkPlane = templateChunk >> 24 & 0x3;
+		int rotation = unpackChunkRotation(templateChunk);
+		int templateChunkY = unpackChunkTemplateY(templateChunk);
+		int templateChunkX = unpackChunkTemplateX(templateChunk);
+		int templateChunkPlane = unpackChunkTemplatePlane(templateChunk);
 
 		// calculate world point of the template
 		int x = templateChunkX + (sceneX & (CHUNK_SIZE - 1));
@@ -415,10 +435,10 @@ public class WorldPointUtil
 				for (int y = 0; y < instanceTemplateChunks[z][x].length; ++y)
 				{
 					int chunkData = instanceTemplateChunks[z][x][y];
-					int rotation = chunkData >> 1 & 0x3;
-					int templateChunkY = (chunkData >> 3 & 0x7FF) * CHUNK_SIZE;
-					int templateChunkX = (chunkData >> 14 & 0x3FF) * CHUNK_SIZE;
-					int plane = chunkData >> 24 & 0x3;
+					int rotation = unpackChunkRotation(chunkData);
+					int templateChunkY = unpackChunkTemplateY(chunkData);
+					int templateChunkX = unpackChunkTemplateX(chunkData);
+					int plane = unpackChunkTemplatePlane(chunkData);
 					if (worldPointX >= templateChunkX && worldPointX < templateChunkX + CHUNK_SIZE
 						&& worldPointY >= templateChunkY && worldPointY < templateChunkY + CHUNK_SIZE
 						&& plane == worldPointPlane)

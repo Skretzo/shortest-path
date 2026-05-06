@@ -41,6 +41,7 @@ import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
+@SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
 {
 	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
@@ -146,11 +147,11 @@ public class PathfinderConfig
 
 	/**
 	 * WARNING: This method collapses the banked/unbanked transport distinction into a single view.
-	 *
+	 * <p>
 	 * It exists only for legacy display-oriented callers such as overlays which want a coarse
 	 * "currently relevant" set of transports to render. It must not be used for path-state-sensitive
 	 * logic, because transport availability now depends on whether a path has visited a bank.
-	 *
+	 * <p>
 	 * Use {@link #getTransportAvailability(boolean)}, {@link #getTransportsPacked(boolean)}, or
 	 * {@link #getUsableTeleports(boolean)} for pathfinding and path analysis code.
 	 */
@@ -199,7 +200,7 @@ public class PathfinderConfig
 
 	public void refresh()
 	{
-		calculationCutoffMillis = config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
+		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
 
@@ -228,7 +229,7 @@ public class PathfinderConfig
 			}
 			boostedSkillLevelsAndMore[i++] = client.getTotalLevel(); // skill total level
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
-			boostedSkillLevelsAndMore[i++] = client.getVarpValue(VarPlayerID.QP); // quest points
+			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
 
 			refreshTransports();
 		}
@@ -252,7 +253,7 @@ public class PathfinderConfig
 		}
 		if (!GameState.LOGGED_IN.equals(client.getGameState()))
 		{
-			accessibleBankTiles = Collections.unmodifiableSet(new HashSet<>(bankLocs));
+			accessibleBankTiles = Set.copyOf(bankLocs);
 			return;
 		}
 		Set<Integer> acc = new HashSet<>(bankLocs.size());
@@ -372,21 +373,19 @@ public class PathfinderConfig
 		{
 			String destinationType = entry.getKey();
 			Set<Integer> usableDestinations = new HashSet<>(entry.getValue().size());
-			boolean isDifferent = false;
 			for (Integer destination : entry.getValue())
 			{
 				// We filter based on whether the destination is inside or outside wilderness
 				if (!WildernessChecker.isInWilderness(destination))
 				{
 					usableDestinations.add(destination);
-					isDifferent = true;
 				}
 			}
 			// If all destinations of a destination type have been filtered away then we don't add the entry
 			if (!usableDestinations.isEmpty())
 			{
 				// If no destinations of a destination type have been filtered away then we re-use the same set reference
-				filteredDestinations.put(destinationType, isDifferent ? usableDestinations : entry.getValue());
+				filteredDestinations.put(destinationType, usableDestinations);
 			}
 		}
 		return filteredDestinations;
@@ -517,10 +516,10 @@ public class PathfinderConfig
 		{
 			if (!varRequirement.check(varbitValues))
 			{
-				return false;
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	public boolean varPlayerChecks(Transport transport)
@@ -529,10 +528,10 @@ public class PathfinderConfig
 		{
 			if (!varRequirement.check(varPlayerValues))
 			{
-				return false;
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	private boolean useTransport(Transport transport)
@@ -590,22 +589,19 @@ public class PathfinderConfig
 			return false;
 		}
 
-		if (!varbitChecks(transport))
+		if (varbitChecks(transport))
 		{
 			return false;
 		}
 
-		if (!varPlayerChecks(transport))
+		if (varPlayerChecks(transport))
 		{
 			return false;
 		}
 
 		if (TransportType.SPIRIT_TREE.equals(type))
 		{
-			if (!checkPlantedSpiritTrees(transport))
-			{
-				return false;
-			}
+			return checkPlantedSpiritTrees(transport);
 		}
 
 		return true;
@@ -617,7 +613,7 @@ public class PathfinderConfig
 		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 
 		// Check planted spirit tree origins (travel FROM a planted tree)
-		if (!isPlantedSpiritTreeAllowed(originX, originY))
+		if (isPlantedSpiritTreeAllowed(originX, originY))
 		{
 			return false;
 		}
@@ -626,12 +622,7 @@ public class PathfinderConfig
 		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 
-		if (!isPlantedSpiritTreeAllowed(destX, destY))
-		{
-			return false;
-		}
-
-		return true;
+		return !isPlantedSpiritTreeAllowed(destX, destY);
 	}
 
 	/**
@@ -687,6 +678,9 @@ public class PathfinderConfig
 			case ALL:
 				return true;
 			case ALL_NON_CONSUMABLE:
+			case UNLOCKED_NON_CONSUMABLE:
+			case INVENTORY_NON_CONSUMABLE:
+			case INVENTORY_AND_BANK_NON_CONSUMABLE:
 				return !transport.isConsumable();
 			case UNLOCKED:
 			case INVENTORY:
@@ -694,10 +688,6 @@ public class PathfinderConfig
 				return true; // Will be checked later by hasRequiredItems
 			case NONE:
 				return false;
-			case UNLOCKED_NON_CONSUMABLE:
-			case INVENTORY_NON_CONSUMABLE:
-			case INVENTORY_AND_BANK_NON_CONSUMABLE:
-				return !transport.isConsumable();
 		}
 		return true;
 	}
@@ -778,11 +768,6 @@ public class PathfinderConfig
 		return true;
 	}
 
-	private boolean hasRequiredItems(Transport transport)
-	{
-		return hasRequiredItems(transport, true, true, true, true);
-	}
-
 	/**
 	 * Checks if the player has all the required equipment and inventory items for the transport
 	 */
@@ -826,11 +811,6 @@ public class PathfinderConfig
 
 		return hasRequiredItems(transport.getItemRequirements(),
 			checkInventory, checkEquipment, checkBank, checkRunePouch);
-	}
-
-	private boolean hasRequiredItems(TransportItems transportItems)
-	{
-		return hasRequiredItems(transportItems, true, true, true, true);
 	}
 
 	/**
@@ -898,7 +878,7 @@ public class PathfinderConfig
 
 		if (checkRunePouch)
 		{
-			if (RUNE_POUCHES.stream().anyMatch(runePouch -> itemsAndQuantities.containsKey(runePouch)))
+			if (RUNE_POUCHES.stream().anyMatch(itemsAndQuantities::containsKey))
 			{
 				EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
 				for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++)
@@ -982,12 +962,20 @@ public class PathfinderConfig
 		int magic = client.getRealSkillLevel(Skill.MAGIC);
 		int ranged = client.getRealSkillLevel(Skill.RANGED);
 		int prayer = client.getRealSkillLevel(Skill.PRAYER);
-		double base = 0.25 * (defence + hitpoints + (prayer) / 2);
+		return computeCombatLevel(attack, strength, defence, hitpoints, magic, ranged, prayer);
+	}
+
+	/**
+	 * Pure combat-level formula, extracted for testability.
+	 */
+	static int computeCombatLevel(int attack, int strength, int defence, int hitpoints, int magic, int ranged, int prayer)
+	{
+		// Integer division is intentional here — it matches the OSRS floor(x/2) steps in the formula.
+		double base = 0.25 * (defence + hitpoints + Math.floorDiv(prayer, 2));
 		double melee = (13 * (attack + strength)) / 40.0;
-		double range = (13 * ((3 * ranged) / 2)) / 40.0;
-		double mage = (13 * ((3 * magic) / 2)) / 40.0;
-		int combatLevel = (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
-		return combatLevel;
+		double range = (13 * (3 * Math.floorDiv(ranged, 2))) / 40.0;
+		double mage = (13 * (3 * Math.floorDiv(magic, 2))) / 40.0;
+		return (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
 	}
 
 	static String getPlantedSpiritTreeName(int x, int y)
@@ -1005,12 +993,12 @@ public class PathfinderConfig
 		String treeName = getPlantedSpiritTreeName(x, y);
 		if (treeName == null)
 		{
-			return true; // Not a planted tree, always allowed
+			return false; // 
 		}
 		if (availableSpiritTrees == null)
 		{
-			return false; // Cache not populated yet, default to disallowed
+			return true;
 		}
-		return availableSpiritTrees.contains(treeName);
+		return !availableSpiritTrees.contains(treeName);
 	}
 }

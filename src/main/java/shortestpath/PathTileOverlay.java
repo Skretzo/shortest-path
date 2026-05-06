@@ -9,7 +9,10 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.runelite.api.Client;
@@ -181,7 +184,7 @@ public class PathTileOverlay extends Overlay
 				pathColor.getBlue(),
 				pathColor.getAlpha() / 2);
 
-			java.util.List<PathStep> path = plugin.getPathfinder().getPath();
+			List<PathStep> path = plugin.getPathfinder().getPath();
 			int counter = 0;
 			if (TileStyle.LINES.equals(plugin.pathStyle))
 			{
@@ -212,7 +215,7 @@ public class PathTileOverlay extends Overlay
 				}
 				for (int target : plugin.getPathfinder().getTargets())
 				{
-					if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition())
+					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 					{
 						drawTile(graphics, target, colorCalculating, -1, showTiles);
 					}
@@ -379,6 +382,35 @@ public class PathTileOverlay extends Overlay
 			return 0;
 		}
 
+		double height = drawLabel(graphics, point, text, verticalOffset);
+
+		return (int) height + TRANSPORT_LABEL_GAP;
+	}
+
+	private int drawLabelAtPackedLocation(Graphics2D graphics, int location, String text, int verticalOffset)
+	{
+		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+		for (int i = 0; i < points.size(); i++)
+		{
+			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+			if (lp == null)
+			{
+				continue;
+			}
+
+			Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
+			if (p == null)
+			{
+				continue;
+			}
+
+			verticalOffset += drawLabelAtCanvasPoint(graphics, p, text, verticalOffset);
+		}
+		return verticalOffset;
+	}
+
+	private double drawLabel(Graphics2D graphics, Point point, String text, int verticalOffset)
+	{
 		Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
 		double height = textBounds.getHeight();
 		int x = (int) (point.getX() - textBounds.getWidth() / 2);
@@ -387,8 +419,7 @@ public class PathTileOverlay extends Overlay
 		graphics.drawString(text, x + 1, y + 1);
 		graphics.setColor(plugin.colourText);
 		graphics.drawString(text, x, y);
-
-		return (int) height + TRANSPORT_LABEL_GAP;
+		return height;
 	}
 
 	private int drawLabelOnPlayerTile(Graphics2D graphics, String text, int verticalOffset)
@@ -402,7 +433,7 @@ public class PathTileOverlay extends Overlay
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, java.util.List<PathStep> path, int pathIndex)
+	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
 	{
 		int location = currentStep.getPackedPosition();
 		if (nextStep == null || !plugin.showTransportInfo || plugin.isPathUnreachable() ||
@@ -457,18 +488,9 @@ public class PathTileOverlay extends Overlay
 				return;
 			}
 
-			Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
-			double height = textBounds.getHeight();
-			int x = (int) (p.getX() - textBounds.getWidth() / 2);
-			int y = (int) (p.getY() - height);
-			graphics.setColor(Color.BLACK);
-			graphics.drawString(text, x + 1, y + 1);
-			graphics.setColor(plugin.colourText);
-			graphics.drawString(text, x, y);
+			drawLabel(graphics, p, text, 0);
 			return;
 		}
-
-		int vertical_offset = 0;
 
 		// Check if this is a bank step and items need to be picked up
 		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
@@ -485,33 +507,7 @@ public class PathTileOverlay extends Overlay
 			if (!bankPickupItems.isEmpty())
 			{
 				String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
-
-				PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-				for (int i = 0; i < points.size(); i++)
-				{
-					LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-					if (lp == null)
-					{
-						continue;
-					}
-
-					Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
-					if (p == null)
-					{
-						continue;
-					}
-
-					Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(pickupText, graphics);
-					double height = textBounds.getHeight();
-					int x = (int) (p.getX() - textBounds.getWidth() / 2);
-					int y = (int) (p.getY() - height) - vertical_offset;
-					graphics.setColor(Color.BLACK);
-					graphics.drawString(pickupText, x + 1, y + 1);
-					graphics.setColor(plugin.colourText);
-					graphics.drawString(pickupText, x, y);
-
-					vertical_offset += (int) height + TRANSPORT_LABEL_GAP;
-				}
+				drawLabelAtPackedLocation(graphics, location, pickupText, 0);
 
 				// By default, bank pickup info replaces the default transport hint text;
 				// enable the option to show both
@@ -523,14 +519,16 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
-		java.util.Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
-		java.util.List<Transport> usableTransports = new java.util.ArrayList<>();
-		for (Transport t : candidateTransports) {
-			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas)) {
+		Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+		List<Transport> usableTransports = new ArrayList<>();
+		for (Transport t : candidateTransports)
+		{
+			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas))
+			{
 				usableTransports.add(t);
 			}
 		}
-		java.util.Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
+		Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
 
 		for (Transport transport : transportsToShow)
 		{
@@ -548,23 +546,7 @@ public class PathTileOverlay extends Overlay
 				text = text + " (Exit: " + pohExitInfo + ")";
 			}
 
-			PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-			for (int i = 0; i < points.size(); i++)
-			{
-				LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-				if (lp == null)
-				{
-					continue;
-				}
-
-				Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
-				if (p == null)
-				{
-					continue;
-				}
-
-				playerTileLabelOffset += drawLabelAtCanvasPoint(graphics, p, text, playerTileLabelOffset);
-			}
+			playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, text, playerTileLabelOffset);
 		}
 	}
 }

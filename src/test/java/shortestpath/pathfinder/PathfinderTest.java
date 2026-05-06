@@ -15,8 +15,10 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -42,6 +44,7 @@ import shortestpath.transport.TransportType;
 import shortestpath.transport.requirement.TransportItems;
 import shortestpath.ShortestPathPlugin;
 
+@SuppressWarnings("SameParameterValue")
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderTest
 {
@@ -227,7 +230,7 @@ public class PathfinderTest
 		{
 			for (Transport t : set)
 			{
-				assertTrue("Fairy ring used unexpectedly: " + t, !TransportType.FAIRY_RING.equals(t.getType()));
+				assertNotEquals("Fairy ring used unexpectedly: " + t, TransportType.FAIRY_RING, t.getType());
 			}
 		}
 	}
@@ -246,8 +249,7 @@ public class PathfinderTest
 		{
 			for (Transport t : set)
 			{
-				assertTrue("Fairy ring used unexpectedly without quest progress or diary: " + t,
-					!TransportType.FAIRY_RING.equals(t.getType()));
+				assertNotEquals("Fairy ring used unexpectedly without quest progress or diary: " + t, TransportType.FAIRY_RING, t.getType());
 			}
 		}
 	}
@@ -334,7 +336,7 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY_AND_BANK);
 
-		Pathfinder pathfinderWithStaff = runScenario("Castle Wars -> AKQ with staff in inventory",
+		Pathfinder pathfinderWithStaff = runScenario(
 			castleWars, akqFairyRing);
 
 		assertTrue("Fairy ring should be used when staff is in inventory",
@@ -360,7 +362,7 @@ public class PathfinderTest
 			new Item(ItemID.NECKLACE_OF_PASSAGE_5, 1)
 		);
 
-		Pathfinder pathfinderWithBankStaff = runScenario("Castle Wars -> AKQ with staff in bank",
+		Pathfinder pathfinderWithBankStaff = runScenario(
 			castleWars, akqFairyRing);
 
 		assertTrue("Fairy ring should be used when staff is in bank with includeBankPath",
@@ -394,10 +396,10 @@ public class PathfinderTest
 			new Item(ItemID.NECKLACE_OF_PASSAGE_1, 1)
 		);
 
-		Pathfinder pathfinderToDJP = runScenario("Castle Wars -> DJP", castleWars, djpFairyRing);
+		Pathfinder pathfinderToDJP = runScenario(castleWars, djpFairyRing);
 
 		// PathfinderConfig is not mutated between runs; reuse the same config for the second path
-		Pathfinder pathfinderToAKQ = runScenario("Castle Wars -> AKQ", castleWars, akqFairyRing);
+		Pathfinder pathfinderToAKQ = runScenario(castleWars, akqFairyRing);
 
 		assertTrue("Should use Ardougne cloak to DJP",
 			usedTransportWithDisplayInfo(pathfinderToDJP, TransportType.TELEPORTATION_ITEM, "Ardougne"));
@@ -438,7 +440,7 @@ public class PathfinderTest
 			new Item(ItemID.NECKLACE_OF_PASSAGE_5, 1)
 		);
 
-		Pathfinder pathfinder = runScenario("Castle Wars -> AKQ with cloak inventory/staff bank",
+		Pathfinder pathfinder = runScenario(
 			castleWars, akqFairyRing);
 
 		assertTrue("Should use Ardougne cloak (it's in inventory, non-consumable)",
@@ -488,7 +490,7 @@ public class PathfinderTest
 		}
 		assertTrue("Fairy rings should be in transport map (filtered per-path)", hasFairyRing);
 
-		runScenario("Fairy ring remains gated before bank visit",
+		runScenario(
 			WorldPointUtil.packWorldPoint(2442, 3096, 0),
 			WorldPointUtil.packWorldPoint(3162, 3489, 0));
 	}
@@ -513,7 +515,7 @@ public class PathfinderTest
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.DRAMEN_STAFF, 1));
 
-		Pathfinder pathfinder = runScenario("Castle Wars -> Grand Exchange bank with on-hand ring",
+		Pathfinder pathfinder = runScenario(
 			castleWars, grandExchangeBank);
 
 		assertTrue("Ring of wealth should remain usable before the first bank visit",
@@ -546,7 +548,7 @@ public class PathfinderTest
 		int alKharidMine = WorldPointUtil.packWorldPoint(3298, 3290, 0);
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0);
 
-		Pathfinder pathfinder = runScenario("Al Kharid mine -> AKQ with staff only in bank",
+		Pathfinder pathfinder = runScenario(
 			alKharidMine, akqFairyRing);
 
 		boolean usedFairyRing = usedTransportType(pathfinder, TransportType.FAIRY_RING);
@@ -1000,10 +1002,7 @@ public class PathfinderTest
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
-		assertTrue(
-			"No transports should be present that require a pickaxe",
-			!hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds())
-		);
+		assertFalse("No transports should be present that require a pickaxe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds()));
 	}
 
 	@Test
@@ -1024,10 +1023,7 @@ public class PathfinderTest
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
-		assertTrue(
-			"No transports should be present that require an axe",
-			!hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds())
-		);
+		assertFalse("No transports should be present that require an axe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds()));
 	}
 
 	@Test
@@ -1144,7 +1140,7 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
-		Pathfinder pathfinder = runScenario("Deep wilderness -> Grand Exchange with no teleports", deepWilderness, grandExchange);
+		Pathfinder pathfinder = runScenario(deepWilderness, grandExchange);
 
 		assertFalse("No teleportation item should be used when none are available",
 			usedTransportType(pathfinder, TransportType.TELEPORTATION_ITEM));
@@ -1166,7 +1162,7 @@ public class PathfinderTest
 		setupInventory(new Item(ItemID.AMULET_OF_GLORY_6, 1));
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
-		Pathfinder withGlory = runScenario("Deep wilderness -> Grand Exchange with glory", deepWilderness, grandExchange);
+		Pathfinder withGlory = runScenario(deepWilderness, grandExchange);
 
 		assertTrue("Charged glory should be used once the route reaches a legal wilderness level",
 			usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
@@ -1190,7 +1186,7 @@ public class PathfinderTest
 		setupEquipment();
 		when(config.useTeleportationSpells()).thenReturn(true);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
-		Pathfinder withVarrockTeleport = runScenario("Deep wilderness -> Grand Exchange with GE Varrock Teleport", deepWilderness, grandExchange);
+		Pathfinder withVarrockTeleport = runScenario(deepWilderness, grandExchange);
 
 		assertEquals(181, withVarrockTeleport.getPath().size());
 		assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
@@ -1216,7 +1212,7 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY, varbits);
 
-		Pathfinder pathfinder = runScenario("Deep wilderness -> Grand Exchange with glory and GE runes", deepWilderness, grandExchange);
+		Pathfinder pathfinder = runScenario(deepWilderness, grandExchange);
 
 		assertEquals(102, pathfinder.getPath().size());
 		assertTrue("Glory should be used when both glory and GE runes are available but the spell is still wilderness-locked",
@@ -1399,7 +1395,7 @@ public class PathfinderTest
 				break;
 			}
 		}
-		TransportItems expected = null;
+		TransportItems expected;
 		if (actual != null)
 		{
 			expected = new TransportItems(
@@ -1425,7 +1421,6 @@ public class PathfinderTest
 				break;
 			}
 		}
-		expected = null;
 		if (actual != null)
 		{
 			expected = new TransportItems(
@@ -1601,10 +1596,7 @@ public class PathfinderTest
 		assertTrue("At least one transport should exist", expectedCount > 0);
 
 		// Test path calculation on just one transport to verify pathfinding works
-		if (sampleTransport != null)
-		{
-			assertEquals(sampleTransport.toString(), 2, calculateTransportLength(sampleTransport));
-		}
+		assertEquals(sampleTransport.toString(), 2, calculateTransportLength(sampleTransport));
 	}
 
 	private void testTransportMinimumLength(int minimumLength, int origin, int destination)
@@ -1631,6 +1623,7 @@ public class PathfinderTest
 	{
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		Transport transport = findSampleTransport(transportType);
+		Assert.assertNotNull(transport);
 		assertScenarioPathLength(label, expectedLength, transport.getOrigin(), transport.getDestination());
 	}
 
@@ -1708,7 +1701,7 @@ public class PathfinderTest
 		return pathfinder;
 	}
 
-	private Pathfinder runScenario(String label, int origin, int destination)
+	private Pathfinder runScenario(int origin, int destination)
 	{
 		return runPathfinder(origin, destination);
 	}
@@ -1897,6 +1890,59 @@ public class PathfinderTest
 		assertFalse(
 			"Fortis Colosseum bank tile should not appear on the shortest path when glory gates it off",
 			pathfinder.getPath().stream().anyMatch(s -> s.getPackedPosition() == fortisColosseumBank));
+	}
+
+	// -----------------------------------------------------------------------
+	// PathfinderConfig.computeCombatLevel
+	// -----------------------------------------------------------------------
+
+	/** Level 3: all combat stats at minimum. */
+	@Test
+	public void combatLevelMinStats()
+	{
+		// base = 0.25 * (1 + 10 + 1/2) = 2.75, melee = 13*2/40 = 0.65 → floor(3.4) = 3
+		assertEquals(3, PathfinderConfig.computeCombatLevel(1, 1, 1, 10, 1, 1, 1));
+	}
+
+	/** Level 126: max melee account. */
+	@Test
+	public void combatLevelMaxMelee()
+	{
+		// base = 0.25*(99+99+49) = 61.75, melee = 13*198/40 = 64.35 → floor(126.1) = 126
+		assertEquals(126, PathfinderConfig.computeCombatLevel(99, 99, 99, 99, 1, 1, 99));
+	}
+
+	/** Magic as the dominant combat style (99 magic, minimal else). */
+	@Test
+	public void combatLevelMageDominant()
+	{
+		// mage = 13*(3*99/2)/40 = 48.1 → floor(2.75 + 48.1) = 50
+		assertEquals(50, PathfinderConfig.computeCombatLevel(1, 1, 1, 10, 99, 1, 1));
+	}
+
+	/** Ranged as the dominant combat style (99 ranged, minimal else) — mirrors mage formula. */
+	@Test
+	public void combatLevelRangeDominant()
+	{
+		assertEquals(50, PathfinderConfig.computeCombatLevel(1, 1, 1, 10, 1, 99, 1));
+	}
+
+	/** Typical mid-level account: 70 attack/strength/defence/hp, 43 prayer → level 85. */
+	@Test
+	public void combatLevelTypicalMeleeAccount()
+	{
+		// base = 0.25*(70+70+21) = 40.25, melee = 13*140/40 = 45.5 → floor(85.75) = 85
+		assertEquals(85, PathfinderConfig.computeCombatLevel(70, 70, 70, 70, 1, 1, 43));
+	}
+
+	/** Higher prayer must not lower the combat level. */
+	@Test
+	public void combatLevelHigherPrayerRaisesLevel()
+	{
+		int withLowPrayer = PathfinderConfig.computeCombatLevel(60, 60, 60, 60, 1, 1, 1);
+		int withHighPrayer = PathfinderConfig.computeCombatLevel(60, 60, 60, 60, 1, 1, 99);
+		assertTrue("Higher prayer should yield a higher or equal combat level",
+			withHighPrayer >= withLowPrayer);
 	}
 
 }

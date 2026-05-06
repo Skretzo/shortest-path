@@ -1,7 +1,6 @@
 package shortestpath;
 
 import com.google.inject.Inject;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -130,7 +129,7 @@ public class PathMapOverlay extends Overlay
 			}
 			for (int target : plugin.getPathfinder().getTargets())
 			{
-				if (path.size() > 0 && target != path.get(path.size() - 1).getPackedPosition())
+				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
 					graphics.setColor(plugin.colourPathCalculating);
 					drawOnMap(graphics, target, true, cursorPos);

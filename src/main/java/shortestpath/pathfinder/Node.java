@@ -38,11 +38,6 @@ public class Node
 	// Only set for ABSTRACT nodes. TILE nodes leave this null.
 	public final AbstractNodeKind abstractKind;
 
-	public Node(int packedPosition, Node previous, int cost)
-	{
-		this(packedPosition, previous, cost, previous != null && previous.bankVisited);
-	}
-
 	public Node(int packedPosition, Node previous, int cost, boolean bankVisited)
 	{
 		this(packedPosition, previous, cost, bankVisited, Type.TILE, null);

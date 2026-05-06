@@ -201,13 +201,11 @@ public class PrimitiveIntList
 	 * required.
 	 *
 	 * @param e value to append.
-	 * @return always {@code true}
 	 */
-	public boolean add(int e)
+	public void add(int e)
 	{
 		ensureCapacityInternal(size + 1);
 		elementData[size++] = e;
-		return true;
 	}
 
 	/**

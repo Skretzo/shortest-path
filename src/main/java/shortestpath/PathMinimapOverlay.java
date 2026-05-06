@@ -53,10 +53,10 @@ public class PathMinimapOverlay extends Overlay
 
 		java.util.List<PathStep> pathPoints = plugin.getPathfinder().getPath();
 		Color pathColor = plugin.getPathColor();
-		for (int i = 0; i < pathPoints.size(); i++)
+		for (PathStep point : pathPoints)
 		{
-			int pathPoint = pathPoints.get(i).getPackedPosition();
-			if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getPlane())
+			int pathPoint = point.getPackedPosition();
+			if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getTopLevelWorldView().getPlane())
 			{
 				continue;
 			}
@@ -65,7 +65,7 @@ public class PathMinimapOverlay extends Overlay
 		}
 		for (int target : plugin.getPathfinder().getTargets())
 		{
-			if (pathPoints.size() > 0 && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
+			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{
 				drawOnMinimap(graphics, target, plugin.colourPathCalculating);
 			}

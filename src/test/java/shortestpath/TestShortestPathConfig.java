@@ -4,10 +4,6 @@ public class TestShortestPathConfig implements ShortestPathConfig
 {
 	private int calculationCutoff = 5;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
-	private String builtTeleportationBoxes = "";
-	private String builtTeleportationPortalsPoh = "";
-	private boolean includeBankPath = false;
-	private boolean useTeleportationMinigames = true;
 
 	public void setCalculationCutoffValue(int calculationCutoff)
 	{
@@ -31,49 +27,16 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		return useTeleportationItems;
 	}
 
-	public void setIncludeBankPathValue(boolean includeBankPath)
-	{
-		this.includeBankPath = includeBankPath;
-	}
-
 	@Override
 	public boolean includeBankPath()
 	{
-		return includeBankPath;
-	}
-
-	public void setUseTeleportationMinigamesValue(boolean useTeleportationMinigames)
-	{
-		this.useTeleportationMinigames = useTeleportationMinigames;
+		return false;
 	}
 
 	@Override
 	public boolean useTeleportationMinigames()
 	{
-		return useTeleportationMinigames;
+		return true;
 	}
 
-	@Override
-	public void setBuiltTeleportationBoxes(String content)
-	{
-		builtTeleportationBoxes = content;
-	}
-
-	@Override
-	public String builtTeleportationBoxes()
-	{
-		return builtTeleportationBoxes;
-	}
-
-	@Override
-	public void setBuiltTeleportationPortalsPoh(String content)
-	{
-		builtTeleportationPortalsPoh = content;
-	}
-
-	@Override
-	public String builtTeleportationPortalsPoh()
-	{
-		return builtTeleportationPortalsPoh;
-	}
 }

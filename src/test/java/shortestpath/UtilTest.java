@@ -1,13 +1,13 @@
 package shortestpath;
 
-import org.junit.Test;
-import org.junit.Assert;
-
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
+import javax.annotation.Nonnull;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Unit tests for {@link Util} helper methods.
@@ -55,7 +55,7 @@ public class UtilTest
 			private boolean first = true;
 
 			@Override
-			public int read(byte[] b, int off, int len) throws IOException
+			public int read(@Nonnull byte[] b, int off, int len) throws IOException
 			{
 				if (first)
 				{
@@ -88,9 +88,8 @@ public class UtilTest
 	public void concatenateSkipsNulls()
 	{
 		int[] a = {1, 2};
-		int[] b = null;
 		int[] c = {3};
-		int[] result = Util.concatenate(new int[][] {a, b, c});
+		int[] result = Util.concatenate(new int[][] {a, null, c});
 		Assert.assertArrayEquals(new int[] {1, 2, 3}, result);
 	}
 
@@ -134,16 +133,17 @@ public class UtilTest
 		else
 		{
 			int count = 0;
-			for (int i = 0; i < arrays.length; i++)
+			for (int[] arr : arrays)
 			{
-				int[] arr = arrays[i];
 				if (arr == null)
 					continue;
 				for (int v : arr)
 				{
+					Assert.assertNotNull(combined);
 					Assert.assertEquals(v, combined[count++]);
 				}
 			}
+			Assert.assertNotNull(combined);
 			Assert.assertEquals(total, combined.length);
 		}
 	}

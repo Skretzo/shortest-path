@@ -53,10 +53,7 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 			for (String andPart : andParts)
 			{
 				ItemRequirement requirement = parseRequirement(andPart);
-				if (requirement != null)
-				{
-					requirements.add(requirement);
-				}
+				requirements.add(requirement);
 			}
 
 			return requirements.isEmpty() ? null : new TransportItems(requirements);

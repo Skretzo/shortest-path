@@ -72,8 +72,8 @@ public class PrimitiveIntListTests
 		intList.add(11);
 		Assert.assertEquals(2, intList.size());
 		Assert.assertEquals(10, intList.removeAt(0));
-		Assert.assertEquals(true, intList.remove(11));
-		Assert.assertEquals(true, intList.isEmpty());
+		Assert.assertTrue(intList.remove(11));
+		Assert.assertTrue(intList.isEmpty());
 	}
 
 	@Test

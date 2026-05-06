@@ -11,7 +11,7 @@ public class VisitedTiles
 
 	private final VisitedRegion[] visitedRegionsWithoutBank;
 	private final VisitedRegion[] visitedRegionsWithBank;
-	private final byte[] visitedRegionPlanes;
+	private final CollisionMap map;
 	// Abstract nodes are visited separately from tile nodes because they represent
 	// global search states, not map positions.
 	private final boolean[] abstractVisitedWithoutBank = new boolean[AbstractNodeKind.values().length];
@@ -19,13 +19,13 @@ public class VisitedTiles
 
 	public VisitedTiles(CollisionMap map)
 	{
+		this.map = map;
 		regionExtents = SplitFlagMap.getRegionExtents();
 		widthInclusive = regionExtents.getWidth() + 1;
 		final int heightInclusive = regionExtents.getHeight() + 1;
 
 		visitedRegionsWithoutBank = new VisitedRegion[widthInclusive * heightInclusive];
 		visitedRegionsWithBank = new VisitedRegion[widthInclusive * heightInclusive];
-		visitedRegionPlanes = map.getPlanes();
 	}
 
 	public boolean get(int packedPoint, boolean bankVisited)
@@ -86,12 +86,8 @@ public class VisitedTiles
 		{
 			abstractVisitedWithBank[node.abstractKind.ordinal()] = true;
 			// A banked abstract state dominates the equivalent unbanked state.
-			abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
 		}
-		else
-		{
-			abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
-		}
+		abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
 		return !visited;
 	}
 
@@ -121,7 +117,7 @@ public class VisitedTiles
 		VisitedRegion region = visitedRegions[regionIndex];
 		if (region == null)
 		{
-			region = new VisitedRegion(visitedRegionPlanes[regionIndex]);
+			region = new VisitedRegion(map.getRegionPlaneCounts(regionIndex));
 			visitedRegions[regionIndex] = region;
 		}
 		return region.set(x % REGION_SIZE, y % REGION_SIZE, plane);
@@ -144,16 +140,6 @@ public class VisitedTiles
 	private int getRegionIndex(int regionX, int regionY)
 	{
 		return (regionX - regionExtents.minX) + (regionY - regionExtents.minY) * widthInclusive;
-	}
-
-	public int getRegionX(int regionIndex)
-	{
-		return (regionIndex % widthInclusive + regionExtents.minX) * REGION_SIZE;
-	}
-
-	public int getRegionY(int regionIndex)
-	{
-		return (regionIndex / widthInclusive + regionExtents.minY) * REGION_SIZE;
 	}
 
 	private static class VisitedRegion

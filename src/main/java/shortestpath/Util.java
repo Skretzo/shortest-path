@@ -53,9 +53,9 @@ public class Util
 	public static int[] concatenate(int[][] arrays)
 	{
 		int n = 0;
-		for (int i = 0; i < arrays.length; i++)
+		for (int[] value : arrays)
 		{
-			n += (arrays[i] == null) ? 0 : arrays[i].length;
+			n += (value == null) ? 0 : value.length;
 		}
 		if (n == 0)
 		{
@@ -63,13 +63,13 @@ public class Util
 		}
 		int[] array = new int[n];
 		int k = 0;
-		for (int i = 0; i < arrays.length; i++)
+		for (int[] ints : arrays)
 		{
-			if (arrays[i] != null)
+			if (ints != null)
 			{
-				for (int j = 0; j < arrays[i].length; j++)
+				for (int anInt : ints)
 				{
-					array[k++] = arrays[i][j];
+					array[k++] = anInt;
 				}
 			}
 		}

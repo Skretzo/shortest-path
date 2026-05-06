@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -39,6 +40,11 @@ public class Destination
 	private static final FieldParser<Set<Quest>> QUEST_PARSER = new QuestParser();
 	private static final FieldParser<Set<VarRequirement>> VARBIT_PARSER = VarRequirementParser.forVarbits();
 	private static final FieldParser<Set<VarRequirement>> VARPLAYER_PARSER = VarRequirementParser.forVarPlayers();
+	private static final String DELIM_COLUMN = "\t";
+	private static final String PREFIX_COMMENT = "#";
+	private static final String FILE_EXTENSION = ".";
+	private static final String DELIM_PATH = "/";
+	private static final String DELIM = " ";
 	/**
 	 * Parses a TSV resource of destination coordinates and merges them into the provided map.
 	 * The key in the destination map is derived from the directory component immediately preceding the file
@@ -50,26 +56,15 @@ public class Destination
 	 */
 	private static void addDestinations(Map<String, Set<Integer>> destinations, String path)
 	{
-		final String DELIM_COLUMN = "\t";
-		final String PREFIX_COMMENT = "#";
-		final String FILE_EXTENSION = ".";
-		final String DELIM_PATH = "/";
-		final String DELIM = " ";
-
 		try
 		{
-			String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)),
+			String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
 				StandardCharsets.UTF_8);
 			Scanner scanner = new Scanner(s);
 
 			// Header line is the first line in the file and will start with either '#' or
 			// '# '
-			String headerLine = scanner.nextLine();
-			headerLine = headerLine.startsWith(PREFIX_COMMENT + " ")
-				? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT)
-				: headerLine;
-			headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
-			String[] headers = headerLine.split(DELIM_COLUMN);
+			String[] headers = parse_header_line(scanner);
 
 			String[] parts = path.replace(FILE_EXTENSION, DELIM_PATH).split(DELIM_PATH);
 			String entry = parts[parts.length - 2];
@@ -129,6 +124,16 @@ public class Destination
 		}
 	}
 
+	private static String[] parse_header_line(Scanner scanner)
+	{
+		String headerLine = scanner.nextLine();
+		headerLine = headerLine.startsWith(PREFIX_COMMENT + " ")
+			? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT)
+			: headerLine;
+		headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
+		return headerLine.split(DELIM_COLUMN);
+	}
+
 	/**
 	 * Loads a predefined subset of destination categories from bundled TSV resources.
 	 *
@@ -159,14 +164,10 @@ public class Destination
 
 		try
 		{
-			String s = new String(Util.readAllBytes(ShortestPathPlugin.class.getResourceAsStream(path)), StandardCharsets.UTF_8);
+			String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))), StandardCharsets.UTF_8);
 			try (Scanner scanner = new Scanner(s))
 			{
-				String headerLine = scanner.nextLine();
-				headerLine = headerLine.startsWith(PREFIX_COMMENT + " ")
-					? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
-				headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
-				String[] headers = headerLine.split(DELIM_COLUMN);
+				String[] headers = parse_header_line(scanner);
 				for (int i = 0; i < headers.length; i++)
 				{
 					headers[i] = headers[i].trim();

@@ -18,7 +18,7 @@ public class TransportItems
 
 	public TransportItems(List<ItemRequirement> requirements)
 	{
-		this.requirements = Collections.unmodifiableList(new ArrayList<>(requirements));
+		this.requirements = List.copyOf(requirements);
 	}
 
 	/**
@@ -44,38 +44,6 @@ public class TransportItems
 	public int size()
 	{
 		return requirements.size();
-	}
-
-	/**
-	 * Gets item IDs at the specified index (for backwards compatibility).
-	 */
-	public int[] getItems(int index)
-	{
-		return requirements.get(index).getItemIds();
-	}
-
-	/**
-	 * Gets staff IDs at the specified index (for backwards compatibility).
-	 */
-	public int[] getStaves(int index)
-	{
-		return requirements.get(index).getStaffIds();
-	}
-
-	/**
-	 * Gets offhand IDs at the specified index (for backwards compatibility).
-	 */
-	public int[] getOffhands(int index)
-	{
-		return requirements.get(index).getOffhandIds();
-	}
-
-	/**
-	 * Gets the quantity at the specified index (for backwards compatibility).
-	 */
-	public int getQuantity(int index)
-	{
-		return requirements.get(index).getQuantity();
 	}
 
 	// Legacy getters for backwards compatibility
@@ -160,6 +128,8 @@ public class TransportItems
 	{
 		if (this == o)
 			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		TransportItems that = (TransportItems) o;
 		if (requirements.size() != that.requirements.size())
 			return false;

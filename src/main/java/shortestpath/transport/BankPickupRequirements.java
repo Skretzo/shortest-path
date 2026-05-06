@@ -23,12 +23,12 @@ import shortestpath.transport.requirement.ItemRequirement;
 /**
  * Determines what items need to be picked up from the bank for a given path.
  * This handles transport-specific requirements like the Dramen staff for fairy rings.
- *
  * Multiple transports that connect the same edge are treated as alternatives (OR):
  * if the player can satisfy any one of them, no pickup is needed; otherwise the
  * cheapest single alternative that can be filled from the bank is chosen.
  */
-public class BankPickupRequirements {
+@SuppressWarnings("unused") // Only static methods are used, incorrectly flagged
+public final class BankPickupRequirements {
 
 	/**
 	 * Gets a list of items that need to be picked up from the bank at a given path step.

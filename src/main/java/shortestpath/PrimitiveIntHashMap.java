@@ -50,7 +50,7 @@ public class PrimitiveIntHashMap<V>
 	 */
 	private static class IntNode<V>
 	{
-		private int key;
+		private final int key;
 		private V value;
 
 		private IntNode(int key, V value)
@@ -124,28 +124,6 @@ public class PrimitiveIntHashMap<V>
 	public V get(int key)
 	{
 		return getOrDefault(key, null);
-	}
-
-	public int[] keys()
-	{
-		int[] keys = new int[size];
-		int index = 0;
-		for (IntNode<V>[] bucket : buckets)
-		{
-			if (bucket == null)
-			{
-				continue;
-			}
-			for (IntNode<V> node : bucket)
-			{
-				if (node == null)
-				{
-					break;
-				}
-				keys[index++] = node.key;
-			}
-		}
-		return keys;
 	}
 
 	/**
@@ -337,27 +315,26 @@ public class PrimitiveIntHashMap<V>
 		IntNode<V>[][] oldBuckets = buckets;
 		recreateArrays();
 
-		for (int i = 0; i < oldBuckets.length; ++i)
+		for (IntNode<V>[] oldBucket : oldBuckets)
 		{
-			IntNode<V>[] oldBucket = oldBuckets[i];
 			if (oldBucket == null)
 			{
 				continue;
 			}
 
-			for (int ind = 0; ind < oldBucket.length; ++ind)
+			for (IntNode<V> vIntNode : oldBucket)
 			{
-				if (oldBucket[ind] == null)
+				if (vIntNode == null)
 				{
 					break;
 				}
 
-				int bucketIndex = getBucket(oldBucket[ind].key);
+				int bucketIndex = getBucket(vIntNode.key);
 				IntNode<V>[] newBucket = buckets[bucketIndex];
 				if (newBucket == null)
 				{
 					newBucket = createBucket(DEFAULT_BUCKET_SIZE);
-					newBucket[0] = oldBucket[ind];
+					newBucket[0] = vIntNode;
 					buckets[bucketIndex] = newBucket;
 				}
 				else
@@ -367,7 +344,7 @@ public class PrimitiveIntHashMap<V>
 					{
 						if (newBucket[bInd] == null)
 						{
-							newBucket[bInd] = oldBucket[ind];
+							newBucket[bInd] = vIntNode;
 							break;
 						}
 					}
@@ -377,8 +354,7 @@ public class PrimitiveIntHashMap<V>
 						// No space in the target bucket; grow it and append the entry,
 						// but continue rehashing remaining entries instead of returning early.
 						IntNode<V>[] grown = growBucket(bucketIndex);
-						grown[newBucket.length] = oldBucket[ind];
-						continue;
+						grown[newBucket.length] = vIntNode;
 					}
 				}
 			}
@@ -387,14 +363,14 @@ public class PrimitiveIntHashMap<V>
 
 	private void recreateArrays()
 	{
-		@SuppressWarnings({"unchecked", "SuspiciousArrayCast"})
+		@SuppressWarnings({"unchecked"})
 		IntNode<V>[][] temp = (IntNode<V>[][]) new IntNode[maxSize][];
 		buckets = temp;
 	}
 
 	private IntNode<V>[] createBucket(int size)
 	{
-		@SuppressWarnings({"unchecked", "SuspiciousArrayCast"})
+		@SuppressWarnings({"unchecked"})
 		IntNode<V>[] temp = (IntNode<V>[]) new IntNode[size];
 		return temp;
 	}
@@ -414,14 +390,14 @@ public class PrimitiveIntHashMap<V>
 	{
 		int size = 0;
 		int usedSize = 0;
-		for (int i = 0; i < buckets.length; ++i)
+		for (IntNode<V>[] bucket : buckets)
 		{
-			if (buckets[i] == null)
+			if (bucket == null)
 				continue;
-			size += buckets[i].length;
-			for (int j = 0; j < buckets[i].length; ++j)
+			size += bucket.length;
+			for (int j = 0; j < bucket.length; ++j)
 			{
-				if (buckets[i][j] == null)
+				if (bucket[j] == null)
 				{
 					usedSize += j;
 					break;

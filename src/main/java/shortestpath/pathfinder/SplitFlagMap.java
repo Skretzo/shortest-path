@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -20,7 +21,6 @@ public class SplitFlagMap
 	@Getter
 	private static RegionExtent regionExtents;
 
-	@Getter
 	private final byte[] regionMapPlaneCounts;
 	// Size is automatically chosen based on the max extents of the collision data
 	private final FlagMap[] regionMaps;
@@ -43,6 +43,11 @@ public class SplitFlagMap
 			regionMaps[index] = flagMap;
 			regionMapPlaneCounts[index] = flagMap.getPlaneCount();
 		}
+	}
+
+	public byte getRegionPlaneCounts(int index)
+	{
+		return regionMapPlaneCounts[index];
 	}
 
 	public boolean get(int x, int y, int z, int flag)
@@ -79,7 +84,7 @@ public class SplitFlagMap
 	public static SplitFlagMap fromResources()
 	{
 		Map<Integer, byte[]> compressedRegions = new HashMap<>();
-		try (ZipInputStream in = new ZipInputStream(ShortestPathPlugin.class.getResourceAsStream("/collision-map.zip")))
+		try (ZipInputStream in = new ZipInputStream(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream("/collision-map.zip"))))
 		{
 			int minX = Integer.MAX_VALUE;
 			int minY = Integer.MAX_VALUE;

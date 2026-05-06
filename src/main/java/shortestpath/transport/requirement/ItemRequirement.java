@@ -40,22 +40,6 @@ public class ItemRequirement
 		this.quantity = quantity;
 	}
 
-	/**
-	 * Creates an ItemRequirement from a single item ID and quantity.
-	 */
-	public static ItemRequirement of(int itemId, int quantity)
-	{
-		return new ItemRequirement(new int[] {itemId}, new int[0], new int[0], quantity);
-	}
-
-	/**
-	 * Creates an ItemRequirement from multiple item IDs (variations) and quantity.
-	 */
-	public static ItemRequirement of(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity)
-	{
-		return new ItemRequirement(itemIds, staffIds, offhandIds, quantity);
-	}
-
 	@Override
 	public boolean equals(Object o)
 	{

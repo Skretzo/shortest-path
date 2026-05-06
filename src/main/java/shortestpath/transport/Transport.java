@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
@@ -50,13 +51,9 @@ public class Transport
 	/**
 	 * The ending point of this transport
 	 */
+	@Setter
 	@Getter
 	private int destination = UNDEFINED_DESTINATION;
-
-	public void setDestination(int packedDestination)
-	{
-		this.destination = packedDestination;
-	}
 
 	/**
 	 * The quests required to use this transport
@@ -398,7 +395,7 @@ public class Transport
 				}
 				catch (NumberFormatException e)
 				{
-					log.error("Invalid tick duration: " + value);
+					log.error("Invalid tick duration: {}", value);
 				}
 			}
 			return this;
@@ -438,7 +435,7 @@ public class Transport
 				}
 				catch (NumberFormatException e)
 				{
-					log.error("Invalid wilderness level: " + value);
+					log.error("Invalid wilderness level: {}", value);
 				}
 			}
 			return this;

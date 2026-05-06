@@ -27,11 +27,6 @@ public final class TransportAvailability
 		this.usableTeleports = usableTeleports;
 	}
 
-	public Set<Transport> getTransportsAt(int origin)
-	{
-		return transportsPacked.getOrDefault(origin, Set.of());
-	}
-
 	/*
 	 * Build a TransportAvailability by incrementally adding available transports.
 	 */

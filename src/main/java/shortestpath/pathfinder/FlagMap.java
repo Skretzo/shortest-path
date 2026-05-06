@@ -16,14 +16,6 @@ public class FlagMap
 	private final int minX;
 	private final int minY;
 
-	public FlagMap(int minX, int minY, byte planeCount)
-	{
-		this.minX = minX;
-		this.minY = minY;
-		this.planeCount = planeCount;
-		flags = new BitSet(REGION_SIZE * REGION_SIZE * planeCount * FLAG_COUNT);
-	}
-
 	public FlagMap(int minX, int minY, byte[] bytes)
 	{
 		this.minX = minX;
@@ -31,11 +23,6 @@ public class FlagMap
 		flags = BitSet.valueOf(bytes);
 		int scale = REGION_SIZE * REGION_SIZE * FLAG_COUNT;
 		this.planeCount = (byte) ((flags.size() + scale - 1) / scale);
-	}
-
-	public byte[] toBytes()
-	{
-		return flags.toByteArray();
 	}
 
 	public boolean get(int x, int y, int z, int flag)
@@ -46,11 +33,6 @@ public class FlagMap
 		}
 
 		return flags.get(index(x, y, z, flag));
-	}
-
-	public void set(int x, int y, int z, int flag, boolean value)
-	{
-		flags.set(index(x, y, z, flag), value);
 	}
 
 	private int index(int x, int y, int z, int flag)

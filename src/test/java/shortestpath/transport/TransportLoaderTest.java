@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Comprehensive unit tests for {@link Transport#addTransportsFromContents}
+ * Comprehensive unit tests for {@link Transport}
  * method.
  */
 public class TransportLoaderTest

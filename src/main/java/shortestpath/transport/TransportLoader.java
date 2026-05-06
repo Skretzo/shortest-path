@@ -89,8 +89,7 @@ public class TransportLoader
 			{
 				transportOrigins.add(transport);
 			}
-			else if (origin == Transport.LOCATION_PERMUTATION
-				&& destination != Transport.LOCATION_PERMUTATION && destination != Transport.UNDEFINED_DESTINATION)
+			else if (origin == Transport.LOCATION_PERMUTATION && destination != Transport.UNDEFINED_DESTINATION)
 			{
 				transportDestinations.add(transport);
 			}

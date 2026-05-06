@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
-
 import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
@@ -49,7 +48,7 @@ public class PluginMessageTestPlugin extends Plugin
 	private static final String CONFIG_COLOUR_PATH = ColorUtil.wrapWithColorTag("Yellow path colour (PluginMessage)",
 		JagexColors.MENU_TARGET);
 
-	private Set<WorldPoint> targets = new HashSet<>(10);
+	private final Set<WorldPoint> targets = new HashSet<>(10);
 	private Point lastMenuOpenedPoint;
 
 	@Inject
@@ -244,7 +243,7 @@ public class PluginMessageTestPlugin extends Plugin
 			int xTileOffset = worldPoint.getX() + widthInTiles / 2 - worldMapPosition.getX();
 
 			int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
-			xGraphDiff += pixelsPerTile - Math.ceil(pixelsPerTile / 2);
+			xGraphDiff += (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
 			xGraphDiff += (int) worldMapRect.getX();
 
 			return xGraphDiff;
@@ -271,7 +270,7 @@ public class PluginMessageTestPlugin extends Plugin
 			int yTileOffset = (yTileMax - worldPoint.getY() - 1) * -1;
 
 			int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
-			yGraphDiff -= pixelsPerTile - Math.ceil(pixelsPerTile / 2);
+			yGraphDiff -= (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
 			yGraphDiff = worldMapRect.height - yGraphDiff;
 			yGraphDiff += (int) worldMapRect.getY();
 

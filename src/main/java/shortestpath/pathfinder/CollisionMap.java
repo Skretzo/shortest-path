@@ -14,9 +14,9 @@ public class CollisionMap
 
 	private final SplitFlagMap collisionData;
 
-	public byte[] getPlanes()
+	public byte getRegionPlaneCounts(int regionIndex)
 	{
-		return collisionData.getRegionMapPlaneCounts();
+		return collisionData.getRegionPlaneCounts(regionIndex);
 	}
 
 	public CollisionMap(SplitFlagMap collisionData)

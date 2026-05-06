@@ -3,7 +3,6 @@ package shortestpath;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
-
 import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -26,7 +25,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -70,12 +68,13 @@ import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
+@SuppressWarnings("SameParameterValue")
 @PluginDescriptor(name = "Shortest Path", description = "Draws the shortest path to a chosen destination on the map<br>"
 	+
 	"Right click on the world map or shift right click a tile to use", tags = {"pathfinder", "map", "waypoint",
@@ -176,7 +175,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private GameState lastGameState = null;
 	private GameState lastLastGameState = null;
-	private List<PendingTask> pendingTasks = new ArrayList<>(3);
+	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 
 	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
 	private Future<?> pathfinderFuture;
@@ -303,16 +302,16 @@ public class ShortestPathPlugin extends Plugin
 
 	public boolean isNearPath(int location)
 	{
-		List<PathStep> path = null;
+		List<PathStep> path;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
 			config.recalculateDistance() < 0 || lastLocation == (lastLocation = location))
 		{
 			return true;
 		}
 
-		for (int i = 0; i < path.size(); i++)
+		for (PathStep pathStep : path)
 		{
-			if (WorldPointUtil.distanceBetween(location, path.get(i).getPackedPosition()) < config.recalculateDistance())
+			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < config.recalculateDistance())
 			{
 				return true;
 			}
@@ -434,10 +433,10 @@ public class ShortestPathPlugin extends Plugin
 			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
 			if (configOverride != null && !configOverride.isEmpty())
 			{
-				this.configOverride.clear();
+				ShortestPathPlugin.configOverride.clear();
 				for (String key : configOverride.keySet())
 				{
-					this.configOverride.put(key, configOverride.get(key));
+					ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
 				}
 				cacheConfigValues();
 			}
@@ -505,7 +504,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
-			this.configOverride.clear();
+			configOverride.clear();
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
 		}
@@ -598,7 +597,7 @@ public class ShortestPathPlugin extends Plugin
 			addMenuEntry(event, SET, TARGET, 1);
 			if (pathfinder != null)
 			{
-				if (pathfinder.getTargets().size() >= 1)
+				if (!pathfinder.getTargets().isEmpty())
 				{
 					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
@@ -612,12 +611,12 @@ public class ShortestPathPlugin extends Plugin
 					}
 				}
 				int selectedTile = getSelectedWorldPoint();
-				List<PathStep> path = null;
+				List<PathStep> path;
 				if ((path = pathfinder.getPath()) != null)
 				{
-					for (int i = 0; i < path.size(); i++)
+					for (PathStep pathStep : path)
 					{
-						if (path.get(i).getPackedPosition() == selectedTile)
+						if (pathStep.getPackedPosition() == selectedTile)
 						{
 							addMenuEntry(event, CLEAR, PATH, 1);
 							break;
@@ -638,7 +637,7 @@ public class ShortestPathPlugin extends Plugin
 				addMenuEntry(event, SET, TARGET, 0);
 				if (pathfinder != null)
 				{
-					if (pathfinder.getTargets().size() >= 1)
+					if (!pathfinder.getTargets().isEmpty())
 					{
 						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
@@ -800,7 +799,7 @@ else
 
 	private void scrollFairyRingPanel()
 	{
-		List<PathStep> path = null;
+		List<PathStep> path;
 
 		if (pathfinder == null
 			|| (path = pathfinder.getPath()) == null)
@@ -837,7 +836,7 @@ else
 				if (widget != null)
 				{
 					String widgetText = widget.getText();
-					if (widgetText != null && (fairyRingCode.equals(widgetText)
+					if ((fairyRingCode.equals(widgetText)
 						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
 					{
 						codeWidget = widget;
@@ -855,7 +854,7 @@ else
 				if (widget != null)
 				{
 					String widgetText = widget.getText();
-					if (widgetText != null && (fairyRingCode.equals(widgetText)
+					if ((fairyRingCode.equals(widgetText)
 						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
 					{
 						codeWidget = widget;
@@ -908,7 +907,7 @@ else
 	 * <p>
 	 * It collapses banked/unbanked transport availability into a single view via
 	 * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
-	 *
+	 * <p>
 	 * Do not use this for reasoning about which transports are available at a specific
 	 * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
 	 * path's PathStep state instead.
@@ -919,25 +918,25 @@ else
 	}
 
 	/** This reconstructs the candidate transports for a rendered path edge from the current path state.
-	*
+	* <p>
 	*  The important detail is that path display logic is edge-based, not node-based:
 	*  - origin position comes from currentStep
 	*  - destination position comes from nextStep
 	*  - the applicable transport set may depend on whether the edge transitions into banked state
-	*
+	* <p>
 	*  That last point is the awkward one. Banking is not represented as its own explicit path edge;
 	*  instead the "becomes banked" state change is conflated into the movement/transport edge that
 	*  reaches the banked destination step. As a result, callers cannot safely resolve transports from
 	*  a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
 	*  nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
 	*  transports for the edge between them.
-	*
+	* <p>
 	*  This is still only a fallback for display code and remains inherently ambiguous when multiple
 	*  valid transports share the same origin/destination pair under the same edge state. The more
 	*  structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
 	*  carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
 	*  adjacent path steps.
-	*
+	* <p>
 	*  Note that this function also performs filtering by the transport target, so callers of this
 	*  function can directly iterate over the returned transports.
 	*/
@@ -947,8 +946,7 @@ else
 		{
 			return Set.of();
 		}
-		boolean bankVisited = currentStep.isBankVisited()
-			|| (nextStep != null && nextStep.isBankVisited());
+		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
 		// Get the transports which start from the position of starting step.
 		Set<Transport> stepTransports = new HashSet<>(
 			pathfinderConfig.getTransportsPacked(bankVisited)
@@ -1035,7 +1033,6 @@ else
 			return null;
 		}
 
-		int pohExitIndex = -1;
 		String immediateExitInfo = null;
 
 		// Look ahead in the path to find the next transport that exits POH
@@ -1278,7 +1275,7 @@ else
 	{
 		return Text.removeTags(text).toLowerCase()
 			.replaceAll("[^a-zA-Z ]", "")
-			.replaceAll("[ ]", "_")
+			.replace(" ", "_")
 			.replace("__", "_");
 	}
 
@@ -1437,7 +1434,7 @@ else
 			int xTileOffset = WorldPointUtil.unpackWorldX(packedWorldPoint) + widthInTiles / 2 - worldMapPosition.getX();
 
 			int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
-			xGraphDiff += pixelsPerTile - Math.ceil(pixelsPerTile / 2);
+			xGraphDiff += (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
 			xGraphDiff += (int) worldMapRect.getX();
 
 			return xGraphDiff;
@@ -1451,7 +1448,7 @@ else
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
-		Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
 		if (map != null)
 		{
 			Rectangle worldMapRect = map.getBounds();
@@ -1464,7 +1461,7 @@ else
 			int yTileOffset = (yTileMax - WorldPointUtil.unpackWorldY(packedWorldPoint) - 1) * -1;
 
 			int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
-			yGraphDiff -= pixelsPerTile - Math.ceil(pixelsPerTile / 2);
+			yGraphDiff -= (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
 			yGraphDiff = worldMapRect.height - yGraphDiff;
 			yGraphDiff += (int) worldMapRect.getY();
 
@@ -1585,7 +1582,7 @@ else
 				int a = (rgb & 0xff000000) >>> 24;
 				int r = (rgb & 0x00ff0000) >> 16;
 				int g = (rgb & 0x0000ff00) >> 8;
-				int b = (rgb & 0x000000ff) >> 0;
+				int b = (rgb & 0x000000ff);
 				Color colour = new Color(r, g, b, a);
 				if (x == 0 && y == 0)
 				{

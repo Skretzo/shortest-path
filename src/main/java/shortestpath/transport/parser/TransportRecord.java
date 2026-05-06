@@ -32,15 +32,6 @@ public class TransportRecord
 	}
 
 	/**
-	 * Gets a field value by name, or the default value if not present or empty.
-	 */
-	public String getOrDefault(String fieldName, String defaultValue)
-	{
-		String value = fields.get(fieldName);
-		return (value == null || value.isEmpty()) ? defaultValue : value;
-	}
-
-	/**
 	 * Checks if a field is present and non-empty.
 	 */
 	public boolean has(String fieldName)
