@@ -52,8 +52,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.withType(Checkstyle).configureEach {
-    enabled = project.hasProperty('checkstyle')
-    ignoreFailures = true
+    enabled = true
+    ignoreFailures = false
 }
 
 // --- Testing ---

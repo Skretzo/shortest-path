@@ -25,7 +25,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run checkstyle
-        continue-on-error: true
         run: ./gradlew checkstyleMain checkstyleTest
         shell: bash
 
