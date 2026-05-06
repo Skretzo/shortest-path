@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+
 import lombok.Getter;
 import shortestpath.WorldPointUtil;
 
@@ -13,25 +14,21 @@ public class Pathfinder implements Runnable
 {
 	private final PathfinderStats stats;
 	@Getter
-	private volatile boolean done = false;
-	private volatile boolean cancelled = false;
-
-	@Getter
 	private final int start;
 	@Getter
 	private final Set<Integer> targets;
-
 	private final PathfinderConfig config;
 	private final CollisionMap map;
 	private final boolean targetInWilderness;
 	private final Runnable completionCallback;
-
 	// Capacities should be enough to store all nodes without requiring the queue to grow
 	// They were found by checking the max queue size
 	private final Deque<Node> boundary = new ArrayDeque<>(4096);
 	private final Queue<TransportNode> pending = new PriorityQueue<>(256);
 	private final VisitedTiles visited;
-
+	@Getter
+	private volatile boolean done = false;
+	private volatile boolean cancelled = false;
 	private List<PathStep> pathSteps = List.of();
 	private boolean pathNeedsUpdate = false;
 	private Node bestLastNode;
@@ -240,7 +237,7 @@ public class Pathfinder implements Runnable
 
 				// For delayed-visit nodes, check if the destination was already
 				// reached by a cheaper path while this node was queued.
-				if (node instanceof TransportNode && ((TransportNode) node).delayedVisit)
+				if (node != null && ((TransportNode) node).delayedVisit)
 				{
 					if (visited.get(node.packedPosition, node.bankVisited))
 					{
@@ -253,7 +250,10 @@ public class Pathfinder implements Runnable
 			{
 				node = boundary.removeFirst();
 			}
-
+			if (node == null)
+			{
+				continue;
+			}
 			if (node.isTile())
 			{
 				updateWildernessLevel(node);

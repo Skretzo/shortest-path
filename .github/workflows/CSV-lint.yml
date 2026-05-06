@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: TSV Consistency Check
         id: tsv-check
@@ -39,7 +39,7 @@ jobs:
 
       - name: Upload lint results
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tsv-lint-results
           path: artifact/
