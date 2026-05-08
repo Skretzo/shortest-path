@@ -40,6 +40,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      # The bundle picker prepends each new bundle to the top of the index,
+      # so build order is reversed in the picker UI. Run the seasonal
+      # dashboard FIRST so it ends up at the bottom of the picker, with the
+      # always-on routes/clue/quetzal/unit-tests bundles above it.
+      - name: Build seasonal Demonic Pacts League dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/dashboard/seasonal_briefcase_routes.csv -PdashboardBundle=seasonal-briefcase -PdashboardTitle="Seasonal — Demonic Pacts League" -PdashboardSubtitle="Briefcase teleports + region unlock varbits" -PdashboardSeasonal=true --stacktrace
+        shell: bash
+
       - name: Build clue locations dashboard
         run: ./gradlew dashboard -PdashboardDataset=/dashboard/clue_locations_full.csv -PdashboardProfile=false --stacktrace
         shell: bash
