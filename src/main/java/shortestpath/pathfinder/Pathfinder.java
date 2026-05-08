@@ -9,6 +9,7 @@ import java.util.Set;
 
 import lombok.Getter;
 import shortestpath.WorldPointUtil;
+import shortestpath.leagues.LeagueModeState;
 
 public class Pathfinder implements Runnable
 {
@@ -20,6 +21,7 @@ public class Pathfinder implements Runnable
 	private final PathfinderConfig config;
 	private final CollisionMap map;
 	private final boolean targetInWilderness;
+	private final boolean targetInBlockedRegion;
 	private final Runnable completionCallback;
 	// Capacities should be enough to store all nodes without requiring the queue to grow
 	// They were found by checking the max queue size
@@ -58,7 +60,24 @@ public class Pathfinder implements Runnable
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map);
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
+		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets);
 		wildernessLevel = 31;
+	}
+
+	private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed)
+	{
+		if (!league.isSeasonal() || packed == null || packed.isEmpty())
+		{
+			return false;
+		}
+		for (Integer point : packed)
+		{
+			if (league.isInBlockedRegion(point))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets)
@@ -131,6 +150,12 @@ public class Pathfinder implements Runnable
 		{
 			if (node.isTile() && neighbor.isTile()
 				&& config.avoidWilderness(node.packedPosition, neighbor.packedPosition, targetInWilderness))
+			{
+				continue;
+			}
+
+			if (node.isTile() && neighbor.isTile()
+				&& config.avoidBlockedRegion(node.packedPosition, neighbor.packedPosition, targetInBlockedRegion))
 			{
 				continue;
 			}
