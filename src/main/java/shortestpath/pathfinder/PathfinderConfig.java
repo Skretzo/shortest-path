@@ -33,6 +33,9 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.leagues.LeagueModeState;
+import shortestpath.leagues.LeagueRegion;
+import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
@@ -88,6 +91,8 @@ public class PathfinderConfig
 	private final Map<Quest, QuestState> questStates = new HashMap<>();
 	private final Map<Integer, Integer> varbitValues = new HashMap<>();
 	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
+	@Getter
+	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
 	public Set<String> availableSpiritTrees = null;
 	/**
@@ -239,6 +244,7 @@ public class PathfinderConfig
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
+		leagueModeState.refresh(client);
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
@@ -506,6 +512,43 @@ public class PathfinderConfig
 	}
 
 	/**
+	 * League-mode neighbour gate: parallels {@link #avoidWilderness} but
+	 * blocks crossing into the always-blocked Misthalin region. Always
+	 * returns {@code false} on non-seasonal worlds so vanilla pathfinding is
+	 * unaffected.
+	 */
+	public boolean avoidBlockedRegion(int packedPosition, int packedNeighborPosition, boolean targetInBlockedRegion)
+	{
+		if (!leagueModeState.isSeasonal())
+		{
+			return false;
+		}
+		return !targetInBlockedRegion
+			&& !leagueModeState.isInBlockedRegion(packedPosition)
+			&& leagueModeState.isInBlockedRegion(packedNeighborPosition);
+	}
+
+	/**
+	 * Whether both endpoints of the supplied transport are in unlocked
+	 * regions for the current league state. Always-unlocked tiles
+	 * (NEUTRAL, Varlamore, Karamja) pass through unchanged on any world.
+	 */
+	private boolean isTransportRegionAllowed(Transport transport)
+	{
+		if (!leagueModeState.isSeasonal())
+		{
+			return true;
+		}
+		LeagueRegion origin = LeagueRegionChecker.getRegion(transport.getOrigin());
+		if (!leagueModeState.isUnlocked(origin))
+		{
+			return false;
+		}
+		LeagueRegion destination = LeagueRegionChecker.getRegion(transport.getDestination());
+		return leagueModeState.isUnlocked(destination);
+	}
+
+	/**
 	 * Remaps POH transport destinations to the house landing tile.
 	 * Transports that arrive inside the POH (e.g., fairy ring DIQ, spirit tree "Your house")
 	 * are remapped so chaining with other POH transports is possible.
@@ -583,6 +626,13 @@ public class PathfinderConfig
 			{
 				return false;
 			}
+		}
+
+		// League region gate: in seasonal mode, drop transports that touch the
+		// always-blocked region or a region the player has not unlocked.
+		if (!isTransportRegionAllowed(transport))
+		{
+			return false;
 		}
 
 		final boolean isQuestLocked = transport.isQuestLocked();
