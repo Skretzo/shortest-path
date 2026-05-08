@@ -52,4 +52,17 @@ public class LeagueModeStateTest
 		assertFalse(state.isUnlocked(LeagueRegion.KARAMJA));
 		assertFalse(state.isUnlocked(LeagueRegion.WILDERNESS));
 	}
+
+	@Test
+	public void areaSelectionVarbitsCoverAllSixSlots()
+	{
+		// Catches accidental drift if Jagex or RuneLite renumber the
+		// LEAGUE_AREA_SELECTION_* varbits. Six contiguous IDs starting at
+		// 10662 mirror the gameval VarbitID table.
+		assertTrue(LeagueModeState.AREA_SELECTION_VARBITS.length == 6);
+		for (int i = 0; i < 6; i++)
+		{
+			assertTrue(LeagueModeState.AREA_SELECTION_VARBITS[i] == 10662 + i);
+		}
+	}
 }

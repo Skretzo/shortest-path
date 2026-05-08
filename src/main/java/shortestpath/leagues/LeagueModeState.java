@@ -30,27 +30,44 @@ import net.runelite.api.WorldType;
  * </ul>
  *
  * <p>
- * The unlock set is rebuilt from three area-slot varbits which the player
- * picks from on the league tutorial island. Each slot stores a numeric
- * region id (mapping defined in {@link #AREA_VARBIT_TO_REGION}). The
- * mapping is deliberately hard-coded here — these IDs are known not to
+ * The unlock set is rebuilt from the {@code LEAGUE_AREA_SELECTION_*} varbit
+ * slots ({@link #AREA_SELECTION_VARBITS}). Each slot stores a numeric area
+ * id matching the wiki's enumeration (mapping defined in
+ * {@link #AREA_VARBIT_TO_REGION}):
+ * </p>
+ * <ul>
+ *   <li>Slot 0 ({@code 10662}) — pre-set to Varlamore on a seasonal world.</li>
+ *   <li>Slot 1 ({@code 10663}) — Karamja, awarded for free with the player's
+ *       first paid pick at 80 tasks.</li>
+ *   <li>Slots 2-3 ({@code 10664}/{@code 10665}) — the player's three area
+ *       picks at 200/300/450 tasks.</li>
+ *   <li>Slots 4-5 ({@code 10666}/{@code 10667}) — reserved by the game for
+ *       additional bonus unlocks; we read them defensively.</li>
+ * </ul>
+ *
+ * <p>
+ * The mapping is deliberately hard-coded here — these IDs are known not to
  * change during a league season.
  * </p>
  */
 public class LeagueModeState
 {
 	/**
-	 * Varbit IDs storing the three player-chosen area unlocks. Slot 0 is
-	 * always Varlamore (no varbit). Refresh these from a seasonal-world
-	 * cache dump if Jagex renumbers the unlock varbits.
+	 * Varbit IDs storing the league area unlocks. The values match
+	 * {@code LEAGUE_AREA_SELECTION_0..5} from RuneLite's gameval VarbitID
+	 * table. Slot 0 is the auto-set Varlamore slot, slot 1 is the Karamja
+	 * free pick, and the remaining slots correspond to the three player
+	 * picks at 200/300/450 tasks plus two bonus slots reserved by the game.
 	 */
-	static final int AREA_1_VARBIT = 10052;
-	static final int AREA_2_VARBIT = 10053;
-	static final int AREA_3_VARBIT = 10054;
+	static final int[] AREA_SELECTION_VARBITS = {
+		10662, 10663, 10664, 10665, 10666, 10667,
+	};
 
 	/**
-	 * Maps the numeric region id stored in an areaN varbit to its
-	 * {@link LeagueRegion}.
+	 * Maps the numeric area id stored in a {@code LEAGUE_AREA_SELECTION_*}
+	 * varbit to its {@link LeagueRegion}. Numbering follows the wiki's
+	 * "Demonic_Pacts_League/Areas" page (id 2 = Misthalin is included for
+	 * completeness even though it is never selectable).
 	 */
 	private static final Map<Integer, LeagueRegion> AREA_VARBIT_TO_REGION;
 
@@ -58,16 +75,16 @@ public class LeagueModeState
 	{
 		Map<Integer, LeagueRegion> m = new HashMap<>();
 		m.put(1, LeagueRegion.VARLAMORE);
-		m.put(2, LeagueRegion.KARAMJA);
-		m.put(3, LeagueRegion.ASGARNIA);
-		m.put(4, LeagueRegion.KANDARIN);
-		m.put(5, LeagueRegion.FREMENNIK);
-		m.put(6, LeagueRegion.KOUREND);
-		m.put(7, LeagueRegion.WILDERNESS);
-		m.put(8, LeagueRegion.MORYTANIA);
-		m.put(9, LeagueRegion.DESERT);
+		m.put(2, LeagueRegion.MISTHALIN);
+		m.put(3, LeagueRegion.KARAMJA);
+		m.put(4, LeagueRegion.ASGARNIA);
+		m.put(5, LeagueRegion.DESERT);
+		m.put(6, LeagueRegion.FREMENNIK);
+		m.put(7, LeagueRegion.KANDARIN);
+		m.put(8, LeagueRegion.KOUREND);
+		m.put(9, LeagueRegion.MORYTANIA);
 		m.put(10, LeagueRegion.TIRANNWN);
-		m.put(11, LeagueRegion.MISTHALIN);
+		m.put(11, LeagueRegion.WILDERNESS);
 		AREA_VARBIT_TO_REGION = Collections.unmodifiableMap(m);
 	}
 
@@ -101,14 +118,15 @@ public class LeagueModeState
 		EnumSet<LeagueRegion> next = EnumSet.noneOf(LeagueRegion.class);
 		if (seasonal)
 		{
-			// Varlamore is the always-unlocked starting region. Karamja is
-			// awarded for free at 80 tasks but flows through the same
-			// area-slot varbits as every other pick, so we trust the varbits
-			// rather than auto-adding it here.
+			// Varlamore is the always-unlocked starting region. Karamja
+			// arrives via slot 1 the moment the player makes their first
+			// paid pick at 80 tasks, so we read it from the same varbit
+			// table as every other unlock rather than auto-adding it here.
 			next.add(LeagueRegion.VARLAMORE);
-			addRegionFromSlot(client, AREA_1_VARBIT, next);
-			addRegionFromSlot(client, AREA_2_VARBIT, next);
-			addRegionFromSlot(client, AREA_3_VARBIT, next);
+			for (int varbitId : AREA_SELECTION_VARBITS)
+			{
+				addRegionFromSlot(client, varbitId, next);
+			}
 		}
 		unlockedRegions = next;
 	}
