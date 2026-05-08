@@ -46,7 +46,7 @@
 1486 3645 0			30361=1		4	Banker's Briefcase: Shayzien Encampment	F	60		
 1483 3645 0			30361=1		4	Banker's Briefcase: Shayzien Encampment	F	60		
 2212 2860 0			30361=1		4	Banker's Briefcase: Soul Wars	F	60		
-1454 3859 0			30361=1		4	Banker's Briefcase: Sulphur mine	F	60	
+1454 3859 0			30361=1		4	Banker's Briefcase: Sulphur mine	F	60		
 3619 9473 0			30361=1		4	Banker's Briefcase: Temple of the Eye	F	60		
 3810 3020 0			30361=1		4	Banker's Briefcase: Trouble Brewing	F	60		
 1809 3567 0			30361=1		4	Banker's Briefcase: Vinery	F	60		
@@ -145,7 +145,7 @@
 1649 3494 0			30361=1		4	Banker's Briefcase: Woodcutting Guild	F	60		
 2611 3088 0			30361=1		4	Banker's Briefcase: Yanille	F	60		
 2382 4462 0			30361=1		4	Banker's Briefcase: Zanaris	F	60		
-# Banker's Briefcase Banks
+# Banker's Briefcase Banks										
 3268 3164 0			30361=1		4	Banker's Briefcase: Al Kharid	F	60		
 1623 3740 0			30361=1		4	Banker's Briefcase: Arceuus	F	60		
 1414 3353 0			30361=1		4	Banker's Briefcase: Auburnvale	F	60		
@@ -181,9 +181,9 @@
 2728 3494 0			30361=1		4	Banker's Briefcase: Seers' Village	F	60		
 1487 3591 0			30361=1		4	Banker's Briefcase: Shayzien	F	60		
 2801 5170 0			30361=1		4	Banker's Briefcase: Sophanem	F	60		
-1244,3121 0			30361=1		4	Banker's Briefcase: Tal Teklan	F	60		
-3097,3027 0			30361=1		4	Banker's Briefcase: The Node	F	60		
-3183,2419 0			30361=1		4	Banker's Briefcase: The Summer Shore	F	60		
+1244 3121 0			30361=1		4	Banker's Briefcase: Tal Teklan	F	60		
+3097 3027 0			30361=1		4	Banker's Briefcase: The Node	F	60		
+3183 2419 0			30361=1		4	Banker's Briefcase: The Summer Shore	F	60		
 2441 3487 1			30361=1		4	Banker's Briefcase: Tree Gnome Stronghold (Grand Tree)	F	60		
 2444 3425 1			30361=1		4	Banker's Briefcase: Tree Gnome Stronghold (South)	F	60		
 3120 3124 0			30361=1		4	Banker's Briefcase: Tutorial Island	F	60		
@@ -192,7 +192,7 @@
 3649 3207 0			30361=1		4	Banker's Briefcase: Ver Sinhaza	F	60		
 2665 2652 0			30361=1		4	Banker's Briefcase: Void Knights' Outpost	F	60		
 2842 3543 0			30361=1		4	Banker's Briefcase: Warriors' Guild	F	60		
-2614 3091 0			30361=1		4	Banker's Briefcase: Yanille	F	60	
+2614 3091 0			30361=1		4	Banker's Briefcase: Yanille	F	60		
 # Evil Eye										
 
 # Map of Alacrity										
