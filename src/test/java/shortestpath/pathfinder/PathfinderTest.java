@@ -661,6 +661,42 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testBankersBriefcaseInBankUsedAfterBankVisit()
+	{
+		// The Banker's Briefcase is a SEASONAL_TRANSPORTS row, but its bank-pickup
+		// behaviour goes through the same hasRequiredItems path as TELEPORTATION_ITEM
+		// and QUETZAL_WHISTLE. With the briefcase only in the bank, the transport
+		// should be unavailable until the path visits a bank tile.
+		when(config.useSeasonalTransports()).thenReturn(true);
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(30361, 1));
+
+		// Start one tile west of the Civitas Illa Fortis east bank chest at
+		// (1781, 3100, 0); target the Catherby briefcase landing tile at
+		// (2807, 3442, 0). Without the briefcase, no other transport will fire
+		// (every other type is disabled), so the path must walk to a bank,
+		// flip bankVisited, and only then teleport.
+		int civitasEastApproach = WorldPointUtil.packWorldPoint(1735, 3093, 0);
+		int catherbyBriefcase = WorldPointUtil.packWorldPoint(2807, 3442, 0);
+
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
+			"Civitas approach -> Catherby briefcase with briefcase in bank",
+			60,
+			civitasEastApproach,
+			catherbyBriefcase);
+
+		assertTrue("Banker's Briefcase should be used after visiting a bank",
+			usedTransportWithDisplayInfoAfterFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
+				"Banker's Briefcase: Catherby"));
+		assertFalse("Banker's Briefcase should not be used before the first bank visit",
+			usedTransportWithDisplayInfoBeforeFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
+				"Banker's Briefcase: Catherby"));
+	}
+
+	@Test
 	public void testGnomeGliders()
 	{
 		when(config.useGnomeGliders()).thenReturn(true);
