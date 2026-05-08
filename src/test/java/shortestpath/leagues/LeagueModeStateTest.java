@@ -27,7 +27,7 @@ public class LeagueModeStateTest
 	public void seasonalBlocksMisthalinAndLocksUnpickedRegions()
 	{
 		LeagueModeState state = new LeagueModeState();
-		state.setForTest(true, EnumSet.of(LeagueRegion.KANDARIN));
+		state.setForTest(true, EnumSet.of(LeagueRegion.KANDARIN, LeagueRegion.KARAMJA));
 
 		assertTrue(state.isUnlocked(LeagueRegion.VARLAMORE));
 		assertTrue(state.isUnlocked(LeagueRegion.KARAMJA));
@@ -41,13 +41,15 @@ public class LeagueModeStateTest
 	}
 
 	@Test
-	public void seasonalAllowsExplicitVarlamoreAndKaramjaWithoutPicks()
+	public void seasonalStartsWithOnlyVarlamoreUnlocked()
 	{
+		// Pre-80-task state: only Varlamore. Karamja must require its
+		// own varbit pick like every other region.
 		LeagueModeState state = new LeagueModeState();
 		state.setForTest(true, EnumSet.noneOf(LeagueRegion.class));
 
 		assertTrue(state.isUnlocked(LeagueRegion.VARLAMORE));
-		assertTrue(state.isUnlocked(LeagueRegion.KARAMJA));
+		assertFalse(state.isUnlocked(LeagueRegion.KARAMJA));
 		assertFalse(state.isUnlocked(LeagueRegion.WILDERNESS));
 	}
 }

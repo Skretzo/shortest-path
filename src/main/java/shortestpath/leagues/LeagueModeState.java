@@ -101,9 +101,11 @@ public class LeagueModeState
 		EnumSet<LeagueRegion> next = EnumSet.noneOf(LeagueRegion.class);
 		if (seasonal)
 		{
-			// Slot 0 is always Varlamore (the starting region).
+			// Varlamore is the always-unlocked starting region. Karamja is
+			// awarded for free at 80 tasks but flows through the same
+			// area-slot varbits as every other pick, so we trust the varbits
+			// rather than auto-adding it here.
 			next.add(LeagueRegion.VARLAMORE);
-			next.add(LeagueRegion.KARAMJA);
 			addRegionFromSlot(client, AREA_1_VARBIT, next);
 			addRegionFromSlot(client, AREA_2_VARBIT, next);
 			addRegionFromSlot(client, AREA_3_VARBIT, next);

@@ -4,22 +4,29 @@ package shortestpath.leagues;
  * Identifies the Demonic Pacts League area that a tile belongs to.
  *
  * <p>
- * The first three values are universally accessible regardless of player
- * progression: {@link #VARLAMORE} is the starting region, {@link #KARAMJA}
- * unlocks for free with the first area unlock, and {@link #NEUTRAL} captures
- * areas reachable from anywhere (Death's office, POH, Zanaris, the Abyssal
- * Area, random events, instances, dynamic regions, tutorial island).
+ * Per the wiki ({@code Demonic_Pacts_League/Areas}), all players start locked
+ * to {@link #VARLAMORE}; {@link #KARAMJA} is the first region unlock awarded
+ * for free at 80 tasks; the remaining regions are picked at 200/300/450
+ * tasks. Karamja is therefore not always-unlocked — it flows through the
+ * same area-slot varbits as the other player picks.
  * </p>
  *
  * <p>
- * {@link #MISTHALIN} is permanently inaccessible during the league. The
- * remaining regions are unlockable through task completion.
+ * {@link #NEUTRAL} captures areas reachable from anywhere regardless of the
+ * player's unlocks: Death's office, POH, Zanaris, the Abyssal Area, random
+ * events, instances, dynamic regions, tutorial island, and Sailing-skill
+ * content (e.g. The Great Conch, The Summer Shore, The Node) which is not
+ * part of the league at all.
  * </p>
  *
  * <p>
- * Region geometry is sourced from {@code leagues/regions.json}: a mapping from
- * OSRS map region id to one of these enum names. Tiles with no mapping fall
- * back to {@link #NEUTRAL}.
+ * {@link #MISTHALIN} is permanently inaccessible during the league.
+ * </p>
+ *
+ * <p>
+ * Region geometry is sourced from {@code leagues/regions.tsv}: a mapping
+ * from OSRS map region id to one of these enum names. Tiles with no
+ * mapping fall back to {@link #NEUTRAL}.
  * </p>
  */
 public enum LeagueRegion
@@ -39,12 +46,13 @@ public enum LeagueRegion
 
 	/**
 	 * Whether this region is reachable regardless of which area unlocks the
-	 * player has chosen. Always-unlocked regions are filtered through but
-	 * never gate transports.
+	 * player has chosen. Only Varlamore (the starting region) and the
+	 * NEUTRAL bucket are always-unlocked; every other region — including
+	 * Karamja — depends on the player's slot picks.
 	 */
 	public boolean isAlwaysUnlocked()
 	{
-		return this == VARLAMORE || this == KARAMJA || this == NEUTRAL;
+		return this == VARLAMORE || this == NEUTRAL;
 	}
 
 	/**
