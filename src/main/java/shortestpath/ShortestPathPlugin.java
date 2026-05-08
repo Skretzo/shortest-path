@@ -43,6 +43,7 @@ import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.SpriteID;
@@ -484,6 +485,22 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
+		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+	}
+
+	/**
+	 * Refresh the pathfinder when the player hops worlds. The new world's type
+	 * (e.g. seasonal) is what drives league-mode auto-detection in
+	 * {@link shortestpath.leagues.LeagueModeState}, so we need a fresh
+	 * {@code PathfinderConfig.refresh()} pass after every hop.
+	 */
+	@Subscribe
+	public void onWorldChanged(WorldChanged event)
+	{
+		if (pathfinderConfig == null)
+		{
+			return;
+		}
 		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
 	}
 
