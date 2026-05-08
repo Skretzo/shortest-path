@@ -17,90 +17,110 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.BankPickupRequirements;
 
-public class BankItemHighlightOverlay extends Overlay {
-    private final Client client;
-    private final ShortestPathPlugin plugin;
-    private final ItemManager itemManager;
+public class BankItemHighlightOverlay extends Overlay
+{
+	private final Client client;
+	private final ShortestPathPlugin plugin;
+	private final ItemManager itemManager;
 
-    @Inject
-    public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager) {
-        this.client = client;
-        this.plugin = plugin;
-        this.itemManager = itemManager;
-        setPosition(OverlayPosition.DYNAMIC);
-        setPriority(Overlay.PRIORITY_LOW);
-        setLayer(OverlayLayer.ABOVE_WIDGETS);
-    }
+	@Inject
+	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	{
+		this.client = client;
+		this.plugin = plugin;
+		this.itemManager = itemManager;
+		setPosition(OverlayPosition.DYNAMIC);
+		setPriority(Overlay.PRIORITY_LOW);
+		setLayer(OverlayLayer.ABOVE_WIDGETS);
+	}
 
-    @Override
-    public Dimension render(Graphics2D graphics) {
-        if (!plugin.highlightBankPickupItems) {
-            return null;
-        }
+	@Override
+	public Dimension render(Graphics2D graphics)
+	{
+		if (!plugin.highlightBankPickupItems)
+		{
+			return null;
+		}
 
-        if (plugin.getPathfinder() == null) {
-            return null;
-        }
+		if (plugin.getPathfinder() == null)
+		{
+			return null;
+		}
 
-        List<PathStep> path = plugin.getPathfinder().getPath();
-        if (path == null || path.isEmpty()) {
-            return null;
-        }
+		List<PathStep> path = plugin.getPathfinder().getPath();
+		if (path == null || path.isEmpty())
+		{
+			return null;
+		}
 
-        Widget bankContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
-        if (bankContainer == null || bankContainer.isHidden()) {
-            return null;
-        }
+		Widget bankContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
+		if (bankContainer == null || bankContainer.isHidden())
+		{
+			return null;
+		}
 
-        if (plugin.getPathfinderConfig().bank == null) {
-            return null;
-        }
+		if (plugin.getPathfinderConfig().bank == null)
+		{
+			return null;
+		}
 
-        Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
-        if (bankLocations == null) {
-            return null;
-        }
+		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
+		if (bankLocations == null)
+		{
+			return null;
+		}
 
-        if (client.getLocalPlayer() == null) {
-            return null;
-        }
+		if (client.getLocalPlayer() == null)
+		{
+			return null;
+		}
 
-        int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
-        int pathIndex = -1;
-        for (int i = 0; i < path.size(); i++) {
-            if (path.get(i).getPackedPosition() == playerLocation) {
-                pathIndex = i;
-                break;
-            }
-        }
+		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
+		int pathIndex = -1;
+		for (int i = 0; i < path.size(); i++)
+		{
+			if (path.get(i).getPackedPosition() == playerLocation)
+			{
+				pathIndex = i;
+				break;
+			}
+		}
 
-        if (pathIndex < 0) {
-            return null;
-        }
+		if (pathIndex < 0)
+		{
+			return null;
+		}
 
-        BankPickupRequirements.BankPickupResult pickup = plugin.getBankPickup(path, pathIndex);
-        if (pickup == null || pickup.bankItemIds.isEmpty()) {
-            return null;
-        }
+		BankPickupRequirements.BankPickupResult pickup = plugin.getBankPickup(path, pathIndex);
+		if (pickup == null || pickup.bankItemIds.isEmpty())
+		{
+			return null;
+		}
 
-        Widget[] items = bankContainer.getChildren();
-        if (items == null) {
-            return null;
-        }
+		Widget[] items = bankContainer.getChildren();
+		if (items == null)
+		{
+			return null;
+		}
 
-        Color highlight = plugin.colourBankPickupHighlight;
-        for (Widget item : items) {
-            if (item == null || item.isHidden() || item.getItemId() < 0) {
-                continue;
-            }
-            if (pickup.bankItemIds.contains(item.getItemId())) {
-                BufferedImage outline = itemManager.getItemOutline(item.getItemId(), item.getItemQuantity(), highlight);
-                if (outline != null) {
-                    graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
-                }
-            }
-        }
+		Color highlight = plugin.colourBankPickupHighlight;
+		for (Widget item : items)
+		{
+			if (item == null || item.isHidden() || item.getItemId() < 0)
+			{
+				continue;
+			}
+			if (pickup.bankItemIds.contains(item.getItemId()))
+			{
+				BufferedImage outline = itemManager.getItemOutline(item.getItemId(), item.getItemQuantity(), highlight);
+				if (outline != null)
+				{
+					graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
+				}
+			}
+		}
 
-        return null;
-    }
+		return null;
+	}
 }
+
