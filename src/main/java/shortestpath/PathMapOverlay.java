@@ -184,8 +184,8 @@ public class PathMapOverlay extends Overlay
 
 	private Area getWorldMapClipArea(Rectangle baseRectangle)
 	{
-		final Widget overview = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		final Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
+		final Widget overview = client.getWidget(InterfaceID.Worldmap.OVERVIEW_CONTAINER);
+		final Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAPLIST_BOX_GRAPHIC0);
 
 		Area clipArea = new Area(baseRectangle);
 
