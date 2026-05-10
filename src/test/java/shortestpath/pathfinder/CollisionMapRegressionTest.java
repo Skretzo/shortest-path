@@ -90,20 +90,22 @@ public class CollisionMapRegressionTest
 	}
 
 	// ---------------------------------------------------------------------
-	// Issue #270 / #233 — Death Plateau hunter trail and approach.
-	// The hunter footprint trail object IDs (31303–31419) are now excluded
-	// in CollisionMapDumper#Exclusion.matches so that they do not block
-	// the player walking along the path.
+	// Issue #270 — Death Plateau approach.
+	// The "invisible wall" object 38848 stands across the route up to Death
+	// Plateau. It is genuinely a wall in the engine (see Duel Arena below),
+	// so the dumper marks it as BLOCKED. Reaching the plateau in-game uses an
+	// elevation/stairs route that should be expressed as a transport entry in
+	// src/main/resources/transports/, NOT by relaxing the wall in the dumper.
+	// This test locks down that the wall stays blocking on the dumper side.
 	// ---------------------------------------------------------------------
 
 	@Test
-	public void deathPlateauApproachHasOpenTiles()
+	public void deathPlateauApproachWallIsBlocked()
 	{
-		// Tiles on the trail leading up to Death Plateau should have at least
-		// one open neighbour — the hunter footprint exclusion guarantees this.
-		assertOpen(2893, 3619, 0);
-		assertOpen(2894, 3619, 0);
-		assertOpen(2895, 3619, 0);
+		// Tile immediately south of the 38848 wall row at the Burthorpe entry
+		// to Death Plateau — should not step north through the wall.
+		assertFalse("Death Plateau invisible wall must block north step",
+			map.n(2895, 3619, 0));
 	}
 
 	// ---------------------------------------------------------------------

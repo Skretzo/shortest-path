@@ -706,9 +706,12 @@ public class CollisionMapDumper
 		HOSIDIUS_VINES_46382(46382),
 
 		// The invisible walls are placed all over the map. Their purpose is unknown.
-		// They dont seem to block player movement.
-		// Most annoyingly they block the entrance to the Death Plateau.
-		INVISIBLE_WALL_38848(38848, FlagMap.TILE_DEFAULT),
+		// At Emir's Arena (Duel Arena) and other locations they correctly block the
+		// player. They are kept BLOCKED here; locations where they incorrectly
+		// block legitimate routes (e.g. Death Plateau approach, issue #270) should
+		// be addressed with a transport entry in src/main/resources/transports/
+		// rather than relaxing the wall globally. See issues #270 and #339.
+		INVISIBLE_WALL_38848(38848),
 
 		KENDAL_STANDING_SPEARS_5860(5860),
 
