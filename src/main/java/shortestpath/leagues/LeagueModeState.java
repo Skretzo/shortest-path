@@ -65,26 +65,26 @@ public class LeagueModeState
 
 	/**
 	 * Maps the numeric area id stored in a {@code LEAGUE_AREA_SELECTION_*}
-	 * varbit to its {@link LeagueRegion}. Numbering follows the wiki's
-	 * "Demonic_Pacts_League/Areas" page (id 2 = Misthalin is included for
-	 * completeness even though it is never selectable).
+	 * varbit to its {@link LeagueRegion}. Numbering was found through trial
+	 * and error (id 1 = Misthalin is included for completeness even though
+	 * it is never selectable).
 	 */
 	private static final Map<Integer, LeagueRegion> AREA_VARBIT_TO_REGION;
 
 	static
 	{
 		Map<Integer, LeagueRegion> m = new HashMap<>();
-		m.put(1, LeagueRegion.VARLAMORE);
-		m.put(2, LeagueRegion.MISTHALIN);
-		m.put(3, LeagueRegion.KARAMJA);
-		m.put(4, LeagueRegion.ASGARNIA);
-		m.put(5, LeagueRegion.DESERT);
-		m.put(6, LeagueRegion.FREMENNIK);
-		m.put(7, LeagueRegion.KANDARIN);
-		m.put(8, LeagueRegion.KOUREND);
-		m.put(9, LeagueRegion.MORYTANIA);
-		m.put(10, LeagueRegion.TIRANNWN);
+		m.put(1, LeagueRegion.MISTHALIN);
+		m.put(2, LeagueRegion.KARAMJA);
+		m.put(3, LeagueRegion.ASGARNIA);
+		m.put(4, LeagueRegion.KOUREND);
+		m.put(5, LeagueRegion.MORYTANIA);
+		m.put(6, LeagueRegion.DESERT);
+		m.put(7, LeagueRegion.TIRANNWN);
+		m.put(8, LeagueRegion.FREMENNIK);
 		m.put(11, LeagueRegion.WILDERNESS);
+		m.put(20, LeagueRegion.KANDARIN);
+		m.put(21, LeagueRegion.VARLAMORE);
 		AREA_VARBIT_TO_REGION = Collections.unmodifiableMap(m);
 	}
 
@@ -118,11 +118,6 @@ public class LeagueModeState
 		EnumSet<LeagueRegion> next = EnumSet.noneOf(LeagueRegion.class);
 		if (seasonal)
 		{
-			// Varlamore is the always-unlocked starting region. Karamja
-			// arrives via slot 1 the moment the player makes their first
-			// paid pick at 80 tasks, so we read it from the same varbit
-			// table as every other unlock rather than auto-adding it here.
-			next.add(LeagueRegion.VARLAMORE);
 			for (int varbitId : AREA_SELECTION_VARBITS)
 			{
 				addRegionFromSlot(client, varbitId, next);
