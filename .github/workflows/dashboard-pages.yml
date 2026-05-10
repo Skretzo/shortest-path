@@ -40,6 +40,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Build collision map dashboard
+        run: ./gradlew dashboard -PdashboardDataset=/dashboard/collision-map-issues.csv --stacktrace
+        shell: bash
+
       - name: Build clue locations dashboard
         run: ./gradlew dashboard -PdashboardDataset=/dashboard/clue_locations_full.csv -PdashboardProfile=false --stacktrace
         shell: bash

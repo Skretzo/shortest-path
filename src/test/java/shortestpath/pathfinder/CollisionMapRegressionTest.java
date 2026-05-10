@@ -140,7 +140,7 @@ public class CollisionMapRegressionTest
 	}
 
 	// ---------------------------------------------------------------------
-	// Issue #1069 (existing) — Varrock Palace trellis: with no transport
+	// Varrock Palace trellis: with no transport
 	// configured the only crossing is via the trellis object, so adjacent
 	// tiles should not be directly connected through the wall.
 	// ---------------------------------------------------------------------

@@ -358,101 +358,63 @@ public class CollisionMapDumper
 						{
 							Z = z != tileZ ? z : loc.getPosition().getZ();
 
-							if (object.getMapSceneID() != MAP_SCENE_ID_NONE)
+							boolean door = object.getWallOrDoor() != WALL_OR_DOOR_NONE;
+							boolean doorway = !door && object.getInteractType() == INTERACT_TYPE_NONE && type == OBJECT_TYPE_WALL_STRAIGHT;
+							tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
+							if (exclusion != null)
 							{
-								if (exclusion != null)
+								tile = exclusion;
+							}
+							else if (doorway)
+							{
+								continue;
+							}
+
+							if (type == OBJECT_TYPE_WALL_STRAIGHT || type == OBJECT_TYPE_WALL_ENTIRE_CORNER)
+							{
+								if (orientation == ORIENTATION_WEST) // wall on west
 								{
-									tile = exclusion;
+									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 								}
-								else if (object.getInteractType() == INTERACT_TYPE_NONE)
+								else if (orientation == ORIENTATION_NORTH) // wall on north
 								{
-									continue;
+									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 								}
-								for (int sx = 0; sx < sizeX; sx++)
+								else if (orientation == ORIENTATION_EAST) // wall on east
 								{
-									for (int sy = 0; sy < sizeY; sy++)
-									{
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-										flagMap.set(X + sx, Y + sy - 1, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx - 1, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-									}
+									flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
+								}
+								else if (orientation == ORIENTATION_SOUTH) // wall on south
+								{
+									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
 								}
 							}
-							else
+
+							// OBJECT_TYPE_WALL_SQUARE_CORNER (type 3) is intentionally NOT
+							// handled. In the OSRS engine these are decorative corner posts
+							// that do not block player movement — enabling collision here
+							// blocks edges around buildings (verified by Catherby/Wilderness
+							// regression tests). If this assumption ever changes, see the
+							// commented-out reference implementation in the git history of
+							// this file.
+
+							if (type == OBJECT_TYPE_WALL_ENTIRE_CORNER) // double walls
 							{
-								boolean door = object.getWallOrDoor() != WALL_OR_DOOR_NONE;
-								boolean doorway = !door && object.getInteractType() == INTERACT_TYPE_NONE && type == OBJECT_TYPE_WALL_STRAIGHT;
-								tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
-								if (exclusion != null)
+								if (orientation == ORIENTATION_SOUTH)
 								{
-									tile = exclusion;
+									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 								}
-								else if (doorway)
+								else if (orientation == ORIENTATION_WEST)
 								{
-									continue;
+									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
 								}
-
-								if (type == OBJECT_TYPE_WALL_STRAIGHT || type == OBJECT_TYPE_WALL_ENTIRE_CORNER)
+								else if (orientation == ORIENTATION_NORTH)
 								{
-									if (orientation == ORIENTATION_WEST) // wall on west
-									{
-										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-									}
-									else if (orientation == ORIENTATION_NORTH) // wall on north
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									}
-									else if (orientation == ORIENTATION_EAST) // wall on east
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									}
-									else if (orientation == ORIENTATION_SOUTH) // wall on south
-									{
-										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
-									}
+									flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
 								}
-
-								/*
-								if (type == OBJECT_TYPE_WALL_SQUARE_CORNER)
+								else if (orientation == ORIENTATION_EAST)
 								{
-									if (orientation == ORIENTATION_WEST) // corner north-west
-									{
-										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-									}
-									else if (orientation == ORIENTATION_NORTH) // corner north-east
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									}
-									else if (orientation == ORIENTATION_EAST) // corner south-east
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									}
-									else if (orientation == ORIENTATION_SOUTH) // corner south-west
-									{
-										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
-									}
-								}
-								*/
-
-								if (type == OBJECT_TYPE_WALL_ENTIRE_CORNER) // double walls
-								{
-									if (orientation == ORIENTATION_SOUTH)
-									{
-										flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-									}
-									else if (orientation == ORIENTATION_WEST)
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									}
-									else if (orientation == ORIENTATION_NORTH)
-									{
-										flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									}
-									else if (orientation == ORIENTATION_EAST)
-									{
-										flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
-									}
+									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_SOUTH, tile);
 								}
 							}
 						}
@@ -460,46 +422,26 @@ public class CollisionMapDumper
 						// Diagonal walls
 						if (type == OBJECT_TYPE_WALL_DIAGONAL)
 						{
-							if (object.getMapSceneID() != MAP_SCENE_ID_NONE)
+							boolean door = object.getWallOrDoor() != WALL_OR_DOOR_NONE;
+							tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
+							if (exclusion != null)
 							{
-								if (exclusion != null)
-								{
-									tile = exclusion;
-								}
-								for (int sx = 0; sx < sizeX; sx++)
-								{
-									for (int sy = 0; sy < sizeY; sy++)
-									{
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-										flagMap.set(X + sx, Y + sy - 1, Z, FlagMap.FLAG_NORTH, tile);
-										flagMap.set(X + sx - 1, Y + sy, Z, FlagMap.FLAG_EAST, tile);
-									}
-								}
+								tile = exclusion;
 							}
-							else
-							{
-								boolean door = object.getWallOrDoor() != WALL_OR_DOOR_NONE;
-								tile = door ? FlagMap.TILE_DEFAULT : FlagMap.TILE_BLOCKED;
-								if (exclusion != null)
-								{
-									tile = exclusion;
-								}
 
-								if (orientation != ORIENTATION_WEST && orientation != ORIENTATION_EAST) // diagonal wall pointing north-east
-								{
-									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
-									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_EAST, tile);
-								}
-								else // diagonal wall pointing north-west
-								{
-									flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X, Y, Z, FlagMap.FLAG_WEST, tile);
-									flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
-									flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
-								}
+							if (orientation != ORIENTATION_WEST && orientation != ORIENTATION_EAST) // diagonal wall pointing north-east
+							{
+								flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X, Y, Z, FlagMap.FLAG_EAST, tile);
+								flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X - 1, Y, Z, FlagMap.FLAG_EAST, tile);
+							}
+							else // diagonal wall pointing north-west
+							{
+								flagMap.set(X, Y, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X, Y, Z, FlagMap.FLAG_WEST, tile);
+								flagMap.set(X, Y - 1, Z, FlagMap.FLAG_NORTH, tile);
+								flagMap.set(X - 1, Y, Z, FlagMap.FLAG_WEST, tile);
 							}
 						}
 
@@ -704,14 +646,6 @@ public class CollisionMapDumper
 		HOSIDIUS_VINES_46380(46380),
 		HOSIDIUS_VINES_46381(46381),
 		HOSIDIUS_VINES_46382(46382),
-
-		// The invisible walls are placed all over the map. Their purpose is unknown.
-		// At Emir's Arena (Duel Arena) and other locations they correctly block the
-		// player. They are kept BLOCKED here; locations where they incorrectly
-		// block legitimate routes (e.g. Death Plateau approach, issue #270) should
-		// be addressed with a transport entry in src/main/resources/transports/
-		// rather than relaxing the wall globally. See issues #270 and #339.
-		INVISIBLE_WALL_38848(38848),
 
 		KENDAL_STANDING_SPEARS_5860(5860),
 
