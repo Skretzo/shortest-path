@@ -5022,6 +5022,10 @@
 2521 3494 1	2521 3494 0	Climb-down Ladder 16679						2	
 2522 3493 1	2522 3493 0	Climb-down Ladder 16679						2	
 									
+# Ancient Cavern (Baxtorian Falls Whirlpool)									
+2511 3511 0	1768 5366 0	Jump-into Whirlpool 25274	35 Firemaking					2	
+2512 3511 0	1768 5366 0	Jump-into Whirlpool 25274	35 Firemaking					2	
+									
 # Hunter Guild									
 1559 3046 0	1556 3046 2	Climb-up Rope 51647						2	
 1556 3046 2	1559 3046 0	Climb-down Rope 51644						2	
