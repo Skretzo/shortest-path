@@ -114,6 +114,14 @@ public class CollisionMapDumper
 	 * Tile setting flag for bridge tiles
 	 */
 	private static final int TILE_SETTING_BRIDGE_FLAG = 2;
+
+	/**
+	 * Tile setting flag indicating that the tile on plane (z+1) should be drawn/walked
+	 * on plane z. The game uses this to project objects (bridges, raised paths,
+	 * whirlpools, plateau interiors) from an upper plane onto the visible ground
+	 * floor. Mirrors FLAG_VISIBLE_BELOW from the RuneLite MapImageDumper.
+	 */
+	private static final int TILE_SETTING_VISIBLE_BELOW = 8;
 	
 	/**
 	 * Tile setting indicating bridge wall
@@ -329,10 +337,27 @@ public class CollisionMapDumper
 					boolean isBridge = (region.getTileSetting(BRIDGE_CHECK_PLANE, localX, localY) & TILE_SETTING_BRIDGE_FLAG) != 0;
 					int tileZ = z + (isBridge ? 1 : 0);
 
+					// Link-below: when the tile on plane z+1 has the VISIBLE_BELOW flag set,
+					// objects placed on z+1 (and the z+1 floor) need to be projected onto z
+					// because that is where the player actually walks. Without this, bridges
+					// such as the Auburnvale north-east bridge (#193/#303) and projected
+					// areas like the Ancient Cavern whirlpool (#374), Giants Foundry (#272)
+					// and Death Plateau / duel arena perimeter (#270/#339) appear blocked or
+					// missing walls in the collision map.
+					boolean linkBelow = tileZ + 1 < Region.Z
+						&& (region.getTileSetting(tileZ + 1, localX, localY) & TILE_SETTING_VISIBLE_BELOW) != 0;
+					int linkTileZ = tileZ + 1;
+
 					for (Location loc : region.getLocations())
 					{
 						Position pos = loc.getPosition();
-						if (pos.getX() != regionX || pos.getY() != regionY || pos.getZ() != tileZ)
+						if (pos.getX() != regionX || pos.getY() != regionY)
+						{
+							continue;
+						}
+						boolean atTileZ = pos.getZ() == tileZ;
+						boolean atLinkTileZ = linkBelow && pos.getZ() == linkTileZ;
+						if (!atTileZ && !atLinkTileZ)
 						{
 							continue;
 						}
@@ -355,7 +380,12 @@ public class CollisionMapDumper
 						// Walls
 						if (type >= OBJECT_TYPE_WALL_STRAIGHT && type <= OBJECT_TYPE_WALL_MAX)
 						{
-							Z = z != tileZ ? z : loc.getPosition().getZ();
+							// Always apply walls on the loop's plane z (the player's
+							// effective walking plane). For bridge tiles, link-below
+							// projection, or normal tiles, the location may sit on a
+							// different plane in the cache (z, z+1, ...) but in our
+							// FlagMap there is only one walkable surface per (x, y, z).
+							Z = z;
 
 							if (object.getMapSceneID() != MAP_SCENE_ID_NONE)
 							{
@@ -527,12 +557,15 @@ public class CollisionMapDumper
 					}
 
 					// Tile without floor / floating in the air ("noclip" tiles, typically found where z > 0)
-					int underlayId = region.getUnderlayId(z < MAX_PLANE_FOR_TILE_Z_ADJUSTMENT ? tileZ : z, localX, localY);
-					int overlayId = region.getOverlayId(z < MAX_PLANE_FOR_TILE_Z_ADJUSTMENT ? tileZ : z, localX, localY);
+					// When link-below is active the walkable surface is the floor on plane z+1,
+					// so read underlay/overlay/setting from there instead of the empty z plane.
+					int floorPlane = linkBelow ? linkTileZ : (z < MAX_PLANE_FOR_TILE_Z_ADJUSTMENT ? tileZ : z);
+					int underlayId = region.getUnderlayId(floorPlane, localX, localY);
+					int overlayId = region.getOverlayId(floorPlane, localX, localY);
 					boolean noFloor = underlayId == NO_UNDERLAY_OVERLAY_ID && overlayId == NO_UNDERLAY_OVERLAY_ID;
 
 					// Nomove
-					int floorType = region.getTileSetting(z < MAX_PLANE_FOR_TILE_Z_ADJUSTMENT ? tileZ : z, localX, localY);
+					int floorType = region.getTileSetting(floorPlane, localX, localY);
 					if (floorType == TILE_SETTING_BLOCKED || // water, rooftop wall
 						floorType == TILE_SETTING_BRIDGE_WALL || // bridge wall
 						floorType == TILE_SETTING_HOUSE_ROOF || // house wall/roof
@@ -839,6 +872,14 @@ public class CollisionMapDumper
 
 		public static Boolean matches(int id)
 		{
+			// Hunter footprint trail objects (Fossil Island, Death Plateau, etc.).
+			// These are decorative trail tiles that the dumper otherwise treats as
+			// blocking. See issues #233 and #270; ID range from Owain94's enumeration
+			// of HUNTING_TRAIL9_* through HUNTING_TRAIL12_* in the gameval cache.
+			if (id >= 31303 && id <= 31419)
+			{
+				return FlagMap.TILE_DEFAULT;
+			}
 			for (Exclusion exclusion : values())
 			{
 				if (exclusion.id == id)
