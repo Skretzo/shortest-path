@@ -275,4 +275,23 @@ public class CollisionMapRegressionTest
 		assertWalkable(3779, 2901, 0);
 		assertWalkable(3781, 2901, 0);
 	}
+
+	// Issue #203 — Dwarf Cannon damaged railings.
+	// The 17 wall variants 15589-15605 carry wallOrDoor=1 so the dumper
+	// otherwise treats them as passable doors. All variants are excluded so
+	// the railings around the Dwarf Cannon camp block ordinary movement;
+	// the quest itself crosses them via an inspect action, not pathfinding.
+	@Test
+	public void issue203DwarfCannonRailingsBlock()
+	{
+		// North-facing railings along the camp's southern fence.
+		assertFalse("(2566,3455,0) N should be blocked", map.n(2566, 3455, 0));
+		assertFalse("(2567,3455,0) N should be blocked", map.n(2567, 3455, 0));
+		assertFalse("(2568,3455,0) N should be blocked", map.n(2568, 3455, 0));
+		assertFalse("(2569,3455,0) N should be blocked", map.n(2569, 3455, 0));
+		// East-facing railings along the camp's western fence.
+		assertFalse("(2554,3473,0) E should be blocked", map.e(2554, 3473, 0));
+		assertFalse("(2554,3474,0) E should be blocked", map.e(2554, 3474, 0));
+		assertFalse("(2554,3475,0) E should be blocked", map.e(2554, 3475, 0));
+	}
 }

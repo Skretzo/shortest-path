@@ -604,8 +604,6 @@ public class CollisionMapDumper
 		DRUIDS_ROBES_4035(4035),
 		DRUIDS_ROBES_4036(4036),
 
-		DWARF_CANNON_RAILING_15601(15601), // type = 9 is full blocked diagonal, type = 0 is wall, type = 1 is corner
-
 		EDGEVILLE_DUNGEON_DOOR_1804(1804),
 
 		FALADOR_GRAPPLE_WALL_17049(17049),
@@ -784,6 +782,14 @@ public class CollisionMapDumper
 			if (id >= 31303 && id <= 31419)
 			{
 				return FlagMap.TILE_DEFAULT;
+			}
+			// Dwarf Cannon damaged railings (issue #203). The 17 variants 15589-15603
+			// are wallOrDoor=1 so the dumper otherwise treats them as a passable door.
+			// All variants must block — the railings are only crossed via the quest's
+			// inspect action, not by ordinary movement. 15604 and 15605 are legitimate gates.
+			if (id >= 15589 && id <= 15603)
+			{
+				return FlagMap.TILE_BLOCKED;
 			}
 			for (Exclusion exclusion : values())
 			{
