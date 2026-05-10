@@ -15,6 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Checkout tooling repository
+        uses: actions/checkout@v6
+        with:
+          repository: osrs-pathfinding/shortest-path-tooling
+          path: tooling
+
       - name: Checkout runelite
         uses: actions/checkout@v6
         with:
@@ -29,7 +35,7 @@ jobs:
 
       - name: Get the cache
         run: |
-          ./collision-map-update/download-latest-cache.sh
+          ./tooling/collision-map-update/download-latest-cache.sh
 
       # Replace the following in the key file
       # Replace the words "mapsquare" with "region" and "key" with "keys" in the keys.json file
@@ -40,11 +46,11 @@ jobs:
 
       - name: Insert CollisionMapDumper.java
         run: |
-          cp ./collision-map-update/CollisionMapDumper.java runelite/cache/src/main/java/net/runelite/cache
+          cp ./tooling/collision-map-update/CollisionMapDumper.java runelite/cache/src/main/java/net/runelite/cache
 
       - name: Patch Runelite build.gradle.kts
         run: |
-          cp ./collision-map-update/build.gradle.kts.patch runelite/cache
+          cp ./tooling/collision-map-update/build.gradle.kts.patch runelite/cache
           cd runelite/cache
           git apply build.gradle.kts.patch
 
@@ -69,7 +75,7 @@ jobs:
 
       - name: Clean up the directories
         run: |
-          rm -rf runelite cache output cache.jar keys.json cache.zip
+          rm -rf runelite cache output cache.jar keys.json cache.zip tooling
 
       - name: Commit changes
         uses: EndBug/add-and-commit@v9
