@@ -189,4 +189,90 @@ public class CollisionMapRegressionTest
 		assertEquals("Lumbridge tile has expected position pack",
 			(50 & 0xFFFF) | ((50 & 0xFFFF) << 16), regionIndex);
 	}
+
+	// =====================================================================
+	// Per-issue regression locks for the linked bug reports in PR #466.
+	// Coordinates were derived by diffing the previous master
+	// collision-map.zip against the regenerated one (see
+	// scripts/compare_collision_maps.py); each test pins down the tile-edge
+	// flips that the fix produced so a future map regeneration cannot
+	// silently undo them.
+	// =====================================================================
+
+	// Issue #178 — Twilight Temple stairs.
+	// The mapScene over-block left the entire temple interior unreachable.
+	// After the fix the stair landings (1684, 3245..3248, 0) are walkable
+	// and the staircase tile (1684, 3247, 0) has open neighbours so the
+	// pathfinder can descend through it.
+	@Test
+	public void issue178TwilightTempleStairIsReachable()
+	{
+		// Stair landing tiles all have at least one open neighbour after
+		// dropping the mapScene over-block (previously they were
+		// fully-blocked four-edge cells).
+		assertOpen(1683, 3247, 0);
+		assertOpen(1684, 3247, 0);
+		assertOpen(1685, 3247, 0);
+		assertOpen(1684, 3248, 0);
+		// Stair traversal: north step on the staircase row should be walkable.
+		assertTrue("stair row (1683,3247) east step", map.e(1683, 3247, 0));
+		assertTrue("stair row (1684,3247) north step", map.n(1684, 3247, 0));
+		assertTrue("stair row (1684,3247) west step", map.w(1684, 3247, 0));
+	}
+
+	// Issue #190 — Mind altar hidden-object collision.
+	// Object id 85 used to mark (2979, 3508, 0) as fully blocked. The fix
+	// makes the tile walkable so the pathfinder no longer detours around it.
+	@Test
+	public void issue190MindAltarTileIsWalkable()
+	{
+		// Old map had all four edges blocked; new map opens N/S/W.
+		assertTrue("(2979,3508) north should be open", map.n(2979, 3508, 0));
+		assertTrue("(2979,3508) south should be open", map.s(2979, 3508, 0));
+		assertTrue("(2979,3508) west should be open", map.w(2979, 3508, 0));
+	}
+
+	// Issue #193 / #303 — Auburnvale bridge.
+	// The bridge approach tiles (1435..1436, 3340..3344, 0) were entirely
+	// blocked because the wooden railing walls carry a mapSceneID. The fix
+	// reinterprets those walls as ordinary directional walls so the bridge
+	// approach is walkable.
+	@Test
+	public void issue193AuburnvaleBridgeApproachIsWalkable()
+	{
+		// All five rows of the southern bridge approach should be open enough
+		// for the pathfinder to step through.
+		for (int y = 3340; y <= 3344; y++)
+		{
+			assertTrue("Auburnvale bridge approach (1435," + y + ") north",
+				map.n(1435, y, 0));
+			assertTrue("Auburnvale bridge approach (1435," + y + ") east",
+				map.e(1435, y, 0));
+		}
+	}
+
+	// Issue #270 — Death Plateau climb-rocks access.
+	// The climb-rocks transport endpoints must both be walkable. The
+	// invisible wall above them remains blocking (covered separately by
+	// deathPlateauApproachWallIsBlocked).
+	@Test
+	public void issue270DeathPlateauClimbEndpointsAreWalkable()
+	{
+		assertOpen(2856, 3611, 0); // bottom-of-rocks tile
+		assertOpen(2856, 3613, 0); // top-of-rocks tile
+	}
+
+	// Issue #313 — Rock north of Sophanem.
+	// Region (59, 45) was heavily under-populated in the previous map (most
+	// tiles fully blocked because the rock decoration carried a mapScene id
+	// over the whole footprint). The fix lets the dumper emit real wall flags
+	// for the area so the rock is just a single obstacle rather than a wall
+	// of blocked terrain.
+	@Test
+	public void issue313SophanemRegionIsPopulated()
+	{
+		// Centre of the rock area, well clear of the rock itself.
+		assertWalkable(3779, 2901, 0);
+		assertWalkable(3781, 2901, 0);
+	}
 }
