@@ -3,8 +3,13 @@ package shortestpath.pathfinder;
 import net.runelite.api.Client;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
+import java.util.Map;
+import java.util.Set;
+import shortestpath.Destination;
+import shortestpath.DestinationRequirements;
 import shortestpath.ShortestPathConfig;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportLoader;
 
 // This subclass is used to provide mocked implementations of methods from the normal
 // PathfinderConfig. CRUCIAL: Not implemented via Mockito as these methods are called
@@ -17,6 +22,29 @@ import shortestpath.transport.Transport;
 // Other methods are delegated to a normal PathfinderConfig.
 public class TestPathfinderConfig extends PathfinderConfig
 {
+	/**
+	 * Initialization-on-Demand Holder: loads the five resource-heavy fields exactly once
+	 * per JVM, so every TestPathfinderConfig instance shares the same pre-parsed data.
+	 */
+	private static final class ResourceHolder
+	{
+		static final SplitFlagMap MAP_DATA;
+		static final Map<Integer, Set<Transport>> ALL_TRANSPORTS;
+		static final Map<String, Set<Integer>> ALL_DESTINATIONS;
+		static final Map<String, Set<Integer>> FILTERED_DESTINATIONS;
+		static final Map<Integer, DestinationRequirements> BANK_REQUIREMENTS;
+
+		static
+		{
+			MAP_DATA = SplitFlagMap.fromResources();
+			ALL_TRANSPORTS = TransportLoader.loadAllFromResources();
+			PathfinderConfig.remapPohDestinations(ALL_TRANSPORTS);
+			ALL_DESTINATIONS = Destination.loadAllFromResources();
+			FILTERED_DESTINATIONS = PathfinderConfig.filterDestinations(ALL_DESTINATIONS);
+			BANK_REQUIREMENTS = Destination.loadBankRequirementsFromResources();
+		}
+	}
+
 	private final QuestState questState;
 	private final boolean bypassVarbitChecks;
 	private final boolean bypassVarPlayerChecks;
@@ -29,7 +57,12 @@ public class TestPathfinderConfig extends PathfinderConfig
 	public TestPathfinderConfig(Client client, ShortestPathConfig config, QuestState questState,
 		boolean bypassVarbitChecks, boolean bypassVarPlayerChecks)
 	{
-		super(client, config);
+		super(client, config,
+			ResourceHolder.MAP_DATA,
+			ResourceHolder.ALL_TRANSPORTS,
+			ResourceHolder.ALL_DESTINATIONS,
+			ResourceHolder.FILTERED_DESTINATIONS,
+			ResourceHolder.BANK_REQUIREMENTS);
 		this.questState = questState;
 		this.bypassVarbitChecks = bypassVarbitChecks;
 		this.bypassVarPlayerChecks = bypassVarPlayerChecks;

@@ -134,13 +134,32 @@ public class PathfinderConfig
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
 		this.allTransports = TransportLoader.loadAllFromResources();
-		remapPohDestinations();
+		remapPohDestinations(allTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.size()).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.size()).build();
 		this.allDestinations = Destination.loadAllFromResources();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
 		this.bankRequirements = Destination.loadBankRequirementsFromResources();
+	}
+
+	protected PathfinderConfig(Client client, ShortestPathConfig config,
+		SplitFlagMap mapData, Map<Integer, Set<Transport>> allTransports,
+		Map<String, Set<Integer>> allDestinations, Map<String, Set<Integer>> filteredDestinations,
+		Map<Integer, DestinationRequirements> bankRequirements)
+	{
+		this.client = client;
+		this.config = config;
+		this.transportTypeConfig = new TransportTypeConfig(config);
+		this.mapData = mapData;
+		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
+		this.allTransports = allTransports;
+		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.size()).build();
+		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.size()).build();
+		this.allDestinations = allDestinations;
+		this.filteredDestinations = filteredDestinations;
+		this.destinations = allDestinations;
+		this.bankRequirements = bankRequirements;
 	}
 
 	/**
@@ -408,7 +427,7 @@ public class PathfinderConfig
 		return 0;
 	}
 
-	private Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations)
+	static Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations)
 	{
 		Map<String, Set<Integer>> filteredDestinations = new HashMap<>(allDestinations.size());
 		for (Map.Entry<String, Set<Integer>> entry : allDestinations.entrySet())
@@ -554,12 +573,12 @@ public class PathfinderConfig
 	 * are remapped so chaining with other POH transports is possible.
 	 * Called once at load time since Transport objects in allTransports are shared references.
 	 */
-	private void remapPohDestinations()
+	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)
 	{
 		int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
-		for (Set<Transport> transports : allTransports.values())
+		for (Set<Transport> transportSet : transports.values())
 		{
-			for (Transport transport : transports)
+			for (Transport transport : transportSet)
 			{
 				int destination = transport.getDestination();
 				int destX = WorldPointUtil.unpackWorldX(destination);
