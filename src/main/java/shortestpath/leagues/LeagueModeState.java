@@ -77,13 +77,13 @@ public class LeagueModeState
 		m.put(1, LeagueRegion.MISTHALIN);
 		m.put(2, LeagueRegion.KARAMJA);
 		m.put(3, LeagueRegion.ASGARNIA);
-		m.put(4, LeagueRegion.KOUREND);
+		m.put(4, LeagueRegion.KANDARIN);
 		m.put(5, LeagueRegion.MORYTANIA);
 		m.put(6, LeagueRegion.DESERT);
 		m.put(7, LeagueRegion.TIRANNWN);
 		m.put(8, LeagueRegion.FREMENNIK);
 		m.put(11, LeagueRegion.WILDERNESS);
-		m.put(20, LeagueRegion.KANDARIN);
+		m.put(20, LeagueRegion.KOUREND);
 		m.put(21, LeagueRegion.VARLAMORE);
 		AREA_VARBIT_TO_REGION = Collections.unmodifiableMap(m);
 	}
