@@ -410,6 +410,10 @@ public class PathfinderConfig
 		{
 			return costConsumableTeleportationItems;
 		}
+		if (transport.isConsumable() && TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
+		{
+			return transportTypeConfig.getCost(transport.getType()) + costConsumableTeleportationItems;
+		}
 		return transportTypeConfig.getCost(transport.getType());
 	}
 

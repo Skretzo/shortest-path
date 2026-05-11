@@ -995,6 +995,35 @@ public class PathfinderTest
 		assertEquals("Whistle should be used when far from any platform", 2, pathLength);
 	}
 
+	/**
+	 * Issue #468: costConsumableTeleportationItems should penalise the Quetzal
+	 * whistle as well as teleportation tabs, since both are consumable items.
+	 * Without this fix the whistle bypassed the consumable-item threshold and could
+	 * make a bank-detour route appear cheaper than a direct teleportation tab.
+	 *
+	 * Verified via the Aldarin platform cost boundary: from 1 tile away the platform
+	 * compareCost is 7 (1 walk + 6 flight). With costConsumableTeleportationItems=5
+	 * the whistle's actual cost becomes 4+5=9, so the platform wins (path length 3).
+	 * Before the fix the whistle paid no consumable penalty (cost 4) and won (path 2).
+	 */
+	@Test
+	public void testConsumableCostPenaltyAppliedToQuetzalWhistle()
+	{
+		when(config.useQuetzals()).thenReturn(true);
+		when(config.costConsumableTeleportationItems()).thenReturn(5);
+		when(config.costQuetzalWhistle()).thenReturn(0);
+		setupInventory(new Item(29271, 1)); // Quetzal whistle
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		int nearAldarin = WorldPointUtil.packWorldPoint(1390, 2901, 0);
+		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
+
+		int pathLength = calculatePathLength(nearAldarin, hunterGuild);
+		assertEquals(
+			"Platform should win when costConsumableTeleportationItems tips the whistle past the platform cost",
+			3, pathLength);
+	}
+
 	@Test
 	public void testSpiritTrees()
 	{
