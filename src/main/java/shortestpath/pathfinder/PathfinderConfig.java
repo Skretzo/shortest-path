@@ -551,6 +551,13 @@ public class PathfinderConfig
 	 * Whether both endpoints of the supplied transport are in unlocked
 	 * regions for the current league state. Always-unlocked tiles
 	 * (NEUTRAL, Varlamore, Karamja) pass through unchanged on any world.
+	 *
+	 * <p>If the transport declares a {@link Transport#getRegionOverride()
+	 * region override}, it replaces the chunk-classifier result for the
+	 * destination endpoint. Used for shortcuts whose destination chunk
+	 * sits in a different region than the wiki classifies the shortcut
+	 * under (e.g. Trollheim Wilderness climb \u2014 destination chunk is
+	 * Wilderness, but the shortcut is wiki-listed as Asgarnia).
 	 */
 	private boolean isTransportRegionAllowed(Transport transport)
 	{
@@ -563,7 +570,9 @@ public class PathfinderConfig
 		{
 			return false;
 		}
-		LeagueRegion destination = LeagueRegionChecker.getRegion(transport.getDestination());
+		LeagueRegion destination = transport.getRegionOverride() != null
+			? transport.getRegionOverride()
+			: LeagueRegionChecker.getRegion(transport.getDestination());
 		return leagueModeState.isUnlocked(destination);
 	}
 

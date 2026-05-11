@@ -42,6 +42,7 @@ KNOWN_COLUMNS = {
     "Wilderness level",
     "Varbits",
     "VarPlayers",
+    "Region override",
     # Destination-file-only columns
     "Info",
     # leagues/regions.tsv columns (regionId -> LeagueRegion mapping
@@ -66,6 +67,23 @@ _VAR_REQ = re.compile(r"^\d+[=><&@]\d+$")
 _COORD = re.compile(r"^\d+ \d+ \d+$")
 # Item requirement part after normalization: 'NAME=qty' where NAME is [A-Z0-9_]
 _ITEM_PART = re.compile(r"^[A-Z0-9_]+=\d+$")
+
+# Valid LeagueRegion enum values for the 'Region override' column.
+# Must match shortestpath.leagues.LeagueRegion exactly (case-sensitive).
+LEAGUE_REGIONS = {
+    "VARLAMORE",
+    "KARAMJA",
+    "ASGARNIA",
+    "KANDARIN",
+    "FREMENNIK",
+    "KOUREND",
+    "WILDERNESS",
+    "MORYTANIA",
+    "DESERT",
+    "TIRANNWN",
+    "MISTHALIN",
+    "NEUTRAL",
+}
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DIR = os.path.join(SCRIPT_DIR, "..", "src", "main", "resources")
@@ -179,6 +197,19 @@ def validate_consumable(value):
     return None
 
 
+def validate_region_override(value):
+    """Return error string if value is not a valid LeagueRegion name."""
+    v = value.strip()
+    if not v:
+        return None
+    if v not in LEAGUE_REGIONS:
+        return (
+            f"region override '{v}' is not a valid LeagueRegion "
+            f"(expected one of: {', '.join(sorted(LEAGUE_REGIONS))})"
+        )
+    return None
+
+
 # Map column name → validator function
 COLUMN_VALIDATORS = {
     "Origin":           validate_coordinate,
@@ -190,6 +221,7 @@ COLUMN_VALIDATORS = {
     "Duration":         validate_duration,
     "Wilderness level": validate_wilderness_level,
     "Consumable":       validate_consumable,
+    "Region override":  validate_region_override,
 }
 
 

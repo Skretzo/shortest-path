@@ -145,6 +145,14 @@ public class TransportRecord
 	}
 
 	/**
+	 * Gets the league region override field value.
+	 */
+	public String getRegionOverride()
+	{
+		return get(Fields.REGION_OVERRIDE);
+	}
+
+	/**
 	 * Standard field names used across TSV files
 	 */
 	public static final class Fields
@@ -161,6 +169,7 @@ public class TransportRecord
 		public static final String OBJECT_INFO = "menuOption menuTarget objectID";
 		public static final String VARBITS = "Varbits";
 		public static final String VAR_PLAYERS = "VarPlayers";
+		public static final String REGION_OVERRIDE = "Region override";
 
 		private Fields()
 		{
