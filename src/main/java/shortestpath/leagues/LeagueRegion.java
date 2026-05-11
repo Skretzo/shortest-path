@@ -16,7 +16,10 @@ package shortestpath.leagues;
  * player's unlocks: Death's office, POH, Zanaris, the Abyssal Area, random
  * events, instances, dynamic regions, tutorial island, and Sailing-skill
  * content (e.g. The Great Conch, The Summer Shore, The Node) which is not
- * part of the league at all.
+ * part of the league at all. The Great Conch is explicitly blocked as
+ * {@link #MISTHALIN} rather than left NEUTRAL because it has walkable tiles
+ * reachable via charter ship and fairy ring — leaving it NEUTRAL would allow
+ * the pathfinder to route through it.
  * </p>
  *
  * <p>
