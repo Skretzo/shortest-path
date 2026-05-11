@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import shortestpath.WorldPointUtil;
+import shortestpath.leagues.LeagueRegion;
 import shortestpath.transport.parser.FieldParser;
 import shortestpath.transport.parser.ItemRequirementParser;
 import shortestpath.transport.parser.QuestParser;
@@ -97,6 +98,17 @@ public class Transport
 	 */
 	@Getter
 	private String objectInfo = null;
+	/**
+	 * Per-transport seasonal-league region override. When set, the league-mode
+	 * region gate ({@code PathfinderConfig#isTransportRegionAllowed}) uses
+	 * this region for the destination chunk instead of the result of
+	 * {@code LeagueRegionChecker#getRegion(destination)}. Used for shortcuts
+	 * whose destination tile sits in a chunk that the wiki classifies under
+	 * a different region (e.g. Trollheim Wilderness climb — destination chunk
+	 * is Wilderness, but the wiki lists the shortcut under Asgarnia).
+	 */
+	@Getter
+	private LeagueRegion regionOverride = null;
 
 	/**
 	 * Creates a new transport from an origin-only transport
@@ -119,7 +131,8 @@ public class Transport
 			.maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel))
 			.objectInfo(origin.objectInfo)
 			.varRequirements(origin.varRequirements)
-			.varRequirements(destination.varRequirements);
+			.varRequirements(destination.varRequirements)
+			.regionOverride(destination.regionOverride != null ? destination.regionOverride : origin.regionOverride);
 
 		Transport builtTransport = builder.build();
 
@@ -191,9 +204,12 @@ public class Transport
 		{
 			builder.varPlayers(record.getVarPlayers());
 		}
+		if (record.has(TransportRecord.Fields.REGION_OVERRIDE))
+		{
+			builder.regionOverride(record.getRegionOverride());
+		}
 
 		Transport builtTransport = builder.build();
-
 		this.origin = builtTransport.origin;
 		this.destination = builtTransport.destination;
 		System.arraycopy(builtTransport.skillLevels, 0, this.skillLevels, 0, this.skillLevels.length);
@@ -206,6 +222,7 @@ public class Transport
 		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
 		this.objectInfo = builtTransport.objectInfo;
 		this.varRequirements.addAll(builtTransport.varRequirements);
+		this.regionOverride = builtTransport.regionOverride;
 	}
 
 	private Transport()
@@ -326,6 +343,7 @@ public class Transport
 		private boolean isConsumable = false;
 		private int maxWildernessLevel = -1;
 		private String objectInfo = null;
+		private LeagueRegion regionOverride = null;
 
 		public TransportBuilder origin(int origin)
 		{
@@ -471,6 +489,31 @@ public class Transport
 			return this;
 		}
 
+		public TransportBuilder regionOverride(LeagueRegion regionOverride)
+		{
+			if (regionOverride != null)
+			{
+				this.regionOverride = regionOverride;
+			}
+			return this;
+		}
+
+		public TransportBuilder regionOverride(String value)
+		{
+			if (value != null && !value.isEmpty())
+			{
+				try
+				{
+					this.regionOverride = LeagueRegion.valueOf(value.trim().toUpperCase());
+				}
+				catch (IllegalArgumentException e)
+				{
+					log.error("Invalid region override: {}", value);
+				}
+			}
+			return this;
+		}
+
 		public TransportBuilder varRequirements(Set<VarRequirement> requirements)
 		{
 			this.varRequirements.addAll(requirements);
@@ -504,6 +547,7 @@ public class Transport
 			transport.maxWildernessLevel = this.maxWildernessLevel;
 			transport.objectInfo = this.objectInfo;
 			transport.varRequirements.addAll(this.varRequirements);
+			transport.regionOverride = this.regionOverride;
 
 			// Post-build validation/refinement
 			if (transport.type != null && transport.type.isTeleport())
