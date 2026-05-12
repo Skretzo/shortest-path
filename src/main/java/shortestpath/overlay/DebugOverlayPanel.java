@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.Color;
@@ -15,6 +15,7 @@ import net.runelite.client.ui.overlay.components.ComponentConstants;
 import net.runelite.client.ui.overlay.components.LayoutableRenderableEntity;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
+import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.Pathfinder;
 
 public class DebugOverlayPanel extends OverlayPanel

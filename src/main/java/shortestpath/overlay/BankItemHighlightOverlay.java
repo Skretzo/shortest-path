@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.Color;
@@ -11,27 +11,19 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
-import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.BankPickupRequirements;
 
-public class BankItemHighlightOverlay extends Overlay
+public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
-	private final Client client;
-	private final ShortestPathPlugin plugin;
 	private final ItemManager itemManager;
 
 	@Inject
 	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
 	{
-		this.client = client;
-		this.plugin = plugin;
+		super(client, plugin);
 		this.itemManager = itemManager;
-		setPosition(OverlayPosition.DYNAMIC);
-		setPriority(Overlay.PRIORITY_LOW);
-		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
 
 	@Override
@@ -70,22 +62,7 @@ public class BankItemHighlightOverlay extends Overlay
 			return null;
 		}
 
-		if (client.getLocalPlayer() == null)
-		{
-			return null;
-		}
-
-		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
-		int pathIndex = -1;
-		for (int i = 0; i < path.size(); i++)
-		{
-			if (path.get(i).getPackedPosition() == playerLocation)
-			{
-				pathIndex = i;
-				break;
-			}
-		}
-
+		int pathIndex = getPlayerPathIndex(path);
 		if (pathIndex < 0)
 		{
 			return null;
