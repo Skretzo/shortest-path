@@ -465,10 +465,34 @@ public interface ShortestPathConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "highlightSpellbookSpells",
+		name = "Highlight spellbook spells",
+		description = "Highlight spells in the spellbook that need to be cast for the current path step",
+		position = 35,
+		section = sectionSettings
+	)
+	default boolean highlightSpellbookSpells()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "highlightInventoryItems",
+		name = "Highlight inventory items",
+		description = "Highlight items in the inventory and equipment that need to be used for the current path step",
+		position = 36,
+		section = sectionSettings
+	)
+	default boolean highlightInventoryItems()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 		name = "Player-Owned House",
 		description = "Options for POH (Player-Owned House) teleports",
-		position = 35,
+		position = 37,
 		closedByDefault = true
 	)
 	String sectionPoh = "sectionPoh";
