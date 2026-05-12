@@ -507,7 +507,7 @@ public class PathTileOverlay extends Overlay
 			if (!bankPickupItems.isEmpty())
 			{
 				String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
-				drawLabelAtPackedLocation(graphics, location, pickupText, 0);
+				playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
 
 				// By default, bank pickup info replaces the default transport hint text;
 				// enable the option to show both

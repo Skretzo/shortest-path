@@ -222,9 +222,16 @@ public final class BankPickupRequirements
 				itemName = "Unknown item";
 			}
 			boolean isCurrency = PathfinderConfig.CURRENCIES.contains(itemId);
-			if (isCurrency && qty > 1)
+			if (isCurrency)
 			{
-				itemName += " (" + String.format("%,d", qty) + ")";
+				if (qty > 1)
+				{
+					itemName += " (" + String.format("%,d", qty) + ")";
+				}
+			}
+			else
+			{
+				itemName = qty + " " + itemName;
 			}
 			parts.add(itemName);
 		}
