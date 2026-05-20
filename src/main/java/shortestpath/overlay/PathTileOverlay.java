@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.overlay;
 
 import com.google.inject.Inject;
 
@@ -23,6 +23,11 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.PrimitiveIntList;
+import shortestpath.ShortestPathPlugin;
+import shortestpath.TileCounter;
+import shortestpath.TileStyle;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.BankPickupRequirements;
@@ -493,19 +498,11 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Check if this is a bank step and items need to be picked up
-		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
-		if (bankLocations != null && plugin.getPathfinderConfig().bank != null)
 		{
-			List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
-				client,
-				plugin.getPathfinderConfig().bank,
-				plugin.getPathfinderConfig(),
-				bankLocations,
-				path,
-				pathIndex
-			);
-			if (!bankPickupItems.isEmpty())
+			BankPickupRequirements.BankPickupResult bankPickup = plugin.getBankPickup(path, pathIndex);
+			if (bankPickup != null && !bankPickup.phrases.isEmpty())
 			{
+				List<String> bankPickupItems = bankPickup.phrases;
 				String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
 				playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
 

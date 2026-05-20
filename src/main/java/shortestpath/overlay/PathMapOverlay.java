@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.BasicStroke;
@@ -16,6 +16,8 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.ShortestPathPlugin;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
