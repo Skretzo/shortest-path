@@ -442,10 +442,22 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "easyTeleportNames",
+		name = "Easy teleport names",
+		description = "Use Easy Teleports custom names in transport hints when available",
+		position = 33,
+		section = sectionSettings
+	)
+	default boolean easyTeleportNames()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showBankPickupInfo",
 		name = "Show transport hint at pickup",
 		description = "When standing at a bank on the path, also show the transport hint for the next step requiring an item pickup",
-		position = 33,
+		position = 34,
 		section = sectionSettings
 	)
 	default boolean showBankPickupInfo()
