@@ -436,9 +436,23 @@ public class PathTileOverlay extends Overlay
 	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
 	{
 		int location = currentStep.getPackedPosition();
-		if (nextStep == null || !plugin.showTransportInfo || plugin.isPathUnreachable() ||
-			!plugin.getPathfinder().isDone() ||
+		if (nextStep == null || !plugin.showTransportInfo ||
 			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane())
+		{
+			return;
+		}
+
+		// Sailing: teleports are suppressed while aboard a boat. When the path is
+		// unreachable as a result, show a one-time hint on the player tile.
+		if (pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
+			&& plugin.getPathfinder().isDone() && plugin.isPathUnreachable())
+		{
+			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
+				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
+			return;
+		}
+
+		if (plugin.isPathUnreachable() || !plugin.getPathfinder().isDone())
 		{
 			return;
 		}

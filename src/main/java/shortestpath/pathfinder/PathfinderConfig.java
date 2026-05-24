@@ -125,6 +125,8 @@ public class PathfinderConfig
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
+	@Getter
+	private boolean isOnSailingBoat;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -283,6 +285,8 @@ public class PathfinderConfig
 
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
+			isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
+
 			int i = 0;
 			for (; i < Skill.values().length; i++)
 			{
@@ -647,6 +651,14 @@ public class PathfinderConfig
 
 	private boolean useTransport(Transport transport)
 	{
+		// Sailing: suppress teleports while the player is aboard a boat.
+		// We don't model sailing navigation, so teleporting away mid-ocean would produce
+		// confusing suggestions. Pathfinding resumes normally after disembarking.
+		if (isOnSailingBoat && transport.getType().isTeleport())
+		{
+			return false;
+		}
+
 		// Master POH gate - if POH is disabled, reject all POH transports
 		if (!usePoh)
 		{
