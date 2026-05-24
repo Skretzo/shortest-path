@@ -873,9 +873,17 @@ public class PathfinderConfig
 	 */
 	private boolean hasRequiredLevels(Transport transport)
 	{
+		// In leagues some skills are disabled so the max total level is lower than
+		// the standard 2376. Holding the item (e.g. Max cape) already proves the
+		// player is maxed for the available skills, so skip the total-level check.
+		final int totalLevelIndex = Skill.values().length;
 		int[] requiredLevels = transport.getSkillLevels();
 		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
 		{
+			if (leagueModeState.isSeasonal() && i == totalLevelIndex)
+			{
+				continue;
+			}
 			int boostedLevel = boostedSkillLevelsAndMore[i];
 			int requiredLevel = requiredLevels[i];
 			if (boostedLevel < requiredLevel)
