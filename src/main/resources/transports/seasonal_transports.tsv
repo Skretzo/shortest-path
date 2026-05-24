@@ -1,8 +1,8 @@
 # Destination	menuOption menuTarget objectID	Skills	Items	Quests	Duration	Display info	Consumable	Wilderness level	Varbits	VarPlayers	Region override
 # Banker's Briefcase Bank Chests											
-1399 9313 0			30361=1		4	Banker's Briefcase: Varlamore - Alchemical Society	F	60
+1399 9313 0			30361=1		4	Banker's Briefcase: Varlamore - Alchemical Society	F	60			
 1502 3410 0			30361=1		4	Banker's Briefcase: Varlamore - Aldarin	F	60			VARLAMORE
-2780 2782 0			30361=1	Monkey Madness I	4	Banker's Briefcase: Kandarin - Ape Atoll	F	60
+2780 2782 0			30361=1	Monkey Madness I	4	Banker's Briefcase: Kandarin - Ape Atoll	F	60			
 2537 3573 0			30361=1		4	Banker's Briefcase: Kandarin - Barbarian Assault	F	60			
 1948 4956 0			30361=1	The Giant Dwarf	4	Banker's Briefcase: Fremennik - Blast Furnace	F	60			
 1476 3877 0			30361=1		4	Banker's Briefcase: Kourend - Blast mine (north)	F	60			
@@ -402,7 +402,7 @@
 1359 2941 0			25102=1	Children of the Sun	4	Fairy Mushroom: Varlamore - CKQ (Aldarin)	F	60			
 2801 3003 0			25102=1		4	Fairy Mushroom: Karamja - CKR (South of Tai Bwo Wannai)	F	60			
 3447 3470 0			25102=1		4	Fairy Mushroom: Morytania - CKS (Canifis)	F	60			
-2740 2738 0			25102=1	Monkey Madness I	4	Fairy Mushroom: Kandarin - CLR (Ape Atoll)	F	60
+2740 2738 0			25102=1	Monkey Madness I	4	Fairy Mushroom: Kandarin - CLR (Ape Atoll)	F	60			
 2682 3081 0			25102=1		4	Fairy Mushroom: Kandarin - CLS (Hazelmere's home)	F	60			
 3037 4763 0			25102=1		4	Fairy Mushroom: Varlamore - DIP (Abyssal Nexus)	F	60			
 2658 3230 0			25102=1		4	Fairy Mushroom: Kandarin - DJP (Tower of Life)	F	60			
@@ -415,21 +415,21 @@
 # Fairy Mushroom - Tool Leprechauns											
 3319 3204 0			25102=1		4	Fairy Mushroom: Desert - Al Kharid	F	60			
 2619 3221 0			25102=1		4	Fairy Mushroom: Kandarin - Ardougne Monastery	F	60			
-2773 3211 0			25102=1		4	Fairy Mushroom: Karamja - Brimhaven	F	60
+2773 3211 0			25102=1		4	Fairy Mushroom: Karamja - Brimhaven	F	60			
 2815 3467 0			25102=1		4	Fairy Mushroom: Kandarin - Catherby	F	60			
 3454 3468 0			25102=1		4	Fairy Mushroom: Morytania - West of Canifis	F	60			
 2812 3332 0			25102=1		4	Fairy Mushroom: Asgarnia - Entrana	F	60			
 2596 3860 0			25102=1		4	Fairy Mushroom: Fremennik - Etceteria	F	60			
 3053 3305 0			25102=1		4	Fairy Mushroom: Asgarnia - Falador Farm	F	60			
 3008 3370 0			25102=1		4	Fairy Mushroom: Asgarnia - Falador Park	F	60			
-1236 3732 0			25102=1		4	Fairy Mushroom: Kourend - Farming Guild	F	60
+1236 3732 0			25102=1		4	Fairy Mushroom: Kourend - Farming Guild	F	60			
 3792 2840 0			25102=1		4	Fairy Mushroom: Morytania - Harmony Island	F	60			
 1741 3552 0			25102=1		4	Fairy Mushroom: Kourend - Hosidius Allotment	F	60			
 1696 3544 0			25102=1		4	Fairy Mushroom: Kourend - Hosidius Saltpetre	F	60			
 1806 3555 0			25102=1		4	Fairy Mushroom: Kourend - Hosidius Vinery	F	60			
 2346 3164 0			25102=1		4	Fairy Mushroom: Tirannwn - Lletya	F	60			
 2671 3368 0			25102=1		4	Fairy Mushroom: Kandarin - North of Ardougne	F	60			
-2663 3521 0			25102=1		4	Fairy Mushroom: Kandarin - North of McGrubor's Wood	F	60
+2663 3521 0			25102=1		4	Fairy Mushroom: Kandarin - North of McGrubor's Wood	F	60			
 3596 3524 0			25102=1		4	Fairy Mushroom: Morytania - West of Port Phasmatys	F	60			
 3064 3255 0			25102=1		4	Fairy Mushroom: Asgarnia - Port Sarim	F	60			
 3295 6105 0			25102=1	Song of the Elves	4	Fairy Mushroom: Tirannwn - Prifddinas	F	60			
