@@ -1000,7 +1000,7 @@ public class PathfinderTest
 	 * whistle as well as teleportation tabs, since both are consumable items.
 	 * Without this fix the whistle bypassed the consumable-item threshold and could
 	 * make a bank-detour route appear cheaper than a direct teleportation tab.
-	 *
+	 * <p>
 	 * Verified via the Aldarin platform cost boundary: from 1 tile away the platform
 	 * compareCost is 7 (1 walk + 6 flight). With costConsumableTeleportationItems=5
 	 * the whistle's actual cost becomes 4+5=9, so the platform wins (path length 3).

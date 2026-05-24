@@ -1,6 +1,7 @@
 package shortestpath.leagues;
 
 import java.util.EnumSet;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
 
@@ -59,10 +60,10 @@ public class LeagueModeStateTest
 		// Catches accidental drift if Jagex or RuneLite renumber the
 		// LEAGUE_AREA_SELECTION_* varbits. Six contiguous IDs starting at
 		// 10662 mirror the gameval VarbitID table.
-		assertTrue(LeagueModeState.AREA_SELECTION_VARBITS.length == 6);
+		assertEquals(6, LeagueModeState.AREA_SELECTION_VARBITS.length);
 		for (int i = 0; i < 6; i++)
 		{
-			assertTrue(LeagueModeState.AREA_SELECTION_VARBITS[i] == 10662 + i);
+			assertEquals(LeagueModeState.AREA_SELECTION_VARBITS[i], 10662 + i);
 		}
 	}
 }

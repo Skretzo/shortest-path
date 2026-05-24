@@ -564,7 +564,7 @@ public class PathfinderConfig
 	 * region override}, it replaces the chunk-classifier result for the
 	 * destination endpoint. Used for shortcuts whose destination chunk
 	 * sits in a different region than the wiki classifies the shortcut
-	 * under (e.g. Trollheim Wilderness climb \u2014 destination chunk is
+	 * under (e.g. Trollheim Wilderness climb — destination chunk is
 	 * Wilderness, but the shortcut is wiki-listed as Asgarnia).
 	 */
 	private boolean isTransportRegionAllowed(Transport transport)
