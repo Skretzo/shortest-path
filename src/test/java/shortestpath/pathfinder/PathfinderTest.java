@@ -690,10 +690,10 @@ public class PathfinderTest
 
 		assertTrue("Banker's Briefcase should be used after visiting a bank",
 			usedTransportWithDisplayInfoAfterFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
-				"Banker's Briefcase: Catherby"));
+				"Banker's Briefcase: Kandarin - Catherby"));
 		assertFalse("Banker's Briefcase should not be used before the first bank visit",
 			usedTransportWithDisplayInfoBeforeFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
-				"Banker's Briefcase: Catherby"));
+				"Banker's Briefcase: Kandarin - Catherby"));
 	}
 
 	@Test
