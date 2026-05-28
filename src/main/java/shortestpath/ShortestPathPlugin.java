@@ -55,12 +55,14 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.PluginChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
@@ -72,6 +74,7 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.teleports.EasyTeleportLabelFormatter;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -83,6 +86,7 @@ import shortestpath.transport.TransportType;
 public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
+	private static final String EASY_TELEPORTS_PLUGIN_NAME = "Easy Teleports";
 
 	// POH (Player Owned House) bounds for detecting when path goes through POH
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
@@ -109,6 +113,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
+	private final Map<String, String> transportDisplayInfoCache = new HashMap<>();
 	private final Object pathfinderMutex = new Object();
 	boolean drawCollisionMap;
 	boolean drawMap;
@@ -117,6 +122,8 @@ public class ShortestPathPlugin extends Plugin
 	boolean drawTransports;
 	boolean showTransportInfo;
 	boolean showBankPickupInfo;
+	boolean easyTeleportNames;
+	boolean easyTeleportsPluginActive;
 	Color colourCollisionMap;
 	Color colourPath;
 	Color colourPathCalculating;
@@ -135,6 +142,10 @@ public class ShortestPathPlugin extends Plugin
 	private ClientThread clientThread;
 	@Inject
 	private ShortestPathConfig config;
+	@Inject
+	ConfigManager configManager;
+	@Inject
+	PluginManager pluginManager;
 	@Inject
 	private EventBus eventBus;
 	@Inject
@@ -296,6 +307,7 @@ public class ShortestPathPlugin extends Plugin
 	protected void startUp()
 	{
 		cacheConfigValues();
+		cacheEasyTeleportsPluginActive();
 
 		pathfinderConfig = new PathfinderConfig(client, config);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
@@ -442,9 +454,19 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
+		if (EasyTeleportLabelFormatter.CONFIG_GROUP.equals(event.getGroup()))
+		{
+			transportDisplayInfoCache.clear();
+			return;
+		}
+
 		if (!CONFIG_GROUP.equals(event.getGroup()))
 		{
 			return;
+		}
+		if ("easyTeleportNames".equals(event.getKey()))
+		{
+			transportDisplayInfoCache.clear();
 		}
 
 		cacheConfigValues();
@@ -469,6 +491,16 @@ public class ShortestPathPlugin extends Plugin
 			{
 				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
 			}
+		}
+	}
+
+	@Subscribe
+	public void onPluginChanged(PluginChanged event)
+	{
+		if (isEasyTeleportsPlugin(event.getPlugin()))
+		{
+			cacheEasyTeleportsPluginActive();
+			transportDisplayInfoCache.clear();
 		}
 	}
 
@@ -624,7 +656,7 @@ public class ShortestPathPlugin extends Plugin
 					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
 					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
 					transportObjectInfos.add(transport.getObjectInfo());
-					transportDisplayInfos.add(transport.getDisplayInfo());
+					transportDisplayInfos.add(formatTransportDisplayInfo(transport));
 				}
 			}
 			data.put("origin", transportOrigins);
@@ -633,6 +665,47 @@ public class ShortestPathPlugin extends Plugin
 			data.put("displayInfo", transportDisplayInfos);
 			eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_TRANSPORTS, data));
 		}
+	}
+
+	/**
+	 * Display label for overlays and plugin messages. Applies Easy Teleports replacements
+	 * when {@link #easyTeleportNames} is enabled and the Easy Teleports plugin is active.
+	 */
+	String formatTransportDisplayInfo(Transport transport)
+	{
+		if (transport == null)
+		{
+			return null;
+		}
+
+		String displayInfo = transport.getDisplayInfo();
+		if (displayInfo == null || displayInfo.isEmpty())
+		{
+			return displayInfo;
+		}
+		if (!easyTeleportNames || !easyTeleportsPluginActive)
+		{
+			return displayInfo;
+		}
+
+		return transportDisplayInfoCache.computeIfAbsent(displayInfo,
+			label -> EasyTeleportLabelFormatter.format(label, configManager::getConfiguration));
+	}
+
+	/** Refreshes whether the Easy Teleports plugin is installed and enabled. */
+	private void cacheEasyTeleportsPluginActive()
+	{
+		easyTeleportsPluginActive = pluginManager != null && pluginManager.getPlugins().stream()
+			.anyMatch(plugin -> isEasyTeleportsPlugin(plugin) && pluginManager.isPluginActive(plugin));
+	}
+
+	/**
+	 * Detects Easy Teleports by RuneLite's plugin display name to avoid a compile-time
+	 * dependency on Easy Teleports classes.
+	 */
+	private static boolean isEasyTeleportsPlugin(Plugin plugin)
+	{
+		return plugin != null && EASY_TELEPORTS_PLUGIN_NAME.equals(plugin.getName());
 	}
 
 	@Subscribe
@@ -1136,7 +1209,7 @@ public class ShortestPathPlugin extends Plugin
 				PathStep nextStep = path.get(i + 1);
 				for (Transport transport : transportsForEdge(currentStep, nextStep))
 				{
-					String exitInfo = transport.getDisplayInfo();
+					String exitInfo = formatTransportDisplayInfo(transport);
 					if (exitInfo != null && !exitInfo.isEmpty())
 					{
 						TransportType exitType = transport.getType();
@@ -1256,6 +1329,7 @@ public class ShortestPathPlugin extends Plugin
 		drawTransports = override("drawTransports", config.drawTransports());
 		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
+		easyTeleportNames = override("easyTeleportNames", config.easyTeleportNames());
 
 		colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
 		colourPath = override("colourPath", config.colourPath());

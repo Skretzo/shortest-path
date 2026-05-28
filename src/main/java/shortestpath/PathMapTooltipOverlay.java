@@ -109,9 +109,9 @@ public class PathMapTooltipOverlay extends Overlay
 			PathStep nextStep = plugin.nextPathStep(path, pathIndex);
 			for (Transport transport : plugin.transportsForEdge(currentStep, nextStep))
 			{
-				if (transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty())
+				String displayInfo = plugin.formatTransportDisplayInfo(transport);
+				if (displayInfo != null && !displayInfo.isEmpty())
 				{
-					String displayInfo = transport.getDisplayInfo();
 					// Check if this transport goes to POH - if so, look ahead to find the exit
 					// transport
 					String pohExitInfo = plugin.getPohExitInfo(nextPoint, path, pathIndex);
