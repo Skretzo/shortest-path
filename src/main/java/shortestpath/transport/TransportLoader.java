@@ -2,8 +2,10 @@ package shortestpath.transport;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -14,7 +16,9 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.parser.TransportRecord;
+import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.parser.TsvParser;
+import shortestpath.transport.requirement.TransportItems;
 
 @Slf4j
 public class TransportLoader
@@ -130,6 +134,31 @@ public class TransportLoader
 			}
 		}
 
+		internRequirements(transports);
+
 		return transports;
+	}
+
+	/**
+	 * Deduplicates the requirement objects shared across the loaded transports, so identical
+	 * {@code TransportItems}/{@code VarRequirement} requirements point at one shared instance
+	 * instead of a per-transport copy (issue #491). The interning pools are local and discarded
+	 * once loading finishes.
+	 */
+	private static void internRequirements(Map<Integer, Set<Transport>> transports)
+	{
+		Map<TransportItems, TransportItems> itemPool = new HashMap<>();
+		Map<VarRequirement, VarRequirement> varPool = new HashMap<>();
+		Set<Transport> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+		for (Set<Transport> set : transports.values())
+		{
+			for (Transport transport : set)
+			{
+				if (visited.add(transport))
+				{
+					transport.internRequirements(itemPool, varPool);
+				}
+			}
+		}
 	}
 }

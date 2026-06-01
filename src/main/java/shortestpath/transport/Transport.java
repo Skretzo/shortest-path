@@ -2,6 +2,7 @@ package shortestpath.transport;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import lombok.Getter;
@@ -264,6 +265,30 @@ public class Transport
 			}
 		}
 		return NO_SKILLS;
+	}
+
+	/**
+	 * Load-time flyweight: replaces this transport's requirement objects with shared canonical
+	 * instances from the supplied pools, so transports with identical item or var requirements share
+	 * one {@code TransportItems}/{@code VarRequirement} instance (and the int[] arrays inside them)
+	 * rather than each holding a distinct copy (issue #491). Identical requirements are extremely
+	 * common across the permuted transport rows. The pools are local to loading and discarded after.
+	 */
+	void internRequirements(Map<TransportItems, TransportItems> itemPool, Map<VarRequirement, VarRequirement> varPool)
+	{
+		if (itemRequirements != null)
+		{
+			itemRequirements = itemPool.computeIfAbsent(itemRequirements, i -> i);
+		}
+		if (!varRequirements.isEmpty())
+		{
+			Set<VarRequirement> interned = new HashSet<>(varRequirements.size() * 2);
+			for (VarRequirement requirement : varRequirements)
+			{
+				interned.add(varPool.computeIfAbsent(requirement, r -> r));
+			}
+			varRequirements = interned;
+		}
 	}
 
 	@Override
