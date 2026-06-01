@@ -3,7 +3,6 @@ package shortestpath.transport;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import lombok.Getter;
@@ -285,30 +284,25 @@ public class Transport
 	 * rather than each holding a distinct copy (issue #491). Identical requirements are extremely
 	 * common across the permuted transport rows. The pools are local to loading and discarded after.
 	 */
-	void internRequirements(
-		Map<TransportItems, TransportItems> itemPool,
-		Map<VarRequirement, VarRequirement> varPool,
-		Map<Set<VarRequirement>, Set<VarRequirement>> varSetPool,
-		Map<Set<Quest>, Set<Quest>> questSetPool)
+	void internRequirements(LoadInterner interner)
 	{
-		if (itemRequirements != null)
-		{
-			itemRequirements = itemPool.computeIfAbsent(itemRequirements, i -> i);
-		}
+		itemRequirements = interner.intern(itemRequirements);
+		displayInfo = interner.internString(displayInfo);
+		objectInfo = interner.internString(objectInfo);
 		if (!varRequirements.isEmpty())
 		{
 			Set<VarRequirement> interned = new HashSet<>(varRequirements.size() * 2);
 			for (VarRequirement requirement : varRequirements)
 			{
-				interned.add(varPool.computeIfAbsent(requirement, r -> r));
+				interned.add(interner.intern(requirement));
 			}
 			// Transports with identical var requirements (very common across permutations) share one
 			// read-only Set instead of each keeping a copy.
-			varRequirements = varSetPool.computeIfAbsent(interned, s -> s);
+			varRequirements = interner.internVarSet(interned);
 		}
 		if (!quests.isEmpty())
 		{
-			quests = questSetPool.computeIfAbsent(quests, s -> s);
+			quests = interner.internQuestSet(quests);
 		}
 	}
 
