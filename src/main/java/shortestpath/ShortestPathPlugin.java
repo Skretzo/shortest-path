@@ -72,6 +72,7 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -1000,7 +1001,7 @@ public class ShortestPathPlugin extends Plugin
 	 * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
 	 * path's PathStep state instead.
 	 */
-	public Map<Integer, Set<Transport>> getTransports()
+	public PrimitiveIntHashMap<Transport[]> getTransports()
 	{
 		return pathfinderConfig.getTransports();
 	}
@@ -1037,11 +1038,11 @@ public class ShortestPathPlugin extends Plugin
 		}
 		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
 		// Get the transports which start from the position of starting step.
-		Set<Transport> stepTransports = new HashSet<>(
+		Set<Transport> stepTransports = new HashSet<>(Arrays.asList(
 			pathfinderConfig.getTransportsPacked(bankVisited)
-				.getOrDefault(currentStep.getPackedPosition(), Set.of()));
+				.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)));
 		// Add the teleports, which might be used from anywhere.
-		stepTransports.addAll(pathfinderConfig.getUsableTeleports(bankVisited));
+		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisited)));
 		// Remove transports which do not target the correct location.
 		stepTransports.removeIf(transport -> transport.getDestination() != nextStep.getPackedPosition());
 		// Remove teleports that share destinations with a local transport type on this edge.

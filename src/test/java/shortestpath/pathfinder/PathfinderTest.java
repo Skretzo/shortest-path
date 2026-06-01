@@ -1,6 +1,9 @@
 package shortestpath.pathfinder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
@@ -29,6 +32,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
+import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
@@ -214,12 +218,9 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		// Ensure none of the usable transports are of type FAIRY_RING
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
-			{
-				assertNotEquals("Fairy ring used unexpectedly: " + t, TransportType.FAIRY_RING, t.getType());
-			}
+			assertNotEquals("Fairy ring used unexpectedly: " + t, TransportType.FAIRY_RING, t.getType());
 		}
 	}
 
@@ -233,12 +234,9 @@ public class PathfinderTest
 
 		setupConfig(QuestState.NOT_STARTED, 99, TeleportationItem.NONE);
 
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
-			{
-				assertNotEquals("Fairy ring used unexpectedly without quest progress or diary: " + t, TransportType.FAIRY_RING, t.getType());
-			}
+			assertNotEquals("Fairy ring used unexpectedly without quest progress or diary: " + t, TransportType.FAIRY_RING, t.getType());
 		}
 	}
 
@@ -288,18 +286,11 @@ public class PathfinderTest
 		// With per-path filtering, fairy rings ARE in the transport map
 		// but filtered at runtime based on whether the path visited a bank
 		boolean hasFairyRing = false;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (TransportType.FAIRY_RING.equals(t.getType()))
 			{
-				if (TransportType.FAIRY_RING.equals(t.getType()))
-				{
-					hasFairyRing = true;
-					break;
-				}
-			}
-			if (hasFairyRing)
-			{
+				hasFairyRing = true;
 				break;
 			}
 		}
@@ -467,18 +458,11 @@ public class PathfinderTest
 		// With per-path filtering, fairy rings ARE in the transport map
 		// but filtered at runtime based on whether the path visited a bank
 		boolean hasFairyRing = false;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (TransportType.FAIRY_RING.equals(t.getType()))
 			{
-				if (TransportType.FAIRY_RING.equals(t.getType()))
-				{
-					hasFairyRing = true;
-					break;
-				}
-			}
-			if (hasFairyRing)
-			{
+				hasFairyRing = true;
 				break;
 			}
 		}
@@ -1597,8 +1581,8 @@ public class PathfinderTest
 		setupConfig(questState, skillLevel, useTeleportationItems);
 
 		int counter = 0;
-		Map<Integer, Set<Transport>> activeTransports = pathfinderConfig.getTransports();
-		for (int origin : activeTransports.keySet())
+		PrimitiveIntHashMap<Transport[]> activeTransports = pathfinderConfig.getTransports();
+		for (int origin : activeTransports.keys())
 		{
 			for (Transport transport : activeTransports.get(origin))
 			{
@@ -1643,14 +1627,11 @@ public class PathfinderTest
 
 		// Count actual transports in the configured (usable) transports
 		int actualCount = 0;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (transportType.equals(t.getType()))
 			{
-				if (transportType.equals(t.getType()))
-				{
-					actualCount++;
-				}
+				actualCount++;
 			}
 		}
 
@@ -1768,11 +1749,22 @@ public class PathfinderTest
 		return runPathfinder(origin, destination);
 	}
 
-	private boolean hasTransportWithRequiredItem(Map<Integer, Set<Transport>> transports, int[] variationIds)
+	private List<Transport> activeTransportList()
 	{
-		for (Set<Transport> set : transports.values())
+		PrimitiveIntHashMap<Transport[]> active = pathfinderConfig.getTransports();
+		List<Transport> all = new ArrayList<>();
+		for (int origin : active.keys())
 		{
-			for (Transport t : set)
+			all.addAll(Arrays.asList(active.get(origin)));
+		}
+		return all;
+	}
+
+	private boolean hasTransportWithRequiredItem(PrimitiveIntHashMap<Transport[]> transports, int[] variationIds)
+	{
+		for (int origin : transports.keys())
+		{
+			for (Transport t : transports.get(origin))
 			{
 				TransportItems items = t.getItemRequirements();
 				if (items == null)
@@ -1809,14 +1801,11 @@ public class PathfinderTest
 	private int countLovakenjMinecarts()
 	{
 		int count = 0;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (t.isType(TransportType.MINECART) && t.hasVarbit(7796))
 			{
-				if (t.isType(TransportType.MINECART) && t.hasVarbit(7796))
-				{
-					count++;
-				}
+				count++;
 			}
 		}
 		return count;
@@ -1913,9 +1902,9 @@ public class PathfinderTest
 
 	private Set<Transport> transportsForStep(int origin, boolean bankVisited)
 	{
-		Set<Transport> stepTransports = new java.util.HashSet<>(
-			pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, Set.of()));
-		stepTransports.addAll(pathfinderConfig.getUsableTeleports(bankVisited));
+		Set<Transport> stepTransports = new java.util.HashSet<>(Arrays.asList(
+			pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)));
+		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisited)));
 		return stepTransports;
 	}
 

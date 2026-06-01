@@ -1,7 +1,5 @@
 package shortestpath.pathfinder;
 
-import java.util.Set;
-
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
@@ -116,7 +114,7 @@ public class CollisionMap
 			|| (config.isBankPathEnabled() && config.bankAccessible(packedPosition));
 
 		// Firstly check if there are any transports or teleports which are applicable from the current tile.
-		Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(packedPosition, Set.of());
+		Transport[] transports = config.getTransportsPacked(pathBankVisited).getOrDefault(packedPosition, TransportAvailability.EMPTY_TRANSPORTS);
 		// If this tile was itself reached via a delayed-visit teleport (e.g. QUETZAL_WHISTLE), propagate its
 		// differential cost to any competing delayed-visit transports emitted from here. This prevents the
 		// pathfinder from choosing a chain (e.g. whistle → landing site A → fly to B) over a direct teleport
@@ -207,8 +205,8 @@ public class CollisionMap
 				// The transport starts from a blocked adjacent tile, e.g. fairy ring
 				// Only checks non-teleport transports (includes portals and levers, but not
 				// items and spells)
-				Set<Transport> neighborTransports = config.getTransportsPacked(pathBankVisited).getOrDefault(neighborPacked,
-					Set.of());
+				Transport[] neighborTransports = config.getTransportsPacked(pathBankVisited).getOrDefault(neighborPacked,
+					TransportAvailability.EMPTY_TRANSPORTS);
 				for (Transport transport : neighborTransports)
 				{
 					if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN

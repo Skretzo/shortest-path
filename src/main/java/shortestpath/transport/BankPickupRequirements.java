@@ -97,15 +97,11 @@ public final class BankPickupRequirements
 			TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
 
 			List<Transport> edgeAlternatives = new ArrayList<>();
-			Set<Transport> originSet = availability.getTransportsByOrigin().get(stepPoint);
-			if (originSet != null)
+			for (Transport t : availability.getTransportsAt(stepPoint))
 			{
-				for (Transport t : originSet)
+				if (t.getDestination() == nextPoint)
 				{
-					if (t.getDestination() == nextPoint)
-					{
-						edgeAlternatives.add(t);
-					}
+					edgeAlternatives.add(t);
 				}
 			}
 			for (Transport t : availability.getUsableTeleports())

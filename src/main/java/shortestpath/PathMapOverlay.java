@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
-import java.util.HashSet;
 import java.util.Objects;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
@@ -18,6 +17,7 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.Transport;
 
 public class PathMapOverlay extends Overlay
@@ -78,7 +78,7 @@ public class PathMapOverlay extends Overlay
 		if (plugin.drawTransports)
 		{
 			graphics.setColor(Color.WHITE);
-			for (int a : plugin.getTransports().keySet())
+			for (int a : plugin.getTransports().keys())
 			{
 				if (a == Transport.UNDEFINED_ORIGIN)
 				{
@@ -92,7 +92,7 @@ public class PathMapOverlay extends Overlay
 					continue;
 				}
 
-				for (Transport b : plugin.getTransports().getOrDefault(a, new HashSet<>()))
+				for (Transport b : plugin.getTransports().getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
 				{
 					if (b == null || (b.getType() != null && b.getType().isTeleport()))
 					{

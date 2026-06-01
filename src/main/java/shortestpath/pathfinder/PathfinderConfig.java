@@ -217,17 +217,17 @@ public class PathfinderConfig
 	 * Use {@link #getTransportAvailability(boolean)}, {@link #getTransportsPacked(boolean)}, or
 	 * {@link #getUsableTeleports(boolean)} for pathfinding and path analysis code.
 	 */
-	public Map<Integer, Set<Transport>> getTransports()
+	public PrimitiveIntHashMap<Transport[]> getTransports()
 	{
-		return getTransportAvailability(includeBankPath).getTransportsByOrigin();
+		return getTransportAvailability(includeBankPath).getDisplayTransports();
 	}
 
-	public PrimitiveIntHashMap<Set<Transport>> getTransportsPacked(boolean bankVisited)
+	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(boolean bankVisited)
 	{
 		return getTransportAvailability(bankVisited).getTransportsPacked();
 	}
 
-	public Set<Transport> getUsableTeleports(boolean bankVisited)
+	public Transport[] getUsableTeleports(boolean bankVisited)
 	{
 		return getTransportAvailability(bankVisited).getUsableTeleports();
 	}
