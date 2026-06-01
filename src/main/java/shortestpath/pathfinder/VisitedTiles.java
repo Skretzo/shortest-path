@@ -63,31 +63,37 @@ public class VisitedTiles
 		return set(x, y, plane, bankVisited);
 	}
 
-	public boolean get(Node node)
+	public boolean get(int id, NodeGraph graph)
 	{
-		if (node.isTile())
+		if (graph.isTile(id))
 		{
-			return get(node.packedPosition, node.bankVisited);
+			return get(graph.packedPosition(id), graph.bankVisited(id));
 		}
-		return node.bankVisited
-			? abstractVisitedWithBank[node.abstractKind.ordinal()]
-			: abstractVisitedWithoutBank[node.abstractKind.ordinal()];
+		return getAbstract(graph.abstractKind(id), graph.bankVisited(id));
 	}
 
-	public boolean set(Node node)
+	public boolean getAbstract(AbstractNodeKind abstractKind, boolean bankVisited)
 	{
-		if (node.isTile())
+		return bankVisited
+			? abstractVisitedWithBank[abstractKind.ordinal()]
+			: abstractVisitedWithoutBank[abstractKind.ordinal()];
+	}
+
+	public boolean set(int id, NodeGraph graph)
+	{
+		if (graph.isTile(id))
 		{
-			return set(node.packedPosition, node.bankVisited);
+			return set(graph.packedPosition(id), graph.bankVisited(id));
 		}
 
-		boolean visited = get(node);
-		if (node.bankVisited)
+		final AbstractNodeKind abstractKind = graph.abstractKind(id);
+		boolean visited = getAbstract(abstractKind, graph.bankVisited(id));
+		if (graph.bankVisited(id))
 		{
-			abstractVisitedWithBank[node.abstractKind.ordinal()] = true;
+			abstractVisitedWithBank[abstractKind.ordinal()] = true;
 			// A banked abstract state dominates the equivalent unbanked state.
 		}
-		abstractVisitedWithoutBank[node.abstractKind.ordinal()] = true;
+		abstractVisitedWithoutBank[abstractKind.ordinal()] = true;
 		return !visited;
 	}
 

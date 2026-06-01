@@ -1,13 +1,10 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Set;
 
 import lombok.Getter;
+import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 
@@ -23,17 +20,26 @@ public class Pathfinder implements Runnable
 	private final boolean targetInWilderness;
 	private final boolean targetInBlockedRegion;
 	private final Runnable completionCallback;
+	// Nodes are stored structure-of-arrays style: each node is an int id into the graph, instead of
+	// an object per explored tile. This keeps a whole search to a handful of arrays (issue #491).
+	private final NodeGraph graph = new NodeGraph(1 << 14);
 	// Capacities should be enough to store all nodes without requiring the queue to grow
 	// They were found by checking the max queue size
-	private final Deque<Node> boundary = new ArrayDeque<>(4096);
-	private final Queue<TransportNode> pending = new PriorityQueue<>(256);
+	private final IntDeque boundary = new IntDeque(4096);
+	private final IntMinHeap pending = new IntMinHeap(graph, 256);
 	private final VisitedTiles visited;
 	@Getter
 	private volatile boolean done = false;
 	private volatile boolean cancelled = false;
+	// Read by the render thread during the search to draw the partial path; written by the worker.
+	private volatile int bestLastNode = NodeGraph.NO_NODE;
+	// The path the render thread builds progressively while the search runs.
 	private List<PathStep> pathSteps = List.of();
 	private boolean pathNeedsUpdate = false;
-	private Node bestLastNode;
+	// Built once on the worker thread when the search finishes, then served to the render thread so
+	// it never walks the node chain (which is released) after the search is done.
+	private volatile List<PathStep> finalPath = null;
+	private volatile int closestReachedPoint = WorldPointUtil.UNDEFINED;
 	private int bestRemainingDistance = Integer.MAX_VALUE;
 	private int bestTravelledDistance = Integer.MAX_VALUE;
 	private int bestX = Integer.MAX_VALUE;
@@ -103,16 +109,32 @@ public class Pathfinder implements Runnable
 
 	public List<PathStep> getPath()
 	{
-		Node lastNode = bestLastNode; // For thread safety, read bestLastNode once
-		if (lastNode == null)
+		int lastNode = bestLastNode; // For thread safety, read bestLastNode once
+		if (lastNode == NodeGraph.NO_NODE)
 		{
-			return pathSteps;
+			List<PathStep> finalised = finalPath;
+			return finalised != null ? finalised : pathSteps;
+		}
+
+		// Once the search is finished the node graph is released, so serve the pre-built snapshot.
+		if (done)
+		{
+			List<PathStep> finalised = finalPath;
+			if (finalised != null)
+			{
+				return finalised;
+			}
 		}
 
 		if (pathNeedsUpdate)
 		{
-			pathSteps = lastNode.getPathSteps();
-			pathNeedsUpdate = false;
+			List<PathStep> walked = graph.getPathSteps(lastNode);
+			// An empty result means the graph was released mid-walk; keep the last good path.
+			if (!walked.isEmpty())
+			{
+				pathSteps = walked;
+				pathNeedsUpdate = false;
+			}
 		}
 
 		return pathSteps;
@@ -129,7 +151,7 @@ public class Pathfinder implements Runnable
 		List<PathStep> currentPath = getPath();
 		boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
 		int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
-		int closestReachedPoint = bestLastNode != null ? bestLastNode.getClosestTilePosition() : start;
+		// getStats() only returns non-null once the search has ended, so the snapshot is set.
 		return new PathfinderResult(
 			start,
 			target,
@@ -143,32 +165,33 @@ public class Pathfinder implements Runnable
 		);
 	}
 
-	private void addNeighbors(Node node)
+	private void addNeighbors(int node)
 	{
-		List<Node> nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness);
-		for (Node neighbor : nodes)
+		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph);
+		for (int i = 0; i < nodes.size(); i++)
 		{
-			if (node.isTile() && neighbor.isTile()
-				&& config.avoidWilderness(node.packedPosition, neighbor.packedPosition, targetInWilderness))
+			int neighbor = nodes.get(i);
+			if (graph.isTile(node) && graph.isTile(neighbor)
+				&& config.avoidWilderness(graph.packedPosition(node), graph.packedPosition(neighbor), targetInWilderness))
 			{
 				continue;
 			}
 
-			if (node.isTile() && neighbor.isTile()
-				&& config.avoidBlockedRegion(node.packedPosition, neighbor.packedPosition, targetInBlockedRegion))
+			if (graph.isTile(node) && graph.isTile(neighbor)
+				&& config.avoidBlockedRegion(graph.packedPosition(node), graph.packedPosition(neighbor), targetInBlockedRegion))
 			{
 				continue;
 			}
 
 			// For delayed-visit nodes (shared destinations), don't mark as visited on enqueue.
 			// They will be checked and marked when dequeued from pending.
-			if (!(neighbor instanceof TransportNode && ((TransportNode) neighbor).delayedVisit))
+			if (!(graph.isTransport(neighbor) && graph.isDelayedVisit(neighbor)))
 			{
-				visited.set(neighbor);
+				visited.set(neighbor, graph);
 			}
-			if (neighbor instanceof TransportNode)
+			if (graph.isTransport(neighbor))
 			{
-				pending.add((TransportNode) neighbor);
+				pending.add(neighbor);
 				++stats.transportsChecked;
 			}
 			else
@@ -189,16 +212,17 @@ public class Pathfinder implements Runnable
 	 * - 3) If another tie occurs, pick the path with minimum x-coordinate
 	 * - 4) If another tie occurs, pick the path with minimum y-coordinate
 	 */
-	private boolean updateBestPathWhenUnreachable(Node node)
+	private boolean updateBestPathWhenUnreachable(int node)
 	{
 		boolean update = false;
 
+		final int packedPosition = graph.packedPosition(node);
 		for (int target : targets)
 		{
-			int remainingDistance = WorldPointUtil.distanceBetween(target, node.packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
-			int travelledDistance = node.cost;
-			int x = WorldPointUtil.unpackWorldX(node.packedPosition);
-			int y = WorldPointUtil.unpackWorldY(node.packedPosition);
+			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
+			int travelledDistance = graph.cost(node);
+			int x = WorldPointUtil.unpackWorldX(packedPosition);
+			int y = WorldPointUtil.unpackWorldY(packedPosition);
 			if ((remainingDistance < bestRemainingDistance) ||
 				(remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
 				(remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x < bestX) ||
@@ -220,21 +244,22 @@ public class Pathfinder implements Runnable
 	/**
 	 * Update wilderness level based on the current node position.
 	 */
-	private void updateWildernessLevel(Node node)
+	private void updateWildernessLevel(int node)
 	{
+		final int packedPosition = graph.packedPosition(node);
 		if (wildernessLevel > 0)
 		{
 			// These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
 			// likewise, if the node isn't in level 20, it's in 0-19
-			if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(node.packedPosition))
+			if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(packedPosition))
 			{
 				wildernessLevel = 30;
 			}
-			if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(node.packedPosition))
+			if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(packedPosition))
 			{
 				wildernessLevel = 20;
 			}
-			if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(node.packedPosition))
+			if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(packedPosition))
 			{
 				wildernessLevel = 0;
 			}
@@ -245,55 +270,58 @@ public class Pathfinder implements Runnable
 	public void run()
 	{
 		stats.start();
-		boundary.addFirst(new Node(start, null, 0, false));
+		boundary.addFirst(graph.createStart(start));
 
 		long cutoffDurationMillis = config.getCalculationCutoffMillis();
 		long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 
 		while (!cancelled && (!boundary.isEmpty() || !pending.isEmpty()))
 		{
-			Node node = boundary.peekFirst();
-			TransportNode p = pending.peek();
+			int boundaryHead = boundary.peekFirst();
+			int pendingHead = pending.peek();
 
-
-			if (p != null && (node == null || p.compareCost() < node.cost))
+			int node;
+			if (pendingHead != NodeGraph.NO_NODE
+				&& (boundaryHead == NodeGraph.NO_NODE || graph.compareCost(pendingHead) < graph.cost(boundaryHead)))
 			{
 				node = pending.poll();
 
 				// For delayed-visit nodes, check if the destination was already
 				// reached by a cheaper path while this node was queued.
-				if (node != null && ((TransportNode) node).delayedVisit)
+				if (graph.isDelayedVisit(node))
 				{
-					if (visited.get(node.packedPosition, node.bankVisited))
+					int packed = graph.packedPosition(node);
+					boolean bank = graph.bankVisited(node);
+					if (visited.get(packed, bank))
 					{
 						continue;
 					}
-					visited.set(node.packedPosition, node.bankVisited);
+					visited.set(packed, bank);
 				}
 			}
 			else
 			{
-				node = boundary.removeFirst();
+				node = boundary.pollFirst();
 			}
-			if (node == null)
+			if (node == NodeGraph.NO_NODE)
 			{
 				continue;
 			}
-			if (node.isTile())
+			if (graph.isTile(node))
 			{
 				updateWildernessLevel(node);
 			}
 
-			if (node.isTile() && targets.contains(node.packedPosition))
+			if (graph.isTile(node) && targets.contains(graph.packedPosition(node)))
 			{
 				bestLastNode = node;
 				pathNeedsUpdate = true;
-				reachedTarget = node.packedPosition;
+				reachedTarget = graph.packedPosition(node);
 				terminationReason = PathTerminationReason.TARGET_REACHED;
 				break;
 			}
 
-			if (node.isTile() && updateBestPathWhenUnreachable(node))
+			if (graph.isTile(node) && updateBestPathWhenUnreachable(node))
 			{
 				cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 			}
@@ -316,11 +344,27 @@ public class Pathfinder implements Runnable
 			terminationReason = PathTerminationReason.SEARCH_EXHAUSTED;
 		}
 
+		// Materialise the final path and closest reached tile on the worker thread, publish them,
+		// then release the large node graph. Once done is set the render thread serves finalPath
+		// and never touches the released graph, so this is race-free with progressive rendering.
+		int lastNode = bestLastNode;
+		if (lastNode != NodeGraph.NO_NODE)
+		{
+			finalPath = graph.getPathSteps(lastNode);
+			closestReachedPoint = graph.getClosestTilePosition(lastNode);
+		}
+		else
+		{
+			finalPath = pathSteps;
+			closestReachedPoint = start;
+		}
+
 		done = !cancelled;
 
 		boundary.clear();
 		visited.clear();
 		pending.clear();
+		graph.release();
 
 		stats.end(); // Include cleanup in stats to get the total cost of pathfinding
 
