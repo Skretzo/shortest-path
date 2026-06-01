@@ -1,5 +1,6 @@
 package shortestpath.transport;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,17 +34,25 @@ public class Transport
 	 */
 	public static final int LOCATION_PERMUTATION = WorldPointUtil.packWorldPoint(-1, -1, 1);
 	/**
+	 * Shared, never-mutated all-zero skill array. Most transports require no skills, so they point
+	 * at this singleton instead of each allocating their own {@code int[]} (issue #491).
+	 */
+	private static final int[] NO_SKILLS = new int[Skill.values().length + 3];
+	/**
 	 * The skill levels, total level, combat level and quest points required to use
-	 * this transport
+	 * this transport. Defaults to {@link #NO_SKILLS} until real requirements are set.
 	 */
 	@Getter
-	private final int[] skillLevels = new int[Skill.values().length + 3];
+	private int[] skillLevels = NO_SKILLS;
 	/**
 	 * Variable requirements (varbits and varplayers) for the transport to be valid.
 	 * All must pass.
 	 */
+	// Defaults to a shared immutable empty set; only transports that actually declare var
+	// requirements pay for a real Set. Most transports declare none, so this avoids ~one
+	// HashSet (+ its HashMap) per transport (issue #491).
 	@Getter
-	private final Set<VarRequirement> varRequirements = new HashSet<>();
+	private Set<VarRequirement> varRequirements = Collections.emptySet();
 	/**
 	 * The starting point of this transport
 	 */
@@ -59,8 +68,9 @@ public class Transport
 	/**
 	 * The quests required to use this transport
 	 */
+	// Shared immutable empty set by default; see varRequirements above.
 	@Getter
-	private Set<Quest> quests = new HashSet<>();
+	private Set<Quest> quests = Collections.emptySet();
 	/**
 	 * The item requirements to use this transport
 	 */
@@ -138,7 +148,7 @@ public class Transport
 
 		this.origin = builtTransport.origin;
 		this.destination = builtTransport.destination;
-		System.arraycopy(builtTransport.skillLevels, 0, this.skillLevels, 0, this.skillLevels.length);
+		this.skillLevels = builtTransport.skillLevels;
 		this.quests = builtTransport.quests;
 		this.itemRequirements = builtTransport.itemRequirements;
 		this.type = builtTransport.type;
@@ -147,7 +157,7 @@ public class Transport
 		this.isConsumable = builtTransport.isConsumable;
 		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
 		this.objectInfo = builtTransport.objectInfo;
-		this.varRequirements.addAll(builtTransport.varRequirements);
+		this.varRequirements = builtTransport.varRequirements;
 	}
 
 	Transport(TransportRecord record, TransportType transportType)
@@ -212,7 +222,7 @@ public class Transport
 		Transport builtTransport = builder.build();
 		this.origin = builtTransport.origin;
 		this.destination = builtTransport.destination;
-		System.arraycopy(builtTransport.skillLevels, 0, this.skillLevels, 0, this.skillLevels.length);
+		this.skillLevels = builtTransport.skillLevels;
 		this.quests = builtTransport.quests;
 		this.itemRequirements = builtTransport.itemRequirements;
 		this.type = builtTransport.type;
@@ -221,12 +231,39 @@ public class Transport
 		this.isConsumable = builtTransport.isConsumable;
 		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
 		this.objectInfo = builtTransport.objectInfo;
-		this.varRequirements.addAll(builtTransport.varRequirements);
+		this.varRequirements = builtTransport.varRequirements;
 		this.regionOverride = builtTransport.regionOverride;
 	}
 
 	private Transport()
 	{
+	}
+
+	/**
+	 * Hands back a shared immutable empty set when the builder accumulated nothing, so empty
+	 * requirement sets do not allocate a {@code HashSet}/{@code HashMap} per transport. A non-empty
+	 * builder set is handed over directly (the single-use builder is discarded afterwards).
+	 */
+	private static <T> Set<T> compact(Set<T> set)
+	{
+		return set.isEmpty() ? Collections.emptySet() : set;
+	}
+
+	/**
+	 * Hands back the shared {@link #NO_SKILLS} singleton when no skill requirement is set, so
+	 * all-zero skill arrays do not allocate a per-transport {@code int[]}. A non-empty builder array
+	 * is handed over directly (the single-use builder is discarded afterwards).
+	 */
+	private static int[] compactSkills(int[] skills)
+	{
+		for (int level : skills)
+		{
+			if (level != 0)
+			{
+				return skills;
+			}
+		}
+		return NO_SKILLS;
 	}
 
 	@Override
@@ -537,8 +574,8 @@ public class Transport
 			Transport transport = new Transport();
 			transport.origin = this.origin;
 			transport.destination = this.destination;
-			System.arraycopy(this.skillLevels, 0, transport.skillLevels, 0, this.skillLevels.length);
-			transport.quests = this.quests;
+			transport.skillLevels = compactSkills(this.skillLevels);
+			transport.quests = compact(this.quests);
 			transport.itemRequirements = this.itemRequirements;
 			transport.type = this.type;
 			transport.duration = this.duration;
@@ -546,7 +583,7 @@ public class Transport
 			transport.isConsumable = this.isConsumable;
 			transport.maxWildernessLevel = this.maxWildernessLevel;
 			transport.objectInfo = this.objectInfo;
-			transport.varRequirements.addAll(this.varRequirements);
+			transport.varRequirements = compact(this.varRequirements);
 			transport.regionOverride = this.regionOverride;
 
 			// Post-build validation/refinement
