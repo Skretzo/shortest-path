@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Quest;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
@@ -149,6 +150,8 @@ public class TransportLoader
 	{
 		Map<TransportItems, TransportItems> itemPool = new HashMap<>();
 		Map<VarRequirement, VarRequirement> varPool = new HashMap<>();
+		Map<Set<VarRequirement>, Set<VarRequirement>> varSetPool = new HashMap<>();
+		Map<Set<Quest>, Set<Quest>> questSetPool = new HashMap<>();
 		Set<Transport> visited = Collections.newSetFromMap(new IdentityHashMap<>());
 		for (Set<Transport> set : transports.values())
 		{
@@ -156,7 +159,7 @@ public class TransportLoader
 			{
 				if (visited.add(transport))
 				{
-					transport.internRequirements(itemPool, varPool);
+					transport.internRequirements(itemPool, varPool, varSetPool, questSetPool);
 				}
 			}
 		}

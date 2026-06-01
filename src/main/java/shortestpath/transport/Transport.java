@@ -285,7 +285,11 @@ public class Transport
 	 * rather than each holding a distinct copy (issue #491). Identical requirements are extremely
 	 * common across the permuted transport rows. The pools are local to loading and discarded after.
 	 */
-	void internRequirements(Map<TransportItems, TransportItems> itemPool, Map<VarRequirement, VarRequirement> varPool)
+	void internRequirements(
+		Map<TransportItems, TransportItems> itemPool,
+		Map<VarRequirement, VarRequirement> varPool,
+		Map<Set<VarRequirement>, Set<VarRequirement>> varSetPool,
+		Map<Set<Quest>, Set<Quest>> questSetPool)
 	{
 		if (itemRequirements != null)
 		{
@@ -298,7 +302,13 @@ public class Transport
 			{
 				interned.add(varPool.computeIfAbsent(requirement, r -> r));
 			}
-			varRequirements = interned;
+			// Transports with identical var requirements (very common across permutations) share one
+			// read-only Set instead of each keeping a copy.
+			varRequirements = varSetPool.computeIfAbsent(interned, s -> s);
+		}
+		if (!quests.isEmpty())
+		{
+			quests = questSetPool.computeIfAbsent(quests, s -> s);
 		}
 	}
 
