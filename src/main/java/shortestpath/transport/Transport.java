@@ -1,6 +1,7 @@
 package shortestpath.transport;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -248,6 +249,16 @@ public class Transport
 	private static <T> Set<T> compact(Set<T> set)
 	{
 		return set.isEmpty() ? Collections.emptySet() : set;
+	}
+
+	/**
+	 * Quest requirements are keyed on the {@link Quest} enum, so a non-empty set is stored as a
+	 * compact {@link EnumSet} (a single bitmask object) rather than a HashSet plus its HashMap and
+	 * per-element nodes (issue #491). The empty case keeps the shared immutable empty set.
+	 */
+	private static Set<Quest> compactQuests(Set<Quest> quests)
+	{
+		return quests.isEmpty() ? Collections.emptySet() : EnumSet.copyOf(quests);
 	}
 
 	/**
@@ -600,7 +611,7 @@ public class Transport
 			transport.origin = this.origin;
 			transport.destination = this.destination;
 			transport.skillLevels = compactSkills(this.skillLevels);
-			transport.quests = compact(this.quests);
+			transport.quests = compactQuests(this.quests);
 			transport.itemRequirements = this.itemRequirements;
 			transport.type = this.type;
 			transport.duration = this.duration;
