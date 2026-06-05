@@ -165,31 +165,38 @@ public class Pathfinder implements Runnable
 		);
 	}
 
-	private void addNeighbors(int node)
+	private void addNeighbors(int node, boolean nodeIsTile, int nodePacked)
 	{
 		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph);
-		for (int i = 0; i < nodes.size(); i++)
+		final int count = nodes.size();
+		for (int i = 0; i < count; i++)
 		{
 			int neighbor = nodes.get(i);
-			if (graph.isTile(node) && graph.isTile(neighbor)
-				&& config.avoidWilderness(graph.packedPosition(node), graph.packedPosition(neighbor), targetInWilderness))
+			// Each graph.xxx(id) re-indexes a backing array, so read each neighbour field once and
+			// reuse the loop-invariant node fields passed in (the JIT cached these for free when nodes
+			// were objects, but not when they are int ids into structure-of-arrays storage).
+			final boolean neighborIsTile = graph.isTile(neighbor);
+			if (nodeIsTile && neighborIsTile)
 			{
-				continue;
+				final int neighborPacked = graph.packedPosition(neighbor);
+				if (config.avoidWilderness(nodePacked, neighborPacked, targetInWilderness))
+				{
+					continue;
+				}
+				if (config.avoidBlockedRegion(nodePacked, neighborPacked, targetInBlockedRegion))
+				{
+					continue;
+				}
 			}
 
-			if (graph.isTile(node) && graph.isTile(neighbor)
-				&& config.avoidBlockedRegion(graph.packedPosition(node), graph.packedPosition(neighbor), targetInBlockedRegion))
-			{
-				continue;
-			}
-
+			final boolean neighborIsTransport = graph.isTransport(neighbor);
 			// For delayed-visit nodes (shared destinations), don't mark as visited on enqueue.
 			// They will be checked and marked when dequeued from pending.
-			if (!(graph.isTransport(neighbor) && graph.isDelayedVisit(neighbor)))
+			if (!(neighborIsTransport && graph.isDelayedVisit(neighbor)))
 			{
 				visited.set(neighbor, graph);
 			}
-			if (graph.isTransport(neighbor))
+			if (neighborIsTransport)
 			{
 				pending.add(neighbor);
 				++stats.transportsChecked;
@@ -212,15 +219,14 @@ public class Pathfinder implements Runnable
 	 * - 3) If another tie occurs, pick the path with minimum x-coordinate
 	 * - 4) If another tie occurs, pick the path with minimum y-coordinate
 	 */
-	private boolean updateBestPathWhenUnreachable(int node)
+	private boolean updateBestPathWhenUnreachable(int node, int packedPosition)
 	{
 		boolean update = false;
 
-		final int packedPosition = graph.packedPosition(node);
+		final int travelledDistance = graph.cost(node);
 		for (int target : targets)
 		{
 			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
-			int travelledDistance = graph.cost(node);
 			int x = WorldPointUtil.unpackWorldX(packedPosition);
 			int y = WorldPointUtil.unpackWorldY(packedPosition);
 			if ((remainingDistance < bestRemainingDistance) ||
@@ -244,9 +250,8 @@ public class Pathfinder implements Runnable
 	/**
 	 * Update wilderness level based on the current node position.
 	 */
-	private void updateWildernessLevel(int node)
+	private void updateWildernessLevel(int packedPosition)
 	{
-		final int packedPosition = graph.packedPosition(node);
 		if (wildernessLevel > 0)
 		{
 			// These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
@@ -307,23 +312,27 @@ public class Pathfinder implements Runnable
 			{
 				continue;
 			}
-			if (graph.isTile(node))
+			// Read the node's tile-ness and position once; every graph.xxx(id) re-indexes a backing
+			// array, and these are used by several of the checks below.
+			final boolean nodeIsTile = graph.isTile(node);
+			final int nodePacked = nodeIsTile ? graph.packedPosition(node) : WorldPointUtil.UNDEFINED;
+			if (nodeIsTile)
 			{
-				updateWildernessLevel(node);
-			}
+				updateWildernessLevel(nodePacked);
 
-			if (graph.isTile(node) && targets.contains(graph.packedPosition(node)))
-			{
-				bestLastNode = node;
-				pathNeedsUpdate = true;
-				reachedTarget = graph.packedPosition(node);
-				terminationReason = PathTerminationReason.TARGET_REACHED;
-				break;
-			}
+				if (targets.contains(nodePacked))
+				{
+					bestLastNode = node;
+					pathNeedsUpdate = true;
+					reachedTarget = nodePacked;
+					terminationReason = PathTerminationReason.TARGET_REACHED;
+					break;
+				}
 
-			if (graph.isTile(node) && updateBestPathWhenUnreachable(node))
-			{
-				cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+				if (updateBestPathWhenUnreachable(node, nodePacked))
+				{
+					cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+				}
 			}
 
 			if (System.currentTimeMillis() > cutoffTimeMillis)
@@ -332,7 +341,7 @@ public class Pathfinder implements Runnable
 				break;
 			}
 
-			addNeighbors(node);
+			addNeighbors(node, nodeIsTile, nodePacked);
 		}
 
 		if (cancelled)
