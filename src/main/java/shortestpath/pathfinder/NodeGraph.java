@@ -22,11 +22,12 @@ import shortestpath.WorldPointUtil;
  * <p>
  * <strong>Threading.</strong> The search runs on a single worker thread, but the render thread
  * reads the partial path while the search is still running (progressive rendering via
- * {@code Pathfinder.getPath()}). Node data is write-once, the backing array references are
- * {@code volatile} so a grow publishes safely, and the chain walks ({@link #getPathSteps} /
- * {@link #getClosestTilePosition}) snapshot the arrays into locals and tolerate an index that is
- * out of bounds or released. This means a walk concurrent with a grow/release can never throw; at
- * worst it yields a one-frame-stale path.
+ * {@code Pathfinder.getPath()}). Node data is write-once and is published to the render thread by
+ * the single volatile {@code Pathfinder.bestLastNode} handoff rather than by marking these arrays
+ * {@code volatile} (which would cripple the hot loop, see the field comment). The chain walks
+ * ({@link #getPathSteps} / {@link #getClosestTilePosition}) snapshot the arrays into locals and
+ * tolerate an index that is out of bounds or released. This means a walk concurrent with a
+ * grow/release can never throw; at worst it yields a one-frame-stale path.
  */
 public class NodeGraph
 {
@@ -40,12 +41,22 @@ public class NodeGraph
 	// Enum.values() copies on every call, so cache it for the abstractKind lookup.
 	private static final AbstractNodeKind[] ABSTRACT_KINDS = AbstractNodeKind.values();
 
-	private volatile int[] packedPosition;
-	private volatile int[] previous;
-	private volatile int[] cost;
-	private volatile int[] differentialCost;
-	private volatile byte[] flags;
-	private volatile byte[] abstractKind;
+	// The node arrays are NOT volatile: making them volatile forces every accessor (packedPosition,
+	// cost, isTile, compareCost, the append() writes, ...) to re-read the array reference on each
+	// call and blocks the JIT from caching the base in a register or eliminating bounds checks. The
+	// hot loop touches these hundreds of times per node, so volatile reads roughly halved field
+	// throughput (~1.6x slower searches). Safe publication to the render thread is provided instead
+	// by the single volatile Pathfinder.bestLastNode handoff: the worker writes the node data, then
+	// volatile-writes bestLastNode; the render thread volatile-reads bestLastNode before walking,
+	// which establishes happens-before for all the plain writes above it. The walk methods snapshot
+	// the references into locals and tolerate a null (post-release) or stale-but-valid (mid-grow,
+	// Arrays.copyOf preserves every index) array, so a concurrent grow/release never throws.
+	private int[] packedPosition;
+	private int[] previous;
+	private int[] cost;
+	private int[] differentialCost;
+	private byte[] flags;
+	private byte[] abstractKind;
 	private int size;
 
 	public NodeGraph(int initialCapacity)
