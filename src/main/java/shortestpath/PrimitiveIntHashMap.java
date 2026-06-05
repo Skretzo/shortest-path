@@ -78,7 +78,12 @@ public class PrimitiveIntHashMap<V>
 	 */
 	private static int hash(int value)
 	{
-		return value ^ (value >>> 5) ^ (value >>> 25);
+		// Full multiplicative avalanche. Linear probing is very sensitive to clustering, and packed
+		// world points of nearby tiles differ only in a few low bits, so the cheap xor-shift mix used
+		// previously left spatially-clustered transport origins clustered in the table too -> long
+		// probe runs on the per-tile miss lookups. Fibonacci-style multiply + xorshift spreads them.
+		int h = value * 0x9E3779B1;
+		return h ^ (h >>> 16);
 	}
 
 	/**
