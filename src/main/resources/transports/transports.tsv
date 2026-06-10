@@ -5557,3 +5557,7 @@
 # Lumber Yard Fence									
 3308 3491 0	3308 3493 0	Climb-over Broken fence 2618						6	
 3308 3493 0	3308 3491 0	Climb-over Broken fence 2618						6	
+									
+# Legends Guild Ladder									
+2893 3507 0	2893 9907 0	Climb-down Ladder 17374					1	
+2893 9907 0	2893 3507 0	Climb-up Ladder 17387					1	
