@@ -30,14 +30,15 @@ public class VisitedTilesTest
 	public void settingBankedAbstractNodeAlsoMarksUnbankedAbstractNodeVisited()
 	{
 		VisitedTiles visited = new VisitedTiles(collisionMap());
-		Node banked = Node.abstractNode(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, null, true);
-		Node unbanked = Node.abstractNode(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, null, false);
+		NodeGraph graph = new NodeGraph(16);
+		int banked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, true);
+		int unbanked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, false);
 
-		assertTrue(visited.set(banked));
+		assertTrue(visited.set(banked, graph));
 
-		assertTrue(visited.get(banked));
-		assertTrue(visited.get(unbanked));
-		assertFalse(visited.set(unbanked));
+		assertTrue(visited.get(banked, graph));
+		assertTrue(visited.get(unbanked, graph));
+		assertFalse(visited.set(unbanked, graph));
 	}
 
 	@Test
@@ -45,15 +46,16 @@ public class VisitedTilesTest
 	{
 		VisitedTiles visited = new VisitedTiles(collisionMap());
 		int tile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
-		Node unbanked = Node.abstractNode(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, null, false);
-		Node banked = Node.abstractNode(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, null, true);
+		NodeGraph graph = new NodeGraph(16);
+		int unbanked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, false);
+		int banked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, true);
 
 		assertTrue(visited.set(tile, false));
 		assertTrue(visited.get(tile, false));
 		assertFalse(visited.get(tile, true));
 
-		assertTrue(visited.set(unbanked));
-		assertTrue(visited.get(unbanked));
-		assertFalse(visited.get(banked));
+		assertTrue(visited.set(unbanked, graph));
+		assertTrue(visited.get(unbanked, graph));
+		assertFalse(visited.get(banked, graph));
 	}
 }
