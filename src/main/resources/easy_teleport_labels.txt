@@ -1,0 +1,121 @@
+# Maps Shortest Path transport display labels to Easy Teleports config keys.
+# Columns 1-2 come from Shortest Path Display info values in transports/teleportation_items.tsv.
+# Columns 3-4 come from Easy Teleports' EasyTeleportsConfig @ConfigItem key names and
+# its replacer classes' TeleportReplacement(original, config.replacement...) entries.
+# Upstream Easy Teleports source:
+# https://github.com/LlemonDuck/easy-teleports/blob/31e38dbedb512292b0370dc9be0f72df6cd25e1b/src/main/java/com/duckblade/osrs/easyteleports/EasyTeleportsConfig.java
+# https://github.com/LlemonDuck/easy-teleports/tree/31e38dbedb512292b0370dc9be0f72df6cd25e1b/src/main/java/com/duckblade/osrs/easyteleports/replacers
+# Easy Teleports stores these values under config group "easypharaohsceptre";
+# that legacy group name comes from EasyTeleportsConfig.CONFIG_GROUP.
+# Only add rows where the Shortest Path label identifies one unambiguous Easy Teleports replacement.
+# Shortest Path item label	Shortest Path destination label	Easy Teleports enabled key	Easy Teleports replacement key
+Achievement diary cape	1. Two-pints	enableDiaryCape	replacementArdougne
+Achievement diary cape	2. Jarr	enableDiaryCape	replacementDesert
+Achievement diary cape	3. Sir Rebral	enableDiaryCape	replacementFalador
+Achievement diary cape	4. Thorodin	enableDiaryCape	replacementFremennik
+Achievement diary cape	5. Flax keeper	enableDiaryCape	replacementKandarin
+Achievement diary cape	6. Pirate Jackie the Fruit	enableDiaryCape	replacementKaramjaJackie
+Achievement diary cape	7. Kaleb Paramaya	enableDiaryCape	replacementKaramjaKaleb
+Achievement diary cape	8. Jungle forester	enableDiaryCape	replacementKaramjaForester
+Achievement diary cape	9. TzHaar-Mej	enableDiaryCape	replacementKaramjaTzhaar
+Achievement diary cape	A. Elise	enableDiaryCape	replacementKourend
+Achievement diary cape	B. Hatius Cosaintus	enableDiaryCape	replacementLumbridge
+Achievement diary cape	C. Le-sabrè	enableDiaryCape	replacementMorytania
+Achievement diary cape	D. Toby	enableDiaryCape	replacementVarrock
+Achievement diary cape	E. Lesser Fanatic	enableDiaryCape	replacementWilderness
+Achievement diary cape	F. Elder Gnome child	enableDiaryCape	replacementWestern
+Achievement diary cape	G. Twiggy O'Korn	enableDiaryCape	replacementTwiggy
+Kharedst's memoirs	Lunch by the Lancalliums	enableKharedstsMemoirs	replacementLancalliums
+Kharedst's memoirs	The Fisher's Flute	enableKharedstsMemoirs	replacementFishers
+Kharedst's memoirs	History and Hearsay	enableKharedstsMemoirs	replacementHistory
+Kharedst's memoirs	Jewelry of Jubilation	enableKharedstsMemoirs	replacementJubilation
+Kharedst's memoirs	A Dark Disposition	enableKharedstsMemoirs	replacementDisposition
+Book of the dead	Lunch by the Lancalliums	enableKharedstsMemoirs	replacementLancalliums
+Book of the dead	The Fisher's Flute	enableKharedstsMemoirs	replacementFishers
+Book of the dead	History and Hearsay	enableKharedstsMemoirs	replacementHistory
+Book of the dead	Jewelry of Jubilation	enableKharedstsMemoirs	replacementJubilation
+Book of the dead	A Dark Disposition	enableKharedstsMemoirs	replacementDisposition
+Pharaoh's sceptre	Jalsavrah	enablePharaohSceptre	replacementJalsavrah
+Pharaoh's sceptre	Jaleustrophos	enablePharaohSceptre	replacementJaleustrophos
+Pharaoh's sceptre	Jaldraocht	enablePharaohSceptre	replacementJaldraocht
+Pharaoh's sceptre	Jaltevas	enablePharaohSceptre	replacementJaltevas
+Necklace of passage	Wizards' Tower	enableNecklaceOfPassage	replacementWizardsTower
+Necklace of passage	The Outpost	enableNecklaceOfPassage	replacementOutpost
+Necklace of passage	Eagle's Eyrie	enableNecklaceOfPassage	replacementEagleEyrie
+Karamja gloves	Gem Mine	enableKaramjaGloves	replacementKaramjaGemMine
+Karamja gloves 4	Slayer Master	enableKaramjaGloves	replacementKaramjaSlayerMaster
+Desert amulet 4	Nardah	enableDesertAmulet	replacementDesertNardah
+Desert amulet 4	Kalphite cave	enableDesertAmulet	replacementDesertKalphiteCave
+Morytania legs	Slime Pit	enableMorytaniaLegs	replacementMorytaniaEctofuntus
+Morytania legs	Burgh de Rott	enableMorytaniaLegs	replacementMorytaniaBurgh
+Rada's blessing	Kourend Woodland	enableRadasBlessing	replacementRadasKourendWoodland
+Rada's blessing	Mount Karuulm	enableRadasBlessing	replacementRadasMountKaruulm
+Ring of dueling	Emir's Arena	enableRingOfDueling	replacementEmirsArena
+Ring of dueling	Castle Wars	enableRingOfDueling	replacementCastleWars
+Ring of dueling	Ferox Enclave	enableRingOfDueling	replacementFeroxEnclave
+Ring of dueling	Fortis Colosseum	enableRingOfDueling	replacementFortisColosseum
+Slayer ring	Stronghold	enableSlayerRing	replacementSlayerStronghold
+Slayer ring	Slayer Tower	enableSlayerRing	replacementSlayerTower
+Slayer ring	Fremennik	enableSlayerRing	replacementSlayerRellekka
+Slayer ring	Tarn's Lair	enableSlayerRing	replacementTarns
+Slayer ring	Dark Beasts	enableSlayerRing	replacementDarkBeasts
+Digsite pendant	Digsite	enableDigsitePendant	replacementDigsite
+Digsite pendant	Fossil Island	enableDigsitePendant	replacementFossilIsland
+Digsite pendant	Lithkren	enableDigsitePendant	replacementLithkren
+Burning amulet	Chaos Temple	enableBurningAmulet	replacementBurningChaosTemple
+Burning amulet	Bandit Camp	enableBurningAmulet	replacementBurningBanditCamp
+Burning amulet	Lava Maze	enableBurningAmulet	replacementBurningLavaMaze
+Enchanted lyre	Rellekka	enableEnchantedLyre	replacementLyreRellekka
+Enchanted lyre	Waterbirth Island	enableEnchantedLyre	replacementLyreWaterbirthIsland
+Enchanted lyre	Jatizso	enableEnchantedLyre	replacementLyreJatizso
+Enchanted lyre	Neitiznot	enableEnchantedLyre	replacementLyreNeitiznot
+Enchanted lyre (i)	Rellekka	enableEnchantedLyre	replacementLyreRellekka
+Enchanted lyre (i)	Waterbirth Island	enableEnchantedLyre	replacementLyreWaterbirthIsland
+Enchanted lyre (i)	Jatizso	enableEnchantedLyre	replacementLyreJatizso
+Enchanted lyre (i)	Neitiznot	enableEnchantedLyre	replacementLyreNeitiznot
+Camulet	Enakhra's Temple	enableCamulet	replacementCamuletEnakhrasTemple
+Camulet	Bandit Camp Quarry	enableCamulet	replacementCamuletEnakhrasTempleEntrance
+Eternal teleport crystal	Lletya	enableEternalTeleportCrystal	replacementEternalLletya
+Eternal teleport crystal	Prifddinas	enableEternalTeleportCrystal	replacementEternalPrifddinas
+Drakan's medallion	Ver Sinhaza	enableDrakans	replacementVerSinhaza
+Drakan's medallion	Darkmeyer	enableDrakans	replacementDarkmeyer
+Drakan's medallion	Slepe	enableDrakans	replacementSlepe
+Xeric's talisman	1. Xeric's Lookout	enableXericsTalisman	replacementLookout
+Xeric's talisman	2. Xeric's Glade	enableXericsTalisman	replacementGlade
+Xeric's talisman	3. Xeric's Inferno	enableXericsTalisman	replacementInferno
+Xeric's talisman	4. Xeric's Heart	enableXericsTalisman	replacementHeart
+Xeric's talisman	5. Xeric's Honour	enableXericsTalisman	replacementHonour
+Ring of the elements	Air	enableRingOfTheElements	replacementAirAltar
+Ring of the elements	Water	enableRingOfTheElements	replacementWaterAltar
+Ring of the elements	Earth	enableRingOfTheElements	replacementEarthAltar
+Ring of the elements	Fire	enableRingOfTheElements	replacementFireAltar
+Ring of shadows	Ancient Vault	enableRingOfShadows	replacementAncientVault
+Ring of shadows	Ghorrock Dungeon	enableRingOfShadows	replacementGhorrockDungeon
+Ring of shadows	The Scar	enableRingOfShadows	replacementScar
+Ring of shadows	Lassar Undercity	enableRingOfShadows	replacementLassarUndercity
+Ring of shadows	The Stranglewood	enableRingOfShadows	replacementStranglewood
+Pendant of ates	1. The Darkfrost	enablePendantOfAtes	replacementDarkfrost
+Pendant of ates	2. Twilight Temple	enablePendantOfAtes	replacementTwilightTemple
+Pendant of ates	3. Ralos' Rise	enablePendantOfAtes	replacementRalosRise
+Pendant of ates	4. North Aldarin	enablePendantOfAtes	replacementNorthAldarin
+Pendant of ates	5. Kastori	enablePendantOfAtes	replacementKastori
+Pendant of ates	6. Nemus Retreat	enablePendantOfAtes	replacementNemusRetreat
+Giantsoul amulet	1. Bryophyta	enableGiantsoulAmulet	replacementBryophyta
+Giantsoul amulet	2. Obor	enableGiantsoulAmulet	replacementObor
+Giantsoul amulet	3. Branda and Eldric	enableGiantsoulAmulet	replacementBrandaAndEldric
+Max cape	POH Portals: Rimmington	enableMaxCape	replacementMaxCapeRimmington
+Max cape	POH Portals: Taverley	enableMaxCape	replacementMaxCapeTaverley
+Max cape	POH Portals: Pollnivneach	enableMaxCape	replacementMaxCapePollnivneach
+Max cape	POH Portals: Hosidius	enableMaxCape	replacementMaxCapeHosidius
+Max cape	POH Portals: Rellekka	enableMaxCape	replacementMaxCapeRellekka
+Max cape	POH Portals: Brimhaven	enableMaxCape	replacementMaxCapeBrimhaven
+Max cape	POH Portals: Yanille	enableMaxCape	replacementMaxCapeYanille
+Max cape	POH Portals: Prifddinas	enableMaxCape	replacementMaxCapePrifddinas
+Max cape	Warriors' Guild	enableMaxCape	replacementMaxCapeWarriorsGuild
+Max cape	Fishing Teleports: Fishing Guild	enableMaxCape	replacementMaxCapeFishingGuild
+Max cape	Fishing Teleports: Otto's Grotto	enableMaxCape	replacementMaxCapeOttosGrotto
+Max cape	Crafting Guild	enableMaxCape	replacementMaxCapeCraftingGuild
+Max cape	Other Teleports: Feldip Hills	enableMaxCape	replacementMaxCapeFeldipHills
+Max cape	Other Teleports: Black chinchompa	enableMaxCape	replacementMaxCapeBlackChincompas
+Max cape	Other Teleports: Hunter Guild	enableMaxCape	replacementMaxCapeHunterGuild
+Max cape	Other Teleports: Farming Guild	enableMaxCape	replacementMaxCapeFarmingGuild
