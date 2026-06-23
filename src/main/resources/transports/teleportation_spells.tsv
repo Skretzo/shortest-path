@@ -17,8 +17,8 @@
 # Falador Teleport								
 2964 3378 0	AIR_RUNE=3&&WATER_RUNE=1&&LAW_RUNE=1	37 Magic		4	Falador Teleport	20	4070=0	
 								
-# Teleport to House - These depend on the current player's home location  determined by varbit 2187
-# Varbit 4744 is the Teleport to House mode, 0 = Inside, 1 = Outside. As both options are always available, we list
+# Teleport to House - These depend on the current player's home location  determined by varbit 2187								
+# Varbit 4744 is the Teleport to House mode, 0 = Inside, 1 = Outside. As both options are always available, we list								
 # each option twice, only specifying (Inside) or (Outside) if that is not the default mode selected by the player.								
 1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;4744=0	
 1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Inside)	20	4070=0;4744=0;4744=1	
@@ -182,4 +182,4 @@
 3564 3315 0	BLOOD_RUNE=1&&LAW_RUNE=2&&SOUL_RUNE=2	83 Magic		4	Barrows Teleport	20	4070=3	
 								
 # Ape Atoll Teleport								
-2771 9102 0	BLOOD_RUNE=2&&LAW_RUNE=2&&SOUL_RUNE=2	90 Magic	Monkey Madness I	4	Ape Atoll Teleport	20	4070=3	
+2771 9102 0	BLOOD_RUNE=2&&LAW_RUNE=2&&SOUL_RUNE=2	90 Magic	Monkey Madness I	4	Ape Atoll Teleport	20	4070=3		
