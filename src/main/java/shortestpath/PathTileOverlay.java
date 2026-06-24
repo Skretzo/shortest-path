@@ -25,6 +25,7 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements;
 import shortestpath.transport.Transport;
 
@@ -47,7 +48,7 @@ public class PathTileOverlay extends Overlay
 
 	private void renderTransports(Graphics2D graphics)
 	{
-		for (int a : plugin.getTransports().keySet())
+		for (int a : plugin.getTransports().keys())
 		{
 			if (a == Transport.UNDEFINED_ORIGIN)
 			{
@@ -64,7 +65,7 @@ public class PathTileOverlay extends Overlay
 			}
 
 			StringBuilder s = new StringBuilder();
-			for (Transport b : plugin.getTransports().getOrDefault(a, Set.of()))
+			for (Transport b : plugin.getTransports().getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
 			{
 				if (b == null || (b.getType() != null && b.getType().isTeleport()))
 				{

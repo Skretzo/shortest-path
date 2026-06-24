@@ -74,7 +74,10 @@ public class PathfinderConfig
 	/**
 	 * All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player.
 	 */
-	private final Map<Integer, Set<Transport>> allTransports;
+	// Flat list of every loaded transport. refreshTransports only ever iterates these (the origin
+	// is re-derived from each transport), so the per-origin Set/HashMap/Integer-key map the loader
+	// produces is flattened here and not retained (issue #491).
+	private final Transport[] allTransports;
 	private final Map<String, Set<Integer>> allDestinations;
 	private final Map<String, Set<Integer>> filteredDestinations;
 	/**
@@ -135,10 +138,11 @@ public class PathfinderConfig
 		this.transportTypeConfig = new TransportTypeConfig(config);
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
-		this.allTransports = TransportLoader.loadAllFromResources();
-		remapPohDestinations(allTransports);
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.size()).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.size()).build();
+		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
+		remapPohDestinations(loadedTransports);
+		this.allTransports = flatten(loadedTransports);
+		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
+		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.allDestinations = Destination.loadAllFromResources();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
@@ -155,9 +159,9 @@ public class PathfinderConfig
 		this.transportTypeConfig = new TransportTypeConfig(config);
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
-		this.allTransports = allTransports;
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.size()).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.size()).build();
+		this.allTransports = flatten(allTransports);
+		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
+		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.allDestinations = allDestinations;
 		this.filteredDestinations = filteredDestinations;
 		this.destinations = allDestinations;
@@ -217,17 +221,17 @@ public class PathfinderConfig
 	 * Use {@link #getTransportAvailability(boolean)}, {@link #getTransportsPacked(boolean)}, or
 	 * {@link #getUsableTeleports(boolean)} for pathfinding and path analysis code.
 	 */
-	public Map<Integer, Set<Transport>> getTransports()
+	public PrimitiveIntHashMap<Transport[]> getTransports()
 	{
-		return getTransportAvailability(includeBankPath).getTransportsByOrigin();
+		return getTransportAvailability(includeBankPath).getDisplayTransports();
 	}
 
-	public PrimitiveIntHashMap<Set<Transport>> getTransportsPacked(boolean bankVisited)
+	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(boolean bankVisited)
 	{
 		return getTransportAvailability(bankVisited).getTransportsPacked();
 	}
 
-	public Set<Transport> getUsableTeleports(boolean bankVisited)
+	public Transport[] getUsableTeleports(boolean bankVisited)
 	{
 		return getTransportAvailability(bankVisited).getUsableTeleports();
 	}
@@ -477,50 +481,47 @@ public class PathfinderConfig
 		transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
 			QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
-		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.size());
-		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.size());
-		for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet())
+		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
+		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
+		for (Transport transport : allTransports)
 		{
-			for (Transport transport : entry.getValue())
+			for (Quest quest : transport.getQuests())
 			{
-				for (Quest quest : transport.getQuests())
+				try
 				{
-					try
-					{
-						questStates.put(quest, getQuestState(quest));
-					}
-					catch (NullPointerException ignored)
-					{
-					}
+					questStates.put(quest, getQuestState(quest));
 				}
+				catch (NullPointerException ignored)
+				{
+				}
+			}
 
-				for (VarRequirement varRequirement : transport.getVarRequirements())
+			for (VarRequirement varRequirement : transport.getVarRequirements())
+			{
+				if (varRequirement.isVarbit())
 				{
-					if (varRequirement.isVarbit())
-					{
-						varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
-					}
-					else
-					{
-						varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
-					}
+					varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
 				}
+				else
+				{
+					varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
+				}
+			}
 
-				if (!useTransport(transport))
-				{
-					continue;
-				}
+			if (!useTransport(transport))
+			{
+				continue;
+			}
 
-				boolean usableWithoutBank = hasRequiredItems(transport, true, true, false, true);
-				boolean usableWithBank = hasRequiredItems(transport, true, true, includeBankPath, true);
-				if (usableWithoutBank)
-				{
-					withoutBank.add(transport);
-				}
-				if (usableWithBank)
-				{
-					withBank.add(transport);
-				}
+			boolean usableWithoutBank = hasRequiredItems(transport, true, true, false, true);
+			boolean usableWithBank = hasRequiredItems(transport, true, true, includeBankPath, true);
+			if (usableWithoutBank)
+			{
+				withoutBank.add(transport);
+			}
+			if (usableWithBank)
+			{
+				withBank.add(transport);
 			}
 		}
 
@@ -590,6 +591,16 @@ public class PathfinderConfig
 	 * are remapped so chaining with other POH transports is possible.
 	 * Called once at load time since Transport objects in allTransports are shared references.
 	 */
+	private static Transport[] flatten(Map<Integer, Set<Transport>> transports)
+	{
+		List<Transport> all = new ArrayList<>();
+		for (Set<Transport> set : transports.values())
+		{
+			all.addAll(set);
+		}
+		return all.toArray(new Transport[0]);
+	}
+
 	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)
 	{
 		int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
