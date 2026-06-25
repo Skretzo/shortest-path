@@ -1,0 +1,28 @@
+# Destination	Items	Skills	Quests	Duration	Display info	Wilderness level	Varbits	VarPlayers
+# Standard Spellbook - Varbit 4070=0								
+# Lumbridge Home Teleport (enabled animation:4560=3 is both 1 and 2 randomly. &249 is either 1, 8, 16, 32, 64 or 128)								
+3221 3218 0				23	Lumbridge Home Teleport	20	4070=0	4560=0;892@30
+3221 3218 0				21	Lumbridge Home Teleport	20	4070=0	4560&2;892@30
+3221 3218 0				18	Lumbridge Home Teleport	20	4070=0	4560&4;892@30
+3221 3218 0				23	Lumbridge Home Teleport	20	4070=0	4560&249;892@30
+								
+# Ancient Spellbook - Varbit 4070=1								
+# Edgeville Home Teleport								
+3087 3504 0			Desert Treasure I	23	Edgeville Home Teleport	20	4070=1	4560=0;892@30
+3087 3504 0			Desert Treasure I	21	Edgeville Home Teleport	20	4070=1	4560&2;892@30
+3087 3504 0			Desert Treasure I	18	Edgeville Home Teleport	20	4070=1	4560&4;892@30
+3087 3504 0			Desert Treasure I	23	Edgeville Home Teleport	20	4070=1	4560&249;892@30
+								
+# Lunar Spellbook - Varbit 4070=2								
+# Lunar Home Teleport								
+2113 3915 0			Lunar Diplomacy	23	Lunar Home Teleport	20	4070=2	4560=0;892@30
+2113 3915 0			Lunar Diplomacy	21	Lunar Home Teleport	20	4070=2	4560&2;892@30
+2113 3915 0			Lunar Diplomacy	18	Lunar Home Teleport	20	4070=2	4560&4;892@30
+2113 3915 0			Lunar Diplomacy	23	Lunar Home Teleport	20	4070=2	4560&249;892@30
+								
+# Arceuus Spellbook - Varbit 4070=3								
+# Arceuus Home Teleport								
+1700 3882 0				23	Arceuus Home Teleport	20	4070=3	4560=0;892@30
+1700 3882 0				21	Arceuus Home Teleport	20	4070=3	4560&2;892@30
+1700 3882 0				18	Arceuus Home Teleport	20	4070=3	4560&4;892@30
+1700 3882 0				23	Arceuus Home Teleport	20	4070=3	4560&249;892@30
