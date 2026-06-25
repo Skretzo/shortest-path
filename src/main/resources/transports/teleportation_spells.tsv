@@ -18,25 +18,37 @@
 2964 3378 0	AIR_RUNE=3&&WATER_RUNE=1&&LAW_RUNE=1	37 Magic		4	Falador Teleport	20	4070=0	
 								
 # Teleport to House - These depend on the current player's home location  determined by varbit 2187								
+# Varbit 4744 is the Teleport to House mode, 0 = Inside, 1 = Outside. As both options are always available, we list								
+# each option twice, only specifying (Inside) or (Outside) if that is not the default mode selected by the player.								
 1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;4744=0	
+1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Inside)	20	4070=0;4744=0;4744=1	
 # 1 - Rimmington								
-2953 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=1;4744=1	
+2953 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=1;4744=1	
+2953 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=1;4744=0	
 # 2 - Taverly								
-2893 3465 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=2;4744=1	
+2893 3465 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=2;4744=1	
+2893 3465 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=2;4744=0	
 # 3 - Pollnivneach								
-3340 3003 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=3;4744=1	
+3340 3003 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=3;4744=1	
+3340 3003 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=3;4744=0	
 # 4 - Rellekka								
-2670 3631 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=4;4744=1	
+2670 3631 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=4;4744=1	
+2670 3631 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=4;4744=0	
 # 5 - Brimhaven								
-2757 3178 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=5;4744=1	
+2757 3178 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=5;4744=1	
+2757 3178 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=5;4744=0	
 # 6 - Yanille								
-2544 3096 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=6;4744=1	
+2544 3096 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=6;4744=1	
+2544 3096 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=6;4744=0	
 # 7 - Prifddinas								
-3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=7;4744=1	
+3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=7;4744=1	
+3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=7;4744=0	
 # 8 - Hosidius								
-1743 3517 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=8;4744=1	
+1743 3517 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=8;4744=1	
+1743 3517 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=8;4744=0	
 # 9 - Aldarin								
-1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=9;4744=1	
+1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=9;4744=1	
+1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=9;4744=0	
 								
 # Camelot Teleport								
 2757 3479 0	AIR_RUNE=5&&LAW_RUNE=1	45 Magic		4	Camelot Teleport	20	4070=0	
@@ -170,4 +182,4 @@
 3564 3315 0	BLOOD_RUNE=1&&LAW_RUNE=2&&SOUL_RUNE=2	83 Magic		4	Barrows Teleport	20	4070=3	
 								
 # Ape Atoll Teleport								
-2771 9102 0	BLOOD_RUNE=2&&LAW_RUNE=2&&SOUL_RUNE=2	90 Magic	Monkey Madness I	4	Ape Atoll Teleport	20	4070=3	
+2771 9102 0	BLOOD_RUNE=2&&LAW_RUNE=2&&SOUL_RUNE=2	90 Magic	Monkey Madness I	4	Ape Atoll Teleport	20	4070=3		
