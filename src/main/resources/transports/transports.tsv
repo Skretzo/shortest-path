@@ -1306,7 +1306,7 @@
 2749 3490 2	2749 3490 1	Climb-down Ladder 25606							
 2750 3491 1	2750 3491 2	Climb-up Ladder 26107							
 2750 3491 2	2750 3491 1	Climb-down Ladder 25606							
-
+									
 # Lighthouse									
 2596 3608 0	2598 3608 0	Cross Broken bridge 4615						2	
 2598 3608 0	2596 3608 0	Cross Broken bridge 4616						2	
@@ -2373,13 +2373,13 @@
 # Mining Guild									
 # Two entrances, both require 60 Mining									
 # Underground tunnels:									
-3046 9757 0	3046 9756 0	Open Door 30364	60 Mining					1    	
+3046 9757 0	3046 9756 0	Open Door 30364	60 Mining					1	
 3046 9756 0	3046 9757 0	Open Door 30364						1	
 # Surface entrance:									
-3019 9741 0	3019 9741 0 	Climb-down Ladder 30367	60 Mining					2	
+3019 9741 0	3019 9741 0	Climb-down Ladder 30367	60 Mining					2	
 3019 9741 0	3019 9741 0	Climb-up Ladder 17386						2	
-3021 3339 0	3021 9739 0 	Climb-down Ladder 30367	60 Mining					2	
-3021 9739 0	3021 3339 0 	Climb-up Ladder 17386						2	
+3021 3339 0	3021 9739 0	Climb-down Ladder 30367	60 Mining					2	
+3021 9739 0	3021 3339 0	Climb-up Ladder 17386						2	
 3019 3337 0	3019 9737 0	Climb-down Ladder 30367	60 Mining					2	
 3019 9737 0	3019 3337 0	Climb-up Ladder 17386						2	
 3017 3339 0	3017 9739 0	Climb-down Ladder 30367	60 Mining					2	
@@ -3218,18 +3218,35 @@
 3074 3653 0	3197 10056 0	Enter Cavern 31555						2	
 3075 3653 0	3197 10056 0	Enter Cavern 31555						2	
 3076 3653 0	3197 10056 0	Enter Cavern 31555						2	
-3069 3740 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3741 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3742 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3743 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3740 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3741 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3742 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3743 0	3187 10128 0	Jump-down Crevice 40386						2	
-3067 3739 0	3187 10128 0	Jump-down Crevice 40386						2	
-3068 3739 0	3187 10128 0	Jump-down Crevice 40386						2	
-3067 3744 0	3187 10128 0	Jump-down Crevice 40386						2	
-3068 3744 0	3187 10128 0	Jump-down Crevice 40386						2	
+									
+# Revenant Caves									
+									
+3069 3740 0	3187 10127 0	Jump-down Crevice 40386						2	
+3069 3741 0	3187 10127 0	Jump-down Crevice 40386						2	
+3069 3742 0	3187 10127 0	Jump-down Crevice 40386						2	
+3069 3743 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3740 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3741 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3742 0	3187 10127 0	Jump-down Crevice 40386						2	
+3066 3743 0	3187 10127 0	Jump-down Crevice 40386						2	
+3067 3739 0	3187 10127 0	Jump-down Crevice 40386						2	
+3068 3739 0	3187 10127 0	Jump-down Crevice 40386						2	
+3067 3744 0	3187 10127 0	Jump-down Crevice 40386						2	
+3068 3744 0	3187 10127 0	Jump-down Crevice 40386						2	
+									
+3220 10088 0	3220 10084 0	Jump-to Pillar 31561	65 Agility					4	
+3220 10084 0	3220 10088 0	Jump-to Pillar 31561	65 Agility					4	
+									
+3198 10136 0	3202 10132 0	Jump-to Pillar 31562						4	
+3202 10132 0	3198 10136 0	Jump-to Pillar 31562						4	
+									
+3200 10196 0	3204 10196 0	Jump-to Pillar 31561						4	
+3204 10196 0	3200 10196 0	Jump-to Pillar 31561						4	
+									
+3180 10211 0	3180 10207 0	Jump-to Pillar 31561						4	
+3180 10207 0	3180 10211 0	Jump-to Pillar 31561						4	
+									
+									
 3126 3831 0	3241 10233 0	Enter Cavern 31556						2	
 3126 3832 0	3241 10233 0	Enter Cavern 31556						2	
 3126 3833 0	3241 10233 0	Enter Cavern 31556						2	
@@ -4907,10 +4924,10 @@
 1658 3504 0	1657 3504 0	Open Gate 28851	60 Woodcutting					2	
 1657 3504 0	1658 3504 0	Open Gate 28851						2	
 # West gate:									
-1562 3488 0	1563 3488 0 	Open Gate 28852	60 Woodcutting					2	
-1563 3488 0	1562 3488 0 	Open Gate 28852						2	
-1562 3487 0	1563 3487 0 	Open Gate 28852	60 Woodcutting					2	
-1563 3487 0	1562 3487 0 	Open Gate 28852						2	
+1562 3488 0	1563 3488 0	Open Gate 28852	60 Woodcutting					2	
+1563 3488 0	1562 3488 0	Open Gate 28852						2	
+1562 3487 0	1563 3487 0	Open Gate 28852	60 Woodcutting					2	
+1563 3487 0	1562 3487 0	Open Gate 28852						2	
 									
 # Jiggig									
 2455 3049 0	2457 3049 0	Climb-over Crushed barricade 6881				496=1		2	
@@ -5110,7 +5127,7 @@
 2799 2797 1	2799 2793 0	Climb-down Staircase						1	
 2800 2793 0	2800 2797 1	Climb-up Staircase						1	
 2800 2797 1	2800 2793 0	Climb-down Staircase						1	
-
+									
 # Tomb of Bervirius									
 2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
 2764 9376 0	2765 2976 0	Climb Climbing rocks 2236						15	
@@ -5246,7 +5263,7 @@
 # Abyss									
 									
 # there are multiple destination and one is picked at random when used									
-3106 3559 0	 3035 4852 0	Teleport Mage of Zamorak 2581			Enter the Abyss				
+3106 3559 0	3035 4852 0	Teleport Mage of Zamorak 2581			Enter the Abyss				
 									
 3039 4805 0	3039 4800 0	Enter Passage 27054							
 									
@@ -5336,12 +5353,66 @@
 2142 4813 0	2405 4381 0	Use Portal 34754						1	
 									
 # Nature Altar									
-3035 4842 0	2400 4844 0	Exit-through Nature rift 25382							 
+3035 4842 0	2400 4844 0	Exit-through Nature rift 25382							
 2400 4835 0	2865 3022 0	Use Portal 34756						1	
 									
 # Arzinian mine									
 2824 10169 0	2615 4966 0	Talk-to Dondakan the Dwarf 4891		4567=1	Between a Rock...			4	
-
+									
+# Wintertodt									
+									
+1633 4023 0	1631 4023 0	Jump Gap 29326	60 Agility					2	
+1631 4023 0	1629 4023 0	Jump Gap 29326	60 Agility					2	
+1629 4023 0	1627 4023 0	Jump Gap 29326	60 Agility					2	
+									
+1631 4023 0	1633 4023 0	Jump Gap 29326	60 Agility					2	
+1629 4023 0	1631 4023 0	Jump Gap 29326	60 Agility					2	
+1627 4023 0	1629 4023 0	Jump Gap 29326	60 Agility					2	
+									
+									
+									
+1627 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1628 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1629 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1630 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1631 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1632 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+1633 3963 0	1630 3979 0	Enter Door of Dinh 29322	50 Firemaking					1	
+									
+									
+1627 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1628 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1629 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1630 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1631 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1632 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+1633 3963 0	1630 3958 0	Enter Door of Dinh 29322						1	
+									
+									
+# Temple of the eye									
+									
+3633 9503 0	3637 9503 0	Climb Rubble 43724						5	
+3637 9503 0	3633 9503 0	Climb Rubble 43726						5	
+									
+3613 9482 0	3613 9484 0	Quick-pass Barrier 43700						5	
+3614 9482 0	3614 9484 0	Quick-pass Barrier 43700						5	
+3615 9482 0	3615 9484 0	Quick-pass Barrier 43700						5	
+3616 9482 0	3616 9484 0	Quick-pass Barrier 43700						5	
+3617 9482 0	3617 9484 0	Quick-pass Barrier 43700						5	
+3613 9484 0	3613 9482 0	Quick-pass Barrier 43700						5	
+3614 9484 0	3614 9482 0	Quick-pass Barrier 43700						5	
+3615 9484 0	3615 9482 0	Quick-pass Barrier 43700						5	
+3616 9484 0	3616 9482 0	Quick-pass Barrier 43700						5	
+3617 9484 0	3617 9482 0	Quick-pass Barrier 43700						5	
+									
+2775 10003 0	2773 10003 0	Jump-over Strange floor 16544	43 Agility					10	
+2773 10003 0	2775 10003 0	Jump-over Strange floor 16544	43 Agility					10	
+									
+2770 10002 0	2768 10002 0	Jump-over Strange floor 16544	43 Agility					10	
+2768 10002 0	2770 10002 0	Jump-over Strange floor 16544	43 Agility					10	
+									
+									
+									
 # Lumbridge Castle Basement Goblins									
 3230 9609 0	3313 9613 0	Mines Kazgar 7301			The Lost Tribe			8	Mines
 3230 9609 0	3245 9648 0	Watermill Kazgar 7301			Death to the Dorgeshuun			8	Watermill
@@ -5349,13 +5420,13 @@
 3317 9612 0	3245 9648 0	Watermill Mistag 7299			Death to the Dorgeshuun			8	Watermill
 3246 9646 0	3313 9613 0	Mines Dartog 7301			Death to the Dorgeshuun			8	Mines
 3246 9646 0	3232 9610 0	Cellar Dartog 997			Death to the Dorgeshuun			8	Cellar
-
+									
 # Elemental Workshop									
 2709 3495 0	2709 3496 0	Open Odd-looking wall		2887=1|4446=1				2	
 2709 3496 0	2709 3495 0	Open Odd-looking wall		2887=1|4446=1				2	
 2709 3498 0	2716 9888 0	Climb-down Staircase 3415						1	
 2716 9888 0	2709 3497 0	Climb-up Staircase 3416						1	
-
+									
 # Piscatoris Falconry Area									
 2371 3622 0	2371 3620 0	Climb-over Stile 19222						5	
 2370 3621 0	2371 3620 0	Climb-over Stile 19222						5	
@@ -5363,7 +5434,7 @@
 2371 3619 0	2371 3621 0	Climb-over Stile 19222						5	
 2370 3620 0	2371 3621 0	Climb-over Stile 19222						5	
 2372 3620 0	2371 3621 0	Climb-over Stile 19222						5	
-
+									
 # Shadow Dungeon									
 2547 3422 0	2630 5071 0	Climb-down Ladder 6560		4657=1|28329=1|28327=1	Desert Treasure I				
 2546 3421 0	2630 5071 0	Climb-down Ladder 6560		4657=1|28329=1|28327=1	Desert Treasure I				
@@ -5373,7 +5444,7 @@
 2628 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
 2630 5072 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
 2629 5071 0	2547 3422 0	Climb-up Ladder 6450			Desert Treasure I				
-
+									
 # Piscatoris Fishing Colony									
 2344 3650 0	2344 3655 0	Enter Hole 12656			Swan Song				
 2344 3655 0	2344 3650 0	Enter Hole 12656			Swan Song				
@@ -5381,7 +5452,7 @@
 2343 3662 0	2343 3663 0	Open Colony gate			Swan Song			2	
 2344 3663 0	2344 3662 0	Open Colony gate			Swan Song			2	
 2343 3663 0	2343 3662 0	Open Colony gate			Swan Song			2	
-
+									
 # Socerer's Tower									
 2701 3407 0	2701 3407 1	Climb-up Ladder 16683							
 2700 3408 0	2701 3407 1	Climb-up Ladder 16683							
@@ -5403,13 +5474,13 @@
 2700 3405 3	2700 3405 2	Climb-down Ladder 16679							
 2699 3406 3	2700 3405 2	Climb-down Ladder 16679							
 2699 3404 3	2700 3405 2	Climb-down Ladder 16679							
-
+									
 # Cam Torum									
 1435 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
 1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
 1439 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
 1440 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
-
+									
 # Observatory Tower & Dungeon									
 2457 3186 0	2355 9394 0	Climb-down Stairs 25432							
 2458 3185 0	2355 9394 0	Climb-down Stairs 25432							
@@ -5422,7 +5493,7 @@
 2442 3159 1	2444 3162 0	Climb-down Stairs 25437							
 2443 3160 1	2444 3162 0	Climb-down Stairs 25437							
 2443 3158 1	2444 3162 0	Climb-down Stairs 25437							
-
+									
 # Shilo Village Gem Mine									
 2826 2998 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
 2825 2999 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
@@ -5430,14 +5501,14 @@
 2825 2997 0	2838 9387 0	Climb-down Ladder 23586				3598=1			
 2838 9387 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
 2839 9388 0	2826 2998 0	Climb-up Ladder 23584				3598=1			
-
+									
 # Corsair Cave Dungeon									
 2523 2860 0	2012 9004 1	Enter Hole 31791							
 2012 9004 1	2523 2860 0	Climb Vine ladder 31790							
 2483 2889 0	1971 9035 1	Enter Cave 31766				6076=1			
 2484 2889 0	1971 9035 1	Enter Cave 31766				6076=1			
 1971 9035 1	2483 2889 0	Enter Cave 31806				6076=1			
-
+									
 # Myths' Guild									
 2456 2862 0	2456 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
 2457 2862 0	2457 2860 0	Pass Magical Barrier 31616			Dragon Slayer II				
@@ -5458,13 +5529,13 @@
 2459 2839 1	2457 2839 0	Climb-down Stairs 32206			Dragon Slayer II				
 2449 2847 1	2452 2847 2	Climb-up Stairs 31609			Dragon Slayer II				
 2452 2847 2	2449 2847 1	Climb-down Stairs 31610			Dragon Slayer II				
-
+									
 # Brimhaven House									
 2808 3162 0	2808 3162 1	Climb-up Ladder 16683							
 2809 3161 0	2808 3162 1	Climb-up Ladder 16683							
 2808 3162 1	2808 3162 0	Climb-down Ladder 16670							
 2809 3161 1	2808 3162 0	Climb-down Ladder 16670							
-
+									
 # Prifddinas' Gates									
 ## North									
 2238 3386 0	3262 6135 0	Enter City Gate 36518			Song of the Elves			4	
@@ -5475,7 +5546,7 @@
 3263 6135 0	2239 3386 0	Exit City Gate 36522			Song of the Elves			4	
 3264 6135 0	2240 3386 0	Exit City Gate 36523			Song of the Elves			4	
 3265 6135 0	2241 3386 0	Exit City Gate 36523			Song of the Elves			4	
-
+									
 ## South									
 2238 3269 0	3262 6024 0	Enter City Gate 36518			Song of the Elves			4	
 2239 3269 0	3263 6024 0	Enter City Gate 36518			Song of the Elves			4	
@@ -5485,7 +5556,7 @@
 3263 6024 0	2239 3269 0	Exit City Gate 36522			Song of the Elves			4	
 3264 6024 0	2240 3269 0	Exit City Gate 36523			Song of the Elves			4	
 3265 6024 0	2241 3269 0	Exit City Gate 36523			Song of the Elves			4	
-
+									
 ## West									
 2181 3326 0	3208 6078 0	Enter City Gate 36518			Song of the Elves			4	
 2181 3327 0	3208 6079 0	Enter City Gate 36518			Song of the Elves			4	
@@ -5495,7 +5566,7 @@
 3208 6079 0	2181 3327 0	Exit City Gate 36522			Song of the Elves			4	
 3208 6080 0	2181 3328 0	Exit City Gate 36523			Song of the Elves			4	
 3208 6081 0	2181 3329 0	Exit City Gate 36523			Song of the Elves			4	
-
+									
 ## East									
 2298 3326 0	3319 6078 0	Enter City Gate 36518			Song of the Elves			4	
 2298 3327 0	3319 6079 0	Enter City Gate 36518			Song of the Elves			4	
@@ -5505,7 +5576,7 @@
 3319 6079 0	2298 3327 0	Exit City Gate 36522			Song of the Elves			4	
 3319 6080 0	2298 3328 0	Exit City Gate 36523			Song of the Elves			4	
 3319 6081 0	2298 3329 0	Exit City Gate 36523			Song of the Elves			4	
-
+									
 # Ape Atoll Dungeon									
 2763 9103 0	2763 2703 0	Climb-up Bamboo Ladder 4781							
 2763 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780							
