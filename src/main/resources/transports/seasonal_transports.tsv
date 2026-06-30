@@ -211,7 +211,7 @@
 3182 3744 0			33227=1		4	Evil Eye: Wilderness - Spindel	F	60			
 3319 3798 0			33227=1		4	Evil Eye: Wilderness - Venenatis	F	60			
 3219 3788 0			33227=1		4	Evil Eye: Wilderness - Vet'ion	F	60			
-
+											
 # Map of Alacrity											
 2927 3523 0			33233=1		4	Map of Alacrity: Asgarnia - Burthorpe: Tight gap	F	60			
 3035 9806 0			33233=1		4	Map of Alacrity: Asgarnia - Dwarf mine: Crevice	F	60			
@@ -356,8 +356,8 @@
 3384 10142 0			33233=1		4	Map of Alacrity: Wilderness - Wilderness slayer cave: Lesser demons	F	60			
 											
 # Clue Contract											
-# Destinations are dynamic (current clue step) 											
-
+# Destinations are dynamic (current clue step)											
+											
 # Fairy Mushroom											
 2539 3166 0			25102=1		4	Fairy Mushroom: Kandarin - Tree Gnome Village	F	60			
 2460 3446 0			25102=1		4	Fairy Mushroom: Kandarin - Gnome Stronghold	F	60			
