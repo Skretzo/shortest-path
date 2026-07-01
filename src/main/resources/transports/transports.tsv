@@ -5632,3 +5632,13 @@
 # Legends Guild Ladder									
 2893 3507 0	2893 9907 0	Climb-down Ladder 17374						1	
 2893 9907 0	2893 3507 0	Climb-up Ladder 17387						1	
+									
+# The Warrens									
+									
+1812 3745 0	1813 10145 0	Climb-down Manhole 31707						2	
+1813 3746 0	1813 10145 0	Climb-down Manhole 31707						2	
+1814 3745 0	1813 10145 0	Climb-down Manhole 31707						2	
+1813 3744 0	1813 10145 0	Climb-down Manhole 31707						2	
+									
+1813 10145 0	1813 3744 0	Climb-up Ladder 31708						2	
+1812 10145 0	1813 3744 0	Climb-up Ladder 31708						2	
