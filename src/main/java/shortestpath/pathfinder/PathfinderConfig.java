@@ -128,6 +128,13 @@ public class PathfinderConfig
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
+	/**
+	 * One-off cost surcharge for entering the banked state (routing through a bank to withdraw a
+	 * required item), so banking is only chosen when it saves more than this many tiles overall.
+	 * Applies wherever bank routing is enabled ({@link #isBankPathEnabled()}).
+	 */
+	@Getter
+	private int bankPickupCost;
 	@Getter
 	private boolean isOnSailingBoat;
 
@@ -286,6 +293,7 @@ public class PathfinderConfig
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
+		bankPickupCost = ShortestPathPlugin.override("costBankPickup", config.costBankPickup());
 
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{

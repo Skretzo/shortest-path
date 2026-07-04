@@ -124,7 +124,12 @@ public class CollisionMap
 			: 0;
 		for (Transport transport : transports)
 		{
-			boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
+			int bankSurcharge = bankPickupCost(config, pathBankVisited, packedPosition, transport);
+			// Bank-surcharged transports are enqueued as delayed visits: their cost no longer matches
+			// their creation order, so claiming the destination at enqueue (which for banked nodes also
+			// claims the unbanked plane, see VisitedTiles#set) could block a cheaper plain-walking path.
+			// Delayed visits are deduplicated at dequeue instead, in cost order.
+			boolean delayedVisit = transport.getType().sharesDestinationsWith() != null || bankSurcharge > 0;
 			// Do not consider a transport if we have already visited its target tile.
 			// For transports that share destinations with a teleport, skip this check
 			// so both can compete in the priority queue (delayed visit).
@@ -141,7 +146,7 @@ public class CollisionMap
 				transport.getDestination(),
 				node,
 				transport.getDuration(),
-				config.getAdditionalTransportCost(transport) + chainPenalty,
+				config.getAdditionalTransportCost(transport) + chainPenalty + bankSurcharge,
 				pathBankVisited,
 				delayedVisit,
 				delayedVisit ? config.getDifferentialCost(transport) : 0));
@@ -233,7 +238,11 @@ public class CollisionMap
 		int maxWildernessLevel = graph.abstractKind(node).maxWildernessLevel();
 		for (Transport transport : config.getUsableTeleports(bankVisited))
 		{
-			boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
+			int bankSurcharge = bankPickupCost(config, bankVisited, Transport.UNDEFINED_ORIGIN, transport);
+			// Bank-surcharged teleports are delayed visits (see getTileNeighbors): claiming their
+			// destination at enqueue would also claim the unbanked plane and could block a cheaper
+			// plain-walking path; dedup happens at dequeue instead, in cost order.
+			boolean delayedVisit = transport.getType().sharesDestinationsWith() != null || bankSurcharge > 0;
 			if (!delayedVisit && visited.get(transport.getDestination(), bankVisited))
 			{
 				continue;
@@ -255,11 +264,56 @@ public class CollisionMap
 				transport.getDestination(),
 				node,
 				transport.getDuration(),
-				config.getAdditionalTransportCost(transport),
+				config.getAdditionalTransportCost(transport) + bankSurcharge,
 				bankVisited,
 				delayedVisit,
 				differentialCost));
 		}
 		return neighbors;
+	}
+
+	/**
+	 * The bank pick-up surcharge for taking {@code transport} in the given bank state: the configured
+	 * cost when the transport is only available because the path visited a bank (i.e. it is absent from
+	 * the unbanked availability), otherwise zero. Charged on the transport edge itself — transport nodes
+	 * are ordered by the cost min-heap, so the surcharge steers the search without disturbing the FIFO
+	 * walking frontier, whose ordering assumes uniform step costs.
+	 */
+	private static int bankPickupCost(PathfinderConfig config, boolean bankVisited, int origin, Transport transport)
+	{
+		final int cost = config.getBankPickupCost();
+		if (!bankVisited || cost == 0)
+		{
+			return 0;
+		}
+		return availableWithoutBank(config, origin, transport) ? 0 : cost;
+	}
+
+	/**
+	 * Whether this transport is also in the unbanked availability (same identity): global teleports
+	 * (undefined origin) are matched in the unbanked teleport list, fixed-origin transports in the
+	 * unbanked per-tile transport map.
+	 */
+	private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport)
+	{
+		if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN)
+		{
+			for (Transport candidate : config.getUsableTeleports(false))
+			{
+				if (candidate == transport)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		for (Transport candidate : config.getTransportsPacked(false).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS))
+		{
+			if (candidate == transport)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }
