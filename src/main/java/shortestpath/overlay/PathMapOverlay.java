@@ -6,8 +6,10 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Stroke;
 import java.awt.geom.Area;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
@@ -18,6 +20,7 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
@@ -127,18 +130,26 @@ public class PathMapOverlay extends Overlay
 		if (plugin.getPathfinder() != null)
 		{
 			Color colour = plugin.getPathColor();
-			java.util.List<PathStep> path = plugin.getPathfinder().getPath();
+			List<PathStep> path = plugin.getPathfinder().getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
-			for (int i = 0; i < path.size(); i++)
+			if (TileStyle.ARROW_LINE.equals(plugin.pathStyle))
 			{
 				graphics.setColor(colour);
-				int point = path.get(i).getPackedPosition();
-				int lastPoint = (i > 0) ? path.get(i - 1).getPackedPosition() : point;
-				if (WorldPointUtil.distanceBetween(point, lastPoint) > 1)
+				drawArrowPath(graphics, path);
+			}
+			else
+			{
+				for (int i = 0; i < path.size(); i++)
 				{
-					drawOnMap(graphics, lastPoint, point, true, cursorPos);
+					graphics.setColor(colour);
+					int point = path.get(i).getPackedPosition();
+					int lastPoint = (i > 0) ? path.get(i - 1).getPackedPosition() : point;
+					if (WorldPointUtil.distanceBetween(point, lastPoint) > 1)
+					{
+						drawOnMap(graphics, lastPoint, point, true, cursorPos);
+					}
+					drawOnMap(graphics, point, true, cursorPos);
 				}
-				drawOnMap(graphics, point, true, cursorPos);
 			}
 			for (int target : plugin.getPathfinder().getTargets())
 			{
@@ -151,6 +162,72 @@ public class PathMapOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	/**
+	 * Draws the path as a directed polyline: consecutive same-direction walking steps are compressed
+	 * into one straight segment, each segment ends in a small arrowhead showing travel direction, and
+	 * teleport/transport jumps are dashed. (Arrowhead technique adapted from Quest Helper's
+	 * DirectionArrow, see {@link ArrowHead}.)
+	 */
+	private void drawArrowPath(Graphics2D graphics, List<PathStep> path)
+	{
+		final Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+		final Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
+
+		int i = 0;
+		while (i < path.size() - 1)
+		{
+			int from = path.get(i).getPackedPosition();
+			int next = path.get(i + 1).getPackedPosition();
+
+			if (WorldPointUtil.distanceBetween(from, next) > 1)
+			{
+				// Teleport/transport jump: dashed segment.
+				drawMapSegment(graphics, from, next, jumpStroke);
+				i++;
+				continue;
+			}
+
+			// Extend the straight walking run while the direction stays the same.
+			int dx = WorldPointUtil.unpackWorldX(next) - WorldPointUtil.unpackWorldX(from);
+			int dy = WorldPointUtil.unpackWorldY(next) - WorldPointUtil.unpackWorldY(from);
+			int j = i + 1;
+			while (j < path.size() - 1)
+			{
+				int a = path.get(j).getPackedPosition();
+				int b = path.get(j + 1).getPackedPosition();
+				if (WorldPointUtil.distanceBetween(a, b) > 1
+					|| WorldPointUtil.unpackWorldX(b) - WorldPointUtil.unpackWorldX(a) != dx
+					|| WorldPointUtil.unpackWorldY(b) - WorldPointUtil.unpackWorldY(a) != dy)
+				{
+					break;
+				}
+				j++;
+			}
+			drawMapSegment(graphics, from, path.get(j).getPackedPosition(), walkStroke);
+			i = j;
+		}
+	}
+
+	private void drawMapSegment(Graphics2D graphics, int from, int to, Stroke stroke)
+	{
+		int x1 = plugin.mapWorldPointToGraphicsPointX(from);
+		int y1 = plugin.mapWorldPointToGraphicsPointY(from);
+		int x2 = plugin.mapWorldPointToGraphicsPointX(to);
+		int y2 = plugin.mapWorldPointToGraphicsPointY(to);
+		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE
+			|| x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
+		{
+			return;
+		}
+		graphics.setStroke(stroke);
+		graphics.drawLine(x1, y1, x2, y2);
+		// Skip the head on segments too short to fit it (e.g. zoomed far out).
+		if (Math.hypot(x2 - x1, y2 - y1) >= 10)
+		{
+			ArrowHead.draw(graphics, x1, y1, x2, y2, 7);
+		}
 	}
 
 	private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos)
