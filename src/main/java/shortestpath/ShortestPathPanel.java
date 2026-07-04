@@ -267,9 +267,7 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			// Shortest Path has no active target. (Quest Helper draws its own line for some steps and
 			// doesn't hand Shortest Path a destination — set one on the map to find routes.)
-			status = "No Shortest Path destination set."
-				+ "<br>Quest Helper draws its own line for some steps."
-				+ "<br>Set a target on the map, then press \"Refresh routes\".";
+			status = "No Shortest Path destination set.";
 		}
 		// The bank container is only populated once the bank has been opened this session; without it
 		// Bank mode cannot see banked teleports (same constraint as Shortest Path itself).
@@ -361,8 +359,9 @@ public class ShortestPathPanel extends PluginPanel
 		methods.setBorder(new EmptyBorder(2, 6, 4, 4));
 		if (route.isViaBank())
 		{
-			methods.add(noteRow("<i>Walks to a bank first to withdraw the item</i>",
-				"A required teleport item is in your bank — the drawn path includes the walk to a bank to pick it up before teleporting"));
+			methods.add(noteRow("<i>Walks to a bank first — withdraws the item for "
+					+ escapeHtml(joinLabels(route.getBankMethods())) + "</i>",
+				"The marked method needs an item from your bank — the drawn path includes the walk to a bank to pick it up first"));
 		}
 		if (route.isWalkOnly())
 		{
@@ -372,7 +371,7 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			for (TeleportMethod method : route.getMethods())
 			{
-				methods.add(buildMethodRow(method));
+				methods.add(buildMethodRow(method, route.getBankMethods()));
 			}
 		}
 		card.add(methods, BorderLayout.CENTER);
@@ -384,9 +383,11 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * A route-card method row: category dot + wrapped label + an exclude (✕) icon.
+	 * A route-card method row: category dot + wrapped label + an exclude (✕) icon. Methods whose
+	 * required item must first be withdrawn from the bank get a bank glyph, so it's clear which
+	 * method the route's bank detour is for.
 	 */
-	private JPanel buildMethodRow(TeleportMethod method)
+	private JPanel buildMethodRow(TeleportMethod method, Set<TeleportMethod> bankMethods)
 	{
 		JPanel row = new JPanel(new BorderLayout(5, 0));
 		row.setOpaque(false);
@@ -396,12 +397,22 @@ public class ShortestPathPanel extends PluginPanel
 		dot.setBorder(new EmptyBorder(2, 0, 0, 0));
 		dot.setToolTipText(method.category());
 		MethodAvailability status = cachedUnavailable.get(method);
-		if (status != null)
+		boolean bankGated = bankMethods.contains(method);
+		if (status != null || bankGated)
 		{
 			JPanel west = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
 			west.setOpaque(false);
 			west.add(dot);
-			west.add(statusLabel(status));
+			if (bankGated)
+			{
+				JLabel bankMarker = new JLabel(RouteIcons.IN_BANK);
+				bankMarker.setToolTipText("This method needs an item from your bank — the route walks to a bank to withdraw it first");
+				west.add(bankMarker);
+			}
+			if (status != null)
+			{
+				west.add(statusLabel(status));
+			}
 			row.add(west, BorderLayout.WEST);
 		}
 		else
@@ -634,6 +645,25 @@ public class ShortestPathPanel extends PluginPanel
 			expandedCategories.remove(category);
 		}
 		render();
+	}
+
+	/**
+	 * Human list of method labels, e.g. "Fairy ring" or "Fairy ring and Cowbell amulet".
+	 */
+	private static String joinLabels(Set<TeleportMethod> methods)
+	{
+		StringBuilder joined = new StringBuilder();
+		int i = 0;
+		for (TeleportMethod method : methods)
+		{
+			if (i > 0)
+			{
+				joined.append(i == methods.size() - 1 ? " and " : ", ");
+			}
+			joined.append(method.label());
+			i++;
+		}
+		return joined.toString();
 	}
 
 	private String methodTooltip(TeleportMethod method)

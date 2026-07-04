@@ -204,6 +204,13 @@ public class AlternativeRoutesServiceTest
 				+ "flipped at step " + firstBankVisited + " of " + path.size(),
 			firstBankVisited > 5);
 		assertTrue("Route must be flagged as going via the bank (panel indicator)", bankedRoute.isViaBank());
+		// The detour must be attributed to the right method: the banked teleport item, and only it —
+		// so the panel can say which method the bank walk is for (user report: an equipped Ardougne
+		// cloak looked like the reason for a bank trip that was actually for a banked item).
+		assertTrue("The bank detour must be attributed to the teleport-item method",
+			bankedRoute.getBankMethods().stream().anyMatch(m -> m.getType() == TransportType.TELEPORTATION_ITEM));
+		assertTrue("Only bank-gated methods may be attributed to the bank detour",
+			bankedRoute.getMethods().containsAll(bankedRoute.getBankMethods()));
 	}
 
 	@Test

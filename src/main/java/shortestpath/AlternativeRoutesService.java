@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -244,7 +245,7 @@ public class AlternativeRoutesService
 			{
 				break;
 			}
-			routes.add(new RouteOption(path, methods, result.getTotalCost(), reached, scan.viaBank));
+			routes.add(new RouteOption(path, methods, result.getTotalCost(), reached, scan.bankGated));
 			// Stream the route we just found so the panel shows it immediately.
 			emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
 
@@ -391,7 +392,7 @@ public class AlternativeRoutesService
 					continue;
 				}
 				routes.add(new RouteOption(seedResult.path, seedResult.scan.methods,
-					seedResult.totalCost, seedResult.reached, seedResult.scan.viaBank));
+					seedResult.totalCost, seedResult.reached, seedResult.scan.bankGated));
 				emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
 			}
 		}
@@ -576,16 +577,17 @@ public class AlternativeRoutesService
 	/**
 	 * Derives the ordered list of teleport/transport methods a path uses, by inspecting each edge for
 	 * a method-type transport (anything beyond plain walking connectors) whose destination matches.
-	 * Also detects whether any used method is bank-gated (only available in the post-bank state), i.e.
-	 * the route walks to a bank to withdraw the required item first.
+	 * Also collects which of those methods are bank-gated (only available in the post-bank state), i.e.
+	 * the route walks to a bank to withdraw that method's required item first — so the panel can say
+	 * which method the bank detour is for.
 	 */
 	private MethodScan scanMethods(PathfinderConfig config, List<PathStep> path)
 	{
 		List<TeleportMethod> methods = new ArrayList<>();
-		boolean viaBank = false;
+		Set<TeleportMethod> bankGated = new LinkedHashSet<>();
 		if (path == null)
 		{
-			return new MethodScan(methods, false);
+			return new MethodScan(methods, bankGated);
 		}
 		for (int i = 1; i < path.size(); i++)
 		{
@@ -595,15 +597,16 @@ public class AlternativeRoutesService
 			Transport chosen = matchMethodTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
 			if (chosen != null)
 			{
-				methods.add(TeleportMethod.fromTransport(chosen));
+				TeleportMethod method = TeleportMethod.fromTransport(chosen);
+				methods.add(method);
 				// Bank-gated: used in the post-bank state and not available without the bank.
 				if (bankVisited && !availableWithoutBank(config, from.getPackedPosition(), chosen))
 				{
-					viaBank = true;
+					bankGated.add(method);
 				}
 			}
 		}
-		return new MethodScan(methods, viaBank);
+		return new MethodScan(methods, bankGated);
 	}
 
 	private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport)
@@ -629,12 +632,12 @@ public class AlternativeRoutesService
 	private static final class MethodScan
 	{
 		private final List<TeleportMethod> methods;
-		private final boolean viaBank;
+		private final Set<TeleportMethod> bankGated;
 
-		MethodScan(List<TeleportMethod> methods, boolean viaBank)
+		MethodScan(List<TeleportMethod> methods, Set<TeleportMethod> bankGated)
 		{
 			this.methods = methods;
-			this.viaBank = viaBank;
+			this.bankGated = bankGated;
 		}
 	}
 

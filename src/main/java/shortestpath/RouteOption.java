@@ -1,6 +1,7 @@
 package shortestpath;
 
 import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import shortestpath.pathfinder.PathStep;
 
@@ -30,19 +31,28 @@ public final class RouteOption
 	 */
 	private final boolean reached;
 	/**
-	 * Whether one of this route's methods requires an item that must first be withdrawn from the bank
-	 * (the path includes a walk to a bank before that method is used).
+	 * The subset of {@link #methods} that require an item that must first be withdrawn from the bank —
+	 * the path includes a walk to a bank before each of these is used. Empty when the route needs no
+	 * bank visit. Lets the panel say <em>which</em> method the bank detour is for.
 	 */
-	private final boolean viaBank;
+	private final Set<TeleportMethod> bankMethods;
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, int totalCost, boolean reached,
-		boolean viaBank)
+		Set<TeleportMethod> bankMethods)
 	{
 		this.path = path;
 		this.methods = methods;
 		this.totalCost = totalCost;
 		this.reached = reached;
-		this.viaBank = viaBank;
+		this.bankMethods = bankMethods;
+	}
+
+	/**
+	 * Whether one of this route's methods requires a bank withdrawal first (see {@link #bankMethods}).
+	 */
+	public boolean isViaBank()
+	{
+		return !bankMethods.isEmpty();
 	}
 
 	/**
