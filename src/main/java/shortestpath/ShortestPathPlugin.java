@@ -490,13 +490,13 @@ public class ShortestPathPlugin extends Plugin
 
 	public Color getPathColor()
 	{
-		// A displayed alternative route is a static snapshot: colour it by whether it reached the target,
+		// A displayed alternative route is a static snapshot: colour it from its own endpoint,
 		// never by the classic pathfinder's background re-anchoring (which would otherwise flash the drawn
 		// route blue every time you walk far enough to trigger a recalculation).
 		RouteOption displayed = getDisplayedRoute();
 		if (displayed != null)
 		{
-			return displayed.isReached() ? colourPath : colourPathUnreachable;
+			return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
 		}
 
 		if (pathfinder == null || !pathfinder.isDone())
@@ -516,6 +516,33 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		return colourPath;
+	}
+
+	/**
+	 * Mirrors {@link #isPathUnreachable()}'s tolerance for a displayed alternative route: a route that
+	 * stops at the closest reachable tile (e.g. because the exact target tile is an NPC/object spot)
+	 * still counts as reached for colouring while its endpoint is within the configured
+	 * unreachable-distance threshold — only genuinely far endpoints get the unreachable colour.
+	 */
+	private boolean isRouteEndTooFar(RouteOption route)
+	{
+		if (route.isReached())
+		{
+			return false;
+		}
+		List<PathStep> path = route.getPath();
+		Set<Integer> targets = lastAltTargets;
+		if (path == null || path.isEmpty() || targets.isEmpty())
+		{
+			return false;
+		}
+		int endPoint = path.get(path.size() - 1).getPackedPosition();
+		int closestTargetDistance = Integer.MAX_VALUE;
+		for (int target : targets)
+		{
+			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
+		}
+		return closestTargetDistance > unreachableTargetDistance;
 	}
 
 	public boolean isPathUnreachable()
