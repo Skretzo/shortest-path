@@ -7,7 +7,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.Stroke;
 import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -187,13 +189,19 @@ public class PathTileOverlay extends Overlay
 
 			List<PathStep> path = plugin.getPathfinder().getPath();
 			int counter = 0;
-			if (TileStyle.LINES.equals(plugin.pathStyle))
+			if (TileStyle.LINES.equals(plugin.pathStyle) || TileStyle.ARROW_LINE.equals(plugin.pathStyle))
 			{
+				boolean arrows = TileStyle.ARROW_LINE.equals(plugin.pathStyle);
 				for (int i = 1; i < path.size(); i++)
 				{
 					PathStep currentStep = path.get(i - 1);
 					PathStep nextStep = path.get(i);
-					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color, 1 + counter++);
+					// Arrowheads only where they carry information: at direction changes and the end.
+					boolean head = arrows && (i == path.size() - 1
+						|| directionChanges(currentStep.getPackedPosition(), nextStep.getPackedPosition(),
+							path.get(i + 1).getPackedPosition()));
+					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color,
+						1 + counter++, head);
 					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 				}
 			}
@@ -299,7 +307,16 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
-	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter)
+	private static boolean directionChanges(int previous, int current, int next)
+	{
+		int dx1 = WorldPointUtil.unpackWorldX(current) - WorldPointUtil.unpackWorldX(previous);
+		int dy1 = WorldPointUtil.unpackWorldY(current) - WorldPointUtil.unpackWorldY(previous);
+		int dx2 = WorldPointUtil.unpackWorldX(next) - WorldPointUtil.unpackWorldX(current);
+		int dy2 = WorldPointUtil.unpackWorldY(next) - WorldPointUtil.unpackWorldY(current);
+		return dx1 != dx2 || dy1 != dy2;
+	}
+
+	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead)
 	{
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
 		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
@@ -342,6 +359,10 @@ public class PathTileOverlay extends Overlay
 		graphics.setColor(color);
 		graphics.setStroke(new BasicStroke(4));
 		graphics.draw(line);
+		if (arrowHead)
+		{
+			ArrowHead.draw(graphics, p1.getX(), p1.getY(), p2.getX(), p2.getY(), 12);
+		}
 
 		if (counter == 1)
 		{
@@ -408,6 +429,69 @@ public class PathTileOverlay extends Overlay
 			verticalOffset += drawLabelAtCanvasPoint(graphics, p, text, verticalOffset);
 		}
 		return verticalOffset;
+	}
+
+	/**
+	 * A pulsing "teleport from here" highlight: diamond rings expanding out from the tile and fading,
+	 * looping. Drawn every frame (scene overlays repaint continuously) off wall-clock time, so the motion
+	 * stays smooth regardless of game ticks. Anchored to the tile the player casts from — for a
+	 * cast-from-anywhere teleport that sits under the player, drawing the eye to "teleport now".
+	 */
+	private void drawTeleportPulse(Graphics2D graphics, int location)
+	{
+		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+		for (int i = 0; i < points.size(); i++)
+		{
+			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+			if (lp == null)
+			{
+				continue;
+			}
+			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+			if (poly == null || poly.npoints == 0)
+			{
+				continue;
+			}
+			final double cx = poly.getBounds().getCenterX();
+			final double cy = poly.getBounds().getCenterY();
+
+			final long period = 1400L;
+			final int rings = 2;
+			final Color base = plugin.colourTeleportPulse;
+			final Stroke previousStroke = graphics.getStroke();
+			graphics.setStroke(new BasicStroke(2.2f));
+			for (int r = 0; r < rings; r++)
+			{
+				// Stagger the two rings by half a period so one is always small/bright while the other
+				// is large/faint — a continuous outward pulse.
+				double phase = ((System.currentTimeMillis() + (long) (r * period / (double) rings)) % period)
+					/ (double) period;
+				double scale = 1.0 + phase * 2.6;
+				int alpha = (int) Math.round(170 * (1.0 - phase));
+				if (alpha <= 0)
+				{
+					continue;
+				}
+				Path2D ring = new Path2D.Double();
+				for (int v = 0; v < poly.npoints; v++)
+				{
+					double x = cx + (poly.xpoints[v] - cx) * scale;
+					double y = cy + (poly.ypoints[v] - cy) * scale;
+					if (v == 0)
+					{
+						ring.moveTo(x, y);
+					}
+					else
+					{
+						ring.lineTo(x, y);
+					}
+				}
+				ring.closePath();
+				graphics.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha));
+				graphics.draw(ring);
+			}
+			graphics.setStroke(previousStroke);
+		}
 	}
 
 	private double drawLabel(Graphics2D graphics, Point point, String text, int verticalOffset)
@@ -544,6 +628,22 @@ public class PathTileOverlay extends Overlay
 			}
 		}
 		Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
+
+		// Teleports ("use this item/spell") get a pulsing highlight on the tile you cast from, drawn
+		// once for the edge even if several teleport options share it.
+		boolean teleportEdge = false;
+		for (Transport transport : transportsToShow)
+		{
+			if (transport.getType() != null && transport.getType().isTeleport())
+			{
+				teleportEdge = true;
+				break;
+			}
+		}
+		if (teleportEdge && plugin.showTeleportPulse)
+		{
+			drawTeleportPulse(graphics, location);
+		}
 
 		for (Transport transport : transportsToShow)
 		{
