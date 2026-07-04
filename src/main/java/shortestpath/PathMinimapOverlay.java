@@ -65,7 +65,7 @@ public class PathMinimapOverlay extends Overlay
 		}
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		java.util.List<PathStep> pathPoints = plugin.getPathfinder().getPath();
+		java.util.List<PathStep> pathPoints = plugin.getDisplayPath();
 		Color pathColor = plugin.getPathColor();
 		for (PathStep point : pathPoints)
 		{

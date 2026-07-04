@@ -173,7 +173,7 @@ public class PathTileOverlay extends Overlay
 			renderCollisionMap(graphics);
 		}
 
-		if (plugin.drawTiles && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null)
+		if (plugin.drawTiles && plugin.getPathfinder() != null && !plugin.getDisplayPath().isEmpty())
 		{
 			Color colorCalculating = new Color(
 				plugin.colourPathCalculating.getRed(),
@@ -187,7 +187,7 @@ public class PathTileOverlay extends Overlay
 				pathColor.getBlue(),
 				pathColor.getAlpha() / 2);
 
-			List<PathStep> path = plugin.getPathfinder().getPath();
+			List<PathStep> path = plugin.getDisplayPath();
 			int counter = 0;
 			if (TileStyle.LINES.equals(plugin.pathStyle) || TileStyle.ARROW_LINE.equals(plugin.pathStyle))
 			{
@@ -376,7 +376,7 @@ public class PathTileOverlay extends Overlay
 		if (counter >= 0 && !TileCounter.DISABLED.equals(plugin.showTileCounter))
 		{
 			int n = plugin.tileCounterStep > 0 ? plugin.tileCounterStep : 1;
-			int s = plugin.getPathfinder().getPath().size();
+			int s = plugin.getDisplayPath().size();
 			if ((counter % n != 0) && (s != (counter + 1)))
 			{
 				return;

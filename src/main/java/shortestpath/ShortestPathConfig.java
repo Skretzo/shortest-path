@@ -468,6 +468,33 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "defaultRouteCount",
+		name = "Routes to find",
+		description = "How many alternative routes the side panel searches for by default<br>" +
+			"(the panel's \"Show more\" button can extend this per query)",
+		position = 36,
+		section = sectionSettings
+	)
+	@Range(min = 1, max = 25)
+	default int defaultRouteCount()
+	{
+		return 10;
+	}
+
+	@ConfigItem(
+		keyName = "routeCountStep",
+		name = "Show more increment",
+		description = "How many extra alternative routes the panel's \"Show more\" button fetches each time",
+		position = 37,
+		section = sectionSettings
+	)
+	@Range(min = 1, max = 25)
+	default int routeCountStep()
+	{
+		return 5;
+	}
+
 	@ConfigSection(
 		name = "Player-Owned House",
 		description = "Options for POH (Player-Owned House) teleports",

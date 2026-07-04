@@ -39,6 +39,9 @@ public class Pathfinder implements Runnable
 	// Built once on the worker thread when the search finishes, then served to the render thread so
 	// it never walks the node chain (which is released) after the search is done.
 	private volatile List<PathStep> finalPath = null;
+	// Accumulated cost of the path to bestLastNode, captured before the node graph is released so
+	// alternative-route ranking has a total cost without re-walking the (released) chain.
+	private volatile int finalCost = -1;
 	private volatile int closestReachedPoint = WorldPointUtil.UNDEFINED;
 	private int bestRemainingDistance = Integer.MAX_VALUE;
 	private int bestTravelledDistance = Integer.MAX_VALUE;
@@ -158,6 +161,7 @@ public class Pathfinder implements Runnable
 			reached,
 			currentPath,
 			closestReachedPoint,
+			finalCost,
 			currentStats.getNodesChecked(),
 			currentStats.getTransportsChecked(),
 			currentStats.getElapsedTimeNanos(),
@@ -361,11 +365,13 @@ public class Pathfinder implements Runnable
 		{
 			finalPath = graph.getPathSteps(lastNode);
 			closestReachedPoint = graph.getClosestTilePosition(lastNode);
+			finalCost = graph.cost(lastNode);
 		}
 		else
 		{
 			finalPath = pathSteps;
 			closestReachedPoint = start;
+			finalCost = 0;
 		}
 
 		done = !cancelled;

@@ -11,6 +11,11 @@ public class PathfinderResult
 	private final boolean reached;
 	private final List<PathStep> pathSteps;
 	private final int closestReachedPoint;
+	/**
+	 * Accumulated search cost (blended walk distance + transport ticks/penalties) of the returned
+	 * path. Used to rank alternative routes against each other.
+	 */
+	private final int totalCost;
 	private final int nodesChecked;
 	private final int transportsChecked;
 	private final long elapsedNanos;
@@ -22,6 +27,7 @@ public class PathfinderResult
 		boolean reached,
 		List<PathStep> pathSteps,
 		int closestReachedPoint,
+		int totalCost,
 		int nodesChecked,
 		int transportsChecked,
 		long elapsedNanos,
@@ -32,6 +38,7 @@ public class PathfinderResult
 		this.reached = reached;
 		this.pathSteps = pathSteps;
 		this.closestReachedPoint = closestReachedPoint;
+		this.totalCost = totalCost;
 		this.nodesChecked = nodesChecked;
 		this.transportsChecked = transportsChecked;
 		this.elapsedNanos = elapsedNanos;

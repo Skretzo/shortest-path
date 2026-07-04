@@ -136,6 +136,18 @@ public class TransportTypeConfig
 	}
 
 	/**
+	 * Overrides the teleportation-item setting (used by the alternative-routes planning copy to force a
+	 * mode independent of the user's config). Keeps the teleport-item/box enabled states consistent.
+	 */
+	public void setTeleportationItemSetting(TeleportationItem setting)
+	{
+		this.teleportationItemSetting = setting;
+		boolean enabled = setting != TeleportationItem.NONE;
+		enabledStates.put(TransportType.TELEPORTATION_ITEM, enabled);
+		enabledStates.put(TransportType.TELEPORTATION_BOX, enabled);
+	}
+
+	/**
 	 * Sets the enabled state for a transport type.
 	 * Used for runtime modifications (e.g., disabling fairy rings without dramen
 	 * staff).

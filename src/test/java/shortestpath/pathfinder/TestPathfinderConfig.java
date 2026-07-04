@@ -68,6 +68,20 @@ public class TestPathfinderConfig extends PathfinderConfig
 		this.bypassVarPlayerChecks = bypassVarPlayerChecks;
 	}
 
+	protected TestPathfinderConfig(TestPathfinderConfig source)
+	{
+		super(source);
+		this.questState = source.questState;
+		this.bypassVarbitChecks = source.bypassVarbitChecks;
+		this.bypassVarPlayerChecks = source.bypassVarPlayerChecks;
+	}
+
+	@Override
+	protected PathfinderConfig newPlanningCopy()
+	{
+		return new TestPathfinderConfig(this);
+	}
+
 	@Override
 	public QuestState getQuestState(Quest quest)
 	{

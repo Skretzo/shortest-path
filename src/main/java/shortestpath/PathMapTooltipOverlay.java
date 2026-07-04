@@ -52,7 +52,7 @@ public class PathMapTooltipOverlay extends Overlay
 
 		if (plugin.getPathfinder() != null)
 		{
-			List<PathStep> path = plugin.getPathfinder().getPath();
+			List<PathStep> path = plugin.getDisplayPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			for (int i = 0; i < path.size(); i++)
 			{
@@ -102,7 +102,7 @@ public class PathMapTooltipOverlay extends Overlay
 		}
 
 		List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
-			n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getPathfinder().getPath().size())));
+			n < 0 ? "Unused target" : ("Step " + n + " of " + path.size())));
 		if (nextPoint != WorldPointUtil.UNDEFINED)
 		{
 			PathStep currentStep = path.get(pathIndex);
