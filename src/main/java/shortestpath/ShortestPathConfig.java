@@ -975,6 +975,22 @@ public interface ShortestPathConfig extends Config
 		return 0;
 	}
 
+	@Range(
+		max = 10000
+	)
+	@ConfigItem(
+		keyName = "costBankPickup",
+		name = "Bank pick-up threshold",
+		description = "How many extra tiles routing through a bank (to withdraw a required teleport item)<br>" +
+			"must save to be preferred over walking or other transports",
+		position = 69,
+		section = sectionThresholds
+	)
+	default int costBankPickup()
+	{
+		return 0;
+	}
+
 	@ConfigSection(
 		name = "Display",
 		description = "Options for displaying the path on the world map, minimap and scene tiles",
