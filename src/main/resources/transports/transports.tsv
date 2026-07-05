@@ -5694,3 +5694,20 @@
 3089 9971 0	3089 3571 0	Climb-down Ladder 16680						2	
 3088 9970 0	3088 3570 0	Climb-down Ladder 16680						2	
 3087 9971 0	3087 3571 0	Climb-down Ladder 16680						2	
+									
+# Rogues' Castle									
+									
+3282 3936 3	3282 3936 2	Climb-down Staircase 14737						2	
+									
+3282 3936 2	3282 3936 3	Climb-up Staircase 14736						2	
+3282 3936 2	3281 3935 1	Climb-down Staircase 14736						2	
+									
+3282 3936 1	3282 3936 2	Climb-up Staircase 14736						2	
+3282 3936 1	3281 3935 0	Climb-down Staircase 14736						2	
+									
+3281 3935 0	3282 3936 1	Climb-up Staircase 14736						2	
+									
+									
+# Villa Lucens									
+									
+1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
