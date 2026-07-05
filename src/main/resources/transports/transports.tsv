@@ -5682,3 +5682,15 @@
 									
 1695 3794 0	1688 3793 1	Climb Stairs 27851						2	
 1695 3793 0	1688 3793 1	Climb Stairs 27851						2	
+									
+# wilderness air obelisk									
+									
+3088 3572 0	3088 9972 0	Climb-down Ladder 16680						2	
+3089 3571 0	3089 9971 0	Climb-down Ladder 16680						2	
+3088 3570 0	3088 9970 0	Climb-down Ladder 16680						2	
+3087 3571 0	3087 9971 0	Climb-down Ladder 16680						2	
+									
+3088 9972 0	3088 3572 0	Climb-down Ladder 16680						2	
+3089 9971 0	3089 3571 0	Climb-down Ladder 16680						2	
+3088 9970 0	3088 3570 0	Climb-down Ladder 16680						2	
+3087 9971 0	3087 3571 0	Climb-down Ladder 16680						2	
