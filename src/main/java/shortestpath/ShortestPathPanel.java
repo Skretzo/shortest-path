@@ -32,9 +32,12 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.components.IconTextField;
 
 /**
  * The "view": lists up to {@link AlternativeRoutesService#MAX_ROUTES} alternative routes to the
@@ -49,6 +52,8 @@ public class ShortestPathPanel extends PluginPanel
 {
 	private static final int CONTROL_SIZE = 18;
 	private static final int METHOD_TEXT_WIDTH = 132;
+	// Tallest the expanded teleport-methods box may grow before it scrolls internally.
+	private static final int CATALOG_MAX_HEIGHT = 240;
 
 	// Stable, distinct-ish palette; categories hash into it so the same category always gets the
 	// same dot colour.
@@ -68,6 +73,22 @@ public class ShortestPathPanel extends PluginPanel
 
 	private final ShortestPathPlugin plugin;
 	private final JLabel statusLabel = new JLabel();
+	private final JLabel bankWarningLabel = new JLabel();
+	// Fixed (non-scrolling) slot below the header holding the teleport-methods catalog.
+	private final JPanel catalogHolder = new JPanel();
+	// Filter box for the catalog; a persistent component so typing keeps focus while only the rows
+	// below repopulate. Shown only while the catalog is expanded.
+	private final IconTextField catalogSearch = new IconTextField();
+	// The scrollable rows box of the expanded catalog; repopulated in place when the filter changes.
+	private JPanel catalogRowsPanel;
+	private JScrollPane catalogRowsScroll;
+	// Snapshot of the inputs the catalog section was last built from. Routes stream several updates
+	// per generation; rebuilding ~1000 catalog rows on the EDT for each of them made the toggles
+	// unresponsive (the row under the cursor kept being replaced). Rebuild only when these change.
+	private List<TeleportMethod> renderedCatalog;
+	private Set<TeleportMethod> renderedExclusions;
+	private Map<TeleportMethod, MethodAvailability> renderedUnavailable;
+	private boolean renderedCatalogExpanded;
 	private final JPanel listPanel = new JPanel();
 	private JButton ownedButton;
 	private JButton allButton;
@@ -94,12 +115,49 @@ public class ShortestPathPanel extends PluginPanel
 		setBorder(new EmptyBorder(8, 8, 8, 8));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		add(buildHeader(), BorderLayout.NORTH);
+		// Fixed top area: the header (title/modes/refresh/status) plus the teleport-methods catalog,
+		// which scrolls inside its own bounded box (see buildCatalogSection) instead of pushing the
+		// route list down. Only the routes scroll in the main area below.
+		catalogHolder.setLayout(new BoxLayout(catalogHolder, BoxLayout.Y_AXIS));
+		catalogHolder.setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+		catalogSearch.setIcon(IconTextField.Icon.SEARCH);
+		catalogSearch.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		catalogSearch.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
+		catalogSearch.getDocument().addDocumentListener(new DocumentListener()
+		{
+			@Override
+			public void insertUpdate(DocumentEvent e)
+			{
+				populateCatalogRows();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e)
+			{
+				populateCatalogRows();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e)
+			{
+				populateCatalogRows();
+			}
+		});
+		JPanel top = new JPanel(new BorderLayout());
+		top.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		top.add(buildHeader(), BorderLayout.NORTH);
+		top.add(catalogHolder, BorderLayout.CENTER);
+		top.add(buildNotes(), BorderLayout.SOUTH);
+		add(top, BorderLayout.NORTH);
 
 		listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
 		listPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		// Top-anchor the content so a short list keeps each row at its natural height.
-		JPanel listWrapper = new JPanel(new BorderLayout());
+		// Top-anchor the content so a short list keeps each row at its natural height. The wrapper
+		// tracks the viewport width: without that, HORIZONTAL_SCROLLBAR_NEVER still lays the view out
+		// at its preferred width and CLIPS the overflow at the right edge (the "scrollbar eats the
+		// cards" effect) instead of shrinking the rows to fit.
+		ScrollableBox listWrapper = new ScrollableBox(new BorderLayout());
 		listWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		listWrapper.add(listPanel, BorderLayout.NORTH);
 		JScrollPane scroll = new JScrollPane(listWrapper,
@@ -107,13 +165,52 @@ public class ShortestPathPanel extends PluginPanel
 			ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		scroll.getVerticalScrollBar().setUnitIncrement(16);
-		// The sidebar scrollbar overlays the content (it doesn't shrink the viewport), so it clips the
-		// right edge of full-width cards. Reserve a matching gutter on the scrolling content for it.
-		int scrollbarWidth = scroll.getVerticalScrollBar().getPreferredSize().width;
-		listPanel.setBorder(new EmptyBorder(0, 0, 0, scrollbarWidth > 0 ? scrollbarWidth : 12));
 		add(scroll, BorderLayout.CENTER);
 
 		render();
+	}
+
+	/**
+	 * A panel that always lays out at the scroll viewport's width. A plain JPanel inside a JScrollPane
+	 * keeps its preferred width even with the horizontal scrollbar disabled, so any row slightly wider
+	 * than the viewport pushes the whole content under the vertical scrollbar and gets clipped.
+	 */
+	private static final class ScrollableBox extends JPanel implements javax.swing.Scrollable
+	{
+		private ScrollableBox(java.awt.LayoutManager layout)
+		{
+			super(layout);
+		}
+
+		@Override
+		public Dimension getPreferredScrollableViewportSize()
+		{
+			return getPreferredSize();
+		}
+
+		@Override
+		public int getScrollableUnitIncrement(java.awt.Rectangle visibleRect, int orientation, int direction)
+		{
+			return 16;
+		}
+
+		@Override
+		public int getScrollableBlockIncrement(java.awt.Rectangle visibleRect, int orientation, int direction)
+		{
+			return Math.max(visibleRect.height - 16, 16);
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportWidth()
+		{
+			return true;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportHeight()
+		{
+			return false;
+		}
 	}
 
 	private JPanel buildHeader()
@@ -212,10 +309,6 @@ public class ShortestPathPanel extends PluginPanel
 		findWrap.add(findButton, BorderLayout.CENTER);
 		lower.add(findWrap, BorderLayout.NORTH);
 
-		statusLabel.setFont(FontManager.getRunescapeSmallFont());
-		statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		statusLabel.setBorder(new EmptyBorder(6, 0, 0, 0));
-		lower.add(statusLabel, BorderLayout.SOUTH);
 
 		bottom.add(lower, BorderLayout.SOUTH);
 
@@ -223,6 +316,35 @@ public class ShortestPathPanel extends PluginPanel
 
 		updateModeButtons();
 		return header;
+	}
+
+	/**
+	 * The status line ("N routes found", "No Shortest Path destination set", ...) and the red bank
+	 * warning. Shown below the teleport-methods catalog, directly above the route cards.
+	 */
+	private JPanel buildNotes()
+	{
+		// Red bank warning directly above the status line; only visible in "Inv + bank" mode until the
+		// bank has been opened once this session (before that, banked items are invisible to the plugin).
+		bankWarningLabel.setText("<html><b>Bank contents unknown</b> — open your bank once so banked items can be found.</html>");
+		bankWarningLabel.setFont(FontManager.getRunescapeSmallFont());
+		bankWarningLabel.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
+		bankWarningLabel.setBorder(new EmptyBorder(4, 0, 0, 0));
+		bankWarningLabel.setVisible(false);
+
+		statusLabel.setFont(FontManager.getRunescapeSmallFont());
+		statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		statusLabel.setBorder(new EmptyBorder(4, 0, 0, 0));
+
+		JPanel notes = new JPanel();
+		notes.setLayout(new BoxLayout(notes, BoxLayout.Y_AXIS));
+		notes.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		notes.setBorder(new EmptyBorder(0, 0, 6, 0));
+		bankWarningLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		notes.add(bankWarningLabel);
+		notes.add(statusLabel);
+		return notes;
 	}
 
 	/**
@@ -269,20 +391,38 @@ public class ShortestPathPanel extends PluginPanel
 			// doesn't hand Shortest Path a destination — set one on the map to find routes.)
 			status = "No Shortest Path destination set.";
 		}
-		// The bank container is only populated once the bank has been opened this session; without it
-		// Bank mode cannot see banked teleports (same constraint as Shortest Path itself).
-		if (plugin.getRoutesMode() == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown())
+		// Method toggles no longer recalculate; flag a route list generated with different exclusions.
+		if (!cachedCalculating && cachedHasTarget && plugin.isRouteListStale())
 		{
-			status += "<br><b>Bank contents unknown</b> — open your bank once so banked teleports can be found.";
+			status += "<br><font color='#FF981F'>Exclusions changed — press \"Refresh routes\" to apply.</font>";
 		}
+		// The bank container is only populated once the bank has been opened this session; without it
+		// Bank mode cannot see banked items (same constraint as Shortest Path itself).
+		bankWarningLabel.setVisible(
+			plugin.getRoutesMode() == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown());
 		statusLabel.setText("<html>" + status + "</html>");
 
-		// The teleport-methods catalog sits at the top (collapsed by default), so browsing/toggling
-		// methods is always one click away above the routes.
-		if (!cachedCatalog.isEmpty())
+		// The teleport-methods catalog lives in a fixed slot below the header (collapsed by default).
+		// Expanded it scrolls inside its own bounded box, so it never pushes the routes off screen.
+		// Rebuilt only when its inputs changed — streamed route updates leave it untouched so its
+		// toggles stay responsive while a generation is running.
+		boolean catalogDirty = !cachedCatalog.equals(renderedCatalog)
+			|| !cachedExclusions.equals(renderedExclusions)
+			|| !cachedUnavailable.equals(renderedUnavailable)
+			|| catalogExpanded != renderedCatalogExpanded;
+		if (catalogDirty)
 		{
-			listPanel.add(buildCatalogSection());
-			listPanel.add(verticalGap(8));
+			catalogHolder.removeAll();
+			if (!cachedCatalog.isEmpty())
+			{
+				catalogHolder.add(buildCatalogSection());
+			}
+			catalogHolder.revalidate();
+			catalogHolder.repaint();
+			renderedCatalog = cachedCatalog;
+			renderedExclusions = cachedExclusions;
+			renderedUnavailable = cachedUnavailable;
+			renderedCatalogExpanded = catalogExpanded;
 		}
 
 		// Routes are shown as they stream in (even while still calculating). The previous list was
@@ -343,10 +483,16 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
 		right.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		JLabel cost = new JLabel("≈ " + route.getTotalCost());
+		// Weighted cost, plus — when configured weights changed it — the raw cost in parentheses.
+		boolean weighted = route.getRawCost() != route.getTotalCost();
+		JLabel cost = new JLabel("≈ " + route.getTotalCost()
+			+ (weighted ? " (" + route.getRawCost() + ")" : ""));
 		cost.setFont(FontManager.getRunescapeSmallFont());
 		cost.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		cost.setToolTipText("Blended cost: walk distance + teleport ticks/penalties (lower is shorter)");
+		cost.setToolTipText(weighted
+			? "<html>Blended cost incl. your configured method weights (lower is shorter).<br>"
+				+ "In parentheses: the raw cost — walk distance + travel time only.</html>"
+			: "Blended cost: walk distance + travel time (lower is shorter)");
 		right.add(cost);
 		// Status indicator (orange when shown); the whole card is the click target, see makeSelectable.
 		right.add(control(new JLabel(selected ? RouteIcons.SHOW_ACTIVE : RouteIcons.SHOW)));
@@ -359,20 +505,20 @@ public class ShortestPathPanel extends PluginPanel
 		methods.setBorder(new EmptyBorder(2, 6, 4, 4));
 		if (route.isViaBank())
 		{
-			methods.add(noteRow("<i>Walks to a bank first — withdraws the item for "
-					+ escapeHtml(joinLabels(route.getBankMethods())) + "</i>",
-				"The marked method needs an item from your bank — the drawn path includes the walk to a bank to pick it up first"));
+			// Kept to one line: the method that needs the bank is identified by the bank glyph on its
+			// own row below, and this note's tooltip names it too.
+			methods.add(noteRow("<i>Walks to a bank first</i>",
+				"<html>Withdraws the item for: <b>" + escapeHtml(joinLabels(route.getBankMethods()))
+					+ "</b><br>The drawn path includes the walk to a bank before that method is used</html>"));
 		}
-		if (route.isWalkOnly())
+		for (int m = 0; m < route.getMethods().size(); m++)
 		{
-			methods.add(noteRow("<i>No teleports — walking the whole way</i>", null));
+			methods.add(buildMethodRow(route.getMethods().get(m), route.getBankMethods(), route.walkBefore(m)));
 		}
-		else
+		// Trailing walking leg after the last method — the whole route for walk-only ones.
+		if (route.getTrailingWalkSteps() > 0 || route.isWalkOnly())
 		{
-			for (TeleportMethod method : route.getMethods())
-			{
-				methods.add(buildMethodRow(method, route.getBankMethods()));
-			}
+			methods.add(buildWalkRow(route.getTrailingWalkSteps()));
 		}
 		card.add(methods, BorderLayout.CENTER);
 
@@ -382,12 +528,38 @@ public class ShortestPathPanel extends PluginPanel
 		return card;
 	}
 
+	// Neutral dot colour for walking legs; deliberately outside the category palette so walking
+	// doesn't masquerade as a teleport category.
+	private static final Color WALK_DOT_COLOUR = new Color(0x9E, 0x9E, 0x9E);
+
+	/**
+	 * A walking-leg row, shaped exactly like a method row: a neutral grey dot in the category-dot
+	 * column, then the step count.
+	 */
+	private JPanel buildWalkRow(int steps)
+	{
+		JPanel row = new JPanel(new BorderLayout(5, 0));
+		row.setOpaque(false);
+
+		JLabel dot = new JLabel(dot(WALK_DOT_COLOUR));
+		dot.setVerticalAlignment(SwingConstants.TOP);
+		dot.setBorder(new EmptyBorder(2, 0, 0, 0));
+		dot.setToolTipText("Walking");
+		row.add(dot, BorderLayout.WEST);
+
+		JLabel text = wrappedLabel("(" + steps + ") Walk");
+		text.setToolTipText("Walk " + steps + " tiles to the destination");
+		row.add(text, BorderLayout.CENTER);
+		return row;
+	}
+
 	/**
 	 * A route-card method row: category dot + wrapped label + an exclude (✕) icon. Methods whose
 	 * required item must first be withdrawn from the bank get a bank glyph, so it's clear which
-	 * method the route's bank detour is for.
+	 * method the route's bank detour is for. {@code walkBefore} tiles of walking to reach the method
+	 * are shown as a "(N)" prefix on the label.
 	 */
-	private JPanel buildMethodRow(TeleportMethod method, Set<TeleportMethod> bankMethods)
+	private JPanel buildMethodRow(TeleportMethod method, Set<TeleportMethod> bankMethods, int walkBefore)
 	{
 		JPanel row = new JPanel(new BorderLayout(5, 0));
 		row.setOpaque(false);
@@ -420,8 +592,11 @@ public class ShortestPathPanel extends PluginPanel
 			row.add(dot, BorderLayout.WEST);
 		}
 
-		JLabel text = wrappedLabel(escapeHtml(method.label()));
-		text.setToolTipText(methodTooltip(method));
+		String prefix = walkBefore > 0 ? "(" + walkBefore + ") " : "";
+		JLabel text = wrappedLabel(prefix + escapeHtml(method.label()));
+		text.setToolTipText(walkBefore > 0
+			? "<html>Walk " + walkBefore + " tiles to reach this method.<br>" + methodTooltipBody(method) + "</html>"
+			: methodTooltip(method));
 		row.add(text, BorderLayout.CENTER);
 
 		IconActionLabel exclude = new IconActionLabel(RouteIcons.EXCLUDE, RouteIcons.EXCLUDE_HOVER,
@@ -448,9 +623,18 @@ public class ShortestPathPanel extends PluginPanel
 		titleRow.setBorder(new EmptyBorder(0, 0, 4, 0));
 		titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 		titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		JLabel title = new JLabel("Teleport methods (" + cachedCatalog.size() + ")");
+		int active = 0;
+		for (TeleportMethod method : cachedCatalog)
+		{
+			if (!cachedExclusions.contains(method))
+			{
+				active++;
+			}
+		}
+		JLabel title = new JLabel("Teleport methods (" + active + "/" + cachedCatalog.size() + ")");
 		title.setFont(FontManager.getRunescapeBoldFont());
 		title.setForeground(ColorScheme.BRAND_ORANGE);
+		title.setToolTipText(active + " of " + cachedCatalog.size() + " methods included in searches");
 		titleRow.add(title, BorderLayout.CENTER);
 		titleRow.add(control(new JLabel(catalogExpanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
 			BorderLayout.EAST);
@@ -469,37 +653,112 @@ public class ShortestPathPanel extends PluginPanel
 
 		if (!catalogExpanded)
 		{
+			catalogRowsPanel = null;
+			catalogRowsScroll = null;
+			section.setBorder(new EmptyBorder(0, 0, 4, 0));
 			return section;
 		}
+
+		// Filter box (persistent component, see the field comment) — only mounted while expanded.
+		catalogSearch.setAlignmentX(Component.LEFT_ALIGNMENT);
+		catalogSearch.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		JPanel searchWrap = new JPanel(new BorderLayout());
+		searchWrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		searchWrap.setBorder(new EmptyBorder(0, 0, 4, 0));
+		searchWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+		searchWrap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+		searchWrap.add(catalogSearch, BorderLayout.CENTER);
+		section.add(searchWrap);
+
+		// The method rows scroll inside their own bounded box with their own scrollbar, so a long
+		// (or fully expanded) catalog never pushes the route list off screen. The rows panel tracks
+		// the viewport width so the scrollbar sits beside the rows instead of clipping them.
+		ScrollableBox rows = new ScrollableBox(null);
+		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
+		rows.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		JScrollPane rowsScroll = new JScrollPane(rows,
+			ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+			ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		rowsScroll.setBorder(BorderFactory.createEmptyBorder());
+		rowsScroll.getVerticalScrollBar().setUnitIncrement(16);
+		rowsScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+		catalogRowsPanel = rows;
+		catalogRowsScroll = rowsScroll;
+		populateCatalogRows();
+		section.add(rowsScroll);
+		section.setBorder(new EmptyBorder(0, 0, 8, 0));
+
+		return section;
+	}
+
+	/**
+	 * (Re)fills the expanded catalog's rows box from the current filter text. Called on every filter
+	 * keystroke — repopulates in place so the search field keeps focus. While a filter is active,
+	 * matching categories are shown force-expanded (a filter that only matched collapsed categories
+	 * would otherwise look like it found nothing).
+	 */
+	private void populateCatalogRows()
+	{
+		JPanel rows = catalogRowsPanel;
+		JScrollPane rowsScroll = catalogRowsScroll;
+		if (rows == null || rowsScroll == null)
+		{
+			return;
+		}
+		rows.removeAll();
+
+		String filter = catalogSearch.getText() == null ? "" : catalogSearch.getText().trim().toLowerCase();
+		boolean filtering = !filter.isEmpty();
 
 		Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
 		for (TeleportMethod method : cachedCatalog)
 		{
-			grouped.computeIfAbsent(method.category(), k -> new ArrayList<>()).add(method);
+			// A filter hit on the category keeps the whole category; otherwise match the method label.
+			if (!filtering
+				|| method.category().toLowerCase().contains(filter)
+				|| method.label().toLowerCase().contains(filter))
+			{
+				grouped.computeIfAbsent(method.category(), k -> new ArrayList<>()).add(method);
+			}
 		}
 		for (List<TeleportMethod> items : grouped.values())
 		{
 			items.sort(Comparator.comparing(m -> m.label().toLowerCase()));
 		}
 
+		if (grouped.isEmpty())
+		{
+			JLabel none = wrappedLabel("<i>No methods match \"" + escapeHtml(filter) + "\"</i>");
+			none.setBorder(new EmptyBorder(2, 4, 2, 0));
+			none.setAlignmentX(Component.LEFT_ALIGNMENT);
+			rows.add(none);
+		}
 		for (Map.Entry<String, List<TeleportMethod>> entry : grouped.entrySet())
 		{
 			String category = entry.getKey();
 			List<TeleportMethod> items = entry.getValue();
-			section.add(buildCategoryHeader(category, items));
-			if (expandedCategories.contains(category))
+			boolean expanded = filtering || expandedCategories.contains(category);
+			rows.add(buildCategoryHeader(category, items, expanded));
+			if (expanded)
 			{
 				for (TeleportMethod item : items)
 				{
-					section.add(buildCatalogItemRow(item));
+					rows.add(buildCatalogItemRow(item));
 				}
 			}
 		}
 
-		return section;
+		// Bounded height: natural size for short lists, capped so the routes below stay visible.
+		int height = Math.min(rows.getPreferredSize().height + 2, CATALOG_MAX_HEIGHT);
+		rowsScroll.setPreferredSize(new Dimension(10, height));
+		rowsScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+		rows.revalidate();
+		rows.repaint();
+		catalogHolder.revalidate();
+		catalogHolder.repaint();
 	}
 
-	private JPanel buildCategoryHeader(String category, List<TeleportMethod> items)
+	private JPanel buildCategoryHeader(String category, List<TeleportMethod> items, boolean expanded)
 	{
 		int excludedCount = 0;
 		for (TeleportMethod method : items)
@@ -511,7 +770,6 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		boolean allIncluded = excludedCount == 0;
 		boolean allExcluded = excludedCount == items.size();
-		boolean expanded = expandedCategories.contains(category);
 
 		JPanel row = new JPanel(new BorderLayout(5, 0));
 		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -644,7 +902,9 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			expandedCategories.remove(category);
 		}
-		render();
+		// Repopulate the rows in place: cheaper than a full render, and the catalog section's dirty
+		// check (which doesn't track per-category expansion) would skip the rebuild anyway.
+		populateCatalogRows();
 	}
 
 	/**
@@ -668,14 +928,18 @@ public class ShortestPathPanel extends PluginPanel
 
 	private String methodTooltip(TeleportMethod method)
 	{
+		return "<html>" + methodTooltipBody(method) + "</html>";
+	}
+
+	private String methodTooltipBody(TeleportMethod method)
+	{
 		int destination = method.getDestination();
 		int x = WorldPointUtil.unpackWorldX(destination);
 		int y = WorldPointUtil.unpackWorldY(destination);
 		int plane = WorldPointUtil.unpackWorldPlane(destination);
-		return "<html><b>" + escapeHtml(method.category()) + "</b><br>"
+		return "<b>" + escapeHtml(method.category()) + "</b><br>"
 			+ escapeHtml(method.label()) + "<br>"
-			+ "Arrives at " + x + ", " + y + (plane > 0 ? " (plane " + plane + ")" : "")
-			+ "</html>";
+			+ "Arrives at " + x + ", " + y + (plane > 0 ? " (plane " + plane + ")" : "");
 	}
 
 	private void makeSelectable(JPanel card, int index)
@@ -780,11 +1044,16 @@ public class ShortestPathPanel extends PluginPanel
 
 	private static Icon categoryDot(String category)
 	{
+		return dot(categoryColour(category));
+	}
+
+	private static Icon dot(Color colour)
+	{
 		final int s = 9;
 		BufferedImage image = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = image.createGraphics();
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g.setColor(categoryColour(category));
+		g.setColor(colour);
 		g.fillRoundRect(0, 1, s - 1, s - 2, 4, 4);
 		g.dispose();
 		return new ImageIcon(image);

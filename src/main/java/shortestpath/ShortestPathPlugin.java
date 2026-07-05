@@ -181,6 +181,9 @@ public class ShortestPathPlugin extends Plugin
 	private static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
 	private static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
 	private final Set<TeleportMethod> userExclusions = ConcurrentHashMap.newKeySet();
+	// The exclusions the current route list was generated with; diverging from userExclusions means
+	// the list is stale until the user refreshes (method toggles no longer auto-recalculate).
+	private volatile Set<TeleportMethod> generatedExclusions = Set.of();
 	// Which methods the alternatives consider: carried (default), carried + bank, or every teleport.
 	private volatile AlternativeRoutesMode routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
 	// How many alternative routes to generate; grows when the user asks for more.
@@ -919,7 +922,13 @@ public class ShortestPathPlugin extends Plugin
 		// Snapshot the items now, while the bank is open: the client may empty the live container
 		// (and thereby every reference to it) once the interface closes.
 		pathfinderConfig.setBankSnapshot(event.getItemContainer().getItems());
+		boolean firstSight = !bankContentsKnown;
 		bankContentsKnown = true;
+		if (firstSight)
+		{
+			// Clear the panel's "bank contents unknown" warning the moment the bank is first seen.
+			refreshPanel(altGenerationInFlight);
+		}
 	}
 
 	@Subscribe
@@ -1595,15 +1604,24 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return route.getPath();
 		}
-		// While the alternatives for the current destination are still computing, draw nothing rather
-		// than the classic path: the classic path follows the SP config (not the panel's mode) and can
-		// use methods the list will never contain. The first streamed route replaces it in <1s.
 		Pathfinder current = pathfinder;
-		if (altGenerationInFlight && current != null && lastAltTargets.equals(current.getTargets()))
+		if (current == null)
 		{
 			return List.of();
 		}
-		return current != null ? current.getPath() : List.of();
+		// The classic path is only a fallback here: route 1 replaces it as soon as the alternatives
+		// stream in. Drawing it in the meantime made the world path visibly jump around after setting
+		// a target — the progressive search frontier first, then its final shape, then blank, then
+		// route 1. Keep the world empty instead while the classic search is still running, while the
+		// alternatives are computing, or while their auto-trigger for this target is still pending
+		// (it fires on the next game tick). The classic path still draws when a generation finishes
+		// without producing any routes.
+		if (!current.getTargets().isEmpty()
+			&& (!current.isDone() || altGenerationInFlight || !lastAltTargets.equals(current.getTargets())))
+		{
+			return List.of();
+		}
+		return current.getPath();
 	}
 
 	public List<RouteOption> getAlternativeRoutes()
@@ -1633,7 +1651,9 @@ public class ShortestPathPlugin extends Plugin
 		if (method != null && userExclusions.add(method))
 		{
 			saveExclusions();
-			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+			// other recompute); this just refreshes the panel so the catalog icons and counts update.
+			refreshPanel(altGenerationInFlight);
 		}
 	}
 
@@ -1642,7 +1662,9 @@ public class ShortestPathPlugin extends Plugin
 		if (method != null && userExclusions.remove(method))
 		{
 			saveExclusions();
-			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+			// other recompute); this just refreshes the panel so the catalog icons and counts update.
+			refreshPanel(altGenerationInFlight);
 		}
 	}
 
@@ -1659,7 +1681,9 @@ public class ShortestPathPlugin extends Plugin
 		if (changed)
 		{
 			saveExclusions();
-			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+			// other recompute); this just refreshes the panel so the catalog icons and counts update.
+			refreshPanel(altGenerationInFlight);
 		}
 	}
 
@@ -1676,7 +1700,9 @@ public class ShortestPathPlugin extends Plugin
 		if (changed)
 		{
 			saveExclusions();
-			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+			// other recompute); this just refreshes the panel so the catalog icons and counts update.
+			refreshPanel(altGenerationInFlight);
 		}
 	}
 
@@ -1686,7 +1712,9 @@ public class ShortestPathPlugin extends Plugin
 		{
 			userExclusions.clear();
 			saveExclusions();
-			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+			// other recompute); this just refreshes the panel so the catalog icons and counts update.
+			refreshPanel(altGenerationInFlight);
 		}
 	}
 
@@ -1758,6 +1786,15 @@ public class ShortestPathPlugin extends Plugin
 		triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
 	}
 
+	/**
+	 * Whether the displayed route list was generated with different method exclusions than are
+	 * currently selected — i.e. the user toggled methods since and hasn't pressed Refresh yet.
+	 */
+	public boolean isRouteListStale()
+	{
+		return !userExclusions.equals(generatedExclusions);
+	}
+
 	public AlternativeRoutesMode getRoutesMode()
 	{
 		return routesMode;
@@ -1822,6 +1859,9 @@ public class ShortestPathPlugin extends Plugin
 		alternativeRoutes = new ArrayList<>();
 		moreRoutesLikely = false;
 		altGenerationInFlight = !ends.isEmpty();
+		// Snapshot the exclusions this generation runs with, so the panel can flag the route list as
+		// stale once the user toggles methods afterwards (recalculation is manual via Refresh).
+		generatedExclusions = getUserExclusions();
 		final List<TeleportMethod> catalog = teleportCatalog;
 		final boolean hasTarget = !ends.isEmpty();
 		if (altPanel != null)

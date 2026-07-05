@@ -245,7 +245,8 @@ public class AlternativeRoutesService
 			{
 				break;
 			}
-			routes.add(new RouteOption(path, methods, result.getTotalCost(), reached, scan.bankGated));
+			routes.add(new RouteOption(path, methods, result.getTotalCost(), scan.rawCost, reached,
+				scan.bankGated, scan.walkBefore, scan.trailingWalk));
 			// Stream the route we just found so the panel shows it immediately.
 			emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
 
@@ -392,7 +393,8 @@ public class AlternativeRoutesService
 					continue;
 				}
 				routes.add(new RouteOption(seedResult.path, seedResult.scan.methods,
-					seedResult.totalCost, seedResult.reached, seedResult.scan.bankGated));
+					seedResult.totalCost, seedResult.scan.rawCost, seedResult.reached,
+					seedResult.scan.bankGated, seedResult.scan.walkBefore, seedResult.scan.trailingWalk));
 				emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
 			}
 		}
@@ -587,8 +589,13 @@ public class AlternativeRoutesService
 		Set<TeleportMethod> bankGated = new LinkedHashSet<>();
 		if (path == null)
 		{
-			return new MethodScan(methods, bankGated);
+			return new MethodScan(methods, bankGated, 0, new ArrayList<>(), 0);
 		}
+		int rawCost = 0;
+		// Walking-leg lengths: tiles walked before each method (parallel to `methods`), and after the
+		// last one. Plain connectors (doors, stairs, shortcuts) count into the leg they sit in.
+		List<Integer> walkBefore = new ArrayList<>();
+		int legSteps = 0;
 		for (int i = 1; i < path.size(); i++)
 		{
 			PathStep from = path.get(i - 1);
@@ -599,14 +606,30 @@ public class AlternativeRoutesService
 			{
 				TeleportMethod method = TeleportMethod.fromTransport(chosen);
 				methods.add(method);
+				walkBefore.add(legSteps);
+				legSteps = 0;
 				// Bank-gated: used in the post-bank state and not available without the bank.
 				if (bankVisited && !availableWithoutBank(config, from.getPackedPosition(), chosen))
 				{
 					bankGated.add(method);
 				}
 			}
+			// Raw cost: what the edge costs without any configured weights — a transport edge counts
+			// only its travel time, a walking edge its tile distance (mirrors the search's own cost
+			// accumulation minus the additional/weight terms).
+			Transport edgeTransport = chosen != null
+				? chosen
+				: matchAnyTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
+			int edgeCost = edgeTransport != null
+				? edgeTransport.getDuration()
+				: WorldPointUtil.distanceBetween(from.getPackedPosition(), to.getPackedPosition());
+			rawCost += edgeCost;
+			if (chosen == null)
+			{
+				legSteps += edgeCost;
+			}
 		}
-		return new MethodScan(methods, bankGated);
+		return new MethodScan(methods, bankGated, rawCost, walkBefore, legSteps);
 	}
 
 	private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport)
@@ -633,11 +656,20 @@ public class AlternativeRoutesService
 	{
 		private final List<TeleportMethod> methods;
 		private final Set<TeleportMethod> bankGated;
+		// Path cost without any configured weights: walk distance plus transport travel times only.
+		private final int rawCost;
+		// Tiles walked before each method (parallel to methods) and after the last one.
+		private final List<Integer> walkBefore;
+		private final int trailingWalk;
 
-		MethodScan(List<TeleportMethod> methods, Set<TeleportMethod> bankGated)
+		MethodScan(List<TeleportMethod> methods, Set<TeleportMethod> bankGated, int rawCost,
+			List<Integer> walkBefore, int trailingWalk)
 		{
 			this.methods = methods;
 			this.bankGated = bankGated;
+			this.rawCost = rawCost;
+			this.walkBefore = walkBefore;
+			this.trailingWalk = trailingWalk;
 		}
 	}
 
@@ -658,6 +690,32 @@ public class AlternativeRoutesService
 		for (Transport transport : config.getUsableTeleports(bankVisited))
 		{
 			if (transport.getDestination() == destination && TeleportMethod.isMethodType(transport.getType()))
+			{
+				return transport;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Like {@link #matchMethodTransport} but without the method-type filter: also matches plain
+	 * connectors (doors, stairs, agility shortcuts, ...) so the raw-cost scan can use the transport's
+	 * travel time for any edge the search traversed via a transport.
+	 */
+	private static Transport matchAnyTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited)
+	{
+		Transport[] atOrigin = config.getTransportsPacked(bankVisited)
+			.getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS);
+		for (Transport transport : atOrigin)
+		{
+			if (transport.getDestination() == destination)
+			{
+				return transport;
+			}
+		}
+		for (Transport transport : config.getUsableTeleports(bankVisited))
+		{
+			if (transport.getDestination() == destination)
 			{
 				return transport;
 			}

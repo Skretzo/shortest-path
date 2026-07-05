@@ -26,6 +26,11 @@ public final class RouteOption
 	 */
 	private final int totalCost;
 	/**
+	 * The path's cost without any configured weights: walking distance plus transport travel times
+	 * only. Equal to {@link #totalCost} when no weights applied to this route.
+	 */
+	private final int rawCost;
+	/**
 	 * Whether the path actually reaches the exact target. When false it ends at the closest reachable
 	 * tile (mirrors Shortest Path's own behaviour for unreachable targets, e.g. an NPC/object tile).
 	 */
@@ -36,15 +41,35 @@ public final class RouteOption
 	 * bank visit. Lets the panel say <em>which</em> method the bank detour is for.
 	 */
 	private final Set<TeleportMethod> bankMethods;
+	/**
+	 * Tiles walked before each method, parallel to {@link #methods} (walking to a minecart, a fairy
+	 * ring, a bank, ...). Plain connectors along the way (doors, stairs, shortcuts) count into the leg.
+	 */
+	private final List<Integer> walkBeforeSteps;
+	/**
+	 * Tiles walked after the last method to the destination; the whole walk for walk-only routes.
+	 */
+	private final int trailingWalkSteps;
 
-	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, int totalCost, boolean reached,
-		Set<TeleportMethod> bankMethods)
+	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, int totalCost, int rawCost,
+		boolean reached, Set<TeleportMethod> bankMethods, List<Integer> walkBeforeSteps, int trailingWalkSteps)
 	{
 		this.path = path;
 		this.methods = methods;
 		this.totalCost = totalCost;
+		this.rawCost = rawCost;
 		this.reached = reached;
 		this.bankMethods = bankMethods;
+		this.walkBeforeSteps = walkBeforeSteps;
+		this.trailingWalkSteps = trailingWalkSteps;
+	}
+
+	/**
+	 * Tiles walked before the method at {@code index}, or 0 when unknown.
+	 */
+	public int walkBefore(int index)
+	{
+		return (index >= 0 && index < walkBeforeSteps.size()) ? walkBeforeSteps.get(index) : 0;
 	}
 
 	/**
