@@ -35,6 +35,7 @@ import shortestpath.ItemVariations;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.SnapshotAssertions;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
@@ -99,11 +100,12 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE, 1));
 
-		assertScenarioPathLength(
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Banked mith grapple should not leak to non-bank grapple branch",
 			66,
 			WorldPointUtil.packWorldPoint(3025, 3365, 0),
 			WorldPointUtil.packWorldPoint(3026, 3393, 0));
+		assertRouteSnapshot("pathfinder-grapple-branch-no-leak-banked-mith-grapple", pathfinder);
 	}
 
 	@Test
@@ -146,11 +148,12 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.COINS, 10000));
 
-		assertScenarioPathLength(
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Catherby charter tile reuse -> bank -> Musa Point with banked coins",
 			78, // Fill in the precise length after running locally.
 			catherbyCharter,
 			musaPointCharter);
+		assertRouteSnapshot("pathfinder-catherby-charter-reuse-after-bank", pathfinder);
 	}
 
 	@Test
@@ -165,11 +168,12 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.COINS, 10000));
 
-		assertScenarioPathLength(
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Catherby bank branch should not leak coins to charter branch",
 			46, // Fill in the precise length after running locally.
 			WorldPointUtil.packWorldPoint(2807, 3435, 0),
 			WorldPointUtil.packWorldPoint(2954, 3158, 0));
+		assertRouteSnapshot("pathfinder-catherby-bank-branch-no-leak-coins-charter", pathfinder);
 	}
 
 	@Test
@@ -250,7 +254,7 @@ public class PathfinderTest
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(1);
 
-		testSingleTransportScenario("Fairy ring with Lumbridge diary and no Dramen staff", 2, TransportType.FAIRY_RING);
+		testSingleTransportScenarioAndSnapshot("Fairy ring with Lumbridge diary and no Dramen staff", "pathfinder-fairy-rings-lumbridge-diary-no-staff", 2, TransportType.FAIRY_RING);
 	}
 
 	@Test
@@ -262,7 +266,7 @@ public class PathfinderTest
 
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
-		testSingleTransportScenario("Fairy ring with Dramen staff worn", 2, TransportType.FAIRY_RING);
+		testSingleTransportScenarioAndSnapshot("Fairy ring with Dramen staff worn", "pathfinder-fairy-rings-dramen-staff-worn", 2, TransportType.FAIRY_RING);
 	}
 
 	@Test
@@ -323,6 +327,7 @@ public class PathfinderTest
 
 		assertTrue("Fairy ring should be used when staff is in inventory",
 			usedTransportType(pathfinderWithStaff, TransportType.FAIRY_RING));
+		assertRouteSnapshot("pathfinder-castle-wars-akq-staff-in-inventory", pathfinderWithStaff);
 	}
 
 	@Test
@@ -349,6 +354,7 @@ public class PathfinderTest
 
 		assertTrue("Fairy ring should be used when staff is in bank with includeBankPath",
 			usedTransportType(pathfinderWithBankStaff, TransportType.FAIRY_RING));
+		assertRouteSnapshot("pathfinder-castle-wars-akq-staff-in-bank", pathfinderWithBankStaff);
 	}
 
 	/**
@@ -387,6 +393,7 @@ public class PathfinderTest
 			usedTransportWithDisplayInfo(pathfinderToDJP, TransportType.TELEPORTATION_ITEM, "Ardougne"));
 		assertFalse("Should NOT use necklace to DJP",
 			usedTransportWithDisplayInfo(pathfinderToDJP, TransportType.TELEPORTATION_ITEM, "Necklace"));
+		assertRouteSnapshot("pathfinder-bank-path-djp-target", pathfinderToDJP);
 
 		assertTrue("Should use fairy ring to reach AKQ",
 			usedTransportType(pathfinderToAKQ, TransportType.FAIRY_RING));
@@ -394,6 +401,7 @@ public class PathfinderTest
 			usedTransportWithDisplayInfo(pathfinderToAKQ, TransportType.TELEPORTATION_ITEM, "Ardougne"));
 		assertFalse("Should NOT use necklace to AKQ",
 			usedTransportWithDisplayInfo(pathfinderToAKQ, TransportType.TELEPORTATION_ITEM, "Necklace"));
+		assertRouteSnapshot("pathfinder-bank-path-akq-target", pathfinderToAKQ);
 	}
 
 	/**
@@ -431,6 +439,7 @@ public class PathfinderTest
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Necklace"));
 		assertTrue("Should use fairy ring to reach destination",
 			usedTransportType(pathfinder, TransportType.FAIRY_RING));
+		assertRouteSnapshot("pathfinder-ardougne-cloak-inventory-staff-in-bank", pathfinder);
 	}
 
 	/**
@@ -468,9 +477,10 @@ public class PathfinderTest
 		}
 		assertTrue("Fairy rings should be in transport map (filtered per-path)", hasFairyRing);
 
-		runScenario(
+		Pathfinder pathfinder = runScenario(
 			WorldPointUtil.packWorldPoint(2442, 3096, 0),
 			WorldPointUtil.packWorldPoint(3162, 3489, 0));
+		assertRouteSnapshot("pathfinder-fairy-ring-not-used-after-teleport-no-bank", pathfinder);
 	}
 
 	@Test
@@ -498,6 +508,7 @@ public class PathfinderTest
 
 		assertTrue("Ring of wealth should remain usable before the first bank visit",
 			usedTransportWithDisplayInfoBeforeFirstBank(pathfinder, TransportType.TELEPORTATION_ITEM, "Ring of wealth"));
+		assertRouteSnapshot("pathfinder-teleport-item-inventory-before-bank", pathfinder);
 	}
 
 	/**
@@ -538,6 +549,7 @@ public class PathfinderTest
 				pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
 		}
 		// If no fairy ring was used, that's also acceptable (walking path)
+		assertRouteSnapshot("pathfinder-fairy-ring-requires-bank-staff-in-bank", pathfinder);
 	}
 
 	@Test
@@ -551,14 +563,15 @@ public class PathfinderTest
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
-		assertScenarioPathLengthWithBank(
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.DRAMEN_STAFF, 1),
+			new Item(11118, 1));
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Great Conch -> McGrubor's Wood with banked staff and bracelet",
 			49,
 			WorldPointUtil.packWorldPoint(3180, 2419, 0),
-			WorldPointUtil.packWorldPoint(2652, 3485, 0),
-			TeleportationItem.INVENTORY_AND_BANK,
-			new Item(ItemID.DRAMEN_STAFF, 1),
-			new Item(11118, 1));
+			WorldPointUtil.packWorldPoint(2652, 3485, 0));
+		assertRouteSnapshot("pathfinder-great-conch-bank-mcgrubors", pathfinder);
 	}
 
 	@Test
@@ -572,14 +585,15 @@ public class PathfinderTest
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
-		assertScenarioPathLengthWithBank(
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.DRAMEN_STAFF, 1),
+			new Item(11118, 1));
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Great Conch tile reuse -> McGrubor's Wood with banked Dramen staff",
 			70,
 			WorldPointUtil.packWorldPoint(3181, 2437, 0),
-			WorldPointUtil.packWorldPoint(2652, 3485, 0),
-			TeleportationItem.INVENTORY_AND_BANK,
-			new Item(ItemID.DRAMEN_STAFF, 1),
-			new Item(11118, 1));
+			WorldPointUtil.packWorldPoint(2652, 3485, 0));
+		assertRouteSnapshot("pathfinder-great-conch-tile-reuse-mcgrubors-banked-staff", pathfinder);
 	}
 
 	@Test
@@ -593,11 +607,12 @@ public class PathfinderTest
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
-		assertScenarioPathLength(
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Great Conch -> McGrubor's Wood with inventory Dramen staff",
 			48,
 			WorldPointUtil.packWorldPoint(3180, 2419, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0));
+		assertRouteSnapshot("pathfinder-great-conch-mcgrubors-no-banking", pathfinder);
 	}
 
 	@Test
@@ -614,11 +629,12 @@ public class PathfinderTest
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
 		setupConfigWithBank(new Item(ItemID.DRAMEN_STAFF, 1));
 
-		assertScenarioPathLength(
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Banked Dramen staff should not leak to non-bank fairy-ring branch",
 			127,
 			WorldPointUtil.packWorldPoint(3134, 3503, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0));
+		assertRouteSnapshot("pathfinder-fairy-ring-branch-no-leak-banked-staff", pathfinder);
 	}
 
 	@Test
@@ -642,6 +658,7 @@ public class PathfinderTest
 			usedTransportWithDisplayInfoAfterFirstBank(pathfinder, TransportType.TELEPORTATION_ITEM, "Cowbell amulet"));
 		assertFalse("Cowbell amulet should not be used before the first bank visit",
 			usedTransportWithDisplayInfoBeforeFirstBank(pathfinder, TransportType.TELEPORTATION_ITEM, "Cowbell amulet"));
+		assertRouteSnapshot("pathfinder-cowbell-amulet-bank-used-after-bank-visit", pathfinder);
 	}
 
 	@Test
@@ -678,6 +695,7 @@ public class PathfinderTest
 		assertFalse("Banker's Briefcase should not be used before the first bank visit",
 			usedTransportWithDisplayInfoBeforeFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
 				"Banker's Briefcase: Kandarin - Catherby"));
+		assertRouteSnapshot("pathfinder-bankers-briefcase-bank-used-after-bank-visit", pathfinder);
 	}
 
 	@Test
@@ -785,7 +803,7 @@ public class PathfinderTest
 		int shayzienWest = WorldPointUtil.packWorldPoint(1415, 3577, 0);
 		int arceuus = WorldPointUtil.packWorldPoint(1670, 3833, 0);
 
-		assertScenarioMinimumPathLength("Lovakengj reverse minecart without coins", 3, shayzienWest, arceuus);
+		assertScenarioMinimumPathLengthAndGet("Lovakengj reverse minecart without coins", "pathfinder-lovakengj-reverse-minecart-no-coins", 3, shayzienWest, arceuus);
 	}
 
 	@Test
@@ -809,12 +827,14 @@ public class PathfinderTest
 		int civitasPrimio = WorldPointUtil.packWorldPoint(1700, 3141, 0);
 
 		assertEquals(2, calculatePathLength(varrockPrimio, civitasPrimio));
+		assertPathLengthAndSnapshot("pathfinder-primio-quetzal-varrock-to-civitas", 2, varrockPrimio, civitasPrimio);
 
 		// Civitas Primio platform to Varrock
 		int civitasPrimioOrigin = WorldPointUtil.packWorldPoint(1703, 3140, 0);
 		int varrockPrimioDest = WorldPointUtil.packWorldPoint(3280, 3412, 0);
 
 		assertEquals(2, calculatePathLength(civitasPrimioOrigin, varrockPrimioDest));
+		assertPathLengthAndSnapshot("pathfinder-primio-quetzal-civitas-to-varrock", 2, civitasPrimioOrigin, varrockPrimioDest);
 	}
 
 	/**
@@ -839,8 +859,7 @@ public class PathfinderTest
 		int aldarinPlatform = WorldPointUtil.packWorldPoint(1389, 2901, 0);
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		int pathLength = calculatePathLength(aldarinPlatform, hunterGuild);
-		assertEquals("Platform should be used when standing at platform origin", 2, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-quetzal-platform-preferred-over-whistle", 2, aldarinPlatform, hunterGuild);
 	}
 
 	/**
@@ -867,18 +886,13 @@ public class PathfinderTest
 		int nearAldarinPlatform = WorldPointUtil.packWorldPoint(1390, 2901, 0); // 1 tile away
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		int pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
-		// With costQuetzalWhistle=0, whistle (cost 4) beats platform (cost 7), so path length = 2
-		assertEquals("Whistle should be used when it's cheaper and has no extra cost", 2, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-whistle-not-used-near-platform-cheap", 2, nearAldarinPlatform, hunterGuild);
 
 		// Now with a higher whistle cost, platform should win
 		when(config.costQuetzalWhistle()).thenReturn(10);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
-		pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
-		// Whistle cost: 4 + 10 = 14, Platform cost: 1 walk + 6 flight = 7
-		// Platform wins, path = start -> platform -> dest = 3
-		assertEquals("Platform should be used when whistle cost threshold makes it more expensive", 3, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-whistle-not-used-near-platform-expensive", 3, nearAldarinPlatform, hunterGuild);
 	}
 
 	/**
@@ -898,8 +912,10 @@ public class PathfinderTest
 		int aldarinPlatform = WorldPointUtil.packWorldPoint(1389, 2901, 0);
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		int pathLength = calculatePathLength(aldarinPlatform, hunterGuild);
+		Pathfinder pathfinder = runPathfinder(aldarinPlatform, hunterGuild);
+		int pathLength = pathfinder.getPath().size();
 		assertTrue("Without quetzals, path should be much longer than 2 (walking)", pathLength > 2);
+		assertRouteSnapshot("pathfinder-quetzal-disabled-disables-whistle", pathfinder);
 	}
 
 	/**
@@ -919,8 +935,7 @@ public class PathfinderTest
 		int aldarinPlatform = WorldPointUtil.packWorldPoint(1389, 2901, 0);
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		int pathLength = calculatePathLength(aldarinPlatform, hunterGuild);
-		assertEquals("Platform should be used when whistle is not in inventory", 2, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-platform-used-whistle-not-in-inventory", 2, aldarinPlatform, hunterGuild);
 	}
 
 	/**
@@ -943,15 +958,13 @@ public class PathfinderTest
 		when(config.costQuetzalWhistle()).thenReturn(4);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
-		int pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
-		assertEquals("Platform should win when whistle differential makes it more expensive", 3, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-quetzal-whistle-cost-boundary-platform-wins", 3, nearAldarinPlatform, hunterGuild);
 
 		// Differential=2: whistle compareCost=6 < platform=7, whistle should win
 		when(config.costQuetzalWhistle()).thenReturn(2);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
-		pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
-		assertEquals("Whistle should win when differential keeps it cheaper than platform", 2, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-quetzal-whistle-cost-boundary-whistle-wins", 2, nearAldarinPlatform, hunterGuild);
 	}
 
 	/**
@@ -974,9 +987,7 @@ public class PathfinderTest
 		int faladorCenter = WorldPointUtil.packWorldPoint(2965, 3380, 0);
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		int pathLength = calculatePathLength(faladorCenter, hunterGuild);
-		// Whistle teleport (compareCost=4) is cheapest: path = start -> dest = 2
-		assertEquals("Whistle should be used when far from any platform", 2, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-whistle-used-from-far-away", 2, faladorCenter, hunterGuild);
 	}
 
 	/**
@@ -1002,10 +1013,7 @@ public class PathfinderTest
 		int nearAldarin = WorldPointUtil.packWorldPoint(1390, 2901, 0);
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		int pathLength = calculatePathLength(nearAldarin, hunterGuild);
-		assertEquals(
-			"Platform should win when costConsumableTeleportationItems tips the whistle past the platform cost",
-			3, pathLength);
+		assertPathLengthAndSnapshot("pathfinder-consumable-cost-penalty-quetzal-whistle", 3, nearAldarin, hunterGuild);
 	}
 
 	@Test
@@ -1030,10 +1038,10 @@ public class PathfinderTest
 		when(config.useTeleportationSpells()).thenReturn(false);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
 		when(client.getVarpValue(any(Integer.class))).thenReturn(0);
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-teleportation-minigames-grotto", 2,
 			WorldPointUtil.packWorldPoint(3440, 3334, 0),  // Nature Spirit Grotto
 			WorldPointUtil.packWorldPoint(2658, 3157, 0)); // Fishing Trawler
-		testTransportLength(3,
+		testTransportLengthAndSnapshot("pathfinder-teleportation-minigames-wilderness", 3,
 			WorldPointUtil.packWorldPoint(3136, 3525, 0),  // In wilderness level 1
 			WorldPointUtil.packWorldPoint(2658, 3157, 0)); // Fishing Trawler
 	}
@@ -1099,10 +1107,10 @@ public class PathfinderTest
 	@Test
 	public void testVarrockPalaceTrellisUsableWithGardenOfTranquillity()
 	{
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-varrock-palace-trellis-south-to-north", 2,
 			WorldPointUtil.packWorldPoint(3228, 3470, 0),
 			WorldPointUtil.packWorldPoint(3228, 3472, 0));
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-varrock-palace-trellis-north-to-south", 2,
 			WorldPointUtil.packWorldPoint(3228, 3472, 0),
 			WorldPointUtil.packWorldPoint(3228, 3470, 0));
 	}
@@ -1115,10 +1123,15 @@ public class PathfinderTest
 		int south = WorldPointUtil.packWorldPoint(3228, 3470, 0);
 		int north = WorldPointUtil.packWorldPoint(3228, 3472, 0);
 
+		Pathfinder pathfinderSouthNorth = runPathfinder(south, north);
 		assertTrue("Varrock Palace trellis should not be directly usable without Garden of Tranquillity",
-			calculatePathLength(south, north) > 2);
+			pathfinderSouthNorth.getPath().size() > 2);
+		assertRouteSnapshot("pathfinder-varrock-palace-trellis-south-to-north-no-quest", pathfinderSouthNorth);
+
+		Pathfinder pathfinderNorthSouth = runPathfinder(north, south);
 		assertTrue("Varrock Palace trellis should not be directly usable without Garden of Tranquillity",
-			calculatePathLength(north, south) > 2);
+			pathfinderNorthSouth.getPath().size() > 2);
+		assertRouteSnapshot("pathfinder-varrock-palace-trellis-north-to-south-no-quest", pathfinderNorthSouth);
 	}
 
 	@Test
@@ -1132,9 +1145,10 @@ public class PathfinderTest
 		// ~40 tiles is using the combat bracelet teleport to Champions Guild
 		// >100 tiles is walking around the river via Barbarian Village
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
-		assertScenarioPathLength("Draynor Manor stepping stones vs combat bracelet", 6,
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet("Draynor Manor stepping stones vs combat bracelet", 6,
 			WorldPointUtil.packWorldPoint(3149, 3363, 0),
 			WorldPointUtil.packWorldPoint(3154, 3363, 0));
+		assertRouteSnapshot("pathfinder-agility-shortcut-and-teleport-item", pathfinder);
 	}
 
 	@Test
@@ -1142,9 +1156,9 @@ public class PathfinderTest
 	{
 		// South of river south of Champions Guild to Chronicle teleport destination
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
-		assertEquals(2, calculatePathLength(
+		assertPathLengthAndSnapshot("pathfinder-chronicle", 2,
 			WorldPointUtil.packWorldPoint(3199, 3336, 0),
-			WorldPointUtil.packWorldPoint(3200, 3355, 0)));
+			WorldPointUtil.packWorldPoint(3200, 3355, 0));
 	}
 
 	@Test
@@ -1155,9 +1169,10 @@ public class PathfinderTest
 
 		// Test 1: Without magic level (can't cast spell) - should walk
 		setupConfig(QuestState.FINISHED, 1, TeleportationItem.NONE);
-		assertScenarioPathLength("Varrock teleport too low magic level", 4,
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet("Varrock teleport too low magic level", 4,
 			WorldPointUtil.packWorldPoint(3216, 3424, 0),
 			WorldPointUtil.packWorldPoint(3213, 3424, 0));
+		assertRouteSnapshot("pathfinder-varrock-teleport-low-magic", pathfinder);
 
 		// Test 2: With magic level and runes, starting far enough that teleport is cheaper
 		setupInventory(
@@ -1167,9 +1182,10 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		// Starting 10 tiles away - teleport (4 ticks) is definitely cheaper than walking (10 ticks)
-		assertScenarioPathLength("Varrock teleport with runes and magic level", 2,
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet("Varrock teleport with runes and magic level", 2,
 			WorldPointUtil.packWorldPoint(3223, 3424, 0),
 			WorldPointUtil.packWorldPoint(3213, 3424, 0));
+		assertRouteSnapshot("pathfinder-varrock-teleport-with-runes", pathfinder);
 	}
 
 	@Test
@@ -1192,6 +1208,7 @@ public class PathfinderTest
 		assertTrue("Walking route should still reach the destination", pathfinder.getResult().isReached());
 
 		assertEquals(328, pathfinder.getPath().size());
+		assertRouteSnapshot("pathfinder-wilderness-route-without-teleports", pathfinder);
 	}
 
 	@Test
@@ -1211,6 +1228,7 @@ public class PathfinderTest
 			usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
 
 		assertEquals(139, withGlory.getPath().size());
+		assertRouteSnapshot("pathfinder-wilderness-route-glory-after-level-30", withGlory);
 	}
 
 	@Test
@@ -1234,6 +1252,7 @@ public class PathfinderTest
 		assertEquals(181, withVarrockTeleport.getPath().size());
 		assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
 			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: GE"));
+		assertRouteSnapshot("pathfinder-wilderness-route-ge-varrock-teleport", withVarrockTeleport);
 	}
 
 	@Test
@@ -1260,6 +1279,7 @@ public class PathfinderTest
 		assertEquals(102, pathfinder.getPath().size());
 		assertTrue("Glory should be used when both glory and GE runes are available but the spell is still wilderness-locked",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
+		assertRouteSnapshot("pathfinder-wilderness-route-glory-and-runes-no-early-spell", pathfinder);
 	}
 
 	@Test
@@ -1284,6 +1304,7 @@ public class PathfinderTest
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Burning amulet"));
 		assertFalse("Ardougne lever should not be used when avoid wilderness is enabled",
 			usedTransportType(pathfinder, TransportType.TELEPORTATION_LEVER));
+		assertRouteSnapshot("pathfinder-avoid-wilderness-suppresses-burning-amulet", pathfinder);
 	}
 
 	@Test
@@ -1307,6 +1328,7 @@ public class PathfinderTest
 		assertTrue("Route should still reach the destination when wilderness is allowed", pathfinder.getResult().isReached());
 		assertTrue("Ardougne lever should be used when wilderness is allowed and no better item teleport exists",
 			usedTransportType(pathfinder, TransportType.TELEPORTATION_LEVER));
+		assertRouteSnapshot("pathfinder-ardougne-lever-without-items-wilderness-allowed", pathfinder);
 	}
 
 	@Test
@@ -1329,31 +1351,32 @@ public class PathfinderTest
 		assertTrue("Route should reach the destination when wilderness is allowed", pathfinder.getResult().isReached());
 		assertTrue("Burning amulet should be used when wilderness is allowed",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Burning amulet"));
+		assertRouteSnapshot("pathfinder-burning-amulet-allowed-not-avoiding-wilderness", pathfinder);
 	}
 
 	@Test
 	public void testCaves()
 	{
 		// Eadgar's Cave
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-caves-1", 2,
 			WorldPointUtil.packWorldPoint(2892, 3671, 0),
 			WorldPointUtil.packWorldPoint(2893, 10074, 2));
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-caves-2", 2,
 			WorldPointUtil.packWorldPoint(2893, 3671, 0),
 			WorldPointUtil.packWorldPoint(2893, 10074, 2));
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-caves-3", 2,
 			WorldPointUtil.packWorldPoint(2894, 3671, 0),
 			WorldPointUtil.packWorldPoint(2893, 10074, 2));
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-caves-4", 2,
 			WorldPointUtil.packWorldPoint(2895, 3672, 0),
 			WorldPointUtil.packWorldPoint(2893, 10074, 2));
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-caves-5", 2,
 			WorldPointUtil.packWorldPoint(2892, 10074, 2),
 			WorldPointUtil.packWorldPoint(2893, 3671, 0));
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-caves-6", 2,
 			WorldPointUtil.packWorldPoint(2893, 10074, 2),
 			WorldPointUtil.packWorldPoint(2893, 3671, 0));
-		testTransportLength(2,
+		testTransportLengthAndSnapshot("pathfinder-caves-7", 2,
 			WorldPointUtil.packWorldPoint(2894, 10074, 2),
 			WorldPointUtil.packWorldPoint(2893, 3671, 0));
 	}
@@ -1364,13 +1387,15 @@ public class PathfinderTest
 		// Shortest path from east to west Keldagrim is via the first floor
 		// of the Keldagrim Palace, and not via the bridge to the north
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
-		assertScenarioPathLength("Keldagrim east -> west via other plane", 64,
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet("Keldagrim east -> west via other plane", 64,
 			WorldPointUtil.packWorldPoint(2894, 10199, 0),
 			WorldPointUtil.packWorldPoint(2864, 10199, 0));
+		assertRouteSnapshot("pathfinder-keldagrim-east-to-west", pathfinder);
 
-		assertScenarioPathLength("Keldagrim west -> east via other plane", 64,
+		pathfinder = assertScenarioPathLengthAndGet("Keldagrim west -> east via other plane", 64,
 			WorldPointUtil.packWorldPoint(2864, 10199, 0),
 			WorldPointUtil.packWorldPoint(2894, 10199, 0));
+		assertRouteSnapshot("pathfinder-keldagrim-west-to-east", pathfinder);
 	}
 
 	@Test
@@ -1382,45 +1407,45 @@ public class PathfinderTest
 		setupInventory(new Item(ItemID.COINS, 1000000));
 
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-aldarin-sunset", 3,
 			WorldPointUtil.packWorldPoint(1455, 2968, 0), // Aldarin
 			WorldPointUtil.packWorldPoint(1514, 2971, 0)); // Sunset Coast
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-sunset-aldarin", 3,
 			WorldPointUtil.packWorldPoint(1514, 2971, 0), // Sunset Coast
 			WorldPointUtil.packWorldPoint(1455, 2968, 0)); // Aldarin
 
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-phasmatys-harmless", 3,
 			WorldPointUtil.packWorldPoint(3702, 3503, 0), // Port Phasmatys
 			WorldPointUtil.packWorldPoint(3671, 2931, 0)); // Mos Le'Harmless
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-harmless-phasmatys", 3,
 			WorldPointUtil.packWorldPoint(3671, 2931, 0), // Mos Le'Harmless
 			WorldPointUtil.packWorldPoint(3702, 3503, 0)); // Port Phasmatys
 
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-pisc-lands-end", 3,
 			WorldPointUtil.packWorldPoint(1808, 3679, 0), // Port Piscarilius
 			WorldPointUtil.packWorldPoint(1496, 3403, 0)); // Land's End
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-lands-end-pisc", 3,
 			WorldPointUtil.packWorldPoint(1496, 3403, 0), // Land's End
 			WorldPointUtil.packWorldPoint(1808, 3679, 0)); // Port Piscarilius
 
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-sarim-lands-end", 3,
 			WorldPointUtil.packWorldPoint(3038, 3192, 0), // Port Sarim
 			WorldPointUtil.packWorldPoint(1496, 3403, 0)); // Land's End
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-lands-end-sarim", 3,
 			WorldPointUtil.packWorldPoint(1496, 3403, 0), // Land's End
 			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
 
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-sarim-musa", 3,
 			WorldPointUtil.packWorldPoint(3038, 3192, 0), // Port Sarim
 			WorldPointUtil.packWorldPoint(2954, 3158, 0)); // Musa Point
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-musa-sarim", 3,
 			WorldPointUtil.packWorldPoint(2954, 3158, 0), // Musa Point
 			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
 
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-sarim-pisc", 3,
 			WorldPointUtil.packWorldPoint(3038, 3192, 0), // Port Sarim
 			WorldPointUtil.packWorldPoint(1808, 3679, 0)); // Port Piscarilius
-		testTransportMinimumLength(3,
+		testTransportMinimumLengthAndSnapshot("pathfinder-impossible-charter-pisc-sarim", 3,
 			WorldPointUtil.packWorldPoint(1808, 3679, 0), // Port Piscarilius
 			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
 	}
@@ -1548,6 +1573,25 @@ public class PathfinderTest
 		testTransportLength(expectedLength, origin, destination, TeleportationItem.NONE, 99);
 	}
 
+	private void testTransportLengthAndSnapshot(String snapshotName, int expectedLength, int origin, int destination)
+	{
+		testTransportLengthAndSnapshot(snapshotName, expectedLength, origin, destination, TeleportationItem.NONE, 99);
+	}
+
+	private void testTransportLengthAndSnapshot(
+		String snapshotName,
+		int expectedLength,
+		int origin,
+		int destination,
+		TeleportationItem useTeleportationItems,
+		int skillLevel)
+	{
+		setupConfig(QuestState.FINISHED, skillLevel, useTeleportationItems);
+		Pathfinder pathfinder = runPathfinder(origin, destination);
+		assertEquals(expectedLength, pathfinder.getPath().size());
+		assertRouteSnapshot(snapshotName, pathfinder);
+	}
+
 	private void testTransportLength(
 		int expectedLength,
 		int origin,
@@ -1657,6 +1701,15 @@ public class PathfinderTest
 			" with actual length = " + actualLength + " >= minimum length = " + minimumLength);
 	}
 
+	private void testTransportMinimumLengthAndSnapshot(String snapshotName, int minimumLength, int origin, int destination)
+	{
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
+		Pathfinder pathfinder = runPathfinder(origin, destination);
+		int actualLength = pathfinder.getPath().size();
+		assertTrue("An impossible transport was used with length " + actualLength, actualLength >= minimumLength);
+		assertRouteSnapshot(snapshotName, pathfinder);
+	}
+
 	private int calculateTransportLength(Transport transport)
 	{
 		return calculatePathLength(transport.getOrigin(), transport.getDestination());
@@ -1668,6 +1721,16 @@ public class PathfinderTest
 		Transport transport = findSampleTransport(transportType);
 		Assert.assertNotNull(transport);
 		assertScenarioPathLength(label, expectedLength, transport.getOrigin(), transport.getDestination());
+	}
+
+	private void testSingleTransportScenarioAndSnapshot(String label, String snapshotName, int expectedLength, TransportType transportType)
+	{
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		Transport transport = findSampleTransport(transportType);
+		Assert.assertNotNull(transport);
+		Pathfinder pathfinder = runPathfinder(transport.getOrigin(), transport.getDestination());
+		assertEquals(label, expectedLength, pathfinder.getPath().size());
+		assertRouteSnapshot(snapshotName, pathfinder);
 	}
 
 	// A "scenario" is a single, named pathfinding example with a fixed origin and
@@ -1690,11 +1753,28 @@ public class PathfinderTest
 		return pathfinder;
 	}
 
+	private void assertRouteSnapshot(String snapshotName, Pathfinder pathfinder)
+	{
+		SnapshotAssertions.SnapshotState state = SnapshotAssertions.SnapshotState.withTransports(
+			(origin, bankVisited) -> transportsForStep(origin, bankVisited));
+		SnapshotAssertions.assertRouteSnapshot(state, snapshotName, pathfinder.getPath());
+	}
+
 	private void assertScenarioMinimumPathLength(String label, int minimumLength, int origin, int destination)
+	{
+		assertScenarioMinimumPathLengthAndGet(label, null, minimumLength, origin, destination);
+	}
+
+	private Pathfinder assertScenarioMinimumPathLengthAndGet(String label, String snapshotName, int minimumLength, int origin, int destination)
 	{
 		Pathfinder pathfinder = runPathfinder(origin, destination);
 		int actualLength = pathfinder.getPath().size();
 		assertTrue("Scenario " + label + " had length " + actualLength + " < " + minimumLength, actualLength >= minimumLength);
+		if (snapshotName != null)
+		{
+			assertRouteSnapshot(snapshotName, pathfinder);
+		}
+		return pathfinder;
 	}
 
 	private void assertScenarioPathLengthWithBank(
@@ -1735,6 +1815,13 @@ public class PathfinderTest
 	{
 		Pathfinder pathfinder = runPathfinder(origin, destination);
 		return pathfinder.getPath().size();
+	}
+
+	private void assertPathLengthAndSnapshot(String snapshotName, int expectedLength, int origin, int destination)
+	{
+		Pathfinder pathfinder = runPathfinder(origin, destination);
+		assertEquals(expectedLength, pathfinder.getPath().size());
+		assertRouteSnapshot(snapshotName, pathfinder);
 	}
 
 	private Pathfinder runPathfinder(int origin, int destination)
@@ -1945,6 +2032,7 @@ public class PathfinderTest
 		assertFalse(
 			"Fortis Colosseum bank tile should not appear on the shortest path when glory gates it off",
 			pathfinder.getPath().stream().anyMatch(s -> s.getPackedPosition() == fortisColosseumBank));
+		assertRouteSnapshot("pathfinder-auburnvale-ferox-bank-at-auburnvale", pathfinder);
 	}
 
 	// -----------------------------------------------------------------------

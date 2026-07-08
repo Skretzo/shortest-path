@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import shortestpath.TeleportationItem;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
+import shortestpath.SnapshotAssertions;
 
 public class PathfinderResultTest
 {
@@ -47,6 +48,7 @@ public class PathfinderResultTest
 
 		assertTrue(result.isReached());
 		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		SnapshotAssertions.assertRouteSnapshot("pathfinder-result-reached-target", pathfinder.getPath());
 	}
 
 	@Test
@@ -58,5 +60,6 @@ public class PathfinderResultTest
 		PathfinderResult result = pathfinder.getResult();
 
 		assertEquals(PathTerminationReason.CUTOFF_REACHED, result.getTerminationReason());
+		SnapshotAssertions.assertRouteSnapshot("pathfinder-result-zero-cutoff", pathfinder.getPath());
 	}
 }
