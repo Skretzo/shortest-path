@@ -70,8 +70,8 @@ route:
 	0067 (3344, 3761, 0) bank-visited=false
 	0068 (3344, 3760, 0) bank-visited=false
 	0069 (3344, 3759, 0) bank-visited=false
-	=> transport type=TELEPORTATION_ITEM from=undefined to=(3105, 3251, 0) duration=4 display="Amulet of glory: Draynor Village"
-	0070 (3105, 3251, 0) bank-visited=false
+	=> transport type=TELEPORTATION_ITEM from=undefined to=(3293, 3163, 0) duration=4 display="Amulet of glory: Al Kharid"
+	0070 (3293, 3163, 0) bank-visited=false
 	=> transport type=TELEPORTATION_SPELL from=undefined to=(3165, 3479, 0) duration=4 display="Varrock Teleport: GE"
 	0071 (3165, 3479, 0) bank-visited=false
 	0072 (3165, 3480, 0) bank-visited=false

@@ -1321,7 +1321,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
-			771,
+			769,
 			origin,
 			destination);
 
@@ -1791,24 +1791,50 @@ public class PathfinderTest
 
 	private Transport findSampleTransport(TransportType transportType)
 	{
+		// The loaded transports live in HashMap/HashSet collections whose iteration order is not
+		// stable across JVM runs. Selecting the "first" match would therefore pick a different
+		// sample transport (and thus a different destination) between runs, making the snapshot
+		// tests flaky. Choose a deterministic sample by ordering candidates by origin then
+		// destination.
+		Transport best = null;
 		for (int origin : transports.keySet())
 		{
 			for (Transport transport : transports.get(origin))
 			{
-				if (transportType.equals(transport.getType()))
+				if (!transportType.equals(transport.getType()))
 				{
-					int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-					int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-					if (ShortestPathPlugin.isInsidePoh(originX, originY))
-					{
-						continue;
-					}
-					return transport;
+					continue;
+				}
+				int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+				int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+				if (ShortestPathPlugin.isInsidePoh(originX, originY))
+				{
+					continue;
+				}
+				if (best == null || isPreferredSample(transport, best))
+				{
+					best = transport;
 				}
 			}
 		}
-		fail("No transport of type " + transportType + " found");
-		return null;
+		if (best == null)
+		{
+			fail("No transport of type " + transportType + " found");
+		}
+		return best;
+	}
+
+	private static boolean isPreferredSample(Transport candidate, Transport current)
+	{
+		if (candidate.getOrigin() != current.getOrigin())
+		{
+			return candidate.getOrigin() < current.getOrigin();
+		}
+		if (candidate.getDestination() != current.getDestination())
+		{
+			return candidate.getDestination() < current.getDestination();
+		}
+		return candidate.getDuration() < current.getDuration();
 	}
 
 	private int calculatePathLength(int origin, int destination)

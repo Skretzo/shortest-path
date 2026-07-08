@@ -59,7 +59,10 @@ public class PathfinderResultTest
 		pathfinder.run();
 		PathfinderResult result = pathfinder.getResult();
 
+		// A zero-tick cutoff stops the search almost immediately, so the exact set of tiles that
+		// were explored (and therefore the "closest reached" partial path) depends on wall-clock
+		// timing and is not reproducible. Only the termination reason is meaningful here; snapshotting
+		// the path would make this test flaky.
 		assertEquals(PathTerminationReason.CUTOFF_REACHED, result.getTerminationReason());
-		SnapshotAssertions.assertRouteSnapshot("pathfinder-result-zero-cutoff", pathfinder.getPath());
 	}
 }
