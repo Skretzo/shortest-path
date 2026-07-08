@@ -1,0 +1,7 @@
+route:
+	steps: 3
+	0000 (3702, 3503, 0) bank-visited=false
+	=> transport type=CHARTER_SHIP from=(3702, 3503, 0) to=(2954, 3158, 0) duration=6 display="Musa Point" object="Charter Trader Crewmember 1330"
+	0001 (2954, 3158, 0) bank-visited=false
+	=> transport type=CHARTER_SHIP from=(2954, 3158, 0) to=(3671, 2931, 0) duration=6 display="Mos Le'Harmless" object="Charter Trader Crewmember 1330"
+	0002 (3671, 2931, 0) bank-visited=false

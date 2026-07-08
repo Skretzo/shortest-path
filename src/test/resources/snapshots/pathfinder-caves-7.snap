@@ -1,0 +1,5 @@
+route:
+	steps: 2
+	0000 (2894, 10074, 2) bank-visited=false
+	=> transport type=TRANSPORT from=(2894, 10074, 2) to=(2893, 3671, 0) duration=1 object="Exit Cave Exit 3760"
+	0001 (2893, 3671, 0) bank-visited=false

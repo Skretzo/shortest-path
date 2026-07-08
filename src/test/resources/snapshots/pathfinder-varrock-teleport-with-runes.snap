@@ -1,0 +1,5 @@
+route:
+	steps: 2
+	0000 (3223, 3424, 0) bank-visited=false
+	=> transport type=TELEPORTATION_SPELL from=undefined to=(3213, 3424, 0) duration=4 display="Varrock Teleport"
+	0001 (3213, 3424, 0) bank-visited=false

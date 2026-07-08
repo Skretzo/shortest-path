@@ -1,0 +1,4 @@
+route:
+	steps: 2
+	0000 (3200, 3200, 0) bank-visited=false
+	0001 (3201, 3200, 0) bank-visited=false

@@ -1,0 +1,7 @@
+route:
+	steps: 3
+	0000 (1455, 2968, 0) bank-visited=false
+	=> transport type=CHARTER_SHIP from=(1455, 2968, 0) to=(2792, 3414, 0) duration=6 display="Catherby" object="Charter Trader Crewmember 1330"
+	0001 (2792, 3414, 0) bank-visited=false
+	=> transport type=CHARTER_SHIP from=(2792, 3414, 0) to=(1514, 2971, 0) duration=6 display="Sunset Coast" object="Charter Trader Crewmember 1330"
+	0002 (1514, 2971, 0) bank-visited=false

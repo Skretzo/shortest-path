@@ -1,0 +1,7 @@
+route:
+	steps: 3
+	0000 (1808, 3679, 0) bank-visited=false
+	=> transport type=CHARTER_SHIP from=(1808, 3679, 0) to=(1455, 2968, 0) duration=6 display="Aldarin" object="Charter Trader Crewmember 1330"
+	0001 (1455, 2968, 0) bank-visited=false
+	=> transport type=CHARTER_SHIP from=(1455, 2968, 0) to=(1496, 3403, 0) duration=6 display="Land's End" object="Charter Trader Crewmember 1330"
+	0002 (1496, 3403, 0) bank-visited=false

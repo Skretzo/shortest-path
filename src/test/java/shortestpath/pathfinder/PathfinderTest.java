@@ -1182,7 +1182,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		// Starting 10 tiles away - teleport (4 ticks) is definitely cheaper than walking (10 ticks)
-		Pathfinder pathfinder = assertScenarioPathLengthAndGet("Varrock teleport with runes and magic level", 2,
+		pathfinder = assertScenarioPathLengthAndGet("Varrock teleport with runes and magic level", 2,
 			WorldPointUtil.packWorldPoint(3223, 3424, 0),
 			WorldPointUtil.packWorldPoint(3213, 3424, 0));
 		assertRouteSnapshot("pathfinder-varrock-teleport-with-runes", pathfinder);

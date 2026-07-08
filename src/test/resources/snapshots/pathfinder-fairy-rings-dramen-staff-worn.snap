@@ -1,0 +1,5 @@
+route:
+	steps: 2
+	0000 (2735, 5221, 0) bank-visited=false
+	=> transport type=FAIRY_RING from=(2735, 5221, 0) to=(2528, 3127, 0) duration=5 display="C I Q" object="Configure Fairy ring 43109"
+	0001 (2528, 3127, 0) bank-visited=false

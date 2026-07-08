@@ -1,0 +1,6 @@
+route:
+	steps: 4
+	0000 (3216, 3424, 0) bank-visited=false
+	0001 (3215, 3424, 0) bank-visited=false
+	0002 (3214, 3424, 0) bank-visited=false
+	0003 (3213, 3424, 0) bank-visited=false
