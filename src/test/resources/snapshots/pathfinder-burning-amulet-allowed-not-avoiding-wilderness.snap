@@ -1,166 +1,169 @@
+state:
+	inventory: 21166x1
+	levels: all=99
 route:
 	steps: 162
-	0000 (2485, 3080, 0) bank-visited=false
+	0000 (2485, 3080, 0)
 	=> transport type=TELEPORTATION_ITEM from=undefined to=(3038, 3651, 0) duration=4 display="Burning amulet: Bandit Camp"
-	0001 (3038, 3651, 0) bank-visited=false
-	0002 (3039, 3651, 0) bank-visited=false
-	0003 (3040, 3651, 0) bank-visited=false
-	0004 (3041, 3651, 0) bank-visited=false
-	0005 (3042, 3650, 0) bank-visited=false
-	0006 (3043, 3649, 0) bank-visited=false
-	0007 (3044, 3648, 0) bank-visited=false
-	0008 (3044, 3647, 0) bank-visited=false
-	0009 (3045, 3646, 0) bank-visited=false
-	0010 (3045, 3645, 0) bank-visited=false
-	0011 (3045, 3644, 0) bank-visited=false
-	0012 (3045, 3643, 0) bank-visited=false
-	0013 (3045, 3642, 0) bank-visited=false
-	0014 (3045, 3641, 0) bank-visited=false
-	0015 (3046, 3640, 0) bank-visited=false
-	0016 (3047, 3639, 0) bank-visited=false
-	0017 (3047, 3638, 0) bank-visited=false
-	0018 (3047, 3637, 0) bank-visited=false
-	0019 (3047, 3636, 0) bank-visited=false
-	0020 (3047, 3635, 0) bank-visited=false
-	0021 (3047, 3634, 0) bank-visited=false
-	0022 (3047, 3633, 0) bank-visited=false
-	0023 (3047, 3632, 0) bank-visited=false
-	0024 (3048, 3631, 0) bank-visited=false
-	0025 (3049, 3630, 0) bank-visited=false
-	0026 (3049, 3629, 0) bank-visited=false
-	0027 (3049, 3628, 0) bank-visited=false
-	0028 (3049, 3627, 0) bank-visited=false
-	0029 (3049, 3626, 0) bank-visited=false
-	0030 (3050, 3625, 0) bank-visited=false
-	0031 (3050, 3624, 0) bank-visited=false
-	0032 (3050, 3623, 0) bank-visited=false
-	0033 (3050, 3622, 0) bank-visited=false
-	0034 (3050, 3621, 0) bank-visited=false
-	0035 (3050, 3620, 0) bank-visited=false
-	0036 (3049, 3619, 0) bank-visited=false
-	0037 (3049, 3618, 0) bank-visited=false
-	0038 (3049, 3617, 0) bank-visited=false
-	0039 (3049, 3616, 0) bank-visited=false
-	0040 (3049, 3615, 0) bank-visited=false
-	0041 (3049, 3614, 0) bank-visited=false
-	0042 (3049, 3613, 0) bank-visited=false
-	0043 (3049, 3612, 0) bank-visited=false
-	0044 (3049, 3611, 0) bank-visited=false
-	0045 (3049, 3610, 0) bank-visited=false
-	0046 (3049, 3609, 0) bank-visited=false
-	0047 (3049, 3608, 0) bank-visited=false
-	0048 (3049, 3607, 0) bank-visited=false
-	0049 (3049, 3606, 0) bank-visited=false
-	0050 (3049, 3605, 0) bank-visited=false
-	0051 (3049, 3604, 0) bank-visited=false
-	0052 (3049, 3603, 0) bank-visited=false
-	0053 (3049, 3602, 0) bank-visited=false
-	0054 (3049, 3601, 0) bank-visited=false
-	0055 (3049, 3600, 0) bank-visited=false
-	0056 (3049, 3599, 0) bank-visited=false
-	0057 (3049, 3598, 0) bank-visited=false
-	0058 (3049, 3597, 0) bank-visited=false
-	0059 (3050, 3596, 0) bank-visited=false
-	0060 (3050, 3595, 0) bank-visited=false
-	0061 (3050, 3594, 0) bank-visited=false
-	0062 (3049, 3593, 0) bank-visited=false
-	0063 (3049, 3592, 0) bank-visited=false
-	0064 (3049, 3591, 0) bank-visited=false
-	0065 (3049, 3590, 0) bank-visited=false
-	0066 (3049, 3589, 0) bank-visited=false
-	0067 (3049, 3588, 0) bank-visited=false
-	0068 (3049, 3587, 0) bank-visited=false
-	0069 (3049, 3586, 0) bank-visited=false
-	0070 (3049, 3585, 0) bank-visited=false
-	0071 (3049, 3584, 0) bank-visited=false
-	0072 (3049, 3583, 0) bank-visited=false
-	0073 (3049, 3582, 0) bank-visited=false
-	0074 (3049, 3581, 0) bank-visited=false
-	0075 (3049, 3580, 0) bank-visited=false
-	0076 (3049, 3579, 0) bank-visited=false
-	0077 (3049, 3578, 0) bank-visited=false
-	0078 (3049, 3577, 0) bank-visited=false
-	0079 (3050, 3576, 0) bank-visited=false
-	0080 (3051, 3575, 0) bank-visited=false
-	0081 (3051, 3574, 0) bank-visited=false
-	0082 (3051, 3573, 0) bank-visited=false
-	0083 (3052, 3572, 0) bank-visited=false
-	0084 (3053, 3571, 0) bank-visited=false
-	0085 (3053, 3570, 0) bank-visited=false
-	0086 (3053, 3569, 0) bank-visited=false
-	0087 (3054, 3568, 0) bank-visited=false
-	0088 (3055, 3567, 0) bank-visited=false
-	0089 (3056, 3566, 0) bank-visited=false
-	0090 (3057, 3565, 0) bank-visited=false
-	0091 (3058, 3564, 0) bank-visited=false
-	0092 (3059, 3563, 0) bank-visited=false
-	0093 (3060, 3562, 0) bank-visited=false
-	0094 (3060, 3561, 0) bank-visited=false
-	0095 (3060, 3560, 0) bank-visited=false
-	0096 (3061, 3559, 0) bank-visited=false
-	0097 (3062, 3558, 0) bank-visited=false
-	0098 (3062, 3557, 0) bank-visited=false
-	0099 (3062, 3556, 0) bank-visited=false
-	0100 (3062, 3555, 0) bank-visited=false
-	0101 (3063, 3554, 0) bank-visited=false
-	0102 (3064, 3553, 0) bank-visited=false
-	0103 (3065, 3552, 0) bank-visited=false
-	0104 (3065, 3551, 0) bank-visited=false
-	0105 (3066, 3550, 0) bank-visited=false
-	0106 (3067, 3549, 0) bank-visited=false
-	0107 (3068, 3548, 0) bank-visited=false
-	0108 (3069, 3547, 0) bank-visited=false
-	0109 (3070, 3546, 0) bank-visited=false
-	0110 (3071, 3545, 0) bank-visited=false
-	0111 (3072, 3544, 0) bank-visited=false
-	0112 (3073, 3543, 0) bank-visited=false
-	0113 (3074, 3542, 0) bank-visited=false
-	0114 (3075, 3541, 0) bank-visited=false
-	0115 (3076, 3540, 0) bank-visited=false
-	0116 (3077, 3539, 0) bank-visited=false
-	0117 (3078, 3538, 0) bank-visited=false
-	0118 (3079, 3537, 0) bank-visited=false
-	0119 (3080, 3536, 0) bank-visited=false
-	0120 (3081, 3535, 0) bank-visited=false
-	0121 (3082, 3534, 0) bank-visited=false
-	0122 (3083, 3533, 0) bank-visited=false
-	0123 (3083, 3532, 0) bank-visited=false
-	0124 (3083, 3531, 0) bank-visited=false
-	0125 (3084, 3530, 0) bank-visited=false
-	0126 (3084, 3529, 0) bank-visited=false
-	0127 (3084, 3528, 0) bank-visited=false
-	0128 (3084, 3527, 0) bank-visited=false
-	0129 (3084, 3526, 0) bank-visited=false
-	0130 (3084, 3525, 0) bank-visited=false
-	0131 (3085, 3524, 0) bank-visited=false
-	0132 (3086, 3523, 0) bank-visited=false
+	0001 (3038, 3651, 0)
+	0002 (3039, 3651, 0)
+	0003 (3040, 3651, 0)
+	0004 (3041, 3651, 0)
+	0005 (3042, 3650, 0)
+	0006 (3043, 3649, 0)
+	0007 (3044, 3648, 0)
+	0008 (3044, 3647, 0)
+	0009 (3045, 3646, 0)
+	0010 (3045, 3645, 0)
+	0011 (3045, 3644, 0)
+	0012 (3045, 3643, 0)
+	0013 (3045, 3642, 0)
+	0014 (3045, 3641, 0)
+	0015 (3046, 3640, 0)
+	0016 (3047, 3639, 0)
+	0017 (3047, 3638, 0)
+	0018 (3047, 3637, 0)
+	0019 (3047, 3636, 0)
+	0020 (3047, 3635, 0)
+	0021 (3047, 3634, 0)
+	0022 (3047, 3633, 0)
+	0023 (3047, 3632, 0)
+	0024 (3048, 3631, 0)
+	0025 (3049, 3630, 0)
+	0026 (3049, 3629, 0)
+	0027 (3049, 3628, 0)
+	0028 (3049, 3627, 0)
+	0029 (3049, 3626, 0)
+	0030 (3050, 3625, 0)
+	0031 (3050, 3624, 0)
+	0032 (3050, 3623, 0)
+	0033 (3050, 3622, 0)
+	0034 (3050, 3621, 0)
+	0035 (3050, 3620, 0)
+	0036 (3049, 3619, 0)
+	0037 (3049, 3618, 0)
+	0038 (3049, 3617, 0)
+	0039 (3049, 3616, 0)
+	0040 (3049, 3615, 0)
+	0041 (3049, 3614, 0)
+	0042 (3049, 3613, 0)
+	0043 (3049, 3612, 0)
+	0044 (3049, 3611, 0)
+	0045 (3049, 3610, 0)
+	0046 (3049, 3609, 0)
+	0047 (3049, 3608, 0)
+	0048 (3049, 3607, 0)
+	0049 (3049, 3606, 0)
+	0050 (3049, 3605, 0)
+	0051 (3049, 3604, 0)
+	0052 (3049, 3603, 0)
+	0053 (3049, 3602, 0)
+	0054 (3049, 3601, 0)
+	0055 (3049, 3600, 0)
+	0056 (3049, 3599, 0)
+	0057 (3049, 3598, 0)
+	0058 (3049, 3597, 0)
+	0059 (3050, 3596, 0)
+	0060 (3050, 3595, 0)
+	0061 (3050, 3594, 0)
+	0062 (3049, 3593, 0)
+	0063 (3049, 3592, 0)
+	0064 (3049, 3591, 0)
+	0065 (3049, 3590, 0)
+	0066 (3049, 3589, 0)
+	0067 (3049, 3588, 0)
+	0068 (3049, 3587, 0)
+	0069 (3049, 3586, 0)
+	0070 (3049, 3585, 0)
+	0071 (3049, 3584, 0)
+	0072 (3049, 3583, 0)
+	0073 (3049, 3582, 0)
+	0074 (3049, 3581, 0)
+	0075 (3049, 3580, 0)
+	0076 (3049, 3579, 0)
+	0077 (3049, 3578, 0)
+	0078 (3049, 3577, 0)
+	0079 (3050, 3576, 0)
+	0080 (3051, 3575, 0)
+	0081 (3051, 3574, 0)
+	0082 (3051, 3573, 0)
+	0083 (3052, 3572, 0)
+	0084 (3053, 3571, 0)
+	0085 (3053, 3570, 0)
+	0086 (3053, 3569, 0)
+	0087 (3054, 3568, 0)
+	0088 (3055, 3567, 0)
+	0089 (3056, 3566, 0)
+	0090 (3057, 3565, 0)
+	0091 (3058, 3564, 0)
+	0092 (3059, 3563, 0)
+	0093 (3060, 3562, 0)
+	0094 (3060, 3561, 0)
+	0095 (3060, 3560, 0)
+	0096 (3061, 3559, 0)
+	0097 (3062, 3558, 0)
+	0098 (3062, 3557, 0)
+	0099 (3062, 3556, 0)
+	0100 (3062, 3555, 0)
+	0101 (3063, 3554, 0)
+	0102 (3064, 3553, 0)
+	0103 (3065, 3552, 0)
+	0104 (3065, 3551, 0)
+	0105 (3066, 3550, 0)
+	0106 (3067, 3549, 0)
+	0107 (3068, 3548, 0)
+	0108 (3069, 3547, 0)
+	0109 (3070, 3546, 0)
+	0110 (3071, 3545, 0)
+	0111 (3072, 3544, 0)
+	0112 (3073, 3543, 0)
+	0113 (3074, 3542, 0)
+	0114 (3075, 3541, 0)
+	0115 (3076, 3540, 0)
+	0116 (3077, 3539, 0)
+	0117 (3078, 3538, 0)
+	0118 (3079, 3537, 0)
+	0119 (3080, 3536, 0)
+	0120 (3081, 3535, 0)
+	0121 (3082, 3534, 0)
+	0122 (3083, 3533, 0)
+	0123 (3083, 3532, 0)
+	0124 (3083, 3531, 0)
+	0125 (3084, 3530, 0)
+	0126 (3084, 3529, 0)
+	0127 (3084, 3528, 0)
+	0128 (3084, 3527, 0)
+	0129 (3084, 3526, 0)
+	0130 (3084, 3525, 0)
+	0131 (3085, 3524, 0)
+	0132 (3086, 3523, 0)
 	=> transport type=TRANSPORT from=(3086, 3523, 0) to=(3086, 3520, 0) duration=4 object="Cross Wilderness Ditch 23271"
-	0133 (3086, 3520, 0) bank-visited=false
-	0134 (3086, 3519, 0) bank-visited=false
-	0135 (3086, 3518, 0) bank-visited=false
-	0136 (3086, 3517, 0) bank-visited=false
-	0137 (3086, 3516, 0) bank-visited=false
-	0138 (3086, 3515, 0) bank-visited=false
-	0139 (3086, 3514, 0) bank-visited=false
-	0140 (3086, 3513, 0) bank-visited=false
-	0141 (3086, 3512, 0) bank-visited=false
-	0142 (3086, 3511, 0) bank-visited=false
-	0143 (3086, 3510, 0) bank-visited=false
-	0144 (3086, 3509, 0) bank-visited=false
-	0145 (3086, 3508, 0) bank-visited=false
-	0146 (3086, 3507, 0) bank-visited=false
-	0147 (3086, 3506, 0) bank-visited=false
-	0148 (3086, 3505, 0) bank-visited=false
-	0149 (3086, 3504, 0) bank-visited=false
-	0150 (3086, 3503, 0) bank-visited=false
-	0151 (3086, 3502, 0) bank-visited=false
-	0152 (3086, 3501, 0) bank-visited=false
-	0153 (3086, 3500, 0) bank-visited=false
-	0154 (3086, 3499, 0) bank-visited=false
-	0155 (3086, 3498, 0) bank-visited=false
-	0156 (3086, 3497, 0) bank-visited=false
-	0157 (3086, 3496, 0) bank-visited=false
-	0158 (3086, 3495, 0) bank-visited=false
-	0159 (3086, 3494, 0) bank-visited=false
-	0160 (3086, 3493, 0) bank-visited=false
-	0161 (3087, 3492, 0) bank-visited=false
+	0133 (3086, 3520, 0)
+	0134 (3086, 3519, 0)
+	0135 (3086, 3518, 0)
+	0136 (3086, 3517, 0)
+	0137 (3086, 3516, 0)
+	0138 (3086, 3515, 0)
+	0139 (3086, 3514, 0)
+	0140 (3086, 3513, 0)
+	0141 (3086, 3512, 0)
+	0142 (3086, 3511, 0)
+	0143 (3086, 3510, 0)
+	0144 (3086, 3509, 0)
+	0145 (3086, 3508, 0)
+	0146 (3086, 3507, 0)
+	0147 (3086, 3506, 0)
+	0148 (3086, 3505, 0)
+	0149 (3086, 3504, 0)
+	0150 (3086, 3503, 0)
+	0151 (3086, 3502, 0)
+	0152 (3086, 3501, 0)
+	0153 (3086, 3500, 0)
+	0154 (3086, 3499, 0)
+	0155 (3086, 3498, 0)
+	0156 (3086, 3497, 0)
+	0157 (3086, 3496, 0)
+	0158 (3086, 3495, 0)
+	0159 (3086, 3494, 0)
+	0160 (3086, 3493, 0)
+	0161 (3087, 3492, 0)

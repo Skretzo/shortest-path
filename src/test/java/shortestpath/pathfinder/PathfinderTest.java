@@ -59,6 +59,11 @@ public class PathfinderTest
 	@Mock
 	ShortestPathConfig config;
 	private PathfinderConfig pathfinderConfig;
+	private Item[] snapshotInventory;
+	private Item[] snapshotEquipment;
+	private Item[] snapshotBank;
+	private Integer snapshotSkillLevel;
+	private Map<Integer, Integer> snapshotVarbits = Map.of();
 
 	@Before
 	public void before()
@@ -1512,6 +1517,8 @@ public class PathfinderTest
 	// * A toggle about wheher to use teleportation items.
 	private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems)
 	{
+		snapshotSkillLevel = skillLevel;
+		snapshotVarbits = Map.of();
 		// NOTE: Not mocked since PathfinderConfig is repeatedly queried in the hot loop.
 		pathfinderConfig = new TestPathfinderConfig(
 			client,
@@ -1536,6 +1543,8 @@ public class PathfinderTest
 	// * Fixed set of varbit values
 	private void setupConfig(QuestState questState, int skillLevel, TeleportationItem useTeleportationItems, Map<Integer, Integer> varbitValues)
 	{
+		snapshotSkillLevel = skillLevel;
+		snapshotVarbits = Map.copyOf(varbitValues);
 		// NOTE: Not mocked since PathfinderConfig is repeatedly queried in the hot loop.
 		pathfinderConfig = new TestPathfinderConfig(
 			client, config,
@@ -1558,12 +1567,14 @@ public class PathfinderTest
 
 	private void setupInventory(Item... items)
 	{
+		snapshotInventory = items;
 		doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
 		doReturn(items).when(inventory).getItems();
 	}
 
 	private void setupEquipment(Item... items)
 	{
+		snapshotEquipment = items;
 		doReturn(equipment).when(client).getItemContainer(InventoryID.WORN);
 		doReturn(items).when(equipment).getItems();
 	}
@@ -1756,7 +1767,8 @@ public class PathfinderTest
 	private void assertRouteSnapshot(String snapshotName, Pathfinder pathfinder)
 	{
 		SnapshotAssertions.SnapshotState state = SnapshotAssertions.SnapshotState.withTransports(
-			(origin, bankVisited) -> transportsForStep(origin, bankVisited));
+			(origin, bankVisited) -> transportsForStep(origin, bankVisited))
+			.withMetadata(snapshotInventory, snapshotEquipment, snapshotBank, snapshotSkillLevel, snapshotVarbits);
 		SnapshotAssertions.assertRouteSnapshot(state, snapshotName, pathfinder.getPath());
 	}
 
@@ -1931,6 +1943,9 @@ public class PathfinderTest
 
 	private void setupConfigWithBank(TeleportationItem useTeleportationItems, Item... bankItems)
 	{
+		snapshotBank = bankItems;
+		snapshotSkillLevel = 99;
+		snapshotVarbits = Map.of();
 		pathfinderConfig = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());

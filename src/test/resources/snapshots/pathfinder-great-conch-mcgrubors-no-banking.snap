@@ -1,52 +1,55 @@
+state:
+	inventory: 772x1
+	levels: all=99
 route:
 	steps: 48
-	0000 (3180, 2419, 0) bank-visited=false
-	0001 (3179, 2419, 0) bank-visited=false
-	0002 (3178, 2419, 0) bank-visited=false
-	0003 (3177, 2419, 0) bank-visited=false
-	0004 (3176, 2419, 0) bank-visited=false
-	0005 (3176, 2420, 0) bank-visited=false
-	0006 (3176, 2421, 0) bank-visited=false
-	0007 (3176, 2422, 0) bank-visited=false
-	0008 (3177, 2423, 0) bank-visited=false
-	0009 (3177, 2424, 0) bank-visited=false
-	0010 (3177, 2425, 0) bank-visited=false
-	0011 (3177, 2426, 0) bank-visited=false
-	0012 (3177, 2427, 0) bank-visited=false
-	0013 (3177, 2428, 0) bank-visited=false
-	0014 (3177, 2429, 0) bank-visited=false
-	0015 (3178, 2430, 0) bank-visited=false
-	0016 (3179, 2430, 0) bank-visited=false
-	0017 (3180, 2431, 0) bank-visited=false
-	0018 (3180, 2432, 0) bank-visited=false
+	0000 (3180, 2419, 0)
+	0001 (3179, 2419, 0)
+	0002 (3178, 2419, 0)
+	0003 (3177, 2419, 0)
+	0004 (3176, 2419, 0)
+	0005 (3176, 2420, 0)
+	0006 (3176, 2421, 0)
+	0007 (3176, 2422, 0)
+	0008 (3177, 2423, 0)
+	0009 (3177, 2424, 0)
+	0010 (3177, 2425, 0)
+	0011 (3177, 2426, 0)
+	0012 (3177, 2427, 0)
+	0013 (3177, 2428, 0)
+	0014 (3177, 2429, 0)
+	0015 (3178, 2430, 0)
+	0016 (3179, 2430, 0)
+	0017 (3180, 2431, 0)
+	0018 (3180, 2432, 0)
 	=> transport type=AGILITY_SHORTCUT from=(3180, 2432, 0) to=(3180, 2434, 0) duration=0 object="Climb Rocks 57928"
-	0019 (3180, 2434, 0) bank-visited=false
-	0020 (3180, 2435, 0) bank-visited=false
-	0021 (3180, 2436, 0) bank-visited=false
-	0022 (3180, 2437, 0) bank-visited=false
-	0023 (3180, 2438, 0) bank-visited=false
-	0024 (3180, 2439, 0) bank-visited=false
-	0025 (3180, 2440, 0) bank-visited=false
-	0026 (3180, 2441, 0) bank-visited=false
-	0027 (3180, 2442, 0) bank-visited=false
-	0028 (3179, 2443, 0) bank-visited=false
-	0029 (3179, 2444, 0) bank-visited=false
-	0030 (3179, 2445, 0) bank-visited=false
-	0031 (3178, 2446, 0) bank-visited=false
-	0032 (3178, 2447, 0) bank-visited=false
+	0019 (3180, 2434, 0)
+	0020 (3180, 2435, 0)
+	0021 (3180, 2436, 0)
+	0022 (3180, 2437, 0)
+	0023 (3180, 2438, 0)
+	0024 (3180, 2439, 0)
+	0025 (3180, 2440, 0)
+	0026 (3180, 2441, 0)
+	0027 (3180, 2442, 0)
+	0028 (3179, 2443, 0)
+	0029 (3179, 2444, 0)
+	0030 (3179, 2445, 0)
+	0031 (3178, 2446, 0)
+	0032 (3178, 2447, 0)
 	=> transport type=FAIRY_RING from=(3178, 2447, 0) to=(2644, 3495, 0) duration=5 display="A L S" object="Configure Fairy ring 29495"
-	0033 (2644, 3495, 0) bank-visited=false
-	0034 (2644, 3494, 0) bank-visited=false
-	0035 (2645, 3494, 0) bank-visited=false
-	0036 (2646, 3494, 0) bank-visited=false
-	0037 (2646, 3493, 0) bank-visited=false
-	0038 (2647, 3492, 0) bank-visited=false
-	0039 (2648, 3492, 0) bank-visited=false
-	0040 (2649, 3491, 0) bank-visited=false
-	0041 (2649, 3490, 0) bank-visited=false
-	0042 (2649, 3489, 0) bank-visited=false
-	0043 (2649, 3488, 0) bank-visited=false
-	0044 (2650, 3487, 0) bank-visited=false
-	0045 (2651, 3487, 0) bank-visited=false
-	0046 (2651, 3486, 0) bank-visited=false
-	0047 (2652, 3485, 0) bank-visited=false
+	0033 (2644, 3495, 0)
+	0034 (2644, 3494, 0)
+	0035 (2645, 3494, 0)
+	0036 (2646, 3494, 0)
+	0037 (2646, 3493, 0)
+	0038 (2647, 3492, 0)
+	0039 (2648, 3492, 0)
+	0040 (2649, 3491, 0)
+	0041 (2649, 3490, 0)
+	0042 (2649, 3489, 0)
+	0043 (2649, 3488, 0)
+	0044 (2650, 3487, 0)
+	0045 (2651, 3487, 0)
+	0046 (2651, 3486, 0)
+	0047 (2652, 3485, 0)

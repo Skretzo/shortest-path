@@ -1,5 +1,7 @@
+state:
+	levels: all=99
 route:
 	steps: 2
-	0000 (1703, 3140, 0) bank-visited=false
+	0000 (1703, 3140, 0)
 	=> transport type=TRANSPORT from=(1703, 3140, 0) to=(3280, 3412, 0) duration=6 display="Varrock" object="Travel Primio 12889"
-	0001 (3280, 3412, 0) bank-visited=false
+	0001 (3280, 3412, 0)

@@ -1,7 +1,10 @@
+state:
+	inventory: 995x1000000
+	levels: all=99
 route:
 	steps: 3
-	0000 (3702, 3503, 0) bank-visited=false
+	0000 (3702, 3503, 0)
 	=> transport type=CHARTER_SHIP from=(3702, 3503, 0) to=(2760, 3238, 0) duration=6 display="Brimhaven" object="Charter Trader Crewmember 1330"
-	0001 (2760, 3238, 0) bank-visited=false
+	0001 (2760, 3238, 0)
 	=> transport type=CHARTER_SHIP from=(2760, 3238, 0) to=(3671, 2931, 0) duration=6 display="Mos Le'Harmless" object="Charter Trader Crewmember 1330"
-	0002 (3671, 2931, 0) bank-visited=false
+	0002 (3671, 2931, 0)

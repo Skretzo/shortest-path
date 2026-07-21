@@ -1,5 +1,7 @@
+state:
+	levels: all=99
 route:
 	steps: 2
-	0000 (3199, 3336, 0) bank-visited=false
+	0000 (3199, 3336, 0)
 	=> transport type=TELEPORTATION_ITEM from=undefined to=(3200, 3355, 0) duration=4 display="Chronicle"
-	0001 (3200, 3355, 0) bank-visited=false
+	0001 (3200, 3355, 0)

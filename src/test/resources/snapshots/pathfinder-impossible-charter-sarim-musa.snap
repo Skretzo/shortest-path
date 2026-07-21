@@ -1,7 +1,10 @@
+state:
+	inventory: 995x1000000
+	levels: all=99
 route:
 	steps: 3
-	0000 (3038, 3192, 0) bank-visited=false
+	0000 (3038, 3192, 0)
 	=> transport type=CHARTER_SHIP from=(3038, 3192, 0) to=(2674, 3144, 0) duration=6 display="Port Khazard" object="Charter Trader Crewmember 1330"
-	0001 (2674, 3144, 0) bank-visited=false
+	0001 (2674, 3144, 0)
 	=> transport type=CHARTER_SHIP from=(2674, 3144, 0) to=(2954, 3158, 0) duration=6 display="Musa Point" object="Charter Trader Crewmember 1330"
-	0002 (2954, 3158, 0) bank-visited=false
+	0002 (2954, 3158, 0)

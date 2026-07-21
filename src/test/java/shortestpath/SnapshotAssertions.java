@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import net.runelite.api.Item;
 import org.junit.Assert;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
@@ -218,11 +219,16 @@ public final class SnapshotAssertions
 
 	private static void appendRoute(StringBuilder out, SnapshotState state, List<?> steps, String indent)
 	{
+		appendState(out, state, indent);
 		out.append(indent).append("route:\n");
 		out.append(indent).append("\tsteps: ").append(steps.size()).append('\n');
 		for (int i = 0; i < steps.size(); i++)
 		{
 			PathStep step = (PathStep) steps.get(i);
+			if (i > 0 && !((PathStep) steps.get(i - 1)).isBankVisited() && step.isBankVisited())
+			{
+				out.append(indent).append("\t=> bank visited\n");
+			}
 			if (i > 0)
 			{
 				PathStep previous = (PathStep) steps.get(i - 1);
@@ -279,7 +285,47 @@ public final class SnapshotAssertions
 
 	private static String formatPathStep(PathStep step)
 	{
-		return formatPoint(step.getPackedPosition()) + " bank-visited=" + step.isBankVisited();
+		return formatPoint(step.getPackedPosition());
+	}
+
+	private static void appendState(StringBuilder out, SnapshotState state, String indent)
+	{
+		if (!state.hasMetadata())
+		{
+			return;
+		}
+		out.append(indent).append("state:\n");
+		appendItems(out, "inventory", state.inventory, indent + "\t");
+		appendItems(out, "equipment", state.equipment, indent + "\t");
+		appendItems(out, "bank", state.bank, indent + "\t");
+		if (state.skillLevel != null)
+		{
+			out.append(indent).append("\tlevels: all=").append(state.skillLevel).append('\n');
+		}
+		if (!state.varbits.isEmpty())
+		{
+			out.append(indent).append("\tvarbits:");
+			state.varbits.entrySet().stream().sorted(Map.Entry.comparingByKey())
+				.forEach(entry -> out.append(' ').append(entry.getKey()).append('=').append(entry.getValue()));
+			out.append('\n');
+		}
+	}
+
+	private static void appendItems(StringBuilder out, String label, Item[] items, String indent)
+	{
+		if (items == null || items.length == 0)
+		{
+			return;
+		}
+		out.append(indent).append(label).append(':');
+		for (Item item : items)
+		{
+			if (item != null && item.getId() >= 0 && item.getQuantity() > 0)
+			{
+				out.append(' ').append(item.getId()).append('x').append(item.getQuantity());
+			}
+		}
+		out.append('\n');
 	}
 
 	private static String formatTransport(Transport transport)
@@ -405,6 +451,11 @@ public final class SnapshotAssertions
 		private static final SnapshotState EMPTY = new SnapshotState((origin, bankVisited) -> List.of());
 
 		private final TransportProvider transportProvider;
+		private Item[] inventory;
+		private Item[] equipment;
+		private Item[] bank;
+		private Integer skillLevel;
+		private Map<Integer, Integer> varbits = Map.of();
 
 		private SnapshotState(TransportProvider transportProvider)
 		{
@@ -419,6 +470,22 @@ public final class SnapshotAssertions
 		public static SnapshotState withTransports(TransportProvider transportProvider)
 		{
 			return new SnapshotState(transportProvider);
+		}
+
+		public SnapshotState withMetadata(Item[] inventory, Item[] equipment, Item[] bank,
+			Integer skillLevel, Map<Integer, Integer> varbits)
+		{
+			this.inventory = inventory;
+			this.equipment = equipment;
+			this.bank = bank;
+			this.skillLevel = skillLevel;
+			this.varbits = varbits == null ? Map.of() : varbits;
+			return this;
+		}
+
+		private boolean hasMetadata()
+		{
+			return inventory != null || equipment != null || bank != null || skillLevel != null || !varbits.isEmpty();
 		}
 
 		private Collection<Transport> getTransports(int origin, boolean bankVisited)

@@ -1,5 +1,7 @@
+state:
+	levels: all=99
 route:
 	steps: 2
-	0000 (3280, 3412, 0) bank-visited=false
+	0000 (3280, 3412, 0)
 	=> transport type=TRANSPORT from=(3280, 3412, 0) to=(1700, 3141, 0) duration=6 display="Civitas illa Fortis" object="Travel Primio 12888"
-	0001 (1700, 3141, 0) bank-visited=false
+	0001 (1700, 3141, 0)

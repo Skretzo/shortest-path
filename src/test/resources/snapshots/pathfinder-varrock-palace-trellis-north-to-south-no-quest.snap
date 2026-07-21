@@ -1,80 +1,82 @@
+state:
+	levels: all=99
 route:
 	steps: 76
-	0000 (3228, 3472, 0) bank-visited=false
-	0001 (3228, 3473, 0) bank-visited=false
-	0002 (3228, 3474, 0) bank-visited=false
-	0003 (3228, 3475, 0) bank-visited=false
-	0004 (3228, 3476, 0) bank-visited=false
-	0005 (3228, 3477, 0) bank-visited=false
-	0006 (3228, 3478, 0) bank-visited=false
-	0007 (3228, 3479, 0) bank-visited=false
-	0008 (3228, 3480, 0) bank-visited=false
-	0009 (3228, 3481, 0) bank-visited=false
-	0010 (3228, 3482, 0) bank-visited=false
-	0011 (3228, 3483, 0) bank-visited=false
-	0012 (3228, 3484, 0) bank-visited=false
-	0013 (3228, 3485, 0) bank-visited=false
-	0014 (3228, 3486, 0) bank-visited=false
-	0015 (3228, 3487, 0) bank-visited=false
-	0016 (3229, 3488, 0) bank-visited=false
-	0017 (3230, 3489, 0) bank-visited=false
-	0018 (3230, 3490, 0) bank-visited=false
-	0019 (3230, 3491, 0) bank-visited=false
-	0020 (3229, 3491, 0) bank-visited=false
-	0021 (3228, 3491, 0) bank-visited=false
-	0022 (3227, 3491, 0) bank-visited=false
-	0023 (3226, 3492, 0) bank-visited=false
-	0024 (3225, 3493, 0) bank-visited=false
-	0025 (3224, 3493, 0) bank-visited=false
-	0026 (3223, 3493, 0) bank-visited=false
-	0027 (3223, 3492, 0) bank-visited=false
-	0028 (3222, 3491, 0) bank-visited=false
+	0000 (3228, 3472, 0)
+	0001 (3228, 3473, 0)
+	0002 (3228, 3474, 0)
+	0003 (3228, 3475, 0)
+	0004 (3228, 3476, 0)
+	0005 (3228, 3477, 0)
+	0006 (3228, 3478, 0)
+	0007 (3228, 3479, 0)
+	0008 (3228, 3480, 0)
+	0009 (3228, 3481, 0)
+	0010 (3228, 3482, 0)
+	0011 (3228, 3483, 0)
+	0012 (3228, 3484, 0)
+	0013 (3228, 3485, 0)
+	0014 (3228, 3486, 0)
+	0015 (3228, 3487, 0)
+	0016 (3229, 3488, 0)
+	0017 (3230, 3489, 0)
+	0018 (3230, 3490, 0)
+	0019 (3230, 3491, 0)
+	0020 (3229, 3491, 0)
+	0021 (3228, 3491, 0)
+	0022 (3227, 3491, 0)
+	0023 (3226, 3492, 0)
+	0024 (3225, 3493, 0)
+	0025 (3224, 3493, 0)
+	0026 (3223, 3493, 0)
+	0027 (3223, 3492, 0)
+	0028 (3222, 3491, 0)
 	=> transport type=TRANSPORT from=(3222, 3491, 0) to=(3222, 3490, 0) duration=0 object="Open Door 32464"
-	0029 (3222, 3490, 0) bank-visited=false
-	0030 (3221, 3490, 0) bank-visited=false
-	0031 (3220, 3489, 0) bank-visited=false
-	0032 (3220, 3488, 0) bank-visited=false
-	0033 (3220, 3487, 0) bank-visited=false
-	0034 (3220, 3486, 0) bank-visited=false
-	0035 (3220, 3485, 0) bank-visited=false
-	0036 (3220, 3484, 0) bank-visited=false
-	0037 (3220, 3483, 0) bank-visited=false
-	0038 (3220, 3482, 0) bank-visited=false
-	0039 (3220, 3481, 0) bank-visited=false
-	0040 (3220, 3480, 0) bank-visited=false
-	0041 (3221, 3480, 0) bank-visited=false
-	0042 (3222, 3479, 0) bank-visited=false
+	0029 (3222, 3490, 0)
+	0030 (3221, 3490, 0)
+	0031 (3220, 3489, 0)
+	0032 (3220, 3488, 0)
+	0033 (3220, 3487, 0)
+	0034 (3220, 3486, 0)
+	0035 (3220, 3485, 0)
+	0036 (3220, 3484, 0)
+	0037 (3220, 3483, 0)
+	0038 (3220, 3482, 0)
+	0039 (3220, 3481, 0)
+	0040 (3220, 3480, 0)
+	0041 (3221, 3480, 0)
+	0042 (3222, 3479, 0)
 	=> transport type=TRANSPORT from=(3222, 3479, 0) to=(3222, 3478, 0) duration=0 object="Open Door 32464"
-	0043 (3222, 3478, 0) bank-visited=false
-	0044 (3222, 3477, 0) bank-visited=false
-	0045 (3222, 3476, 0) bank-visited=false
-	0046 (3222, 3475, 0) bank-visited=false
-	0047 (3221, 3474, 0) bank-visited=false
-	0048 (3220, 3473, 0) bank-visited=false
-	0049 (3219, 3472, 0) bank-visited=false
-	0050 (3218, 3472, 0) bank-visited=false
-	0051 (3217, 3472, 0) bank-visited=false
-	0052 (3216, 3472, 0) bank-visited=false
-	0053 (3215, 3472, 0) bank-visited=false
-	0054 (3214, 3472, 0) bank-visited=false
-	0055 (3213, 3472, 0) bank-visited=false
-	0056 (3213, 3471, 0) bank-visited=false
-	0057 (3213, 3470, 0) bank-visited=false
-	0058 (3213, 3469, 0) bank-visited=false
-	0059 (3214, 3468, 0) bank-visited=false
-	0060 (3215, 3468, 0) bank-visited=false
-	0061 (3216, 3468, 0) bank-visited=false
-	0062 (3217, 3468, 0) bank-visited=false
-	0063 (3218, 3468, 0) bank-visited=false
-	0064 (3219, 3468, 0) bank-visited=false
-	0065 (3220, 3468, 0) bank-visited=false
-	0066 (3221, 3468, 0) bank-visited=false
-	0067 (3222, 3468, 0) bank-visited=false
-	0068 (3222, 3467, 0) bank-visited=false
-	0069 (3223, 3466, 0) bank-visited=false
-	0070 (3224, 3466, 0) bank-visited=false
-	0071 (3225, 3466, 0) bank-visited=false
-	0072 (3225, 3467, 0) bank-visited=false
-	0073 (3226, 3468, 0) bank-visited=false
-	0074 (3227, 3469, 0) bank-visited=false
-	0075 (3228, 3470, 0) bank-visited=false
+	0043 (3222, 3478, 0)
+	0044 (3222, 3477, 0)
+	0045 (3222, 3476, 0)
+	0046 (3222, 3475, 0)
+	0047 (3221, 3474, 0)
+	0048 (3220, 3473, 0)
+	0049 (3219, 3472, 0)
+	0050 (3218, 3472, 0)
+	0051 (3217, 3472, 0)
+	0052 (3216, 3472, 0)
+	0053 (3215, 3472, 0)
+	0054 (3214, 3472, 0)
+	0055 (3213, 3472, 0)
+	0056 (3213, 3471, 0)
+	0057 (3213, 3470, 0)
+	0058 (3213, 3469, 0)
+	0059 (3214, 3468, 0)
+	0060 (3215, 3468, 0)
+	0061 (3216, 3468, 0)
+	0062 (3217, 3468, 0)
+	0063 (3218, 3468, 0)
+	0064 (3219, 3468, 0)
+	0065 (3220, 3468, 0)
+	0066 (3221, 3468, 0)
+	0067 (3222, 3468, 0)
+	0068 (3222, 3467, 0)
+	0069 (3223, 3466, 0)
+	0070 (3224, 3466, 0)
+	0071 (3225, 3466, 0)
+	0072 (3225, 3467, 0)
+	0073 (3226, 3468, 0)
+	0074 (3227, 3469, 0)
+	0075 (3228, 3470, 0)

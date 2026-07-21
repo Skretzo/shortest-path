@@ -1,5 +1,7 @@
+state:
+	levels: all=99
 route:
 	steps: 2
-	0000 (3178, 2447, 0) bank-visited=false
+	0000 (3178, 2447, 0)
 	=> transport type=FAIRY_RING from=(3178, 2447, 0) to=(3284, 2706, 0) duration=5 display="A K P" object="Configure Fairy ring 29495"
-	0001 (3284, 2706, 0) bank-visited=false
+	0001 (3284, 2706, 0)

@@ -1,12 +1,14 @@
+state:
+	levels: all=99
 route:
 	steps: 6
-	0000 (3149, 3363, 0) bank-visited=false
+	0000 (3149, 3363, 0)
 	=> transport type=AGILITY_SHORTCUT from=(3149, 3363, 0) to=(3150, 3363, 0) duration=4 object="Jump-onto Stepping stone 16533"
-	0001 (3150, 3363, 0) bank-visited=false
+	0001 (3150, 3363, 0)
 	=> transport type=AGILITY_SHORTCUT from=(3150, 3363, 0) to=(3151, 3363, 0) duration=4 object="Jump-onto Stepping stone 16533"
-	0002 (3151, 3363, 0) bank-visited=false
+	0002 (3151, 3363, 0)
 	=> transport type=AGILITY_SHORTCUT from=(3151, 3363, 0) to=(3152, 3363, 0) duration=4 object="Jump-onto Stepping stone 16533"
-	0003 (3152, 3363, 0) bank-visited=false
+	0003 (3152, 3363, 0)
 	=> transport type=AGILITY_SHORTCUT from=(3152, 3363, 0) to=(3153, 3363, 0) duration=4 object="Jump-onto Stepping stone 16533"
-	0004 (3153, 3363, 0) bank-visited=false
-	0005 (3154, 3363, 0) bank-visited=false
+	0004 (3153, 3363, 0)
+	0005 (3154, 3363, 0)

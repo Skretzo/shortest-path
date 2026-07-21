@@ -1,16 +1,20 @@
+state:
+	inventory: 11988x1
+	bank: 772x1
+	levels: all=99
 route:
 	steps: 13
-	0000 (2442, 3096, 0) bank-visited=false
+	0000 (2442, 3096, 0)
 	=> transport type=TELEPORTATION_ITEM from=undefined to=(3163, 3478, 0) duration=4 display="Ring of wealth: Grand Exchange"
-	0001 (3163, 3478, 0) bank-visited=false
-	0002 (3163, 3479, 0) bank-visited=false
-	0003 (3163, 3480, 0) bank-visited=false
-	0004 (3163, 3481, 0) bank-visited=false
-	0005 (3163, 3482, 0) bank-visited=false
-	0006 (3163, 3483, 0) bank-visited=false
-	0007 (3163, 3484, 0) bank-visited=false
-	0008 (3163, 3485, 0) bank-visited=false
-	0009 (3163, 3486, 0) bank-visited=false
-	0010 (3162, 3487, 0) bank-visited=false
-	0011 (3162, 3488, 0) bank-visited=false
-	0012 (3162, 3489, 0) bank-visited=false
+	0001 (3163, 3478, 0)
+	0002 (3163, 3479, 0)
+	0003 (3163, 3480, 0)
+	0004 (3163, 3481, 0)
+	0005 (3163, 3482, 0)
+	0006 (3163, 3483, 0)
+	0007 (3163, 3484, 0)
+	0008 (3163, 3485, 0)
+	0009 (3163, 3486, 0)
+	0010 (3162, 3487, 0)
+	0011 (3162, 3488, 0)
+	0012 (3162, 3489, 0)

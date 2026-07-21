@@ -1,106 +1,110 @@
+state:
+	inventory: 11978x1 563x1 556x3 554x1
+	levels: all=99
+	varbits: 4480=1
 route:
 	steps: 102
-	0000 (3340, 3828, 0) bank-visited=false
-	0001 (3340, 3827, 0) bank-visited=false
-	0002 (3340, 3826, 0) bank-visited=false
-	0003 (3340, 3825, 0) bank-visited=false
-	0004 (3340, 3824, 0) bank-visited=false
-	0005 (3340, 3823, 0) bank-visited=false
-	0006 (3340, 3822, 0) bank-visited=false
-	0007 (3340, 3821, 0) bank-visited=false
-	0008 (3340, 3820, 0) bank-visited=false
-	0009 (3340, 3819, 0) bank-visited=false
-	0010 (3340, 3818, 0) bank-visited=false
-	0011 (3340, 3817, 0) bank-visited=false
-	0012 (3340, 3816, 0) bank-visited=false
-	0013 (3340, 3815, 0) bank-visited=false
-	0014 (3340, 3814, 0) bank-visited=false
-	0015 (3341, 3813, 0) bank-visited=false
-	0016 (3341, 3812, 0) bank-visited=false
-	0017 (3341, 3811, 0) bank-visited=false
-	0018 (3341, 3810, 0) bank-visited=false
-	0019 (3341, 3809, 0) bank-visited=false
-	0020 (3341, 3808, 0) bank-visited=false
-	0021 (3341, 3807, 0) bank-visited=false
-	0022 (3341, 3806, 0) bank-visited=false
-	0023 (3341, 3805, 0) bank-visited=false
-	0024 (3341, 3804, 0) bank-visited=false
-	0025 (3341, 3803, 0) bank-visited=false
-	0026 (3341, 3802, 0) bank-visited=false
-	0027 (3341, 3801, 0) bank-visited=false
-	0028 (3341, 3800, 0) bank-visited=false
-	0029 (3341, 3799, 0) bank-visited=false
-	0030 (3342, 3798, 0) bank-visited=false
-	0031 (3342, 3797, 0) bank-visited=false
-	0032 (3342, 3796, 0) bank-visited=false
-	0033 (3342, 3795, 0) bank-visited=false
-	0034 (3342, 3794, 0) bank-visited=false
-	0035 (3342, 3793, 0) bank-visited=false
-	0036 (3342, 3792, 0) bank-visited=false
-	0037 (3342, 3791, 0) bank-visited=false
-	0038 (3342, 3790, 0) bank-visited=false
-	0039 (3342, 3789, 0) bank-visited=false
-	0040 (3342, 3788, 0) bank-visited=false
-	0041 (3342, 3787, 0) bank-visited=false
-	0042 (3342, 3786, 0) bank-visited=false
-	0043 (3342, 3785, 0) bank-visited=false
-	0044 (3342, 3784, 0) bank-visited=false
-	0045 (3342, 3783, 0) bank-visited=false
-	0046 (3342, 3782, 0) bank-visited=false
-	0047 (3342, 3781, 0) bank-visited=false
-	0048 (3342, 3780, 0) bank-visited=false
-	0049 (3342, 3779, 0) bank-visited=false
-	0050 (3342, 3778, 0) bank-visited=false
-	0051 (3342, 3777, 0) bank-visited=false
-	0052 (3342, 3776, 0) bank-visited=false
-	0053 (3342, 3775, 0) bank-visited=false
-	0054 (3342, 3774, 0) bank-visited=false
-	0055 (3342, 3773, 0) bank-visited=false
-	0056 (3342, 3772, 0) bank-visited=false
-	0057 (3342, 3771, 0) bank-visited=false
-	0058 (3342, 3770, 0) bank-visited=false
-	0059 (3342, 3769, 0) bank-visited=false
-	0060 (3342, 3768, 0) bank-visited=false
-	0061 (3342, 3767, 0) bank-visited=false
-	0062 (3342, 3766, 0) bank-visited=false
-	0063 (3343, 3765, 0) bank-visited=false
-	0064 (3343, 3764, 0) bank-visited=false
-	0065 (3344, 3763, 0) bank-visited=false
-	0066 (3344, 3762, 0) bank-visited=false
-	0067 (3344, 3761, 0) bank-visited=false
-	0068 (3344, 3760, 0) bank-visited=false
-	0069 (3344, 3759, 0) bank-visited=false
+	0000 (3340, 3828, 0)
+	0001 (3340, 3827, 0)
+	0002 (3340, 3826, 0)
+	0003 (3340, 3825, 0)
+	0004 (3340, 3824, 0)
+	0005 (3340, 3823, 0)
+	0006 (3340, 3822, 0)
+	0007 (3340, 3821, 0)
+	0008 (3340, 3820, 0)
+	0009 (3340, 3819, 0)
+	0010 (3340, 3818, 0)
+	0011 (3340, 3817, 0)
+	0012 (3340, 3816, 0)
+	0013 (3340, 3815, 0)
+	0014 (3340, 3814, 0)
+	0015 (3341, 3813, 0)
+	0016 (3341, 3812, 0)
+	0017 (3341, 3811, 0)
+	0018 (3341, 3810, 0)
+	0019 (3341, 3809, 0)
+	0020 (3341, 3808, 0)
+	0021 (3341, 3807, 0)
+	0022 (3341, 3806, 0)
+	0023 (3341, 3805, 0)
+	0024 (3341, 3804, 0)
+	0025 (3341, 3803, 0)
+	0026 (3341, 3802, 0)
+	0027 (3341, 3801, 0)
+	0028 (3341, 3800, 0)
+	0029 (3341, 3799, 0)
+	0030 (3342, 3798, 0)
+	0031 (3342, 3797, 0)
+	0032 (3342, 3796, 0)
+	0033 (3342, 3795, 0)
+	0034 (3342, 3794, 0)
+	0035 (3342, 3793, 0)
+	0036 (3342, 3792, 0)
+	0037 (3342, 3791, 0)
+	0038 (3342, 3790, 0)
+	0039 (3342, 3789, 0)
+	0040 (3342, 3788, 0)
+	0041 (3342, 3787, 0)
+	0042 (3342, 3786, 0)
+	0043 (3342, 3785, 0)
+	0044 (3342, 3784, 0)
+	0045 (3342, 3783, 0)
+	0046 (3342, 3782, 0)
+	0047 (3342, 3781, 0)
+	0048 (3342, 3780, 0)
+	0049 (3342, 3779, 0)
+	0050 (3342, 3778, 0)
+	0051 (3342, 3777, 0)
+	0052 (3342, 3776, 0)
+	0053 (3342, 3775, 0)
+	0054 (3342, 3774, 0)
+	0055 (3342, 3773, 0)
+	0056 (3342, 3772, 0)
+	0057 (3342, 3771, 0)
+	0058 (3342, 3770, 0)
+	0059 (3342, 3769, 0)
+	0060 (3342, 3768, 0)
+	0061 (3342, 3767, 0)
+	0062 (3342, 3766, 0)
+	0063 (3343, 3765, 0)
+	0064 (3343, 3764, 0)
+	0065 (3344, 3763, 0)
+	0066 (3344, 3762, 0)
+	0067 (3344, 3761, 0)
+	0068 (3344, 3760, 0)
+	0069 (3344, 3759, 0)
 	=> transport type=TELEPORTATION_ITEM from=undefined to=(3293, 3163, 0) duration=4 display="Amulet of glory: Al Kharid"
-	0070 (3293, 3163, 0) bank-visited=false
+	0070 (3293, 3163, 0)
 	=> transport type=TELEPORTATION_SPELL from=undefined to=(3165, 3479, 0) duration=4 display="Varrock Teleport: GE"
-	0071 (3165, 3479, 0) bank-visited=false
-	0072 (3165, 3480, 0) bank-visited=false
-	0073 (3165, 3481, 0) bank-visited=false
-	0074 (3165, 3482, 0) bank-visited=false
-	0075 (3165, 3483, 0) bank-visited=false
-	0076 (3165, 3484, 0) bank-visited=false
-	0077 (3165, 3485, 0) bank-visited=false
-	0078 (3166, 3486, 0) bank-visited=false
-	0079 (3167, 3487, 0) bank-visited=false
-	0080 (3167, 3488, 0) bank-visited=false
-	0081 (3167, 3489, 0) bank-visited=false
-	0082 (3167, 3490, 0) bank-visited=false
-	0083 (3167, 3491, 0) bank-visited=false
-	0084 (3167, 3492, 0) bank-visited=false
-	0085 (3167, 3493, 0) bank-visited=false
-	0086 (3167, 3494, 0) bank-visited=false
-	0087 (3167, 3495, 0) bank-visited=false
-	0088 (3167, 3496, 0) bank-visited=false
-	0089 (3167, 3497, 0) bank-visited=false
-	0090 (3167, 3498, 0) bank-visited=false
-	0091 (3166, 3499, 0) bank-visited=false
-	0092 (3166, 3500, 0) bank-visited=false
-	0093 (3166, 3501, 0) bank-visited=false
-	0094 (3165, 3502, 0) bank-visited=false
-	0095 (3164, 3503, 0) bank-visited=false
-	0096 (3163, 3504, 0) bank-visited=false
-	0097 (3162, 3505, 0) bank-visited=false
-	0098 (3161, 3506, 0) bank-visited=false
-	0099 (3160, 3507, 0) bank-visited=false
-	0100 (3159, 3508, 0) bank-visited=false
-	0101 (3158, 3509, 0) bank-visited=false
+	0071 (3165, 3479, 0)
+	0072 (3165, 3480, 0)
+	0073 (3165, 3481, 0)
+	0074 (3165, 3482, 0)
+	0075 (3165, 3483, 0)
+	0076 (3165, 3484, 0)
+	0077 (3165, 3485, 0)
+	0078 (3166, 3486, 0)
+	0079 (3167, 3487, 0)
+	0080 (3167, 3488, 0)
+	0081 (3167, 3489, 0)
+	0082 (3167, 3490, 0)
+	0083 (3167, 3491, 0)
+	0084 (3167, 3492, 0)
+	0085 (3167, 3493, 0)
+	0086 (3167, 3494, 0)
+	0087 (3167, 3495, 0)
+	0088 (3167, 3496, 0)
+	0089 (3167, 3497, 0)
+	0090 (3167, 3498, 0)
+	0091 (3166, 3499, 0)
+	0092 (3166, 3500, 0)
+	0093 (3166, 3501, 0)
+	0094 (3165, 3502, 0)
+	0095 (3164, 3503, 0)
+	0096 (3163, 3504, 0)
+	0097 (3162, 3505, 0)
+	0098 (3161, 3506, 0)
+	0099 (3160, 3507, 0)
+	0100 (3159, 3508, 0)
+	0101 (3158, 3509, 0)

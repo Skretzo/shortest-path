@@ -1,5 +1,8 @@
+state:
+	inventory: 29271x1
+	levels: all=99
 route:
 	steps: 2
-	0000 (1389, 2901, 0) bank-visited=false
-	=> transport type=QUETZAL from=(1389, 2901, 0) to=(1585, 3053, 0) duration=6 display="Hunter Guild" object="Travel Renu 13350"
-	0001 (1585, 3053, 0) bank-visited=false
+	0000 (1389, 2901, 0)
+	=> transport type=QUETZAL_WHISTLE from=undefined to=(1585, 3053, 0) duration=4 display="Quetzal whistle: Hunter Guild"
+	0001 (1585, 3053, 0)

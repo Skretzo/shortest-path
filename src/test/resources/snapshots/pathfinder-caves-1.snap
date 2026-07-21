@@ -1,5 +1,7 @@
+state:
+	levels: all=99
 route:
 	steps: 2
-	0000 (2892, 3671, 0) bank-visited=false
+	0000 (2892, 3671, 0)
 	=> transport type=TRANSPORT from=(2892, 3671, 0) to=(2893, 10074, 2) duration=1 object="Enter Cave Entrance 3759"
-	0001 (2893, 10074, 2) bank-visited=false
+	0001 (2893, 10074, 2)

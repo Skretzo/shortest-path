@@ -1,6 +1,8 @@
+state:
+	levels: all=99
 route:
 	steps: 3
-	0000 (3136, 3525, 0) bank-visited=false
-	0001 (3136, 3524, 0) bank-visited=false
+	0000 (3136, 3525, 0)
+	0001 (3136, 3524, 0)
 	=> transport type=TELEPORTATION_MINIGAME from=undefined to=(2658, 3157, 0) duration=23 display="Fishing Trawler Minigame Teleport"
-	0002 (2658, 3157, 0) bank-visited=false
+	0002 (2658, 3157, 0)

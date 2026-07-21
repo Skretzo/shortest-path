@@ -1,7 +1,10 @@
+state:
+	inventory: 995x1000000
+	levels: all=99
 route:
 	steps: 3
-	0000 (1496, 3403, 0) bank-visited=false
+	0000 (1496, 3403, 0)
 	=> transport type=CHARTER_SHIP from=(1496, 3403, 0) to=(1455, 2968, 0) duration=6 display="Aldarin" object="Charter Trader Crewmember 1330"
-	0001 (1455, 2968, 0) bank-visited=false
+	0001 (1455, 2968, 0)
 	=> transport type=CHARTER_SHIP from=(1455, 2968, 0) to=(1808, 3679, 0) duration=6 display="Port Piscarilius" object="Charter Trader Crewmember 1330"
-	0002 (1808, 3679, 0) bank-visited=false
+	0002 (1808, 3679, 0)

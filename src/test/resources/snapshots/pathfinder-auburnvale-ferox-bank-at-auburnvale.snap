@@ -1,29 +1,33 @@
+state:
+	bank: 2552x1
+	levels: all=99
 route:
 	steps: 26
-	0000 (1411, 3361, 0) bank-visited=false
-	0001 (1412, 3360, 0) bank-visited=false
-	0002 (1413, 3359, 0) bank-visited=false
-	0003 (1414, 3358, 0) bank-visited=false
-	0004 (1415, 3357, 0) bank-visited=false
-	0005 (1416, 3356, 0) bank-visited=false
+	0000 (1411, 3361, 0)
+	0001 (1412, 3360, 0)
+	0002 (1413, 3359, 0)
+	0003 (1414, 3358, 0)
+	0004 (1415, 3357, 0)
+	0005 (1416, 3356, 0)
+	=> bank visited
 	=> unlabelled transport or jump
-	0006 (3151, 3635, 0) bank-visited=true
-	0007 (3151, 3634, 0) bank-visited=true
-	0008 (3151, 3633, 0) bank-visited=true
-	0009 (3150, 3632, 0) bank-visited=true
-	0010 (3149, 3631, 0) bank-visited=true
-	0011 (3148, 3630, 0) bank-visited=true
-	0012 (3147, 3630, 0) bank-visited=true
-	0013 (3146, 3630, 0) bank-visited=true
-	0014 (3145, 3630, 0) bank-visited=true
-	0015 (3144, 3630, 0) bank-visited=true
-	0016 (3143, 3630, 0) bank-visited=true
-	0017 (3142, 3630, 0) bank-visited=true
-	0018 (3141, 3630, 0) bank-visited=true
-	0019 (3140, 3630, 0) bank-visited=true
-	0020 (3139, 3630, 0) bank-visited=true
-	0021 (3138, 3630, 0) bank-visited=true
-	0022 (3137, 3630, 0) bank-visited=true
-	0023 (3136, 3630, 0) bank-visited=true
-	0024 (3135, 3630, 0) bank-visited=true
-	0025 (3134, 3629, 0) bank-visited=true
+	0006 (3151, 3635, 0)
+	0007 (3151, 3634, 0)
+	0008 (3151, 3633, 0)
+	0009 (3150, 3632, 0)
+	0010 (3149, 3631, 0)
+	0011 (3148, 3630, 0)
+	0012 (3147, 3630, 0)
+	0013 (3146, 3630, 0)
+	0014 (3145, 3630, 0)
+	0015 (3144, 3630, 0)
+	0016 (3143, 3630, 0)
+	0017 (3142, 3630, 0)
+	0018 (3141, 3630, 0)
+	0019 (3140, 3630, 0)
+	0020 (3139, 3630, 0)
+	0021 (3138, 3630, 0)
+	0022 (3137, 3630, 0)
+	0023 (3136, 3630, 0)
+	0024 (3135, 3630, 0)
+	0025 (3134, 3629, 0)
