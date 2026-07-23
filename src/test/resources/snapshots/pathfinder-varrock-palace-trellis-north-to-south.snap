@@ -1,0 +1,7 @@
+state:
+	levels: all=99
+route:
+	steps: 2
+	0000 (3228, 3472, 0)
+	=> transport type=TRANSPORT from=(3228, 3472, 0) to=(3228, 3470, 0) duration=2 object="Climb Trellis 2149"
+	0001 (3228, 3470, 0)

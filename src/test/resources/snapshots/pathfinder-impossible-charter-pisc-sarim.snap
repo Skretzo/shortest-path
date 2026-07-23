@@ -1,0 +1,10 @@
+state:
+	inventory: 995x1000000
+	levels: all=99
+route:
+	steps: 3
+	0000 (1808, 3679, 0)
+	=> transport type=CHARTER_SHIP from=(1808, 3679, 0) to=(1455, 2968, 0) duration=6 display="Aldarin" object="Charter Trader Crewmember 1330"
+	0001 (1455, 2968, 0)
+	=> transport type=CHARTER_SHIP from=(1455, 2968, 0) to=(3038, 3192, 0) duration=6 display="Port Sarim" object="Charter Trader Crewmember 1330"
+	0002 (3038, 3192, 0)
