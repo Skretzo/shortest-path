@@ -1264,7 +1264,7 @@ public class PathfinderTest
 
 		assertEquals(181, withVarrockTeleport.getPath().size());
 		assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
-			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: GE"));
+			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: Grand Exchange"));
 	}
 
 	@Test
