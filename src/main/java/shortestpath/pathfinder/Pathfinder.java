@@ -1,8 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import lombok.Getter;
@@ -46,8 +44,9 @@ public class Pathfinder implements Runnable
 	private int bestTravelledDistance = Integer.MAX_VALUE;
 	private int bestX = Integer.MAX_VALUE;
 	private int bestY = Integer.MAX_VALUE;
-	// Cheapest explored node within the configured unreachable distance, keyed by target.
-	private final Map<Integer, Integer> shortestAcceptedNodes = new HashMap<>();
+	// First explored node within the configured unreachable distance.
+	private int shortestAcceptedNode = NodeGraph.NO_NODE;
+	private int shortestAcceptedTarget = WorldPointUtil.UNDEFINED;
 	private int reachedTarget = WorldPointUtil.UNDEFINED;
 	private PathTerminationReason terminationReason;
 	/**
@@ -231,14 +230,6 @@ public class Pathfinder implements Runnable
 		for (int target : targets)
 		{
 			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
-			if (targets.size() > 1 && WorldPointUtil.distanceBetween(target, packedPosition) <= config.getUnreachableTargetDistance())
-			{
-				Integer acceptedNode = shortestAcceptedNodes.get(target);
-				if (acceptedNode == null || travelledDistance < graph.cost(acceptedNode))
-				{
-					shortestAcceptedNodes.put(target, node);
-				}
-			}
 			int x = WorldPointUtil.unpackWorldX(packedPosition);
 			int y = WorldPointUtil.unpackWorldY(packedPosition);
 			if ((remainingDistance < bestRemainingDistance) ||
@@ -257,6 +248,24 @@ public class Pathfinder implements Runnable
 		}
 
 		return update;
+	}
+
+	private void updateCustomPathWhenUnreachable(int node, int packedPosition)
+	{
+		if (targets.size() <= 1 || shortestAcceptedNode != NodeGraph.NO_NODE)
+		{
+			return;
+		}
+
+		for (int target : targets)
+		{
+			if (WorldPointUtil.distanceBetween(target, packedPosition) <= config.getUnreachableTargetDistance())
+			{
+				shortestAcceptedNode = node;
+				shortestAcceptedTarget = target;
+				return;
+			}
+		}
 	}
 
 	/**
@@ -336,13 +345,10 @@ public class Pathfinder implements Runnable
 				{
 					bestLastNode = node;
 					reachedTarget = nodePacked;
-					for (Map.Entry<Integer, Integer> accepted : shortestAcceptedNodes.entrySet())
+					if (shortestAcceptedNode != NodeGraph.NO_NODE && graph.cost(shortestAcceptedNode) < graph.cost(bestLastNode))
 					{
-						if (accepted.getKey() != nodePacked && graph.cost(accepted.getValue()) < graph.cost(bestLastNode))
-						{
-							bestLastNode = accepted.getValue();
-							reachedTarget = accepted.getKey();
-						}
+						bestLastNode = shortestAcceptedNode;
+						reachedTarget = shortestAcceptedTarget;
 					}
 					pathNeedsUpdate = true;
 					terminationReason = PathTerminationReason.TARGET_REACHED;
@@ -353,6 +359,7 @@ public class Pathfinder implements Runnable
 				{
 					cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 				}
+				updateCustomPathWhenUnreachable(node, nodePacked);
 			}
 
 			if (System.currentTimeMillis() > cutoffTimeMillis)
