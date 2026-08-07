@@ -345,7 +345,7 @@ public class Pathfinder implements Runnable
 				{
 					bestLastNode = node;
 					reachedTarget = nodePacked;
-					if (shortestAcceptedNode != NodeGraph.NO_NODE && graph.cost(shortestAcceptedNode) < graph.cost(bestLastNode))
+					if (shortestAcceptedNode != NodeGraph.NO_NODE)
 					{
 						bestLastNode = shortestAcceptedNode;
 						reachedTarget = shortestAcceptedTarget;
