@@ -5306,9 +5306,8 @@
 2464 4818 0	2858 3378 0	Enter Portal 34755						1	
 									
 # Death Altar									
-# todo: destination is estimated									
-3050 4837 0	2209 4834 0	Exit-through Death rift 25382			Mourning's End Part II				
-2208 4830 0	1860 4639 0	Enter Portal 34758						1	
+3050 4837 0	2205 4838 0	Exit-through Death rift 25382			Mourning's End Part II				
+2208 4830 0	1862 4639 0	Enter Portal 34758						1	
 									
 # Water Altar									
 3051 4833 0	2714 4838 0	Exit-through Water rift 25382							
