@@ -5040,8 +5040,9 @@
 2522 3493 1	2522 3493 0	Climb-down Ladder 16679						2	
 									
 # Ancient Cavern (Baxtorian Falls Whirlpool)									
-2511 3511 0	1768 5366 0	Jump-into Whirlpool 25274				3759>1		2	
-2512 3511 0	1768 5366 0	Jump-into Whirlpool 25274				3759>1		2	
+2511 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2	
+2512 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2	
+1768 5366 1	1772 5366 0	Climb-down Stairs 25338							
 1742 5352 0	2531 3446 0	Ride Aged log 25216						2	
 1761 5362 0	2531 3446 0	Ride Aged log 25216						2	
 									
