@@ -717,6 +717,68 @@
 2458 3311 1	2458 3311 0	Climb-down Ladder 16679						2	
 2458 3311 0	2458 3311 1	Climb-up Ladder 16683						2	
 									
+# Underground pass (Iban's Lair)
+2161 4724 1	2157 4724 1	Cross 3254 Bridge						5	
+2157 4724 1	2161 4724 1	Cross 3254 Bridge						5	
+2155 4721 1	2155 4717 1	Cross 3254 Bridge						5	
+2145 4720 1	2145 4716 1	Cross 3254 Bridge						5	
+2145 4716 1	2145 4720 1	Cross 3254 Bridge						5	
+2155 4707 1	2155 4703 1	Cross 3255 Bridge						5	
+2155 4703 1	2155 4707 1	Cross 3255 Bridge						5	
+2154 4693 1	2154 4689 1	Cross 3254 Bridge						5	
+2154 4689 1	2154 4693 1	Cross 3254 Bridge						5	
+2120 4686 1	2124 4686 1	Cross 3255 Bridge						5	
+2124 4686 1	2120 4686 1	Cross 3255 Bridge						5	
+2163 4686 1	2167 4686 1	Cross 3255 Bridge						5	
+2167 4686 1	2163 4686 1	Cross 3255 Bridge						5	
+2162 4666 1	2162 4662 1	Cross 3254 Bridge						5	
+2162 4662 1	2162 4666 1	Cross 3255 Bridge						5	
+2161 4657 1	2161 4653 1	Cross 3255 Bridge						5	
+2161 4653 1	2161 4657 1	Cross 3255 Bridge						5	
+2161 4640 1	2161 4636 1	Cross 3254 Bridge						5	
+2161 4636 1	2161 4640 1	Cross 3254 Bridge						5	
+2160 4628 1	2160 4624 1	Cross 3255 Bridge						5	
+2160 4624 1	2160 4628 1	Cross 3255 Bridge						5	
+2151 4614 1	2147 4614 1	Cross 3254 Bridge						5	
+2147 4614 1	2151 4614 1	Cross 3254 Bridge						5	
+2123 4619 1	2123 4615 1	Cross 3255 Bridge						5	
+2123 4615 1	2123 4619 1	Cross 3255 Bridge						5	
+2126 4610 1	2130 4610 1	Cross 3254 Bridge						5	
+2130 4610 1	2126 4610 1	Cross 3254 Bridge						5	
+2142 4604 1	2146 4604 1	Cross 3255 Bridge						5	
+2146 4604 1	2142 4604 1	Cross 3255 Bridge						5	
+2161 4602 1	2161 4598 1	Cross 3255 Bridge						5	
+2161 4598 1	2161 4602 1	Cross 3255 Bridge						5	
+2127 4595 1	2127 4591 1	Cross 3254 Bridge						5	
+2127 4591 1	2127 4595 1	Cross 3254 Bridge						5	
+2123 4585 1	2123 4581 1	Cross 3255 Bridge						5	
+2123 4581 1	2123 4585 1	Cross 3255 Bridge						5	
+2135 4584 1	2139 4584 1	Cross 3254 Bridge						5	
+2139 4584 1	2135 4584 1	Cross 3254 Bridge						5	
+2146 4583 1	2150 4583 1	Cross 3255 Bridge						5	
+2150 4583 1	2146 4583 1	Cross 3255 Bridge						5	
+2155 4582 1	2159 4582 1	Cross 3255 Bridge						5	
+2159 4582 1	2155 4582 1	Cross 3255 Bridge						5	
+2142 4565 1	2142 4561 1	Cross 3254 Bridge						5	
+2142 4561 1	2142 4565 1	Cross 3254 Bridge						5	
+2129 4566 1	2125 4566 1	Cross 3255 Bridge						5	
+2125 4566 1	2129 4566 1	Cross 3255 Bridge						5	
+2145 4648 1	2014 4712 1	Open 3333 Door						1	
+2145 4647 1	2014 4711 1	Open 3334 Door						1	
+2010 4711 1	2343 9622 0	Climb-down 4004 Well						5	
+2010 4712 1	2343 9622 0	Climb-down 4004 Well						5	
+2150 4546 1	2336 9794 0	Ascend 3223 Cave						5	
+
+# Underground Pass (Dwarf Area)
+# Note: There's another copy of this area at ~(2150,6100) that's used before the battle sequence in SOTE. 
+#       Not including the transport to get to that here, transport out is included though.
+1857 4639 0	2311 9793 0	Enter 9977 Tunnel			Mourning's End Part II			5	
+2305 9915 0	2113 4729 1	Ascend 3223 Cave						5	
+2311 9793 0	1857 4639 0	Descend 9974 Cave						5	
+2336 9794 0	2150 4546 1	Ascend 3223 Cave						5	
+2464 6082 0	2150 4546 1	Ascend 3223 Cave						5	
+2439 6081 0	1857 4639 0	Descend 9974 Cave						5	
+
 # Clock tower									
 2571 3240 0	2571 3241 1	Climb-up Staircase 16671						1	
 2571 3241 0	2571 3241 1	Climb-up Staircase 16671						1	
