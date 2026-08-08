@@ -717,7 +717,7 @@
 2458 3311 1	2458 3311 0	Climb-down Ladder 16679						2	
 2458 3311 0	2458 3311 1	Climb-up Ladder 16683						2	
 									
-# Underground pass (Iban's Lair)
+# Underground pass (Iban's Lair)									
 2161 4724 1	2157 4724 1	Cross 3254 Bridge						5	
 2157 4724 1	2161 4724 1	Cross 3254 Bridge						5	
 2155 4721 1	2155 4717 1	Cross 3254 Bridge						5	
@@ -769,9 +769,9 @@
 2010 4712 1	2343 9622 0	Climb-down 4004 Well						5	
 2150 4546 1	2336 9794 0	Ascend 3223 Cave						5	
 
-# Underground Pass (Dwarf Area)
-# Note: There's another copy of this area at ~(2150,6100) that's used before the battle sequence in SOTE. 
-#       Not including the transport to get to that here, transport out is included though.
+# Underground Pass (Dwarf Area)									
+# Note: There's another copy of this area at ~(2150,6100) that's used before the battle sequence in SOTE. 									
+#       Not including the transport to get to that here, transport out is included though.									
 1857 4639 0	2311 9793 0	Enter 9977 Tunnel			Mourning's End Part II			5	
 2305 9915 0	2113 4729 1	Ascend 3223 Cave						5	
 2311 9793 0	1857 4639 0	Descend 9974 Cave						5	
