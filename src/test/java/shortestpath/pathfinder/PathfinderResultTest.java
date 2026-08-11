@@ -72,7 +72,7 @@ public class PathfinderResultTest
 		int start = point(3139, 3445);
 		int nearbyPieDish = point(3142, 3447);
 		int distantTarget = WorldPointUtil.packWorldPoint(2813, 3449, 1);
-		PathfinderConfig config = configWithCutoff(100, 3);
+		PathfinderConfig config = configWithCutoff(100, 4);
 
 		Pathfinder pathfinder = new Pathfinder(config, start, Set.of(nearbyPieDish, distantTarget));
 		pathfinder.run();
@@ -81,6 +81,6 @@ public class PathfinderResultTest
 		assertEquals(nearbyPieDish, result.getTarget());
 		assertTrue(result.isReached());
 		assertTrue(result.getClosestReachedPoint() != nearbyPieDish);
-		assertTrue(WorldPointUtil.distanceBetween(nearbyPieDish, result.getClosestReachedPoint()) <= config.getUnreachableTargetDistance());
+		assertTrue(WorldPointUtil.distanceBetween(nearbyPieDish, result.getClosestReachedPoint(), WorldPointUtil.MANHATTAN_DISTANCE_METRIC) <= config.getUnreachableTargetDistance());
 	}
 }

@@ -259,7 +259,7 @@ public class Pathfinder implements Runnable
 
 		for (int target : targets)
 		{
-			if (WorldPointUtil.distanceBetween(target, packedPosition) <= config.getUnreachableTargetDistance())
+			if (WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.MANHATTAN_DISTANCE_METRIC) <= config.getUnreachableTargetDistance())
 			{
 				shortestAcceptedNode = node;
 				shortestAcceptedTarget = target;
