@@ -41,6 +41,7 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
+import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
@@ -56,6 +57,7 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
+import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
@@ -116,6 +118,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|use\\w+|cost\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
+	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
@@ -182,6 +185,8 @@ public class ShortestPathPlugin extends Plugin
 	private WorldMapPointManager worldMapPointManager;
 	@Inject
 	private KeyManager keyManager;
+	@Inject
+	private PortalNexusKeybinds portalNexusKeybinds;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -344,6 +349,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
+		portalNexusKeybinds.loadFromProfile();
 	}
 
 	@Override
@@ -539,6 +545,12 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
+	{
+		portalNexusKeybinds.loadFromProfile();
+	}
+
+	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
 		if (!CONFIG_GROUP.equals(event.getNamespace()))
@@ -658,7 +670,7 @@ public class ShortestPathPlugin extends Plugin
 					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
 					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
 					transportObjectInfos.add(transport.getObjectInfo());
-					transportDisplayInfos.add(transport.getDisplayInfo());
+					transportDisplayInfos.add(formatTransportDisplay(transport));
 				}
 			}
 			data.put("origin", transportOrigins);
@@ -678,6 +690,9 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		portalNexusKeybinds.refreshFromDialog(client);
+		portalNexusKeybinds.persistIfDirty();
+
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
 			if (pendingTasks.get(i).check(client.getTickCount()))
@@ -841,11 +856,43 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onScriptPostFired(ScriptPostFired event)
+	{
+		if (event.getScriptId() != PortalNexusKeybinds.TELENEXUS_CREATE_TELELINE)
+		{
+			return;
+		}
+		Widget widget = client.getScriptActiveWidget();
+		if (widget != null)
+		{
+			portalNexusKeybinds.putFromDialogLine(widget.getText());
+		}
+	}
+
+	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
 		if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
 		{
 			fairyRingPanelOpen = true;
+		}
+
+		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
+			|| event.getGroupId() == InterfaceID.TELENEXUS)
+		{
+			final int[] attempts = {0};
+			clientThread.invokeLater(() ->
+			{
+				attempts[0]++;
+				boolean dialogOpen = client.getWidget(InterfaceID.TelenexusTeleport.UNIVERSE) != null
+					|| client.getWidget(InterfaceID.Telenexus.UNIVERSE) != null;
+				if (!dialogOpen)
+				{
+					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
+				}
+				return portalNexusKeybinds.refreshFromDialog(client)
+					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
+			});
 		}
 
 		// Populate spirit tree cache, but only once.
@@ -1149,6 +1196,20 @@ public class ShortestPathPlugin extends Plugin
 		return path.get(index + 1);
 	}
 
+	public String formatTransportDisplay(Transport transport)
+	{
+		String info = transport.getDisplayInfo();
+		if (info == null || info.isEmpty())
+		{
+			return info;
+		}
+		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
+		{
+			return portalNexusKeybinds.apply(info);
+		}
+		return info;
+	}
+
 	/**
 	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
 	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
@@ -1199,7 +1260,7 @@ public class ShortestPathPlugin extends Plugin
 				PathStep nextStep = path.get(i + 1);
 				for (Transport transport : transportsForEdge(currentStep, nextStep))
 				{
-					String exitInfo = transport.getDisplayInfo();
+					String exitInfo = formatTransportDisplay(transport);
 					if (exitInfo != null && !exitInfo.isEmpty())
 					{
 						TransportType exitType = transport.getType();
