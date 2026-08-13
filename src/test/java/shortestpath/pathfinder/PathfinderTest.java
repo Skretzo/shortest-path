@@ -1300,7 +1300,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
-			771,
+			769,
 			origin,
 			destination);
 
