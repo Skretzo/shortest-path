@@ -44,6 +44,9 @@ public class Pathfinder implements Runnable
 	private int bestTravelledDistance = Integer.MAX_VALUE;
 	private int bestX = Integer.MAX_VALUE;
 	private int bestY = Integer.MAX_VALUE;
+	// First explored node within the configured unreachable distance.
+	private int shortestAcceptedNode = NodeGraph.NO_NODE;
+	private int shortestAcceptedTarget = WorldPointUtil.UNDEFINED;
 	private int reachedTarget = WorldPointUtil.UNDEFINED;
 	private PathTerminationReason terminationReason;
 	/**
@@ -247,6 +250,24 @@ public class Pathfinder implements Runnable
 		return update;
 	}
 
+	private void updateCustomPathWhenUnreachable(int node, int packedPosition)
+	{
+		if (targets.size() <= 1 || shortestAcceptedNode != NodeGraph.NO_NODE)
+		{
+			return;
+		}
+
+		for (int target : targets)
+		{
+			if (WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.MANHATTAN_DISTANCE_METRIC) <= config.getUnreachableTargetDistance())
+			{
+				shortestAcceptedNode = node;
+				shortestAcceptedTarget = target;
+				return;
+			}
+		}
+	}
+
 	/**
 	 * Update wilderness level based on the current node position.
 	 */
@@ -323,8 +344,13 @@ public class Pathfinder implements Runnable
 				if (targets.contains(nodePacked))
 				{
 					bestLastNode = node;
-					pathNeedsUpdate = true;
 					reachedTarget = nodePacked;
+					if (shortestAcceptedNode != NodeGraph.NO_NODE)
+					{
+						bestLastNode = shortestAcceptedNode;
+						reachedTarget = shortestAcceptedTarget;
+					}
+					pathNeedsUpdate = true;
 					terminationReason = PathTerminationReason.TARGET_REACHED;
 					break;
 				}
@@ -333,6 +359,7 @@ public class Pathfinder implements Runnable
 				{
 					cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 				}
+				updateCustomPathWhenUnreachable(node, nodePacked);
 			}
 
 			if (System.currentTimeMillis() > cutoffTimeMillis)
