@@ -1173,6 +1173,35 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testFaladorTeleportWithMistStaff()
+	{
+		when(config.useTeleportationSpells()).thenReturn(true);
+		setupInventory(
+			new Item(ItemID.MIST_BATTLESTAFF, 1),
+			new Item(ItemID.LAWRUNE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		assertTrue("Mist battlestaff should supply both air and water for Falador Teleport",
+			hasUsableTeleport("Falador Teleport"));
+	}
+
+	@Test
+	public void testHouseTeleportWithDustStaff()
+	{
+		when(config.useTeleportationSpells()).thenReturn(true);
+		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		setupInventory(
+			new Item(ItemID.DUST_BATTLESTAFF, 1),
+			new Item(ItemID.LAWRUNE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		assertTrue("Dust battlestaff should supply both air and earth for Teleport to House",
+			hasUsableTeleport("Teleport to House") || hasUsableTeleport("Teleport to House (Inside)"));
+	}
+
+	@Test
 	public void testWildernessRouteWithoutTeleportsWalksOut()
 	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
@@ -1919,6 +1948,18 @@ public class PathfinderTest
 				{
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	private boolean hasUsableTeleport(String displayInfo)
+	{
+		for (Transport transport : pathfinderConfig.getUsableTeleports(false))
+		{
+			if (displayInfo.equals(transport.getDisplayInfo()))
+			{
+				return true;
 			}
 		}
 		return false;

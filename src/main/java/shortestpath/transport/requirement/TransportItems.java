@@ -3,7 +3,10 @@ package shortestpath.transport.requirement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import lombok.Getter;
 
@@ -64,6 +67,138 @@ public class TransportItems
 	public int size()
 	{
 		return requirements.size();
+	}
+
+	/**
+	 * Returns whether the player can satisfy every item requirement at once.
+	 *
+	 * <p>Runes (and other counted items) are applied first, then at most one offhand
+	 * (tome), then at most one staff. Combination staves may cover multiple leftover
+	 * rune types because the same item id appears in more than one staff list. Two
+	 * different staves cannot be used together.
+	 */
+	public boolean isSatisfiedBy(Map<Integer, Integer> itemCounts, Set<Integer> currencies, int currencyThreshold)
+	{
+		if (requirements.isEmpty())
+		{
+			return true;
+		}
+
+		List<ItemRequirement> leftover = new ArrayList<>();
+		boolean usedOffhand = false;
+		for (ItemRequirement req : requirements)
+		{
+			Boolean itemsResult = satisfiedByItems(req, itemCounts, currencies, currencyThreshold);
+			if (itemsResult == null)
+			{
+				return false;
+			}
+			if (itemsResult)
+			{
+				continue;
+			}
+			if (!usedOffhand && hasOwnedSubstitute(req.getOffhandIds(), itemCounts, req.getQuantity(), true))
+			{
+				usedOffhand = true;
+				continue;
+			}
+			leftover.add(req);
+		}
+
+		if (leftover.isEmpty())
+		{
+			return true;
+		}
+		return existsOneStaffCovering(leftover, itemCounts);
+	}
+
+	/**
+	 * {@code true} if counted items pay this requirement, {@code false} if not,
+	 * {@code null} if the player has the items but they exceed the currency threshold.
+	 */
+	private static Boolean satisfiedByItems(
+		ItemRequirement req,
+		Map<Integer, Integer> itemCounts,
+		Set<Integer> currencies,
+		int currencyThreshold)
+	{
+		int[] itemIds = req.getItemIds();
+		if (itemIds == null)
+		{
+			return false;
+		}
+		int requiredQuantity = req.getQuantity();
+		for (int itemId : itemIds)
+		{
+			if (!hasQuantity(itemCounts, itemId, requiredQuantity, false))
+			{
+				continue;
+			}
+			if (currencies != null && currencies.contains(itemId) && requiredQuantity > currencyThreshold)
+			{
+				return null;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	private static boolean existsOneStaffCovering(List<ItemRequirement> leftover, Map<Integer, Integer> itemCounts)
+	{
+		Set<Integer> candidates = null;
+		for (ItemRequirement req : leftover)
+		{
+			Set<Integer> ownedStaves = ownedIds(req.getStaffIds(), itemCounts, req.getQuantity(), true);
+			if (ownedStaves.isEmpty())
+			{
+				return false;
+			}
+			if (candidates == null)
+			{
+				candidates = ownedStaves;
+			}
+			else
+			{
+				candidates.retainAll(ownedStaves);
+			}
+			if (candidates.isEmpty())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static boolean hasOwnedSubstitute(int[] ids, Map<Integer, Integer> itemCounts, int requiredQuantity, boolean unlimited)
+	{
+		return !ownedIds(ids, itemCounts, requiredQuantity, unlimited).isEmpty();
+	}
+
+	private static Set<Integer> ownedIds(int[] ids, Map<Integer, Integer> itemCounts, int requiredQuantity, boolean unlimited)
+	{
+		if (ids == null || ids.length == 0)
+		{
+			return Set.of();
+		}
+		Set<Integer> owned = new HashSet<>();
+		for (int itemId : ids)
+		{
+			if (hasQuantity(itemCounts, itemId, requiredQuantity, unlimited))
+			{
+				owned.add(itemId);
+			}
+		}
+		return owned;
+	}
+
+	private static boolean hasQuantity(Map<Integer, Integer> itemCounts, int itemId, int requiredQuantity, boolean unlimited)
+	{
+		int quantity = itemCounts.getOrDefault(itemId, 0);
+		if (unlimited)
+		{
+			return requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0;
+		}
+		return requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0;
 	}
 
 	// Legacy getters for backwards compatibility
