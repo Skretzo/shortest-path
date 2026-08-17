@@ -9,6 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.parser.QuestLists;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
@@ -573,6 +574,60 @@ public class TransportLoaderTest
 		Set<Quest> quests = transport.getQuests();
 		Assert.assertTrue("Should have no quest requirements for invalid quest", quests.isEmpty());
 		Assert.assertFalse("Should not be quest locked", transport.isQuestLocked());
+	}
+
+	@Test
+	public void testAllQuestsTokenExcludesMiniquests()
+	{
+		String contents = "# Origin\tDestination\tQuests\n" +
+			"3200 3200 0\t3300 3300 0\tAll Quests\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		Transport transport = getFirstTransport(transports.get(origin));
+
+		Set<Quest> quests = transport.getQuests();
+		Assert.assertTrue("Should be quest locked", transport.isQuestLocked());
+		Assert.assertTrue("Should require Cook's Assistant", quests.contains(Quest.COOKS_ASSISTANT));
+		Assert.assertTrue("Should require While Guthix Sleeps", quests.contains(Quest.WHILE_GUTHIX_SLEEPS));
+		Assert.assertFalse("Should not require Mage Arena II miniquest", quests.contains(Quest.MAGE_ARENA_II));
+		Assert.assertFalse("Should not require Daddy's Home miniquest", quests.contains(Quest.DADDYS_HOME));
+		Assert.assertEquals(
+			"Should require every quest except miniquests",
+			Quest.values().length - QuestLists.MINIQUESTS.size(),
+			quests.size());
+	}
+
+	@Test
+	public void testQuestPointCapeTeleportRequiresAllQuestsNotQuestPoints()
+	{
+		HashMap<Integer, Set<Transport>> allTransports = TransportLoader.loadAllFromResources();
+		Transport cape = null;
+		for (Set<Transport> originTransports : allTransports.values())
+		{
+			for (Transport transport : originTransports)
+			{
+				if ("Quest point cape: Teleport".equals(transport.getDisplayInfo()))
+				{
+					cape = transport;
+					break;
+				}
+			}
+			if (cape != null)
+			{
+				break;
+			}
+		}
+
+		Assert.assertNotNull("Quest point cape teleport should be loaded", cape);
+		int questPointsIndex = Skill.values().length + 2;
+		Assert.assertEquals("Quest points should not be required", 0, cape.getSkillLevels()[questPointsIndex]);
+		Assert.assertTrue("Cape teleport should be quest locked", cape.isQuestLocked());
+		Assert.assertTrue("Cape teleport should require all quests",
+			cape.getQuests().containsAll(QuestLists.ALL_QUESTS_EXCLUDING_MINIQUESTS));
+		Assert.assertFalse("Cape teleport should not require miniquests",
+			cape.getQuests().contains(Quest.MAGE_ARENA_II));
 	}
 
 	@Test
