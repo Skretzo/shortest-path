@@ -1173,6 +1173,37 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testQuestCapeTeleportRequiresCapeAndCompletedQuests()
+	{
+		setupInventory(new Item(ItemID.SKILLCAPE_QP, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertTrue("Quest cape in inventory with all quests finished should be usable",
+			hasUsableTeleport("Quest point cape: Teleport"));
+
+		setupConfig(QuestState.NOT_STARTED, 99, TeleportationItem.INVENTORY);
+		assertFalse("Quest cape should not teleport when quests are incomplete",
+			hasUsableTeleport("Quest point cape: Teleport"));
+	}
+
+	@Test
+	public void testQuestCapeInBankRequiresCompletedQuests()
+	{
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.SKILLCAPE_QP, 1));
+		assertTrue("Quest cape in bank with all quests finished should be usable after banking",
+			hasUsableTeleport("Quest point cape: Teleport", true));
+
+		setupConfigWithBank(QuestState.NOT_STARTED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.SKILLCAPE_QP, 1));
+		assertFalse("Quest cape in bank should not be suggested when quests are incomplete",
+			hasUsableTeleport("Quest point cape: Teleport", true));
+	}
+
+	@Test
 	public void testWildernessRouteWithoutTeleportsWalksOut()
 	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
@@ -1818,7 +1849,12 @@ public class PathfinderTest
 
 	private void setupConfigWithBank(TeleportationItem useTeleportationItems, Item... bankItems)
 	{
-		pathfinderConfig = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
+		setupConfigWithBank(QuestState.FINISHED, useTeleportationItems, bankItems);
+	}
+
+	private void setupConfigWithBank(QuestState questState, TeleportationItem useTeleportationItems, Item... bankItems)
+	{
+		pathfinderConfig = new TestPathfinderConfig(client, config, questState, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
@@ -1895,6 +1931,23 @@ public class PathfinderTest
 				{
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	private boolean hasUsableTeleport(String displayInfo)
+	{
+		return hasUsableTeleport(displayInfo, false);
+	}
+
+	private boolean hasUsableTeleport(String displayInfo, boolean bankVisited)
+	{
+		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
+		{
+			if (displayInfo.equals(transport.getDisplayInfo()))
+			{
+				return true;
 			}
 		}
 		return false;
