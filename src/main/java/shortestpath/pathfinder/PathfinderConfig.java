@@ -41,7 +41,6 @@ import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 import shortestpath.transport.parser.VarRequirement;
-import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
@@ -1043,60 +1042,7 @@ public class PathfinderConfig
 			}
 		}
 
-		boolean usingStaff = false;
-		boolean usingOffhand = false;
-		for (ItemRequirement req : transportItems.getRequirements())
-		{
-			boolean missing = true;
-			int requiredQuantity = req.getQuantity();
-			if (req.getItemIds() != null)
-			{
-				for (int itemId : req.getItemIds())
-				{
-					int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-					if (requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0)
-					{
-						if (CURRENCIES.contains(itemId) && requiredQuantity > currencyThreshold)
-						{
-							return false;
-						}
-						missing = false;
-						break;
-					}
-				}
-			}
-			if (missing && !usingStaff && req.getStaffIds() != null)
-			{
-				for (int itemId : req.getStaffIds())
-				{
-					int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-					if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0)
-					{
-						usingStaff = true;
-						missing = false;
-						break;
-					}
-				}
-			}
-			if (missing && !usingOffhand && req.getOffhandIds() != null)
-			{
-				for (int itemId : req.getOffhandIds())
-				{
-					int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-					if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0)
-					{
-						usingOffhand = true;
-						missing = false;
-						break;
-					}
-				}
-			}
-			if (missing)
-			{
-				return false;
-			}
-		}
-		return true;
+		return transportItems.isSatisfiedBy(itemsAndQuantities, CURRENCIES, currencyThreshold);
 	}
 
 	/**
