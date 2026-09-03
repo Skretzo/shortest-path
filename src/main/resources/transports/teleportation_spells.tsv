@@ -3,7 +3,7 @@
 # Varrock Teleport								
 3213 3424 0	AIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1	25 Magic		4	Varrock Teleport	20	4070=0	
 # Varbit 4480 is DIARY_VARROCK_MEDIUM								
-3165 3479 0	AIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1	25 Magic		4	Varrock Teleport: GE	20	4070=0;4480=1	
+3165 3479 0	AIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1	25 Magic		4	Varrock Teleport: Grand Exchange	20	4070=0;4480=1	
 								
 # Lumbridge Teleport								
 3221 3218 0	AIR_RUNE=3&&EARTH_RUNE=1&&LAW_RUNE=1	31 Magic		4	Lumbridge Teleport	20	4070=0	
