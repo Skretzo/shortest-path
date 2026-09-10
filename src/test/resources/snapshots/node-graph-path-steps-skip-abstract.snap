@@ -1,0 +1,6 @@
+route:
+	steps: 3
+	0000 (3200, 3200, 0)
+	0001 (3201, 3200, 0)
+	=> unlabelled transport or jump
+	0002 (2800, 3400, 0)

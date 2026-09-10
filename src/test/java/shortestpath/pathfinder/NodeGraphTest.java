@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import shortestpath.SnapshotAssertions;
 import shortestpath.WorldPointUtil;
 
 /**
@@ -131,6 +132,8 @@ public class NodeGraphTest
 
 		assertEquals(c, graph.getClosestTilePosition(teleportDest));
 		assertEquals(b, graph.getClosestTilePosition(abstractNode));
+
+		SnapshotAssertions.assertRouteSnapshot("node-graph-path-steps-skip-abstract", steps);
 	}
 
 	@Test

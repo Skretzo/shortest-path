@@ -1,6 +1,9 @@
 package shortestpath.transport;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Quest;
@@ -8,6 +11,7 @@ import net.runelite.api.Skill;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import shortestpath.SnapshotAssertions;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
@@ -34,6 +38,19 @@ public class TransportLoaderTest
 		return transportSet.iterator().next();
 	}
 
+	private void assertTransportSnapshot(String snapshotName)
+	{
+		List<Transport> sortedTransports = new ArrayList<>();
+		for (Set<Transport> transportSet : transports.values())
+		{
+			sortedTransports.addAll(transportSet);
+		}
+		sortedTransports.sort(Comparator.comparingInt(Transport::getOrigin)
+			.thenComparingInt(Transport::getDestination)
+			.thenComparing(transport -> transport.getType().name()));
+		SnapshotAssertions.assertSnapshot(snapshotName, sortedTransports);
+	}
+
 	@Test
 	public void testBasicTransportParsing()
 	{
@@ -54,6 +71,7 @@ public class TransportLoaderTest
 		Assert.assertEquals("Destination should match", destinationPacked, transport.getDestination());
 		Assert.assertEquals("Duration should match", 5, transport.getDuration());
 		Assert.assertEquals("Type should match", TransportType.TRANSPORT, transport.getType());
+		assertTransportSnapshot("transport-loader-basic");
 	}
 
 	@Test
@@ -86,6 +104,7 @@ public class TransportLoaderTest
 		Assert.assertEquals("Origin1 duration should match", 5, t1.getDuration());
 		Assert.assertEquals("Origin2 destination should match", dest2, t2.getDestination());
 		Assert.assertEquals("Origin2 duration should match", 10, t2.getDuration());
+		assertTransportSnapshot("transport-loader-comments-and-empty-lines");
 	}
 
 	@Test
@@ -121,6 +140,7 @@ public class TransportLoaderTest
 		}
 		Assert.assertTrue("Should contain destination 1", hasDestination1);
 		Assert.assertTrue("Should contain destination 2", hasDestination2);
+		assertTransportSnapshot("transport-loader-multiple-from-same-origin");
 	}
 
 	@Test
@@ -213,6 +233,7 @@ public class TransportLoaderTest
 		}
 		Assert.assertTrue("Origin2 should go to 3300,3300,0", origin2ToDestinationA);
 		Assert.assertTrue("Origin2 should go to 3400,3400,0", origin2ToDestinationB);
+		assertTransportSnapshot("transport-loader-permutations");
 	}
 
 	@Test

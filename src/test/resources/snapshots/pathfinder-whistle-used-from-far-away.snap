@@ -1,0 +1,8 @@
+state:
+	inventory: 29271x1
+	levels: all=99
+route:
+	steps: 2
+	0000 (2965, 3380, 0)
+	=> transport type=QUETZAL_WHISTLE from=undefined to=(1585, 3053, 0) duration=4 display="Quetzal whistle: Hunter Guild"
+	0001 (1585, 3053, 0)
