@@ -485,7 +485,7 @@ public class PathTileOverlay extends Overlay
 			String text = null;
 			for (Transport transport : candidateTransports)
 			{
-				text = transport.getDisplayInfo();
+				text = plugin.formatTransportDisplay(transport);
 				if (text != null && !text.isEmpty())
 				{
 					break;
@@ -547,7 +547,7 @@ public class PathTileOverlay extends Overlay
 
 		for (Transport transport : transportsToShow)
 		{
-			String text = transport.getDisplayInfo();
+			String text = plugin.formatTransportDisplay(transport);
 			if (text == null || text.isEmpty())
 			{
 				continue;
