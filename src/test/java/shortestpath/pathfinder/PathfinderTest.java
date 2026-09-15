@@ -1426,6 +1426,19 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testLumbridgeDesertSteppingStoneCannotCrossOcean()
+	{
+		when(config.useAgilityShortcuts()).thenReturn(true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		Pathfinder pathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(3212, 3137, 0),
+			WorldPointUtil.packWorldPoint(3214, 3132, 0));
+
+		assertFalse("Stepping stone must not connect ocean tiles", pathfinder.getResult().isReached());
+	}
+
+	@Test
 	public void testTransportItems()
 	{
 		// Varrock Teleport
