@@ -30,6 +30,7 @@ import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements;
 import shortestpath.transport.Transport;
 
@@ -52,7 +53,7 @@ public class PathTileOverlay extends Overlay
 
 	private void renderTransports(Graphics2D graphics)
 	{
-		for (int a : plugin.getTransports().keySet())
+		for (int a : plugin.getTransports().keys())
 		{
 			if (a == Transport.UNDEFINED_ORIGIN)
 			{
@@ -69,7 +70,7 @@ public class PathTileOverlay extends Overlay
 			}
 
 			StringBuilder s = new StringBuilder();
-			for (Transport b : plugin.getTransports().getOrDefault(a, Set.of()))
+			for (Transport b : plugin.getTransports().getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
 			{
 				if (b == null || (b.getType() != null && b.getType().isTeleport()))
 				{
@@ -441,9 +442,23 @@ public class PathTileOverlay extends Overlay
 	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
 	{
 		int location = currentStep.getPackedPosition();
-		if (nextStep == null || !plugin.showTransportInfo || plugin.isPathUnreachable() ||
-			!plugin.getPathfinder().isDone() ||
+		if (nextStep == null || !plugin.showTransportInfo ||
 			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane())
+		{
+			return;
+		}
+
+		// Sailing: teleports are suppressed while aboard a boat. When the path is
+		// unreachable as a result, show a one-time hint on the player tile.
+		if (pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
+			&& plugin.getPathfinder().isDone() && plugin.isPathUnreachable())
+		{
+			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
+				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
+			return;
+		}
+
+		if (plugin.isPathUnreachable() || !plugin.getPathfinder().isDone())
 		{
 			return;
 		}

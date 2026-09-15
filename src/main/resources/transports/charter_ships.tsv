@@ -1,260 +1,446 @@
-# Origin	Destination	menuOption menuTarget objectID	Items	Quests	Duration	Display info
-# Aldarin						
-1455 2968 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2500		6	Brimhaven
-1455 2968 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2500		6	Catherby
-1455 2968 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=600		6	Civitas illa Fortis
-1455 2968 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2100		6	Corsair Cove
-1455 2968 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=900		6	Land's End
-1455 2968 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2350	Cabin Fever	6	Mos Le'Harmless
-1455 2968 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=3000		6	Musa Point
-1455 2968 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2300		6	Port Khazard
-1455 2968 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4500	Priest in Peril	6	Port Phasmatys
-1455 2968 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1100		6	Port Piscarilius
-1455 2968 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3100		6	Port Sarim
-1455 2968 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-1455 2968 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1800	Song of the Elves	6	Prifddinas
-1455 2968 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3100	The Grand Tree	6	Shipyard
-						
-# Brimhaven						
-2760 3238 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2500		6	Aldarin
-2760 3238 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=460		6	Catherby
-2760 3238 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2400		6	Civitas illa Fortis
-2760 3238 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=680		6	Corsair Cove
-2760 3238 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2200		6	Land's End
-2760 3238 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=1950	Cabin Fever	6	Mos Le'Harmless
-2760 3238 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=480		6	Musa Point
-2760 3238 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=400		6	Port Khazard
-2760 3238 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=2900	Priest in Peril	6	Port Phasmatys
-2760 3238 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2000		6	Port Piscarilius
-2760 3238 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1600		6	Port Sarim
-2760 3238 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-2760 3238 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=3450	Song of the Elves	6	Prifddinas
-2760 3238 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=400	The Grand Tree	6	Shipyard
-2760 3238 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1250		6	Sunset Coast
-						
-# Catherby						
-2792 3414 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2500		6	Aldarin
-2792 3414 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=480		6	Brimhaven
-2792 3414 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2400		6	Civitas illa Fortis
-2792 3414 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1000		6	Corsair Cove
-2792 3414 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2200		6	Land's End
-2792 3414 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=1750	Cabin Fever	6	Mos Le'Harmless
-2792 3414 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=480		6	Musa Point
-2792 3414 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1600		6	Port Khazard
-2792 3414 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=3500	Priest in Peril	6	Port Phasmatys
-2792 3414 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2000		6	Port Piscarilius
-2792 3414 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1000		6	Port Sarim
-2792 3414 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-2792 3414 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=3560	Song of the Elves	6	Prifddinas
-2792 3414 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=1600	The Grand Tree	6	Shipyard
-2792 3414 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1250		6	Sunset Coast
-						
-# Civitas illa Fortis						
-1743 3136 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=600		6	Aldarin
-1743 3136 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2400		6	Brimhaven
-1743 3136 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2400		6	Catherby
-1743 3136 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2000		6	Corsair Cove
-1743 3136 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=800		6	Land's End
-1743 3136 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2300	Cabin Fever	6	Mos Le'Harmless
-1743 3136 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2900		6	Musa Point
-1743 3136 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2200		6	Port Khazard
-1743 3136 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4400	Priest in Peril	6	Port Phasmatys
-1743 3136 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1000		6	Port Piscarilius
-1743 3136 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3000		6	Port Sarim
-1743 3136 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-1743 3136 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1700	Song of the Elves	6	Prifddinas
-1743 3136 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3000	The Grand Tree	6	Shipyard
-1743 3136 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=250		6	Sunset Coast
-						
-# Corsair Cove						
-2589 2851 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2100		6	Aldarin
-2589 2851 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=680		6	Brimhaven
-2589 2851 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1000		6	Catherby
-2589 2851 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2000		6	Civitas illa Fortis
-2589 2851 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=1800		6	Land's End
-2589 2851 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2040	Cabin Fever	6	Mos Le'Harmless
-2589 2851 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=800		6	Musa Point
-2589 2851 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=600		6	Port Khazard
-2589 2851 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4040	Priest in Peril	6	Port Phasmatys
-2589 2851 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1500		6	Port Piscarilius
-2589 2851 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1200		6	Port Sarim
-2589 2851 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-2589 2851 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1420	Song of the Elves	6	Prifddinas
-2589 2851 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=800	The Grand Tree	6	Shipyard
-2589 2851 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1050		6	Sunset Coast
-						
-# Land's End						
-1496 3403 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=900		6	Aldarin
-1496 3403 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2200		6	Brimhaven
-1496 3403 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2200		6	Catherby
-1496 3403 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=800		6	Civitas illa Fortis
-1496 3403 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1800		6	Corsair Cove
-1496 3403 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2200	Cabin Fever	6	Mos Le'Harmless
-1496 3403 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2700		6	Musa Point
-1496 3403 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2000		6	Port Khazard
-1496 3403 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4200	Priest in Peril	6	Port Phasmatys
-1496 3403 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-1496 3403 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1500	Song of the Elves	6	Prifddinas
-1496 3403 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=2800	The Grand Tree	6	Shipyard
-1496 3403 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=450		6	Sunset Coast
-						
-# Mos Le'Harmless						
-3671 2931 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2350		6	Aldarin
-3671 2931 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1450		6	Brimhaven
-3671 2931 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1250		6	Catherby
-3671 2931 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2300		6	Civitas illa Fortis
-3671 2931 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2040		6	Corsair Cove
-3671 2931 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2200		6	Land's End
-3671 2931 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2050		6	Musa Point
-3671 2931 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=550		6	Port Khazard
-3671 2931 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2100		6	Port Piscarilius
-3671 2931 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=650		6	Port Sarim
-3671 2931 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=1600	Regicide	6	Port Tyras
-3671 2931 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=2475	Song of the Elves	6	Prifddinas
-3671 2931 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=550	The Grand Tree	6	Shipyard
-3671 2931 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2350		6	Sunset Coast
-						
-# Musa Point						
-2954 3158 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3000		6	Aldarin
-2954 3158 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=200		6	Brimhaven
-2954 3158 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=480		6	Catherby
-2954 3158 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2900		6	Civitas illa Fortis
-2954 3158 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=800		6	Corsair Cove
-2954 3158 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2700		6	Land's End
-2954 3158 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=550	Cabin Fever	6	Mos Le'Harmless
-2954 3158 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=400		6	Port Khazard
-2954 3158 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=1100	Priest in Peril	6	Port Phasmatys
-2954 3158 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2500		6	Port Piscarilius
-2954 3158 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-2954 3158 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=4400	Song of the Elves	6	Prifddinas
-2954 3158 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=200	The Grand Tree	6	Shipyard
-2954 3158 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1500		6	Sunset Coast
-						
-# Port Khazard						
-2674 3144 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2300		6	Aldarin
-2674 3144 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1600		6	Brimhaven
-2674 3144 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1600		6	Catherby
-2674 3144 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2200		6	Civitas illa Fortis
-2674 3144 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=600		6	Corsair Cove
-2674 3144 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2000		6	Land's End
-2674 3144 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2050	Cabin Fever	6	Mos Le'Harmless
-2674 3144 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=1600		6	Musa Point
-2674 3144 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4100	Priest in Peril	6	Port Phasmatys
-2674 3144 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1800		6	Port Piscarilius
-2674 3144 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1280		6	Port Sarim
-2674 3144 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-2674 3144 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=2800	Song of the Elves	6	Prifddinas
-2674 3144 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=1600	The Grand Tree	6	Shipyard
-2674 3144 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1150		6	Sunset Coast
-						
-# Port Phasmatys						
-3702 3503 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=4500		6	Aldarin
-3702 3503 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2900		6	Brimhaven
-3702 3503 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=3500		6	Catherby
-3702 3503 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=4400		6	Civitas illa Fortis
-3702 3503 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=4040		6	Corsair Cove
-3702 3503 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=4200		6	Land's End
-3702 3503 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=1100		6	Musa Point
-3702 3503 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=4100		6	Port Khazard
-3702 3503 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=4000		6	Port Piscarilius
-3702 3503 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1300		6	Port Sarim
-3702 3503 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-3702 3503 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=5200	Song of the Elves	6	Prifddinas
-3702 3503 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3200	The Grand Tree	6	Shipyard
-3702 3503 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2250		6	Sunset Coast
-						
-# Port Piscarilius						
-1808 3679 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=1100		6	Aldarin
-1808 3679 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2000		6	Brimhaven
-1808 3679 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2000		6	Catherby
-1808 3679 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=1000		6	Civitas illa Fortis
-1808 3679 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1500		6	Corsair Cove
-1808 3679 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2100	Cabin Fever	6	Mos Le'Harmless
-1808 3679 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2500		6	Musa Point
-1808 3679 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1800		6	Port Khazard
-1808 3679 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4000		6	Port Phasmatys
-1808 3679 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-1808 3679 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1200	Song of the Elves	6	Prifddinas
-1808 3679 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=2600	The Grand Tree	6	Shipyard
-1808 3679 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=550		6	Sunset Coast
-						
-# Port Sarim						
-3038 3192 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3100		6	Aldarin
-3038 3192 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1600		6	Brimhaven
-3038 3192 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1000		6	Catherby
-3038 3192 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=3000		6	Civitas illa Fortis
-3038 3192 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1200		6	Corsair Cove
-3038 3192 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=650	Cabin Fever	6	Mos Le'Harmless
-3038 3192 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1280		6	Port Khazard
-3038 3192 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=1300	Priest in Peril	6	Port Phasmatys
-3038 3192 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-3038 3192 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=4800	Song of the Elves	6	Prifddinas
-3038 3192 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=400	The Grand Tree	6	Shipyard
-3038 3192 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1550		6	Sunset Coast
-						
-# Port Tyras						
-2142 3122 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3200		6	Aldarin
-2142 3122 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=3200		6	Brimhaven
-2142 3122 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=3200		6	Catherby
-2142 3122 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=3200		6	Civitas illa Fortis
-2142 3122 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=3200		6	Corsair Cove
-2142 3122 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=3200		6	Land's End
-2142 3122 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=1600	Cabin Fever	6	Mos Le'Harmless
-2142 3122 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=3200		6	Musa Point
-2142 3122 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=3200		6	Port Khazard
-2142 3122 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=3200	Priest in Peril	6	Port Phasmatys
-2142 3122 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=3200		6	Port Piscarilius
-2142 3122 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3200		6	Port Sarim
-2142 3122 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=3200	Song of the Elves	6	Prifddinas
-2142 3122 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3200	The Grand Tree	6	Shipyard
-2142 3122 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1600		6	Sunset Coast
-						
-# Prifddinas						
-2157 3330 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=1800		6	Aldarin
-2157 3330 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=3450		6	Brimhaven
-2157 3330 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=3560		6	Catherby
-2157 3330 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=1700		6	Civitas illa Fortis
-2157 3330 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1420		6	Corsair Cove
-2157 3330 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=1500		6	Land's End
-2157 3330 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2475	Cabin Fever	6	Mos Le'Harmless
-2157 3330 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=4400		6	Musa Point
-2157 3330 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2800		6	Port Khazard
-2157 3330 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=5200	Priest in Peril	6	Port Phasmatys
-2157 3330 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1200		6	Port Piscarilius
-2157 3330 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=4800		6	Port Sarim
-2157 3330 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-2157 3330 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=4000	The Grand Tree	6	Shipyard
-2157 3330 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1800		6	Sunset Coast
-						
-# Ship Yard						
-3001 3032 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3100		6	Aldarin
-3001 3032 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=400		6	Brimhaven
-3001 3032 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1600		6	Catherby
-3001 3032 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=3000		6	Civitas illa Fortis
-3001 3032 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=800		6	Corsair Cove
-3001 3032 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2800		6	Land's End
-3001 3032 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=550	Cabin Fever	6	Mos Le'Harmless
-3001 3032 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=200		6	Musa Point
-3001 3032 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=720		6	Port Khazard
-3001 3032 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=1100	Priest in Peril	6	Port Phasmatys
-3001 3032 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2600		6	Port Piscarilius
-3001 3032 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=400		6	Port Sarim
-3001 3032 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide	6	Port Tyras
-3001 3032 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=4000	Song of the Elves	6	Prifddinas
-3001 3032 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1550		6	Sunset Coast
-						
-# Sunset Coast						
-1514 2971 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1250		6	Brimhaven
-1514 2971 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1250		6	Catherby
-1514 2971 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=250		6	Civitas illa Fortis
-1514 2971 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1050		6	Corsair Cove
-1514 2971 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=450		6	Land's End
-1514 2971 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2350	Cabin Fever	6	Mos Le'Harmless
-1514 2971 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=1500		6	Musa Point
-1514 2971 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1150		6	Port Khazard
-1514 2971 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=2250	Priest in Peril	6	Port Phasmatys
-1514 2971 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=550		6	Port Piscarilius
-1514 2971 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1550		6	Port Sarim
-1514 2971 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=1600	Regicide	6	Port Tyras
-1514 2971 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1800	Song of the Elves	6	Prifddinas
-1514 2971 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=1550	The Grand Tree	6	Shipyard
+# Origin	Destination	menuOption menuTarget objectID	Items	Quests	Skills	Duration	Display info
+# Aldarin							
+1455 2968 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2500			6	Brimhaven
+1455 2968 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2500			6	Catherby
+1455 2968 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=600	Children of the Sun		6	Civitas illa Fortis
+1455 2968 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2100			6	Corsair Cove
+1455 2968 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1200		67 Sailing	6	Deepfin Point
+1455 2968 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3100	Monkey Madness I		6	Shipyard
+1455 2968 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=900			6	Land's End
+1455 2968 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2350	Cabin Fever		6	Mos Le'Harmless
+1455 2968 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=3000			6	Musa Point
+1455 2968 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2300			6	Port Khazard
+1455 2968 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4500	Priest in Peril		6	Port Phasmatys
+1455 2968 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1100			6	Port Piscarilius
+1455 2968 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=1400		50 Sailing	6	Port Roberts
+1455 2968 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3100			6	Port Sarim
+1455 2968 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+1455 2968 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1800	Song of the Elves		6	Prifddinas
+1455 2968 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2200	The Red Reef		6	Red Rock
+1455 2968 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=3000	Pandemonium		6	The Pandemonium
+1455 2968 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2400	Troubled Tortugans		6	The Summer Shore
+							
+# Brimhaven							
+2760 3238 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2500	Children of the Sun		6	Aldarin
+2760 3238 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=480			6	Catherby
+2760 3238 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2400	Children of the Sun		6	Civitas illa Fortis
+2760 3238 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=680			6	Corsair Cove
+2760 3238 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=2000		67 Sailing	6	Deepfin Point
+2760 3238 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=400	Monkey Madness I		6	Shipyard
+2760 3238 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2200			6	Land's End
+2760 3238 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=1950	Cabin Fever		6	Mos Le'Harmless
+2760 3238 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=480			6	Musa Point
+2760 3238 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=400			6	Port Khazard
+2760 3238 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=2900	Priest in Peril		6	Port Phasmatys
+2760 3238 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2000			6	Port Piscarilius
+2760 3238 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3200		50 Sailing	6	Port Roberts
+2760 3238 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1600			6	Port Sarim
+2760 3238 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+2760 3238 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=3450	Song of the Elves		6	Prifddinas
+2760 3238 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1900	The Red Reef		6	Red Rock
+2760 3238 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2500	Children of the Sun		6	Sunset Coast
+2760 3238 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=400	Pandemonium		6	The Pandemonium
+2760 3238 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1900	Troubled Tortugans		6	The Summer Shore
+							
+# Catherby							
+2792 3414 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2500	Children of the Sun		6	Aldarin
+2792 3414 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=480			6	Brimhaven
+2792 3414 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2400	Children of the Sun		6	Civitas illa Fortis
+2792 3414 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1000			6	Corsair Cove
+2792 3414 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=2200		67 Sailing	6	Deepfin Point
+2792 3414 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=1600	Monkey Madness I		6	Shipyard
+2792 3414 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2200			6	Land's End
+2792 3414 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=1250	Cabin Fever		6	Mos Le'Harmless
+2792 3414 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=480			6	Musa Point
+2792 3414 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1600			6	Port Khazard
+2792 3414 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=3500	Priest in Peril		6	Port Phasmatys
+2792 3414 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2000			6	Port Piscarilius
+2792 3414 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3400		50 Sailing	6	Port Roberts
+2792 3414 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1000			6	Port Sarim
+2792 3414 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+2792 3414 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=3560	Song of the Elves		6	Prifddinas
+2792 3414 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2000	The Red Reef		6	Red Rock
+2792 3414 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2500	Children of the Sun		6	Sunset Coast
+2792 3414 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=1200	Pandemonium		6	The Pandemonium
+2792 3414 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2000	Troubled Tortugans		6	The Summer Shore
+							
+# Civitas illa Fortis							
+1743 3136 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=600	Children of the Sun		6	Aldarin
+1743 3136 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2400			6	Brimhaven
+1743 3136 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2400			6	Catherby
+1743 3136 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2000			6	Corsair Cove
+1743 3136 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1200		67 Sailing	6	Deepfin Point
+1743 3136 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3000	Monkey Madness I		6	Shipyard
+1743 3136 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=800			6	Land's End
+1743 3136 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2300	Cabin Fever		6	Mos Le'Harmless
+1743 3136 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2900			6	Musa Point
+1743 3136 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2200			6	Port Khazard
+1743 3136 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4400	Priest in Peril		6	Port Phasmatys
+1743 3136 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1000			6	Port Piscarilius
+1743 3136 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=600		50 Sailing	6	Port Roberts
+1743 3136 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3000			6	Port Sarim
+1743 3136 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+1743 3136 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1700	Song of the Elves		6	Prifddinas
+1743 3136 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2000	The Red Reef		6	Red Rock
+1743 3136 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=500	Children of the Sun		6	Sunset Coast
+1743 3136 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=2800	Pandemonium		6	The Pandemonium
+1743 3136 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2200	Troubled Tortugans		6	The Summer Shore
+							
+# Corsair Cove							
+2589 2851 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2100	Children of the Sun		6	Aldarin
+2589 2851 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=680			6	Brimhaven
+2589 2851 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1000			6	Catherby
+2589 2851 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2000	Children of the Sun		6	Civitas illa Fortis
+2589 2851 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1600		67 Sailing	6	Deepfin Point
+2589 2851 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=800	Monkey Madness I		6	Shipyard
+2589 2851 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=1800			6	Land's End
+2589 2851 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2040	Cabin Fever		6	Mos Le'Harmless
+2589 2851 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=800			6	Musa Point
+2589 2851 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=600			6	Port Khazard
+2589 2851 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4040	Priest in Peril		6	Port Phasmatys
+2589 2851 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1500			6	Port Piscarilius
+2589 2851 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=2200		50 Sailing	6	Port Roberts
+2589 2851 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1200			6	Port Sarim
+2589 2851 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+2589 2851 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1420	Song of the Elves		6	Prifddinas
+2589 2851 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1500	The Red Reef		6	Red Rock
+2589 2851 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2100	Children of the Sun		6	Sunset Coast
+2589 2851 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=800	Pandemonium		6	The Pandemonium
+2589 2851 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1600	Troubled Tortugans		6	The Summer Shore
+							
+# Deepfin Point							
+1943 2757 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=1200	Children of the Sun		6	Aldarin
+1943 2757 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2000			6	Brimhaven
+1943 2757 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2200			6	Catherby
+1943 2757 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=1200	Children of the Sun		6	Civitas illa Fortis
+1943 2757 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1600			6	Corsair Cove
+1943 2757 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=2800	Monkey Madness I		6	Shipyard
+1943 2757 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=1400			6	Land's End
+1943 2757 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=1600	Cabin Fever		6	Mos Le'Harmless
+1943 2757 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2400			6	Musa Point
+1943 2757 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1800			6	Port Khazard
+1943 2757 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=3400	Priest in Peril		6	Port Phasmatys
+1943 2757 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1600			6	Port Piscarilius
+1943 2757 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=1000		50 Sailing	6	Port Roberts
+1943 2757 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=2600			6	Port Sarim
+1943 2757 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+1943 2757 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1200	Song of the Elves		6	Prifddinas
+1943 2757 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1400	The Red Reef		6	Red Rock
+1943 2757 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1200	Children of the Sun		6	Sunset Coast
+1943 2757 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=2800	Pandemonium		6	The Pandemonium
+1943 2757 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1800	Troubled Tortugans		6	The Summer Shore
+							
+# Shipyard							
+3001 3032 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3100	Children of the Sun		6	Aldarin
+3001 3032 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=400			6	Brimhaven
+3001 3032 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1600			6	Catherby
+3001 3032 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=3000	Children of the Sun		6	Civitas illa Fortis
+3001 3032 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=800			6	Corsair Cove
+3001 3032 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=2800		67 Sailing	6	Deepfin Point
+3001 3032 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2800			6	Land's End
+3001 3032 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=550	Cabin Fever		6	Mos Le'Harmless
+3001 3032 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=200			6	Musa Point
+3001 3032 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1600			6	Port Khazard
+3001 3032 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=3200	Priest in Peril		6	Port Phasmatys
+3001 3032 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2600			6	Port Piscarilius
+3001 3032 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3600		50 Sailing	6	Port Roberts
+3001 3032 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=400			6	Port Sarim
+3001 3032 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+3001 3032 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=4000	Song of the Elves		6	Prifddinas
+3001 3032 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1600	The Red Reef		6	Red Rock
+3001 3032 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=3100	Children of the Sun		6	Sunset Coast
+3001 3032 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=200	Pandemonium		6	The Pandemonium
+3001 3032 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1600	Troubled Tortugans		6	The Summer Shore
+							
+# Land's End							
+1496 3403 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=900	Children of the Sun		6	Aldarin
+1496 3403 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2200			6	Brimhaven
+1496 3403 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2200			6	Catherby
+1496 3403 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=800	Children of the Sun		6	Civitas illa Fortis
+1496 3403 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1800			6	Corsair Cove
+1496 3403 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1400		67 Sailing	6	Deepfin Point
+1496 3403 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=2800	Monkey Madness I		6	Shipyard
+1496 3403 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2200	Cabin Fever		6	Mos Le'Harmless
+1496 3403 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2700			6	Musa Point
+1496 3403 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2000			6	Port Khazard
+1496 3403 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4200	Priest in Peril		6	Port Phasmatys
+1496 3403 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=800		50 Sailing	6	Port Roberts
+1496 3403 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+1496 3403 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1500	Song of the Elves		6	Prifddinas
+1496 3403 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2200	The Red Reef		6	Red Rock
+1496 3403 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=900	Children of the Sun		6	Sunset Coast
+1496 3403 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=2600	Pandemonium		6	The Pandemonium
+1496 3403 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2400	Troubled Tortugans		6	The Summer Shore
+							
+# Mos Le'Harmless							
+3671 2931 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2350	Children of the Sun		6	Aldarin
+3671 2931 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1950			6	Brimhaven
+3671 2931 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1250			6	Catherby
+3671 2931 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2300	Children of the Sun		6	Civitas illa Fortis
+3671 2931 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2040			6	Corsair Cove
+3671 2931 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1600		67 Sailing	6	Deepfin Point
+3671 2931 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=550	Monkey Madness I		6	Shipyard
+3671 2931 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2200			6	Land's End
+3671 2931 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2050			6	Musa Point
+3671 2931 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=550			6	Port Khazard
+3671 2931 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2100			6	Port Piscarilius
+3671 2931 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=2200		50 Sailing	6	Port Roberts
+3671 2931 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=650			6	Port Sarim
+3671 2931 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=1600	Regicide		6	Port Tyras
+3671 2931 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=2475	Song of the Elves		6	Prifddinas
+3671 2931 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1000	The Red Reef		6	Red Rock
+3671 2931 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2350	Children of the Sun		6	Sunset Coast
+3671 2931 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=500	Pandemonium		6	The Pandemonium
+3671 2931 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=900	Troubled Tortugans		6	The Summer Shore
+							
+# Musa Point							
+2954 3158 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3000	Children of the Sun		6	Aldarin
+2954 3158 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=480			6	Brimhaven
+2954 3158 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=480			6	Catherby
+2954 3158 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2900	Children of the Sun		6	Civitas illa Fortis
+2954 3158 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=800			6	Corsair Cove
+2954 3158 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=2400		67 Sailing	6	Deepfin Point
+2954 3158 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=200	Monkey Madness I		6	Shipyard
+2954 3158 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2700			6	Land's End
+2954 3158 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2050	Cabin Fever		6	Mos Le'Harmless
+2954 3158 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=400			6	Port Khazard
+2954 3158 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=1100	Priest in Peril		6	Port Phasmatys
+2954 3158 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2500			6	Port Piscarilius
+2954 3158 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3500		50 Sailing	6	Port Roberts
+2954 3158 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+2954 3158 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=4400	Song of the Elves		6	Prifddinas
+2954 3158 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1700	The Red Reef		6	Red Rock
+2954 3158 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=3000	Children of the Sun		6	Sunset Coast
+2954 3158 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1700	Troubled Tortugans		6	The Summer Shore
+							
+# Port Khazard							
+2674 3144 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2300	Children of the Sun		6	Aldarin
+2674 3144 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=400			6	Brimhaven
+2674 3144 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1600			6	Catherby
+2674 3144 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2200	Children of the Sun		6	Civitas illa Fortis
+2674 3144 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=600			6	Corsair Cove
+2674 3144 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1800		67 Sailing	6	Deepfin Point
+2674 3144 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=1600	Monkey Madness I		6	Shipyard
+2674 3144 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2000			6	Land's End
+2674 3144 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=550	Cabin Fever		6	Mos Le'Harmless
+2674 3144 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=400			6	Musa Point
+2674 3144 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4100	Priest in Peril		6	Port Phasmatys
+2674 3144 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1800			6	Port Piscarilius
+2674 3144 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3000		50 Sailing	6	Port Roberts
+2674 3144 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1280			6	Port Sarim
+2674 3144 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+2674 3144 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=2800	Song of the Elves		6	Prifddinas
+2674 3144 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1800	The Red Reef		6	Red Rock
+2674 3144 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2300	Children of the Sun		6	Sunset Coast
+2674 3144 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=700	Pandemonium		6	The Pandemonium
+2674 3144 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1800	Troubled Tortugans		6	The Summer Shore
+							
+# Port Phasmatys							
+3702 3503 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=4500	Children of the Sun		6	Aldarin
+3702 3503 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2900			6	Brimhaven
+3702 3503 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=3500			6	Catherby
+3702 3503 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=4400	Children of the Sun		6	Civitas illa Fortis
+3702 3503 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=4040			6	Corsair Cove
+3702 3503 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=3400		67 Sailing	6	Deepfin Point
+3702 3503 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3200	Monkey Madness I		6	Shipyard
+3702 3503 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=4200			6	Land's End
+3702 3503 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=1100			6	Musa Point
+3702 3503 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=4100			6	Port Khazard
+3702 3503 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=4000			6	Port Piscarilius
+3702 3503 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=4600		50 Sailing	6	Port Roberts
+3702 3503 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1300			6	Port Sarim
+3702 3503 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+3702 3503 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=5200	Song of the Elves		6	Prifddinas
+3702 3503 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2200	The Red Reef		6	Red Rock
+3702 3503 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=4500	Children of the Sun		6	Sunset Coast
+3702 3503 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=1000	Pandemonium		6	The Pandemonium
+3702 3503 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2000	Troubled Tortugans		6	The Summer Shore
+							
+# Port Piscarilius							
+1808 3679 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=1100	Children of the Sun		6	Aldarin
+1808 3679 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2000			6	Brimhaven
+1808 3679 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2000			6	Catherby
+1808 3679 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=1000	Children of the Sun		6	Civitas illa Fortis
+1808 3679 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1500			6	Corsair Cove
+1808 3679 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1600		67 Sailing	6	Deepfin Point
+1808 3679 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=2600	Monkey Madness I		6	Shipyard
+1808 3679 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2100	Cabin Fever		6	Mos Le'Harmless
+1808 3679 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=2500			6	Musa Point
+1808 3679 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1800			6	Port Khazard
+1808 3679 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4000	Priest in Peril		6	Port Phasmatys
+1808 3679 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=1000		50 Sailing	6	Port Roberts
+1808 3679 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+1808 3679 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1200	Song of the Elves		6	Prifddinas
+1808 3679 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2400	The Red Reef		6	Red Rock
+1808 3679 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1100	Children of the Sun		6	Sunset Coast
+1808 3679 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=2400	Pandemonium		6	The Pandemonium
+1808 3679 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2600	Troubled Tortugans		6	The Summer Shore
+							
+# Port Roberts							
+1889 3292 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=1400	Children of the Sun		6	Aldarin
+1889 3292 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=3200			6	Brimhaven
+1889 3292 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=3400			6	Catherby
+1889 3292 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=600	Children of the Sun		6	Civitas illa Fortis
+1889 3292 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2200			6	Corsair Cove
+1889 3292 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1000		67 Sailing	6	Deepfin Point
+1889 3292 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3600	Monkey Madness I		6	Shipyard
+1889 3292 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=800			6	Land's End
+1889 3292 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2200	Cabin Fever		6	Mos Le'Harmless
+1889 3292 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=3500			6	Musa Point
+1889 3292 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=3000			6	Port Khazard
+1889 3292 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4600	Priest in Peril		6	Port Phasmatys
+1889 3292 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1000			6	Port Piscarilius
+1889 3292 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3500			6	Port Sarim
+1889 3292 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+1889 3292 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=600	Song of the Elves		6	Prifddinas
+1889 3292 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2000	The Red Reef		6	Red Rock
+1889 3292 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1400	Children of the Sun		6	Sunset Coast
+1889 3292 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=3600	Pandemonium		6	The Pandemonium
+1889 3292 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2500	Troubled Tortugans		6	The Summer Shore
+							
+# Port Sarim							
+3038 3192 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3100	Children of the Sun		6	Aldarin
+3038 3192 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1600			6	Brimhaven
+3038 3192 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1000			6	Catherby
+3038 3192 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=3000	Children of the Sun		6	Civitas illa Fortis
+3038 3192 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1200			6	Corsair Cove
+3038 3192 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=2600		67 Sailing	6	Deepfin Point
+3038 3192 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=400	Monkey Madness I		6	Shipyard
+3038 3192 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=650	Cabin Fever		6	Mos Le'Harmless
+3038 3192 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1280			6	Port Khazard
+3038 3192 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=1300	Priest in Peril		6	Port Phasmatys
+3038 3192 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3500		50 Sailing	6	Port Roberts
+3038 3192 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+3038 3192 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=4800	Song of the Elves		6	Prifddinas
+3038 3192 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1700	The Red Reef		6	Red Rock
+3038 3192 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=3100	Children of the Sun		6	Sunset Coast
+3038 3192 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1700	Troubled Tortugans		6	The Summer Shore
+							
+# Port Tyras							
+2142 3122 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3200	Children of the Sun		6	Aldarin
+2142 3122 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=3200			6	Brimhaven
+2142 3122 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=3200			6	Catherby
+2142 3122 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=3200	Children of the Sun		6	Civitas illa Fortis
+2142 3122 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=3200			6	Corsair Cove
+2142 3122 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=3200		67 Sailing	6	Deepfin Point
+2142 3122 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3200	Monkey Madness I		6	Shipyard
+2142 3122 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=3200			6	Land's End
+2142 3122 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=1600	Cabin Fever		6	Mos Le'Harmless
+2142 3122 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=3200			6	Musa Point
+2142 3122 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=3200			6	Port Khazard
+2142 3122 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=3200	Priest in Peril		6	Port Phasmatys
+2142 3122 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=3200			6	Port Piscarilius
+2142 3122 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3200		50 Sailing	6	Port Roberts
+2142 3122 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3200			6	Port Sarim
+2142 3122 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=3200	Song of the Elves		6	Prifddinas
+2142 3122 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=3200	The Red Reef		6	Red Rock
+2142 3122 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=3200	Children of the Sun		6	Sunset Coast
+2142 3122 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=3200	Pandemonium		6	The Pandemonium
+2142 3122 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=3200	Troubled Tortugans		6	The Summer Shore
+							
+# Prifddinas							
+2157 3330 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=1800	Children of the Sun		6	Aldarin
+2157 3330 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=3450			6	Brimhaven
+2157 3330 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=3560			6	Catherby
+2157 3330 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=1700	Children of the Sun		6	Civitas illa Fortis
+2157 3330 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1420			6	Corsair Cove
+2157 3330 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1200		67 Sailing	6	Deepfin Point
+2157 3330 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=4000	Monkey Madness I		6	Shipyard
+2157 3330 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=1500			6	Land's End
+2157 3330 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2475	Cabin Fever		6	Mos Le'Harmless
+2157 3330 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=4400			6	Musa Point
+2157 3330 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2800			6	Port Khazard
+2157 3330 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=5200	Priest in Peril		6	Port Phasmatys
+2157 3330 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1200			6	Port Piscarilius
+2157 3330 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=600		50 Sailing	6	Port Roberts
+2157 3330 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=4800			6	Port Sarim
+2157 3330 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+2157 3330 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2000	The Red Reef		6	Red Rock
+2157 3330 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=1800	Children of the Sun		6	Sunset Coast
+2157 3330 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=3800	Pandemonium		6	The Pandemonium
+2157 3330 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2200	Troubled Tortugans		6	The Summer Shore
+							
+# Red Rock							
+2805 2502 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2200	Children of the Sun		6	Aldarin
+2805 2502 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1900			6	Brimhaven
+2805 2502 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2000			6	Catherby
+2805 2502 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2000	Children of the Sun		6	Civitas illa Fortis
+2805 2502 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1500			6	Corsair Cove
+2805 2502 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1400		67 Sailing	6	Deepfin Point
+2805 2502 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=1600	Monkey Madness I		6	Shipyard
+2805 2502 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2200			6	Land's End
+2805 2502 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2000	Cabin Fever		6	Mos Le'Harmless
+2805 2502 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=1700			6	Musa Point
+2805 2502 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1800			6	Port Khazard
+2805 2502 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=2200	Priest in Peril		6	Port Phasmatys
+2805 2502 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2400			6	Port Piscarilius
+2805 2502 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=2000		50 Sailing	6	Port Roberts
+2805 2502 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1700			6	Port Sarim
+2805 2502 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+2805 2502 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=2000	Song of the Elves		6	Prifddinas
+2805 2502 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2200	Children of the Sun		6	Sunset Coast
+2805 2502 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=1600	Pandemonium		6	The Pandemonium
+2805 2502 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1000	Troubled Tortugans		6	The Summer Shore
+							
+# Sunset Coast							
+1514 2971 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=2500			6	Brimhaven
+1514 2971 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2500			6	Catherby
+1514 2971 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=500	Children of the Sun		6	Civitas illa Fortis
+1514 2971 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=2100			6	Corsair Cove
+1514 2971 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1200		67 Sailing	6	Deepfin Point
+1514 2971 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=3100	Monkey Madness I		6	Shipyard
+1514 2971 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=900			6	Land's End
+1514 2971 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=2350	Cabin Fever		6	Mos Le'Harmless
+1514 2971 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=3000			6	Musa Point
+1514 2971 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=2300			6	Port Khazard
+1514 2971 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=4500	Priest in Peril		6	Port Phasmatys
+1514 2971 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=1100			6	Port Piscarilius
+1514 2971 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=1400		50 Sailing	6	Port Roberts
+1514 2971 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=3100			6	Port Sarim
+1514 2971 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+1514 2971 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=1800	Song of the Elves		6	Prifddinas
+1514 2971 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=2200	The Red Reef		6	Red Rock
+1514 2971 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=3000	Pandemonium		6	The Pandemonium
+1514 2971 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=2400	Troubled Tortugans		6	The Summer Shore
+							
+# The Pandemonium							
+3058 2975 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=3000	Children of the Sun		6	Aldarin
+3058 2975 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=400			6	Brimhaven
+3058 2975 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=1200			6	Catherby
+3058 2975 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2800	Children of the Sun		6	Civitas illa Fortis
+3058 2975 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=800			6	Corsair Cove
+3058 2975 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=2800		67 Sailing	6	Deepfin Point
+3058 2975 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=200	Monkey Madness I		6	Shipyard
+3058 2975 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2600			6	Land's End
+3058 2975 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=500	Cabin Fever		6	Mos Le'Harmless
+3058 2975 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=700			6	Port Khazard
+3058 2975 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=1000	Priest in Peril		6	Port Phasmatys
+3058 2975 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2400			6	Port Piscarilius
+3058 2975 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=3600		50 Sailing	6	Port Roberts
+3058 2975 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+3058 2975 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=3800	Song of the Elves		6	Prifddinas
+3058 2975 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1600	The Red Reef		6	Red Rock
+3058 2975 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=3000	Children of the Sun		6	Sunset Coast
+3058 2975 0	3155 2415 0	Charter Trader Crewmember 1330	COINS=1600	Troubled Tortugans		6	The Summer Shore
+							
+# The Summer Shore							
+3155 2415 0	1455 2968 0	Charter Trader Crewmember 1330	COINS=2400	Children of the Sun		6	Aldarin
+3155 2415 0	2760 3238 0	Charter Trader Crewmember 1330	COINS=1900			6	Brimhaven
+3155 2415 0	2792 3414 0	Charter Trader Crewmember 1330	COINS=2000			6	Catherby
+3155 2415 0	1743 3136 0	Charter Trader Crewmember 1330	COINS=2200	Children of the Sun		6	Civitas illa Fortis
+3155 2415 0	2589 2851 0	Charter Trader Crewmember 1330	COINS=1600			6	Corsair Cove
+3155 2415 0	1943 2757 0	Charter Trader Crewmember 1330	COINS=1800		67 Sailing	6	Deepfin Point
+3155 2415 0	3001 3032 0	Charter Trader Crewmember 1330	COINS=1600	Monkey Madness I		6	Shipyard
+3155 2415 0	1496 3403 0	Charter Trader Crewmember 1330	COINS=2400			6	Land's End
+3155 2415 0	3671 2931 0	Charter Trader Crewmember 1330	COINS=900	Cabin Fever		6	Mos Le'Harmless
+3155 2415 0	2954 3158 0	Charter Trader Crewmember 1330	COINS=1700			6	Musa Point
+3155 2415 0	2674 3144 0	Charter Trader Crewmember 1330	COINS=1800			6	Port Khazard
+3155 2415 0	3702 3503 0	Charter Trader Crewmember 1330	COINS=2000	Priest in Peril		6	Port Phasmatys
+3155 2415 0	1808 3679 0	Charter Trader Crewmember 1330	COINS=2600			6	Port Piscarilius
+3155 2415 0	1889 3292 0	Charter Trader Crewmember 1330	COINS=2500		50 Sailing	6	Port Roberts
+3155 2415 0	3038 3192 0	Charter Trader Crewmember 1330	COINS=1700			6	Port Sarim
+3155 2415 0	2142 3122 0	Charter Trader Crewmember 1330	COINS=3200	Regicide		6	Port Tyras
+3155 2415 0	2157 3330 0	Charter Trader Crewmember 1330	COINS=2200	Song of the Elves		6	Prifddinas
+3155 2415 0	2805 2502 0	Charter Trader Crewmember 1330	COINS=1000	The Red Reef		6	Red Rock
+3155 2415 0	1514 2971 0	Charter Trader Crewmember 1330	COINS=2400	Children of the Sun		6	Sunset Coast
+3155 2415 0	3058 2975 0	Charter Trader Crewmember 1330	COINS=1600	Pandemonium		6	The Pandemonium

@@ -1,9 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
+import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 
@@ -13,8 +10,9 @@ public class CollisionMap
 	private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 
 	private final SplitFlagMap collisionData;
-	// This is only safe if pathfinding is single-threaded
-	private final List<Node> neighbors = new ArrayList<>(16);
+	// This is only safe if pathfinding is single-threaded. Holds the ids of the neighbour nodes
+	// appended to the NodeGraph during the most recent getNeighbors call.
+	private final PrimitiveIntList neighbors = new PrimitiveIntList(16);
 	private final boolean[] traversable = new boolean[8];
 
 	public CollisionMap(SplitFlagMap collisionData)
@@ -85,15 +83,15 @@ public class CollisionMap
 		return !n(x, y, z) && !s(x, y, z) && !e(x, y, z) && !w(x, y, z);
 	}
 
-	public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness)
+	public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness, NodeGraph graph)
 	{
-		if (node.isTile())
+		if (graph.isTile(node))
 		{
-			return getTileNeighbors(node, visited, config, wildernessLevel);
+			return getTileNeighbors(node, visited, config, wildernessLevel, graph);
 		}
 		else
 		{
-			return getAbstractNodeNeighbors(node, visited, config, targetInWilderness);
+			return getAbstractNodeNeighbors(node, visited, config, targetInWilderness, graph);
 		}
 	}
 
@@ -101,27 +99,28 @@ public class CollisionMap
 	//      * Neighbouring tiles we can walk to
 	//      * A transition into banked state, if the current tile is a bank.
 	//      * Transition into abstract global teleport nodes, if we haven't tried that yet.
-	private List<Node> getTileNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel)
+	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph)
 	{
-		final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
-		final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
-		final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
+		final int packedPosition = graph.packedPosition(node);
+		final int x = WorldPointUtil.unpackWorldX(packedPosition);
+		final int y = WorldPointUtil.unpackWorldY(packedPosition);
+		final int z = WorldPointUtil.unpackWorldPlane(packedPosition);
 
 		neighbors.clear();
 
 		// Either we have already visited a bank, if the current tile is a bank switch into the bankVisited state for the
 		// rest of the path.
-		boolean pathBankVisited = node.bankVisited
-			|| (config.isBankPathEnabled() && config.bankAccessible(node.packedPosition));
+		boolean pathBankVisited = graph.bankVisited(node)
+			|| (config.isBankPathEnabled() && config.bankAccessible(packedPosition));
 
 		// Firstly check if there are any transports or teleports which are applicable from the current tile.
-		Set<Transport> transports = config.getTransportsPacked(pathBankVisited).getOrDefault(node.packedPosition, Set.of());
+		Transport[] transports = config.getTransportsPacked(pathBankVisited).getOrDefault(packedPosition, TransportAvailability.EMPTY_TRANSPORTS);
 		// If this tile was itself reached via a delayed-visit teleport (e.g. QUETZAL_WHISTLE), propagate its
 		// differential cost to any competing delayed-visit transports emitted from here. This prevents the
 		// pathfinder from choosing a chain (e.g. whistle → landing site A → fly to B) over a direct teleport
 		// to B, because the chain inherits the teleport's penalty and is therefore always more expensive.
-		int inheritedDifferential = (node instanceof TransportNode && ((TransportNode) node).delayedVisit)
-			? ((TransportNode) node).differentialCost
+		int inheritedDifferential = (graph.isTransport(node) && graph.isDelayedVisit(node))
+			? graph.differentialCost(node)
 			: 0;
 		for (Transport transport : transports)
 		{
@@ -138,7 +137,7 @@ public class CollisionMap
 			// a direct teleport to B.
 			int chainPenalty = (delayedVisit && inheritedDifferential > 0) ? inheritedDifferential : 0;
 			// NB: Do not need to check for wilderness level for transports, since transports have specific origin tile.
-			neighbors.add(new TransportNode(
+			neighbors.add(graph.createTransport(
 				transport.getDestination(),
 				node,
 				transport.getDuration(),
@@ -150,11 +149,10 @@ public class CollisionMap
 
 		// Global teleports are only considered from an abstract node, so each
 		// wilderness/bank state expands them once.
-		Node globalTeleports = Node.abstractNode(AbstractNodeKind.fromWildernessLevel(wildernessLevel), node,
-			pathBankVisited);
-		if (!visited.get(globalTeleports))
+		AbstractNodeKind abstractKind = AbstractNodeKind.fromWildernessLevel(wildernessLevel);
+		if (!visited.getAbstract(abstractKind, pathBankVisited))
 		{
-			neighbors.add(globalTeleports);
+			neighbors.add(graph.createAbstract(abstractKind, node, pathBankVisited));
 		}
 
 		// Then add tiles which we can walk to, which go into the FIFO boundary queue.
@@ -192,7 +190,7 @@ public class CollisionMap
 		for (int i = 0; i < traversable.length; i++)
 		{
 			OrdinalDirection d = ORDINAL_VALUES[i];
-			int neighborPacked = packedPointFromOrdinal(node.packedPosition, d);
+			int neighborPacked = packedPointFromOrdinal(packedPosition, d);
 			if (visited.get(neighborPacked, pathBankVisited))
 			{
 				continue;
@@ -200,15 +198,15 @@ public class CollisionMap
 
 			if (traversable[i])
 			{
-				neighbors.add(new Node(neighborPacked, node, Node.cost(neighborPacked, node), pathBankVisited));
+				neighbors.add(graph.createTile(neighborPacked, node, pathBankVisited));
 			}
 			else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z))
 			{
 				// The transport starts from a blocked adjacent tile, e.g. fairy ring
 				// Only checks non-teleport transports (includes portals and levers, but not
 				// items and spells)
-				Set<Transport> neighborTransports = config.getTransportsPacked(pathBankVisited).getOrDefault(neighborPacked,
-					Set.of());
+				Transport[] neighborTransports = config.getTransportsPacked(pathBankVisited).getOrDefault(neighborPacked,
+					TransportAvailability.EMPTY_TRANSPORTS);
 				for (Transport transport : neighborTransports)
 				{
 					if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN
@@ -217,7 +215,7 @@ public class CollisionMap
 					{
 						continue;
 					}
-					neighbors.add(new Node(transport.getOrigin(), node, Node.cost(transport.getOrigin(), node), pathBankVisited));
+					neighbors.add(graph.createTile(transport.getOrigin(), node, pathBankVisited));
 				}
 			}
 		}
@@ -226,19 +224,21 @@ public class CollisionMap
 	}
 
 	// The only abstract nodes are currently for global teleports
-	private List<Node> getAbstractNodeNeighbors(Node node, VisitedTiles visited, PathfinderConfig config,
-		boolean targetInWilderness)
+	private PrimitiveIntList getAbstractNodeNeighbors(int node, VisitedTiles visited, PathfinderConfig config,
+		boolean targetInWilderness, NodeGraph graph)
 	{
 		neighbors.clear();
-		int sourceTile = node.getClosestTilePosition();
-		for (Transport transport : config.getUsableTeleports(node.bankVisited))
+		int sourceTile = graph.getClosestTilePosition(node);
+		boolean bankVisited = graph.bankVisited(node);
+		int maxWildernessLevel = graph.abstractKind(node).maxWildernessLevel();
+		for (Transport transport : config.getUsableTeleports(bankVisited))
 		{
 			boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
-			if (!delayedVisit && visited.get(transport.getDestination(), node.bankVisited))
+			if (!delayedVisit && visited.get(transport.getDestination(), bankVisited))
 			{
 				continue;
 			}
-			if (!transport.isUsableAtWildernessLevel(node.abstractKind.maxWildernessLevel()))
+			if (!transport.isUsableAtWildernessLevel(maxWildernessLevel))
 			{
 				continue;
 			}
@@ -251,12 +251,12 @@ public class CollisionMap
 			// station can still win the dequeue race, and a far-away whistle still resolves as the
 			// cheapest path because no competitor has a lower real cost to the same destination.
 			int differentialCost = delayedVisit ? config.getDifferentialCost(transport) : 0;
-			neighbors.add(new TransportNode(
+			neighbors.add(graph.createTransport(
 				transport.getDestination(),
 				node,
 				transport.getDuration(),
 				config.getAdditionalTransportCost(transport),
-				node.bankVisited,
+				bankVisited,
 				delayedVisit,
 				differentialCost));
 		}

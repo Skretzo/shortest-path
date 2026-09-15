@@ -10,6 +10,9 @@ import net.runelite.client.config.Keybind;
 import net.runelite.client.config.Range;
 import net.runelite.client.config.Units;
 
+
+
+
 @SuppressWarnings("SameReturnValue")
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config
@@ -262,11 +265,23 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "useTeleportationSpellsHome",
+		name = "Use Home Teleport spells",
+		description = "Whether to include Home Teleport spells in the path",
+		position = 20,
+		section = sectionSettings
+	)
+	default boolean useTeleportationSpellsHome()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "useTeleportationMinigames",
 		name = "Use teleportation to minigames",
 		description = "Whether to include teleportation to minigames/activities/grouping in the path<br>" +
 			"(e.g. the Nightmare Zone minigame teleport). These teleports share a 20 minute cooldown.",
-		position = 20,
+		position = 21,
 		section = sectionSettings
 	)
 	default boolean useTeleportationMinigames()
@@ -278,7 +293,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "useWildernessObelisks",
 		name = "Use wilderness obelisks",
 		description = "Whether to include wilderness obelisks in the path",
-		position = 21,
+		position = 22,
 		section = sectionSettings
 	)
 	default boolean useWildernessObelisks()
@@ -290,7 +305,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "useSeasonalTransports",
 		name = "Use seasonal transports",
 		description = "Whether to include seasonal transports like League teleports in the path",
-		position = 22,
+		position = 23,
 		section = sectionSettings
 	)
 	default boolean useSeasonalTransports()
@@ -303,7 +318,7 @@ public interface ShortestPathConfig extends Config
 		name = "Include path to bank",
 		description = "Whether to include the path to the closest bank<br>" +
 			"when suggesting teleports from the bank",
-		position = 23,
+		position = 24,
 		section = sectionSettings
 	)
 	default boolean includeBankPath()
@@ -316,7 +331,7 @@ public interface ShortestPathConfig extends Config
 		name = "Currency threshold",
 		description = "The maximum amount of currency to use on a single transportation method." +
 			"<br>The currencies affected by the threshold are coins, trading sticks, ecto-tokens and warrior guild tokens.",
-		position = 24,
+		position = 25,
 		section = sectionSettings
 	)
 	default int currencyThreshold()
@@ -329,7 +344,7 @@ public interface ShortestPathConfig extends Config
 		name = "Cancel instead of recalculating",
 		description = "Whether the path should be cancelled rather than recalculated " +
 			"when the recalculate distance limit is exceeded",
-		position = 25,
+		position = 26,
 		section = sectionSettings
 	)
 	default boolean cancelInstead()
@@ -345,7 +360,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "recalculateDistance",
 		name = "Recalculate distance",
 		description = "Distance from the path the player should be for it to be recalculated (-1 for never)",
-		position = 26,
+		position = 27,
 		section = sectionSettings
 	)
 	default int recalculateDistance()
@@ -361,7 +376,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "finishDistance",
 		name = "Finish distance",
 		description = "Distance from the target tile at which the path should be ended (-1 for never)",
-		position = 27,
+		position = 28,
 		section = sectionSettings
 	)
 	default int reachedDistance()
@@ -377,7 +392,7 @@ public interface ShortestPathConfig extends Config
 		name = "Unreachable target distance",
 		description = "Distance from the target at which a finished path is considered not to reach the target." +
 			"<br>Useful for determining if a path is potentially invalid.",
-		position = 28,
+		position = 29,
 		section = sectionSettings
 	)
 	default int unreachableTargetDistance()
@@ -389,7 +404,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showTileCounter",
 		name = "Show tile counter",
 		description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
-		position = 29,
+		position = 30,
 		section = sectionSettings
 	)
 	default TileCounter showTileCounter()
@@ -401,7 +416,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "tileCounterStep",
 		name = "Tile counter step",
 		description = "The number of tiles between the displayed tile counter numbers",
-		position = 30,
+		position = 31,
 		section = sectionSettings
 	)
 	default int tileCounterStep()
@@ -421,7 +436,7 @@ public interface ShortestPathConfig extends Config
 		name = "Calculation cutoff",
 		description = "The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>" +
 			"made towards the path target before the calculation will be stopped",
-		position = 31,
+		position = 32,
 		section = sectionSettings
 	)
 	default int calculationCutoff()
@@ -433,7 +448,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showTransportInfo",
 		name = "Show transport info",
 		description = "Whether to display transport destination hint info, e.g. which chat option and text to click",
-		position = 32,
+		position = 33,
 		section = sectionSettings
 	)
 	default boolean showTransportInfo()
@@ -445,7 +460,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showBankPickupInfo",
 		name = "Show transport hint at pickup",
 		description = "When standing at a bank on the path, also show the transport hint for the next step requiring an item pickup",
-		position = 33,
+		position = 34,
 		section = sectionSettings
 	)
 	default boolean showBankPickupInfo()
@@ -457,7 +472,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "highlightBankPickupItems",
 		name = "Highlight bank pickup items",
 		description = "Highlight items in the bank that need to be picked up for the current path",
-		position = 34,
+		position = 88,
 		section = sectionSettings
 	)
 	default boolean highlightBankPickupItems()
@@ -469,7 +484,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "highlightSpellbookSpells",
 		name = "Highlight spellbook spells",
 		description = "Highlight spells in the spellbook that need to be cast for the current path step",
-		position = 35,
+		position = 89,
 		section = sectionSettings
 	)
 	default boolean highlightSpellbookSpells()
@@ -481,7 +496,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "highlightInventoryItems",
 		name = "Highlight inventory items",
 		description = "Highlight items in the inventory and equipment that need to be used for the current path step",
-		position = 36,
+		position = 90,
 		section = sectionSettings
 	)
 	default boolean highlightInventoryItems()
@@ -492,7 +507,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigSection(
 		name = "Player-Owned House",
 		description = "Options for POH (Player-Owned House) teleports",
-		position = 37,
+		position = 35,
 		closedByDefault = true
 	)
 	String sectionPoh = "sectionPoh";
@@ -936,11 +951,27 @@ public interface ShortestPathConfig extends Config
 		max = 10000
 	)
 	@ConfigItem(
+		keyName = "costTeleportationSpellsHome",
+		name = "Home Teleport spell threshold",
+		description = "How many extra tiles a Home Teleport spell must save<br>" +
+			"to be preferred over walking or other transports",
+		position = 65,
+		section = sectionThresholds
+	)
+	default int costTeleportationSpellsHome()
+	{
+		return 0;
+	}
+
+	@Range(
+		max = 10000
+	)
+	@ConfigItem(
 		keyName = "costTeleportationMinigames",
 		name = "Teleportation to minigame threshold",
 		description = "How many extra tiles a minigame teleport must save<br>" +
 			"to be preferred over walking or other transports",
-		position = 65,
+		position = 66,
 		section = sectionThresholds
 	)
 	default int costTeleportationMinigames()
@@ -956,7 +987,7 @@ public interface ShortestPathConfig extends Config
 		name = "Wilderness obelisk threshold",
 		description = "How many extra tiles a wilderness obelisk must save<br>" +
 			"to be preferred over walking or other transports",
-		position = 66,
+		position = 67,
 		section = sectionThresholds
 	)
 	default int costWildernessObelisks()
@@ -972,7 +1003,7 @@ public interface ShortestPathConfig extends Config
 		name = "Seasonal transport threshold",
 		description = "How many extra tiles a seasonal transport must save<br>" +
 			"to be preferred over walking or other transports",
-		position = 67,
+		position = 68,
 		section = sectionThresholds
 	)
 	default int costSeasonalTransports()
@@ -983,7 +1014,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigSection(
 		name = "Display",
 		description = "Options for displaying the path on the world map, minimap and scene tiles",
-		position = 68
+		position = 69
 	)
 	String sectionDisplay = "sectionDisplay";
 
@@ -991,7 +1022,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "drawMap",
 		name = "Draw path on world map",
 		description = "Whether the path should be drawn on the world map",
-		position = 69,
+		position = 70,
 		section = sectionDisplay
 	)
 	default boolean drawMap()
@@ -1003,7 +1034,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "drawMinimap",
 		name = "Draw path on minimap",
 		description = "Whether the path should be drawn on the minimap",
-		position = 70,
+		position = 71,
 		section = sectionDisplay
 	)
 	default boolean drawMinimap()
@@ -1015,7 +1046,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "drawTiles",
 		name = "Draw path on tiles",
 		description = "Whether the path should be drawn on the game tiles",
-		position = 71,
+		position = 72,
 		section = sectionDisplay
 	)
 	default boolean drawTiles()
@@ -1027,7 +1058,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "pathStyle",
 		name = "Path style",
 		description = "Whether to display the path as tiles or a segmented line",
-		position = 72,
+		position = 73,
 		section = sectionDisplay
 	)
 	default TileStyle pathStyle()
@@ -1038,7 +1069,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigSection(
 		name = "Colours",
 		description = "Colours for the path map, minimap and scene tiles",
-		position = 73
+		position = 74
 	)
 	String sectionColours = "sectionColours";
 
@@ -1047,7 +1078,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "colourPath",
 		name = "Path",
 		description = "Colour of the path tiles on the world map, minimap and in the game scene",
-		position = 74,
+		position = 75,
 		section = sectionColours
 	)
 	default Color colourPath()
@@ -1061,7 +1092,7 @@ public interface ShortestPathConfig extends Config
 		name = "Calculating",
 		description = "Colour of the path tiles while the pathfinding calculation is in progress," +
 			"<br>and the colour of unused targets if there are more than a single target",
-		position = 75,
+		position = 76,
 		section = sectionColours
 	)
 	default Color colourPathCalculating()
@@ -1074,7 +1105,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "colourPathUnreachable",
 		name = "Unreachable",
 		description = "Colour of the path tiles when pathfinding has finished but the target is still too far away",
-		position = 76,
+		position = 77,
 		section = sectionColours
 	)
 	default Color colourPathUnreachable()
@@ -1087,7 +1118,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "colourTransports",
 		name = "Transports",
 		description = "Colour of the transport tiles",
-		position = 77,
+		position = 78,
 		section = sectionColours
 	)
 	default Color colourTransports()
@@ -1100,7 +1131,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "colourCollisionMap",
 		name = "Collision map",
 		description = "Colour of the collision map tiles",
-		position = 78,
+		position = 79,
 		section = sectionColours
 	)
 	default Color colourCollisionMap()
@@ -1113,7 +1144,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "colourText",
 		name = "Text",
 		description = "Colour of the text of the tile counter and fairy ring codes",
-		position = 79,
+		position = 80,
 		section = sectionColours
 	)
 	default Color colourText()
@@ -1126,7 +1157,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "colourBankPickupHighlight",
 		name = "Bank pickup highlight",
 		description = "Colour used to highlight bank items that need to be picked up for the current path",
-		position = 80,
+		position = 91,
 		section = sectionColours
 	)
 	default Color colourBankPickupHighlight()

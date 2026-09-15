@@ -6,14 +6,15 @@ Validates TSV transport files for:
   1. Header must start with '#'
   2. Column names must all be recognized by the parser
   3. Column count consistency (every data row must match the header)
-  4. Origin/Destination cells must be 'x y plane' coordinates (or empty)
-  5. Skill-like values ('N SkillName') must not appear in Items columns
-  6. Items column values must follow 'NAME=qty' format (& / | separated)
-  7. Skills column values must follow 'N SkillName' format (; separated)
-  8. Varbits/VarPlayers must follow 'id<op>value' format (; separated)
-  9. Duration must be a positive integer
- 10. Wilderness level must be a non-negative integer
- 11. Consumable must be 'T' or 'F'
+  4. Values must not have leading or trailing whitespace
+  5. Origin/Destination cells must be 'x y plane' coordinates (or empty)
+  6. Skill-like values ('N SkillName') must not appear in Items columns
+  7. Items column values must follow 'NAME=qty' format (& / | separated)
+  8. Skills column values must follow 'N SkillName' format (; separated)
+  9. Varbits/VarPlayers must follow 'id<op>value' format (; separated)
+ 10. Duration must be a positive integer
+ 11. Wilderness level must be a non-negative integer
+ 12. Consumable must be 'T' or 'F'
 
 Usage:
   python3 check_tsv.py [directory]
@@ -288,9 +289,18 @@ def check_tsv(filepath):
         if line.startswith("#"):
             continue
 
-        # Check 4-11: per-cell validators
+        # Check 4-12: per-cell validators
         for col_idx, (col_val, validator) in enumerate(zip(cols, validators)):
-            if validator is None or not col_val.strip():
+            if validator is None:
+                continue
+
+            if col_val != col_val.strip():
+                issues.append(
+                    f"  line {lineno} [{headers[col_idx]}]: value has leading/trailing whitespace"
+                )
+                continue
+
+            if not col_val.strip():
                 continue
 
             result = validator(col_val)

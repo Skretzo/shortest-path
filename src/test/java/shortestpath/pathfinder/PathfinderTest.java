@@ -1,6 +1,9 @@
 package shortestpath.pathfinder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
@@ -29,6 +32,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
+import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
@@ -214,12 +218,9 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		// Ensure none of the usable transports are of type FAIRY_RING
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
-			{
-				assertNotEquals("Fairy ring used unexpectedly: " + t, TransportType.FAIRY_RING, t.getType());
-			}
+			assertNotEquals("Fairy ring used unexpectedly: " + t, TransportType.FAIRY_RING, t.getType());
 		}
 	}
 
@@ -233,12 +234,9 @@ public class PathfinderTest
 
 		setupConfig(QuestState.NOT_STARTED, 99, TeleportationItem.NONE);
 
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
-			{
-				assertNotEquals("Fairy ring used unexpectedly without quest progress or diary: " + t, TransportType.FAIRY_RING, t.getType());
-			}
+			assertNotEquals("Fairy ring used unexpectedly without quest progress or diary: " + t, TransportType.FAIRY_RING, t.getType());
 		}
 	}
 
@@ -288,18 +286,11 @@ public class PathfinderTest
 		// With per-path filtering, fairy rings ARE in the transport map
 		// but filtered at runtime based on whether the path visited a bank
 		boolean hasFairyRing = false;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (TransportType.FAIRY_RING.equals(t.getType()))
 			{
-				if (TransportType.FAIRY_RING.equals(t.getType()))
-				{
-					hasFairyRing = true;
-					break;
-				}
-			}
-			if (hasFairyRing)
-			{
+				hasFairyRing = true;
 				break;
 			}
 		}
@@ -467,18 +458,11 @@ public class PathfinderTest
 		// With per-path filtering, fairy rings ARE in the transport map
 		// but filtered at runtime based on whether the path visited a bank
 		boolean hasFairyRing = false;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (TransportType.FAIRY_RING.equals(t.getType()))
 			{
-				if (TransportType.FAIRY_RING.equals(t.getType()))
-				{
-					hasFairyRing = true;
-					break;
-				}
-			}
-			if (hasFairyRing)
-			{
+				hasFairyRing = true;
 				break;
 			}
 		}
@@ -690,10 +674,10 @@ public class PathfinderTest
 
 		assertTrue("Banker's Briefcase should be used after visiting a bank",
 			usedTransportWithDisplayInfoAfterFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
-				"Banker's Briefcase: Catherby"));
+				"Banker's Briefcase: Kandarin - Catherby"));
 		assertFalse("Banker's Briefcase should not be used before the first bank visit",
 			usedTransportWithDisplayInfoBeforeFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
-				"Banker's Briefcase: Catherby"));
+				"Banker's Briefcase: Kandarin - Catherby"));
 	}
 
 	@Test
@@ -1000,7 +984,7 @@ public class PathfinderTest
 	 * whistle as well as teleportation tabs, since both are consumable items.
 	 * Without this fix the whistle bypassed the consumable-item threshold and could
 	 * make a bank-detour route appear cheaper than a direct teleportation tab.
-	 *
+	 * <p>
 	 * Verified via the Aldarin platform cost boundary: from 1 tile away the platform
 	 * compareCost is 7 (1 walk + 6 flight). With costConsumableTeleportationItems=5
 	 * the whistle's actual cost becomes 4+5=9, so the platform wins (path length 3).
@@ -1316,7 +1300,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
-			771,
+			769,
 			origin,
 			destination);
 
@@ -1439,6 +1423,27 @@ public class PathfinderTest
 		testTransportMinimumLength(3,
 			WorldPointUtil.packWorldPoint(1808, 3679, 0), // Port Piscarilius
 			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
+
+		testTransportMinimumLength(3,
+			WorldPointUtil.packWorldPoint(3058, 2975, 0), // The Pandemonium
+			WorldPointUtil.packWorldPoint(2954, 3158, 0)); // Musa Point
+
+		testTransportMinimumLength(3,
+			WorldPointUtil.packWorldPoint(3058, 2975, 0), // The Pandemonium
+			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
+	}
+
+	@Test
+	public void testLumbridgeDesertSteppingStoneCannotCrossOcean()
+	{
+		when(config.useAgilityShortcuts()).thenReturn(true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		Pathfinder pathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(3212, 3137, 0),
+			WorldPointUtil.packWorldPoint(3214, 3132, 0));
+
+		assertFalse("Stepping stone must not connect ocean tiles", pathfinder.getResult().isReached());
 	}
 
 	@Test
@@ -1597,8 +1602,8 @@ public class PathfinderTest
 		setupConfig(questState, skillLevel, useTeleportationItems);
 
 		int counter = 0;
-		Map<Integer, Set<Transport>> activeTransports = pathfinderConfig.getTransports();
-		for (int origin : activeTransports.keySet())
+		PrimitiveIntHashMap<Transport[]> activeTransports = pathfinderConfig.getTransports();
+		for (int origin : activeTransports.keys())
 		{
 			for (Transport transport : activeTransports.get(origin))
 			{
@@ -1643,14 +1648,11 @@ public class PathfinderTest
 
 		// Count actual transports in the configured (usable) transports
 		int actualCount = 0;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (transportType.equals(t.getType()))
 			{
-				if (transportType.equals(t.getType()))
-				{
-					actualCount++;
-				}
+				actualCount++;
 			}
 		}
 
@@ -1768,11 +1770,22 @@ public class PathfinderTest
 		return runPathfinder(origin, destination);
 	}
 
-	private boolean hasTransportWithRequiredItem(Map<Integer, Set<Transport>> transports, int[] variationIds)
+	private List<Transport> activeTransportList()
 	{
-		for (Set<Transport> set : transports.values())
+		PrimitiveIntHashMap<Transport[]> active = pathfinderConfig.getTransports();
+		List<Transport> all = new ArrayList<>();
+		for (int origin : active.keys())
 		{
-			for (Transport t : set)
+			all.addAll(Arrays.asList(active.get(origin)));
+		}
+		return all;
+	}
+
+	private boolean hasTransportWithRequiredItem(PrimitiveIntHashMap<Transport[]> transports, int[] variationIds)
+	{
+		for (int origin : transports.keys())
+		{
+			for (Transport t : transports.get(origin))
 			{
 				TransportItems items = t.getItemRequirements();
 				if (items == null)
@@ -1809,14 +1822,11 @@ public class PathfinderTest
 	private int countLovakenjMinecarts()
 	{
 		int count = 0;
-		for (Set<Transport> set : pathfinderConfig.getTransports().values())
+		for (Transport t : activeTransportList())
 		{
-			for (Transport t : set)
+			if (t.isType(TransportType.MINECART) && t.hasVarbit(7796))
 			{
-				if (t.isType(TransportType.MINECART) && t.hasVarbit(7796))
-				{
-					count++;
-				}
+				count++;
 			}
 		}
 		return count;
@@ -1913,9 +1923,9 @@ public class PathfinderTest
 
 	private Set<Transport> transportsForStep(int origin, boolean bankVisited)
 	{
-		Set<Transport> stepTransports = new java.util.HashSet<>(
-			pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, Set.of()));
-		stepTransports.addAll(pathfinderConfig.getUsableTeleports(bankVisited));
+		Set<Transport> stepTransports = new java.util.HashSet<>(Arrays.asList(
+			pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)));
+		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisited)));
 		return stepTransports;
 	}
 

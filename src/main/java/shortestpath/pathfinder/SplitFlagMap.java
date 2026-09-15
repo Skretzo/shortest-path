@@ -2,6 +2,8 @@ package shortestpath.pathfinder;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -18,30 +20,54 @@ import shortestpath.Util;
 
 public class SplitFlagMap
 {
+	private static final int FLAG_COUNT = 2;
+	private static final int BITS_PER_PLANE = REGION_SIZE * REGION_SIZE * FLAG_COUNT;
+	private static final int WORDS_PER_PLANE = BITS_PER_PLANE / Long.SIZE;
+	private static final int REGION_MASK = REGION_SIZE - 1;
+
 	@Getter
 	private static RegionExtent regionExtents;
 
 	private final byte[] regionMapPlaneCounts;
-	// Size is automatically chosen based on the max extents of the collision data
-	private final FlagMap[] regionMaps;
+	// Every region's collision bits are packed into one shared word array instead of a separate
+	// FlagMap + BitSet + long[] per region. regionWordOffset gives each region's start word, or -1
+	// when the region has no collision data (issue #491).
+	private final long[] flags;
+	private final int[] regionWordOffset;
 	private final int widthInclusive;
 
 	public SplitFlagMap(Map<Integer, byte[]> compressedRegions)
 	{
 		widthInclusive = regionExtents.getWidth() + 1;
 		final int heightInclusive = regionExtents.getHeight() + 1;
-		regionMaps = new FlagMap[widthInclusive * heightInclusive];
-		regionMapPlaneCounts = new byte[regionMaps.length];
+		final int regionCount = widthInclusive * heightInclusive;
+		regionMapPlaneCounts = new byte[regionCount];
+		regionWordOffset = new int[regionCount];
+		Arrays.fill(regionWordOffset, -1);
 
+		// First pass: decode each region and reserve it a slice of the shared word array.
+		final Map<Integer, long[]> regionWords = new HashMap<>(compressedRegions.size());
+		int totalWords = 0;
 		for (Map.Entry<Integer, byte[]> entry : compressedRegions.entrySet())
 		{
 			final int pos = entry.getKey();
-			final int x = unpackX(pos);
-			final int y = unpackY(pos);
-			final int index = getIndex(x, y);
-			FlagMap flagMap = new FlagMap(x * REGION_SIZE, y * REGION_SIZE, entry.getValue());
-			regionMaps[index] = flagMap;
-			regionMapPlaneCounts[index] = flagMap.getPlaneCount();
+			final int index = getIndex(unpackX(pos), unpackY(pos));
+			final BitSet bits = BitSet.valueOf(entry.getValue());
+			// Same plane-count derivation the old FlagMap used.
+			final int planeCount = (bits.size() + BITS_PER_PLANE - 1) / BITS_PER_PLANE;
+			regionMapPlaneCounts[index] = (byte) planeCount;
+			regionWordOffset[index] = totalWords;
+			regionWords.put(index, bits.toLongArray());
+			totalWords += planeCount * WORDS_PER_PLANE;
+		}
+
+		// Second pass: copy each region's words into its reserved slice (trailing zero words from
+		// BitSet.toLongArray are left as the zero-filled remainder of the slice).
+		flags = new long[totalWords];
+		for (Map.Entry<Integer, long[]> entry : regionWords.entrySet())
+		{
+			final long[] words = entry.getValue();
+			System.arraycopy(words, 0, flags, regionWordOffset[entry.getKey()], words.length);
 		}
 	}
 
@@ -102,12 +128,23 @@ public class SplitFlagMap
 	public boolean get(int x, int y, int z, int flag)
 	{
 		final int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
-		if (index < 0 || index >= regionMaps.length || regionMaps[index] == null)
+		if (index < 0 || index >= regionWordOffset.length)
 		{
 			return false;
 		}
 
-		return regionMaps[index].get(x, y, z, flag);
+		final int wordOffset = regionWordOffset[index];
+		if (wordOffset < 0 || z < 0 || z >= regionMapPlaneCounts[index])
+		{
+			return false;
+		}
+
+		// SplitFlagMap routes (x, y) to the region that contains it, so the in-region coordinates
+		// are simply the low REGION_SIZE bits; this matches the old FlagMap.index arithmetic.
+		final int localBit = (z * REGION_SIZE * REGION_SIZE
+			+ (y & REGION_MASK) * REGION_SIZE
+			+ (x & REGION_MASK)) * FLAG_COUNT + flag;
+		return (flags[wordOffset + (localBit >> 6)] >>> (localBit & 63) & 1L) != 0L;
 	}
 
 	private int getIndex(int regionX, int regionY)

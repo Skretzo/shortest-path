@@ -475,6 +475,7 @@ public class TransportTypeConfigTest
 		when(config.useTeleportationPortalsPoh()).thenReturn(true);
 		when(config.useTeleportationSpells()).thenReturn(true);
 		when(config.useWildernessObelisks()).thenReturn(true);
+		when(config.useTeleportationSpellsHome()).thenReturn(true);
 
 		// Cost methods (return 0 by default)
 		when(config.costAgilityShortcuts()).thenReturn(0);
@@ -499,5 +500,6 @@ public class TransportTypeConfigTest
 		when(config.costTeleportationPortals()).thenReturn(0);
 		when(config.costTeleportationSpells()).thenReturn(0);
 		when(config.costWildernessObelisks()).thenReturn(0);
+		when(config.costTeleportationSpellsHome()).thenReturn(0);
 	}
 }

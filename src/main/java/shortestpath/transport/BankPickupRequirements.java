@@ -14,6 +14,7 @@ import net.runelite.api.EnumID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarbitID;
 import shortestpath.ItemVariations;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -109,15 +110,11 @@ public final class BankPickupRequirements
 				TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
 
 				List<Transport> edgeAlternatives = new ArrayList<>();
-				Set<Transport> originSet = availability.getTransportsByOrigin().get(stepPoint);
-				if (originSet != null)
+				for (Transport t : availability.getTransportsAt(stepPoint))
 				{
-					for (Transport t : originSet)
+					if (t.getDestination() == nextPoint)
 					{
-						if (t.getDestination() == nextPoint)
-						{
-							edgeAlternatives.add(t);
-						}
+						edgeAlternatives.add(t);
 					}
 				}
 				for (Transport t : availability.getUsableTeleports())
@@ -202,7 +199,8 @@ public final class BankPickupRequirements
 			}
 
 			// Fairy ring staff (Dramen / Lunar) is a single OR requirement across the whole trip.
-			if (usesFairyRing)
+			// Not needed if the Lumbridge Elite diary is complete.
+			if (usesFairyRing && client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1)
 			{
 				int[] staffIds = ItemVariations.DRAMEN_STAFF.getIds();
 				if (!BankPickupRequirements.hasAnyItem(playerHas, staffIds, 1))

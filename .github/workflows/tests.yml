@@ -25,7 +25,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Run tests
-        run: ./gradlew test jacocoTestReport --stacktrace
+        run: ./gradlew test jacocoTestReport --stacktrace --info
         shell: bash
       - name: Upload JUnit XML results
         if: always()

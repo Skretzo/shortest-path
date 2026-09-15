@@ -74,7 +74,10 @@ public class PathfinderConfig
 	/**
 	 * All transports by origin. The WorldPointUtil.UNDEFINED key is used for transports centered on the player.
 	 */
-	private final Map<Integer, Set<Transport>> allTransports;
+	// Flat list of every loaded transport. refreshTransports only ever iterates these (the origin
+	// is re-derived from each transport), so the per-origin Set/HashMap/Integer-key map the loader
+	// produces is flattened here and not retained (issue #491).
+	private final Transport[] allTransports;
 	private final Map<String, Set<Integer>> allDestinations;
 	private final Map<String, Set<Integer>> filteredDestinations;
 	/**
@@ -125,6 +128,8 @@ public class PathfinderConfig
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
+	@Getter
+	private boolean isOnSailingBoat;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -133,10 +138,11 @@ public class PathfinderConfig
 		this.transportTypeConfig = new TransportTypeConfig(config);
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
-		this.allTransports = TransportLoader.loadAllFromResources();
-		remapPohDestinations(allTransports);
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.size()).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.size()).build();
+		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
+		remapPohDestinations(loadedTransports);
+		this.allTransports = flatten(loadedTransports);
+		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
+		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.allDestinations = Destination.loadAllFromResources();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
@@ -153,9 +159,9 @@ public class PathfinderConfig
 		this.transportTypeConfig = new TransportTypeConfig(config);
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
-		this.allTransports = allTransports;
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.size()).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.size()).build();
+		this.allTransports = flatten(allTransports);
+		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
+		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.allDestinations = allDestinations;
 		this.filteredDestinations = filteredDestinations;
 		this.destinations = allDestinations;
@@ -215,17 +221,17 @@ public class PathfinderConfig
 	 * Use {@link #getTransportAvailability(boolean)}, {@link #getTransportsPacked(boolean)}, or
 	 * {@link #getUsableTeleports(boolean)} for pathfinding and path analysis code.
 	 */
-	public Map<Integer, Set<Transport>> getTransports()
+	public PrimitiveIntHashMap<Transport[]> getTransports()
 	{
-		return getTransportAvailability(includeBankPath).getTransportsByOrigin();
+		return getTransportAvailability(includeBankPath).getDisplayTransports();
 	}
 
-	public PrimitiveIntHashMap<Set<Transport>> getTransportsPacked(boolean bankVisited)
+	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(boolean bankVisited)
 	{
 		return getTransportAvailability(bankVisited).getTransportsPacked();
 	}
 
-	public Set<Transport> getUsableTeleports(boolean bankVisited)
+	public Transport[] getUsableTeleports(boolean bankVisited)
 	{
 		return getTransportAvailability(bankVisited).getUsableTeleports();
 	}
@@ -283,6 +289,8 @@ public class PathfinderConfig
 
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
+			isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
+
 			int i = 0;
 			for (; i < Skill.values().length; i++)
 			{
@@ -473,50 +481,47 @@ public class PathfinderConfig
 		transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
 			QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
-		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.size());
-		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.size());
-		for (Map.Entry<Integer, Set<Transport>> entry : allTransports.entrySet())
+		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
+		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
+		for (Transport transport : allTransports)
 		{
-			for (Transport transport : entry.getValue())
+			for (Quest quest : transport.getQuests())
 			{
-				for (Quest quest : transport.getQuests())
+				try
 				{
-					try
-					{
-						questStates.put(quest, getQuestState(quest));
-					}
-					catch (NullPointerException ignored)
-					{
-					}
+					questStates.put(quest, getQuestState(quest));
 				}
+				catch (NullPointerException ignored)
+				{
+				}
+			}
 
-				for (VarRequirement varRequirement : transport.getVarRequirements())
+			for (VarRequirement varRequirement : transport.getVarRequirements())
+			{
+				if (varRequirement.isVarbit())
 				{
-					if (varRequirement.isVarbit())
-					{
-						varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
-					}
-					else
-					{
-						varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
-					}
+					varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
 				}
+				else
+				{
+					varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
+				}
+			}
 
-				if (!useTransport(transport))
-				{
-					continue;
-				}
+			if (!useTransport(transport))
+			{
+				continue;
+			}
 
-				boolean usableWithoutBank = hasRequiredItems(transport, true, true, false, true);
-				boolean usableWithBank = hasRequiredItems(transport, true, true, includeBankPath, true);
-				if (usableWithoutBank)
-				{
-					withoutBank.add(transport);
-				}
-				if (usableWithBank)
-				{
-					withBank.add(transport);
-				}
+			boolean usableWithoutBank = hasRequiredItems(transport, true, true, false, true);
+			boolean usableWithBank = hasRequiredItems(transport, true, true, includeBankPath, true);
+			if (usableWithoutBank)
+			{
+				withoutBank.add(transport);
+			}
+			if (usableWithBank)
+			{
+				withBank.add(transport);
 			}
 		}
 
@@ -560,7 +565,7 @@ public class PathfinderConfig
 	 * region override}, it replaces the chunk-classifier result for the
 	 * destination endpoint. Used for shortcuts whose destination chunk
 	 * sits in a different region than the wiki classifies the shortcut
-	 * under (e.g. Trollheim Wilderness climb \u2014 destination chunk is
+	 * under (e.g. Trollheim Wilderness climb — destination chunk is
 	 * Wilderness, but the shortcut is wiki-listed as Asgarnia).
 	 */
 	private boolean isTransportRegionAllowed(Transport transport)
@@ -586,6 +591,16 @@ public class PathfinderConfig
 	 * are remapped so chaining with other POH transports is possible.
 	 * Called once at load time since Transport objects in allTransports are shared references.
 	 */
+	private static Transport[] flatten(Map<Integer, Set<Transport>> transports)
+	{
+		List<Transport> all = new ArrayList<>();
+		for (Set<Transport> set : transports.values())
+		{
+			all.addAll(set);
+		}
+		return all.toArray(new Transport[0]);
+	}
+
 	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)
 	{
 		int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
@@ -647,6 +662,14 @@ public class PathfinderConfig
 
 	private boolean useTransport(Transport transport)
 	{
+		// Sailing: suppress teleports while the player is aboard a boat.
+		// We don't model sailing navigation, so teleporting away mid-ocean would produce
+		// confusing suggestions. Pathfinding resumes normally after disembarking.
+		if (isOnSailingBoat && transport.getType().isTeleport())
+		{
+			return false;
+		}
+
 		// Master POH gate - if POH is disabled, reject all POH transports
 		if (!usePoh)
 		{
@@ -873,9 +896,17 @@ public class PathfinderConfig
 	 */
 	private boolean hasRequiredLevels(Transport transport)
 	{
+		// In leagues some skills are disabled so the max total level is lower than
+		// the standard 2376. Holding the item (e.g. Max cape) already proves the
+		// player is maxed for the available skills, so skip the total-level check.
+		final int totalLevelIndex = Skill.values().length;
 		int[] requiredLevels = transport.getSkillLevels();
 		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
 		{
+			if (leagueModeState.isSeasonal() && i == totalLevelIndex)
+			{
+				continue;
+			}
 			int boostedLevel = boostedSkillLevelsAndMore[i];
 			int requiredLevel = requiredLevels[i];
 			if (boostedLevel < requiredLevel)

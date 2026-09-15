@@ -1,11 +1,8 @@
 package shortestpath.leagues;
 
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.WorldType;
@@ -73,19 +70,18 @@ public class LeagueModeState
 
 	static
 	{
-		Map<Integer, LeagueRegion> m = new HashMap<>();
-		m.put(1, LeagueRegion.MISTHALIN);
-		m.put(2, LeagueRegion.KARAMJA);
-		m.put(3, LeagueRegion.ASGARNIA);
-		m.put(4, LeagueRegion.KANDARIN);
-		m.put(5, LeagueRegion.MORYTANIA);
-		m.put(6, LeagueRegion.DESERT);
-		m.put(7, LeagueRegion.TIRANNWN);
-		m.put(8, LeagueRegion.FREMENNIK);
-		m.put(11, LeagueRegion.WILDERNESS);
-		m.put(20, LeagueRegion.KOUREND);
-		m.put(21, LeagueRegion.VARLAMORE);
-		AREA_VARBIT_TO_REGION = Collections.unmodifiableMap(m);
+		AREA_VARBIT_TO_REGION = Map.ofEntries(
+			Map.entry(1, LeagueRegion.MISTHALIN),
+			Map.entry(2, LeagueRegion.KARAMJA),
+			Map.entry(3, LeagueRegion.ASGARNIA),
+			Map.entry(4, LeagueRegion.KANDARIN),
+			Map.entry(5, LeagueRegion.MORYTANIA),
+			Map.entry(6, LeagueRegion.DESERT),
+			Map.entry(7, LeagueRegion.TIRANNWN),
+			Map.entry(8, LeagueRegion.FREMENNIK),
+			Map.entry(11, LeagueRegion.WILDERNESS),
+			Map.entry(20, LeagueRegion.KOUREND),
+			Map.entry(21, LeagueRegion.VARLAMORE));
 	}
 
 	@Getter

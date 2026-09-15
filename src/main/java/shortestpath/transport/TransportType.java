@@ -91,6 +91,14 @@ public enum TransportType
 				return true;
 			}
 		},
+	TELEPORTATION_SPELL_HOME("/transports/teleportation_spells_home.tsv", "useTeleportationSpellsHome", ShortestPathConfig::useTeleportationSpellsHome, "costTeleportationSpellsHome", ShortestPathConfig::costTeleportationSpellsHome)
+		{
+			@Override
+			public boolean isTeleport()
+			{
+				return true;
+			}
+		},
 	WILDERNESS_OBELISK("/transports/wilderness_obelisks.tsv", "useWildernessObelisks", ShortestPathConfig::useWildernessObelisks, "costWildernessObelisks", ShortestPathConfig::costWildernessObelisks),
 	;
 
