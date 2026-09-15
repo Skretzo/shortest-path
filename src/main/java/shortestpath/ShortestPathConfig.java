@@ -468,6 +468,42 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "highlightBankPickupItems",
+		name = "Highlight bank pickup items",
+		description = "Highlight items in the bank that need to be picked up for the current path",
+		position = 88,
+		section = sectionSettings
+	)
+	default boolean highlightBankPickupItems()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "highlightSpellbookSpells",
+		name = "Highlight spellbook spells",
+		description = "Highlight spells in the spellbook that need to be cast for the current path step",
+		position = 89,
+		section = sectionSettings
+	)
+	default boolean highlightSpellbookSpells()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "highlightInventoryItems",
+		name = "Highlight inventory items",
+		description = "Highlight items in the inventory and equipment that need to be used for the current path step",
+		position = 90,
+		section = sectionSettings
+	)
+	default boolean highlightInventoryItems()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 		name = "Player-Owned House",
 		description = "Options for POH (Player-Owned House) teleports",
@@ -1114,6 +1150,19 @@ public interface ShortestPathConfig extends Config
 	default Color colourText()
 	{
 		return Color.WHITE;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "colourBankPickupHighlight",
+		name = "Bank pickup highlight",
+		description = "Colour used to highlight bank items that need to be picked up for the current path",
+		position = 91,
+		section = sectionColours
+	)
+	default Color colourBankPickupHighlight()
+	{
+		return new Color(0, 255, 255, 255);
 	}
 
 	@ConfigSection(
