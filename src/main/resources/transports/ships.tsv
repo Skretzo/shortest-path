@@ -2,11 +2,11 @@
 # Port Sarim, Musa Point							
 3029 3217 0	2956 3146 0	Musa Point Captain Tobias 14979		COINS=30		10	Musa Point
 2956 3146 0	3029 3217 0	Port Sarim Customs officer 14985		COINS=30		10	Port Sarim
-
+							
 # Port Sarim, Pandemonium							
 3029 3217 0	3064 3003 0	The Pandemonium Captain Tobias 14979		COINS=30	Pandemonium	10	Pandemonium
 3064 3003 0	3029 3217 0	Port Sarim Seaman Morris 8631		COINS=30	Pandemonium	10	Port Sarim
-
+							
 # Musa Point, Pandemonium							
 2956 3146 0	3064 3003 0	The Pandemonium Customs officer 14985		COINS=30	Pandemonium	10	Pandemonium
 3064 3003 0	2956 3146 0	Musa Point Seaman Morris 8631		COINS=30	Pandemonium	10	Musa Point
@@ -27,10 +27,9 @@
 3362 3445 0	3724 3807 0	Quick-Travel Barge guard 8012			Bone Voyage	12	
 3724 3807 0	3362 3445 0	Travel Rowboat 30914			Bone Voyage	12	
 							
-# Lady of the Waves: Cairn Isle, Port Khazard, Port Sarim							
-2763 2960 1	2680 3150 0	Talk-to Captain Shanks 5364		COINS=50		10	
-2763 2960 1	3050 3192 0	Talk-to Captain Shanks 5364		COINS=50		10	
-2763 2960 1	3047 3235 0	Talk-to Captain Shanks 5364		COINS=50		10	
+# Lady of the Waves: Cairn Isle to Port Khazard or Port Sarim							
+2763 2960 1	2680 3150 0	Talk-to Captain Shanks 5364		621=1	Shilo Village	10	Port Khazard
+2763 2960 1	3050 3192 0	Talk-to Captain Shanks 5364		621=1	Shilo Village	10	Port Sarim
 							
 # Port Phasmatys, Mos Le'Harmless							
 3709 3496 0	3684 2953 0	Travel Bill Teach 4016			Cabin Fever	6	

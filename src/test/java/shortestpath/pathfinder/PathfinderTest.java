@@ -1423,6 +1423,14 @@ public class PathfinderTest
 		testTransportMinimumLength(3,
 			WorldPointUtil.packWorldPoint(1808, 3679, 0), // Port Piscarilius
 			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
+
+		testTransportMinimumLength(3,
+			WorldPointUtil.packWorldPoint(3058, 2975, 0), // The Pandemonium
+			WorldPointUtil.packWorldPoint(2954, 3158, 0)); // Musa Point
+
+		testTransportMinimumLength(3,
+			WorldPointUtil.packWorldPoint(3058, 2975, 0), // The Pandemonium
+			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
 	}
 
 	@Test
