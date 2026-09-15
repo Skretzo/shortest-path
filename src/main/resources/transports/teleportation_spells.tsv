@@ -15,7 +15,7 @@
 # Varbit 4744 is the Teleport to House mode, 0 = Inside, 1 = Outside. As both options are always available, we list								
 # each option twice, only specifying (Inside) or (Outside) if that is not the default mode selected by the player.								
 1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;4744=0	
-1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Inside)	20	4070=0;4744=0;4744=1	
+1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Inside)	20	4070=0;4744=1	
 # 1 - Rimmington								
 2953 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=1;4744=1	
 2953 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=1;4744=0	
@@ -67,7 +67,7 @@
 2890 3679 0	FIRE_RUNE=2&&LAW_RUNE=2	61 Magic	Eadgar's Ruse	4	Trollheim Teleport	20	4070=0	
 								
 # Ape Atoll Teleport								
-2797 2798 1	FIRE_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2&&BANANA=1	64 Magic	Freeing King Awowogei	4	Ape Atoll Teleport	20	4070=0	
+2797 2798 1	FIRE_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2&&BANANA=1	64 Magic	Recipe for Disaster - King Awowogei	4	Ape Atoll Teleport	20	4070=0	
 								
 # Ancient Spellbook - Varbit 4070=1								
 # Paddewwa Teleport								
