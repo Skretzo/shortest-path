@@ -6,7 +6,8 @@ import lombok.RequiredArgsConstructor;
 public enum TileStyle
 {
 	TILES("Tiles"),
-	LINES("Lines");
+	LINES("Lines"),
+	ARROW_LINE("Arrow line");
 
 	private final String type;
 
