@@ -5632,3 +5632,82 @@
 # Legends Guild Ladder									
 2893 3507 0	2893 9907 0	Climb-down Ladder 17374						1	
 2893 9907 0	2893 3507 0	Climb-up Ladder 17387						1	
+									
+# The Warrens									
+									
+1812 3745 0	1813 10145 0	Climb-down Manhole 31707						2	
+1813 3746 0	1813 10145 0	Climb-down Manhole 31707						2	
+1814 3745 0	1813 10145 0	Climb-down Manhole 31707						2	
+1813 3744 0	1813 10145 0	Climb-down Manhole 31707						2	
+									
+1813 10145 0	1813 3744 0	Climb-up Ladder 31708						2	
+1812 10145 0	1813 3744 0	Climb-up Ladder 31708						2	
+									
+									
+# Arceuus church									
+# top stairs									
+									
+1703 3795 2	1710 3795 1	Climb Stairs 27856						2	
+1703 3794 2	1710 3794 1	Climb Stairs 27856						2	
+1703 3793 2	1710 3793 1	Climb Stairs 27855						2	
+1703 3792 2	1710 3792 1	Climb Stairs 27855						2	
+									
+1710 3795 1	1703 3795 2	Climb Stairs 27854						2	
+1710 3794 1	1703 3794 2	Climb Stairs 27854						2	
+1710 3793 1	1703 3793 2	Climb Stairs 27853						2	
+1710 3792 1	1703 3792 2	Climb Stairs 27853						2	
+									
+# north stairs									
+									
+1685 3803 1	1678 3803 0	Climb Stairs 27855						2	
+1685 3802 1	1678 3802 0	Climb Stairs 27856						2	
+									
+1678 3803 0	1685 3803 1	Climb Stairs 27853						2	
+1678 3802 0	1685 3802 1	Climb Stairs 27854						2	
+									
+									
+# south stairs									
+									
+1685 3785 1	1678 3785 0	Climb Stairs 27855						2	
+1685 3784 1	1678 3784 0	Climb Stairs 27856						2	
+									
+1678 3785 0	1685 3785 1	Climb Stairs 27853						2	
+1678 3784 0	1685 3784 1	Climb Stairs 27854						2	
+									
+									
+# down stairs									
+									
+1688 3793 1	1695 3794 0	Climb Stairs 27852						2	
+1688 3793 1	1695 3793 0	Climb Stairs 27852						2	
+									
+1695 3794 0	1688 3793 1	Climb Stairs 27851						2	
+1695 3793 0	1688 3793 1	Climb Stairs 27851						2	
+									
+# wilderness air obelisk									
+									
+3088 3572 0	3088 9972 0	Climb-down Ladder 16680						2	
+3089 3571 0	3089 9971 0	Climb-down Ladder 16680						2	
+3088 3570 0	3088 9970 0	Climb-down Ladder 16680						2	
+3087 3571 0	3087 9971 0	Climb-down Ladder 16680						2	
+									
+3088 9972 0	3088 3572 0	Climb-down Ladder 16680						2	
+3089 9971 0	3089 3571 0	Climb-down Ladder 16680						2	
+3088 9970 0	3088 3570 0	Climb-down Ladder 16680						2	
+3087 9971 0	3087 3571 0	Climb-down Ladder 16680						2	
+									
+# Rogues' Castle									
+									
+3282 3936 3	3282 3936 2	Climb-down Staircase 14737						2	
+									
+3282 3936 2	3282 3936 3	Climb-up Staircase 14736						2	
+3282 3936 2	3281 3935 1	Climb-down Staircase 14736						2	
+									
+3282 3936 1	3282 3936 2	Climb-up Staircase 14736						2	
+3282 3936 1	3281 3935 0	Climb-down Staircase 14736						2	
+									
+3281 3935 0	3282 3936 1	Climb-up Staircase 14736						2	
+									
+									
+# Villa Lucens									
+									
+1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	

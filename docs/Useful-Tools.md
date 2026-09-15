@@ -65,7 +65,7 @@ RuneLite's developer mode gives you access to some debug tools. This includes:
 - An overlay that shows object ids of game-, floor- and wall objects
 - A logger that shows varbit and varplayer changes
 
-If you already have the shortest-path plugin checked out then you can run `./gradlew runelite` to launch a RuneLite instance with developer mode enabled.
+If you already have the shortest-path plugin checked out then you can run `./gradlew run` to launch a RuneLite instance with developer mode enabled.
 
 ### RuneLite Source files
 
