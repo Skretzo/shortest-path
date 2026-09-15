@@ -1630,7 +1630,6 @@ public class PathfinderTest
 
 		// Count expected transports from the full transport list
 		int expectedCount = 0;
-		Transport sampleTransport = null;
 		for (int origin : transports.keySet())
 		{
 			for (Transport transport : transports.get(origin))
@@ -1638,10 +1637,6 @@ public class PathfinderTest
 				if (transportType.equals(transport.getType()))
 				{
 					expectedCount++;
-					if (sampleTransport == null)
-					{
-						sampleTransport = transport;
-					}
 				}
 			}
 		}
@@ -1660,6 +1655,7 @@ public class PathfinderTest
 		assertTrue("At least one transport should exist", expectedCount > 0);
 
 		// Test path calculation on just one transport to verify pathfinding works
+		Transport sampleTransport = findSampleTransport(transportType);
 		assertEquals(sampleTransport.toString(), 2, calculateTransportLength(sampleTransport));
 	}
 
@@ -1740,7 +1736,14 @@ public class PathfinderTest
 				{
 					int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 					int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-					if (ShortestPathPlugin.isInsidePoh(originX, originY))
+					int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
+					int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+					// Skip transports touching the POH interior: they are rejected by
+					// PathfinderConfig unless usePoh is enabled, and the POH ring
+					// destination is unreachable by walking, so a picked sample would
+					// produce an arbitrarily long exhausted-search path instead of 2.
+					if (ShortestPathPlugin.isInsidePoh(originX, originY)
+						|| ShortestPathPlugin.isInsidePoh(destX, destY))
 					{
 						continue;
 					}
