@@ -36,6 +36,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
@@ -125,7 +126,7 @@ public class PathfinderConfig
 		usePoh,
 		usePohObelisk,
 		includeBankPath;
-	private Set<String> enabledPohNexusPortals = Set.of();
+	private Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
@@ -279,173 +280,7 @@ public class PathfinderConfig
 		usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
 		usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
 		usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
-		enabledPohNexusPortals = new HashSet<>();
-		if (ShortestPathPlugin.override("usePohNexusAnnakarl", config.usePohNexusAnnakarl()))
-		{
-			enabledPohNexusPortals.add("Annakarl Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusArceuusLibrary", config.usePohNexusArceuusLibrary()))
-		{
-			enabledPohNexusPortals.add("Arceuus Library Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusArdougne", config.usePohNexusArdougne()))
-		{
-			enabledPohNexusPortals.add("Ardougne Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusBarbarianOutpost", config.usePohNexusBarbarianOutpost()))
-		{
-			enabledPohNexusPortals.add("Barbarian Outpost Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusBarrows", config.usePohNexusBarrows()))
-		{
-			enabledPohNexusPortals.add("Barrows Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusBattlefront", config.usePohNexusBattlefront()))
-		{
-			enabledPohNexusPortals.add("Battlefront Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusCamelot", config.usePohNexusCamelot()))
-		{
-			enabledPohNexusPortals.add("Camelot Portal");
-			enabledPohNexusPortals.add("Seers' Village Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusCarrallanger", config.usePohNexusCarrallanger()))
-		{
-			enabledPohNexusPortals.add("Carrallanger Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusCatherby", config.usePohNexusCatherby()))
-		{
-			enabledPohNexusPortals.add("Catherby Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusCemetery", config.usePohNexusCemetery()))
-		{
-			enabledPohNexusPortals.add("Cemetery Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusCivitasIllaFortis", config.usePohNexusCivitasIllaFortis()))
-		{
-			enabledPohNexusPortals.add("Civitas illa Fortis Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusDareeyak", config.usePohNexusDareeyak()))
-		{
-			enabledPohNexusPortals.add("Dareeyak Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusDraynorManor", config.usePohNexusDraynorManor()))
-		{
-			enabledPohNexusPortals.add("Draynor Manor Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusFalador", config.usePohNexusFalador()))
-		{
-			enabledPohNexusPortals.add("Falador Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusFenkenstrainsCastle", config.usePohNexusFenkenstrainsCastle()))
-		{
-			enabledPohNexusPortals.add("Fenkenstrain's Castle Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusFishingGuild", config.usePohNexusFishingGuild()))
-		{
-			enabledPohNexusPortals.add("Fishing Guild Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusGhorrock", config.usePohNexusGhorrock()))
-		{
-			enabledPohNexusPortals.add("Ghorrock Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusHarmonyIsland", config.usePohNexusHarmonyIsland()))
-		{
-			enabledPohNexusPortals.add("Harmony Island Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusIcePlateau", config.usePohNexusIcePlateau()))
-		{
-			enabledPohNexusPortals.add("Ice Plateau Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusKharyrll", config.usePohNexusKharyrll()))
-		{
-			enabledPohNexusPortals.add("Kharyrll Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusKourend", config.usePohNexusKourend()))
-		{
-			enabledPohNexusPortals.add("Kourend Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusLassar", config.usePohNexusLassar()))
-		{
-			enabledPohNexusPortals.add("Lassar Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusLumbridge", config.usePohNexusLumbridge()))
-		{
-			enabledPohNexusPortals.add("Lumbridge Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusLunarIsle", config.usePohNexusLunarIsle()))
-		{
-			enabledPohNexusPortals.add("Lunar Isle Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusMarim", config.usePohNexusMarim()))
-		{
-			enabledPohNexusPortals.add("Marim Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusMindAltar", config.usePohNexusMindAltar()))
-		{
-			enabledPohNexusPortals.add("Mind Altar Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusOurania", config.usePohNexusOurania()))
-		{
-			enabledPohNexusPortals.add("Ourania Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusPaddewwa", config.usePohNexusPaddewwa()))
-		{
-			enabledPohNexusPortals.add("Paddewwa Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusPortKhazard", config.usePohNexusPortKhazard()))
-		{
-			enabledPohNexusPortals.add("Port Khazard Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusRespawn", config.usePohNexusRespawn()))
-		{
-			enabledPohNexusPortals.add("Respawn Portal (Lumbridge)");
-			enabledPohNexusPortals.add("Respawn Portal (Falador)");
-			enabledPohNexusPortals.add("Respawn Portal (Camelot)");
-			enabledPohNexusPortals.add("Respawn Portal (Edgeville)");
-			enabledPohNexusPortals.add("Respawn Portal (Prifddinas)");
-			enabledPohNexusPortals.add("Respawn Portal (Ferox Enclave)");
-			enabledPohNexusPortals.add("Respawn Portal (Kourend Castle)");
-			enabledPohNexusPortals.add("Respawn Portal (Civitas illa Fortis)");
-		}
-		if (ShortestPathPlugin.override("usePohNexusSalveGraveyard", config.usePohNexusSalveGraveyard()))
-		{
-			enabledPohNexusPortals.add("Salve Graveyard Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusSenntisten", config.usePohNexusSenntisten()))
-		{
-			enabledPohNexusPortals.add("Senntisten Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusTrollheim", config.usePohNexusTrollheim()))
-		{
-			enabledPohNexusPortals.add("Trollheim Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusTrollStronghold", config.usePohNexusTrollStronghold()))
-		{
-			enabledPohNexusPortals.add("Troll Stronghold Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusVarrock", config.usePohNexusVarrock()))
-		{
-			enabledPohNexusPortals.add("Varrock Portal");
-			enabledPohNexusPortals.add("Grand Exchange Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusWaterbirthIsland", config.usePohNexusWaterbirthIsland()))
-		{
-			enabledPohNexusPortals.add("Waterbirth Island Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusWatchtower", config.usePohNexusWatchtower()))
-		{
-			enabledPohNexusPortals.add("Watchtower Portal");
-			enabledPohNexusPortals.add("Yanille Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusWeiss", config.usePohNexusWeiss()))
-		{
-			enabledPohNexusPortals.add("Weiss Portal");;
-		}
-		if (ShortestPathPlugin.override("usePohNexusWestArdougne", config.usePohNexusWestArdougne()))
-		{
-			enabledPohNexusPortals.add("West Ardougne Portal");;
-		}
+		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
 		pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
@@ -967,11 +802,16 @@ public class PathfinderConfig
 		}
 		if (TransportType.TELEPORTATION_PORTAL_POH.equals(type))
 		{
-			String displayInfo = transport.getDisplayInfo();
-			return displayInfo == null || enabledPohNexusPortals.contains(displayInfo);
+			return isPohNexusPortalEnabled(enabledPohNexusPortals, transport.getDisplayInfo());
 		}
 
 		return true;
+	}
+
+	static boolean isPohNexusPortalEnabled(Set<PohNexusPortal> enabledPortals, String displayInfo)
+	{
+		PohNexusPortal portal = PohNexusPortal.fromDisplayInfo(displayInfo);
+		return portal == null || enabledPortals.contains(portal);
 	}
 
 	/**
