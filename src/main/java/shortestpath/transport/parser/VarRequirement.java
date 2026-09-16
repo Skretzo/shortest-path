@@ -50,22 +50,25 @@ public class VarRequirement
 	 * Checks if this requirement is satisfied given the current variable values.
 	 *
 	 * @param values A map of variable IDs to their current values
+	 * @param currentTimeMinutes current game time in minutes
 	 * @return true if the requirement is satisfied
 	 */
-	public boolean check(Map<Integer, Integer> values)
+	public boolean check(Map<Integer, Integer> values, long currentTimeMinutes)
 	{
 		Integer currentValue = values.get(id);
 		if (currentValue == null)
 		{
 			return false;
 		}
-		return checkValue(currentValue);
+		return checkValue(currentValue, currentTimeMinutes);
 	}
 
 	/**
-	 * Same logic as {@link #check(Map)} but with the variable value already resolved (e.g. from the client).
+	 * Same logic as {@link #check(Map, long)} but with the variable value already resolved (e.g. from the client).
+	 *
+	 * @param currentTimeMinutes current game time in minutes
 	 */
-	public boolean checkValue(int currentValue)
+	public boolean checkValue(int currentValue, long currentTimeMinutes)
 	{
 		switch (checkType)
 		{
@@ -78,7 +81,7 @@ public class VarRequirement
 			case BIT_SET:
 				return (currentValue & value) > 0;
 			case COOLDOWN_MINUTES:
-				return ((System.currentTimeMillis() / 60000) - currentValue) > value;
+				return (currentTimeMinutes - (long) currentValue) > value;
 			default:
 				return false;
 		}
