@@ -36,6 +36,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
@@ -125,6 +126,7 @@ public class PathfinderConfig
 		usePoh,
 		usePohObelisk,
 		includeBankPath;
+	private Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
@@ -278,6 +280,7 @@ public class PathfinderConfig
 		usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
 		usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
 		usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
+		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
 		pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
@@ -797,8 +800,18 @@ public class PathfinderConfig
 		{
 			return usePohObelisk;
 		}
+		if (TransportType.TELEPORTATION_PORTAL_POH.equals(type))
+		{
+			return isPohNexusPortalEnabled(enabledPohNexusPortals, transport.getDisplayInfo());
+		}
 
 		return true;
+	}
+
+	static boolean isPohNexusPortalEnabled(Set<PohNexusPortal> enabledPortals, String displayInfo)
+	{
+		PohNexusPortal portal = PohNexusPortal.fromDisplayInfo(displayInfo);
+		return portal == null || enabledPortals.contains(portal);
 	}
 
 	/**

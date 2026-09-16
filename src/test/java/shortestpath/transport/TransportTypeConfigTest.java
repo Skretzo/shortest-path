@@ -138,6 +138,19 @@ public class TransportTypeConfigTest
 			typeConfig.isEnabled(TransportType.BOAT));
 	}
 
+	@Test
+	public void testPohPortalMasterToggle()
+	{
+		setupDefaultMocks();
+		when(config.useTeleportationPortalsPoh()).thenReturn(false);
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
+		assertFalse(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
+
+		when(config.useTeleportationPortalsPoh()).thenReturn(true);
+		typeConfig.refresh();
+		assertTrue(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
+	}
+
 	/**
 	 * Verifies that types without configKey are enabled based on TeleportationItem
 	 * setting.
