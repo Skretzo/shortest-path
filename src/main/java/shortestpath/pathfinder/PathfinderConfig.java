@@ -514,7 +514,7 @@ public class PathfinderConfig
 				}
 			}
 
-			if (!useTransport(transport))
+			if (!useTransport(transport, evaluationTimeMinutes))
 			{
 				continue;
 			}
@@ -642,9 +642,8 @@ public class PathfinderConfig
 		return true;
 	}
 
-	public boolean varbitChecks(Transport transport)
+	public boolean varbitChecks(Transport transport, long evaluationTimeMinutes)
 	{
-		long evaluationTimeMinutes = currentTimeMinutes();
 		for (VarRequirement varRequirement : transport.getVarbits())
 		{
 			if (!varRequirement.check(varbitValues, evaluationTimeMinutes))
@@ -655,9 +654,8 @@ public class PathfinderConfig
 		return false;
 	}
 
-	public boolean varPlayerChecks(Transport transport)
+	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
 	{
-		long evaluationTimeMinutes = currentTimeMinutes();
 		for (VarRequirement varRequirement : transport.getVarPlayers())
 		{
 			if (!varRequirement.check(varPlayerValues, evaluationTimeMinutes))
@@ -668,7 +666,7 @@ public class PathfinderConfig
 		return false;
 	}
 
-	private boolean useTransport(Transport transport)
+	private boolean useTransport(Transport transport, long evaluationTimeMinutes)
 	{
 		// Sailing: suppress teleports while the player is aboard a boat.
 		// We don't model sailing navigation, so teleporting away mid-ocean would produce
@@ -738,12 +736,12 @@ public class PathfinderConfig
 			return false;
 		}
 
-		if (varbitChecks(transport))
+		if (varbitChecks(transport, evaluationTimeMinutes))
 		{
 			return false;
 		}
 
-		if (varPlayerChecks(transport))
+		if (varPlayerChecks(transport, evaluationTimeMinutes))
 		{
 			return false;
 		}
