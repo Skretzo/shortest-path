@@ -518,7 +518,9 @@ public class TransportLoaderFidelityTest
 						{
 							continue;
 						}
-						if (new QuestParser().parse(token).size() != 1)
+						// A token may expand to several quests (e.g. "All Quests"),
+						// so only an empty result means the token was dropped.
+						if (new QuestParser().parse(token).isEmpty())
 						{
 							failures.add(String.format(
 								"%s:%d: Quests token '%s' matched no Quest enum entry",
