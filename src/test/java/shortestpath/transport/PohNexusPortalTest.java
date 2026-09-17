@@ -1,7 +1,6 @@
 package shortestpath.transport;
 
 import java.util.EnumSet;
-import java.util.Set;
 import org.junit.Test;
 import shortestpath.TestShortestPathConfig;
 
@@ -58,9 +57,17 @@ public class PohNexusPortalTest
 	}
 
 	@Test
-	public void testDefaultConfigEnablesAllPortals()
+	public void testLegacyConfigSuppliesTheInitialPortalSelection()
 	{
-		Set<PohNexusPortal> expected = EnumSet.allOf(PohNexusPortal.class);
-		assertEquals(expected, new TestShortestPathConfig().pohNexusPortals());
+		assertEquals(EnumSet.noneOf(PohNexusPortal.class), new TestShortestPathConfig().pohNexusPortals());
+		TestShortestPathConfig legacyEnabled = new TestShortestPathConfig()
+		{
+			@Override
+			public boolean useTeleportationPortalsPoh()
+			{
+				return true;
+			}
+		};
+		assertEquals(EnumSet.allOf(PohNexusPortal.class), legacyEnabled.pohNexusPortals());
 	}
 }
