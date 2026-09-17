@@ -37,6 +37,7 @@ import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.transport.PohNexusPortal;
+import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
@@ -122,11 +123,11 @@ public class PathfinderConfig
 	// POH-specific settings (not tied to a single TransportType)
 	private boolean usePohFairyRing,
 		usePohSpiritTree,
-		usePohMountedItems,
 		usePoh,
 		usePohObelisk,
 		includeBankPath;
 	private Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
+	private Set<PohMountedItem> enabledPohMountedItems = Set.of();
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
@@ -278,9 +279,10 @@ public class PathfinderConfig
 		// POH-specific settings
 		usePohFairyRing = ShortestPathPlugin.override("usePohFairyRing", config.usePohFairyRing());
 		usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
-		usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
 		usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
 		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
+		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
+		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
 		pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
@@ -814,6 +816,12 @@ public class PathfinderConfig
 		return portal == null || enabledPortals.contains(portal);
 	}
 
+	static boolean isPohMountedItemEnabled(Set<PohMountedItem> enabledItems, String objectInfo)
+	{
+		PohMountedItem item = PohMountedItem.fromObjectInfo(objectInfo);
+		return item == null || enabledItems.contains(item);
+	}
+
 	/**
 	 * Checks teleportation item rules (consumable vs non-consumable, inventory settings).
 	 * Returns false if the transport should be filtered out based on teleportation item settings.
@@ -858,22 +866,16 @@ public class PathfinderConfig
 			return false;
 		}
 
-		// Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
-		boolean isMountedGlory = objectInfo.contains("Amulet of Glory");
-		boolean isMountedItem = isMountedGlory ||
-			objectInfo.contains("Xeric's Talisman") ||
-			objectInfo.contains("Digsite") ||
-			objectInfo.contains("Mythical cape");
-
-		if (isMountedItem)
+		PohMountedItem mountedItem = PohMountedItem.fromObjectInfo(objectInfo);
+		if (mountedItem != null)
 		{
 			// If mounted glory and ornate jewellery box is enabled, skip the glory
 			// because the ornate box already covers all 4 destinations with correct prefixes
-			if (isMountedGlory && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier))
+			if (PohMountedItem.GLORY.equals(mountedItem) && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier))
 			{
 				return false;
 			}
-			return usePohMountedItems;
+			return isPohMountedItemEnabled(enabledPohMountedItems, objectInfo);
 		}
 
 		// Filter jewellery boxes by tier

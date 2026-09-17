@@ -12,6 +12,7 @@ import net.runelite.client.config.Keybind;
 import net.runelite.client.config.Range;
 import net.runelite.client.config.Units;
 import shortestpath.transport.PohNexusPortal;
+import shortestpath.transport.PohMountedItem;
 
 
 
@@ -592,12 +593,28 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "usePohMountedItems",
+		keyName = "pohMountedItems",
 		name = "POH mounted items",
-		description = "Whether to include POH mounted items in the path<br>" +
-			"(e.g. mounted glory, Xeric's talisman, digsite pendant, mythical cape)",
+		description = "Select the mounted POH items available in your house",
 		position = 42,
 		section = sectionPoh
+	)
+	default Set<PohMountedItem> pohMountedItems()
+	{
+		return usePohMountedItems()
+			? EnumSet.allOf(PohMountedItem.class)
+			: EnumSet.noneOf(PohMountedItem.class);
+	}
+
+	/**
+	 * Legacy persisted setting used as the migration default for {@link #pohMountedItems()}.
+	 * Remove once the old config value is no longer supported.
+	 */
+	@ConfigItem(
+		keyName = "usePohMountedItems",
+		name = "",
+		description = "",
+		hidden = true
 	)
 	default boolean usePohMountedItems()
 	{
