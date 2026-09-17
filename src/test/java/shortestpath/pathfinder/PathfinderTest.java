@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
+import shortestpath.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
@@ -40,6 +42,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.requirement.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
@@ -1094,6 +1097,34 @@ public class PathfinderTest
 		when(config.usePoh()).thenReturn(true);
 		when(config.usePohObelisk()).thenReturn(true);
 		testTransportLength(2, TransportType.WILDERNESS_OBELISK);
+	}
+
+	@Test
+	public void testPohMountedItemSelectionChangesRoute()
+	{
+		// From Lumbridge to the Grand Exchange, a house tablet makes the POH exits viable:
+		// Edgeville is the closest Glory exit; after Glory is disabled, Digsite is the best remaining exit.
+		int grandExchange = WorldPointUtil.packWorldPoint(3164, 3487, 0);
+		when(config.usePoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(Set.of());
+		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
+		when(config.pohMountedItems()).thenReturn(EnumSet.of(
+			PohMountedItem.GLORY, PohMountedItem.DIGSITE_PENDANT));
+		setupInventory(new Item(8013, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		Pathfinder withGlory = runScenario(WorldPointUtil.packWorldPoint(3200, 3200, 0), grandExchange);
+		assertTrue(withGlory.getResult().isReached());
+		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Teleport to House tablet"));
+		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_BOX, "Edgeville"));
+
+		when(config.pohMountedItems()).thenReturn(EnumSet.of(PohMountedItem.DIGSITE_PENDANT));
+		pathfinderConfig.refresh();
+		Pathfinder withoutGlory = runScenario(WorldPointUtil.packWorldPoint(3200, 3200, 0), grandExchange);
+		assertTrue(withoutGlory.getResult().isReached());
+		assertTrue(usedTransportWithDisplayInfo(withoutGlory, TransportType.TELEPORTATION_ITEM, "Teleport to House tablet"));
+		assertFalse(usedTransportWithDisplayInfo(withoutGlory, TransportType.TELEPORTATION_BOX, "Edgeville"));
+		assertTrue(usedTransportWithDisplayInfo(withoutGlory, TransportType.TELEPORTATION_BOX, "Digsite"));
 	}
 
 	@Test
