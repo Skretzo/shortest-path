@@ -9,7 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.parser.QuestLists;
+import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
@@ -309,6 +309,24 @@ public class TransportLoaderTest
 	}
 
 	@Test
+	public void testMaximumSkillRequirements()
+	{
+		String contents = "# Origin\tDestination\tSkills\n" +
+			"3200 3200 0\t3300 3300 0\tMax Agility;Max Total;Max Combat;Max Quest\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		int[] skillLevels = getFirstTransport(transports.get(origin)).getSkillLevels();
+		int totalLevelIndex = Skill.values().length;
+
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[Skill.AGILITY.ordinal()]);
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex]);
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex + 1]);
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex + 2]);
+	}
+
+	@Test
 	public void testEmptySkillRequirements()
 	{
 		String contents = "# Origin\tDestination\tSkills\n" +
@@ -577,30 +595,7 @@ public class TransportLoaderTest
 	}
 
 	@Test
-	public void testAllQuestsTokenExcludesMiniquests()
-	{
-		String contents = "# Origin\tDestination\tQuests\n" +
-			"3200 3200 0\t3300 3300 0\tAll Quests\n";
-
-		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
-
-		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
-		Transport transport = getFirstTransport(transports.get(origin));
-
-		Set<Quest> quests = transport.getQuests();
-		Assert.assertTrue("Should be quest locked", transport.isQuestLocked());
-		Assert.assertTrue("Should require Cook's Assistant", quests.contains(Quest.COOKS_ASSISTANT));
-		Assert.assertTrue("Should require While Guthix Sleeps", quests.contains(Quest.WHILE_GUTHIX_SLEEPS));
-		Assert.assertFalse("Should not require Mage Arena II miniquest", quests.contains(Quest.MAGE_ARENA_II));
-		Assert.assertFalse("Should not require Daddy's Home miniquest", quests.contains(Quest.DADDYS_HOME));
-		Assert.assertEquals(
-			"Should require every quest except miniquests",
-			Quest.values().length - QuestLists.MINIQUESTS.size(),
-			quests.size());
-	}
-
-	@Test
-	public void testQuestPointCapeTeleportRequiresAllQuestsNotQuestPoints()
+	public void testQuestPointCapeTeleportRequiresQuestPoints()
 	{
 		HashMap<Integer, Set<Transport>> allTransports = TransportLoader.loadAllFromResources();
 		Transport cape = null;
@@ -622,12 +617,8 @@ public class TransportLoaderTest
 
 		Assert.assertNotNull("Quest point cape teleport should be loaded", cape);
 		int questPointsIndex = Skill.values().length + 2;
-		Assert.assertEquals("Quest points should not be required", 0, cape.getSkillLevels()[questPointsIndex]);
-		Assert.assertTrue("Cape teleport should be quest locked", cape.isQuestLocked());
-		Assert.assertTrue("Cape teleport should require all quests",
-			cape.getQuests().containsAll(QuestLists.ALL_QUESTS_EXCLUDING_MINIQUESTS));
-		Assert.assertFalse("Cape teleport should not require miniquests",
-			cape.getQuests().contains(Quest.MAGE_ARENA_II));
+		Assert.assertEquals("Quest points should be dynamic", SkillRequirementParser.MAX_LEVEL, cape.getSkillLevels()[questPointsIndex]);
+		Assert.assertFalse("Cape teleport should not have quest-name requirements", cape.isQuestLocked());
 	}
 
 	@Test

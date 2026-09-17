@@ -14,11 +14,6 @@ import net.runelite.api.Quest;
  * <p>
  * Example: {@code Dragon Slayer I;Recipe for Disaster}
  * </p>
- * <p>
- * Special token: {@code All Quests} expands to every
- * {@link Quest} except miniquests. Used by the quest point cape teleport so
- * eligibility tracks the current quest list instead of a stale quest-point total.
- * </p>
  */
 public class QuestParser implements FieldParser<Set<Quest>>
 {
@@ -32,11 +27,6 @@ public class QuestParser implements FieldParser<Set<Quest>>
 		{
 			return quests;
 		}
-		if (value.equals("All Quests"))
-		{
-			return QuestLists.ALL_QUESTS_EXCLUDING_MINIQUESTS;
-		}
-
 		String[] questNames = value.split(DELIM_MULTI);
 		for (String questName : questNames)
 		{
