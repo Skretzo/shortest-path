@@ -82,7 +82,7 @@ public enum TransportType
 			}
 		},
 	TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv", "useTeleportationPortals", ShortestPathConfig::useTeleportationPortals, "costTeleportationPortals", ShortestPathConfig::costTeleportationPortals),
-	TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv", "useTeleportationPortalsPoh", ShortestPathConfig::useTeleportationPortalsPoh, null, null),
+	TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv", null, null, null, null),
 	TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", ShortestPathConfig::useTeleportationSpells, "costTeleportationSpells", ShortestPathConfig::costTeleportationSpells)
 		{
 			@Override

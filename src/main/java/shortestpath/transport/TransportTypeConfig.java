@@ -2,6 +2,7 @@ package shortestpath.transport;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +91,11 @@ public class TransportTypeConfig
 			// The detailed filtering (consumable, inventory, etc.) is done in
 			// PathfinderConfig
 			return teleportationItemSetting != TeleportationItem.NONE;
+		}
+		if (type == TransportType.TELEPORTATION_PORTAL_POH)
+		{
+			Set<PohNexusPortal> portals = config.pohNexusPortals();
+			return portals != null && !portals.isEmpty();
 		}
 
 		// No enabled getter means always enabled (controlled elsewhere or not

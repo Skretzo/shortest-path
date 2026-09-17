@@ -557,10 +557,9 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		keyName = "useTeleportationPortalsPoh",
-		name = "POH portal nexus",
-		description = "Whether to include POH teleportation portals/nexus in the path",
-		position = 39,
-		section = sectionPoh
+		name = "",
+		description = "",
+		hidden = true
 	)
 	default boolean useTeleportationPortalsPoh()
 	{
@@ -576,7 +575,9 @@ public interface ShortestPathConfig extends Config
 	)
 	default Set<PohNexusPortal> pohNexusPortals()
 	{
-		return EnumSet.allOf(PohNexusPortal.class);
+		return useTeleportationPortalsPoh()
+			? EnumSet.allOf(PohNexusPortal.class)
+			: EnumSet.noneOf(PohNexusPortal.class);
 	}
 
 	@ConfigItem(

@@ -1,6 +1,7 @@
 package shortestpath.transport;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
 import static org.junit.Assert.assertEquals;
@@ -142,11 +143,11 @@ public class TransportTypeConfigTest
 	public void testPohPortalMasterToggle()
 	{
 		setupDefaultMocks();
-		when(config.useTeleportationPortalsPoh()).thenReturn(false);
+		when(config.pohNexusPortals()).thenReturn(EnumSet.noneOf(PohNexusPortal.class));
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 		assertFalse(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
 
-		when(config.useTeleportationPortalsPoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.ARDOUGNE));
 		typeConfig.refresh();
 		assertTrue(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
 	}
@@ -485,7 +486,7 @@ public class TransportTypeConfigTest
 		when(config.useTeleportationLevers()).thenReturn(true);
 		when(config.useTeleportationMinigames()).thenReturn(true);
 		when(config.useTeleportationPortals()).thenReturn(true);
-		when(config.useTeleportationPortalsPoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(EnumSet.allOf(PohNexusPortal.class));
 		when(config.useTeleportationSpells()).thenReturn(true);
 		when(config.useWildernessObelisks()).thenReturn(true);
 		when(config.useTeleportationSpellsHome()).thenReturn(true);
