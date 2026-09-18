@@ -13,6 +13,8 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.VarPlayer;
+import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
@@ -67,6 +69,7 @@ public class PathfinderTest
 	{
 		when(config.calculationCutoff()).thenReturn(30);
 		when(config.currencyThreshold()).thenReturn(10000000);
+		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 	}
 
 	@Test
@@ -1223,6 +1226,41 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testQuestCapeTeleportRequiresCapeAndCompletedQuests()
+	{
+		setupQuestPointDatabase(343);
+		setupInventory(new Item(ItemID.SKILLCAPE_QP, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertTrue("Quest cape in inventory with all quests finished should be usable",
+			hasUsableTeleport("Quest point cape: Teleport"));
+
+		setupQuestPointDatabase(342);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse("Quest cape should not teleport when quests are incomplete",
+			hasUsableTeleport("Quest point cape: Teleport"));
+	}
+
+	@Test
+	public void testQuestCapeInBankRequiresCompletedQuests()
+	{
+		setupQuestPointDatabase(343);
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.SKILLCAPE_QP, 1));
+		assertTrue("Quest cape in bank with all quests finished should be usable after banking",
+			hasUsableTeleport("Quest point cape: Teleport", true));
+
+		setupQuestPointDatabase(342);
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.SKILLCAPE_QP, 1));
+		assertFalse("Quest cape in bank should not be suggested when quests are incomplete",
+			hasUsableTeleport("Quest point cape: Teleport", true));
+	}
+
+	@Test
 	public void testWildernessRouteWithoutTeleportsWalksOut()
 	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
@@ -1627,6 +1665,18 @@ public class PathfinderTest
 		doReturn(items).when(inventory).getItems();
 	}
 
+	private void setupQuestPointDatabase(int currentQuestPoints)
+	{
+		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(Arrays.asList(1, 2, 3));
+		when(client.getDBTableField(1, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
+		when(client.getDBTableField(2, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
+		when(client.getDBTableField(3, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{0});
+		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{300});
+		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{43});
+		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{4});
+		when(client.getVarpValue(VarPlayer.QUEST_POINTS)).thenReturn(currentQuestPoints);
+	}
+
 	private void setupEquipment(Item... items)
 	{
 		doReturn(equipment).when(client).getItemContainer(InventoryID.WORN);
@@ -1911,7 +1961,12 @@ public class PathfinderTest
 
 	private void setupConfigWithBank(TeleportationItem useTeleportationItems, Item... bankItems)
 	{
-		pathfinderConfig = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
+		setupConfigWithBank(QuestState.FINISHED, useTeleportationItems, bankItems);
+	}
+
+	private void setupConfigWithBank(QuestState questState, TeleportationItem useTeleportationItems, Item... bankItems)
+	{
+		pathfinderConfig = new TestPathfinderConfig(client, config, questState, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
@@ -1988,6 +2043,23 @@ public class PathfinderTest
 				{
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	private boolean hasUsableTeleport(String displayInfo)
+	{
+		return hasUsableTeleport(displayInfo, false);
+	}
+
+	private boolean hasUsableTeleport(String displayInfo, boolean bankVisited)
+	{
+		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
+		{
+			if (displayInfo.equals(transport.getDisplayInfo()))
+			{
+				return true;
 			}
 		}
 		return false;

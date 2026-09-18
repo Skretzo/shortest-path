@@ -4,6 +4,7 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
+import net.runelite.api.gameval.DBTableID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -24,6 +25,7 @@ public class PathfinderResultTest
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(client.getTotalLevel()).thenReturn(2277);
+		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(java.util.List.of());
 		config.setCalculationCutoffValue(cutoffTicks);
 		config.setUseTeleportationItemsValue(TeleportationItem.ALL);
 
