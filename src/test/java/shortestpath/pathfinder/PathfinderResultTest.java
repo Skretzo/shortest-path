@@ -18,6 +18,11 @@ public class PathfinderResultTest
 {
 	private static PathfinderConfig configWithCutoff(int cutoffTicks)
 	{
+		return configWithCutoff(cutoffTicks, 2);
+	}
+
+	private static PathfinderConfig configWithCutoff(int cutoffTicks, int unreachableTargetDistance)
+	{
 		Client client = mock(Client.class);
 		TestShortestPathConfig config = new TestShortestPathConfig();
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
@@ -25,6 +30,7 @@ public class PathfinderResultTest
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(client.getTotalLevel()).thenReturn(2277);
 		config.setCalculationCutoffValue(cutoffTicks);
+		config.setUnreachableTargetDistanceValue(unreachableTargetDistance);
 		config.setUseTeleportationItemsValue(TeleportationItem.ALL);
 
 		PathfinderConfig pathfinderConfig = new TestPathfinderConfig(client, config);
@@ -58,5 +64,23 @@ public class PathfinderResultTest
 		PathfinderResult result = pathfinder.getResult();
 
 		assertEquals(PathTerminationReason.CUTOFF_REACHED, result.getTerminationReason());
+	}
+
+	@Test
+	public void prefersShorterPathWithinUnreachableThreshold()
+	{
+		int start = point(3139, 3445);
+		int nearbyPieDish = point(3142, 3447);
+		int distantTarget = WorldPointUtil.packWorldPoint(2813, 3449, 1);
+		PathfinderConfig config = configWithCutoff(100, 4);
+
+		Pathfinder pathfinder = new Pathfinder(config, start, Set.of(nearbyPieDish, distantTarget));
+		pathfinder.run();
+
+		PathfinderResult result = pathfinder.getResult();
+		assertEquals(nearbyPieDish, result.getTarget());
+		assertTrue(result.isReached());
+		assertTrue(result.getClosestReachedPoint() != nearbyPieDish);
+		assertTrue(WorldPointUtil.distanceBetween(nearbyPieDish, result.getClosestReachedPoint(), WorldPointUtil.MANHATTAN_DISTANCE_METRIC) <= config.getUnreachableTargetDistance());
 	}
 }
