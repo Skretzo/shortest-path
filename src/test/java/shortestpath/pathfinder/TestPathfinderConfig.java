@@ -75,14 +75,14 @@ public class TestPathfinderConfig extends PathfinderConfig
 	}
 
 	@Override
-	public boolean varbitChecks(Transport transport)
+	public boolean varbitChecks(Transport transport, long evaluationTimeMinutes)
 	{
-		return !bypassVarbitChecks && super.varbitChecks(transport);
+		return !bypassVarbitChecks && super.varbitChecks(transport, evaluationTimeMinutes);
 	}
 
 	@Override
-	public boolean varPlayerChecks(Transport transport)
+	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
 	{
-		return !bypassVarPlayerChecks && super.varPlayerChecks(transport);
+		return !bypassVarPlayerChecks && super.varPlayerChecks(transport, evaluationTimeMinutes);
 	}
 }

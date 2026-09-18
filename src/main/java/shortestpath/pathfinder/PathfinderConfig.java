@@ -269,6 +269,7 @@ public class PathfinderConfig
 
 	public void refresh()
 	{
+		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
@@ -305,11 +306,16 @@ public class PathfinderConfig
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
 			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
 
-			refreshTransports();
+			refreshTransports(evaluationTimeMinutes);
 		}
 
 		refreshDestinations();
-		rebuildAccessibleBankTiles();
+		rebuildAccessibleBankTiles(evaluationTimeMinutes);
+	}
+
+	protected long currentTimeMinutes()
+	{
+		return System.currentTimeMillis() / 60_000L;
 	}
 
 	private void refreshDestinations()
@@ -317,7 +323,7 @@ public class PathfinderConfig
 		destinations = avoidWilderness ? filteredDestinations : allDestinations;
 	}
 
-	private void rebuildAccessibleBankTiles()
+	private void rebuildAccessibleBankTiles(long evaluationTimeMinutes)
 	{
 		Set<Integer> bankLocs = destinations.get("bank");
 		if (bankLocs == null)
@@ -334,7 +340,7 @@ public class PathfinderConfig
 		for (Integer p : bankLocs)
 		{
 			DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
-			if (satisfiesBankDestinationRequirements(req))
+			if (satisfiesBankDestinationRequirements(req, evaluationTimeMinutes))
 			{
 				acc.add(p);
 			}
@@ -345,7 +351,7 @@ public class PathfinderConfig
 	/**
 	 * Quest/skill/var gates for bank tiles (not used for transport overlays).
 	 */
-	private boolean satisfiesBankDestinationRequirements(DestinationRequirements dr)
+	private boolean satisfiesBankDestinationRequirements(DestinationRequirements dr, long evaluationTimeMinutes)
 	{
 		if (dr == null || dr.isEmpty())
 		{
@@ -369,14 +375,14 @@ public class PathfinderConfig
 		}
 		for (VarRequirement req : dr.getVarbits())
 		{
-			if (!req.checkValue(client.getVarbitValue(req.getId())))
+			if (!req.checkValue(client.getVarbitValue(req.getId()), evaluationTimeMinutes))
 			{
 				return false;
 			}
 		}
 		for (VarRequirement req : dr.getVarPlayers())
 		{
-			if (!req.checkValue(client.getVarpValue(req.getId())))
+			if (!req.checkValue(client.getVarpValue(req.getId()), evaluationTimeMinutes))
 			{
 				return false;
 			}
@@ -469,7 +475,7 @@ public class PathfinderConfig
 		return filteredDestinations;
 	}
 
-	private void refreshTransports()
+	private void refreshTransports(long evaluationTimeMinutes)
 	{
 		if (!Thread.currentThread().equals(client.getClientThread()))
 		{
@@ -513,7 +519,7 @@ public class PathfinderConfig
 				}
 			}
 
-			if (!useTransport(transport))
+			if (!useTransport(transport, evaluationTimeMinutes))
 			{
 				continue;
 			}
@@ -641,11 +647,11 @@ public class PathfinderConfig
 		return true;
 	}
 
-	public boolean varbitChecks(Transport transport)
+	public boolean varbitChecks(Transport transport, long evaluationTimeMinutes)
 	{
 		for (VarRequirement varRequirement : transport.getVarbits())
 		{
-			if (!varRequirement.check(varbitValues))
+			if (!varRequirement.check(varbitValues, evaluationTimeMinutes))
 			{
 				return true;
 			}
@@ -653,11 +659,11 @@ public class PathfinderConfig
 		return false;
 	}
 
-	public boolean varPlayerChecks(Transport transport)
+	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
 	{
 		for (VarRequirement varRequirement : transport.getVarPlayers())
 		{
-			if (!varRequirement.check(varPlayerValues))
+			if (!varRequirement.check(varPlayerValues, evaluationTimeMinutes))
 			{
 				return true;
 			}
@@ -665,7 +671,7 @@ public class PathfinderConfig
 		return false;
 	}
 
-	private boolean useTransport(Transport transport)
+	private boolean useTransport(Transport transport, long evaluationTimeMinutes)
 	{
 		// Sailing: suppress teleports while the player is aboard a boat.
 		// We don't model sailing navigation, so teleporting away mid-ocean would produce
@@ -735,12 +741,12 @@ public class PathfinderConfig
 			return false;
 		}
 
-		if (varbitChecks(transport))
+		if (varbitChecks(transport, evaluationTimeMinutes))
 		{
 			return false;
 		}
 
-		if (varPlayerChecks(transport))
+		if (varPlayerChecks(transport, evaluationTimeMinutes))
 		{
 			return false;
 		}
