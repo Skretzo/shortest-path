@@ -449,6 +449,23 @@ public class TransportLoaderTest
 	}
 
 	@Test
+	public void testUnequalOrQuantitiesPreserveBranchSemantics()
+	{
+		String contents = "# Origin\tDestination\tItems\n" +
+			"3200 3200 0\t3300 3300 0\tSHANTAY_PASS=1|COINS=5\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		Transport transport = getFirstTransport(transports.get(origin));
+		TransportItems items = transport.getItemRequirements();
+
+		// Expected semantic behavior: one Shantay pass should satisfy the first branch.
+		// The current flattened Java representation uses max(quantity), so this fails.
+		Assert.assertEquals("Shantay pass branch should retain quantity 1", 1, items.getQuantities()[0]);
+	}
+
+	@Test
 	public void testItemVariationsRequirements()
 	{
 		String contents = "# Origin\tDestination\tItems\n" +
