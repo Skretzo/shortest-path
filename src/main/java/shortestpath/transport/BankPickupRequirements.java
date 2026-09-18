@@ -384,18 +384,8 @@ public final class BankPickupRequirements
 		{
 			return true;
 		}
-		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
-		{
-			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
-			if (hasAnyItem(playerHas, req.getItemIds(), qty)
-				|| hasAnyItem(playerHas, req.getStaffIds(), 1)
-				|| hasAnyItem(playerHas, req.getOffhandIds(), 1))
-			{
-				continue;
-			}
-			return false;
-		}
-		return true;
+		return transport.getItemRequirements().isSatisfiedBy(
+			playerHas, PathfinderConfig.CURRENCIES, Integer.MAX_VALUE);
 	}
 
 	/**
