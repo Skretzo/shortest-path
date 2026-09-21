@@ -1045,6 +1045,25 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testMinigameTeleportCooldownUsesRefreshTime()
+	{
+		// These are the Nature Spirit Grotto start and Fishing Trawler destination used by the
+		// existing testTeleportationMinigames fixture above.
+		int fishingTrawlerStart = WorldPointUtil.packWorldPoint(3440, 3334, 0);
+		int fishingTrawlerDestination = WorldPointUtil.packWorldPoint(2658, 3157, 0);
+
+		setupConfigAtTimes(100000000L, 99999990L, 99999979);
+		Pathfinder ready = runPathfinder(fishingTrawlerStart, fishingTrawlerDestination);
+		assertTrue(usedTransportWithDisplayInfo(
+			ready, TransportType.TELEPORTATION_MINIGAME, "Fishing Trawler Minigame Teleport"));
+
+		setupConfigAtTimes(99999990L, 100000000L, 99999979);
+		Pathfinder onCooldown = runPathfinder(fishingTrawlerStart, fishingTrawlerDestination);
+		assertFalse(usedTransportWithDisplayInfo(
+			onCooldown, TransportType.TELEPORTATION_MINIGAME, "Fishing Trawler Minigame Teleport"));
+	}
+
+	@Test
 	public void testPickaxeNotUsedWithoutPickaxe()
 	{
 		// Ensure transports requiring a pickaxe are not included when the player has no pickaxe
@@ -1242,6 +1261,35 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testFaladorTeleportWithMistStaff()
+	{
+		when(config.useTeleportationSpells()).thenReturn(true);
+		setupInventory(
+			new Item(ItemID.MIST_BATTLESTAFF, 1),
+			new Item(ItemID.LAWRUNE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		assertTrue("Mist battlestaff should supply both air and water for Falador Teleport",
+			hasUsableTeleport("Falador Teleport"));
+	}
+
+	@Test
+	public void testHouseTeleportWithDustStaff()
+	{
+		when(config.useTeleportationSpells()).thenReturn(true);
+		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		setupInventory(
+			new Item(ItemID.DUST_BATTLESTAFF, 1),
+			new Item(ItemID.LAWRUNE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		assertTrue("Dust battlestaff should supply both air and earth for Teleport to House",
+			hasUsableTeleport("Teleport to House") || hasUsableTeleport("Teleport to House (Inside)"));
+	}
+
+	@Test
 	public void testWildernessRouteWithoutTeleportsWalksOut()
 	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
@@ -1302,7 +1350,7 @@ public class PathfinderTest
 
 		assertEquals(181, withVarrockTeleport.getPath().size());
 		assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
-			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: GE"));
+			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: Grand Exchange"));
 	}
 
 	@Test
@@ -1590,6 +1638,25 @@ public class PathfinderTest
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
+
+		pathfinderConfig.refresh();
+	}
+
+	private void setupConfigAtTimes(long refreshTimeMinutes, long laterTimeMinutes, int storedTimestamp)
+	{
+		pathfinderConfig = new ChangingTimePathfinderConfig(
+			client, config, QuestState.FINISHED, false, false, refreshTimeMinutes, laterTimeMinutes);
+		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+		when(client.getTotalLevel()).thenReturn(2376);
+		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
+		when(client.getVarpValue(any(Integer.class))).thenReturn(0);
+		when(client.getVarpValue(888)).thenReturn(storedTimestamp);
+		when(config.calculationCutoff()).thenReturn(500);
+		when(config.useTeleportationMinigames()).thenReturn(true);
+		when(config.useTeleportationSpells()).thenReturn(false);
+		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
 
 		pathfinderConfig.refresh();
 	}
@@ -2137,6 +2204,33 @@ public class PathfinderTest
 		int withHighPrayer = PathfinderConfig.computeCombatLevel(60, 60, 60, 60, 1, 1, 99);
 		assertTrue("Higher prayer should yield a higher or equal combat level",
 			withHighPrayer >= withLowPrayer);
+	}
+
+	private static final class ChangingTimePathfinderConfig extends TestPathfinderConfig
+	{
+		private final long refreshTimeMinutes;
+		private final long laterTimeMinutes;
+		private boolean timeRead;
+
+		private ChangingTimePathfinderConfig(Client client, ShortestPathConfig config,
+			QuestState questState, boolean bypassVarbitChecks, boolean bypassVarPlayerChecks,
+			long refreshTimeMinutes, long laterTimeMinutes)
+		{
+			super(client, config, questState, bypassVarbitChecks, bypassVarPlayerChecks);
+			this.refreshTimeMinutes = refreshTimeMinutes;
+			this.laterTimeMinutes = laterTimeMinutes;
+		}
+
+		@Override
+		protected long currentTimeMinutes()
+		{
+			if (!timeRead)
+			{
+				timeRead = true;
+				return refreshTimeMinutes;
+			}
+			return laterTimeMinutes;
+		}
 	}
 
 }
