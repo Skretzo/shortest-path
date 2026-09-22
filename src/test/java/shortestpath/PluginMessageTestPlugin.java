@@ -4,9 +4,11 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
@@ -34,6 +36,8 @@ public class PluginMessageTestPlugin extends Plugin
 	private static final String PLUGIN_MESSAGE_START = "start";
 	private static final String PLUGIN_MESSAGE_TARGET = "target";
 	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
+	private static final String PLUGIN_MESSAGE_QUERY = "query";
+	private static final String PLUGIN_MESSAGE_RESULT = "result";
 	private static final String CLEAR = "Clear";
 	private static final String PATH = ColorUtil.wrapWithColorTag("Path (PluginMessage)", JagexColors.MENU_TARGET);
 	private static final String SET = "Set";
@@ -44,6 +48,9 @@ public class PluginMessageTestPlugin extends Plugin
 	private static final String TARGET_INT = ColorUtil.wrapWithColorTag("Target Integer(s) (PluginMessage)",
 		JagexColors.MENU_TARGET);
 	private static final String TARGET_WP = ColorUtil.wrapWithColorTag("Target WorldPoint(s) (PluginMessage)",
+		JagexColors.MENU_TARGET);
+	private static final String QUERY = "Query";
+	private static final String QUERY_TARGET = ColorUtil.wrapWithColorTag("Path to here (PluginMessage)",
 		JagexColors.MENU_TARGET);
 	private static final String CONFIG_COLOUR_PATH = ColorUtil.wrapWithColorTag("Yellow path colour (PluginMessage)",
 		JagexColors.MENU_TARGET);
@@ -83,6 +90,7 @@ public class PluginMessageTestPlugin extends Plugin
 				addMenuEntry(SET, TARGET_INT, 1);
 				addMenuEntry(SET, TARGET_WP, 1);
 				addMenuEntry(SET, CONFIG_COLOUR_PATH, 1);
+				addMenuEntry(QUERY, QUERY_TARGET, 1);
 				if (!targets.isEmpty())
 				{
 					addMenuEntry(SET, START_INT, 1);
@@ -103,6 +111,7 @@ public class PluginMessageTestPlugin extends Plugin
 			addMenuEntry(SET, TARGET_INT, 0);
 			addMenuEntry(SET, TARGET_WP, 0);
 			addMenuEntry(SET, CONFIG_COLOUR_PATH, 0);
+			addMenuEntry(QUERY, QUERY_TARGET, 0);
 			if (!targets.isEmpty())
 			{
 				addMenuEntry(SET, START_INT, 0);
@@ -150,6 +159,14 @@ public class PluginMessageTestPlugin extends Plugin
 		{
 			overrideColourPath = true;
 		}
+		else if (entry.getOption().equals(QUERY) && entry.getTarget().equals(QUERY_TARGET))
+		{
+			Map<String, Object> data = new HashMap<>();
+			data.put("id", "test-query");
+			data.put(PLUGIN_MESSAGE_TARGET, getSelectedWorldPoint());
+			eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_QUERY, data));
+			return;
+		}
 		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
 		{
 			targets.clear();
@@ -193,6 +210,21 @@ public class PluginMessageTestPlugin extends Plugin
 		}
 
 		eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_PATH, data));
+	}
+
+	/** Queries leave the displayed path alone, so their answer is only reported in chat. */
+	@Subscribe
+	public void onPluginMessage(PluginMessage event)
+	{
+		if (!PLUGIN_MESSAGE_NAME.equals(event.getNamespace()) || !PLUGIN_MESSAGE_RESULT.equals(event.getName()))
+		{
+			return;
+		}
+		Map<String, Object> data = event.getData();
+		List<?> path = (List<?>) data.get("path");
+		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
+			"Query " + data.get("id") + ": reached=" + data.get("reached")
+				+ ", " + path.size() + " steps, transports " + data.get("transports"), null);
 	}
 
 	private WorldPoint getSelectedWorldPoint()

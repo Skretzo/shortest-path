@@ -82,6 +82,7 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
@@ -108,6 +109,9 @@ public class ShortestPathPlugin extends Plugin
 	private static final String PLUGIN_MESSAGE_TARGET = "target";
 	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
 	private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
+	private static final String PLUGIN_MESSAGE_QUERY = "query";
+	private static final String PLUGIN_MESSAGE_RESULT = "result";
+	private static final String PLUGIN_MESSAGE_ID = "id";
 	private static final String CLEAR = "Clear";
 	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
 	private static final String SET = "Set";
@@ -583,61 +587,26 @@ public class ShortestPathPlugin extends Plugin
 				return;
 			}
 
-			int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
-				: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
-			if (start == WorldPointUtil.UNDEFINED)
+			int start = parseStart(objStart);
+			Set<Integer> targets = parseTargets(objTarget);
+			if (start == WorldPointUtil.UNDEFINED || targets == null)
 			{
-				if (client.getLocalPlayer() == null)
-				{
-					return;
-				}
-				start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
-			}
-
-			Set<Integer> targets = new HashSet<>();
-			if (objTarget instanceof Integer)
-			{
-				int packedPoint = (Integer) objTarget;
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof WorldPoint)
-			{
-				int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof Set<?>)
-			{
-				@SuppressWarnings("unchecked")
-				Set<Object> objTargets = (Set<Object>) objTarget;
-				for (Object obj : objTargets)
-				{
-					int packedPoint = WorldPointUtil.UNDEFINED;
-					if (obj instanceof Integer)
-					{
-						packedPoint = (Integer) obj;
-					}
-					else if (obj instanceof WorldPoint)
-					{
-						packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
-					}
-					if (packedPoint == WorldPointUtil.UNDEFINED)
-					{
-						return;
-					}
-					targets.add(packedPoint);
-				}
+				return;
 			}
 
 			boolean useOld = targets.isEmpty() && pathfinder != null;
 			restartPathfinding(start, useOld ? pathfinder.getTargets() : targets, useOld);
+		}
+		else if (PLUGIN_MESSAGE_QUERY.equals(action))
+		{
+			Map<String, Object> data = event.getData();
+			int start = parseStart(data.get(PLUGIN_MESSAGE_START));
+			Set<Integer> targets = parseTargets(data.get(PLUGIN_MESSAGE_TARGET));
+			if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
+			{
+				return;
+			}
+			queryPath(data.get(PLUGIN_MESSAGE_ID), start, targets);
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
@@ -645,6 +614,135 @@ public class ShortestPathPlugin extends Plugin
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
 		}
+	}
+
+	/**
+	 * The packed start of a plugin message path, defaulting to the player's location.
+	 * {@link WorldPointUtil#UNDEFINED} when there is neither.
+	 */
+	private int parseStart(Object objStart)
+	{
+		int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
+			: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
+		if (start == WorldPointUtil.UNDEFINED && client.getLocalPlayer() != null)
+		{
+			start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
+		}
+		return start;
+	}
+
+	/**
+	 * The packed targets of a plugin message: a WorldPoint, a packed Integer, or a Set of either.
+	 * Empty when none were given, and null when any of them is invalid.
+	 */
+	private static Set<Integer> parseTargets(Object objTarget)
+	{
+		Set<Integer> targets = new HashSet<>();
+		if (objTarget instanceof Integer)
+		{
+			int packedPoint = (Integer) objTarget;
+			if (packedPoint == WorldPointUtil.UNDEFINED)
+			{
+				return null;
+			}
+			targets.add(packedPoint);
+		}
+		else if (objTarget instanceof WorldPoint)
+		{
+			int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
+			if (packedPoint == WorldPointUtil.UNDEFINED)
+			{
+				return null;
+			}
+			targets.add(packedPoint);
+		}
+		else if (objTarget instanceof Set<?>)
+		{
+			for (Object obj : (Set<?>) objTarget)
+			{
+				int packedPoint = WorldPointUtil.UNDEFINED;
+				if (obj instanceof Integer)
+				{
+					packedPoint = (Integer) obj;
+				}
+				else if (obj instanceof WorldPoint)
+				{
+					packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
+				}
+				if (packedPoint == WorldPointUtil.UNDEFINED)
+				{
+					return null;
+				}
+				targets.add(packedPoint);
+			}
+		}
+		return targets;
+	}
+
+	/**
+	 * Finds a path for another plugin without touching the displayed one, and answers with a
+	 * {@code result} plugin message carrying the caller's {@code id}.
+	 *
+	 * <p>Queries share the single pathfinding thread with the displayed path, so the two never
+	 * search at the same time. The transport availability is only refreshed when no displayed
+	 * search is running, since that search reads it while it runs; otherwise the query uses what
+	 * the displayed search was started with.
+	 */
+	private void queryPath(Object id, int start, Set<Integer> targets)
+	{
+		clientThread.invokeLater(() ->
+		{
+			synchronized (pathfinderMutex)
+			{
+				if (pathfindingExecutor == null)
+				{
+					return;
+				}
+				if (pathfinder == null || pathfinder.isDone())
+				{
+					pathfinderConfig.refresh();
+				}
+				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
+				pathfindingExecutor.submit(() ->
+				{
+					query.run();
+					postQueryResult(id, query);
+				});
+			}
+		});
+	}
+
+	private void postQueryResult(Object id, Pathfinder query)
+	{
+		PathfinderResult result = query.getResult();
+		if (result == null)
+		{
+			return;
+		}
+
+		List<PathStep> steps = result.getPathSteps();
+		List<WorldPoint> path = new ArrayList<>(steps.size());
+		List<String> transports = new ArrayList<>();
+		for (int i = 0; i < steps.size(); i++)
+		{
+			path.add(WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
+			if (i > 0)
+			{
+				for (Transport transport : transportsForEdge(steps.get(i - 1), steps.get(i)))
+				{
+					transports.add(formatTransportDisplay(transport));
+				}
+			}
+		}
+
+		Map<String, Object> data = new HashMap<>();
+		data.put(PLUGIN_MESSAGE_ID, id);
+		data.put("reached", result.isReached());
+		data.put(PLUGIN_MESSAGE_START, WorldPointUtil.unpackWorldPoint(result.getStart()));
+		data.put(PLUGIN_MESSAGE_TARGET, WorldPointUtil.unpackWorldPoint(result.getTarget()));
+		data.put("path", path);
+		data.put(PLUGIN_MESSAGE_TRANSPORTS, transports);
+		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
 	}
 
 	public void postPluginMessages()
