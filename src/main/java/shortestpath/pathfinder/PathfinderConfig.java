@@ -20,9 +20,10 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.VarPlayer;
+import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
-import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.DestinationRequirements;
@@ -42,12 +43,14 @@ import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
+import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
 {
+	private static final int MAX_SKILL_LEVEL = 99;
 	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
 		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
 		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
@@ -92,6 +95,7 @@ public class PathfinderConfig
 	// Centralized transport type enable/disable config
 	private final TransportTypeConfig transportTypeConfig;
 	private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
+	private int currentMaxQuestPoints;
 	private final Map<Quest, QuestState> questStates = new HashMap<>();
 	private final Map<Integer, Integer> varbitValues = new HashMap<>();
 	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
@@ -306,7 +310,7 @@ public class PathfinderConfig
 			}
 			boostedSkillLevelsAndMore[i++] = client.getTotalLevel(); // skill total level
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
-			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
+			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayer.QUEST_POINTS); // quest points
 
 			refreshTransports(evaluationTimeMinutes);
 		}
@@ -483,6 +487,7 @@ public class PathfinderConfig
 		{
 			return; // Has to run on the client thread; data will be refreshed when path finding commences
 		}
+		currentMaxQuestPoints = maximumQuestPoints();
 
 		// Fairy ring staff/diary requirements are enforced later in hasRequiredItems().
 		transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
@@ -932,12 +937,53 @@ public class PathfinderConfig
 			}
 			int boostedLevel = boostedSkillLevelsAndMore[i];
 			int requiredLevel = requiredLevels[i];
+			if (requiredLevel == SkillRequirementParser.MAX_LEVEL)
+			{
+				requiredLevel = maximumLevel(i);
+			}
 			if (boostedLevel < requiredLevel)
 			{
 				return false;
 			}
 		}
 		return true;
+	}
+
+	private int maximumLevel(int index)
+	{
+		if (index < Skill.values().length)
+		{
+			return MAX_SKILL_LEVEL;
+		}
+		if (index == Skill.values().length)
+		{
+			return MAX_SKILL_LEVEL * Skill.values().length;
+		}
+		if (index == Skill.values().length + 1)
+		{
+			return 126;
+		}
+		if (index == Skill.values().length + 2)
+		{
+			return currentMaxQuestPoints;
+		}
+		return SkillRequirementParser.MAX_LEVEL;
+	}
+
+	private int maximumQuestPoints()
+	{
+		return client.getDBTableRows(DBTableID.Quest.ID).stream()
+			.filter(row -> (Integer) client.getDBTableField(
+				row,
+				DBTableID.Quest.COL_RELEASE_TYPE,
+				0
+			)[0] != 0)
+			.mapToInt(row -> (Integer) client.getDBTableField(
+				row,
+				DBTableID.Quest.COL_QUESTPOINTS,
+				0
+			)[0])
+			.sum();
 	}
 
 	/**

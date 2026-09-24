@@ -9,6 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
@@ -308,6 +309,24 @@ public class TransportLoaderTest
 	}
 
 	@Test
+	public void testMaximumSkillRequirements()
+	{
+		String contents = "# Origin\tDestination\tSkills\n" +
+			"3200 3200 0\t3300 3300 0\tMax Agility;Max Total;Max Combat;Max Quest\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		int[] skillLevels = getFirstTransport(transports.get(origin)).getSkillLevels();
+		int totalLevelIndex = Skill.values().length;
+
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[Skill.AGILITY.ordinal()]);
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex]);
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex + 1]);
+		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex + 2]);
+	}
+
+	@Test
 	public void testEmptySkillRequirements()
 	{
 		String contents = "# Origin\tDestination\tSkills\n" +
@@ -573,6 +592,33 @@ public class TransportLoaderTest
 		Set<Quest> quests = transport.getQuests();
 		Assert.assertTrue("Should have no quest requirements for invalid quest", quests.isEmpty());
 		Assert.assertFalse("Should not be quest locked", transport.isQuestLocked());
+	}
+
+	@Test
+	public void testQuestPointCapeTeleportRequiresQuestPoints()
+	{
+		HashMap<Integer, Set<Transport>> allTransports = TransportLoader.loadAllFromResources();
+		Transport cape = null;
+		for (Set<Transport> originTransports : allTransports.values())
+		{
+			for (Transport transport : originTransports)
+			{
+				if ("Quest point cape: Teleport".equals(transport.getDisplayInfo()))
+				{
+					cape = transport;
+					break;
+				}
+			}
+			if (cape != null)
+			{
+				break;
+			}
+		}
+
+		Assert.assertNotNull("Quest point cape teleport should be loaded", cape);
+		int questPointsIndex = Skill.values().length + 2;
+		Assert.assertEquals("Quest points should be dynamic", SkillRequirementParser.MAX_LEVEL, cape.getSkillLevels()[questPointsIndex]);
+		Assert.assertFalse("Cape teleport should not have quest-name requirements", cape.isQuestLocked());
 	}
 
 	@Test

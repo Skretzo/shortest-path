@@ -268,43 +268,43 @@
 2865 3546 0		99 Strength	9750=1||9751=1		4	Strength cape: Teleport	F	20		
 # Max capes										
 # The Max cape's home teleports, determined by varbit 2187, and teleport inside or outside determined by varbit 4744										
-1923 5709 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	4744=0	
+1923 5709 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	4744=0	
 # 1 - Rimmington										
-2952 3224 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=1;4744=1	
+2952 3224 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=1;4744=1	
 # 2 - Taverly										
-2892 3465 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=2;4744=1	
+2892 3465 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=2;4744=1	
 # 3 - Pollnivneach										
-3339 3001 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=3;4744=1	
+3339 3001 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=3;4744=1	
 # 4 - Rellekka										
-2669 3629 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=4;4744=1	
+2669 3629 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=4;4744=1	
 # 5 - Brimhaven										
-2756 3176 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=5;4744=1	
+2756 3176 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=5;4744=1	
 # 6 - Yanille										
-2545 3097 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=6;4744=1	
+2545 3097 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=6;4744=1	
 # 7 - Prifddinas										
-3239 6077 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=7;4744=1	
+3239 6077 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=7;4744=1	
 # 8 - Hosidius										
-1740 3517 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=8;4744=1	
+1740 3517 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=8;4744=1	
 # 9 - Aldarin										
-1422 2963 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=9;4744=1	
-2952 3224 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Rimmington	F	20		
-2892 3465 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Taverley	F	20		
-3339 3001 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Pollnivneach	F	20		
-1743 3517 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Hosidius	F	20		
-2669 3629 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Rellekka	F	20		
-2756 3176 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Brimhaven	F	20		
-2545 3097 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Yanille	F	20		
-3239 6077 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Prifddinas	F	20		
-2865 3546 0		2376 Total	13280=1||13342=1		4	Max cape: Warriors' Guild	F	20		
-2604 3401 0		2376 Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Fishing Guild	F	20		
-2504 3484 0		2376 Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Otto's Grotto	F	20		
-2931 3286 0		2376 Total	13280=1||13342=1		4	Max cape: Crafting Guild	F	20		
-2556 2917 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Feldip Hills	T	20		
-3144 3772 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Black chinchompa	T	20		
-1558 3046 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Hunter Guild	F	20		
-1248 3725 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Farming Guild	F	20		
-3048 2972 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: The Pandemonium	F	20		
-2729 3348 0		327 Quest	9813=1||13068=1		4	Quest point cape: Teleport	F	20		
+1422 2963 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=9;4744=1	
+2952 3224 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Rimmington	F	20		
+2892 3465 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Taverley	F	20		
+3339 3001 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Pollnivneach	F	20		
+1743 3517 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Hosidius	F	20		
+2669 3629 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Rellekka	F	20		
+2756 3176 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Brimhaven	F	20		
+2545 3097 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Yanille	F	20		
+3239 6077 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Prifddinas	F	20		
+2865 3546 0		Max Total	13280=1||13342=1		4	Max cape: Warriors' Guild	F	20		
+2604 3401 0		Max Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Fishing Guild	F	20		
+2504 3484 0		Max Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Otto's Grotto	F	20		
+2931 3286 0		Max Total	13280=1||13342=1		4	Max cape: Crafting Guild	F	20		
+2556 2917 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Feldip Hills	T	20		
+3144 3772 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Black chinchompa	T	20		
+1558 3046 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Hunter Guild	F	20		
+1248 3725 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Farming Guild	F	20		
+3048 2972 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: The Pandemonium	F	20		
+2729 3348 0		Max Quest	9813=1||13068=1		4	Quest point cape: Teleport	F	20		
 2689 3547 0			13221=1||13222=1		4	Music cape: Teleport	F	20		
 2574 3323 0			13069=1||19476=1		4	Achievement diary cape: 1. Two-pints	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 3302 3122 0			13069=1||19476=1		4	Achievement diary cape: 2. Jarr	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
