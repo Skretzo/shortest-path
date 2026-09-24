@@ -3767,14 +3767,18 @@
 3501 3426 0	3502 3432 0	Cross-bridge Tree 5003							
 									
 # Burgh de Rott									
-3484 3244 0	3484 3243 0	Open Gate 12817							
+3484 3244 0	3484 3243 0	Open Gate 12817				1990>39			
 3484 3243 0	3484 3244 0	Open Gate 12817							
-3485 3244 0	3485 3243 0	Open Gate 12816							
+3485 3244 0	3485 3243 0	Open Gate 12816				1990>39			
 3485 3243 0	3485 3244 0	Open Gate 12816							
 3513 3237 0	3513 3239 2	Climb-up Ladder 12780						2	
 3513 3239 2	3513 3237 0	Climb-down Ladder 12781						2	
-3474 3221 0	3473 3221 0	Jump-over Low fence 12776							
-3473 3221 0	3475 3221 0	Jump-over Low fence 12776							
+3474 3221 0	3473 3221 0	Jump-over Low fence 12776	25 Agility			1990>39			
+3473 3221 0	3475 3221 0	Jump-over Low fence 12776	25 Agility			1990>39			
+3538 3262 0	3538 3260 0	Climb-over Broken fence 18411				1990>39		6	
+3538 3260 0	3538 3262 0	Climb-over Broken fence 18411				1990>39		6	
+3582 3264 0	3582 3262 0	Climb-over Broken fence 18411				1990>39		6	
+3582 3262 0	3582 3264 0	Climb-over Broken fence 18411				1990>39		6	
 									
 # Haunted Mine									
 3446 3236 0	3444 3236 0	Climb-over Mine cart 4918							
