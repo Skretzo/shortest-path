@@ -35,4 +35,20 @@ public class ExactCostsTest
 		{
 		}
 	}
+
+	@Test
+	public void weightsSearchPrioritySafely()
+	{
+		assertEquals(13, ExactForwardSearch.priority(3, 5, 2));
+		assertEquals(ExactCosts.INF - 1,
+			ExactForwardSearch.priority(3, ExactCosts.INF - 1, Double.MAX_VALUE));
+		try
+		{
+			ExactForwardSearch.validateHeuristicWeight(0);
+			fail("zero heuristic weight must be rejected");
+		}
+		catch (IllegalArgumentException expected)
+		{
+		}
+	}
 }

@@ -17,25 +17,32 @@ public final class ExactForwardSearch
 
 	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start)
 	{
-		return search(target, heuristic, start, () -> false, true);
+		return search(target, heuristic, start, () -> false, true, 1);
 	}
 
 	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
 		BooleanSupplier cancelled)
 	{
-		return search(target, heuristic, start, cancelled, true);
+		return search(target, heuristic, start, cancelled, true, 1);
+	}
+
+	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
+		BooleanSupplier cancelled, double heuristicWeight)
+	{
+		return search(target, heuristic, start, cancelled, true, heuristicWeight);
 	}
 
 	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start, boolean optimized)
 	{
-		return search(target, heuristic, start, () -> false, optimized);
+		return search(target, heuristic, start, () -> false, optimized, 1);
 	}
 
 	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
-		BooleanSupplier cancelled, boolean optimized)
+		BooleanSupplier cancelled, boolean optimized, double heuristicWeight)
 	{
 		if (target == null || heuristic == null || cancelled == null) throw new NullPointerException();
 		if (heuristic.overlay() != target) throw new IllegalArgumentException("heuristic belongs to another target overlay");
+		validateHeuristicWeight(heuristicWeight);
 		SearchSpace space = SearchSpace.create(target, start);
 		Capability capability = capabilityAt(start);
 		int tileStates = space.tileCount * 2;
@@ -57,7 +64,7 @@ public final class ExactForwardSearch
 		if (startH != ExactCosts.INF)
 		{
 			best[startState] = 0;
-			push(queue, startState, 0, ExactCosts.add(0, startH), counters, true, PUSH_INITIAL);
+			push(queue, startState, 0, priority(0, startH, heuristicWeight), counters, true, PUSH_INITIAL);
 		}
 		else
 		{
@@ -70,7 +77,7 @@ public final class ExactForwardSearch
 			push(queue, hub, 0, 0, counters, true, PUSH_GLOBAL);
 		}
 		seedGlobals(target, capability, best, previous, queue, counters, startState, space,
-			restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
+			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 
 		while (queue.poll())
 		{
@@ -92,7 +99,7 @@ public final class ExactForwardSearch
 			int currentH = effectiveHeuristic(heuristic, space, state, cost, best, restrictedHeuristic, globalBounds,
 				optimized, bestBankCost[0], counters);
 			if (currentH == ExactCosts.INF) continue;
-			int currentPriority = ExactCosts.add(cost, currentH);
+			int currentPriority = priority(cost, currentH, heuristicWeight);
 			if (currentPriority > queuedPriority)
 			{
 				push(queue, state, cost, currentPriority, counters, false, PUSH_REKEY);
@@ -104,49 +111,49 @@ public final class ExactForwardSearch
 				return Result.reached(cost, state, counters.snapshot(bestBankCost[0]), reconstruct(space, startState, state, previous));
 			if (space.isBase(node))
 			{
-				walkBase(space, node, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-				addBlockedOrigins(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
+				walkBase(space, node, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+				addBlockedOrigins(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 			}
 			else
 			{
 				for (int next : target.collision().ordinaryWalkingNeighbors(tile))
-					relaxWalking(space, next, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-				addBlockedOrigins(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
+					relaxWalking(space, next, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+				addBlockedOrigins(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 			}
-			relaxBank(target, space, node, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, capability, bestBankCost);
-			relaxLocalTransports(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
+			relaxBank(target, space, node, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, capability, bestBankCost);
+			relaxLocalTransports(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 		}
 		return Result.unreachable(counters.snapshot(bestBankCost[0]), startPath);
 	}
 
 	private static void walkBase(SearchSpace space, int node, boolean banked, int from, int cost, int[] best,
 		int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic, int[] globalBounds,
-		boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost)
+		boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		int mask = space.stat.walkingMask(node);
-		emit(space, banked, from, mask, 6, node - 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-		emit(space, banked, from, mask, 2, node + 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-		emit(space, banked, from, mask, 4, space.stat.southNode(node), cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-		emit(space, banked, from, mask, 0, space.stat.northNode(node), cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
+		emit(space, banked, from, mask, 6, node - 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+		emit(space, banked, from, mask, 2, node + 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+		emit(space, banked, from, mask, 4, space.stat.southNode(node), cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+		emit(space, banked, from, mask, 0, space.stat.northNode(node), cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 		int south = space.stat.southNode(node), north = space.stat.northNode(node);
-		emit(space, banked, from, mask, 5, south < 0 ? -1 : south - 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-		emit(space, banked, from, mask, 3, south < 0 ? -1 : south + 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-		emit(space, banked, from, mask, 7, north < 0 ? -1 : north - 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
-		emit(space, banked, from, mask, 1, north < 0 ? -1 : north + 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
+		emit(space, banked, from, mask, 5, south < 0 ? -1 : south - 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+		emit(space, banked, from, mask, 3, south < 0 ? -1 : south + 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+		emit(space, banked, from, mask, 7, north < 0 ? -1 : north - 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+		emit(space, banked, from, mask, 1, north < 0 ? -1 : north + 1, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 	}
 
 	private static void emit(SearchSpace space, boolean banked, int from, int mask, int bit, int next, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
-		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost)
+		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		if ((mask & (1 << bit)) != 0 && next >= 0 && next < space.baseCount)
 			relaxState(space, from, stateForNode(next, banked), cost, 1, best, previous, queue, counters,
-				restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost, PUSH_WALKING);
+				restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_WALKING);
 	}
 
 	private static void addBlockedOrigins(TargetOverlay target, SearchSpace space, int tile, boolean banked, int from, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
-		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost)
+		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		CollisionMap collision = target.collision();
 		if (collision.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile), WorldPointUtil.unpackWorldPlane(tile))) return;
@@ -154,59 +161,59 @@ public final class ExactForwardSearch
 		int[] cardinal = {WorldPointUtil.packWorldPoint(x - 1, y, plane), WorldPointUtil.packWorldPoint(x + 1, y, plane), WorldPointUtil.packWorldPoint(x, y - 1, plane), WorldPointUtil.packWorldPoint(x, y + 1, plane)};
 		for (int next : cardinal)
 			if (collision.isBlocked(WorldPointUtil.unpackWorldX(next), WorldPointUtil.unpackWorldY(next), WorldPointUtil.unpackWorldPlane(next)) && space.hasLocalOrigin(next, banked))
-				relaxWalking(space, next, banked, from, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost);
+				relaxWalking(space, next, banked, from, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 	}
 
 	private static void relaxWalking(SearchSpace space, int tile, boolean banked, int from, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
-		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost)
+		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		int node = space.node(tile);
 		if (node >= 0) relaxState(space, from, stateForNode(node, banked), cost, 1, best, previous, queue, counters,
-			restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost, PUSH_WALKING);
+			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_WALKING);
 	}
 
 	private static void relaxBank(TargetOverlay target, SearchSpace space, int node, boolean banked, int from, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
-		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic,
+		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight,
 		Capability capability, int[] bestBankCost)
 	{
 		if (banked || !target.account().bankPathEnabled() || !space.isReachableBankNode(node)) return;
 		relaxState(space, from, stateForNode(node, true), cost, 0, best, previous, queue, counters,
-			restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost, PUSH_BANKING);
+			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_BANKING);
 		if (capability == Capability.ALL)
 			for (int i = 0; i < target.account().globalCount(true); i++)
 				if (!optimized || cost <= bestBankCost[0])
-					relaxTransport(space, from, true, cost, target.account().globalDestination(true, i), target.account().globalCost(true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost, PUSH_GLOBAL);
+					relaxTransport(space, from, true, cost, target.account().globalDestination(true, i), target.account().globalCost(true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
 				else if (space.node(target.account().globalDestination(true, i)) >= 0)
 					counters.bankGlobalSuppressed++;
 	}
 
 	private static void relaxLocalTransports(TargetOverlay target, SearchSpace space, int tile, boolean banked, int from, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
-		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost)
+		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		PreparedRoutingAccount.View view = target.account().localView(banked);
 		int start = lowerBound(view.origins, tile);
 		for (int i = start; i < view.count && view.origins[i] == tile; i++)
 			relaxTransport(space, from, banked, cost, view.destinations[i], view.costs[i], best, previous, queue,
-				counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost, PUSH_LOCAL);
+				counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_LOCAL);
 	}
 
 	private static void relaxTransport(SearchSpace space, int from, boolean banked, int cost, int destination, int stepCost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
-		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost,
+		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost,
 		int pushKind)
 	{
 		counters.transportCandidates++;
 		int node = space.node(destination);
 		if (node >= 0) relaxState(space, from, stateForNode(node, banked), cost, stepCost, best, previous, queue,
-			counters, restrictedHeuristic, globalBounds, optimized, heuristic, bestBankCost, pushKind);
+			counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, pushKind);
 	}
 
 	private static void relaxState(SearchSpace space, int from, int state, int cost, int stepCost, int[] best,
 		int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic, int[] globalBounds,
-		boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost, int pushKind)
+		boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost, int pushKind)
 	{
 		int candidate = ExactCosts.add(cost, stepCost);
 		if (candidate == ExactCosts.INF) return;
@@ -220,13 +227,13 @@ public final class ExactForwardSearch
 	}
 		boolean newState = best[state] == ExactCosts.INF;
 		best[state] = candidate; previous[state] = from;
-		push(queue, state, candidate, ExactCosts.add(candidate, h), counters, newState, pushKind);
+		push(queue, state, candidate, priority(candidate, h, heuristicWeight), counters, newState, pushKind);
 		if (pushKind == PUSH_LOCAL || pushKind == PUSH_GLOBAL) counters.successfulTransportRelaxations++;
 	}
 
 	private static void seedGlobals(TargetOverlay target, Capability capability, int[] best, int[] previous,
 		ExactMinHeap queue, MutableCounters counters, int startState, SearchSpace space, boolean restrictedHeuristic,
-		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, int[] bestBankCost)
+		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		if (capability == Capability.NONE) return;
 		boolean wilderness = capability == Capability.WILDERNESS;
@@ -250,7 +257,7 @@ public final class ExactForwardSearch
 					continue;
 				}
 				best[state] = cost; previous[state] = startState;
-				push(queue, state, cost, ExactCosts.add(cost, h), counters, true, PUSH_GLOBAL);
+				push(queue, state, cost, priority(cost, h, heuristicWeight), counters, true, PUSH_GLOBAL);
 				counters.successfulTransportRelaxations++;
 		}
 		}
@@ -308,6 +315,19 @@ public final class ExactForwardSearch
 		return space.isBase(node)
 			? heuristic.estimateBaseNode(space.tile(node), (state & 1) != 0, space.stat.routingComponent(node))
 			: heuristic.estimate(space.tile(node), (state & 1) != 0, space.components(node));
+	}
+
+	static int priority(int cost, int heuristic, double weight)
+	{
+		if (heuristic == ExactCosts.INF) return ExactCosts.INF;
+		long weighted = Math.round(weight * heuristic);
+		return weighted >= ExactCosts.INF - cost ? ExactCosts.INF - 1 : cost + (int) weighted;
+	}
+
+	static void validateHeuristicWeight(double weight)
+	{
+		if (!(weight > 0) || !Double.isFinite(weight))
+			throw new IllegalArgumentException("heuristic weight must be positive and finite");
 	}
 
 	private static int effectiveHeuristic(PreparedHeuristic heuristic, SearchSpace space, int state, int cost,

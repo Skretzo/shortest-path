@@ -25,6 +25,7 @@ public final class ExactPathfinder implements ActiveSearch
 	private final PreparedRoutingAccount account;
 	private SiteGraph graph;
 	private final long cutoffMillis;
+	private final double heuristicWeight;
 	private final long accountPrepareNanos;
 	private volatile long routingStaticNanos;
 	private volatile long graphPrepareNanos;
@@ -44,6 +45,12 @@ public final class ExactPathfinder implements ActiveSearch
 		this(config, constant(routingStatic), start, targets, completionCallback);
 	}
 
+	public ExactPathfinder(PathfinderConfig config, RoutingStatic routingStatic, int start, Set<Integer> targets,
+		Runnable completionCallback, double heuristicWeight)
+	{
+		this(config, constant(routingStatic), start, targets, completionCallback, heuristicWeight);
+	}
+
 	/**
 	 * Creates a search whose static routing data is obtained from {@code routingStatic} when the
 	 * search runs, so a first-use build happens on the pathfinding thread rather than here.
@@ -51,7 +58,16 @@ public final class ExactPathfinder implements ActiveSearch
 	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic, int start,
 		Set<Integer> targets, Runnable completionCallback)
 	{
+		this(config, routingStatic, start, targets, completionCallback,
+			config == null ? 1 : config.getExactHeuristicWeight());
+	}
+
+	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic, int start,
+		Set<Integer> targets, Runnable completionCallback, double heuristicWeight)
+	{
 		if (config == null || routingStatic == null || targets == null) throw new NullPointerException();
+		if (!(heuristicWeight > 0) || !Double.isFinite(heuristicWeight))
+			throw new IllegalArgumentException("heuristic weight must be positive and finite");
 		this.start = start;
 		this.targets = Set.copyOf(targets);
 		this.completionCallback = completionCallback;
@@ -61,6 +77,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.account = config.prepareExactRoutingAccount(true);
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.cutoffMillis = config.getCalculationCutoffMillis();
+		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
 		this.path = List.of(new PathStep(start, false));
 	}
@@ -80,6 +97,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.routingStatic = null;
 		this.account = null;
 		this.cutoffMillis = 0;
+		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
 		this.failure = failure;
 		this.path = List.of(new PathStep(start, false));
@@ -209,7 +227,7 @@ public final class ExactPathfinder implements ActiveSearch
 							return true;
 						}
 						return false;
-					});
+					}, heuristicWeight);
 				forwardSearchNanos += System.nanoTime() - phaseStarted;
 				stats.nodesChecked += current.counters().statesPopped();
 				stats.transportsChecked += current.counters().transportCandidates();
