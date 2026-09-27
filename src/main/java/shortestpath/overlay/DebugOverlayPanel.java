@@ -16,7 +16,8 @@ import net.runelite.client.ui.overlay.components.LayoutableRenderableEntity;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.pathfinder.Pathfinder;
+import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.PathfinderStats;
 
 public class DebugOverlayPanel extends OverlayPanel
 {
@@ -46,8 +47,8 @@ public class DebugOverlayPanel extends OverlayPanel
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		Pathfinder pathfinder = plugin.getPathfinder();
-		Pathfinder.PathfinderStats stats;
+		ActiveSearch pathfinder = plugin.getActiveSearch();
+		PathfinderStats stats;
 		if (pathfinder == null || (stats = pathfinder.getStats()) == null)
 		{
 			return null;

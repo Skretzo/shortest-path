@@ -11,6 +11,7 @@ import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
 import net.runelite.client.config.Range;
 import net.runelite.client.config.Units;
+import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 
@@ -27,6 +28,18 @@ public interface ShortestPathConfig extends Config
 		position = 0
 	)
 	String sectionSettings = "sectionSettings";
+
+	@ConfigItem(
+		keyName = "pathfinderBackend",
+		name = "Pathfinder backend",
+		description = "Backend used for pathfinding",
+		position = 0,
+		section = sectionSettings
+	)
+	default PathfinderBackend pathfinderBackend()
+	{
+		return PathfinderBackend.LEGACY;
+	}
 
 	@ConfigItem(
 		keyName = "avoidWilderness",
