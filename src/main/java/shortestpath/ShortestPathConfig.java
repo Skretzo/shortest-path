@@ -461,6 +461,23 @@ public interface ShortestPathConfig extends Config
 		return 5;
 	}
 
+	@Range(
+		min = 100,
+		max = 1000
+	)
+	@ConfigItem(
+		keyName = "exactHeuristicWeight",
+		name = "Exact heuristic weight",
+		description = "Heuristic weight used by the exact backend, as a percentage.<br>" +
+			"100 preserves exact paths; higher values trade path quality for speed.",
+		position = 35,
+		section = sectionSettings
+	)
+	default int exactHeuristicWeight()
+	{
+		return 100;
+	}
+
 	@ConfigItem(
 		keyName = "showTransportInfo",
 		name = "Show transport info",

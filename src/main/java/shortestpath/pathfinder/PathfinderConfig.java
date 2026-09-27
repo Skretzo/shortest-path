@@ -126,6 +126,8 @@ public class PathfinderConfig
 	@Getter
 	private int unreachableTargetDistance;
 	@Getter
+	private double exactHeuristicWeight = 1;
+	@Getter
 	private boolean avoidWilderness;
 	// POH-specific settings (not tied to a single TransportType)
 	private boolean usePohFairyRing,
@@ -290,6 +292,7 @@ public class PathfinderConfig
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		unreachableTargetDistance = ShortestPathPlugin.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+		exactHeuristicWeight = ShortestPathPlugin.override("exactHeuristicWeight", config.exactHeuristicWeight()) / 100.0;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
 		leagueModeState.refresh(client);
