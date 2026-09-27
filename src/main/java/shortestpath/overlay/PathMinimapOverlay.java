@@ -52,7 +52,7 @@ public class PathMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMinimap || plugin.getPathfinder() == null)
+		if (!plugin.drawMinimap || plugin.getActiveSearch() == null)
 		{
 			return null;
 		}
@@ -68,7 +68,7 @@ public class PathMinimapOverlay extends Overlay
 		}
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		java.util.List<PathStep> pathPoints = plugin.getPathfinder().getPath();
+		java.util.List<PathStep> pathPoints = plugin.getActiveSearch().getPath();
 		Color pathColor = plugin.getPathColor();
 		for (PathStep point : pathPoints)
 		{
@@ -80,7 +80,7 @@ public class PathMinimapOverlay extends Overlay
 
 			drawOnMinimap(graphics, pathPoint, pathColor);
 		}
-		for (int target : plugin.getPathfinder().getTargets())
+		for (int target : plugin.getActiveSearch().getTargets())
 		{
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{

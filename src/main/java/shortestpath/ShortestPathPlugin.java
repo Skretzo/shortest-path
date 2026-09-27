@@ -81,12 +81,16 @@ import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.ExactPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
+import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -128,7 +132,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|use\\w+|cost\\w+|unlock\\w+)$");
+	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|use\\w+|cost\\w+|unlock\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -219,8 +223,9 @@ public class ShortestPathPlugin extends Plugin
 	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
 	// whose query never ran and to know whether a search is reading the transport availability.
 	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
-	@Getter
-	private Pathfinder pathfinder;
+	private ActiveSearch pathfinder;
+	private Pathfinder legacyPathfinder;
+	private ExactRoutingStaticProvider exactRoutingStatic;
 	@Getter
 	private PathfinderConfig pathfinderConfig;
 	@Getter
@@ -247,6 +252,19 @@ public class ShortestPathPlugin extends Plugin
 		}
 	};
 	private boolean fairyRingPanelOpen = false;
+
+	public ActiveSearch getActiveSearch()
+	{
+		return pathfinder;
+	}
+
+	/**
+	 * Legacy source-compatible accessor. Plugin internals use {@link #getActiveSearch()}.
+	 */
+	public Pathfinder getPathfinder()
+	{
+		return legacyPathfinder;
+	}
 
 	/**
 	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
@@ -416,8 +434,11 @@ public class ShortestPathPlugin extends Plugin
 		spiritTreePatchState.persistIfDirty();
 	}
 
-	public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered)
+	public void restartPathfinding(int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
 	{
+		// filterLocations edits the set in place, and callers often pass a search's own targets,
+		// which the exact backend holds immutable.
+		Set<Integer> ends = new HashSet<>(requestedEnds);
 		synchronized (pathfinderMutex)
 		{
 			if (pathfinder != null)
@@ -450,7 +471,26 @@ public class ShortestPathPlugin extends Plugin
 				else
 				{
 					bankPickupDirty = true;
-					pathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
+					if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
+					{
+						try
+						{
+							if (exactRoutingStatic == null)
+								exactRoutingStatic = new ExactRoutingStaticProvider(pathfinderConfig::getMap);
+							legacyPathfinder = null;
+							pathfinder = new ExactPathfinder(pathfinderConfig, exactRoutingStatic, start, ends, this::postPluginMessages);
+						}
+						catch (RuntimeException error)
+						{
+							legacyPathfinder = null;
+							pathfinder = ExactPathfinder.failed(start, ends, this::postPluginMessages, error);
+						}
+					}
+					else
+					{
+						legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
+						pathfinder = legacyPathfinder;
+					}
 					pathfinderFuture = pathfindingExecutor.submit(pathfinder);
 				}
 			}
@@ -1858,6 +1898,7 @@ public class ShortestPathPlugin extends Plugin
 					pathfinder.cancel();
 				}
 				pathfinder = null;
+				legacyPathfinder = null;
 			}
 
 			worldMapPointManager.removeIf(x -> x == marker);
