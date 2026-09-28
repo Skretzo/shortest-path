@@ -298,8 +298,8 @@ public class Pathfinder implements Runnable
 		stats.start();
 		boundary.addFirst(graph.createStart(start));
 
-		long cutoffDurationMillis = config.getCalculationCutoffMillis();
-		long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+		// The cutoff counts time without progress towards the target.
+		SearchDeadline deadline = new SearchDeadline(config.getCalculationCutoffMillis());
 
 		while (!cancelled && (!boundary.isEmpty() || !pending.isEmpty()))
 		{
@@ -357,12 +357,12 @@ public class Pathfinder implements Runnable
 
 				if (updateBestPathWhenUnreachable(node, nodePacked))
 				{
-					cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+					deadline.progressed();
 				}
 				updateCustomPathWhenUnreachable(node, nodePacked);
 			}
 
-			if (System.currentTimeMillis() > cutoffTimeMillis)
+			if (deadline.expired())
 			{
 				terminationReason = PathTerminationReason.CUTOFF_REACHED;
 				break;
