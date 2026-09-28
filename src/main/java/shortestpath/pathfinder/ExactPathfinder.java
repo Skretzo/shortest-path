@@ -6,12 +6,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import shortestpath.pathfinder.exact.ExactForwardSearch;
-import shortestpath.pathfinder.exact.PreparedHeuristic;
+import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
-import shortestpath.pathfinder.exact.ReverseLabels;
+import shortestpath.pathfinder.exact.PreparedTarget;
 import shortestpath.pathfinder.exact.RoutingStatic;
 import shortestpath.pathfinder.exact.SiteGraph;
-import shortestpath.pathfinder.exact.TargetOverlay;
 
 /** ActiveSearch adapter for the exact core. */
 public final class ExactPathfinder implements ActiveSearch
@@ -22,8 +21,8 @@ public final class ExactPathfinder implements ActiveSearch
 	private final Runnable completionCallback;
 	private final CollisionMap collision;
 	private final Supplier<RoutingStatic> routingStatic;
+	private final ExactRoutingSession session;
 	private final PreparedRoutingAccount account;
-	private SiteGraph graph;
 	private final long cutoffMillis;
 	private final double heuristicWeight;
 	private final long accountPrepareNanos;
@@ -38,6 +37,8 @@ public final class ExactPathfinder implements ActiveSearch
 	private volatile long reverseSearchNanos;
 	private volatile long heuristicPrepareNanos;
 	private volatile long forwardSearchNanos;
+	private volatile boolean graphReused;
+	private volatile int targetsReused;
 
 	public ExactPathfinder(PathfinderConfig config, RoutingStatic routingStatic, int start, Set<Integer> targets,
 		Runnable completionCallback)
@@ -65,6 +66,30 @@ public final class ExactPathfinder implements ActiveSearch
 	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic, int start,
 		Set<Integer> targets, Runnable completionCallback, double heuristicWeight)
 	{
+		this(config, routingStatic, null, start, targets, completionCallback, heuristicWeight);
+	}
+
+	/**
+	 * Creates a search that reuses the account graph and prepared targets held by {@code session}
+	 * across queries; {@code null} prepares everything for this search alone.
+	 */
+	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic,
+		ExactRoutingSession session, int start, Set<Integer> targets, Runnable completionCallback)
+	{
+		this(config, routingStatic, session, start, targets, completionCallback,
+			config == null ? 1 : config.getExactHeuristicWeight());
+	}
+
+	public ExactPathfinder(PathfinderConfig config, RoutingStatic routingStatic, ExactRoutingSession session,
+		int start, Set<Integer> targets, Runnable completionCallback, double heuristicWeight)
+	{
+		this(config, constant(routingStatic), session, start, targets, completionCallback, heuristicWeight);
+	}
+
+	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic,
+		ExactRoutingSession session, int start, Set<Integer> targets, Runnable completionCallback,
+		double heuristicWeight)
+	{
 		if (config == null || routingStatic == null || targets == null) throw new NullPointerException();
 		if (!(heuristicWeight > 0) || !Double.isFinite(heuristicWeight))
 			throw new IllegalArgumentException("heuristic weight must be positive and finite");
@@ -73,6 +98,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.completionCallback = completionCallback;
 		this.collision = config.getMap();
 		this.routingStatic = routingStatic;
+		this.session = session == null ? new ExactRoutingSession() : session;
 		long phaseStarted = System.nanoTime();
 		this.account = config.prepareExactRoutingAccount(true);
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
@@ -95,6 +121,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.completionCallback = completionCallback;
 		this.collision = null;
 		this.routingStatic = null;
+		this.session = null;
 		this.account = null;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
@@ -178,6 +205,16 @@ public final class ExactPathfinder implements ActiveSearch
 	{ return forwardSearchNanos;
 	}
 
+	/** Whether the account graph came from the session rather than being built for this search. */
+	public boolean isGraphReused()
+	{ return graphReused;
+	}
+
+	/** How many of this search's targets were already prepared in the session. */
+	public int getTargetsReused()
+	{ return targetsReused;
+	}
+
 	@Override
 	public void run()
 	{
@@ -196,8 +233,9 @@ public final class ExactPathfinder implements ActiveSearch
 			RoutingStatic staticData = routingStatic.get();
 			routingStaticNanos = System.nanoTime() - phaseStarted;
 			phaseStarted = System.nanoTime();
-			graph = new SiteGraph(staticData, account);
+			ExactRoutingSession.Lookup<SiteGraph> graph = session.graph(staticData, account);
 			graphPrepareNanos = System.nanoTime() - phaseStarted;
+			graphReused = graph.reused();
 			AtomicBoolean timedOut = new AtomicBoolean();
 			// A zero cutoff means no cutoff for the exact backend.
 			SearchDeadline deadline = cutoffMillis > 0 ? new SearchDeadline(cutoffMillis) : null;
@@ -209,15 +247,20 @@ public final class ExactPathfinder implements ActiveSearch
 			for (int target : ordered)
 			{
 				if (cancelled) break;
-				TargetOverlay overlay = new TargetOverlay(graph, collision, target);
 				phaseStarted = System.nanoTime();
-				ReverseLabels reverse = ReverseLabels.compute(overlay);
-				reverseSearchNanos += System.nanoTime() - phaseStarted;
+				ExactRoutingSession.Lookup<PreparedTarget> prepared = session.target(graph.value(), collision, target);
+				if (prepared.reused())
+				{
+					targetsReused++;
+					heuristicPrepareNanos += System.nanoTime() - phaseStarted;
+				}
+				else
+				{
+					reverseSearchNanos += prepared.value().reverseSearchNanos();
+					heuristicPrepareNanos += prepared.value().heuristicPrepareNanos();
+				}
 				phaseStarted = System.nanoTime();
-				PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, reverse);
-				heuristicPrepareNanos += System.nanoTime() - phaseStarted;
-				phaseStarted = System.nanoTime();
-				ExactForwardSearch.Result current = ExactForwardSearch.search(overlay, heuristic, start,
+				ExactForwardSearch.Result current = prepared.value().search(start,
 					() ->
 					{
 						if (cancelled) return true;
