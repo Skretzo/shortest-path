@@ -6,7 +6,8 @@ import shortestpath.pathfinder.CollisionMap;
 /**
  * Target-lifetime preparation: the target overlay, its reverse labels and the heuristic built
  * from them. None of it depends on the start, so one prepared target serves any number of
- * forward searches for the same account snapshot.
+ * forward searches for the same account snapshot. With several target tiles, a search ends at
+ * whichever target is cheapest to reach.
  */
 public final class PreparedTarget
 {
@@ -26,7 +27,12 @@ public final class PreparedTarget
 
 	public static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, int packed)
 	{
-		TargetOverlay overlay = new TargetOverlay(graph, collision, packed);
+		return prepare(graph, collision, new int[] {packed});
+	}
+
+	public static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, int[] packedTargets)
+	{
+		TargetOverlay overlay = new TargetOverlay(graph, collision, packedTargets);
 		long phaseStarted = System.nanoTime();
 		ReverseLabels reverse = ReverseLabels.compute(overlay);
 		long reverseSearchNanos = System.nanoTime() - phaseStarted;
@@ -49,9 +55,10 @@ public final class PreparedTarget
 	{
 		return heuristic;
 	}
-	public int packedTarget()
+	/** The target tiles, in unsigned order. */
+	public int[] packedTargets()
 	{
-		return overlay.packedTarget();
+		return overlay.packedTargets();
 	}
 	/** Time the reverse relaxed search took when this target was prepared. */
 	public long reverseSearchNanos()

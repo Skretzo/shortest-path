@@ -107,7 +107,7 @@ public final class ExactForwardSearch
 				continue;
 			}
 			counters.statesPopped++;
-			if (tile == target.packedTarget())
+			if (target.isTarget(tile))
 				return Result.reached(cost, state, counters.snapshot(bestBankCost[0]), reconstruct(space, startState, state, previous));
 			if (space.isBase(node))
 			{
@@ -661,9 +661,10 @@ public final class ExactForwardSearch
 	}
 		static SearchSpace create(TargetOverlay target, int start)
 		{
-			RoutingStatic stat = target.routingStatic(); int[] values = new int[stat.siteCount() + 2]; int count = 0;
+			RoutingStatic stat = target.routingStatic(); int[] values = new int[stat.siteCount() + target.targetCount() + 1]; int count = 0;
 			for (int site = 0; site < stat.siteCount(); site++) count = add(values, count, stat.siteTile(site), stat);
-			count = add(values, count, target.packedTarget(), stat); count = add(values, count, start, stat);
+			for (int i = 0; i < target.targetCount(); i++) count = add(values, count, target.packedTarget(i), stat);
+			count = add(values, count, start, stat);
 			for (int i = 1; i < count; i++)
 	{ int value = values[i], j = i - 1; while (j >= 0 && Integer.compareUnsigned(values[j], value) > 0) values[j + 1] = values[j--]; values[j + 1] = value;
 	}
@@ -671,8 +672,8 @@ public final class ExactForwardSearch
 			int[] extras = Arrays.copyOf(values, extraCount); int[][] components = new int[extraCount][];
 			int[] sites = new int[extraCount];
 			for (int i = 0; i < extraCount; i++)
-	{ int tile = extras[i], site = stat.siteIndex(tile); sites[i] = site;
-		components[i] = tile == target.packedTarget() ? target.components() : site >= 0 ? stat.siteComponents(site) : stat.attachments(tile, target.collision());
+	{ int tile = extras[i], site = stat.siteIndex(tile), targetIndex = target.targetIndex(tile); sites[i] = site;
+		components[i] = targetIndex >= 0 ? target.componentsView(targetIndex) : site >= 0 ? stat.siteComponents(site) : stat.attachments(tile, target.collision());
 	}
 			return new SearchSpace(stat, target.account(), extras, components, sites);
 		}
