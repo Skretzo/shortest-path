@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -100,6 +101,65 @@ public class ExactPathfinderTest
 		assertEquals(PathfinderBackend.LEGACY, config.pathfinderBackend());
 		assertEquals(PathfinderBackend.EXACT, config.pathfinderBackend());
 		assertTrue(ActiveSearch.class.isAssignableFrom(ExactPathfinder.class));
+	}
+
+	@Test
+	public void previousRouteIsShownUntilTheSearchCompletes()
+		throws Exception
+	{
+		List<PathStep> previous = List.of(new PathStep(RoutingStaticTestFixture.C, false),
+			new PathStep(RoutingStaticTestFixture.D, false));
+		ExactPathfinder search = pathfinder(0);
+		search.showUntilDone(previous);
+
+		assertTrue(search.isShowingProvisionalPath());
+		assertEquals(previous, search.getPath());
+		search.run();
+
+		assertFalse(search.isShowingProvisionalPath());
+		assertTrue(search.getResult().isReached());
+		assertEquals(RoutingStaticTestFixture.D, search.getPath().get(search.getPath().size() - 1).getPackedPosition());
+		assertEquals(RoutingStaticTestFixture.A, search.getPath().get(0).getPackedPosition());
+	}
+
+	@Test
+	public void cancelledSearchKeepsShowingThePreviousRoute()
+		throws Exception
+	{
+		List<PathStep> previous = List.of(new PathStep(RoutingStaticTestFixture.C, false),
+			new PathStep(RoutingStaticTestFixture.D, false));
+		ExactPathfinder search = pathfinder(0);
+		search.showUntilDone(previous);
+		search.cancel();
+
+		search.run();
+
+		assertTrue(search.isShowingProvisionalPath());
+		assertEquals(previous, search.getPath());
+	}
+
+	@Test
+	public void trivialPreviousRouteIsNotShown()
+		throws Exception
+	{
+		ExactPathfinder search = pathfinder(0);
+		search.showUntilDone(List.of(new PathStep(RoutingStaticTestFixture.C, false)));
+
+		assertFalse(search.isShowingProvisionalPath());
+		assertEquals(1, search.getPath().size());
+	}
+
+	private static ExactPathfinder pathfinder(long cutoffMillis) throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		PathfinderConfig config = mock(PathfinderConfig.class);
+		CollisionMap collision = emptyCollision();
+		when(config.getMap()).thenReturn(collision);
+		when(config.prepareExactRoutingAccount(true))
+			.thenReturn(account(global(RoutingStaticTestFixture.D, 2), new Transport[0], false));
+		when(config.getCalculationCutoffMillis()).thenReturn(cutoffMillis);
+		return new ExactPathfinder(config, stat, null, RoutingStaticTestFixture.A,
+			java.util.Set.of(RoutingStaticTestFixture.D), null, 1);
 	}
 
 	private static ExactForwardSearch.Result search(TargetOverlay target, int start)

@@ -31,6 +31,7 @@ public final class ExactPathfinder implements ActiveSearch
 	private volatile boolean cancelled;
 	private volatile boolean done;
 	private volatile List<PathStep> path;
+	private volatile List<PathStep> provisionalPath;
 	private volatile PathfinderResult result;
 	private volatile ExactForwardSearch.Counters exactStats;
 	private volatile long reverseSearchNanos;
@@ -154,7 +155,25 @@ public final class ExactPathfinder implements ActiveSearch
 
 	@Override
 	public List<PathStep> getPath()
-	{ return path;
+	{
+		List<PathStep> shown = provisionalPath;
+		return shown != null ? shown : path;
+	}
+
+	/**
+	 * Shows {@code previous} as this search's path until the search completes, so recalculating a
+	 * route keeps the old one on screen instead of collapsing it to the start tile. Call before
+	 * running the search; a cancelled search keeps showing it.
+	 */
+	public void showUntilDone(List<PathStep> previous)
+	{
+		provisionalPath = previous == null || previous.size() < 2 ? null : List.copyOf(previous);
+	}
+
+	/** Whether {@link #getPath()} is still the previous route passed to {@link #showUntilDone}. */
+	public boolean isShowingProvisionalPath()
+	{
+		return provisionalPath != null;
 	}
 
 	@Override
@@ -308,6 +327,7 @@ public final class ExactPathfinder implements ActiveSearch
 		}
 		finally
 		{
+			if (!cancelled) provisionalPath = null;
 			done = !cancelled;
 			stats.end();
 			if (completionCallback != null) completionCallback.run();
