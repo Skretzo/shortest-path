@@ -441,8 +441,12 @@ public class ShortestPathPlugin extends Plugin
 		// filterLocations edits the set in place, and callers often pass a search's own targets,
 		// which the exact backend holds immutable.
 		Set<Integer> ends = new HashSet<>(requestedEnds);
+		List<PathStep> previousPath;
+		Set<Integer> previousTargets;
 		synchronized (pathfinderMutex)
 		{
+			previousPath = pathfinder == null ? null : pathfinder.getPath();
+			previousTargets = pathfinder == null ? null : Set.copyOf(pathfinder.getTargets());
 			if (pathfinder != null)
 			{
 				pathfinder.cancel();
@@ -480,8 +484,13 @@ public class ShortestPathPlugin extends Plugin
 							if (exactRoutingStatic == null)
 								exactRoutingStatic = new ExactRoutingStaticProvider(pathfinderConfig::getMap);
 							legacyPathfinder = null;
-							pathfinder = new ExactPathfinder(pathfinderConfig, exactRoutingStatic, exactRoutingSession, start, ends,
-								this::postPluginMessages);
+							ExactPathfinder exact = new ExactPathfinder(pathfinderConfig, exactRoutingStatic,
+								exactRoutingSession, start, ends, this::postPluginMessages);
+							// Recalculating towards the same targets: keep the old route drawn until
+							// the new one is ready.
+							if (ends.equals(previousTargets))
+								exact.showUntilDone(previousPath);
+							pathfinder = exact;
 						}
 						catch (RuntimeException error)
 						{
@@ -508,6 +517,12 @@ public class ShortestPathPlugin extends Plugin
 	public boolean isNearPath(int location)
 	{
 		List<PathStep> path;
+		// The previous route is only on screen until its recalculation finishes; the player is
+		// expected to be off it, so it must not trigger yet another recalculation.
+		if (pathfinder instanceof ExactPathfinder && ((ExactPathfinder) pathfinder).isShowingProvisionalPath())
+		{
+			return true;
+		}
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
 			config.recalculateDistance() < 0 || lastLocation == (lastLocation = location))
 		{
