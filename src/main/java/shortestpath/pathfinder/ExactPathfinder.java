@@ -260,6 +260,7 @@ public final class ExactPathfinder implements ActiveSearch
 			int[] packedTargets = targets.stream().mapToInt(Integer::intValue).toArray();
 			ExactForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
+			int partialCost = PathfinderResult.NO_PATH_COST;
 			exactStats = ExactForwardSearch.Counters.empty();
 			if (!cancelled && packedTargets.length != 0)
 			{
@@ -299,6 +300,12 @@ public final class ExactPathfinder implements ActiveSearch
 					path = current.path();
 					bestTarget = last(path);
 				}
+				else if (timedOut.get() && !cancelled)
+				{
+					// Like legacy: a cut-off search still routes to the tile it got closest to.
+					path = current.closestPath();
+					partialCost = current.closestCost();
+				}
 			}
 
 			if (cancelled)
@@ -307,7 +314,7 @@ public final class ExactPathfinder implements ActiveSearch
 					PathTerminationReason.CANCELLED);
 			else if (timedOut.get())
 				result = new PathfinderResult(start, bestTarget, best != null, path,
-					last(path), best == null ? PathfinderResult.NO_PATH_COST : best.cost(), stats.nodesChecked,
+					last(path), best == null ? partialCost : best.cost(), stats.nodesChecked,
 					stats.transportsChecked, System.nanoTime() - started, PathTerminationReason.CUTOFF_REACHED);
 			else if (best != null)
 				result = new PathfinderResult(start, bestTarget, true, path, last(path), best.cost(), stats.nodesChecked,

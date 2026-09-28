@@ -54,6 +54,7 @@ public final class ExactForwardSearch
 		int[] bestBankCost = {ExactCosts.INF};
 		int[] globalBounds = restrictedHeuristic ? globalBounds(target, heuristic, space) : null;
 		List<PathStep> startPath = List.of(new PathStep(start, false));
+		Closest closest = new Closest(target);
 		if (cancelled.getAsBoolean()) return Result.cancelled(counters.snapshot(bestBankCost[0]), startPath);
 
 		ExactMinHeap queue = new ExactMinHeap(Math.min(stateCount, 32_768));
@@ -81,7 +82,9 @@ public final class ExactForwardSearch
 
 		while (queue.poll())
 		{
-			if (cancelled.getAsBoolean()) return Result.cancelled(counters.snapshot(bestBankCost[0]), startPath);
+			if (cancelled.getAsBoolean())
+				return Result.cancelled(counters.snapshot(bestBankCost[0]), startPath,
+					closest.path(space, startState, previous, startPath), closest.cost());
 			int state = queue.state(), cost = queue.cost(), queuedPriority = queue.priority();
 			if (cost != best[state])
 	{ counters.staleEntries++; continue;
@@ -109,6 +112,7 @@ public final class ExactForwardSearch
 			counters.statesPopped++;
 			if (target.isTarget(tile))
 				return Result.reached(cost, state, counters.snapshot(bestBankCost[0]), reconstruct(space, startState, state, previous));
+			closest.consider(state, tile, cost);
 			if (space.isBase(node))
 			{
 				walkBase(space, node, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
@@ -123,7 +127,54 @@ public final class ExactForwardSearch
 			relaxBank(target, space, node, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, capability, bestBankCost);
 			relaxLocalTransports(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 		}
-		return Result.unreachable(counters.snapshot(bestBankCost[0]), startPath);
+		return Result.unreachable(counters.snapshot(bestBankCost[0]), startPath,
+			closest.path(space, startState, previous, startPath), closest.cost());
+	}
+
+	/**
+	 * The popped tile nearest to any target, chosen like the legacy pathfinder's closest reachable
+	 * tile: minimum squared Euclidean distance, then travelled cost, then x, then y.
+	 */
+	private static final class Closest
+	{
+		private final TargetOverlay target;
+		private int state = -1, cost = ExactCosts.INF, x, y;
+		private int distance = Integer.MAX_VALUE;
+
+		Closest(TargetOverlay target)
+		{
+			this.target = target;
+		}
+
+		void consider(int state, int tile, int cost)
+		{
+			int remaining = Integer.MAX_VALUE;
+			for (int i = 0; i < target.targetCount(); i++)
+				remaining = Math.min(remaining, WorldPointUtil.distanceBetween(target.packedTarget(i), tile,
+					WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC));
+			int tileX = WorldPointUtil.unpackWorldX(tile), tileY = WorldPointUtil.unpackWorldY(tile);
+			if (remaining < distance
+				|| (remaining == distance && cost < this.cost)
+				|| (remaining == distance && cost == this.cost && tileX < x)
+				|| (remaining == distance && cost == this.cost && tileX == x && tileY < y))
+			{
+				this.state = state;
+				this.cost = cost;
+				this.distance = remaining;
+				this.x = tileX;
+				this.y = tileY;
+			}
+		}
+
+		List<PathStep> path(SearchSpace space, int startState, int[] previous, List<PathStep> startPath)
+		{
+			return state < 0 ? startPath : reconstruct(space, startState, state, previous);
+		}
+
+		int cost()
+		{
+			return state < 0 ? 0 : cost;
+		}
 	}
 
 	private static void walkBase(SearchSpace space, int node, boolean banked, int from, int cost, int[] best,
@@ -464,21 +515,26 @@ public final class ExactForwardSearch
 	public static final class Result
 	{
 		private final boolean reached, cancelled;
-		private final int cost, terminalState;
+		private final int cost, terminalState, closestCost;
 		private final Counters counters;
-		private final List<PathStep> path;
-		private Result(boolean reached, boolean cancelled, int cost, int terminalState, Counters counters, List<PathStep> path)
+		private final List<PathStep> path, closestPath;
+		private Result(boolean reached, boolean cancelled, int cost, int terminalState, Counters counters, List<PathStep> path,
+			List<PathStep> closestPath, int closestCost)
 		{
 			this.reached = reached; this.cancelled = cancelled; this.cost = cost; this.terminalState = terminalState; this.counters = counters; this.path = path;
+			this.closestPath = closestPath; this.closestCost = closestCost;
 		}
 		static Result reached(int cost, int state, Counters counters, List<PathStep> path)
-	{ return new Result(true, false, cost, state, counters, path);
+	{ return new Result(true, false, cost, state, counters, path, path, cost);
 	}
-		static Result unreachable(Counters counters, List<PathStep> path)
-	{ return new Result(false, false, ExactCosts.INF, -1, counters, path);
+		static Result unreachable(Counters counters, List<PathStep> path, List<PathStep> closestPath, int closestCost)
+	{ return new Result(false, false, ExactCosts.INF, -1, counters, path, closestPath, closestCost);
 	}
 		static Result cancelled(Counters counters, List<PathStep> path)
-	{ return new Result(false, true, ExactCosts.INF, -1, counters, path);
+	{ return cancelled(counters, path, path, 0);
+	}
+		static Result cancelled(Counters counters, List<PathStep> path, List<PathStep> closestPath, int closestCost)
+	{ return new Result(false, true, ExactCosts.INF, -1, counters, path, closestPath, closestCost);
 	}
 		public boolean reached()
 	{ return reached;
@@ -497,6 +553,14 @@ public final class ExactForwardSearch
 	}
 		public List<PathStep> path()
 	{ return path;
+	}
+		/** Route to the popped tile nearest a target; the full route when a target was reached. */
+		public List<PathStep> closestPath()
+	{ return closestPath;
+	}
+		/** Cost of {@link #closestPath()}. */
+		public int closestCost()
+	{ return closestCost;
 	}
 	}
 
