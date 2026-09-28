@@ -1,6 +1,5 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,7 +37,7 @@ public final class ExactPathfinder implements ActiveSearch
 	private volatile long heuristicPrepareNanos;
 	private volatile long forwardSearchNanos;
 	private volatile boolean graphReused;
-	private volatile int targetsReused;
+	private volatile boolean targetReused;
 
 	public ExactPathfinder(PathfinderConfig config, RoutingStatic routingStatic, int start, Set<Integer> targets,
 		Runnable completionCallback)
@@ -210,9 +209,9 @@ public final class ExactPathfinder implements ActiveSearch
 	{ return graphReused;
 	}
 
-	/** How many of this search's targets were already prepared in the session. */
-	public int getTargetsReused()
-	{ return targetsReused;
+	/** Whether this search's target set was already prepared in the session. */
+	public boolean isTargetReused()
+	{ return targetReused;
 	}
 
 	@Override
@@ -239,25 +238,25 @@ public final class ExactPathfinder implements ActiveSearch
 			AtomicBoolean timedOut = new AtomicBoolean();
 			// A zero cutoff means no cutoff for the exact backend.
 			SearchDeadline deadline = cutoffMillis > 0 ? new SearchDeadline(cutoffMillis) : null;
-			List<Integer> ordered = new ArrayList<>(targets);
-			ordered.sort(Integer::compareUnsigned);
+			int[] packedTargets = targets.stream().mapToInt(Integer::intValue).toArray();
 			ExactForwardSearch.Result best = null;
-			ExactForwardSearch.Counters totalExactStats = null;
 			int bestTarget = firstTarget();
-			for (int target : ordered)
+			exactStats = ExactForwardSearch.Counters.empty();
+			if (!cancelled && packedTargets.length != 0)
 			{
-				if (cancelled) break;
+				// One search towards every target at once; it ends at the cheapest one to reach.
 				phaseStarted = System.nanoTime();
-				ExactRoutingSession.Lookup<PreparedTarget> prepared = session.target(graph.value(), collision, target);
-				if (prepared.reused())
+				ExactRoutingSession.Lookup<PreparedTarget> prepared = session.target(graph.value(), collision,
+					packedTargets);
+				targetReused = prepared.reused();
+				if (targetReused)
 				{
-					targetsReused++;
-					heuristicPrepareNanos += System.nanoTime() - phaseStarted;
+					heuristicPrepareNanos = System.nanoTime() - phaseStarted;
 				}
 				else
 				{
-					reverseSearchNanos += prepared.value().reverseSearchNanos();
-					heuristicPrepareNanos += prepared.value().heuristicPrepareNanos();
+					reverseSearchNanos = prepared.value().reverseSearchNanos();
+					heuristicPrepareNanos = prepared.value().heuristicPrepareNanos();
 				}
 				phaseStarted = System.nanoTime();
 				ExactForwardSearch.Result current = prepared.value().search(start,
@@ -271,18 +270,16 @@ public final class ExactPathfinder implements ActiveSearch
 						}
 						return false;
 					}, heuristicWeight);
-				forwardSearchNanos += System.nanoTime() - phaseStarted;
+				forwardSearchNanos = System.nanoTime() - phaseStarted;
 				stats.nodesChecked += current.counters().statesPopped();
 				stats.transportsChecked += current.counters().transportCandidates();
-				totalExactStats = totalExactStats == null ? current.counters() : totalExactStats.plus(current.counters());
-				if (current.cancelled()) break;
-				if (current.reached() && (best == null || current.cost() < best.cost()))
+				exactStats = current.counters();
+				if (current.reached())
 				{
 					best = current;
-					bestTarget = target;
 					path = current.path();
+					bestTarget = last(path);
 				}
-				if (best != null && best.cost() == 0) break;
 			}
 
 			if (cancelled)
@@ -300,7 +297,6 @@ public final class ExactPathfinder implements ActiveSearch
 				result = new PathfinderResult(start, firstTarget(), false, path, last(path), PathfinderResult.NO_PATH_COST,
 					stats.nodesChecked, stats.transportsChecked, System.nanoTime() - started,
 					PathTerminationReason.SEARCH_EXHAUSTED);
-			exactStats = totalExactStats == null ? ExactForwardSearch.Counters.empty() : totalExactStats;
 		}
 		catch (RuntimeException error)
 		{

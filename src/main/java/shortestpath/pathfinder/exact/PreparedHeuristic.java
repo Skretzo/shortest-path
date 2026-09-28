@@ -42,12 +42,14 @@ public final class PreparedHeuristic
 			addSite(raw, reduced, reverse, overlay, site, stat.siteTile(site), stat.siteComponents(site), false);
 			addSite(raw, reduced, reverse, overlay, site, stat.siteTile(site), stat.siteComponents(site), true);
 		}
-		if (overlay.synthetic())
+		for (int target = 0; target < overlay.targetCount(); target++)
 		{
-			addSite(raw, reduced, reverse, overlay, overlay.targetNode(), overlay.packedTarget(),
-				overlay.components(), false);
-			addSite(raw, reduced, reverse, overlay, overlay.targetNode(), overlay.packedTarget(),
-				overlay.components(), true);
+			if (!overlay.synthetic(target))
+				continue;
+			addSite(raw, reduced, reverse, overlay, overlay.targetNode(target), overlay.packedTarget(target),
+				overlay.componentsView(target), false);
+			addSite(raw, reduced, reverse, overlay, overlay.targetNode(target), overlay.packedTarget(target),
+				overlay.componentsView(target), true);
 		}
 		int[][] tiles = new int[bucketCount][], labels = new int[bucketCount][];
 		int[][] generatorTiles = new int[bucketCount][], generatorLabels = new int[bucketCount][];
@@ -140,7 +142,7 @@ public final class PreparedHeuristic
 
 	public int estimateBaseNode(int packed, boolean banked, int component)
 	{
-		int best = packed == overlay.packedTarget() ? reverse.targetLabel(banked) : ExactCosts.INF;
+		int best = targetLabel(packed, banked);
 		int site = overlay.routingStatic().siteIndex(packed);
 		if (site >= 0) best = Math.min(best, reverse.label(site, banked));
 		return Math.min(best,
@@ -162,7 +164,7 @@ public final class PreparedHeuristic
 		boolean fallbackToRaw)
 	{
 		RoutingStatic stat = overlay.routingStatic();
-		int best = packed == overlay.packedTarget() ? reverse.targetLabel(banked) : ExactCosts.INF;
+		int best = targetLabel(packed, banked);
 		int site = stat.siteIndex(packed);
 		if (site >= 0)
 			best = Math.min(best, reverse.label(site, banked));
@@ -206,8 +208,7 @@ public final class PreparedHeuristic
 			int generatorState = validOrigin(reverse, overlay, node, packed, components, component, state, origin)
 				? origin : state;
 			int generatorNode = generatorState / 2;
-			int generatorTile = generatorNode == overlay.targetNode() ? overlay.packedTarget()
-				: overlay.routingStatic().siteTile(generatorNode);
+			int generatorTile = overlay.nodeTile(generatorNode);
 			int generatorLabel = reverse.label(generatorNode, (generatorState & 1) != 0);
 			if (reduced[key] == null)
 				reduced[key] = new GeneratorList();
@@ -221,20 +222,23 @@ public final class PreparedHeuristic
 		if (origin < 0 || (origin & 1) != (state & 1))
 			return false;
 		int originNode = origin / 2;
-		if (originNode >= overlay.graph().spatialNodeCount()
-			&& !(overlay.synthetic() && originNode == overlay.targetNode()))
+		if (originNode >= overlay.graph().spatialNodeCount() && overlay.syntheticTarget(originNode) < 0)
 			return false;
-		int originTile = originNode == overlay.targetNode() ? overlay.packedTarget()
-			: overlay.routingStatic().siteTile(originNode);
+		int originTile = overlay.nodeTile(originNode);
 		int direct = WorldPointUtil.distanceBetween(originTile, packed);
 		if (direct == ExactCosts.INF)
 			return false;
 		if (reverse.generatorWeightDoubled(state) == ExactCosts.INF
 			|| reverse.doubledLabel(state) != ExactCosts.add(reverse.generatorWeightDoubled(state), ExactCosts.twice(direct)))
 			return false;
-		int[] originComponents = originNode == overlay.targetNode() ? overlay.components()
-			: overlay.routingStatic().siteComponents(originNode);
+		int[] originComponents = overlay.nodeComponents(originNode);
 		return contains(originComponents, component);
+	}
+
+	private int targetLabel(int packed, boolean banked)
+	{
+		int target = overlay.targetIndex(packed);
+		return target < 0 ? ExactCosts.INF : reverse.targetLabel(target, banked);
 	}
 
 	private static int key(int component, boolean banked)

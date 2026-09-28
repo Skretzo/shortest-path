@@ -52,11 +52,18 @@ public final class ReverseLabels
 		int[] labels = new int[overlay.queryNodeCount() * 2];
 		Arrays.fill(labels, ExactCosts.INF);
 		ExactMinHeap queue = new ExactMinHeap(Math.max(16, labels.length));
-		int pre = overlay.targetState(false), post = overlay.targetState(true);
-		labels[pre] = labels[post] = 0;
-		queue.push(0, 0, pre);
-		queue.push(0, 0, post);
-		int settled = 0, stale = 0, pushes = 2;
+		int pushes = 0;
+		for (int target = 0; target < overlay.targetCount(); target++)
+		{
+			for (boolean banked : new boolean[] {false, true})
+			{
+				int seed = overlay.targetState(target, banked);
+				labels[seed] = 0;
+				queue.push(0, 0, seed);
+				pushes++;
+			}
+		}
+		int settled = 0, stale = 0;
 		while (queue.poll())
 		{
 			int state = queue.state(), cost = queue.cost();
@@ -88,19 +95,15 @@ public final class ReverseLabels
 							pushes++;
 					}
 				}
-				if (overlay.synthetic() && attachedToTarget(stat.siteComponents(node), overlay.components())
-					&& relax(labels, queue, overlay.targetState(banked),
-						ExactCosts.add(cost, distance(stat.siteTile(node), overlay.packedTarget()))))
-				{
-					pushes++;
-				}
+				// Targets are seeded at zero, so walking from a site into a target never improves it.
 			}
-			else if (overlay.synthetic() && node == overlay.targetNode())
+			else
 			{
-				for (int i = 0; i < overlay.attachmentCount(); i++)
+				int target = overlay.syntheticTarget(node);
+				for (int i = 0; target >= 0 && i < overlay.attachmentCount(target); i++)
 				{
-					if (relax(labels, queue, SiteGraph.stateId(overlay.attachmentSite(i), banked),
-						ExactCosts.add(cost, overlay.attachmentCost(i))))
+					if (relax(labels, queue, SiteGraph.stateId(overlay.attachmentSite(target, i), banked),
+						ExactCosts.add(cost, overlay.attachmentCost(target, i))))
 						pushes++;
 				}
 			}
@@ -125,14 +128,20 @@ public final class ReverseLabels
 		Arrays.fill(origins, -1);
 		Arrays.fill(weights, ExactCosts.INF);
 		ExactMinHeap queue = new ExactMinHeap(Math.max(16, stateCount));
-		int pre = overlay.targetState(false), post = overlay.targetState(true);
-		doubled[pre] = doubled[post] = 0;
-		origins[pre] = pre;
-		origins[post] = post;
-		weights[pre] = weights[post] = 0;
-		queue.push(0, 0, pre);
-		queue.push(0, 0, post);
-		int settled = 0, stale = 0, pushes = 2;
+		int pushes = 0;
+		for (int target = 0; target < overlay.targetCount(); target++)
+		{
+			for (boolean banked : new boolean[] {false, true})
+			{
+				int seed = overlay.targetState(target, banked);
+				doubled[seed] = 0;
+				origins[seed] = seed;
+				weights[seed] = 0;
+				queue.push(0, 0, seed);
+				pushes++;
+			}
+		}
+		int settled = 0, stale = 0;
 		int sparseEdges = 0, explicitEdges = 0, attachmentEdges = 0;
 		while (queue.poll())
 		{
@@ -168,26 +177,16 @@ public final class ReverseLabels
 						pushes++;
 				}
 			}
-			if (overlay.synthetic())
+			// Targets are seeded at zero, so walking from a site into a target never improves it;
+			// only a synthetic target's own attachment edges need relaxing.
+			int target = vertex < routingNodes ? overlay.syntheticTarget(vertex) : -1;
+			for (int i = 0; target >= 0 && i < overlay.attachmentCount(target); i++)
 			{
-				if (vertex == overlay.targetNode())
-				{
-					for (int i = 0; i < overlay.attachmentCount(); i++)
-					{
-						attachmentEdges++;
-						if (relax(doubled, origins, weights, queue, state,
-							SiteGraph.stateId(overlay.attachmentSite(i), banked),
-							ExactCosts.twice(overlay.attachmentCost(i)), false))
-							pushes++;
-					}
-				}
-				else if (vertex < originalCount && attachedToTarget(stat.siteComponents(vertex), overlay.components()))
-				{
-					attachmentEdges++;
-					if (relax(doubled, origins, weights, queue, state, overlay.targetState(banked),
-						ExactCosts.twice(distance(stat.siteTile(vertex), overlay.packedTarget())), false))
-						pushes++;
-				}
+				attachmentEdges++;
+				if (relax(doubled, origins, weights, queue, state,
+					SiteGraph.stateId(overlay.attachmentSite(target, i), banked),
+					ExactCosts.twice(overlay.attachmentCost(target, i)), false))
+					pushes++;
 			}
 		}
 		int[] labels = new int[routingNodes * 2];
@@ -214,6 +213,10 @@ public final class ReverseLabels
 	public int targetLabel(boolean banked)
 	{
 		return labels[overlay.targetState(banked)];
+	}
+	public int targetLabel(int target, boolean banked)
+	{
+		return labels[overlay.targetState(target, banked)];
 	}
 	public int stateCount()
 	{
@@ -311,15 +314,6 @@ public final class ReverseLabels
 		}
 		queue.push(candidate, candidate, next);
 		return true;
-	}
-
-	private static boolean attachedToTarget(int[] components, int[] targetComponents)
-	{
-		for (int left : components)
-			for (int right : targetComponents)
-				if (left == right)
-					return true;
-		return false;
 	}
 
 	private static int distance(int left, int right)
