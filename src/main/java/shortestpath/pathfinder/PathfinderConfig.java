@@ -88,7 +88,6 @@ public class PathfinderConfig
 	 * Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers.
 	 */
 	private final Map<Integer, DestinationRequirements> bankRequirements;
-	private final Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
 	private final List<Integer> filteredTargets = new ArrayList<>(4);
 	private final Client client;
 	private final ShortestPathConfig config;
@@ -499,12 +498,21 @@ public class PathfinderConfig
 		transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
 			QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
+		// The owned items depend only on which containers are included, so collect them once rather
+		// than once per transport.
+		Map<Integer, Integer> carriedItems = collectItems(true, true, false, true);
+		Map<Integer, Integer> bankPathItems = includeBankPath ? collectItems(true, true, true, true) : carriedItems;
+		Set<Quest> refreshedQuests = new HashSet<>();
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
 			for (Quest quest : transport.getQuests())
 			{
+				if (!refreshedQuests.add(quest))
+				{
+					continue;
+				}
 				try
 				{
 					questStates.put(quest, getQuestState(quest));
@@ -531,8 +539,8 @@ public class PathfinderConfig
 				continue;
 			}
 
-			boolean usableWithoutBank = hasRequiredItems(transport, true, true, false, true);
-			boolean usableWithBank = hasRequiredItems(transport, true, true, includeBankPath, true);
+			boolean usableWithoutBank = hasRequiredItems(transport, carriedItems);
+			boolean usableWithBank = hasRequiredItems(transport, bankPathItems);
 			if (usableWithoutBank)
 			{
 				withoutBank.add(transport);
@@ -987,14 +995,10 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Checks if the player has all the required equipment and inventory items for the transport
+	 * Checks if {@code ownedItems} (from {@link #collectItems}) cover the equipment and inventory
+	 * items the transport requires
 	 */
-	private boolean hasRequiredItems(
-		Transport transport,
-		boolean checkInventory,
-		boolean checkEquipment,
-		boolean checkBank,
-		boolean checkRunePouch)
+	private boolean hasRequiredItems(Transport transport, Map<Integer, Integer> ownedItems)
 	{
 		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
 			TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
@@ -1020,32 +1024,28 @@ public class PathfinderConfig
 			int lumbridgeDiaryComplete = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0);
 			if (lumbridgeDiaryComplete != 1)
 			{
-				if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch))
+				if (!DRAMEN_STAFF.isSatisfiedBy(ownedItems, CURRENCIES, currencyThreshold))
 				{
 					return false;
 				}
 			}
 		}
 
-		return hasRequiredItems(transport.getItemRequirements(),
-			checkInventory, checkEquipment, checkBank, checkRunePouch);
+		TransportItems transportItems = transport.getItemRequirements();
+		return transportItems == null || transportItems.isSatisfiedBy(ownedItems, CURRENCIES, currencyThreshold);
 	}
 
 	/**
-	 * Checks if the player has all the required equipment and inventory items for the transport
+	 * Item id to quantity over the selected containers. Later containers overwrite the quantity of
+	 * an item already seen (inventory, then equipment, then bank, then rune pouch).
 	 */
-	private boolean hasRequiredItems(
-		TransportItems transportItems,
+	private Map<Integer, Integer> collectItems(
 		boolean checkInventory,
 		boolean checkEquipment,
 		boolean checkBank,
 		boolean checkRunePouch)
 	{
-		if (transportItems == null)
-		{
-			return true;
-		}
-		itemsAndQuantities.clear();
+		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
 
 		if (checkInventory)
 		{
@@ -1112,7 +1112,7 @@ public class PathfinderConfig
 			}
 		}
 
-		return transportItems.isSatisfiedBy(itemsAndQuantities, CURRENCIES, currencyThreshold);
+		return itemsAndQuantities;
 	}
 
 	/**
