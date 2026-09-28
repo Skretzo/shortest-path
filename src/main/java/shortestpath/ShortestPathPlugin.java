@@ -87,6 +87,7 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
+import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -209,6 +210,7 @@ public class ShortestPathPlugin extends Plugin
 	private ActiveSearch pathfinder;
 	private Pathfinder legacyPathfinder;
 	private ExactRoutingStaticProvider exactRoutingStatic;
+	private final ExactRoutingSession exactRoutingSession = new ExactRoutingSession();
 	@Getter
 	private PathfinderConfig pathfinderConfig;
 	@Getter
@@ -434,7 +436,8 @@ public class ShortestPathPlugin extends Plugin
 							if (exactRoutingStatic == null)
 								exactRoutingStatic = new ExactRoutingStaticProvider(pathfinderConfig::getMap);
 							legacyPathfinder = null;
-							pathfinder = new ExactPathfinder(pathfinderConfig, exactRoutingStatic, start, ends, this::postPluginMessages);
+							pathfinder = new ExactPathfinder(pathfinderConfig, exactRoutingStatic, exactRoutingSession, start, ends,
+								this::postPluginMessages);
 						}
 						catch (RuntimeException error)
 						{

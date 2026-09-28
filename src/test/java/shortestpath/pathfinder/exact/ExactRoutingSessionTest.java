@@ -1,0 +1,178 @@
+package shortestpath.pathfinder.exact;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.junit.Test;
+import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.pathfinder.TransportAvailabilityFixture;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
+
+public class ExactRoutingSessionTest
+{
+	private static final int A = RoutingStaticTestFixture.A;
+	private static final int BANK = RoutingStaticTestFixture.BANK;
+	private static final int C = RoutingStaticTestFixture.C;
+	private static final int D = RoutingStaticTestFixture.D;
+
+	@Test
+	public void graphIsReusedForAnEqualFingerprintFromAFreshCompile() throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		ExactRoutingSession session = new ExactRoutingSession();
+
+		ExactRoutingSession.Lookup<SiteGraph> first = session.graph(stat, account(global(D, 2)));
+		ExactRoutingSession.Lookup<SiteGraph> second = session.graph(stat, account(global(D, 2)));
+
+		assertFalse(first.reused());
+		assertTrue(second.reused());
+		assertSame(first.value(), second.value());
+	}
+
+	@Test
+	public void changedAccountRebuildsTheGraphAndDropsPreparedTargets() throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		CollisionMap collision = emptyCollision();
+		ExactRoutingSession session = new ExactRoutingSession();
+		SiteGraph before = session.graph(stat, account(global(D, 2))).value();
+		session.target(before, collision, D);
+
+		ExactRoutingSession.Lookup<SiteGraph> after = session.graph(stat, account(global(D, 3)));
+
+		assertFalse(after.reused());
+		assertNotSame(before, after.value());
+		assertEquals(0, session.cachedTargetCount());
+		assertFalse(session.target(after.value(), collision, D).reused());
+	}
+
+	@Test
+	public void differentStaticDataRebuildsTheGraph() throws Exception
+	{
+		ExactRoutingSession session = new ExactRoutingSession();
+		session.graph(RoutingStaticTestFixture.create(), account(global(D, 2)));
+
+		assertFalse(session.graph(RoutingStaticTestFixture.create(), account(global(D, 2))).reused());
+	}
+
+	@Test
+	public void preparedTargetIsReusedForNewStartsWithIdenticalResults() throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		CollisionMap collision = emptyCollision();
+		PreparedRoutingAccount account = account(global(D, 2));
+		ExactRoutingSession session = new ExactRoutingSession();
+		SiteGraph graph = session.graph(stat, account).value();
+
+		ExactRoutingSession.Lookup<PreparedTarget> first = session.target(graph, collision, D);
+		ExactRoutingSession.Lookup<PreparedTarget> second = session.target(graph, collision, D);
+
+		assertFalse(first.reused());
+		assertTrue(second.reused());
+		assertSame(first.value(), second.value());
+		for (int start : new int[] {A, BANK, C})
+		{
+			TargetOverlay fresh = new TargetOverlay(new SiteGraph(stat, account), collision, D);
+			ExactForwardSearch.Result expected = ExactForwardSearch.search(fresh,
+				PreparedHeuristic.prepare(fresh, ReverseLabels.compute(fresh)), start);
+			ExactForwardSearch.Result actual = second.value().search(start, () -> false, 1);
+			assertEquals(expected.reached(), actual.reached());
+			assertEquals(expected.cost(), actual.cost());
+			assertEquals(positions(expected), positions(actual));
+		}
+	}
+
+	@Test
+	public void leastRecentlyUsedTargetIsEvicted() throws Exception
+	{
+		CollisionMap collision = emptyCollision();
+		ExactRoutingSession session = new ExactRoutingSession(2);
+		SiteGraph graph = session.graph(RoutingStaticTestFixture.create(), account(global(D, 2))).value();
+		session.target(graph, collision, A);
+		session.target(graph, collision, C);
+		assertTrue(session.target(graph, collision, A).reused());
+
+		session.target(graph, collision, D);
+
+		assertEquals(2, session.cachedTargetCount());
+		assertTrue(session.target(graph, collision, A).reused());
+		assertFalse(session.target(graph, collision, C).reused());
+	}
+
+	@Test
+	public void clearingTargetsKeepsTheGraph() throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		CollisionMap collision = emptyCollision();
+		ExactRoutingSession session = new ExactRoutingSession();
+		SiteGraph graph = session.graph(stat, account(global(D, 2))).value();
+		session.target(graph, collision, D);
+
+		session.clearTargets();
+
+		assertTrue(session.graph(stat, account(global(D, 2))).reused());
+		assertFalse(session.target(graph, collision, D).reused());
+	}
+
+	@Test
+	public void targetsAreNotSharedAcrossCollisionMaps() throws Exception
+	{
+		ExactRoutingSession session = new ExactRoutingSession();
+		SiteGraph graph = session.graph(RoutingStaticTestFixture.create(), account(global(D, 2))).value();
+		session.target(graph, emptyCollision(), D);
+
+		assertFalse(session.target(graph, emptyCollision(), D).reused());
+	}
+
+	@Test
+	public void graphsFromOutsideTheSessionAreNotCached() throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		CollisionMap collision = emptyCollision();
+		ExactRoutingSession session = new ExactRoutingSession();
+		SiteGraph outside = new SiteGraph(stat, account(global(D, 2)));
+
+		session.target(outside, collision, D);
+
+		assertFalse(session.target(outside, collision, D).reused());
+		assertEquals(0, session.cachedTargetCount());
+	}
+
+	private static List<Integer> positions(ExactForwardSearch.Result result)
+	{
+		return result.path().stream().map(PathStep::getPackedPosition).collect(Collectors.toList());
+	}
+
+	private static PreparedRoutingAccount account(Transport global)
+	{
+		TransportAvailability availability = TransportAvailabilityFixture.of(global);
+		return PreparedRoutingAccount.compile(availability, availability, false, true, ignored -> 0);
+	}
+
+	private static Transport global(int destination, int duration)
+	{
+		return new Transport.TransportBuilder().destination(destination)
+			.type(TransportType.TELEPORTATION_ITEM).duration(duration).build();
+	}
+
+	private static CollisionMap emptyCollision()
+	{
+		return new CollisionMap(null)
+		{
+			@Override public int[] ordinaryWalkingNeighbors(int packedPoint)
+	{ return new int[0];
+	}
+			@Override public boolean isBlocked(int x, int y, int z)
+	{ return false;
+	}
+		};
+	}
+}
