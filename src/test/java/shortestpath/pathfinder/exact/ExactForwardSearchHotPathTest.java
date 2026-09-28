@@ -62,6 +62,34 @@ public class ExactForwardSearchHotPathTest
 	}
 
 	@Test
+	public void cancelledSearchKeepsTheRouteToTheClosestPoppedTile() throws Exception
+	{
+		TargetOverlay target = target(RoutingStaticTestFixture.createT4Walking(), account(), RoutingStaticTestFixture.C);
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		int[] checks = {0};
+
+		ExactForwardSearch.Result result = ExactForwardSearch.search(target, heuristic, RoutingStaticTestFixture.A,
+			() -> ++checks[0] >= 4);
+
+		assertTrue(result.cancelled());
+		assertEquals(List.of(RoutingStaticTestFixture.A), tiles(result.path()));
+		assertEquals(List.of(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK), tiles(result.closestPath()));
+		assertEquals(1, result.closestCost());
+	}
+
+	@Test
+	public void unreachableTargetKeepsTheRouteToTheClosestReachableTile() throws Exception
+	{
+		ExactForwardSearch.Result result = search(RoutingStaticTestFixture.createT4Walking(), account(),
+			RoutingStaticTestFixture.A, RoutingStaticTestFixture.D);
+
+		assertFalse(result.reached());
+		assertEquals(List.of(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, RoutingStaticTestFixture.C),
+			tiles(result.closestPath()));
+		assertEquals(2, result.closestCost());
+	}
+
+	@Test
 	public void restrictedStartUsesCapThenNormalHeuristicAfterGlobalActivation() throws Exception
 	{
 		RoutingStatic stat = wildernessStatic();
