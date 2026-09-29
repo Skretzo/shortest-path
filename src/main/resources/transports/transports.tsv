@@ -1081,6 +1081,7 @@
 3168 2819 0	3168 2816 0	Go-through Shantay pass 41863		SHANTAY_PASS=1|COINS=5				3	
 3167 2816 0	3167 2819 0	Go-through Shantay pass 41863						3	
 3168 2816 0	3168 2819 0	Go-through Shantay pass 41863						3	
+3304 3124 0	3013 3180 0	Talk-to Shantay 4642						4	Shantay Pass arrest
 3322 3138 0	3322 3138 1	Climb-up Ladder 21781							
 3322 3138 1	3322 3138 0	Climb-down Ladder 21782							
 3312 3184 0	3314 3185 1	Climb-up Staircase 16671							
