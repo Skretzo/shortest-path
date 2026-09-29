@@ -90,6 +90,8 @@
 3208 9616 0	3208 3216 0	Climb-up Ladder 17385						2	
 3213 3221 0	3212 3221 0	Open Large door 12349						1	
 3212 3221 0	3213 3221 0	Open Large door 12349						1	
+3213 3221 0	1866 5323 0	Open Large door 12349						1	
+1866 5323 0	3213 3221 0	Open Large door 12350						1	
 3213 3222 0	3212 3222 0	Open Large door 12350						1	
 3212 3222 0	3213 3222 0	Open Large door 12350						1	
 3207 3218 0	3207 3217 0	Open Door 12348						1	
