@@ -100,8 +100,11 @@ public class ShortestPathPlugin extends Plugin
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
 	private static final int POH_MIN_X = 1856;
 	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 5696;
-	private static final int POH_MAX_Y = 5767;
+	private static final int POH_MIN_Y = 7040;
+	private static final int POH_MAX_Y = 7111;
+	// Co-ordinates for Basic theme landing tile
+	public static final int POH_LANDING_X = 1858;
+	public static final int POH_LANDING_Y = 7051;
 	private static final String PLUGIN_MESSAGE_PATH = "path";
 	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
 	private static final String PLUGIN_MESSAGE_START = "start";

@@ -32,6 +32,8 @@ import shortestpath.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
+import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
+import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
@@ -629,7 +631,7 @@ public class PathfinderConfig
 
 	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)
 	{
-		int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
+		int pohLanding = WorldPointUtil.packWorldPoint(POH_LANDING_X, POH_LANDING_Y, 0);
 		for (Set<Transport> transportSet : transports.values())
 		{
 			for (Transport transport : transportSet)

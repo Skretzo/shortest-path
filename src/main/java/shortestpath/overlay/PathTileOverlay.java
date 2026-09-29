@@ -20,6 +20,7 @@ import net.runelite.api.Perspective;
 import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -467,7 +468,12 @@ public class PathTileOverlay extends Overlay
 		// Workaround for weird pathing inside PoH to instead show info on the player
 		// tile
 		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
-		int playerPackedPoint = WorldPointUtil.fromLocalInstance(client, playerLocalPoint);
+		WorldPoint playerWorldPoint = client.getLocalPlayer().getWorldLocation();
+		if (client.getTopLevelWorldView().isInstance())
+		{
+			playerWorldPoint = WorldPoint.fromLocalInstance(client, playerLocalPoint);
+		}
+		int playerPackedPoint = WorldPointUtil.packWorldPoint(playerWorldPoint);
 		int px = WorldPointUtil.unpackWorldX(playerPackedPoint);
 		int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
 		int tx = WorldPointUtil.unpackWorldX(location);
@@ -479,28 +485,13 @@ public class PathTileOverlay extends Overlay
 		// When inside POH, only show the POH exit info once (not per-transport)
 		if (transportAndPlayerInsidePoh)
 		{
-			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+			String pohExitInfo = plugin.getPohExitInfo(location, path, pathIndex - 1);
+
 			if (pohExitInfo == null)
 			{
 				return;
 			}
-
-			// Find the display name of the teleport that brought us to POH using bank-aware
-			// lookup
-			String text = null;
-			for (Transport transport : candidateTransports)
-			{
-				text = plugin.formatTransportDisplay(transport);
-				if (text != null && !text.isEmpty())
-				{
-					break;
-				}
-			}
-			if (text == null || text.isEmpty())
-			{
-				return;
-			}
-			text = text + " (Exit: " + pohExitInfo + ")";
+			String text = "Exit: " + pohExitInfo;
 
 			Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getTopLevelWorldView().getPlane());
 			if (p == null)
