@@ -2244,10 +2244,10 @@
 3629 9680 0	3629 9681 0	Open Door 17911						1	
 3630 9681 0	3630 9680 0	Open Door 17912						1	
 3630 9680 0	3630 9681 0	Open Door 17912						1	
-3513 9811 0	3492 9862 0	Enter Cave 38016							
-3492 9862 0	3513 9811 0	Enter Cave entrance 12771							
-3491 9876 0	3483 9832 0	Enter Cave entrance 12771							
-3483 9832 0	3491 9876 0	Enter Cave entrance 12770							
+3513 9811 0	3492 9862 0	Enter Cave 38016	93 Agility;78 Mining		Darkness of Hallowvale				
+3492 9862 0	3513 9811 0	Enter Cave entrance 12771	93 Agility;78 Mining		Darkness of Hallowvale				
+3491 9876 0	3483 9832 0	Enter Cave entrance 12771			In Aid of the Myreque				
+3483 9832 0	3491 9876 0	Enter Cave entrance 12770			In Aid of the Myreque				
 3626 3293 0	3626 3291 1	Climb-up Ladder 17974						2	
 3626 3291 1	3626 3293 0	Climb-down Ladder 17975						2	
 3621 3317 0	3619 3317 1	Climb-up Ladder 17974						2	
