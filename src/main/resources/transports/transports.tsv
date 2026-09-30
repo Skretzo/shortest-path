@@ -719,6 +719,7 @@
 2458 3311 1	2458 3311 0	Climb-down Ladder 16679						2	
 2458 3311 0	2458 3311 1	Climb-up Ladder 16683						2	
 									
+									
 # Underground pass (Iban's Lair)									
 2161 4724 1	2157 4724 1	Cross Bridge 3254						5	
 2157 4724 1	2161 4724 1	Cross Bridge 3254						5	
@@ -5238,8 +5239,8 @@
 2720 2767 0	2720 2765 0	Open Bamboo Gate 4787			Monkey Madness II			2	
 									
 # Ape Atoll - east bridge									
-2803 2734 0	2803 2734 2	Climb-up Bamboo Ladder 4743						1	
-2803 2734 2	2803 2734 0	Climb-down Bamboo Ladder 4744						1	
+2803 2735 0	2803 2733 2	Climb-up Bamboo Ladder 4743						1	
+2803 2733 2	2803 2735 0	Climb-down Bamboo Ladder 4744						1	
 2803 2727 2	2806 2727 0	Jump off End of bridge 4745						4	
 									
 # Tomb of Bervirius									
