@@ -15,6 +15,7 @@ Validates TSV transport files for:
  10. Duration must be a positive integer
  11. Wilderness level must be a non-negative integer
  12. Consumable must be 'T' or 'F'
+ 13. F2P must be blank, 'f2p' or 'f2p-only'
 
 Usage:
   python3 check_tsv.py [directory]
@@ -44,6 +45,7 @@ KNOWN_COLUMNS = {
     "Varbits",
     "VarPlayers",
     "Region override",
+    "F2P",
     # Destination-file-only columns
     "Info",
     # leagues/regions.tsv columns (regionId -> LeagueRegion mapping
@@ -84,6 +86,13 @@ LEAGUE_REGIONS = {
     "TIRANNWN",
     "MISTHALIN",
     "NEUTRAL",
+}
+
+# Valid TransportMembership values for the 'F2P' column (blank = members-only).
+# Must match shortestpath.transport.TransportMembership exactly (case-sensitive).
+F2P_VALUES = {
+    "f2p",
+    "f2p-only",
 }
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -208,6 +217,19 @@ def validate_region_override(value):
     return None
 
 
+def validate_f2p(value):
+    """Return error string if value is not a valid TransportMembership value."""
+    v = value.strip()
+    if not v:
+        return None
+    if v not in F2P_VALUES:
+        return (
+            f"F2P '{v}' is not a valid value "
+            f"(expected blank, 'f2p' or 'f2p-only')"
+        )
+    return None
+
+
 # Map column name → validator function
 COLUMN_VALIDATORS = {
     "Origin":           validate_coordinate,
@@ -220,6 +242,7 @@ COLUMN_VALIDATORS = {
     "Wilderness level": validate_wilderness_level,
     "Consumable":       validate_consumable,
     "Region override":  validate_region_override,
+    "F2P":              validate_f2p,
 }
 
 
@@ -286,7 +309,7 @@ def check_tsv(filepath):
         if line.startswith("#"):
             continue
 
-        # Check 4-12: per-cell validators
+        # Check 4-13: per-cell validators
         for col_idx, (col_val, validator) in enumerate(zip(cols, validators)):
             if validator is None:
                 continue

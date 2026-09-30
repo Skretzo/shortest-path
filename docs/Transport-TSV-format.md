@@ -28,6 +28,7 @@ All transport TSV files share the same structure: rows are tab-separated fields,
 - [Wilderness level](#wilderness-level)
 - [Varbits](#varbits)
 - [VarPlayers](#varplayers)
+- [F2P](#f2p)
 
 Other columns (for example, `menuOption menuTarget objectID`) may appear and are used by other layers (e.g., UI/interaction) but are ignored by the pathfinding parser.
 
@@ -120,6 +121,21 @@ Notes: display labels sometimes include an index or letter prefix used by in-gam
 - Meaning: additional player/state conditions. Each clause must be `ID<op>VALUE` with numeric `ID` and `VALUE`.
 
 Notes: VarPlayers are used across many transport files (not just spells) — for example in quetzals, minigames, and teleportation files — to encode additional player-specific state conditions.
+
+### F2P
+
+- Format: `f2p`, `f2p-only`, or empty.
+- Meaning: which world types the transport can be used on.
+  - empty: members worlds only. This is the default, because new transportation options are almost always members-only; only the exceptions are marked.
+  - `f2p`: usable on both free-to-play and members worlds (e.g., `Varrock Teleport`, the Port Sarim–Musa Point ship).
+  - `f2p-only`: usable on free-to-play worlds only (e.g., the Castle Wars lobby doors, which lead to the Ferox Enclave only on free-to-play worlds).
+- Notes:
+  - A file without an `F2P` column is treated as if every cell were empty, so all of its transports are members-only.
+  - `f2p-only` transports are only used on free-to-play worlds, whatever the options. Members-only transports are only left out on free-to-play worlds when the "Filter members transports on F2P" option is on (it is off by default).
+  - `transports.tsv` is exempt and has no `F2P` column, so its members-only rows are still used on free-to-play worlds. It holds thousands of doors, stairs and ladders, as well as boats, toll gates and other transports (e.g. the Varrock–Civitas quetzal), so a blank-means-members default would break free-to-play pathfinding. See the comment on `TRANSPORT` in `TransportType.java` before adding the column there.
+  - Walking into members-only areas is not restricted.
+  - For [permutation](#permutation-generation) rows, the generated transport is only usable where both its origin row and its destination row are (e.g., `f2p` with an empty cell gives members-only).
+  - Any other value is rejected by `scripts/check_tsv.py`; the loader logs an error and treats the row as members-only.
 
 ## Permutation generation
 

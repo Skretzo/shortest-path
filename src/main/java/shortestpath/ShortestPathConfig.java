@@ -534,6 +534,19 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "filterMembersTransportsOnF2p",
+		name = "Filter members transports on F2P",
+		description = "On free-to-play worlds, avoid members-only transports and teleports<br>" +
+			"(e.g. members teleport items and spells, fairy rings, agility shortcuts)",
+		position = 92,
+		section = sectionSettings
+	)
+	default boolean filterMembersTransportsOnF2p()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Player-Owned House",
 		description = "Options for POH (Player-Owned House) teleports",

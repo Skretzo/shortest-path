@@ -120,6 +120,12 @@ public class Transport
 	 */
 	@Getter
 	private LeagueRegion regionOverride = null;
+	/**
+	 * Which world types this transport can be used on, from the {@code F2P}
+	 * column. Defaults to members-only; see {@link TransportMembership}.
+	 */
+	@Getter
+	private TransportMembership membership = TransportMembership.MEMBERS;
 
 	/**
 	 * Creates a new transport from an origin-only transport
@@ -143,7 +149,8 @@ public class Transport
 			.objectInfo(origin.objectInfo)
 			.varRequirements(origin.varRequirements)
 			.varRequirements(destination.varRequirements)
-			.regionOverride(destination.regionOverride != null ? destination.regionOverride : origin.regionOverride);
+			.regionOverride(destination.regionOverride != null ? destination.regionOverride : origin.regionOverride)
+			.membership(TransportMembership.combine(origin.membership, destination.membership));
 
 		Transport builtTransport = builder.build();
 
@@ -160,6 +167,7 @@ public class Transport
 		this.objectInfo = builtTransport.objectInfo;
 		this.varRequirements = builtTransport.varRequirements;
 		this.regionOverride = builtTransport.regionOverride;
+		this.membership = builtTransport.membership;
 	}
 
 	Transport(TransportRecord record, TransportType transportType)
@@ -220,6 +228,10 @@ public class Transport
 		{
 			builder.regionOverride(record.getRegionOverride());
 		}
+		if (record.has(TransportRecord.Fields.F2P))
+		{
+			builder.membership(record.getF2p());
+		}
 
 		Transport builtTransport = builder.build();
 		this.origin = builtTransport.origin;
@@ -235,6 +247,7 @@ public class Transport
 		this.objectInfo = builtTransport.objectInfo;
 		this.varRequirements = builtTransport.varRequirements;
 		this.regionOverride = builtTransport.regionOverride;
+		this.membership = builtTransport.membership;
 	}
 
 	private Transport()
@@ -422,6 +435,7 @@ public class Transport
 		private int maxWildernessLevel = -1;
 		private String objectInfo = null;
 		private LeagueRegion regionOverride = null;
+		private TransportMembership membership = TransportMembership.MEMBERS;
 
 		public TransportBuilder origin(int origin)
 		{
@@ -592,6 +606,30 @@ public class Transport
 			return this;
 		}
 
+		public TransportBuilder membership(TransportMembership membership)
+		{
+			if (membership != null)
+			{
+				this.membership = membership;
+			}
+			return this;
+		}
+
+		public TransportBuilder membership(String value)
+		{
+			TransportMembership parsed = TransportMembership.fromValue(value);
+			if (parsed == null)
+			{
+				// Keep the members-only default
+				log.error("Invalid F2P value: {}", value);
+			}
+			else
+			{
+				this.membership = parsed;
+			}
+			return this;
+		}
+
 		public TransportBuilder varRequirements(Set<VarRequirement> requirements)
 		{
 			this.varRequirements.addAll(requirements);
@@ -626,6 +664,7 @@ public class Transport
 			transport.objectInfo = this.objectInfo;
 			transport.varRequirements = compact(this.varRequirements);
 			transport.regionOverride = this.regionOverride;
+			transport.membership = this.membership;
 
 			// Post-build validation/refinement
 			if (transport.type != null && transport.type.isTeleport())

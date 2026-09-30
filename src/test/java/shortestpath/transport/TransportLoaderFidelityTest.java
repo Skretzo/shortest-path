@@ -87,7 +87,8 @@ public class TransportLoaderFidelityTest
 		TransportRecord.Fields.OBJECT_INFO,
 		TransportRecord.Fields.VARBITS,
 		TransportRecord.Fields.VAR_PLAYERS,
-		TransportRecord.Fields.REGION_OVERRIDE));
+		TransportRecord.Fields.REGION_OVERRIDE,
+		TransportRecord.Fields.F2P));
 
 	/**
 	 * A concrete coordinate cell is exactly three space-separated unsigned

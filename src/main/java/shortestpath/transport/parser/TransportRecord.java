@@ -153,6 +153,14 @@ public class TransportRecord
 	}
 
 	/**
+	 * Gets the members/free-to-play classification field value.
+	 */
+	public String getF2p()
+	{
+		return get(Fields.F2P);
+	}
+
+	/**
 	 * Standard field names used across TSV files
 	 */
 	public static final class Fields
@@ -170,6 +178,7 @@ public class TransportRecord
 		public static final String VARBITS = "Varbits";
 		public static final String VAR_PLAYERS = "VarPlayers";
 		public static final String REGION_OVERRIDE = "Region override";
+		public static final String F2P = "F2P";
 
 		private Fields()
 		{

@@ -9,7 +9,25 @@ import shortestpath.ShortestPathConfig;
 @Getter
 public enum TransportType
 {
-	TRANSPORT("/transports/transports.tsv", null, null, null, null),
+	TRANSPORT("/transports/transports.tsv", null, null, null, null)
+		{
+			/*
+			 * Exempt from members/F2P filtering, so its members-only rows are still offered
+			 * on F2P worlds. transports.tsv (doors, stairs, ladders, boats, toll gates and
+			 * other transports, e.g. the Varrock-Civitas quetzal) has no F2P column yet, and
+			 * elsewhere a blank cell means members-only: removing the exemption before
+			 * classifying the file would break F2P pathfinding.
+			 *
+			 * To classify it, in one change: add the F2P column, mark each row "f2p" or
+			 * "f2p-only" (blank only if verified members-only), delete
+			 * TransportDataIntegrityTest#transportsTsvHasNoF2pColumn, then remove this.
+			 */
+			@Override
+			public boolean isMembershipFiltered()
+			{
+				return false;
+			}
+		},
 	AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", ShortestPathConfig::useAgilityShortcuts, "costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts)
 		{
 			@Override
@@ -166,6 +184,14 @@ public enum TransportType
 		return false;
 	}
 
+
+	/**
+	 * Whether transports of this type are filtered by their {@link TransportMembership}.
+	 */
+	public boolean isMembershipFiltered()
+	{
+		return true;
+	}
 
 	/**
 	 * Stores which transport type this transport shares destinations with, if any.
