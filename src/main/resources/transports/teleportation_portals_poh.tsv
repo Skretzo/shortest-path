@@ -102,7 +102,8 @@
 1858 7051 0	2964 3378 0	Enter Respawn Portal 60798	668=1	1	Respawn Portal (Falador)
 1858 7051 0	2757 3479 0	Enter Respawn Portal 60798	3910=1	1	Respawn Portal (Camelot)
 1858 7051 0	3095 3469 0	Enter Respawn Portal 60798	621=1	1	Respawn Portal (Edgeville)
-1858 7051 0	3265 6077 0	Enter Respawn Portal 60798		1	Respawn Portal (Prifddinas)
+# TODO: Figure out how to gate the Prifddinas respawn portal - no varbit exposes the player's active respawn for Prifddinas					
+#1858 7051 0	3265 6077 0	Enter Respawn Portal 60798		1	Respawn Portal (Prifddinas)
 1858 7051 0	3151 3636 0	Enter Respawn Portal 60798	10528=1	1	Respawn Portal (Ferox Enclave)
 1858 7051 0	1630 3674 0	Enter Respawn Portal 60798	12310=1	1	Respawn Portal (Kourend Castle)
 1858 7051 0	1682 3135 0	Enter Respawn Portal 60798	9805=1	1	Respawn Portal (Civitas illa Fortis)
