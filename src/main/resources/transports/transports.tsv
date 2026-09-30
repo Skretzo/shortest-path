@@ -5221,6 +5221,15 @@
 2800 2793 0	2800 2797 1	Climb-up Staircase						1	
 2800 2797 1	2800 2793 0	Climb-down Staircase						1	
 									
+# Ape Atoll - Marim bamboo gate									
+2720 2765 0	2720 2767 0	Open Bamboo Gate 4787			Monkey Madness II			2	
+2720 2767 0	2720 2765 0	Open Bamboo Gate 4787			Monkey Madness II			2	
+									
+# Ape Atoll - east bridge									
+2803 2734 0	2803 2734 2	Climb-up Bamboo Ladder 4743						1	
+2803 2734 2	2803 2734 0	Climb-down Bamboo Ladder 4744						1	
+2803 2727 2	2806 2727 0	Jump off End of bridge 4745						4	
+									
 # Tomb of Bervirius									
 2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
 2764 9376 0	2765 2976 0	Climb Climbing rocks 2236						15	
