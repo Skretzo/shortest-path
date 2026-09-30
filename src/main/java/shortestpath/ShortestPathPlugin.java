@@ -28,6 +28,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.KeyCode;
@@ -96,6 +97,7 @@ import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
+@Slf4j
 @SuppressWarnings("SameParameterValue")
 @PluginDescriptor(name = "Shortest Path", description = "Draws the shortest path to a chosen destination on the map<br>"
 	+
@@ -406,6 +408,7 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		portalNexusKeybinds.loadFromProfile();
+		prepareExactBackend();
 	}
 
 	@Override
@@ -457,11 +460,7 @@ public class ShortestPathPlugin extends Plugin
 			// queries would delay it on the shared single thread.
 			cancelQueries("CANCELLED");
 
-			if (pathfindingExecutor == null)
-			{
-				ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
-				pathfindingExecutor = Executors.newSingleThreadExecutor(shortestPathNaming);
-			}
+			ensurePathfindingExecutor();
 		}
 
 		getClientThread().invokeLater(() ->
@@ -481,10 +480,8 @@ public class ShortestPathPlugin extends Plugin
 					{
 						try
 						{
-							if (exactRoutingStatic == null)
-								exactRoutingStatic = new ExactRoutingStaticProvider(pathfinderConfig::getMap);
 							legacyPathfinder = null;
-							ExactPathfinder exact = new ExactPathfinder(pathfinderConfig, exactRoutingStatic,
+							ExactPathfinder exact = new ExactPathfinder(pathfinderConfig, exactRoutingStatic(),
 								exactRoutingSession, start, ends, this::postPluginMessages);
 							// Recalculating towards the same targets: keep the old route drawn until
 							// the new one is ready.
@@ -512,6 +509,58 @@ public class ShortestPathPlugin extends Plugin
 	public void restartPathfinding(int start, Set<Integer> ends)
 	{
 		restartPathfinding(start, ends, true);
+	}
+
+	private void ensurePathfindingExecutor()
+	{
+		synchronized (pathfinderMutex)
+		{
+			if (pathfindingExecutor == null)
+			{
+				ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
+				pathfindingExecutor = Executors.newSingleThreadExecutor(shortestPathNaming);
+			}
+		}
+	}
+
+	private ExactRoutingStaticProvider exactRoutingStatic()
+	{
+		synchronized (pathfinderMutex)
+		{
+			if (exactRoutingStatic == null)
+				exactRoutingStatic = new ExactRoutingStaticProvider(pathfinderConfig::getMap);
+			return exactRoutingStatic;
+		}
+	}
+
+	/**
+	 * Builds the exact backend's static routing data in the background when the exact backend is
+	 * selected, so the first route does not pay for it. The build runs on the pathfinding thread,
+	 * so a search submitted meanwhile simply queues behind it; a failed build is remembered by the
+	 * provider and reported by that search.
+	 */
+	private void prepareExactBackend()
+	{
+		if (config.pathfinderBackend() != PathfinderBackend.EXACT)
+		{
+			return;
+		}
+		ExactRoutingStaticProvider provider = exactRoutingStatic();
+		ensurePathfindingExecutor();
+		synchronized (pathfinderMutex)
+		{
+			pathfindingExecutor.submit(() ->
+			{
+				try
+				{
+					provider.get();
+				}
+				catch (RuntimeException error)
+				{
+					log.warn("Failed to build exact routing data", error);
+				}
+			});
+		}
 	}
 
 	public boolean isNearPath(int location)
@@ -605,6 +654,11 @@ public class ShortestPathPlugin extends Plugin
 				overlayManager.remove(debugOverlayPanel);
 			}
 			return;
+		}
+
+		if ("pathfinderBackend".equals(event.getKey()))
+		{
+			prepareExactBackend();
 		}
 
 		// Transport option changed; rerun pathfinding
