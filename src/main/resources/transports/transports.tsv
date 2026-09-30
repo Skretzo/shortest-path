@@ -5704,6 +5704,17 @@
 2674 3141 1	2674 3144 0	Cross Gangplank 17403						3	
 2674 3144 0	2674 3141 1	Cross Gangplank 17402						3	
 									
+# Mogre Camp									
+# Diving with Murphy requires <28 kg carried weight in game; the TSV grammar has no weight requirement type, so this row assumes the dive conditions are met.									
+2664 3160 0	2963 9478 1	Talk-to Murphy 5607		7534=1|32386=1&7535=1|32386=1	Recipe for Disaster - Pirate Pete			4	Mogre Camp dive
+2963 9478 1	2664 3160 0	Climb Anchor 12475						4	Port Khazard
+									
+# Mogre Camp underwater cavern (requires 5 rocks moved, varbit HUNDRED_PIRATE_ROCKS)									
+2949 9515 1	2949 9520 1	Enter Underwater Cavern Entrance 12460				1869=5		1	
+2950 9515 1	2950 9520 1	Enter Underwater Cavern Entrance 12461				1869=5		1	
+2949 9520 1	2949 9515 1	Exit Underwater Cavern Entrance 12463						1	
+2950 9520 1	2950 9515 1	Exit Underwater Cavern Entrance 12462						1	
+									
 # Karamja Shipyard									
 2998 3032 1	3001 3032 0	Cross Gangplank 17397						3	
 3001 3032 0	2998 3032 1	Cross Gangplank 17396						3	
