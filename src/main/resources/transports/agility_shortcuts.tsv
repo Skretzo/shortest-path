@@ -119,8 +119,8 @@
 2575 3112 0	2575 3107 0	Climb-into Hole 16520	16 Agility					
 1706 10078 0	1716 10056 0	Squeeze-through Crack 28892	17 Agility				2	
 1716 10056 0	1706 10078 0	Squeeze-through Crack 28892	17 Agility				2	
-1647 10010 0	1645 10000 0	Squeeze-through Crack 28892	17 Agility					
-1645 10000 0	1647 10010 0	Squeeze-through Crack 28892	17 Agility					
+1647 10010 0	1645 10000 0	Squeeze-through Crack 28892	17 Agility				2	
+1645 10000 0	1647 10010 0	Squeeze-through Crack 28892	17 Agility				2	
 3444 3533 0	3442 3531 0	Climb-through Broken window 2173	18 Agility				4	
 3442 3531 0	3444 3533 0	Climb-through Broken window 2173	18 Agility				4	
 2548 3119 0	2548 3117 1	Climb-up Trellis 20056	18 Agility				3	
@@ -282,8 +282,8 @@
 2290 3239 0	2290 3232 0	Cross Log balance 3933	45 Agility				9	
 1591 3258 0	1586 3262 0	Climb Rock 56983	45 Agility				8	
 1590 3257 0	1586 3262 0	Climb Rock 56983	45 Agility				8	
-1587 3262 0	1591 3257 0	Climb Rock 56983	45 Agility					
-1586 3261 0	1591 3257 0	Climb Rock 56983	45 Agility					
+1587 3262 0	1591 3257 0	Climb Rock 56983	45 Agility				8	
+1586 3261 0	1591 3257 0	Climb Rock 56983	45 Agility				8	
 2400 4402 0	2400 4404 0	Squeeze-past Jutting wall 17002	46 Agility				2	
 2400 4404 0	2400 4402 0	Squeeze-past Jutting wall 17002	46 Agility				2	
 3046 10326 0	3048 10336 0	Use Crevice 17030	46 Agility		6312=1		6	
@@ -536,7 +536,7 @@
 3447 3577 2	3447 3577 1	Climb-down Spikey chain 16538	71 Agility					
 3448 3576 1	3448 3576 2	Climb-up Spikey chain 16537	71 Agility					
 3448 3576 2	3448 3576 1	Climb-down Spikey chain 16538	71 Agility					
-1581 3249 0	1576 3254 0	Climb Rock 56980	71 Agility					
+1581 3249 0	1576 3254 0	Climb Rock 56980	71 Agility				8	
 1576 3254 0	1581 3249 0	Climb Rock 56980	71 Agility				8	
 2545 3031 0	2549 3031 0	Climb Crumbling wall 40355	71 Agility				2	Watchtower
 2549 3031 0	2545 3031 0	Climb Rocks 40356	71 Agility				2	Watchtower
