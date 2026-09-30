@@ -526,6 +526,8 @@
 3448 3576 2	3448 3576 1	Climb-down Spikey chain 16538	71 Agility					
 1581 3249 0	1576 3254 0	Climb Rock 56980	71 Agility					
 1576 3254 0	1581 3249 0	Climb Rock 56980	71 Agility				8	
+2545 3031 0	2549 3031 0	Climb Crumbling wall 40355	71 Agility				2	Watchtower
+2549 3031 0	2545 3031 0	Climb Rocks 40356	71 Agility				2	Watchtower
 3268 3629 0	3268 3625 0	Cross Stepping stone 53237	72 Agility				2	
 3268 3625 0	3268 3629 0	Cross Stepping stone 53237	72 Agility				2	
 2429 9807 0	2435 9807 0	Enter Tunnel 30174	72 Agility					
