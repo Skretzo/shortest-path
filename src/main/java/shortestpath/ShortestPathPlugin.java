@@ -234,6 +234,8 @@ public class ShortestPathPlugin extends Plugin
 	private PathfinderConfig pathfinderConfig;
 	@Getter
 	private boolean startPointSet = false;
+	@Getter
+	private final DebugState debugState = new DebugState();
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -439,11 +441,12 @@ public class ShortestPathPlugin extends Plugin
 		spiritTreePatchState.persistIfDirty();
 	}
 
-	public void restartPathfinding(int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
+	public void restartPathfinding(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
 	{
 		// filterLocations edits the set in place, and callers often pass a search's own targets,
 		// which the exact backend holds immutable.
 		Set<Integer> ends = new HashSet<>(requestedEnds);
+		debugState.restartRequested(reason, client.getTickCount());
 		List<PathStep> previousPath;
 		Set<Integer> previousTargets;
 		synchronized (pathfinderMutex)
@@ -454,6 +457,7 @@ public class ShortestPathPlugin extends Plugin
 			{
 				pathfinder.cancel();
 				pathfinderFuture.cancel(true);
+				debugState.searchCancelled(pathfinder);
 			}
 			// The displayed path wins over pending queries: it refreshes the transport
 			// availability, which a running query would otherwise read mid-search, and queued
@@ -465,50 +469,75 @@ public class ShortestPathPlugin extends Plugin
 
 		getClientThread().invokeLater(() ->
 		{
-			pathfinderConfig.refresh();
-			pathfinderConfig.filterLocations(ends, canReviveFiltered);
-			synchronized (pathfinderMutex)
+			try
 			{
-				if (ends.isEmpty())
-				{
-					setTarget(WorldPointUtil.UNDEFINED);
-				}
-				else
-				{
-					bankPickupDirty = true;
-					if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
-					{
-						try
-						{
-							legacyPathfinder = null;
-							ExactPathfinder exact = new ExactPathfinder(pathfinderConfig, exactRoutingStatic(),
-								exactRoutingSession, start, ends, this::postPluginMessages);
-							// Recalculating towards the same targets: keep the old route drawn until
-							// the new one is ready.
-							if (ends.equals(previousTargets))
-								exact.showUntilDone(previousPath);
-							pathfinder = exact;
-						}
-						catch (RuntimeException error)
-						{
-							legacyPathfinder = null;
-							pathfinder = ExactPathfinder.failed(start, ends, this::postPluginMessages, error);
-						}
-					}
-					else
-					{
-						legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
-						pathfinder = legacyPathfinder;
-					}
-					pathfinderFuture = pathfindingExecutor.submit(pathfinder);
-				}
+				startPathfinding(start, ends, canReviveFiltered, previousPath, previousTargets);
+			}
+			catch (RuntimeException error)
+			{
+				debugState.clientError(error, client.getTickCount());
+				debugState.restartOutcome("failed: " + DebugState.describe(error));
+				throw error;
 			}
 		});
 	}
 
-	public void restartPathfinding(int start, Set<Integer> ends)
+	private void startPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered,
+		List<PathStep> previousPath, Set<Integer> previousTargets)
 	{
-		restartPathfinding(start, ends, true);
+		pathfinderConfig.refresh();
+		pathfinderConfig.filterLocations(ends, canReviveFiltered);
+		synchronized (pathfinderMutex)
+		{
+			if (ends.isEmpty())
+			{
+				debugState.restartOutcome("no targets left after filtering");
+				setTarget(WorldPointUtil.UNDEFINED);
+			}
+			else
+			{
+				bankPickupDirty = true;
+				if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
+				{
+					try
+					{
+						legacyPathfinder = null;
+						ExactPathfinder exact = new ExactPathfinder(pathfinderConfig, exactRoutingStatic(),
+							exactRoutingSession, start, ends, this::postPluginMessages);
+						// Recalculating towards the same targets: keep the old route drawn until
+						// the new one is ready.
+						if (ends.equals(previousTargets))
+							exact.showUntilDone(previousPath);
+						pathfinder = exact;
+					}
+					catch (RuntimeException error)
+					{
+						debugState.clientError(error, client.getTickCount());
+						legacyPathfinder = null;
+						pathfinder = ExactPathfinder.failed(start, ends, this::postPluginMessages, error);
+					}
+				}
+				else
+				{
+					legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
+					pathfinder = legacyPathfinder;
+				}
+				ActiveSearch search = pathfinder;
+				debugState.searchStarted(search);
+				pathfinderFuture = pathfindingExecutor.submit(() ->
+				{
+					try
+					{
+						search.run();
+					}
+					catch (RuntimeException error)
+					{
+						debugState.searchError(error, client.getTickCount());
+						throw error;
+					}
+				});
+			}
+		}
 	}
 
 	private void ensurePathfindingExecutor()
@@ -561,6 +590,11 @@ public class ShortestPathPlugin extends Plugin
 				}
 			});
 		}
+	}
+
+	public void restartPathfinding(String reason, int start, Set<Integer> ends)
+	{
+		restartPathfinding(reason, start, ends, true);
 	}
 
 	public boolean isNearPath(int location)
@@ -666,7 +700,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			if (pathfinder != null)
 			{
-				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+				restartPathfinding("config: " + event.getKey(), pathfinder.getStart(), pathfinder.getTargets());
 			}
 		}
 	}
@@ -715,7 +749,7 @@ public class ShortestPathPlugin extends Plugin
 		// restart the tick and menu writers issue after changing the field.
 		if (pathfinder != null)
 		{
-			restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+			restartPathfinding("profile change", pathfinder.getStart(), pathfinder.getTargets());
 		}
 	}
 
@@ -763,7 +797,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 
 			boolean useOld = targets.isEmpty() && pathfinder != null;
-			restartPathfinding(start, useOld ? pathfinder.getTargets() : targets, useOld);
+			restartPathfinding("plugin message", start, useOld ? pathfinder.getTargets() : targets, useOld);
 		}
 		else if (PLUGIN_MESSAGE_QUERY.equals(action))
 		{
@@ -1132,7 +1166,7 @@ public class ShortestPathPlugin extends Plugin
 				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
 				if (pathfinder != null)
 				{
-					restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+					restartPathfinding("spirit tree varbit", pathfinder.getStart(), pathfinder.getTargets());
 				}
 			}
 		}
@@ -1163,7 +1197,7 @@ public class ShortestPathPlugin extends Plugin
 				setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
-			restartPathfinding(currentLocation, pathfinder.getTargets());
+			restartPathfinding("off route", currentLocation, pathfinder.getTargets());
 		}
 	}
 
@@ -1414,7 +1448,7 @@ public class ShortestPathPlugin extends Plugin
 
 			if (pathfinder != null)
 			{
-				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+				restartPathfinding("spirit trees", pathfinder.getStart(), pathfinder.getTargets());
 			}
 		}
 	}
@@ -2005,7 +2039,7 @@ public class ShortestPathPlugin extends Plugin
 			{
 				destinations.addAll(pathfinder.getTargets());
 			}
-			restartPathfinding(start, destinations, append);
+			restartPathfinding(append ? "add target" : "set target", start, destinations, append);
 		}
 	}
 
@@ -2016,7 +2050,7 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 		startPointSet = true;
-		restartPathfinding(start, pathfinder.getTargets());
+		restartPathfinding("set start", start, pathfinder.getTargets());
 	}
 
 	public int calculateMapPoint(int pointX, int pointY)
