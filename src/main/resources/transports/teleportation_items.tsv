@@ -137,15 +137,15 @@
 # 6 - Yanille										
 2544 3096 0			8013=1		4	Teleport to House tablet	T	20	2187=6;4744=1	
 2544 3096 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=6;4744=0	
-# 7 - Prifddinas										
-3239 6076 0			8013=1		4	Teleport to House tablet	T	20	2187=7;4744=1	
-3239 6076 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=7;4744=0	
 # 8 - Hosidius										
 1743 3517 0			8013=1		4	Teleport to House tablet	T	20	2187=8;4744=1	
 1743 3517 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=8;4744=0	
-# 9 - Aldarin										
-1422 2963 0			8013=1		4	Teleport to House tablet	T	20	2187=9;4744=1	
-1422 2963 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=9;4744=0	
+# 9 - Prifddinas										
+3239 6076 0			8013=1		4	Teleport to House tablet	T	20	2187=9;4744=1	
+3239 6076 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=9;4744=0	
+# 13 - Aldarin										
+1422 2963 0			8013=1		4	Teleport to House tablet	T	20	2187=13;4744=1	
+1422 2963 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=13;4744=0	
 										
 #  Teleport tablets										
 3213 3424 0			8007=1		4	Varrock tablet	T	20		
@@ -245,12 +245,12 @@
 2756 3176 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=5;4744=1	
 # 6 - Yanille										
 2545 3097 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=6;4744=1	
-# 7 - Prifddinas										
-3239 6077 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=7;4744=1	
 # 8 - Hosidius										
 1740 3517 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=8;4744=1	
-# 9 - Aldarin										
-1422 2963 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=9;4744=1	
+# 9 - Prifddinas										
+3239 6077 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=9;4744=1	
+# 13 - Aldarin										
+1422 2963 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=13;4744=1	
 2952 3224 0		99 Construction	9789=1||9790=1		4	Construction cape: Rimmington	F	20		
 2892 3465 0		99 Construction	9789=1||9790=1		4	Construction cape: Taverley	F	20		
 3339 3001 0		99 Construction	9789=1||9790=1		4	Construction cape: Pollnivneach	F	20		
@@ -281,12 +281,12 @@
 2756 3176 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=5;4744=1	
 # 6 - Yanille										
 2545 3097 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=6;4744=1	
-# 7 - Prifddinas										
-3239 6077 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=7;4744=1	
 # 8 - Hosidius										
 1740 3517 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=8;4744=1	
-# 9 - Aldarin										
-1422 2963 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=9;4744=1	
+# 9 - Prifddinas										
+3239 6077 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=9;4744=1	
+# 13 - Aldarin										
+1422 2963 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=13;4744=1	
 2952 3224 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Rimmington	F	20		
 2892 3465 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Taverley	F	20		
 3339 3001 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Pollnivneach	F	20		
