@@ -5201,6 +5201,20 @@
 2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
 2764 9376 0	2765 2976 0	Climb Climbing rocks 2236						15	
 									
+# Shaman Caves									
+2780 2934 0	2773 9341 0	Search Mossy rock 2901	50 Agility				139>0	5	
+2781 2934 0	2773 9341 0	Search Mossy rock 2901	50 Agility				139>0	5	
+2782 2934 0	2773 9341 0	Search Rocks 2902	50 Agility				139>0	5	
+2783 2934 0	2773 9341 0	Search Rocks 2902	50 Agility				139>0	5	
+2781 2935 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5	
+2780 2936 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5	
+2783 2936 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5	
+2780 2937 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5	
+2782 2938 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5	
+2783 2938 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5	
+2773 9341 0	2781 2934 0	Walk through Cave entrance 2903						1	
+2772 9341 0	2781 2934 0	Walk through Cave entrance 2904						1	
+									
 # Ice Queen's lair - Rock formations									
 2840 3516 0	2836 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
 2839 3516 0	2836 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
