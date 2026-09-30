@@ -411,3 +411,8 @@
 
 # Cowbell amulet										
 3259 3277 0			33104=1		4	Cowbell amulet	T	20		
+
+# Teleport spheres (consumed on use; each lands on a random tile inside the destination area, modelled at a central walkable tile)										
+2703 5350 0			10972=1	Death to the Dorgeshuun	4	Dorgesh-kaan sphere	T	20		
+2956 3505 0			11060=1	Another Slice of H.A.M.	4	Goblin village sphere	T	20		
+2588 9840 0			26577=1	Land of the Goblins	4	Plain of Mud sphere	T	20		
