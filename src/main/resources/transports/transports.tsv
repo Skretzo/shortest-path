@@ -4923,8 +4923,8 @@
 1271 3436 0	1259 3430 0	Pass-through Cave 57220						4	
 									
 # Mountain Guide between Nemus Retreat and Quetzacalli Gorge									
-1486 3232 0	1361 3309 0	Follow Mountain Guide 14529				17226=1		5	
-1361 3309 0	1486 3232 0	Follow Mountain Guide 14529				17226=1		5	
+1486 3232 0	1361 3309 0	Follow Mountain Guide 14529						5	
+1361 3309 0	1486 3232 0	Follow Mountain Guide 14529						5	
 									
 # Primio quetzal between Varrock and Civitas illa Fortis									
 3280 3412 0	1700 3141 0	Travel Primio 12888			Children of the Sun			6	Civitas illa Fortis
