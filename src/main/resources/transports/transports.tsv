@@ -719,6 +719,88 @@
 2458 3311 1	2458 3311 0	Climb-down Ladder 16679						2	
 2458 3311 0	2458 3311 1	Climb-up Ladder 16683						2	
 									
+# Underground Pass									
+2433 3312 0	2495 9714 0	Enter Cave entrance 3213						5	
+2495 9714 0	2433 3312 0	Leave Cave exit 3214						5	
+2480 9712 0	2480 9714 0	Climb-over Rockslide 3309						5	
+2480 9714 0	2480 9712 0	Climb-over Rockslide 3309						5	
+2470 9706 0	2472 9706 0	Climb-over Rockslide 3309						5	
+2472 9706 0	2470 9706 0	Climb-over Rockslide 3309						5	
+2458 9711 0	2458 9713 0	Climb-over Rockslide 3309						5	
+2458 9713 0	2458 9711 0	Climb-over Rockslide 3309						5	
+2460 9719 0	2460 9721 0	Climb-over Rockslide 3309						5	
+2460 9721 0	2460 9719 0	Climb-over Rockslide 3309						5	
+2466 9723 0	2468 9723 0	Climb-over Rockslide 3309						5	
+2468 9723 0	2466 9723 0	Climb-over Rockslide 3309						5	
+2477 9721 0	2479 9721 0	Climb-over Rockslide 3309						5	
+2479 9721 0	2477 9721 0	Climb-over Rockslide 3309						5	
+2477 9724 0	2479 9724 0	Climb-over Rockslide 3309						5	
+2479 9724 0	2477 9724 0	Climb-over Rockslide 3309						5	
+2485 9720 0	2485 9722 0	Climb-over Rockslide 3309						5	
+2485 9722 0	2485 9720 0	Climb-over Rockslide 3309						5	
+2491 9690 0	2491 9692 0	Climb-over Rockslide 3309						5	
+2491 9692 0	2491 9690 0	Climb-over Rockslide 3309						5	
+2481 9679 0	2483 9679 0	Climb-over Rockslide 3309						5	
+2483 9679 0	2481 9679 0	Climb-over Rockslide 3309						5	
+2442 9717 0	2447 9717 0	Fire-at Guide rope 3340						5	
+2447 9717 0	2442 9717 0	Fire-at Guide rope 3340						5	
+2460 9697 0	2466 9697 0	Use Rope -> Rope swing 23123		ROPE=1				5	
+2466 9697 0	2460 9697 0	Use Rope -> Rope swing 23123		ROPE=1				5	
+2466 9674 0	2464 9674 0	Pull Lever 3337						5	
+2464 9674 0	2466 9674 0	Pull Lever 3337						5	
+2451 9688 0	2451 9694 0	Squeeze-through Pipe 3235						5	
+2417 9673 0	2420 9660 0	Climb-down Well 3264						5	
+2381 9654 0	2381 9656 0	Picklock Gate 3266						5	
+2381 9656 0	2381 9654 0	Picklock Gate 3266						5	
+2384 9654 0	2384 9656 0	Picklock Gate 3266						5	
+2384 9656 0	2384 9654 0	Picklock Gate 3266						5	
+2387 9654 0	2387 9656 0	Picklock Gate 3266						5	
+2387 9656 0	2387 9654 0	Picklock Gate 3266						5	
+2390 9654 0	2390 9656 0	Picklock Gate 3266						5	
+2390 9656 0	2390 9654 0	Picklock Gate 3266						5	
+2393 9654 0	2393 9656 0	Picklock Gate 3266						5	
+2393 9656 0	2393 9654 0	Picklock Gate 3266						5	
+2394 9650 0	2392 9646 0	Use Spade -> Loose mud 3216		952=1				5	
+2392 9646 0	2393 9651 0	Enter Cave 3217						5	
+2375 9644 0	2373 9644 0	Cross Ledge 3238						5	
+2373 9644 0	2375 9644 0	Cross Ledge 3238						5	
+2373 9640 0	2374 9638 0	Cross Ledge 3238						5	
+2374 9638 0	2373 9640 0	Cross Ledge 3238						5	
+2379 9634 0	2381 9634 0	Cross Stone bridge 3276						5	
+2381 9634 0	2379 9634 0	Cross Stone bridge 3276						5	
+2386 9631 0	2388 9631 0	Cross Stone bridge 3276						5	
+2388 9631 0	2386 9631 0	Cross Stone bridge 3276						5	
+2391 9627 0	2393 9627 0	Cross Stone bridge 3276						5	
+2393 9627 0	2391 9627 0	Cross Stone bridge 3276						5	
+2395 9636 0	2397 9636 0	Cross Stone bridge 3276						5	
+2397 9636 0	2395 9636 0	Cross Stone bridge 3276						5	
+2398 9632 0	2400 9632 0	Cross Stone bridge 3276						5	
+2400 9632 0	2398 9632 0	Cross Stone bridge 3276						5	
+2405 9632 0	2407 9632 0	Cross Stone bridge 3276						5	
+2407 9632 0	2405 9632 0	Cross Stone bridge 3276						5	
+2405 9637 0	2407 9637 0	Cross Stone bridge 3276						5	
+2407 9637 0	2405 9637 0	Cross Stone bridge 3276						5	
+2379 9619 0	2381 9619 0	Picklock Gate 3268	50 Thieving					5	
+2381 9619 0	2379 9619 0	Picklock Gate 3268	50 Thieving					5	
+2403 9620 0	2405 9620 0	Picklock Gate 3268	50 Thieving					5	
+2405 9620 0	2403 9620 0	Picklock Gate 3268	50 Thieving					5	
+2419 9605 0	2412 9605 0	Squeeze-through Pipe 3237						5	
+2412 9605 0	2419 9605 0	Squeeze-through Pipe 3237						5	
+2419 9644 0	2420 9650 0	Squeeze-through Pipe 35941						5	
+2420 9650 0	2419 9644 0	Squeeze-through Pipe 35941						5	
+2375 9610 0	2370 9666 0	Pass-through Tunnel 3219						5	
+2376 9610 0	2371 9666 0	Pass-through Tunnel 3218						5	
+2400 9610 0	2370 9666 0	Pass-through Tunnel 3219						5	
+2401 9610 0	2371 9666 0	Pass-through Tunnel 3218						5	
+2370 9666 0	2375 9610 0	Pass-through Tunnel 3218						5	
+2371 9666 0	2376 9610 0	Pass-through Tunnel 3219						5	
+2370 9666 0	2400 9610 0	Pass-through Tunnel 3218						5	
+2371 9666 0	2401 9610 0	Pass-through Tunnel 3219						5	
+2423 9660 0	2420 9667 0	Climb Rockpile 3307						5	
+2420 9667 0	2423 9660 0	Climb Rockpile 3307						5	
+2439 9607 0	2428 9607 0	Enter Cave 3224						5	
+2370 9718 0	2173 4725 1	Open Door 3220						5	
+2173 4725 1	2370 9718 0	Open Door 3220						5	
 									
 # Underground pass (Iban's Lair)									
 2161 4724 1	2157 4724 1	Cross Bridge 3254						5	
