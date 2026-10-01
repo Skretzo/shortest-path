@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.EnumID;
-import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
@@ -82,16 +79,13 @@ public final class BankPickupRequirements
 
 			// Snapshot bank contents.
 			Map<Integer, Integer> bankHas = new HashMap<>();
-			for (Item bankItem : bank.getItems())
-			{
-				if (bankItem.getId() >= 0 && bankItem.getQuantity() > 0)
-				{
-					bankHas.merge(bankItem.getId(), bankItem.getQuantity(), Integer::sum);
-				}
-			}
+			OwnedItems.addContainer(bankHas, bank);
 
-			// Map runeId to pouchId for any rune pouch sitting in the bank.
-			Map<Integer, Integer> bankPouchRunes = BankPickupRequirements.buildBankPouchRunes(client, bankHas);
+			// Runes in a rune pouch sitting in the bank, as rune id to amount.
+			int bankPouchId = BankPickupRequirements.findBankPouch(bankHas);
+			Map<Integer, Integer> bankPouchRunes = bankPouchId == -1
+				? Map.of()
+				: OwnedItems.runePouchContents(client);
 
 			// Snapshot what the player already has (inventory + equipment + rune pouch in hand).
 			Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
@@ -181,7 +175,8 @@ public final class BankPickupRequirements
 				LinkedHashSet<String> altStrings = new LinkedHashSet<>();
 				for (Transport t : nonFairy)
 				{
-					Map<Integer, Long> pickups = BankPickupRequirements.computeBankPickups(t, playerHas, bankHas, bankPouchRunes);
+					Map<Integer, Long> pickups = BankPickupRequirements.computeBankPickups(
+						t, playerHas, bankHas, bankPouchId, bankPouchRunes);
 					if (pickups != null && !pickups.isEmpty())
 					{
 						// Bank can fully satisfy this alternative: contribute to display phrase.
@@ -190,7 +185,8 @@ public final class BankPickupRequirements
 					// Always collect actual bank item IDs for highlighting.
 					// computeBankPickups uses canonical IDs (e.g. air rune) for display, but the bank
 					// may only hold a variant (e.g. mist rune), so we resolve the real ID separately.
-					BankPickupRequirements.collectPartialBankItemIds(t, playerHas, bankHas, bankPouchRunes, itemIds);
+					BankPickupRequirements.collectPartialBankItemIds(
+						t, playerHas, bankHas, bankPouchId, bankPouchRunes, itemIds);
 				}
 				if (!altStrings.isEmpty())
 				{
@@ -203,23 +199,16 @@ public final class BankPickupRequirements
 			if (usesFairyRing && client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1)
 			{
 				int[] staffIds = ItemVariations.DRAMEN_STAFF.getIds();
-				if (!BankPickupRequirements.hasAnyItem(playerHas, staffIds, 1))
+				if (BankPickupRequirements.findCovering(staffIds, 1, Map.of(), playerHas) == -1)
 				{
 					// Use the canonical ID (Dramen staff) for the display phrase.
-					int foundId = BankPickupRequirements.findItemIdInBank(bankHas, staffIds, 1);
-					if (foundId != -1)
+					if (BankPickupRequirements.findCovering(staffIds, 1, Map.of(), bankHas) != -1)
 					{
 						Map<Integer, Long> single = new LinkedHashMap<>();
 						single.put(staffIds[0], 1L);
 						phrases.add(BankPickupRequirements.formatPickups(client, single));
 						// Highlight all staff variants present in the bank.
-						for (int staffId : staffIds)
-						{
-							if (bankHas.getOrDefault(staffId, 0) >= 1)
-							{
-								itemIds.add(staffId);
-							}
-						}
+						BankPickupRequirements.addCovering(staffIds, 1, Map.of(), bankHas, itemIds);
 					}
 				}
 			}
@@ -235,9 +224,10 @@ public final class BankPickupRequirements
 	 * Called when the bank cannot fully satisfy the transport (so no phrase is generated),
 	 * but we still want to highlight any relevant items the bank does have.
 	 */
-	private static void collectPartialBankItemIds(Transport transport,
+	static void collectPartialBankItemIds(Transport transport,
 		Map<Integer, Integer> playerHas,
 		Map<Integer, Integer> bankHas,
+		int bankPouchId,
 		Map<Integer, Integer> bankPouchRunes,
 		Set<Integer> itemIds)
 	{
@@ -245,67 +235,32 @@ public final class BankPickupRequirements
 		{
 			return;
 		}
+		// Add the bank rune pouch if it is taken; its runes then count as carried.
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankPouchRunes);
+		if (carried != playerHas)
+		{
+			itemIds.add(bankPouchId);
+		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
 			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
-			if (hasAnyItem(playerHas, req.getItemIds(), qty)
-				|| hasAnyItem(playerHas, req.getStaffIds(), 1)
-				|| hasAnyItem(playerHas, req.getOffhandIds(), 1))
+			if (playerSatisfies(req, qty, carried))
 			{
 				continue;
 			}
-			// Add all rune pouches in bank that cover any required rune variant.
-			if (req.getItemIds() != null)
-			{
-				for (int itemId : req.getItemIds())
-				{
-					Integer pouchId = bankPouchRunes.get(itemId);
-					if (pouchId != null)
-					{
-						itemIds.add(pouchId);
-					}
-				}
-			}
-			// Add all item variants (e.g. mist/dust/smoke rune for air rune) present in bank.
-			if (req.getItemIds() != null)
-			{
-				for (int id : req.getItemIds())
-				{
-					if (bankHas.getOrDefault(id, 0) >= qty)
-					{
-						itemIds.add(id);
-					}
-				}
-			}
+			// Add all item variants (e.g. mist/dust/smoke rune for air rune) that cover the shortfall.
+			addCovering(req.getItemIds(), qty, carried, bankHas, itemIds);
 			// Add all staff variants (e.g. all air battlestaff types) present in bank.
-			if (req.getStaffIds() != null)
-			{
-				for (int id : req.getStaffIds())
-				{
-					if (bankHas.getOrDefault(id, 0) >= 1)
-					{
-						itemIds.add(id);
-					}
-				}
-			}
+			addCovering(req.getStaffIds(), 1, Map.of(), bankHas, itemIds);
 			// Add all offhand variants (e.g. tome of fire) present in bank.
-			if (req.getOffhandIds() != null)
-			{
-				for (int id : req.getOffhandIds())
-				{
-					if (bankHas.getOrDefault(id, 0) >= 1)
-					{
-						itemIds.add(id);
-					}
-				}
-			}
+			addCovering(req.getOffhandIds(), 1, Map.of(), bankHas, itemIds);
 		}
 	}
 
 	/**
 	 * Formats a pickup map (item id to quantity) as a comma-separated, human-readable string.
 	 */
-	private static String formatPickups(Client client, Map<Integer, Long> pickups)
+	static String formatPickups(Client client, Map<Integer, Long> pickups)
 	{
 		List<String> parts = new ArrayList<>(pickups.size());
 		for (Map.Entry<Integer, Long> entry : pickups.entrySet())
@@ -335,30 +290,30 @@ public final class BankPickupRequirements
 	}
 
 	/**
-	 * Returns true if the player has at least {@code requiredQty} of any id in {@code itemIds}
-	 * across inventory/equipment/rune-pouch.
+	 * Returns true if the player already meets this requirement on its own, with enough of
+	 * one item variant, or with a staff or offhand that substitutes for it.
 	 */
-	private static boolean hasAnyItem(Map<Integer, Integer> playerHas, int[] itemIds, int requiredQty)
+	private static boolean playerSatisfies(ItemRequirement req, int qty, Map<Integer, Integer> playerHas)
 	{
-		if (itemIds == null)
-		{
-			return false;
-		}
-		for (int id : itemIds)
-		{
-			if (playerHas.getOrDefault(id, 0) >= requiredQty)
-			{
-				return true;
-			}
-		}
-		return false;
+		return findCovering(req.getItemIds(), qty, Map.of(), playerHas) != -1
+			|| findCovering(req.getStaffIds(), 1, Map.of(), playerHas) != -1
+			|| findCovering(req.getOffhandIds(), 1, Map.of(), playerHas) != -1;
 	}
 
 	/**
-	 * Returns the item ID from {@code itemIds} present in the bank with at least
-	 * {@code requiredQty}, or -1 if none qualifies.
+	 * Returns true if {@code source} holds enough of {@code id} to make up what {@code carried}
+	 * lacks of {@code requiredQty}.
 	 */
-	private static int findItemIdInBank(Map<Integer, Integer> bankHas, int[] itemIds, int requiredQty)
+	private static boolean covers(int id, int requiredQty, Map<Integer, Integer> carried, Map<Integer, Integer> source)
+	{
+		return source.getOrDefault(id, 0) >= requiredQty - carried.getOrDefault(id, 0);
+	}
+
+	/**
+	 * Returns the first ID in {@code itemIds} that {@code source} {@link #covers covers}, or -1 if none does.
+	 * Item variations list the pure item first, so it is preferred over combination variants.
+	 */
+	private static int findCovering(int[] itemIds, int requiredQty, Map<Integer, Integer> carried, Map<Integer, Integer> source)
 	{
 		if (itemIds == null)
 		{
@@ -366,12 +321,52 @@ public final class BankPickupRequirements
 		}
 		for (int id : itemIds)
 		{
-			if (bankHas.getOrDefault(id, 0) >= requiredQty)
+			if (covers(id, requiredQty, carried, source))
 			{
 				return id;
 			}
 		}
 		return -1;
+	}
+
+	/**
+	 * Returns the first ID in {@code itemIds} that the player already carries some of and that
+	 * {@code source} {@link #covers covers}, or -1 if none does.
+	 */
+	private static int findCarriedCovering(int[] itemIds, int requiredQty, Map<Integer, Integer> carried,
+		Map<Integer, Integer> source)
+	{
+		if (itemIds == null)
+		{
+			return -1;
+		}
+		for (int id : itemIds)
+		{
+			if (carried.getOrDefault(id, 0) > 0 && covers(id, requiredQty, carried, source))
+			{
+				return id;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Adds every ID in {@code itemIds} that {@code source} {@link #covers covers} to {@code out}.
+	 */
+	private static void addCovering(int[] itemIds, int requiredQty, Map<Integer, Integer> carried,
+		Map<Integer, Integer> source, Set<Integer> out)
+	{
+		if (itemIds == null)
+		{
+			return;
+		}
+		for (int id : itemIds)
+		{
+			if (covers(id, requiredQty, carried, source))
+			{
+				out.add(id);
+			}
+		}
 	}
 
 	/**
@@ -391,66 +386,58 @@ public final class BankPickupRequirements
 	/**
 	 * For an unsatisfied transport, returns the items (id to qty) that need to be picked up
 	 * from the bank to satisfy it, or null if the bank can't supply them.
-	 * When a required rune is only available via a bank rune pouch, the pouch itself is
-	 * returned as the pickup item (qty 1, deduped across multiple rune requirements).
+	 * Each counted item asks only for the shortfall: the required quantity less what the
+	 * player already carries of that item ID. Loose items are chosen from the variants the
+	 * player already carries first, then from all variants, each in variation order.
+	 * When the bank rune pouch covers the shortfall of a required rune, the pouch itself is
+	 * returned as a pickup item (qty 1), and its runes count as carried for every requirement.
 	 */
-	private static Map<Integer, Long> computeBankPickups(Transport transport,
+	static Map<Integer, Long> computeBankPickups(Transport transport,
 		Map<Integer, Integer> playerHas,
 		Map<Integer, Integer> bankHas,
+		int bankPouchId,
 		Map<Integer, Integer> bankPouchRunes)
 	{
 		Map<Integer, Long> pickups = new LinkedHashMap<>();
-		Set<Integer> addedPouches = new HashSet<>(); // tracks pouch IDs already added to pickups
 		if (transport.getItemRequirements() == null)
 		{
 			return pickups;
 		}
+		// Prefer bank rune pouch over individual runes. This avoids surfacing combination
+		// rune variants (mist, dust, etc.) when the pouch already covers the requirement.
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankPouchRunes);
+		if (carried != playerHas)
+		{
+			pickups.put(bankPouchId, 1L);
+		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
 			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
-			// Already satisfied by player?
-			if (hasAnyItem(playerHas, req.getItemIds(), qty)
-				|| hasAnyItem(playerHas, req.getStaffIds(), 1)
-				|| hasAnyItem(playerHas, req.getOffhandIds(), 1))
+			if (playerSatisfies(req, qty, carried))
 			{
 				continue;
 			}
-			// Prefer bank rune pouch over individual runes. This avoids surfacing combination
-			// rune variants (mist, dust, etc.) when the pouch already covers the requirement.
-			boolean satisfied = false;
-			if (req.getItemIds() != null)
-			{
-				for (int itemId : req.getItemIds())
-				{
-					Integer pouchId = bankPouchRunes.get(itemId);
-					if (pouchId != null)
-					{
-						if (!addedPouches.contains(pouchId))
-						{
-							addedPouches.add(pouchId);
-							pickups.put(pouchId, 1L);
-						}
-						satisfied = true;
-						break;
-					}
-				}
-			}
-			if (satisfied)
-			{
-				continue;
-			}
-			// Try to satisfy from bank directly. Use the canonical (first) item ID for display
-			// so we show "Air rune" rather than a combination rune variant like "Mist rune".
-			int foundId = findItemIdInBank(bankHas, req.getItemIds(), qty);
-			if (foundId != -1)
-			{
-				pickups.merge(req.getItemIds()[0], (long) qty, Long::sum);
-				continue;
-			}
-			foundId = findItemIdInBank(bankHas, req.getStaffIds(), 1);
+			// Try to satisfy from bank directly. First top up a variant the player already carries,
+			// which saves a slot, then fall back to the variation order (pure rune first).
+			// Use the canonical (first) item ID for display so we show "Air rune" rather than a
+			// combination rune variant like "Mist rune", unless the player carries some of the
+			// chosen variant, which only that variant tops up.
+			int foundId = findCarriedCovering(req.getItemIds(), qty, carried, bankHas);
 			if (foundId == -1)
 			{
-				foundId = findItemIdInBank(bankHas, req.getOffhandIds(), 1);
+				foundId = findCovering(req.getItemIds(), qty, carried, bankHas);
+			}
+			if (foundId != -1)
+			{
+				int carriedQty = carried.getOrDefault(foundId, 0);
+				int displayId = carriedQty > 0 ? foundId : req.getItemIds()[0];
+				pickups.merge(displayId, (long) (qty - carriedQty), Long::sum);
+				continue;
+			}
+			foundId = findCovering(req.getStaffIds(), 1, Map.of(), bankHas);
+			if (foundId == -1)
+			{
+				foundId = findCovering(req.getOffhandIds(), 1, Map.of(), bankHas);
 			}
 			if (foundId == -1)
 			{
@@ -462,36 +449,41 @@ public final class BankPickupRequirements
 	}
 
 	/**
-	 * Builds a map of runeId to pouchId for every rune stored inside any rune pouch in the bank.
-	 * The varbits that encode pouch contents are always current regardless of pouch location.
+	 * Returns what the player carries plus the bank rune pouch's runes, if the pouch covers the
+	 * shortfall of at least one requirement the player doesn't already meet. Otherwise the pouch
+	 * is not taken and {@code playerHas} itself is returned.
 	 */
-	private static Map<Integer, Integer> buildBankPouchRunes(Client client, Map<Integer, Integer> bankHas)
+	private static Map<Integer, Integer> carriedWithBankPouch(Transport transport,
+		Map<Integer, Integer> playerHas,
+		Map<Integer, Integer> bankPouchRunes)
 	{
-		Map<Integer, Integer> bankPouchRunes = new HashMap<>();
-		for (Integer pouchId : PathfinderConfig.RUNE_POUCHES)
+		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			if (!bankHas.containsKey(pouchId))
+			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
+			if (!playerSatisfies(req, qty, playerHas)
+				&& findCovering(req.getItemIds(), qty, playerHas, bankPouchRunes) != -1)
 			{
-				continue;
+				Map<Integer, Integer> carried = new HashMap<>(playerHas);
+				bankPouchRunes.forEach((runeId, amount) -> carried.merge(runeId, amount, Integer::sum));
+				return carried;
 			}
-			EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
-			if (runePouchEnum == null)
-			{
-				break;
-			}
-			for (int i = 0; i < PathfinderConfig.RUNE_POUCH_RUNE_VARBITS.length; i++)
-			{
-				int runeEnumId = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS[i]);
-				int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
-				int runeAmount = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS[i]);
-				if (runeId > 0 && runeAmount > 0)
-				{
-					bankPouchRunes.put(runeId, pouchId);
-				}
-			}
-			break; // one pouch per bank
 		}
-		return bankPouchRunes;
+		return playerHas;
+	}
+
+	/**
+	 * Returns the ID of the first rune pouch found in the bank, or -1 if there is none.
+	 */
+	private static int findBankPouch(Map<Integer, Integer> bankHas)
+	{
+		for (int pouchId : PathfinderConfig.RUNE_POUCHES)
+		{
+			if (bankHas.containsKey(pouchId))
+			{
+				return pouchId;
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -501,59 +493,9 @@ public final class BankPickupRequirements
 	public static Map<Integer, Integer> collectPlayerItems(Client client)
 	{
 		Map<Integer, Integer> totals = new HashMap<>();
-
-		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
-		if (inventory != null)
-		{
-			for (Item item : inventory.getItems())
-			{
-				if (item.getId() >= 0 && item.getQuantity() > 0)
-				{
-					totals.merge(item.getId(), item.getQuantity(), Integer::sum);
-				}
-			}
-		}
-
-		ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
-		if (equipment != null)
-		{
-			for (Item item : equipment.getItems())
-			{
-				if (item.getId() >= 0 && item.getQuantity() > 0)
-				{
-					totals.merge(item.getId(), item.getQuantity(), Integer::sum);
-				}
-			}
-		}
-
-		// Rune pouch contents only when the pouch is actually on the player.
-		boolean hasPouch = false;
-		for (Integer pouchId : PathfinderConfig.RUNE_POUCHES)
-		{
-			if (totals.containsKey(pouchId))
-			{
-				hasPouch = true;
-				break;
-			}
-		}
-		if (hasPouch)
-		{
-			EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
-			if (runePouchEnum != null)
-			{
-				for (int i = 0; i < PathfinderConfig.RUNE_POUCH_RUNE_VARBITS.length; i++)
-				{
-					int runeEnumId = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS[i]);
-					int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
-					int runeAmount = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS[i]);
-					if (runeId > 0 && runeAmount > 0)
-					{
-						totals.merge(runeId, runeAmount, Integer::sum);
-					}
-				}
-			}
-		}
-
+		OwnedItems.addContainer(totals, client.getItemContainer(InventoryID.INV));
+		OwnedItems.addContainer(totals, client.getItemContainer(InventoryID.WORN));
+		OwnedItems.addRunePouchContents(client, totals);
 		return totals;
 	}
 }

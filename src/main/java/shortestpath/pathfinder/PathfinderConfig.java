@@ -12,10 +12,7 @@ import java.util.Set;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.EnumID;
 import net.runelite.api.GameState;
-import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
@@ -39,6 +36,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.transport.OwnedItems;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.Transport;
@@ -1038,8 +1036,7 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Item id to quantity over the selected containers. Later containers overwrite the quantity of
-	 * an item already seen (inventory, then equipment, then bank, then rune pouch).
+	 * Item id to quantity over the selected containers, summed across containers.
 	 */
 	private Map<Integer, Integer> collectItems(
 		boolean checkInventory,
@@ -1051,67 +1048,27 @@ public class PathfinderConfig
 
 		if (checkInventory)
 		{
-			ItemContainer inventory = client.getItemContainer(InventoryID.INV);
-			if (inventory != null)
-			{
-				for (Item item : inventory.getItems())
-				{
-					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
-					}
-				}
-			}
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV));
 		}
 
 		if (checkEquipment)
 		{
-			ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
-			if (equipment != null)
-			{
-				for (Item item : equipment.getItems())
-				{
-					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
-					}
-				}
-			}
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN));
 		}
 
 		if (checkBank)
 		{
 			TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
-			if (bank != null
-				&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting)))
+			if (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))
 			{
-				for (Item item : bank.getItems())
-				{
-					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
-					}
-				}
+				OwnedItems.addContainer(itemsAndQuantities, bank);
 			}
 		}
 
 		if (checkRunePouch)
 		{
-			if (RUNE_POUCHES.stream().anyMatch(itemsAndQuantities::containsKey))
-			{
-				EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
-				for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++)
-				{
-					int runeEnumId = client.getVarbitValue(RUNE_POUCH_RUNE_VARBITS[i]);
-					int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
-					int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
-					if (runeId > 0 && runeAmount > 0)
-					{
-						itemsAndQuantities.put(runeId, runeAmount);
-					}
-				}
-			}
+			OwnedItems.addRunePouchContents(client, itemsAndQuantities);
 		}
 
 		return itemsAndQuantities;
