@@ -25,10 +25,14 @@ client directly.
   (`ExactRoutingStaticProvider`, `RoutingStaticBuilder`). It comes from
   `collision-map.zip`, the transport and bank resources, and
   `routing-cuts.bin`.
-- **Prepared account data** (`PreparedRoutingAccount`, `SiteGraph`) is compiled
-  from the current account state for each search.
-- **Per-target data** (`TargetOverlay`, `ReverseLabels`, `PreparedHeuristic`)
-  gives an admissible heuristic for one target.
+- **Prepared account data** (`PreparedRoutingAccount`) is compiled from the
+  current account state for each search. The `SiteGraph` built from it is kept
+  by `ExactRoutingSession` while the account's routing fingerprint is
+  unchanged.
+- **Per-target data** (`TargetOverlay`, `ReverseLabels`, `PreparedHeuristic`,
+  held by `PreparedTarget`) gives an admissible heuristic for one target set;
+  see [exact-heuristic.md](exact-heuristic.md). The session keeps recent
+  targets for reuse while the graph and collision map are unchanged.
 - **Search state** (`ExactForwardSearch`) belongs to one active search.
 
 ## Routing cuts
