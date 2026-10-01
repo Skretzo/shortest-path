@@ -145,6 +145,33 @@ public class TransportRegionOverrideTest
 		Assert.assertNull(t.getRegionOverride());
 	}
 
+	@Test
+	public void testPermutationKeepsDestinationOverride()
+	{
+		String contents = "# Origin\tDestination\tDuration\tRegion override\n" +
+			"3200 3200 0\t\t5\t\n" +
+			"\t3300 3300 0\t5\tVARLAMORE\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+
+		Transport t = firstTransport(WorldPointUtil.packWorldPoint(3200, 3200, 0));
+		Assert.assertEquals(WorldPointUtil.packWorldPoint(3300, 3300, 0), t.getDestination());
+		Assert.assertEquals(LeagueRegion.VARLAMORE, t.getRegionOverride());
+	}
+
+	@Test
+	public void testPermutationKeepsOriginOverride()
+	{
+		String contents = "# Origin\tDestination\tDuration\tRegion override\n" +
+			"3200 3200 0\t\t5\tASGARNIA\n" +
+			"\t3300 3300 0\t5\t\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+
+		Transport t = firstTransport(WorldPointUtil.packWorldPoint(3200, 3200, 0));
+		Assert.assertEquals(LeagueRegion.ASGARNIA, t.getRegionOverride());
+	}
+
 	// ── Real seasonal_transports.tsv resource ─────────────────────────
 
 	/**
