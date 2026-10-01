@@ -45,3 +45,5 @@ empty one.
 
 The file is generated with KaHIP by the `routingCuts` task in
 [shortest-path-tooling](https://github.com/osrs-pathfinding/shortest-path-tooling).
+The `ExtractCollisionMap` workflow regenerates it whenever it dumps a new
+collision map and commits both files together.

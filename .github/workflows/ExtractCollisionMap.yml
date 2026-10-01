@@ -7,6 +7,9 @@ on:
     - cron: '20 23 * * 3' # Every Wednesday at 23:20 UTC
   workflow_dispatch:
 
+env:
+  KAHIP_VERSION: "3.23"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -72,6 +75,33 @@ jobs:
           cd output
           zip -r collision-map.zip .
           mv collision-map.zip ../src/main/resources/collision-map.zip
+
+      # The exact pathfinder's routing cuts are derived from the collision map, so they are
+      # regenerated with it and committed in the same commit.
+      - name: Restore KaHIP
+        id: kahip-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/kahip-bin
+          key: kahip-${{ env.KAHIP_VERSION }}-${{ runner.os }}
+
+      - name: Build KaHIP
+        if: steps.kahip-cache.outputs.cache-hit != 'true'
+        run: |
+          src="$RUNNER_TEMP/kahip-src"
+          git clone --depth 1 --branch "v${KAHIP_VERSION}" https://github.com/KaHIP/KaHIP.git "$src"
+          cmake -S "$src" -B "$src/build" -DCMAKE_BUILD_TYPE=Release -DNOMPI=On -DNONATIVEOPTIMIZATIONS=On
+          cmake --build "$src/build" --target node_separator --parallel
+          mkdir -p "$RUNNER_TEMP/kahip-bin"
+          cp "$(find "$src/build" -type f -name node_separator | head -n 1)" "$RUNNER_TEMP/kahip-bin/node_separator"
+
+      - name: Generate routing cuts
+        run: |
+          cd tooling
+          ./gradlew routingCuts \
+            -PshortestPathDir=.. \
+            -PkahipNodeSeparator="$RUNNER_TEMP/kahip-bin/node_separator" \
+            -ProutingCutsOutput="$GITHUB_WORKSPACE/src/main/resources/routing-cuts.bin"
 
       - name: Clean up the directories
         run: |
