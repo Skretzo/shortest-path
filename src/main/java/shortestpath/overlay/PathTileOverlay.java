@@ -644,7 +644,8 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
-		Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+		Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client,
+			plugin.getPathfinderConfig().usableItems());
 		List<Transport> usableTransports = new ArrayList<>();
 		for (Transport t : candidateTransports)
 		{

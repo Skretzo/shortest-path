@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntPredicate;
 
 import lombok.Getter;
 import net.runelite.api.Client;
@@ -125,6 +126,10 @@ public class PathfinderConfig
 	private final Map<Quest, QuestState> questStates = new HashMap<>();
 	private final Map<Integer, Integer> varbitValues = new HashMap<>();
 	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
+	/**
+	 * Item id to {@code ItemComposition.isMembers()}, which is fixed for a session.
+	 */
+	private final Map<Integer, Boolean> membersItems = new HashMap<>();
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
@@ -673,6 +678,20 @@ public class PathfinderConfig
 	}
 
 	/**
+	 * Accepts the items that count as owned. Members items don't on free-to-play worlds with
+	 * members-only filtering on, where rune pouch contents, combination runes, battlestaves
+	 * and tomes can't be used. Must be used on the client thread.
+	 */
+	public IntPredicate usableItems()
+	{
+		if (!filterMembersTransportsOnF2p || membersWorld)
+		{
+			return OwnedItems.ALL_ITEMS;
+		}
+		return itemId -> !membersItems.computeIfAbsent(itemId, id -> client.getItemDefinition(id).isMembers());
+	}
+
+	/**
 	 * Whether a transport with the supplied membership may be used. {@code f2p-only}
 	 * transports depend only on the world type; members-only transports are only
 	 * left out on free-to-play worlds with the filter on.
@@ -1210,7 +1229,8 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Item id to quantity over the selected containers, summed across containers.
+	 * Item id to quantity over the selected containers, summed across containers. Members items
+	 * are left out while they are unusable (see {@link #usableItems()}).
 	 */
 	private Map<Integer, Integer> collectItems(
 		boolean checkInventory,
@@ -1219,15 +1239,16 @@ public class PathfinderConfig
 		boolean checkRunePouch)
 	{
 		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
+		IntPredicate usable = usableItems();
 
 		if (checkInventory)
 		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV));
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV), usable);
 		}
 
 		if (checkEquipment)
 		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN));
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN), usable);
 		}
 
 		if (checkBank)
@@ -1236,13 +1257,13 @@ public class PathfinderConfig
 			if (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
 				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))
 			{
-				OwnedItems.addContainer(itemsAndQuantities, bank);
+				OwnedItems.addContainer(itemsAndQuantities, bank, usable);
 			}
 		}
 
 		if (checkRunePouch)
 		{
-			OwnedItems.addRunePouchContents(client, itemsAndQuantities);
+			OwnedItems.addRunePouchContents(client, itemsAndQuantities, usable);
 		}
 
 		return itemsAndQuantities;
