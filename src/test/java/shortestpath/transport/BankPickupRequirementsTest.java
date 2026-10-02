@@ -171,6 +171,29 @@ public class BankPickupRequirementsTest
 	}
 
 	@Test
+	public void bankPouchAndLooseRunesCombineForOneShortfall()
+	{
+		// Neither the pouch's 2 air nor the 1 loose air covers 3 alone, but together they do,
+		// as the pathfinder's bank path already counts them
+		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
+		bankHas.put(ItemID.AIRRUNE, 1);
+		bankPouchRunes.put(ItemID.AIRRUNE, 2);
+
+		assertEquals(Map.of(ItemID.BH_RUNE_POUCH, 1L, ItemID.AIRRUNE, 1L), pickups(THREE_AIR, ItemID.BH_RUNE_POUCH));
+		assertEquals(Set.of(ItemID.BH_RUNE_POUCH, ItemID.AIRRUNE), highlighted(THREE_AIR, ItemID.BH_RUNE_POUCH));
+	}
+
+	@Test
+	public void bankPouchAndLooseRunesStillShortGiveNoPickup()
+	{
+		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
+		bankHas.put(ItemID.AIRRUNE, 1);
+		bankPouchRunes.put(ItemID.AIRRUNE, 1);
+
+		assertNull(pickups(THREE_AIR, ItemID.BH_RUNE_POUCH));
+	}
+
+	@Test
 	public void bankPouchCoveringTheShortfallIsPreferredOnce()
 	{
 		playerHas.put(ItemID.LAWRUNE, 1);

@@ -79,6 +79,23 @@ public class PathfinderConfigItemQuantitiesTest
 		assertTrue(varrockTeleportUsable(true));
 	}
 
+	@Test
+	public void bankedRunePouchRunesAddToLooseBankedRunes()
+	{
+		// A banked pouch with 2 air plus 1 loose banked air makes 3 on the bank path
+		setupInventory(new Item(ItemID.FIRERUNE, 1), new Item(ItemID.LAWRUNE, 1));
+		when(bank.getItems()).thenReturn(new Item[]{new Item(ItemID.BH_RUNE_POUCH, 1), new Item(ItemID.AIRRUNE, 1)});
+		when(client.getEnum(EnumID.RUNEPOUCH_RUNE)).thenReturn(runePouchEnum);
+		when(runePouchEnum.getIntValue(POUCH_AIR)).thenReturn(ItemID.AIRRUNE);
+		when(client.getVarbitValue(VarbitID.RUNE_POUCH_TYPE_1)).thenReturn(POUCH_AIR);
+		when(client.getVarbitValue(VarbitID.RUNE_POUCH_QUANTITY_1)).thenReturn(2);
+
+		refresh(true, TeleportationItem.INVENTORY_AND_BANK);
+
+		assertFalse(varrockTeleportUsable(false));
+		assertTrue(varrockTeleportUsable(true));
+	}
+
 	private void setupInventory(Item... items)
 	{
 		doReturn(inventory).when(client).getItemContainer(InventoryID.INV);

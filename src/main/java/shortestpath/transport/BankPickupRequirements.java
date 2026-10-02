@@ -236,7 +236,7 @@ public final class BankPickupRequirements
 			return;
 		}
 		// Add the bank rune pouch if it is taken; its runes then count as carried.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankPouchRunes);
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankHas, bankPouchRunes);
 		if (carried != playerHas)
 		{
 			itemIds.add(bankPouchId);
@@ -389,7 +389,7 @@ public final class BankPickupRequirements
 	 * Each counted item asks only for the shortfall: the required quantity less what the
 	 * player already carries of that item ID. Loose items are chosen from the variants the
 	 * player already carries first, then from all variants, each in variation order.
-	 * When the bank rune pouch covers the shortfall of a required rune, the pouch itself is
+	 * When the bank rune pouch is taken (see {@link #carriedWithBankPouch}), the pouch itself is
 	 * returned as a pickup item (qty 1), and its runes count as carried for every requirement.
 	 */
 	static Map<Integer, Long> computeBankPickups(Transport transport,
@@ -405,7 +405,7 @@ public final class BankPickupRequirements
 		}
 		// Prefer bank rune pouch over individual runes. This avoids surfacing combination
 		// rune variants (mist, dust, etc.) when the pouch already covers the requirement.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankPouchRunes);
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankHas, bankPouchRunes);
 		if (carried != playerHas)
 		{
 			pickups.put(bankPouchId, 1L);
@@ -449,19 +449,31 @@ public final class BankPickupRequirements
 	}
 
 	/**
-	 * Returns what the player carries plus the bank rune pouch's runes, if the pouch covers the
-	 * shortfall of at least one requirement the player doesn't already meet. Otherwise the pouch
-	 * is not taken and {@code playerHas} itself is returned.
+	 * Returns what the player carries plus the bank rune pouch's runes, if the pouch is taken.
+	 * The pouch is taken when, for at least one requirement the player doesn't already meet,
+	 * either the pouch alone covers the shortfall of one of its item IDs, or loose bank items
+	 * alone cover the shortfall of none of its item IDs but the pouch and loose bank items
+	 * together cover the shortfall of one of them (counted per item ID, never across variants).
+	 * Otherwise the pouch is not taken and {@code playerHas} itself is returned.
 	 */
 	private static Map<Integer, Integer> carriedWithBankPouch(Transport transport,
 		Map<Integer, Integer> playerHas,
+		Map<Integer, Integer> bankHas,
 		Map<Integer, Integer> bankPouchRunes)
 	{
+		// Pouch runes plus loose bank items, per item ID.
+		Map<Integer, Integer> pouchAndBank = new HashMap<>(bankHas);
+		bankPouchRunes.forEach((runeId, amount) -> pouchAndBank.merge(runeId, amount, Integer::sum));
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
 			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
-			if (!playerSatisfies(req, qty, playerHas)
-				&& findCovering(req.getItemIds(), qty, playerHas, bankPouchRunes) != -1)
+			if (playerSatisfies(req, qty, playerHas))
+			{
+				continue;
+			}
+			if (findCovering(req.getItemIds(), qty, playerHas, bankPouchRunes) != -1
+				|| (findCovering(req.getItemIds(), qty, playerHas, bankHas) == -1
+				&& findCovering(req.getItemIds(), qty, playerHas, pouchAndBank) != -1))
 			{
 				Map<Integer, Integer> carried = new HashMap<>(playerHas);
 				bankPouchRunes.forEach((runeId, amount) -> carried.merge(runeId, amount, Integer::sum));
