@@ -5,7 +5,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import shortestpath.pathfinder.exact.ExactForwardSearch;
+import shortestpath.pathfinder.exact.ExactRoute;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
+import shortestpath.pathfinder.exact.ExactWalkCanonicalizer;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 import shortestpath.pathfinder.exact.PreparedTarget;
 import shortestpath.pathfinder.exact.RoutingStatic;
@@ -37,6 +39,8 @@ public final class ExactPathfinder implements ActiveSearch
 	private volatile long reverseSearchNanos;
 	private volatile long heuristicPrepareNanos;
 	private volatile long forwardSearchNanos;
+	private volatile long walkCanonicalizeNanos;
+	private volatile List<ExactWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
 	private volatile boolean graphReused;
 	private volatile boolean targetReused;
 
@@ -223,6 +227,19 @@ public final class ExactPathfinder implements ActiveSearch
 	{ return forwardSearchNanos;
 	}
 
+	/** Time spent choosing each walking leg's canonical walk. */
+	public long getWalkCanonicalizeNanos()
+	{ return walkCanonicalizeNanos;
+	}
+
+	/**
+	 * Walking legs that kept the search's own walk because the canonicaliser disagreed with the
+	 * route about them; empty when every leg was canonicalised.
+	 */
+	public List<ExactWalkCanonicalizer.Diagnostic> getWalkDiagnostics()
+	{ return walkDiagnostics;
+	}
+
 	/** Whether the account graph came from the session rather than being built for this search. */
 	public boolean isGraphReused()
 	{ return graphReused;
@@ -294,17 +311,29 @@ public final class ExactPathfinder implements ActiveSearch
 				stats.nodesChecked += current.counters().statesPopped();
 				stats.transportsChecked += current.counters().transportCandidates();
 				exactStats = current.counters();
+				ExactRoute found = null;
 				if (current.reached())
 				{
 					best = current;
-					path = current.path();
-					bestTarget = last(path);
+					found = current.route();
 				}
 				else if (timedOut.get() && !cancelled)
 				{
 					// Like legacy: a cut-off search still routes to the tile it got closest to.
-					path = current.closestPath();
+					found = current.closestRoute();
 					partialCost = current.closestCost();
+				}
+				if (found != null)
+				{
+					// Publish only the canonical path, so the render thread never shows the raw one:
+					// each walking leg's canonical walk among the equally cheap ones.
+					phaseStarted = System.nanoTime();
+					ExactWalkCanonicalizer.Result canonical = new ExactWalkCanonicalizer(collision, account)
+						.canonicalize(found);
+					walkCanonicalizeNanos = System.nanoTime() - phaseStarted;
+					walkDiagnostics = canonical.diagnostics();
+					path = canonical.path();
+					if (best != null) bestTarget = last(path);
 				}
 			}
 
