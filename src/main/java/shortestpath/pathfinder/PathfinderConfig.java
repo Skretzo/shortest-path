@@ -12,17 +12,15 @@ import java.util.Set;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.EnumID;
 import net.runelite.api.GameState;
-import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.VarPlayer;
+import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
-import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.DestinationRequirements;
@@ -31,23 +29,28 @@ import shortestpath.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
+import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
+import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.transport.OwnedItems;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
+import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
 {
+	private static final int MAX_SKILL_LEVEL = 99;
 	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
 		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
 		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
@@ -79,19 +82,26 @@ public class PathfinderConfig
 	// is re-derived from each transport), so the per-origin Set/HashMap/Integer-key map the loader
 	// produces is flattened here and not retained (issue #491).
 	private final Transport[] allTransports;
+	/**
+	 * Display view of every loaded transport, grouped by origin tile with POH origins
+	 * collapsed into the landing tile (same layout as the available-transport display
+	 * view). Used by overlays to render unavailable transports alongside available ones.
+	 */
+	@Getter
+	private final PrimitiveIntHashMap<Transport[]> allDisplayTransports;
 	private final Map<String, Set<Integer>> allDestinations;
 	private final Map<String, Set<Integer>> filteredDestinations;
 	/**
 	 * Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers.
 	 */
 	private final Map<Integer, DestinationRequirements> bankRequirements;
-	private final Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
 	private final List<Integer> filteredTargets = new ArrayList<>(4);
 	private final Client client;
 	private final ShortestPathConfig config;
 	// Centralized transport type enable/disable config
 	private final TransportTypeConfig transportTypeConfig;
 	private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
+	private int currentMaxQuestPoints;
 	private final Map<Quest, QuestState> questStates = new HashMap<>();
 	private final Map<Integer, Integer> varbitValues = new HashMap<>();
 	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
@@ -145,6 +155,7 @@ public class PathfinderConfig
 		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
 		remapPohDestinations(loadedTransports);
 		this.allTransports = flatten(loadedTransports);
+		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.allDestinations = Destination.loadAllFromResources();
@@ -164,6 +175,7 @@ public class PathfinderConfig
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = flatten(allTransports);
+		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.allDestinations = allDestinations;
@@ -306,7 +318,7 @@ public class PathfinderConfig
 			}
 			boostedSkillLevelsAndMore[i++] = client.getTotalLevel(); // skill total level
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
-			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
+			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayer.QUEST_POINTS); // quest points
 
 			refreshTransports(evaluationTimeMinutes);
 		}
@@ -483,6 +495,7 @@ public class PathfinderConfig
 		{
 			return; // Has to run on the client thread; data will be refreshed when path finding commences
 		}
+		currentMaxQuestPoints = maximumQuestPoints();
 
 		// Fairy ring staff/diary requirements are enforced later in hasRequiredItems().
 		transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
@@ -494,12 +507,21 @@ public class PathfinderConfig
 		transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
 			QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
+		// The owned items depend only on which containers are included, so collect them once rather
+		// than once per transport.
+		Map<Integer, Integer> carriedItems = collectItems(true, true, false, true);
+		Map<Integer, Integer> bankPathItems = includeBankPath ? collectItems(true, true, true, true) : carriedItems;
+		Set<Quest> refreshedQuests = new HashSet<>();
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
 			for (Quest quest : transport.getQuests())
 			{
+				if (!refreshedQuests.add(quest))
+				{
+					continue;
+				}
 				try
 				{
 					questStates.put(quest, getQuestState(quest));
@@ -526,8 +548,8 @@ public class PathfinderConfig
 				continue;
 			}
 
-			boolean usableWithoutBank = hasRequiredItems(transport, true, true, false, true);
-			boolean usableWithBank = hasRequiredItems(transport, true, true, includeBankPath, true);
+			boolean usableWithoutBank = hasRequiredItems(transport, carriedItems);
+			boolean usableWithBank = hasRequiredItems(transport, bankPathItems);
 			if (usableWithoutBank)
 			{
 				withoutBank.add(transport);
@@ -614,9 +636,20 @@ public class PathfinderConfig
 		return all.toArray(new Transport[0]);
 	}
 
+	private static PrimitiveIntHashMap<Transport[]> buildAllDisplayTransports(Transport[] transports)
+	{
+		TransportAvailability.Builder builder = new TransportAvailability.Builder(transports.length);
+		for (Transport transport : transports)
+		{
+			builder.add(transport);
+		}
+		builder.remapPohTransports();
+		return builder.build().getDisplayTransports();
+	}
+
 	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)
 	{
-		int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
+		int pohLanding = WorldPointUtil.packWorldPoint(POH_LANDING_X, POH_LANDING_Y, 0);
 		for (Set<Transport> transportSet : transports.values())
 		{
 			for (Transport transport : transportSet)
@@ -753,7 +786,8 @@ public class PathfinderConfig
 			return false;
 		}
 
-		if (TransportType.SPIRIT_TREE.equals(type) || TransportType.SEASONAL_TRANSPORTS.equals(type))
+		if (TransportType.SPIRIT_TREE.equals(type) || TransportType.SEASONAL_TRANSPORTS.equals(type)
+			|| TransportType.TELEPORTATION_ITEM.equals(type))
 		{
 			return checkPlantedSpiritTrees(transport);
 		}
@@ -932,6 +966,10 @@ public class PathfinderConfig
 			}
 			int boostedLevel = boostedSkillLevelsAndMore[i];
 			int requiredLevel = requiredLevels[i];
+			if (requiredLevel == SkillRequirementParser.MAX_LEVEL)
+			{
+				requiredLevel = maximumLevel(i);
+			}
 			if (boostedLevel < requiredLevel)
 			{
 				return false;
@@ -940,15 +978,48 @@ public class PathfinderConfig
 		return true;
 	}
 
+	private int maximumLevel(int index)
+	{
+		if (index < Skill.values().length)
+		{
+			return MAX_SKILL_LEVEL;
+		}
+		if (index == Skill.values().length)
+		{
+			return MAX_SKILL_LEVEL * Skill.values().length;
+		}
+		if (index == Skill.values().length + 1)
+		{
+			return 126;
+		}
+		if (index == Skill.values().length + 2)
+		{
+			return currentMaxQuestPoints;
+		}
+		return SkillRequirementParser.MAX_LEVEL;
+	}
+
+	private int maximumQuestPoints()
+	{
+		return client.getDBTableRows(DBTableID.Quest.ID).stream()
+			.filter(row -> (Integer) client.getDBTableField(
+				row,
+				DBTableID.Quest.COL_RELEASE_TYPE,
+				0
+			)[0] != 0)
+			.mapToInt(row -> (Integer) client.getDBTableField(
+				row,
+				DBTableID.Quest.COL_QUESTPOINTS,
+				0
+			)[0])
+			.sum();
+	}
+
 	/**
-	 * Checks if the player has all the required equipment and inventory items for the transport
+	 * Checks if {@code ownedItems} (from {@link #collectItems}) cover the equipment and inventory
+	 * items the transport requires
 	 */
-	private boolean hasRequiredItems(
-		Transport transport,
-		boolean checkInventory,
-		boolean checkEquipment,
-		boolean checkBank,
-		boolean checkRunePouch)
+	private boolean hasRequiredItems(Transport transport, Map<Integer, Integer> ownedItems)
 	{
 		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
 			TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
@@ -974,99 +1045,54 @@ public class PathfinderConfig
 			int lumbridgeDiaryComplete = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0);
 			if (lumbridgeDiaryComplete != 1)
 			{
-				if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch))
+				if (!DRAMEN_STAFF.isSatisfiedBy(ownedItems, CURRENCIES, currencyThreshold))
 				{
 					return false;
 				}
 			}
 		}
 
-		return hasRequiredItems(transport.getItemRequirements(),
-			checkInventory, checkEquipment, checkBank, checkRunePouch);
+		TransportItems transportItems = transport.getItemRequirements();
+		return transportItems == null || transportItems.isSatisfiedBy(ownedItems, CURRENCIES, currencyThreshold);
 	}
 
 	/**
-	 * Checks if the player has all the required equipment and inventory items for the transport
+	 * Item id to quantity over the selected containers, summed across containers.
 	 */
-	private boolean hasRequiredItems(
-		TransportItems transportItems,
+	private Map<Integer, Integer> collectItems(
 		boolean checkInventory,
 		boolean checkEquipment,
 		boolean checkBank,
 		boolean checkRunePouch)
 	{
-		if (transportItems == null)
-		{
-			return true;
-		}
-		itemsAndQuantities.clear();
+		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
 
 		if (checkInventory)
 		{
-			ItemContainer inventory = client.getItemContainer(InventoryID.INV);
-			if (inventory != null)
-			{
-				for (Item item : inventory.getItems())
-				{
-					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
-					}
-				}
-			}
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV));
 		}
 
 		if (checkEquipment)
 		{
-			ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
-			if (equipment != null)
-			{
-				for (Item item : equipment.getItems())
-				{
-					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
-					}
-				}
-			}
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN));
 		}
 
 		if (checkBank)
 		{
 			TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
-			if (bank != null
-				&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting)))
+			if (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))
 			{
-				for (Item item : bank.getItems())
-				{
-					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
-					}
-				}
+				OwnedItems.addContainer(itemsAndQuantities, bank);
 			}
 		}
 
 		if (checkRunePouch)
 		{
-			if (RUNE_POUCHES.stream().anyMatch(itemsAndQuantities::containsKey))
-			{
-				EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
-				for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++)
-				{
-					int runeEnumId = client.getVarbitValue(RUNE_POUCH_RUNE_VARBITS[i]);
-					int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
-					int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
-					if (runeId > 0 && runeAmount > 0)
-					{
-						itemsAndQuantities.put(runeId, runeAmount);
-					}
-				}
-			}
+			OwnedItems.addRunePouchContents(client, itemsAndQuantities);
 		}
 
-		return transportItems.isSatisfiedBy(itemsAndQuantities, CURRENCIES, currencyThreshold);
+		return itemsAndQuantities;
 	}
 
 	/**

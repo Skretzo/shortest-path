@@ -1,28 +1,61 @@
 # Destination	Items	Skills	Quests	Duration	Display info	Wilderness level	Varbits	VarPlayers
 # Standard Spellbook - Varbit 4070=0								
-# Lumbridge Home Teleport (enabled animation:4560=3 is both 1 and 2 randomly. &249 is either 1, 8, 16, 32, 64 or 128)								
-3221 3218 0				23	Lumbridge Home Teleport	20	4070=0	4560=0;892@30
+# Lumbridge Home Teleport (varp 4560 is a bitmask of enabled animation overrides, bit order = animation menu order: 1=Default 24t, 2=Runefest 21t, 4=Speedy 19t, 8=Armageddon 24t, 16=League I Twisted 24t, 32=League II Trailblazer 25t, 64=League III Shattered 20t, 128=League IV Trailblazer Reloaded 21t, 256=League V Raging Echoes 21t, 512=Annihilation 19t, 1024=League VI Demonic Pacts 23t; multiple enabled bits choose randomly; 892@30 is the 30-minute cooldown)								
+3221 3218 0				24	Lumbridge Home Teleport	20	4070=0	4560=0;892@30
+3221 3218 0				24	Lumbridge Home Teleport	20	4070=0	4560&1;892@30
 3221 3218 0				21	Lumbridge Home Teleport	20	4070=0	4560&2;892@30
-3221 3218 0				18	Lumbridge Home Teleport	20	4070=0	4560&4;892@30
-3221 3218 0				23	Lumbridge Home Teleport	20	4070=0	4560&249;892@30
+3221 3218 0				19	Lumbridge Home Teleport	20	4070=0	4560&4;892@30
+3221 3218 0				24	Lumbridge Home Teleport	20	4070=0	4560&8;892@30
+3221 3218 0				24	Lumbridge Home Teleport	20	4070=0	4560&16;892@30
+3221 3218 0				25	Lumbridge Home Teleport	20	4070=0	4560&32;892@30
+3221 3218 0				20	Lumbridge Home Teleport	20	4070=0	4560&64;892@30
+3221 3218 0				21	Lumbridge Home Teleport	20	4070=0	4560&128;892@30
+3221 3218 0				21	Lumbridge Home Teleport	20	4070=0	4560&256;892@30
+3221 3218 0				19	Lumbridge Home Teleport	20	4070=0	4560&512;892@30
+3221 3218 0				23	Lumbridge Home Teleport	20	4070=0	4560&1024;892@30
 								
 # Ancient Spellbook - Varbit 4070=1								
 # Edgeville Home Teleport								
-3087 3504 0			Desert Treasure I	23	Edgeville Home Teleport	20	4070=1	4560=0;892@30
+3087 3504 0			Desert Treasure I	24	Edgeville Home Teleport	20	4070=1	4560=0;892@30
+3087 3504 0			Desert Treasure I	24	Edgeville Home Teleport	20	4070=1	4560&1;892@30
 3087 3504 0			Desert Treasure I	21	Edgeville Home Teleport	20	4070=1	4560&2;892@30
-3087 3504 0			Desert Treasure I	18	Edgeville Home Teleport	20	4070=1	4560&4;892@30
-3087 3504 0			Desert Treasure I	23	Edgeville Home Teleport	20	4070=1	4560&249;892@30
+3087 3504 0			Desert Treasure I	19	Edgeville Home Teleport	20	4070=1	4560&4;892@30
+3087 3504 0			Desert Treasure I	24	Edgeville Home Teleport	20	4070=1	4560&8;892@30
+3087 3504 0			Desert Treasure I	24	Edgeville Home Teleport	20	4070=1	4560&16;892@30
+3087 3504 0			Desert Treasure I	25	Edgeville Home Teleport	20	4070=1	4560&32;892@30
+3087 3504 0			Desert Treasure I	20	Edgeville Home Teleport	20	4070=1	4560&64;892@30
+3087 3504 0			Desert Treasure I	21	Edgeville Home Teleport	20	4070=1	4560&128;892@30
+3087 3504 0			Desert Treasure I	21	Edgeville Home Teleport	20	4070=1	4560&256;892@30
+3087 3504 0			Desert Treasure I	19	Edgeville Home Teleport	20	4070=1	4560&512;892@30
+3087 3504 0			Desert Treasure I	23	Edgeville Home Teleport	20	4070=1	4560&1024;892@30
 								
 # Lunar Spellbook - Varbit 4070=2								
 # Lunar Home Teleport								
-2113 3915 0			Lunar Diplomacy	23	Lunar Home Teleport	20	4070=2	4560=0;892@30
+2113 3915 0			Lunar Diplomacy	24	Lunar Home Teleport	20	4070=2	4560=0;892@30
+2113 3915 0			Lunar Diplomacy	24	Lunar Home Teleport	20	4070=2	4560&1;892@30
 2113 3915 0			Lunar Diplomacy	21	Lunar Home Teleport	20	4070=2	4560&2;892@30
-2113 3915 0			Lunar Diplomacy	18	Lunar Home Teleport	20	4070=2	4560&4;892@30
-2113 3915 0			Lunar Diplomacy	23	Lunar Home Teleport	20	4070=2	4560&249;892@30
+2113 3915 0			Lunar Diplomacy	19	Lunar Home Teleport	20	4070=2	4560&4;892@30
+2113 3915 0			Lunar Diplomacy	24	Lunar Home Teleport	20	4070=2	4560&8;892@30
+2113 3915 0			Lunar Diplomacy	24	Lunar Home Teleport	20	4070=2	4560&16;892@30
+2113 3915 0			Lunar Diplomacy	25	Lunar Home Teleport	20	4070=2	4560&32;892@30
+2113 3915 0			Lunar Diplomacy	20	Lunar Home Teleport	20	4070=2	4560&64;892@30
+2113 3915 0			Lunar Diplomacy	21	Lunar Home Teleport	20	4070=2	4560&128;892@30
+2113 3915 0			Lunar Diplomacy	21	Lunar Home Teleport	20	4070=2	4560&256;892@30
+2113 3915 0			Lunar Diplomacy	19	Lunar Home Teleport	20	4070=2	4560&512;892@30
+2113 3915 0			Lunar Diplomacy	23	Lunar Home Teleport	20	4070=2	4560&1024;892@30
 								
 # Arceuus Spellbook - Varbit 4070=3								
 # Arceuus Home Teleport								
-1700 3882 0				23	Arceuus Home Teleport	20	4070=3	4560=0;892@30
+1700 3882 0				24	Arceuus Home Teleport	20	4070=3	4560=0;892@30
+1700 3882 0				24	Arceuus Home Teleport	20	4070=3	4560&1;892@30
 1700 3882 0				21	Arceuus Home Teleport	20	4070=3	4560&2;892@30
-1700 3882 0				18	Arceuus Home Teleport	20	4070=3	4560&4;892@30
-1700 3882 0				23	Arceuus Home Teleport	20	4070=3	4560&249;892@30
+1700 3882 0				19	Arceuus Home Teleport	20	4070=3	4560&4;892@30
+1700 3882 0				24	Arceuus Home Teleport	20	4070=3	4560&8;892@30
+1700 3882 0				24	Arceuus Home Teleport	20	4070=3	4560&16;892@30
+1700 3882 0				25	Arceuus Home Teleport	20	4070=3	4560&32;892@30
+1700 3882 0				20	Arceuus Home Teleport	20	4070=3	4560&64;892@30
+1700 3882 0				21	Arceuus Home Teleport	20	4070=3	4560&128;892@30
+1700 3882 0				21	Arceuus Home Teleport	20	4070=3	4560&256;892@30
+1700 3882 0				19	Arceuus Home Teleport	20	4070=3	4560&512;892@30
+1700 3882 0				23	Arceuus Home Teleport	20	4070=3	4560&1024;892@30
+								

@@ -13,6 +13,7 @@ public class PohNexusPortalTest
 	@Test
 	public void testSimpleMappings()
 	{
+		assertSame(PohNexusPortal.APE_ATOLL_DUNGEON, PohNexusPortal.fromDisplayInfo("Ape Atoll Dungeon Portal"));
 		assertSame(PohNexusPortal.ANNAKARL, PohNexusPortal.fromDisplayInfo("Annakarl Portal"));
 		assertSame(PohNexusPortal.ARCEUUS_LIBRARY, PohNexusPortal.fromDisplayInfo("Arceuus Library Portal"));
 	}

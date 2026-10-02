@@ -98,13 +98,10 @@ def looks_like_skill(value):
     """Return True if value looks like a skill requirement, e.g. '35 Construction'."""
     parts = value.strip().split()
     if len(parts) == 2:
-        try:
-            int(parts[0])
+        if parts[0] == "Max" or parts[0].isdigit():
             name = parts[1].lower()
             if name in SKILL_NAMES or name.rstrip("s") in SKILL_NAMES:
                 return True
-        except ValueError:
-            pass
     return False
 
 
@@ -357,4 +354,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -14,12 +14,13 @@ import net.runelite.api.Skill;
  * Example: {@code 70 Agility;50 Strength}
  * </p>
  * <p>
- * Special skills: "Total level", "Combat level", "Quest points"
+ * Prefix a requirement with {@code Max} to use its maximum supported value.
  * </p>
  */
 @Slf4j
 public class SkillRequirementParser implements FieldParser<int[]>
 {
+	public static final int MAX_LEVEL = Integer.MAX_VALUE;
 	private static final String DELIM_SPACE = " ";
 	private static final String DELIM_MULTI = ";";
 
@@ -50,7 +51,9 @@ public class SkillRequirementParser implements FieldParser<int[]>
 					continue;
 				}
 
-				int level = Integer.parseInt(levelAndSkill[0]);
+				int level = "Max".equals(levelAndSkill[0])
+					? MAX_LEVEL
+					: Integer.parseInt(levelAndSkill[0]);
 				String skillName = levelAndSkill[1] == null ? "" : levelAndSkill[1];
 
 				Skill[] skills = Skill.values();

@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import shortestpath.ItemVariations;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.transport.parser.ItemRequirementParser;
 
 /**
  * Combination staves, tomes and leftover runes for {@link TransportItems#isSatisfiedBy}.
@@ -136,9 +137,69 @@ public class TransportItemsSatisfactionTest
 			ItemID.TOME_OF_FIRE, 1));
 	}
 
+	@Test
+	public void shantayPassAloneSatisfiesUnequalOrGroup()
+	{
+		Assert.assertTrue(satisfied(shantayGate(),
+			ItemID.SHANTAY_PASS, 1));
+	}
+
+	@Test
+	public void fiveCoinsSatisfyUnequalOrGroup()
+	{
+		Assert.assertTrue(satisfied(shantayGate(),
+			ItemID.COINS, 5));
+	}
+
+	@Test
+	public void fourCoinsDoNotSatisfyUnequalOrGroup()
+	{
+		Assert.assertFalse(satisfied(shantayGate(),
+			ItemID.COINS, 4));
+	}
+
+	@Test
+	public void passBranchWinsWhenCoinBranchExceedsCurrencyThreshold()
+	{
+		Assert.assertTrue(satisfiedWithThreshold(shantayGate(), 0,
+			ItemID.SHANTAY_PASS, 1,
+			ItemID.COINS, 100));
+	}
+
+	@Test
+	public void coinsAloneAreBlockedByCurrencyThreshold()
+	{
+		Assert.assertFalse(satisfiedWithThreshold(shantayGate(), 0,
+			ItemID.COINS, 100));
+		Assert.assertTrue(satisfiedWithThreshold(shantayGate(), 5,
+			ItemID.COINS, 100));
+	}
+
+	@Test
+	public void staffCoveringOneRuneBranchSatisfiesOrGroup()
+	{
+		TransportItems runes = new ItemRequirementParser().parse("AIR_RUNE=3|WATER_RUNE=5&LAW_RUNE=1");
+		Assert.assertTrue(satisfied(runes,
+			ItemID.STAFF_OF_AIR, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void noRuneStaffFailsRuneOrGroup()
+	{
+		TransportItems runes = new ItemRequirementParser().parse("AIR_RUNE=3|WATER_RUNE=5&LAW_RUNE=1");
+		Assert.assertFalse(satisfied(runes,
+			ItemID.LAWRUNE, 1));
+	}
+
 	private static boolean satisfied(TransportItems items, int... idAndQuantity)
 	{
 		return items.isSatisfiedBy(counts(idAndQuantity), PathfinderConfig.CURRENCIES, Integer.MAX_VALUE);
+	}
+
+	private static boolean satisfiedWithThreshold(TransportItems items, int threshold, int... idAndQuantity)
+	{
+		return items.isSatisfiedBy(counts(idAndQuantity), PathfinderConfig.CURRENCIES, threshold);
 	}
 
 	private static Map<Integer, Integer> counts(int... idAndQuantity)
@@ -149,6 +210,11 @@ public class TransportItemsSatisfactionTest
 			itemCounts.put(idAndQuantity[i], idAndQuantity[i + 1]);
 		}
 		return itemCounts;
+	}
+
+	private static TransportItems shantayGate()
+	{
+		return new ItemRequirementParser().parse("SHANTAY_PASS=1|COINS=5");
 	}
 
 	private static TransportItems faladorTeleport()

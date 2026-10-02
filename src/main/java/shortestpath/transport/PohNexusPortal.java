@@ -7,6 +7,7 @@ import java.util.Map;
 
 public enum PohNexusPortal
 {
+	APE_ATOLL_DUNGEON("Ape Atoll Dungeon", "Ape Atoll Dungeon Portal"),
 	ANNAKARL("Annakarl", "Annakarl Portal"),
 	ARCEUUS_LIBRARY("Arceuus Library", "Arceuus Library Portal"),
 	ARDOUGNE("Ardougne", "Ardougne Portal"),

@@ -4,6 +4,7 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
+import net.runelite.api.gameval.DBTableID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -29,6 +30,7 @@ public class PathfinderResultTest
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(client.getTotalLevel()).thenReturn(2277);
+		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(java.util.List.of());
 		config.setCalculationCutoffValue(cutoffTicks);
 		config.setUnreachableTargetDistanceValue(unreachableTargetDistance);
 		config.setUseTeleportationItemsValue(TeleportationItem.ALL);
@@ -52,7 +54,35 @@ public class PathfinderResultTest
 		PathfinderResult result = pathfinder.getResult();
 
 		assertTrue(result.isReached());
+		assertEquals(1, result.getPathCost());
 		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+	}
+
+	@Test
+	public void startEqualsTargetHasZeroCost()
+	{
+		int start = point(3200, 3200);
+		Pathfinder pathfinder = new Pathfinder(configWithCutoff(100), start, Set.of(start));
+
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+
+		assertTrue(result.isReached());
+		assertEquals(0, result.getPathCost());
+	}
+
+	@Test
+	public void cancelledBeforeSearchUsesNoPathCost()
+	{
+		Pathfinder pathfinder = new Pathfinder(configWithCutoff(100), point(3200, 3200),
+			Set.of(point(3201, 3200)));
+		pathfinder.cancel();
+
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+
+		assertEquals(PathTerminationReason.CANCELLED, result.getTerminationReason());
+		assertEquals(PathfinderResult.NO_PATH_COST, result.getPathCost());
 	}
 
 	@Test

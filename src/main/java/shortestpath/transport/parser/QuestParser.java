@@ -27,7 +27,6 @@ public class QuestParser implements FieldParser<Set<Quest>>
 		{
 			return quests;
 		}
-
 		String[] questNames = value.split(DELIM_MULTI);
 		for (String questName : questNames)
 		{

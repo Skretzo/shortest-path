@@ -159,6 +159,7 @@ public class Transport
 		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
 		this.objectInfo = builtTransport.objectInfo;
 		this.varRequirements = builtTransport.varRequirements;
+		this.regionOverride = builtTransport.regionOverride;
 	}
 
 	Transport(TransportRecord record, TransportType transportType)

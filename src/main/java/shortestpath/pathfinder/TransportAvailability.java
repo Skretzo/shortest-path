@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 import shortestpath.PrimitiveIntHashMap;
+import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
+import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 
@@ -87,7 +89,7 @@ public final class TransportAvailability
 
 		void remapPohTransports()
 		{
-			int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
+			int pohLanding = WorldPointUtil.packWorldPoint(POH_LANDING_X, POH_LANDING_Y, 0);
 			Set<Transport> pohTransports = new HashSet<>();
 
 			for (Map.Entry<Integer, Set<Transport>> entry : transportsByOrigin.entrySet())
@@ -95,7 +97,7 @@ public final class TransportAvailability
 				int origin = entry.getKey();
 				int originX = WorldPointUtil.unpackWorldX(origin);
 				int originY = WorldPointUtil.unpackWorldY(origin);
-				if (shortestpath.ShortestPathPlugin.isInsidePoh(originX, originY))
+				if (shortestpath.ShortestPathPlugin.isInsidePoh(originX, originY) && origin != pohLanding)
 				{
 					pohTransports.addAll(entry.getValue());
 					// Kept in the pathfinding view, collapsed out of the display view.

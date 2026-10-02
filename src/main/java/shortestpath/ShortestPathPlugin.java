@@ -104,8 +104,11 @@ public class ShortestPathPlugin extends Plugin
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
 	private static final int POH_MIN_X = 1856;
 	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 5696;
-	private static final int POH_MAX_Y = 5767;
+	private static final int POH_MIN_Y = 7040;
+	private static final int POH_MAX_Y = 7111;
+	// Co-ordinates for Basic theme landing tile
+	public static final int POH_LANDING_X = 1858;
+	public static final int POH_LANDING_Y = 7051;
 	private static final String PLUGIN_MESSAGE_PATH = "path";
 	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
 	private static final String PLUGIN_MESSAGE_START = "start";
@@ -137,6 +140,7 @@ public class ShortestPathPlugin extends Plugin
 	public boolean drawTransports;
 	public boolean showTransportInfo;
 	public boolean showBankPickupInfo;
+	public boolean showUnreachableText;
 	public boolean highlightBankPickupItems;
 	public boolean highlightSpellbookSpells;
 	public boolean highlightInventoryItems;
@@ -1318,6 +1322,15 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
+	 * Every loaded transport grouped by origin for display, including transports the
+	 * player cannot currently use. Same layout as {@link #getTransports()}.
+	 */
+	public PrimitiveIntHashMap<Transport[]> getAllDisplayTransports()
+	{
+		return pathfinderConfig.getAllDisplayTransports();
+	}
+
+	/**
 	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
 	 * <p>
 	 * The important detail is that path display logic is edge-based, not node-based:
@@ -1582,6 +1595,7 @@ public class ShortestPathPlugin extends Plugin
 		drawTransports = override("drawTransports", config.drawTransports());
 		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
+		showUnreachableText = override("showUnreachableText", config.showUnreachableText());
 		highlightBankPickupItems = override("highlightBankPickupItems", config.highlightBankPickupItems());
 		highlightSpellbookSpells = override("highlightSpellbookSpells", config.highlightSpellbookSpells());
 		highlightInventoryItems = override("highlightInventoryItems", config.highlightInventoryItems());

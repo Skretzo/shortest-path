@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
+import java.util.Arrays;
 import java.util.Objects;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
@@ -15,6 +16,7 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
@@ -37,6 +39,9 @@ public class PathMapOverlay extends Overlay
 		setLayer(OverlayLayer.MANUAL);
 		drawAfterLayer(InterfaceID.Worldmap.MAP_CONTAINER);
 	}
+
+	private static final Color COLOR_AVAILABLE = Color.WHITE;
+	private static final Color COLOR_UNAVAILABLE = Color.ORANGE;
 
 	@Override
 	public Dimension render(Graphics2D graphics)
@@ -79,8 +84,10 @@ public class PathMapOverlay extends Overlay
 
 		if (plugin.drawTransports)
 		{
-			graphics.setColor(Color.WHITE);
-			for (int a : plugin.getTransports().keys())
+			PrimitiveIntHashMap<Transport[]> allTransports = plugin.getAllDisplayTransports();
+			PrimitiveIntHashMap<Transport[]> availableTransports = plugin.getTransports();
+
+			for (int a : allTransports.keys())
 			{
 				if (a == Transport.UNDEFINED_ORIGIN)
 				{
@@ -94,7 +101,9 @@ public class PathMapOverlay extends Overlay
 					continue;
 				}
 
-				for (Transport b : plugin.getTransports().getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
+				Transport[] availableAtOrigin = availableTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS);
+
+				for (Transport b : allTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
 				{
 					if (b == null || (b.getType() != null && b.getType().isTeleport()))
 					{
@@ -108,6 +117,8 @@ public class PathMapOverlay extends Overlay
 						continue;
 					}
 
+					boolean isAvailable = Arrays.asList(availableAtOrigin).contains(b);
+					graphics.setColor(isAvailable ? COLOR_AVAILABLE : COLOR_UNAVAILABLE);
 					graphics.drawLine(mapAX, mapAY, mapBX, mapBY);
 				}
 			}
