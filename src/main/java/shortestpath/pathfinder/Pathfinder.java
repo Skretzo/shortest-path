@@ -8,7 +8,7 @@ import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 
-public class Pathfinder implements Runnable
+public class Pathfinder implements ActiveSearch
 {
 	private final PathfinderStats stats;
 	@Getter
@@ -414,35 +414,7 @@ public class Pathfinder implements Runnable
 		}
 	}
 
-	public static class PathfinderStats
+	public static class PathfinderStats extends shortestpath.pathfinder.PathfinderStats
 	{
-		@Getter
-		private int nodesChecked = 0, transportsChecked = 0;
-		private long startNanos, endNanos;
-		private volatile boolean started = false, ended = false;
-
-		public int getTotalNodesChecked()
-		{
-			return nodesChecked + transportsChecked;
-		}
-
-		public long getElapsedTimeNanos()
-		{
-			return endNanos - startNanos;
-		}
-
-		private void start()
-		{
-			started = true;
-			nodesChecked = 0;
-			transportsChecked = 0;
-			startNanos = System.nanoTime();
-		}
-
-		private void end()
-		{
-			endNanos = System.nanoTime();
-			ended = true;
-		}
 	}
 }

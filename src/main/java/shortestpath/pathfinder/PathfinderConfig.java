@@ -48,6 +48,7 @@ import shortestpath.transport.TransportTypeConfig;
 import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
+import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
@@ -125,6 +126,8 @@ public class PathfinderConfig
 	@Getter
 	private int unreachableTargetDistance;
 	@Getter
+	private double exactHeuristicWeight = 1;
+	@Getter
 	private boolean avoidWilderness;
 	// POH-specific settings (not tied to a single TransportType)
 	private boolean usePohFairyRing,
@@ -139,6 +142,8 @@ public class PathfinderConfig
 	private int currencyThreshold;
 	@Getter
 	private boolean isOnSailingBoat;
+	@Getter
+	private PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -255,6 +260,14 @@ public class PathfinderConfig
 		return includeBankPath;
 	}
 
+	/** Snapshot the already-evaluated account/config state for the exact graph. */
+	public PreparedRoutingAccount prepareExactRoutingAccount(boolean allowTransports)
+	{
+		return PreparedRoutingAccount.compile(
+			getTransportAvailability(false), getTransportAvailability(true), includeBankPath,
+			allowTransports, this::getAdditionalTransportCost);
+	}
+
 	public boolean hasDestination(String destinationType)
 	{
 		return destinations.containsKey(destinationType);
@@ -275,9 +288,11 @@ public class PathfinderConfig
 
 	public void refresh()
 	{
+		pathfinderBackend = config.pathfinderBackend();
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		unreachableTargetDistance = ShortestPathPlugin.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+		exactHeuristicWeight = ShortestPathPlugin.override("exactHeuristicWeight", config.exactHeuristicWeight()) / 100.0;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
 		leagueModeState.refresh(client);

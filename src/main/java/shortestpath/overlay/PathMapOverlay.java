@@ -113,10 +113,10 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (plugin.getPathfinder() != null)
+		if (plugin.getActiveSearch() != null)
 		{
 			Color colour = plugin.getPathColor();
-			java.util.List<PathStep> path = plugin.getPathfinder().getPath();
+			java.util.List<PathStep> path = plugin.getActiveSearch().getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			for (int i = 0; i < path.size(); i++)
 			{
@@ -129,7 +129,7 @@ public class PathMapOverlay extends Overlay
 				}
 				drawOnMap(graphics, point, true, cursorPos);
 			}
-			for (int target : plugin.getPathfinder().getTargets())
+			for (int target : plugin.getActiveSearch().getTargets())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{

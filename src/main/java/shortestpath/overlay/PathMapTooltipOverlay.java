@@ -52,9 +52,9 @@ public class PathMapTooltipOverlay extends Overlay
 			return null;
 		}
 
-		if (plugin.getPathfinder() != null)
+		if (plugin.getActiveSearch() != null)
 		{
-			List<PathStep> path = plugin.getPathfinder().getPath();
+			List<PathStep> path = plugin.getActiveSearch().getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			for (int i = 0; i < path.size(); i++)
 			{
@@ -68,7 +68,7 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : plugin.getPathfinder().getTargets())
+			for (int target : plugin.getActiveSearch().getTargets())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
@@ -104,7 +104,7 @@ public class PathMapTooltipOverlay extends Overlay
 		}
 
 		List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
-			n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getPathfinder().getPath().size())));
+			n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getActiveSearch().getPath().size())));
 		if (nextPoint != WorldPointUtil.UNDEFINED)
 		{
 			PathStep currentStep = path.get(pathIndex);

@@ -18,6 +18,7 @@ public class PathfinderResult
 	private final int transportsChecked;
 	private final long elapsedNanos;
 	private final PathTerminationReason terminationReason;
+	private final String message;
 
 	public PathfinderResult(
 		int start,
@@ -40,7 +41,8 @@ public class PathfinderResult
 			nodesChecked,
 			transportsChecked,
 			elapsedNanos,
-			terminationReason
+			terminationReason,
+			null
 		);
 	}
 
@@ -56,6 +58,23 @@ public class PathfinderResult
 		long elapsedNanos,
 		PathTerminationReason terminationReason)
 	{
+		this(start, target, reached, pathSteps, closestReachedPoint, pathCost, nodesChecked,
+			transportsChecked, elapsedNanos, terminationReason, null);
+	}
+
+	public PathfinderResult(
+		int start,
+		int target,
+		boolean reached,
+		List<PathStep> pathSteps,
+		int closestReachedPoint,
+		int pathCost,
+		int nodesChecked,
+		int transportsChecked,
+		long elapsedNanos,
+		PathTerminationReason terminationReason,
+		String message)
+	{
 		this.start = start;
 		this.target = target;
 		this.reached = reached;
@@ -66,5 +85,6 @@ public class PathfinderResult
 		this.transportsChecked = transportsChecked;
 		this.elapsedNanos = elapsedNanos;
 		this.terminationReason = terminationReason;
+		this.message = message;
 	}
 }

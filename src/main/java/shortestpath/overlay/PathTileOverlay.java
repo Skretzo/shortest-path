@@ -177,7 +177,7 @@ public class PathTileOverlay extends Overlay
 			renderCollisionMap(graphics);
 		}
 
-		if (plugin.drawTiles && plugin.getPathfinder() != null && plugin.getPathfinder().getPath() != null)
+		if (plugin.drawTiles && plugin.getActiveSearch() != null && plugin.getActiveSearch().getPath() != null)
 		{
 			Color colorCalculating = new Color(
 				plugin.colourPathCalculating.getRed(),
@@ -191,7 +191,7 @@ public class PathTileOverlay extends Overlay
 				pathColor.getBlue(),
 				pathColor.getAlpha() / 2);
 
-			List<PathStep> path = plugin.getPathfinder().getPath();
+			List<PathStep> path = plugin.getActiveSearch().getPath();
 			int counter = 0;
 			if (TileStyle.LINES.equals(plugin.pathStyle))
 			{
@@ -220,7 +220,7 @@ public class PathTileOverlay extends Overlay
 					counter++;
 					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
 				}
-				for (int target : plugin.getPathfinder().getTargets())
+				for (int target : plugin.getActiveSearch().getTargets())
 				{
 					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 					{
@@ -361,7 +361,7 @@ public class PathTileOverlay extends Overlay
 		if (counter >= 0 && !TileCounter.DISABLED.equals(plugin.showTileCounter))
 		{
 			int n = plugin.tileCounterStep > 0 ? plugin.tileCounterStep : 1;
-			int s = plugin.getPathfinder().getPath().size();
+			int s = plugin.getActiveSearch().getPath().size();
 			if ((counter % n != 0) && (s != (counter + 1)))
 			{
 				return;
@@ -452,14 +452,14 @@ public class PathTileOverlay extends Overlay
 		// Sailing: teleports are suppressed while aboard a boat. When the path is
 		// unreachable as a result, show a one-time hint on the player tile.
 		if (pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
-			&& plugin.getPathfinder().isDone() && plugin.isPathUnreachable())
+			&& plugin.getActiveSearch().isDone() && plugin.isPathUnreachable())
 		{
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
 				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
 			return;
 		}
 
-		if (plugin.isPathUnreachable() || !plugin.getPathfinder().isDone())
+		if (plugin.isPathUnreachable() || !plugin.getActiveSearch().isDone())
 		{
 			return;
 		}
