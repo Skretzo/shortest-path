@@ -1404,7 +1404,7 @@ public class PathfinderTest
 	}
 
 	@Test
-	public void testArdougneLeverUsedWithoutItemsWhenWildernessAllowed()
+	public void testArdougneLeverNotUsedWithoutSlashItem()
 	{
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
@@ -1417,12 +1417,12 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
-			769,
+			876,
 			origin,
 			destination);
 
 		assertTrue("Route should still reach the destination when wilderness is allowed", pathfinder.getResult().isReached());
-		assertTrue("Ardougne lever should be used when wilderness is allowed and no better item teleport exists",
+		assertFalse("Ardougne lever lands inside a web-fenced compound and should not be used without a slash item",
 			usedTransportType(pathfinder, TransportType.TELEPORTATION_LEVER));
 	}
 
