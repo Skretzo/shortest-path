@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +84,8 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.PathfinderResult;
+import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
@@ -111,6 +115,9 @@ public class ShortestPathPlugin extends Plugin
 	private static final String PLUGIN_MESSAGE_TARGET = "target";
 	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
 	private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
+	private static final String PLUGIN_MESSAGE_QUERY = "query";
+	private static final String PLUGIN_MESSAGE_RESULT = "result";
+	private static final String PLUGIN_MESSAGE_ID = "id";
 	private static final String CLEAR = "Clear";
 	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
 	private static final String SET = "Set";
@@ -203,6 +210,9 @@ public class ShortestPathPlugin extends Plugin
 	private GameState lastLastGameState = null;
 	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
 	private Future<?> pathfinderFuture;
+	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
+	// whose query never ran and to know whether a search is reading the transport availability.
+	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
 	@Getter
 	private Pathfinder pathfinder;
 	@Getter
@@ -368,10 +378,14 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 
-		if (pathfindingExecutor != null)
+		synchronized (pathfinderMutex)
 		{
-			pathfindingExecutor.shutdownNow();
-			pathfindingExecutor = null;
+			cancelQueries("SHUTDOWN");
+			if (pathfindingExecutor != null)
+			{
+				pathfindingExecutor.shutdownNow();
+				pathfindingExecutor = null;
+			}
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
@@ -386,6 +400,10 @@ public class ShortestPathPlugin extends Plugin
 				pathfinder.cancel();
 				pathfinderFuture.cancel(true);
 			}
+			// The displayed path wins over pending queries: it refreshes the transport
+			// availability, which a running query would otherwise read mid-search, and queued
+			// queries would delay it on the shared single thread.
+			cancelQueries("CANCELLED");
 
 			if (pathfindingExecutor == null)
 			{
@@ -587,67 +605,252 @@ public class ShortestPathPlugin extends Plugin
 				return;
 			}
 
-			int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
-				: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
-			if (start == WorldPointUtil.UNDEFINED)
+			int start = parseStart(objStart);
+			Set<Integer> targets = parseTargets(objTarget);
+			if (start == WorldPointUtil.UNDEFINED || targets == null)
 			{
-				if (client.getLocalPlayer() == null)
-				{
-					return;
-				}
-				start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
-			}
-
-			Set<Integer> targets = new HashSet<>();
-			if (objTarget instanceof Integer)
-			{
-				int packedPoint = (Integer) objTarget;
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof WorldPoint)
-			{
-				int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof Set<?>)
-			{
-				@SuppressWarnings("unchecked")
-				Set<Object> objTargets = (Set<Object>) objTarget;
-				for (Object obj : objTargets)
-				{
-					int packedPoint = WorldPointUtil.UNDEFINED;
-					if (obj instanceof Integer)
-					{
-						packedPoint = (Integer) obj;
-					}
-					else if (obj instanceof WorldPoint)
-					{
-						packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
-					}
-					if (packedPoint == WorldPointUtil.UNDEFINED)
-					{
-						return;
-					}
-					targets.add(packedPoint);
-				}
+				return;
 			}
 
 			boolean useOld = targets.isEmpty() && pathfinder != null;
 			restartPathfinding(start, useOld ? pathfinder.getTargets() : targets, useOld);
+		}
+		else if (PLUGIN_MESSAGE_QUERY.equals(action))
+		{
+			Map<String, Object> data = event.getData();
+			if (data == null)
+			{
+				return;
+			}
+			Object id = data.get(PLUGIN_MESSAGE_ID);
+			int start = parseStart(data.get(PLUGIN_MESSAGE_START));
+			Set<Integer> targets = parseTargets(data.get(PLUGIN_MESSAGE_TARGET));
+			if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
+			{
+				postQueryFailure(id, "INVALID");
+				return;
+			}
+			queryPath(id, start, targets);
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
 			configOverride.clear();
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
+		}
+	}
+
+	/**
+	 * The packed start of a plugin message path, defaulting to the player's location.
+	 * {@link WorldPointUtil#UNDEFINED} when there is neither.
+	 */
+	private int parseStart(Object objStart)
+	{
+		int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
+			: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
+		if (start == WorldPointUtil.UNDEFINED && client.getLocalPlayer() != null)
+		{
+			start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
+		}
+		return start;
+	}
+
+	/**
+	 * The packed targets of a plugin message: a WorldPoint, a packed Integer, or a Set of either.
+	 * Empty when none were given, and null when any of them is invalid.
+	 */
+	private static Set<Integer> parseTargets(Object objTarget)
+	{
+		Set<Integer> targets = new HashSet<>();
+		if (objTarget instanceof Integer)
+		{
+			int packedPoint = (Integer) objTarget;
+			if (packedPoint == WorldPointUtil.UNDEFINED)
+			{
+				return null;
+			}
+			targets.add(packedPoint);
+		}
+		else if (objTarget instanceof WorldPoint)
+		{
+			int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
+			if (packedPoint == WorldPointUtil.UNDEFINED)
+			{
+				return null;
+			}
+			targets.add(packedPoint);
+		}
+		else if (objTarget instanceof Set<?>)
+		{
+			for (Object obj : (Set<?>) objTarget)
+			{
+				int packedPoint = WorldPointUtil.UNDEFINED;
+				if (obj instanceof Integer)
+				{
+					packedPoint = (Integer) obj;
+				}
+				else if (obj instanceof WorldPoint)
+				{
+					packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
+				}
+				if (packedPoint == WorldPointUtil.UNDEFINED)
+				{
+					return null;
+				}
+				targets.add(packedPoint);
+			}
+		}
+		return targets;
+	}
+
+	/**
+	 * Finds a path for another plugin without touching the displayed one, and answers with a
+	 * {@code result} plugin message carrying the caller's {@code id}.
+	 *
+	 * <p>Queries share the single pathfinding thread with the displayed path, so the two never
+	 * search at the same time. The transport availability is only refreshed when no search is
+	 * queued or running, since a search reads it while it runs; otherwise the query uses what the
+	 * previous search was started with. A new displayed path cancels pending queries, so a query
+	 * never runs concurrently with a refresh triggered by {@code restartPathfinding} either.
+	 */
+	private void queryPath(Object id, int start, Set<Integer> targets)
+	{
+		clientThread.invokeLater(() ->
+		{
+			synchronized (pathfinderMutex)
+			{
+				if (pathfindingExecutor == null)
+				{
+					postQueryFailure(id, "SHUTDOWN");
+					return;
+				}
+				if (queries.isEmpty() && (pathfinder == null || pathfinder.isDone()))
+				{
+					pathfinderConfig.refresh();
+				}
+				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
+				QueryTask task = new QueryTask(id);
+				queries.put(query, task);
+				task.future = pathfindingExecutor.submit(() -> runQuery(query, task));
+			}
+		});
+	}
+
+	private void runQuery(Pathfinder query, QueryTask task)
+	{
+		try
+		{
+			query.run();
+			postQueryResult(task.id, query);
+		}
+		catch (RuntimeException | Error e)
+		{
+			postQueryFailure(task.id, "ERROR");
+			throw e;
+		}
+		finally
+		{
+			synchronized (pathfinderMutex)
+			{
+				queries.remove(query);
+			}
+		}
+	}
+
+	/**
+	 * Cancels every pending query while holding {@link #pathfinderMutex}. Queries still in the
+	 * executor queue are dequeued and answered here since their runnable will never execute;
+	 * queries already running are signalled and answer for themselves once they stop.
+	 */
+	private void cancelQueries(String reason)
+	{
+		for (Iterator<Map.Entry<Pathfinder, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
+		{
+			Map.Entry<Pathfinder, QueryTask> entry = it.next();
+			QueryTask task = entry.getValue();
+			if (task.future != null && task.future.cancel(false))
+			{
+				it.remove();
+				postQueryFailure(task.id, reason);
+			}
+			else
+			{
+				entry.getKey().cancel();
+			}
+		}
+	}
+
+	private void postQueryResult(Object id, Pathfinder query)
+	{
+		PathfinderResult result = query.getResult();
+		if (result == null)
+		{
+			postQueryFailure(id, "ERROR");
+			return;
+		}
+
+		List<PathStep> steps = result.getPathSteps();
+		List<WorldPoint> path = new ArrayList<>(steps.size());
+		List<Map<String, Object>> transports = new ArrayList<>();
+		for (int i = 0; i < steps.size(); i++)
+		{
+			path.add(WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
+			if (i > 0)
+			{
+				for (Transport transport : transportsForEdge(steps.get(i - 1), steps.get(i)))
+				{
+					Map<String, Object> edge = new HashMap<>();
+					edge.put("origin", WorldPointUtil.unpackWorldPoint(steps.get(i - 1).getPackedPosition()));
+					edge.put("destination", WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
+					edge.put("objectInfo", transport.getObjectInfo());
+					edge.put("displayInfo", formatTransportDisplay(transport));
+					transports.add(edge);
+				}
+			}
+		}
+
+		Map<String, Object> data = new HashMap<>();
+		data.put(PLUGIN_MESSAGE_ID, id);
+		data.put("reached", result.isReached());
+		data.put(PLUGIN_MESSAGE_START, WorldPointUtil.unpackWorldPoint(result.getStart()));
+		data.put(PLUGIN_MESSAGE_TARGET, WorldPointUtil.unpackWorldPoint(result.getTarget()));
+		data.put("path", path);
+		data.put(PLUGIN_MESSAGE_TRANSPORTS, transports);
+		data.put("closest", WorldPointUtil.unpackWorldPoint(result.getClosestReachedPoint()));
+		data.put("cost", result.getPathCost());
+		PathTerminationReason reason = result.getTerminationReason();
+		data.put("reason", reason == null ? null : reason.name());
+		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
+	}
+
+	/**
+	 * Answers a query that produced no result: a malformed message, a plugin shutdown, a
+	 * cancelled search, or a failure while running.
+	 */
+	private void postQueryFailure(Object id, String reason)
+	{
+		Map<String, Object> data = new HashMap<>();
+		data.put(PLUGIN_MESSAGE_ID, id);
+		data.put("reached", false);
+		data.put("path", List.of());
+		data.put(PLUGIN_MESSAGE_TRANSPORTS, List.of());
+		data.put("reason", reason);
+		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
+	}
+
+	/**
+	 * A query that has been submitted to the executor: the caller's {@code id} plus the task's
+	 * future, so it can be answered or cancelled when the displayed path or plugin shutdown
+	 * takes precedence.
+	 */
+	private static class QueryTask
+	{
+		final Object id;
+		Future<?> future;
+
+		QueryTask(Object id)
+		{
+			this.id = id;
 		}
 	}
 
