@@ -15,18 +15,18 @@
 2531 3569 0			Barbarian Assault Minigame Teleport	23	0	3264=11	4560&1024;888@20
 							
 # Blast Furnace - East Keldagrim							
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	24	0		4560=0;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	24	0		4560&1;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	21	0		4560&2;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	19	0		4560&4;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	24	0		4560&8;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	24	0		4560&16;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	25	0		4560&32;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	20	0		4560&64;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	21	0		4560&128;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	21	0		4560&256;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	19	0		4560&512;888@20
-2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	23	0		4560&1024;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	24	0	571>4	4560=0;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	24	0	571>4	4560&1;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	21	0	571>4	4560&2;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	19	0	571>4	4560&4;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	24	0	571>4	4560&8;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	24	0	571>4	4560&16;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	25	0	571>4	4560&32;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	20	0	571>4	4560&64;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	21	0	571>4	4560&128;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	21	0	571>4	4560&256;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	19	0	571>4	4560&512;888@20
+2934 10184 0			Blast Furnace Minigame Teleport	23	0	571>4	4560&1024;888@20
 							
 # Burthorpe Games Room							
 2899 3553 0			Burthorpe Games Room Minigame Teleport	24	0		4560=0;888@20
@@ -127,18 +127,18 @@
 3150 3635 0			Last Man Standing Minigame Teleport	23	0		4560&1024;888@20
 							
 # Mage Training Arena							
-3363 3295 0			Mage Training Arena Minigame Teleport	24	0		4560=0;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	24	0		4560&1;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	21	0		4560&2;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	19	0		4560&4;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	24	0		4560&8;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	24	0		4560&16;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	25	0		4560&32;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	20	0		4560&64;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	21	0		4560&128;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	21	0		4560&256;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	19	0		4560&512;888@20
-3363 3295 0			Mage Training Arena Minigame Teleport	23	0		4560&1024;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	24	0	1499>0	4560=0;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	24	0	1499>0	4560&1;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	21	0	1499>0	4560&2;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	19	0	1499>0	4560&4;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	24	0	1499>0	4560&8;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	24	0	1499>0	4560&16;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	25	0	1499>0	4560&32;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	20	0	1499>0	4560&64;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	21	0	1499>0	4560&128;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	21	0	1499>0	4560&256;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	19	0	1499>0	4560&512;888@20
+3363 3295 0			Mage Training Arena Minigame Teleport	23	0	1499>0	4560&1024;888@20
 							
 # Nightmare Zone - North of Yanille							
 2609 3114 0			Nightmare Zone Minigame Teleport	24	0		4560=0;888@20
