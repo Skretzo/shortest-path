@@ -1102,13 +1102,25 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "pathStyle",
 		name = "Path style",
-		description = "Whether to display the path as tiles or a segmented line",
+		description = "Whether to display the path as tiles, a segmented line, or a line with direction arrows",
 		position = 73,
 		section = sectionDisplay
 	)
 	default TileStyle pathStyle()
 	{
 		return TileStyle.TILES;
+	}
+
+	@ConfigItem(
+		keyName = "showTeleportPulse",
+		name = "Teleport pulse",
+		description = "Animate a pulsing highlight on the tile when the next teleport on the path is due",
+		position = 74,
+		section = sectionDisplay
+	)
+	default boolean showTeleportPulse()
+	{
+		return false;
 	}
 
 	@ConfigSection(
@@ -1195,6 +1207,18 @@ public interface ShortestPathConfig extends Config
 	default Color colourText()
 	{
 		return Color.WHITE;
+	}
+
+	@ConfigItem(
+		keyName = "colourTeleportPulse",
+		name = "Teleport pulse",
+		description = "Colour of the pulsing teleport highlight",
+		position = 81,
+		section = sectionColours
+	)
+	default Color colourTeleportPulse()
+	{
+		return new Color(255, 170, 0);
 	}
 
 	@Alpha

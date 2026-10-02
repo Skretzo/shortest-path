@@ -158,6 +158,8 @@ public class ShortestPathPlugin extends Plugin
 	public Color colourText;
 	public Color colourTransports;
 	public Color colourBankPickupHighlight;
+	public Color colourTeleportPulse;
+	public boolean showTeleportPulse;
 	public int tileCounterStep;
 	int unreachableTargetDistance;
 	public String unreachableText;
@@ -1608,6 +1610,7 @@ public class ShortestPathPlugin extends Plugin
 		colourText = override("colourText", config.colourText());
 		colourTransports = override("colourTransports", config.colourTransports());
 		colourBankPickupHighlight = override("colourBankPickupHighlight", config.colourBankPickupHighlight());
+		colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
 
 		tileCounterStep = override("tileCounterStep", config.tileCounterStep());
 		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
@@ -1615,6 +1618,7 @@ public class ShortestPathPlugin extends Plugin
 
 		showTileCounter = override("showTileCounter", config.showTileCounter());
 		pathStyle = override("pathStyle", config.pathStyle());
+		showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
 	}
 
 	private String simplify(String text)
