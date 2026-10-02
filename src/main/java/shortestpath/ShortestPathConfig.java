@@ -405,10 +405,22 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showUnreachableText",
+		name = "Show unreachable text",
+		description = "Whether to display text on the player tile when the destination cannot be reached",
+		position = 30,
+		section = sectionSettings
+	)
+	default boolean showUnreachableText()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showTileCounter",
 		name = "Show tile counter",
 		description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
-		position = 30,
+		position = 31,
 		section = sectionSettings
 	)
 	default TileCounter showTileCounter()
@@ -420,7 +432,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "tileCounterStep",
 		name = "Tile counter step",
 		description = "The number of tiles between the displayed tile counter numbers",
-		position = 31,
+		position = 32,
 		section = sectionSettings
 	)
 	default int tileCounterStep()
@@ -440,7 +452,7 @@ public interface ShortestPathConfig extends Config
 		name = "Calculation cutoff",
 		description = "The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>" +
 			"made towards the path target before the calculation will be stopped",
-		position = 32,
+		position = 33,
 		section = sectionSettings
 	)
 	default int calculationCutoff()
@@ -452,7 +464,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showTransportInfo",
 		name = "Show transport info",
 		description = "Whether to display transport destination hint info, e.g. which chat option and text to click",
-		position = 33,
+		position = 34,
 		section = sectionSettings
 	)
 	default boolean showTransportInfo()
@@ -464,7 +476,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showBankPickupInfo",
 		name = "Show transport hint at pickup",
 		description = "When standing at a bank on the path, also show the transport hint for the next step requiring an item pickup",
-		position = 34,
+		position = 35,
 		section = sectionSettings
 	)
 	default boolean showBankPickupInfo()
