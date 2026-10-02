@@ -243,13 +243,16 @@ public final class BankPickupRequirements
 		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
-			if (playerSatisfies(req, qty, carried))
+			if (playerSatisfies(req, carried))
 			{
 				continue;
 			}
-			// Add all item variants (e.g. mist/dust/smoke rune for air rune) that cover the shortfall.
-			addCovering(req.getItemIds(), qty, carried, bankHas, itemIds);
+			// Add all item variants (e.g. mist/dust/smoke rune for air rune) that cover the
+			// shortfall of any OR branch, at that branch's quantity.
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				addCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas, itemIds);
+			}
 			// Add all staff variants (e.g. all air battlestaff types) present in bank.
 			addCovering(req.getStaffIds(), 1, Map.of(), bankHas, itemIds);
 			// Add all offhand variants (e.g. tome of fire) present in bank.
@@ -290,13 +293,29 @@ public final class BankPickupRequirements
 	}
 
 	/**
-	 * Returns true if the player already meets this requirement on its own, with enough of
-	 * one item variant, or with a staff or offhand that substitutes for it.
+	 * Returns the quantity an OR branch asks for: the branch quantity when that is
+	 * positive, otherwise 1.
 	 */
-	private static boolean playerSatisfies(ItemRequirement req, int qty, Map<Integer, Integer> playerHas)
+	private static int pickupQuantity(ItemRequirement.Branch branch)
 	{
-		return findCovering(req.getItemIds(), qty, Map.of(), playerHas) != -1
-			|| findCovering(req.getStaffIds(), 1, Map.of(), playerHas) != -1
+		return branch.getQuantity() > 0 ? branch.getQuantity() : 1;
+	}
+
+	/**
+	 * Returns true if the player already meets this requirement on its own, with enough of
+	 * one item variant of any OR branch at that branch's quantity, or with a staff or
+	 * offhand that substitutes for it.
+	 */
+	private static boolean playerSatisfies(ItemRequirement req, Map<Integer, Integer> playerHas)
+	{
+		for (ItemRequirement.Branch branch : req.getBranches())
+		{
+			if (findCovering(branch.getItemIds(), pickupQuantity(branch), Map.of(), playerHas) != -1)
+			{
+				return true;
+			}
+		}
+		return findCovering(req.getStaffIds(), 1, Map.of(), playerHas) != -1
 			|| findCovering(req.getOffhandIds(), 1, Map.of(), playerHas) != -1;
 	}
 
@@ -387,8 +406,10 @@ public final class BankPickupRequirements
 	 * For an unsatisfied transport, returns the items (id to qty) that need to be picked up
 	 * from the bank to satisfy it, or null if the bank can't supply them.
 	 * Each counted item asks only for the shortfall: the required quantity less what the
-	 * player already carries of that item ID. Loose items are chosen from the variants the
-	 * player already carries first, then from all variants, each in variation order.
+	 * player already carries of that item ID, per OR branch at that branch's quantity.
+	 * Loose items are chosen from the variants the player already carries first, across all
+	 * OR branches, then from all variants in branch declaration order. The displayed item ID
+	 * comes from the branch actually picked.
 	 * When the bank rune pouch is taken (see {@link #carriedWithBankPouch}), the pouch itself is
 	 * returned as a pickup item (qty 1), and its runes count as carried for every requirement.
 	 */
@@ -412,26 +433,44 @@ public final class BankPickupRequirements
 		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
-			if (playerSatisfies(req, qty, carried))
+			if (playerSatisfies(req, carried))
 			{
 				continue;
 			}
 			// Try to satisfy from bank directly. First top up a variant the player already carries,
-			// which saves a slot, then fall back to the variation order (pure rune first).
-			// Use the canonical (first) item ID for display so we show "Air rune" rather than a
-			// combination rune variant like "Mist rune", unless the player carries some of the
-			// chosen variant, which only that variant tops up.
-			int foundId = findCarriedCovering(req.getItemIds(), qty, carried, bankHas);
-			if (foundId == -1)
+			// across all OR branches, which saves a slot, then fall back to the branches in
+			// declaration order (pure item variant first within each branch).
+			// Use the canonical (first) item ID of the chosen branch for display so we show
+			// "Air rune" rather than a combination rune variant like "Mist rune", unless the
+			// player carries some of the chosen variant, which only that variant tops up.
+			ItemRequirement.Branch chosen = null;
+			int foundId = -1;
+			for (ItemRequirement.Branch branch : req.getBranches())
 			{
-				foundId = findCovering(req.getItemIds(), qty, carried, bankHas);
+				foundId = findCarriedCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas);
+				if (foundId != -1)
+				{
+					chosen = branch;
+					break;
+				}
 			}
-			if (foundId != -1)
+			if (chosen == null)
+			{
+				for (ItemRequirement.Branch branch : req.getBranches())
+				{
+					foundId = findCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas);
+					if (foundId != -1)
+					{
+						chosen = branch;
+						break;
+					}
+				}
+			}
+			if (chosen != null)
 			{
 				int carriedQty = carried.getOrDefault(foundId, 0);
-				int displayId = carriedQty > 0 ? foundId : req.getItemIds()[0];
-				pickups.merge(displayId, (long) (qty - carriedQty), Long::sum);
+				int displayId = carriedQty > 0 ? foundId : chosen.getItemIds()[0];
+				pickups.merge(displayId, (long) (pickupQuantity(chosen) - carriedQty), Long::sum);
 				continue;
 			}
 			foundId = findCovering(req.getStaffIds(), 1, Map.of(), bankHas);
@@ -451,9 +490,10 @@ public final class BankPickupRequirements
 	/**
 	 * Returns what the player carries plus the bank rune pouch's runes, if the pouch is taken.
 	 * The pouch is taken when, for at least one requirement the player doesn't already meet,
-	 * either the pouch alone covers the shortfall of one of its item IDs, or loose bank items
-	 * alone cover the shortfall of none of its item IDs but the pouch and loose bank items
-	 * together cover the shortfall of one of them (counted per item ID, never across variants).
+	 * either the pouch alone covers the shortfall of any OR branch at that branch's quantity,
+	 * or loose bank items alone cover the shortfall of no OR branch but the pouch and loose
+	 * bank items together cover the shortfall of one of them (counted per item ID, never
+	 * across variants).
 	 * Otherwise the pouch is not taken and {@code playerHas} itself is returned.
 	 */
 	private static Map<Integer, Integer> carriedWithBankPouch(Transport transport,
@@ -466,14 +506,21 @@ public final class BankPickupRequirements
 		bankPouchRunes.forEach((runeId, amount) -> pouchAndBank.merge(runeId, amount, Integer::sum));
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
-			if (playerSatisfies(req, qty, playerHas))
+			if (playerSatisfies(req, playerHas))
 			{
 				continue;
 			}
-			if (findCovering(req.getItemIds(), qty, playerHas, bankPouchRunes) != -1
-				|| (findCovering(req.getItemIds(), qty, playerHas, bankHas) == -1
-				&& findCovering(req.getItemIds(), qty, playerHas, pouchAndBank) != -1))
+			boolean pouchAlone = false;
+			boolean looseAlone = false;
+			boolean combined = false;
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				int qty = pickupQuantity(branch);
+				pouchAlone = pouchAlone || findCovering(branch.getItemIds(), qty, playerHas, bankPouchRunes) != -1;
+				looseAlone = looseAlone || findCovering(branch.getItemIds(), qty, playerHas, bankHas) != -1;
+				combined = combined || findCovering(branch.getItemIds(), qty, playerHas, pouchAndBank) != -1;
+			}
+			if (pouchAlone || (!looseAlone && combined))
 			{
 				Map<Integer, Integer> carried = new HashMap<>(playerHas);
 				bankPouchRunes.forEach((runeId, amount) -> carried.merge(runeId, amount, Integer::sum));

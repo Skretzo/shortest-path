@@ -24,6 +24,7 @@ import shortestpath.transport.requirement.TransportItems;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +38,9 @@ public class BankPickupRequirementsTest
 	private static final Transport FALADOR_TELEPORT = teleport(
 		rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.AIR_RUNE, 3), rune(ItemVariations.WATER_RUNE, 1));
 	private static final Transport THREE_AIR = teleport(rune(ItemVariations.AIR_RUNE, 3));
+	private static final Transport SHANTAY_GATE = teleport(new ItemRequirement(List.of(
+		new ItemRequirement.Branch(ItemVariations.SHANTAY_PASS.getIds(), null, null, 1),
+		new ItemRequirement.Branch(ItemVariations.COINS.getIds(), null, null, 5))));
 
 	@Mock
 	private Client client;
@@ -236,6 +240,54 @@ public class BankPickupRequirementsTest
 
 		assertNull(pickups(FALADOR_TELEPORT, NO_POUCH));
 		assertEquals(Set.of(ItemID.AIRRUNE), highlighted(FALADOR_TELEPORT, NO_POUCH));
+	}
+
+	@Test
+	public void carriedShantayPassNeedsNoBankPickup()
+	{
+		playerHas.put(ItemID.SHANTAY_PASS, 1);
+		bankHas.put(ItemID.COINS, 100);
+
+		assertEquals(Map.of(), pickups(SHANTAY_GATE, NO_POUCH));
+		assertEquals(Set.of(), highlighted(SHANTAY_GATE, NO_POUCH));
+		assertTrue(BankPickupRequirements.transportSatisfiedBy(SHANTAY_GATE, playerHas));
+	}
+
+	@Test
+	public void bankCoinsAloneArePickedUpAsFiveCoins()
+	{
+		bankHas.put(ItemID.COINS, 100);
+
+		assertEquals(Map.of(ItemID.COINS, 5L), pickups(SHANTAY_GATE, NO_POUCH));
+	}
+
+	@Test
+	public void bankShantayPassPreferredOverCoins()
+	{
+		bankHas.put(ItemID.SHANTAY_PASS, 1);
+		bankHas.put(ItemID.COINS, 100);
+
+		assertEquals(Map.of(ItemID.SHANTAY_PASS, 1L), pickups(SHANTAY_GATE, NO_POUCH));
+	}
+
+	@Test
+	public void carriedCoinsAreToppedUpBeforeTakingAPass()
+	{
+		playerHas.put(ItemID.COINS, 4);
+		bankHas.put(ItemID.SHANTAY_PASS, 1);
+		bankHas.put(ItemID.COINS, 100);
+
+		assertEquals(Map.of(ItemID.COINS, 1L), pickups(SHANTAY_GATE, NO_POUCH));
+	}
+
+	@Test
+	public void highlightingUsesEachBranchQuantity()
+	{
+		bankHas.put(ItemID.SHANTAY_PASS, 1);
+		bankHas.put(ItemID.COINS, 3);
+
+		assertEquals(Set.of(ItemID.SHANTAY_PASS), highlighted(SHANTAY_GATE, NO_POUCH));
+		assertEquals(Map.of(ItemID.SHANTAY_PASS, 1L), pickups(SHANTAY_GATE, NO_POUCH));
 	}
 
 	private Map<Integer, Long> pickups(Transport transport, int bankPouchId)
