@@ -5006,6 +5006,16 @@
 1667 10051 0	1639 3673 0	Climb-up Vine ladder 28894						2	
 1639 3673 0	1666 10050 0	Investigate Statue 27785						2	
 									
+# Chasm of Fire									
+1435 3671 0	1435 10077 2	Enter Chasm 30236						2	
+1435 10077 2	1435 3671 0	Climb-up Rope 30234						2	
+1438 10093 1	1438 10093 2	Enter Lift 30259							
+1438 10093 2	1438 10093 1	Enter Lift 30258							
+1457 10096 1	1457 10096 0	Enter Lift 30258							
+1457 10096 0	1457 10096 1	Enter Lift 30259							
+1457 10075 0	1457 10075 1	Enter Lift 30259							
+1457 10075 1	1457 10075 0	Enter Lift 30258							
+									
 # Hosidius									
 1631 3570 0	1634 3570 0	Climb-over Stile 7527						3	
 1634 3570 0	1631 3570 0	Climb-over Stile 7527						3	
