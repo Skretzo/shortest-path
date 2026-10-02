@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +85,7 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
+import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
@@ -203,6 +206,9 @@ public class ShortestPathPlugin extends Plugin
 	private GameState lastLastGameState = null;
 	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
 	private Future<?> pathfinderFuture;
+	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
+	// whose query never ran and to know whether a search is reading the transport availability.
+	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
 	@Getter
 	private Pathfinder pathfinder;
 	@Getter
@@ -368,10 +374,14 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 
-		if (pathfindingExecutor != null)
+		synchronized (pathfinderMutex)
 		{
-			pathfindingExecutor.shutdownNow();
-			pathfindingExecutor = null;
+			cancelQueries("SHUTDOWN");
+			if (pathfindingExecutor != null)
+			{
+				pathfindingExecutor.shutdownNow();
+				pathfindingExecutor = null;
+			}
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
@@ -386,6 +396,10 @@ public class ShortestPathPlugin extends Plugin
 				pathfinder.cancel();
 				pathfinderFuture.cancel(true);
 			}
+			// The displayed path wins over pending queries: it refreshes the transport
+			// availability, which a running query would otherwise read mid-search, and queued
+			// queries would delay it on the shared single thread.
+			cancelQueries("CANCELLED");
 
 			if (pathfindingExecutor == null)
 			{
@@ -600,13 +614,19 @@ public class ShortestPathPlugin extends Plugin
 		else if (PLUGIN_MESSAGE_QUERY.equals(action))
 		{
 			Map<String, Object> data = event.getData();
+			if (data == null)
+			{
+				return;
+			}
+			Object id = data.get(PLUGIN_MESSAGE_ID);
 			int start = parseStart(data.get(PLUGIN_MESSAGE_START));
 			Set<Integer> targets = parseTargets(data.get(PLUGIN_MESSAGE_TARGET));
 			if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
 			{
+				postQueryFailure(id, "INVALID");
 				return;
 			}
-			queryPath(data.get(PLUGIN_MESSAGE_ID), start, targets);
+			queryPath(id, start, targets);
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
@@ -684,9 +704,10 @@ public class ShortestPathPlugin extends Plugin
 	 * {@code result} plugin message carrying the caller's {@code id}.
 	 *
 	 * <p>Queries share the single pathfinding thread with the displayed path, so the two never
-	 * search at the same time. The transport availability is only refreshed when no displayed
-	 * search is running, since that search reads it while it runs; otherwise the query uses what
-	 * the displayed search was started with.
+	 * search at the same time. The transport availability is only refreshed when no search is
+	 * queued or running, since a search reads it while it runs; otherwise the query uses what the
+	 * previous search was started with. A new displayed path cancels pending queries, so a query
+	 * never runs concurrently with a refresh triggered by {@code restartPathfinding} either.
 	 */
 	private void queryPath(Object id, int start, Set<Integer> targets)
 	{
@@ -696,20 +717,63 @@ public class ShortestPathPlugin extends Plugin
 			{
 				if (pathfindingExecutor == null)
 				{
+					postQueryFailure(id, "SHUTDOWN");
 					return;
 				}
-				if (pathfinder == null || pathfinder.isDone())
+				if (queries.isEmpty() && (pathfinder == null || pathfinder.isDone()))
 				{
 					pathfinderConfig.refresh();
 				}
 				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
-				pathfindingExecutor.submit(() ->
-				{
-					query.run();
-					postQueryResult(id, query);
-				});
+				QueryTask task = new QueryTask(id);
+				queries.put(query, task);
+				task.future = pathfindingExecutor.submit(() -> runQuery(query, task));
 			}
 		});
+	}
+
+	private void runQuery(Pathfinder query, QueryTask task)
+	{
+		try
+		{
+			query.run();
+			postQueryResult(task.id, query);
+		}
+		catch (RuntimeException | Error e)
+		{
+			postQueryFailure(task.id, "ERROR");
+			throw e;
+		}
+		finally
+		{
+			synchronized (pathfinderMutex)
+			{
+				queries.remove(query);
+			}
+		}
+	}
+
+	/**
+	 * Cancels every pending query while holding {@link #pathfinderMutex}. Queries still in the
+	 * executor queue are dequeued and answered here since their runnable will never execute;
+	 * queries already running are signalled and answer for themselves once they stop.
+	 */
+	private void cancelQueries(String reason)
+	{
+		for (Iterator<Map.Entry<Pathfinder, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
+		{
+			Map.Entry<Pathfinder, QueryTask> entry = it.next();
+			QueryTask task = entry.getValue();
+			if (task.future != null && task.future.cancel(false))
+			{
+				it.remove();
+				postQueryFailure(task.id, reason);
+			}
+			else
+			{
+				entry.getKey().cancel();
+			}
+		}
 	}
 
 	private void postQueryResult(Object id, Pathfinder query)
@@ -717,12 +781,13 @@ public class ShortestPathPlugin extends Plugin
 		PathfinderResult result = query.getResult();
 		if (result == null)
 		{
+			postQueryFailure(id, "ERROR");
 			return;
 		}
 
 		List<PathStep> steps = result.getPathSteps();
 		List<WorldPoint> path = new ArrayList<>(steps.size());
-		List<String> transports = new ArrayList<>();
+		List<Map<String, Object>> transports = new ArrayList<>();
 		for (int i = 0; i < steps.size(); i++)
 		{
 			path.add(WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
@@ -730,7 +795,12 @@ public class ShortestPathPlugin extends Plugin
 			{
 				for (Transport transport : transportsForEdge(steps.get(i - 1), steps.get(i)))
 				{
-					transports.add(formatTransportDisplay(transport));
+					Map<String, Object> edge = new HashMap<>();
+					edge.put("origin", WorldPointUtil.unpackWorldPoint(steps.get(i - 1).getPackedPosition()));
+					edge.put("destination", WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
+					edge.put("objectInfo", transport.getObjectInfo());
+					edge.put("displayInfo", formatTransportDisplay(transport));
+					transports.add(edge);
 				}
 			}
 		}
@@ -742,7 +812,41 @@ public class ShortestPathPlugin extends Plugin
 		data.put(PLUGIN_MESSAGE_TARGET, WorldPointUtil.unpackWorldPoint(result.getTarget()));
 		data.put("path", path);
 		data.put(PLUGIN_MESSAGE_TRANSPORTS, transports);
+		data.put("closest", WorldPointUtil.unpackWorldPoint(result.getClosestReachedPoint()));
+		PathTerminationReason reason = result.getTerminationReason();
+		data.put("reason", reason == null ? null : reason.name());
 		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
+	}
+
+	/**
+	 * Answers a query that produced no result: a malformed message, a plugin shutdown, a
+	 * cancelled search, or a failure while running.
+	 */
+	private void postQueryFailure(Object id, String reason)
+	{
+		Map<String, Object> data = new HashMap<>();
+		data.put(PLUGIN_MESSAGE_ID, id);
+		data.put("reached", false);
+		data.put("path", List.of());
+		data.put(PLUGIN_MESSAGE_TRANSPORTS, List.of());
+		data.put("reason", reason);
+		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
+	}
+
+	/**
+	 * A query that has been submitted to the executor: the caller's {@code id} plus the task's
+	 * future, so it can be answered or cancelled when the displayed path or plugin shutdown
+	 * takes precedence.
+	 */
+	private static class QueryTask
+	{
+		final Object id;
+		Future<?> future;
+
+		QueryTask(Object id)
+		{
+			this.id = id;
+		}
 	}
 
 	public void postPluginMessages()

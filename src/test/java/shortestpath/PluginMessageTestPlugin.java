@@ -224,6 +224,7 @@ public class PluginMessageTestPlugin extends Plugin
 		List<?> path = (List<?>) data.get("path");
 		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
 			"Query " + data.get("id") + ": reached=" + data.get("reached")
+				+ ", reason=" + data.get("reason")
 				+ ", " + path.size() + " steps, transports " + data.get("transports"), null);
 	}
 
