@@ -82,6 +82,13 @@ public class PathfinderConfig
 	// is re-derived from each transport), so the per-origin Set/HashMap/Integer-key map the loader
 	// produces is flattened here and not retained (issue #491).
 	private final Transport[] allTransports;
+	/**
+	 * Display view of every loaded transport, grouped by origin tile with POH origins
+	 * collapsed into the landing tile (same layout as the available-transport display
+	 * view). Used by overlays to render unavailable transports alongside available ones.
+	 */
+	@Getter
+	private final PrimitiveIntHashMap<Transport[]> allDisplayTransports;
 	private final Map<String, Set<Integer>> allDestinations;
 	private final Map<String, Set<Integer>> filteredDestinations;
 	/**
@@ -148,6 +155,7 @@ public class PathfinderConfig
 		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
 		remapPohDestinations(loadedTransports);
 		this.allTransports = flatten(loadedTransports);
+		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.allDestinations = Destination.loadAllFromResources();
@@ -167,6 +175,7 @@ public class PathfinderConfig
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = flatten(allTransports);
+		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.allDestinations = allDestinations;
@@ -625,6 +634,17 @@ public class PathfinderConfig
 			all.addAll(set);
 		}
 		return all.toArray(new Transport[0]);
+	}
+
+	private static PrimitiveIntHashMap<Transport[]> buildAllDisplayTransports(Transport[] transports)
+	{
+		TransportAvailability.Builder builder = new TransportAvailability.Builder(transports.length);
+		for (Transport transport : transports)
+		{
+			builder.add(transport);
+		}
+		builder.remapPohTransports();
+		return builder.build().getDisplayTransports();
 	}
 
 	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)

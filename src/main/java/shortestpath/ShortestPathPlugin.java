@@ -1120,6 +1120,15 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
+	 * Every loaded transport grouped by origin for display, including transports the
+	 * player cannot currently use. Same layout as {@link #getTransports()}.
+	 */
+	public PrimitiveIntHashMap<Transport[]> getAllDisplayTransports()
+	{
+		return pathfinderConfig.getAllDisplayTransports();
+	}
+
+	/**
 	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
 	 * <p>
 	 * The important detail is that path display logic is edge-based, not node-based:

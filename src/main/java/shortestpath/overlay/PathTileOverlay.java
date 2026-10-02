@@ -10,6 +10,7 @@ import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.PrimitiveIntHashMap;
 import shortestpath.PrimitiveIntList;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TileCounter;
@@ -52,16 +54,20 @@ public class PathTileOverlay extends Overlay
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
 
+	private static final Color COLOR_AVAILABLE = Color.WHITE;
+	private static final Color COLOR_UNAVAILABLE = Color.ORANGE;
+
 	private void renderTransports(Graphics2D graphics)
 	{
-		for (int a : plugin.getTransports().keys())
+		PrimitiveIntHashMap<Transport[]> allTransports = plugin.getAllDisplayTransports();
+		PrimitiveIntHashMap<Transport[]> availableTransports = plugin.getTransports();
+
+		for (int a : allTransports.keys())
 		{
 			if (a == Transport.UNDEFINED_ORIGIN)
 			{
 				continue; // skip teleports
 			}
-
-			boolean drawStart = false;
 
 			Point ca = tileCenter(a);
 
@@ -70,13 +76,20 @@ public class PathTileOverlay extends Overlay
 				continue;
 			}
 
+			boolean drawStart = false;
 			StringBuilder s = new StringBuilder();
-			for (Transport b : plugin.getTransports().getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
+			Transport[] availableAtOrigin = availableTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS);
+
+			for (Transport b : allTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
 			{
 				if (b == null || (b.getType() != null && b.getType().isTeleport()))
 				{
 					continue; // skip teleports
 				}
+
+				boolean isAvailable = Arrays.asList(availableAtOrigin).contains(b);
+				graphics.setColor(isAvailable ? COLOR_AVAILABLE : COLOR_UNAVAILABLE);
+
 				PrimitiveIntList destinations = WorldPointUtil.toLocalInstance(client, b.getDestination());
 				for (int i = 0; i < destinations.size(); i++)
 				{
