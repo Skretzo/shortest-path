@@ -786,7 +786,8 @@ public class PathfinderConfig
 			return false;
 		}
 
-		if (TransportType.SPIRIT_TREE.equals(type) || TransportType.SEASONAL_TRANSPORTS.equals(type))
+		if (TransportType.SPIRIT_TREE.equals(type) || TransportType.SEASONAL_TRANSPORTS.equals(type)
+			|| TransportType.TELEPORTATION_ITEM.equals(type))
 		{
 			return checkPlantedSpiritTrees(transport);
 		}
