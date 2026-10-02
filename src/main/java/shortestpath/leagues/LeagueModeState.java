@@ -87,6 +87,14 @@ public class LeagueModeState
 	@Getter
 	private boolean seasonal;
 
+	/**
+	 * Whether the player is on a Deadman Mode world ({@link WorldType#DEADMAN};
+	 * tournament worlds are flagged DEADMAN too). Tracked here because this
+	 * object already owns world-type detection.
+	 */
+	@Getter
+	private boolean deadman;
+
 	private Set<LeagueRegion> unlockedRegions = EnumSet.noneOf(LeagueRegion.class);
 
 	/**
@@ -105,11 +113,13 @@ public class LeagueModeState
 		if (client == null)
 		{
 			seasonal = false;
+			deadman = false;
 			unlockedRegions = EnumSet.noneOf(LeagueRegion.class);
 			return;
 		}
 		EnumSet<WorldType> worldTypes = client.getWorldType();
 		seasonal = worldTypes != null && worldTypes.contains(WorldType.SEASONAL);
+		deadman = worldTypes != null && worldTypes.contains(WorldType.DEADMAN);
 
 		EnumSet<LeagueRegion> next = EnumSet.noneOf(LeagueRegion.class);
 		if (seasonal)

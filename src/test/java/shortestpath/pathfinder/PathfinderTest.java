@@ -14,6 +14,7 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
+import net.runelite.api.WorldType;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
@@ -657,6 +658,13 @@ public class PathfinderTest
 		// behaviour goes through the same hasRequiredItems path as TELEPORTATION_ITEM
 		// and QUETZAL_WHISTLE. With the briefcase only in the bank, the transport
 		// should be unavailable until the path visits a bank tile.
+		// Seasonal transports only exist on seasonal worlds: Varlamore and
+		// Karamja are pre-unlocked, Kandarin (the briefcase destination) needs
+		// an unlock slot.
+		when(client.getWorldType()).thenReturn(EnumSet.of(WorldType.SEASONAL));
+		when(client.getVarbitValue(10662)).thenReturn(21);
+		when(client.getVarbitValue(10663)).thenReturn(2);
+		when(client.getVarbitValue(10664)).thenReturn(4);
 		when(config.useSeasonalTransports()).thenReturn(true);
 		when(config.includeBankPath()).thenReturn(true);
 		setupInventory();
@@ -684,6 +692,48 @@ public class PathfinderTest
 		assertFalse("Banker's Briefcase should not be used before the first bank visit",
 			usedTransportWithDisplayInfoBeforeFirstBank(pathfinder, TransportType.SEASONAL_TRANSPORTS,
 				"Banker's Briefcase: Kandarin - Catherby"));
+	}
+
+	@Test
+	public void testSeasonalTransportsNotUsableOnNormalWorld()
+	{
+		// Same setup as the briefcase test but on a normal world: the enabled
+		// toggle must not leak seasonal transports into non-seasonal worlds.
+		when(config.useSeasonalTransports()).thenReturn(true);
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(30361, 1));
+
+		int civitasEastApproach = WorldPointUtil.packWorldPoint(1735, 3093, 0);
+		int catherbyBriefcase = WorldPointUtil.packWorldPoint(2807, 3442, 0);
+
+		Pathfinder pathfinder = runPathfinder(civitasEastApproach, catherbyBriefcase);
+
+		assertFalse("Seasonal transports must not be used on a non-seasonal world",
+			usedTransportType(pathfinder, TransportType.SEASONAL_TRANSPORTS));
+	}
+
+	@Test
+	public void testSeasonalTransportsNotUsableOnDeadmanWorld()
+	{
+		// Deadman worlds are permanent-mode worlds, not seasonal worlds.
+		when(client.getWorldType()).thenReturn(EnumSet.of(WorldType.DEADMAN));
+		when(config.useSeasonalTransports()).thenReturn(true);
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(30361, 1));
+
+		int civitasEastApproach = WorldPointUtil.packWorldPoint(1735, 3093, 0);
+		int catherbyBriefcase = WorldPointUtil.packWorldPoint(2807, 3442, 0);
+
+		Pathfinder pathfinder = runPathfinder(civitasEastApproach, catherbyBriefcase);
+
+		assertFalse("Seasonal transports must not be used on a Deadman world",
+			usedTransportType(pathfinder, TransportType.SEASONAL_TRANSPORTS));
 	}
 
 	@Test
