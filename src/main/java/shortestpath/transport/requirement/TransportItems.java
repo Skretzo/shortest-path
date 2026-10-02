@@ -97,7 +97,7 @@ public class TransportItems
 			{
 				continue;
 			}
-			if (!usedOffhand && hasOwnedSubstitute(req.getOffhandIds(), itemCounts, req.getQuantity(), true))
+			if (!usedOffhand && hasOwnedOffhand(req, itemCounts))
 			{
 				usedOffhand = true;
 				continue;
@@ -113,8 +113,10 @@ public class TransportItems
 	}
 
 	/**
-	 * {@code true} if counted items pay this requirement, {@code false} if not,
-	 * {@code null} if the player has the items but they exceed the currency threshold.
+	 * {@code true} if counted items pay this requirement through any OR branch at that
+	 * branch's quantity, {@code false} if not, {@code null} if the player has the items
+	 * but every covering branch exceeds the currency threshold. A satisfied branch wins
+	 * over a blocked one, whatever their order.
 	 */
 	private static Boolean satisfiedByItems(
 		ItemRequirement req,
@@ -122,23 +124,42 @@ public class TransportItems
 		Set<Integer> currencies,
 		int currencyThreshold)
 	{
-		int[] itemIds = req.getItemIds();
-		if (itemIds == null)
+		boolean blocked = false;
+		for (ItemRequirement.Branch branch : req.getBranches())
 		{
-			return false;
-		}
-		int requiredQuantity = req.getQuantity();
-		for (int itemId : itemIds)
-		{
-			if (!hasQuantity(itemCounts, itemId, requiredQuantity, false))
+			int[] itemIds = branch.getItemIds();
+			if (itemIds == null)
 			{
 				continue;
 			}
-			if (currencies != null && currencies.contains(itemId) && requiredQuantity > currencyThreshold)
+			for (int itemId : itemIds)
 			{
-				return null;
+				if (!hasQuantity(itemCounts, itemId, branch.getQuantity(), false))
+				{
+					continue;
+				}
+				if (currencies != null && currencies.contains(itemId) && branch.getQuantity() > currencyThreshold)
+				{
+					blocked = true;
+					break;
+				}
+				return true;
 			}
-			return true;
+		}
+		return blocked ? null : false;
+	}
+
+	/**
+	 * {@code true} when any OR branch has an owned offhand id at that branch's quantity.
+	 */
+	private static boolean hasOwnedOffhand(ItemRequirement req, Map<Integer, Integer> itemCounts)
+	{
+		for (ItemRequirement.Branch branch : req.getBranches())
+		{
+			if (hasOwnedSubstitute(branch.getOffhandIds(), itemCounts, branch.getQuantity(), true))
+			{
+				return true;
+			}
 		}
 		return false;
 	}
@@ -148,7 +169,11 @@ public class TransportItems
 		Set<Integer> candidates = null;
 		for (ItemRequirement req : leftover)
 		{
-			Set<Integer> ownedStaves = ownedIds(req.getStaffIds(), itemCounts, req.getQuantity(), true);
+			Set<Integer> ownedStaves = new HashSet<>();
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				ownedStaves.addAll(ownedIds(branch.getStaffIds(), itemCounts, branch.getQuantity(), true));
+			}
 			if (ownedStaves.isEmpty())
 			{
 				return false;
@@ -201,43 +226,72 @@ public class TransportItems
 		return requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0;
 	}
 
-	// Legacy getters for backwards compatibility
+	// Legacy getters for backwards compatibility. They emit one row per OR
+	// branch, in requirement order and then branch order; a requirement
+	// without OR alternatives still gives one row. Use size() or
+	// getRequirements() to count AND groups.
+	private int branchCount()
+	{
+		int n = 0;
+		for (ItemRequirement req : requirements)
+		{
+			n += req.getBranches().size();
+		}
+		return n;
+	}
+
 	public int[][] getItems()
 	{
-		int[][] items = new int[requirements.size()][];
-		for (int i = 0; i < requirements.size(); i++)
+		int[][] items = new int[branchCount()][];
+		int i = 0;
+		for (ItemRequirement req : requirements)
 		{
-			items[i] = requirements.get(i).getItemIds();
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				items[i++] = branch.getItemIds();
+			}
 		}
 		return items;
 	}
 
 	public int[][] getStaves()
 	{
-		int[][] staves = new int[requirements.size()][];
-		for (int i = 0; i < requirements.size(); i++)
+		int[][] staves = new int[branchCount()][];
+		int i = 0;
+		for (ItemRequirement req : requirements)
 		{
-			staves[i] = requirements.get(i).getStaffIds();
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				staves[i++] = branch.getStaffIds();
+			}
 		}
 		return staves;
 	}
 
 	public int[][] getOffhands()
 	{
-		int[][] offhands = new int[requirements.size()][];
-		for (int i = 0; i < requirements.size(); i++)
+		int[][] offhands = new int[branchCount()][];
+		int i = 0;
+		for (ItemRequirement req : requirements)
 		{
-			offhands[i] = requirements.get(i).getOffhandIds();
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				offhands[i++] = branch.getOffhandIds();
+			}
 		}
 		return offhands;
 	}
 
 	public int[] getQuantities()
 	{
-		int[] quantities = new int[requirements.size()];
-		for (int i = 0; i < requirements.size(); i++)
+		int[] quantities = new int[branchCount()];
+		int i = 0;
+		for (ItemRequirement req : requirements)
 		{
-			quantities[i] = requirements.get(i).getQuantity();
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				quantities[i++] = branch.getQuantity();
+			}
 		}
 		return quantities;
 	}

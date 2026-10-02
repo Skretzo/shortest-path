@@ -9,6 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.parser.ItemRequirementParser;
 import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.VarRequirement;
 import shortestpath.transport.requirement.TransportItems;
@@ -440,31 +441,17 @@ public class TransportLoaderTest
 		int[][] requiredItems = items.getItems();
 		int[] quantities = items.getQuantities();
 
-		Assert.assertEquals("Should have one item requirement (OR group)", 1, requiredItems.length);
-		Assert.assertEquals("Should have one quantity requirement", 1, quantities.length);
+		Assert.assertEquals("Should have one item requirement (OR group)", 1, items.size());
+		Assert.assertEquals("Should have one row per OR alternative", 2, requiredItems.length);
+		Assert.assertEquals("Should have one quantity per OR alternative", 2, quantities.length);
 
-		// The OR group should contain both items
-		int[] itemGroup = requiredItems[0];
-		Assert.assertEquals("Should have two items in OR group", 2, itemGroup.length);
+		// Each OR alternative keeps its own item ids and quantity
+		Assert.assertArrayEquals(new int[]{995}, requiredItems[0]);
+		Assert.assertArrayEquals(new int[]{561}, requiredItems[1]);
+		Assert.assertArrayEquals(new int[]{5, 10}, quantities);
 
-		// Should contain both coins and nature runes
-		boolean hasCoins = false, hasNatureRunes = false;
-		for (int itemId : itemGroup)
-		{
-			if (itemId == 995)
-			{
-				hasCoins = true;
-			}
-			if (itemId == 561)
-			{
-				hasNatureRunes = true;
-			}
-		}
-		Assert.assertTrue("Should contain coins", hasCoins);
-		Assert.assertTrue("Should contain nature runes", hasNatureRunes);
-
-		// Quantity should be the maximum (10)
-		Assert.assertEquals("Quantity should be max of OR group", 10, quantities[0]);
+		// The flat requirement still exposes both alternatives
+		Assert.assertArrayEquals(new int[]{995, 561}, items.getRequirements().get(0).getItemIds());
 	}
 
 	@Test
@@ -479,9 +466,22 @@ public class TransportLoaderTest
 		Transport transport = getFirstTransport(transports.get(origin));
 		TransportItems items = transport.getItemRequirements();
 
-		// Expected semantic behavior: one Shantay pass should satisfy the first branch.
-		// The current flattened Java representation uses max(quantity), so this fails.
+		// Each OR branch keeps its own quantity.
 		Assert.assertEquals("Shantay pass branch should retain quantity 1", 1, items.getQuantities()[0]);
+		Assert.assertEquals("Coins branch should retain quantity 5", 5, items.getQuantities()[1]);
+		Assert.assertEquals("OR alternatives form a single requirement", 1, items.size());
+	}
+
+	@Test
+	public void testOrBranchQuantitiesAffectEquality()
+	{
+		TransportItems first = new ItemRequirementParser().parse("SHANTAY_PASS=1|COINS=5");
+		TransportItems same = new ItemRequirementParser().parse("SHANTAY_PASS=1|COINS=5");
+		TransportItems swapped = new ItemRequirementParser().parse("SHANTAY_PASS=5|COINS=1");
+
+		Assert.assertEquals(first, same);
+		Assert.assertEquals(first.hashCode(), same.hashCode());
+		Assert.assertNotEquals(first, swapped);
 	}
 
 	@Test
@@ -539,9 +539,11 @@ public class TransportLoaderTest
 		int[][] requiredItems = items.getItems();
 		int[] quantities = items.getQuantities();
 
-		// Should have 3 item groups: coins AND (nature|air) runes AND earth runes
-		Assert.assertEquals("Should have three item groups", 3, requiredItems.length);
-		Assert.assertEquals("Should have three quantities", 3, quantities.length);
+		// Should have 3 item groups: coins AND (nature|air) runes AND earth runes,
+		// with one getter row per OR branch
+		Assert.assertEquals("Should have three item requirements", 3, items.size());
+		Assert.assertEquals("Should have four branch rows", 4, requiredItems.length);
+		Assert.assertArrayEquals("Per-branch quantities", new int[]{50, 5, 10, 3}, quantities);
 	}
 
 	@Test
