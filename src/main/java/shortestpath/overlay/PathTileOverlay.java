@@ -229,7 +229,7 @@ public class PathTileOverlay extends Overlay
 				}
 			}
 
-			if (plugin.isPathUnreachable())
+			if (plugin.isPathUnreachable() && plugin.showUnreachableText)
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
 			}
