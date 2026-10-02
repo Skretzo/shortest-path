@@ -73,6 +73,14 @@ public class PathfinderConfig
 		new int[][]{null},
 		new int[]{1});
 
+	/**
+	 * Item ids that only exist on Deadman Mode worlds ({@code WorldType.DEADMAN}).
+	 * Transports requiring them are filtered out on every other world type,
+	 * regardless of the teleportation-item setting.
+	 */
+	private static final Set<Integer> DEADMAN_ONLY_ITEM_IDS = Set.of(
+		ItemID.MAGIC_ROCK_OF_FAIRIES);
+
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
 	/**
@@ -877,6 +885,21 @@ public class PathfinderConfig
 			return true; // Not a teleportation item type
 		}
 
+		// Seasonal transports only exist on seasonal worlds; a lingering config
+		// toggle must not leak them into normal worlds.
+		if (TransportType.SEASONAL_TRANSPORTS.equals(type) && !leagueModeState.isSeasonal())
+		{
+			return false;
+		}
+
+		// Mode-locked items (e.g. the Deadman-only Trinket of fairies) can never
+		// be obtained on other world types, even when the ALL/UNLOCKED settings
+		// bypass the inventory check.
+		if (!leagueModeState.isDeadman() && requiresModeLockedItem(transport, DEADMAN_ONLY_ITEM_IDS))
+		{
+			return false;
+		}
+
 		switch (transportTypeConfig.getTeleportationItemSetting())
 		{
 			case ALL:
@@ -894,6 +917,38 @@ public class PathfinderConfig
 				return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Whether the transport has an item requirement that can only be satisfied
+	 * by mode-locked items — every alternative in some requirement branch is in
+	 * {@code modeLockedItemIds}. A branch that also lists a normal item keeps
+	 * the transport usable on every world.
+	 */
+	private static boolean requiresModeLockedItem(Transport transport, Set<Integer> modeLockedItemIds)
+	{
+		TransportItems itemRequirements = transport.getItemRequirements();
+		if (itemRequirements == null)
+		{
+			return false;
+		}
+		for (int[] alternatives : itemRequirements.getItems())
+		{
+			boolean allLocked = alternatives.length > 0;
+			for (int itemId : alternatives)
+			{
+				if (!modeLockedItemIds.contains(itemId))
+				{
+					allLocked = false;
+					break;
+				}
+			}
+			if (allLocked)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
