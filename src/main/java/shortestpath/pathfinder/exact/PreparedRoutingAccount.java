@@ -97,6 +97,16 @@ public final class PreparedRoutingAccount
 	{
 		return view(local, banked).maxWilderness[index];
 	}
+	/**
+	 * The local transport's action class: entries in one layer share a class exactly when they are
+	 * the same game action (type, object and menu option, display text, consumption and item
+	 * requirements) to the same destination at the same cost, differing at most in origin. Taking
+	 * any of them leads to the same state, so a route may take the action from whichever origin.
+	 */
+	public int localActionClass(boolean banked, int index)
+	{
+		return view(local, banked).actionClasses[index];
+	}
 	public int globalCount(boolean banked)
 	{
 		return view(global, banked).count;
@@ -204,8 +214,10 @@ public final class PreparedRoutingAccount
 		final int[] costs;
 		final int[] types;
 		final int[] maxWilderness;
+		final int[] actionClasses;
 
-		private View(boolean local, int[] origins, int[] destinations, int[] costs, int[] types, int[] maxWilderness)
+		private View(boolean local, int[] origins, int[] destinations, int[] costs, int[] types, int[] maxWilderness,
+			int[] actionClasses)
 		{
 			this.local = local;
 			this.count = destinations.length;
@@ -214,11 +226,12 @@ public final class PreparedRoutingAccount
 			this.costs = costs;
 			this.types = types;
 			this.maxWilderness = maxWilderness;
+			this.actionClasses = actionClasses;
 		}
 
 		static View empty(boolean local)
 		{
-			return new View(local, new int[0], new int[0], new int[0], new int[0], new int[0]);
+			return new View(local, new int[0], new int[0], new int[0], new int[0], new int[0], new int[0]);
 		}
 
 		static View local(PrimitiveIntHashMap<Transport[]> map, ToIntFunction<Transport> additionalCost)
@@ -258,6 +271,8 @@ public final class PreparedRoutingAccount
 		private int[] costs = new int[16];
 		private int[] types = new int[16];
 		private int[] maxWilderness = new int[16];
+		private int[] actionClasses = new int[16];
+		private final java.util.Map<java.util.List<Object>, Integer> actionClassIds = new java.util.HashMap<>();
 
 		Builder(boolean local)
 		{
@@ -274,13 +289,25 @@ public final class PreparedRoutingAccount
 				costs = Arrays.copyOf(costs, capacity);
 				types = Arrays.copyOf(types, capacity);
 				maxWilderness = Arrays.copyOf(maxWilderness, capacity);
+				actionClasses = Arrays.copyOf(actionClasses, capacity);
 			}
 			origins[size] = origin;
 			destinations[size] = transport.getDestination();
 			costs[size] = ExactCosts.add(transport.getDuration(), additionalCost.applyAsInt(transport));
 			types[size] = transport.getType().ordinal();
 			maxWilderness[size] = transport.getMaxWildernessLevel();
+			actionClasses[size] = actionClass(transport, costs[size]);
 			size++;
+		}
+
+		private int actionClass(Transport transport, int cost)
+		{
+			// An action without an object description is never grouped: a class of its own, below zero.
+			if (!local || transport.getObjectInfo() == null) return -1 - size;
+			java.util.List<Object> key = java.util.Arrays.asList(transport.getType(), transport.getDestination(), cost,
+				transport.getMaxWildernessLevel(), transport.getObjectInfo(), transport.getDisplayInfo(),
+				transport.isConsumable(), transport.getItemRequirements());
+			return actionClassIds.computeIfAbsent(key, k -> actionClassIds.size());
 		}
 
 		View build()
@@ -296,6 +323,7 @@ public final class PreparedRoutingAccount
 			int[] sortedCosts = new int[size];
 			int[] sortedTypes = new int[size];
 			int[] sortedMaxWilderness = new int[size];
+			int[] sortedActionClasses = new int[size];
 			for (int i = 0; i < size; i++)
 			{
 				int from = order[i];
@@ -304,8 +332,10 @@ public final class PreparedRoutingAccount
 				sortedCosts[i] = costs[from];
 				sortedTypes[i] = types[from];
 				sortedMaxWilderness[i] = maxWilderness[from];
+				sortedActionClasses[i] = actionClasses[from];
 			}
-			return new View(local, sortedOrigins, sortedDestinations, sortedCosts, sortedTypes, sortedMaxWilderness);
+			return new View(local, sortedOrigins, sortedDestinations, sortedCosts, sortedTypes, sortedMaxWilderness,
+				sortedActionClasses);
 		}
 
 		private int compare(int left, int right)

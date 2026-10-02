@@ -121,6 +121,9 @@ public class DebugOverlayPanel extends OverlayPanel
 		if (exact != null)
 		{
 			components.add(makeLine("  Forward search:", millis(exact.getForwardSearchNanos())));
+			components.add(makeLine("  Walk canonicalize:", millis(exact.getWalkCanonicalizeNanos())));
+			if (!exact.getWalkDiagnostics().isEmpty())
+				components.add(makeLine("  Legs kept as found:", Integer.toString(exact.getWalkDiagnostics().size())));
 			components.add(makeLine("  Target prep:", exact.isTargetReused() ? "reused"
 				: millis(exact.getReverseSearchNanos() + exact.getHeuristicPrepareNanos())));
 			components.add(makeLine("  Graph prep:", exact.isGraphReused() ? "reused"

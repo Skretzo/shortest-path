@@ -44,16 +44,16 @@ public final class ExactForwardSearch
 		if (heuristic.overlay() != target) throw new IllegalArgumentException("heuristic belongs to another target overlay");
 		validateHeuristicWeight(heuristicWeight);
 		SearchSpace space = SearchSpace.create(target, start);
-		Capability capability = capabilityAt(start);
+		TeleportCapability capability = capabilityAt(start);
 		int tileStates = space.tileCount * 2;
-		int stateCount = tileStates + (capability == Capability.ALL ? 0 : 4);
+		int stateCount = tileStates + (capability == TeleportCapability.ALL ? 0 : 4);
 		int[] best = new int[stateCount]; Arrays.fill(best, ExactCosts.INF);
 		int[] previous = new int[stateCount];
-		boolean restrictedHeuristic = capability != Capability.ALL && hasGlobals(target.account());
+		boolean restrictedHeuristic = capability != TeleportCapability.ALL && hasGlobals(target.account());
 		MutableCounters counters = new MutableCounters(capability, !restrictedHeuristic);
 		int[] bestBankCost = {ExactCosts.INF};
 		int[] globalBounds = restrictedHeuristic ? globalBounds(target, heuristic, space) : null;
-		List<PathStep> startPath = List.of(new PathStep(start, false));
+		ExactRoute startPath = ExactRoute.of(List.of(new PathStep(start, false)), new int[1]);
 		Closest closest = new Closest(target);
 		if (cancelled.getAsBoolean()) return Result.cancelled(counters.snapshot(bestBankCost[0]), startPath);
 
@@ -71,7 +71,7 @@ public final class ExactForwardSearch
 		{
 			counters.heuristicUnreachable++;
 		}
-		if (capability == Capability.WILDERNESS)
+		if (capability == TeleportCapability.WILDERNESS)
 		{
 			int hub = hub(tileStates, false, false);
 			best[hub] = 0;
@@ -84,7 +84,7 @@ public final class ExactForwardSearch
 		{
 			if (cancelled.getAsBoolean())
 				return Result.cancelled(counters.snapshot(bestBankCost[0]), startPath,
-					closest.path(space, startState, previous, startPath), closest.cost());
+					closest.path(space, startState, previous, best, startPath), closest.cost());
 			int state = queue.state(), cost = queue.cost(), queuedPriority = queue.priority();
 			if (cost != best[state])
 	{ counters.staleEntries++; continue;
@@ -97,7 +97,7 @@ public final class ExactForwardSearch
 			int node = state / 2;
 			boolean banked = (state & 1) != 0;
 			int tile = space.tile(node);
-			if (capability != Capability.ALL)
+			if (capability != TeleportCapability.ALL)
 				activateGlobal(tile, state, banked, tileStates, cost, best, previous, queue, counters);
 			int currentH = effectiveHeuristic(heuristic, space, state, cost, best, restrictedHeuristic, globalBounds,
 				optimized, bestBankCost[0], counters);
@@ -111,7 +111,7 @@ public final class ExactForwardSearch
 			}
 			counters.statesPopped++;
 			if (target.isTarget(tile))
-				return Result.reached(cost, state, counters.snapshot(bestBankCost[0]), reconstruct(space, startState, state, previous));
+				return Result.reached(cost, state, counters.snapshot(bestBankCost[0]), reconstruct(space, startState, state, previous, best));
 			closest.consider(state, tile, cost);
 			if (space.isBase(node))
 			{
@@ -128,7 +128,7 @@ public final class ExactForwardSearch
 			relaxLocalTransports(target, space, tile, banked, state, cost, best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 		}
 		return Result.unreachable(counters.snapshot(bestBankCost[0]), startPath,
-			closest.path(space, startState, previous, startPath), closest.cost());
+			closest.path(space, startState, previous, best, startPath), closest.cost());
 	}
 
 	/**
@@ -166,9 +166,9 @@ public final class ExactForwardSearch
 			}
 		}
 
-		List<PathStep> path(SearchSpace space, int startState, int[] previous, List<PathStep> startPath)
+		ExactRoute path(SearchSpace space, int startState, int[] previous, int[] best, ExactRoute startPath)
 		{
-			return state < 0 ? startPath : reconstruct(space, startState, state, previous);
+			return state < 0 ? startPath : reconstruct(space, startState, state, previous, best);
 		}
 
 		int cost()
@@ -227,12 +227,12 @@ public final class ExactForwardSearch
 	private static void relaxBank(TargetOverlay target, SearchSpace space, int node, boolean banked, int from, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight,
-		Capability capability, int[] bestBankCost)
+		TeleportCapability capability, int[] bestBankCost)
 	{
 		if (banked || !target.account().bankPathEnabled() || !space.isReachableBankNode(node)) return;
 		relaxState(space, from, stateForNode(node, true), cost, 0, best, previous, queue, counters,
 			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_BANKING);
-		if (capability == Capability.ALL)
+		if (capability == TeleportCapability.ALL)
 			for (int i = 0; i < target.account().globalCount(true); i++)
 				if (!optimized || cost <= bestBankCost[0])
 					relaxTransport(space, from, true, cost, target.account().globalDestination(true, i), target.account().globalCost(true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
@@ -282,12 +282,12 @@ public final class ExactForwardSearch
 		if (pushKind == PUSH_LOCAL || pushKind == PUSH_GLOBAL) counters.successfulTransportRelaxations++;
 	}
 
-	private static void seedGlobals(TargetOverlay target, Capability capability, int[] best, int[] previous,
+	private static void seedGlobals(TargetOverlay target, TeleportCapability capability, int[] best, int[] previous,
 		ExactMinHeap queue, MutableCounters counters, int startState, SearchSpace space, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
-		if (capability == Capability.NONE) return;
-		boolean wilderness = capability == Capability.WILDERNESS;
+		if (capability == TeleportCapability.NONE) return;
+		boolean wilderness = capability == TeleportCapability.WILDERNESS;
 		int count = wilderness ? target.account().wildernessGlobalCount(false) : target.account().globalCount(false);
 		for (int i = 0; i < count; i++)
 		{
@@ -317,9 +317,9 @@ public final class ExactForwardSearch
 	private static void activateGlobal(int tile, int from, boolean banked, int tileStates, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters)
 	{
-		Capability capability = capabilityAt(tile);
-		if (capability == Capability.NONE) return;
-		int state = hub(tileStates, capability == Capability.ALL, banked);
+		TeleportCapability capability = capabilityAt(tile);
+		if (capability == TeleportCapability.NONE) return;
+		int state = hub(tileStates, capability == TeleportCapability.ALL, banked);
 		if (cost < best[state])
 		{
 			boolean newState = best[state] == ExactCosts.INF;
@@ -351,13 +351,37 @@ public final class ExactForwardSearch
 		}
 	}
 
-	private static List<PathStep> reconstruct(SearchSpace space, int start, int terminal, int[] previous)
+	private static ExactRoute reconstruct(SearchSpace space, int start, int terminal, int[] previous, int[] best)
 	{
+		int tileStates = space.tileCount * 2;
 		ArrayList<PathStep> result = new ArrayList<>();
-		for (int state = terminal; state != start; state = previous[state])
-			if (state < space.tileCount * 2) result.add(new PathStep(space.tile(state / 2), (state & 1) != 0));
-		result.add(new PathStep(space.tile(start / 2), (start & 1) != 0));
-		java.util.Collections.reverse(result); return result;
+		int[] costs = new int[16];
+		byte[] arrivals = new byte[16];
+		int count = 0;
+		for (int state = terminal; ; state = previous[state])
+		{
+			if (state >= tileStates) continue;
+			if (count == costs.length)
+			{
+				costs = Arrays.copyOf(costs, count * 2);
+				arrivals = Arrays.copyOf(arrivals, count * 2);
+			}
+			result.add(new PathStep(space.tile(state / 2), (state & 1) != 0));
+			costs[count] = state == start ? 0 : best[state];
+			int from = state == start ? start : previous[state];
+			arrivals[count++] = from < tileStates ? ExactRoute.FROM_STEP
+				: from >= tileStates + 2 ? ExactRoute.FROM_ALL_HUB : ExactRoute.FROM_WILDERNESS_HUB;
+			if (state == start) break;
+		}
+		java.util.Collections.reverse(result);
+		int[] forwardCosts = new int[count];
+		byte[] forwardArrivals = new byte[count];
+		for (int i = 0; i < count; i++)
+		{
+			forwardCosts[i] = costs[count - 1 - i];
+			forwardArrivals[i] = arrivals[count - 1 - i];
+		}
+		return new ExactRoute(result, forwardArrivals, forwardCosts);
 	}
 
 	private static int heuristic(PreparedHeuristic heuristic, SearchSpace space, int state)
@@ -408,7 +432,7 @@ public final class ExactForwardSearch
 		}
 		boolean allGlobalsActivated = restrictedHeuristic
 			&& best[hub(space.tileCount * 2, true, banked)] <= cost;
-		if (restrictedHeuristic && (capabilityAt(space.tile(state / 2)) != Capability.ALL
+		if (restrictedHeuristic && (capabilityAt(space.tile(state / 2)) != TeleportCapability.ALL
 			|| !allGlobalsActivated))
 		{
 			counters.restrictedHeuristicStates++;
@@ -484,20 +508,9 @@ public final class ExactForwardSearch
 	private static final int PUSH_BANKING = 4;
 	private static final int PUSH_REKEY = 5;
 
-	private enum Capability
+	private static TeleportCapability capabilityAt(int tile)
 	{
-		NONE, WILDERNESS, ALL
-	}
-	private static Capability capabilityAt(int tile)
-	{
-		int x = WorldPointUtil.unpackWorldX(tile), y = WorldPointUtil.unpackWorldY(tile);
-		if (inArea(x, y, 2944, 3760, 448, 448) || inArea(x, y, 2944, 10155, 518, 221)) return Capability.NONE;
-		if (inArea(x, y, 2944, 3680, 448, 448) || inArea(x, y, 2944, 10075, 518, 301)) return Capability.WILDERNESS;
-		return Capability.ALL;
-	}
-	private static boolean inArea(int x, int y, int left, int bottom, int width, int height)
-	{
-		return x >= left && x < left + width && y >= bottom && y < bottom + height;
+		return TeleportCapability.at(tile);
 	}
 	private static int hub(int tileStates, boolean all, boolean banked)
 	{
@@ -517,23 +530,23 @@ public final class ExactForwardSearch
 		private final boolean reached, cancelled;
 		private final int cost, terminalState, closestCost;
 		private final Counters counters;
-		private final List<PathStep> path, closestPath;
-		private Result(boolean reached, boolean cancelled, int cost, int terminalState, Counters counters, List<PathStep> path,
-			List<PathStep> closestPath, int closestCost)
+		private final ExactRoute path, closestPath;
+		private Result(boolean reached, boolean cancelled, int cost, int terminalState, Counters counters, ExactRoute path,
+			ExactRoute closestPath, int closestCost)
 		{
 			this.reached = reached; this.cancelled = cancelled; this.cost = cost; this.terminalState = terminalState; this.counters = counters; this.path = path;
 			this.closestPath = closestPath; this.closestCost = closestCost;
 		}
-		static Result reached(int cost, int state, Counters counters, List<PathStep> path)
+		static Result reached(int cost, int state, Counters counters, ExactRoute path)
 	{ return new Result(true, false, cost, state, counters, path, path, cost);
 	}
-		static Result unreachable(Counters counters, List<PathStep> path, List<PathStep> closestPath, int closestCost)
+		static Result unreachable(Counters counters, ExactRoute path, ExactRoute closestPath, int closestCost)
 	{ return new Result(false, false, ExactCosts.INF, -1, counters, path, closestPath, closestCost);
 	}
-		static Result cancelled(Counters counters, List<PathStep> path)
+		static Result cancelled(Counters counters, ExactRoute path)
 	{ return cancelled(counters, path, path, 0);
 	}
-		static Result cancelled(Counters counters, List<PathStep> path, List<PathStep> closestPath, int closestCost)
+		static Result cancelled(Counters counters, ExactRoute path, ExactRoute closestPath, int closestCost)
 	{ return new Result(false, true, ExactCosts.INF, -1, counters, path, closestPath, closestCost);
 	}
 		public boolean reached()
@@ -552,10 +565,18 @@ public final class ExactForwardSearch
 	{ return counters;
 	}
 		public List<PathStep> path()
+	{ return path.steps();
+	}
+		/** {@link #path()} with the search's knowledge of how each step was reached. */
+		public ExactRoute route()
 	{ return path;
 	}
 		/** Route to the popped tile nearest a target; the full route when a target was reached. */
 		public List<PathStep> closestPath()
+	{ return closestPath.steps();
+	}
+		/** {@link #closestPath()} with the search's knowledge of how each step was reached. */
+		public ExactRoute closestRoute()
 	{ return closestPath;
 	}
 		/** Cost of {@link #closestPath()}. */
@@ -700,7 +721,7 @@ public final class ExactForwardSearch
 		int restrictedHeuristicZeroes;
 		final String initialCapability;
 		final boolean normalHeuristicEnabledAtStart;
-		MutableCounters(Capability initialCapability, boolean normalHeuristicEnabledAtStart)
+		MutableCounters(TeleportCapability initialCapability, boolean normalHeuristicEnabledAtStart)
 		{
 			this.initialCapability = initialCapability.name();
 			this.normalHeuristicEnabledAtStart = normalHeuristicEnabledAtStart;
