@@ -3,7 +3,7 @@
 # Varrock Teleport								
 3213 3424 0	AIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1	25 Magic		4	Varrock Teleport	20	4070=0	
 # Varbit 4480 is DIARY_VARROCK_MEDIUM								
-3165 3479 0	AIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1	25 Magic		4	Varrock Teleport: GE	20	4070=0;4480=1	
+3165 3479 0	AIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1	25 Magic		4	Varrock Teleport: Grand Exchange	20	4070=0;4480=1	
 								
 # Lumbridge Teleport								
 3221 3218 0	AIR_RUNE=3&&EARTH_RUNE=1&&LAW_RUNE=1	31 Magic		4	Lumbridge Teleport	20	4070=0	
@@ -14,8 +14,8 @@
 # Teleport to House - These depend on the current player's home location  determined by varbit 2187								
 # Varbit 4744 is the Teleport to House mode, 0 = Inside, 1 = Outside. As both options are always available, we list								
 # each option twice, only specifying (Inside) or (Outside) if that is not the default mode selected by the player.								
-1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;4744=0	
-1923 5709 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Inside)	20	4070=0;4744=0;4744=1	
+1858 7051 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;4744=0	
+1858 7051 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Inside)	20	4070=0;4744=1	
 # 1 - Rimmington								
 2953 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=1;4744=1	
 2953 3224 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=1;4744=0	
@@ -34,15 +34,15 @@
 # 6 - Yanille								
 2544 3096 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=6;4744=1	
 2544 3096 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=6;4744=0	
-# 7 - Prifddinas								
-3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=7;4744=1	
-3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=7;4744=0	
 # 8 - Hosidius								
 1743 3517 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=8;4744=1	
 1743 3517 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=8;4744=0	
-# 9 - Aldarin								
-1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=9;4744=1	
-1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=9;4744=0	
+# 9 - Prifddinas								
+3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=9;4744=1	
+3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=9;4744=0	
+# 13 - Aldarin								
+1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House	20	4070=0;2187=13;4744=1	
+1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=13;4744=0	
 								
 # Camelot Teleport								
 2757 3479 0	AIR_RUNE=5&&LAW_RUNE=1	45 Magic		4	Camelot Teleport	20	4070=0	
@@ -67,7 +67,7 @@
 2890 3679 0	FIRE_RUNE=2&&LAW_RUNE=2	61 Magic	Eadgar's Ruse	4	Trollheim Teleport	20	4070=0	
 								
 # Ape Atoll Teleport								
-2797 2798 1	FIRE_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2&&BANANA=1	64 Magic	Freeing King Awowogei	4	Ape Atoll Teleport	20	4070=0	
+2797 2798 1	FIRE_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2&&BANANA=1	64 Magic	Recipe for Disaster - King Awowogei	4	Ape Atoll Teleport	20	4070=0	
 								
 # Ancient Spellbook - Varbit 4070=1								
 # Paddewwa Teleport								

@@ -37,8 +37,8 @@
 1554 3461 0			22941=1		4	Rada's blessing: Kourend Woodland	T	20	7925=1;7937<3	
 1554 3461 0			22943=1		4	Rada's blessing: Kourend Woodland	T	20	7926=1;7937<5	
 1554 3461 0			22945=1||22947=1		4	Rada's blessing: Kourend Woodland	F	20	7927=1	
-1311 3806 0			22945=1		4	Rada's blessing: Mount Karuulm	T	20	7927=1;7938<3	
-1311 3806 0			22947=1		4	Rada's blessing: Mount Karuulm	F	20	7928=1	
+1310 3796 0			22945=1		4	Rada's blessing: Mount Karuulm	T	20	7927=1;7938<3	
+1310 3796 0			22947=1		4	Rada's blessing: Mount Karuulm	F	20	7928=1	
 										
 # Games necklace										
 2520 3571 0			3853=1||3855=1||3857=1||3859=1||3861=1||3863=1||3865=1||3867=1		4	Games necklace: Barbarian Outpost	T	20		
@@ -117,8 +117,8 @@
 										
 # Teleport to house (tablet) - These depend on the current player's home location, determined by varbit 2187, and teleport inside or outside determined by varbit 4744										
 # Shows (Inside) or (Outside) only if that is not the current default for the player.										
-1923 5709 0			8013=1		4	Teleport to House tablet	T	20	4744=0	
-1923 5709 0			8013=1		4	Teleport to House tablet (Inside)	T	20	4744=1	
+1858 7051 0			8013=1		4	Teleport to House tablet	T	20	4744=0	
+1858 7051 0			8013=1		4	Teleport to House tablet (Inside)	T	20	4744=1	
 # 1 - Rimmington										
 2953 3224 0			8013=1		4	Teleport to House tablet	T	20	2187=1;4744=1	
 2953 3224 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=1;4744=0	
@@ -137,15 +137,15 @@
 # 6 - Yanille										
 2544 3096 0			8013=1		4	Teleport to House tablet	T	20	2187=6;4744=1	
 2544 3096 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=6;4744=0	
-# 7 - Prifddinas										
-3239 6076 0			8013=1		4	Teleport to House tablet	T	20	2187=7;4744=1	
-3239 6076 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=7;4744=0	
 # 8 - Hosidius										
 1743 3517 0			8013=1		4	Teleport to House tablet	T	20	2187=8;4744=1	
 1743 3517 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=8;4744=0	
-# 9 - Aldarin										
-1422 2963 0			8013=1		4	Teleport to House tablet	T	20	2187=9;4744=1	
-1422 2963 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=9;4744=0	
+# 9 - Prifddinas										
+3239 6076 0			8013=1		4	Teleport to House tablet	T	20	2187=9;4744=1	
+3239 6076 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=9;4744=0	
+# 13 - Aldarin										
+1422 2963 0			8013=1		4	Teleport to House tablet	T	20	2187=13;4744=1	
+1422 2963 0			8013=1		4	Teleport to House tablet (Outside)	T	20	2187=13;4744=0	
 										
 #  Teleport tablets										
 3213 3424 0			8007=1		4	Varrock tablet	T	20		
@@ -232,25 +232,25 @@
 # Capes										
 2931 3286 0		99 Crafting	9780=1||9781=1		4	Crafting cape: Teleport	F	20		
 # The Construction cape's home teleports, determined by varbit 2187, and teleport inside or outside determined by varbit 4744										
-1923 5709 0			9789=1||9790=1		4	Construction cape: Tele to POH	F	20	4744=0	
+1858 7051 0		99 Construction	9789=1||9790=1		4	Construction cape: Tele to POH	F	20	4744=0	
 # 1 - Rimmington										
-2952 3224 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=1;4744=1	
+2952 3224 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=1;4744=1	
 # 2 - Taverly										
-2892 3465 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=2;4744=1	
+2892 3465 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=2;4744=1	
 # 3 - Pollnivneach										
-3339 3001 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=3;4744=1	
+3339 3001 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=3;4744=1	
 # 4 - Rellekka										
-2669 3629 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=4;4744=1	
+2669 3629 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=4;4744=1	
 # 5 - Brimhaven										
-2756 3176 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=5;4744=1	
+2756 3176 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=5;4744=1	
 # 6 - Yanille										
-2545 3097 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=6;4744=1	
-# 7 - Prifddinas										
-3239 6077 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=7;4744=1	
+2545 3097 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=6;4744=1	
 # 8 - Hosidius										
-1740 3517 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=8;4744=1	
-# 9 - Aldarin										
-1422 2963 0			9789=1||9790=1		4	Construction cape: Home	F	20	2187=9;4744=1	
+1740 3517 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=8;4744=1	
+# 9 - Prifddinas										
+3239 6077 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=9;4744=1	
+# 13 - Aldarin										
+1422 2963 0		99 Construction	9789=1||9790=1		4	Construction cape: Home	F	20	2187=13;4744=1	
 2952 3224 0		99 Construction	9789=1||9790=1		4	Construction cape: Rimmington	F	20		
 2892 3465 0		99 Construction	9789=1||9790=1		4	Construction cape: Taverley	F	20		
 3339 3001 0		99 Construction	9789=1||9790=1		4	Construction cape: Pollnivneach	F	20		
@@ -268,48 +268,46 @@
 2865 3546 0		99 Strength	9750=1||9751=1		4	Strength cape: Teleport	F	20		
 # Max capes										
 # The Max cape's home teleports, determined by varbit 2187, and teleport inside or outside determined by varbit 4744										
-1923 5709 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	4744=0	
+1858 7051 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	4744=0	
 # 1 - Rimmington										
-2952 3224 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=1;4744=1	
+2952 3224 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=1;4744=1	
 # 2 - Taverly										
-2892 3465 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=2;4744=1	
+2892 3465 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=2;4744=1	
 # 3 - Pollnivneach										
-3339 3001 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=3;4744=1	
+3339 3001 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=3;4744=1	
 # 4 - Rellekka										
-2669 3629 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=4;4744=1	
+2669 3629 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=4;4744=1	
 # 5 - Brimhaven										
-2756 3176 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=5;4744=1	
+2756 3176 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=5;4744=1	
 # 6 - Yanille										
-2545 3097 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=6;4744=1	
-# 7 - Prifddinas										
-3239 6077 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=7;4744=1	
+2545 3097 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=6;4744=1	
 # 8 - Hosidius										
-1740 3517 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=8;4744=1	
-# 9 - Aldarin										
-1422 2963 0		2376 Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=9;4744=1	
-2952 3224 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Rimmington	F	20		
-2892 3465 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Taverley	F	20		
-3339 3001 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Pollnivneach	F	20		
-1743 3517 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Hosidius	F	20		
-2669 3629 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Rellekka	F	20		
-2756 3176 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Brimhaven	F	20		
-2545 3097 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Yanille	F	20		
-3239 6077 0		2376 Total	13280=1||13342=1		4	Max cape: POH Portals: Prifddinas	F	20		
-2865 3546 0		2376 Total	13280=1||13342=1		4	Max cape: Warriors' Guild	F	20		
-2604 3401 0		2376 Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Fishing Guild	F	20		
-2504 3484 0		2376 Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Otto's Grotto	F	20		
-2931 3286 0		2376 Total	13280=1||13342=1		4	Max cape: Crafting Guild	F	20		
-2556 2917 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Feldip Hills	T	20		
-3144 3772 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Black chinchompa	T	20		
-1558 3046 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Hunter Guild	F	20		
-1248 3725 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: Farming Guild	F	20		
-3048 2972 0		2376 Total	13280=1||13342=1		4	Max cape: Other Teleports: The Pandemonium	F	20		
-2729 3348 0		327 Quest	9813=1||13068=1		4	Quest point cape: Teleport	F	20		
+1740 3517 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=8;4744=1	
+# 9 - Prifddinas										
+3239 6077 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=9;4744=1	
+# 13 - Aldarin										
+1422 2963 0		Max Total	13280=1||13342=1		4	Max cape: Tele to POH	F	20	2187=13;4744=1	
+2952 3224 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Rimmington	F	20		
+2892 3465 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Taverley	F	20		
+3339 3001 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Pollnivneach	F	20		
+1743 3517 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Hosidius	F	20		
+2669 3629 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Rellekka	F	20		
+2756 3176 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Brimhaven	F	20		
+2545 3097 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Yanille	F	20		
+3239 6077 0		Max Total	13280=1||13342=1		4	Max cape: POH Portals: Prifddinas	F	20		
+2865 3546 0		Max Total	13280=1||13342=1		4	Max cape: Warriors' Guild	F	20		
+2604 3401 0		Max Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Fishing Guild	F	20		
+2504 3484 0		Max Total	13280=1||13342=1		4	Max cape: Fishing Teleports: Otto's Grotto	F	20		
+2931 3286 0		Max Total	13280=1||13342=1		4	Max cape: Crafting Guild	F	20		
+2556 2917 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Feldip Hills	T	20		
+3144 3772 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Black chinchompa	T	20		
+1558 3046 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Hunter Guild	F	20		
+1248 3725 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: Farming Guild	F	20		
+3048 2972 0		Max Total	13280=1||13342=1		4	Max cape: Other Teleports: The Pandemonium	F	20		
+2729 3348 0		Max Quest	9813=1||13068=1		4	Quest point cape: Teleport	F	20		
 2689 3547 0			13221=1||13222=1		4	Music cape: Teleport	F	20		
 2574 3323 0			13069=1||19476=1		4	Achievement diary cape: 1. Two-pints	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 3302 3122 0			13069=1||19476=1		4	Achievement diary cape: 2. Jarr	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
-2689 3547 0			13069=1||19476=1		4	Achievement diary cape: 3. Sir Rebral	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
-2689 3547 0			13069=1||19476=1		4	Achievement diary cape: 4. Thorodin	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 2978 3347 0			13069=1||19476=1		4	Achievement diary cape: 3. Sir Rebral	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 2659 3627 0			13069=1||19476=1		4	Achievement diary cape: 4. Thorodin	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 2744 3443 0			13069=1||19476=1		4	Achievement diary cape: 5. Flax keeper	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
@@ -332,8 +330,8 @@
 3264 6066 0			6099=1||6100=1||6101=1||6102=1||13102=1	Song of the Elves	4	Teleport crystal: Prifddinas	T	20		
 2330 3171 0			23946=1		4	Eternal teleport crystal: Lletya	F	20		
 3264 6066 0			23946=1	Song of the Elves	4	Eternal teleport crystal: Prifddinas	F	20		
-2465 3495 0			19564=1		4	Royal seed pod	F	30		
-2465 3495 0			9469=1		4	Grand seed pod	T	30		
+2465 3495 0			19564=1		13	Royal seed pod	F	30		
+2465 3495 0			9469=1		13	Grand seed pod	T	30		
 # Enchanted lyre - 4493 is DIARY_FREMENNIK_HARD, 4494 is DIARY_FREMENNIK_ELITE										
 2662 3644 0			3691=1||6125=1||6126=1||6127=1||13079=1		4	Enchanted lyre: Rellekka	T	20		
 2551 3755 0			3691=1||6125=1||6126=1||6127=1||13079=1		4	Enchanted lyre: Waterbirth Island	T	20	4493=1	
@@ -343,7 +341,7 @@
 2551 3755 0			23458=1		4	Enchanted lyre (i): Waterbirth Island	F	20	4493=1	
 2409 3809 0			23458=1		4	Enchanted lyre (i): Jatizso	F	20	4494=1	
 2336 3802 0			23458=1		4	Enchanted lyre (i): Neitiznot	F	20	4494=1	
-3105 9315 0			6707=1		4	Camulet: Enakhra's Temple	F	20		
+3105 9315 2			6707=1		4	Camulet: Enakhra's Temple	F	20		
 3191 2924 0			6707=1		4	Camulet: Bandit Camp Quarry	F	20	4485=1	
 1714 3611 0			21760=1		4	Kharedst's memoirs: Lunch by the Lancalliums	T	20	6028=1;6035>0	
 1803 3748 0			21760=1		4	Kharedst's memoirs: The Fisher's Flute	T	20	6038=1;6035>0	
@@ -404,37 +402,34 @@
 2952 9574 0			30638=1		4	Giantsoul amulet: 3. Branda and Eldric	T	20		
 										
 # Sailors' amulet (Charged)										
-# TODO: gate Port Roberts and Deepfin Point teleports on the Sailors' Marker inspection varbit.										
-# Confirmed from cache dump (see SailingAmenityVarbitDumperTest):										
-#   Item 32398 Sailors amulet (inert)   interfaceOptions: [null, Wear, null, Inspect, Destroy]										
-#   Item 32399 Sailors amulet (charged) interfaceOptions: [null, Wear, Teleport, Check, Destroy]										
-#     subops[2] = [The Pandemonium, Port Roberts, _, _, Deepfin Point, ...]										
-#     param[2257] = 7040 (cs2 script that handles the Teleport submenu and checks the unlock varbit).										
-# The unlock varbit itself lives only in that cs2 script and can't be decoded by the bundled										
-# runelite-cache 1.12.24 loader against the current cache rev. Find it in-game by inspecting the										
-# Sailors' Marker with RuneLite's varbit inspector open. Marker scenery object IDs + world tiles:										
-#   59985 Port Roberts     @ 1902 3304 1										
-#   59988 Deepfin Point    @ 1936 2766 1										
-#   59986 Red Rock         @ 2803 2523 1 (not currently accessible)										
 3058 2975 0			32399=1		4	Sailors' amulet: The Pandemonium	T	20		
-1889 3292 0			32399=1		4	Sailors' amulet: Port Roberts	T	20		
-1943 2757 0			32399=1		4	Sailors' amulet: Deepfin Point	T	20		
-										
+1889 3292 0			32399=1		4	Sailors' amulet: Port Roberts	T	20	19540=1	
+2797 2521 0			32399=1		4	Sailors' amulet: Red Rock	T	20	19541=1	
+1943 2757 0			32399=1		4	Sailors' amulet: Deepfin Point	T	20	19543=1	
+
 # Cowbell amulet										
 3259 3277 0			33104=1		4	Cowbell amulet	T	20		
-										
+
+# Teleport spheres (consumed on use; each lands on a random tile inside the destination area, modelled at a central walkable tile)										
+2703 5350 0			10972=1	Death to the Dorgeshuun	4	Dorgesh-kaan sphere	T	20		
+2956 3505 0			11060=1	Another Slice of H.A.M.	4	Goblin village sphere	T	20		
+2588 9840 0			26577=1	Land of the Goblins	4	Plain of Mud sphere	T	20		
+
+
 # Trinket of fairies - Spirit Trees										
-2542 3170 0			28564=1		4	Trinket of fairies: Spirit Tree - Tree Gnome Village	F	30		
-2461 3444 0			28564=1		4	Trinket of fairies: Spirit Tree - Gnome Stronghold	F	30		
-2555 3259 0			28564=1		4	Trinket of fairies: Spirit Tree - Battlefield of Khazard	F	30		
-2486 2850 0			28564=1		4	Trinket of fairies: Spirit Tree - Feldip Hills	F	30		
-2339 3111 0			28564=1	The Path of Glouphrie	4	Trinket of fairies: Spirit Tree - Poison Waste	F	30		
-3275 6124 0			28564=1	Song of the Elves	4	Trinket of fairies: Spirit Tree - Prifddinas	F	30		
-2613 3858 0			28564=1		4	Trinket of fairies: Spirit Tree - Etceteria (planted)	F	30		
-3060 3258 0			28564=1		4	Trinket of fairies: Spirit Tree - Port Sarim (planted)	F	30		
-2802 3203 0			28564=1		4	Trinket of fairies: Spirit Tree - Brimhaven (planted)	F	30		
-1693 3542 0			28564=1		4	Trinket of fairies: Spirit Tree - Hosidius (planted)	F	30		
-1253 3750 0			28564=1		4	Trinket of fairies: Spirit Tree - Farming Guild (planted)	F	30		
+2542 3170 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Tree Gnome Village	F	30		
+2461 3444 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Gnome Stronghold	F	30		
+2555 3259 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Battlefield of Khazard	F	30		
+3185 3508 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Grand Exchange	F	30		
+2488 2850 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Feldip Hills	F	30		
+3274 6123 0			28564=1	Tree Gnome Village;Song of the Elves	4	Trinket of fairies: Spirit Tree - Prifddinas	F	30		
+3058 3257 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Port Sarim (planted)	F	30		
+2613 3855 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Etceteria (planted)	F	30		
+2800 3203 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Brimhaven (planted)	F	30		
+1693 3540 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Hosidius (planted)	F	30		
+1251 3750 0			28564=1	Tree Gnome Village	4	Trinket of fairies: Spirit Tree - Farming Guild (planted)	F	30		
+2339 3109 0			28564=1	The Path of Glouphrie	4	Trinket of fairies: Spirit Tree - Poison Waste	F	30		
+1202 2785 0			28564=1	Pandemonium	4	Trinket of fairies: Spirit Tree - Laguna Aurorae	F	30		
 # Trinket of fairies - Fairy Rings										
 2996 3114 0			28564=1		4	Trinket of fairies: Fairy Ring - AIQ (Mudskipper Point)	F	30		
 2700 3247 0			28564=1		4	Trinket of fairies: Fairy Ring - AIR (South-east of Ardougne)	F	30		
@@ -442,8 +437,8 @@
 2780 3613 0			28564=1		4	Trinket of fairies: Fairy Ring - AJR (Slayer cave SE of Rellekka)	F	30		
 1651 3010 0			28564=1	Children of the Sun	4	Trinket of fairies: Fairy Ring - AJP (Avium Savannah)	F	30		
 2500 3896 0			28564=1		4	Trinket of fairies: Fairy Ring - AJS (Penguins near Miscellania)	F	30		
-2735 5221 0			28564=1		4	Trinket of fairies: Fairy Ring - AJQ (Cave south of Dorgesh-Kaan)	F	30		
-3284 2705 0			28564=1		4	Trinket of fairies: Fairy Ring - AKP (Necropolis)	F	30		
+2735 5221 0			28564=1	Death to the Dorgeshuun	4	Trinket of fairies: Fairy Ring - AJQ (Cave south of Dorgesh-Kaan)	F	30		
+3284 2706 0			28564=1		4	Trinket of fairies: Fairy Ring - AKP (Necropolis)	F	30		
 2319 3619 0			28564=1		4	Trinket of fairies: Fairy Ring - AKQ (Piscatoris Hunter area)	F	30		
 2571 2956 0			28564=1		4	Trinket of fairies: Fairy Ring - AKS (Feldip Hunter area)	F	30		
 1826 3540 0			28564=1		4	Trinket of fairies: Fairy Ring - AKR (Hosidius Vinery)	F	30		
@@ -455,18 +450,20 @@
 2635 3266 0			28564=1		4	Trinket of fairies: Fairy Ring - BIS (Ardougne Zoo unicorns)	F	30		
 2650 4730 0			28564=1	Holy Grail	4	Trinket of fairies: Fairy Ring - BJR (Fisher Realm)	F	30		
 2150 3070 0			28564=1	Regicide	4	Trinket of fairies: Fairy Ring - BJS (Near Zul-Andra)	F	30		
-2267 2976 0			28564=1		4	Trinket of fairies: Fairy Ring - BJP (Isle of Souls)	F	30		
+2264 2976 0			28564=1		4	Trinket of fairies: Fairy Ring - BJP (Isle of Souls)	F	30		
 2385 3035 0			28564=1		4	Trinket of fairies: Fairy Ring - BKP (South of Castle Wars)	F	30		
 3469 3431 0			28564=1		4	Trinket of fairies: Fairy Ring - BKR (Mort Myre south of Canifis)	F	30		
-2412 4434 0			28564=1	Lost City	4	Trinket of fairies: Fairy Ring - BKS (Zanaris)	F	30		
+2412 4434 0			28564=1		4	Trinket of fairies: Fairy Ring - BKS (Zanaris)	F	30		
 3041 4532 0			28564=1		4	Trinket of fairies: Fairy Ring - BKQ (Enchanted Valley)	F	30		
 2437 5126 0			28564=1		4	Trinket of fairies: Fairy Ring - BLP (TzHaar area)	F	30		
+3572 4371 0			28564=1		4	Trinket of fairies: Fairy Ring - BLQ (Yu'biusk)	F	30	13599>49	
 2740 3351 0			28564=1		4	Trinket of fairies: Fairy Ring - BLR (Legends' Guild)	F	30		
 1295 3493 0			28564=1		4	Trinket of fairies: Fairy Ring - BLS (South of Mount Quidamortem)	F	30		
 2513 3884 0			28564=1	The Fremennik Trials	4	Trinket of fairies: Fairy Ring - CIP (Miscellania)	F	30		
 2528 3127 0			28564=1		4	Trinket of fairies: Fairy Ring - CIQ (North-west of Yanille)	F	30		
 1302 3762 0			28564=1		4	Trinket of fairies: Fairy Ring - CIR (South of Mount Karuulm)	F	30		
 1639 3868 0			28564=1		4	Trinket of fairies: Fairy Ring - CIS (Arceuus Library)	F	30		
+3178 2447 0			28564=1	Troubled Tortugans	4	Trinket of fairies: Fairy Ring - CJQ (The Great Conch)	F	30		
 2705 3576 0			28564=1		4	Trinket of fairies: Fairy Ring - CJR (Sinclair Mansion)	F	30		
 1359 2941 0			28564=1	Children of the Sun	4	Trinket of fairies: Fairy Ring - CKQ (Aldarin)	F	30		
 2801 3003 0			28564=1		4	Trinket of fairies: Fairy Ring - CKR (South of Tai Bwo Wannai)	F	30		
@@ -502,13 +499,13 @@
 3008 3370 0			28564=1		4	Trinket of fairies: Tool Lep - Falador Park	F	30		
 1236 3732 0			28564=1		4	Trinket of fairies: Tool Lep - Farming Guild	F	30		
 3710 3838 0			28564=1		4	Trinket of fairies: Tool Lep - Fossil Island	F	30		
-3792 2840 0			28564=1		4	Trinket of fairies: Tool Lep - Harmony Island	F	30		
+3792 2840 0			28564=1	The Great Brain Robbery	4	Trinket of fairies: Tool Lep - Harmony Island	F	30		
 1741 3552 0			28564=1		4	Trinket of fairies: Tool Lep - Hosidius Allotment	F	30		
 1696 3544 0			28564=1		4	Trinket of fairies: Tool Lep - Hosidius Saltpetre	F	30		
 1806 3555 0			28564=1		4	Trinket of fairies: Tool Lep - Hosidius Vinery	F	30		
 1352 3057 0			28564=1	Children of the Sun	4	Trinket of fairies: Tool Lep - Kastori North	F	30		
 1354 3029 0			28564=1	Children of the Sun	4	Trinket of fairies: Tool Lep - Kastori South	F	30		
-2346 3164 0			28564=1		4	Trinket of fairies: Tool Lep - Lletya	F	30		
+2346 3164 0			28564=1	Mourning's End Part I	4	Trinket of fairies: Tool Lep - Lletya	F	30		
 1683 2971 0			28564=1	Children of the Sun	4	Trinket of fairies: Tool Lep - Locus Oasis	F	30		
 3188 3232 0			28564=1		4	Trinket of fairies: Tool Lep - Lumbridge	F	30		
 1369 3317 0			28564=1	Children of the Sun	4	Trinket of fairies: Tool Lep - Nemus Retreat	F	30		
@@ -527,6 +524,7 @@
 2485 3178 0			28564=1		4	Trinket of fairies: Tool Lep - Tree Gnome Village	F	30		
 2825 3685 0			28564=1	My Arm's Big Adventure	4	Trinket of fairies: Tool Lep - Troll Stronghold	F	30		
 3288 3456 0			28564=1		4	Trinket of fairies: Tool Lep - Varrock	F	30		
-2848 3930 0			28564=1		4	Trinket of fairies: Tool Lep - Weiss	F	30		
+2848 3930 0			28564=1	Making Friends with My Arm	4	Trinket of fairies: Tool Lep - Weiss	F	30		
 2863 3432 0			28564=1		4	Trinket of fairies: Tool Lep - White Wolf Mountain	F	30		
 2573 3108 0			28564=1		4	Trinket of fairies: Tool Lep - Yanille	F	30		
+

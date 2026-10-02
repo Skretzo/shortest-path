@@ -17,9 +17,9 @@ public class TransportVarbitTest
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(1, 5);
 		VarRequirement v = VarRequirement.varbit(1, 5, VarCheckType.EQUAL);
-		assertTrue(v.check(values));
+		assertTrue(v.check(values, 0));
 		values.put(1, 4);
-		assertFalse(v.check(values));
+		assertFalse(v.check(values, 0));
 	}
 
 	@Test
@@ -28,9 +28,9 @@ public class TransportVarbitTest
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(2, 10);
 		VarRequirement v = VarRequirement.varbit(2, 5, VarCheckType.GREATER);
-		assertTrue(v.check(values));
+		assertTrue(v.check(values, 0));
 		values.put(2, 5);
-		assertFalse(v.check(values));
+		assertFalse(v.check(values, 0));
 	}
 
 	@Test
@@ -39,9 +39,9 @@ public class TransportVarbitTest
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(3, 3);
 		VarRequirement v = VarRequirement.varbit(3, 5, VarCheckType.SMALLER);
-		assertTrue(v.check(values));
+		assertTrue(v.check(values, 0));
 		values.put(3, 5);
-		assertFalse(v.check(values));
+		assertFalse(v.check(values, 0));
 	}
 
 	@Test
@@ -50,22 +50,22 @@ public class TransportVarbitTest
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(4, 0b1010);
 		VarRequirement v = VarRequirement.varbit(4, 0b0010, VarCheckType.BIT_SET);
-		assertTrue(v.check(values));
+		assertTrue(v.check(values, 0));
 		v = VarRequirement.varbit(4, 0b0100, VarCheckType.BIT_SET);
-		assertFalse(v.check(values));
+		assertFalse(v.check(values, 0));
 	}
 
 	@Test
 	public void testCooldownMinutes()
 	{
 		Map<Integer, Integer> values = new HashMap<>();
-		long nowMinutes = System.currentTimeMillis() / 60000;
-		values.put(5, (int) (nowMinutes - 10)); // stored timestamp 10 minutes ago
+		long nowMinutes = 100000000L;
+		values.put(5, 99999979); // stored timestamp 21 minutes ago
 
-		VarRequirement v = VarRequirement.varbit(5, 5, VarCheckType.COOLDOWN_MINUTES);
-		assertTrue(v.check(values)); // 10 > 5
+		VarRequirement v = VarRequirement.varbit(5, 20, VarCheckType.COOLDOWN_MINUTES);
+		assertTrue(v.check(values, nowMinutes)); // 21 > 5
 
-		values.put(5, (int) (nowMinutes - 3)); // 3 minutes ago
-		assertFalse(v.check(values)); // 3 > 5 is false
+		values.put(5, 99999981); // 19 minutes ago
+		assertFalse(v.check(values, nowMinutes)); // 19 > 5 is false
 	}
 }

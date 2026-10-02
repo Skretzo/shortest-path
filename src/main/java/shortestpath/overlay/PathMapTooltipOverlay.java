@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.Dimension;
@@ -17,6 +17,8 @@ import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import shortestpath.ShortestPathPlugin;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 
@@ -109,9 +111,9 @@ public class PathMapTooltipOverlay extends Overlay
 			PathStep nextStep = plugin.nextPathStep(path, pathIndex);
 			for (Transport transport : plugin.transportsForEdge(currentStep, nextStep))
 			{
-				if (transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty())
+				String displayInfo = plugin.formatTransportDisplay(transport);
+				if (displayInfo != null && !displayInfo.isEmpty())
 				{
-					String displayInfo = transport.getDisplayInfo();
 					// Check if this transport goes to POH - if so, look ahead to find the exit
 					// transport
 					String pohExitInfo = plugin.getPohExitInfo(nextPoint, path, pathIndex);

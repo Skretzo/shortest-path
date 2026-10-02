@@ -41,6 +41,7 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
+import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
@@ -56,6 +57,7 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
+import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
@@ -68,11 +70,20 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
+import shortestpath.overlay.BankItemHighlightOverlay;
+import shortestpath.overlay.DebugOverlayPanel;
+import shortestpath.overlay.InventoryHighlightOverlay;
+import shortestpath.overlay.PathMapOverlay;
+import shortestpath.overlay.PathMapTooltipOverlay;
+import shortestpath.overlay.PathMinimapOverlay;
+import shortestpath.overlay.PathTileOverlay;
+import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -89,8 +100,11 @@ public class ShortestPathPlugin extends Plugin
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
 	private static final int POH_MIN_X = 1856;
 	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 5696;
-	private static final int POH_MAX_Y = 5767;
+	private static final int POH_MIN_Y = 7040;
+	private static final int POH_MAX_Y = 7111;
+	// Co-ordinates for Basic theme landing tile
+	public static final int POH_LANDING_X = 1858;
+	public static final int POH_LANDING_Y = 7051;
 	private static final String PLUGIN_MESSAGE_PATH = "path";
 	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
 	private static final String PLUGIN_MESSAGE_START = "start";
@@ -107,28 +121,41 @@ public class ShortestPathPlugin extends Plugin
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|use\\w+|cost\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
+	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
-	boolean drawCollisionMap;
-	boolean drawMap;
-	boolean drawMinimap;
-	boolean drawTiles;
-	boolean drawTransports;
-	boolean showTransportInfo;
-	boolean showBankPickupInfo;
-	Color colourCollisionMap;
+	public boolean drawCollisionMap;
+	public boolean drawMap;
+	public boolean drawMinimap;
+	public boolean drawTiles;
+	public boolean drawTransports;
+	public boolean showTransportInfo;
+	public boolean showBankPickupInfo;
+	public boolean showUnreachableText;
+	public boolean highlightBankPickupItems;
+	public boolean highlightSpellbookSpells;
+	public boolean highlightInventoryItems;
+
+	// Bank pickup cache — invalidated when path, bank, or inventory changes.
+	private shortestpath.transport.BankPickupRequirements.BankPickupResult bankPickupCache;
+	private List<PathStep> bankPickupCachePath;
+	private int bankPickupCacheIndex = -1;
+	private boolean bankPickupDirty = true;
+
+	public Color colourCollisionMap;
 	Color colourPath;
-	Color colourPathCalculating;
+	public Color colourPathCalculating;
 	Color colourPathUnreachable;
-	Color colourText;
-	Color colourTransports;
-	int tileCounterStep;
+	public Color colourText;
+	public Color colourTransports;
+	public Color colourBankPickupHighlight;
+	public int tileCounterStep;
 	int unreachableTargetDistance;
-	String unreachableText;
-	TileCounter showTileCounter;
-	TileStyle pathStyle;
+	public String unreachableText;
+	public TileCounter showTileCounter;
+	public TileStyle pathStyle;
 	@Inject
 	private Client client;
 	@Getter
@@ -149,6 +176,12 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private PathMapTooltipOverlay pathMapTooltipOverlay;
 	@Inject
+	private BankItemHighlightOverlay bankItemHighlightOverlay;
+	@Inject
+	private SpellbookHighlightOverlay spellbookHighlightOverlay;
+	@Inject
+	private InventoryHighlightOverlay inventoryHighlightOverlay;
+	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
 	private SpriteManager spriteManager;
@@ -156,6 +189,8 @@ public class ShortestPathPlugin extends Plugin
 	private WorldMapPointManager worldMapPointManager;
 	@Inject
 	private KeyManager keyManager;
+	@Inject
+	private PortalNexusKeybinds portalNexusKeybinds;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -308,6 +343,9 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(pathMinimapOverlay);
 		overlayManager.add(pathMapOverlay);
 		overlayManager.add(pathMapTooltipOverlay);
+		overlayManager.add(bankItemHighlightOverlay);
+		overlayManager.add(spellbookHighlightOverlay);
+		overlayManager.add(inventoryHighlightOverlay);
 
 		if (config.drawDebugPanel())
 		{
@@ -315,6 +353,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
+		portalNexusKeybinds.loadFromProfile();
 	}
 
 	@Override
@@ -324,6 +363,9 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(pathMinimapOverlay);
 		overlayManager.remove(pathMapOverlay);
 		overlayManager.remove(pathMapTooltipOverlay);
+		overlayManager.remove(bankItemHighlightOverlay);
+		overlayManager.remove(spellbookHighlightOverlay);
+		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 
 		if (pathfindingExecutor != null)
@@ -364,6 +406,7 @@ public class ShortestPathPlugin extends Plugin
 				}
 				else
 				{
+					bankPickupDirty = true;
 					pathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
 					pathfinderFuture = pathfindingExecutor.submit(pathfinder);
 				}
@@ -506,6 +549,12 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
+	{
+		portalNexusKeybinds.loadFromProfile();
+	}
+
+	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
 		if (!CONFIG_GROUP.equals(event.getNamespace()))
@@ -625,7 +674,7 @@ public class ShortestPathPlugin extends Plugin
 					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
 					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
 					transportObjectInfos.add(transport.getObjectInfo());
-					transportDisplayInfos.add(transport.getDisplayInfo());
+					transportDisplayInfos.add(formatTransportDisplay(transport));
 				}
 			}
 			data.put("origin", transportOrigins);
@@ -645,6 +694,9 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		portalNexusKeybinds.refreshFromDialog(client);
+		portalNexusKeybinds.persistIfDirty();
+
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
 			if (pendingTasks.get(i).check(client.getTickCount()))
@@ -771,11 +823,54 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		if (event.getContainerId() != InventoryID.BANK)
+		int id = event.getContainerId();
+		if (id == InventoryID.BANK)
+		{
+			pathfinderConfig.bank = event.getItemContainer();
+		}
+		if (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN)
+		{
+			bankPickupDirty = true;
+		}
+	}
+
+	/**
+	 * Returns the cached bank pickup result for the given path step, recomputing only when
+	 * the path, bank contents, or player inventory has changed since the last call.
+	 */
+	public BankPickupResult getBankPickup(
+			List<PathStep> path, int pathIndex)
+	{
+		Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
+		if (pathfinderConfig.bank == null || bankLocations == null
+				|| path == null || pathIndex < 0 || pathIndex >= path.size())
+		{
+			return null;
+		}
+		if (!bankPickupDirty && path == bankPickupCachePath && pathIndex == bankPickupCacheIndex)
+		{
+			return bankPickupCache;
+		}
+		bankPickupCachePath = path;
+		bankPickupCacheIndex = pathIndex;
+		bankPickupDirty = false;
+		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
+				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex);
+		return bankPickupCache;
+	}
+
+	@Subscribe
+	public void onScriptPostFired(ScriptPostFired event)
+	{
+		if (event.getScriptId() != PortalNexusKeybinds.TELENEXUS_CREATE_TELELINE)
 		{
 			return;
 		}
-		pathfinderConfig.bank = event.getItemContainer();
+		Widget widget = client.getScriptActiveWidget();
+		if (widget != null)
+		{
+			portalNexusKeybinds.putFromDialogLine(widget.getText());
+		}
 	}
 
 	@Subscribe
@@ -784,6 +879,24 @@ public class ShortestPathPlugin extends Plugin
 		if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
 		{
 			fairyRingPanelOpen = true;
+		}
+
+		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
+			|| event.getGroupId() == InterfaceID.TELENEXUS)
+		{
+			final int[] attempts = {0};
+			clientThread.invokeLater(() ->
+			{
+				attempts[0]++;
+				boolean dialogOpen = client.getWidget(InterfaceID.TelenexusTeleport.UNIVERSE) != null
+					|| client.getWidget(InterfaceID.Telenexus.UNIVERSE) != null;
+				if (!dialogOpen)
+				{
+					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
+				}
+				return portalNexusKeybinds.refreshFromDialog(client)
+					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
+			});
 		}
 
 		// Populate spirit tree cache, but only once.
@@ -1007,6 +1120,15 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
+	 * Every loaded transport grouped by origin for display, including transports the
+	 * player cannot currently use. Same layout as {@link #getTransports()}.
+	 */
+	public PrimitiveIntHashMap<Transport[]> getAllDisplayTransports()
+	{
+		return pathfinderConfig.getAllDisplayTransports();
+	}
+
+	/**
 	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
 	 * <p>
 	 * The important detail is that path display logic is edge-based, not node-based:
@@ -1087,6 +1209,20 @@ public class ShortestPathPlugin extends Plugin
 		return path.get(index + 1);
 	}
 
+	public String formatTransportDisplay(Transport transport)
+	{
+		String info = transport.getDisplayInfo();
+		if (info == null || info.isEmpty())
+		{
+			return info;
+		}
+		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
+		{
+			return portalNexusKeybinds.apply(info);
+		}
+		return info;
+	}
+
 	/**
 	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
 	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
@@ -1137,7 +1273,7 @@ public class ShortestPathPlugin extends Plugin
 				PathStep nextStep = path.get(i + 1);
 				for (Transport transport : transportsForEdge(currentStep, nextStep))
 				{
-					String exitInfo = transport.getDisplayInfo();
+					String exitInfo = formatTransportDisplay(transport);
 					if (exitInfo != null && !exitInfo.isEmpty())
 					{
 						TransportType exitType = transport.getType();
@@ -1257,6 +1393,10 @@ public class ShortestPathPlugin extends Plugin
 		drawTransports = override("drawTransports", config.drawTransports());
 		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
+		showUnreachableText = override("showUnreachableText", config.showUnreachableText());
+		highlightBankPickupItems = override("highlightBankPickupItems", config.highlightBankPickupItems());
+		highlightSpellbookSpells = override("highlightSpellbookSpells", config.highlightSpellbookSpells());
+		highlightInventoryItems = override("highlightInventoryItems", config.highlightInventoryItems());
 
 		colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
 		colourPath = override("colourPath", config.colourPath());
@@ -1264,6 +1404,7 @@ public class ShortestPathPlugin extends Plugin
 		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
 		colourText = override("colourText", config.colourText());
 		colourTransports = override("colourTransports", config.colourTransports());
+		colourBankPickupHighlight = override("colourBankPickupHighlight", config.colourBankPickupHighlight());
 
 		tileCounterStep = override("tileCounterStep", config.tileCounterStep());
 		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());

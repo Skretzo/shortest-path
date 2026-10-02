@@ -28,13 +28,13 @@ public class TransportCountingTest
 		}
 		/*
 		 * Info:
-		 * There are currently 16 unique charter ship origin/destinations.
-		 * If every combination was possible then it would be 16^2 = 256.
-		 * It is impossible to travel from and to the same place, so subtract 16.
+		 * There are currently 21 unique charter ship origin/destinations.
+		 * If every combination was possible then it would be 21^2 = 441.
+		 * It is impossible to travel from and to the same place, so subtract 21.
 		 * It is also impossible to travel between certain places, presumably
-		 * because the distance between them is too small. Currently 12 of these.
+		 * because the distance between them is too small. Currently 16 of these.
 		 */
-		assertEquals(16 * 16 - 16 - 12, actualCount);
+		assertEquals(21 * 21 - 21 - 16, actualCount);
 	}
 
 	@Test

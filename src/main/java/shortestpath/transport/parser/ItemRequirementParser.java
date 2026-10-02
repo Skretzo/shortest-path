@@ -22,6 +22,10 @@ import shortestpath.transport.requirement.TransportItems;
  * <p>
  * Example: {@code DRAMEN_STAFF=1|LUNAR_STAFF=1} (need either)
  * </p>
+ * <p>
+ * Each OR alternative keeps its own quantity, for example
+ * {@code SHANTAY_PASS=1|COINS=5} is satisfied by one Shantay pass or by 5 coins.
+ * </p>
  */
 @Slf4j
 public class ItemRequirementParser implements FieldParser<TransportItems>
@@ -73,11 +77,12 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 	private ItemRequirement parseRequirement(String part)
 	{
 		String[] orParts = part.split(Pattern.quote(DELIM_OR));
+		if (orParts.length == 0)
+		{
+			throw new NumberFormatException("Invalid format: " + part);
+		}
 
-		List<int[]> itemIdsList = new ArrayList<>();
-		List<int[]> stavesList = new ArrayList<>();
-		List<int[]> offhandsList = new ArrayList<>();
-		int maxQuantity = -1;
+		List<ItemRequirement.Branch> branches = new ArrayList<>();
 
 		for (String orPart : orParts)
 		{
@@ -89,28 +94,29 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 
 			String itemName = itemAndQuantity[0];
 			int quantity = Integer.parseInt(itemAndQuantity[1]);
-			maxQuantity = Math.max(maxQuantity, quantity);
 
 			ItemVariations variation = ItemVariations.fromName(itemName);
 			if (variation != null)
 			{
-				itemIdsList.add(variation.getIds());
-				stavesList.add(ItemVariations.staves(variation));
-				offhandsList.add(ItemVariations.offhands(variation));
+				branches.add(new ItemRequirement.Branch(
+					copyOrNull(variation.getIds()),
+					copyOrNull(ItemVariations.staves(variation)),
+					copyOrNull(ItemVariations.offhands(variation)),
+					quantity));
 			}
 			else
 			{
 				// Try parsing as raw item ID
-				itemIdsList.add(new int[]{Integer.parseInt(itemName)});
-				stavesList.add(new int[0]);
-				offhandsList.add(new int[0]);
+				branches.add(new ItemRequirement.Branch(
+					new int[]{Integer.parseInt(itemName)}, null, null, quantity));
 			}
 		}
 
-		return new ItemRequirement(
-			Util.concatenate(itemIdsList.toArray(new int[0][])),
-			Util.concatenate(stavesList.toArray(new int[0][])),
-			Util.concatenate(offhandsList.toArray(new int[0][])),
-			maxQuantity);
+		return new ItemRequirement(branches);
+	}
+
+	private static int[] copyOrNull(int[] ids)
+	{
+		return Util.concatenate(new int[][]{ids});
 	}
 }

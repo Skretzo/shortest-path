@@ -40,10 +40,14 @@ public class Pathfinder implements Runnable
 	// it never walks the node chain (which is released) after the search is done.
 	private volatile List<PathStep> finalPath = null;
 	private volatile int closestReachedPoint = WorldPointUtil.UNDEFINED;
+	private volatile int finalPathCost = PathfinderResult.NO_PATH_COST;
 	private int bestRemainingDistance = Integer.MAX_VALUE;
 	private int bestTravelledDistance = Integer.MAX_VALUE;
 	private int bestX = Integer.MAX_VALUE;
 	private int bestY = Integer.MAX_VALUE;
+	// First explored node within the configured unreachable distance.
+	private int shortestAcceptedNode = NodeGraph.NO_NODE;
+	private int shortestAcceptedTarget = WorldPointUtil.UNDEFINED;
 	private int reachedTarget = WorldPointUtil.UNDEFINED;
 	private PathTerminationReason terminationReason;
 	/**
@@ -158,6 +162,7 @@ public class Pathfinder implements Runnable
 			reached,
 			currentPath,
 			closestReachedPoint,
+			finalPathCost,
 			currentStats.getNodesChecked(),
 			currentStats.getTransportsChecked(),
 			currentStats.getElapsedTimeNanos(),
@@ -247,6 +252,24 @@ public class Pathfinder implements Runnable
 		return update;
 	}
 
+	private void updateCustomPathWhenUnreachable(int node, int packedPosition)
+	{
+		if (targets.size() <= 1 || shortestAcceptedNode != NodeGraph.NO_NODE)
+		{
+			return;
+		}
+
+		for (int target : targets)
+		{
+			if (WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.MANHATTAN_DISTANCE_METRIC) <= config.getUnreachableTargetDistance())
+			{
+				shortestAcceptedNode = node;
+				shortestAcceptedTarget = target;
+				return;
+			}
+		}
+	}
+
 	/**
 	 * Update wilderness level based on the current node position.
 	 */
@@ -277,8 +300,8 @@ public class Pathfinder implements Runnable
 		stats.start();
 		boundary.addFirst(graph.createStart(start));
 
-		long cutoffDurationMillis = config.getCalculationCutoffMillis();
-		long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+		// The cutoff counts time without progress towards the target.
+		SearchDeadline deadline = new SearchDeadline(config.getCalculationCutoffMillis());
 
 		while (!cancelled && (!boundary.isEmpty() || !pending.isEmpty()))
 		{
@@ -323,19 +346,25 @@ public class Pathfinder implements Runnable
 				if (targets.contains(nodePacked))
 				{
 					bestLastNode = node;
-					pathNeedsUpdate = true;
 					reachedTarget = nodePacked;
+					if (shortestAcceptedNode != NodeGraph.NO_NODE)
+					{
+						bestLastNode = shortestAcceptedNode;
+						reachedTarget = shortestAcceptedTarget;
+					}
+					pathNeedsUpdate = true;
 					terminationReason = PathTerminationReason.TARGET_REACHED;
 					break;
 				}
 
 				if (updateBestPathWhenUnreachable(node, nodePacked))
 				{
-					cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
+					deadline.progressed();
 				}
+				updateCustomPathWhenUnreachable(node, nodePacked);
 			}
 
-			if (System.currentTimeMillis() > cutoffTimeMillis)
+			if (deadline.expired())
 			{
 				terminationReason = PathTerminationReason.CUTOFF_REACHED;
 				break;
@@ -361,11 +390,13 @@ public class Pathfinder implements Runnable
 		{
 			finalPath = graph.getPathSteps(lastNode);
 			closestReachedPoint = graph.getClosestTilePosition(lastNode);
+			finalPathCost = graph.cost(lastNode);
 		}
 		else
 		{
 			finalPath = pathSteps;
 			closestReachedPoint = start;
+			finalPathCost = PathfinderResult.NO_PATH_COST;
 		}
 
 		done = !cancelled;

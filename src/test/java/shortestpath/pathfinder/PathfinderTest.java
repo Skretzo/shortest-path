@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.VarPlayer;
+import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
@@ -32,6 +35,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
+import shortestpath.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
@@ -40,6 +44,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.requirement.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
@@ -64,6 +69,7 @@ public class PathfinderTest
 	{
 		when(config.calculationCutoff()).thenReturn(30);
 		when(config.currencyThreshold()).thenReturn(10000000);
+		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 	}
 
 	@Test
@@ -1039,6 +1045,25 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testMinigameTeleportCooldownUsesRefreshTime()
+	{
+		// These are the Nature Spirit Grotto start and Fishing Trawler destination used by the
+		// existing testTeleportationMinigames fixture above.
+		int fishingTrawlerStart = WorldPointUtil.packWorldPoint(3440, 3334, 0);
+		int fishingTrawlerDestination = WorldPointUtil.packWorldPoint(2658, 3157, 0);
+
+		setupConfigAtTimes(100000000L, 99999990L, 99999979);
+		Pathfinder ready = runPathfinder(fishingTrawlerStart, fishingTrawlerDestination);
+		assertTrue(usedTransportWithDisplayInfo(
+			ready, TransportType.TELEPORTATION_MINIGAME, "Fishing Trawler Minigame Teleport"));
+
+		setupConfigAtTimes(99999990L, 100000000L, 99999979);
+		Pathfinder onCooldown = runPathfinder(fishingTrawlerStart, fishingTrawlerDestination);
+		assertFalse(usedTransportWithDisplayInfo(
+			onCooldown, TransportType.TELEPORTATION_MINIGAME, "Fishing Trawler Minigame Teleport"));
+	}
+
+	@Test
 	public void testPickaxeNotUsedWithoutPickaxe()
 	{
 		// Ensure transports requiring a pickaxe are not included when the player has no pickaxe
@@ -1094,6 +1119,34 @@ public class PathfinderTest
 		when(config.usePoh()).thenReturn(true);
 		when(config.usePohObelisk()).thenReturn(true);
 		testTransportLength(2, TransportType.WILDERNESS_OBELISK);
+	}
+
+	@Test
+	public void testPohMountedItemSelectionChangesRoute()
+	{
+		// From Lumbridge to the Grand Exchange, a house tablet makes the POH exits viable:
+		// Edgeville is the closest Glory exit; after Glory is disabled, Digsite is the best remaining exit.
+		int grandExchange = WorldPointUtil.packWorldPoint(3164, 3487, 0);
+		when(config.usePoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(Set.of());
+		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
+		when(config.pohMountedItems()).thenReturn(EnumSet.of(
+			PohMountedItem.GLORY, PohMountedItem.DIGSITE_PENDANT));
+		setupInventory(new Item(8013, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		Pathfinder withGlory = runScenario(WorldPointUtil.packWorldPoint(3200, 3200, 0), grandExchange);
+		assertTrue(withGlory.getResult().isReached());
+		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Teleport to House tablet"));
+		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_BOX, "Edgeville"));
+
+		when(config.pohMountedItems()).thenReturn(EnumSet.of(PohMountedItem.DIGSITE_PENDANT));
+		pathfinderConfig.refresh();
+		Pathfinder withoutGlory = runScenario(WorldPointUtil.packWorldPoint(3200, 3200, 0), grandExchange);
+		assertTrue(withoutGlory.getResult().isReached());
+		assertTrue(usedTransportWithDisplayInfo(withoutGlory, TransportType.TELEPORTATION_ITEM, "Teleport to House tablet"));
+		assertFalse(usedTransportWithDisplayInfo(withoutGlory, TransportType.TELEPORTATION_BOX, "Edgeville"));
+		assertTrue(usedTransportWithDisplayInfo(withoutGlory, TransportType.TELEPORTATION_BOX, "Digsite"));
 	}
 
 	@Test
@@ -1173,6 +1226,70 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testQuestCapeTeleportRequiresCapeAndCompletedQuests()
+	{
+		setupQuestPointDatabase(343);
+		setupInventory(new Item(ItemID.SKILLCAPE_QP, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertTrue("Quest cape in inventory with all quests finished should be usable",
+			hasUsableTeleport("Quest point cape: Teleport"));
+
+		setupQuestPointDatabase(342);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse("Quest cape should not teleport when quests are incomplete",
+			hasUsableTeleport("Quest point cape: Teleport"));
+	}
+
+	@Test
+	public void testQuestCapeInBankRequiresCompletedQuests()
+	{
+		setupQuestPointDatabase(343);
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.SKILLCAPE_QP, 1));
+		assertTrue("Quest cape in bank with all quests finished should be usable after banking",
+			hasUsableTeleport("Quest point cape: Teleport", true));
+
+		setupQuestPointDatabase(342);
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.SKILLCAPE_QP, 1));
+		assertFalse("Quest cape in bank should not be suggested when quests are incomplete",
+			hasUsableTeleport("Quest point cape: Teleport", true));
+	}
+
+	@Test
+	public void testFaladorTeleportWithMistStaff()
+	{
+		when(config.useTeleportationSpells()).thenReturn(true);
+		setupInventory(
+			new Item(ItemID.MIST_BATTLESTAFF, 1),
+			new Item(ItemID.LAWRUNE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		assertTrue("Mist battlestaff should supply both air and water for Falador Teleport",
+			hasUsableTeleport("Falador Teleport"));
+	}
+
+	@Test
+	public void testHouseTeleportWithDustStaff()
+	{
+		when(config.useTeleportationSpells()).thenReturn(true);
+		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		setupInventory(
+			new Item(ItemID.DUST_BATTLESTAFF, 1),
+			new Item(ItemID.LAWRUNE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		assertTrue("Dust battlestaff should supply both air and earth for Teleport to House",
+			hasUsableTeleport("Teleport to House") || hasUsableTeleport("Teleport to House (Inside)"));
+	}
+
+	@Test
 	public void testWildernessRouteWithoutTeleportsWalksOut()
 	{
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
@@ -1233,7 +1350,7 @@ public class PathfinderTest
 
 		assertEquals(181, withVarrockTeleport.getPath().size());
 		assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
-			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: GE"));
+			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: Grand Exchange"));
 	}
 
 	@Test
@@ -1287,7 +1404,7 @@ public class PathfinderTest
 	}
 
 	@Test
-	public void testArdougneLeverUsedWithoutItemsWhenWildernessAllowed()
+	public void testArdougneLeverNotUsedWithoutSlashItem()
 	{
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
@@ -1300,12 +1417,12 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
-			771,
+			876,
 			origin,
 			destination);
 
 		assertTrue("Route should still reach the destination when wilderness is allowed", pathfinder.getResult().isReached());
-		assertTrue("Ardougne lever should be used when wilderness is allowed and no better item teleport exists",
+		assertFalse("Ardougne lever lands inside a web-fenced compound and should not be used without a slash item",
 			usedTransportType(pathfinder, TransportType.TELEPORTATION_LEVER));
 	}
 
@@ -1423,6 +1540,27 @@ public class PathfinderTest
 		testTransportMinimumLength(3,
 			WorldPointUtil.packWorldPoint(1808, 3679, 0), // Port Piscarilius
 			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
+
+		testTransportMinimumLength(3,
+			WorldPointUtil.packWorldPoint(3058, 2975, 0), // The Pandemonium
+			WorldPointUtil.packWorldPoint(2954, 3158, 0)); // Musa Point
+
+		testTransportMinimumLength(3,
+			WorldPointUtil.packWorldPoint(3058, 2975, 0), // The Pandemonium
+			WorldPointUtil.packWorldPoint(3038, 3192, 0)); // Port Sarim
+	}
+
+	@Test
+	public void testLumbridgeDesertSteppingStoneCannotCrossOcean()
+	{
+		when(config.useAgilityShortcuts()).thenReturn(true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		Pathfinder pathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(3212, 3137, 0),
+			WorldPointUtil.packWorldPoint(3214, 3132, 0));
+
+		assertFalse("Stepping stone must not connect ocean tiles", pathfinder.getResult().isReached());
 	}
 
 	@Test
@@ -1504,6 +1642,25 @@ public class PathfinderTest
 		pathfinderConfig.refresh();
 	}
 
+	private void setupConfigAtTimes(long refreshTimeMinutes, long laterTimeMinutes, int storedTimestamp)
+	{
+		pathfinderConfig = new ChangingTimePathfinderConfig(
+			client, config, QuestState.FINISHED, false, false, refreshTimeMinutes, laterTimeMinutes);
+		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+		when(client.getTotalLevel()).thenReturn(2376);
+		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
+		when(client.getVarpValue(any(Integer.class))).thenReturn(0);
+		when(client.getVarpValue(888)).thenReturn(storedTimestamp);
+		when(config.calculationCutoff()).thenReturn(500);
+		when(config.useTeleportationMinigames()).thenReturn(true);
+		when(config.useTeleportationSpells()).thenReturn(false);
+		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+
+		pathfinderConfig.refresh();
+	}
+
 	// Setup a configuration with
 	// * A fixed QuestState for all quests
 	// * A fixed skill level for all skills
@@ -1535,6 +1692,18 @@ public class PathfinderTest
 	{
 		doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
 		doReturn(items).when(inventory).getItems();
+	}
+
+	private void setupQuestPointDatabase(int currentQuestPoints)
+	{
+		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(Arrays.asList(1, 2, 3));
+		when(client.getDBTableField(1, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
+		when(client.getDBTableField(2, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
+		when(client.getDBTableField(3, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{0});
+		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{300});
+		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{43});
+		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{4});
+		when(client.getVarpValue(VarPlayer.QUEST_POINTS)).thenReturn(currentQuestPoints);
 	}
 
 	private void setupEquipment(Item... items)
@@ -1609,7 +1778,6 @@ public class PathfinderTest
 
 		// Count expected transports from the full transport list
 		int expectedCount = 0;
-		Transport sampleTransport = null;
 		for (int origin : transports.keySet())
 		{
 			for (Transport transport : transports.get(origin))
@@ -1617,10 +1785,6 @@ public class PathfinderTest
 				if (transportType.equals(transport.getType()))
 				{
 					expectedCount++;
-					if (sampleTransport == null)
-					{
-						sampleTransport = transport;
-					}
 				}
 			}
 		}
@@ -1639,6 +1803,7 @@ public class PathfinderTest
 		assertTrue("At least one transport should exist", expectedCount > 0);
 
 		// Test path calculation on just one transport to verify pathfinding works
+		Transport sampleTransport = findSampleTransport(transportType);
 		assertEquals(sampleTransport.toString(), 2, calculateTransportLength(sampleTransport));
 	}
 
@@ -1719,7 +1884,14 @@ public class PathfinderTest
 				{
 					int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 					int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-					if (ShortestPathPlugin.isInsidePoh(originX, originY))
+					int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
+					int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+					// Skip transports touching the POH interior: they are rejected by
+					// PathfinderConfig unless usePoh is enabled, and the POH ring
+					// destination is unreachable by walking, so a picked sample would
+					// produce an arbitrarily long exhausted-search path instead of 2.
+					if (ShortestPathPlugin.isInsidePoh(originX, originY)
+						|| ShortestPathPlugin.isInsidePoh(destX, destY))
 					{
 						continue;
 					}
@@ -1818,7 +1990,12 @@ public class PathfinderTest
 
 	private void setupConfigWithBank(TeleportationItem useTeleportationItems, Item... bankItems)
 	{
-		pathfinderConfig = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
+		setupConfigWithBank(QuestState.FINISHED, useTeleportationItems, bankItems);
+	}
+
+	private void setupConfigWithBank(QuestState questState, TeleportationItem useTeleportationItems, Item... bankItems)
+	{
+		pathfinderConfig = new TestPathfinderConfig(client, config, questState, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
@@ -1895,6 +2072,23 @@ public class PathfinderTest
 				{
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	private boolean hasUsableTeleport(String displayInfo)
+	{
+		return hasUsableTeleport(displayInfo, false);
+	}
+
+	private boolean hasUsableTeleport(String displayInfo, boolean bankVisited)
+	{
+		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
+		{
+			if (displayInfo.equals(transport.getDisplayInfo()))
+			{
+				return true;
 			}
 		}
 		return false;
@@ -2010,6 +2204,33 @@ public class PathfinderTest
 		int withHighPrayer = PathfinderConfig.computeCombatLevel(60, 60, 60, 60, 1, 1, 99);
 		assertTrue("Higher prayer should yield a higher or equal combat level",
 			withHighPrayer >= withLowPrayer);
+	}
+
+	private static final class ChangingTimePathfinderConfig extends TestPathfinderConfig
+	{
+		private final long refreshTimeMinutes;
+		private final long laterTimeMinutes;
+		private boolean timeRead;
+
+		private ChangingTimePathfinderConfig(Client client, ShortestPathConfig config,
+			QuestState questState, boolean bypassVarbitChecks, boolean bypassVarPlayerChecks,
+			long refreshTimeMinutes, long laterTimeMinutes)
+		{
+			super(client, config, questState, bypassVarbitChecks, bypassVarPlayerChecks);
+			this.refreshTimeMinutes = refreshTimeMinutes;
+			this.laterTimeMinutes = laterTimeMinutes;
+		}
+
+		@Override
+		protected long currentTimeMinutes()
+		{
+			if (!timeRead)
+			{
+				timeRead = true;
+				return refreshTimeMinutes;
+			}
+			return laterTimeMinutes;
+		}
 	}
 
 }

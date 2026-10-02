@@ -3,6 +3,7 @@ package shortestpath;
 public class TestShortestPathConfig implements ShortestPathConfig
 {
 	private int calculationCutoff = 5;
+	private int unreachableTargetDistance = 2;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	private boolean includeBankPath = false;
 
@@ -10,6 +11,11 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public void setCalculationCutoffValue(int calculationCutoff)
 	{
 		this.calculationCutoff = calculationCutoff;
+	}
+
+	public void setUnreachableTargetDistanceValue(int unreachableTargetDistance)
+	{
+		this.unreachableTargetDistance = unreachableTargetDistance;
 	}
 
 	@SuppressWarnings("unused")
@@ -46,6 +52,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public int calculationCutoff()
 	{
 		return calculationCutoff;
+	}
+
+	@Override
+	public int unreachableTargetDistance()
+	{
+		return unreachableTargetDistance;
 	}
 
 	@Override
