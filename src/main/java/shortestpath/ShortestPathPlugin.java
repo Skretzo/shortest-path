@@ -817,6 +817,7 @@ public class ShortestPathPlugin extends Plugin
 		data.put("path", path);
 		data.put(PLUGIN_MESSAGE_TRANSPORTS, transports);
 		data.put("closest", WorldPointUtil.unpackWorldPoint(result.getClosestReachedPoint()));
+		data.put("cost", result.getPathCost());
 		PathTerminationReason reason = result.getTerminationReason();
 		data.put("reason", reason == null ? null : reason.name());
 		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
