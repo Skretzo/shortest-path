@@ -1,20 +1,45 @@
 # Contributing
 
 Thanks for helping keep the routing data accurate. This guide covers the
-three ways people contribute here — pick the section that fits you:
+three ways people contribute here — pick the section that fits your
+change:
 
-- [I want to fix wrong/missing routes or teleports](#fixing-data) — most
+- [Fixing wrong/missing routes or teleports](#fixing-data) — most
   contributions are small edits to `.tsv` files; no Java needed.
-- [I want to change plugin code](#changing-code) — Java, the standard
+- [Changing plugin code](#changing-code) — Java, the standard
   RuneLite plugin workflow.
-- [I'm driving an AI agent](#contributing-with-an-ai-agent) — agents work
-  well on this repo *if* you hold them to the evidence rules below.
+- [Working with an AI assistant](#working-with-an-ai-assistant) —
+  agents work well on this repo *if* they're held to the evidence
+  rules below.
 
 Before writing code, skim
 [docs/Transport-TSV-format.md](docs/Transport-TSV-format.md) — every route
 the plugin knows is a row in a tab-separated file, and that doc defines
 the columns. [docs/Useful-Tools.md](docs/Useful-Tools.md) lists the map
 viewers and databases contributors use to check coordinates.
+
+## Recommended: work in shortest-path-tooling
+
+For anything beyond a typo, the easiest way to work on this repo is via
+[shortest-path-tooling](https://github.com/osrs-pathfinding/shortest-path-tooling)
+— it carries this repo as a submodule and adds the tooling the
+maintainers use:
+
+- **The dashboard** — renders every committed scenario's route on a map,
+  so you can see what a data change does before opening a PR:
+  `./gradlew dashboard` then serve `build/reports/pathfinder-dashboard`.
+- **The scenario corpus** — committed CSVs of real reported routes run
+  through the pathfinder; your change is checked against all of them.
+- **Cache dumpers and probes** — confirm *which* varbit/quest stage
+  actually gates a transport straight from the game cache instead of
+  guessing (see `VarAccessProbeTest` there).
+- **Validation gates** — `maintenance.py verify`/`validate` run the
+  same checks the maintainers run.
+
+Its `CONTRIBUTING.md` covers the setup (fork remotes, cache download,
+branch conventions). You can still work in this repo directly — the
+guide below applies either way — but the tooling repo is where values
+get *verified* rather than assumed.
 
 ## Fixing data
 
@@ -36,6 +61,10 @@ Typical fix:
    bash scripts/tsv-lint.sh          # every row has the right columns
    ./gradlew test                    # full pathfinder test suite
    ```
+
+   In the tooling repo, `./gradlew test` also runs the dashboard
+   scenario corpus, and `maintenance.py verify` adds the collision-map
+   diff.
 
 3. Open a PR — see [PR conventions](#pr-conventions).
 
@@ -74,9 +103,9 @@ walls or claims impossible teleports. So:
   `::getvarp`/`::getvarb` console commands.
 - **Wiki**: fetch machine-readable wikitext instead of scraping HTML:
   `https://oldschool.runescape.wiki/api.php?action=parse&page=<Page>&prop=wikitext&format=json`
-- **Deeper digging** (cache enums, scripts, collision tiles): the
+- **Cache data** (enums, client scripts, collision tiles): the
   [shortest-path-tooling](https://github.com/osrs-pathfinding/shortest-path-tooling)
-  repo has the dumpers and probes the maintainers use for exactly this.
+  repo has the dumpers and probes for exactly this.
 
 ## Changing code
 
@@ -98,23 +127,25 @@ Things reviewers look for:
 - Keep behavior honest about the game: the pathfinder should model what
   players can actually do, not what would be convenient.
 
-## Contributing with an AI agent
+## Working with an AI assistant
 
 Agents are a great fit for this repository — the data is declarative,
 every file has a schema, and the test suite catches a lot — **but they
-will confidently invent values if you let them.** The maintainer can
-verify your PR, but a bad guess wastes a review round. Hold your agent
-to this checklist:
+will confidently invent values if you let them.** Hold your agent to
+this checklist:
 
 **Tell it:**
 
-1. Fix only the reported issue — one route, one requirement, one file
+1. Work in [shortest-path-tooling](https://github.com/osrs-pathfinding/shortest-path-tooling)
+   — it gives the agent the cache probes and scenario suite it needs to
+   *verify* values instead of guessing them.
+2. Fix only the reported issue — one route, one requirement, one file
    section. No "while I'm here" edits.
-2. Cite a source for every changed number (wiki, in-game check, cache
+3. Cite a source for every changed number (wiki, in-game check, cache
    script). If it can't cite one, it must not write the value.
-3. Run `python3 scripts/check_tsv.py`, `bash scripts/tsv-lint.sh`, and
+4. Run `python3 scripts/check_tsv.py`, `bash scripts/tsv-lint.sh`, and
    `./gradlew test` before the PR. Tabs, not spaces — TSV means tabs.
-4. Describe the expected in-game behavior in the PR description so a
+5. Describe the expected in-game behavior in the PR description so a
    human can sanity-check it.
 
 **Red flags — don't open the PR if your agent did any of these:**
