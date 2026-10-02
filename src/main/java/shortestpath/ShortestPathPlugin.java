@@ -133,6 +133,7 @@ public class ShortestPathPlugin extends Plugin
 	public boolean drawTransports;
 	public boolean showTransportInfo;
 	public boolean showBankPickupInfo;
+	public boolean showUnreachableText;
 	public boolean highlightBankPickupItems;
 	public boolean highlightSpellbookSpells;
 	public boolean highlightInventoryItems;
@@ -1383,6 +1384,7 @@ public class ShortestPathPlugin extends Plugin
 		drawTransports = override("drawTransports", config.drawTransports());
 		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
+		showUnreachableText = override("showUnreachableText", config.showUnreachableText());
 		highlightBankPickupItems = override("highlightBankPickupItems", config.highlightBankPickupItems());
 		highlightSpellbookSpells = override("highlightSpellbookSpells", config.highlightSpellbookSpells());
 		highlightInventoryItems = override("highlightInventoryItems", config.highlightInventoryItems());
