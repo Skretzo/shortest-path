@@ -3,11 +3,13 @@ package shortestpath.pathfinder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntPredicate;
 
 import lombok.Getter;
 import net.runelite.api.Client;
@@ -18,6 +20,7 @@ import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
+import net.runelite.api.WorldType;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
@@ -41,6 +44,7 @@ import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
+import shortestpath.transport.TransportMembership;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 import shortestpath.transport.parser.SkillRequirementParser;
@@ -122,6 +126,10 @@ public class PathfinderConfig
 	private final Map<Quest, QuestState> questStates = new HashMap<>();
 	private final Map<Integer, Integer> varbitValues = new HashMap<>();
 	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
+	/**
+	 * Item id to {@code ItemComposition.isMembers()}, which is fixed for a session.
+	 */
+	private final Map<Integer, Boolean> membersItems = new HashMap<>();
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
@@ -164,6 +172,15 @@ public class PathfinderConfig
 	private int currencyThreshold;
 	@Getter
 	private boolean isOnSailingBoat;
+	/**
+	 * Opt-in: leave out members-only transports on free-to-play worlds.
+	 */
+	private boolean filterMembersTransportsOnF2p;
+	/**
+	 * Whether the current world is a members world; {@code true} until a world type has been read.
+	 */
+	@Getter
+	private boolean membersWorld = true;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -308,6 +325,9 @@ public class PathfinderConfig
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
 		leagueModeState.refresh(client);
+		filterMembersTransportsOnF2p = ShortestPathPlugin.override("filterMembersTransportsOnF2p", config.filterMembersTransportsOnF2p());
+		// Leagues worlds are always members worlds, so free-to-play filtering never applies to them.
+		membersWorld = isMembersWorldType(client == null ? null : client.getWorldType());
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
@@ -649,6 +669,45 @@ public class PathfinderConfig
 	}
 
 	/**
+	 * Whether the supplied world types describe a members world. An unknown
+	 * world type counts as members, so free-to-play filtering stays off.
+	 */
+	public static boolean isMembersWorldType(EnumSet<WorldType> worldTypes)
+	{
+		return worldTypes == null || worldTypes.contains(WorldType.MEMBERS);
+	}
+
+	/**
+	 * Accepts the items that count as owned. Members items don't on free-to-play worlds with
+	 * members-only filtering on, where rune pouch contents, combination runes, battlestaves
+	 * and tomes can't be used. Must be used on the client thread.
+	 */
+	public IntPredicate usableItems()
+	{
+		if (!filterMembersTransportsOnF2p || membersWorld)
+		{
+			return OwnedItems.ALL_ITEMS;
+		}
+		return itemId -> !membersItems.computeIfAbsent(itemId, id -> client.getItemDefinition(id).isMembers());
+	}
+
+	/**
+	 * Whether a transport with the supplied membership may be used. {@code f2p-only}
+	 * transports depend only on the world type; members-only transports are only
+	 * left out on free-to-play worlds with the filter on.
+	 */
+	static boolean isMembershipAllowed(TransportMembership membership, TransportType type,
+		boolean filterEnabled, boolean membersWorld)
+	{
+		if (!type.isMembershipFiltered()
+			|| (!filterEnabled && membership != TransportMembership.F2P_ONLY))
+		{
+			return true;
+		}
+		return membership.isUsableOn(membersWorld);
+	}
+
+	/**
 	 * Remaps POH transport destinations to the house landing tile.
 	 * Transports that arrive inside the POH (e.g., fairy ring DIQ, spirit tree "Your house")
 	 * are remapped so chaining with other POH transports is possible.
@@ -760,6 +819,13 @@ public class PathfinderConfig
 		// League region gate: in seasonal mode, drop transports that touch the
 		// always-blocked region or a region the player has not unlocked.
 		if (!isTransportRegionAllowed(transport))
+		{
+			return false;
+		}
+
+		// Members/free-to-play gate, from the "F2P" column of the transport TSVs.
+		if (!isMembershipAllowed(transport.getMembership(), transport.getType(),
+			filterMembersTransportsOnF2p, membersWorld))
 		{
 			return false;
 		}
@@ -1163,7 +1229,8 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Item id to quantity over the selected containers, summed across containers.
+	 * Item id to quantity over the selected containers, summed across containers. Members items
+	 * are left out while they are unusable (see {@link #usableItems()}).
 	 */
 	private Map<Integer, Integer> collectItems(
 		boolean checkInventory,
@@ -1172,15 +1239,16 @@ public class PathfinderConfig
 		boolean checkRunePouch)
 	{
 		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
+		IntPredicate usable = usableItems();
 
 		if (checkInventory)
 		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV));
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV), usable);
 		}
 
 		if (checkEquipment)
 		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN));
+			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN), usable);
 		}
 
 		if (checkBank)
@@ -1189,13 +1257,13 @@ public class PathfinderConfig
 			if (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
 				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))
 			{
-				OwnedItems.addContainer(itemsAndQuantities, bank);
+				OwnedItems.addContainer(itemsAndQuantities, bank, usable);
 			}
 		}
 
 		if (checkRunePouch)
 		{
-			OwnedItems.addRunePouchContents(client, itemsAndQuantities);
+			OwnedItems.addRunePouchContents(client, itemsAndQuantities, usable);
 		}
 
 		return itemsAndQuantities;

@@ -126,7 +126,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|use\\w+|cost\\w+)$");
+	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|filterMembersTransportsOnF2p|use\\w+|cost\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -221,6 +221,10 @@ public class ShortestPathPlugin extends Plugin
 	private PathfinderConfig pathfinderConfig;
 	@Getter
 	private boolean startPointSet = false;
+	/**
+	 * Whether the current path was requested on a members world.
+	 */
+	private boolean pathMembersWorld = true;
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -417,6 +421,7 @@ public class ShortestPathPlugin extends Plugin
 		getClientThread().invokeLater(() ->
 		{
 			pathfinderConfig.refresh();
+			pathMembersWorld = pathfinderConfig.isMembersWorld();
 			pathfinderConfig.filterLocations(ends, canReviveFiltered);
 			synchronized (pathfinderMutex)
 			{
@@ -539,6 +544,13 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		// Not in onWorldChanged, which fires before the new connection exists; wait a tick for login to finish.
+		// LOGGED_IN also fires after region loads, hence the world type check.
+		if (GameState.LOGGED_IN.equals(event.getGameState()) && worldTypeChangedSincePath())
+		{
+			pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::recalculateAfterWorldTypeChange));
+		}
+
 		if (pathfinderConfig == null
 			|| !GameState.LOGGING_IN.equals(lastLastGameState)
 			|| !GameState.LOADING.equals(lastLastGameState = lastGameState)
@@ -550,6 +562,31 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+	}
+
+	/**
+	 * Usable transports depend on the world type, so hopping between
+	 * free-to-play and members worlds invalidates the current path.
+	 */
+	private boolean worldTypeChangedSincePath()
+	{
+		return pathfinder != null
+			&& pathfinderConfig != null
+			&& pathMembersWorld != PathfinderConfig.isMembersWorldType(client.getWorldType());
+	}
+
+	private void recalculateAfterWorldTypeChange()
+	{
+		// Region loads can queue this more than once; the first run resolves the change
+		if (!worldTypeChangedSincePath())
+		{
+			return;
+		}
+		Player localPlayer = client.getLocalPlayer();
+		int start = startPointSet || localPlayer == null
+			? pathfinder.getStart()
+			: WorldPointUtil.fromLocalInstance(client, localPlayer);
+		restartPathfinding(start, pathfinder.getTargets());
 	}
 
 	/**

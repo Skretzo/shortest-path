@@ -110,6 +110,19 @@ public class TransportLoader
 				// same origin and destination
 				if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold)
 				{
+					if (TransportMembership.combine(origin.getMembership(), destination.getMembership()) == null)
+					{
+						// No world type allows both halves (members-only with F2P-only)
+						log.warn("Skipping {} transport ({}, {}, {}) to ({}, {}, {}): F2P values of its halves never overlap",
+							transportType,
+							WorldPointUtil.unpackWorldX(origin.getOrigin()),
+							WorldPointUtil.unpackWorldY(origin.getOrigin()),
+							WorldPointUtil.unpackWorldPlane(origin.getOrigin()),
+							WorldPointUtil.unpackWorldX(destination.getDestination()),
+							WorldPointUtil.unpackWorldY(destination.getDestination()),
+							WorldPointUtil.unpackWorldPlane(destination.getDestination()));
+						continue;
+					}
 					Transport combined = new Transport(origin, destination);
 					transports
 						.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())

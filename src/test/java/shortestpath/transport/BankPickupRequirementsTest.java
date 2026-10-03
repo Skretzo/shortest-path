@@ -23,9 +23,13 @@ import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -68,7 +72,7 @@ public class BankPickupRequirementsTest
 		when(client.getVarbitValue(VarbitID.RUNE_POUCH_TYPE_1)).thenReturn(POUCH_AIR);
 		when(client.getVarbitValue(VarbitID.RUNE_POUCH_QUANTITY_1)).thenReturn(5);
 
-		Map<Integer, Integer> collected = BankPickupRequirements.collectPlayerItems(client);
+		Map<Integer, Integer> collected = BankPickupRequirements.collectPlayerItems(client, OwnedItems.ALL_ITEMS);
 
 		assertEquals(Integer.valueOf(15), collected.get(ItemID.AIRRUNE));
 		assertEquals(Integer.valueOf(1), collected.get(ItemID.STAFF_OF_FIRE));
@@ -314,6 +318,21 @@ public class BankPickupRequirementsTest
 			.type(TransportType.TELEPORTATION_SPELL)
 			.itemRequirements(new TransportItems(List.of(requirements)))
 			.build();
+	}
+
+	@Test
+	public void collectPlayerItemsLeavesOutRejectedItems()
+	{
+		setupPlayerItems();
+
+		Map<Integer, Integer> collected = BankPickupRequirements.collectPlayerItems(client,
+			itemId -> itemId != ItemID.BH_RUNE_POUCH);
+
+		// The pouch was left out, so its runes are not counted
+		assertEquals(Integer.valueOf(10), collected.get(ItemID.AIRRUNE));
+		assertEquals(Integer.valueOf(1), collected.get(ItemID.STAFF_OF_FIRE));
+		assertFalse(collected.containsKey(ItemID.BH_RUNE_POUCH));
+		verify(client, never()).getEnum(anyInt());
 	}
 
 	private void setupPlayerItems()

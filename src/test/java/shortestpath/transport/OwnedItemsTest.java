@@ -2,6 +2,7 @@ package shortestpath.transport;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.IntPredicate;
 import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -42,8 +44,8 @@ public class OwnedItemsTest
 		when(inventory.getItems()).thenReturn(new Item[]{new Item(ItemID.COINS, 100)});
 		when(equipment.getItems()).thenReturn(new Item[]{new Item(ItemID.COINS, 5)});
 
-		OwnedItems.addContainer(owned, inventory);
-		OwnedItems.addContainer(owned, equipment);
+		OwnedItems.addContainer(owned, inventory, OwnedItems.ALL_ITEMS);
+		OwnedItems.addContainer(owned, equipment, OwnedItems.ALL_ITEMS);
 
 		assertEquals(Integer.valueOf(105), owned.get(ItemID.COINS));
 	}
@@ -53,8 +55,8 @@ public class OwnedItemsTest
 	{
 		when(inventory.getItems()).thenReturn(new Item[]{new Item(-1, 0), new Item(ItemID.COINS, 0)});
 
-		OwnedItems.addContainer(owned, inventory);
-		OwnedItems.addContainer(owned, null);
+		OwnedItems.addContainer(owned, inventory, OwnedItems.ALL_ITEMS);
+		OwnedItems.addContainer(owned, null, OwnedItems.ALL_ITEMS);
 
 		assertTrue(owned.isEmpty());
 	}
@@ -67,8 +69,8 @@ public class OwnedItemsTest
 			new Item(ItemID.AIRRUNE, 1000), new Item(ItemID.BH_RUNE_POUCH, 1)});
 		setupRunePouch(2, 5);
 
-		OwnedItems.addContainer(owned, inventory);
-		OwnedItems.addRunePouchContents(client, owned);
+		OwnedItems.addContainer(owned, inventory, OwnedItems.ALL_ITEMS);
+		OwnedItems.addRunePouchContents(client, owned, OwnedItems.ALL_ITEMS);
 
 		assertEquals(Integer.valueOf(1002), owned.get(ItemID.AIRRUNE));
 		assertEquals(Integer.valueOf(5), owned.get(ItemID.LAWRUNE));
@@ -77,7 +79,7 @@ public class OwnedItemsTest
 	@Test
 	public void runePouchIsOnlyReadWhenOwned()
 	{
-		OwnedItems.addRunePouchContents(client, owned);
+		OwnedItems.addRunePouchContents(client, owned, OwnedItems.ALL_ITEMS);
 
 		assertTrue(owned.isEmpty());
 		verifyNoInteractions(client);
@@ -88,7 +90,34 @@ public class OwnedItemsTest
 	{
 		setupRunePouch(2, 5);
 
-		assertEquals(Map.of(ItemID.AIRRUNE, 2, ItemID.LAWRUNE, 5), OwnedItems.runePouchContents(client));
+		assertEquals(Map.of(ItemID.AIRRUNE, 2, ItemID.LAWRUNE, 5),
+			OwnedItems.runePouchContents(client, OwnedItems.ALL_ITEMS));
+	}
+
+	@Test
+	public void rejectedRunesAreLeftOutOfRunePouchContents()
+	{
+		setupRunePouch(2, 5);
+
+		assertEquals(Map.of(ItemID.LAWRUNE, 5),
+			OwnedItems.runePouchContents(client, itemId -> itemId != ItemID.AIRRUNE));
+	}
+
+	@Test
+	public void rejectedItemsAndTheirPouchContentsAreLeftOut()
+	{
+		when(inventory.getItems()).thenReturn(new Item[]{
+			new Item(ItemID.DUSTRUNE, 100), new Item(ItemID.LAWRUNE, 10), new Item(ItemID.BH_RUNE_POUCH, 1)});
+		IntPredicate usable = itemId -> itemId != ItemID.DUSTRUNE && itemId != ItemID.BH_RUNE_POUCH;
+
+		OwnedItems.addContainer(owned, inventory, usable);
+		OwnedItems.addRunePouchContents(client, owned, usable);
+
+		// The pouch was left out, so its contents are not read
+		assertFalse(owned.containsKey(ItemID.BH_RUNE_POUCH));
+		assertFalse(owned.containsKey(ItemID.DUSTRUNE));
+		assertEquals(Integer.valueOf(10), owned.get(ItemID.LAWRUNE));
+		verifyNoInteractions(client);
 	}
 
 	private void setupRunePouch(int airRunes, int lawRunes)
