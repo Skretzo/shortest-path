@@ -2,10 +2,13 @@ package shortestpath.pathfinder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.Transport;
 
 /**
  * Pins down the cost formulas and flag bookkeeping of the structure-of-arrays node store so a
@@ -86,7 +89,12 @@ public class NodeGraphTest
 		int travelTime = 6;
 		int additionalCost = 50;
 		int differentialCost = 4;
-		int transport = graph.createTransport(destination, prev, travelTime, additionalCost, false, true, differentialCost);
+		Transport used = new Transport.TransportBuilder()
+			.origin(origin)
+			.destination(destination)
+			.build();
+		int transport = graph.createTransport(destination, prev, travelTime, additionalCost, false, true,
+			differentialCost, used);
 
 		// No walking-distance term for transports, unlike a walked tile.
 		assertEquals(graph.cost(prev) + travelTime + additionalCost, graph.cost(transport));
@@ -95,6 +103,8 @@ public class NodeGraphTest
 		assertTrue(graph.isDelayedVisit(transport));
 		assertTrue(graph.isTile(transport)); // transports are concrete tile destinations
 		assertEquals(differentialCost, graph.differentialCost(transport));
+		assertSame(used, graph.transport(transport));
+		assertSame(used, graph.getPathSteps(transport).get(2).getTransport());
 	}
 
 	@Test
@@ -102,7 +112,11 @@ public class NodeGraphTest
 	{
 		NodeGraph graph = new NodeGraph(16);
 		int start = graph.createStart(WorldPointUtil.packWorldPoint(3200, 3200, 0));
-		int transport = graph.createTransport(WorldPointUtil.packWorldPoint(2800, 3400, 0), start, 6, 0, true, false, 0);
+		Transport used = new Transport.TransportBuilder()
+			.destination(WorldPointUtil.packWorldPoint(2800, 3400, 0))
+			.build();
+		int transport = graph.createTransport(WorldPointUtil.packWorldPoint(2800, 3400, 0), start, 6, 0,
+			true, false, 0, used);
 
 		assertTrue(graph.isTransport(transport));
 		assertFalse(graph.isDelayedVisit(transport));
@@ -133,6 +147,7 @@ public class NodeGraphTest
 		var steps = graph.getPathSteps(bankVisit);
 		assertEquals(1, steps.size());
 		assertEquals(bankTile, steps.get(0).getPackedPosition());
+		assertNull(steps.get(0).getTransport());
 	}
 
 	@Test
@@ -145,13 +160,18 @@ public class NodeGraphTest
 		int start = graph.createStart(a);
 		int tile = graph.createTile(b, start, false);
 		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tile, false);
-		int teleportDest = graph.createTransport(c, abstractNode, 6, 0, false, false, 0);
+		Transport teleport = new Transport.TransportBuilder()
+			.destination(c)
+			.build();
+		int teleportDest = graph.createTransport(c, abstractNode, 6, 0, false, false, 0, teleport);
 
 		var steps = graph.getPathSteps(teleportDest);
 		assertEquals(3, steps.size()); // start, tile, teleportDest (abstract is skipped)
 		assertEquals(a, steps.get(0).getPackedPosition());
 		assertEquals(b, steps.get(1).getPackedPosition());
 		assertEquals(c, steps.get(2).getPackedPosition());
+		assertNull(steps.get(0).getTransport()); // walked steps carry no transport identity
+		assertSame(teleport, steps.get(2).getTransport());
 
 		assertEquals(c, graph.getClosestTilePosition(teleportDest));
 		assertEquals(b, graph.getClosestTilePosition(abstractNode));

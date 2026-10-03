@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.Transport;
 
 /**
  * Structure-of-Arrays store for pathfinding nodes.
@@ -18,7 +19,10 @@ import shortestpath.WorldPointUtil;
  * The fields packed per node are exactly those of the old {@code Node}/{@code TransportNode}:
  * packed world position, the index of the previous node ({@link #NO_NODE} for the start),
  * accumulated cost, the transport differential cost (queue-ordering only), a set of boolean flags,
- * and the {@link AbstractNodeKind} ordinal for abstract nodes.
+ * and the {@link AbstractNodeKind} ordinal for abstract nodes — plus the {@link Transport}
+ * that produced a transport edge, so consumers can identify which transport the path actually
+ * used instead of reconstructing it from origin/destination (ambiguous on shared-destination
+ * transports).
  * <p>
  * <strong>Threading.</strong> The search runs on a single worker thread, but the render thread
  * reads the partial path while the search is still running (progressive rendering via
@@ -58,6 +62,7 @@ public class NodeGraph
 	private int[] differentialCost;
 	private byte[] flags;
 	private byte[] abstractKind;
+	private Transport[] transports;
 	private int size;
 
 	public NodeGraph(int initialCapacity)
@@ -69,6 +74,7 @@ public class NodeGraph
 		differentialCost = new int[capacity];
 		flags = new byte[capacity];
 		abstractKind = new byte[capacity];
+		transports = new Transport[capacity];
 	}
 
 	public int size()
@@ -92,6 +98,7 @@ public class NodeGraph
 		differentialCost = Arrays.copyOf(differentialCost, newCapacity);
 		flags = Arrays.copyOf(flags, newCapacity);
 		abstractKind = Arrays.copyOf(abstractKind, newCapacity);
+		transports = Arrays.copyOf(transports, newCapacity);
 	}
 
 	private int append(int packed, int prev, int nodeCost, int diffCost, byte flagBits, byte kind)
@@ -138,9 +145,11 @@ public class NodeGraph
 	/**
 	 * A transport destination tile. Cost is the previous cost plus the transport's travel time and
 	 * any additional cost; there is no walking-distance term (mirrors the old {@code TransportNode}).
+	 * The chosen {@link Transport} is stored on the node so the reconstructed path can report
+	 * which transport produced the edge.
 	 */
 	public int createTransport(int packedPosition, int previous, int travelTime, int additionalCost,
-		boolean bankVisited, boolean delayedVisit, int differentialCost)
+		boolean bankVisited, boolean delayedVisit, int differentialCost, Transport transport)
 	{
 		byte flagBits = FLAG_TRANSPORT;
 		if (bankVisited)
@@ -151,8 +160,10 @@ public class NodeGraph
 		{
 			flagBits |= FLAG_DELAYED_VISIT;
 		}
-		return append(packedPosition, previous, costOf(previous) + travelTime + additionalCost,
+		final int id = append(packedPosition, previous, costOf(previous) + travelTime + additionalCost,
 			differentialCost, flagBits, (byte) 0);
+		transports[id] = transport;
+		return id;
 	}
 
 	/**
@@ -241,6 +252,15 @@ public class NodeGraph
 		return (flags[id] & FLAG_DELAYED_VISIT) != 0;
 	}
 
+	/**
+	 * The transport that produced the edge into {@code id}, or null for walking edges,
+	 * bank-visit transitions and the start node.
+	 */
+	public Transport transport(int id)
+	{
+		return transports[id];
+	}
+
 	public AbstractNodeKind abstractKind(int id)
 	{
 		return ABSTRACT_KINDS[abstractKind[id]];
@@ -261,7 +281,8 @@ public class NodeGraph
 		final int[] prev = previous;
 		final int[] packed = packedPosition;
 		final byte[] flg = flags;
-		if (prev == null || packed == null || flg == null || id == NO_NODE)
+		final Transport[] trans = transports;
+		if (prev == null || packed == null || flg == null || trans == null || id == NO_NODE)
 		{
 			return new ArrayList<>();
 		}
@@ -290,7 +311,8 @@ public class NodeGraph
 		{
 			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0)
 			{
-				pathSteps.set(--i, new PathStep(packed[node], (flg[node] & FLAG_BANK_VISITED) != 0));
+				pathSteps.set(--i, new PathStep(packed[node], (flg[node] & FLAG_BANK_VISITED) != 0,
+					trans[node]));
 			}
 			node = prev[node];
 		}
@@ -336,6 +358,7 @@ public class NodeGraph
 		differentialCost = null;
 		flags = null;
 		abstractKind = null;
+		transports = null;
 		size = 0;
 	}
 }

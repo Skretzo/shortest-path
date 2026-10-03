@@ -101,21 +101,33 @@ public final class BankPickupRequirements
 				int stepPoint = path.get(i).getPackedPosition();
 				int nextPoint = path.get(i + 1).getPackedPosition();
 				boolean banked = path.get(i + 1).isBankVisited();
-				TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
 
 				List<Transport> edgeAlternatives = new ArrayList<>();
-				for (Transport t : availability.getTransportsAt(stepPoint))
+				// When the step carries the transport the search actually used, that single
+				// transport is the edge — destination-matched alternatives (including a
+				// no-requirement transport sharing the destination) must not suppress the
+				// pickup phrase or bank highlight for the transport the path takes.
+				Transport usedTransport = path.get(i + 1).getTransport();
+				if (usedTransport != null)
 				{
-					if (t.getDestination() == nextPoint)
-					{
-						edgeAlternatives.add(t);
-					}
+					edgeAlternatives.add(usedTransport);
 				}
-				for (Transport t : availability.getUsableTeleports())
+				else
 				{
-					if (t.getDestination() == nextPoint)
+					TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
+					for (Transport t : availability.getTransportsAt(stepPoint))
 					{
-						edgeAlternatives.add(t);
+						if (t.getDestination() == nextPoint)
+						{
+							edgeAlternatives.add(t);
+						}
+					}
+					for (Transport t : availability.getUsableTeleports())
+					{
+						if (t.getDestination() == nextPoint)
+						{
+							edgeAlternatives.add(t);
+						}
 					}
 				}
 				if (edgeAlternatives.isEmpty())

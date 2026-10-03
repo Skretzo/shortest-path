@@ -1348,13 +1348,14 @@ public class ShortestPathPlugin extends Plugin
 	 * nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
 	 * transports for the edge between them.
 	 * <p>
-	 * This is still only a fallback for display code and remains inherently ambiguous when multiple
-	 * valid transports share the same origin/destination pair under the same edge state. The more
-	 * structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
-	 * carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
-	 * adjacent path steps.
+	 * When the destination step carries the transport the search actually chose (steps built by
+	 * {@link NodeGraph#getPathSteps} do), that transport is the answer and this function returns
+	 * it directly as a singleton — reconstruction is only a fallback for identity-less steps
+	 * (e.g. steps built via the two-argument {@link PathStep} constructor). The destination-based
+	 * fallback remains inherently ambiguous when multiple valid transports share the same
+	 * origin/destination pair under the same edge state.
 	 * <p>
-	 * Note that this function also performs filtering by the transport target, so callers of this
+	 * Note that the fallback also performs filtering by the transport target, so callers of this
 	 * function can directly iterate over the returned transports.
 	 */
 	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
@@ -1362,6 +1363,11 @@ public class ShortestPathPlugin extends Plugin
 		if (currentStep == null || nextStep == null)
 		{
 			return Set.of();
+		}
+		// The step knows which transport produced the edge into it: no reconstruction needed.
+		if (nextStep.getTransport() != null)
+		{
+			return Set.of(nextStep.getTransport());
 		}
 		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
 		// Get the transports which start from the position of starting step.
