@@ -597,6 +597,14 @@ public class ShortestPathPlugin extends Plugin
 		portalNexusKeybinds.loadFromProfile();
 		spiritTreePatchState.loadFromProfile();
 		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+
+		// The new profile may carry different persisted trees, so an in-flight
+		// path computed against the old account's set must be redone — same
+		// restart the tick and menu writers issue after changing the field.
+		if (pathfinder != null)
+		{
+			restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+		}
 	}
 
 	@Subscribe
