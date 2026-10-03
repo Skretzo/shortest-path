@@ -202,6 +202,8 @@ public class ShortestPathPlugin extends Plugin
 	private KeyManager keyManager;
 	@Inject
 	private PortalNexusKeybinds portalNexusKeybinds;
+	@Inject
+	private SpiritTreePatchState spiritTreePatchState;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -348,6 +350,7 @@ public class ShortestPathPlugin extends Plugin
 		cacheConfigValues();
 
 		pathfinderConfig = new PathfinderConfig(client, config);
+		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			clientThread.invokeLater(pathfinderConfig::refresh);
@@ -368,6 +371,7 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		portalNexusKeybinds.loadFromProfile();
+		spiritTreePatchState.loadFromProfile();
 	}
 
 	@Override
@@ -574,6 +578,7 @@ public class ShortestPathPlugin extends Plugin
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
 		portalNexusKeybinds.loadFromProfile();
+		spiritTreePatchState.loadFromProfile();
 	}
 
 	@Subscribe
@@ -957,6 +962,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		portalNexusKeybinds.refreshFromDialog(client);
 		portalNexusKeybinds.persistIfDirty();
+		spiritTreePatchState.persistIfDirty();
 
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
@@ -967,6 +973,26 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		Player localPlayer = client.getLocalPlayer();
+		if (localPlayer != null)
+		{
+			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
+			// a planted spirit tree's varbit is only meaningful while standing in
+			// that patch's region. Sample only on a region match.
+			WorldPoint worldLocation = localPlayer.getWorldLocation();
+			String spiritTreePatch = worldLocation == null
+				? null : SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
+			if (spiritTreePatch != null
+				&& spiritTreePatchState.applyVarbitSample(spiritTreePatch,
+					client.getVarbitValue(SpiritTreePatchState.varbitForPatch(spiritTreePatch))))
+			{
+				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
+				if (pathfinder != null)
+				{
+					restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+				}
+			}
+		}
+
 		if (localPlayer == null || pathfinder == null)
 		{
 			return;
@@ -1160,19 +1186,17 @@ public class ShortestPathPlugin extends Plugin
 			});
 		}
 
-		// Populate spirit tree cache, but only once.
-		// The values here almost never change, we only need to load it once.
-		if (pathfinderConfig.availableSpiritTrees == null)
+		// Refresh the spirit tree cache on every menu open: the menu is
+		// authoritative for the planted patches it lists, and other detection
+		// sources (in-region varbits, persisted profile state) fill in the rest.
+		switch (event.getGroupId())
 		{
-			switch (event.getGroupId())
-			{
-				case InterfaceID.MENU:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
-					break;
-				case InterfaceID.MENU_NEW:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
-					break;
-			}
+			case InterfaceID.MENU:
+				clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
+				break;
+			case InterfaceID.MENU_NEW:
+				clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
+				break;
 		}
 	}
 
@@ -1232,6 +1256,7 @@ public class ShortestPathPlugin extends Plugin
 
 		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
 
+		Set<String> listed = new HashSet<>();
 		Set<String> available = new HashSet<>();
 
 		for (Widget child : children)
@@ -1242,17 +1267,22 @@ public class ShortestPathPlugin extends Plugin
 				continue;
 			}
 
+			// Group 3 is spirit tree name
+			listed.add(matcher.group(3));
+
 			// Group 2 is the disabled color tag; if present, the tree is unavailable
 			if (matcher.group(2) != null)
 			{
 				continue;
 			}
 
-			// Group 3 is spirit tree name
 			available.add(matcher.group(3));
 		}
 
-		pathfinderConfig.availableSpiritTrees = available;
+		// The menu is authoritative for the patches it lists; persisted and
+		// in-region-varbit observations fill the patches the menu never covered.
+		spiritTreePatchState.applyMenuSnapshot(listed, available);
+		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
 
 		if (pathfinder != null)
 		{

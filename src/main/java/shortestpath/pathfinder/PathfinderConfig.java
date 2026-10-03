@@ -15,10 +15,12 @@ import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.GameState;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
@@ -30,6 +32,7 @@ import shortestpath.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.SpiritTreePatchState;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.TeleportationItem;
@@ -129,6 +132,12 @@ public class PathfinderConfig
 	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
 	public Set<String> availableSpiritTrees = null;
+	private SpiritTreePatchState spiritTreePatchState;
+
+	public void setSpiritTreePatchState(SpiritTreePatchState spiritTreePatchState)
+	{
+		this.spiritTreePatchState = spiritTreePatchState;
+	}
 	/**
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
 	 */
@@ -556,6 +565,8 @@ public class PathfinderConfig
 		transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
 			QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
+		refreshSpiritTreeAvailability();
+
 		// The owned items depend only on which containers are included, so collect them once rather
 		// than once per transport.
 		Map<Integer, Integer> carriedItems = collectItems(true, true, false, true);
@@ -927,6 +938,62 @@ public class PathfinderConfig
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Resolves the effective {@link #availableSpiritTrees} from every detection
+	 * source: a live in-region {@code FARMING_TRANSMIT_*} varbit sample, the
+	 * plugin-maintained patch state (RSProfile persistence + menu union), or —
+	 * when no patch-state helper is wired (tests, dashboard harness) — the live
+	 * sample alone. An empty resolved set means every observed patch reported
+	 * unusable and blocks planted-tree transports honestly; the unresolved
+	 * {@code null} is kept while no source has produced any observation.
+	 * <p>
+	 * Client thread only, called from {@link #refreshTransports}.
+	 */
+	private void refreshSpiritTreeAvailability()
+	{
+		String inRegionPatch = null;
+		Player localPlayer = client.getLocalPlayer();
+		if (localPlayer != null)
+		{
+			WorldPoint worldLocation = localPlayer.getWorldLocation();
+			if (worldLocation != null)
+			{
+				inRegionPatch = SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
+			}
+		}
+
+		if (spiritTreePatchState != null)
+		{
+			if (inRegionPatch != null)
+			{
+				// In-region sample is authoritative for this patch — a non-20
+				// read evicts any stale persisted or menu-derived positive.
+				spiritTreePatchState.applyVarbitSample(inRegionPatch,
+					client.getVarbitValue(SpiritTreePatchState.varbitForPatch(inRegionPatch)));
+			}
+			Set<String> resolved = spiritTreePatchState.getTravelableTreesOrNull();
+			if (resolved != null)
+			{
+				availableSpiritTrees = resolved;
+			}
+		}
+		else if (inRegionPatch != null)
+		{
+			int varbitValue = client.getVarbitValue(SpiritTreePatchState.varbitForPatch(inRegionPatch));
+			Set<String> resolved = availableSpiritTrees == null
+				? new HashSet<>() : new HashSet<>(availableSpiritTrees);
+			if (SpiritTreePatchState.spiritTreeTravelable(varbitValue))
+			{
+				resolved.add(inRegionPatch);
+			}
+			else
+			{
+				resolved.remove(inRegionPatch);
+			}
+			availableSpiritTrees = resolved;
+		}
 	}
 
 	private boolean checkPlantedSpiritTrees(Transport transport)
