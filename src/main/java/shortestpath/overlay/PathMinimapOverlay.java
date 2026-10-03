@@ -64,7 +64,7 @@ public class PathMinimapOverlay extends Overlay
 		}
 		else
 		{
-			graphics.setClip(plugin.getMinimapClipArea());
+			graphics.setClip(minimapClipArea);
 		}
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
