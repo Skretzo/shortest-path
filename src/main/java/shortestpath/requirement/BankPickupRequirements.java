@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -292,7 +294,8 @@ public final class BankPickupRequirements
 		{
 			int itemId = entry.getKey();
 			long qty = entry.getValue();
-			String itemName = client.getItemDefinition(itemId).getName();
+			ItemComposition definition = client.getItemDefinition(itemId);
+			String itemName = definition == null ? null : definition.getName();
 			if (itemName == null || itemName.isEmpty() || "null".equals(itemName))
 			{
 				itemName = "Unknown item";
@@ -302,7 +305,7 @@ public final class BankPickupRequirements
 			{
 				if (qty > 1)
 				{
-					itemName += " (" + String.format("%,d", qty) + ")";
+					itemName += " (" + String.format(Locale.ROOT, "%,d", qty) + ")";
 				}
 			}
 			else
