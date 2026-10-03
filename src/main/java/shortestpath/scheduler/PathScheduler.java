@@ -34,12 +34,14 @@ import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
+import shortestpath.pathfinder.PathConsumptionValidator;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.sailing.SailingService;
 import shortestpath.sailing.SailingState;
+import shortestpath.transport.Transport;
 
 /**
  * Owns the plugin's pathfinding concurrency: the single-worker executor, the mutex that pairs
@@ -53,6 +55,11 @@ import shortestpath.sailing.SailingState;
 public class PathScheduler
 {
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(PathScheduler.class, "/marker.png");
+	/**
+	 * Bound on the consumption re-plan loop: a path that still fails validation
+	 * after this many re-plans is shown as-is rather than searched again.
+	 */
+	private static final int MAX_REPLAN_ATTEMPTS = 5;
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
 
@@ -88,6 +95,12 @@ public class PathScheduler
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
 	private volatile int sailingPivotX;
 	private volatile int sailingPivotY;
+	/**
+	 * Re-plans triggered by the post-search consumption validator for the current
+	 * (start, targets) search context. Reset whenever pathfinding restarts for a
+	 * new context — exclusions are per-context state held on the config.
+	 */
+	private volatile int replanAttempts = 0;
 
 	@Inject
 	public PathScheduler(Client client, ClientThread clientThread, ShortestPathConfig config,
@@ -113,7 +126,28 @@ public class PathScheduler
 		this.responder = responder;
 	}
 
-	void restart(String reason, int start, Targets ends, boolean canReviveFiltered)
+	void restart(String reason, int start, Targets requestedEnds, boolean canReviveFiltered)
+	{
+		// A new search context starts a fresh consumption accounting: the
+		// validator's exclusions and the re-plan budget only belong to the search
+		// that produced them.
+		synchronized (pathfinderMutex)
+		{
+			replanAttempts = 0;
+			if (pathfinderConfig != null)
+			{
+				pathfinderConfig.clearExcludedTransports();
+			}
+		}
+		schedulePathfinding(reason, start, requestedEnds, canReviveFiltered);
+	}
+
+	/**
+	 * Shared restart body for public restarts and the validator's re-plans. The
+	 * re-plan variant re-enters here without clearing exclusions or resetting the
+	 * attempt counter.
+	 */
+	private void schedulePathfinding(String reason, int start, Targets requestedEnds, boolean canReviveFiltered)
 	{
 		debugState.restartRequested(reason, client.getTickCount());
 		List<PathStep> previousPath;
@@ -145,7 +179,7 @@ public class PathScheduler
 		{
 			try
 			{
-				startPathfinding(start, ends, canReviveFiltered, previousPath, previousTargets);
+				startPathfinding(start, requestedEnds, canReviveFiltered, previousPath, previousTargets);
 			}
 			catch (RuntimeException error)
 			{
@@ -186,13 +220,17 @@ public class PathScheduler
 					try
 					{
 						legacyPathfinder = null;
-						AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
-							aStarRoutingSession, start, ends, responder::postPluginMessages);
+						// The callback is bound to this search instance so a stale
+						// completion can never validate a newer pathfinder's path.
+						AStarPathfinder[] created = new AStarPathfinder[1];
+						created[0] = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
+							aStarRoutingSession, start, ends,
+							() -> onPathComplete(created[0], start, ends, canReviveFiltered));
 						// Recalculating towards the same targets: keep the old route drawn until
 						// the new one is ready.
 						if (ends.equals(previousTargets))
-							aStar.showUntilDone(previousPath);
-						pathfinder = aStar;
+							created[0].showUntilDone(previousPath);
+						pathfinder = created[0];
 					}
 					catch (RuntimeException error)
 					{
@@ -203,7 +241,12 @@ public class PathScheduler
 				}
 				else
 				{
-					legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, responder::postPluginMessages);
+					// The callback is bound to this search instance so a stale
+					// completion can never validate a newer pathfinder's path.
+					Pathfinder[] created = new Pathfinder[1];
+					created[0] = new Pathfinder(pathfinderConfig, start, ends,
+						() -> onPathComplete(created[0], start, ends, canReviveFiltered));
+					legacyPathfinder = created[0];
 					pathfinder = legacyPathfinder;
 				}
 				ActiveSearch search = pathfinder;
@@ -252,6 +295,35 @@ public class PathScheduler
 			: Math.floorMod((state.getHeading() + 64) / 128, 16);
 		return new SailingPathfinder(pathfinderConfig, sailingStart, ends, responder::postPluginMessages,
 			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull, sailingHeading);
+	}
+
+	/**
+	 * Runs on the pathfinder worker thread when a search finishes: replays the
+	 * path's recorded transports against the consumption ledger and, when the
+	 * first unpayable transport exists, excludes it and re-plans the same
+	 * (start, targets) — bounded by {@link #MAX_REPLAN_ATTEMPTS}. Validation is
+	 * deliberately post-search: keeping resource state out of the search graph
+	 * avoids multiplying the state space, so the worst case is a few extra full
+	 * searches per displayed path and zero when the path is clean.
+	 */
+	private void onPathComplete(ActiveSearch finished, int start, Targets ends, boolean canReviveFiltered)
+	{
+		// Only the search this callback belongs to may be validated; if the field
+		// has moved on to a newer search, that search's own callback handles it.
+		if (pathfinder != finished)
+		{
+			return;
+		}
+		Transport unpayable = PathConsumptionValidator.firstUnpayable(
+			pathfinderConfig.getEligibility(), finished.getPath());
+		if (unpayable == null || replanAttempts >= MAX_REPLAN_ATTEMPTS)
+		{
+			responder.postPluginMessages();
+			return;
+		}
+		replanAttempts++;
+		pathfinderConfig.excludeTransport(unpayable);
+		schedulePathfinding("consumption re-plan", start, ends, canReviveFiltered);
 	}
 
 	private void ensurePathfindingExecutor()
