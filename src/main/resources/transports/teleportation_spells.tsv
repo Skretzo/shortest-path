@@ -135,9 +135,16 @@
 # Mind Altar Teleport								
 2979 3510 0	LAW_RUNE=1&&MIND_RUNE=2	28 Magic		4	Mind Altar Teleport	20	4070=3	
 								
-# Respawn Teleport								
-# TODO: Figure out values of Varbit 668								
-#	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3	
+# Respawn Teleport - lands at the player's active respawn; one row per respawn gated on its *_SPAWN varbit (same convention as the Respawn Portal rows in teleportation_portals_poh.tsv)								
+3221 3218 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;668=0;3910=0;621=0;10528=0;12310=0;9805=0	
+2964 3378 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;668=1	
+2757 3479 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;3910=1	
+3095 3469 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;621=1	
+# TODO: Figure out how to gate the Prifddinas respawn teleport - no varbit exposes the player's active respawn for Prifddinas								
+#3265 6077 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3	
+3151 3636 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;10528=1	
+1630 3674 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;12310=1	
+1682 3135 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;9805=1	
 								
 # Salve Graveyard Teleport								
 3433 3459 0	LAW_RUNE=1&&SOUL_RUNE=2	40 Magic	Priest in Peril	4	Salve Graveyard Teleport	20	4070=3	
