@@ -372,6 +372,7 @@ public class ShortestPathPlugin extends Plugin
 		keyManager.registerKeyListener(clearPathKeylistener);
 		portalNexusKeybinds.loadFromProfile();
 		spiritTreePatchState.loadFromProfile();
+		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
 	}
 
 	@Override
@@ -579,6 +580,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		portalNexusKeybinds.loadFromProfile();
 		spiritTreePatchState.loadFromProfile();
+		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
 	}
 
 	@Subscribe
@@ -1281,12 +1283,14 @@ public class ShortestPathPlugin extends Plugin
 
 		// The menu is authoritative for the patches it lists; persisted and
 		// in-region-varbit observations fill the patches the menu never covered.
-		spiritTreePatchState.applyMenuSnapshot(listed, available);
-		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
-
-		if (pathfinder != null)
+		if (spiritTreePatchState.applyMenuSnapshot(listed, available))
 		{
-			restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
+
+			if (pathfinder != null)
+			{
+				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+			}
 		}
 	}
 
