@@ -70,6 +70,8 @@ public class BankPickupRequirementsTest
 	private ItemComposition airRune;
 	@Mock
 	private ItemComposition mistRune;
+	@Mock
+	private ItemComposition rope;
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
@@ -554,6 +556,35 @@ public class BankPickupRequirementsTest
 
 		assertEquals(List.of("1 Rune pouch, 2 Law rune"), result.phrases);
 		assertEquals(Set.of(ItemID.BH_RUNE_POUCH, ItemID.LAWRUNE), result.bankItemIds);
+	}
+
+	@Test
+	public void aMidPathBankVisitDoesNotRefillTheHintPool()
+	{
+		// The hint models one withdrawal session at the bank it is shown at: the
+		// bank-visited step selects the banked availability view but does not top
+		// the pool back up, so the rope a later bank could supply is still asked
+		// for at the first one.
+		playerHas.put(ItemID.COINS, 3_000);
+		bankHas.put(ItemID.ROPE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf());
+		when(client.getItemDefinition(ItemID.ROPE)).thenReturn(rope);
+		when(rope.getName()).thenReturn("Rope");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, true),
+			new PathStep(EDGE_DESTINATION_2, false,
+				edge(TransportType.TRANSPORT, singleItem(ItemID.ROPE, 1))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Rope"), result.phrases);
+		assertEquals(Set.of(ItemID.ROPE), result.bankItemIds);
 	}
 
 	@Test

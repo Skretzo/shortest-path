@@ -597,6 +597,9 @@ public final class TransportEligibility
 		 * back up to everything the snapshot saw carried or in the bank. The
 		 * remaining bank supply is not restored — items already committed as
 		 * withdrawals are gone from every bank the player might visit next.
+		 * Consumers replaying a routed path call this at bank-visited steps;
+		 * {@link BankPickupRequirements} deliberately does not, since the pickup
+		 * hint models a single withdrawal session at the bank it is shown at.
 		 */
 		public void visitBank()
 		{

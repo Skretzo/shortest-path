@@ -107,6 +107,13 @@ public final class BankPickupRequirements
 			{
 				int stepPoint = path.get(i).getPackedPosition();
 				int nextPoint = path.get(i + 1).getPackedPosition();
+				// A step reached via a bank selects the banked availability view, but
+				// deliberately does not refill the ledger's pool: this hint models a
+				// single withdrawal session at the current bank, so the pool only
+				// grows through committed pickups. Refilling at a mid-path bank would
+				// under-ask here. Consumers replaying a routed path call
+				// ConsumptionLedger.visitBank instead — the two interpretations of
+				// isBankVisited are intentionally different.
 				boolean banked = path.get(i + 1).isBankVisited();
 
 				List<Transport> edgeAlternatives = new ArrayList<>();
