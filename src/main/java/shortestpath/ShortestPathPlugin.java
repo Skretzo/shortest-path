@@ -353,7 +353,22 @@ public class ShortestPathPlugin extends Plugin
 		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
-			clientThread.invokeLater(pathfinderConfig::refresh);
+			// The profile load and field write touch the same HashMaps the
+			// queued refresh() iterates, so they must run on the client thread
+			// too — doing them here on the EDT would race that refresh.
+			clientThread.invokeLater(() ->
+			{
+				spiritTreePatchState.loadFromProfile();
+				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+				pathfinderConfig.refresh();
+			});
+		}
+		else
+		{
+			// No refresh is queued when logged out, so loading here is safe;
+			// RuneScapeProfileChanged reloads once a profile is active anyway.
+			spiritTreePatchState.loadFromProfile();
+			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
 		}
 
 		overlayManager.add(pathOverlay);
@@ -371,8 +386,6 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		portalNexusKeybinds.loadFromProfile();
-		spiritTreePatchState.loadFromProfile();
-		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
 	}
 
 	@Override
