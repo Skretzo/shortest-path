@@ -45,7 +45,7 @@ public class SpiritTreePatchState
 		patches.put("Port Sarim", new int[]{12082, VarbitID.FARMING_TRANSMIT_A});
 		patches.put("Etceteria", new int[]{10300, VarbitID.FARMING_TRANSMIT_B});
 		patches.put("Brimhaven", new int[]{11058, VarbitID.FARMING_TRANSMIT_B});
-		patches.put("Hosidius", new int[]{6967, VarbitID.FARMING_TRANSMIT_F});
+		patches.put("Hosidius", new int[]{6711, VarbitID.FARMING_TRANSMIT_F});
 		patches.put("Farming Guild", new int[]{4922, VarbitID.FARMING_TRANSMIT_A});
 		PATCHES = Collections.unmodifiableMap(patches);
 
