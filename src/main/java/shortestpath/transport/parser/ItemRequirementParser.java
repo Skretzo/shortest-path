@@ -9,6 +9,7 @@ import shortestpath.ItemVariations;
 import shortestpath.Util;
 import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
+import shortestpath.transport.requirement.Unlock;
 
 /**
  * Parses item requirements from TSV field values.
@@ -33,6 +34,7 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 	private static final String DELIM_STATE = "=";
 	private static final String DELIM_AND = "&";
 	private static final String DELIM_OR = "|";
+	private static final String UNLOCK_PREFIX = "UNLOCK_";
 
 	@Override
 	public TransportItems parse(String value)
@@ -94,6 +96,23 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 
 			String itemName = itemAndQuantity[0];
 			int quantity = Integer.parseInt(itemAndQuantity[1]);
+
+			if (itemName.startsWith(UNLOCK_PREFIX))
+			{
+				if (quantity < 1)
+				{
+					throw new IllegalArgumentException("An unlock token needs a positive quantity: " + orPart);
+				}
+				Unlock unlock = Unlock.fromName(itemName);
+				if (unlock == null)
+				{
+					// A typo'd unlock name must fail loudly rather than silently
+					// dropping the whole Items cell like an unknown item name.
+					throw new IllegalArgumentException("Unknown unlock token: " + orPart);
+				}
+				branches.add(new ItemRequirement.Branch(null, null, null, quantity, unlock));
+				continue;
+			}
 
 			ItemVariations variation = ItemVariations.fromName(itemName);
 			if (variation != null)

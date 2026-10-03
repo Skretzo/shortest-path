@@ -2,6 +2,7 @@ package shortestpath.transport.requirement;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Assert;
 import org.junit.Test;
@@ -192,9 +193,113 @@ public class TransportItemsSatisfactionTest
 			ItemID.LAWRUNE, 1));
 	}
 
+	@Test
+	public void unlockBranchParsesAsReliefAlternative()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull("An UNLOCK_* cell must parse", items);
+		Assert.assertEquals(1, items.getRequirements().size());
+		ItemRequirement req = items.getRequirements().get(0);
+		Assert.assertEquals(2, req.getBranches().size());
+		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
+		ItemRequirement.Branch unlock = req.getBranches().get(1);
+		Assert.assertNull(unlock.getItemIds());
+		Assert.assertEquals(Unlock.CANOE_AXE, unlock.getUnlock());
+		Assert.assertTrue(unlock.isUnlockOnly());
+	}
+
+	@Test
+	public void andedUnlockParsesAsPureGateRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertEquals(2, items.getRequirements().size());
+		Assert.assertFalse(items.getRequirements().get(0).isPureUnlock());
+		Assert.assertTrue(items.getRequirements().get(1).isPureUnlock());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unknownUnlockNameIsALoudParseFailure()
+	{
+		new ItemRequirementParser().parse("UNLOCK_BOGUS=1");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void zeroQuantityUnlockIsMalformed()
+	{
+		new ItemRequirementParser().parse("UNLOCK_CANOE_AXE=0");
+	}
+
+	@Test
+	public void declaredUnlockRelievesItemRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.CANOE_AXE)));
+	}
+
+	@Test
+	public void undeclaredUnlockDoesNotRelieveItemRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1));
+	}
+
+	@Test
+	public void declaredUnlockOnlySatisfiesItself()
+	{
+		// A declared unlock must never relieve an unrelated requirement.
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.DRAGONTOOTH)));
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+	}
+
+	@Test
+	public void unlockGateNeedsItemAndUnlock()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		// Item without the declared unlock does not satisfy the gate.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(), 13393, 1));
+		// The declared unlock alone does not relieve the item term.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		// Item and declared unlock together satisfy the gate.
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR), 13393, 1));
+	}
+
+	@Test
+	public void pureUnlockRequirementIsSatisfiedOnlyWhenDeclared()
+	{
+		TransportItems items = new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		// No amount of items can cover an unlock-only branch.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1, ItemID.COINS, 999999));
+	}
+
+	@Test
+	public void unlockBranchesEmitNoNullItemArrays()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1&13393=1&UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		for (int[] alternatives : items.getItems())
+		{
+			Assert.assertNotNull(alternatives);
+		}
+	}
+
 	private static boolean satisfied(TransportItems items, int... idAndQuantity)
 	{
 		return items.isSatisfiedBy(counts(idAndQuantity), PathfinderConfig.CURRENCIES, Integer.MAX_VALUE);
+	}
+
+	private static boolean satisfiedWithUnlocks(TransportItems items, Set<Unlock> unlocks, int... idAndQuantity)
+	{
+		return items.isSatisfiedBy(counts(idAndQuantity), PathfinderConfig.CURRENCIES, Integer.MAX_VALUE, unlocks);
 	}
 
 	private static boolean satisfiedWithThreshold(TransportItems items, int threshold, int... idAndQuantity)

@@ -28,13 +28,34 @@ public class ItemRequirement
 		private final int[] staffIds;
 		private final int[] offhandIds;
 		private final int quantity;
+		/**
+		 * The declared unlock this branch references, or {@code null} for a
+		 * regular item branch. An unlock branch carries no item ids, so its
+		 * {@link #itemIds} is always {@code null}.
+		 */
+		private final Unlock unlock;
 
 		public Branch(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity)
+		{
+			this(itemIds, staffIds, offhandIds, quantity, null);
+		}
+
+		public Branch(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity, Unlock unlock)
 		{
 			this.itemIds = itemIds;
 			this.staffIds = staffIds;
 			this.offhandIds = offhandIds;
 			this.quantity = quantity;
+			this.unlock = unlock;
+		}
+
+		/**
+		 * An unlock-only branch carries no item ids and can only be satisfied
+		 * by declaring its unlock; no item can ever cover it.
+		 */
+		public boolean isUnlockOnly()
+		{
+			return itemIds == null && unlock != null;
 		}
 
 		@Override
@@ -44,6 +65,7 @@ public class ItemRequirement
 			result = 31 * result + Arrays.hashCode(staffIds);
 			result = 31 * result + Arrays.hashCode(offhandIds);
 			result = 31 * result + quantity;
+			result = 31 * result + (unlock == null ? 0 : unlock.hashCode());
 			return result;
 		}
 
@@ -60,6 +82,7 @@ public class ItemRequirement
 			}
 			Branch that = (Branch) o;
 			return quantity == that.quantity &&
+				unlock == that.unlock &&
 				Arrays.equals(itemIds, that.itemIds) &&
 				Arrays.equals(staffIds, that.staffIds) &&
 				Arrays.equals(offhandIds, that.offhandIds);
@@ -133,6 +156,25 @@ public class ItemRequirement
 			this.offhandIds = Util.concatenate(offhandIdArrays);
 		}
 		this.quantity = maxQuantity;
+	}
+
+	/**
+	 * A pure-unlock requirement consists only of unlock branches: it is
+	 * satisfied by declaring any one of them and can never be covered by
+	 * items, staves or offhands. Item evaluation is not the only gate for
+	 * such requirements, since teleportation-item modes can skip item
+	 * evaluation entirely.
+	 */
+	public boolean isPureUnlock()
+	{
+		for (Branch branch : branches)
+		{
+			if (!branch.isUnlockOnly())
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
