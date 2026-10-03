@@ -1416,4 +1416,19 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "unlockXericsHonour",
+		name = "Xeric's Honour unlocked",
+		description = "Enable if you have used an ancient tablet on your Xeric's talisman.<br>" +
+			"The game does not expose the tablet unlock to the client,<br>" +
+			"so the plugin cannot detect it automatically.<br>" +
+			"Enabling this declares the unlock without verification",
+		position = 161,
+		section = sectionUnlocks
+	)
+	default boolean unlockXericsHonour()
+	{
+		return false;
+	}
+
 }
