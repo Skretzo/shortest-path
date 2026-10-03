@@ -112,33 +112,10 @@ public final class TransportEligibility
 	 */
 	public boolean usable(Transport transport, boolean banked)
 	{
-		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType())
-			|| TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())
-			|| TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
+		Boolean typeVerdict = teleportationItemVerdict(transport);
+		if (typeVerdict != null)
 		{
-			switch (teleportationItemSetting)
-			{
-				case ALL:
-				case UNLOCKED:
-					return true;
-				case ALL_NON_CONSUMABLE:
-				case UNLOCKED_NON_CONSUMABLE:
-					// Mirror the requirement chain's teleportation-item gate:
-					// non-consumable modes reject consumables even when their
-					// items are owned.
-					return !transport.isConsumable();
-				case INVENTORY_NON_CONSUMABLE:
-				case INVENTORY_AND_BANK_NON_CONSUMABLE:
-					if (transport.isConsumable())
-					{
-						return false;
-					}
-					break;
-				case NONE:
-					return false;
-				default:
-					break;
-			}
+			return typeVerdict;
 		}
 
 		Map<Integer, Integer> ownedItems = banked ? bankPathItems : carriedItems;
@@ -153,6 +130,42 @@ public final class TransportEligibility
 		TransportItems transportItems = transport.getItemRequirements();
 		return transportItems == null
 			|| transportItems.isSatisfiedBy(ownedItems, TransportItems.CURRENCIES, currencyThreshold, unlocks);
+	}
+
+	/**
+	 * The verdict the teleportation-item setting gives this transport type before any
+	 * item check: {@code Boolean.TRUE} when the setting bypasses the item requirements
+	 * outright, {@code Boolean.FALSE} when it blocks the type regardless of items
+	 * ({@link TeleportationItem#NONE}), and {@code null} when the transport's item
+	 * requirements must be consulted (any other type or setting).
+	 */
+	private Boolean teleportationItemVerdict(Transport transport)
+	{
+		TransportType type = transport.getType();
+		if (!TransportType.TELEPORTATION_ITEM.equals(type)
+			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
+			&& !TransportType.QUETZAL_WHISTLE.equals(type))
+		{
+			return null;
+		}
+		switch (teleportationItemSetting)
+		{
+			case ALL:
+			case UNLOCKED:
+				return Boolean.TRUE;
+			case ALL_NON_CONSUMABLE:
+			case UNLOCKED_NON_CONSUMABLE:
+				// Mirror the requirement chain's gate: non-consumable modes
+				// reject consumables even when their items are owned.
+				return transport.isConsumable() ? Boolean.FALSE : Boolean.TRUE;
+			case INVENTORY_NON_CONSUMABLE:
+			case INVENTORY_AND_BANK_NON_CONSUMABLE:
+				return transport.isConsumable() ? Boolean.FALSE : null;
+			case NONE:
+				return Boolean.FALSE;
+			default:
+				return null;
+		}
 	}
 
 	/**
@@ -376,12 +389,43 @@ public final class TransportEligibility
 		/**
 		 * Whether the running pool meets the transport's item requirements right now,
 		 * with no currency threshold (owned items are spent, not budgeted against).
+		 *
+		 * <p>This is deliberately the item-level question: it ignores the
+		 * type-level bypasses {@link #usable} applies, which is what the
+		 * bank-pickup hint wants — a teleport routed without its item should
+		 * still surface "pick up the item". Callers replaying a path that was
+		 * actually routed (was this transport usable as the search saw it?)
+		 * must use {@link #usableAsRouted} instead, or they will falsely flag
+		 * transports the search legitimately routed under a bypassing setting.
 		 */
 		public boolean satisfied(Transport transport)
 		{
 			TransportItems transportItems = transport.getItemRequirements();
 			return transportItems == null
 				|| transportItems.isSatisfiedBy(pool, TransportItems.CURRENCIES, Integer.MAX_VALUE);
+		}
+
+		/**
+		 * Whether this transport is still usable on the running pool as it was
+		 * routed: the same type-level verdicts {@link #usable} applies under the
+		 * teleportation-item setting, then the fairy-ring staff gate, then the
+		 * {@link #satisfied} item check against the pool. Use this when replaying
+		 * a recorded path — transports routed under a bypassing setting return
+		 * true here even when the player owns none of their items.
+		 */
+		public boolean usableAsRouted(Transport transport)
+		{
+			Boolean typeVerdict = teleportationItemVerdict(transport);
+			if (typeVerdict != null)
+			{
+				return typeVerdict;
+			}
+			if (TransportType.FAIRY_RING.equals(transport.getType()) && fairyRingStaffRequired
+				&& !DRAMEN_STAFF.isSatisfiedBy(pool, TransportItems.CURRENCIES, currencyThreshold))
+			{
+				return false;
+			}
+			return satisfied(transport);
 		}
 
 		/**
