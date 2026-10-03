@@ -928,6 +928,11 @@ public interface ShortestPathConfig extends Config
 		return 0;
 	}
 
+	default int costBankVisit()
+	{
+		return 20;
+	}
+
 	@Range(
 		max = 10000
 	)

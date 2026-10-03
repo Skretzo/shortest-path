@@ -113,6 +113,13 @@ public class CollisionMap
 		boolean pathBankVisited = graph.bankVisited(node)
 			|| (config.isBankPathEnabled() && config.bankAccessible(packedPosition));
 
+		// The transition into the banked state is charged once on every neighbour created from the
+		// tile where the bank is first visited, so the pathfinder weighs the detour of fetching a
+		// banked item against options that are already at hand.
+		final int bankVisitCost = !graph.bankVisited(node) && pathBankVisited
+			? config.getBankVisitCost()
+			: 0;
+
 		// Firstly check if there are any transports or teleports which are applicable from the current tile.
 		Transport[] transports = config.getTransportsPacked(pathBankVisited).getOrDefault(packedPosition, TransportAvailability.EMPTY_TRANSPORTS);
 		// If this tile was itself reached via a delayed-visit teleport (e.g. QUETZAL_WHISTLE), propagate its
@@ -141,7 +148,7 @@ public class CollisionMap
 				transport.getDestination(),
 				node,
 				transport.getDuration(),
-				config.getAdditionalTransportCost(transport) + chainPenalty,
+				config.getAdditionalTransportCost(transport) + chainPenalty + bankVisitCost,
 				pathBankVisited,
 				delayedVisit,
 				delayedVisit ? config.getDifferentialCost(transport) : 0));
@@ -152,7 +159,7 @@ public class CollisionMap
 		AbstractNodeKind abstractKind = AbstractNodeKind.fromWildernessLevel(wildernessLevel);
 		if (!visited.getAbstract(abstractKind, pathBankVisited))
 		{
-			neighbors.add(graph.createAbstract(abstractKind, node, pathBankVisited));
+			neighbors.add(graph.createAbstract(abstractKind, node, pathBankVisited, bankVisitCost));
 		}
 
 		// Then add tiles which we can walk to, which go into the FIFO boundary queue.
@@ -198,7 +205,7 @@ public class CollisionMap
 
 			if (traversable[i])
 			{
-				neighbors.add(graph.createTile(neighborPacked, node, pathBankVisited));
+				neighbors.add(graph.createTile(neighborPacked, node, pathBankVisited, bankVisitCost));
 			}
 			else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z))
 			{
@@ -215,7 +222,7 @@ public class CollisionMap
 					{
 						continue;
 					}
-					neighbors.add(graph.createTile(transport.getOrigin(), node, pathBankVisited));
+					neighbors.add(graph.createTile(transport.getOrigin(), node, pathBankVisited, bankVisitCost));
 				}
 			}
 		}

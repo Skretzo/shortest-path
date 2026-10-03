@@ -659,7 +659,7 @@ public class PathfinderTest
 		// A nonzero bank visit cost must make the direct teleport win again.
 		when(config.useTeleportationMinigames()).thenReturn(true);
 		when(config.includeBankPath()).thenReturn(true);
-		when(config.costBankVisit()).thenReturn(10);
+		when(config.costBankVisit()).thenReturn(20);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -711,7 +711,7 @@ public class PathfinderTest
 		// still bank to fetch the games necklace even when banking carries a cost.
 		when(config.useTeleportationMinigames()).thenReturn(false);
 		when(config.includeBankPath()).thenReturn(true);
-		when(config.costBankVisit()).thenReturn(10);
+		when(config.costBankVisit()).thenReturn(20);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
