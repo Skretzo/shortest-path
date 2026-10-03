@@ -3,13 +3,17 @@ package shortestpath.pathfinder;
 import java.util.Arrays;
 
 /**
- * A binary min-heap of primitive {@code int} node ids ordered by {@link NodeGraph#compareCost}.
+ * A binary min-heap of primitive {@code int} node ids ordered by {@link NodeGraph#compareNodes}
+ * — (cost + differentialCost, node id), so equal-cost nodes pop FIFO in creation order.
  * <p>
  * Replaces the {@code PriorityQueue<TransportNode>} pending queue in {@link Pathfinder} so transport
  * candidates are stored as int ids rather than boxed node objects. The ordering key is fixed when a
  * node is created (its differential cost never changes), so no decrease-key support is needed; the
  * pathfinder discards stale cheaper duplicates with its dequeue-time visited re-check. Single-threaded
  * (worker only), matching the queue it replaces.
+ * <p>
+ * Ordering on cost alone left equal-cost pops to heap-internal order, which depends on the
+ * insertion sequence and made the chosen equal-cost path nondeterministic across runs.
  */
 class IntMinHeap
 {
@@ -79,11 +83,10 @@ class IntMinHeap
 	private void siftUp(int index)
 	{
 		final int id = heap[index];
-		final int key = graph.compareCost(id);
 		while (index > 0)
 		{
 			final int parent = (index - 1) >> 1;
-			if (key >= graph.compareCost(heap[parent]))
+			if (graph.compareNodes(id, heap[parent]) >= 0)
 			{
 				break;
 			}
@@ -96,23 +99,16 @@ class IntMinHeap
 	private void siftDown(int index)
 	{
 		final int id = heap[index];
-		final int key = graph.compareCost(id);
 		final int half = size >> 1;
 		while (index < half)
 		{
 			int child = (index << 1) + 1;
-			int childKey = graph.compareCost(heap[child]);
 			final int right = child + 1;
-			if (right < size)
+			if (right < size && graph.compareNodes(heap[right], heap[child]) < 0)
 			{
-				final int rightKey = graph.compareCost(heap[right]);
-				if (rightKey < childKey)
-				{
-					child = right;
-					childKey = rightKey;
-				}
+				child = right;
 			}
-			if (key <= childKey)
+			if (graph.compareNodes(id, heap[child]) <= 0)
 			{
 				break;
 			}

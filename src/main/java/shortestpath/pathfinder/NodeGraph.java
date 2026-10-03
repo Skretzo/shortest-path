@@ -227,6 +227,19 @@ public class NodeGraph
 		return cost[id] + differentialCost[id];
 	}
 
+	/**
+	 * Total order for heap comparisons: ({@link #compareCost}, node id). Node ids are assigned
+	 * in creation order by {@code append()}, so the secondary key resolves equal-cost
+	 * comparisons by insertion order — equal-cost nodes dequeue FIFO, mirroring the
+	 * (priority, cost, state) heap key of the exact backend. Only valid for real node ids;
+	 * never call with {@link #NO_NODE}.
+	 */
+	public int compareNodes(int a, int b)
+	{
+		int primary = Integer.compare(compareCost(a), compareCost(b));
+		return primary != 0 ? primary : Integer.compare(a, b);
+	}
+
 	public boolean bankVisited(int id)
 	{
 		return (flags[id] & FLAG_BANK_VISITED) != 0;
