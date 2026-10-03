@@ -520,6 +520,20 @@ public interface ShortestPathConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "respawnPrifddinas",
+		name = "Prifddinas respawn point",
+		description = "Enable if your respawn point is Prifddinas.<br>" +
+			"The game does not expose the Prifddinas respawn to the client,<br>" +
+			"so the plugin cannot detect it automatically",
+		position = 36,
+		section = sectionSettings
+	)
+	default boolean respawnPrifddinas()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Player-Owned House",
 		description = "Options for POH (Player-Owned House) teleports",
