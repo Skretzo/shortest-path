@@ -39,18 +39,22 @@ public class SpiritTreePatchState
 {
 	private static final String CONFIG_KEY_PREFIX = "spiritTree.";
 
-	// patch name -> {regionID, varbitID}, in PathfinderConfig.getPlantedSpiritTreeName order
+	// patch name -> {regionID, varbitID, x1, y1, x2, y2} — the single source
+	// for patch metadata: the region-scoped varbit to sample and the tile
+	// bounds (inclusive) used to gate planted-tree transports. Bounds must
+	// stay inside the patch's own region or the varbit would not describe
+	// the tiles they cover.
 	private static final Map<String, int[]> PATCHES;
 	private static final Map<Integer, String> PATCH_BY_REGION;
 
 	static
 	{
 		Map<String, int[]> patches = new LinkedHashMap<>();
-		patches.put("Port Sarim", new int[]{12082, VarbitID.FARMING_TRANSMIT_A});
-		patches.put("Etceteria", new int[]{10300, VarbitID.FARMING_TRANSMIT_B});
-		patches.put("Brimhaven", new int[]{11058, VarbitID.FARMING_TRANSMIT_B});
-		patches.put("Hosidius", new int[]{6711, VarbitID.FARMING_TRANSMIT_F});
-		patches.put("Farming Guild", new int[]{4922, VarbitID.FARMING_TRANSMIT_A});
+		patches.put("Port Sarim", new int[]{12082, VarbitID.FARMING_TRANSMIT_A, 3058, 3256, 3062, 3260});
+		patches.put("Etceteria", new int[]{10300, VarbitID.FARMING_TRANSMIT_B, 2611, 3855, 2615, 3860});
+		patches.put("Brimhaven", new int[]{11058, VarbitID.FARMING_TRANSMIT_B, 2800, 3201, 2804, 3205});
+		patches.put("Hosidius", new int[]{6711, VarbitID.FARMING_TRANSMIT_F, 1691, 3540, 1695, 3544});
+		patches.put("Farming Guild", new int[]{4922, VarbitID.FARMING_TRANSMIT_A, 1251, 3748, 1255, 3752});
 		PATCHES = Collections.unmodifiableMap(patches);
 
 		Map<Integer, String> byRegion = new HashMap<>();
@@ -106,6 +110,34 @@ public class SpiritTreePatchState
 	{
 		int[] entry = PATCHES.get(patchName);
 		return entry == null ? -1 : entry[1];
+	}
+
+	/**
+	 * Returns the planted spirit tree patch whose bounds contain the tile,
+	 * or null when the tile is outside every patch. Used to gate planted-tree
+	 * transport origins and destinations against the observed tree set.
+	 */
+	public static String patchNameForTile(int x, int y)
+	{
+		for (Map.Entry<String, int[]> entry : PATCHES.entrySet())
+		{
+			int[] patch = entry.getValue();
+			if (x >= patch[2] && x <= patch[4] && y >= patch[3] && y <= patch[5])
+			{
+				return entry.getKey();
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Inclusive tile bounds {x1, y1, x2, y2} for a patch, or null. Package-private
+	 * for tests that tie the bounds to the patch's region.
+	 */
+	static int[] boundsForPatch(String patchName)
+	{
+		int[] entry = PATCHES.get(patchName);
+		return entry == null ? null : new int[]{entry[2], entry[3], entry[4], entry[5]};
 	}
 
 	/**

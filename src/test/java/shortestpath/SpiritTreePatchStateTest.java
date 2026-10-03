@@ -86,6 +86,41 @@ public class SpiritTreePatchStateTest
 	}
 
 	@Test
+	public void patchAnchorTilesResolveToPatch()
+	{
+		// The transport rows' destination tiles must land on their patch;
+		// the POH spirit tree tile must not be claimed by any patch.
+		assertEquals("Port Sarim", SpiritTreePatchState.patchNameForTile(3058, 3257));
+		assertEquals("Etceteria", SpiritTreePatchState.patchNameForTile(2613, 3855));
+		assertEquals("Brimhaven", SpiritTreePatchState.patchNameForTile(2800, 3203));
+		assertEquals("Hosidius", SpiritTreePatchState.patchNameForTile(1693, 3540));
+		assertEquals("Farming Guild", SpiritTreePatchState.patchNameForTile(1251, 3750));
+		assertNull(SpiritTreePatchState.patchNameForTile(1858, 7051)); // POH spirit tree
+	}
+
+	@Test
+	public void patchBoundsStayInsideTheirRegion()
+	{
+		// Every tile covered by a patch's bounds must resolve back to that
+		// patch and lie inside the patch's own region — otherwise the
+		// region-scoped varbit would not describe the tiles the bounds gate.
+		for (String name : SpiritTreePatchState.patchNames())
+		{
+			int[] bounds = SpiritTreePatchState.boundsForPatch(name);
+			int region = SpiritTreePatchState.regionForPatch(name);
+			for (int x = bounds[0]; x <= bounds[2]; x++)
+			{
+				for (int y = bounds[1]; y <= bounds[3]; y++)
+				{
+					assertEquals(name + " tile " + x + "," + y + " outside region " + region,
+						region, (x >> 6) << 8 | (y >> 6));
+					assertEquals(name, SpiritTreePatchState.patchNameForTile(x, y));
+				}
+			}
+		}
+	}
+
+	@Test
 	public void storedValueRoundTrips()
 	{
 		String stored = SpiritTreePatchState.serializeObserved(20, 1700000000L);

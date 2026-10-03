@@ -235,27 +235,9 @@ public class PathfinderConfig
 
 	static String getPlantedSpiritTreeName(int x, int y)
 	{
-		if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260)
-		{
-			return "Port Sarim";
-		}
-		if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860)
-		{
-			return "Etceteria";
-		}
-		if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205)
-		{
-			return "Brimhaven";
-		}
-		if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544)
-		{
-			return "Hosidius";
-		}
-		if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752)
-		{
-			return "Farming Guild";
-		}
-		return null;
+		// SpiritTreePatchState owns the patch table (region, varbit, bounds);
+		// this shim keeps the planted-tree gate readable at its call sites.
+		return SpiritTreePatchState.patchNameForTile(x, y);
 	}
 
 	public CollisionMap getMap()
