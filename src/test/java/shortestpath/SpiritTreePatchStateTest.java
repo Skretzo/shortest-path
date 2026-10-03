@@ -68,7 +68,7 @@ public class SpiritTreePatchStateTest
 		assertEquals(4772, SpiritTreePatchState.varbitForPatch("Etceteria"));
 		assertEquals(11058, SpiritTreePatchState.regionForPatch("Brimhaven"));
 		assertEquals(4772, SpiritTreePatchState.varbitForPatch("Brimhaven"));
-		assertEquals(6967, SpiritTreePatchState.regionForPatch("Hosidius"));
+		assertEquals(6711, SpiritTreePatchState.regionForPatch("Hosidius"));
 		assertEquals(7904, SpiritTreePatchState.varbitForPatch("Hosidius"));
 		assertEquals(4922, SpiritTreePatchState.regionForPatch("Farming Guild"));
 		assertEquals(4771, SpiritTreePatchState.varbitForPatch("Farming Guild"));
