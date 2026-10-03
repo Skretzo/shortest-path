@@ -98,6 +98,7 @@ import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.TeleportationItem;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -249,9 +250,31 @@ public class ShortestPathPlugin extends Plugin
 	/**
 	 * Re-plans triggered by the post-search consumption validator for the current
 	 * (start, targets) search context. Reset whenever pathfinding restarts for a
-	 * new context — exclusions are per-context state held on the config.
+	 * new context — exclusions are per-context state held on the config. Only
+	 * touched under {@link #pathfinderMutex}: incremented on the pathfinder
+	 * worker inside {@link #onPathComplete}, reset on the client thread.
 	 */
-	private volatile int replanAttempts = 0;
+	private int replanAttempts = 0;
+	/**
+	 * Monotonic search counter bumped by every {@link #schedulePathfinding} call
+	 * under {@link #pathfinderMutex}. Each submitted search captures the
+	 * generation it was scheduled under, and its completion callback re-checks
+	 * it under the same mutex — the {@link #pathfinder} field alone cannot flag
+	 * a stale callback because reassignment lags the schedule call by up to a
+	 * client tick (it happens inside the queued invokeLater).
+	 */
+	private int pathGeneration;
+	/**
+	 * The generation the currently assigned {@link #pathfinder} was scheduled
+	 * under, so idle readers can tell a settled search apart from one a pending
+	 * schedule is about to replace.
+	 */
+	private int pathfinderGeneration;
+	/**
+	 * Set by {@link #shutDown} so a finishing search's callback or a stray
+	 * restart cannot resurrect the executor that shutdown tore down.
+	 */
+	private volatile boolean shutdown;
 	@Getter
 	private boolean startPointSet = false;
 	@Getter
@@ -391,6 +414,7 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		shutdown = false;
 		cacheConfigValues();
 
 		pathfinderConfig = new PathfinderConfig(client, config);
@@ -447,12 +471,16 @@ public class ShortestPathPlugin extends Plugin
 
 		synchronized (pathfinderMutex)
 		{
+			shutdown = true;
 			cancelQueries("SHUTDOWN");
 			if (pathfindingExecutor != null)
 			{
 				pathfindingExecutor.shutdownNow();
 				pathfindingExecutor = null;
 			}
+			// A finishing search's callback must see the context as gone so it
+			// can neither post messages nor re-plan onto a torn-down executor.
+			pathfinder = null;
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
@@ -487,11 +515,26 @@ public class ShortestPathPlugin extends Plugin
 		debugState.restartRequested(reason, client.getTickCount());
 		List<PathStep> previousPath;
 		Set<Integer> previousTargets;
+		final int generation;
 		synchronized (pathfinderMutex)
 		{
+			if (shutdown)
+			{
+				// Never resurrect the executor from a finishing search's
+				// callback or a stray restart after shutdown.
+				return;
+			}
+			// Every scheduled search gets its own generation so a completion
+			// callback can tell it is stale while `pathfinder` still points at
+			// it — the reassignment only happens in the queued invokeLater.
+			generation = ++pathGeneration;
 			previousPath = pathfinder == null ? null : pathfinder.getPath();
 			previousTargets = pathfinder == null ? null : Set.copyOf(pathfinder.getTargets());
-			if (pathfinder != null)
+			// Cancel the current search only when it is still running. A re-plan
+			// re-enters here from the finished search's own callback, where the
+			// future is already done — cancelling it would self-interrupt the
+			// worker and leak the interrupt flag into the next executor task.
+			if (pathfinder != null && !pathfinder.isDone())
 			{
 				pathfinder.cancel();
 				// pathfinderFuture is null when a submit threw before the
@@ -514,7 +557,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			try
 			{
-				startPathfinding(start, ends, canReviveFiltered, previousPath, previousTargets);
+				startPathfinding(start, ends, canReviveFiltered, previousPath, previousTargets, generation);
 			}
 			catch (RuntimeException error)
 			{
@@ -526,12 +569,18 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	private void startPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered,
-		List<PathStep> previousPath, Set<Integer> previousTargets)
+		List<PathStep> previousPath, Set<Integer> previousTargets, int generation)
 	{
 		pathfinderConfig.refresh();
 		pathfinderConfig.filterLocations(ends, canReviveFiltered);
 		synchronized (pathfinderMutex)
 		{
+			if (shutdown || generation != pathGeneration)
+			{
+				// A newer schedule call (or shutdown) superseded this one
+				// between the cancel above and this client tick.
+				return;
+			}
 			if (ends.isEmpty())
 			{
 				debugState.restartOutcome("no targets left after filtering");
@@ -540,17 +589,25 @@ public class ShortestPathPlugin extends Plugin
 			else
 			{
 				bankPickupDirty = true;
+				// Snapshot the eligibility the refreshed availability was
+				// built from so the completion callback replays this
+				// search's path against the exact snapshot the search
+				// consumed — never a later rebuild observed off the
+				// client thread.
+				TransportEligibility eligibility = pathfinderConfig.getEligibility();
 				if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
 				{
 					try
 					{
 						legacyPathfinder = null;
-						// The callback is bound to this search instance so a stale
-						// completion can never validate a newer pathfinder's path.
+						// The callback is bound to this search instance and generation
+						// so a stale completion can never validate or re-plan over a
+						// newer pathfinder's context.
 						ExactPathfinder[] created = new ExactPathfinder[1];
 						created[0] = new ExactPathfinder(pathfinderConfig, exactRoutingStatic(),
 							exactRoutingSession, start, ends,
-							() -> onPathComplete(created[0], start, ends, canReviveFiltered));
+							() -> onPathComplete(created[0], start, ends, canReviveFiltered,
+								generation, eligibility));
 						// Recalculating towards the same targets: keep the old route drawn until
 						// the new one is ready.
 						if (ends.equals(previousTargets))
@@ -566,14 +623,17 @@ public class ShortestPathPlugin extends Plugin
 				}
 				else
 				{
-					// The callback is bound to this search instance so a stale
-					// completion can never validate a newer pathfinder's path.
+					// The callback is bound to this search instance and generation
+					// so a stale completion can never validate or re-plan over a
+					// newer pathfinder's context.
 					Pathfinder[] created = new Pathfinder[1];
 					created[0] = new Pathfinder(pathfinderConfig, start, ends,
-						() -> onPathComplete(created[0], start, ends, canReviveFiltered));
+						() -> onPathComplete(created[0], start, ends, canReviveFiltered,
+							generation, eligibility));
 					legacyPathfinder = created[0];
 					pathfinder = legacyPathfinder;
 				}
+				pathfinderGeneration = generation;
 				ActiveSearch search = pathfinder;
 				debugState.searchStarted(search);
 				pathfinderFuture = pathfindingExecutor.submit(() ->
@@ -600,25 +660,38 @@ public class ShortestPathPlugin extends Plugin
 	 * deliberately post-search: keeping resource state out of the search graph
 	 * avoids multiplying the state space, so the worst case is a few extra full
 	 * searches per displayed path and zero when the path is clean.
+	 * <p>
+	 * {@code eligibility} is the snapshot the search's availability was built
+	 * from, captured on the client thread at schedule time — {@link
+	 * PathfinderConfig#getEligibility()} is a client-thread reader and may
+	 * already have been rebuilt by an interim refresh. The whole body runs
+	 * under {@link #pathfinderMutex} so the staleness check and the re-plan
+	 * decision are atomic: a newer schedule bumps {@link #pathGeneration} under
+	 * the same mutex before its invokeLater reassigns {@link #pathfinder}, so
+	 * the generation catches callbacks the field check would miss.
 	 */
-	private void onPathComplete(ActiveSearch finished, int start, Set<Integer> ends, boolean canReviveFiltered)
+	private void onPathComplete(ActiveSearch finished, int start, Set<Integer> ends, boolean canReviveFiltered,
+		int generation, TransportEligibility eligibility)
 	{
-		// Only the search this callback belongs to may be validated; if the field
-		// has moved on to a newer search, that search's own callback handles it.
-		if (pathfinder != finished)
+		synchronized (pathfinderMutex)
 		{
-			return;
+			// Only the search this callback belongs to may be validated; a newer
+			// context's own callback handles it. A cancelled search reports
+			// done == false, and its partial path is meaningless to the ledger.
+			if (pathfinder != finished || generation != pathGeneration || !finished.isDone())
+			{
+				return;
+			}
+			Transport unpayable = PathConsumptionValidator.firstUnpayable(eligibility, finished.getPath());
+			if (unpayable == null || replanAttempts >= MAX_REPLAN_ATTEMPTS)
+			{
+				postPluginMessages();
+				return;
+			}
+			replanAttempts++;
+			pathfinderConfig.excludeTransport(unpayable);
+			schedulePathfinding("consumption re-plan", start, ends, canReviveFiltered);
 		}
-		Transport unpayable = PathConsumptionValidator.firstUnpayable(
-			pathfinderConfig.getEligibility(), finished.getPath());
-		if (unpayable == null || replanAttempts >= MAX_REPLAN_ATTEMPTS)
-		{
-			postPluginMessages();
-			return;
-		}
-		replanAttempts++;
-		pathfinderConfig.excludeTransport(unpayable);
-		schedulePathfinding("consumption re-plan", start, ends, canReviveFiltered);
 	}
 
 	private void ensurePathfindingExecutor()
