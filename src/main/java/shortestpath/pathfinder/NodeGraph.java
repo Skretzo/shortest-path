@@ -37,6 +37,7 @@ public class NodeGraph
 	private static final byte FLAG_ABSTRACT = 1 << 1;      // bit1
 	private static final byte FLAG_DELAYED_VISIT = 1 << 2; // bit2
 	private static final byte FLAG_TRANSPORT = 1 << 3;     // bit3
+	private static final byte FLAG_BANK_VISIT = 1 << 4;    // bit4
 
 	// Enum.values() copies on every call, so cache it for the abstractKind lookup.
 	private static final AbstractNodeKind[] ABSTRACT_KINDS = AbstractNodeKind.values();
@@ -155,6 +156,24 @@ public class NodeGraph
 	}
 
 	/**
+	 * The paid transition into the banked state. Emitted from a bank-accessible tile when the
+	 * path has not banked yet: the node stays on the same position and carries the configured
+	 * bank visit cost, so the penalty is charged once on the decision to bank rather than on
+	 * the edges leaving the bank tile.
+	 * <p>
+	 * The node is flagged as a transport even though no real transport exists: {@link
+	 * Pathfinder#addNeighbors} routes transport-flagged nodes to the cost-ordered pending
+	 * heap instead of the FIFO tile boundary queue, which is only correct for unit-cost
+	 * walking edges. A costed transition must go through the heap or nodes would no longer
+	 * be expanded in increasing cost order.
+	 */
+	public int createBankVisit(int packedPosition, int previous, int bankVisitCost)
+	{
+		return append(packedPosition, previous, costOf(previous) + bankVisitCost, 0,
+			(byte) (FLAG_TRANSPORT | FLAG_BANK_VISITED | FLAG_BANK_VISIT), (byte) 0);
+	}
+
+	/**
 	 * An abstract search-state node (global teleports). Has no world position and inherits the
 	 * previous node's cost (mirrors the old {@code Node.abstractNode}).
 	 */
@@ -228,8 +247,10 @@ public class NodeGraph
 	}
 
 	/**
-	 * Walks the previous chain from {@code id} to the start, collecting the tile nodes (abstract
-	 * nodes are skipped) into an ordered list of path steps.
+	 * Walks the previous chain from {@code id} to the start, collecting the tile nodes into an
+	 * ordered list of path steps. Abstract nodes are skipped, and so are bank-visit
+	 * transitions: a bank visit is a state change, not a movement step — the tile the player
+	 * banked at is already in the path as the preceding step.
 	 * <p>
 	 * Safe to call from the render thread during the search: the arrays are snapshotted into locals
 	 * and the walk is bounds-tolerant, so a concurrent grow or {@link #release()} yields an empty
@@ -250,7 +271,7 @@ public class NodeGraph
 		int n = 0;
 		while (node != NO_NODE && node < len)
 		{
-			if ((flg[node] & FLAG_ABSTRACT) == 0)
+			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0)
 			{
 				n++;
 			}
@@ -267,7 +288,7 @@ public class NodeGraph
 		int i = n;
 		while (node != NO_NODE && node < len && i > 0)
 		{
-			if ((flg[node] & FLAG_ABSTRACT) == 0)
+			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0)
 			{
 				pathSteps.set(--i, new PathStep(packed[node], (flg[node] & FLAG_BANK_VISITED) != 0));
 			}

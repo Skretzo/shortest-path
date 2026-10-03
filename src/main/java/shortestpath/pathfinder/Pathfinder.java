@@ -68,7 +68,7 @@ public class Pathfinder implements Runnable
 		this.start = start;
 		this.targets = targets;
 		this.completionCallback = completionCallback;
-		visited = new VisitedTiles(map);
+		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
 		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets);
 		wildernessLevel = 31;

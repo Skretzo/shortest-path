@@ -108,10 +108,17 @@ public class CollisionMap
 
 		neighbors.clear();
 
-		// Either we have already visited a bank, if the current tile is a bank switch into the bankVisited state for the
-		// rest of the path.
-		boolean pathBankVisited = graph.bankVisited(node)
-			|| (config.isBankPathEnabled() && config.bankAccessible(packedPosition));
+		// The banked state is only entered through an explicit, costed transition: standing on a
+		// bank-accessible tile emits a bank-visit edge carrying the configured penalty, so the
+		// charge sits on the decision to bank rather than on the edges leaving the bank tile.
+		// The edge is flagged as a transport so Pathfinder queues it on the cost-ordered pending
+		// heap — the FIFO tile boundary queue is only ordered for unit-cost walking edges.
+		boolean pathBankVisited = graph.bankVisited(node);
+		if (!pathBankVisited && config.isBankPathEnabled() && config.bankAccessible(packedPosition)
+			&& !visited.get(packedPosition, true))
+		{
+			neighbors.add(graph.createBankVisit(packedPosition, node, config.getBankVisitCost()));
+		}
 
 		// Firstly check if there are any transports or teleports which are applicable from the current tile.
 		Transport[] transports = config.getTransportsPacked(pathBankVisited).getOrDefault(packedPosition, TransportAvailability.EMPTY_TRANSPORTS);
