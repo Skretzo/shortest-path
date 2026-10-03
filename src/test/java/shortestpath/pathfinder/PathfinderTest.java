@@ -652,6 +652,85 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testBankVisitCostPrefersReadyMinigameTeleport()
+	{
+		// GE -> Rogues' Den: a ready minigame teleport is the shorter route, but with a
+		// free bank transition the pathfinder detours to a bank for a games necklace.
+		// A nonzero bank visit cost must make the direct teleport win again.
+		when(config.useTeleportationMinigames()).thenReturn(true);
+		when(config.includeBankPath()).thenReturn(true);
+		when(config.costBankVisit()).thenReturn(10);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.NECKLACE_OF_MINIGAMES_8, 1));
+
+		int grandExchangeBank = WorldPointUtil.packWorldPoint(3160, 3486, 0);
+		int roguesDen = WorldPointUtil.packWorldPoint(3040, 4969, 1);
+
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
+			"GE -> Rogues' Den with ready minigame teleport and banked games necklace",
+			53,
+			grandExchangeBank,
+			roguesDen);
+
+		assertFalse("Route should not visit a bank when the minigame teleport is ready",
+			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	@Test
+	public void testFreeBankVisitStillPrefersBankedTeleportDetour()
+	{
+		// costBankVisit = 0 must preserve the legacy free bank transition: the banked
+		// games necklace detour still wins over the ready minigame teleport.
+		when(config.useTeleportationMinigames()).thenReturn(true);
+		when(config.includeBankPath()).thenReturn(true);
+		when(config.costBankVisit()).thenReturn(0);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.NECKLACE_OF_MINIGAMES_8, 1));
+
+		int grandExchangeBank = WorldPointUtil.packWorldPoint(3160, 3486, 0);
+		int roguesDen = WorldPointUtil.packWorldPoint(3040, 4969, 1);
+
+		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
+			"GE -> Rogues' Den with free bank visit keeps the banked detour",
+			56,
+			grandExchangeBank,
+			roguesDen);
+
+		assertTrue("Route should visit a bank to fetch the games necklace",
+			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	@Test
+	public void testBankVisitCostStillBanksWhenTeleportItemRequiresIt()
+	{
+		// When the minigame teleport is unavailable (e.g. on cooldown) the route must
+		// still bank to fetch the games necklace even when banking carries a cost.
+		when(config.useTeleportationMinigames()).thenReturn(false);
+		when(config.includeBankPath()).thenReturn(true);
+		when(config.costBankVisit()).thenReturn(10);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.NECKLACE_OF_MINIGAMES_8, 1));
+
+		int grandExchangeBank = WorldPointUtil.packWorldPoint(3160, 3486, 0);
+		int roguesDen = WorldPointUtil.packWorldPoint(3040, 4969, 1);
+
+		Pathfinder pathfinder = runPathfinder(grandExchangeBank, roguesDen);
+		List<PathStep> path = pathfinder.getPath();
+
+		assertFalse("Expected a path to be found", path.isEmpty());
+		assertEquals("Path should end at the Rogues' Den target",
+			roguesDen, path.get(path.size() - 1).getPackedPosition());
+		assertTrue("Route should still visit a bank to fetch the games necklace",
+			path.stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	@Test
 	public void testBankersBriefcaseInBankUsedAfterBankVisit()
 	{
 		// The Banker's Briefcase is a SEASONAL_TRANSPORTS row, but its bank-pickup
