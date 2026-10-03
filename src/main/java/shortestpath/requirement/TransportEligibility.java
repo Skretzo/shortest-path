@@ -471,6 +471,15 @@ public final class TransportEligibility
 				|| TransportType.TELEPORTATION_SPELL.equals(transport.getType())
 				|| TransportType.TELEPORTATION_SPELL_HOME.equals(transport.getType());
 
+			// Per-requirement payments assume disjoint paying ids: a merged transport
+			// (TransportItems.merge concatenates requirements) can ask for the same
+			// id in several requirements — e.g. coins=5 and coins=10. Each
+			// requirement still pays independently here because that is what
+			// physical payment does, while satisfied()/isSatisfiedBy checks every
+			// requirement against the full pool and reports the transport as
+			// payable. In that case the summed charge below exceeds the pool and
+			// drains it to zero — erring toward over-charging so downstream edges
+			// see fewer items rather than more.
 			Map<Integer, Integer> payments = new HashMap<>();
 			List<ItemRequirement> leftover = new ArrayList<>();
 			boolean usedOffhand = false;
@@ -520,6 +529,9 @@ public final class TransportEligibility
 				int itemId = payment.getKey();
 				if (itemPaymentsConsumed || TransportItems.CURRENCIES.contains(itemId))
 				{
+					// The summed per-requirement charge may exceed what the pool
+					// holds (see above); clamp at zero so the pool never goes
+					// negative and over-spend cannot hide a real shortfall.
 					int remaining = pool.getOrDefault(itemId, 0) - payment.getValue();
 					if (remaining > 0)
 					{
