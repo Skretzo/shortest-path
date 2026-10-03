@@ -16,10 +16,12 @@ public class VisitedTiles
 	// global search states, not map positions.
 	private final boolean[] abstractVisitedWithoutBank = new boolean[AbstractNodeKind.values().length];
 	private final boolean[] abstractVisitedWithBank = new boolean[AbstractNodeKind.values().length];
+	private final int bankVisitCost;
 
-	public VisitedTiles(CollisionMap map)
+	public VisitedTiles(CollisionMap map, int bankVisitCost)
 	{
 		this.map = map;
+		this.bankVisitCost = bankVisitCost;
 		regionExtents = SplitFlagMap.getRegionExtents();
 		widthInclusive = regionExtents.getWidth() + 1;
 		final int heightInclusive = regionExtents.getHeight() + 1;
@@ -91,9 +93,15 @@ public class VisitedTiles
 		if (graph.bankVisited(id))
 		{
 			abstractVisitedWithBank[abstractKind.ordinal()] = true;
-			// A banked abstract state dominates the equivalent unbanked state.
 		}
-		abstractVisitedWithoutBank[abstractKind.ordinal()] = true;
+		// Dominance is only valid when banking is free. A banked arrival pays the configured
+		// bank visit cost, so when that cost is positive the banked arrival can be strictly
+		// more expensive than a later unbanked arrival at the same state — marking the
+		// unbanked bucket would prune the cheaper continuation and lose the better route.
+		if (bankVisitCost <= 0 || !graph.bankVisited(id))
+		{
+			abstractVisitedWithoutBank[abstractKind.ordinal()] = true;
+		}
 		return !visited;
 	}
 
@@ -109,9 +117,13 @@ public class VisitedTiles
 		if (bankVisited)
 		{
 			boolean unique = setInRegion(visitedRegionsWithBank, regionIndex, x, y, plane);
-			// A banked tile dominates the equivalent unbanked tile, so populate both
-			// buckets.
-			setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+			// A banked tile only dominates the equivalent unbanked tile when banking is
+			// free: with a positive bank visit cost the banked arrival paid the penalty, so
+			// a cheaper unbanked arrival must still be allowed to reach this tile.
+			if (bankVisitCost <= 0)
+			{
+				setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+			}
 			return unique;
 		}
 

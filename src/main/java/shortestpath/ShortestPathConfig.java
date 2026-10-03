@@ -1070,6 +1070,22 @@ public interface ShortestPathConfig extends Config
 		return 0;
 	}
 
+	@Range(
+		max = 10000
+	)
+	@ConfigItem(
+		keyName = "costBankVisit",
+		name = "Bank visit threshold",
+		description = "How many extra tiles fetching a teleport item from your bank must save<br>" +
+			"to be preferred over options already at hand (0 treats banking as free)",
+		position = 69,
+		section = sectionThresholds
+	)
+	default int costBankVisit()
+	{
+		return 20;
+	}
+
 	@ConfigSection(
 		name = "Display",
 		description = "Options for displaying the path on the world map, minimap and scene tiles",

@@ -112,6 +112,30 @@ public class NodeGraphTest
 	}
 
 	@Test
+	public void bankVisitStaysOnPositionAndCarriesConfiguredCost()
+	{
+		// The paid bank transition keeps the same position, is banked, and is queued like
+		// a transport (cost-ordered heap, not the unit-cost FIFO tile queue).
+		NodeGraph graph = new NodeGraph(16);
+		int bankTile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		int start = graph.createStart(bankTile);
+		int bankVisit = graph.createBankVisit(bankTile, start, 20);
+
+		assertEquals(20, graph.cost(bankVisit));
+		assertEquals(bankTile, graph.packedPosition(bankVisit));
+		assertTrue(graph.isTransport(bankVisit));
+		assertTrue(graph.isTile(bankVisit));
+		assertFalse(graph.isAbstract(bankVisit));
+		assertTrue(graph.bankVisited(bankVisit));
+
+		// A bank visit is a state change, not a movement step: the tile the player banked
+		// at is already in the path as the preceding step.
+		var steps = graph.getPathSteps(bankVisit);
+		assertEquals(1, steps.size());
+		assertEquals(bankTile, steps.get(0).getPackedPosition());
+	}
+
+	@Test
 	public void pathStepsSkipAbstractNodesInOrder()
 	{
 		NodeGraph graph = new NodeGraph(16);
