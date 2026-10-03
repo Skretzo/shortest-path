@@ -86,6 +86,7 @@ import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.ExactPathfinder;
+import shortestpath.pathfinder.PathConsumptionValidator;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderBackend;
@@ -144,6 +145,11 @@ public class ShortestPathPlugin extends Plugin
 	// cannot take pathfinderMutex, so they read the volatile reference.
 	private static volatile Map<String, Object> configOverride = Map.of();
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
+	/**
+	 * Bound on the consumption re-plan loop: a path that still fails validation
+	 * after this many re-plans is shown as-is rather than searched again.
+	 */
+	private static final int MAX_REPLAN_ATTEMPTS = 5;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
@@ -240,6 +246,12 @@ public class ShortestPathPlugin extends Plugin
 	private final ExactRoutingSession exactRoutingSession = new ExactRoutingSession();
 	@Getter
 	private PathfinderConfig pathfinderConfig;
+	/**
+	 * Re-plans triggered by the post-search consumption validator for the current
+	 * (start, targets) search context. Reset whenever pathfinding restarts for a
+	 * new context — exclusions are per-context state held on the config.
+	 */
+	private volatile int replanAttempts = 0;
 	@Getter
 	private boolean startPointSet = false;
 	@Getter
@@ -451,6 +463,24 @@ public class ShortestPathPlugin extends Plugin
 
 	public void restartPathfinding(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
 	{
+		// A new search context starts a fresh consumption accounting: the
+		// validator's exclusions and the re-plan budget only belong to the search
+		// that produced them.
+		synchronized (pathfinderMutex)
+		{
+			replanAttempts = 0;
+			pathfinderConfig.clearExcludedTransports();
+		}
+		schedulePathfinding(reason, start, requestedEnds, canReviveFiltered);
+	}
+
+	/**
+	 * Shared restart body for public restarts and the validator's re-plans. The
+	 * re-plan variant re-enters here without clearing exclusions or resetting the
+	 * attempt counter.
+	 */
+	private void schedulePathfinding(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
+	{
 		// filterLocations edits the set in place, and callers often pass a search's own targets,
 		// which the exact backend holds immutable.
 		Set<Integer> ends = new HashSet<>(requestedEnds);
@@ -515,13 +545,17 @@ public class ShortestPathPlugin extends Plugin
 					try
 					{
 						legacyPathfinder = null;
-						ExactPathfinder exact = new ExactPathfinder(pathfinderConfig, exactRoutingStatic(),
-							exactRoutingSession, start, ends, this::postPluginMessages);
+						// The callback is bound to this search instance so a stale
+						// completion can never validate a newer pathfinder's path.
+						ExactPathfinder[] created = new ExactPathfinder[1];
+						created[0] = new ExactPathfinder(pathfinderConfig, exactRoutingStatic(),
+							exactRoutingSession, start, ends,
+							() -> onPathComplete(created[0], start, ends, canReviveFiltered));
 						// Recalculating towards the same targets: keep the old route drawn until
 						// the new one is ready.
 						if (ends.equals(previousTargets))
-							exact.showUntilDone(previousPath);
-						pathfinder = exact;
+							created[0].showUntilDone(previousPath);
+						pathfinder = created[0];
 					}
 					catch (RuntimeException error)
 					{
@@ -532,7 +566,12 @@ public class ShortestPathPlugin extends Plugin
 				}
 				else
 				{
-					legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
+					// The callback is bound to this search instance so a stale
+					// completion can never validate a newer pathfinder's path.
+					Pathfinder[] created = new Pathfinder[1];
+					created[0] = new Pathfinder(pathfinderConfig, start, ends,
+						() -> onPathComplete(created[0], start, ends, canReviveFiltered));
+					legacyPathfinder = created[0];
 					pathfinder = legacyPathfinder;
 				}
 				ActiveSearch search = pathfinder;
@@ -551,6 +590,35 @@ public class ShortestPathPlugin extends Plugin
 				});
 			}
 		}
+	}
+
+	/**
+	 * Runs on the pathfinder worker thread when a search finishes: replays the
+	 * path's recorded transports against the consumption ledger and, when the
+	 * first unpayable transport exists, excludes it and re-plans the same
+	 * (start, targets) — bounded by {@link #MAX_REPLAN_ATTEMPTS}. Validation is
+	 * deliberately post-search: keeping resource state out of the search graph
+	 * avoids multiplying the state space, so the worst case is a few extra full
+	 * searches per displayed path and zero when the path is clean.
+	 */
+	private void onPathComplete(ActiveSearch finished, int start, Set<Integer> ends, boolean canReviveFiltered)
+	{
+		// Only the search this callback belongs to may be validated; if the field
+		// has moved on to a newer search, that search's own callback handles it.
+		if (pathfinder != finished)
+		{
+			return;
+		}
+		Transport unpayable = PathConsumptionValidator.firstUnpayable(
+			pathfinderConfig.getEligibility(), finished.getPath());
+		if (unpayable == null || replanAttempts >= MAX_REPLAN_ATTEMPTS)
+		{
+			postPluginMessages();
+			return;
+		}
+		replanAttempts++;
+		pathfinderConfig.excludeTransport(unpayable);
+		schedulePathfinding("consumption re-plan", start, ends, canReviveFiltered);
 	}
 
 	private void ensurePathfindingExecutor()
