@@ -8,6 +8,7 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private boolean includeBankPath = false;
 	private int costBankVisit = 0;
 	private boolean unlockCanoeAxe = false;
+	private boolean unlockXericsHonour = false;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -44,6 +45,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.unlockCanoeAxe = unlockCanoeAxe;
 	}
 
+	@SuppressWarnings("unused")
+	public void setUnlockXericsHonourValue(boolean unlockXericsHonour)
+	{
+		this.unlockXericsHonour = unlockXericsHonour;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -72,6 +79,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean unlockCanoeAxe()
 	{
 		return unlockCanoeAxe;
+	}
+
+	@Override
+	public boolean unlockXericsHonour()
+	{
+		return unlockXericsHonour;
 	}
 
 	@Override
