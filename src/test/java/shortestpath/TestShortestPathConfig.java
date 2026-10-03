@@ -6,7 +6,7 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private int unreachableTargetDistance = 2;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	private boolean includeBankPath = false;
-	private int costBankVisit = 20;
+	private int costBankVisit = 0;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
