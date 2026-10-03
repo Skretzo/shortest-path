@@ -955,7 +955,10 @@ public class PathfinderConfig
 	{
 		String inRegionPatch = null;
 		Player localPlayer = client.getLocalPlayer();
-		if (localPlayer != null)
+		// Varbits are not transmitted while a modal widget is open; skip the
+		// live sample (but not the patch-state resolution below) rather than
+		// attribute a stale shared-slot value to the wrong patch.
+		if (localPlayer != null && !SpiritTreePatchState.modalWidgetOpen(client))
 		{
 			WorldPoint worldLocation = localPlayer.getWorldLocation();
 			if (worldLocation != null)

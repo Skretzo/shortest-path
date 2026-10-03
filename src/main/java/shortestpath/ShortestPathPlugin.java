@@ -988,7 +988,10 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		Player localPlayer = client.getLocalPlayer();
-		if (localPlayer != null)
+		if (localPlayer != null
+			// Varbits are not transmitted while a modal widget is open; a stale
+			// read of the shared slot could carry another patch's value.
+			&& !SpiritTreePatchState.modalWidgetOpen(client))
 		{
 			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
 			// a planted spirit tree's varbit is only meaningful while standing in

@@ -8,7 +8,11 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import net.runelite.api.Client;
+import net.runelite.api.HashTable;
+import net.runelite.api.WidgetNode;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.widgets.WidgetModalMode;
 import net.runelite.client.config.ConfigManager;
 
 /**
@@ -102,6 +106,31 @@ public class SpiritTreePatchState
 	{
 		int[] entry = PATCHES.get(patchName);
 		return entry == null ? -1 : entry[1];
+	}
+
+	/**
+	 * Whether a modal widget is currently open. Varbit updates are not
+	 * transmitted while one is, so {@code FARMING_TRANSMIT_*} reads return
+	 * whatever was last received — which can be the value of the other patch
+	 * sharing the region-scoped slot. Callers must skip sampling while this
+	 * returns true rather than record a cross-contaminated value.
+	 * (Same guard as FarmingTracker.updateData.)
+	 */
+	public static boolean modalWidgetOpen(Client client)
+	{
+		HashTable<WidgetNode> componentTable = client.getComponentTable();
+		if (componentTable == null)
+		{
+			return false;
+		}
+		for (WidgetNode widgetNode : componentTable)
+		{
+			if (widgetNode.getModalMode() != WidgetModalMode.NON_MODAL)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	static String configKey(String patchName)
