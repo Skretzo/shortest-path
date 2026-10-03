@@ -502,6 +502,29 @@ public class BankPickupRequirementsTest
 	}
 
 	@Test
+	public void combinedPickupsCannotExceedWhatTheBankHolds()
+	{
+		// The bank holds one fare, not two: the second edge can no longer be
+		// supplied once the first commits its withdrawal, so the hint asks only
+		// for what is actually withdrawable.
+		bankHas.put(ItemID.COINS, 3_000);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		when(coins.getName()).thenReturn("Coins");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("Coins (3,000)"), result.phrases);
+		assertEquals(Set.of(ItemID.COINS), result.bankItemIds);
+	}
+
+	@Test
 	public void aCommittedBankPouchIsNotOfferedTwice()
 	{
 		// The banked pouch's 5 law runes are credited into the pool when its plan

@@ -196,18 +196,23 @@ public final class TransportEligibility
 	 */
 	public BankPickupPlan bankPickupPlan(Transport transport)
 	{
-		return bankPickupPlan(transport, carriedItems, bankPouchRunes);
+		return bankPickupPlan(transport, carriedItems, bankPouchRunes, bankHas);
 	}
 
 	/**
-	 * {@link #bankPickupPlan(Transport)} evaluated against an arbitrary carried pool
-	 * and pouch-rune source, so {@link ConsumptionLedger#pickupPlan} can ask what the
-	 * bank must supply after earlier edges already consumed or picked items up —
-	 * and so a banked pouch whose runes were already credited into that pool is no
-	 * longer offered (an empty source disables every pouch branch below).
+	 * {@link #bankPickupPlan(Transport)} evaluated against an arbitrary carried pool,
+	 * pouch-rune source and bank supply, so {@link ConsumptionLedger#pickupPlan} can
+	 * ask what the bank must supply after earlier edges already consumed or picked
+	 * items up — and so a banked pouch whose runes were already credited into that
+	 * pool is no longer offered (an empty pouch source disables every pouch branch
+	 * below).
+	 *
+	 * <p>Bank coverage is resolved against a working copy of {@code bankSource}
+	 * decremented as each requirement's pickup lands, so the same bank stock cannot
+	 * fund two requirements of this plan; the caller's map is left untouched.
 	 */
 	private BankPickupPlan bankPickupPlan(Transport transport, Map<Integer, Integer> playerItems,
-		Map<Integer, Integer> pouchRunes)
+		Map<Integer, Integer> pouchRunes, Map<Integer, Integer> bankSource)
 	{
 		Map<Integer, Long> items = new LinkedHashMap<>();
 		Map<Integer, Long> resolvedItems = new LinkedHashMap<>();
@@ -217,16 +222,21 @@ public final class TransportEligibility
 			return new BankPickupPlan(items, bankItemIds, resolvedItems, false);
 		}
 
+		// Bank stock earmarked by earlier resolutions in this plan is spent: an id
+		// counted toward one requirement's shortfall cannot cover another's.
+		Map<Integer, Integer> bank = new HashMap<>(bankSource);
+
 		// Prefer the bank rune pouch over individual runes. This avoids surfacing
 		// combination rune variants (mist, dust, etc.) when the pouch already covers
 		// the requirement.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerItems, bankHas, pouchRunes, unlocks);
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerItems, bank, pouchRunes, unlocks);
 		boolean pouchTaken = carried != playerItems;
 		if (pouchTaken)
 		{
 			items.put(bankPouchId, 1L);
 			resolvedItems.put(bankPouchId, 1L);
 			bankItemIds.add(bankPouchId);
+			debit(bank, bankPouchId, 1);
 		}
 
 		boolean fullySupplied = true;
@@ -242,10 +252,10 @@ public final class TransportEligibility
 			// staff or offhand the bank holds.
 			for (ItemRequirement.Branch branch : req.getBranches())
 			{
-				addCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas, bankItemIds);
+				addCovering(branch.getItemIds(), pickupQuantity(branch), carried, bank, bankItemIds);
 			}
-			addCovering(req.getStaffIds(), 1, Map.of(), bankHas, bankItemIds);
-			addCovering(req.getOffhandIds(), 1, Map.of(), bankHas, bankItemIds);
+			addCovering(req.getStaffIds(), 1, Map.of(), bank, bankItemIds);
+			addCovering(req.getOffhandIds(), 1, Map.of(), bank, bankItemIds);
 
 			if (!fullySupplied)
 			{
@@ -261,7 +271,7 @@ public final class TransportEligibility
 			int foundId = -1;
 			for (ItemRequirement.Branch branch : req.getBranches())
 			{
-				foundId = findCarriedCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas);
+				foundId = findCarriedCovering(branch.getItemIds(), pickupQuantity(branch), carried, bank);
 				if (foundId != -1)
 				{
 					chosen = branch;
@@ -272,7 +282,7 @@ public final class TransportEligibility
 			{
 				for (ItemRequirement.Branch branch : req.getBranches())
 				{
-					foundId = findCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas);
+					foundId = findCovering(branch.getItemIds(), pickupQuantity(branch), carried, bank);
 					if (foundId != -1)
 					{
 						chosen = branch;
@@ -284,14 +294,16 @@ public final class TransportEligibility
 			{
 				int carriedQty = carried.getOrDefault(foundId, 0);
 				int displayId = carriedQty > 0 ? foundId : chosen.getItemIds()[0];
-				items.merge(displayId, (long) (pickupQuantity(chosen) - carriedQty), Long::sum);
-				resolvedItems.merge(foundId, (long) (pickupQuantity(chosen) - carriedQty), Long::sum);
+				int withdrawn = pickupQuantity(chosen) - carriedQty;
+				items.merge(displayId, (long) withdrawn, Long::sum);
+				resolvedItems.merge(foundId, (long) withdrawn, Long::sum);
+				debit(bank, foundId, withdrawn);
 				continue;
 			}
-			foundId = findCovering(req.getStaffIds(), 1, Map.of(), bankHas);
+			foundId = findCovering(req.getStaffIds(), 1, Map.of(), bank);
 			if (foundId == -1)
 			{
-				foundId = findCovering(req.getOffhandIds(), 1, Map.of(), bankHas);
+				foundId = findCovering(req.getOffhandIds(), 1, Map.of(), bank);
 			}
 			if (foundId == -1)
 			{
@@ -300,6 +312,7 @@ public final class TransportEligibility
 			}
 			items.merge(foundId, 1L, Long::sum);
 			resolvedItems.merge(foundId, 1L, Long::sum);
+			debit(bank, foundId, 1);
 		}
 		return new BankPickupPlan(fullySupplied ? items : null, bankItemIds, resolvedItems, pouchTaken);
 	}
@@ -380,6 +393,7 @@ public final class TransportEligibility
 	public final class ConsumptionLedger
 	{
 		private Map<Integer, Integer> pool = new HashMap<>(carriedItems);
+		private Map<Integer, Integer> bankRemaining = new HashMap<>(bankHas);
 		private boolean pouchRunesCredited;
 
 		private ConsumptionLedger()
@@ -524,18 +538,23 @@ public final class TransportEligibility
 		 * rather than the frozen carried snapshot. Once a committed plan has credited
 		 * the banked pouch's runes into the pool, the pouch is no longer offered:
 		 * its runes already live in the pool, so offering them again would double
-		 * count them and re-display the pouch as a pickup it cannot be.
+		 * count them and re-display the pouch as a pickup it cannot be. Bank
+		 * coverage is checked against the remaining supply, so an earlier
+		 * committed pickup cannot fund this edge a second time.
 		 */
 		public BankPickupPlan pickupPlan(Transport transport)
 		{
-			return bankPickupPlan(transport, pool, pouchRunesCredited ? Map.of() : bankPouchRunes);
+			return bankPickupPlan(transport, pool, pouchRunesCredited ? Map.of() : bankPouchRunes,
+				bankRemaining);
 		}
 
 		/**
 		 * Credits a committed pickup plan into the pool — the player is assumed to
-		 * withdraw the resolved items at the bank before continuing the path. The
-		 * banked rune pouch's runes are credited once, the first time a plan takes
-		 * the pouch. Plans the bank cannot fully supply credit nothing.
+		 * withdraw the resolved items at the bank before continuing the path — and
+		 * debits the remaining bank supply by the same amounts, so a later edge
+		 * cannot plan to withdraw stock an earlier edge already claimed. The banked
+		 * rune pouch's runes are credited once, the first time a plan takes the
+		 * pouch. Plans the bank cannot fully supply credit nothing.
 		 */
 		public void commit(BankPickupPlan plan)
 		{
@@ -552,6 +571,7 @@ public final class TransportEligibility
 					return;
 				}
 				pool.merge(itemId, quantity.intValue(), Integer::sum);
+				debit(bankRemaining, itemId, quantity.intValue());
 			});
 			if (plan.pouchTaken && !pouchRunesCredited)
 			{
@@ -562,7 +582,9 @@ public final class TransportEligibility
 
 		/**
 		 * Refills the pool to the bank-path pool: visiting a bank tops the player
-		 * back up to everything the snapshot saw carried or in the bank.
+		 * back up to everything the snapshot saw carried or in the bank. The
+		 * remaining bank supply is not restored — items already committed as
+		 * withdrawals are gone from every bank the player might visit next.
 		 */
 		public void visitBank()
 		{
@@ -669,6 +691,23 @@ public final class TransportEligibility
 		}
 		return findCovering(req.getStaffIds(), 1, Map.of(), playerHas) != -1
 			|| findCovering(req.getOffhandIds(), 1, Map.of(), playerHas) != -1;
+	}
+
+	/**
+	 * Deducts {@code quantity} of {@code itemId} from a supply map, clamping at zero —
+	 * a supply entry never goes negative when a resolved withdrawal exceeds it.
+	 */
+	private static void debit(Map<Integer, Integer> supply, int itemId, int quantity)
+	{
+		int remaining = supply.getOrDefault(itemId, 0) - quantity;
+		if (remaining > 0)
+		{
+			supply.put(itemId, remaining);
+		}
+		else
+		{
+			supply.remove(itemId);
+		}
 	}
 
 	/**
