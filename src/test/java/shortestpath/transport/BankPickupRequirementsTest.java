@@ -1,306 +1,256 @@
 package shortestpath.transport;
 
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.EnumID;
-import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
-import net.runelite.api.gameval.VarbitID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
+import shortestpath.TeleportationItem;
+import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.TestPathfinderConfig;
+import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests {@link BankPickupResult#compute} against eligibility snapshots: the pickup
+ * phrases and bank item highlights read from the same evaluation the pathfinder used,
+ * keyed by the transport recorded on each path step.
+ */
 @RunWith(MockitoJUnitRunner.class)
 public class BankPickupRequirementsTest
 {
-	private static final int POUCH_AIR = 1;
 	private static final int NO_POUCH = -1;
 	private static final int[] NO_SUBSTITUTES = new int[0];
-	// Falador Teleport: 1 law, 3 air, 1 water
+	private static final int BANK_TILE = WorldPointUtil.packWorldPoint(3100, 3500, 0);
+	private static final int EDGE_ORIGIN = WorldPointUtil.packWorldPoint(3101, 3500, 0);
+	private static final int EDGE_DESTINATION = WorldPointUtil.packWorldPoint(3102, 3500, 0);
+	private static final Set<Integer> BANK_LOCATIONS = Set.of(BANK_TILE);
+	private static final Transport LAW_ONLY = teleport(rune(ItemVariations.LAW_RUNE, 1));
 	private static final Transport FALADOR_TELEPORT = teleport(
 		rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.AIR_RUNE, 3), rune(ItemVariations.WATER_RUNE, 1));
-	private static final Transport THREE_AIR = teleport(rune(ItemVariations.AIR_RUNE, 3));
-	private static final Transport SHANTAY_GATE = teleport(new ItemRequirement(List.of(
-		new ItemRequirement.Branch(ItemVariations.SHANTAY_PASS.getIds(), null, null, 1),
-		new ItemRequirement.Branch(ItemVariations.COINS.getIds(), null, null, 5))));
 
 	@Mock
 	private Client client;
 	@Mock
-	private ItemContainer inventory;
+	private PathfinderConfig pathfinderConfig;
 	@Mock
-	private ItemContainer equipment;
+	private ItemContainer bank;
 	@Mock
-	private EnumComposition runePouchEnum;
+	private ItemComposition lawRune;
 	@Mock
-	private ItemComposition airRune;
+	private ItemComposition dramenStaff;
 	@Mock
-	private ItemComposition waterRune;
+	private ItemComposition coins;
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
-	private final Map<Integer, Integer> bankPouchRunes = new HashMap<>();
 
 	@Test
-	public void collectPlayerItemsCountsInventoryEquipmentAndRunePouch()
+	public void recordedTransportProducesPickupPhraseDespiteFreeAlternative()
 	{
-		setupPlayerItems();
-		when(client.getEnum(EnumID.RUNEPOUCH_RUNE)).thenReturn(runePouchEnum);
-		when(runePouchEnum.getIntValue(POUCH_AIR)).thenReturn(ItemID.AIRRUNE);
-		when(client.getVarbitValue(VarbitID.RUNE_POUCH_TYPE_1)).thenReturn(POUCH_AIR);
-		when(client.getVarbitValue(VarbitID.RUNE_POUCH_QUANTITY_1)).thenReturn(5);
+		// The path records the law-requiring teleport it actually used; a free transport
+		// sharing the destination must not suppress the pickup for the recorded one.
+		bankHas.put(ItemID.LAWRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf(edge(TransportType.TRANSPORT, null), LAW_ONLY));
+		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
+		when(lawRune.getName()).thenReturn("Law rune");
 
-		Map<Integer, Integer> collected = BankPickupRequirements.collectPlayerItems(client);
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
 
-		assertEquals(Integer.valueOf(15), collected.get(ItemID.AIRRUNE));
-		assertEquals(Integer.valueOf(1), collected.get(ItemID.STAFF_OF_FIRE));
-		assertEquals(Integer.valueOf(1), collected.get(ItemID.BH_RUNE_POUCH));
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Law rune"), result.phrases);
+		assertEquals(Set.of(ItemID.LAWRUNE), result.bankItemIds);
 	}
 
 	@Test
-	public void pickupAsksOnlyForTheShortfall()
+	public void identitylessStepWithFreeAlternativeProducesNothing()
 	{
-		when(client.getItemDefinition(ItemID.AIRRUNE)).thenReturn(airRune);
-		when(client.getItemDefinition(ItemID.WATERRUNE)).thenReturn(waterRune);
-		when(airRune.getName()).thenReturn("Air rune");
-		when(waterRune.getName()).thenReturn("Water rune");
-		playerHas.put(ItemID.LAWRUNE, 1);
-		playerHas.put(ItemID.AIRRUNE, 2);
-		bankHas.put(ItemID.AIRRUNE, 1000);
-		bankHas.put(ItemID.WATERRUNE, 1000);
+		// Without a recorded transport, destination-matched alternatives apply: any one
+		// of them being free means no pickup for the edge.
+		bankHas.put(ItemID.LAWRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf(
+				edge(TransportType.TRANSPORT, null),
+				edge(TransportType.TELEPORTATION_SPELL, LAW_ONLY.getItemRequirements())));
 
-		Map<Integer, Long> pickups = pickups(FALADOR_TELEPORT, NO_POUCH);
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false));
 
-		assertEquals("1 Air rune, 1 Water rune", BankPickupRequirements.formatPickups(client, pickups));
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
 	}
 
 	@Test
-	public void bankHoldingOnlyTheShortfallCanSupplyIt()
+	public void bankShortProducesNoPhraseButStillHighlights()
 	{
-		// The pathfinder routes via the bank for 2 carried + 1 banked air, so the hint must too
-		playerHas.put(ItemID.LAWRUNE, 1);
-		playerHas.put(ItemID.AIRRUNE, 2);
-		bankHas.put(ItemID.AIRRUNE, 1);
-		bankHas.put(ItemID.WATERRUNE, 1);
-
-		assertEquals(Map.of(ItemID.AIRRUNE, 1L, ItemID.WATERRUNE, 1L), pickups(FALADOR_TELEPORT, NO_POUCH));
-	}
-
-	@Test
-	public void pureRuneIsPreferredAmongCarriedVariants()
-	{
-		// Both carried variants can be topped up; air comes first in the variations
-		playerHas.put(ItemID.AIRRUNE, 1);
-		playerHas.put(ItemID.DUSTRUNE, 1);
-		bankHas.put(ItemID.AIRRUNE, 1000);
-		bankHas.put(ItemID.DUSTRUNE, 1000);
-
-		assertEquals(Map.of(ItemID.AIRRUNE, 2L), pickups(THREE_AIR, NO_POUCH));
-	}
-
-	@Test
-	public void carriedCombinationRuneIsToppedUpBeforePureRune()
-	{
-		// Topping up the 2 carried dust saves a slot over bringing 3 air
-		playerHas.put(ItemID.DUSTRUNE, 2);
-		bankHas.put(ItemID.AIRRUNE, 1000);
-		bankHas.put(ItemID.DUSTRUNE, 1000);
-
-		assertEquals(Map.of(ItemID.DUSTRUNE, 1L), pickups(THREE_AIR, NO_POUCH));
-	}
-
-	@Test
-	public void pureRuneIsUsedWhenCarriedVariantCannotBeToppedUp()
-	{
-		playerHas.put(ItemID.DUSTRUNE, 2);
-		bankHas.put(ItemID.AIRRUNE, 1000);
-
-		assertEquals(Map.of(ItemID.AIRRUNE, 3L), pickups(THREE_AIR, NO_POUCH));
-	}
-
-	@Test
-	public void combinationRuneIsUsedWhenNoPureRuneCovers()
-	{
-		// The player carries 2 dust, so only dust tops them up: show dust, not air
-		playerHas.put(ItemID.DUSTRUNE, 2);
-		bankHas.put(ItemID.DUSTRUNE, 1);
-
-		assertEquals(Map.of(ItemID.DUSTRUNE, 1L), pickups(THREE_AIR, NO_POUCH));
-	}
-
-	@Test
-	public void combinationRuneNotCarriedIsShownAsThePureRune()
-	{
-		bankHas.put(ItemID.DUSTRUNE, 3);
-
-		assertEquals(Map.of(ItemID.AIRRUNE, 3L), pickups(THREE_AIR, NO_POUCH));
-	}
-
-	@Test
-	public void bankHoldingLessThanTheShortfallCannotSupplyIt()
-	{
-		playerHas.put(ItemID.AIRRUNE, 1);
-		bankHas.put(ItemID.AIRRUNE, 1);
-
-		assertNull(pickups(THREE_AIR, NO_POUCH));
-	}
-
-	@Test
-	public void bankPouchShortOfTheShortfallFallsBackToLooseRunes()
-	{
-		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
-		bankHas.put(ItemID.AIRRUNE, 3);
-		bankPouchRunes.put(ItemID.AIRRUNE, 2);
-
-		assertEquals(Map.of(ItemID.AIRRUNE, 3L), pickups(THREE_AIR, ItemID.BH_RUNE_POUCH));
-		assertEquals(Set.of(ItemID.AIRRUNE), highlighted(THREE_AIR, ItemID.BH_RUNE_POUCH));
-	}
-
-	@Test
-	public void bankPouchAndLooseRunesCombineForOneShortfall()
-	{
-		// Neither the pouch's 2 air nor the 1 loose air covers 3 alone, but together they do,
-		// as the pathfinder's bank path already counts them
-		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
-		bankHas.put(ItemID.AIRRUNE, 1);
-		bankPouchRunes.put(ItemID.AIRRUNE, 2);
-
-		assertEquals(Map.of(ItemID.BH_RUNE_POUCH, 1L, ItemID.AIRRUNE, 1L), pickups(THREE_AIR, ItemID.BH_RUNE_POUCH));
-		assertEquals(Set.of(ItemID.BH_RUNE_POUCH, ItemID.AIRRUNE), highlighted(THREE_AIR, ItemID.BH_RUNE_POUCH));
-	}
-
-	@Test
-	public void bankPouchAndLooseRunesStillShortGiveNoPickup()
-	{
-		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
-		bankHas.put(ItemID.AIRRUNE, 1);
-		bankPouchRunes.put(ItemID.AIRRUNE, 1);
-
-		assertNull(pickups(THREE_AIR, ItemID.BH_RUNE_POUCH));
-	}
-
-	@Test
-	public void bankPouchCoveringTheShortfallIsPreferredOnce()
-	{
-		playerHas.put(ItemID.LAWRUNE, 1);
-		playerHas.put(ItemID.AIRRUNE, 2);
-		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
-		bankHas.put(ItemID.AIRRUNE, 5);
-		bankHas.put(ItemID.WATERRUNE, 5);
-		bankPouchRunes.put(ItemID.AIRRUNE, 1);
-		bankPouchRunes.put(ItemID.WATERRUNE, 1);
-
-		// One pouch covers both air and water
-		assertEquals(Map.of(ItemID.BH_RUNE_POUCH, 1L), pickups(FALADOR_TELEPORT, ItemID.BH_RUNE_POUCH));
-	}
-
-	@Test
-	public void bankPouchRunesCountTowardOtherShortfallsOnceTaken()
-	{
-		// The pouch is taken for law and water, so its 2 air leave a shortfall of 1 air
-		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
-		bankHas.put(ItemID.AIRRUNE, 1000);
-		bankPouchRunes.put(ItemID.LAWRUNE, 1);
-		bankPouchRunes.put(ItemID.AIRRUNE, 2);
-		bankPouchRunes.put(ItemID.WATERRUNE, 1);
-
-		assertEquals(Map.of(ItemID.BH_RUNE_POUCH, 1L, ItemID.AIRRUNE, 1L),
-			pickups(FALADOR_TELEPORT, ItemID.BH_RUNE_POUCH));
-		assertEquals(Set.of(ItemID.BH_RUNE_POUCH, ItemID.AIRRUNE),
-			highlighted(FALADOR_TELEPORT, ItemID.BH_RUNE_POUCH));
-	}
-
-	@Test
-	public void highlightingUsesTheShortfall()
-	{
-		// 1 banked air covers the shortfall; 2 banked dust do not (none carried, so 3 needed).
-		// No water in the bank, so the bank can't supply the teleport, but the air is still highlighted.
+		// 1 banked air covers the carried shortfall but no water is anywhere, so the bank
+		// cannot fully supply the teleport: no phrase, but the air is still highlighted.
 		playerHas.put(ItemID.LAWRUNE, 1);
 		playerHas.put(ItemID.AIRRUNE, 2);
 		bankHas.put(ItemID.AIRRUNE, 1);
-		bankHas.put(ItemID.DUSTRUNE, 2);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf());
 
-		assertNull(pickups(FALADOR_TELEPORT, NO_POUCH));
-		assertEquals(Set.of(ItemID.AIRRUNE), highlighted(FALADOR_TELEPORT, NO_POUCH));
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false, FALADOR_TELEPORT));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertEquals(Set.of(ItemID.AIRRUNE), result.bankItemIds);
 	}
 
 	@Test
-	public void carriedShantayPassNeedsNoBankPickup()
+	public void playerSatisfyingTheRecordedTransportNeedsNoPickup()
 	{
-		playerHas.put(ItemID.SHANTAY_PASS, 1);
-		bankHas.put(ItemID.COINS, 100);
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf());
 
-		assertEquals(Map.of(), pickups(SHANTAY_GATE, NO_POUCH));
-		assertEquals(Set.of(), highlighted(SHANTAY_GATE, NO_POUCH));
-		assertTrue(BankPickupRequirements.transportSatisfiedBy(SHANTAY_GATE, playerHas));
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false, FALADOR_TELEPORT));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
 	}
 
 	@Test
-	public void bankCoinsAloneArePickedUpAsFiveCoins()
+	public void fairyRingPathPicksUpTheBankedDramenStaff()
 	{
-		bankHas.put(ItemID.COINS, 100);
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		bankHas.put(ItemID.DRAMEN_STAFF_AIR, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(true));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf());
+		when(client.getItemDefinition(ItemID.DRAMEN_STAFF)).thenReturn(dramenStaff);
+		when(dramenStaff.getName()).thenReturn("Dramen staff");
 
-		assertEquals(Map.of(ItemID.COINS, 5L), pickups(SHANTAY_GATE, NO_POUCH));
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false,
+				new Transport.TransportBuilder().type(TransportType.FAIRY_RING).build()));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Dramen staff"), result.phrases);
+		assertEquals(Set.of(ItemID.DRAMEN_STAFF, ItemID.DRAMEN_STAFF_AIR), result.bankItemIds);
 	}
 
 	@Test
-	public void bankShantayPassPreferredOverCoins()
+	public void fairyRingPathNeedsNoStaffWhenTheDiaryIsComplete()
 	{
-		bankHas.put(ItemID.SHANTAY_PASS, 1);
-		bankHas.put(ItemID.COINS, 100);
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf());
 
-		assertEquals(Map.of(ItemID.SHANTAY_PASS, 1L), pickups(SHANTAY_GATE, NO_POUCH));
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false,
+				new Transport.TransportBuilder().type(TransportType.FAIRY_RING).build()));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
 	}
 
 	@Test
-	public void carriedCoinsAreToppedUpBeforeTakingAPass()
+	public void missingEligibilitySnapshotYieldsEmptyResult()
 	{
-		playerHas.put(ItemID.COINS, 4);
-		bankHas.put(ItemID.SHANTAY_PASS, 1);
-		bankHas.put(ItemID.COINS, 100);
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
 
-		assertEquals(Map.of(ItemID.COINS, 1L), pickups(SHANTAY_GATE, NO_POUCH));
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
 	}
 
 	@Test
-	public void highlightingUsesEachBranchQuantity()
+	public void awayFromABankStepYieldsEmptyResult()
 	{
-		bankHas.put(ItemID.SHANTAY_PASS, 1);
-		bankHas.put(ItemID.COINS, 3);
+		List<PathStep> path = List.of(
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
 
-		assertEquals(Set.of(ItemID.SHANTAY_PASS), highlighted(SHANTAY_GATE, NO_POUCH));
-		assertEquals(Map.of(ItemID.SHANTAY_PASS, 1L), pickups(SHANTAY_GATE, NO_POUCH));
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
 	}
 
-	private Map<Integer, Long> pickups(Transport transport, int bankPouchId)
+	@Test
+	public void formatPickupsNamesQuantitiesAndCurrencyAmounts()
 	{
-		return BankPickupRequirements.computeBankPickups(transport, playerHas, bankHas, bankPouchId, bankPouchRunes);
+		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		when(lawRune.getName()).thenReturn("Law rune");
+		when(coins.getName()).thenReturn("Coins");
+		Map<Integer, Long> pickups = new LinkedHashMap<>();
+		pickups.put(ItemID.LAWRUNE, 2L);
+		pickups.put(ItemID.COINS, 5L);
+
+		assertEquals("2 Law rune, Coins (5)", BankPickupRequirements.formatPickups(client, pickups));
 	}
 
-	private Set<Integer> highlighted(Transport transport, int bankPouchId)
+	private TransportEligibility eligibility(boolean fairyRingStaffRequired)
 	{
-		Set<Integer> itemIds = new HashSet<>();
-		BankPickupRequirements.collectPartialBankItemIds(
-			transport, playerHas, bankHas, bankPouchId, bankPouchRunes, itemIds);
-		return itemIds;
+		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
+		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
+		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, Map.of(),
+			fairyRingStaffRequired, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of());
 	}
 
 	private static ItemRequirement rune(ItemVariations rune, int quantity)
@@ -316,12 +266,16 @@ public class BankPickupRequirementsTest
 			.build();
 	}
 
-	private void setupPlayerItems()
+	private static Transport edge(TransportType type, TransportItems requirements)
 	{
-		doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
-		doReturn(equipment).when(client).getItemContainer(InventoryID.WORN);
-		when(inventory.getItems()).thenReturn(new Item[]{
-			new Item(ItemID.AIRRUNE, 10), new Item(ItemID.BH_RUNE_POUCH, 1)});
-		when(equipment.getItems()).thenReturn(new Item[]{new Item(ItemID.STAFF_OF_FIRE, 1)});
+		Transport.TransportBuilder builder = new Transport.TransportBuilder()
+			.type(type)
+			.origin(EDGE_ORIGIN)
+			.destination(EDGE_DESTINATION);
+		if (requirements != null)
+		{
+			builder.itemRequirements(requirements);
+		}
+		return builder.build();
 	}
 }
