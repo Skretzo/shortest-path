@@ -72,6 +72,8 @@ public class BankPickupRequirementsTest
 	private ItemComposition mistRune;
 	@Mock
 	private ItemComposition rope;
+	@Mock
+	private ItemComposition tradeSticks;
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
@@ -556,6 +558,54 @@ public class BankPickupRequirementsTest
 
 		assertEquals(List.of("1 Rune pouch, 2 Law rune"), result.phrases);
 		assertEquals(Set.of(ItemID.BH_RUNE_POUCH, ItemID.LAWRUNE), result.bankItemIds);
+	}
+
+	@Test
+	public void aCommittedPouchFundsALaterPayableEdge()
+	{
+		// The pouch credit carries past the cast that needed it: the second cast
+		// is payable straight from the leftover pouch runes, so the only pickup
+		// is the pouch itself.
+		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(
+			eligibility(false, ItemID.BH_RUNE_POUCH, Map.of(ItemID.LAWRUNE, 5)));
+		when(client.getItemDefinition(ItemID.BH_RUNE_POUCH)).thenReturn(runePouch);
+		when(runePouch.getName()).thenReturn("Rune pouch");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, teleport(rune(ItemVariations.LAW_RUNE, 3))),
+			new PathStep(EDGE_DESTINATION, false, teleport(rune(ItemVariations.LAW_RUNE, 2))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Rune pouch"), result.phrases);
+		assertEquals(Set.of(ItemID.BH_RUNE_POUCH), result.bankItemIds);
+	}
+
+	@Test
+	public void nonCoinCurrenciesSpendAcrossEdges()
+	{
+		// Secondary currencies are spent like coins: the same banked stock of
+		// trade sticks funds both fares and combines into a single amount.
+		bankHas.put(ItemID.VILLAGE_TRADE_STICKS, 10);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.VILLAGE_TRADE_STICKS)).thenReturn(tradeSticks);
+		when(tradeSticks.getName()).thenReturn("Trading sticks");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false,
+				edge(TransportType.TRANSPORT, singleItem(ItemID.VILLAGE_TRADE_STICKS, 4))),
+			new PathStep(EDGE_DESTINATION, false,
+				edge(TransportType.TRANSPORT, singleItem(ItemID.VILLAGE_TRADE_STICKS, 4))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("Trading sticks (8)"), result.phrases);
+		assertEquals(Set.of(ItemID.VILLAGE_TRADE_STICKS), result.bankItemIds);
 	}
 
 	@Test
