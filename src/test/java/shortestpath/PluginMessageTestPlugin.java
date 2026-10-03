@@ -38,6 +38,8 @@ public class PluginMessageTestPlugin extends Plugin
 	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
 	private static final String PLUGIN_MESSAGE_QUERY = "query";
 	private static final String PLUGIN_MESSAGE_RESULT = "result";
+	private static final String PLUGIN_MESSAGE_GET_TARGET = "getTarget";
+	private static final String PLUGIN_MESSAGE_CURRENT_TARGET = "currentTarget";
 	private static final String CLEAR = "Clear";
 	private static final String PATH = ColorUtil.wrapWithColorTag("Path (PluginMessage)", JagexColors.MENU_TARGET);
 	private static final String SET = "Set";
@@ -54,9 +56,13 @@ public class PluginMessageTestPlugin extends Plugin
 		JagexColors.MENU_TARGET);
 	private static final String CONFIG_COLOUR_PATH = ColorUtil.wrapWithColorTag("Yellow path colour (PluginMessage)",
 		JagexColors.MENU_TARGET);
+	private static final String GET_TARGET = "Get";
+	private static final String CURRENT_TARGET = ColorUtil.wrapWithColorTag("Current target (PluginMessage)",
+		JagexColors.MENU_TARGET);
 
 	private final Set<WorldPoint> targets = new HashSet<>(10);
 	private Point lastMenuOpenedPoint;
+	private int getTargetId;
 
 	@Inject
 	private Client client;
@@ -91,6 +97,7 @@ public class PluginMessageTestPlugin extends Plugin
 				addMenuEntry(SET, TARGET_WP, 1);
 				addMenuEntry(SET, CONFIG_COLOUR_PATH, 1);
 				addMenuEntry(QUERY, QUERY_TARGET, 1);
+				addMenuEntry(GET_TARGET, CURRENT_TARGET, 1);
 				if (!targets.isEmpty())
 				{
 					addMenuEntry(SET, START_INT, 1);
@@ -112,6 +119,7 @@ public class PluginMessageTestPlugin extends Plugin
 			addMenuEntry(SET, TARGET_WP, 0);
 			addMenuEntry(SET, CONFIG_COLOUR_PATH, 0);
 			addMenuEntry(QUERY, QUERY_TARGET, 0);
+			addMenuEntry(GET_TARGET, CURRENT_TARGET, 0);
 			if (!targets.isEmpty())
 			{
 				addMenuEntry(SET, START_INT, 0);
@@ -167,6 +175,11 @@ public class PluginMessageTestPlugin extends Plugin
 			eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_QUERY, data));
 			return;
 		}
+		else if (entry.getOption().equals(GET_TARGET) && entry.getTarget().equals(CURRENT_TARGET))
+		{
+			sendGetTarget();
+			return;
+		}
 		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
 		{
 			targets.clear();
@@ -212,20 +225,38 @@ public class PluginMessageTestPlugin extends Plugin
 		eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_PATH, data));
 	}
 
-	/** Queries leave the displayed path alone, so their answer is only reported in chat. */
+	private void sendGetTarget()
+	{
+		Map<String, Object> data = new HashMap<>();
+		data.put("id", "test-get-target-" + (getTargetId++));
+		eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_GET_TARGET, data));
+	}
+
+	/** Query and getTarget answers leave the displayed path alone, so they are only reported in chat. */
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
-		if (!PLUGIN_MESSAGE_NAME.equals(event.getNamespace()) || !PLUGIN_MESSAGE_RESULT.equals(event.getName()))
+		if (!PLUGIN_MESSAGE_NAME.equals(event.getNamespace()))
 		{
 			return;
 		}
 		Map<String, Object> data = event.getData();
-		List<?> path = (List<?>) data.get("path");
-		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
-			"Query " + data.get("id") + ": reached=" + data.get("reached")
-				+ ", reason=" + data.get("reason")
-				+ ", " + path.size() + " steps, transports " + data.get("transports"), null);
+		if (PLUGIN_MESSAGE_RESULT.equals(event.getName()))
+		{
+			List<?> path = (List<?>) data.get("path");
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
+				"Query " + data.get("id") + ": reached=" + data.get("reached")
+					+ ", reason=" + data.get("reason")
+					+ ", " + path.size() + " steps, transports " + data.get("transports"), null);
+		}
+		else if (PLUGIN_MESSAGE_CURRENT_TARGET.equals(event.getName()))
+		{
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
+				"GetTarget " + data.get("id") + ": set=" + data.get("set")
+					+ ", start=" + data.get("start")
+					+ ", target=" + data.get("target")
+					+ ", config=" + data.get("config"), null);
+		}
 	}
 
 	private WorldPoint getSelectedWorldPoint()
