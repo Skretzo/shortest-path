@@ -226,6 +226,34 @@ public class PathTileOverlay extends Overlay
 					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 				}
 			}
+			else if (TileStyle.TURN_MARKERS.equals(plugin.pathStyle))
+			{
+				for (int i = 0; i < path.size(); i++)
+				{
+					PathStep currentStep = path.get(i);
+					int pathPoint = currentStep.getPackedPosition();
+					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
+					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
+					// Markers only where the route changes direction, plus both endpoints.
+					boolean marker = i == 0 || i == path.size() - 1
+						|| directionChanges(path.get(i - 1).getPackedPosition(), pathPoint,
+							path.get(i + 1).getPackedPosition());
+					// Skip markers inside POH (no collision data, tiles render at wrong positions)
+					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					{
+						drawTile(graphics, pathPoint, color, counter, true);
+					}
+					counter++;
+					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+				}
+				for (int target : plugin.getPathfinder().getTargets())
+				{
+					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
+					{
+						drawTile(graphics, target, colorCalculating, -1, true);
+					}
+				}
+			}
 			else
 			{
 				boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
