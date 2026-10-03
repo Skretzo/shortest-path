@@ -183,15 +183,18 @@ public final class TransportEligibility
 	 */
 	public BankPickupPlan bankPickupPlan(Transport transport)
 	{
-		return bankPickupPlan(transport, carriedItems);
+		return bankPickupPlan(transport, carriedItems, bankPouchRunes);
 	}
 
 	/**
-	 * {@link #bankPickupPlan(Transport)} evaluated against an arbitrary carried pool,
-	 * so {@link ConsumptionLedger#pickupPlan} can ask what the bank must supply after
-	 * earlier edges already consumed or picked items up.
+	 * {@link #bankPickupPlan(Transport)} evaluated against an arbitrary carried pool
+	 * and pouch-rune source, so {@link ConsumptionLedger#pickupPlan} can ask what the
+	 * bank must supply after earlier edges already consumed or picked items up —
+	 * and so a banked pouch whose runes were already credited into that pool is no
+	 * longer offered (an empty source disables every pouch branch below).
 	 */
-	private BankPickupPlan bankPickupPlan(Transport transport, Map<Integer, Integer> playerItems)
+	private BankPickupPlan bankPickupPlan(Transport transport, Map<Integer, Integer> playerItems,
+		Map<Integer, Integer> pouchRunes)
 	{
 		Map<Integer, Long> items = new LinkedHashMap<>();
 		Map<Integer, Long> resolvedItems = new LinkedHashMap<>();
@@ -204,7 +207,7 @@ public final class TransportEligibility
 		// Prefer the bank rune pouch over individual runes. This avoids surfacing
 		// combination rune variants (mist, dust, etc.) when the pouch already covers
 		// the requirement.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerItems, bankHas, bankPouchRunes, unlocks);
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerItems, bankHas, pouchRunes, unlocks);
 		boolean pouchTaken = carried != playerItems;
 		if (pouchTaken)
 		{
@@ -474,11 +477,14 @@ public final class TransportEligibility
 
 		/**
 		 * The bank pickup plan for one transport evaluated against the running pool
-		 * rather than the frozen carried snapshot.
+		 * rather than the frozen carried snapshot. Once a committed plan has credited
+		 * the banked pouch's runes into the pool, the pouch is no longer offered:
+		 * its runes already live in the pool, so offering them again would double
+		 * count them and re-display the pouch as a pickup it cannot be.
 		 */
 		public BankPickupPlan pickupPlan(Transport transport)
 		{
-			return bankPickupPlan(transport, pool);
+			return bankPickupPlan(transport, pool, pouchRunesCredited ? Map.of() : bankPouchRunes);
 		}
 
 		/**
@@ -494,7 +500,15 @@ public final class TransportEligibility
 				return;
 			}
 			plan.resolvedItems.forEach((itemId, quantity) ->
-				pool.merge(itemId, quantity.intValue(), Integer::sum));
+			{
+				// The pouch itself is only ever withdrawn once, alongside the rune
+				// credit below — never grow the pool's pouch count beyond one.
+				if (itemId == bankPouchId && pouchRunesCredited)
+				{
+					return;
+				}
+				pool.merge(itemId, quantity.intValue(), Integer::sum);
+			});
 			if (plan.pouchTaken && !pouchRunesCredited)
 			{
 				bankPouchRunes.forEach((runeId, amount) -> pool.merge(runeId, amount, Integer::sum));

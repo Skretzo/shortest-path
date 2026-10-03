@@ -64,6 +64,8 @@ public class BankPickupRequirementsTest
 	private ItemComposition coins;
 	@Mock
 	private ItemComposition quetzalWhistle;
+	@Mock
+	private ItemComposition runePouch;
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
@@ -500,6 +502,34 @@ public class BankPickupRequirementsTest
 	}
 
 	@Test
+	public void aCommittedBankPouchIsNotOfferedTwice()
+	{
+		// The banked pouch's 5 law runes are credited into the pool when its plan
+		// commits; the second cast can draw the pool down to 2, but the pouch must
+		// not be offered — or counted — again, so the real shortfall resolves to
+		// the 2 loose laws the bank holds.
+		bankHas.put(ItemID.BH_RUNE_POUCH, 1);
+		bankHas.put(ItemID.LAWRUNE, 2);
+		when(pathfinderConfig.getEligibility()).thenReturn(
+			eligibility(false, ItemID.BH_RUNE_POUCH, Map.of(ItemID.LAWRUNE, 5)));
+		when(client.getItemDefinition(ItemID.BH_RUNE_POUCH)).thenReturn(runePouch);
+		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
+		when(runePouch.getName()).thenReturn("Rune pouch");
+		when(lawRune.getName()).thenReturn("Law rune");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, teleport(rune(ItemVariations.LAW_RUNE, 3))),
+			new PathStep(EDGE_DESTINATION, false, teleport(rune(ItemVariations.LAW_RUNE, 4))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Rune pouch, 2 Law rune"), result.phrases);
+		assertEquals(Set.of(ItemID.BH_RUNE_POUCH, ItemID.LAWRUNE), result.bankItemIds);
+	}
+
+	@Test
 	public void formatPickupsNamesQuantitiesAndCurrencyAmounts()
 	{
 		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
@@ -515,9 +545,15 @@ public class BankPickupRequirementsTest
 
 	private TransportEligibility eligibility(boolean fairyRingStaffRequired)
 	{
+		return eligibility(fairyRingStaffRequired, NO_POUCH, Map.of());
+	}
+
+	private TransportEligibility eligibility(boolean fairyRingStaffRequired, int bankPouchId,
+		Map<Integer, Integer> bankPouchRunes)
+	{
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
-		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, Map.of(),
+		return new TransportEligibility(playerHas, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
 			fairyRingStaffRequired, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of());
 	}
 
