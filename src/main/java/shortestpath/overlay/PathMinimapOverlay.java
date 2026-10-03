@@ -37,7 +37,7 @@ public class PathMinimapOverlay extends Overlay
 
 	public static void renderMinimapRect(Client client, Graphics2D graphics, Point center, Color color)
 	{
-		double angle = client.getCameraYawTarget() * Perspective.UNIT;
+		double angle = client.getCameraYawTarget() * Perspective.UNIT14;
 		double tileSize = client.getMinimapZoom();
 		int x = (int) Math.round(center.getX() - tileSize / 2);
 		int y = (int) Math.round(center.getY() - tileSize / 2);
@@ -64,7 +64,7 @@ public class PathMinimapOverlay extends Overlay
 		}
 		else
 		{
-			graphics.setClip(plugin.getMinimapClipArea());
+			graphics.setClip(minimapClipArea);
 		}
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
