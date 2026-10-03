@@ -411,6 +411,9 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
+
+		// Flush pending observations so the last tick's sample is not lost.
+		spiritTreePatchState.persistIfDirty();
 	}
 
 	public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered)
@@ -977,7 +980,6 @@ public class ShortestPathPlugin extends Plugin
 	{
 		portalNexusKeybinds.refreshFromDialog(client);
 		portalNexusKeybinds.persistIfDirty();
-		spiritTreePatchState.persistIfDirty();
 
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
@@ -1010,6 +1012,10 @@ public class ShortestPathPlugin extends Plugin
 				}
 			}
 		}
+
+		// Persist after the same-tick sample so a fresh observation is written
+		// on this tick rather than waiting for the next one.
+		spiritTreePatchState.persistIfDirty();
 
 		if (localPlayer == null || pathfinder == null)
 		{
