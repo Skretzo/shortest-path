@@ -98,7 +98,7 @@
 1858 7051 0	2636 3167 0	Enter Port Khazard Portal 60796		1	Port Khazard Portal
 1858 7051 0	2636 3167 0	Enter Port Khazard Portal 60806		1	Port Khazard Portal
 1858 7051 0	2636 3167 0	Enter Port Khazard Portal 60816		1	Port Khazard Portal
-1858 7051 0	3221 3218 0	Enter Respawn Portal 60798		1	Respawn Portal (Lumbridge)
+1858 7051 0	3221 3218 0	Enter Respawn Portal 60798	668=0;3910=0;621=0;10528=0;12310=0;9805=0	1	Respawn Portal (Lumbridge)
 1858 7051 0	2964 3378 0	Enter Respawn Portal 60798	668=1	1	Respawn Portal (Falador)
 1858 7051 0	2757 3479 0	Enter Respawn Portal 60798	3910=1	1	Respawn Portal (Camelot)
 1858 7051 0	3095 3469 0	Enter Respawn Portal 60798	621=1	1	Respawn Portal (Edgeville)
