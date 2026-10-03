@@ -24,6 +24,7 @@ import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Before;
@@ -793,6 +794,24 @@ public class PathfinderTest
 
 		assertTrue("Route should visit a bank to fetch the games necklace",
 			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+
+		// Issue #492: the banked games necklace and the Burthorpe Games Room minigame
+		// teleport share the destination tile 2899,3553,0. The step must carry the
+		// transport the search actually used — the games necklace — so display and
+		// pickup consumers never see the ambiguous minigame teleport.
+		int sharedDestination = WorldPointUtil.packWorldPoint(2899, 3553, 0);
+		PathStep teleportStep = pathfinder.getPath().stream()
+			.filter(s -> s.getPackedPosition() == sharedDestination)
+			.findFirst()
+			.orElse(null);
+		assertNotNull("Path should contain the shared teleport destination 2899,3553,0",
+			teleportStep);
+		assertNotNull("Teleport destination step should carry the transport that produced the edge",
+			teleportStep.getTransport());
+		assertTrue("Banked edge should use an item teleport, not the minigame teleport",
+			teleportStep.getTransport().isType(TransportType.TELEPORTATION_ITEM));
+		assertTrue("Expected the games necklace, got " + teleportStep.getTransport().getDisplayInfo(),
+			teleportStep.getTransport().hasDisplayInfo("Games necklace"));
 	}
 
 	@Test

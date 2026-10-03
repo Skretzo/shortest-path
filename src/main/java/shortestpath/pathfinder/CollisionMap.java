@@ -151,7 +151,8 @@ public class CollisionMap
 				config.getAdditionalTransportCost(transport) + chainPenalty,
 				pathBankVisited,
 				delayedVisit,
-				delayedVisit ? config.getDifferentialCost(transport) : 0));
+				delayedVisit ? config.getDifferentialCost(transport) : 0,
+				transport));
 		}
 
 		// Global teleports are only considered from an abstract node, so each
@@ -265,7 +266,8 @@ public class CollisionMap
 				config.getAdditionalTransportCost(transport),
 				bankVisited,
 				delayedVisit,
-				differentialCost));
+				differentialCost,
+				transport));
 		}
 		return neighbors;
 	}
