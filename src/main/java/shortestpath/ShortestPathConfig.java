@@ -1083,7 +1083,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default int costBankVisit()
 	{
-		return 20;
+		return 0;
 	}
 
 	@ConfigSection(
