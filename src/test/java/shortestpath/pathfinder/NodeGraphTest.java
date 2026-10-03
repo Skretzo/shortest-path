@@ -35,7 +35,7 @@ public class NodeGraphTest
 		int a = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int b = WorldPointUtil.packWorldPoint(3205, 3203, 0);
 		int start = graph.createStart(a);
-		int tile = graph.createTile(b, start, false, 0);
+		int tile = graph.createTile(b, start, false);
 
 		assertEquals(WorldPointUtil.distanceBetween(a, b), graph.cost(tile));
 		assertEquals(start, graph.previous(tile));
@@ -50,9 +50,9 @@ public class NodeGraphTest
 		int a = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int b = WorldPointUtil.packWorldPoint(3300, 3300, 0);
 		int start = graph.createStart(a);
-		int tileBeforeAbstract = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, false, 0);
-		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tileBeforeAbstract, true, 0);
-		int tileFromAbstract = graph.createTile(b, abstractNode, true, 0);
+		int tileBeforeAbstract = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, false);
+		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tileBeforeAbstract, true);
+		int tileFromAbstract = graph.createTile(b, abstractNode, true);
 
 		// Reaching a tile from an abstract node adds no travel cost: it inherits the abstract cost.
 		assertEquals(graph.cost(abstractNode), graph.cost(tileFromAbstract));
@@ -64,8 +64,8 @@ public class NodeGraphTest
 	{
 		NodeGraph graph = new NodeGraph(16);
 		int start = graph.createStart(WorldPointUtil.packWorldPoint(3200, 3200, 0));
-		int tile = graph.createTile(WorldPointUtil.packWorldPoint(3210, 3200, 0), start, false, 0);
-		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_OVER_30, tile, false, 0);
+		int tile = graph.createTile(WorldPointUtil.packWorldPoint(3210, 3200, 0), start, false);
+		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_OVER_30, tile, false);
 
 		assertEquals(graph.cost(tile), graph.cost(abstractNode));
 		assertTrue(graph.isAbstract(abstractNode));
@@ -75,35 +75,13 @@ public class NodeGraphTest
 	}
 
 	@Test
-	public void tileAndAbstractCarryAdditionalCost()
-	{
-		// The first-step bank visit cost is injected through the same additional-cost
-		// mechanism a transport already uses.
-		NodeGraph graph = new NodeGraph(16);
-		int a = WorldPointUtil.packWorldPoint(3200, 3200, 0);
-		int b = WorldPointUtil.packWorldPoint(3205, 3203, 0);
-		int start = graph.createStart(a);
-		int charged = graph.createTile(b, start, true, 10);
-		int uncharged = graph.createTile(b, start, false, 0);
-
-		assertEquals(WorldPointUtil.distanceBetween(a, b) + 10, graph.cost(charged));
-		assertEquals(WorldPointUtil.distanceBetween(a, b), graph.cost(uncharged));
-		assertTrue(graph.bankVisited(charged));
-
-		int chargedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, charged, true, 10);
-		int unchargedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, charged, false, 0);
-		assertEquals(graph.cost(charged) + 10, graph.cost(chargedAbstract));
-		assertEquals(graph.cost(charged), graph.cost(unchargedAbstract));
-	}
-
-	@Test
 	public void transportCostIsPreviousPlusTravelAndAdditionalWithNoDistance()
 	{
 		NodeGraph graph = new NodeGraph(16);
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int destination = WorldPointUtil.packWorldPoint(2800, 3400, 0);
 		int start = graph.createStart(origin);
-		int prev = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, false, 0);
+		int prev = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, false);
 
 		int travelTime = 6;
 		int additionalCost = 50;
@@ -141,8 +119,8 @@ public class NodeGraphTest
 		int b = WorldPointUtil.packWorldPoint(3201, 3200, 0);
 		int c = WorldPointUtil.packWorldPoint(2800, 3400, 0);
 		int start = graph.createStart(a);
-		int tile = graph.createTile(b, start, false, 0);
-		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tile, false, 0);
+		int tile = graph.createTile(b, start, false);
+		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tile, false);
 		int teleportDest = graph.createTransport(c, abstractNode, 6, 0, false, false, 0);
 
 		var steps = graph.getPathSteps(teleportDest);
