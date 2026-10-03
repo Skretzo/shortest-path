@@ -46,6 +46,7 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
@@ -1317,6 +1318,33 @@ public class ShortestPathPlugin extends Plugin
 			bankPickupDirty = true;
 			pathfinderConfig.invalidateEligibility();
 		}
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
+		// snapshot but change without firing a container event.
+		int varbitId = event.getVarbitId();
+		if (varbitId == VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE
+			|| containsVarbit(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS, varbitId)
+			|| containsVarbit(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
+		{
+			bankPickupDirty = true;
+			pathfinderConfig.invalidateEligibility();
+		}
+	}
+
+	private static boolean containsVarbit(int[] varbits, int varbitId)
+	{
+		for (int id : varbits)
+		{
+			if (id == varbitId)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

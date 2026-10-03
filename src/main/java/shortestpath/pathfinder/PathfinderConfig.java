@@ -72,9 +72,6 @@ public class PathfinderConfig
 			VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
 			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
 		};
-	public static final Set<Integer> CURRENCIES = Set.of(
-		ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
-
 	/**
 	 * Item ids that only exist on Deadman Mode worlds ({@code WorldType.DEADMAN}).
 	 * Transports requiring them are filtered out on every other world type,

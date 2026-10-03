@@ -803,15 +803,18 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
-		// A missing eligibility snapshot counts every candidate as usable — the same net
-		// display as before the snapshot existed.
+		// A missing snapshot (pre-login or off the client thread) means no filtering —
+		// the same "show all" the empty-usable fallback below produces anyway.
 		TransportEligibility eligibility = plugin.getPathfinderConfig().getEligibility();
 		List<Transport> usableTransports = new ArrayList<>();
-		for (Transport t : candidateTransports)
+		if (eligibility != null)
 		{
-			if (eligibility == null || eligibility.satisfiedByPlayer(t))
+			for (Transport t : candidateTransports)
 			{
-				usableTransports.add(t);
+				if (eligibility.satisfiedByPlayer(t))
+				{
+					usableTransports.add(t);
+				}
 			}
 		}
 		Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
