@@ -194,8 +194,12 @@ public final class BankPickupRequirements
 
 				// No alternative is payable: resolve each pickup plan against the running
 				// pool (not the frozen snapshot), keep the highlight ids for every
-				// alternative, then commit the first bank-suppliable witness — its items
-				// top up the pool and the edge's consumables leave it again.
+				// alternative, then commit a witness — its items top up the pool and
+				// the edge's consumables leave it again. The witness is the first
+				// bank-suppliable alternative in declaration order that withdraws
+				// something; the "or" group still offers the player every suppliable
+				// choice, so picking another alternative leaves the pool modelling a
+				// different mix than the player actually carries downstream.
 				Transport witness = null;
 				TransportEligibility.BankPickupPlan witnessPlan = null;
 				int suppliable = 0;
@@ -212,7 +216,13 @@ public final class BankPickupRequirements
 						continue;
 					}
 					suppliable++;
-					if (witnessPlan == null)
+					// The committed witness models what the player withdraws when they
+					// take this edge, so it must be a plan that actually withdraws
+					// something. An empty-items plan only reads as fully supplied
+					// because the plan's player check approximates shared staves and
+					// offhands per requirement; committing it would leave the pool
+					// modelling a pickup the player never made.
+					if (witnessPlan == null && !plan.items.isEmpty())
 					{
 						witness = t;
 						witnessPlan = plan;
@@ -228,7 +238,7 @@ public final class BankPickupRequirements
 					ledger.commit(witnessPlan);
 					ledger.spend(witness);
 				}
-				if (suppliable == 1)
+				if (suppliable == 1 && witnessPlan != null)
 				{
 					for (Map.Entry<Integer, Long> entry : witnessPlan.items.entrySet())
 					{
