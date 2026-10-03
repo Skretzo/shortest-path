@@ -157,6 +157,49 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testDragontoothBoatWithDeclaredFreePassage()
+	{
+		// The permanent free passage relieves the ecto-token toll on the
+		// Port Phasmatys -> Dragontooth Island boat.
+		when(config.useBoats()).thenReturn(true);
+		when(config.unlockDragontoothPassage()).thenReturn(true);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		assertTrue("Dragontooth boat should be usable with the declared free passage",
+			hasTransportTo(pathfinderConfig.getTransports(),
+				WorldPointUtil.packWorldPoint(3703, 3487, 0),
+				WorldPointUtil.packWorldPoint(3792, 3560, 0)));
+	}
+
+	@Test
+	public void testDragontoothBoatNotUsedWithoutTokensOrDeclaredUnlock()
+	{
+		when(config.useBoats()).thenReturn(true);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		assertFalse("Dragontooth boat must stay gated without ecto-tokens or the declared unlock",
+			hasTransportTo(pathfinderConfig.getTransports(),
+				WorldPointUtil.packWorldPoint(3703, 3487, 0),
+				WorldPointUtil.packWorldPoint(3792, 3560, 0)));
+	}
+
+	@Test
+	public void testDragontoothBoatStillUsableWithEctoTokens()
+	{
+		// The item branch still covers the crossing: the unlock relief is additive, not exclusive.
+		when(config.useBoats()).thenReturn(true);
+		setupInventory(new Item(ItemID.ECTOTOKEN, 25));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		assertTrue("Dragontooth boat should still be usable with 25 ecto-tokens",
+			hasTransportTo(pathfinderConfig.getTransports(),
+				WorldPointUtil.packWorldPoint(3703, 3487, 0),
+				WorldPointUtil.packWorldPoint(3792, 3560, 0)));
+	}
+
+	@Test
 	public void unlockOptionKeysMatchTransportOptionsRegex() throws Exception
 	{
 		// An unlock* config key must retrigger pathfinding like other transport options.
@@ -165,6 +208,7 @@ public class PathfinderTest
 		java.util.regex.Pattern pattern = (java.util.regex.Pattern) field.get(null);
 		assertTrue(pattern.matcher("unlockCanoeAxe").matches());
 		assertTrue(pattern.matcher("unlockXericsHonour").matches());
+		assertTrue(pattern.matcher("unlockDragontoothPassage").matches());
 		assertFalse(pattern.matcher("unlock").matches());
 		assertFalse(pattern.matcher("myUnlockCanoeAxe").matches());
 	}

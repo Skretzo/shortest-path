@@ -8,7 +8,7 @@
 2162 5114 1	3680 3536 0	Talk-to Pirate Pete 602			Rum Deal		9	
 								
 # Port Phasmatys, Dragontooth Island								
-3703 3487 0	3792 3560 0	Travel Ghost captain 3005		ECTO_TOKEN=25			6	
+3703 3487 0	3792 3560 0	Travel Ghost captain 3005		ECTO_TOKEN=25|UNLOCK_DRAGONTOOTH=1			6	
 3792 3560 0	3703 3487 0	Travel Ghost captain 3005					6	
 								
 # Mort Myre, Mort'ton								

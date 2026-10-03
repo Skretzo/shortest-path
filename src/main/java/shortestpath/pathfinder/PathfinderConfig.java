@@ -346,6 +346,10 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.XERICS_HONOUR);
 		}
+		if (ShortestPathPlugin.override("unlockDragontoothPassage", config.unlockDragontoothPassage()))
+		{
+			declaredUnlocks.add(Unlock.DRAGONTOOTH);
+		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
