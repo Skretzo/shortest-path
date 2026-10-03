@@ -26,7 +26,6 @@ import shortestpath.transport.requirement.TransportItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -70,6 +69,8 @@ public class BankPickupRequirementsTest
 		// sharing the destination must not suppress the pickup for the recorded one.
 		bankHas.put(ItemID.LAWRUNE, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		// The leading walk edge carries no recorded transport, so compute still
+		// consults the availability fallback for it.
 		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
 			TestPathfinderConfig.availabilityOf(edge(TransportType.TRANSPORT, null), LAW_ONLY));
 		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);

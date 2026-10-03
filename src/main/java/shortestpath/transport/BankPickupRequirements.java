@@ -45,7 +45,9 @@ public final class BankPickupRequirements
 		 * (for bank slot highlighting) in a single pass over the remaining path.
 		 *
 		 * @param client           The game client
-		 * @param bank             The bank ItemContainer
+		 * @param bank             The bank ItemContainer — only null-checked to gate
+		 *                         "a bank is open"; the bank contents themselves come
+		 *                         from the eligibility snapshot
 		 * @param pathfinderConfig The pathfinder config for bank-aware transport lookups
 		 * @param bankLocations    Set of bank location coordinates
 		 * @param path             The current path
@@ -274,7 +276,7 @@ public final class BankPickupRequirements
 			{
 				itemName = "Unknown item";
 			}
-			boolean isCurrency = PathfinderConfig.CURRENCIES.contains(itemId);
+			boolean isCurrency = TransportItems.CURRENCIES.contains(itemId);
 			if (isCurrency)
 			{
 				if (qty > 1)
