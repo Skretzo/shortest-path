@@ -123,15 +123,17 @@ public class NodeGraph
 	/**
 	 * A concrete walkable tile. Travel cost is the walking distance from the previous node, but
 	 * only when the previous node is itself a tile (mirrors the old {@code Node.cost}); reaching a
-	 * tile from an abstract node adds no travel cost.
+	 * tile from an abstract node adds no travel cost. {@code additionalCost} carries the
+	 * configured bank visit charge on the first step that enters the banked state.
 	 */
-	public int createTile(int packedPosition, int previous, boolean bankVisited)
+	public int createTile(int packedPosition, int previous, boolean bankVisited, int additionalCost)
 	{
 		final int travelTime = (previous != NO_NODE && isTile(previous))
 			? WorldPointUtil.distanceBetween(this.packedPosition[previous], packedPosition)
 			: 0;
 		final byte flagBits = bankVisited ? FLAG_BANK_VISITED : 0;
-		return append(packedPosition, previous, costOf(previous) + travelTime, 0, flagBits, (byte) 0);
+		return append(packedPosition, previous, costOf(previous) + travelTime + additionalCost, 0,
+			flagBits, (byte) 0);
 	}
 
 	/**
@@ -156,17 +158,20 @@ public class NodeGraph
 
 	/**
 	 * An abstract search-state node (global teleports). Has no world position and inherits the
-	 * previous node's cost (mirrors the old {@code Node.abstractNode}).
+	 * previous node's cost plus any additional cost (mirrors the old {@code Node.abstractNode});
+	 * the additional cost carries the configured bank visit charge when the node first enters
+	 * the banked state.
 	 */
-	public int createAbstract(AbstractNodeKind abstractKind, int previous, boolean bankVisited)
+	public int createAbstract(AbstractNodeKind abstractKind, int previous, boolean bankVisited,
+		int additionalCost)
 	{
 		byte flagBits = FLAG_ABSTRACT;
 		if (bankVisited)
 		{
 			flagBits |= FLAG_BANK_VISITED;
 		}
-		return append(WorldPointUtil.UNDEFINED, previous, costOf(previous), 0, flagBits,
-			(byte) abstractKind.ordinal());
+		return append(WorldPointUtil.UNDEFINED, previous, costOf(previous) + additionalCost, 0,
+			flagBits, (byte) abstractKind.ordinal());
 	}
 
 	public int packedPosition(int id)

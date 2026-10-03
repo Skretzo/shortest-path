@@ -16,10 +16,12 @@ public class VisitedTiles
 	// global search states, not map positions.
 	private final boolean[] abstractVisitedWithoutBank = new boolean[AbstractNodeKind.values().length];
 	private final boolean[] abstractVisitedWithBank = new boolean[AbstractNodeKind.values().length];
+	private final int bankVisitCost;
 
-	public VisitedTiles(CollisionMap map)
+	public VisitedTiles(CollisionMap map, int bankVisitCost)
 	{
 		this.map = map;
+		this.bankVisitCost = bankVisitCost;
 		regionExtents = SplitFlagMap.getRegionExtents();
 		widthInclusive = regionExtents.getWidth() + 1;
 		final int heightInclusive = regionExtents.getHeight() + 1;
@@ -91,9 +93,18 @@ public class VisitedTiles
 		if (graph.bankVisited(id))
 		{
 			abstractVisitedWithBank[abstractKind.ordinal()] = true;
-			// A banked abstract state dominates the equivalent unbanked state.
+			// A free bank visit makes the banked state dominate the equivalent unbanked
+			// state. With a nonzero cost the banked arrival is strictly more expensive,
+			// so the unbanked bucket stays independent.
+			if (bankVisitCost <= 0)
+			{
+				abstractVisitedWithoutBank[abstractKind.ordinal()] = true;
+			}
 		}
-		abstractVisitedWithoutBank[abstractKind.ordinal()] = true;
+		else
+		{
+			abstractVisitedWithoutBank[abstractKind.ordinal()] = true;
+		}
 		return !visited;
 	}
 
@@ -109,9 +120,13 @@ public class VisitedTiles
 		if (bankVisited)
 		{
 			boolean unique = setInRegion(visitedRegionsWithBank, regionIndex, x, y, plane);
-			// A banked tile dominates the equivalent unbanked tile, so populate both
-			// buckets.
-			setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+			// A banked tile dominates the equivalent unbanked tile only when the bank
+			// visit is free; a nonzero cost makes the banked arrival strictly worse, so
+			// the unbanked bucket must stay unmarked for a cheaper continuation.
+			if (bankVisitCost <= 0)
+			{
+				setInRegion(visitedRegionsWithoutBank, regionIndex, x, y, plane);
+			}
 			return unique;
 		}
 

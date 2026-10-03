@@ -149,6 +149,8 @@ public class PathfinderConfig
 	private Set<PohMountedItem> enabledPohMountedItems = Set.of();
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
+	@Getter
+	private int bankVisitCost;
 	private int currencyThreshold;
 	@Getter
 	private boolean isOnSailingBoat;
@@ -320,6 +322,7 @@ public class PathfinderConfig
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
+		bankVisitCost = ShortestPathPlugin.override("costBankVisit", config.costBankVisit());
 
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
