@@ -386,6 +386,20 @@ public class PathScheduler
 			Transport unpayable = PathConsumptionValidator.firstUnpayable(eligibility, finished.getPath());
 			if (unpayable == null || replanAttempts >= MAX_REPLAN_ATTEMPTS)
 			{
+				if (unpayable != null)
+				{
+					log.debug("Re-plan budget exhausted; showing a path with unpayable transport {}",
+						unpayable.getDisplayInfo());
+				}
+				// The context is settled and the exclusion set's job ends with
+				// the search that produced it: left in place it would keep the
+				// excluded transports out of every later refresh, so
+				// plugin-message queries would silently lose them and the
+				// overlays would keep drawing them as unavailable. The
+				// availability the displayed search consumed was built with
+				// exclusions applied, so rebuild it once on the client thread.
+				pathfinderConfig.clearExcludedTransports();
+				clientThread.invokeLater(pathfinderConfig::refresh);
 				responder.postPluginMessages();
 				return;
 			}
@@ -538,8 +552,17 @@ public class PathScheduler
 					responder.postQueryFailure(id, "SHUTDOWN");
 					return;
 				}
-				if (queries.isEmpty() && (pathfinder == null || pathfinder.isDone()))
+				// Refresh only once the displayed context is settled: a finished
+				// search whose generation is still current has run its terminal
+				// callback, so leftover exclusions belong to a context that
+				// ended before its callback could clear them — drop them so the
+				// query's availability is not polluted by another search's
+				// re-plan. A finished search a pending schedule is about to
+				// replace (generation mismatch) still owns its exclusions.
+				if (queries.isEmpty() && (pathfinder == null
+					|| (pathfinder.isDone() && pathfinderGeneration == pathGeneration)))
 				{
+					pathfinderConfig.clearExcludedTransports();
 					pathfinderConfig.refresh();
 				}
 				// Plugin queries always run on the legacy backend, even when the user-facing
@@ -681,6 +704,14 @@ public class PathScheduler
 				}
 				pathfinder = null;
 				legacyPathfinder = null;
+				// Clearing the target ends the search context without a
+				// restart, so the per-context re-plan budget and exclusions
+				// end with it rather than leaking into queries and refreshes.
+				replanAttempts = 0;
+				if (pathfinderConfig != null)
+				{
+					pathfinderConfig.clearExcludedTransports();
+				}
 			}
 
 			worldMapPointManager.removeIf(x -> x == marker);
