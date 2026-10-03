@@ -299,9 +299,51 @@ public final class TransportEligibility
 	}
 
 	/**
-	 * The result of {@link #bankPickupPlan} or {@link #fairyStaffPickup}: the pickup
-	 * items (id to quantity; {@code null} when the bank cannot fully supply the
-	 * transport) and the bank item ids to highlight.
+	 * The pickup plan for a target's required items: {@link BankPickupPlan#items} holds one
+	 * entry per item group the player doesn't already carry, keyed by the first bank-covering
+	 * item id of the covering OR branch and valued at the shortfall quantity; each entry is a
+	 * separate display phrase. {@link BankPickupPlan#bankItemIds} collects every covering bank
+	 * item across all branches. Item groups the player carries and groups the bank cannot
+	 * cover contribute nothing.
+	 */
+	public BankPickupPlan targetPickupPlan(TransportItems targetItems)
+	{
+		Map<Integer, Long> items = new LinkedHashMap<>();
+		Set<Integer> bankItemIds = new HashSet<>();
+		for (ItemRequirement group : targetItems.getRequirements())
+		{
+			boolean carried = false;
+			for (ItemRequirement.Branch branch : group.getBranches())
+			{
+				carried |= findCovering(branch.getItemIds(), branch.getQuantity(), carriedItems, Map.of()) != -1;
+			}
+			if (carried)
+			{
+				continue;
+			}
+			boolean phrased = false;
+			for (ItemRequirement.Branch branch : group.getBranches())
+			{
+				int foundId = findCovering(branch.getItemIds(), branch.getQuantity(), carriedItems, bankHas);
+				if (foundId == -1)
+				{
+					continue;
+				}
+				addCovering(branch.getItemIds(), branch.getQuantity(), carriedItems, bankHas, bankItemIds);
+				if (!phrased)
+				{
+					items.put(foundId, (long) branch.getQuantity() - carriedItems.getOrDefault(foundId, 0));
+					phrased = true;
+				}
+			}
+		}
+		return new BankPickupPlan(items, bankItemIds);
+	}
+
+	/**
+	 * The result of {@link #bankPickupPlan}, {@link #fairyStaffPickup} or
+	 * {@link #targetPickupPlan}: the pickup items (id to quantity; {@code null} when the
+	 * bank cannot fully supply the transport) and the bank item ids to highlight.
 	 */
 	public static final class BankPickupPlan
 	{

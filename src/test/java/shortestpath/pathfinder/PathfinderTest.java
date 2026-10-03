@@ -47,6 +47,7 @@ import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.BankPickupRequirements;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportEligibility;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.PohMountedItem;
@@ -106,7 +107,9 @@ public class PathfinderTest
 						{
 							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(false).get(outside))
 								.filter(t -> t.getDestination() == inside).findFirst().orElseThrow();
-							assertTrue(BankPickupRequirements.transportSatisfiedBy(entry, Map.of(), pathfinderConfig.getUnlocks()));
+							TransportEligibility eligibility = new TransportEligibility(Map.of(), Map.of(), Map.of(), -1,
+								Map.of(), false, TeleportationItem.NONE, Integer.MAX_VALUE, pathfinderConfig.getUnlocks());
+							assertTrue(eligibility.satisfiedByPlayer(entry));
 							Pathfinder route = runPathfinder(outside, inside);
 							assertTrue(route.getResult().isReached());
 							assertFalse(route.getPath().stream().anyMatch(PathStep::isBankVisited));
