@@ -180,6 +180,96 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testInventoryAndBankModeImpliesBankPath()
+	{
+		// A banked camulet with INVENTORY_AND_BANK item mode but includeBankPath off.
+		// Bank contents only become usable in the bankVisited path state, so the
+		// items mode must imply bank-path traversal: the route visits a bank, then
+		// uses the banked camulet instead of the long foot detour into the temple.
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK, new Item(ItemID.CAMULET, 1));
+
+		Pathfinder pathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(3160, 3486, 0),
+			WorldPointUtil.packWorldPoint(3105, 9315, 0));
+
+		assertTrue(
+			"expected path to reach Enakhra's Temple",
+			pathfinder.getResult() != null && pathfinder.getResult().isReached());
+		assertTrue(
+			"INVENTORY_AND_BANK mode should imply bank-path traversal",
+			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+		assertTrue(
+			"banked camulet should be used after banking",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
+	}
+
+	@Test
+	public void testInventoryModeDoesNotImplyBankPath()
+	{
+		// The same banked camulet with plain INVENTORY item mode must NOT gain bank
+		// access: no bankVisited state, the camulet stays unusable, and the route
+		// falls back to the long foot detour into the temple.
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY, new Item(ItemID.CAMULET, 1));
+
+		Pathfinder pathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(3160, 3486, 0),
+			WorldPointUtil.packWorldPoint(3105, 9315, 0));
+
+		assertFalse(
+			"INVENTORY mode must not activate the bankVisited path state",
+			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+		assertFalse(
+			"INVENTORY mode must not use a banked camulet",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
+		assertTrue(
+			"expected the long foot detour without the banked camulet, got " + pathfinder.getPath().size(),
+			pathfinder.getPath().size() >= 400);
+	}
+
+	@Test
+	public void testIncludeBankPathTrueKeepsModeSemantics()
+	{
+		// With includeBankPath explicitly on, INVENTORY_AND_BANK already banked for
+		// the camulet — the imply is a logical OR and must not change that path.
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK, new Item(ItemID.CAMULET, 1));
+
+		Pathfinder pathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(3160, 3486, 0),
+			WorldPointUtil.packWorldPoint(3105, 9315, 0));
+
+		assertTrue(
+			"expected path to reach Enakhra's Temple",
+			pathfinder.getResult() != null && pathfinder.getResult().isReached());
+		assertTrue(
+			"includeBankPath=true should still bank for the camulet",
+			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+		assertTrue(
+			"banked camulet should be used after banking",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
+
+		// INVENTORY mode with includeBankPath on still cannot use banked items:
+		// the bankVisited state exists but bank contents are never collected.
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(TeleportationItem.INVENTORY, new Item(ItemID.CAMULET, 1));
+
+		Pathfinder inventoryPathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(3160, 3486, 0),
+			WorldPointUtil.packWorldPoint(3105, 9315, 0));
+
+		assertFalse(
+			"INVENTORY mode must not use a banked camulet even with includeBankPath=true",
+			usedTransportWithDisplayInfo(inventoryPathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
+	}
+
+	@Test
 	public void testShips()
 	{
 		when(config.useShips()).thenReturn(true);
