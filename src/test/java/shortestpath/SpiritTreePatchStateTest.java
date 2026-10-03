@@ -127,7 +127,9 @@ public class SpiritTreePatchStateTest
 	@Test
 	public void varbitSampleBelowTwentyIsNotTravelable()
 	{
-		assertTrue(state.applyVarbitSample("Port Sarim", 21));
+		// First observation is recorded (null → empty resolved) but the
+		// travelable set itself did not change, so no change is reported.
+		assertFalse(state.applyVarbitSample("Port Sarim", 21));
 		assertTrue(state.getTravelableTrees().isEmpty());
 		assertEquals(Set.of(), state.getTravelableTreesOrNull());
 	}
