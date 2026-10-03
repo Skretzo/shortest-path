@@ -42,6 +42,7 @@ import shortestpath.transport.Transport;
 public class PathTileOverlay extends Overlay
 {
 	private static final int TRANSPORT_LABEL_GAP = 3;
+	private static final long TRACER_STEP_MS = 200L;
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private int playerTileLabelOffset = 0;
@@ -245,6 +246,54 @@ public class PathTileOverlay extends Overlay
 					}
 					counter++;
 					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+				}
+				for (int target : plugin.getPathfinder().getTargets())
+				{
+					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
+					{
+						drawTile(graphics, target, colorCalculating, -1, true);
+					}
+				}
+			}
+			else if (TileStyle.TRACER.equals(plugin.pathStyle))
+			{
+				// Faint polyline under the moving marker so the full route stays readable.
+				for (int i = 1; i < path.size(); i++)
+				{
+					PathStep currentStep = path.get(i - 1);
+					PathStep nextStep = path.get(i);
+					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color,
+						1 + counter++, false);
+					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+				}
+				if (!path.isEmpty())
+				{
+					// One marker walks the path on a wall-clock phase — the overlay repaints
+					// every frame, so no tick subscription is needed (the drawTeleportPulse idiom).
+					int tracerIndex = (int) ((System.currentTimeMillis() / TRACER_STEP_MS) % path.size());
+					int tracerPoint = path.get(tracerIndex).getPackedPosition();
+					int tracerX = WorldPointUtil.unpackWorldX(tracerPoint);
+					int tracerY = WorldPointUtil.unpackWorldY(tracerPoint);
+					if (!ShortestPathPlugin.isInsidePoh(tracerX, tracerY))
+					{
+						Point current = tileCenter(tracerPoint);
+						if (current != null)
+						{
+							Color previousColour = graphics.getColor();
+							graphics.setColor(pathColor);
+							int radius = 6;
+							graphics.fillOval(current.getX() - radius, current.getY() - radius, radius * 2, radius * 2);
+							if (tracerIndex + 1 < path.size())
+							{
+								Point next = tileCenter(path.get(tracerIndex + 1).getPackedPosition());
+								if (next != null)
+								{
+									ArrowHead.draw(graphics, current.getX(), current.getY(), next.getX(), next.getY(), 10);
+								}
+							}
+							graphics.setColor(previousColour);
+						}
+					}
 				}
 				for (int target : plugin.getPathfinder().getTargets())
 				{

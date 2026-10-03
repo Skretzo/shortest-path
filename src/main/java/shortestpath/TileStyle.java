@@ -8,7 +8,8 @@ public enum TileStyle
 	TILES("Tiles"),
 	LINES("Lines"),
 	ARROW_LINE("Arrow line"),
-	TURN_MARKERS("Turn markers");
+	TURN_MARKERS("Turn markers"),
+	TRACER("Tracer");
 
 	private final String type;
 
