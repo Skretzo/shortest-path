@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
@@ -341,7 +343,8 @@ public final class BankPickupRequirements
 			long qty = entry.getValue();
 			// A detached (forTesting) item-state service passes no client —
 			// degrade to the placeholder name rather than throwing.
-			String itemName = client == null ? null : client.getItemDefinition(itemId).getName();
+			ItemComposition definition = client == null ? null : client.getItemDefinition(itemId);
+			String itemName = definition == null ? null : definition.getName();
 			if (itemName == null || itemName.isEmpty() || "null".equals(itemName))
 			{
 				itemName = "Unknown item";
@@ -351,7 +354,7 @@ public final class BankPickupRequirements
 			{
 				if (qty > 1)
 				{
-					itemName += " (" + String.format("%,d", qty) + ")";
+					itemName += " (" + String.format(Locale.ROOT, "%,d", qty) + ")";
 				}
 			}
 			else
