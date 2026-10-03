@@ -81,6 +81,15 @@ public class PathfinderConfig
 	private static final Set<Integer> DEADMAN_ONLY_ITEM_IDS = Set.of(
 		ItemID.MAGIC_ROCK_OF_FAIRIES);
 
+	/**
+	 * Respawn landing tiles used by the Respawn Teleport spell and the POH respawn portal.
+	 * Every respawn except Prifddinas exposes an {@code *_SPAWN} varbit; when Prifddinas is
+	 * the active respawn all of them read 0, which is the same signature as the Lumbridge
+	 * default, so both landings are gated on the declared respawn in config instead.
+	 */
+	private static final int LUMBRIDGE_RESPAWN = WorldPointUtil.packWorldPoint(3221, 3218, 0);
+	private static final int PRIFDDINAS_RESPAWN = WorldPointUtil.packWorldPoint(3265, 6077, 0);
+
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
 	/**
@@ -144,7 +153,8 @@ public class PathfinderConfig
 		usePohSpiritTree,
 		usePoh,
 		usePohObelisk,
-		includeBankPath;
+		includeBankPath,
+		respawnPrifddinas;
 	private Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
 	private Set<PohMountedItem> enabledPohMountedItems = Set.of();
 	private JewelleryBoxTier pohJewelleryBoxTier;
@@ -319,6 +329,7 @@ public class PathfinderConfig
 		includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath())
 			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
 			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
+		respawnPrifddinas = ShortestPathPlugin.override("respawnPrifddinas", config.respawnPrifddinas());
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
@@ -774,6 +785,13 @@ public class PathfinderConfig
 			return false;
 		}
 
+		// Respawn rows for Prifddinas (and the colliding Lumbridge default) are
+		// gated on the declared respawn in config, not on varbits
+		if (!checkRespawnGate(transport))
+		{
+			return false;
+		}
+
 		// Handle jewellery box tier filtering
 		if (TransportType.TELEPORTATION_BOX.equals(type))
 		{
@@ -809,6 +827,30 @@ public class PathfinderConfig
 			return checkPlantedSpiritTrees(transport);
 		}
 
+		return true;
+	}
+
+	/**
+	 * Gates respawn-destination transports on the declared respawn in config.
+	 * When the active respawn is Prifddinas every {@code *_SPAWN} varbit reads 0,
+	 * which is indistinguishable from the Lumbridge default, so the config option
+	 * resolves the ambiguity in both directions.
+	 */
+	private boolean checkRespawnGate(Transport transport)
+	{
+		if (!transport.hasDisplayInfo("Respawn"))
+		{
+			return true;
+		}
+		int destination = transport.getDestination();
+		if (destination == PRIFDDINAS_RESPAWN)
+		{
+			return respawnPrifddinas;
+		}
+		if (destination == LUMBRIDGE_RESPAWN)
+		{
+			return !respawnPrifddinas;
+		}
 		return true;
 	}
 

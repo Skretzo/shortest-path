@@ -46,6 +46,7 @@ import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.PohMountedItem;
+import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.requirement.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
@@ -1596,6 +1597,93 @@ public class PathfinderTest
 		assertEquals(102, pathfinder.getPath().size());
 		assertTrue("Glory should be used when both glory and GE runes are available but the spell is still wilderness-locked",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
+	}
+
+	@Test
+	public void testRespawnTeleportPrifddinasGatedOnConfigOption()
+	{
+		// All *_SPAWN varbits at 0 is the signature for both the Lumbridge default and the
+		// Prifddinas respawn - the config option is the only way to tell them apart.
+		int prifddinasRespawn = WorldPointUtil.packWorldPoint(3265, 6077, 0);
+		int lumbridgeRespawn = WorldPointUtil.packWorldPoint(3221, 3218, 0);
+		Map<Integer, Integer> varbits = new HashMap<>();
+		varbits.put(4070, 3); // Arceuus spellbook
+
+		setupInventory(new Item(ItemID.LAWRUNE, 1), new Item(ItemID.SOULRUNE, 1));
+		when(config.useTeleportationSpells()).thenReturn(true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
+
+		assertTrue("Lumbridge Respawn Teleport should be usable when no spawn varbit is set",
+			hasUsableTeleportTo(lumbridgeRespawn));
+		assertFalse("Prifddinas Respawn Teleport should stay gated without the config option",
+			hasUsableTeleportTo(prifddinasRespawn));
+	}
+
+	@Test
+	public void testRespawnTeleportPrifddinasConfigSuppressesLumbridgeDefault()
+	{
+		int prifddinasRespawn = WorldPointUtil.packWorldPoint(3265, 6077, 0);
+		int lumbridgeRespawn = WorldPointUtil.packWorldPoint(3221, 3218, 0);
+		Map<Integer, Integer> varbits = new HashMap<>();
+		varbits.put(4070, 3); // Arceuus spellbook
+
+		when(config.respawnPrifddinas()).thenReturn(true);
+		setupInventory(new Item(ItemID.LAWRUNE, 1), new Item(ItemID.SOULRUNE, 1));
+		when(config.useTeleportationSpells()).thenReturn(true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
+
+		assertTrue("Prifddinas Respawn Teleport should be usable with the config option set",
+			hasUsableTeleportTo(prifddinasRespawn));
+		assertFalse("Lumbridge Respawn Teleport should be suppressed when the respawn is Prifddinas",
+			hasUsableTeleportTo(lumbridgeRespawn));
+	}
+
+	@Test
+	public void testRespawnPortalPrifddinasGatedOnConfigOption()
+	{
+		int prifddinasRespawn = WorldPointUtil.packWorldPoint(3265, 6077, 0);
+		int lumbridgeRespawn = WorldPointUtil.packWorldPoint(3221, 3218, 0);
+		int pohOrigin = WorldPointUtil.packWorldPoint(1858, 7051, 0);
+
+		when(config.usePoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.RESPAWN));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		PrimitiveIntHashMap<Transport[]> transports = pathfinderConfig.getTransports();
+		assertTrue("Lumbridge respawn portal should be usable when no spawn varbit is set",
+			hasTransportTo(transports, pohOrigin, lumbridgeRespawn));
+		assertFalse("Prifddinas respawn portal should stay gated without the config option",
+			hasTransportTo(transports, pohOrigin, prifddinasRespawn));
+	}
+
+	private boolean hasUsableTeleportTo(int packedDestination)
+	{
+		for (Transport transport : pathfinderConfig.getUsableTeleports(false))
+		{
+			if (transport.getDestination() == packedDestination
+				&& transport.hasDisplayInfo("Respawn"))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean hasTransportTo(PrimitiveIntHashMap<Transport[]> transports, int origin, int packedDestination)
+	{
+		Transport[] transportsFromOrigin = transports.get(origin);
+		if (transportsFromOrigin == null)
+		{
+			return false;
+		}
+		for (Transport transport : transportsFromOrigin)
+		{
+			if (transport.getDestination() == packedDestination)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Test
