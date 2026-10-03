@@ -1,8 +1,10 @@
 package shortestpath.requirement;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.ItemVariations;
@@ -181,20 +183,33 @@ public final class TransportEligibility
 	 */
 	public BankPickupPlan bankPickupPlan(Transport transport)
 	{
+		return bankPickupPlan(transport, carriedItems);
+	}
+
+	/**
+	 * {@link #bankPickupPlan(Transport)} evaluated against an arbitrary carried pool,
+	 * so {@link ConsumptionLedger#pickupPlan} can ask what the bank must supply after
+	 * earlier edges already consumed or picked items up.
+	 */
+	private BankPickupPlan bankPickupPlan(Transport transport, Map<Integer, Integer> playerItems)
+	{
 		Map<Integer, Long> items = new LinkedHashMap<>();
+		Map<Integer, Long> resolvedItems = new LinkedHashMap<>();
 		Set<Integer> bankItemIds = new HashSet<>();
 		if (transport.getItemRequirements() == null)
 		{
-			return new BankPickupPlan(items, bankItemIds);
+			return new BankPickupPlan(items, bankItemIds, resolvedItems, false);
 		}
 
 		// Prefer the bank rune pouch over individual runes. This avoids surfacing
 		// combination rune variants (mist, dust, etc.) when the pouch already covers
 		// the requirement.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, carriedItems, bankHas, bankPouchRunes, unlocks);
-		if (carried != carriedItems)
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerItems, bankHas, bankPouchRunes, unlocks);
+		boolean pouchTaken = carried != playerItems;
+		if (pouchTaken)
 		{
 			items.put(bankPouchId, 1L);
+			resolvedItems.put(bankPouchId, 1L);
 			bankItemIds.add(bankPouchId);
 		}
 
@@ -254,6 +269,7 @@ public final class TransportEligibility
 				int carriedQty = carried.getOrDefault(foundId, 0);
 				int displayId = carriedQty > 0 ? foundId : chosen.getItemIds()[0];
 				items.merge(displayId, (long) (pickupQuantity(chosen) - carriedQty), Long::sum);
+				resolvedItems.merge(foundId, (long) (pickupQuantity(chosen) - carriedQty), Long::sum);
 				continue;
 			}
 			foundId = findCovering(req.getStaffIds(), 1, Map.of(), bankHas);
@@ -267,8 +283,9 @@ public final class TransportEligibility
 				continue;
 			}
 			items.merge(foundId, 1L, Long::sum);
+			resolvedItems.merge(foundId, 1L, Long::sum);
 		}
-		return new BankPickupPlan(fullySupplied ? items : null, bankItemIds);
+		return new BankPickupPlan(fullySupplied ? items : null, bankItemIds, resolvedItems, pouchTaken);
 	}
 
 	/**
@@ -295,7 +312,9 @@ public final class TransportEligibility
 		}
 		Map<Integer, Long> items = new LinkedHashMap<>();
 		items.put(staffIds[0], 1L);
-		return new BankPickupPlan(items, bankItemIds);
+		Map<Integer, Long> resolvedItems = new LinkedHashMap<>();
+		resolvedItems.put(staffIds[0], 1L);
+		return new BankPickupPlan(items, bankItemIds, resolvedItems, false);
 	}
 
 	/**
@@ -307,11 +326,262 @@ public final class TransportEligibility
 	{
 		public final Map<Integer, Long> items;
 		public final Set<Integer> bankItemIds;
+		/**
+		 * The real covering ids the pickup resolves to — the actual bank or carried
+		 * variant id per requirement (never canonicalised for display) plus the bank
+		 * pouch id when taken — mapped to quantity. {@link ConsumptionLedger#commit}
+		 * credits these into its pool; unlike {@link #items} they are populated even
+		 * when the bank cannot fully supply the transport.
+		 */
+		public final Map<Integer, Long> resolvedItems;
+		/** Whether the plan withdraws the banked rune pouch. */
+		public final boolean pouchTaken;
 
-		private BankPickupPlan(Map<Integer, Long> items, Set<Integer> bankItemIds)
+		private BankPickupPlan(Map<Integer, Long> items, Set<Integer> bankItemIds,
+			Map<Integer, Long> resolvedItems, boolean pouchTaken)
 		{
 			this.items = items;
 			this.bankItemIds = bankItemIds;
+			this.resolvedItems = resolvedItems;
+			this.pouchTaken = pouchTaken;
+		}
+	}
+
+	/**
+	 * A running item-pool view of this snapshot for questions about a whole path:
+	 * the pool starts as a copy of {@code carriedItems}, {@link #spend} deducts what
+	 * each transport consumes, {@link #commit} credits a committed bank pickup back
+	 * in, and {@link #visitBank} refills it to the bank-path pool. The pathfinder
+	 * checks every edge against one frozen snapshot; the ledger is what answers the
+	 * sequential question "is this transport still payable after the earlier ones?"
+	 * from that same snapshot.
+	 */
+	public ConsumptionLedger consumptionLedger()
+	{
+		return new ConsumptionLedger();
+	}
+
+	public final class ConsumptionLedger
+	{
+		private Map<Integer, Integer> pool = new HashMap<>(carriedItems);
+		private boolean pouchRunesCredited;
+
+		private ConsumptionLedger()
+		{
+		}
+
+		/**
+		 * Whether the running pool meets the transport's item requirements right now,
+		 * with no currency threshold (owned items are spent, not budgeted against).
+		 */
+		public boolean satisfied(Transport transport)
+		{
+			TransportItems transportItems = transport.getItemRequirements();
+			return transportItems == null
+				|| transportItems.isSatisfiedBy(pool, TransportItems.CURRENCIES, Integer.MAX_VALUE);
+		}
+
+		/**
+		 * Deducts what taking the transport consumes from the pool. Payments resolve
+		 * in the same allocation order {@link TransportItems#isSatisfiedBy} uses —
+		 * per requirement, the first covering OR branch and item id in declaration
+		 * order; else a single offhand; else one staff shared over the leftover
+		 * requirements — so a carried air staff suppresses air-rune spend exactly as
+		 * the satisfaction check allows it.
+		 *
+		 * <p>A resolved item payment deducts its branch quantity of the paying id iff
+		 * the paying id is a {@link TransportItems#CURRENCIES currency}, the
+		 * transport is flagged {@link Transport#isConsumable consumable}, or the
+		 * transport casts a spell ({@link TransportType#TELEPORTATION_SPELL} or
+		 * {@link TransportType#TELEPORTATION_SPELL_HOME}). Satisfaction via staves or
+		 * offhands and every other item payment — tools, passes and other
+		 * non-consumables are indistinguishable from tools in the current data —
+		 * deducts nothing. Nothing is deducted when the pool cannot pay the
+		 * transport at all; callers normally gate on {@link #satisfied} first.
+		 */
+		public void spend(Transport transport)
+		{
+			TransportItems transportItems = transport.getItemRequirements();
+			if (transportItems == null)
+			{
+				return;
+			}
+			boolean itemPaymentsConsumed = transport.isConsumable()
+				|| TransportType.TELEPORTATION_SPELL.equals(transport.getType())
+				|| TransportType.TELEPORTATION_SPELL_HOME.equals(transport.getType());
+
+			Map<Integer, Integer> payments = new HashMap<>();
+			List<ItemRequirement> leftover = new ArrayList<>();
+			boolean usedOffhand = false;
+			for (ItemRequirement req : transportItems.getRequirements())
+			{
+				int paidId = -1;
+				int paidQuantity = 0;
+				for (ItemRequirement.Branch branch : req.getBranches())
+				{
+					int[] itemIds = branch.getItemIds();
+					if (itemIds == null)
+					{
+						continue;
+					}
+					for (int itemId : itemIds)
+					{
+						if (hasQuantity(itemId, branch.getQuantity(), false))
+						{
+							paidId = itemId;
+							paidQuantity = branch.getQuantity();
+							break;
+						}
+					}
+					if (paidId != -1)
+					{
+						break;
+					}
+				}
+				if (paidId != -1)
+				{
+					payments.merge(paidId, paidQuantity, Integer::sum);
+					continue;
+				}
+				if (!usedOffhand && hasOwnedOffhand(req))
+				{
+					usedOffhand = true;
+					continue;
+				}
+				leftover.add(req);
+			}
+			if (!leftover.isEmpty() && !existsOneStaffCovering(leftover))
+			{
+				return; // the pool cannot pay this transport — charge nothing
+			}
+			for (Map.Entry<Integer, Integer> payment : payments.entrySet())
+			{
+				int itemId = payment.getKey();
+				if (itemPaymentsConsumed || TransportItems.CURRENCIES.contains(itemId))
+				{
+					int remaining = pool.getOrDefault(itemId, 0) - payment.getValue();
+					if (remaining > 0)
+					{
+						pool.put(itemId, remaining);
+					}
+					else
+					{
+						pool.remove(itemId);
+					}
+				}
+			}
+		}
+
+		/**
+		 * The bank pickup plan for one transport evaluated against the running pool
+		 * rather than the frozen carried snapshot.
+		 */
+		public BankPickupPlan pickupPlan(Transport transport)
+		{
+			return bankPickupPlan(transport, pool);
+		}
+
+		/**
+		 * Credits a committed pickup plan into the pool — the player is assumed to
+		 * withdraw the resolved items at the bank before continuing the path. The
+		 * banked rune pouch's runes are credited once, the first time a plan takes
+		 * the pouch. Plans the bank cannot fully supply credit nothing.
+		 */
+		public void commit(BankPickupPlan plan)
+		{
+			if (plan == null || plan.items == null)
+			{
+				return;
+			}
+			plan.resolvedItems.forEach((itemId, quantity) ->
+				pool.merge(itemId, quantity.intValue(), Integer::sum));
+			if (plan.pouchTaken && !pouchRunesCredited)
+			{
+				bankPouchRunes.forEach((runeId, amount) -> pool.merge(runeId, amount, Integer::sum));
+				pouchRunesCredited = true;
+			}
+		}
+
+		/**
+		 * Refills the pool to the bank-path pool: visiting a bank tops the player
+		 * back up to everything the snapshot saw carried or in the bank.
+		 */
+		public void visitBank()
+		{
+			pool = new HashMap<>(bankPathItems);
+			pouchRunesCredited = false;
+		}
+
+		private boolean hasQuantity(int itemId, int requiredQuantity, boolean unlimited)
+		{
+			int quantity = pool.getOrDefault(itemId, 0);
+			if (unlimited)
+			{
+				return requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0;
+			}
+			return requiredQuantity > 0 && quantity >= requiredQuantity
+				|| requiredQuantity == 0 && quantity == 0;
+		}
+
+		private boolean hasOwnedOffhand(ItemRequirement req)
+		{
+			for (ItemRequirement.Branch branch : req.getBranches())
+			{
+				int[] offhandIds = branch.getOffhandIds();
+				if (offhandIds == null)
+				{
+					continue;
+				}
+				for (int itemId : offhandIds)
+				{
+					if (hasQuantity(itemId, branch.getQuantity(), true))
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		private boolean existsOneStaffCovering(List<ItemRequirement> leftover)
+		{
+			Set<Integer> candidates = null;
+			for (ItemRequirement req : leftover)
+			{
+				Set<Integer> ownedStaves = new HashSet<>();
+				for (ItemRequirement.Branch branch : req.getBranches())
+				{
+					int[] staffIds = branch.getStaffIds();
+					if (staffIds == null)
+					{
+						continue;
+					}
+					for (int itemId : staffIds)
+					{
+						if (hasQuantity(itemId, branch.getQuantity(), true))
+						{
+							ownedStaves.add(itemId);
+						}
+					}
+				}
+				if (ownedStaves.isEmpty())
+				{
+					return false;
+				}
+				if (candidates == null)
+				{
+					candidates = ownedStaves;
+				}
+				else
+				{
+					candidates.retainAll(ownedStaves);
+				}
+				if (candidates.isEmpty())
+				{
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 

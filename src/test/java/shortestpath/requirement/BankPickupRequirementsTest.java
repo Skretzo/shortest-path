@@ -42,8 +42,11 @@ public class BankPickupRequirementsTest
 	private static final int BANK_TILE = WorldPointUtil.packWorldPoint(3100, 3500, 0);
 	private static final int EDGE_ORIGIN = WorldPointUtil.packWorldPoint(3101, 3500, 0);
 	private static final int EDGE_DESTINATION = WorldPointUtil.packWorldPoint(3102, 3500, 0);
+	private static final int EDGE_DESTINATION_2 = WorldPointUtil.packWorldPoint(3103, 3500, 0);
 	private static final Set<Integer> BANK_LOCATIONS = Set.of(BANK_TILE);
 	private static final Transport LAW_ONLY = teleport(rune(ItemVariations.LAW_RUNE, 1));
+	private static final Transport LAW_AND_AIR = teleport(
+		rune(ItemVariations.LAW_RUNE, 1), airRuneWithStaff(3));
 	private static final Transport FALADOR_TELEPORT = teleport(
 		rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.AIR_RUNE, 3), rune(ItemVariations.WATER_RUNE, 1));
 
@@ -59,6 +62,8 @@ public class BankPickupRequirementsTest
 	private ItemComposition dramenStaff;
 	@Mock
 	private ItemComposition coins;
+	@Mock
+	private ItemComposition quetzalWhistle;
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
@@ -234,6 +239,267 @@ public class BankPickupRequirementsTest
 	}
 
 	@Test
+	public void twoCoinFaresCombineIntoASinglePickup()
+	{
+		// Issue #636: two 3,000-coin fares must ask for the combined 6,000, not two
+		// per-edge 3,000 phrases that dedupe into one.
+		bankHas.put(ItemID.COINS, 10_000);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		when(coins.getName()).thenReturn("Coins");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("Coins (6,000)"), result.phrases);
+		assertEquals(Set.of(ItemID.COINS), result.bankItemIds);
+	}
+
+	@Test
+	public void carriedCoinsTopUpTheCombinedFare()
+	{
+		playerHas.put(ItemID.COINS, 4_000);
+		bankHas.put(ItemID.COINS, 10_000);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		when(coins.getName()).thenReturn("Coins");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("Coins (2,000)"), result.phrases);
+		assertEquals(Set.of(ItemID.COINS), result.bankItemIds);
+	}
+
+	@Test
+	public void aSpentRuneIsCountedAcrossEdges()
+	{
+		// Carrying one law covers the first cast only; the second needs a bank pickup.
+		playerHas.put(ItemID.LAWRUNE, 1);
+		bankHas.put(ItemID.LAWRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
+		when(lawRune.getName()).thenReturn("Law rune");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, LAW_ONLY),
+			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Law rune"), result.phrases);
+		assertEquals(Set.of(ItemID.LAWRUNE), result.bankItemIds);
+	}
+
+	@Test
+	public void carriedRunesCoveringBothCastsProduceNoPickup()
+	{
+		playerHas.put(ItemID.LAWRUNE, 2);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, LAW_ONLY),
+			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
+	}
+
+	@Test
+	public void aCarriedStaffSuppressesAirSpendAcrossCasts()
+	{
+		// The staff satisfies the air side of both casts without being consumed, so
+		// only the law runes are spent: one carried cast, one bank pickup.
+		playerHas.put(ItemID.STAFF_OF_AIR, 1);
+		playerHas.put(ItemID.LAWRUNE, 1);
+		bankHas.put(ItemID.LAWRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
+		when(lawRune.getName()).thenReturn("Law rune");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, LAW_AND_AIR),
+			new PathStep(EDGE_DESTINATION, false, LAW_AND_AIR));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Law rune"), result.phrases);
+		assertEquals(Set.of(ItemID.LAWRUNE), result.bankItemIds);
+	}
+
+	@Test
+	public void unsuppliableSecondCastHighlightsWithoutAPhrase()
+	{
+		// The second cast cannot be paid: the bank law is highlighted even though
+		// the missing water keeps the bank from fully supplying the edge.
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		bankHas.put(ItemID.LAWRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false,
+				teleport(rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.WATER_RUNE, 1))),
+			new PathStep(EDGE_DESTINATION, false,
+				teleport(rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.WATER_RUNE, 1))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertEquals(Set.of(ItemID.LAWRUNE), result.bankItemIds);
+	}
+
+	@Test
+	public void aNonConsumableToolCoversRepeatedEdges()
+	{
+		// A carried rope is not consumed by a non-consumable transport, so one rope
+		// satisfies the gate twice and nothing is picked up.
+		playerHas.put(ItemID.ROPE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false,
+				edge(TransportType.TRANSPORT, singleItem(ItemID.ROPE, 1))),
+			new PathStep(EDGE_DESTINATION, false,
+				edge(TransportType.TRANSPORT, singleItem(ItemID.ROPE, 1))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
+	}
+
+	@Test
+	public void consumableWhistlesSpendAcrossEdges()
+	{
+		playerHas.put(ItemID.HG_QUETZALWHISTLE_BASIC, 1);
+		bankHas.put(ItemID.HG_QUETZALWHISTLE_BASIC, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.HG_QUETZALWHISTLE_BASIC)).thenReturn(quetzalWhistle);
+		when(quetzalWhistle.getName()).thenReturn("Basic quetzal whistle");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, quetzalWhistle()),
+			new PathStep(EDGE_DESTINATION, false, quetzalWhistle()));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("1 Basic quetzal whistle"), result.phrases);
+		assertEquals(Set.of(ItemID.HG_QUETZALWHISTLE_BASIC), result.bankItemIds);
+	}
+
+	@Test
+	public void aNonConsumableTeleportItemCoversRepeatedEdges()
+	{
+		playerHas.put(ItemID.AMULET_OF_GLORY, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false,
+				edge(TransportType.TELEPORTATION_ITEM, singleItem(ItemID.AMULET_OF_GLORY, 1))),
+			new PathStep(EDGE_DESTINATION, false,
+				edge(TransportType.TELEPORTATION_ITEM, singleItem(ItemID.AMULET_OF_GLORY, 1))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertTrue(result.phrases.isEmpty());
+		assertTrue(result.bankItemIds.isEmpty());
+	}
+
+	@Test
+	public void aMultiAlternativeEdgeKeepsItsOrGroup()
+	{
+		// The identity-less step falls back to destination-matched alternatives; two
+		// bank-suppliable choices stay an "or" group at ledger-aware amounts.
+		bankHas.put(ItemID.COINS, 10_000);
+		bankHas.put(ItemID.LAWRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf(
+				coinFare(3_000),
+				edge(TransportType.TELEPORTATION_SPELL, LAW_ONLY.getItemRequirements())));
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
+		when(coins.getName()).thenReturn("Coins");
+		when(lawRune.getName()).thenReturn("Law rune");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(1, result.phrases.size());
+		String group = result.phrases.get(0);
+		assertTrue("unexpected alternatives group: " + group,
+			"Coins (3,000) or 1 Law rune".equals(group)
+				|| "1 Law rune or Coins (3,000)".equals(group));
+		assertEquals(Set.of(ItemID.COINS, ItemID.LAWRUNE), result.bankItemIds);
+	}
+
+	@Test
+	public void combinedSingletonPickupsLeadAlternativeGroups()
+	{
+		// A later single-alternative edge merges into the combined pickup map, which
+		// renders as one leading phrase before any "or" groups.
+		bankHas.put(ItemID.COINS, 10_000);
+		bankHas.put(ItemID.LAWRUNE, 1);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf(
+				coinFare(3_000),
+				edge(TransportType.TELEPORTATION_SPELL, LAW_ONLY.getItemRequirements())));
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
+		when(coins.getName()).thenReturn("Coins");
+		when(lawRune.getName()).thenReturn("Law rune");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false),
+			new PathStep(EDGE_DESTINATION_2, false, coinFare(3_000)));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(2, result.phrases.size());
+		assertEquals("Coins (3,000)", result.phrases.get(0));
+		String group = result.phrases.get(1);
+		assertTrue("unexpected alternatives group: " + group,
+			"Coins (3,000) or 1 Law rune".equals(group)
+				|| "1 Law rune or Coins (3,000)".equals(group));
+	}
+
+	@Test
 	public void formatPickupsNamesQuantitiesAndCurrencyAmounts()
 	{
 		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
@@ -258,6 +524,34 @@ public class BankPickupRequirementsTest
 	private static ItemRequirement rune(ItemVariations rune, int quantity)
 	{
 		return new ItemRequirement(rune.getIds(), NO_SUBSTITUTES, NO_SUBSTITUTES, quantity);
+	}
+
+	private static ItemRequirement airRuneWithStaff(int quantity)
+	{
+		return new ItemRequirement(ItemVariations.AIR_RUNE.getIds(),
+			ItemVariations.STAFF_OF_AIR.getIds(), NO_SUBSTITUTES, quantity);
+	}
+
+	private static TransportItems singleItem(int itemId, int quantity)
+	{
+		return new TransportItems(List.of(
+			new ItemRequirement(new int[]{itemId}, NO_SUBSTITUTES, NO_SUBSTITUTES, quantity)));
+	}
+
+	private static Transport coinFare(int coins)
+	{
+		return edge(TransportType.TRANSPORT, singleItem(ItemID.COINS, coins));
+	}
+
+	private static Transport quetzalWhistle()
+	{
+		return new Transport.TransportBuilder()
+			.type(TransportType.QUETZAL_WHISTLE)
+			.origin(EDGE_ORIGIN)
+			.destination(EDGE_DESTINATION)
+			.isConsumable(true)
+			.itemRequirements(singleItem(ItemID.HG_QUETZALWHISTLE_BASIC, 1))
+			.build();
 	}
 
 	private static Transport teleport(ItemRequirement... requirements)
