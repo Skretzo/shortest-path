@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntPredicate;
 import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
@@ -77,18 +78,19 @@ public final class BankPickupRequirements
 				return new BankPickupResult(resultPhrases, resultIds);
 			}
 
-			// Snapshot bank contents.
+			// Snapshot bank contents, leaving out items that can't be used on this world.
+			IntPredicate usable = pathfinderConfig.usableItems();
 			Map<Integer, Integer> bankHas = new HashMap<>();
-			OwnedItems.addContainer(bankHas, bank);
+			OwnedItems.addContainer(bankHas, bank, usable);
 
 			// Runes in a rune pouch sitting in the bank, as rune id to amount.
 			int bankPouchId = BankPickupRequirements.findBankPouch(bankHas);
 			Map<Integer, Integer> bankPouchRunes = bankPouchId == -1
 				? Map.of()
-				: OwnedItems.runePouchContents(client);
+				: OwnedItems.runePouchContents(client, usable);
 
 			// Snapshot what the player already has (inventory + equipment + rune pouch in hand).
-			Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+			Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client, usable);
 
 			// Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
 			LinkedHashSet<String> phrases = new LinkedHashSet<>();
@@ -547,14 +549,15 @@ public final class BankPickupRequirements
 
 	/**
 	 * Snapshots what the player already has on them (inventory + equipment + rune pouch
-	 * contents if the pouch is in inventory or equipped).
+	 * contents if the pouch is in inventory or equipped), leaving out items rejected by
+	 * {@code usable}.
 	 */
-	public static Map<Integer, Integer> collectPlayerItems(Client client)
+	public static Map<Integer, Integer> collectPlayerItems(Client client, IntPredicate usable)
 	{
 		Map<Integer, Integer> totals = new HashMap<>();
-		OwnedItems.addContainer(totals, client.getItemContainer(InventoryID.INV));
-		OwnedItems.addContainer(totals, client.getItemContainer(InventoryID.WORN));
-		OwnedItems.addRunePouchContents(client, totals);
+		OwnedItems.addContainer(totals, client.getItemContainer(InventoryID.INV), usable);
+		OwnedItems.addContainer(totals, client.getItemContainer(InventoryID.WORN), usable);
+		OwnedItems.addRunePouchContents(client, totals, usable);
 		return totals;
 	}
 }
