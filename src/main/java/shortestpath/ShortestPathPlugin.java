@@ -1262,12 +1262,14 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		// Tree Gnome Village is always the first row and always available;
-		// quick length check before running the regex
-		// Expected (old): "<col=735a28>1</col>: Tree Gnome Village" (length 39)
-		// Expected (new): "<col=ffffff>1</col>: Tree Gnome Village" (length 39)
-		String firstText = children[0].getText();
-		if (firstText == null || firstText.length() != 39)
+		// Tree Gnome Village is always the first row and always available, so an
+		// exact content match identifies the spirit tree menu. Interface group
+		// MENU is a shared container (other MISCB_IF users load on the same
+		// group), and this parse now runs on every load, so a loose check could
+		// persist a false observation from an unrelated interface.
+		String expectedFirstRow =
+			(useNewMenu ? "<col=ffffff>1</col>: " : "<col=735a28>1</col>: ") + "Tree Gnome Village";
+		if (!expectedFirstRow.equals(children[0].getText()))
 		{
 			return;
 		}
