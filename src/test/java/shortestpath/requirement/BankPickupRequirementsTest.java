@@ -66,6 +66,10 @@ public class BankPickupRequirementsTest
 	private ItemComposition quetzalWhistle;
 	@Mock
 	private ItemComposition runePouch;
+	@Mock
+	private ItemComposition airRune;
+	@Mock
+	private ItemComposition mistRune;
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
@@ -553,6 +557,62 @@ public class BankPickupRequirementsTest
 	}
 
 	@Test
+	public void identicalOrGroupsOnDifferentEdgesAreNotDeduped()
+	{
+		// Two edges each offering the same pair of bank-suppliable fares must both
+		// render their "or" group — each is a separate choice the player satisfies.
+		bankHas.put(ItemID.COINS, 20_000);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+			TestPathfinderConfig.availabilityOf(
+				coinFare(3_000, BANK_TILE, EDGE_ORIGIN),
+				coinFare(3_000, BANK_TILE, EDGE_ORIGIN),
+				coinFare(3_000, EDGE_ORIGIN, EDGE_DESTINATION),
+				coinFare(3_000, EDGE_ORIGIN, EDGE_DESTINATION)));
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		when(coins.getName()).thenReturn("Coins");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false),
+			new PathStep(EDGE_DESTINATION, false));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("Coins (3,000) or Coins (3,000)", "Coins (3,000) or Coins (3,000)"),
+			result.phrases);
+		assertEquals(Set.of(ItemID.COINS), result.bankItemIds);
+	}
+
+	@Test
+	public void variantResolvedPickupsKeepSeparateDisplayIds()
+	{
+		// The combined phrase merges per displayed item id: the first cast tops up
+		// the carried mist rune while the second resolves canonical air, so the two
+		// distinct bank withdrawals stay two distinct entries.
+		playerHas.put(ItemID.MISTRUNE, 1);
+		bankHas.put(ItemID.MISTRUNE, 2);
+		bankHas.put(ItemID.AIRRUNE, 3);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
+		when(client.getItemDefinition(ItemID.MISTRUNE)).thenReturn(mistRune);
+		when(client.getItemDefinition(ItemID.AIRRUNE)).thenReturn(airRune);
+		when(mistRune.getName()).thenReturn("Mist rune");
+		when(airRune.getName()).thenReturn("Air rune");
+
+		List<PathStep> path = List.of(
+			new PathStep(BANK_TILE, false),
+			new PathStep(EDGE_ORIGIN, false, teleport(rune(ItemVariations.AIR_RUNE, 3))),
+			new PathStep(EDGE_DESTINATION, false, teleport(rune(ItemVariations.AIR_RUNE, 3))));
+
+		BankPickupResult result = BankPickupResult.compute(
+			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
+
+		assertEquals(List.of("2 Mist rune, 3 Air rune"), result.phrases);
+		assertEquals(Set.of(ItemID.MISTRUNE, ItemID.AIRRUNE), result.bankItemIds);
+	}
+
+	@Test
 	public void formatPickupsNamesQuantitiesAndCurrencyAmounts()
 	{
 		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
@@ -599,7 +659,12 @@ public class BankPickupRequirementsTest
 
 	private static Transport coinFare(int coins)
 	{
-		return edge(TransportType.TRANSPORT, singleItem(ItemID.COINS, coins));
+		return coinFare(coins, EDGE_ORIGIN, EDGE_DESTINATION);
+	}
+
+	private static Transport coinFare(int coins, int origin, int destination)
+	{
+		return edge(TransportType.TRANSPORT, singleItem(ItemID.COINS, coins), origin, destination);
 	}
 
 	private static Transport quetzalWhistle()
@@ -623,10 +688,15 @@ public class BankPickupRequirementsTest
 
 	private static Transport edge(TransportType type, TransportItems requirements)
 	{
+		return edge(type, requirements, EDGE_ORIGIN, EDGE_DESTINATION);
+	}
+
+	private static Transport edge(TransportType type, TransportItems requirements, int origin, int destination)
+	{
 		Transport.TransportBuilder builder = new Transport.TransportBuilder()
 			.type(type)
-			.origin(EDGE_ORIGIN)
-			.destination(EDGE_DESTINATION);
+			.origin(origin)
+			.destination(destination);
 		if (requirements != null)
 		{
 			builder.itemRequirements(requirements);

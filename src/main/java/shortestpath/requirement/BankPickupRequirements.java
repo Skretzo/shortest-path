@@ -3,7 +3,6 @@ package shortestpath.requirement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,11 +90,15 @@ public final class BankPickupRequirements
 			// The consumption ledger replays the remaining path against a running copy
 			// of the carried pool: payable edges spend their consumables and committed
 			// bank pickups top the pool back up. Pickup quantities for single-alternative
-			// edges merge per item id into one combined leading phrase; edges with
-			// several bank-suppliable alternatives keep their own "or" group.
+			// edges merge per displayed item id into one combined leading phrase — the
+			// same requirement resolved via different bank variants keeps separate
+			// entries, since each id is a distinct withdrawal. Edges with several
+			// bank-suppliable alternatives keep their own "or" group; identical groups
+			// from different edges are not deduplicated, because each is a separate
+			// choice the player must satisfy once.
 			TransportEligibility.ConsumptionLedger ledger = eligibility.consumptionLedger();
 			Map<Integer, Long> combined = new LinkedHashMap<>();
-			Set<String> alternativeGroups = new LinkedHashSet<>();
+			List<String> alternativeGroups = new ArrayList<>();
 			Set<Integer> itemIds = new HashSet<>();
 			boolean usesFairyRing = false;
 
