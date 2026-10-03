@@ -131,7 +131,9 @@ public class PathfinderConfig
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
-	public Set<String> availableSpiritTrees = null;
+	// Written on the client thread, read by the pathfinder thread in
+	// isPlantedSpiritTreeAllowed — volatile keeps the cross-thread contract explicit.
+	public volatile Set<String> availableSpiritTrees = null;
 	private SpiritTreePatchState spiritTreePatchState;
 
 	public void setSpiritTreePatchState(SpiritTreePatchState spiritTreePatchState)
