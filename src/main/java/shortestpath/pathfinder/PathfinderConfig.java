@@ -168,8 +168,9 @@ public class PathfinderConfig
 	/**
 	 * Transports the post-search consumption validator excluded for the current
 	 * search context. Exclusions deliberately survive {@link #refresh()} — they
-	 * exist for the re-plan's rebuild; callers clear them when the search context
-	 * (start or targets) changes. Transports are interned, so identity semantics
+	 * exist for the re-plan's rebuild; callers clear them when the re-plan loop
+	 * settles or the search context (start or targets) ends, so they can never
+	 * leak into later queries or displays. Transports are interned, so identity semantics
 	 * apply; the set is synchronised because exclusion happens on the pathfinder
 	 * worker thread while {@link #refreshTransports} reads it on the client thread.
 	 */
@@ -882,6 +883,14 @@ public class PathfinderConfig
 	 * Excludes a transport from this config's availability for the current search
 	 * context — used by the post-search consumption validator to force a re-plan
 	 * around a transport earlier consumption has made unpayable.
+	 *
+	 * <p>Exclusion is per transport identity, not per occurrence: the validator
+	 * reports the transport unpayable at one position, but the re-plan cannot
+	 * use it anywhere — a deliberately coarse cut. A re-ordering where the same
+	 * transport is payable earlier is never explored, so the displayed path can
+	 * be marginally worse than the optimal payable one; position-aware exclusion
+	 * would need the search to know which edge a transport sits on, which the
+	 * config model has no notion of.
 	 */
 	public void excludeTransport(Transport transport)
 	{
