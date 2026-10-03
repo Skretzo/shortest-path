@@ -6,6 +6,7 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private int unreachableTargetDistance = 2;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	private boolean includeBankPath = false;
+	private int costBankVisit = 20;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -30,6 +31,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.includeBankPath = includeBankPath;
 	}
 
+	@SuppressWarnings("unused")
+	public void setCostBankVisitValue(int costBankVisit)
+	{
+		this.costBankVisit = costBankVisit;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -46,6 +53,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean includeBankPath()
 	{
 		return includeBankPath;
+	}
+
+	@Override
+	public int costBankVisit()
+	{
+		return costBankVisit;
 	}
 
 	@Override
