@@ -14,6 +14,11 @@ import shortestpath.requirement.TransportEligibility;
  * requirements can no longer be met. Validation is deliberately post-search:
  * keeping resource state out of the search graph avoids multiplying the state
  * space, and the walk is a single cheap pass over the finished path.
+ * <p>
+ * Transports are replayed as they were routed: a transport the search used under
+ * a setting-level bypass (e.g. teleportation items set to All) owes nothing and is
+ * never flagged, while one the search admitted on items must still be payable after
+ * the earlier edges spent theirs.
  */
 public final class PathConsumptionValidator
 {
@@ -25,8 +30,13 @@ public final class PathConsumptionValidator
 	 * The first transport on {@code path} the ledger cannot pay for after earlier
 	 * consumption, or {@code null} when the path is fully payable — or when there
 	 * is no snapshot or path to validate. Only transports recorded on the path
-	 * steps are considered; a bank-visited step refills the pool to the bank-path
-	 * pool, after the incoming edge has been paid.
+	 * steps are considered. {@code bankVisited} is a state flag, not a visit
+	 * event — every step after the banking point carries it — so the pool
+	 * refills once, on the unbanked-to-banked transition. The refill precedes
+	 * the transition step's own edge: the bank-visit node itself is not a path
+	 * step, so the first banked step departs after banking and pays from the
+	 * refilled pool, while a transport arriving at the bank is still an
+	 * unbanked step and pays from the carried pool.
 	 */
 	public static Transport firstUnpayable(TransportEligibility eligibility, List<PathStep> path)
 	{
@@ -38,20 +48,18 @@ public final class PathConsumptionValidator
 		for (int i = 1; i < path.size(); i++)
 		{
 			PathStep step = path.get(i);
+			if (step.isBankVisited() && !path.get(i - 1).isBankVisited())
+			{
+				ledger.visitBank();
+			}
 			Transport transport = step.getTransport();
 			if (transport != null)
 			{
-				if (!ledger.satisfied(transport))
+				if (!ledger.usableAsRouted(transport))
 				{
 					return transport;
 				}
 				ledger.spend(transport);
-			}
-			// An arrival step's bank visit refills the pool only after the edge
-			// that produced it has been paid.
-			if (step.isBankVisited())
-			{
-				ledger.visitBank();
 			}
 		}
 		return null;

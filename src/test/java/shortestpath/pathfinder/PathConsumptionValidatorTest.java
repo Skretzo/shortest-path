@@ -2,10 +2,12 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.ItemVariations;
 import shortestpath.WorldPointUtil;
+import shortestpath.requirement.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
@@ -62,8 +64,10 @@ public class PathConsumptionValidatorTest
 	@Test
 	public void aBankVisitedStepBetweenFaresRefillsThePool()
 	{
-		// The first fare empties the carried pool; the bank-visited step between the
-		// fares tops it back up to the bank-path pool, so the second fare is payable.
+		// The first fare empties the carried pool; banking between the fares tops
+		// it back up to the bank-path pool, so the second fare is payable. The
+		// banked state is monotone — real paths never un-bank — so both steps
+		// after the banking point carry the flag.
 		TransportEligibility eligibility = TransportEligibility.forPlayerAndBank(
 			Map.of(ItemID.COINS, 3_000), Map.of(ItemID.COINS, 10_000), NO_POUCH, Map.of());
 
@@ -71,9 +75,63 @@ public class PathConsumptionValidatorTest
 			new PathStep(START, false),
 			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
 			new PathStep(EDGE_DESTINATION, true),
-			new PathStep(FINAL_TILE, false, coinFare(3_000)));
+			new PathStep(FINAL_TILE, true, coinFare(3_000)));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
+	}
+
+	@Test
+	public void bankVisitedStepsRefillOnceNotPerStep()
+	{
+		// bankVisited is a state flag: consecutive banked steps must not each
+		// refund the spend that preceded them. Two 3,000 fares after banking
+		// exhaust a 3,000 bank-path pool, so the second is unpayable.
+		Transport second = coinFare(3_000);
+		TransportEligibility eligibility = TransportEligibility.forPlayerAndBank(
+			Map.of(), Map.of(ItemID.COINS, 3_000), NO_POUCH, Map.of());
+
+		List<PathStep> path = List.of(
+			new PathStep(START, false),
+			new PathStep(EDGE_ORIGIN, true),
+			new PathStep(EDGE_DESTINATION, true, coinFare(3_000)),
+			new PathStep(FINAL_TILE, true, second));
+
+		assertSame(second, PathConsumptionValidator.firstUnpayable(eligibility, path));
+	}
+
+	@Test
+	public void aTransportOnTheBankTransitionStepPaysFromTheBankPool()
+	{
+		// The first banked step departs after the bank visit, so a transport
+		// recorded on it is paid from the refilled bank-path pool — nothing is
+		// carried here, so only the banked coins can cover the fare.
+		TransportEligibility eligibility = TransportEligibility.forPlayerAndBank(
+			Map.of(), Map.of(ItemID.COINS, 3_000), NO_POUCH, Map.of());
+
+		List<PathStep> path = List.of(
+			new PathStep(START, false),
+			new PathStep(EDGE_DESTINATION, true, coinFare(3_000)),
+			new PathStep(FINAL_TILE, true));
+
+		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
+	}
+
+	@Test
+	public void aTransportIntoTheBankedStateStillPaysFromTheCarriedPool()
+	{
+		// The symmetric edge: a transport landing on the bank tile is an
+		// unbanked step — the player has not banked yet — so a fare only the
+		// bank could cover is genuinely unpayable there.
+		Transport fare = coinFare(3_000);
+		TransportEligibility eligibility = TransportEligibility.forPlayerAndBank(
+			Map.of(), Map.of(ItemID.COINS, 3_000), NO_POUCH, Map.of());
+
+		List<PathStep> path = List.of(
+			new PathStep(START, false),
+			new PathStep(EDGE_ORIGIN, false, fare),
+			new PathStep(EDGE_DESTINATION, true));
+
+		assertSame(fare, PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
 
 	@Test
@@ -113,8 +171,10 @@ public class PathConsumptionValidatorTest
 	{
 		Transport first = quetzalWhistle();
 		Transport second = quetzalWhistle();
-		TransportEligibility eligibility = TransportEligibility.forPlayerAndBank(
-			Map.of(ItemID.HG_QUETZALWHISTLE_BASIC, 1), Map.of(), NO_POUCH, Map.of());
+		// An item-checking teleportation-item setting: under a bypassing one the
+		// whistle would be routed without items and owe nothing.
+		TransportEligibility eligibility = eligibilityWithSetting(
+			Map.of(ItemID.HG_QUETZALWHISTLE_BASIC, 1), TeleportationItem.INVENTORY);
 
 		List<PathStep> path = List.of(
 			new PathStep(START, false),
@@ -122,6 +182,22 @@ public class PathConsumptionValidatorTest
 			new PathStep(EDGE_DESTINATION, false, second));
 
 		assertSame(second, PathConsumptionValidator.firstUnpayable(eligibility, path));
+	}
+
+	@Test
+	public void aBypassedTeleportItemTypeIsNotFlaggedWithoutItems()
+	{
+		// Under a bypassing teleportation-item setting the search routes these
+		// transports without any items, so the replay must apply the same
+		// type-level verdict — otherwise every routed one reads as unpayable.
+		TransportEligibility eligibility = eligibilityWithSetting(Map.of(), TeleportationItem.ALL);
+
+		List<PathStep> path = List.of(
+			new PathStep(START, false),
+			new PathStep(EDGE_ORIGIN, false, quetzalWhistle()),
+			new PathStep(EDGE_DESTINATION, false, quetzalWhistle()));
+
+		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
 
 	@Test
@@ -175,6 +251,17 @@ public class PathConsumptionValidatorTest
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, List.of()));
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility,
 			List.of(new PathStep(START, false))));
+	}
+
+	/**
+	 * A snapshot with the given carried pool (and an equal bank-path pool, no
+	 * bank stock) under an explicit teleportation-item setting.
+	 */
+	private static TransportEligibility eligibilityWithSetting(
+		Map<Integer, Integer> carriedItems, TeleportationItem setting)
+	{
+		return new TransportEligibility(carriedItems, carriedItems, Map.of(), NO_POUCH, Map.of(),
+			false, setting, Integer.MAX_VALUE, Set.of());
 	}
 
 	private static Transport coinFare(int coins)
