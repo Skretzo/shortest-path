@@ -310,7 +310,13 @@ public class PathfinderConfig
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
 		currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
-		includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath());
+		// Banked teleport items are only usable from the bankVisited path state, so a
+		// mode that collects bank contents must also enable bank-path traversal —
+		// otherwise the banked items are gathered but can never be offered.
+		TeleportationItem teleportationItemSetting = transportTypeConfig.getTeleportationItemSetting();
+		includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath())
+			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
+			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
