@@ -928,6 +928,17 @@ public interface ShortestPathConfig extends Config
 		return 0;
 	}
 
+	@Range(
+		max = 10000
+	)
+	@ConfigItem(
+		keyName = "costBankVisit",
+		name = "Bank visit cost",
+		description = "How many extra tiles fetching a teleport item from your bank costs<br>" +
+			"to penalize banking when a worse on-hand option exists (0 keeps the bank visit free)",
+		position = 92,
+		section = sectionThresholds
+	)
 	default int costBankVisit()
 	{
 		return 20;
