@@ -496,7 +496,7 @@ public final class TransportEligibility
 					}
 					for (int itemId : itemIds)
 					{
-						if (hasQuantity(itemId, branch.getQuantity(), false))
+						if (TransportItems.hasQuantity(pool, itemId, branch.getQuantity(), false))
 						{
 							paidId = itemId;
 							paidQuantity = branch.getQuantity();
@@ -513,14 +513,14 @@ public final class TransportEligibility
 					payments.merge(paidId, paidQuantity, Integer::sum);
 					continue;
 				}
-				if (!usedOffhand && hasOwnedOffhand(req))
+				if (!usedOffhand && TransportItems.hasOwnedOffhand(req, pool))
 				{
 					usedOffhand = true;
 					continue;
 				}
 				leftover.add(req);
 			}
-			if (!leftover.isEmpty() && !existsOneStaffCovering(leftover))
+			if (!leftover.isEmpty() && !TransportItems.existsOneStaffCovering(leftover, pool))
 			{
 				return; // the pool cannot pay this transport — charge nothing
 			}
@@ -604,77 +604,6 @@ public final class TransportEligibility
 			pouchRunesCredited = false;
 		}
 
-		private boolean hasQuantity(int itemId, int requiredQuantity, boolean unlimited)
-		{
-			int quantity = pool.getOrDefault(itemId, 0);
-			if (unlimited)
-			{
-				return requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0;
-			}
-			return requiredQuantity > 0 && quantity >= requiredQuantity
-				|| requiredQuantity == 0 && quantity == 0;
-		}
-
-		private boolean hasOwnedOffhand(ItemRequirement req)
-		{
-			for (ItemRequirement.Branch branch : req.getBranches())
-			{
-				int[] offhandIds = branch.getOffhandIds();
-				if (offhandIds == null)
-				{
-					continue;
-				}
-				for (int itemId : offhandIds)
-				{
-					if (hasQuantity(itemId, branch.getQuantity(), true))
-					{
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-
-		private boolean existsOneStaffCovering(List<ItemRequirement> leftover)
-		{
-			Set<Integer> candidates = null;
-			for (ItemRequirement req : leftover)
-			{
-				Set<Integer> ownedStaves = new HashSet<>();
-				for (ItemRequirement.Branch branch : req.getBranches())
-				{
-					int[] staffIds = branch.getStaffIds();
-					if (staffIds == null)
-					{
-						continue;
-					}
-					for (int itemId : staffIds)
-					{
-						if (hasQuantity(itemId, branch.getQuantity(), true))
-						{
-							ownedStaves.add(itemId);
-						}
-					}
-				}
-				if (ownedStaves.isEmpty())
-				{
-					return false;
-				}
-				if (candidates == null)
-				{
-					candidates = ownedStaves;
-				}
-				else
-				{
-					candidates.retainAll(ownedStaves);
-				}
-				if (candidates.isEmpty())
-				{
-					return false;
-				}
-			}
-			return true;
-		}
 	}
 
 	/**
