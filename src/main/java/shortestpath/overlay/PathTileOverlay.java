@@ -11,6 +11,7 @@ import java.awt.Stroke;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +25,8 @@ import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -43,16 +46,20 @@ public class PathTileOverlay extends Overlay
 {
 	private static final int TRANSPORT_LABEL_GAP = 3;
 	private static final long TRACER_STEP_MS = 200L;
+	private static final int SPRITE_STRIDE = 10;
+	private static final int SPRITE_ITEM_ID = ItemID.GAUNTLET_ESCAPE_CRYSTAL;
 	private final Client client;
 	private final ShortestPathPlugin plugin;
+	private final ItemManager itemManager;
 	private int playerTileLabelOffset = 0;
 	private boolean teleportPulseDrawn = false;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin)
+	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
 	{
 		this.client = client;
 		this.plugin = plugin;
+		this.itemManager = itemManager;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -294,6 +301,43 @@ public class PathTileOverlay extends Overlay
 							graphics.setColor(previousColour);
 						}
 					}
+				}
+				for (int target : plugin.getPathfinder().getTargets())
+				{
+					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
+					{
+						drawTile(graphics, target, colorCalculating, -1, true);
+					}
+				}
+			}
+			else if (TileStyle.SPRITE_MARKERS.equals(plugin.pathStyle))
+			{
+				for (int i = 0; i < path.size(); i++)
+				{
+					PathStep currentStep = path.get(i);
+					int pathPoint = currentStep.getPackedPosition();
+					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
+					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
+					// Bounded stride — a sprite every SPRITE_STRIDE tiles plus the destination,
+					// never one sprite per tile (per-tile sprite density is too heavy).
+					boolean marker = i % SPRITE_STRIDE == 0 || i == path.size() - 1;
+					// Skip sprites inside POH (no collision data, tiles render at wrong positions)
+					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					{
+						Point p = tileCenter(pathPoint);
+						if (p != null)
+						{
+							BufferedImage sprite = itemManager.getImage(SPRITE_ITEM_ID);
+							if (sprite != null)
+							{
+								graphics.drawImage(sprite, p.getX() - sprite.getWidth() / 2,
+									p.getY() - sprite.getHeight() / 2, null);
+							}
+							drawCounter(graphics, p.getX(), p.getY(), counter);
+						}
+					}
+					counter++;
+					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
 				}
 				for (int target : plugin.getPathfinder().getTargets())
 				{
