@@ -73,6 +73,11 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
   - Within an OR group, if quantities differ across alternatives, the parser uses the maximum quantity of the group. Prefer keeping quantities consistent within an OR group.
   - Left side of `=` can be a numeric item id or a named constant recognized by the client (e.g., `LAW_RUNE`).
   - Equipment/slot tokens: some rows use named slot tokens (for example `HEADSLOT`, `CAPESLOT`, `CAPESLOT`) found in `ItemVariations` to check equipment slots rather than inventory items. These appear as `HEADSLOT=0` to require an empty head slot, and can be combined with `&` to require multiple slot states (e.g., `HEADSLOT=0&CAPESLOT=0`).
+  - Unlock tokens: `UNLOCK_<NAME>=1` declares a state the game does not expose to the client (stored items, earned privileges), resolved against the `Unlock` enum rather than `ItemVariations`. An unlock branch never contributes items and is satisfied only by the player declaring the matching toggle in the plugin's *Unlocks* config section.
+    - In an OR group the unlock is a relief alternative, e.g. `AXE=1|UNLOCK_CANOE_AXE=1` accepts a carried axe or an axe stored at a canoe station.
+    - As an ANDed requirement it is a gate, e.g. `13393=1&UNLOCK_XERICS_HONOUR=1` requires carrying Xeric's talisman *and* having earned Xeric's Honour; the gate applies even when item evaluation is skipped (teleportation-item modes).
+    - Names are case-insensitive (the cell is uppercased before parsing), but unlike unknown item names, an unknown `UNLOCK_*` name is a loud parse error that fails the row — it never silently drops the requirement. `=0` quantities are malformed: unlock tokens must be written `=1`.
+    - Current names: `UNLOCK_CANOE_AXE` (axe stored at a canoe station), `UNLOCK_DRAGONTOOTH` (Dragontooth Island free passage), `UNLOCK_XERICS_HONOUR` (Xeric's Honour).
 
 ### Quests
 

@@ -3,6 +3,7 @@ package shortestpath.pathfinder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,7 +46,9 @@ import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.VarRequirement;
+import shortestpath.transport.requirement.ItemRequirement;
 import shortestpath.transport.requirement.TransportItems;
+import shortestpath.transport.requirement.Unlock;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
@@ -157,6 +160,8 @@ public class PathfinderConfig
 		respawnPrifddinas;
 	private Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
 	private Set<PohMountedItem> enabledPohMountedItems = Set.of();
+	@Getter
+	private Set<Unlock> unlocks = Set.of();
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	@Getter
@@ -330,6 +335,14 @@ public class PathfinderConfig
 			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
 			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
 		respawnPrifddinas = ShortestPathPlugin.override("respawnPrifddinas", config.respawnPrifddinas());
+
+		// Declared unlocks: states the game does not expose to the client, toggled in config.
+		Set<Unlock> declaredUnlocks = EnumSet.noneOf(Unlock.class);
+		if (ShortestPathPlugin.override("unlockCanoeAxe", config.unlockCanoeAxe()))
+		{
+			declaredUnlocks.add(Unlock.CANOE_AXE);
+		}
+		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
@@ -792,6 +805,14 @@ public class PathfinderConfig
 			return false;
 		}
 
+		// Pure-unlock requirements are gated on the declared unlock set here,
+		// ahead of the item evaluation in hasRequiredItems — teleportation-item
+		// modes can skip that evaluation entirely and must still honour the gate
+		if (!checkUnlockGates(transport))
+		{
+			return false;
+		}
+
 		// Handle jewellery box tier filtering
 		if (TransportType.TELEPORTATION_BOX.equals(type))
 		{
@@ -850,6 +871,43 @@ public class PathfinderConfig
 		if (destination == LUMBRIDGE_RESPAWN)
 		{
 			return !respawnPrifddinas;
+		}
+		return true;
+	}
+
+	/**
+	 * Gates transports carrying a pure-unlock item requirement (every OR branch
+	 * of the requirement is an unlock token) on the declared unlock set. Item
+	 * pools can never satisfy such a requirement, and item evaluation is not the
+	 * only path a transport can take to be counted usable — teleportation-item
+	 * modes skip it entirely — so the gate is checked here for every transport.
+	 */
+	private boolean checkUnlockGates(Transport transport)
+	{
+		TransportItems itemRequirements = transport.getItemRequirements();
+		if (itemRequirements == null)
+		{
+			return true;
+		}
+		for (ItemRequirement requirement : itemRequirements.getRequirements())
+		{
+			if (!requirement.isPureUnlock())
+			{
+				continue;
+			}
+			boolean declared = false;
+			for (ItemRequirement.Branch branch : requirement.getBranches())
+			{
+				if (unlocks.contains(branch.getUnlock()))
+				{
+					declared = true;
+					break;
+				}
+			}
+			if (!declared)
+			{
+				return false;
+			}
 		}
 		return true;
 	}
@@ -1159,7 +1217,7 @@ public class PathfinderConfig
 		}
 
 		TransportItems transportItems = transport.getItemRequirements();
-		return transportItems == null || transportItems.isSatisfiedBy(ownedItems, CURRENCIES, currencyThreshold);
+		return transportItems == null || transportItems.isSatisfiedBy(ownedItems, CURRENCIES, currencyThreshold, unlocks);
 	}
 
 	/**

@@ -6,7 +6,8 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private int unreachableTargetDistance = 2;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	private boolean includeBankPath = false;
-	private int costBankVisit = 20;
+	private int costBankVisit = 0;
+	private boolean unlockCanoeAxe = false;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -37,6 +38,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.costBankVisit = costBankVisit;
 	}
 
+	@SuppressWarnings("unused")
+	public void setUnlockCanoeAxeValue(boolean unlockCanoeAxe)
+	{
+		this.unlockCanoeAxe = unlockCanoeAxe;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -59,6 +66,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public int costBankVisit()
 	{
 		return costBankVisit;
+	}
+
+	@Override
+	public boolean unlockCanoeAxe()
+	{
+		return unlockCanoeAxe;
 	}
 
 	@Override

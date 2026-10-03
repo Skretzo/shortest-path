@@ -17,6 +17,7 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.transport.requirement.Unlock;
 
 /**
  * Determines what items need to be picked up from the bank for a given path.
@@ -89,6 +90,9 @@ public final class BankPickupRequirements
 
 			// Snapshot what the player already has (inventory + equipment + rune pouch in hand).
 			Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+
+			// Player-declared unlocks relieve requirements the same way they do during the search.
+			Set<Unlock> unlocks = pathfinderConfig.getUnlocks();
 
 			// Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
 			LinkedHashSet<String> phrases = new LinkedHashSet<>();
@@ -172,7 +176,7 @@ public final class BankPickupRequirements
 				boolean satisfied = false;
 				for (Transport t : nonFairy)
 				{
-					if (BankPickupRequirements.transportSatisfiedBy(t, playerHas))
+					if (BankPickupRequirements.transportSatisfiedBy(t, playerHas, unlocks))
 					{
 						satisfied = true;
 						break;
@@ -188,7 +192,7 @@ public final class BankPickupRequirements
 				for (Transport t : nonFairy)
 				{
 					Map<Integer, Long> pickups = BankPickupRequirements.computeBankPickups(
-						t, playerHas, bankHas, bankPouchId, bankPouchRunes);
+						t, playerHas, bankHas, bankPouchId, bankPouchRunes, unlocks);
 					if (pickups != null && !pickups.isEmpty())
 					{
 						// Bank can fully satisfy this alternative: contribute to display phrase.
@@ -198,7 +202,7 @@ public final class BankPickupRequirements
 					// computeBankPickups uses canonical IDs (e.g. air rune) for display, but the bank
 					// may only hold a variant (e.g. mist rune), so we resolve the real ID separately.
 					BankPickupRequirements.collectPartialBankItemIds(
-						t, playerHas, bankHas, bankPouchId, bankPouchRunes, itemIds);
+						t, playerHas, bankHas, bankPouchId, bankPouchRunes, unlocks, itemIds);
 				}
 				if (!altStrings.isEmpty())
 				{
@@ -243,19 +247,34 @@ public final class BankPickupRequirements
 		Map<Integer, Integer> bankPouchRunes,
 		Set<Integer> itemIds)
 	{
+		collectPartialBankItemIds(transport, playerHas, bankHas, bankPouchId, bankPouchRunes, Set.of(), itemIds);
+	}
+
+	/**
+	 * As {@link #collectPartialBankItemIds(Transport, Map, Map, int, Map, Set)}, with the
+	 * player-declared {@link Unlock unlocks} also counting toward requirement satisfaction.
+	 */
+	static void collectPartialBankItemIds(Transport transport,
+		Map<Integer, Integer> playerHas,
+		Map<Integer, Integer> bankHas,
+		int bankPouchId,
+		Map<Integer, Integer> bankPouchRunes,
+		Set<Unlock> unlocks,
+		Set<Integer> itemIds)
+	{
 		if (transport.getItemRequirements() == null)
 		{
 			return;
 		}
 		// Add the bank rune pouch if it is taken; its runes then count as carried.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankHas, bankPouchRunes);
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankHas, bankPouchRunes, unlocks);
 		if (carried != playerHas)
 		{
 			itemIds.add(bankPouchId);
 		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			if (playerSatisfies(req, carried))
+			if (playerSatisfies(req, carried, unlocks))
 			{
 				continue;
 			}
@@ -316,12 +335,22 @@ public final class BankPickupRequirements
 	/**
 	 * Returns true if the player already meets this requirement on its own, with enough of
 	 * one item variant of any OR branch at that branch's quantity, or with a staff or
-	 * offhand that substitutes for it.
+	 * offhand that substitutes for it. An unlock branch is met by declaring its unlock;
+	 * it can never be covered by items, so it never contributes a pickup.
 	 */
-	private static boolean playerSatisfies(ItemRequirement req, Map<Integer, Integer> playerHas)
+	private static boolean playerSatisfies(ItemRequirement req, Map<Integer, Integer> playerHas,
+		Set<Unlock> unlocks)
 	{
 		for (ItemRequirement.Branch branch : req.getBranches())
 		{
+			if (branch.getUnlock() != null)
+			{
+				if (unlocks.contains(branch.getUnlock()))
+				{
+					return true;
+				}
+				continue;
+			}
 			if (findCovering(branch.getItemIds(), pickupQuantity(branch), Map.of(), playerHas) != -1)
 			{
 				return true;
@@ -406,12 +435,22 @@ public final class BankPickupRequirements
 	 */
 	public static boolean transportSatisfiedBy(Transport transport, Map<Integer, Integer> playerHas)
 	{
+		return transportSatisfiedBy(transport, playerHas, Set.of());
+	}
+
+	/**
+	 * As {@link #transportSatisfiedBy(Transport, Map)}, with the player-declared
+	 * {@link Unlock unlocks} also counting toward requirement satisfaction.
+	 */
+	public static boolean transportSatisfiedBy(Transport transport, Map<Integer, Integer> playerHas,
+		Set<Unlock> unlocks)
+	{
 		if (transport.getItemRequirements() == null)
 		{
 			return true;
 		}
 		return transport.getItemRequirements().isSatisfiedBy(
-			playerHas, PathfinderConfig.CURRENCIES, Integer.MAX_VALUE);
+			playerHas, PathfinderConfig.CURRENCIES, Integer.MAX_VALUE, unlocks);
 	}
 
 	/**
@@ -431,6 +470,22 @@ public final class BankPickupRequirements
 		int bankPouchId,
 		Map<Integer, Integer> bankPouchRunes)
 	{
+		return computeBankPickups(transport, playerHas, bankHas, bankPouchId, bankPouchRunes, Set.of());
+	}
+
+	/**
+	 * As {@link #computeBankPickups(Transport, Map, Map, int, Map)}, with the
+	 * player-declared {@link Unlock unlocks} also counting toward requirement
+	 * satisfaction. A pure-unlock requirement yields no pickup items, and a
+	 * requirement the unlocks already meet asks for nothing.
+	 */
+	static Map<Integer, Long> computeBankPickups(Transport transport,
+		Map<Integer, Integer> playerHas,
+		Map<Integer, Integer> bankHas,
+		int bankPouchId,
+		Map<Integer, Integer> bankPouchRunes,
+		Set<Unlock> unlocks)
+	{
 		Map<Integer, Long> pickups = new LinkedHashMap<>();
 		if (transport.getItemRequirements() == null)
 		{
@@ -438,14 +493,14 @@ public final class BankPickupRequirements
 		}
 		// Prefer bank rune pouch over individual runes. This avoids surfacing combination
 		// rune variants (mist, dust, etc.) when the pouch already covers the requirement.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankHas, bankPouchRunes);
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, playerHas, bankHas, bankPouchRunes, unlocks);
 		if (carried != playerHas)
 		{
 			pickups.put(bankPouchId, 1L);
 		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			if (playerSatisfies(req, carried))
+			if (playerSatisfies(req, carried, unlocks))
 			{
 				continue;
 			}
@@ -511,14 +566,15 @@ public final class BankPickupRequirements
 	private static Map<Integer, Integer> carriedWithBankPouch(Transport transport,
 		Map<Integer, Integer> playerHas,
 		Map<Integer, Integer> bankHas,
-		Map<Integer, Integer> bankPouchRunes)
+		Map<Integer, Integer> bankPouchRunes,
+		Set<Unlock> unlocks)
 	{
 		// Pouch runes plus loose bank items, per item ID.
 		Map<Integer, Integer> pouchAndBank = new HashMap<>(bankHas);
 		bankPouchRunes.forEach((runeId, amount) -> pouchAndBank.merge(runeId, amount, Integer::sum));
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			if (playerSatisfies(req, playerHas))
+			if (playerSatisfies(req, playerHas, unlocks))
 			{
 				continue;
 			}

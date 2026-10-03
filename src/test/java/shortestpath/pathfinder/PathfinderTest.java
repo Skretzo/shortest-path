@@ -134,6 +134,42 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testCanoesWithStoredAxeUnlock()
+	{
+		// An axe stored at a canoe station relieves the carried-axe requirement.
+		when(config.useCanoes()).thenReturn(true);
+		when(config.unlockCanoeAxe()).thenReturn(true);
+		setupInventory();
+		testTransportLength(2, TransportType.CANOE);
+	}
+
+	@Test
+	public void testCanoesNotUsedWithoutAxeOrDeclaredUnlock()
+	{
+		when(config.useCanoes()).thenReturn(true);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		for (Transport transport : activeTransportList())
+		{
+			assertNotEquals("No canoe may be usable without an axe or the declared stored axe",
+				TransportType.CANOE, transport.getType());
+		}
+	}
+
+	@Test
+	public void unlockOptionKeysMatchTransportOptionsRegex() throws Exception
+	{
+		// An unlock* config key must retrigger pathfinding like other transport options.
+		java.lang.reflect.Field field = ShortestPathPlugin.class.getDeclaredField("TRANSPORT_OPTIONS_REGEX");
+		field.setAccessible(true);
+		java.util.regex.Pattern pattern = (java.util.regex.Pattern) field.get(null);
+		assertTrue(pattern.matcher("unlockCanoeAxe").matches());
+		assertTrue(pattern.matcher("unlockXericsHonour").matches());
+		assertFalse(pattern.matcher("unlock").matches());
+		assertFalse(pattern.matcher("myUnlockCanoeAxe").matches());
+	}
+
+	@Test
 	public void testCharterShips()
 	{
 		when(config.useCharterShips()).thenReturn(true);

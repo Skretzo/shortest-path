@@ -79,6 +79,17 @@ public class TransportItems
 	 */
 	public boolean isSatisfiedBy(Map<Integer, Integer> itemCounts, Set<Integer> currencies, int currencyThreshold)
 	{
+		return isSatisfiedBy(itemCounts, currencies, currencyThreshold, Set.of());
+	}
+
+	/**
+	 * As {@link #isSatisfiedBy(Map, Set, int)}, with an additional set of
+	 * player-declared {@link Unlock unlocks}. An unlock branch of an OR group
+	 * is satisfied when its unlock is declared; it never relieves item terms
+	 * of other branches and is never covered by items, staves or offhands.
+	 */
+	public boolean isSatisfiedBy(Map<Integer, Integer> itemCounts, Set<Integer> currencies, int currencyThreshold, Set<Unlock> unlocks)
+	{
 		if (requirements.isEmpty())
 		{
 			return true;
@@ -88,7 +99,7 @@ public class TransportItems
 		boolean usedOffhand = false;
 		for (ItemRequirement req : requirements)
 		{
-			Boolean itemsResult = satisfiedByItems(req, itemCounts, currencies, currencyThreshold);
+			Boolean itemsResult = satisfiedByItems(req, itemCounts, currencies, currencyThreshold, unlocks);
 			if (itemsResult == null)
 			{
 				return false;
@@ -122,11 +133,22 @@ public class TransportItems
 		ItemRequirement req,
 		Map<Integer, Integer> itemCounts,
 		Set<Integer> currencies,
-		int currencyThreshold)
+		int currencyThreshold,
+		Set<Unlock> unlocks)
 	{
 		boolean blocked = false;
 		for (ItemRequirement.Branch branch : req.getBranches())
 		{
+			Unlock unlock = branch.getUnlock();
+			if (unlock != null)
+			{
+				if (unlocks.contains(unlock))
+				{
+					return true;
+				}
+				continue;
+			}
+
 			int[] itemIds = branch.getItemIds();
 			if (itemIds == null)
 			{
@@ -248,7 +270,10 @@ public class TransportItems
 		{
 			for (ItemRequirement.Branch branch : req.getBranches())
 			{
-				items[i++] = branch.getItemIds();
+				// Unlock-only branches carry no item ids; emit an empty array so
+				// consumers iterating alternatives never dereference a null.
+				int[] itemIds = branch.getItemIds();
+				items[i++] = itemIds == null ? new int[0] : itemIds;
 			}
 		}
 		return items;

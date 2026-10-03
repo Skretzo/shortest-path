@@ -527,7 +527,7 @@ public interface ShortestPathConfig extends Config
 			"The game does not expose the Prifddinas respawn to the client,<br>" +
 			"so the plugin cannot detect it automatically",
 		position = 91,
-		section = sectionSettings
+		section = sectionUnlocks
 	)
 	default boolean respawnPrifddinas()
 	{
@@ -1391,5 +1391,29 @@ public interface ShortestPathConfig extends Config
 	)
 	@SuppressWarnings("unused")
 	void setBuiltTeleportationPortalsPoh(String content);
+
+	@ConfigSection(
+		name = "Unlocks",
+		description = "Declare unlock states the game does not expose to the client,<br>" +
+			"so the plugin cannot detect them automatically",
+		position = 159,
+		closedByDefault = true
+	)
+	String sectionUnlocks = "sectionUnlocks";
+
+	@ConfigItem(
+		keyName = "unlockCanoeAxe",
+		name = "Axe stored at a canoe station",
+		description = "Enable if you have stored an axe at a canoe station.<br>" +
+			"The game does not expose the stored axe to the client,<br>" +
+			"so the plugin cannot detect it automatically.<br>" +
+			"Enabling this declares the unlock without verification",
+		position = 160,
+		section = sectionUnlocks
+	)
+	default boolean unlockCanoeAxe()
+	{
+		return false;
+	}
 
 }
