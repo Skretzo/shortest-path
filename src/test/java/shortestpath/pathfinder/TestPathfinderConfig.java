@@ -85,4 +85,20 @@ public class TestPathfinderConfig extends PathfinderConfig
 	{
 		return !bypassVarPlayerChecks && super.varPlayerChecks(transport, evaluationTimeMinutes);
 	}
+
+	/**
+	 * Builds a real {@link TransportAvailability} holding the given transports. Mockito's
+	 * default mock maker cannot mock the final class, so tests that need availability
+	 * lookups go through this instead.
+	 */
+	public static TransportAvailability availabilityOf(Transport... transports)
+	{
+		TransportAvailability.Builder builder = new TransportAvailability.Builder(transports.length);
+		for (Transport transport : transports)
+		{
+			builder.add(transport);
+		}
+		builder.remapPohTransports();
+		return builder.build();
+	}
 }

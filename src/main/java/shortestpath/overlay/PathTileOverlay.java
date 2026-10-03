@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import net.runelite.api.Client;
@@ -41,6 +40,7 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportEligibility;
 
 public class PathTileOverlay extends Overlay
 {
@@ -803,11 +803,13 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
-		Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+		// A missing eligibility snapshot counts every candidate as usable — the same net
+		// display as before the snapshot existed.
+		TransportEligibility eligibility = plugin.getPathfinderConfig().getEligibility();
 		List<Transport> usableTransports = new ArrayList<>();
 		for (Transport t : candidateTransports)
 		{
-			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas))
+			if (eligibility == null || eligibility.satisfiedByPlayer(t))
 			{
 				usableTransports.add(t);
 			}
