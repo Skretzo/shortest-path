@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.Set;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -305,5 +306,25 @@ public class SpiritTreePatchStateTest
 		state.persistIfDirty(); // must not throw
 
 		assertEquals(Set.of("Port Sarim"), state.getTravelableTrees());
+	}
+
+	@Test
+	public void greyedMenuRowWithMarkupStillListsPatch()
+	{
+		// A greyed row can leave a closing tag on the name capture; the parse
+		// must strip it or the row misses the patch table and the menu loses
+		// its authority to evict a stale positive for that patch.
+		Widget row = mock(Widget.class);
+		when(row.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>");
+
+		ShortestPathPlugin.SpiritTreeMenuSnapshot snapshot =
+			ShortestPathPlugin.parseSpiritTreeMenuRows(new Widget[]{row}, false);
+
+		assertEquals(Set.of("Port Sarim"), snapshot.listed);
+		assertTrue(snapshot.available.isEmpty());
+
+		state.applyVarbitSample("Port Sarim", 20);
+		assertTrue(state.applyMenuSnapshot(snapshot.listed, snapshot.available));
+		assertTrue(state.getTravelableTrees().isEmpty());
 	}
 }

@@ -1274,34 +1274,11 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
-
-		Set<String> listed = new HashSet<>();
-		Set<String> available = new HashSet<>();
-
-		for (Widget child : children)
-		{
-			Matcher matcher = pattern.matcher(child.getText());
-			if (!matcher.matches())
-			{
-				continue;
-			}
-
-			// Group 3 is spirit tree name
-			listed.add(matcher.group(3));
-
-			// Group 2 is the disabled color tag; if present, the tree is unavailable
-			if (matcher.group(2) != null)
-			{
-				continue;
-			}
-
-			available.add(matcher.group(3));
-		}
+		SpiritTreeMenuSnapshot snapshot = parseSpiritTreeMenuRows(children, useNewMenu);
 
 		// The menu is authoritative for the patches it lists; persisted and
 		// in-region-varbit observations fill the patches the menu never covered.
-		if (spiritTreePatchState.applyMenuSnapshot(listed, available))
+		if (spiritTreePatchState.applyMenuSnapshot(snapshot.listed, snapshot.available))
 		{
 			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
 
@@ -1310,6 +1287,57 @@ public class ShortestPathPlugin extends Plugin
 				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
 			}
 		}
+	}
+
+	/**
+	 * Parsed contents of one spirit tree travel menu: every patch row the
+	 * menu showed ({@link #listed}) and the subset usable right now
+	 * ({@link #available} — a greyed row means planted but not usable).
+	 */
+	static final class SpiritTreeMenuSnapshot
+	{
+		final Set<String> listed = new HashSet<>();
+		final Set<String> available = new HashSet<>();
+	}
+
+	/**
+	 * Parses the dynamic children of a spirit tree menu container into the
+	 * listed/available patch-name sets. Package-private for tests.
+	 */
+	static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(Widget[] children, boolean useNewMenu)
+	{
+		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
+		SpiritTreeMenuSnapshot snapshot = new SpiritTreeMenuSnapshot();
+
+		for (Widget child : children)
+		{
+			String text = child.getText();
+			if (text == null)
+			{
+				continue;
+			}
+			Matcher matcher = pattern.matcher(text);
+			if (!matcher.matches())
+			{
+				continue;
+			}
+
+			// Group 3 is spirit tree name; a greyed row can leave markup on it
+			// (e.g. "Port Sarim</col>"), which would miss the patch table and
+			// silently drop the row's eviction signal — strip tags before use.
+			String name = Text.removeTags(matcher.group(3)).trim();
+			snapshot.listed.add(name);
+
+			// Group 2 is the disabled color tag; if present, the tree is unavailable
+			if (matcher.group(2) != null)
+			{
+				continue;
+			}
+
+			snapshot.available.add(name);
+		}
+
+		return snapshot;
 	}
 
 	private void scrollFairyRingPanel()
