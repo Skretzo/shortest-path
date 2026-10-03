@@ -74,7 +74,7 @@ public class SpiritTreePatchState
 		this(null);
 	}
 
-	static boolean spiritTreeTravelable(int varbitValue)
+	public static boolean spiritTreeTravelable(int varbitValue)
 	{
 		// Matches PatchImplementation.SPIRIT_TREE: 0-7 weeds, 8-19 growing,
 		// 21-31 diseased, 32-43 dead, 44 grown but check-health-only,
@@ -87,7 +87,7 @@ public class SpiritTreePatchState
 		return PATCHES.keySet();
 	}
 
-	static String patchNameForRegion(int regionId)
+	public static String patchNameForRegion(int regionId)
 	{
 		return PATCH_BY_REGION.get(regionId);
 	}
@@ -98,7 +98,7 @@ public class SpiritTreePatchState
 		return entry == null ? -1 : entry[0];
 	}
 
-	static int varbitForPatch(String patchName)
+	public static int varbitForPatch(String patchName)
 	{
 		int[] entry = PATCHES.get(patchName);
 		return entry == null ? -1 : entry[1];
@@ -158,7 +158,7 @@ public class SpiritTreePatchState
 	 * varbits are region-scoped and mean different patches elsewhere.
 	 * Returns true when the resolved set of travelable trees changed.
 	 */
-	boolean applyVarbitSample(String patchName, int varbitValue)
+	public boolean applyVarbitSample(String patchName, int varbitValue)
 	{
 		if (!PATCHES.containsKey(patchName))
 		{
@@ -202,7 +202,7 @@ public class SpiritTreePatchState
 	 * The union of all detection sources: planted patches currently known to be
 	 * grown and usable. Empty when nothing observed is travelable.
 	 */
-	Set<String> getTravelableTrees()
+	public Set<String> getTravelableTrees()
 	{
 		Set<String> trees = new HashSet<>();
 		for (Map.Entry<String, Integer> entry : observedValues.entrySet())
@@ -220,7 +220,7 @@ public class SpiritTreePatchState
 	 * produced any observation — lets the consumer stay conservative
 	 * ("never checked") instead of asserting an empty set.
 	 */
-	Set<String> getTravelableTreesOrNull()
+	public Set<String> getTravelableTreesOrNull()
 	{
 		return observedValues.isEmpty() ? null : getTravelableTrees();
 	}
