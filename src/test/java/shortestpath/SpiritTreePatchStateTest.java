@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.Set;
@@ -290,14 +291,17 @@ public class SpiritTreePatchStateTest
 			eq(ShortestPathPlugin.CONFIG_GROUP),
 			eq("spiritTree.12082.4771"),
 			contains("20:"));
+		// An unobserved patch must not produce any profile write.
 		verify(configManager, never()).setRSProfileConfiguration(
 			eq(ShortestPathPlugin.CONFIG_GROUP),
 			eq("spiritTree.11058.4772"),
 			contains("0:"));
+		verify(configManager, never()).unsetRSProfileConfiguration(
+			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.11058.4772");
 	}
 
 	@Test
-	public void evictionOverwritesPersistedPositive()
+	public void evictionUnsetsPersistedPositive()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
@@ -309,10 +313,73 @@ public class SpiritTreePatchStateTest
 		persisted.applyVarbitSample("Port Sarim", 0); // cleared patch
 		persisted.persistIfDirty();
 
-		verify(configManager).setRSProfileConfiguration(
+		verify(configManager).unsetRSProfileConfiguration(
+			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
+	}
+
+	@Test
+	public void persistRoundTripsThroughUnset()
+	{
+		// travelable → non-travelable → travelable must end with a live key
+		// again, not a stale unset or an unwritten second set.
+		ConfigManager configManager = mock(ConfigManager.class);
+		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+
+		persisted.applyVarbitSample("Port Sarim", 20);
+		persisted.persistIfDirty();
+		persisted.applyVarbitSample("Port Sarim", 0);
+		persisted.persistIfDirty();
+		persisted.applyVarbitSample("Port Sarim", 20);
+		persisted.persistIfDirty();
+
+		verify(configManager, times(2)).setRSProfileConfiguration(
 			eq(ShortestPathPlugin.CONFIG_GROUP),
 			eq("spiritTree.12082.4771"),
-			contains("0:"));
+			contains("20:"));
+		verify(configManager).unsetRSProfileConfiguration(
+			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
+	}
+
+	@Test
+	public void repeatNonTravelableFlushUnsetsOnce()
+	{
+		// A second dirty flush for another patch must not unset the same key
+		// again — the absent-key state is already persisted.
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(configManager.getRSProfileConfiguration(
+			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			.thenReturn("20:1700000000");
+
+		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		persisted.loadFromProfile();
+		persisted.applyVarbitSample("Port Sarim", 32); // dead
+		persisted.persistIfDirty();
+		persisted.applyVarbitSample("Etceteria", 20);
+		persisted.persistIfDirty();
+
+		verify(configManager).unsetRSProfileConfiguration(
+			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
+	}
+
+	@Test
+	public void legacyNegativeResidueIsUnsetOnFlush()
+	{
+		// Entries persisted by the previous scheme as "0:<ts>" still parse as
+		// non-travelable observations; the next dirty flush removes the key.
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(configManager.getRSProfileConfiguration(
+			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			.thenReturn("0:1700000000");
+
+		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		persisted.loadFromProfile();
+		assertTrue(persisted.getTravelableTrees().isEmpty());
+
+		persisted.applyVarbitSample("Etceteria", 20); // dirty for another patch
+		persisted.persistIfDirty();
+
+		verify(configManager).unsetRSProfileConfiguration(
+			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
 	}
 
 	@Test

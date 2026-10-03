@@ -323,13 +323,27 @@ public class SpiritTreePatchState
 		for (Map.Entry<String, Integer> entry : observedValues.entrySet())
 		{
 			Integer last = lastPersistedValues.get(entry.getKey());
-			if (last != null && last.equals(entry.getValue()))
+			if (spiritTreeTravelable(entry.getValue()))
 			{
-				continue;
+				if (last != null && last.equals(entry.getValue()))
+				{
+					continue;
+				}
+				configManager.setRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP,
+					configKey(entry.getKey()), serializeObserved(entry.getValue(), now));
+				lastPersistedValues.put(entry.getKey(), entry.getValue());
 			}
-			configManager.setRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP,
-				configKey(entry.getKey()), serializeObserved(entry.getValue(), now));
-			lastPersistedValues.put(entry.getKey(), entry.getValue());
+			else if (last != null)
+			{
+				// An absent key means "never observed", so a non-travelable
+				// observation removes the entry — including a legacy "0:<ts>"
+				// residue — rather than leaving a dead value on the profile.
+				// lastPersistedValues holds no marker for an absent key, so a
+				// repeat non-travelable flush does not unset twice.
+				configManager.unsetRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP,
+					configKey(entry.getKey()));
+				lastPersistedValues.remove(entry.getKey());
+			}
 		}
 	}
 
