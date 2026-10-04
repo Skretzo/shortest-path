@@ -596,10 +596,13 @@ public class ShortestPathPlugin extends Plugin
 			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
 			if (configOverride != null && !configOverride.isEmpty())
 			{
-				ShortestPathPlugin.configOverride.clear();
-				for (String key : configOverride.keySet())
+				synchronized (pathfinderMutex)
 				{
-					ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
+					ShortestPathPlugin.configOverride.clear();
+					for (String key : configOverride.keySet())
+					{
+						ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
+					}
 				}
 				cacheConfigValues();
 			}
@@ -643,7 +646,10 @@ public class ShortestPathPlugin extends Plugin
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
-			configOverride.clear();
+			synchronized (pathfinderMutex)
+			{
+				configOverride.clear();
+			}
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
 		}
