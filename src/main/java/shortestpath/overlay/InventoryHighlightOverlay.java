@@ -9,9 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
@@ -80,7 +77,8 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			TransportType type = transport.getType();
 			if (!TransportType.TELEPORTATION_ITEM.equals(type)
 				&& !TransportType.TELEPORTATION_BOX.equals(type)
-				&& !TransportType.FAIRY_RING.equals(type))
+				&& !TransportType.FAIRY_RING.equals(type)
+				&& !TransportType.QUETZAL_WHISTLE.equals(type))
 			{
 				continue;
 			}
@@ -107,19 +105,6 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 		for (int id : ItemVariations.DRAMEN_STAFF.getIds())
 		{
 			dramenStaffIds.add(id);
-		}
-
-		ItemContainer wornContainer = client.getItemContainer(InventoryID.WORN);
-		Set<Integer> equippedItemIds = new HashSet<>();
-		if (wornContainer != null)
-		{
-			for (Item item : wornContainer.getItems())
-			{
-				if (item.getId() >= 0)
-				{
-					equippedItemIds.add(item.getId());
-				}
-			}
 		}
 
 		Color highlight = plugin.colourBankPickupHighlight;
@@ -149,28 +134,42 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			}
 		}
 
-		// Highlight matching items in the equipment tab
+		// Highlight matching items in the equipment tab. Equipped items are
+		// rendered by child item widgets of the static slot components; the slot
+		// widgets themselves never carry an item id.
 		for (int slotWidgetId : EQUIPMENT_SLOT_WIDGET_IDS)
 		{
 			Widget slot = client.getWidget(slotWidgetId);
-			if (slot == null || slot.isHidden() || slot.getItemId() < 0)
+			if (slot == null || slot.isHidden())
 			{
 				continue;
 			}
-			int itemId = slot.getItemId();
-			if (!itemsToHighlight.contains(itemId))
+			Widget[] children = slot.getChildren();
+			if (children == null)
 			{
 				continue;
 			}
-			// Dramen/lunar staff: skip when equipped — wearing it passively enables fairy rings
-			if (dramenStaffIds.contains(itemId) && equippedItemIds.contains(itemId))
+			for (Widget item : children)
 			{
-				continue;
-			}
-			BufferedImage outline = itemManager.getItemOutline(itemId, 1, highlight);
-			if (outline != null)
-			{
-				graphics.drawImage(outline, slot.getBounds().x, slot.getBounds().y, null);
+				if (item == null || item.isHidden() || item.getItemId() < 0)
+				{
+					continue;
+				}
+				int itemId = item.getItemId();
+				if (!itemsToHighlight.contains(itemId))
+				{
+					continue;
+				}
+				// Dramen/lunar staff: skip when equipped — wearing it passively enables fairy rings
+				if (dramenStaffIds.contains(itemId))
+				{
+					continue;
+				}
+				BufferedImage outline = itemManager.getItemOutline(itemId, 1, highlight);
+				if (outline != null)
+				{
+					graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
+				}
 			}
 		}
 
