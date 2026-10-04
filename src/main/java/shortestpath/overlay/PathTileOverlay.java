@@ -254,13 +254,7 @@ public class PathTileOverlay extends Overlay
 					counter++;
 					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
 				}
-				for (int target : plugin.getPathfinder().getTargets())
-				{
-					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-					{
-						drawTile(graphics, target, colorCalculating, -1, true);
-					}
-				}
+				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
 			else if (TileStyle.TRACER.equals(plugin.pathStyle))
 			{
@@ -302,13 +296,7 @@ public class PathTileOverlay extends Overlay
 						}
 					}
 				}
-				for (int target : plugin.getPathfinder().getTargets())
-				{
-					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-					{
-						drawTile(graphics, target, colorCalculating, -1, true);
-					}
-				}
+				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
 			else if (TileStyle.SPRITE_MARKERS.equals(plugin.pathStyle))
 			{
@@ -339,13 +327,7 @@ public class PathTileOverlay extends Overlay
 					counter++;
 					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
 				}
-				for (int target : plugin.getPathfinder().getTargets())
-				{
-					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-					{
-						drawTile(graphics, target, colorCalculating, -1, true);
-					}
-				}
+				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
 			else
 			{
@@ -364,13 +346,7 @@ public class PathTileOverlay extends Overlay
 					counter++;
 					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
 				}
-				for (int target : plugin.getPathfinder().getTargets())
-				{
-					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-					{
-						drawTile(graphics, target, colorCalculating, -1, showTiles);
-					}
-				}
+				drawUnreachedTargets(graphics, path, colorCalculating, showTiles);
 			}
 
 			if (plugin.isPathUnreachable() && plugin.showUnreachableText)
@@ -446,6 +422,17 @@ public class PathTileOverlay extends Overlay
 			}
 
 			drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter);
+		}
+	}
+
+	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
+	{
+		for (int target : plugin.getPathfinder().getTargets())
+		{
+			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
+			{
+				drawTile(graphics, target, colorCalculating, -1, draw);
+			}
 		}
 	}
 
