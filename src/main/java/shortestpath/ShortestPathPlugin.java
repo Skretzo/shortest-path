@@ -117,6 +117,8 @@ public class ShortestPathPlugin extends Plugin
 	private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
 	private static final String PLUGIN_MESSAGE_QUERY = "query";
 	private static final String PLUGIN_MESSAGE_RESULT = "result";
+	private static final String PLUGIN_MESSAGE_GET_TARGET = "getTarget";
+	private static final String PLUGIN_MESSAGE_CURRENT_TARGET = "currentTarget";
 	private static final String PLUGIN_MESSAGE_ID = "id";
 	private static final String CLEAR = "Clear";
 	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
@@ -594,10 +596,13 @@ public class ShortestPathPlugin extends Plugin
 			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
 			if (configOverride != null && !configOverride.isEmpty())
 			{
-				ShortestPathPlugin.configOverride.clear();
-				for (String key : configOverride.keySet())
+				synchronized (pathfinderMutex)
 				{
-					ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
+					ShortestPathPlugin.configOverride.clear();
+					for (String key : configOverride.keySet())
+					{
+						ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
+					}
 				}
 				cacheConfigValues();
 			}
@@ -634,9 +639,17 @@ public class ShortestPathPlugin extends Plugin
 			}
 			queryPath(id, start, targets);
 		}
+		else if (PLUGIN_MESSAGE_GET_TARGET.equals(action))
+		{
+			Map<String, Object> data = event.getData();
+			postCurrentTarget(data == null ? null : data.get(PLUGIN_MESSAGE_ID));
+		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
-			configOverride.clear();
+			synchronized (pathfinderMutex)
+			{
+				configOverride.clear();
+			}
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
 		}
@@ -838,6 +851,49 @@ public class ShortestPathPlugin extends Plugin
 		data.put(PLUGIN_MESSAGE_TRANSPORTS, List.of());
 		data.put("reason", reason);
 		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
+	}
+
+	/**
+	 * Answers a {@code getTarget} plugin message with a {@code currentTarget} message carrying
+	 * the caller's {@code id} and a snapshot of the displayed path's start and targets. This is
+	 * a read-only request: it launches no pathfinding work and mutates no state.
+	 *
+	 * <p>The start/targets pair is read while holding {@link #pathfinderMutex} so a request
+	 * arriving mid-search sees one consistent snapshot rather than a torn pair; the mutex is
+	 * released before the response hops to the client thread. When no path is set the response
+	 * carries {@code set=false} and no start or target fields.
+	 */
+	private void postCurrentTarget(Object id)
+	{
+		int start;
+		Set<Integer> targets;
+		Map<String, Object> overrides;
+		synchronized (pathfinderMutex)
+		{
+			start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
+			targets = (pathfinder == null) ? Set.of() : new HashSet<>(pathfinder.getTargets());
+			overrides = configOverride.isEmpty() ? null : new HashMap<>(configOverride);
+		}
+
+		Map<String, Object> data = new HashMap<>();
+		data.put(PLUGIN_MESSAGE_ID, id);
+		data.put("set", !targets.isEmpty());
+		if (!targets.isEmpty())
+		{
+			data.put(PLUGIN_MESSAGE_START,
+				start == WorldPointUtil.UNDEFINED ? null : WorldPointUtil.unpackWorldPoint(start));
+			List<WorldPoint> unpackedTargets = new ArrayList<>(targets.size());
+			for (int target : targets)
+			{
+				unpackedTargets.add(WorldPointUtil.unpackWorldPoint(target));
+			}
+			data.put(PLUGIN_MESSAGE_TARGET, unpackedTargets);
+		}
+		if (overrides != null)
+		{
+			data.put(PLUGIN_MESSAGE_CONFIG_OVERRIDE, overrides);
+		}
+		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_CURRENT_TARGET, data)));
 	}
 
 	/**
