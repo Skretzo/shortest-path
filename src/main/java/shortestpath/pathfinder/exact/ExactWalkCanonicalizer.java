@@ -59,14 +59,25 @@ public final class ExactWalkCanonicalizer
 
 	private final CollisionMap map;
 	private final PreparedRoutingAccount account;
+	private final SearchRestrictions restrictions;
 	private final StateTable states = new StateTable();
 	private final LexHeap heap = new LexHeap();
 
 	public ExactWalkCanonicalizer(CollisionMap map, PreparedRoutingAccount account)
 	{
-		if (map == null || account == null) throw new NullPointerException();
+		this(map, account, SearchRestrictions.none());
+	}
+
+	/**
+	 * @param restrictions the search's positional gates: a canonical walk must obey them too, or
+	 * it could reroute a leg through tiles the forward search was not allowed to enter
+	 */
+	public ExactWalkCanonicalizer(CollisionMap map, PreparedRoutingAccount account, SearchRestrictions restrictions)
+	{
+		if (map == null || account == null || restrictions == null) throw new NullPointerException();
 		this.map = map;
 		this.account = account;
+		this.restrictions = restrictions;
 	}
 
 	/** Why a leg kept the search's own walk. */
@@ -347,6 +358,10 @@ public final class ExactWalkCanonicalizer
 					// A blocked goal tile may still be stepped onto cardinally, as the exact search does.
 					if (direction >= 4 || blocked || !goal.entersBlockedTiles() || !map.isBlocked(nx, ny, plane)
 						|| !goal.contains(nx, ny)) continue;
+				}
+				if (!restrictions.stepAllowed(packed, WorldPointUtil.packWorldPoint(nx, ny, plane)))
+				{
+					continue;
 				}
 				long bound = goal.lowerBound(nx, ny);
 				int nextTicks = gTicks + 1;

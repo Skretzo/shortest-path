@@ -3,7 +3,9 @@ package shortestpath.pathfinder;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
+import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.exact.ExactForwardSearch;
 import shortestpath.pathfinder.exact.ExactRoute;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
@@ -11,6 +13,7 @@ import shortestpath.pathfinder.exact.ExactWalkCanonicalizer;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 import shortestpath.pathfinder.exact.PreparedTarget;
 import shortestpath.pathfinder.exact.RoutingStatic;
+import shortestpath.pathfinder.exact.SearchRestrictions;
 import shortestpath.pathfinder.exact.SiteGraph;
 
 /** ActiveSearch adapter for the exact core. */
@@ -24,6 +27,7 @@ public final class ExactPathfinder implements ActiveSearch
 	private final Supplier<RoutingStatic> routingStatic;
 	private final ExactRoutingSession session;
 	private final PreparedRoutingAccount account;
+	private final SearchRestrictions restrictions;
 	private final long cutoffMillis;
 	private final double heuristicWeight;
 	private final long accountPrepareNanos;
@@ -106,6 +110,7 @@ public final class ExactPathfinder implements ActiveSearch
 		long phaseStarted = System.nanoTime();
 		this.account = config.prepareExactRoutingAccount(true);
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
+		this.restrictions = restrictions(config, this.targets);
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
@@ -118,6 +123,31 @@ public final class ExactPathfinder implements ActiveSearch
 		return () -> routingStatic;
 	}
 
+	/**
+	 * The same positional gates legacy checks per edge: {@code avoidWilderness} and the league's
+	 * always-blocked region, each lifted when a target lies inside the gated area (the user asked
+	 * for that tile, so the route must be allowed to reach it).
+	 */
+	private static SearchRestrictions restrictions(PathfinderConfig config, Set<Integer> targets)
+	{
+		boolean avoidWilderness = config.isAvoidWilderness() && !WildernessChecker.isInWilderness(targets);
+		LeagueModeState league = config.getLeagueModeState();
+		IntPredicate blockedRegion = null;
+		if (league != null && league.isSeasonal())
+		{
+			boolean targetInBlockedRegion = false;
+			for (int target : targets)
+			{
+				targetInBlockedRegion |= league.isInBlockedRegion(target);
+			}
+			if (!targetInBlockedRegion)
+			{
+				blockedRegion = league::isInBlockedRegion;
+			}
+		}
+		return SearchRestrictions.of(avoidWilderness, blockedRegion);
+	}
+
 	private ExactPathfinder(int start, Set<Integer> targets, Runnable completionCallback, String failure)
 	{
 		this.start = start;
@@ -127,6 +157,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.routingStatic = null;
 		this.session = null;
 		this.account = null;
+		this.restrictions = SearchRestrictions.none();
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
@@ -306,7 +337,7 @@ public final class ExactPathfinder implements ActiveSearch
 							return true;
 						}
 						return false;
-					}, heuristicWeight);
+					}, heuristicWeight, restrictions);
 				forwardSearchNanos = System.nanoTime() - phaseStarted;
 				stats.nodesChecked += current.counters().statesPopped();
 				stats.transportsChecked += current.counters().transportCandidates();
@@ -328,8 +359,8 @@ public final class ExactPathfinder implements ActiveSearch
 					// Publish only the canonical path, so the render thread never shows the raw one:
 					// each walking leg's canonical walk among the equally cheap ones.
 					phaseStarted = System.nanoTime();
-					ExactWalkCanonicalizer.Result canonical = new ExactWalkCanonicalizer(collision, account)
-						.canonicalize(found);
+					ExactWalkCanonicalizer.Result canonical = new ExactWalkCanonicalizer(collision, account,
+						restrictions).canonicalize(found);
 					walkCanonicalizeNanos = System.nanoTime() - phaseStarted;
 					walkDiagnostics = canonical.diagnostics();
 					path = canonical.path();

@@ -7,6 +7,7 @@ import java.util.function.BooleanSupplier;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.WildernessChecker;
 
 /** Correctness-first forward search over tiles, capability hubs, and bank layers. */
 public final class ExactForwardSearch
@@ -40,10 +41,23 @@ public final class ExactForwardSearch
 	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
 		BooleanSupplier cancelled, boolean optimized, double heuristicWeight)
 	{
-		if (target == null || heuristic == null || cancelled == null) throw new NullPointerException();
+		return search(target, heuristic, start, cancelled, optimized, heuristicWeight,
+			SearchRestrictions.none());
+	}
+
+	/**
+	 * {@code restrictions} applies the same positional gates as legacy's per-edge checks: the
+	 * caller decides them per search, while the prepared graph and heuristic stay unchanged —
+	 * gating only removes edges, so the heuristic can only under-estimate the distances left.
+	 */
+	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
+		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions)
+	{
+		if (target == null || heuristic == null || cancelled == null || restrictions == null)
+			throw new NullPointerException();
 		if (heuristic.overlay() != target) throw new IllegalArgumentException("heuristic belongs to another target overlay");
 		validateHeuristicWeight(heuristicWeight);
-		SearchSpace space = SearchSpace.create(target, start);
+		SearchSpace space = SearchSpace.create(target, start, restrictions);
 		TeleportCapability capability = capabilityAt(start);
 		int tileStates = space.tileCount * 2;
 		// From a start with every global castable they are all seeded there, since casting one later
@@ -200,7 +214,7 @@ public final class ExactForwardSearch
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
-		if ((mask & (1 << bit)) != 0 && next >= 0 && next < space.baseCount)
+		if ((mask & (1 << bit)) != 0 && next >= 0 && next < space.baseCount && space.stepAllowed(from / 2, next))
 			relaxState(space, from, stateForNode(next, banked), cost, 1, best, previous, queue, counters,
 				restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_WALKING);
 	}
@@ -223,8 +237,9 @@ public final class ExactForwardSearch
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		int node = space.node(tile);
-		if (node >= 0) relaxState(space, from, stateForNode(node, banked), cost, 1, best, previous, queue, counters,
-			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_WALKING);
+		if (node >= 0 && space.stepAllowed(from / 2, node))
+			relaxState(space, from, stateForNode(node, banked), cost, 1, best, previous, queue, counters,
+				restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_WALKING);
 	}
 
 	private static void relaxBank(TargetOverlay target, SearchSpace space, int node, boolean banked, int from, int cost,
@@ -240,16 +255,20 @@ public final class ExactForwardSearch
 		relaxState(space, from, stateForNode(node, true), bankedCost, 0, best, previous, queue, counters,
 			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_BANKING);
 		// With hubs (a start without every global castable) the banked hub of this tile's
-		// capability casts them. Without, they are cast here, as far as this bank's wilderness level
-		// allows; no bank is in the wilderness, so that is every banked global.
+		// capability casts them. Without, they are cast here, as far as this bank tile's own
+		// wilderness level allows.
 		if (capability == TeleportCapability.ALL)
 		{
 			TeleportCapability here = capabilityAt(space.tile(node));
 			for (int i = 0; i < target.account().globalCount(here, true); i++)
+			{
+				int destination = target.account().globalDestination(here, true, i);
+				if (!space.globalAllowed(here, destination)) continue;
 				if (!optimized || cost <= bestBankCost[0])
-					relaxTransport(space, from, true, bankedCost, target.account().globalDestination(here, true, i), target.account().globalCost(here, true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
-				else if (space.node(target.account().globalDestination(here, true, i)) >= 0)
+					relaxTransport(space, from, true, bankedCost, destination, target.account().globalCost(here, true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
+				else if (space.node(destination) >= 0)
 					counters.bankGlobalSuppressed++;
+			}
 		}
 	}
 
@@ -260,8 +279,15 @@ public final class ExactForwardSearch
 		PreparedRoutingAccount.View view = target.account().localView(banked);
 		int start = lowerBound(view.origins, tile);
 		for (int i = start; i < view.count && view.origins[i] == tile; i++)
+		{
+			int node = space.node(view.destinations[i]);
+			// Legacy checks the positional gates on a transport's destination node exactly like a
+			// walked neighbour (crossing the wilderness ditch is a transport, and must not bypass
+			// the avoid-wilderness gate), so apply them to the jump's landing tile.
+			if (node < 0 || !space.stepAllowed(from / 2, node)) continue;
 			relaxTransport(space, from, banked, cost, view.destinations[i], view.costs[i], best, previous, queue,
 				counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_LOCAL);
+		}
 	}
 
 	private static void relaxTransport(SearchSpace space, int from, boolean banked, int cost, int destination, int stepCost,
@@ -304,6 +330,9 @@ public final class ExactForwardSearch
 		{
 			counters.transportCandidates++;
 			int destination = target.account().globalDestination(capability, false, i);
+			// This duplicates the start-capability hub: the hub offers these transports again when
+			// it pops, but seeding them here starts their states without a hub round-trip.
+			if (!space.globalAllowed(capability, destination)) continue;
 			int node = space.node(destination);
 			if (node < 0) continue;
 			int state = stateForNode(node, false);
@@ -344,11 +373,14 @@ public final class ExactForwardSearch
 	{
 		TeleportCapability capability = hubCapability(tileStates, state);
 		boolean banked = ((state - tileStates) & 1) != 0;
+		// A hub stands for every tile in its wilderness band, so the capability doubles as the
+		// source position legacy checks a global teleport against.
 		int count = target.account().globalCount(capability, banked);
 		for (int i = 0; i < count; i++)
 		{
 			counters.transportCandidates++;
 			int destination = target.account().globalDestination(capability, banked, i);
+			if (!space.globalAllowed(capability, destination)) continue;
 			int node = space.node(destination);
 			if (node < 0) continue;
 			int stepCost = target.account().globalCost(capability, banked, i);
@@ -757,14 +789,25 @@ public final class ExactForwardSearch
 
 	private static final class SearchSpace
 	{
+		private static final int STATUS_CLEAR = 1;
+		private static final int STATUS_WILDERNESS = 2;
+		private static final int STATUS_BLOCKED_REGION = 4;
+
 		final RoutingStatic stat; final int[] extraTiles, extraSites; final int[][] extraComponents;
 		final int baseCount, tileCount; private final PreparedRoutingAccount account;
+		private SearchRestrictions restrictions = SearchRestrictions.none();
+		/**
+		 * Per-node gate status bits, computed on first ask: entering the wilderness or the blocked
+		 * league region is asked about on every walking edge, so the lookups are memoised. Only
+		 * allocated while a gate is active.
+		 */
+		private byte[] gateBits;
 		private SearchSpace(RoutingStatic stat, PreparedRoutingAccount account, int[] extraTiles,
 			int[][] extraComponents, int[] extraSites)
 	{ this.stat = stat; this.account = account; this.extraTiles = extraTiles; this.extraComponents = extraComponents;
 		this.extraSites = extraSites; baseCount = stat.searchTileCount(); tileCount = baseCount + extraTiles.length;
 	}
-		static SearchSpace create(TargetOverlay target, int start)
+		static SearchSpace create(TargetOverlay target, int start, SearchRestrictions restrictions)
 		{
 			RoutingStatic stat = target.routingStatic(); int[] values = new int[stat.siteCount() + target.targetCount() + 1]; int count = 0;
 			for (int site = 0; site < stat.siteCount(); site++) count = add(values, count, stat.siteTile(site), stat);
@@ -780,7 +823,13 @@ public final class ExactForwardSearch
 	{ int tile = extras[i], site = stat.siteIndex(tile), targetIndex = target.targetIndex(tile); sites[i] = site;
 		components[i] = targetIndex >= 0 ? target.componentsView(targetIndex) : site >= 0 ? stat.siteComponents(site) : stat.attachments(tile, target.collision());
 	}
-			return new SearchSpace(stat, target.account(), extras, components, sites);
+			SearchSpace space = new SearchSpace(stat, target.account(), extras, components, sites);
+			space.restrictions = restrictions;
+			if (restrictions.anyGate())
+			{
+				space.gateBits = new byte[space.tileCount];
+			}
+			return space;
 		}
 		private static int add(int[] values, int count, int value, RoutingStatic stat)
 	{ if (stat.searchIndex(value) >= 0) return count; for (int i = 0; i < count; i++) if (values[i] == value) return count; values[count] = value; return count + 1;
@@ -813,6 +862,33 @@ public final class ExactForwardSearch
 		boolean hasLocalOrigin(int tile, boolean banked)
 	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.count && view.origins[index] == tile;
 	}
+		/** The node's wilderness/blocked-region status bits, computed on first ask. */
+		private int gateStatus(int node)
+		{
+			int value = gateBits[node];
+			if (value == 0)
+			{
+				int tile = tile(node);
+				value = STATUS_CLEAR
+					| (WildernessChecker.isInWilderness(tile) ? STATUS_WILDERNESS : 0)
+					| (restrictions.inBlockedRegion(tile) ? STATUS_BLOCKED_REGION : 0);
+				gateBits[node] = (byte) value;
+			}
+			return value;
+		}
+		/** Legacy's tile-to-tile gate: a step may not enter the wilderness or the blocked region. */
+		boolean stepAllowed(int fromNode, int toNode)
+		{
+			if (gateBits == null) return true;
+			int from = gateStatus(fromNode), to = gateStatus(toNode);
+			return restrictions.stepAllowed((from & STATUS_WILDERNESS) != 0, (to & STATUS_WILDERNESS) != 0,
+				(from & STATUS_BLOCKED_REGION) != 0, (to & STATUS_BLOCKED_REGION) != 0);
+		}
+		/** Whether a global cast with {@code capability} (the source band) may land on the tile. */
+		boolean globalAllowed(TeleportCapability capability, int destination)
+		{
+			return restrictions.globalAllowed(capability, destination);
+		}
 		private static int binarySearch(int[] values, int target)
 	{ int low = 0, high = values.length - 1; while (low <= high)
 	{ int middle = low + (high - low) / 2, compare = Integer.compareUnsigned(values[middle], target); if (compare == 0) return middle; if (compare < 0) low = middle + 1; else high = middle - 1;

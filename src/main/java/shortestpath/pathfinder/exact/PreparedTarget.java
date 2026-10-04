@@ -44,7 +44,18 @@ public final class PreparedTarget
 
 	public ExactForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight)
 	{
-		return ExactForwardSearch.search(overlay, heuristic, start, cancelled, heuristicWeight);
+		return search(start, cancelled, heuristicWeight, SearchRestrictions.none());
+	}
+
+	/**
+	 * {@code restrictions} mirrors the positional gates legacy applies per edge; they only remove
+	 * edges, so the prepared heuristic stays admissible and this target may be reused.
+	 */
+	public ExactForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight,
+		SearchRestrictions restrictions)
+	{
+		return ExactForwardSearch.search(overlay, heuristic, start, cancelled, true, heuristicWeight,
+			restrictions);
 	}
 
 	public TargetOverlay overlay()
