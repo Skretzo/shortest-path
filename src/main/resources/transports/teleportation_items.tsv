@@ -374,7 +374,7 @@
 1504 3815 0			13393=1		4	Xeric's talisman: 3. Xeric's Inferno	T	20		
 1644 3673 0			13393=1		4	Xeric's talisman: 4. Xeric's Heart	T	20		
 # Requires the use of an ancient tablet to activate										
-1254 3560 0			13393=1		4	Xeric's talisman: 5. Xeric's Honour	T	20		
+1254 3560 0			13393=1&UNLOCK_XERICS_HONOUR=1		4	Xeric's talisman: 5. Xeric's Honour	T	20		
 3200 3355 0			13660=1		4	Chronicle	T	0		
 3615 9461 0			26914=1		4	Amulet of the eye	F	20		
 2981 3276 0			26818=1		4	Ring of the elements: Air	T	20		

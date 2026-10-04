@@ -169,6 +169,99 @@ public class PathfinderTest
 		assertFalse(pattern.matcher("myUnlockCanoeAxe").matches());
 	}
 
+	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";
+	private static final String XERICS_LOOKOUT = "Xeric's talisman: 1. Xeric's Lookout";
+
+	@Test
+	public void xericsHonourIsGatedBehindTheDeclaredUnlockInEveryItemMode()
+	{
+		// The ancient-tablet unlock is a gate, not an item: modes that skip item
+		// evaluation entirely (ALL/UNLOCKED early-return before hasRequiredItems)
+		// must still refuse the Honour destination while it is undeclared. The
+		// ungated sibling destinations stay usable as the control.
+		for (TeleportationItem mode : new TeleportationItem[]{
+			TeleportationItem.INVENTORY,
+			TeleportationItem.INVENTORY_AND_BANK,
+			TeleportationItem.UNLOCKED,
+			TeleportationItem.ALL})
+		{
+			setupInventory(new Item(ItemID.XERIC_TALISMAN, 1));
+			setupConfig(QuestState.FINISHED, 99, mode);
+			assertFalse("Honour offered under " + mode + " without the declared unlock",
+				hasUsableTeleport(XERICS_HONOUR));
+			assertTrue("ungated Xeric's destination missing under " + mode,
+				hasUsableTeleport(XERICS_LOOKOUT));
+		}
+	}
+
+	@Test
+	public void xericsHonourIsUsableWhenTheUnlockIsDeclared()
+	{
+		when(config.unlockXericsHonour()).thenReturn(true);
+		setupInventory(new Item(ItemID.XERIC_TALISMAN, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertTrue(hasUsableTeleport(XERICS_HONOUR));
+	}
+
+	@Test
+	public void xericsHonourStillNeedsTheTalismanWhenUnlocked()
+	{
+		// The unlock opens the destination; it does not conjure the talisman.
+		when(config.unlockXericsHonour()).thenReturn(true);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport(XERICS_HONOUR));
+	}
+
+	@Test
+	public void xericsHonourUnderAllModeNeedsOnlyTheDeclaredUnlock()
+	{
+		// ALL presumes every item including the talisman, so the declared unlock
+		// is the only remaining gate.
+		when(config.unlockXericsHonour()).thenReturn(true);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
+		assertTrue(hasUsableTeleport(XERICS_HONOUR));
+	}
+
+	@Test
+	public void pohHonourXericsTalismanIsGatedByTheDeclaredUnlock()
+	{
+		// The POH Honour mounted-talisman row has no Items column to carry the
+		// unlock term, so the gate is checked in code — regardless of the
+		// jewellery-box tier, which only covers actual jewellery boxes.
+		when(config.usePoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(Set.of());
+		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
+		when(config.pohMountedItems()).thenReturn(EnumSet.of(PohMountedItem.XERICS_TALISMAN));
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		assertFalse("POH Honour box offered without the declared unlock",
+			hasActiveTeleportationBox("Honour"));
+		assertTrue("ungated POH Xeric's destinations stay usable",
+			hasActiveTeleportationBox("Lookout"));
+
+		when(config.unlockXericsHonour()).thenReturn(true);
+		pathfinderConfig.refresh();
+		assertTrue("POH Honour box usable once the unlock is declared",
+			hasActiveTeleportationBox("Honour"));
+		assertTrue("ungated POH Xeric's destinations stay usable",
+			hasActiveTeleportationBox("Lookout"));
+	}
+
+	private boolean hasActiveTeleportationBox(String displayInfo)
+	{
+		for (Transport t : activeTransportList())
+		{
+			if (t.isType(TransportType.TELEPORTATION_BOX) && t.hasDisplayInfo(displayInfo))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	@Test
 	public void testCharterShips()
 	{

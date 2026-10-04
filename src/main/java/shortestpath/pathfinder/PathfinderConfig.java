@@ -342,6 +342,10 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.CANOE_AXE);
 		}
+		if (ShortestPathPlugin.override("unlockXericsHonour", config.unlockXericsHonour()))
+		{
+			declaredUnlocks.add(Unlock.XERICS_HONOUR);
+		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
@@ -884,6 +888,15 @@ public class PathfinderConfig
 	 */
 	private boolean checkUnlockGates(Transport transport)
 	{
+		// The POH Honour teleportation box has no Items column to carry the
+		// unlock term, so it is gated here by its display info, the same
+		// singleton pattern as checkRespawnGate.
+		if (TransportType.TELEPORTATION_BOX.equals(transport.getType())
+			&& transport.hasDisplayInfo("Honour")
+			&& !unlocks.contains(Unlock.XERICS_HONOUR))
+		{
+			return false;
+		}
 		TransportItems itemRequirements = transport.getItemRequirements();
 		if (itemRequirements == null)
 		{
