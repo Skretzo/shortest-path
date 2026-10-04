@@ -207,7 +207,7 @@ public class MultiTargetTest
 	private static PreparedRoutingAccount account(Transport... local)
 	{
 		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(local),
-			TransportAvailabilityFixture.of(), false, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), false, java.util.Set.of(), true, ignored -> 0);
 	}
 
 	private static Transport local(int origin, int destination, int duration)

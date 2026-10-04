@@ -235,7 +235,8 @@ public class ReverseLabelsTest
 	private static PreparedRoutingAccount account(Transport[] carried, Transport[] banked, boolean bankPath)
 	{
 		return PreparedRoutingAccount.compile(
-			availability(carried), availability(banked), bankPath, true, ignored -> 0);
+			availability(carried), availability(banked), bankPath,
+			java.util.Set.of(RoutingStaticTestFixture.BANK, RoutingStaticTestFixture.T3_B), true, ignored -> 0);
 	}
 
 	private static TransportAvailability availability(Transport[] transports)

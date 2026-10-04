@@ -55,6 +55,26 @@ public class ExactRoutingSessionTest
 	}
 
 	@Test
+	public void changedBankAccessRebuildsTheGraphInBothDirections() throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		CollisionMap collision = emptyCollision();
+		ExactRoutingSession session = new ExactRoutingSession();
+
+		SiteGraph inaccessible = session.graph(stat, bankingAccount(java.util.Set.of())).value();
+		ExactRoutingSession.Lookup<SiteGraph> accessible = session.graph(stat, bankingAccount(java.util.Set.of(BANK)));
+		assertFalse(accessible.reused());
+		assertTrue(search(accessible.value(), collision).reached());
+
+		ExactRoutingSession.Lookup<SiteGraph> again = session.graph(stat, bankingAccount(java.util.Set.of()));
+		assertFalse("a graph that may bank must not be reused for an account that may not", again.reused());
+		assertNotSame(inaccessible, again.value());
+		ExactForwardSearch.Result result = search(again.value(), collision);
+		assertFalse(result.reached());
+		assertFalse(result.path().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	@Test
 	public void differentStaticDataRebuildsTheGraph() throws Exception
 	{
 		ExactRoutingSession session = new ExactRoutingSession();
@@ -154,7 +174,23 @@ public class ExactRoutingSessionTest
 	private static PreparedRoutingAccount account(Transport global)
 	{
 		TransportAvailability availability = TransportAvailabilityFixture.of(global);
-		return PreparedRoutingAccount.compile(availability, availability, false, true, ignored -> 0);
+		return PreparedRoutingAccount.compile(availability, availability, false, java.util.Set.of(), true,
+			ignored -> 0);
+	}
+
+	/** Banks at BANK (reached by a local transport from A) to take the only teleport to D. */
+	private static PreparedRoutingAccount bankingAccount(java.util.Set<Integer> accessibleBanks)
+	{
+		Transport toBank = new Transport.TransportBuilder().origin(A).destination(BANK)
+			.type(TransportType.TRANSPORT).duration(1).build();
+		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(toBank),
+			TransportAvailabilityFixture.of(global(D, 3)), true, accessibleBanks, true, ignored -> 0);
+	}
+
+	private static ExactForwardSearch.Result search(SiteGraph graph, CollisionMap collision)
+	{
+		TargetOverlay target = new TargetOverlay(graph, collision, D);
+		return ExactForwardSearch.search(target, PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), A);
 	}
 
 	private static Transport global(int destination, int duration)

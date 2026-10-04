@@ -31,14 +31,14 @@ public class ExactForwardSearchHotPathTest
 				ExactForwardSearch.stateForNode(node, false));
 			assertEquals(stat.searchIndex(stat.searchTile(node)) * 2 + 1,
 				ExactForwardSearch.stateForNode(node, true));
-			assertEquals(isBankTile(stat, stat.searchTile(node)), stat.isReachableBankNode(node));
+			assertEquals(isBankTile(stat, stat.searchTile(node)), stat.isBankNode(node));
 			for (boolean banked : new boolean[] {false, true})
 				assertEquals(heuristic.estimate(stat.searchTile(node), banked,
 					new int[] {stat.routingComponent(node)}), heuristic.estimateBaseNode(stat.searchTile(node),
 					banked, stat.routingComponent(node)));
 		}
 		for (int site = 0; site < stat.siteCount(); site++)
-			assertEquals(isBankTile(stat, stat.siteTile(site)), stat.isReachableBankSite(site));
+			assertEquals(isBankTile(stat, stat.siteTile(site)), stat.isBankSite(site));
 	}
 
 	@Test
@@ -149,7 +149,7 @@ public class ExactForwardSearchHotPathTest
 	private static PreparedRoutingAccount account(Transport... transports)
 	{
 		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(transports),
-			TransportAvailabilityFixture.of(), false, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), false, java.util.Set.of(), true, ignored -> 0);
 	}
 
 	private static Transport local(int origin, int destination, int cost)

@@ -27,7 +27,7 @@ public class PreparedRoutingAccountTest
 				.type(TransportType.TRANSPORT).duration(1).build();
 		TransportAvailability availability = TransportAvailabilityFixture.of(transports);
 
-		PreparedRoutingAccount account = PreparedRoutingAccount.compile(availability, availability, false, true,
+		PreparedRoutingAccount account = PreparedRoutingAccount.compile(availability, availability, false, java.util.Set.of(), true,
 			ignored -> 0);
 
 		assertEquals(origins.length, account.localCount(false));

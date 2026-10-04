@@ -30,7 +30,7 @@ public final class SiteGraph
 		this.account = account;
 		int spatialCount = stat.siteCount();
 		validateEndpoints(account, stat);
-		int[] bankSites = bankSites(stat);
+		int[] bankSites = bankSites(stat, account);
 		int[] globalDestinations = globalDestinations(account, stat);
 		hasBankedGlobalHub = account.allowTransports() && account.bankPathEnabled() && bankSites.length != 0
 			&& globalDestinations.length != 0;
@@ -198,16 +198,21 @@ public final class SiteGraph
 		}
 	}
 
-	private static int[] bankSites(RoutingStatic stat)
+	/** The static bank sites this account may use. */
+	private static int[] bankSites(RoutingStatic stat, PreparedRoutingAccount account)
 	{
 		int[] result = new int[stat.reachableBankCount()];
+		int count = 0;
 		for (int i = 0; i < result.length; i++)
 		{
-			result[i] = stat.siteIndex(stat.reachableBankTile(i));
-			if (result[i] < 0)
+			int tile = stat.reachableBankTile(i);
+			int site = stat.siteIndex(tile);
+			if (site < 0)
 				throw new IllegalStateException("reachable bank is not a static site");
+			if (account.bankAccessible(tile))
+				result[count++] = site;
 		}
-		return result;
+		return Arrays.copyOf(result, count);
 	}
 
 	private static int[] globalDestinations(PreparedRoutingAccount account, RoutingStatic stat)

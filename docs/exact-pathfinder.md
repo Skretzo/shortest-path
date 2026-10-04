@@ -14,9 +14,9 @@ coordinates, collision data and transport types are shared with legacy.
 
 `ShortestPathConfig` owns RuneLite user settings. `PathfinderConfig` owns
 client/account refresh, requirement evaluation, transport availability, costs,
-wilderness preference, bank-path enablement and the calculation cutoff. Exact
-code consumes prepared values and never evaluates requirements or reads the
-client directly.
+wilderness preference, bank-path enablement, bank requirements and the
+calculation cutoff. Exact code consumes prepared values and never evaluates
+requirements or reads the client directly.
 
 ## Data lifetimes
 

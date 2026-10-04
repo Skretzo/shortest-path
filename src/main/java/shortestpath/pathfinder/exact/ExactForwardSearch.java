@@ -229,7 +229,7 @@ public final class ExactForwardSearch
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight,
 		TeleportCapability capability, int[] bestBankCost)
 	{
-		if (banked || !target.account().bankPathEnabled() || !space.isReachableBankNode(node)) return;
+		if (banked || !target.account().bankPathEnabled() || !space.isUsableBankNode(node)) return;
 		relaxState(space, from, stateForNode(node, true), cost, 0, best, previous, queue, counters,
 			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_BANKING);
 		if (capability == TeleportCapability.ALL)
@@ -452,7 +452,7 @@ public final class ExactForwardSearch
 		int[] bestBankCost, MutableCounters counters)
 	{
 		if (optimized && (state & 1) == 0 && space.bankGlobalRelevant() && cost < bestBankCost[0]
-			&& space.isReachableBankNode(state / 2))
+			&& space.isUsableBankNode(state / 2))
 		{
 			bestBankCost[0] = cost;
 			counters.bestBankUpdates++;
@@ -780,8 +780,12 @@ public final class ExactForwardSearch
 		boolean isBase(int node)
 	{ return node < baseCount;
 	}
-		boolean isReachableBankNode(int node)
-	{ return node < baseCount ? stat.isReachableBankNode(node) : stat.isReachableBankSite(extraSites[node - baseCount]);
+		/** A bank in the world (static topology) that this account may use (prepared account). */
+		boolean isUsableBankNode(int node)
+	{ return isBankNode(node) && account.bankAccessible(tile(node));
+	}
+		boolean isBankNode(int node)
+	{ return node < baseCount ? stat.isBankNode(node) : stat.isBankSite(extraSites[node - baseCount]);
 	}
 		boolean bankGlobalRelevant()
 		{ return account.allowTransports() && account.bankPathEnabled();

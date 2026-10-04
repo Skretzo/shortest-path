@@ -61,7 +61,8 @@ public class BankDominanceTest
 	{
 		return PreparedRoutingAccount.compile(
 			TransportAvailabilityFixture.of(local(A, X, 1), local(A, BANK2, 5), local(X, BANK1, 1), local(BANK2, D, 7)),
-			TransportAvailabilityFixture.of(local(BANK2, Y, 10), local(Y, D, 1), global(D, 100)), true, true, ignored -> 0);
+			TransportAvailabilityFixture.of(local(BANK2, Y, 10), local(Y, D, 1), global(D, 100)), true,
+			java.util.Set.of(BANK1, BANK2), true, ignored -> 0);
 	}
 
 	private static Transport local(int origin, int destination, int duration)

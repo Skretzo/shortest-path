@@ -1,6 +1,7 @@
 package shortestpath.pathfinder.exact;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.ToIntFunction;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.pathfinder.TransportAvailability;
@@ -15,16 +16,19 @@ public final class PreparedRoutingAccount
 
 	private final boolean allowTransports;
 	private final boolean bankPathEnabled;
+	/** Bank tiles this account may use, in unsigned order: a subset of the static bank tiles. */
+	private final int[] accessibleBankTiles;
 	private final View[] local = new View[2];
 	private final View[] global = new View[2];
 	private final View[] wildernessGlobal = new View[2];
 	private final long fingerprint;
 
-	private PreparedRoutingAccount(
-		boolean allowTransports, boolean bankPathEnabled, View[] local, View[] global, View[] wildernessGlobal)
+	private PreparedRoutingAccount(boolean allowTransports, boolean bankPathEnabled, int[] accessibleBankTiles,
+		View[] local, View[] global, View[] wildernessGlobal)
 	{
 		this.allowTransports = allowTransports;
 		this.bankPathEnabled = bankPathEnabled;
+		this.accessibleBankTiles = accessibleBankTiles;
 		this.local[0] = local[0];
 		this.local[1] = local[1];
 		this.global[0] = global[0];
@@ -34,12 +38,20 @@ public final class PreparedRoutingAccount
 		this.fingerprint = computeFingerprint();
 	}
 
+	/**
+	 * @param accessibleBankTiles the bank tiles whose requirements this account meets, as resolved by
+	 * {@code PathfinderConfig.bankAccessible}; the static data knows every bank, so this decides
+	 * which of them may switch a route into the banked layer
+	 */
 	public static PreparedRoutingAccount compile(TransportAvailability carried, TransportAvailability banked,
-		boolean bankPathEnabled, boolean allowTransports, ToIntFunction<Transport> additionalCost)
+		boolean bankPathEnabled, Collection<Integer> accessibleBankTiles, boolean allowTransports,
+		ToIntFunction<Transport> additionalCost)
 	{
+		int[] banks = sortedUnsigned(accessibleBankTiles);
 		if (!allowTransports)
 		{
-			return new PreparedRoutingAccount(false, bankPathEnabled, new View[] {View.empty(true), View.empty(true)},
+			return new PreparedRoutingAccount(false, bankPathEnabled, banks,
+				new View[] {View.empty(true), View.empty(true)},
 				new View[] {View.empty(false), View.empty(false)}, new View[] {View.empty(false), View.empty(false)});
 		}
 
@@ -53,7 +65,23 @@ public final class PreparedRoutingAccount
 			global[bankedState] = View.global(availability.getUsableTeleports(), additionalCost, false);
 			wilderness[bankedState] = View.global(availability.getUsableTeleports(), additionalCost, true);
 		}
-		return new PreparedRoutingAccount(true, bankPathEnabled, local, global, wilderness);
+		return new PreparedRoutingAccount(true, bankPathEnabled, banks, local, global, wilderness);
+	}
+
+	private static int[] sortedUnsigned(Collection<Integer> tiles)
+	{
+		int[] result = new int[tiles.size()];
+		int size = 0;
+		for (int tile : tiles)
+			result[size++] = tile ^ Integer.MIN_VALUE;
+		Arrays.sort(result);
+		int unique = 0;
+		for (int i = 0; i < size; i++)
+			if (unique == 0 || result[unique - 1] != result[i])
+				result[unique++] = result[i];
+		for (int i = 0; i < unique; i++)
+			result[i] ^= Integer.MIN_VALUE;
+		return Arrays.copyOf(result, unique);
 	}
 
 	public boolean allowTransports()
@@ -63,6 +91,31 @@ public final class PreparedRoutingAccount
 	public boolean bankPathEnabled()
 	{
 		return bankPathEnabled;
+	}
+	/**
+	 * Whether this account may bank at {@code packedTile}. Only meaningful for a tile the static
+	 * data marks as a bank; the forward search asks only there, so the binary search stays rare.
+	 */
+	public boolean bankAccessible(int packedTile)
+	{
+		int low = 0, high = accessibleBankTiles.length - 1;
+		while (low <= high)
+		{
+			int middle = (low + high) >>> 1;
+			int compare = Integer.compareUnsigned(accessibleBankTiles[middle], packedTile);
+			if (compare == 0) return true;
+			if (compare < 0) low = middle + 1;
+			else high = middle - 1;
+		}
+		return false;
+	}
+	public int accessibleBankCount()
+	{
+		return accessibleBankTiles.length;
+	}
+	public int accessibleBankTile(int index)
+	{
+		return accessibleBankTiles[index];
 	}
 	public long fingerprint()
 	{
@@ -167,6 +220,9 @@ public final class PreparedRoutingAccount
 		long hash = FNV_OFFSET;
 		hash = mix(hash, allowTransports ? 1 : 0);
 		hash = mix(hash, bankPathEnabled ? 1 : 0);
+		hash = u32(hash, accessibleBankTiles.length);
+		for (int tile : accessibleBankTiles)
+			hash = u32(hash, tile);
 		for (int kind = 0; kind < 3; kind++)
 		{
 			for (int banked = 0; banked < 2; banked++)

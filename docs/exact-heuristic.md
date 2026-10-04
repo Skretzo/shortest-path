@@ -59,14 +59,19 @@ The graph stores the *reverse* CSR of these explicit edges (`EdgeKind`):
 | Edge | From → to | Cost | Starts generator |
 |---|---|---|---|
 | `LOCAL` | `(origin, b)` → `(dest, b)` for each available transport in layer `b` | duration + penalty | yes |
-| `BANK_TRANSITION` | `(bank, false)` → `(bank, true)` | 0 | yes |
-| `BANK_GLOBAL_ENTRY` | `(bank, false)` → `(hub, true)` | 0 | yes |
+| `BANK_TRANSITION` | `(bank, false)` → `(bank, true)` for each bank the account may use | 0 | yes |
+| `BANK_GLOBAL_ENTRY` | `(bank, false)` → `(hub, true)` for the same banks | 0 | yes |
 | `BANK_GLOBAL_DESTINATION` | `(hub, true)` → `(dest, true)` | cheapest banked global to `dest` | **no** |
 | `SEPARATOR` | both directions, both layers | crossing cost (1) | yes |
 
 The single abstract **hub** node replaces a banks × destinations bipartite
-graph. It exists only when transports and bank paths are enabled, a reachable
-bank exists, and at least one banked global destination exists.
+graph. It exists only when transports and bank paths are enabled, the account
+may use at least one bank, and at least one banked global destination exists.
+
+`RoutingStatic` holds every bank in the world. Which of them the account may
+use is `PreparedRoutingAccount.bankAccessible`, compiled from the same set
+legacy uses (`PathfinderConfig.bankAccessible`). The forward search applies
+the same rule when it enters the bank layer.
 
 Carried global teleports are deliberately **absent**. A global can be used from
 anywhere, so using it later is never cheaper than using it at the start, and

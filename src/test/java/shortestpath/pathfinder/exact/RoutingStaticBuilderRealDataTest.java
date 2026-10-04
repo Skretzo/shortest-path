@@ -63,18 +63,18 @@ public class RoutingStaticBuilderRealDataTest
 		for (int i = 0; i < mine.reachableBankCount(); i++)
 		{
 			int tile = mine.reachableBankTile(i);
-			assertTrue(mine.isReachableBankSite(mine.siteIndex(tile)));
+			assertTrue(mine.isBankSite(mine.siteIndex(tile)));
 			int node = mine.searchIndex(tile);
 			if (node >= 0)
 			{
-				assertTrue(mine.isReachableBankNode(node));
+				assertTrue(mine.isBankNode(node));
 				expectedNodes++;
 			}
 		}
 		int actualNodes = 0;
 		for (int node = 0; node < mine.searchTileCount(); node++)
 		{
-			if (mine.isReachableBankNode(node))
+			if (mine.isBankNode(node))
 			{
 				actualNodes++;
 			}
@@ -82,7 +82,7 @@ public class RoutingStaticBuilderRealDataTest
 		int actualSites = 0;
 		for (int site = 0; site < mine.siteCount(); site++)
 		{
-			if (mine.isReachableBankSite(site))
+			if (mine.isBankSite(site))
 			{
 				actualSites++;
 			}

@@ -77,6 +77,40 @@ public class ExactPathfinderTest
 	}
 
 	@Test
+	public void inaccessibleBankIsNotEnteredEvenThoughTheStaticDataHasIt()
+		throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		PreparedRoutingAccount account = account(
+			new Transport[] {local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, 1)},
+			new Transport[] {global(RoutingStaticTestFixture.D, 3)}, true, java.util.Set.of());
+		TargetOverlay target = target(stat, account, RoutingStaticTestFixture.D);
+
+		ExactForwardSearch.Result result = search(target, RoutingStaticTestFixture.A);
+
+		assertFalse("only the banked teleport reaches D, and this account cannot bank", result.reached());
+		assertFalse(result.path().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	@Test
+	public void disabledBankPathIgnoresAnAccessibleBank()
+		throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		PreparedRoutingAccount account = account(
+			new Transport[] {local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, 1)},
+			new Transport[] {global(RoutingStaticTestFixture.D, 3)}, false,
+			java.util.Set.of(RoutingStaticTestFixture.BANK));
+		TargetOverlay target = target(stat, account, RoutingStaticTestFixture.D);
+
+		ExactForwardSearch.Result result = search(target, RoutingStaticTestFixture.A);
+
+		assertTrue(account.bankAccessible(RoutingStaticTestFixture.BANK));
+		assertFalse(result.reached());
+		assertFalse(result.path().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	@Test
 	public void cancellationDoesNotPublishACompletedExactRoute()
 		throws Exception
 	{
@@ -197,7 +231,15 @@ public class ExactPathfinderTest
 
 	private static PreparedRoutingAccount account(Transport[] carried, Transport[] banked, boolean bankPath)
 	{
-		return PreparedRoutingAccount.compile(availability(carried), availability(banked), bankPath, true, ignored -> 0);
+		return account(carried, banked, bankPath,
+			java.util.Set.of(RoutingStaticTestFixture.BANK, RoutingStaticTestFixture.T3_B));
+	}
+
+	private static PreparedRoutingAccount account(Transport[] carried, Transport[] banked, boolean bankPath,
+		java.util.Set<Integer> accessibleBanks)
+	{
+		return PreparedRoutingAccount.compile(availability(carried), availability(banked), bankPath,
+			accessibleBanks, true, ignored -> 0);
 	}
 
 	private static TransportAvailability availability(Transport... transports)

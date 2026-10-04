@@ -197,11 +197,16 @@ public final class RoutingStatic
 	{
 		return reachableBankTiles[index];
 	}
-	public boolean isReachableBankNode(int node)
+	/**
+	 * Whether the search tile is a bank in the world. This is account-independent: whether an
+	 * account may bank there is {@link PreparedRoutingAccount#bankAccessible(int)}.
+	 */
+	public boolean isBankNode(int node)
 	{
 		return reachableBankNodes[node] != 0;
 	}
-	public boolean isReachableBankSite(int site)
+	/** Whether the site is a bank in the world; see {@link #isBankNode(int)}. */
+	public boolean isBankSite(int site)
 	{
 		return site >= 0 && reachableBankSites[site] != 0;
 	}

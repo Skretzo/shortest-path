@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.exact.ExactCosts;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 import shortestpath.pathfinder.exact.RoutingStatic;
@@ -39,10 +40,10 @@ public class PreparedRoutingAccountTest
 
 		PreparedRoutingAccount first =
 			PreparedRoutingAccount.compile(availability(carriedLocal, sharedLocal, wilderness, ordinary),
-				availability(bankedLocal, sharedLocal, wilderness, ordinary), true, true, ignored -> penalty);
+				availability(bankedLocal, sharedLocal, wilderness, ordinary), true, Set.of(RoutingStaticTestFixture.BANK), true, ignored -> penalty);
 		PreparedRoutingAccount second =
 			PreparedRoutingAccount.compile(availability(ordinary, wilderness, sharedLocal, carriedLocal),
-				availability(ordinary, wilderness, sharedLocal, bankedLocal), true, true, ignored -> penalty);
+				availability(ordinary, wilderness, sharedLocal, bankedLocal), true, Set.of(RoutingStaticTestFixture.BANK), true, ignored -> penalty);
 
 		assertEquals(2, first.localCount(false));
 		assertEquals(2, first.localCount(true));
@@ -65,7 +66,7 @@ public class PreparedRoutingAccountTest
 	{
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(
 			availability(global(RoutingStaticTestFixture.C, 1, 29), global(RoutingStaticTestFixture.D, 1, 30)),
-			availability(), false, true, ignored -> 0);
+			availability(), false, Set.of(), true, ignored -> 0);
 		assertEquals(2, account.globalCount(false));
 		assertEquals(1, account.wildernessGlobalCount(false));
 		assertEquals(30, account.wildernessGlobalMaxWilderness(false, 0));
@@ -79,7 +80,7 @@ public class PreparedRoutingAccountTest
 		builder.add(poh);
 		builder.remapPohTransports();
 		PreparedRoutingAccount account =
-			PreparedRoutingAccount.compile(builder.build(), availability(), false, true, ignored -> 0);
+			PreparedRoutingAccount.compile(builder.build(), availability(), false, Set.of(), true, ignored -> 0);
 		Set<Integer> origins = new HashSet<>();
 		for (int i = 0; i < account.localCount(false); i++)
 			origins.add(account.localOrigin(false, i));
@@ -87,7 +88,7 @@ public class PreparedRoutingAccountTest
 		assertTrue(origins.contains(RoutingStaticTestFixture.POH_LANDING));
 
 		PreparedRoutingAccount unavailable = PreparedRoutingAccount.compile(
-			availability(), availability(), false, true, ignored -> 0);
+			availability(), availability(), false, Set.of(), true, ignored -> 0);
 		assertEquals(0, unavailable.localCount(false));
 	}
 
@@ -98,7 +99,7 @@ public class PreparedRoutingAccountTest
 			availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, 2)),
 			availability(local(RoutingStaticTestFixture.BANK, RoutingStaticTestFixture.C, 3),
 				global(RoutingStaticTestFixture.D, 5, 29), global(RoutingStaticTestFixture.D, 2, 30)),
-			true, true, ignored -> penalty);
+			true, Set.of(RoutingStaticTestFixture.BANK), true, ignored -> penalty);
 		SiteGraph graph = new SiteGraph(stat, account);
 		int bank = graph.nodeForTile(RoutingStaticTestFixture.BANK);
 		int destination = graph.nodeForTile(RoutingStaticTestFixture.D);
@@ -124,13 +125,56 @@ public class PreparedRoutingAccountTest
 	}
 
 	@Test
+	public void accessibleBanksAreAnAccountPropertyInTheFingerprint()
+	{
+		int bank = RoutingStaticTestFixture.BANK;
+		int highPlane = WorldPointUtil.packWorldPoint(1000, 1000, 3);
+		PreparedRoutingAccount none = PreparedRoutingAccount.compile(
+			availability(), availability(), true, Set.of(), true, ignored -> 0);
+		PreparedRoutingAccount some = PreparedRoutingAccount.compile(
+			availability(), availability(), true, java.util.List.of(highPlane, bank, highPlane), true, ignored -> 0);
+		PreparedRoutingAccount reordered = PreparedRoutingAccount.compile(
+			availability(), availability(), true, java.util.List.of(bank, highPlane), true, ignored -> 0);
+
+		assertFalse(none.bankAccessible(bank));
+		assertTrue(some.bankAccessible(bank));
+		assertTrue(some.bankAccessible(highPlane));
+		assertFalse(some.bankAccessible(RoutingStaticTestFixture.C));
+		assertEquals(2, some.accessibleBankCount());
+		assertEquals(bank, some.accessibleBankTile(0));
+		assertEquals(highPlane, some.accessibleBankTile(1));
+		assertTrue(none.fingerprint() != some.fingerprint());
+		assertEquals(some.fingerprint(), reordered.fingerprint());
+	}
+
+	@Test
+	public void siteGraphOnlyBanksWhereTheAccountMay()
+	{
+		Transport bankedGlobal = global(RoutingStaticTestFixture.D, 5, 30);
+		SiteGraph inaccessible = new SiteGraph(stat, PreparedRoutingAccount.compile(
+			availability(), availability(bankedGlobal), true, Set.of(), true, ignored -> 0));
+		SiteGraph accessible = new SiteGraph(stat, PreparedRoutingAccount.compile(
+			availability(), availability(bankedGlobal), true, Set.of(RoutingStaticTestFixture.BANK), true,
+			ignored -> 0));
+		int bank = inaccessible.nodeForTile(RoutingStaticTestFixture.BANK);
+
+		assertTrue("the static data still has the bank", stat.isBankSite(stat.siteIndex(RoutingStaticTestFixture.BANK)));
+		assertFalse(inaccessible.hasBankedGlobalHub());
+		assertFalse(has(inaccessible, SiteGraph.stateId(bank, false), SiteGraph.stateId(bank, true), 0,
+			SiteGraph.EdgeKind.BANK_TRANSITION));
+		assertTrue(accessible.hasBankedGlobalHub());
+		assertTrue(has(accessible, SiteGraph.stateId(bank, false), SiteGraph.stateId(bank, true), 0,
+			SiteGraph.EdgeKind.BANK_TRANSITION));
+	}
+
+	@Test
 	public void rejectsMissingEndpointAndSaturatesOverflow()
 	{
 		try
 		{
 			new SiteGraph(stat,
 				PreparedRoutingAccount.compile(availability(local(RoutingStaticTestFixture.A, 12345, 1)),
-					availability(), false, true, ignored -> 0));
+					availability(), false, Set.of(), true, ignored -> 0));
 			fail("missing endpoint must fail");
 		}
 		catch (IllegalStateException expected)
@@ -139,13 +183,13 @@ public class PreparedRoutingAccountTest
 
 		PreparedRoutingAccount overflow = PreparedRoutingAccount.compile(
 			availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, Integer.MAX_VALUE)),
-			availability(), false, true, ignored -> 1);
+			availability(), false, Set.of(), true, ignored -> 1);
 		assertEquals(ExactCosts.INF, overflow.localCost(false, 0));
 		try
 		{
 			PreparedRoutingAccount.compile(
 				availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, 1)), availability(),
-				false, true, ignored -> - 1);
+				false, Set.of(), true, ignored -> - 1);
 			fail("negative cost must fail");
 		}
 		catch (IllegalArgumentException expected)
