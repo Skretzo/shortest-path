@@ -44,18 +44,19 @@ public final class PreparedTarget
 
 	public ExactForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight)
 	{
-		return search(start, cancelled, heuristicWeight, SearchRestrictions.none());
+		return search(start, cancelled, heuristicWeight, SearchRestrictions.none(), ExactForwardSearch.NO_PROGRESS);
 	}
 
 	/**
 	 * {@code restrictions} mirrors the positional gates legacy applies per edge; they only remove
 	 * edges, so the prepared heuristic stays admissible and this target may be reused.
+	 * {@code progressed} runs each time the closest-reached-tile record improves.
 	 */
 	public ExactForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight,
-		SearchRestrictions restrictions)
+		SearchRestrictions restrictions, Runnable progressed)
 	{
 		return ExactForwardSearch.search(overlay, heuristic, start, cancelled, true, heuristicWeight,
-			restrictions);
+			restrictions, progressed);
 	}
 
 	public TargetOverlay overlay()

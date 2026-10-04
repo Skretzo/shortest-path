@@ -337,7 +337,7 @@ public final class ExactPathfinder implements ActiveSearch
 							return true;
 						}
 						return false;
-					}, heuristicWeight, restrictions);
+					}, heuristicWeight, restrictions, deadline == null ? ExactForwardSearch.NO_PROGRESS : deadline::progressed);
 				forwardSearchNanos = System.nanoTime() - phaseStarted;
 				stats.nodesChecked += current.counters().statesPopped();
 				stats.transportsChecked += current.counters().transportCandidates();

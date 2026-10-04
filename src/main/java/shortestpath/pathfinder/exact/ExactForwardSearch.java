@@ -14,7 +14,14 @@ import shortestpath.transport.TransportType;
 /** Correctness-first forward search over tiles, capability hubs, and bank layers. */
 public final class ExactForwardSearch
 {
+	/** A {@code progressed} callback for a search whose caller does not track progress. */
+	public static final Runnable NO_PROGRESS = ExactForwardSearch::ignoreProgress;
+
 	private ExactForwardSearch()
+	{
+	}
+
+	private static void ignoreProgress()
 	{
 	}
 
@@ -44,7 +51,7 @@ public final class ExactForwardSearch
 		BooleanSupplier cancelled, boolean optimized, double heuristicWeight)
 	{
 		return search(target, heuristic, start, cancelled, optimized, heuristicWeight,
-			SearchRestrictions.none());
+			SearchRestrictions.none(), NO_PROGRESS);
 	}
 
 	/**
@@ -55,7 +62,19 @@ public final class ExactForwardSearch
 	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
 		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions)
 	{
-		if (target == null || heuristic == null || cancelled == null || restrictions == null)
+		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions,
+			NO_PROGRESS);
+	}
+
+	/**
+	 * {@code progressed} runs whenever the closest-reached-tile record improves, the same
+	 * moment legacy reports progress for its without-progress cutoff.
+	 */
+	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
+		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
+		Runnable progressed)
+	{
+		if (target == null || heuristic == null || cancelled == null || restrictions == null || progressed == null)
 			throw new NullPointerException();
 		if (heuristic.overlay() != target) throw new IllegalArgumentException("heuristic belongs to another target overlay");
 		validateHeuristicWeight(heuristicWeight);
@@ -132,7 +151,8 @@ public final class ExactForwardSearch
 			counters.statesPopped++;
 			if (target.isTarget(tile))
 				return Result.reached(cost, state, counters.snapshot(bestBankCost[0]), reconstruct(space, startState, state, previous, previousTransport, best));
-			closest.consider(state, tile, cost);
+			if (closest.consider(state, tile, cost))
+				progressed.run();
 			if (space.isBase(node))
 			{
 				walkBase(space, node, banked, state, cost, best, previous, previousTransport, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
@@ -166,7 +186,7 @@ public final class ExactForwardSearch
 			this.target = target;
 		}
 
-		void consider(int state, int tile, int cost)
+		boolean consider(int state, int tile, int cost)
 		{
 			int remaining = Integer.MAX_VALUE;
 			for (int i = 0; i < target.targetCount(); i++)
@@ -183,7 +203,9 @@ public final class ExactForwardSearch
 				this.distance = remaining;
 				this.x = tileX;
 				this.y = tileY;
+				return true;
 			}
+			return false;
 		}
 
 		ExactRoute path(SearchSpace space, int startState, int[] previous, Transport[] previousTransport, int[] best, ExactRoute startPath)
