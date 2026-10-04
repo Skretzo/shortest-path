@@ -23,12 +23,13 @@
 #1858 7051 0		Enter Boat Portal 60799		1	Boat Portal
 #1858 7051 0		Enter Boat Portal 60809		1	Boat Portal
 #1858 7051 0		Enter Boat Portal 60819		1	Boat Portal
-1858 7051 0	2757 3479 0	Camelot Camelot Portal 33094	4560=0	1	Camelot Portal
-1858 7051 0	2757 3479 0	Camelot Camelot Portal 33100	4560=0	1	Camelot Portal
-1858 7051 0	2757 3479 0	Camelot Camelot Portal 33106	4560=0	1	Camelot Portal
-1858 7051 0	2726 3487 0	Seers' Village Seers' Village Portal 33095	4560=1	1	Seers' Village Portal
-1858 7051 0	2726 3487 0	Seers' Village Seers' Village Portal 33101	4560=1	1	Seers' Village Portal
-1858 7051 0	2726 3487 0	Seers' Village Seers' Village Portal 33107	4560=1	1	Seers' Village Portal
+1858 7051 0	2757 3479 0	Camelot Camelot Portal 33094		1	Camelot Portal
+1858 7051 0	2757 3479 0	Camelot Camelot Portal 33100		1	Camelot Portal
+1858 7051 0	2757 3479 0	Camelot Camelot Portal 33106		1	Camelot Portal
+# Varbit 4477 is DIARY_KANDARIN_HARD; the Camelot teleport toggle (varbit 4560) only picks the default destination					
+1858 7051 0	2726 3487 0	Seers' Village Seers' Village Portal 33095	4477=1	1	Seers' Village Portal
+1858 7051 0	2726 3487 0	Seers' Village Seers' Village Portal 33101	4477=1	1	Seers' Village Portal
+1858 7051 0	2726 3487 0	Seers' Village Seers' Village Portal 33107	4477=1	1	Seers' Village Portal
 1858 7051 0	3158 3666 0	Enter Carrallanger Portal 33434		1	Carrallanger Portal
 1858 7051 0	3158 3666 0	Enter Carrallanger Portal 33437		1	Carrallanger Portal
 1858 7051 0	3158 3666 0	Enter Carrallanger Portal 33440		1	Carrallanger Portal
