@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +25,7 @@ import shortestpath.transport.TransportType;
  *       walking edges are ignored; cuts that no longer separate two routing components are
  *       dropped. Cuts therefore only affect performance, never routes.</li>
  *   <li>Structural reachability: natural components reachable from Lumbridge through any
- *       non-seasonal transport or global teleport, regardless of requirements.</li>
+ *       transport or global teleport of any type, seasonal included, regardless of requirements.</li>
  *   <li>Search tiles: every tile of a reachable natural component, with its walking mask,
  *       routing component and north/south neighbour indexes.</li>
  *   <li>Sites (transport endpoints, crossing endpoints and reachable banks), their component
@@ -40,7 +39,6 @@ public final class RoutingStaticBuilder
 	private static final int SEED_TILE = WorldPointUtil.packWorldPoint(3221, 3218, 0);
 	/** One full {@code y} unit in the packed encoding (bit 15). */
 	private static final int Y_UNIT = 1 << 15;
-	private static final EnumSet<TransportType> STRUCTURAL_IGNORED_TYPES = EnumSet.of(TransportType.SEASONAL_TRANSPORTS);
 
 	private RoutingStaticBuilder()
 	{
@@ -546,6 +544,10 @@ public final class RoutingStaticBuilder
 
 	// ---- Structural reachability: closure over NATURAL components ----
 	// Reachability must use natural, not routing, components: a cut never makes a tile unreachable.
+	// The closure is an account-independent overapproximation of the geography routes can use, so it
+	// deliberately follows every known transport, seasonal ones included, whatever its requirements.
+	// It only prunes components nothing can reach, such as the sea. Whether an account can take a
+	// transport is decided later, by PreparedRoutingAccount and the forward search.
 
 	private static boolean[] structuralReachability(CollisionMap collision, WalkableTiles walkable, int[] naturalId,
 		int naturalComponentCount, Map<Integer, Set<Transport>> rawTransports, int seedTile)
@@ -558,7 +560,6 @@ public final class RoutingStaticBuilder
 			{
 				int origin = transport.getOrigin();
 				int destination = transport.getDestination();
-				boolean allowed = !STRUCTURAL_IGNORED_TYPES.contains(transport.getType());
 
 				// attachmentEdges: every endpoint point of every transport, any type, any origin state.
 				int[] originAttachments = origin == WorldPointUtil.UNDEFINED ? new int[0]
@@ -567,13 +568,9 @@ public final class RoutingStaticBuilder
 				addAttachmentClique(edges, originAttachments);
 				addAttachmentClique(edges, destinationAttachments);
 
-				if (!allowed)
-				{
-					continue;
-				}
 				if (origin == WorldPointUtil.UNDEFINED)
 				{
-					// globalDestinations: allowed global-teleport destinations.
+					// globalDestinations: global-teleport destinations.
 					for (int naturalComponent : destinationAttachments)
 					{
 						globalDestinations.add(naturalComponent);
@@ -581,7 +578,7 @@ public final class RoutingStaticBuilder
 				}
 				else
 				{
-					// transportEdges: allowed local transports, directed origin -> destination.
+					// transportEdges: local transports, directed origin -> destination.
 					for (int fromComponent : originAttachments)
 					{
 						for (int toComponent : destinationAttachments)

@@ -1,6 +1,7 @@
 package shortestpath.pathfinder.exact;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -9,13 +10,15 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.pathfinder.TransportAvailabilityFixture;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
 /**
  * Synthetic-world unit tests for {@link RoutingStaticBuilder}, covering rules a whole-map test
  * can't isolate: cut validity, non-separating cuts, transport-only reachability,
- * seasonal exclusion, the empty-cut-list case, and determinism.
+ * seasonal reachability and pruning, the empty-cut-list case, and determinism.
  */
 public class RoutingStaticBuilderTest
 {
@@ -163,31 +166,70 @@ public class RoutingStaticBuilderTest
 		assertEquals(y1, result.routingStatic.reachableBankTile(0));
 	}
 
-	@Test
-	public void seasonalTransportIsExcludedFromReachabilityButRemainsASite() throws Exception
+	// ---- Seasonal reachability: A1-A2 holds the seed, B1-B2-B3 is reached only by a seasonal
+	// transport from A2, and C1-C2 is reached by nothing. ----
+
+	private static final int A1 = tile(30, 20), A2 = tile(31, 20);
+	private static final int B1 = tile(40, 20), B2 = tile(41, 20), B3 = tile(42, 20);
+	private static final int C1 = tile(50, 20), C2 = tile(51, 20);
+	private static final Transport SEASONAL = transport(A2, B1, TransportType.SEASONAL_TRANSPORTS);
+
+	private static SyntheticCollisionMap seasonalWorld()
 	{
-		int x2 = tile(30, 20);
-		int y2 = tile(40, 20);
-		Set<Integer> walkable = Set.of(x2, y2);
-		SyntheticCollisionMap world = new SyntheticCollisionMap(walkable, Map.of(), 1);
-		Map<Integer, Set<Transport>> transports = transports(transport(x2, y2, TransportType.SEASONAL_TRANSPORTS));
+		return new SyntheticCollisionMap(Set.of(A1, A2, B1, B2, B3, C1, C2),
+			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{A1, A2}, {B1, B2}, {B2, B3}, {C1, C2}}), 1);
+	}
 
+	private static RoutingStatic seasonalStatic() throws Exception
+	{
+		return RoutingStaticBuilder.build(seasonalWorld(), transports(SEASONAL), Set.of(), new int[0], A1)
+			.routingStatic;
+	}
+
+	@Test
+	public void seasonalTransportKeepsItsDestinationComponent() throws Exception
+	{
 		RoutingStaticBuilder.Result result =
-			RoutingStaticBuilder.build(world, transports, Set.of(y2), new int[0], x2);
+			RoutingStaticBuilder.build(seasonalWorld(), transports(SEASONAL), Set.of(), new int[0], A1);
 
-		assertEquals(2, result.diagnostics.naturalComponentCount);
-		// Only the seed's own natural component is reachable: the seasonal edge does not count.
-		assertEquals(1, result.diagnostics.reachableNaturalComponentCount);
-		assertEquals(1, result.routingStatic.searchTileCount());
+		assertEquals(3, result.diagnostics.naturalComponentCount);
+		assertEquals(2, result.diagnostics.reachableNaturalComponentCount);
+		for (int tile : new int[] {A1, A2, B1, B2, B3})
+			assertTrue(result.routingStatic.searchIndex(tile) >= 0);
+	}
 
-		RoutingStatic mine = result.routingStatic;
-		// Both transport endpoints are still sites, even though y2's component is unreachable.
-		assertEquals(2, mine.siteCount());
-		int y2Site = mine.siteIndex(y2);
-		assertTrue(y2Site >= 0);
-		assertEquals(0, mine.siteComponents(y2Site).length);
-		// The bank at y2 is not structurally reachable, so it is excluded from Section E.
-		assertEquals(0, mine.reachableBankCount());
+	@Test
+	public void componentNothingReachesIsStillPruned() throws Exception
+	{
+		RoutingStatic mine = seasonalStatic();
+
+		assertEquals(5, mine.searchTileCount());
+		assertEquals(-1, mine.searchIndex(C1));
+		assertEquals(-1, mine.searchIndex(C2));
+	}
+
+	@Test
+	public void keptSeasonalComponentIsOnlyReachableWhenTheAccountHasTheTransport() throws Exception
+	{
+		RoutingStatic mine = seasonalStatic();
+
+		ExactForwardSearch.Result without = search(mine, TransportAvailabilityFixture.of(), B3);
+		ExactForwardSearch.Result with = search(mine, TransportAvailabilityFixture.of(SEASONAL), B3);
+
+		assertFalse(without.reached());
+		assertTrue(with.reached());
+		// Walk to A2, take the transport, then walk on through B2 to B3.
+		assertEquals(4, with.cost());
+		assertEquals(java.util.List.of(A1, A2, B1, B2, B3), with.path().stream()
+			.map(shortestpath.pathfinder.PathStep::getPackedPosition).collect(java.util.stream.Collectors.toList()));
+	}
+
+	private static ExactForwardSearch.Result search(RoutingStatic stat, TransportAvailability availability, int target)
+	{
+		PreparedRoutingAccount account = PreparedRoutingAccount.compile(availability, TransportAvailabilityFixture.of(),
+			false, Set.of(), 0, true, ignored -> 0);
+		TargetOverlay overlay = new TargetOverlay(new SiteGraph(stat, account), seasonalWorld(), target);
+		return ExactForwardSearch.search(overlay, PreparedHeuristic.prepare(overlay, ReverseLabels.compute(overlay)), A1);
 	}
 
 	@Test
