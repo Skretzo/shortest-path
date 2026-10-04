@@ -4923,8 +4923,8 @@
 1271 3436 0	1259 3430 0	Pass-through Cave 57220						4	
 									
 # Stalker Den									
-1296 3375 0	1296 9767 0	Enter Cave 56439			Shadows of Custodia			4	
-1296 9767 0	1296 3375 0	Exit Cave 56440			Shadows of Custodia				
+1296 3375 0	1296 9767 0	Enter Cave 56439				16632>9		4	
+1296 9767 0	1296 3375 0	Exit Cave 56440				16632>9			
 1262 9758 0	1259 9758 0	Climb Rope 57276			Shadows of Custodia			3	
 1259 9758 0	1262 9758 0	Climb Rope 57276			Shadows of Custodia				
 1274 9770 0	1297 9780 0	Enter Cave 57273			Shadows of Custodia				
