@@ -139,13 +139,14 @@ public class DebugOverlayPanel extends OverlayPanel
 
 	private void renderRestart(List<LayoutableRenderableEntity> components, DebugState debug, int tick)
 	{
-		if (debug.getRestartReason() == null)
+		DebugState.Restart restart = debug.getRestart();
+		if (restart == null)
 		{
 			return;
 		}
-		components.add(makeLine("Restarts:", debug.getRestartCount() + " (last: " + debug.getRestartReason() + ", "
-			+ ago(debug.getRestartTick(), tick) + ")"));
-		String outcome = debug.getRestartOutcome();
+		components.add(makeLine("Restarts:", restart.count + " (last: " + restart.reason + ", "
+			+ ago(restart.tick, tick) + ")"));
+		String outcome = restart.outcome;
 		if (!DebugState.STARTED.equals(outcome))
 		{
 			components.add(makeLine("Restart outcome:", outcome, PROBLEM));

@@ -15,11 +15,34 @@ public final class DebugState
 	private static final int MAX_MESSAGE_LENGTH = 60;
 	public static final String STARTED = "started";
 
+	/**
+	 * One restart attempt: a request plus the outcome it eventually got. Kept as a single
+	 * immutable snapshot so the render thread never reads a torn reason/tick/outcome mix.
+	 */
+	public static final class Restart
+	{
+		public final int count;
+		public final String reason;
+		public final int tick;
+		public final String outcome;
+
+		private Restart(int count, String reason, int tick, String outcome)
+		{
+			this.count = count;
+			this.reason = reason;
+			this.tick = tick;
+			this.outcome = outcome;
+		}
+
+		private Restart withOutcome(String newOutcome)
+		{
+			return new Restart(count, reason, tick, newOutcome);
+		}
+	}
+
 	// Last restart attempt
-	private volatile int restartCount;
-	private volatile String restartReason;
-	private volatile int restartTick = -1;
-	private volatile String restartOutcome;
+	private volatile Restart restart;
+	private int restartCount;
 
 	// Current search
 	private volatile ActiveSearch search;
@@ -35,15 +58,16 @@ public final class DebugState
 
 	void restartRequested(String reason, int tick)
 	{
-		restartCount++;
-		restartReason = reason;
-		restartTick = tick;
-		restartOutcome = "pending";
+		restart = new Restart(++restartCount, reason, tick, "pending");
 	}
 
 	void restartOutcome(String outcome)
 	{
-		restartOutcome = outcome;
+		Restart current = restart;
+		if (current != null)
+		{
+			restart = current.withOutcome(outcome);
+		}
 	}
 
 	void searchCancelled(ActiveSearch cancelled)
@@ -54,7 +78,7 @@ public final class DebugState
 	void searchStarted(ActiveSearch started)
 	{
 		search = started;
-		restartOutcome = STARTED;
+		restartOutcome(STARTED);
 	}
 
 	void clientError(Throwable error, int tick)
