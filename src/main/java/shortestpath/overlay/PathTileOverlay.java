@@ -11,6 +11,7 @@ import java.awt.Stroke;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +25,8 @@ import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -42,16 +45,22 @@ import shortestpath.transport.Transport;
 public class PathTileOverlay extends Overlay
 {
 	private static final int TRANSPORT_LABEL_GAP = 3;
+	private static final long TRACER_STEP_MS = 200L;
+	private static final int TRACER_WINDOW_TILES = 60;
+	private static final int SPRITE_STRIDE = 10;
+	private static final int SPRITE_ITEM_ID = ItemID.GAUNTLET_ESCAPE_CRYSTAL;
 	private final Client client;
 	private final ShortestPathPlugin plugin;
+	private final ItemManager itemManager;
 	private int playerTileLabelOffset = 0;
 	private boolean teleportPulseDrawn = false;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin)
+	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
 	{
 		this.client = client;
 		this.plugin = plugin;
+		this.itemManager = itemManager;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -226,6 +235,123 @@ public class PathTileOverlay extends Overlay
 					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 				}
 			}
+			else if (TileStyle.TURN_MARKERS.equals(plugin.pathStyle))
+			{
+				for (int i = 0; i < path.size(); i++)
+				{
+					PathStep currentStep = path.get(i);
+					int pathPoint = currentStep.getPackedPosition();
+					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
+					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
+					// Markers only where the route changes direction, plus both endpoints.
+					boolean marker = i == 0 || i == path.size() - 1
+						|| directionChanges(path.get(i - 1).getPackedPosition(), pathPoint,
+							path.get(i + 1).getPackedPosition());
+					// Skip markers inside POH (no collision data, tiles render at wrong positions)
+					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					{
+						drawTile(graphics, pathPoint, color, counter, true);
+						drawTurnMarkerGlyph(graphics, path, i);
+					}
+					counter++;
+					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+				}
+				drawUnreachedTargets(graphics, path, colorCalculating, true);
+			}
+			else if (TileStyle.TRACER.equals(plugin.pathStyle))
+			{
+				// Faint polyline under the moving marker so the full route stays readable
+				// without looking identical to LINES.
+				Color tracerLineColour = new Color(color.getRed(), color.getGreen(), color.getBlue(),
+					color.getAlpha() / 2);
+				for (int i = 1; i < path.size(); i++)
+				{
+					PathStep currentStep = path.get(i - 1);
+					PathStep nextStep = path.get(i);
+					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), tracerLineColour,
+						1 + counter++, false);
+					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+				}
+				if (!path.isEmpty())
+				{
+					// One marker walks the path on a wall-clock phase — the overlay repaints
+					// every frame, so no tick subscription is needed (the drawTeleportPulse idiom).
+					// The window caps the walk to the slice near the player: over a full-length
+					// path the marker sits off-screen most of the time on long routes.
+					int tracerWindow = Math.min(path.size(), TRACER_WINDOW_TILES);
+					int tracerIndex = (int) ((System.currentTimeMillis() / TRACER_STEP_MS) % tracerWindow);
+					int tracerPoint = path.get(tracerIndex).getPackedPosition();
+					int tracerX = WorldPointUtil.unpackWorldX(tracerPoint);
+					int tracerY = WorldPointUtil.unpackWorldY(tracerPoint);
+					if (!ShortestPathPlugin.isInsidePoh(tracerX, tracerY))
+					{
+						Point current = tileCenter(tracerPoint);
+						if (current != null)
+						{
+							Color previousColour = graphics.getColor();
+							graphics.setColor(pathColor);
+							int radius = 6;
+							graphics.fillOval(current.getX() - radius, current.getY() - radius, radius * 2, radius * 2);
+							if (tracerIndex + 1 < path.size())
+							{
+								Point next = tileCenter(path.get(tracerIndex + 1).getPackedPosition());
+								if (next != null)
+								{
+									ArrowHead.draw(graphics, current.getX(), current.getY(), next.getX(), next.getY(), 10);
+								}
+							}
+							graphics.setColor(previousColour);
+						}
+					}
+				}
+				drawUnreachedTargets(graphics, path, colorCalculating, true);
+			}
+			else if (TileStyle.SPRITE_MARKERS.equals(plugin.pathStyle))
+			{
+				for (int i = 0; i < path.size(); i++)
+				{
+					PathStep currentStep = path.get(i);
+					int pathPoint = currentStep.getPackedPosition();
+					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
+					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
+					// Bounded stride — a sprite every SPRITE_STRIDE tiles plus the destination,
+					// never one sprite per tile (per-tile sprite density is too heavy).
+					boolean marker = i % SPRITE_STRIDE == 0 || i == path.size() - 1;
+					// Skip sprites inside POH (no collision data, tiles render at wrong positions)
+					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					{
+						Point p = tileCenter(pathPoint);
+						if (p != null)
+						{
+							BufferedImage sprite = itemManager.getImage(SPRITE_ITEM_ID);
+							if (sprite != null)
+							{
+								if (i == path.size() - 1)
+								{
+									// The destination reads as the endpoint: larger sprite plus a ring.
+									int dw = sprite.getWidth() * 3 / 2;
+									int dh = sprite.getHeight() * 3 / 2;
+									graphics.drawImage(sprite, p.getX() - dw / 2, p.getY() - dh / 2, dw, dh, null);
+									int radius = Math.max(dw, dh) / 2 + 3;
+									Color previousColour = graphics.getColor();
+									graphics.setColor(plugin.colourText);
+									graphics.drawOval(p.getX() - radius, p.getY() - radius, radius * 2, radius * 2);
+									graphics.setColor(previousColour);
+								}
+								else
+								{
+									graphics.drawImage(sprite, p.getX() - sprite.getWidth() / 2,
+										p.getY() - sprite.getHeight() / 2, null);
+								}
+							}
+							drawCounter(graphics, p.getX(), p.getY(), counter);
+						}
+					}
+					counter++;
+					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+				}
+				drawUnreachedTargets(graphics, path, colorCalculating, true);
+			}
 			else
 			{
 				boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
@@ -243,13 +369,7 @@ public class PathTileOverlay extends Overlay
 					counter++;
 					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
 				}
-				for (int target : plugin.getPathfinder().getTargets())
-				{
-					if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-					{
-						drawTile(graphics, target, colorCalculating, -1, showTiles);
-					}
-				}
+				drawUnreachedTargets(graphics, path, colorCalculating, showTiles);
 			}
 
 			if (plugin.isPathUnreachable() && plugin.showUnreachableText)
@@ -328,6 +448,17 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
+	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
+	{
+		for (int target : plugin.getPathfinder().getTargets())
+		{
+			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
+			{
+				drawTile(graphics, target, colorCalculating, -1, draw);
+			}
+		}
+	}
+
 	private static boolean directionChanges(int previous, int current, int next)
 	{
 		int dx1 = WorldPointUtil.unpackWorldX(current) - WorldPointUtil.unpackWorldX(previous);
@@ -335,6 +466,34 @@ public class PathTileOverlay extends Overlay
 		int dx2 = WorldPointUtil.unpackWorldX(next) - WorldPointUtil.unpackWorldX(current);
 		int dy2 = WorldPointUtil.unpackWorldY(next) - WorldPointUtil.unpackWorldY(current);
 		return dx1 != dx2 || dy1 != dy2;
+	}
+
+	// Turn markers get a glyph inside the fill: an arrowhead along the outgoing
+	// segment so the marker reads as "turn this way", a ring for the destination
+	// which has no outgoing segment.
+	private void drawTurnMarkerGlyph(Graphics2D graphics, List<PathStep> path, int index)
+	{
+		Point here = tileCenter(path.get(index).getPackedPosition());
+		if (here == null)
+		{
+			return;
+		}
+		Color previousColour = graphics.getColor();
+		graphics.setColor(plugin.colourText);
+		if (index + 1 < path.size())
+		{
+			Point next = tileCenter(path.get(index + 1).getPackedPosition());
+			if (next != null)
+			{
+				ArrowHead.draw(graphics, here.getX(), here.getY(), next.getX(), next.getY(), 8);
+			}
+		}
+		else
+		{
+			int radius = 5;
+			graphics.drawOval(here.getX() - radius, here.getY() - radius, radius * 2, radius * 2);
+		}
+		graphics.setColor(previousColour);
 	}
 
 	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead)
