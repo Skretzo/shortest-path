@@ -544,6 +544,134 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testBlockedTargetExpandsToWalkableNeighbours()
+	{
+		// Issue #640: a blocked target tile can never be walked into. The goal set is
+		// expanded to the walkable tiles within the unreachable distance so the search
+		// terminates on a nearby tile instead of exhausting the whole map.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(3203, 3178, 0);
+		assertTrue("test requires a blocked target tile",
+			pathfinderConfig.getMap().isBlocked(3203, 3178, 0));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("expected path to a walkable tile near the blocked target", result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		List<PathStep> steps = result.getPathSteps();
+		int end = steps.get(steps.size() - 1).getPackedPosition();
+		assertFalse("path must end on a walkable tile", pathfinderConfig.getMap().isBlocked(
+			WorldPointUtil.unpackWorldX(end), WorldPointUtil.unpackWorldY(end),
+			WorldPointUtil.unpackWorldPlane(end)));
+		assertTrue("path must end within the unreachable distance of the blocked target",
+			WorldPointUtil.distanceBetween(end, blockedTarget) <= 2);
+	}
+
+	@Test
+	public void testFullyBlockedTargetShortCircuitsSearch()
+	{
+		// Issue #640: a blocked target that no transport lands on and that has no
+		// walkable tile within the unreachable distance can never be reached, so the
+		// search is skipped entirely instead of exhausting the map.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		// Interior of a large blocked area: the whole 5x5 neighbourhood is blocked.
+		int blockedTarget = WorldPointUtil.packWorldPoint(2114, 5506, 0);
+		assertTrue("test requires a blocked target tile",
+			pathfinderConfig.getMap().isBlocked(2114, 5506, 0));
+		assertFalse("test requires that no transport lands on the target",
+			pathfinderConfig.isTransportDestination(blockedTarget));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertFalse(result.isReached());
+		assertEquals(PathTerminationReason.SEARCH_EXHAUSTED, result.getTerminationReason());
+		assertEquals("a hopeless target must not explore any tile", 0, result.getNodesChecked());
+	}
+
+	@Test
+	public void testBlockedTargetDoesNotSuppressOtherTargets()
+	{
+		// A hopeless blocked target in a multi-target set must not prevent the
+		// remaining viable targets from being reached.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(2114, 5506, 0);
+		int reachableTarget = WorldPointUtil.packWorldPoint(3213, 3428, 0);
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget, reachableTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("the viable target should still be reached", result.isReached());
+		assertEquals(reachableTarget, result.getTarget());
+	}
+
+	@Test
+	public void testBlockedTransportDestinationStillReached()
+	{
+		// Fairy ring tiles are blocked for walking but a ring lands the player on
+		// them, so they must stay reachable and must not be short-circuited.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		when(config.useFairyRings()).thenReturn(true);
+		when(config.usePoh()).thenReturn(true);
+		when(config.usePohFairyRing()).thenReturn(true);
+		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
+		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int ringTile = WorldPointUtil.packWorldPoint(2700, 3247, 0);
+		assertTrue("test requires the fairy ring tile to be blocked",
+			pathfinderConfig.getMap().isBlocked(2700, 3247, 0));
+		assertTrue("test requires a transport landing on the target",
+			pathfinderConfig.isTransportDestination(ringTile));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(ringTile));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("fairy ring target should be reached despite the blocked tile",
+			result.isReached());
+	}
+
+	@Test
+	public void testBlockedTargetReachedViaAdjacentTransportDestination()
+	{
+		// Issue #640: the Jalsavrah teleport lands on (1934, 4428), a blocked tile
+		// adjacent to the likewise blocked (1934, 4427). No walkable tile exists
+		// within the unreachable distance, so the transport landing must count as
+		// a goal instead of the target being treated as hopeless.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(1934, 4427, 0);
+		int jalsavrahLanding = WorldPointUtil.packWorldPoint(1934, 4428, 0);
+		assertTrue("test requires a blocked target tile",
+			pathfinderConfig.getMap().isBlocked(1934, 4427, 0));
+		assertTrue("test requires the landing tile to be blocked",
+			pathfinderConfig.getMap().isBlocked(1934, 4428, 0));
+		assertTrue("test requires a transport landing adjacent to the target",
+			pathfinderConfig.isTransportDestination(jalsavrahLanding));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("target should be reached via the adjacent teleport landing",
+			result.isReached());
+		List<PathStep> steps = result.getPathSteps();
+		assertEquals("path must end on the Jalsavrah landing tile",
+			jalsavrahLanding, steps.get(steps.size() - 1).getPackedPosition());
+	}
+
+	@Test
 	public void testTeleportItemsAndFairyRingsAvailableAfterBankVisit()
 	{
 		// Test scenario: Both Dramen staff AND Ardougne cloak are in the bank

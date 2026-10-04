@@ -107,6 +107,12 @@ public class PathfinderConfig
 	// produces is flattened here and not retained (issue #491).
 	private final Transport[] allTransports;
 	/**
+	 * Every tile any loaded transport lands on. Transports can place the player onto
+	 * collision-blocked tiles (e.g. fairy rings), so a blocked target is still
+	 * potentially reachable when it is a transport destination.
+	 */
+	private final Set<Integer> transportDestinations;
+	/**
 	 * Display view of every loaded transport, grouped by origin tile with POH origins
 	 * collapsed into the landing tile (same layout as the available-transport display
 	 * view). Used by overlays to render unavailable transports alongside available ones.
@@ -196,6 +202,7 @@ public class PathfinderConfig
 		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
 		remapPohDestinations(loadedTransports);
 		this.allTransports = flatten(loadedTransports);
+		this.transportDestinations = collectTransportDestinations(this.allTransports);
 		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
@@ -216,6 +223,7 @@ public class PathfinderConfig
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = flatten(allTransports);
+		this.transportDestinations = collectTransportDestinations(this.allTransports);
 		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
@@ -698,6 +706,25 @@ public class PathfinderConfig
 			all.addAll(set);
 		}
 		return all.toArray(new Transport[0]);
+	}
+
+	private static Set<Integer> collectTransportDestinations(Transport[] transports)
+	{
+		Set<Integer> destinations = new HashSet<>(transports.length * 2);
+		for (Transport transport : transports)
+		{
+			destinations.add(transport.getDestination());
+		}
+		return destinations;
+	}
+
+	/**
+	 * Whether any loaded transport lands on the given tile, regardless of whether the
+	 * transport is currently usable by this account.
+	 */
+	public boolean isTransportDestination(int packedPosition)
+	{
+		return transportDestinations.contains(packedPosition);
 	}
 
 	private static PrimitiveIntHashMap<Transport[]> buildAllDisplayTransports(Transport[] transports)
