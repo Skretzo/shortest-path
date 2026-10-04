@@ -1,5 +1,6 @@
 package shortestpath.pathfinder;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -15,6 +16,15 @@ public class Pathfinder implements ActiveSearch
 	private final int start;
 	@Getter
 	private final Set<Integer> targets;
+	// Termination set: the requested targets plus, for each blocked target, every
+	// walkable tile within the configured unreachable distance. A blocked tile can
+	// never produce walk-in edges, so without expansion the search would explore the
+	// entire map before giving up (issue #640).
+	private final Set<Integer> goals;
+	// Whether any requested target could possibly terminate the search: non-blocked,
+	// a transport destination, or resolved to at least one walkable nearby tile.
+	// When false the search is skipped entirely, since no goal can ever be visited.
+	private final boolean hasViableGoal;
 	private final PathfinderConfig config;
 	private final CollisionMap map;
 	private final boolean targetInWilderness;
@@ -45,6 +55,10 @@ public class Pathfinder implements ActiveSearch
 	private int bestTravelledDistance = Integer.MAX_VALUE;
 	private int bestX = Integer.MAX_VALUE;
 	private int bestY = Integer.MAX_VALUE;
+	// Upper bound for the blocked-target expansion scan. The unreachable distance
+	// config allows values up to 20000; scanning a (2r+1)^2 square per blocked
+	// target must stay cheap since it runs per request on the client thread.
+	private static final int MAX_GOAL_EXPANSION_RADIUS = 64;
 	// First explored node within the configured unreachable distance.
 	private int shortestAcceptedNode = NodeGraph.NO_NODE;
 	private int shortestAcceptedTarget = WorldPointUtil.UNDEFINED;
@@ -67,6 +81,54 @@ public class Pathfinder implements ActiveSearch
 		this.map = config.getMap();
 		this.start = start;
 		this.targets = targets;
+		Set<Integer> resolvedGoals = targets;
+		boolean viable = false;
+		for (int target : targets)
+		{
+			final int x = WorldPointUtil.unpackWorldX(target);
+			final int y = WorldPointUtil.unpackWorldY(target);
+			final int z = WorldPointUtil.unpackWorldPlane(target);
+			if (!map.isBlocked(x, y, z))
+			{
+				viable = true;
+				continue;
+			}
+			// A transport landing on the target can still visit it even when the tile
+			// is blocked for walking (e.g. fairy rings).
+			if (config.isTransportDestination(target))
+			{
+				viable = true;
+			}
+			// The target tile is blocked so it can never be walked into. Route to the
+			// nearby tiles within the configured unreachable distance instead:
+			// walkable tiles, and blocked tiles that a transport can land on (a
+			// teleport that lands adjacent to the target still gets close enough).
+			// The scan is bounded: the config allows huge distances and this runs per
+			// pathfinding request on the client thread.
+			final int radius = Math.min(config.getUnreachableTargetDistance(), MAX_GOAL_EXPANSION_RADIUS);
+			for (int dy = -radius; dy <= radius; dy++)
+			{
+				for (int dx = -radius; dx <= radius; dx++)
+				{
+					if (dx == 0 && dy == 0)
+					{
+						continue;
+					}
+					final int neighbour = WorldPointUtil.packWorldPoint(x + dx, y + dy, z);
+					if (!map.isBlocked(x + dx, y + dy, z) || config.isTransportDestination(neighbour))
+					{
+						if (resolvedGoals == targets)
+						{
+							resolvedGoals = new HashSet<>(targets);
+						}
+						resolvedGoals.add(neighbour);
+						viable = true;
+					}
+				}
+			}
+		}
+		this.goals = resolvedGoals;
+		this.hasViableGoal = viable;
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
@@ -303,7 +365,10 @@ public class Pathfinder implements ActiveSearch
 		// The cutoff counts time without progress towards the target.
 		SearchDeadline deadline = new SearchDeadline(config.getCalculationCutoffMillis());
 
-		while (!cancelled && (!boundary.isEmpty() || !pending.isEmpty()))
+		// When every target is a blocked tile that no transport lands on and no
+		// walkable tile exists within the unreachable distance, no node can ever
+		// satisfy the goal set — skip the search instead of exhausting the map.
+		while (!cancelled && hasViableGoal && (!boundary.isEmpty() || !pending.isEmpty()))
 		{
 			int boundaryHead = boundary.peekFirst();
 			int pendingHead = pending.peek();
@@ -343,7 +408,7 @@ public class Pathfinder implements ActiveSearch
 			{
 				updateWildernessLevel(nodePacked);
 
-				if (targets.contains(nodePacked))
+				if (goals.contains(nodePacked))
 				{
 					bestLastNode = node;
 					reachedTarget = nodePacked;

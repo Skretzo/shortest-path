@@ -654,12 +654,15 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
+		if (path == null || pathfinder.getTargets().isEmpty())
 		{
 			return false;
 		}
 
-		int endPoint = path.get(path.size() - 1).getPackedPosition();
+		// A finished search can produce an empty path when no goal tile could ever be
+		// reached (e.g. a blocked target); measure the distance from the start then.
+		int endPoint = path.isEmpty() ? pathfinder.getStart()
+			: path.get(path.size() - 1).getPackedPosition();
 		int closestTargetDistance = Integer.MAX_VALUE;
 		for (int target : pathfinder.getTargets())
 		{
