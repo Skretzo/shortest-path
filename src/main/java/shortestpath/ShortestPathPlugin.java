@@ -202,6 +202,8 @@ public class ShortestPathPlugin extends Plugin
 	private KeyManager keyManager;
 	@Inject
 	private PortalNexusKeybinds portalNexusKeybinds;
+	@Inject
+	private SpiritTreePatchState spiritTreePatchState;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -348,9 +350,25 @@ public class ShortestPathPlugin extends Plugin
 		cacheConfigValues();
 
 		pathfinderConfig = new PathfinderConfig(client, config);
+		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
-			clientThread.invokeLater(pathfinderConfig::refresh);
+			// The profile load and field write touch the same HashMaps the
+			// queued refresh() iterates, so they must run on the client thread
+			// too — doing them here on the EDT would race that refresh.
+			clientThread.invokeLater(() ->
+			{
+				spiritTreePatchState.loadFromProfile();
+				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+				pathfinderConfig.refresh();
+			});
+		}
+		else
+		{
+			// No refresh is queued when logged out, so loading here is safe;
+			// RuneScapeProfileChanged reloads once a profile is active anyway.
+			spiritTreePatchState.loadFromProfile();
+			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
 		}
 
 		overlayManager.add(pathOverlay);
@@ -393,6 +411,9 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
+
+		// Flush pending observations so the last tick's sample is not lost.
+		spiritTreePatchState.persistIfDirty();
 	}
 
 	public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered)
@@ -574,6 +595,16 @@ public class ShortestPathPlugin extends Plugin
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
 		portalNexusKeybinds.loadFromProfile();
+		spiritTreePatchState.loadFromProfile();
+		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+
+		// The new profile may carry different persisted trees, so an in-flight
+		// path computed against the old account's set must be redone — same
+		// restart the tick and menu writers issue after changing the field.
+		if (pathfinder != null)
+		{
+			restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+		}
 	}
 
 	@Subscribe
@@ -967,6 +998,37 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		Player localPlayer = client.getLocalPlayer();
+		WorldPoint worldLocation = localPlayer == null ? null : localPlayer.getWorldLocation();
+		int playerRegion = worldLocation == null ? -1 : worldLocation.getRegionID();
+		spiritTreePatchState.notePlayerRegion(playerRegion, client.getTickCount());
+		if (localPlayer != null
+			// Varbits are not transmitted while a modal widget is open; a stale
+			// read of the shared slot could carry another patch's value.
+			&& !SpiritTreePatchState.modalWidgetOpen(client)
+			// On the region-entry tick the slot can still carry the previous
+			// region's values; only sample once the region has settled.
+			&& spiritTreePatchState.isRegionSettled(playerRegion))
+		{
+			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
+			// a planted spirit tree's varbit is only meaningful while standing in
+			// that patch's region. Sample only on a region match.
+			String spiritTreePatch = SpiritTreePatchState.patchNameForRegion(playerRegion);
+			if (spiritTreePatch != null
+				&& spiritTreePatchState.applyVarbitSample(spiritTreePatch,
+					client.getVarbitValue(SpiritTreePatchState.varbitForPatch(spiritTreePatch))))
+			{
+				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
+				if (pathfinder != null)
+				{
+					restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+				}
+			}
+		}
+
+		// Persist after the same-tick sample so a fresh observation is written
+		// on this tick rather than waiting for the next one.
+		spiritTreePatchState.persistIfDirty();
+
 		if (localPlayer == null || pathfinder == null)
 		{
 			return;
@@ -1160,19 +1222,17 @@ public class ShortestPathPlugin extends Plugin
 			});
 		}
 
-		// Populate spirit tree cache, but only once.
-		// The values here almost never change, we only need to load it once.
-		if (pathfinderConfig.availableSpiritTrees == null)
+		// Refresh the spirit tree cache on every menu open: the menu is
+		// authoritative for the planted patches it lists, and other detection
+		// sources (in-region varbits, persisted profile state) fill in the rest.
+		switch (event.getGroupId())
 		{
-			switch (event.getGroupId())
-			{
-				case InterfaceID.MENU:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
-					break;
-				case InterfaceID.MENU_NEW:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
-					break;
-			}
+			case InterfaceID.MENU:
+				clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
+				break;
+			case InterfaceID.MENU_NEW:
+				clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
+				break;
 		}
 	}
 
@@ -1220,27 +1280,71 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		// Tree Gnome Village is always the first row and always available;
-		// quick length check before running the regex
-		// Expected (old): "<col=735a28>1</col>: Tree Gnome Village" (length 39)
-		// Expected (new): "<col=ffffff>1</col>: Tree Gnome Village" (length 39)
-		String firstText = children[0].getText();
-		if (firstText == null || firstText.length() != 39)
+		// Tree Gnome Village is always the first row and always available, so an
+		// exact content match identifies the spirit tree menu. Interface group
+		// MENU is a shared container (other MISCB_IF users load on the same
+		// group), and this parse now runs on every load, so a loose check could
+		// persist a false observation from an unrelated interface.
+		String expectedFirstRow =
+			(useNewMenu ? "<col=ffffff>1</col>: " : "<col=735a28>1</col>: ") + "Tree Gnome Village";
+		if (!expectedFirstRow.equals(children[0].getText()))
 		{
 			return;
 		}
 
-		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
+		SpiritTreeMenuSnapshot snapshot = parseSpiritTreeMenuRows(children, useNewMenu);
 
-		Set<String> available = new HashSet<>();
+		// The menu is authoritative for the patches it lists; persisted and
+		// in-region-varbit observations fill the patches the menu never covered.
+		if (spiritTreePatchState.applyMenuSnapshot(snapshot.listed, snapshot.available))
+		{
+			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
+
+			if (pathfinder != null)
+			{
+				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+			}
+		}
+	}
+
+	/**
+	 * Parsed contents of one spirit tree travel menu: every patch row the
+	 * menu showed ({@link #listed}) and the subset usable right now
+	 * ({@link #available} — a greyed row means planted but not usable).
+	 */
+	static final class SpiritTreeMenuSnapshot
+	{
+		final Set<String> listed = new HashSet<>();
+		final Set<String> available = new HashSet<>();
+	}
+
+	/**
+	 * Parses the dynamic children of a spirit tree menu container into the
+	 * listed/available patch-name sets. Package-private for tests.
+	 */
+	static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(Widget[] children, boolean useNewMenu)
+	{
+		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
+		SpiritTreeMenuSnapshot snapshot = new SpiritTreeMenuSnapshot();
 
 		for (Widget child : children)
 		{
-			Matcher matcher = pattern.matcher(child.getText());
+			String text = child.getText();
+			if (text == null)
+			{
+				continue;
+			}
+			Matcher matcher = pattern.matcher(text);
 			if (!matcher.matches())
 			{
 				continue;
 			}
+
+			// Group 3 is spirit tree name; a greyed row can leave markup on it
+			// (e.g. "Port Sarim</col>"), which would miss the patch table and
+			// silently drop the row's eviction signal — strip tags before use.
+			String name = Text.removeTags(matcher.group(3)).trim();
+			snapshot.listed.add(name);
 
 			// Group 2 is the disabled color tag; if present, the tree is unavailable
 			if (matcher.group(2) != null)
@@ -1248,16 +1352,10 @@ public class ShortestPathPlugin extends Plugin
 				continue;
 			}
 
-			// Group 3 is spirit tree name
-			available.add(matcher.group(3));
+			snapshot.available.add(name);
 		}
 
-		pathfinderConfig.availableSpiritTrees = available;
-
-		if (pathfinder != null)
-		{
-			restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
-		}
+		return snapshot;
 	}
 
 	private void scrollFairyRingPanel()
