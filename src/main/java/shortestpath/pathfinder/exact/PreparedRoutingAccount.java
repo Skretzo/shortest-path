@@ -200,6 +200,10 @@ public final class PreparedRoutingAccount
 	{
 		return globalView(capability, banked).maxWilderness[index];
 	}
+	public Transport globalTransport(TeleportCapability capability, boolean banked, int index)
+	{
+		return globalView(capability, banked).transports[index];
+	}
 
 	View localView(boolean banked)
 	{
@@ -276,9 +280,12 @@ public final class PreparedRoutingAccount
 		final int[] types;
 		final int[] maxWilderness;
 		final int[] actionClasses;
+		/** The transport each row represents; parallel to the other arrays so a search can
+		 *  report which transport produced an edge, not just its effect. */
+		final Transport[] transports;
 
 		private View(boolean local, int[] origins, int[] destinations, int[] costs, int[] types, int[] maxWilderness,
-			int[] actionClasses)
+			int[] actionClasses, Transport[] transports)
 		{
 			this.local = local;
 			this.count = destinations.length;
@@ -288,11 +295,13 @@ public final class PreparedRoutingAccount
 			this.types = types;
 			this.maxWilderness = maxWilderness;
 			this.actionClasses = actionClasses;
+			this.transports = transports;
 		}
 
 		static View empty(boolean local)
 		{
-			return new View(local, new int[0], new int[0], new int[0], new int[0], new int[0], new int[0]);
+			return new View(local, new int[0], new int[0], new int[0], new int[0], new int[0], new int[0],
+				new Transport[0]);
 		}
 
 		static View local(PrimitiveIntHashMap<Transport[]> map, ToIntFunction<Transport> additionalCost)
@@ -334,6 +343,7 @@ public final class PreparedRoutingAccount
 		private int[] types = new int[16];
 		private int[] maxWilderness = new int[16];
 		private int[] actionClasses = new int[16];
+		private Transport[] transports = new Transport[16];
 		private final java.util.Map<java.util.List<Object>, Integer> actionClassIds = new java.util.HashMap<>();
 
 		Builder(boolean local)
@@ -352,6 +362,7 @@ public final class PreparedRoutingAccount
 				types = Arrays.copyOf(types, capacity);
 				maxWilderness = Arrays.copyOf(maxWilderness, capacity);
 				actionClasses = Arrays.copyOf(actionClasses, capacity);
+				transports = Arrays.copyOf(transports, capacity);
 			}
 			origins[size] = origin;
 			destinations[size] = transport.getDestination();
@@ -359,6 +370,7 @@ public final class PreparedRoutingAccount
 			types[size] = transport.getType().ordinal();
 			maxWilderness[size] = transport.getMaxWildernessLevel();
 			actionClasses[size] = actionClass(transport, costs[size]);
+			transports[size] = transport;
 			size++;
 		}
 
@@ -386,6 +398,7 @@ public final class PreparedRoutingAccount
 			int[] sortedTypes = new int[size];
 			int[] sortedMaxWilderness = new int[size];
 			int[] sortedActionClasses = new int[size];
+			Transport[] sortedTransports = new Transport[size];
 			for (int i = 0; i < size; i++)
 			{
 				int from = order[i];
@@ -395,9 +408,10 @@ public final class PreparedRoutingAccount
 				sortedTypes[i] = types[from];
 				sortedMaxWilderness[i] = maxWilderness[from];
 				sortedActionClasses[i] = actionClasses[from];
+				sortedTransports[i] = transports[from];
 			}
 			return new View(local, sortedOrigins, sortedDestinations, sortedCosts, sortedTypes, sortedMaxWilderness,
-				sortedActionClasses);
+				sortedActionClasses, sortedTransports);
 		}
 
 		private int compare(int left, int right)

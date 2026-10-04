@@ -219,6 +219,9 @@ public final class ExactWalkCanonicalizer
 	{
 		if (route.arrival(index) != ExactRoute.FROM_STEP) return false;
 		PathStep from = route.steps().get(index - 1), to = route.steps().get(index);
+		// A transport can land one tile away; its edge paid the transport's duration, not a walk
+		// tick, so it must not be folded into a walking leg.
+		if (to.getTransport() != null) return false;
 		if (from.isBankVisited() != to.isBankVisited()) return false;
 		int a = from.getPackedPosition(), b = to.getPackedPosition();
 		int plane = WorldPointUtil.unpackWorldPlane(a);

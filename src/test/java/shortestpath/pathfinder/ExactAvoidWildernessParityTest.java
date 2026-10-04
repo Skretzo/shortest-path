@@ -77,6 +77,12 @@ public class ExactAvoidWildernessParityTest
 		assertTrue(legacy.isReached());
 		assertTrue(exact.getResult().isReached());
 		assertEquals(legacy.getPathCost(), exact.getResult().getPathCost());
+
+		// The route crosses the Wilderness Ditch by transport; the landing step must report
+		// which transport produced it, not just the tile it landed on.
+		assertTrue("the ditch hop does not report its transport",
+			exact.getResult().getPathSteps().stream().anyMatch(
+				s -> s.getTransport() != null && s.getTransport().getDestination() == s.getPackedPosition()));
 	}
 
 	@Test
