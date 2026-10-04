@@ -128,12 +128,23 @@ public final class RoutingCuts
 		return pairs.clone();
 	}
 
-	/** Loads the packaged {@code routing-cuts.bin}. */
+	/** No cuts at all: builds without separators, so it only costs performance. */
+	public static RoutingCuts empty()
+	{
+		return new RoutingCuts(0, new Parameters(0, 0, 0, 0, 0, ""), new int[0]);
+	}
+
+	/**
+	 * Loads the packaged {@code routing-cuts.bin}, or an empty index when the jar does not
+	 * contain it: missing cuts only affect build performance, never the routes. A corrupt
+	 * resource still fails loudly, since that indicates a broken build rather than an
+	 * optional one.
+	 */
 	public static RoutingCuts loadFromResources()
 	{
 		try (InputStream stream = RoutingCuts.class.getResourceAsStream(RESOURCE))
 		{
-			if (stream == null) throw new IllegalStateException("missing " + RESOURCE);
+			if (stream == null) return empty();
 			return read(stream.readAllBytes());
 		}
 		catch (IOException error)

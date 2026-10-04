@@ -43,6 +43,11 @@ public final class ExactRoutingStaticProvider implements Supplier<RoutingStatic>
 			Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
 			Set<Integer> banks = Destination.loadAllFromResources().get("bank");
 			RoutingCuts cuts = RoutingCuts.loadFromResources();
+			if (cuts.cutCount() == 0)
+			{
+				log.warn("{} is missing or empty; building exact routing data without cuts",
+					RoutingCuts.RESOURCE);
+			}
 			RoutingStaticBuilder.Result result = RoutingStaticBuilder.build(collision.get(), transports,
 				banks == null ? Set.of() : banks, cuts.pairs());
 			diagnostics = result.diagnostics;

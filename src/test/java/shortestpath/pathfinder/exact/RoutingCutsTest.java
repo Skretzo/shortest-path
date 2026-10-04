@@ -64,6 +64,16 @@ public class RoutingCutsTest
 		assertTrue(cuts.cutCount() > 0);
 	}
 
+	@Test
+	public void missingResourceYieldsAnEmptyIndex()
+	{
+		// The resource is on the test classpath, so exercise the empty form directly:
+		// loadFromResources returns it when the stream is null.
+		RoutingCuts cuts = RoutingCuts.empty();
+		assertEquals(0, cuts.cutCount());
+		assertEquals(0, cuts.pairs().length);
+	}
+
 	private static void assertRejected(byte[] bytes, String reason)
 	{
 		try
