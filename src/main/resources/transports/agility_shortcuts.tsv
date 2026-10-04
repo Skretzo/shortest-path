@@ -444,6 +444,8 @@
 3671 9888 2	3670 9888 3	Jump-up Weathered wall 16525	58 Agility					
 2346 3300 0	2344 3294 0	Climb Rocks 16515	59 Agility				6	
 2344 3294 0	2346 3300 0	Climb Rocks 16514	59 Agility				8	
+1324 9768 0	1324 3363 0	Squeeze-through Cave 57278	59 Agility					Shadows of Custodia
+1324 3363 0	1324 9768 0	Squeeze-through Cave 57279	59 Agility					Shadows of Custodia
 3708 2969 0	3714 2969 0	Jump-to Stepping stone 19042	60 Agility					
 3714 2969 0	3708 2969 0	Jump-to Stepping stone 19042	60 Agility					
 2927 3758 0	2927 3761 0	Climb Rocky handholds 26400	60 Agility					
@@ -519,6 +521,8 @@
 2946 3678 0	2949 3681 0	Climb Rocks 16545	64 Agility					
 3778 3821 0	3784 3821 0	Climb Up Rope anchor 30916	64 Agility				6	
 3784 3821 0	3778 3821 0	Climb Down Rope anchor 30917	64 Agility				6	
+1308 9782 0	1309 9786 0	Cross Stepping stone 57277	64 Agility					Shadows of Custodia
+1309 9786 0	1308 9782 0	Cross Stepping stone 57277	64 Agility					Shadows of Custodia
 3423 3476 0	3424 3476 0	Squeeze-through Ornate railing 16552	65 Agility					
 3424 3476 0	3427 3477 0	Climb Rocks 16998	65 Agility					
 3427 3477 0	3424 3476 0	Climb Rocks 16999	65 Agility					
