@@ -33,7 +33,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "pathfinderBackend",
 		name = "Pathfinder backend",
 		description = "Backend used for pathfinding",
-		position = 36,
+		position = 40,
 		section = sectionSettings
 	)
 	default PathfinderBackend pathfinderBackend()
@@ -542,7 +542,7 @@ public interface ShortestPathConfig extends Config
 		name = "Exact heuristic weight",
 		description = "Heuristic weight used by the exact backend, as a percentage.<br>" +
 			"100 preserves exact paths; higher values trade path quality for speed.",
-		position = 37,
+		position = 41,
 		section = sectionSettings
 	)
 	default int exactHeuristicWeight()
