@@ -41,6 +41,7 @@ public class ExactBankAccessParityTest
 	private static final int FARMING_GUILD_BANK = WorldPointUtil.packWorldPoint(1248, 3758, 0);
 	private static final int START = WorldPointUtil.packWorldPoint(1249, 3752, 0);
 	private static final int ENAKHRAS_TEMPLE = WorldPointUtil.packWorldPoint(3105, 9315, 0);
+	private static final int BANK_VISIT_COST = 5;
 
 	private static RoutingStatic routingStatic;
 
@@ -96,6 +97,24 @@ public class ExactBankAccessParityTest
 	}
 
 	@Test
+	public void bankVisitCostIsChargedLikeLegacy()
+	{
+		for (int farmingLevel : new int[] {84, 85})
+		{
+			PathfinderConfig free = config(farmingLevel, 0);
+			PathfinderConfig costed = config(farmingLevel, BANK_VISIT_COST);
+			PathfinderResult legacy = legacy(costed);
+			ExactPathfinder exact = exact(costed, null);
+
+			assertTrue(exact.getResult().isReached());
+			assertEquals("Farming " + farmingLevel, legacy.getPathCost(), exact.getResult().getPathCost());
+			assertTrue(exact.getPath().stream().anyMatch(PathStep::isBankVisited));
+			assertEquals("the route still banks, so it pays the visit once",
+				exact(free, null).getResult().getPathCost() + BANK_VISIT_COST, exact.getResult().getPathCost());
+		}
+	}
+
+	@Test
 	public void sessionDoesNotReuseStaleBankAccess()
 	{
 		ExactRoutingSession session = new ExactRoutingSession();
@@ -110,6 +129,10 @@ public class ExactBankAccessParityTest
 		assertFalse(with.isGraphReused());
 		assertEquals(withCost, with.getResult().getPathCost());
 		assertTrue(exact(config(85), session).isGraphReused());
+
+		ExactPathfinder costed = exact(config(85, BANK_VISIT_COST), session);
+		assertFalse("the account graph must be rebuilt when the bank visit cost changes", costed.isGraphReused());
+		assertEquals(withCost + BANK_VISIT_COST, costed.getResult().getPathCost());
 	}
 
 	private static boolean isStaticBank(int tile)
@@ -144,8 +167,13 @@ public class ExactBankAccessParityTest
 		return pathfinder;
 	}
 
-	/** A logged-in account with 99 in every skill except Farming and a camulet in the bank. */
 	private static PathfinderConfig config(int farmingLevel)
+	{
+		return config(farmingLevel, 0);
+	}
+
+	/** A logged-in account with 99 in every skill except Farming and a camulet in the bank. */
+	private static PathfinderConfig config(int farmingLevel, int bankVisitCost)
 	{
 		Client client = mock(Client.class);
 		ShortestPathConfig settings = mock(ShortestPathConfig.class);
@@ -163,6 +191,7 @@ public class ExactBankAccessParityTest
 		when(settings.calculationCutoff()).thenReturn(500);
 		when(settings.currencyThreshold()).thenReturn(10000000);
 		when(settings.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
+		when(settings.costBankVisit()).thenReturn(bankVisitCost);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
 		config.bank = bank;

@@ -174,7 +174,7 @@ public class ExactRoutingSessionTest
 	private static PreparedRoutingAccount account(Transport global)
 	{
 		TransportAvailability availability = TransportAvailabilityFixture.of(global);
-		return PreparedRoutingAccount.compile(availability, availability, false, java.util.Set.of(), true,
+		return PreparedRoutingAccount.compile(availability, availability, false, java.util.Set.of(), 0, true,
 			ignored -> 0);
 	}
 
@@ -184,7 +184,7 @@ public class ExactRoutingSessionTest
 		Transport toBank = new Transport.TransportBuilder().origin(A).destination(BANK)
 			.type(TransportType.TRANSPORT).duration(1).build();
 		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(toBank),
-			TransportAvailabilityFixture.of(global(D, 3)), true, accessibleBanks, true, ignored -> 0);
+			TransportAvailabilityFixture.of(global(D, 3)), true, accessibleBanks, 0, true, ignored -> 0);
 	}
 
 	private static ExactForwardSearch.Result search(SiteGraph graph, CollisionMap collision)

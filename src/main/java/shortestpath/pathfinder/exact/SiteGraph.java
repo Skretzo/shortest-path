@@ -43,7 +43,8 @@ public final class SiteGraph
 		{
 			for (int bankSite : bankSites)
 			{
-				edges.add(stateId(bankSite, false), stateId(bankSite, true), 0, true, EdgeKind.BANK_TRANSITION);
+				edges.add(stateId(bankSite, false), stateId(bankSite, true), account.bankVisitCost(), true,
+					EdgeKind.BANK_TRANSITION);
 			}
 		}
 		if (hasBankedGlobalHub)
@@ -51,7 +52,8 @@ public final class SiteGraph
 			int hub = spatialCount;
 			for (int bankSite : bankSites)
 			{
-				edges.add(stateId(bankSite, false), stateId(hub, true), 0, true, EdgeKind.BANK_GLOBAL_ENTRY);
+				edges.add(stateId(bankSite, false), stateId(hub, true), account.bankVisitCost(), true,
+					EdgeKind.BANK_GLOBAL_ENTRY);
 			}
 			for (int destination : globalDestinations)
 			{

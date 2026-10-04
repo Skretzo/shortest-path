@@ -86,6 +86,6 @@ public class SparseManhattanTest
 	private static PreparedRoutingAccount emptyAccount()
 	{
 		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(), TransportAvailabilityFixture.of(),
-			false, java.util.Set.of(), true, ignored -> 0);
+			false, java.util.Set.of(), 0, true, ignored -> 0);
 	}
 }

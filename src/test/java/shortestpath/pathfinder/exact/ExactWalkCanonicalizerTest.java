@@ -27,7 +27,7 @@ public class ExactWalkCanonicalizerTest
 	// Away from the wilderness, so every global teleport is castable.
 	private static final int BASE_X = 3200, BASE_Y = 3200;
 	private static final PreparedRoutingAccount NO_TRANSPORTS = PreparedRoutingAccount.compile(null, null, false,
-		java.util.Set.of(), false, ignored -> 0);
+		java.util.Set.of(), 0, false, ignored -> 0);
 
 	@Test
 	public void straightWalkStaysStraight()
@@ -350,7 +350,7 @@ public class ExactWalkCanonicalizerTest
 	private static PreparedRoutingAccount account(Transport... transports)
 	{
 		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(transports),
-			TransportAvailabilityFixture.of(transports), false, java.util.Set.of(), true, ignored -> 0);
+			TransportAvailabilityFixture.of(transports), false, java.util.Set.of(), 0, true, ignored -> 0);
 	}
 
 	private static Transport transport(int origin, int destination, String objectInfo)

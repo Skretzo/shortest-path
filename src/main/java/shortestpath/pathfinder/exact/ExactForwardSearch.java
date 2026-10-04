@@ -230,12 +230,16 @@ public final class ExactForwardSearch
 		TeleportCapability capability, int[] bestBankCost)
 	{
 		if (banked || !target.account().bankPathEnabled() || !space.isUsableBankNode(node)) return;
-		relaxState(space, from, stateForNode(node, true), cost, 0, best, previous, queue, counters,
+		// Every bank charges the same visit cost, so comparing arrival costs with bestBankCost
+		// (an arrival cost too) still orders the banks correctly.
+		int bankedCost = ExactCosts.add(cost, target.account().bankVisitCost());
+		if (bankedCost == ExactCosts.INF) return;
+		relaxState(space, from, stateForNode(node, true), bankedCost, 0, best, previous, queue, counters,
 			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_BANKING);
 		if (capability == TeleportCapability.ALL)
 			for (int i = 0; i < target.account().globalCount(true); i++)
 				if (!optimized || cost <= bestBankCost[0])
-					relaxTransport(space, from, true, cost, target.account().globalDestination(true, i), target.account().globalCost(true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
+					relaxTransport(space, from, true, bankedCost, target.account().globalDestination(true, i), target.account().globalCost(true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
 				else if (space.node(target.account().globalDestination(true, i)) >= 0)
 					counters.bankGlobalSuppressed++;
 	}

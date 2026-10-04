@@ -59,8 +59,8 @@ The graph stores the *reverse* CSR of these explicit edges (`EdgeKind`):
 | Edge | From → to | Cost | Starts generator |
 |---|---|---|---|
 | `LOCAL` | `(origin, b)` → `(dest, b)` for each available transport in layer `b` | duration + penalty | yes |
-| `BANK_TRANSITION` | `(bank, false)` → `(bank, true)` for each bank the account may use | 0 | yes |
-| `BANK_GLOBAL_ENTRY` | `(bank, false)` → `(hub, true)` for the same banks | 0 | yes |
+| `BANK_TRANSITION` | `(bank, false)` → `(bank, true)` for each bank the account may use | bank visit cost | yes |
+| `BANK_GLOBAL_ENTRY` | `(bank, false)` → `(hub, true)` for the same banks | bank visit cost | yes |
 | `BANK_GLOBAL_DESTINATION` | `(hub, true)` → `(dest, true)` | cheapest banked global to `dest` | **no** |
 | `SEPARATOR` | both directions, both layers | crossing cost (1) | yes |
 

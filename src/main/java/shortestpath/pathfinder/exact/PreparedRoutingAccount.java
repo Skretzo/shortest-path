@@ -18,17 +18,19 @@ public final class PreparedRoutingAccount
 	private final boolean bankPathEnabled;
 	/** Bank tiles this account may use, in unsigned order: a subset of the static bank tiles. */
 	private final int[] accessibleBankTiles;
+	private final int bankVisitCost;
 	private final View[] local = new View[2];
 	private final View[] global = new View[2];
 	private final View[] wildernessGlobal = new View[2];
 	private final long fingerprint;
 
 	private PreparedRoutingAccount(boolean allowTransports, boolean bankPathEnabled, int[] accessibleBankTiles,
-		View[] local, View[] global, View[] wildernessGlobal)
+		int bankVisitCost, View[] local, View[] global, View[] wildernessGlobal)
 	{
 		this.allowTransports = allowTransports;
 		this.bankPathEnabled = bankPathEnabled;
 		this.accessibleBankTiles = accessibleBankTiles;
+		this.bankVisitCost = bankVisitCost;
 		this.local[0] = local[0];
 		this.local[1] = local[1];
 		this.global[0] = global[0];
@@ -42,15 +44,18 @@ public final class PreparedRoutingAccount
 	 * @param accessibleBankTiles the bank tiles whose requirements this account meets, as resolved by
 	 * {@code PathfinderConfig.bankAccessible}; the static data knows every bank, so this decides
 	 * which of them may switch a route into the banked layer
+	 * @param bankVisitCost what switching into the banked layer costs, as legacy's bank-visit edge
+	 * ({@code PathfinderConfig.getBankVisitCost})
 	 */
 	public static PreparedRoutingAccount compile(TransportAvailability carried, TransportAvailability banked,
-		boolean bankPathEnabled, Collection<Integer> accessibleBankTiles, boolean allowTransports,
-		ToIntFunction<Transport> additionalCost)
+		boolean bankPathEnabled, Collection<Integer> accessibleBankTiles, int bankVisitCost,
+		boolean allowTransports, ToIntFunction<Transport> additionalCost)
 	{
 		int[] banks = sortedUnsigned(accessibleBankTiles);
+		ExactCosts.validate(bankVisitCost);
 		if (!allowTransports)
 		{
-			return new PreparedRoutingAccount(false, bankPathEnabled, banks,
+			return new PreparedRoutingAccount(false, bankPathEnabled, banks, bankVisitCost,
 				new View[] {View.empty(true), View.empty(true)},
 				new View[] {View.empty(false), View.empty(false)}, new View[] {View.empty(false), View.empty(false)});
 		}
@@ -65,7 +70,7 @@ public final class PreparedRoutingAccount
 			global[bankedState] = View.global(availability.getUsableTeleports(), additionalCost, false);
 			wilderness[bankedState] = View.global(availability.getUsableTeleports(), additionalCost, true);
 		}
-		return new PreparedRoutingAccount(true, bankPathEnabled, banks, local, global, wilderness);
+		return new PreparedRoutingAccount(true, bankPathEnabled, banks, bankVisitCost, local, global, wilderness);
 	}
 
 	private static int[] sortedUnsigned(Collection<Integer> tiles)
@@ -108,6 +113,11 @@ public final class PreparedRoutingAccount
 			else high = middle - 1;
 		}
 		return false;
+	}
+	/** The cost of switching into the banked layer at an accessible bank. */
+	public int bankVisitCost()
+	{
+		return bankVisitCost;
 	}
 	public int accessibleBankCount()
 	{
@@ -220,6 +230,7 @@ public final class PreparedRoutingAccount
 		long hash = FNV_OFFSET;
 		hash = mix(hash, allowTransports ? 1 : 0);
 		hash = mix(hash, bankPathEnabled ? 1 : 0);
+		hash = u32(hash, bankVisitCost);
 		hash = u32(hash, accessibleBankTiles.length);
 		for (int tile : accessibleBankTiles)
 			hash = u32(hash, tile);

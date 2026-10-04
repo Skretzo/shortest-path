@@ -93,6 +93,26 @@ public class ExactPathfinderTest
 	}
 
 	@Test
+	public void bankVisitCostIsChargedAndCanMakeBankingNotWorthIt()
+		throws Exception
+	{
+		RoutingStatic stat = RoutingStaticTestFixture.create();
+		Transport[] carried = {local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, 1),
+			local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.D, 10)};
+		Transport[] banked = {global(RoutingStaticTestFixture.D, 3)};
+
+		ExactForwardSearch.Result cheapVisit = search(target(stat, account(carried, banked, true,
+			java.util.Set.of(RoutingStaticTestFixture.BANK), 5), RoutingStaticTestFixture.D), RoutingStaticTestFixture.A);
+		ExactForwardSearch.Result dearVisit = search(target(stat, account(carried, banked, true,
+			java.util.Set.of(RoutingStaticTestFixture.BANK), 20), RoutingStaticTestFixture.D), RoutingStaticTestFixture.A);
+
+		assertEquals("walk 1 + visit 5 + banked teleport 3", 9, cheapVisit.cost());
+		assertTrue(cheapVisit.path().stream().anyMatch(PathStep::isBankVisited));
+		assertEquals("the direct transport beats 1 + 20 + 3", 10, dearVisit.cost());
+		assertFalse(dearVisit.path().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	@Test
 	public void disabledBankPathIgnoresAnAccessibleBank()
 		throws Exception
 	{
@@ -238,8 +258,14 @@ public class ExactPathfinderTest
 	private static PreparedRoutingAccount account(Transport[] carried, Transport[] banked, boolean bankPath,
 		java.util.Set<Integer> accessibleBanks)
 	{
+		return account(carried, banked, bankPath, accessibleBanks, 0);
+	}
+
+	private static PreparedRoutingAccount account(Transport[] carried, Transport[] banked, boolean bankPath,
+		java.util.Set<Integer> accessibleBanks, int bankVisitCost)
+	{
 		return PreparedRoutingAccount.compile(availability(carried), availability(banked), bankPath,
-			accessibleBanks, true, ignored -> 0);
+			accessibleBanks, bankVisitCost, true, ignored -> 0);
 	}
 
 	private static TransportAvailability availability(Transport... transports)

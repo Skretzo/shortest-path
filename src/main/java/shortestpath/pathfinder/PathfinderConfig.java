@@ -290,7 +290,7 @@ public class PathfinderConfig
 	{
 		return PreparedRoutingAccount.compile(
 			getTransportAvailability(false), getTransportAvailability(true), includeBankPath,
-			accessibleBankTiles, allowTransports, this::getAdditionalTransportCost);
+			accessibleBankTiles, bankVisitCost, allowTransports, this::getAdditionalTransportCost);
 	}
 
 	public boolean hasDestination(String destinationType)
