@@ -941,11 +941,15 @@ public class PathfinderConfig
 		Player localPlayer = client.getLocalPlayer();
 		// Varbits are not transmitted while a modal widget is open; skip the
 		// live sample (but not the patch-state resolution below) rather than
-		// attribute a stale shared-slot value to the wrong patch.
+		// attribute a stale shared-slot value to the wrong patch. On the
+		// region-entry tick the slot can likewise still carry the previous
+		// region's values, so sample only once the region has settled.
 		if (localPlayer != null && !SpiritTreePatchState.modalWidgetOpen(client))
 		{
 			WorldPoint worldLocation = localPlayer.getWorldLocation();
-			if (worldLocation != null)
+			if (worldLocation != null
+				&& (spiritTreePatchState == null
+					|| spiritTreePatchState.isRegionSettled(worldLocation.getRegionID())))
 			{
 				inRegionPatch = SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
 			}

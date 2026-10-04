@@ -70,6 +70,11 @@ public class SpiritTreePatchState
 	private final Map<String, Integer> observedValues = new HashMap<>();
 	private final Map<String, Integer> lastPersistedValues = new HashMap<>();
 	private boolean dirty;
+	// Player region seen on the previous game tick (and at which tick), and
+	// the region considered settled for transmit-slot sampling.
+	private int lastPlayerRegionID = -1;
+	private int lastPlayerRegionTick = -1;
+	private int settledRegionID = -1;
 
 	@Inject
 	public SpiritTreePatchState(ConfigManager configManager)
@@ -163,6 +168,36 @@ public class SpiritTreePatchState
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Records the player's region for this game tick. The
+	 * {@code FARMING_TRANSMIT_*} slots are repopulated for the new region
+	 * after a region change, so a read taken on the entry tick can still
+	 * carry the previous region's patch values. Sampling is only allowed
+	 * once the same region has been seen on two consecutive ticks —
+	 * {@link #isRegionSettled(int)}. Pass -1 when the player location is
+	 * unknown; any gap (region change, loading tick, logout) un-settles.
+	 * (Same region-stability guard as TimeTrackingPlugin.onGameTick.)
+	 */
+	public void notePlayerRegion(int regionID, int tickCount)
+	{
+		settledRegionID = regionID != -1
+			&& regionID == lastPlayerRegionID
+			&& tickCount == lastPlayerRegionTick + 1
+			? regionID : -1;
+		lastPlayerRegionID = regionID;
+		lastPlayerRegionTick = tickCount;
+	}
+
+	/**
+	 * Whether the given region has been the player's region for at least two
+	 * consecutive recorded ticks — i.e. a {@code FARMING_TRANSMIT_*} read for
+	 * that region can no longer be a stale leftover from the previous region.
+	 */
+	public boolean isRegionSettled(int regionID)
+	{
+		return regionID != -1 && settledRegionID == regionID;
 	}
 
 	static String configKey(String patchName)

@@ -998,17 +998,21 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		Player localPlayer = client.getLocalPlayer();
+		WorldPoint worldLocation = localPlayer == null ? null : localPlayer.getWorldLocation();
+		int playerRegion = worldLocation == null ? -1 : worldLocation.getRegionID();
+		spiritTreePatchState.notePlayerRegion(playerRegion, client.getTickCount());
 		if (localPlayer != null
 			// Varbits are not transmitted while a modal widget is open; a stale
 			// read of the shared slot could carry another patch's value.
-			&& !SpiritTreePatchState.modalWidgetOpen(client))
+			&& !SpiritTreePatchState.modalWidgetOpen(client)
+			// On the region-entry tick the slot can still carry the previous
+			// region's values; only sample once the region has settled.
+			&& spiritTreePatchState.isRegionSettled(playerRegion))
 		{
 			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
 			// a planted spirit tree's varbit is only meaningful while standing in
 			// that patch's region. Sample only on a region match.
-			WorldPoint worldLocation = localPlayer.getWorldLocation();
-			String spiritTreePatch = worldLocation == null
-				? null : SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
+			String spiritTreePatch = SpiritTreePatchState.patchNameForRegion(playerRegion);
 			if (spiritTreePatch != null
 				&& spiritTreePatchState.applyVarbitSample(spiritTreePatch,
 					client.getVarbitValue(SpiritTreePatchState.varbitForPatch(spiritTreePatch))))

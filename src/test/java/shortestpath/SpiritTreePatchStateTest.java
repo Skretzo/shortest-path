@@ -191,6 +191,54 @@ public class SpiritTreePatchStateTest
 	}
 
 	@Test
+	public void regionSettlesAfterTwoConsecutiveTicks()
+	{
+		state.notePlayerRegion(12082, 10);
+		assertFalse(state.isRegionSettled(12082)); // entry tick: slot may be stale
+		state.notePlayerRegion(12082, 11);
+		assertTrue(state.isRegionSettled(12082));
+	}
+
+	@Test
+	public void regionChangeUnSettles()
+	{
+		state.notePlayerRegion(12082, 10);
+		state.notePlayerRegion(12082, 11);
+		assertTrue(state.isRegionSettled(12082));
+
+		state.notePlayerRegion(4922, 12);
+		assertFalse(state.isRegionSettled(4922));
+		assertFalse(state.isRegionSettled(12082));
+	}
+
+	@Test
+	public void tickGapUnSettles()
+	{
+		state.notePlayerRegion(12082, 10);
+		state.notePlayerRegion(12082, 11);
+		assertTrue(state.isRegionSettled(12082));
+
+		// A skipped tick (map loading, relog into the same region) means the
+		// slot may have been repopulated — require another consecutive tick.
+		state.notePlayerRegion(12082, 13);
+		assertFalse(state.isRegionSettled(12082));
+		state.notePlayerRegion(12082, 14);
+		assertTrue(state.isRegionSettled(12082));
+	}
+
+	@Test
+	public void unknownRegionUnSettles()
+	{
+		state.notePlayerRegion(12082, 10);
+		state.notePlayerRegion(12082, 11);
+		state.notePlayerRegion(-1, 12); // player location unknown
+		assertFalse(state.isRegionSettled(12082));
+		assertFalse(state.isRegionSettled(-1));
+		state.notePlayerRegion(12082, 13);
+		assertFalse(state.isRegionSettled(12082));
+	}
+
+	@Test
 	public void menuSnapshotCoversListedPatchesOnly()
 	{
 		state.applyVarbitSample("Farming Guild", 20);
