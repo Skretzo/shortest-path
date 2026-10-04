@@ -384,7 +384,10 @@ public final class ExactPathfinder implements ActiveSearch
 					stats.nodesChecked, stats.transportsChecked, System.nanoTime() - started,
 					PathTerminationReason.SEARCH_EXHAUSTED);
 		}
-		catch (RuntimeException error)
+		// Errors too: the static build allocates the large search arrays, where OOM is the most
+		// plausible fatal failure; an uncaught Error would leave result null and display as
+		// "unreachable" rather than a backend failure. Matches runQuery's catch.
+		catch (RuntimeException | Error error)
 		{
 			exactStats = exactStats == null ? ExactForwardSearch.Counters.empty() : exactStats;
 			result = new PathfinderResult(start, firstTarget(), false, path, last(path), PathfinderResult.NO_PATH_COST,
