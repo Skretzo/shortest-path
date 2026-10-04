@@ -174,6 +174,9 @@ public final class ExactForwardSearch
 	/**
 	 * The popped tile nearest to any target, chosen like the legacy pathfinder's closest reachable
 	 * tile: minimum squared Euclidean distance, then travelled cost, then x, then y.
+	 *
+	 * <p>Only popped states compete: a state improved by a rekey after its last pop never wins
+	 * the tie-break, which can shift which partial path a cut-off search returns.
 	 */
 	private static final class Closest
 	{
