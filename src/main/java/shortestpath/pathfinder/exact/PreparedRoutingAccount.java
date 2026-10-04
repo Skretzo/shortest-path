@@ -13,6 +13,7 @@ public final class PreparedRoutingAccount
 {
 	private static final long FNV_OFFSET = 0xcbf29ce484222325L;
 	private static final long FNV_PRIME = 0x100000001b3L;
+	private static final TeleportCapability[] CAPABILITIES = TeleportCapability.values();
 
 	private final boolean allowTransports;
 	private final boolean bankPathEnabled;
@@ -20,12 +21,12 @@ public final class PreparedRoutingAccount
 	private final int[] accessibleBankTiles;
 	private final int bankVisitCost;
 	private final View[] local = new View[2];
-	private final View[] global = new View[2];
-	private final View[] wildernessGlobal = new View[2];
+	/** The global teleports castable with each {@link TeleportCapability}, by ordinal, in each bank layer. */
+	private final View[][] global;
 	private final long fingerprint;
 
 	private PreparedRoutingAccount(boolean allowTransports, boolean bankPathEnabled, int[] accessibleBankTiles,
-		int bankVisitCost, View[] local, View[] global, View[] wildernessGlobal)
+		int bankVisitCost, View[] local, View[][] global)
 	{
 		this.allowTransports = allowTransports;
 		this.bankPathEnabled = bankPathEnabled;
@@ -33,10 +34,7 @@ public final class PreparedRoutingAccount
 		this.bankVisitCost = bankVisitCost;
 		this.local[0] = local[0];
 		this.local[1] = local[1];
-		this.global[0] = global[0];
-		this.global[1] = global[1];
-		this.wildernessGlobal[0] = wildernessGlobal[0];
-		this.wildernessGlobal[1] = wildernessGlobal[1];
+		this.global = global;
 		this.fingerprint = computeFingerprint();
 	}
 
@@ -53,24 +51,18 @@ public final class PreparedRoutingAccount
 	{
 		int[] banks = sortedUnsigned(accessibleBankTiles);
 		ExactCosts.validate(bankVisitCost);
-		if (!allowTransports)
-		{
-			return new PreparedRoutingAccount(false, bankPathEnabled, banks, bankVisitCost,
-				new View[] {View.empty(true), View.empty(true)},
-				new View[] {View.empty(false), View.empty(false)}, new View[] {View.empty(false), View.empty(false)});
-		}
-
 		View[] local = new View[2];
-		View[] global = new View[2];
-		View[] wilderness = new View[2];
+		View[][] global = new View[CAPABILITIES.length][2];
 		for (int bankedState = 0; bankedState < 2; bankedState++)
 		{
 			TransportAvailability availability = bankedState != 0 ? banked : carried;
-			local[bankedState] = View.local(availability.getTransportsPacked(), additionalCost);
-			global[bankedState] = View.global(availability.getUsableTeleports(), additionalCost, false);
-			wilderness[bankedState] = View.global(availability.getUsableTeleports(), additionalCost, true);
+			local[bankedState] = allowTransports
+				? View.local(availability.getTransportsPacked(), additionalCost) : View.empty(true);
+			for (TeleportCapability capability : CAPABILITIES)
+				global[capability.ordinal()][bankedState] = allowTransports
+					? View.global(availability.getUsableTeleports(), additionalCost, capability) : View.empty(false);
 		}
-		return new PreparedRoutingAccount(true, bankPathEnabled, banks, bankVisitCost, local, global, wilderness);
+		return new PreparedRoutingAccount(allowTransports, bankPathEnabled, banks, bankVisitCost, local, global);
 	}
 
 	private static int[] sortedUnsigned(Collection<Integer> tiles)
@@ -170,45 +162,43 @@ public final class PreparedRoutingAccount
 	{
 		return view(local, banked).actionClasses[index];
 	}
+	/** The global teleports castable outside the wilderness: every global this account has. */
 	public int globalCount(boolean banked)
 	{
-		return view(global, banked).count;
+		return globalCount(TeleportCapability.ALL, banked);
 	}
 	public int globalDestination(boolean banked, int index)
 	{
-		return view(global, banked).destinations[index];
+		return globalDestination(TeleportCapability.ALL, banked, index);
 	}
 	public int globalCost(boolean banked, int index)
 	{
-		return view(global, banked).costs[index];
+		return globalCost(TeleportCapability.ALL, banked, index);
 	}
 	public int globalType(boolean banked, int index)
 	{
-		return view(global, banked).types[index];
+		return globalView(TeleportCapability.ALL, banked).types[index];
 	}
 	public int globalMaxWilderness(boolean banked, int index)
 	{
-		return view(global, banked).maxWilderness[index];
+		return globalMaxWilderness(TeleportCapability.ALL, banked, index);
 	}
-	public int wildernessGlobalCount(boolean banked)
+	/** The global teleports castable with {@code capability}. */
+	public int globalCount(TeleportCapability capability, boolean banked)
 	{
-		return view(wildernessGlobal, banked).count;
+		return globalView(capability, banked).count;
 	}
-	public int wildernessGlobalDestination(boolean banked, int index)
+	public int globalDestination(TeleportCapability capability, boolean banked, int index)
 	{
-		return view(wildernessGlobal, banked).destinations[index];
+		return globalView(capability, banked).destinations[index];
 	}
-	public int wildernessGlobalCost(boolean banked, int index)
+	public int globalCost(TeleportCapability capability, boolean banked, int index)
 	{
-		return view(wildernessGlobal, banked).costs[index];
+		return globalView(capability, banked).costs[index];
 	}
-	public int wildernessGlobalType(boolean banked, int index)
+	public int globalMaxWilderness(TeleportCapability capability, boolean banked, int index)
 	{
-		return view(wildernessGlobal, banked).types[index];
-	}
-	public int wildernessGlobalMaxWilderness(boolean banked, int index)
-	{
-		return view(wildernessGlobal, banked).maxWilderness[index];
+		return globalView(capability, banked).maxWilderness[index];
 	}
 
 	View localView(boolean banked)
@@ -217,7 +207,11 @@ public final class PreparedRoutingAccount
 	}
 	View globalView(boolean banked)
 	{
-		return view(global, banked);
+		return globalView(TeleportCapability.ALL, banked);
+	}
+	View globalView(TeleportCapability capability, boolean banked)
+	{
+		return view(global[capability.ordinal()], banked);
 	}
 
 	private static View view(View[] views, boolean banked)
@@ -234,11 +228,11 @@ public final class PreparedRoutingAccount
 		hash = u32(hash, accessibleBankTiles.length);
 		for (int tile : accessibleBankTiles)
 			hash = u32(hash, tile);
-		for (int kind = 0; kind < 3; kind++)
+		for (int kind = 0; kind <= CAPABILITIES.length; kind++)
 		{
 			for (int banked = 0; banked < 2; banked++)
 			{
-				View view = kind == 0 ? local[banked] : kind == 1 ? global[banked] : wildernessGlobal[banked];
+				View view = kind == 0 ? local[banked] : global[kind - 1][banked];
 				hash = mix(hash, kind);
 				hash = mix(hash, banked);
 				for (int i = 0; i < view.count; i++)
@@ -315,12 +309,13 @@ public final class PreparedRoutingAccount
 			return builder.build();
 		}
 
-		static View global(Transport[] transports, ToIntFunction<Transport> additionalCost, boolean wildernessOnly)
+		static View global(Transport[] transports, ToIntFunction<Transport> additionalCost,
+			TeleportCapability capability)
 		{
 			Builder builder = new Builder(false);
 			for (Transport transport : transports)
 			{
-				if (!wildernessOnly || transport.getMaxWildernessLevel() >= 30)
+				if (capability.canCast(transport))
 				{
 					builder.add(0, transport, additionalCost);
 				}

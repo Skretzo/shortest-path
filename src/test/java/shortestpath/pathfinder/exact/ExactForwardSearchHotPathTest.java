@@ -15,8 +15,8 @@ import shortestpath.transport.TransportType;
 
 public class ExactForwardSearchHotPathTest
 {
-	private static final int OUTSIDE = WorldPointUtil.packWorldPoint(3200, 3679, 0);
-	private static final int TARGET = WorldPointUtil.packWorldPoint(3202, 3679, 0);
+	private static final int OUTSIDE = WorldPointUtil.packWorldPoint(3200, 3520, 0);
+	private static final int TARGET = WorldPointUtil.packWorldPoint(3202, 3520, 0);
 	private static final int DEEP_WILDERNESS = WorldPointUtil.packWorldPoint(3200, 3760, 0);
 
 	@Test
@@ -103,7 +103,7 @@ public class ExactForwardSearchHotPathTest
 		assertEquals(oracle.cost(), result.cost());
 		assertEquals(6, result.cost());
 		assertEquals(List.of(DEEP_WILDERNESS, OUTSIDE, TARGET), tiles(result.path()));
-		assertEquals("NONE", result.counters().initialCapability());
+		assertEquals("OVER_30", result.counters().initialCapability());
 		assertFalse(result.counters().normalHeuristicEnabledAtStart());
 		assertTrue(result.counters().restrictedHeuristicStates() > 0);
 		assertTrue(result.counters().normalHeuristicStates() > 0);
@@ -161,7 +161,7 @@ public class ExactForwardSearchHotPathTest
 	private static Transport global(int destination, int cost)
 	{
 		return new Transport.TransportBuilder().destination(destination)
-			.type(TransportType.TELEPORTATION_ITEM).duration(cost).build();
+			.type(TransportType.TELEPORTATION_ITEM).duration(cost).maxWildernessLevel(0).build();
 	}
 
 	private static RoutingStatic wildernessStatic() throws Exception

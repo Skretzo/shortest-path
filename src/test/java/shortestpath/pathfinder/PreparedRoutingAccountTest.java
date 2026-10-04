@@ -15,6 +15,7 @@ import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 import shortestpath.pathfinder.exact.RoutingStatic;
 import shortestpath.pathfinder.exact.RoutingStaticTestFixture;
 import shortestpath.pathfinder.exact.SiteGraph;
+import shortestpath.pathfinder.exact.TeleportCapability;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -49,11 +50,11 @@ public class PreparedRoutingAccountTest
 		assertEquals(2, first.localCount(true));
 		assertEquals(2, first.globalCount(false));
 		assertEquals(2, first.globalCount(true));
-		assertEquals(1, first.wildernessGlobalCount(false));
-		assertEquals(1, first.wildernessGlobalCount(true));
+		assertEquals(1, first.globalCount(TeleportCapability.OVER_20, false));
+		assertEquals(1, first.globalCount(TeleportCapability.OVER_20, true));
 		assertEquals(6, first.localCost(false, 0));
 		assertEquals(7, first.localCost(true, 0));
-		assertEquals(6, first.wildernessGlobalCost(true, 0));
+		assertEquals(6, first.globalCost(TeleportCapability.OVER_20, true, 0));
 		assertEquals(first.fingerprint(), second.fingerprint());
 
 		// The prepared arrays are query-local; later mutation of a source transport cannot alter them.
@@ -68,8 +69,8 @@ public class PreparedRoutingAccountTest
 			availability(global(RoutingStaticTestFixture.C, 1, 29), global(RoutingStaticTestFixture.D, 1, 30)),
 			availability(), false, Set.of(), 0, true, ignored -> 0);
 		assertEquals(2, account.globalCount(false));
-		assertEquals(1, account.wildernessGlobalCount(false));
-		assertEquals(30, account.wildernessGlobalMaxWilderness(false, 0));
+		assertEquals(1, account.globalCount(TeleportCapability.OVER_20, false));
+		assertEquals(30, account.globalMaxWilderness(TeleportCapability.OVER_20, false, 0));
 	}
 
 	@Test

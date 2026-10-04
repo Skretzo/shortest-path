@@ -263,6 +263,7 @@ public class ReverseLabelsTest
 			.destination(destination)
 			.type(TransportType.TELEPORTATION_ITEM)
 			.duration(duration)
+			.maxWildernessLevel(0)
 			.build();
 	}
 

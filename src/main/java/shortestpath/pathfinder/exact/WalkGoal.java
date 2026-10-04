@@ -113,20 +113,22 @@ abstract class WalkGoal
 	}
 
 	/**
-	 * The tiles outside a few rectangles. Leaving the rectangles takes at least as many moves as the
-	 * furthest any containing rectangle's nearest edge is, and a straight walk to that edge costs as
-	 * much axis travel as it does ticks.
+	 * The tiles outside a few rectangles, or inside a few holes in them. Leaving the rectangles takes
+	 * at least as many moves as the furthest any containing rectangle's nearest edge is, and a
+	 * straight walk to that edge costs as much axis travel as it does ticks; reaching a hole is
+	 * bounded like reaching a tile.
 	 */
 	private static final class TeleportArea extends WalkGoal
 	{
 		private final TeleportCapability capability;
-		private final int[][] excluded;
+		private final int[][] excluded, holes;
 		private final int left, bottom, right, top;
 
 		TeleportArea(TeleportCapability capability)
 		{
 			this.capability = capability;
 			this.excluded = capability.excludedAreas();
+			this.holes = capability.holes();
 			int l = Integer.MAX_VALUE, b = Integer.MAX_VALUE, r = Integer.MIN_VALUE, t = Integer.MIN_VALUE;
 			for (int[] area : excluded)
 			{
@@ -159,7 +161,14 @@ abstract class WalkGoal
 				int down = y - area[1] + 1, up = area[1] + area[3] - y;
 				distance = Math.max(distance, Math.min(Math.min(left, right), Math.min(down, up)));
 			}
-			return bound(distance, distance);
+			long best = bound(distance, distance);
+			for (int[] hole : holes)
+			{
+				int dx = Math.max(0, Math.max(hole[0] - x, x - (hole[0] + hole[2] - 1)));
+				int dy = Math.max(0, Math.max(hole[1] - y, y - (hole[1] + hole[3] - 1)));
+				best = Math.min(best, bound(Math.max(dx, dy), dx + dy));
+			}
+			return best;
 		}
 
 		@Override

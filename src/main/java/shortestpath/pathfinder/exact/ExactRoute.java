@@ -13,10 +13,8 @@ public final class ExactRoute
 {
 	/** The step was reached from the previous step directly: a walk, a bank visit or a transport. */
 	public static final byte FROM_STEP = 0;
-	/** The step is the destination of a teleport castable up to level 30 wilderness. */
-	public static final byte FROM_WILDERNESS_HUB = 1;
-	/** The step is the destination of a teleport castable where every global teleport is. */
-	public static final byte FROM_ALL_HUB = 2;
+	/** The first hub arrival; the step is the destination of a teleport cast with capability {@code arrival - 1}. */
+	private static final byte FROM_HUB = 1;
 
 	private final List<PathStep> steps;
 	private final byte[] arrivals;
@@ -47,7 +45,19 @@ public final class ExactRoute
 		return steps.size();
 	}
 
-	/** How step {@code index} was reached: {@link #FROM_STEP} or one of the hubs. */
+	/** The arrival of a step reached through the hub casting the globals {@code capability} allows. */
+	public static byte fromHub(TeleportCapability capability)
+	{
+		return (byte) (FROM_HUB + capability.ordinal());
+	}
+
+	/** The capability of the hub an arrival came through; {@code arrival} must not be {@link #FROM_STEP}. */
+	public static TeleportCapability hubCapability(byte arrival)
+	{
+		return TeleportCapability.values()[arrival - FROM_HUB];
+	}
+
+	/** How step {@code index} was reached: {@link #FROM_STEP} or {@link #fromHub one of the hubs}. */
 	public byte arrival(int index)
 	{
 		return arrivals[index];

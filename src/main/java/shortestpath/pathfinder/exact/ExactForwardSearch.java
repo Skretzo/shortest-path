@@ -46,7 +46,10 @@ public final class ExactForwardSearch
 		SearchSpace space = SearchSpace.create(target, start);
 		TeleportCapability capability = capabilityAt(start);
 		int tileStates = space.tileCount * 2;
-		int stateCount = tileStates + (capability == TeleportCapability.ALL ? 0 : 4);
+		// From a start with every global castable they are all seeded there, since casting one later
+		// costs the same; elsewhere each capability gets a hub per bank layer, opened the first time
+		// the search reaches a tile with that capability.
+		int stateCount = tileStates + (capability == TeleportCapability.ALL ? 0 : HUB_STATES);
 		int[] best = new int[stateCount]; Arrays.fill(best, ExactCosts.INF);
 		int[] previous = new int[stateCount];
 		boolean restrictedHeuristic = capability != TeleportCapability.ALL && hasGlobals(target.account());
@@ -71,9 +74,9 @@ public final class ExactForwardSearch
 		{
 			counters.heuristicUnreachable++;
 		}
-		if (capability == TeleportCapability.WILDERNESS)
+		if (capability != TeleportCapability.ALL)
 		{
-			int hub = hub(tileStates, false, false);
+			int hub = hub(tileStates, capability, false);
 			best[hub] = 0;
 			push(queue, hub, 0, 0, counters, true, PUSH_GLOBAL);
 		}
@@ -98,7 +101,7 @@ public final class ExactForwardSearch
 			boolean banked = (state & 1) != 0;
 			int tile = space.tile(node);
 			if (capability != TeleportCapability.ALL)
-				activateGlobal(tile, state, banked, tileStates, cost, best, previous, queue, counters);
+				activateGlobal(target.account(), tile, state, banked, tileStates, cost, best, previous, queue, counters);
 			int currentH = effectiveHeuristic(heuristic, space, state, cost, best, restrictedHeuristic, globalBounds,
 				optimized, bestBankCost[0], counters);
 			if (currentH == ExactCosts.INF) continue;
@@ -236,12 +239,18 @@ public final class ExactForwardSearch
 		if (bankedCost == ExactCosts.INF) return;
 		relaxState(space, from, stateForNode(node, true), bankedCost, 0, best, previous, queue, counters,
 			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_BANKING);
+		// With hubs (a start without every global castable) the banked hub of this tile's
+		// capability casts them. Without, they are cast here, as far as this bank's wilderness level
+		// allows; no bank is in the wilderness, so that is every banked global.
 		if (capability == TeleportCapability.ALL)
-			for (int i = 0; i < target.account().globalCount(true); i++)
+		{
+			TeleportCapability here = capabilityAt(space.tile(node));
+			for (int i = 0; i < target.account().globalCount(here, true); i++)
 				if (!optimized || cost <= bestBankCost[0])
-					relaxTransport(space, from, true, bankedCost, target.account().globalDestination(true, i), target.account().globalCost(true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
-				else if (space.node(target.account().globalDestination(true, i)) >= 0)
+					relaxTransport(space, from, true, bankedCost, target.account().globalDestination(here, true, i), target.account().globalCost(here, true, i), best, previous, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
+				else if (space.node(target.account().globalDestination(here, true, i)) >= 0)
 					counters.bankGlobalSuppressed++;
+		}
 	}
 
 	private static void relaxLocalTransports(TargetOverlay target, SearchSpace space, int tile, boolean banked, int from, int cost,
@@ -290,17 +299,15 @@ public final class ExactForwardSearch
 		ExactMinHeap queue, MutableCounters counters, int startState, SearchSpace space, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
-		if (capability == TeleportCapability.NONE) return;
-		boolean wilderness = capability == TeleportCapability.WILDERNESS;
-		int count = wilderness ? target.account().wildernessGlobalCount(false) : target.account().globalCount(false);
+		int count = target.account().globalCount(capability, false);
 		for (int i = 0; i < count; i++)
 		{
 			counters.transportCandidates++;
-			int destination = wilderness ? target.account().wildernessGlobalDestination(false, i) : target.account().globalDestination(false, i);
+			int destination = target.account().globalDestination(capability, false, i);
 			int node = space.node(destination);
 			if (node < 0) continue;
 			int state = stateForNode(node, false);
-			int cost = wilderness ? target.account().wildernessGlobalCost(false, i) : target.account().globalCost(false, i);
+			int cost = target.account().globalCost(capability, false, i);
 			if (cost < best[state])
 			{
 				updateBestBank(space, state, cost, optimized, bestBankCost, counters);
@@ -318,12 +325,12 @@ public final class ExactForwardSearch
 		}
 	}
 
-	private static void activateGlobal(int tile, int from, boolean banked, int tileStates, int cost,
-		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters)
+	private static void activateGlobal(PreparedRoutingAccount account, int tile, int from, boolean banked,
+		int tileStates, int cost, int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters)
 	{
 		TeleportCapability capability = capabilityAt(tile);
-		if (capability == TeleportCapability.NONE) return;
-		int state = hub(tileStates, capability == TeleportCapability.ALL, banked);
+		if (account.globalCount(capability, banked) == 0) return;
+		int state = hub(tileStates, capability, banked);
 		if (cost < best[state])
 		{
 			boolean newState = best[state] == ExactCosts.INF;
@@ -335,15 +342,16 @@ public final class ExactForwardSearch
 	private static void relaxGlobalHub(TargetOverlay target, SearchSpace space, int state, int tileStates, int cost,
 		int[] best, int[] previous, ExactMinHeap queue, MutableCounters counters)
 	{
-		boolean all = state >= tileStates + 2, banked = ((state - tileStates) & 1) != 0;
-		int count = all ? target.account().globalCount(banked) : target.account().wildernessGlobalCount(banked);
+		TeleportCapability capability = hubCapability(tileStates, state);
+		boolean banked = ((state - tileStates) & 1) != 0;
+		int count = target.account().globalCount(capability, banked);
 		for (int i = 0; i < count; i++)
 		{
 			counters.transportCandidates++;
-			int destination = all ? target.account().globalDestination(banked, i) : target.account().wildernessGlobalDestination(banked, i);
+			int destination = target.account().globalDestination(capability, banked, i);
 			int node = space.node(destination);
 			if (node < 0) continue;
-			int stepCost = all ? target.account().globalCost(banked, i) : target.account().wildernessGlobalCost(banked, i);
+			int stepCost = target.account().globalCost(capability, banked, i);
 			int next = stateForNode(node, banked), candidate = ExactCosts.add(cost, stepCost);
 			if (candidate == ExactCosts.INF) continue;
 			counters.transportRelaxations++;
@@ -374,7 +382,7 @@ public final class ExactForwardSearch
 			costs[count] = state == start ? 0 : best[state];
 			int from = state == start ? start : previous[state];
 			arrivals[count++] = from < tileStates ? ExactRoute.FROM_STEP
-				: from >= tileStates + 2 ? ExactRoute.FROM_ALL_HUB : ExactRoute.FROM_WILDERNESS_HUB;
+				: ExactRoute.fromHub(hubCapability(tileStates, from));
 			if (state == start) break;
 		}
 		java.util.Collections.reverse(result);
@@ -435,7 +443,7 @@ public final class ExactForwardSearch
 			}
 		}
 		boolean allGlobalsActivated = restrictedHeuristic
-			&& best[hub(space.tileCount * 2, true, banked)] <= cost;
+			&& best[hub(space.tileCount * 2, TeleportCapability.ALL, banked)] <= cost;
 		if (restrictedHeuristic && (capabilityAt(space.tile(state / 2)) != TeleportCapability.ALL
 			|| !allGlobalsActivated))
 		{
@@ -484,8 +492,8 @@ public final class ExactForwardSearch
 
 	private static boolean hasGlobals(PreparedRoutingAccount account)
 	{
-		return account.allowTransports() && (account.globalCount(false) != 0 || account.globalCount(true) != 0
-			|| account.wildernessGlobalCount(false) != 0 || account.wildernessGlobalCount(true) != 0);
+		// Every capability's globals are among ALL's.
+		return account.allowTransports() && (account.globalCount(false) != 0 || account.globalCount(true) != 0);
 	}
 
 	private static int[] globalBounds(TargetOverlay target, PreparedHeuristic heuristic, SearchSpace space)
@@ -516,9 +524,17 @@ public final class ExactForwardSearch
 	{
 		return TeleportCapability.at(tile);
 	}
-	private static int hub(int tileStates, boolean all, boolean banked)
+	private static final TeleportCapability[] CAPABILITIES = TeleportCapability.values();
+	private static final int HUB_STATES = CAPABILITIES.length * 2;
+
+	/** The hub state casting the globals {@code capability} allows, in one bank layer. */
+	private static int hub(int tileStates, TeleportCapability capability, boolean banked)
 	{
-		return tileStates + (all ? 2 : 0) + (banked ? 1 : 0);
+		return tileStates + capability.ordinal() * 2 + (banked ? 1 : 0);
+	}
+	private static TeleportCapability hubCapability(int tileStates, int hubState)
+	{
+		return CAPABILITIES[(hubState - tileStates) / 2];
 	}
 	private static int lowerBound(int[] values, int target)
 	{

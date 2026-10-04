@@ -239,8 +239,7 @@ public final class ExactWalkCanonicalizer
 		if (arrival != ExactRoute.FROM_STEP)
 		{
 			// A global teleport: castable anywhere its hub's capability is.
-			WalkGoal area = WalkGoal.teleportArea(arrival == ExactRoute.FROM_ALL_HUB
-				? TeleportCapability.ALL : TeleportCapability.WILDERNESS);
+			WalkGoal area = WalkGoal.teleportArea(ExactRoute.hubCapability(arrival));
 			return area.contains(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile))
 				? area : WalkGoal.tile(tile);
 		}

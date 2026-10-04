@@ -155,12 +155,13 @@ public class ExactWalkCanonicalizerTest
 	{
 		// Level 30 wilderness above-ground ends below y = 3760; level 20 below y = 3680.
 		Shape wilderness = walk(new Grid(), 3000 - BASE_X, 3800 - BASE_Y, 41,
-			WalkGoal.teleportArea(TeleportCapability.WILDERNESS));
+			WalkGoal.teleportArea(TeleportCapability.OVER_20));
 		assertEquals("S41", wilderness.runs);
 		assertEquals(41, wilderness.axis);
 
-		Shape all = walk(new Grid(), 3000 - BASE_X, 3700 - BASE_Y, 21, WalkGoal.teleportArea(TeleportCapability.ALL));
-		assertEquals("S21", all.runs);
+		Shape over0 = walk(new Grid(), 3000 - BASE_X, 3700 - BASE_Y, 21,
+			WalkGoal.teleportArea(TeleportCapability.OVER_0));
+		assertEquals("S21", over0.runs);
 	}
 
 	@Test
@@ -169,7 +170,7 @@ public class ExactWalkCanonicalizerTest
 		Set<Integer> blocked = new HashSet<>();
 		for (int x = 2995; x <= 3005; x++) blocked.add(WorldPointUtil.packWorldPoint(x, 3790, 0));
 		Grid grid = new Grid(blocked);
-		WalkGoal goal = WalkGoal.teleportArea(TeleportCapability.WILDERNESS);
+		WalkGoal goal = WalkGoal.teleportArea(TeleportCapability.OVER_20);
 		int start = WorldPointUtil.packWorldPoint(3000, 3800, 0);
 		int[] reference = Reference.best(grid, start, goal, 45);
 		assertNotNull(reference);
@@ -197,7 +198,7 @@ public class ExactWalkCanonicalizerTest
 		int destination = WorldPointUtil.packWorldPoint(3213, 3424, 0);
 		route.add(new PathStep(destination, false));
 		byte[] arrivals = new byte[route.size()];
-		arrivals[route.size() - 1] = ExactRoute.FROM_WILDERNESS_HUB;
+		arrivals[route.size() - 1] = ExactRoute.fromHub(TeleportCapability.OVER_20);
 		int[] costs = new int[route.size()];
 		for (int i = 0; i < 42; i++) costs[i] = i;
 		costs[42] = 41 + 4;

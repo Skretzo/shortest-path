@@ -284,6 +284,6 @@ public class ExactPathfinderTest
 	private static Transport global(int destination, int duration)
 	{
 		return new Transport.TransportBuilder().destination(destination)
-			.type(TransportType.TELEPORTATION_ITEM).duration(duration).build();
+			.type(TransportType.TELEPORTATION_ITEM).duration(duration).maxWildernessLevel(0).build();
 	}
 }

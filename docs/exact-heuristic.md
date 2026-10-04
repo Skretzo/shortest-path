@@ -80,6 +80,17 @@ Banked globals are only reachable through a bank, hence the hub. For
 Wilderness starts, where globals are not usable at the start, see
 [the restricted cap](#4-lookup-in-the-forward-search).
 
+Which globals a tile can cast follows legacy's global-teleport abstract nodes:
+`TeleportCapability` is `OVER_30` above level 30, `OVER_20` at levels 21–30,
+`OVER_0` at levels 1–20 and `ALL` outside the Wilderness. A global is castable
+with a capability when `Transport.isUsableAtWildernessLevel` allows its cast
+level (31, 30, 20 or 0), and `PreparedRoutingAccount` compiles one global view
+per capability. Each capability can cast everything the one before it can. The
+forward search seeds `ALL`'s globals at a start outside the Wilderness;
+elsewhere it opens one hub per capability and bank layer, the first time it
+reaches a tile with that capability. The relaxed graph's banked hub uses
+`ALL`'s globals, the most permissive set, so it stays a lower bound.
+
 ## 3. Target overlay (`TargetOverlay`)
 
 A target that is already a site reuses that site's node. Any other target gets
@@ -189,7 +200,7 @@ target. Every bucket scan computes `min(label_i + chebyshev(x, tile_i))`.
   whose key has risen is re-queued (rekey).
 - **Restricted cap:** in Wilderness-restricted queries, until all globals are
   activated, `h = min(h, globalBound[layer])`. Here `globalBound` is
-  `min(globalCost + h(destination))` over that layer's globals, computed once
+  `min(globalCost + h(destination))` over that layer's `ALL` globals, computed once
   per search by `globalBounds`. This restores admissibility, because the
   relaxed graph assumes globals are usable sooner than the restricted state
   allows.
