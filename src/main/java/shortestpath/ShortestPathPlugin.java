@@ -1192,7 +1192,7 @@ public class ShortestPathPlugin extends Plugin
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			portalNexusKeybinds.putFromDialogLine(widget.getText());
+			portalNexusKeybinds.putFromDialogLine(client.getTickCount(), widget.getText());
 		}
 	}
 

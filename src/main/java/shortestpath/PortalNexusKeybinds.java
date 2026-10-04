@@ -20,6 +20,11 @@ import net.runelite.client.util.Text;
  * Live Portal Nexus Teleport Menu keys. Slot order is player-configurable, so
  * keybinds are read from the teleport dialog whenever it is built rather than
  * assumed from the default destination list.
+ *
+ * Menu keys are positional: the first nine lines bind 1-9, the next twenty-six
+ * bind A-Z and lines beyond that bind F1-F10 (the nexus holds up to 45 slots).
+ * The F-key hints are rendered as sprites, so those lines carry no readable
+ * "key : name" prefix; their key can only be recovered from the line position.
  */
 @Singleton
 public class PortalNexusKeybinds
@@ -27,9 +32,9 @@ public class PortalNexusKeybinds
 	static final int TELENEXUS_CREATE_TELELINE = 2675;
 
 	// In-game labels look like "<col=ffffff>1 : Harmony Island" (space before the colon).
-	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z])\\s*:\\s*(.+)$");
+	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z]|F(?:[1-9]|10))\\s*:\\s*(.+)$");
 	private static final Pattern PARENTHETICAL = Pattern.compile("\\(([^()]*)\\)");
-	private static final String KEYBIND_KEYS = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	private static final int MAX_KEYED_LINES = 45;
 	private static final Map<String, String> NAME_ALIASES;
 
 	static
@@ -66,9 +71,11 @@ public class PortalNexusKeybinds
 	static final String CONFIG_KEY = "portalNexusKeybinds";
 
 	private final ConfigManager configManager;
-	private final Map<String, Character> keysByNormalizedName = new HashMap<>();
+	private final Map<String, String> keysByNormalizedName = new HashMap<>();
 	private String lastSaved = "";
 	private boolean dirty;
+	private int dialogTick = -1;
+	private int dialogLineIndex;
 
 	@Inject
 	public PortalNexusKeybinds(ConfigManager configManager)
@@ -102,7 +109,7 @@ public class PortalNexusKeybinds
 		}
 
 		String base = stripKeyPrefix(displayInfo);
-		Character key = keysByNormalizedName.get(normalize(base));
+		String key = keysByNormalizedName.get(normalize(base));
 		if (key == null)
 		{
 			return base;
@@ -110,10 +117,39 @@ public class PortalNexusKeybinds
 		return key + ": " + base;
 	}
 
-	void putFromDialogLine(String rawText)
+	/**
+	 * Records one teleport menu line as it is created by the client. Lines are
+	 * created in menu order within a single tick, so the line position doubles
+	 * as the key index; the displayed key is positional (1-9, A-Z, F1-F10).
+	 * An explicit "key : name" prefix in the line text wins when present.
+	 */
+	void putFromDialogLine(int tick, String rawText)
 	{
-		parseKeyedText(rawText, keysByNormalizedName);
-		dirty = true;
+		if (tick != dialogTick)
+		{
+			dialogTick = tick;
+			dialogLineIndex = 0;
+		}
+		String cleaned = rawText == null ? "" : Text.removeTags(rawText).trim();
+		Matcher matcher = KEYED_LINE.matcher(cleaned);
+		String key;
+		String name;
+		if (matcher.matches())
+		{
+			key = matcher.group(1).toUpperCase(Locale.ROOT);
+			name = matcher.group(2);
+		}
+		else
+		{
+			key = keyForIndex(dialogLineIndex);
+			name = cleaned.replaceAll("^[\\s:]+", "");
+		}
+		dialogLineIndex++;
+		if (!key.isEmpty())
+		{
+			putMapping(keysByNormalizedName, name, key);
+			dirty = true;
+		}
 	}
 
 	void loadFromProfile()
@@ -142,7 +178,7 @@ public class PortalNexusKeybinds
 
 	boolean refreshFromTeleportMenu(Client client)
 	{
-		Map<String, Character> parsed = new HashMap<>();
+		Map<String, String> parsed = new HashMap<>();
 		// Primary labels are TEXT1; diary/alternate names (GE, Seers, Yanille) are EXTRAS.
 		collectKeyedWidgets(client.getWidget(InterfaceID.TelenexusTeleport.TEXT1), parsed);
 		collectKeyedWidgets(client.getWidget(InterfaceID.TelenexusTeleport.EXTRAS), parsed);
@@ -187,7 +223,7 @@ public class PortalNexusKeybinds
 		return NAME_ALIASES.getOrDefault(stripped, stripped);
 	}
 
-	boolean replaceIfPresent(Map<String, Character> parsed)
+	boolean replaceIfPresent(Map<String, String> parsed)
 	{
 		if (parsed.isEmpty())
 		{
@@ -208,9 +244,9 @@ public class PortalNexusKeybinds
 		return true;
 	}
 
-	static Map<String, Character> parseSlotLabels(List<String> names)
+	static Map<String, String> parseSlotLabels(List<String> names)
 	{
-		Map<String, Character> parsed = new HashMap<>();
+		Map<String, String> parsed = new HashMap<>();
 		if (names == null || names.isEmpty())
 		{
 			return parsed;
@@ -235,14 +271,36 @@ public class PortalNexusKeybinds
 			return parsed;
 		}
 
-		for (int i = 0; i < names.size() && i < KEYBIND_KEYS.length(); i++)
+		for (int i = 0; i < names.size() && i < MAX_KEYED_LINES; i++)
 		{
-			putMapping(parsed, names.get(i), KEYBIND_KEYS.charAt(i));
+			putMapping(parsed, names.get(i), keyForIndex(i));
 		}
 		return parsed;
 	}
 
-	static String serialize(Map<String, Character> keys)
+	/**
+	 * The menu binds keys by line position: 1-9 for the first nine lines, then
+	 * A-Z, then F1-F10 for the last ten slots of a fully upgraded nexus.
+	 * Returns "" when the position has no key.
+	 */
+	static String keyForIndex(int index)
+	{
+		if (index < 0 || index >= MAX_KEYED_LINES)
+		{
+			return "";
+		}
+		if (index < 9)
+		{
+			return String.valueOf((char) ('1' + index));
+		}
+		if (index < 35)
+		{
+			return String.valueOf((char) ('A' + index - 9));
+		}
+		return "F" + (index - 34);
+	}
+
+	static String serialize(Map<String, String> keys)
 	{
 		if (keys.isEmpty())
 		{
@@ -262,7 +320,7 @@ public class PortalNexusKeybinds
 		return sb.toString();
 	}
 
-	static void deserialize(String stored, Map<String, Character> keys)
+	static void deserialize(String stored, Map<String, String> keys)
 	{
 		if (stored == null || stored.isEmpty())
 		{
@@ -276,13 +334,8 @@ public class PortalNexusKeybinds
 				continue;
 			}
 			String name = entry.substring(0, split);
-			String keyText = entry.substring(split + 1);
-			if (keyText.length() != 1)
-			{
-				continue;
-			}
-			char key = Character.toUpperCase(keyText.charAt(0));
-			if ((key >= '1' && key <= '9') || (key >= 'A' && key <= 'Z'))
+			String key = entry.substring(split + 1).toUpperCase(Locale.ROOT);
+			if (key.matches("[1-9A-Z]|F(?:[1-9]|10)"))
 			{
 				keys.put(name, key);
 			}
@@ -304,7 +357,7 @@ public class PortalNexusKeybinds
 		configManager.setRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP, CONFIG_KEY, serialized);
 	}
 
-	private static void collectKeyedWidgets(Widget widget, Map<String, Character> parsed)
+	private static void collectKeyedWidgets(Widget widget, Map<String, String> parsed)
 	{
 		if (widget == null)
 		{
@@ -364,7 +417,7 @@ public class PortalNexusKeybinds
 		}
 	}
 
-	private static void parseKeyedText(String rawText, Map<String, Character> parsed)
+	private static void parseKeyedText(String rawText, Map<String, String> parsed)
 	{
 		if (rawText == null || rawText.isEmpty())
 		{
@@ -373,11 +426,11 @@ public class PortalNexusKeybinds
 		Matcher matcher = KEYED_LINE.matcher(Text.removeTags(rawText).trim());
 		if (matcher.matches())
 		{
-			putMapping(parsed, matcher.group(2), Character.toUpperCase(matcher.group(1).charAt(0)));
+			putMapping(parsed, matcher.group(2), matcher.group(1).toUpperCase(Locale.ROOT));
 		}
 	}
 
-	private static void putMapping(Map<String, Character> parsed, String destinationName, char key)
+	private static void putMapping(Map<String, String> parsed, String destinationName, String key)
 	{
 		putNormalized(parsed, destinationName, key);
 
@@ -394,7 +447,7 @@ public class PortalNexusKeybinds
 		}
 	}
 
-	private static void putNormalized(Map<String, Character> parsed, String destinationName, char key)
+	private static void putNormalized(Map<String, String> parsed, String destinationName, String key)
 	{
 		String normalized = normalize(destinationName);
 		if (normalized.isEmpty())
