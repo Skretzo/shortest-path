@@ -60,9 +60,10 @@
 1858 7051 0	2976 3872 0	Enter Ghorrock Portal 33433		1	Ghorrock Portal
 1858 7051 0	2976 3872 0	Enter Ghorrock Portal 33436		1	Ghorrock Portal
 1858 7051 0	2976 3872 0	Enter Ghorrock Portal 33439		1	Ghorrock Portal
-1858 7051 0	3165 3479 0	Grand Exchange Grand Exchange Portal 33093	4585=1	1	Grand Exchange Portal
-1858 7051 0	3165 3479 0	Grand Exchange Grand Exchange Portal 33099	4585=1	1	Grand Exchange Portal
-1858 7051 0	3165 3479 0	Grand Exchange Grand Exchange Portal 33105	4585=1	1	Grand Exchange Portal
+# Varbit 4480 is DIARY_VARROCK_MEDIUM; the Varrock teleport toggle (varbit 4585) only picks the default destination					
+1858 7051 0	3165 3479 0	Grand Exchange Grand Exchange Portal 33093	4480=1	1	Grand Exchange Portal
+1858 7051 0	3165 3479 0	Grand Exchange Grand Exchange Portal 33099	4480=1	1	Grand Exchange Portal
+1858 7051 0	3165 3479 0	Grand Exchange Grand Exchange Portal 33105	4480=1	1	Grand Exchange Portal
 1858 7051 0	3797 2866 0	Enter Harmony Island Portal 37589		1	Harmony Island Portal
 1858 7051 0	3797 2866 0	Enter Harmony Island Portal 37601		1	Harmony Island Portal
 1858 7051 0	3797 2866 0	Enter Harmony Island Portal 37613		1	Harmony Island Portal
@@ -123,9 +124,9 @@
 1858 7051 0	2837 3695 0	Enter Troll Stronghold Portal 33179	4493=1	1	Troll Stronghold Portal
 1858 7051 0	2837 3695 0	Enter Troll Stronghold Portal 33180	4493=1	1	Troll Stronghold Portal
 1858 7051 0	2837 3695 0	Enter Troll Stronghold Portal 33181	4493=1	1	Troll Stronghold Portal
-1858 7051 0	3213 3424 0	Varrock Varrock Portal 33092	4585=0	1	Varrock Portal
-1858 7051 0	3213 3424 0	Varrock Varrock Portal 33098	4585=0	1	Varrock Portal
-1858 7051 0	3213 3424 0	Varrock Varrock Portal 33104	4585=0	1	Varrock Portal
+1858 7051 0	3213 3424 0	Varrock Varrock Portal 33092		1	Varrock Portal
+1858 7051 0	3213 3424 0	Varrock Varrock Portal 33098		1	Varrock Portal
+1858 7051 0	3213 3424 0	Varrock Varrock Portal 33104		1	Varrock Portal
 1858 7051 0	2546 3755 0	Enter Waterbirth Island Portal 29342		1	Waterbirth Island Portal
 1858 7051 0	2546 3755 0	Enter Waterbirth Island Portal 29350		1	Waterbirth Island Portal
 1858 7051 0	2546 3755 0	Enter Waterbirth Island Portal 29358		1	Waterbirth Island Portal
@@ -135,9 +136,10 @@
 1858 7051 0	2500 3290 0	Enter West Ardougne Portal 37588		1	West Ardougne Portal
 1858 7051 0	2500 3290 0	Enter West Ardougne Portal 37600		1	West Ardougne Portal
 1858 7051 0	2500 3290 0	Enter West Ardougne Portal 37612		1	West Ardougne Portal
-1858 7051 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33096	4548=0	1	Watchtower Portal
-1858 7051 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33108	4548=0	1	Watchtower Portal
-1858 7051 0	2546 3114 0	Watchtower Yanille Portal 33102	4548=0	1	Watchtower Portal
-1858 7051 0	2584 3097 0	Yanille Yanille Portal 33097	4548=1	1	Yanille Portal
-1858 7051 0	2584 3097 0	Yanille Yanille Portal 33103	4548=1	1	Yanille Portal
-1858 7051 0	2584 3097 0	Yanille Yanille Portal 33109	4548=1	1	Yanille Portal
+1858 7051 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33096		1	Watchtower Portal
+1858 7051 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33108		1	Watchtower Portal
+1858 7051 0	2546 3114 0	Watchtower Yanille Portal 33102		1	Watchtower Portal
+# Varbit 4460 is DIARY_ARDOUGNE_HARD; the Watchtower teleport toggle (varbit 4548) only picks the default destination					
+1858 7051 0	2584 3097 0	Yanille Yanille Portal 33097	4460=1	1	Yanille Portal
+1858 7051 0	2584 3097 0	Yanille Yanille Portal 33103	4460=1	1	Yanille Portal
+1858 7051 0	2584 3097 0	Yanille Yanille Portal 33109	4460=1	1	Yanille Portal
