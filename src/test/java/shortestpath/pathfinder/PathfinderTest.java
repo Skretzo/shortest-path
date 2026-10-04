@@ -107,6 +107,11 @@ public class PathfinderTest
 		setupInventory(new Item(ItemID.XBOWS_CROSSBOW_ADAMANTITE, 1));
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE, 1));
+		// Keep every skill below the barehanded wall-climb requirement (52
+		// Agility) so the only way over the wall is still the grapple and the
+		// scenario continues to exercise the banked-grapple branch.
+		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(40);
+		pathfinderConfig.refresh();
 
 		assertScenarioPathLength(
 			"Banked mith grapple should not leak to non-bank grapple branch",
