@@ -1431,4 +1431,20 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "unlockDragontoothPassage",
+		name = "Dragontooth Island free passage",
+		description = "Enable if you have permanently unlocked free boat passage to Dragontooth Island<br>" +
+			"(the one-time Ghosts Ahoy reward paid to the ghost captain).<br>" +
+			"The game does not expose the unlock to the client,<br>" +
+			"so the plugin cannot detect it automatically.<br>" +
+			"Enabling this declares the unlock without verification",
+		position = 162,
+		section = sectionUnlocks
+	)
+	default boolean unlockDragontoothPassage()
+	{
+		return false;
+	}
+
 }

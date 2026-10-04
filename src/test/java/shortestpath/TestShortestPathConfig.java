@@ -9,6 +9,7 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private int costBankVisit = 0;
 	private boolean unlockCanoeAxe = false;
 	private boolean unlockXericsHonour = false;
+	private boolean unlockDragontoothPassage = false;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -51,6 +52,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.unlockXericsHonour = unlockXericsHonour;
 	}
 
+	@SuppressWarnings("unused")
+	public void setUnlockDragontoothPassageValue(boolean unlockDragontoothPassage)
+	{
+		this.unlockDragontoothPassage = unlockDragontoothPassage;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -85,6 +92,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean unlockXericsHonour()
 	{
 		return unlockXericsHonour;
+	}
+
+	@Override
+	public boolean unlockDragontoothPassage()
+	{
+		return unlockDragontoothPassage;
 	}
 
 	@Override
