@@ -12,6 +12,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.BankPickupRequirements;
 
@@ -34,12 +35,13 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		if (plugin.getPathfinder() == null)
+		ActiveSearch search = plugin.getActiveSearch();
+		if (search == null)
 		{
 			return null;
 		}
 
-		List<PathStep> path = plugin.getPathfinder().getPath();
+		List<PathStep> path = search.getPath();
 		if (path == null || path.isEmpty())
 		{
 			return null;
