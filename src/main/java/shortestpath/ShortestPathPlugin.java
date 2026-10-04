@@ -226,8 +226,10 @@ public class ShortestPathPlugin extends Plugin
 	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
 	// whose query never ran and to know whether a search is reading the transport availability.
 	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
-	private ActiveSearch pathfinder;
-	private Pathfinder legacyPathfinder;
+	// Volatile because the render thread reads it (through getActiveSearch() and friends)
+	// while restarts write it on the client thread under pathfinderMutex.
+	private volatile ActiveSearch pathfinder;
+	private volatile Pathfinder legacyPathfinder;
 	private ExactRoutingStaticProvider exactRoutingStatic;
 	private final ExactRoutingSession exactRoutingSession = new ExactRoutingSession();
 	@Getter
@@ -920,6 +922,9 @@ public class ShortestPathPlugin extends Plugin
 				{
 					pathfinderConfig.refresh();
 				}
+				// Plugin queries always run on the legacy backend, even when the user-facing
+				// search opted into a different one: external callers get the proven engine's
+				// routes regardless of the experiment the user has enabled.
 				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
 				QueryTask task = new QueryTask(id);
 				queries.put(query, task);
