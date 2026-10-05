@@ -674,13 +674,15 @@ public class Settings
 		private final boolean unlockXericsHonour;
 		private final boolean unlockDragontoothPassage;
 		private final boolean unlockMorUlRek;
+		private final boolean unlockBalloonLogBasket;
 
 		private UnlocksView(EffectiveConfig effective)
 		{
-			unlockCanoeAxe = effective.bool(ConfigKey.UNLOCK_CANOE_AXE);
-			unlockXericsHonour = effective.bool(ConfigKey.UNLOCK_XERICS_HONOUR);
-			unlockDragontoothPassage = effective.bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
-			unlockMorUlRek = effective.bool(ConfigKey.UNLOCK_MOR_UL_REK);
+			unlockCanoeAxe = config.unlockCanoeAxe();
+			unlockXericsHonour = config.unlockXericsHonour();
+			unlockDragontoothPassage = config.unlockDragontoothPassage();
+			unlockMorUlRek = config.unlockMorUlRek();
+			unlockBalloonLogBasket = config.unlockBalloonLogBasket();
 		}
 	}
 
