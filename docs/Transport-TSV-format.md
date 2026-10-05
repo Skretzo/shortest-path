@@ -77,7 +77,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
     - In an OR group the unlock is a relief alternative, e.g. `AXE=1|UNLOCK_CANOE_AXE=1` accepts a carried axe or an axe stored at a canoe station.
     - As an ANDed requirement it is a gate, e.g. `13393=1&UNLOCK_XERICS_HONOUR=1` requires carrying Xeric's talisman *and* having earned Xeric's Honour; the gate applies even when item evaluation is skipped (teleportation-item modes).
     - Names are case-insensitive (the cell is uppercased before parsing), but unlike unknown item names, an unknown `UNLOCK_*` name is a loud parse error that fails the row — it never silently drops the requirement. `=0` quantities are malformed: unlock tokens must be written `=1`.
-    - Current names: `UNLOCK_CANOE_AXE` (axe stored at a canoe station), `UNLOCK_DRAGONTOOTH` (Dragontooth Island free passage), `UNLOCK_XERICS_HONOUR` (Xeric's Honour).
+    - Current names: `UNLOCK_CANOE_AXE` (axe stored at a canoe station), `UNLOCK_DRAGONTOOTH` (Dragontooth Island free passage), `UNLOCK_XERICS_HONOUR` (Xeric's Honour), `UNLOCK_BALLOON_LOG_BASKET` (logs stored in the shared balloon-station basket — relief for the destination log, e.g. `1511=1|UNLOCK_BALLOON_LOG_BASKET=1`, not a standalone gate).
 
 ### Quests
 
