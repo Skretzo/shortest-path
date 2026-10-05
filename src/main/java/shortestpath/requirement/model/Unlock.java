@@ -35,6 +35,14 @@ public enum Unlock
 	 * Permanent access to Mor Ul Rek's inner city after showing a fire cape.
 	 */
 	MOR_UL_REK,
+
+	/**
+	 * Logs deposited in the shared balloon-station basket, which the pilot
+	 * consumes per destination (regular, oak, willow, yew or magic). The
+	 * stored stack is not exposed to the client, so it is declared by the
+	 * player instead of being read from inventory.
+	 */
+	BALLOON_LOG_BASKET,
 	;
 
 	private static final String TOKEN_PREFIX = "UNLOCK_";
