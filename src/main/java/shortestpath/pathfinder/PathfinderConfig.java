@@ -23,6 +23,7 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
+import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
@@ -48,6 +49,7 @@ import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
+import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.requirement.model.Unlock;
 
@@ -480,6 +482,15 @@ public class PathfinderConfig
 	 */
 	public int getAdditionalTransportCost(Transport transport)
 	{
+		// A pinned per-item threshold is the whole additional cost for a
+		// transport referencing that item — the user declared its exact
+		// tiles-saved value, so it replaces type-level and consumable pricing
+		// rather than stacking on top of them.
+		int thresholdOverride = memberThresholdOverride(transport);
+		if (thresholdOverride > 0)
+		{
+			return thresholdOverride;
+		}
 		if (transport.isConsumable() && TransportType.TELEPORTATION_ITEM.equals(transport.getType()))
 		{
 			return costConsumableTeleportationItems;
@@ -503,6 +514,58 @@ public class PathfinderConfig
 			return transport.getType().differentialCostFunction().apply(config);
 		}
 		return 0;
+	}
+
+	/**
+	 * Largest {@code id:N} threshold override matching any item id the
+	 * transport's requirements reference. Member ids include the staff and
+	 * offhand substitutes of each branch — an override pinned on a substitute
+	 * (e.g. a staff standing in for a rune) applies to the transport too.
+	 * Scoped to the same item-teleport types as the restriction gate;
+	 * returns 0 when nothing matches.
+	 */
+	private int memberThresholdOverride(Transport transport)
+	{
+		if (itemThresholdOverrides.isEmpty())
+		{
+			return 0;
+		}
+		TransportType type = transport.getType();
+		if (!TransportType.TELEPORTATION_ITEM.equals(type)
+			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
+			&& !TransportType.QUETZAL_WHISTLE.equals(type))
+		{
+			return 0;
+		}
+		TransportItems itemRequirements = transport.getItemRequirements();
+		if (itemRequirements == null)
+		{
+			return 0;
+		}
+		int max = 0;
+		for (ItemRequirement requirement : itemRequirements.getRequirements())
+		{
+			for (ItemRequirement.Branch branch : requirement.getBranches())
+			{
+				max = Math.max(max, maxOverride(branch.getItemIds()));
+				max = Math.max(max, maxOverride(branch.getStaffIds()));
+				max = Math.max(max, maxOverride(branch.getOffhandIds()));
+			}
+		}
+		return max;
+	}
+
+	private int maxOverride(int[] ids)
+	{
+		int max = 0;
+		if (ids != null)
+		{
+			for (int itemId : ids)
+			{
+				max = Math.max(max, itemThresholdOverrides.getOrDefault(itemId, 0));
+			}
+		}
+		return max;
 	}
 
 	static Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations)
