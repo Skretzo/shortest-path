@@ -1,8 +1,10 @@
 package shortestpath.requirement.model;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Assert;
 import org.junit.Test;
@@ -329,6 +331,64 @@ public class TransportItemsSatisfactionTest
 		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
 		// A carried log satisfies the item branch even with no unlock declared.
 		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(), 1511, 1));
+	}
+
+	/**
+	 * Blocking is structural: a transport drops out only when some ANDed
+	 * requirement loses every OR alternative to blocked item ids. Ownership is
+	 * never consulted here — that question belongs to {@code isSatisfiedBy}.
+	 */
+	@Test
+	public void blockedLastAlternativeKillsTheRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(items.survivesBlockedItems(Set.of(13121)));
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(99999)));
+		Assert.assertTrue(items.survivesBlockedItems(Set.of()));
+	}
+
+	@Test
+	public void orGroupSurvivesOnItsUnblockedBranch()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1|13124=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(13121)));
+		Assert.assertFalse(items.survivesBlockedItems(Set.of(13121, 13124)));
+	}
+
+	@Test
+	public void andedRequirementsDieWhenEitherLosesEveryBranch()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1|13122=1&13124=1");
+		Assert.assertNotNull(items);
+		// First requirement survives on 13122, second is fully blocked.
+		Assert.assertFalse(items.survivesBlockedItems(Set.of(13121, 13124)));
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(13121)));
+	}
+
+	@Test
+	public void unlockBranchesCanNeverBeBlocked()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1|UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(13121)));
+
+		TransportItems pureUnlock = new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(pureUnlock);
+		Assert.assertTrue(pureUnlock.survivesBlockedItems(Set.of(13121, 13124)));
+	}
+
+	@Test
+	public void unblockedStaffSubstituteKeepsBranchAlive()
+	{
+		// A fire-rune requirement whose every rune variant is blocked still
+		// survives while a fire staff substitute is not.
+		TransportItems items = new ItemRequirementParser().parse("FIRE_RUNE=1");
+		Assert.assertNotNull(items);
+		Set<Integer> allRunes =
+			Arrays.stream(ItemVariations.FIRE_RUNE.getIds()).boxed().collect(Collectors.toSet());
+		Assert.assertTrue(items.survivesBlockedItems(allRunes));
 	}
 
 	private static boolean satisfied(TransportItems items, int... idAndQuantity)

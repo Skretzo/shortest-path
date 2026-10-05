@@ -75,6 +75,32 @@ public final class ItemRequirement
 			return itemIds == null && unlock != null;
 		}
 
+		/**
+		 * Any unblocked item, staff or offhand id keeps the branch alive; a
+		 * branch carrying no ids at all — an unlock alternative — can never
+		 * be blocked.
+		 */
+		public boolean hasUnblockedId(Set<Integer> blockedIds)
+		{
+			boolean hasIds = false;
+			for (int[] ids : new int[][]{itemIds, staffIds, offhandIds})
+			{
+				if (ids == null)
+				{
+					continue;
+				}
+				for (int itemId : ids)
+				{
+					hasIds = true;
+					if (!blockedIds.contains(itemId))
+					{
+						return true;
+					}
+				}
+			}
+			return !hasIds;
+		}
+
 		@Override
 		public int hashCode()
 		{
@@ -210,6 +236,25 @@ public final class ItemRequirement
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Whether this requirement keeps at least one OR alternative once the
+	 * player-blocked item ids are removed: a branch survives on any unblocked
+	 * item, staff or offhand id, and a branch carrying no ids at all — an
+	 * unlock alternative — can never be blocked. This is a structural property
+	 * of the requirement, independent of what the player owns.
+	 */
+	public boolean hasUnblockedAlternative(Set<Integer> blockedIds)
+	{
+		for (Branch branch : branches)
+		{
+			if (branch.hasUnblockedId(blockedIds))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
