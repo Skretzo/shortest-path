@@ -237,7 +237,8 @@ public class PlayerStateSourceTest
 		Set<PohNexusPortal> portals = new HashSet<>(PohNexusPortal.values());
 		Set<PohMountedItem> mounted = new HashSet<>(PohMountedItem.values());
 		RoutingPolicy policy = new RoutingPolicy(enabledTypes, MODE, true, true, true, true,
-			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true);
+			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true,
+			Set.of(), Map.of());
 
 		RequirementContext context = RequirementTestFixtures.context().build();
 		Requirements requirements = new Requirements(context, policy,
