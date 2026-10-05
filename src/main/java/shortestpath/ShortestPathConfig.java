@@ -87,8 +87,7 @@ public interface ShortestPathConfig extends Config
 		name = "Use boats",
 		description = "Whether to include small boats in the path<br>" +
 			"(e.g. the boat to Fishing Platform)",
-		position = 44,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean useBoats()
 	{
@@ -830,8 +829,7 @@ public interface ShortestPathConfig extends Config
 		name = "Boat threshold",
 		description = "How many extra tiles a small boat must save<br>" +
 			"to be preferred over walking or other transports",
-		position = 153,
-		section = sectionThresholds
+		hidden = true
 	)
 	default int costBoats()
 	{
