@@ -535,13 +535,14 @@ public interface ShortestPathConfig extends Config
 
 	@Range(
 		min = 100,
-		max = 1000
+		max = 300
 	)
 	@ConfigItem(
 		keyName = "exactHeuristicWeight",
 		name = "Exact heuristic weight",
-		description = "Heuristic weight used by the exact backend, as a percentage.<br>" +
-			"100 preserves exact paths; higher values trade path quality for speed.",
+		description = "Makes the exact backend search faster at the price of a suboptimal route.<br>" +
+			"The route costs at most this percentage of the optimal route's cost:<br>" +
+			"100 always finds the optimal route, 300 may find one up to 3x as costly.",
 		position = 41,
 		section = sectionSettings
 	)
