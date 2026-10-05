@@ -341,13 +341,7 @@ public final class Requirements
 	private boolean checkBlockedItems(Transport transport, TransportType type)
 	{
 		Set<Integer> blockedItemIds = policy.blockedItemIds();
-		if (blockedItemIds.isEmpty())
-		{
-			return true;
-		}
-		if (!TransportType.TELEPORTATION_ITEM.equals(type)
-			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
-			&& !TransportType.QUETZAL_WHISTLE.equals(type))
+		if (blockedItemIds.isEmpty() || !TeleportRestriction.isItemTeleportType(type))
 		{
 			return true;
 		}
