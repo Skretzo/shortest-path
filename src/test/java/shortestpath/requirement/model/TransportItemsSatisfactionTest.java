@@ -291,6 +291,48 @@ public class TransportItemsSatisfactionTest
 		}
 	}
 
+	/**
+	 * Logs already deposited in a balloon station's basket are invisible to
+	 * the client, so a pilot request is satisfied either by a carried log or
+	 * by the declared storage unlock.
+	 */
+	@Test
+	public void balloonLogBasketUnlockResolvesFromName()
+	{
+		Assert.assertNotNull("UNLOCK_BALLOON_LOG_BASKET must name a real unlock",
+			Unlock.fromName("UNLOCK_BALLOON_LOG_BASKET"));
+	}
+
+	@Test
+	public void balloonLogBasketUnlockParsesAsReliefAlternative()
+	{
+		TransportItems items = new ItemRequirementParser().parse("1511=1|UNLOCK_BALLOON_LOG_BASKET=1");
+		Assert.assertNotNull("An UNLOCK_* cell must parse", items);
+		Assert.assertEquals(1, items.getRequirements().size());
+		ItemRequirement req = items.getRequirements().get(0);
+		Assert.assertEquals(2, req.getBranches().size());
+		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
+		ItemRequirement.Branch unlock = req.getBranches().get(1);
+		Assert.assertNull(unlock.getItemIds());
+		Assert.assertNotNull(unlock.getUnlock());
+		Assert.assertEquals("BALLOON_LOG_BASKET", unlock.getUnlock().name());
+		Assert.assertTrue(unlock.isUnlockOnly());
+	}
+
+	@Test
+	public void declaredBalloonLogBasketRelievesLogRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("1511=1|UNLOCK_BALLOON_LOG_BASKET=1");
+		Assert.assertNotNull(items);
+		// Stored basket declared: the pilot flies without any carried log.
+		Assert.assertTrue(satisfiedWithUnlocks(items,
+			Set.of(Unlock.fromName("UNLOCK_BALLOON_LOG_BASKET"))));
+		// Nothing carried and nothing stored: the requirement gates.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		// A carried log satisfies the item branch even with no unlock declared.
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(), 1511, 1));
+	}
+
 	private static boolean satisfied(TransportItems items, int... idAndQuantity)
 	{
 		return items.isSatisfiedBy(counts(idAndQuantity), TransportItems.CURRENCIES, Integer.MAX_VALUE);
