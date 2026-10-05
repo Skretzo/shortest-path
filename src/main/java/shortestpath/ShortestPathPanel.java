@@ -72,6 +72,15 @@ public class ShortestPathPanel extends PluginPanel
 	private static final int COMBO_HEIGHT = 22;
 	private static final int SUB_LIST_INDENT = 16;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
+	private static final String OWNED_FILTER_TOOLTIP =
+		"Only show teleports for items in your inventory, equipment or bank";
+	static final String OWNED_EMPTY_LINE_1 =
+		"No teleport items detected in inventory, equipment or bank.";
+	static final String OWNED_EMPTY_LINE_2 =
+		"Open your bank once so the plugin can see its contents.";
+	static final String RESTRICTIONS_DISABLED_HINT =
+		"Teleportation items are disabled. Enable \"Use teleportation items\" "
+			+ "in Transports to restrict individual items.";
 
 	static final ImageIcon SECTION_EXPAND_ICON;
 	static final ImageIcon SECTION_RETRACT_ICON;
@@ -105,6 +114,7 @@ public class ShortestPathPanel extends PluginPanel
 	private final List<SearchRow> pohSubRows = new ArrayList<>();
 
 	private Section restrictionsSection;
+	private RestrictionListPanel restrictionListPanel;
 
 	boolean suppressConfigSync;
 
@@ -190,6 +200,10 @@ public class ShortestPathPanel extends PluginPanel
 		JScrollPane scrollPane = new JScrollPane(northWrap);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		add(scrollPane, BorderLayout.CENTER);
+
+		// Rows only live in section.rows until the search filter runs — with
+		// no initial pass the panel would render headers above empty bodies.
+		applySearchFilter("");
 	}
 
 	/**
@@ -231,6 +245,7 @@ public class ShortestPathPanel extends PluginPanel
 		nameLabel.setForeground(ColorScheme.BRAND_ORANGE);
 		nameLabel.setFont(FontManager.getRunescapeBoldFont());
 		header.add(nameLabel, BorderLayout.CENTER);
+		section.header = header;
 
 		section.contents = new JPanel(new DynamicGridLayout(0, 1, 0, 5));
 		section.contents.setMinimumSize(new Dimension(PANEL_WIDTH, 0));
@@ -333,12 +348,19 @@ public class ShortestPathPanel extends PluginPanel
 	private void buildRestrictionsSection()
 	{
 		restrictionsSection = createSection("restrictions", "Teleport Restrictions", false);
-		// Placeholder body: the per-family restriction rows land here in a
-		// later step; the section exists now so the panel order is final.
-		JPanel placeholder = new JPanel(new BorderLayout());
-		placeholder.setOpaque(false);
-		placeholder.setBorder(new EmptyBorder(4, 8, 4, 8));
-		restrictionsSection.rows.add(new SearchRow(placeholder, searchable("teleport restrictions")));
+		restrictionListPanel = new RestrictionListPanel(this, config, client, clientThread);
+		restrictionsSection.rows.add(new SearchRow(restrictionListPanel, searchable("teleport restrictions")));
+
+		JCheckBox owned = new JCheckBox("Owned");
+		owned.setOpaque(false);
+		owned.setForeground(Color.WHITE);
+		owned.setToolTipText(html(OWNED_FILTER_TOOLTIP));
+		owned.addActionListener(e ->
+		{
+			owned.setForeground(owned.isSelected() ? ColorScheme.BRAND_ORANGE : Color.WHITE);
+			restrictionListPanel.setOwnedOnly(owned.isSelected());
+		});
+		restrictionsSection.header.add(owned, BorderLayout.EAST);
 	}
 
 	private void buildUnlocksSection()
@@ -701,6 +723,10 @@ public class ShortestPathPanel extends PluginPanel
 		try
 		{
 			configManager.setConfiguration(ShortestPathPlugin.CONFIG_GROUP, keyName, value);
+			// The ConfigChanged echo is suppressed for panel writes, so
+			// same-key listeners (e.g. the restrictions list watching the
+			// teleportation-items mode) are synced here instead.
+			syncControl(keyName);
 		}
 		finally
 		{
@@ -720,6 +746,19 @@ public class ShortestPathPanel extends PluginPanel
 			return;
 		}
 		SwingUtilities.invokeLater(() -> syncControl(event.getKey()));
+	}
+
+	/**
+	 * Inventory/equipment/bank contents changed: refresh the restriction
+	 * checklist's owned-item snapshot. The container reads themselves are
+	 * marshalled onto the client thread inside {@link RestrictionListPanel}.
+	 */
+	void onItemContainersChanged()
+	{
+		if (restrictionListPanel != null)
+		{
+			restrictionListPanel.refreshOwnedItems();
+		}
 	}
 
 	private void syncControl(String keyName)
@@ -778,6 +817,19 @@ public class ShortestPathPanel extends PluginPanel
 			boolean anyMatch = false;
 			for (SearchRow row : section.rows)
 			{
+				// The restriction checklist filters itself: family-name hits
+				// stay collapsed while member-label hits expand their row, and
+				// the owned-filter empty state renders inside the section
+				// instead of dropping it.
+				if (row.component instanceof RestrictionListPanel)
+				{
+					if (((RestrictionListPanel) row.component).applyFilter(query))
+					{
+						section.contents.add(row.component);
+						anyMatch = true;
+					}
+					continue;
+				}
 				// Cards search-expanded by an earlier query return to their
 				// recorded state once the search box empties.
 				if (query.isEmpty() && row.component instanceof TransportFamilyCard)
@@ -882,6 +934,7 @@ public class ShortestPathPanel extends PluginPanel
 		String id;
 		boolean defaultOpen;
 		JPanel root;
+		JPanel header;
 		JButton toggle;
 		JPanel contents;
 		final List<SearchRow> rows = new ArrayList<>();
