@@ -127,10 +127,10 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (plugin.getPathfinder() != null)
+		if (plugin.getActiveSearch() != null)
 		{
 			Color colour = plugin.getPathColor();
-			List<PathStep> path = plugin.getPathfinder().getPath();
+			List<PathStep> path = plugin.getActiveSearch().getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			if (TileStyle.ARROW_LINE.equals(plugin.pathStyle))
 			{
@@ -151,7 +151,7 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			for (int target : plugin.getPathfinder().getTargets())
+			for (int target : plugin.getActiveSearch().getTargets())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{

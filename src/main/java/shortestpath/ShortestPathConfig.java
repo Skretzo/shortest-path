@@ -11,6 +11,7 @@ import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
 import net.runelite.client.config.Range;
 import net.runelite.client.config.Units;
+import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 
@@ -27,6 +28,18 @@ public interface ShortestPathConfig extends Config
 		position = 0
 	)
 	String sectionSettings = "sectionSettings";
+
+	@ConfigItem(
+		keyName = "pathfinderBackend",
+		name = "Pathfinder backend",
+		description = "Backend used for pathfinding",
+		position = 40,
+		section = sectionSettings
+	)
+	default PathfinderBackend pathfinderBackend()
+	{
+		return PathfinderBackend.LEGACY;
+	}
 
 	@ConfigItem(
 		keyName = "avoidWilderness",
@@ -518,6 +531,24 @@ public interface ShortestPathConfig extends Config
 	default int calculationCutoff()
 	{
 		return 5;
+	}
+
+	@Range(
+		min = 100,
+		max = 300
+	)
+	@ConfigItem(
+		keyName = "exactHeuristicWeight",
+		name = "Exact heuristic weight",
+		description = "Makes the exact backend search faster at the price of a suboptimal route.<br>" +
+			"The route costs at most this percentage of the optimal route's cost:<br>" +
+			"100 always finds the optimal route, 300 may find one up to 3x as costly.",
+		position = 41,
+		section = sectionSettings
+	)
+	default int exactHeuristicWeight()
+	{
+		return 100;
 	}
 
 	@ConfigItem(

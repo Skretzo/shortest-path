@@ -40,6 +40,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 import shortestpath.transport.OwnedItems;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
@@ -161,6 +162,8 @@ public class PathfinderConfig
 	@Getter
 	private int unreachableTargetDistance;
 	@Getter
+	private double exactHeuristicWeight = 1;
+	@Getter
 	private boolean avoidWilderness;
 	// POH-specific settings (not tied to a single TransportType)
 	private boolean usePohFairyRing,
@@ -180,6 +183,8 @@ public class PathfinderConfig
 	private int currencyThreshold;
 	@Getter
 	private boolean isOnSailingBoat;
+	@Getter
+	private PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -280,6 +285,14 @@ public class PathfinderConfig
 		return includeBankPath;
 	}
 
+	/** Snapshot the already-evaluated account/config state for the exact graph. */
+	public PreparedRoutingAccount prepareExactRoutingAccount(boolean allowTransports)
+	{
+		return PreparedRoutingAccount.compile(
+			getTransportAvailability(false), getTransportAvailability(true), includeBankPath,
+			accessibleBankTiles, bankVisitCost, allowTransports, this::getAdditionalTransportCost);
+	}
+
 	public boolean hasDestination(String destinationType)
 	{
 		return destinations.containsKey(destinationType);
@@ -300,9 +313,13 @@ public class PathfinderConfig
 
 	public void refresh()
 	{
+		pathfinderBackend = config.pathfinderBackend();
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		unreachableTargetDistance = ShortestPathPlugin.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+		// @Range only bounds the config panel, so also clamp overrides to the same 100-300% range.
+		exactHeuristicWeight = Math.max(100, Math.min(300,
+			ShortestPathPlugin.override("exactHeuristicWeight", config.exactHeuristicWeight()))) / 100.0;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
 		leagueModeState.refresh(client);

@@ -15,6 +15,7 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -90,12 +91,13 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		if (plugin.getPathfinder() == null)
+		ActiveSearch search = plugin.getActiveSearch();
+		if (search == null)
 		{
 			return null;
 		}
 
-		List<PathStep> path = plugin.getPathfinder().getPath();
+		List<PathStep> path = search.getPath();
 		if (path == null || path.isEmpty())
 		{
 			return null;
