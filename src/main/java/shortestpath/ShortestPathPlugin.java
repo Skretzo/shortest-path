@@ -48,6 +48,7 @@ import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
@@ -1176,8 +1177,13 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		ItemChange change = itemState.onContainerChanged(event.getContainerId(), event.getItemContainer());
+		int id = event.getContainerId();
+		ItemChange change = itemState.onContainerChanged(id, event.getItemContainer());
 		applyItemChange(change);
+		if (panel != null && (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN))
+		{
+			panel.onItemContainersChanged();
+		}
 	}
 
 	@Subscribe
