@@ -314,8 +314,7 @@ public class TransportItemsSatisfactionTest
 		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
 		ItemRequirement.Branch unlock = req.getBranches().get(1);
 		Assert.assertNull(unlock.getItemIds());
-		Assert.assertNotNull(unlock.getUnlock());
-		Assert.assertEquals("BALLOON_LOG_BASKET", unlock.getUnlock().name());
+		Assert.assertEquals(Unlock.BALLOON_LOG_BASKET, unlock.getUnlock());
 		Assert.assertTrue(unlock.isUnlockOnly());
 	}
 
@@ -325,8 +324,7 @@ public class TransportItemsSatisfactionTest
 		TransportItems items = new ItemRequirementParser().parse("1511=1|UNLOCK_BALLOON_LOG_BASKET=1");
 		Assert.assertNotNull(items);
 		// Stored basket declared: the pilot flies without any carried log.
-		Assert.assertTrue(satisfiedWithUnlocks(items,
-			Set.of(Unlock.fromName("UNLOCK_BALLOON_LOG_BASKET"))));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.BALLOON_LOG_BASKET)));
 		// Nothing carried and nothing stored: the requirement gates.
 		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
 		// A carried log satisfies the item branch even with no unlock declared.
