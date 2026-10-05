@@ -84,6 +84,11 @@ public final class ExactForwardSearch
 		// costs the same; elsewhere each capability gets a hub per bank layer, opened the first time
 		// the search reaches a tile with that capability.
 		int stateCount = tileStates + (capability == TeleportCapability.ALL ? 0 : HUB_STATES);
+		// These arrays span every reachable tile, so allocating them is a fixed cost on every query:
+		// about 1.4 ms for the 1.4M reachable tiles, measured on a Ryzen 9 7900. If the reachable set
+		// grows a lot (Sailing would add about 4M sea tiles), record transports only on the edges
+		// that win a state, in a small map keyed by state, instead of previousTransport. Also
+		// reuse best/previous across searches, using a per-search stamp in place of the fill.
 		int[] best = new int[stateCount]; Arrays.fill(best, ExactCosts.INF);
 		int[] previous = new int[stateCount];
 		Transport[] previousTransport = new Transport[stateCount];
