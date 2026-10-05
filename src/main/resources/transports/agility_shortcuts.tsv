@@ -647,10 +647,8 @@
 3024 9555 0	3012 9550 0	Enter Tunnel 53250	82 Agility				1	
 3024 9554 0	3012 9550 0	Enter Tunnel 53250	82 Agility				1	
 3024 9553 0	3012 9550 0	Enter Tunnel 53250	82 Agility				1	
-3810 3048 0	3810 3051 0	Cross Stepping Stone 62410	82 Agility					Cabin Fever
-3810 3051 0	3810 3048 0	Cross Stepping Stone 62410	82 Agility					Cabin Fever
-3811 3054 0	3811 3056 0	Cross Stepping Stone 62411	82 Agility					Cabin Fever
-3811 3056 0	3811 3054 0	Cross Stepping Stone 62411	82 Agility					Cabin Fever
+3810 3048 0	3811 3056 0	Cross Stepping Stone 62410	82 Agility					Cabin Fever
+3811 3056 0	3810 3048 0	Cross Stepping Stone 62411	82 Agility					Cabin Fever
 1435 10076 2	1436 10074 0	Climb Chain 56242	83 Agility					
 3330 2983 0	3336 2983 0	Cross Ditch 62416	83 Agility					
 3336 2983 0	3330 2983 0	Cross Ditch 62416	83 Agility					
