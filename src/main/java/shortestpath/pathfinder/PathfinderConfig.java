@@ -40,6 +40,7 @@ import shortestpath.requirement.RequirementContext;
 import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
+import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
@@ -194,6 +195,14 @@ public class PathfinderConfig
 	private volatile Set<PohMountedItem> enabledPohMountedItems = Set.of();
 	@Getter
 	private volatile Set<Unlock> unlocks = Set.of();
+	/**
+	 * Item ids the player excluded from routing via the hidden
+	 * {@code blockedTeleportItems} CSV ({@code id} records), and per-item
+	 * tiles-saved threshold overrides from {@code id:N} records. Reparsed on
+	 * every {@link #refresh()}.
+	 */
+	private volatile Set<Integer> blockedItemIds = Set.of();
+	private volatile Map<Integer, Integer> itemThresholdOverrides = Map.of();
 	private volatile JewelleryBoxTier pohJewelleryBoxTier;
 	private volatile int costConsumableTeleportationItems;
 	@Getter
@@ -381,6 +390,15 @@ public class PathfinderConfig
 		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
+		// Player-declared per-item restrictions: a bare id blocks the item from
+		// routing entirely, while id:N pins the tiles-saved threshold used to
+		// price transports that reference the id.
+		Set<Integer> blockedItems = new HashSet<>();
+		Map<Integer, Integer> thresholdOverrides = new HashMap<>();
+		TeleportRestriction.parseBlocked(config.blockedTeleportItems(), blockedItems, thresholdOverrides);
+		blockedItemIds = Set.copyOf(blockedItems);
+		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
+
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = settings.effective().costConsumableTeleportationItems();
 		bankVisitCost = settings.effective().costBankVisit();
@@ -552,7 +570,7 @@ public class PathfinderConfig
 		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath);
+			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides);
 
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
