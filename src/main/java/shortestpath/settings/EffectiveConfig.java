@@ -116,7 +116,128 @@ public final class EffectiveConfig implements ShortestPathConfig
 		return (TeleportationItem) baseOf(ConfigKey.USE_TELEPORTATION_ITEMS);
 	}
 
-	/** {@code showTileCounter} — string-parsed enum coercion. */
+	@Override
+	public boolean useTeleportationLevers()
+	{
+		return override(ConfigKey.USE_TELEPORTATION_LEVERS, base.useTeleportationLevers());
+	}
+
+	@Override
+	public boolean useTeleportationPortals()
+	{
+		return override(ConfigKey.USE_TELEPORTATION_PORTALS, base.useTeleportationPortals());
+	}
+
+	@Override
+	public boolean useTeleportationSpells()
+	{
+		return override(ConfigKey.USE_TELEPORTATION_SPELLS, base.useTeleportationSpells());
+	}
+
+	@Override
+	public boolean useTeleportationSpellsHome()
+	{
+		return override(ConfigKey.USE_TELEPORTATION_SPELLS_HOME, base.useTeleportationSpellsHome());
+	}
+
+	@Override
+	public boolean useTeleportationMinigames()
+	{
+		return override(ConfigKey.USE_TELEPORTATION_MINIGAMES, base.useTeleportationMinigames());
+	}
+
+	@Override
+	public boolean useWildernessObelisks()
+	{
+		return override(ConfigKey.USE_WILDERNESS_OBELISKS, base.useWildernessObelisks());
+	}
+
+	@Override
+	public boolean useSeasonalTransports()
+	{
+		return override(ConfigKey.USE_SEASONAL_TRANSPORTS, base.useSeasonalTransports());
+	}
+
+	@Override
+	public boolean respawnPrifddinas()
+	{
+		return override(ConfigKey.RESPAWN_PRIFDDINAS, base.respawnPrifddinas());
+	}
+
+	@Override
+	public boolean unlockCanoeAxe()
+	{
+		return override(ConfigKey.UNLOCK_CANOE_AXE, base.unlockCanoeAxe());
+	}
+
+	@Override
+	public boolean unlockXericsHonour()
+	{
+		return override(ConfigKey.UNLOCK_XERICS_HONOUR, base.unlockXericsHonour());
+	}
+
+	@Override
+	public boolean unlockDragontoothPassage()
+	{
+		return override(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE, base.unlockDragontoothPassage());
+	}
+
+	@Override
+	public boolean unlockMorUlRek()
+	{
+		return override(ConfigKey.UNLOCK_MOR_UL_REK, base.unlockMorUlRek());
+	}
+
+	@Override
+	public boolean unlockBalloonLogBasket()
+	{
+		Object value = overrides.get(ConfigKey.UNLOCK_BALLOON_LOG_BASKET.getKey());
+		return value instanceof Boolean ? (boolean) value : base.unlockBalloonLogBasket();
+	}
+
+	@Override
+	public boolean includeBankPath()
+	{
+		return override(ConfigKey.INCLUDE_BANK_PATH, base.includeBankPath());
+	}
+
+	@Override
+	public int currencyThreshold()
+	{
+		return override(ConfigKey.CURRENCY_THRESHOLD, base.currencyThreshold());
+	}
+
+	@Override
+	public boolean cancelInstead()
+	{
+		return override(ConfigKey.CANCEL_INSTEAD, base.cancelInstead());
+	}
+
+	@Override
+	public int recalculateDistance()
+	{
+		return override(ConfigKey.RECALCULATE_DISTANCE, base.recalculateDistance());
+	}
+
+	@Override
+	public int reachedDistance()
+	{
+		return override(ConfigKey.FINISH_DISTANCE, base.reachedDistance());
+	}
+
+	@Override
+	public int unreachableTargetDistance()
+	{
+		return override(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD, base.unreachableTargetDistance());
+	}
+
+	@Override
+	public boolean showUnreachableText()
+	{
+		return override(ConfigKey.SHOW_UNREACHABLE_TEXT, base.showUnreachableText());
+	}
+
+	@Override
 	public TileCounter showTileCounter()
 	{
 		Object value = overrides.get(ConfigKey.SHOW_TILE_COUNTER.getKey());

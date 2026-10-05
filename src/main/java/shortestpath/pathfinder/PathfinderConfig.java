@@ -481,6 +481,10 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.MOR_UL_REK);
 		}
+		if (effective.unlockBalloonLogBasket())
+		{
+			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
+		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// Player-declared per-item restrictions: a bare id blocks the item from
