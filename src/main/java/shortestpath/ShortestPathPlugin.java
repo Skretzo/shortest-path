@@ -63,12 +63,15 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.events.RuneScapeProfileChanged;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
@@ -217,6 +220,14 @@ public class ShortestPathPlugin extends Plugin
 	private PortalNexusKeybinds portalNexusKeybinds;
 	@Inject
 	private SpiritTreePatchState spiritTreePatchState;
+	@Inject
+	private ClientToolbar clientToolbar;
+	@Inject
+	private ConfigManager configManager;
+	@Inject
+	private ItemManager itemManager;
+	private ShortestPathPanel panel;
+	private NavigationButton navButton;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -419,6 +430,15 @@ public class ShortestPathPlugin extends Plugin
 		keyManager.registerKeyListener(clearPathKeylistener);
 		portalNexusKeybinds.loadFromProfile();
 		prepareExactBackend();
+
+		panel = new ShortestPathPanel(config, configManager, client, clientThread, itemManager);
+		navButton = NavigationButton.builder()
+			.tooltip("Shortest Path")
+			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/panel_icon.png"))
+			.priority(5)
+			.panel(panel)
+			.build();
+		clientToolbar.addNavigation(navButton);
 	}
 
 	@Override
@@ -444,6 +464,13 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
+
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+			panel = null;
+		}
 
 		// Flush pending observations so the last tick's sample is not lost.
 		spiritTreePatchState.persistIfDirty();
@@ -688,6 +715,11 @@ public class ShortestPathPlugin extends Plugin
 		if (!CONFIG_GROUP.equals(event.getGroup()))
 		{
 			return;
+		}
+
+		if (panel != null)
+		{
+			panel.onExternalConfigChanged(event);
 		}
 
 		cacheConfigValues();
