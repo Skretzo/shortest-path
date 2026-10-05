@@ -78,8 +78,15 @@ public class PathfinderConfigBlockedItemsTest
 		"No requirements", null);
 	private static final Transport CONSUMABLE_TELE = teleport(
 		"Consumable", "13121=1", true);
-	private static final Transport WHISTLE = transport(TransportType.QUETZAL_WHISTLE,
-		"Quetzal whistle", "29271=1");
+	// Consumable so the whistle exercises the stacked
+	// type-cost + consumable-cost pricing path.
+	private static final Transport WHISTLE = new Transport.TransportBuilder()
+		.type(TransportType.QUETZAL_WHISTLE)
+		.destination("2607 3221 0")
+		.displayInfo("Quetzal whistle")
+		.itemRequirements("29271=1")
+		.isConsumable(true)
+		.build();
 	// The destination sits in a region with no league mapping, which classifies
 	// as the always-unlocked NEUTRAL region for the league-mode gate.
 	private static final Transport SEASONAL = transport(TransportType.SEASONAL_TRANSPORTS,
@@ -310,6 +317,118 @@ public class PathfinderConfigBlockedItemsTest
 			items(ARDY_CLOAK_2), ARDY_CLOAK);
 
 		assertTrue(usable(cfg, ARDY_CLOAK, false));
+	}
+
+	@Test
+	public void thresholdOverrideReplacesWholeTypeCost()
+	{
+		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:40", ARDY_CLOAK);
+
+		// id:N is a threshold record, not a block record — the transport must
+		// stay usable and its additional cost is the pinned value.
+		assertTrue(usable(cfg, ARDY_CLOAK, false));
+		assertEquals(40, cfg.getAdditionalTransportCost(ARDY_CLOAK));
+	}
+
+	@Test
+	public void zeroThresholdFallsBackToTypeCost()
+	{
+		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:0", ARDY_CLOAK);
+
+		assertEquals(10, cfg.getAdditionalTransportCost(ARDY_CLOAK));
+	}
+
+	@Test
+	public void maxThresholdWinsAcrossMatchingMemberIds()
+	{
+		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:30,13122:50", ARDY_CLOAK);
+
+		assertEquals(50, cfg.getAdditionalTransportCost(ARDY_CLOAK));
+	}
+
+	@Test
+	public void nonMatchingThresholdLeavesTypeCost()
+	{
+		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "99999:40", ARDY_CLOAK);
+
+		assertEquals(10, cfg.getAdditionalTransportCost(ARDY_CLOAK));
+	}
+
+	@Test
+	public void thresholdOverrideIsWholeCostForConsumables()
+	{
+		when(config.costConsumableTeleportationItems()).thenReturn(7);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:40", CONSUMABLE_TELE);
+
+		// The pinned tiles-saved is the whole additional cost — it replaces
+		// consumable-item pricing rather than stacking on top of it.
+		assertEquals(40, cfg.getAdditionalTransportCost(CONSUMABLE_TELE));
+	}
+
+	@Test
+	public void consumableWhistleThresholdReplacesStackedCost()
+	{
+		when(config.costQuetzals()).thenReturn(5);
+		when(config.costConsumableTeleportationItems()).thenReturn(7);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "29271:40", WHISTLE);
+
+		// Without the override this whistle costs 5 + 7 = 12; the pinned
+		// override is the whole cost for the item, not an added component.
+		assertEquals(40, cfg.getAdditionalTransportCost(WHISTLE));
+	}
+
+	@Test
+	public void whistleWithoutOverrideKeepsStackedCost()
+	{
+		when(config.costQuetzals()).thenReturn(5);
+		when(config.costConsumableTeleportationItems()).thenReturn(7);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "", WHISTLE);
+
+		assertEquals(12, cfg.getAdditionalTransportCost(WHISTLE));
+	}
+
+	@Test
+	public void seasonalThresholdOverrideApplies()
+	{
+		when(config.costSeasonalTransports()).thenReturn(4);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "30361:25", SEASONAL);
+
+		assertEquals(25, cfg.getAdditionalTransportCost(SEASONAL));
+	}
+
+	@Test
+	public void staffAndOffhandMemberIdsCarryThresholds()
+	{
+		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		// A threshold pinned on a staff substitute id applies too — substitutes
+		// are member ids of the transport's item requirement.
+		int staffId = ItemVariations.staves(ItemVariations.FIRE_RUNE)[0];
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, staffId + ":33", RUNE_TELE);
+
+		assertEquals(33, cfg.getAdditionalTransportCost(RUNE_TELE));
+	}
+
+	@Test
+	public void thresholdOverrideDoesNotReachNonTeleportTypes()
+	{
+		when(config.costBoats()).thenReturn(3);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:40", BOAT_ON_CLOAK);
+
+		assertEquals(3, cfg.getAdditionalTransportCost(BOAT_ON_CLOAK));
+	}
+
+	@Test
+	public void malformedThresholdRecordsAreSkipped()
+	{
+		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL,
+			"13121:abc,13122:50", ARDY_CLOAK);
+
+		assertEquals(50, cfg.getAdditionalTransportCost(ARDY_CLOAK));
 	}
 
 	private static Transport teleport(String displayInfo, String items)
