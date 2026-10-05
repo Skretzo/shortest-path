@@ -214,7 +214,8 @@ public class Settings
 		boolean usePoh, boolean usePohFairyRing, boolean usePohSpiritTree,
 		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
 		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
-		int currencyThreshold, boolean includeBankPath)
+		int currencyThreshold, boolean includeBankPath,
+		Set<Integer> blockedItemIds, Map<Integer, Integer> itemThresholdOverrides)
 	{
 		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
 		for (TransportType type : TransportType.values())
@@ -228,7 +229,7 @@ public class Settings
 			transportTypeConfig.getTeleportationItemSetting(),
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath);
+			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides);
 		publishRouting(policy);
 		return policy;
 	}
