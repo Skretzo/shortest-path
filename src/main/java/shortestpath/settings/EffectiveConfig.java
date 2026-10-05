@@ -246,6 +246,13 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean unlockBalloonLogBasket()
+	{
+		Object value = overrides.get(ConfigKey.UNLOCK_BALLOON_LOG_BASKET.getKey());
+		return value instanceof Boolean ? (boolean) value : base.unlockBalloonLogBasket();
+	}
+
+	@Override
 	public boolean includeBankPath()
 	{
 		Object value = overrides.get(ConfigKey.INCLUDE_BANK_PATH.getKey());
