@@ -778,10 +778,27 @@ public class ShortestPathPanel extends PluginPanel
 			boolean anyMatch = false;
 			for (SearchRow row : section.rows)
 			{
+				// Cards search-expanded by an earlier query return to their
+				// recorded state once the search box empties.
+				if (query.isEmpty() && row.component instanceof TransportFamilyCard)
+				{
+					((TransportFamilyCard) row.component).clearSearchExpanded();
+				}
 				if (row.text.contains(query))
 				{
 					section.contents.add(row.component);
 					anyMatch = true;
+					// A match on a detail label (e.g. a cost threshold name)
+					// opens the card detail so the matched control is visible.
+					if (row.component instanceof TransportFamilyCard && !query.isEmpty())
+					{
+						TransportFamilyCard card = (TransportFamilyCard) row.component;
+						String cardName = card.getNameLabel().getText().toLowerCase(Locale.ROOT);
+						if (!cardName.contains(query))
+						{
+							card.setSearchExpanded();
+						}
+					}
 				}
 			}
 			if (!anyMatch)
