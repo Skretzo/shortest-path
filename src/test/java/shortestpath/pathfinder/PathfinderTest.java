@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Before;
@@ -1851,6 +1852,35 @@ public class PathfinderTest
 			hasTransportTo(transports, pohOrigin, lumbridgeRespawn));
 		assertFalse("Prifddinas respawn portal should stay gated without the config option",
 			hasTransportTo(transports, pohOrigin, prifddinasRespawn));
+	}
+
+	@Test
+	public void testMosLeHarmlessSteppingStonesStayOutOfTheSea()
+	{
+		// The stones (3810,3050 and 3810,3055) stand in open water, which the collision map
+		// leaves walkable. Landing on a water tile between them would connect the search to
+		// about a million tiles of sea, so the crossing goes straight from shore to island.
+		int shore = WorldPointUtil.packWorldPoint(3810, 3048, 0);
+		int island = WorldPointUtil.packWorldPoint(3811, 3056, 0);
+
+		when(config.useAgilityShortcuts()).thenReturn(true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		PrimitiveIntHashMap<Transport[]> transports = pathfinderConfig.getTransports();
+		assertTrue("Stepping stones should cross from Mos Le'Harmless to the island",
+			hasTransportTo(transports, shore, island));
+		assertTrue("Stepping stones should cross from the island to Mos Le'Harmless",
+			hasTransportTo(transports, island, shore));
+		for (int y = 3049; y <= 3055; y++)
+		{
+			for (int x = 3810; x <= 3811; x++)
+			{
+				int water = WorldPointUtil.packWorldPoint(x, y, 0);
+				assertNull("No transport may start in the water at " + x + "," + y, transports.get(water));
+				assertFalse("No transport may land in the water at " + x + "," + y,
+					hasTransportTo(transports, shore, water) || hasTransportTo(transports, island, water));
+			}
+		}
 	}
 
 	private boolean hasUsableTeleportTo(int packedDestination)
