@@ -24,8 +24,10 @@ for file in $(find "$RESOURCE_DIR" -name "*.tsv" -type f | sort); do
             continue
         fi
 
-        # Count columns (number of tabs + 1)
-        num_columns=$(($(printf '%s' "$line" | tr -cd '\t' | wc -c) + 1))
+        # Count columns (number of tabs + 1) via parameter expansion;
+        # spawning tr/wc per line made this lint take ~1 min on this repo
+        tabs_only=${line//[!$'\t']/}
+        num_columns=$((${#tabs_only} + 1))
 
         # Use the first line (header) to set expected column count
         if [[ -z "$expected_columns" ]]; then
