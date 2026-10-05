@@ -2,25 +2,34 @@ package shortestpath;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -28,18 +37,25 @@ import javax.swing.border.MatteBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import net.runelite.api.Client;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Range;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.ui.components.IconTextField;
+import net.runelite.client.ui.components.TitleCaseListCellRenderer;
+import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;
+import shortestpath.poh.PohMountedItem;
+import shortestpath.poh.PohNexusPortal;
 
 /**
  * Sidebar panel hosting the route-affecting plugin options. The keys stay on
@@ -50,13 +66,15 @@ import net.runelite.client.util.SwingUtil;
  */
 public class ShortestPathPanel extends PluginPanel
 {
-	private static final int SECTION_TOGGLE_WIDTH = 18;
-	private static final int CARD_ICON_SIZE = 16;
+	static final int SECTION_TOGGLE_WIDTH = 18;
+	static final int CARD_ICON_SIZE = 16;
 	private static final int SPINNER_FIELD_WIDTH = 6;
+	private static final int COMBO_HEIGHT = 22;
+	private static final int SUB_LIST_INDENT = 16;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 
-	private static final ImageIcon SECTION_EXPAND_ICON;
-	private static final ImageIcon SECTION_RETRACT_ICON;
+	static final ImageIcon SECTION_EXPAND_ICON;
+	static final ImageIcon SECTION_RETRACT_ICON;
 
 	static
 	{
@@ -68,8 +86,8 @@ public class ShortestPathPanel extends PluginPanel
 
 	private final ShortestPathConfig config;
 	private final ConfigManager configManager;
-	// Held for later sections (item icons, owned-items detection) so the
-	// constructor signature does not churn as cards are added.
+	// Held for the restrictions section (per-item sprites, owned-items
+	// detection) so the constructor signature does not churn as cards land.
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ItemManager itemManager;
@@ -79,18 +97,16 @@ public class ShortestPathPanel extends PluginPanel
 	private final JLabel noResultsLabel;
 	private final Map<String, Boolean> sectionExpandStates = new HashMap<>();
 	private final List<Section> sections = new ArrayList<>();
+	private final Map<String, Method> configMethods = new HashMap<>();
+	private final Map<String, List<Runnable>> syncHandlers = new HashMap<>();
 
-	// Boats card controls, kept as fields so external config edits can update
-	// them in place without rebuilding the panel.
-	private JCheckBox useBoatsToggle;
-	private JLabel boatsNameLabel;
-	private JButton boatsDetailToggle;
-	private JPanel boatsDetail;
-	private JLabel costBoatsLabel;
-	private JSpinner costBoatsSpinner;
-	private boolean boatsDetailOpen;
+	// Every POH control below the master row; dimmed + disabled while the
+	// master is off, same contract as the transport cards.
+	private final List<SearchRow> pohSubRows = new ArrayList<>();
 
-	private boolean suppressConfigSync;
+	private Section restrictionsSection;
+
+	boolean suppressConfigSync;
 
 	ShortestPathPanel(ShortestPathConfig config, ConfigManager configManager, Client client,
 		ClientThread clientThread, ItemManager itemManager)
@@ -102,6 +118,18 @@ public class ShortestPathPanel extends PluginPanel
 		this.client = client;
 		this.clientThread = clientThread;
 		this.itemManager = itemManager;
+
+		// Config getters are looked up by @ConfigItem keyName — the method name
+		// is not guaranteed to match (e.g. unreachableTargetDistanceThreshold
+		// is served by unreachableTargetDistance()).
+		for (Method method : ShortestPathConfig.class.getMethods())
+		{
+			ConfigItem item = method.getAnnotation(ConfigItem.class);
+			if (item != null && method.getParameterCount() == 0 && method.getReturnType() != void.class)
+			{
+				configMethods.putIfAbsent(item.keyName(), method);
+			}
+		}
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -142,14 +170,17 @@ public class ShortestPathPanel extends PluginPanel
 		contentPanel = new JPanel(new DynamicGridLayout(0, 1, 0, 3));
 		contentPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		Section transports = createSection("transports", "Transports", true);
-		JPanel boatsCard = createBoatsCard();
-		transports.rows.add(new SearchRow(boatsCard, searchable("useBoats", "Boats", "costBoats", "Boat threshold")));
-		contentPanel.add(transports.root);
+		buildTransportsSection();
+		buildRestrictionsSection();
+		buildUnlocksSection();
+		buildBankSection();
+		buildPohSection();
+		buildRoutingSection();
 
 		noResultsLabel = new JLabel();
 		noResultsLabel.setFont(FontManager.getRunescapeSmallFont());
 		noResultsLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		noResultsLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		noResultsLabel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
 		JPanel northWrap = new JPanel(new BorderLayout());
@@ -223,134 +254,439 @@ public class ShortestPathPanel extends PluginPanel
 		header.addMouseListener(adapter);
 
 		sections.add(section);
+		contentPanel.add(section.root);
 		return section;
 	}
 
 	private void toggleSection(Section section)
 	{
-		boolean newState = !section.contents.isVisible();
-		section.contents.setVisible(newState);
-		section.toggle.setIcon(newState ? SECTION_RETRACT_ICON : SECTION_EXPAND_ICON);
-		section.toggle.setToolTipText(newState ? "Retract" : "Expand");
-		sectionExpandStates.put(section.id, newState);
+		setSectionExpanded(section, !section.contents.isVisible());
+	}
+
+	private void setSectionExpanded(Section section, boolean expanded)
+	{
+		section.contents.setVisible(expanded);
+		section.toggle.setIcon(expanded ? SECTION_RETRACT_ICON : SECTION_EXPAND_ICON);
+		section.toggle.setToolTipText(expanded ? "Retract" : "Expand");
+		sectionExpandStates.put(section.id, expanded);
 		SwingUtilities.invokeLater(section.contents::revalidate);
 	}
 
-	/**
-	 * The Boats family card: name label, master {@code useBoats} checkbox and a
-	 * chevron revealing the {@code costBoats} threshold spinner. This is the
-	 * card shape the remaining transport families are built from.
-	 */
-	private JPanel createBoatsCard()
+	// ---- Section builders -------------------------------------------------
+
+	private void buildTransportsSection()
 	{
-		final boolean enabled = config.useBoats();
-		ConfigItem useBoatsItem = configItem("useBoats");
-		ConfigItem costBoatsItem = configItem("costBoats");
+		Section transports = createSection("transports", "Transports", true);
 
-		JPanel card = new JPanel();
-		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		card.setBorder(new EmptyBorder(4, 0, 4, 0));
+		addFamilyCard(transports, "useAgilityShortcuts", ItemID.AGILITY_JUMP,
+			familyThresholdRows("useAgilityShortcuts"));
+		addFamilyCard(transports, "useGrappleShortcuts", ItemID.XBOWS_GRAPPLE_HOOK,
+			familyThresholdRows("useGrappleShortcuts"));
+		addFamilyCard(transports, "useBoats", null,
+			familyThresholdRows("useBoats"));
+		addFamilyCard(transports, "useCanoes", ItemID.CANOEING_PADDLE,
+			familyThresholdRows("useCanoes"));
+		addFamilyCard(transports, "useCharterShips", null,
+			familyThresholdRows("useCharterShips"));
+		addFamilyCard(transports, "useShips", null,
+			familyThresholdRows("useShips"));
+		addFamilyCard(transports, "useFairyRings", ItemID.DRAMEN_STAFF,
+			familyThresholdRows("useFairyRings"));
+		addFamilyCard(transports, "useGnomeGliders", null,
+			familyThresholdRows("useGnomeGliders"));
+		addFamilyCard(transports, "useHotAirBalloons", null,
+			familyThresholdRows("useHotAirBalloons"));
+		addFamilyCard(transports, "useMagicCarpets", ItemID.MAGIC_CARPET,
+			familyThresholdRows("useMagicCarpets"));
+		addFamilyCard(transports, "useMagicMushtrees", null,
+			familyThresholdRows("useMagicMushtrees"));
+		addFamilyCard(transports, "useMinecarts", ItemID.DWARF_MINECART_TICKET_KELDA_ICE,
+			familyThresholdRows("useMinecarts"));
 
-		JPanel header = new JPanel(new BorderLayout());
-		header.setOpaque(false);
+		addFamilyCard(transports, "useQuetzals", ItemID.HG_QUETZALWHISTLE_BASIC,
+			spinnerRow("costQuetzals"), spinnerRow("costQuetzalWhistle"));
+		addFamilyCard(transports, "useSpiritTrees", ItemID.PLANTPOT_SPIRIT_TREE_SAPLING,
+			familyThresholdRows("useSpiritTrees"));
 
-		// Reserved icon slot: a representative family sprite lands here in
-		// later cards; keeping the empty column aligns the detail indent.
-		JPanel iconSlot = new JPanel();
-		iconSlot.setOpaque(false);
-		iconSlot.setPreferredSize(new Dimension(CARD_ICON_SIZE, CARD_ICON_SIZE));
-		header.add(iconSlot, BorderLayout.WEST);
+		addFamilyCard(transports, "useTeleportationItems", ItemID.RING_OF_DUELING_8,
+			spinnerRow("costConsumableTeleportationItems"),
+			spinnerRow("costNonConsumableTeleportationItems"),
+			spinnerRow("costTeleportationBoxes"),
+			restrictionsPointer());
 
-		boatsNameLabel = new JLabel("Boats");
-		boatsNameLabel.setToolTipText(html(useBoatsItem == null ? "" : useBoatsItem.description()));
-		boatsNameLabel.setForeground(enabled ? Color.WHITE : ColorScheme.LIGHT_GRAY_COLOR);
-		header.add(boatsNameLabel, BorderLayout.CENTER);
+		addFamilyCard(transports, "useTeleportationLevers", null,
+			familyThresholdRows("useTeleportationLevers"));
+		addFamilyCard(transports, "useTeleportationPortals", null,
+			familyThresholdRows("useTeleportationPortals"));
+		addFamilyCard(transports, "useTeleportationSpells", ItemID.LAWRUNE,
+			familyThresholdRows("useTeleportationSpells"));
+		addFamilyCard(transports, "useTeleportationSpellsHome", ItemID.POH_TABLET_TELEPORTTOHOUSE,
+			familyThresholdRows("useTeleportationSpellsHome"));
+		addFamilyCard(transports, "useTeleportationMinigames", ItemID.MINIGAME_TELEPORT,
+			familyThresholdRows("useTeleportationMinigames"));
+		addFamilyCard(transports, "useWildernessObelisks", null,
+			familyThresholdRows("useWildernessObelisks"));
+		addFamilyCard(transports, "useSeasonalTransports", ItemID.LEAGUE_TWISTED_HOME_TELEPORT,
+			familyThresholdRows("useSeasonalTransports"));
+	}
 
-		JPanel headerControls = new JPanel();
-		headerControls.setOpaque(false);
-		headerControls.setLayout(new BoxLayout(headerControls, BoxLayout.X_AXIS));
+	private void buildRestrictionsSection()
+	{
+		restrictionsSection = createSection("restrictions", "Teleport Restrictions", false);
+		// Placeholder body: the per-family restriction rows land here in a
+		// later step; the section exists now so the panel order is final.
+		JPanel placeholder = new JPanel(new BorderLayout());
+		placeholder.setOpaque(false);
+		placeholder.setBorder(new EmptyBorder(4, 8, 4, 8));
+		restrictionsSection.rows.add(new SearchRow(placeholder, searchable("teleport restrictions")));
+	}
 
-		useBoatsToggle = new JCheckBox();
-		useBoatsToggle.setSelected(enabled);
-		useBoatsToggle.setToolTipText(html(useBoatsItem == null ? "" : useBoatsItem.description()));
-		useBoatsToggle.addActionListener(e -> setBoatsEnabled(useBoatsToggle.isSelected()));
-		headerControls.add(useBoatsToggle);
+	private void buildUnlocksSection()
+	{
+		Section unlocks = createSection("unlocks", "Unlocks", true);
+		unlocks.rows.add(checkRow("unlockCanoeAxe"));
+		unlocks.rows.add(checkRow("unlockXericsHonour"));
+		unlocks.rows.add(checkRow("unlockDragontoothPassage"));
+		unlocks.rows.add(checkRow("unlockBalloonLogBasket"));
+	}
 
-		boatsDetailToggle = new JButton(boatsDetailOpen ? SECTION_RETRACT_ICON : SECTION_EXPAND_ICON);
-		boatsDetailToggle.setPreferredSize(new Dimension(SECTION_TOGGLE_WIDTH, 0));
-		boatsDetailToggle.setBorder(new EmptyBorder(0, 0, 0, 5));
-		boatsDetailToggle.setToolTipText(boatsDetailOpen ? "Retract" : "Expand");
-		SwingUtil.removeButtonDecorations(boatsDetailToggle);
-		boatsDetailToggle.addActionListener(e -> toggleBoatsDetail());
-		headerControls.add(boatsDetailToggle);
+	private void buildBankSection()
+	{
+		Section bank = createSection("bank", "Bank", true);
+		bank.rows.add(checkRow("includeBankPath"));
+		bank.rows.add(spinnerRow("costBankVisit"));
+	}
 
-		header.add(headerControls, BorderLayout.EAST);
+	private void buildPohSection()
+	{
+		Section poh = createSection("poh", "Player-Owned House", false);
 
-		MouseAdapter expandAdapter = new MouseAdapter()
+		SearchRow master = checkRow("usePoh", () -> applyPohEnabled(isConfigOn("usePoh")));
+		poh.rows.add(master);
+
+		pohSubRows.add(checkRow("usePohFairyRing"));
+		pohSubRows.add(checkRow("usePohSpiritTree"));
+		pohSubRows.add(checkRow("usePohObelisk"));
+		pohSubRows.add(comboRow("pohJewelleryBoxTier"));
+		pohSubRows.addAll(setSubListRows("pohNexusPortals", PohNexusPortal.class));
+		pohSubRows.addAll(setSubListRows("pohMountedItems", PohMountedItem.class));
+		poh.rows.addAll(pohSubRows);
+
+		boolean enabled = isConfigOn("usePoh");
+		for (SearchRow row : pohSubRows)
+		{
+			applyRowDisabledState(row.component, enabled);
+		}
+	}
+
+	private void applyPohEnabled(boolean enabled)
+	{
+		for (SearchRow row : pohSubRows)
+		{
+			applyRowDisabledState(row.component, enabled);
+		}
+	}
+
+	private void buildRoutingSection()
+	{
+		Section routing = createSection("routing", "Routing", true);
+		routing.rows.add(checkRow("avoidWilderness"));
+		routing.rows.add(spinnerRow("currencyThreshold"));
+		routing.rows.add(checkRow("respawnPrifddinas"));
+		routing.rows.add(spinnerRow("unreachableTargetDistanceThreshold"));
+	}
+
+	// ---- Card + row builders ------------------------------------------------
+
+	/**
+	 * Creates a transport-family card bound to {@code useKey} and appends it to
+	 * the section as a searchable row. The card title is the config item name
+	 * minus its leading "Use " (the checkbox carries the on/off meaning).
+	 */
+	private TransportFamilyCard addFamilyCard(Section section, String useKey, Integer iconItemId,
+		SearchRow... detailRows)
+	{
+		ConfigItem item = configItem(useKey);
+		String name = item == null ? useKey : item.name();
+		String title = name.startsWith("Use ") ? name.substring("Use ".length()) : name;
+		String description = item == null ? "" : item.description();
+
+		TransportFamilyCard card = new TransportFamilyCard(this, useKey, title, description, iconItemId);
+
+		List<String> searchParts = new ArrayList<>();
+		searchParts.add(name);
+		for (SearchRow row : detailRows)
+		{
+			card.addDetailRow(row.component);
+			searchParts.add(row.text);
+		}
+		section.rows.add(new SearchRow(card, searchable(searchParts.toArray(new String[0]))));
+		return card;
+	}
+
+	/**
+	 * The {@code cost*} key matching a {@code use*} family — the pair is named
+	 * identically apart from the prefix, so this resolves e.g.
+	 * useAgilityShortcuts → costAgilityShortcuts.
+	 */
+	private SearchRow[] familyThresholdRows(String useKey)
+	{
+		String costKey = "cost" + useKey.substring("use".length());
+		return configMethods.containsKey(costKey) ? new SearchRow[]{spinnerRow(costKey)} : new SearchRow[0];
+	}
+
+	private SearchRow restrictionsPointer()
+	{
+		JLabel pointer = new JLabel("Manage individual items below");
+		pointer.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		pointer.setFont(FontManager.getRunescapeSmallFont());
+		pointer.setBorder(new EmptyBorder(2, 0, 2, 0));
+		pointer.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				toggleBoatsDetail();
+				setSectionExpanded(restrictionsSection, true);
+				SwingUtilities.invokeLater(() -> restrictionsSection.root.scrollRectToVisible(
+					restrictionsSection.root.getBounds()));
 			}
-		};
-		header.addMouseListener(expandAdapter);
-		iconSlot.addMouseListener(expandAdapter);
-		boatsNameLabel.addMouseListener(expandAdapter);
+		});
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		row.add(pointer, BorderLayout.CENTER);
+		return new SearchRow(row, searchable("Manage individual items below"));
+	}
 
-		card.add(header);
+	private SearchRow checkRow(String keyName)
+	{
+		return checkRow(keyName, null);
+	}
 
-		boatsDetail = new JPanel(new BorderLayout());
-		boatsDetail.setOpaque(false);
-		// Indented under the icon column so the detail lines up with the label.
-		boatsDetail.setBorder(new EmptyBorder(0, CARD_ICON_SIZE, 0, 0));
-		boatsDetail.setVisible(boatsDetailOpen);
+	private SearchRow checkRow(String keyName, Runnable onChange)
+	{
+		ConfigItem item = configItem(keyName);
+		String name = configName(keyName);
+		String description = item == null ? "" : item.description();
 
-		costBoatsLabel = new JLabel(costBoatsItem == null ? "Boat threshold" : costBoatsItem.name());
-		costBoatsLabel.setForeground(enabled ? Color.WHITE : ColorScheme.LIGHT_GRAY_COLOR);
-		costBoatsLabel.setToolTipText(html(costBoatsItem == null ? "" : costBoatsItem.description()));
-		costBoatsLabel.setEnabled(enabled);
-		boatsDetail.add(costBoatsLabel, BorderLayout.CENTER);
-
-		costBoatsSpinner = new JSpinner(new SpinnerNumberModel(config.costBoats(), 0, 10000, 1));
-		((JSpinner.DefaultEditor) costBoatsSpinner.getEditor()).getTextField().setColumns(SPINNER_FIELD_WIDTH);
-		costBoatsSpinner.setToolTipText(html(costBoatsItem == null ? "" : costBoatsItem.description()));
-		costBoatsSpinner.setEnabled(enabled);
-		costBoatsSpinner.addChangeListener(e ->
+		JCheckBox checkBox = new JCheckBox();
+		checkBox.setSelected(isConfigOn(keyName));
+		checkBox.setToolTipText(html(description));
+		checkBox.addActionListener(e ->
 		{
 			if (!suppressConfigSync)
 			{
-				onConfigWrite("costBoats", costBoatsSpinner.getValue());
+				writeConfig(keyName, checkBox.isSelected());
+			}
+			if (onChange != null)
+			{
+				onChange.run();
 			}
 		});
-		boatsDetail.add(costBoatsSpinner, BorderLayout.EAST);
+		registerSync(keyName, () ->
+		{
+			checkBox.setSelected(isConfigOn(keyName));
+			if (onChange != null)
+			{
+				onChange.run();
+			}
+		});
 
-		card.add(boatsDetail);
-		return card;
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		JLabel label = new JLabel(name);
+		label.setForeground(Color.WHITE);
+		label.setToolTipText(html(description));
+		row.add(label, BorderLayout.CENTER);
+		row.add(checkBox, BorderLayout.EAST);
+		return new SearchRow(row, searchable(name));
 	}
 
-	private void toggleBoatsDetail()
+	private SearchRow spinnerRow(String keyName)
 	{
-		boatsDetailOpen = !boatsDetailOpen;
-		boatsDetail.setVisible(boatsDetailOpen);
-		boatsDetailToggle.setIcon(boatsDetailOpen ? SECTION_RETRACT_ICON : SECTION_EXPAND_ICON);
-		boatsDetailToggle.setToolTipText(boatsDetailOpen ? "Retract" : "Expand");
-		SwingUtilities.invokeLater(boatsDetail::revalidate);
+		ConfigItem item = configItem(keyName);
+		String name = configName(keyName);
+		String description = item == null ? "" : item.description();
+
+		Object value = configValue(keyName);
+		int current = value instanceof Number ? ((Number) value).intValue() : 0;
+		Range range = rangeOf(keyName);
+		int min = range == null ? 0 : Math.max(0, range.min());
+		Integer max = range == null || range.max() == Integer.MAX_VALUE ? null : range.max();
+
+		JSpinner spinner = new JSpinner(new SpinnerNumberModel(
+			Integer.valueOf(current), Integer.valueOf(min), max, Integer.valueOf(1)));
+		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(SPINNER_FIELD_WIDTH);
+		spinner.setToolTipText(html(description));
+		spinner.addChangeListener(e ->
+		{
+			if (!suppressConfigSync)
+			{
+				writeConfig(keyName, spinner.getValue());
+			}
+		});
+		registerSync(keyName, () ->
+		{
+			Object updated = configValue(keyName);
+			if (updated instanceof Number)
+			{
+				spinner.setValue(((Number) updated).intValue());
+			}
+		});
+
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		JLabel label = new JLabel(name);
+		label.setForeground(Color.WHITE);
+		label.setToolTipText(html(description));
+		row.add(label, BorderLayout.CENTER);
+		row.add(spinner, BorderLayout.EAST);
+		return new SearchRow(row, searchable(name));
 	}
 
-	private void setBoatsEnabled(boolean enabled)
+	private SearchRow comboRow(String keyName)
 	{
-		onConfigWrite("useBoats", enabled);
-		applyBoatsEnabled(enabled);
+		ConfigItem item = configItem(keyName);
+		String name = configName(keyName);
+		String description = item == null ? "" : item.description();
+
+		Object value = configValue(keyName);
+		@SuppressWarnings("unchecked")
+		Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
+		JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
+		combo.setRenderer(new TitleCaseListCellRenderer());
+		combo.setSelectedItem(value);
+		combo.setPreferredSize(new Dimension(combo.getPreferredSize().width, COMBO_HEIGHT));
+		combo.setToolTipText(html(description));
+		combo.addItemListener(e ->
+		{
+			if (e.getStateChange() == ItemEvent.SELECTED && !suppressConfigSync)
+			{
+				writeConfig(keyName, combo.getSelectedItem());
+			}
+		});
+		registerSync(keyName, () -> combo.setSelectedItem(configValue(keyName)));
+
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		JLabel label = new JLabel(name);
+		label.setForeground(Color.WHITE);
+		label.setToolTipText(html(description));
+		row.add(label, BorderLayout.CENTER);
+		row.add(combo, BorderLayout.EAST);
+		return new SearchRow(row, searchable(name));
 	}
 
-	private void applyBoatsEnabled(boolean enabled)
+	/**
+	 * A {@code Set<Enum>} config rendered as a group label followed by one
+	 * indented checkbox row per enum constant; toggling a box writes the
+	 * mutated set back through the shared config path.
+	 */
+	private <E extends Enum<E>> List<SearchRow> setSubListRows(String keyName, Class<E> type)
 	{
-		boatsNameLabel.setForeground(enabled ? Color.WHITE : ColorScheme.LIGHT_GRAY_COLOR);
-		costBoatsLabel.setForeground(enabled ? Color.WHITE : ColorScheme.LIGHT_GRAY_COLOR);
-		costBoatsLabel.setEnabled(enabled);
-		costBoatsSpinner.setEnabled(enabled);
+		ConfigItem item = configItem(keyName);
+		String name = configName(keyName);
+		String description = item == null ? "" : item.description();
+
+		List<SearchRow> rows = new ArrayList<>();
+
+		JPanel groupRow = new JPanel(new BorderLayout());
+		groupRow.setOpaque(false);
+		JLabel groupLabel = new JLabel(name);
+		groupLabel.setForeground(Color.WHITE);
+		groupLabel.setToolTipText(html(description));
+		groupRow.add(groupLabel, BorderLayout.CENTER);
+		rows.add(new SearchRow(groupRow, searchable(name)));
+
+		for (E constant : type.getEnumConstants())
+		{
+			JCheckBox checkBox = new JCheckBox(constant.toString());
+			checkBox.setSelected(currentSet(keyName, type).contains(constant));
+			checkBox.setToolTipText(html(description));
+			checkBox.addActionListener(e ->
+			{
+				if (!suppressConfigSync)
+				{
+					EnumSet<E> updated = EnumSet.noneOf(type);
+					updated.addAll(currentSet(keyName, type));
+					if (checkBox.isSelected())
+					{
+						updated.add(constant);
+					}
+					else
+					{
+						updated.remove(constant);
+					}
+					writeConfig(keyName, updated);
+				}
+			});
+			registerSync(keyName, () -> checkBox.setSelected(currentSet(keyName, type).contains(constant)));
+
+			JPanel row = new JPanel(new BorderLayout());
+			row.setOpaque(false);
+			row.setBorder(new EmptyBorder(0, SUB_LIST_INDENT, 0, 0));
+			row.add(checkBox, BorderLayout.CENTER);
+			rows.add(new SearchRow(row, searchable(name, constant.toString())));
+		}
+		return rows;
+	}
+
+	// ---- Config access ------------------------------------------------------
+
+	private ConfigItem configItem(String keyName)
+	{
+		Method method = configMethods.get(keyName);
+		return method == null ? null : method.getAnnotation(ConfigItem.class);
+	}
+
+	private Range rangeOf(String keyName)
+	{
+		Method method = configMethods.get(keyName);
+		return method == null ? null : method.getAnnotation(Range.class);
+	}
+
+	private String configName(String keyName)
+	{
+		ConfigItem item = configItem(keyName);
+		return item == null ? keyName : item.name();
+	}
+
+	Object configValue(String keyName)
+	{
+		Method method = configMethods.get(keyName);
+		if (method == null)
+		{
+			return null;
+		}
+		try
+		{
+			return method.invoke(config);
+		}
+		catch (ReflectiveOperationException e)
+		{
+			return null;
+		}
+	}
+
+	private boolean isConfigOn(String keyName)
+	{
+		return Boolean.TRUE.equals(configValue(keyName));
+	}
+
+	@SuppressWarnings("unchecked")
+	private <E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
+	{
+		Set<E> set = EnumSet.noneOf(type);
+		Object value = configValue(keyName);
+		if (value instanceof Set)
+		{
+			set.addAll((Set<E>) value);
+		}
+		return set;
+	}
+
+	void registerSync(String keyName, Runnable handler)
+	{
+		syncHandlers.computeIfAbsent(keyName, k -> new ArrayList<>()).add(handler);
 	}
 
 	/**
@@ -359,7 +695,7 @@ public class ShortestPathPanel extends PluginPanel
 	 * synchronously; the guard stops the panel's own listener from reacting to
 	 * its own write.
 	 */
-	private void onConfigWrite(String keyName, Object value)
+	void writeConfig(String keyName, Object value)
 	{
 		suppressConfigSync = true;
 		try
@@ -388,18 +724,17 @@ public class ShortestPathPanel extends PluginPanel
 
 	private void syncControl(String keyName)
 	{
+		List<Runnable> handlers = syncHandlers.get(keyName);
+		if (handlers == null)
+		{
+			return;
+		}
 		suppressConfigSync = true;
 		try
 		{
-			if ("useBoats".equals(keyName))
+			for (Runnable handler : handlers)
 			{
-				boolean enabled = config.useBoats();
-				useBoatsToggle.setSelected(enabled);
-				applyBoatsEnabled(enabled);
-			}
-			else if ("costBoats".equals(keyName))
-			{
-				costBoatsSpinner.setValue(config.costBoats());
+				handler.run();
 			}
 		}
 		finally
@@ -408,16 +743,32 @@ public class ShortestPathPanel extends PluginPanel
 		}
 	}
 
+	void loadItemIcon(int itemId, JLabel label)
+	{
+		AsyncBufferedImage image = itemManager.getImage(itemId);
+		image.onLoaded(() -> SwingUtilities.invokeLater(() ->
+			label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, CARD_ICON_SIZE, CARD_ICON_SIZE)))));
+	}
+
+	// ---- Search -------------------------------------------------------------
+
 	/**
-	 * Live case-insensitive substring filter across the registered rows. Rows
-	 * that match are re-added to their (force-expanded) section; sections with
-	 * no match drop out of the layout entirely. DynamicGridLayout does not
-	 * reclaim cells of invisible children, so filtering rebuilds the container
-	 * contents instead of toggling visibility.
+	 * Live case-insensitive substring filter across every registered row.
+	 * Matching rows are re-added to their (visually force-expanded) section;
+	 * sections with no match drop out of the layout entirely. DynamicGridLayout
+	 * does not reclaim cells of invisible children, so filtering rebuilds the
+	 * container contents instead of toggling row visibility. Clearing the query
+	 * restores the expand states the user recorded — the map is never touched
+	 * by the filter itself.
 	 */
 	private void onSearchChanged()
 	{
-		String query = searchBar.getText().trim().toLowerCase(Locale.ROOT);
+		applySearchFilter(searchBar.getText());
+	}
+
+	private void applySearchFilter(String rawQuery)
+	{
+		String query = rawQuery.trim().toLowerCase(Locale.ROOT);
 		boolean anyVisible = false;
 
 		contentPanel.removeAll();
@@ -458,7 +809,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		if (!query.isEmpty() && !anyVisible)
 		{
-			noResultsLabel.setText("<html>No options matching \"" + escapeHtml(query)
+			noResultsLabel.setText("<html>No options matching \"" + escapeHtml(rawQuery.trim())
 				+ "\". Clear the search to see everything.</html>");
 			contentPanel.add(noResultsLabel);
 		}
@@ -472,19 +823,7 @@ public class ShortestPathPanel extends PluginPanel
 		return String.join(" ", parts).toLowerCase(Locale.ROOT);
 	}
 
-	private static ConfigItem configItem(String methodName)
-	{
-		try
-		{
-			return ShortestPathConfig.class.getMethod(methodName).getAnnotation(ConfigItem.class);
-		}
-		catch (NoSuchMethodException e)
-		{
-			return null;
-		}
-	}
-
-	private static String html(String text)
+	static String html(String text)
 	{
 		return "<html>" + text + "</html>";
 	}
@@ -493,6 +832,32 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 			.replace("\"", "&quot;");
+	}
+
+	/**
+	 * Dims a whole row subtree (labels grey out via their disabled rendering)
+	 * and disables every interactive descendant. Kept package-visible as the
+	 * seam the teleport-restriction rows reuse for their blocked state.
+	 */
+	static void applyRowDisabledState(JComponent root, boolean enabled)
+	{
+		applyEnabledDeep(root, enabled);
+	}
+
+	private static void applyEnabledDeep(Component component, boolean enabled)
+	{
+		component.setEnabled(enabled);
+		if (component instanceof DimmableJPanel)
+		{
+			((DimmableJPanel) component).setDimmed(!enabled);
+		}
+		if (component instanceof Container)
+		{
+			for (Component child : ((Container) component).getComponents())
+			{
+				applyEnabledDeep(child, enabled);
+			}
+		}
 	}
 
 	private static final class Section
@@ -507,10 +872,10 @@ public class ShortestPathPanel extends PluginPanel
 
 	private static final class SearchRow
 	{
-		final JPanel component;
+		final JComponent component;
 		final String text;
 
-		SearchRow(JPanel component, String text)
+		SearchRow(JComponent component, String text)
 		{
 			this.component = component;
 			this.text = text;
