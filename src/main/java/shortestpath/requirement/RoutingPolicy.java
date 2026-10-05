@@ -1,6 +1,7 @@
 package shortestpath.requirement;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.settings.TeleportationItem;
@@ -17,7 +18,9 @@ import lombok.experimental.Accessors;
  * {@code disableUnless} overrides, so the snapshot is taken only after those
  * derivations ran), the POH master and variant toggles, the enabled nexus
  * portals and mounted items, the jewellery-box tier, the teleportation-item
- * mode, the currency threshold and whether bank paths are included. Facts the
+ * mode, the currency threshold, whether bank paths are included, and the
+ * player-declared blocked teleport items with their {@code id:N} threshold
+ * overrides. Facts the
  * game or config asserts about the player — skill levels, quest states, var
  * values, owned items, declared unlocks, respawn, sailing and league state,
  * planted spirit trees — are state, not policy, and live on
@@ -31,16 +34,18 @@ import lombok.experimental.Accessors;
 public final class RoutingPolicy
 {
 	private final EnumSet<TransportType> enabledTypes;
-	@Getter @Accessors(fluent = true) private final TeleportationItem teleportationItemSetting;
-	@Getter @Accessors(fluent = true) private final boolean usePoh;
-	@Getter @Accessors(fluent = true) private final boolean usePohFairyRing;
-	@Getter @Accessors(fluent = true) private final boolean usePohSpiritTree;
-	@Getter @Accessors(fluent = true) private final boolean usePohObelisk;
-	@Getter @Accessors(fluent = true) private final Set<PohNexusPortal> enabledPohNexusPortals;
-	@Getter @Accessors(fluent = true) private final Set<PohMountedItem> enabledPohMountedItems;
-	@Getter @Accessors(fluent = true) private final JewelleryBoxTier pohJewelleryBoxTier;
-	@Getter @Accessors(fluent = true) private final int currencyThreshold;
-	@Getter @Accessors(fluent = true) private final boolean includeBankPath;
+	private final TeleportationItem teleportationItemSetting;
+	private final boolean usePoh;
+	private final boolean usePohFairyRing;
+	private final boolean usePohSpiritTree;
+	private final boolean usePohObelisk;
+	private final Set<PohNexusPortal> enabledPohNexusPortals;
+	private final Set<PohMountedItem> enabledPohMountedItems;
+	private final JewelleryBoxTier pohJewelleryBoxTier;
+	private final int currencyThreshold;
+	private final boolean includeBankPath;
+	private final Set<Integer> blockedItemIds;
+	private final Map<Integer, Integer> itemThresholdOverrides;
 
 	public RoutingPolicy(
 		Set<TransportType> enabledTypes,
@@ -53,7 +58,9 @@ public final class RoutingPolicy
 		Set<PohMountedItem> enabledPohMountedItems,
 		JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold,
-		boolean includeBankPath)
+		boolean includeBankPath,
+		Set<Integer> blockedItemIds,
+		Map<Integer, Integer> itemThresholdOverrides)
 	{
 		this.enabledTypes = enabledTypes.isEmpty()
 			? EnumSet.noneOf(TransportType.class)
@@ -68,6 +75,8 @@ public final class RoutingPolicy
 		this.pohJewelleryBoxTier = pohJewelleryBoxTier;
 		this.currencyThreshold = currencyThreshold;
 		this.includeBankPath = includeBankPath;
+		this.blockedItemIds = Set.copyOf(blockedItemIds);
+		this.itemThresholdOverrides = Map.copyOf(itemThresholdOverrides);
 	}
 
 	/**
@@ -90,14 +99,28 @@ public final class RoutingPolicy
 
 
 
+	public boolean includeBankPath()
+	{
+		return includeBankPath;
+	}
 
+	/**
+	 * Item ids the player excluded from routing via the hidden
+	 * {@code blockedTeleportItems} CSV — a candidate-set filter, not a fact
+	 * about what the player owns, so it lives on the policy side.
+	 */
+	public Set<Integer> blockedItemIds()
+	{
+		return blockedItemIds;
+	}
 
-
-
-
-
-
-
-
-
+	/**
+	 * Per-item tiles-saved threshold overrides parsed from the {@code id:N}
+	 * records of {@code blockedTeleportItems}; consumed by the additional-cost
+	 * path, not by the verdict chain.
+	 */
+	public Map<Integer, Integer> itemThresholdOverrides()
+	{
+		return itemThresholdOverrides;
+	}
 }
