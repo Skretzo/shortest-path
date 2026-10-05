@@ -1351,6 +1351,10 @@ public class ShortestPathPlugin extends Plugin
 		{
 			bankPickupDirty = true;
 			pathfinderConfig.invalidateEligibility();
+			if (panel != null)
+			{
+				panel.onItemContainersChanged();
+			}
 		}
 	}
 
