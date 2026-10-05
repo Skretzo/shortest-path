@@ -412,6 +412,10 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
 		}
+		if (ShortestPathPlugin.override("unlockBalloonLogBasket", config.unlockBalloonLogBasket()))
+		{
+			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
+		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// Player-declared per-item restrictions: a bare id blocks the item from
