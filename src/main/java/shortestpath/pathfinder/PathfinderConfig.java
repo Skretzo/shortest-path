@@ -201,7 +201,9 @@ public class PathfinderConfig
 	 * Item ids the player excluded from routing via the hidden
 	 * {@code blockedTeleportItems} CSV ({@code id} records), and per-item
 	 * tiles-saved threshold overrides from {@code id:N} records. Reparsed on
-	 * every {@link #refresh()}.
+	 * every {@link #refresh()}; the blocked set gates the candidate set in
+	 * {@link shortestpath.requirement.Requirements} while the overrides feed
+	 * {@link #getAdditionalTransportCost}.
 	 */
 	private volatile Set<Integer> blockedItemIds = Set.of();
 	private volatile Map<Integer, Integer> itemThresholdOverrides = Map.of();
