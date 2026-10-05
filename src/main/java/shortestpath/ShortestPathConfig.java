@@ -1407,4 +1407,31 @@ public interface ShortestPathConfig extends Config
 	@SuppressWarnings("unused")
 	void setBuiltTeleportationPortalsPoh(String content);
 
+	@ConfigItem(
+		keyName = "blockedTeleportItems",
+		name = "Blocked teleport items",
+		description = "Internal: comma-separated restricted teleport item ids and per-item threshold overrides (id or id:tiles). Managed by the Shortest Path sidebar.",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	default String blockedTeleportItems()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "unlockBalloonLogBasket",
+		name = "Balloon log basket stocked",
+		description = "Enable if you have stored logs in the balloon transport baskets.<br>" +
+			"The game does not expose the stored logs to the client,<br>" +
+			"so the plugin cannot detect them automatically.<br>" +
+			"Enabling this declares the unlock without verification",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	default boolean unlockBalloonLogBasket()
+	{
+		return false;
+	}
+
 }
