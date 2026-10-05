@@ -118,6 +118,7 @@ public final class Requirements
 		if (reason == RejectionReason.NONE) reason = typeDisabled(transport);
 		if (reason == RejectionReason.NONE) reason = pohVariant(transport);
 		if (reason == RejectionReason.NONE) reason = teleportationItem(transport);
+		if (reason == RejectionReason.NONE) reason = blockedItems(transport);
 		if (reason == RejectionReason.NONE) reason = respawn(transport);
 		if (reason == RejectionReason.NONE) reason = unlockGate(transport);
 		if (reason == RejectionReason.NONE) reason = jewelleryBoxTier(transport);
@@ -338,6 +339,92 @@ public final class Requirements
 				return RejectionReason.TELEPORT_MODE;
 		}
 		return RejectionReason.NONE;
+	}
+
+	// Per-item blocks apply to every teleportation-item mode, including
+	// the modes that skip item evaluation in the eligibility snapshot — the
+	// gate must sit ahead of that evaluation, not inside it.
+	private RejectionReason blockedItems(Transport transport)
+	{
+		if (!checkBlockedItems(transport, transport.getType()))
+		{
+			return RejectionReason.BLOCKED_ITEM;
+		}
+		return RejectionReason.NONE;
+	}
+
+	/**
+	 * Per-item block list for item-teleport types: a transport is rejected when
+	 * some ANDed item requirement loses every OR alternative to blocked item
+	 * ids. Iterates the branch structure rather than the flattened
+	 * {@link TransportItems#getItems()} view so {@code A|B} survives blocking A
+	 * while {@code A&B} is rejected by blocking either term's last alternative.
+	 * Non-item-teleport types never consult the block list.
+	 */
+	private boolean checkBlockedItems(Transport transport, TransportType type)
+	{
+		Set<Integer> blockedItemIds = policy.blockedItemIds();
+		if (blockedItemIds.isEmpty())
+		{
+			return true;
+		}
+		if (!TransportType.TELEPORTATION_ITEM.equals(type)
+			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
+			&& !TransportType.QUETZAL_WHISTLE.equals(type))
+		{
+			return true;
+		}
+		TransportItems itemRequirements = transport.getItemRequirements();
+		if (itemRequirements == null)
+		{
+			return true;
+		}
+		for (ItemRequirement requirement : itemRequirements.getRequirements())
+		{
+			boolean anyBranchSurvives = false;
+			for (ItemRequirement.Branch branch : requirement.getBranches())
+			{
+				if (branchSurvivesBlocked(branch, blockedItemIds))
+				{
+					anyBranchSurvives = true;
+					break;
+				}
+			}
+			if (!anyBranchSurvives)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Whether an OR branch still offers an alternative once blocked item ids
+	 * are removed: any unblocked item, staff or offhand id keeps it alive, and
+	 * a branch carrying no ids at all — such as an unlock alternative — can
+	 * never be blocked.
+	 */
+	private boolean branchSurvivesBlocked(ItemRequirement.Branch branch, Set<Integer> blockedItemIds)
+	{
+		boolean hasIds = false;
+		int[][] idArrays =
+			{branch.getItemIds(), branch.getStaffIds(), branch.getOffhandIds()};
+		for (int[] ids : idArrays)
+		{
+			if (ids == null)
+			{
+				continue;
+			}
+			for (int itemId : ids)
+			{
+				hasIds = true;
+				if (!blockedItemIds.contains(itemId))
+				{
+					return true;
+				}
+			}
+		}
+		return !hasIds;
 	}
 
 	// Respawn rows for Prifddinas (and the colliding Lumbridge default) are
