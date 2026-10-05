@@ -118,7 +118,6 @@ public final class Requirements
 		if (reason == RejectionReason.NONE) reason = typeDisabled(transport);
 		if (reason == RejectionReason.NONE) reason = pohVariant(transport);
 		if (reason == RejectionReason.NONE) reason = teleportationItem(transport);
-		if (reason == RejectionReason.NONE) reason = blockedItems(transport);
 		if (reason == RejectionReason.NONE) reason = respawn(transport);
 		if (reason == RejectionReason.NONE) reason = unlockGate(transport);
 		if (reason == RejectionReason.NONE) reason = jewelleryBoxTier(transport);
@@ -293,9 +292,7 @@ public final class Requirements
 	private RejectionReason teleportationItem(Transport transport)
 	{
 		TransportType type = transport.getType();
-		if (!TransportType.TELEPORTATION_ITEM.equals(type)
-			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
-			&& !TransportType.QUETZAL_WHISTLE.equals(type))
+		if (!TeleportRestriction.isItemTeleportType(type))
 		{
 			return RejectionReason.NONE; // Not a teleportation item type
 		}
@@ -316,10 +313,15 @@ public final class Requirements
 			return RejectionReason.DEADMAN_ITEM;
 		}
 
-		// Reserved seat for the per-item restriction gate (BLOCKED_ITEM) —
-		// after the seasonal and deadman checks and before the mode dispatch,
-		// because the modes below can bypass item evaluation entirely. That
-		// gate is not implemented yet; no check emits BLOCKED_ITEM today.
+		// Player-declared per-item restrictions drop the transport from the
+		// candidate set: the modes below can bypass item evaluation entirely,
+		// so the restriction gate runs here, before eligibility is consulted.
+		TransportItems itemRequirements = transport.getItemRequirements();
+		if (itemRequirements != null && !itemRequirements.survivesBlockedItems(policy.blockedItemIds()))
+		{
+			return RejectionReason.BLOCKED_ITEM;
+		}
+
 		switch (policy.teleportationItemSetting())
 		{
 			case ALL:
@@ -332,6 +334,7 @@ public final class Requirements
 					? RejectionReason.TELEPORT_MODE
 					: RejectionReason.NONE;
 			case UNLOCKED:
+				return RejectionReason.NONE; // Ownership is implied by the unlock check; items are never evaluated
 			case INVENTORY:
 			case INVENTORY_AND_BANK:
 				return RejectionReason.NONE; // Will be checked later by the eligibility snapshot
@@ -341,85 +344,7 @@ public final class Requirements
 		return RejectionReason.NONE;
 	}
 
-	// Per-item blocks apply to every teleportation-item mode, including
-	// the modes that skip item evaluation in the eligibility snapshot — the
-	// gate must sit ahead of that evaluation, not inside it.
-	private RejectionReason blockedItems(Transport transport)
-	{
-		if (!checkBlockedItems(transport, transport.getType()))
-		{
-			return RejectionReason.BLOCKED_ITEM;
-		}
-		return RejectionReason.NONE;
-	}
 
-	/**
-	 * Per-item block list for item-teleport types: a transport is rejected when
-	 * some ANDed item requirement loses every OR alternative to blocked item
-	 * ids. Iterates the branch structure rather than the flattened
-	 * {@link TransportItems#getItems()} view so {@code A|B} survives blocking A
-	 * while {@code A&B} is rejected by blocking either term's last alternative.
-	 * Non-item-teleport types never consult the block list.
-	 */
-	private boolean checkBlockedItems(Transport transport, TransportType type)
-	{
-		Set<Integer> blockedItemIds = policy.blockedItemIds();
-		if (blockedItemIds.isEmpty() || !TeleportRestriction.isItemTeleportType(type))
-		{
-			return true;
-		}
-		TransportItems itemRequirements = transport.getItemRequirements();
-		if (itemRequirements == null)
-		{
-			return true;
-		}
-		for (ItemRequirement requirement : itemRequirements.getRequirements())
-		{
-			boolean anyBranchSurvives = false;
-			for (ItemRequirement.Branch branch : requirement.getBranches())
-			{
-				if (branchSurvivesBlocked(branch, blockedItemIds))
-				{
-					anyBranchSurvives = true;
-					break;
-				}
-			}
-			if (!anyBranchSurvives)
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Whether an OR branch still offers an alternative once blocked item ids
-	 * are removed: any unblocked item, staff or offhand id keeps it alive, and
-	 * a branch carrying no ids at all — such as an unlock alternative — can
-	 * never be blocked.
-	 */
-	private boolean branchSurvivesBlocked(ItemRequirement.Branch branch, Set<Integer> blockedItemIds)
-	{
-		boolean hasIds = false;
-		int[][] idArrays =
-			{branch.getItemIds(), branch.getStaffIds(), branch.getOffhandIds()};
-		for (int[] ids : idArrays)
-		{
-			if (ids == null)
-			{
-				continue;
-			}
-			for (int itemId : ids)
-			{
-				hasIds = true;
-				if (!blockedItemIds.contains(itemId))
-				{
-					return true;
-				}
-			}
-		}
-		return !hasIds;
-	}
 
 	// Respawn rows for Prifddinas (and the colliding Lumbridge default) are
 	// gated on the declared respawn in config, not on varbits
