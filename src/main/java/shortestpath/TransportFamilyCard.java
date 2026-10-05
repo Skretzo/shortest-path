@@ -47,6 +47,7 @@ class TransportFamilyCard extends JPanel
 	private final JPanel detail;
 	private JButton expander;
 	private boolean detailOpen;
+	private boolean searchExpanded;
 
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId)
 	{
@@ -147,9 +148,44 @@ class TransportFamilyCard extends JPanel
 		{
 			return;
 		}
+		// A manual toggle counts as user intent, so search no longer owns the
+		// expansion state of this card.
+		searchExpanded = false;
+		setDetailOpenInternal(open);
+	}
+
+	/**
+	 * Search-driven expansion: opens the detail well when the query matched a
+	 * detail label rather than the card name, so the matched control is
+	 * visible. Only fires on cards the user had collapsed, and
+	 * {@link #clearSearchExpanded()} restores them when the query clears.
+	 */
+	void setSearchExpanded()
+	{
+		if (expander != null && !detailOpen)
+		{
+			searchExpanded = true;
+			setDetailOpenInternal(true);
+		}
+	}
+
+	void clearSearchExpanded()
+	{
+		if (searchExpanded)
+		{
+			searchExpanded = false;
+			setDetailOpenInternal(false);
+		}
+	}
+
+	private void setDetailOpenInternal(boolean open)
+	{
 		detailOpen = open;
-		expander.setIcon(open ? ShortestPathPanel.SECTION_RETRACT_ICON : ShortestPathPanel.SECTION_EXPAND_ICON);
-		expander.setToolTipText(open ? "Retract" : "Expand");
+		if (expander != null)
+		{
+			expander.setIcon(open ? ShortestPathPanel.SECTION_RETRACT_ICON : ShortestPathPanel.SECTION_EXPAND_ICON);
+			expander.setToolTipText(open ? "Retract" : "Expand");
+		}
 		detail.setVisible(open);
 		revalidate();
 		repaint();
