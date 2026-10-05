@@ -118,9 +118,9 @@ public class PathfinderConfig
 	private final TransportTypeConfig transportTypeConfig;
 	private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
 	private int currentMaxQuestPoints;
-	private final Map<Quest, QuestState> questStates = new HashMap<>();
-	private final Map<Integer, Integer> varbitValues = new HashMap<>();
-	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
+	private Map<Quest, QuestState> questStates = new HashMap<>();
+	private Map<Integer, Integer> varbitValues = new HashMap<>();
+	private Map<Integer, Integer> varPlayerValues = new HashMap<>();
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
@@ -587,42 +587,18 @@ public class PathfinderConfig
 
 		refreshSpiritTreeAvailability();
 
-		// The owned items depend only on which containers are included, so the eligibility
-		// snapshot collects them once rather than once per transport.
-		eligibility = collectEligibility();
+		// All player state the checks below read is captured once per refresh in
+		// an immutable snapshot, so no check can observe the game mid-refresh.
+		RequirementContext context = buildRequirementContext(evaluationTimeMinutes);
+		eligibility = context.getEligibility();
 		eligibilityStale = false;
-		Set<Quest> refreshedQuests = new HashSet<>();
+		questStates = context.getQuestStates();
+		varbitValues = context.getVarbitValues();
+		varPlayerValues = context.getVarPlayerValues();
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
-			for (Quest quest : transport.getQuests())
-			{
-				if (!refreshedQuests.add(quest))
-				{
-					continue;
-				}
-				try
-				{
-					questStates.put(quest, getQuestState(quest));
-				}
-				catch (NullPointerException ignored)
-				{
-				}
-			}
-
-			for (VarRequirement varRequirement : transport.getVarRequirements())
-			{
-				if (varRequirement.isVarbit())
-				{
-					varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
-				}
-				else
-				{
-					varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
-				}
-			}
-
 			if (!useTransport(transport, evaluationTimeMinutes))
 			{
 				continue;
@@ -1387,6 +1363,61 @@ public class PathfinderConfig
 		}
 
 		return itemsAndQuantities;
+	}
+
+	/**
+	 * Builds the immutable snapshot the requirement checks read this refresh: the
+	 * eligibility item pools, the quest states behind the quest hook and the var
+	 * values behind the var requirements, plus the config-declared and league
+	 * state already captured in {@link #refresh()}. Called once per refresh after
+	 * {@link #refreshSpiritTreeAvailability()} has settled the planted-tree set;
+	 * client thread only.
+	 */
+	private RequirementContext buildRequirementContext(long evaluationTimeMinutes)
+	{
+		TransportEligibility eligibilitySnapshot = collectEligibility();
+
+		Map<Quest, QuestState> capturedQuestStates = new HashMap<>();
+		Map<Integer, Integer> capturedVarbitValues = new HashMap<>();
+		Map<Integer, Integer> capturedVarPlayerValues = new HashMap<>();
+		Set<Quest> refreshedQuests = new HashSet<>();
+		for (Transport transport : allTransports)
+		{
+			for (Quest quest : transport.getQuests())
+			{
+				if (!refreshedQuests.add(quest))
+				{
+					continue;
+				}
+				try
+				{
+					QuestState state = getQuestState(quest);
+					if (state != null)
+					{
+						capturedQuestStates.put(quest, state);
+					}
+				}
+				catch (NullPointerException ignored)
+				{
+				}
+			}
+			for (VarRequirement varRequirement : transport.getVarRequirements())
+			{
+				if (varRequirement.isVarbit())
+				{
+					capturedVarbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
+				}
+				else
+				{
+					capturedVarPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
+				}
+			}
+		}
+
+		return new RequirementContext(evaluationTimeMinutes, boostedSkillLevelsAndMore,
+			currentMaxQuestPoints, capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
+			eligibilitySnapshot, unlocks, respawnPrifddinas, isOnSailingBoat,
+			leagueModeState, availableSpiritTrees);
 	}
 
 	/**
