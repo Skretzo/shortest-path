@@ -235,7 +235,8 @@ public class PlayerStateSourceTest
 		Set<PohNexusPortal> portals = EnumSet.allOf(PohNexusPortal.class);
 		Set<PohMountedItem> mounted = EnumSet.allOf(PohMountedItem.class);
 		RoutingPolicy policy = new RoutingPolicy(enabledTypes, MODE, true, true, true, true,
-			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true);
+			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true,
+			Set.of(), Map.of());
 
 		RequirementContext context = RequirementTestFixtures.context().build();
 		Requirements requirements = new Requirements(context, policy,
