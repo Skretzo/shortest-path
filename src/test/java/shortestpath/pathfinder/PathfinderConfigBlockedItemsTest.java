@@ -22,7 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
 import shortestpath.ShortestPathConfig;
-import shortestpath.TeleportationItem;
+import shortestpath.requirement.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -38,10 +38,10 @@ import static org.mockito.Mockito.when;
  * Per-item teleport restrictions from the hidden {@code blockedTeleportItems}
  * config key: a bare {@code id} record blocks the item from routing and an
  * {@code id:N} record overrides the tiles-saved threshold for transports that
- * reference it. The block gate sits in {@code useTransport} so all nine
- * {@link TeleportationItem} modes honour it — the {@code ALL}/
- * {@code UNLOCKED} modes skip item evaluation entirely in
- * {@code hasRequiredItems} and would otherwise route around a block.
+ * reference it. The block gate sits in {@code checkTeleportationItemRules} —
+ * the candidate-set filter — so all nine {@link TeleportationItem} modes honour
+ * it: the {@code ALL}/{@code UNLOCKED} modes short-circuit item evaluation
+ * entirely and would otherwise route around a block.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderConfigBlockedItemsTest
