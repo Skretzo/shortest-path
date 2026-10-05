@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -168,6 +169,14 @@ public class PathfinderConfig
 	 */
 	private TransportEligibility eligibility;
 	private boolean eligibilityStale = true;
+	/**
+	 * The per-refresh gate chain, bound to the latest {@link RequirementContext}.
+	 * {@link #rebuildAccessibleBankTiles} runs after {@link #refreshTransports}
+	 * and evaluates bank destinations through this same chain, so both sides of
+	 * a refresh share one snapshot and one definition of requirement
+	 * satisfaction. {@code null} until the first successful transport refresh.
+	 */
+	private Requirements requirements;
 	/**
 	 * Reference that points to either allDestinations or filteredDestinations
 	 */
@@ -400,7 +409,7 @@ public class PathfinderConfig
 		}
 
 		refreshDestinations();
-		rebuildAccessibleBankTiles(evaluationTimeMinutes);
+		rebuildAccessibleBankTiles();
 	}
 
 	protected long currentTimeMinutes()
@@ -413,7 +422,7 @@ public class PathfinderConfig
 		destinations = avoidWilderness ? filteredDestinations : allDestinations;
 	}
 
-	private void rebuildAccessibleBankTiles(long evaluationTimeMinutes)
+	private void rebuildAccessibleBankTiles()
 	{
 		Set<Integer> bankLocs = destinations.get("bank");
 		if (bankLocs == null)
@@ -426,58 +435,25 @@ public class PathfinderConfig
 			accessibleBankTiles = Set.copyOf(bankLocs);
 			return;
 		}
+		// Bank destinations are gated by the chain the transport refresh built
+		// from this refresh's snapshot; when no snapshot exists yet there is
+		// nothing to gate on, matching the logged-out answer.
+		Requirements requirements = this.requirements;
+		if (requirements == null)
+		{
+			accessibleBankTiles = Set.copyOf(bankLocs);
+			return;
+		}
 		Set<Integer> acc = new HashSet<>(bankLocs.size());
 		for (Integer p : bankLocs)
 		{
 			DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
-			if (satisfiesBankDestinationRequirements(req, evaluationTimeMinutes))
+			if (requirements.check(req) == RejectionReason.NONE)
 			{
 				acc.add(p);
 			}
 		}
 		accessibleBankTiles = Collections.unmodifiableSet(acc);
-	}
-
-	/**
-	 * Quest/skill/var gates for bank tiles (not used for transport overlays).
-	 */
-	private boolean satisfiesBankDestinationRequirements(DestinationRequirements dr, long evaluationTimeMinutes)
-	{
-		if (dr == null || dr.isEmpty())
-		{
-			return true;
-		}
-		int[] requiredLevels = dr.getSkillLevels();
-		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
-		{
-			int need = i < requiredLevels.length ? requiredLevels[i] : 0;
-			if (boostedSkillLevelsAndMore[i] < need)
-			{
-				return false;
-			}
-		}
-		for (Quest quest : dr.getQuests())
-		{
-			if (!QuestState.FINISHED.equals(getQuestState(quest)))
-			{
-				return false;
-			}
-		}
-		for (VarRequirement req : dr.getVarbits())
-		{
-			if (!req.checkValue(client.getVarbitValue(req.getId()), evaluationTimeMinutes))
-			{
-				return false;
-			}
-		}
-		for (VarRequirement req : dr.getVarPlayers())
-		{
-			if (!req.checkValue(client.getVarpValue(req.getId()), evaluationTimeMinutes))
-			{
-				return false;
-			}
-		}
-		return true;
 	}
 
 	/**
@@ -596,7 +572,7 @@ public class PathfinderConfig
 		questStates = context.getQuestStates();
 		varbitValues = context.getVarbitValues();
 		varPlayerValues = context.getVarPlayerValues();
-		Requirements requirements = new Requirements(context);
+		requirements = new Requirements(context);
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
@@ -702,7 +678,18 @@ public class PathfinderConfig
 	{
 		// Iterate the unified var-requirement set: getVarbits() would
 		// materialize a filtered HashSet for every transport in the refresh.
-		for (VarRequirement varRequirement : transport.getVarRequirements())
+		return varbitChecks(transport.getVarRequirements(), evaluationTimeMinutes);
+	}
+
+	/**
+	 * Whether any varbit requirement in the collection fails against this
+	 * refresh's captured values. Returns {@code true} when a check FAILED —
+	 * the polarity the bypass overrides rely on. Bank-destination requirement
+	 * sets reach this same seam.
+	 */
+	public boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+	{
+		for (VarRequirement varRequirement : requirements)
 		{
 			if (varRequirement.isVarbit() && !varRequirement.check(varbitValues, evaluationTimeMinutes))
 			{
@@ -714,7 +701,17 @@ public class PathfinderConfig
 
 	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
 	{
-		for (VarRequirement varRequirement : transport.getVarRequirements())
+		return varPlayerChecks(transport.getVarRequirements(), evaluationTimeMinutes);
+	}
+
+	/**
+	 * Whether any varplayer requirement in the collection fails against this
+	 * refresh's captured values. Same failure polarity as
+	 * {@link #varbitChecks(Collection, long)}.
+	 */
+	public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+	{
+		for (VarRequirement varRequirement : requirements)
 		{
 			if (varRequirement.isVarPlayer() && !varRequirement.check(varPlayerValues, evaluationTimeMinutes))
 			{
@@ -974,24 +971,7 @@ public class PathfinderConfig
 		Set<Quest> refreshedQuests = new HashSet<>();
 		for (Transport transport : allTransports)
 		{
-			for (Quest quest : transport.getQuests())
-			{
-				if (!refreshedQuests.add(quest))
-				{
-					continue;
-				}
-				try
-				{
-					QuestState state = getQuestState(quest);
-					if (state != null)
-					{
-						capturedQuestStates.put(quest, state);
-					}
-				}
-				catch (NullPointerException ignored)
-				{
-				}
-			}
+			captureQuestStates(transport.getQuests(), refreshedQuests, capturedQuestStates);
 			for (VarRequirement varRequirement : transport.getVarRequirements())
 			{
 				if (varRequirement.isVarbit())
@@ -1005,10 +985,55 @@ public class PathfinderConfig
 			}
 		}
 
+		// Bank destinations can carry quest and var ids that no transport
+		// declares; they must land in the same snapshot, because a var or
+		// quest missing from these maps fails closed when the shared
+		// evaluator looks it up.
+		for (DestinationRequirements destinationRequirements : bankRequirements.values())
+		{
+			captureQuestStates(destinationRequirements.getQuests(), refreshedQuests, capturedQuestStates);
+			for (VarRequirement varRequirement : destinationRequirements.getVarbits())
+			{
+				capturedVarbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
+			}
+			for (VarRequirement varRequirement : destinationRequirements.getVarPlayers())
+			{
+				capturedVarPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
+			}
+		}
+
 		return new RequirementContext(evaluationTimeMinutes, boostedSkillLevelsAndMore,
 			currentMaxQuestPoints, capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
 			eligibilitySnapshot, unlocks, respawnPrifddinas, isOnSailingBoat,
 			leagueModeState, availableSpiritTrees);
+	}
+
+	/**
+	 * Captures each quest's state through the {@link #getQuestState} hook,
+	 * skipping quests already captured this refresh and tolerating a hook
+	 * that throws or returns null for a quest it cannot answer.
+	 */
+	private void captureQuestStates(Collection<Quest> quests, Set<Quest> refreshedQuests,
+		Map<Quest, QuestState> capturedQuestStates)
+	{
+		for (Quest quest : quests)
+		{
+			if (!refreshedQuests.add(quest))
+			{
+				continue;
+			}
+			try
+			{
+				QuestState state = getQuestState(quest);
+				if (state != null)
+				{
+					capturedQuestStates.put(quest, state);
+				}
+			}
+			catch (NullPointerException ignored)
+			{
+			}
+		}
 	}
 
 	/**
@@ -1083,6 +1108,44 @@ public class PathfinderConfig
 			if (reason == RejectionReason.NONE) reason = varplayer(transport);
 			if (reason == RejectionReason.NONE) reason = plantedSpiritTree(transport);
 			if (reason == RejectionReason.NONE) reason = itemRequirement(transport);
+			return reason;
+		}
+
+		/**
+		 * Bank-destination admissibility: a {@link DestinationRequirements} is
+		 * satisfied when its skill, quest, varbit and varplayer sets pass the
+		 * same checks the transport gates above run. An empty requirement is
+		 * always satisfied.
+		 *
+		 * <p>Bank evaluation intentionally reads this refresh's captured
+		 * context values and routes through the shared overridable hooks
+		 * ({@link #varbitChecks}, {@link #varPlayerChecks}, the quest map the
+		 * {@link #getQuestState} hook feeds) instead of querying the client
+		 * per tile as it used to. A bank tile and a transport can therefore
+		 * never disagree about the same requirement inside one refresh, and
+		 * test bypasses cover bank requirements too.
+		 */
+		RejectionReason check(DestinationRequirements requirements)
+		{
+			if (requirements == null || requirements.isEmpty())
+			{
+				return RejectionReason.NONE;
+			}
+			RejectionReason reason = skillLevel(requirements.getSkillLevels());
+			if (reason == RejectionReason.NONE && !completedQuests(requirements.getQuests()))
+			{
+				reason = RejectionReason.QUEST;
+			}
+			if (reason == RejectionReason.NONE
+				&& varbitChecks(requirements.getVarbits(), context.getEvaluationTimeMinutes()))
+			{
+				reason = RejectionReason.VARBIT;
+			}
+			if (reason == RejectionReason.NONE
+				&& varPlayerChecks(requirements.getVarPlayers(), context.getEvaluationTimeMinutes()))
+			{
+				reason = RejectionReason.VARPLAYER;
+			}
 			return reason;
 		}
 
@@ -1414,12 +1477,16 @@ public class PathfinderConfig
 
 		private RejectionReason skillLevel(Transport transport)
 		{
+			return skillLevel(transport.getSkillLevels());
+		}
+
+		private RejectionReason skillLevel(int[] requiredLevels)
+		{
 			// In leagues some skills are disabled so the max total level is lower than
 			// the standard 2376. Holding the item (e.g. Max cape) already proves the
 			// player is maxed for the available skills, so skip the total-level check.
 			final int totalLevelIndex = Skill.values().length;
 			LeagueModeState leagueModeState = context.getLeagueModeState();
-			int[] requiredLevels = transport.getSkillLevels();
 			for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
 			{
 				if (leagueModeState.isSeasonal() && i == totalLevelIndex)
@@ -1463,17 +1530,17 @@ public class PathfinderConfig
 
 		private RejectionReason quest(Transport transport)
 		{
-			if (transport.isQuestLocked() && !completedQuests(transport))
+			if (transport.isQuestLocked() && !completedQuests(transport.getQuests()))
 			{
 				return RejectionReason.QUEST;
 			}
 			return RejectionReason.NONE;
 		}
 
-		private boolean completedQuests(Transport transport)
+		private boolean completedQuests(Collection<Quest> quests)
 		{
 			Map<Quest, QuestState> questStates = context.getQuestStates();
-			for (Quest quest : transport.getQuests())
+			for (Quest quest : quests)
 			{
 				if (!QuestState.FINISHED.equals(questStates.getOrDefault(quest, QuestState.NOT_STARTED)))
 				{

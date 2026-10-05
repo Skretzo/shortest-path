@@ -3,6 +3,7 @@ package shortestpath.pathfinder;
 import net.runelite.api.Client;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.Destination;
@@ -10,6 +11,7 @@ import shortestpath.DestinationRequirements;
 import shortestpath.ShortestPathConfig;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
+import shortestpath.transport.parser.VarRequirement;
 
 // This subclass is used to provide mocked implementations of methods from the normal
 // PathfinderConfig. CRUCIAL: Not implemented via Mockito as these methods are called
@@ -75,15 +77,15 @@ public class TestPathfinderConfig extends PathfinderConfig
 	}
 
 	@Override
-	public boolean varbitChecks(Transport transport, long evaluationTimeMinutes)
+	public boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
 	{
-		return !bypassVarbitChecks && super.varbitChecks(transport, evaluationTimeMinutes);
+		return !bypassVarbitChecks && super.varbitChecks(requirements, evaluationTimeMinutes);
 	}
 
 	@Override
-	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
+	public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
 	{
-		return !bypassVarPlayerChecks && super.varPlayerChecks(transport, evaluationTimeMinutes);
+		return !bypassVarPlayerChecks && super.varPlayerChecks(requirements, evaluationTimeMinutes);
 	}
 
 	/**
