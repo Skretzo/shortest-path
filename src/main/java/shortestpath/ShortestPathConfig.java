@@ -1405,20 +1405,84 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	/**
-	 * The balloon routes whose destination basket holds the required logs.
-	 * While this key has never been written its default derives from the
-	 * legacy {@link #unlockBalloonLogBasket()} flag (on =&gt; every route,
-	 * off =&gt; none); the first written per-route set takes over
-	 * permanently, after which the flag keeps meaning only for profiles that
-	 * never wrote this key.
-	 */
-	
+	@ConfigItem(
+		keyName = "unreachableText",
+		name = "",
+		description = "Text shown on the player tile when the destination cannot be reached",
+		hidden = true
+	)
+	default String unreachableText()
+	{
+		return "Destination could not be reached";
+	}
+
+	@ConfigItem(
+		keyName = "builtTeleportationBoxes",
+		name = "",
+		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	default String builtTeleportationBoxes()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "builtTeleportationBoxes",
+		name = "",
+		description = "",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	void setBuiltTeleportationBoxes(String content);
+
+	@ConfigItem(
+		keyName = "builtTeleportationPortalsPoh",
+		name = "",
+		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	default String builtTeleportationPortalsPoh()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "builtTeleportationPortalsPoh",
+		name = "",
+		description = "",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	void setBuiltTeleportationPortalsPoh(String content);
+
+	@ConfigItem(
+		keyName = "blockedTeleportItems",
+		name = "Blocked teleport items",
+		description = "Internal: comma-separated restricted teleport item ids and per-item threshold overrides (id or id:tiles). Managed by the Shortest Path sidebar.",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	default String blockedTeleportItems()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "unlockBalloonLogBasket",
+		name = "Balloon log basket stocked",
+		description = "Enable if you have stored logs in the balloon transport baskets.<br>" +
+			"The game does not expose the stored logs to the client,<br>" +
+			"so the plugin cannot detect them automatically.<br>" +
+			"Enabling this declares the unlock without verification",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	default boolean unlockBalloonLogBasket()
+	{
+		return false;
+	}
+
 }
