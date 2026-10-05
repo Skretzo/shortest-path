@@ -9,7 +9,6 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.WildernessChecker;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
 
 /** Correctness-first forward search over tiles, capability hubs, and bank layers. */
 public final class ExactForwardSearch
@@ -252,27 +251,12 @@ public final class ExactForwardSearch
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		CollisionMap collision = target.collision();
+		if (collision.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile), WorldPointUtil.unpackWorldPlane(tile))) return;
 		int x = WorldPointUtil.unpackWorldX(tile), y = WorldPointUtil.unpackWorldY(tile), plane = WorldPointUtil.unpackWorldPlane(tile);
 		int[] cardinal = {WorldPointUtil.packWorldPoint(x - 1, y, plane), WorldPointUtil.packWorldPoint(x + 1, y, plane), WorldPointUtil.packWorldPoint(x, y - 1, plane), WorldPointUtil.packWorldPoint(x, y + 1, plane)};
-		PreparedRoutingAccount.View view = target.account().localView(banked);
-		// Legacy checks each transport's wilderness limit against the expanding tile's band before
-		// stepping onto its blocked origin; the tile's capability is the same band.
-		int castLevel = capabilityAt(tile).castLevel();
-		// The current tile may itself be a blocked origin (a stepping stone): legacy still offers
-		// the step onto a further blocked origin from there, which is what chains the stones.
 		for (int next : cardinal)
-			if (collision.isBlocked(WorldPointUtil.unpackWorldX(next), WorldPointUtil.unpackWorldY(next), WorldPointUtil.unpackWorldPlane(next))
-				&& usableOrigin(view, next, castLevel))
+			if (collision.isBlocked(WorldPointUtil.unpackWorldX(next), WorldPointUtil.unpackWorldY(next), WorldPointUtil.unpackWorldPlane(next)) && space.hasLocalOrigin(next, banked))
 				relaxWalking(space, next, banked, from, cost, best, previous, previousTransport, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
-	}
-
-	/** Whether any local transport leaving {@code origin} is usable at {@code wildernessLevel}. */
-	private static boolean usableOrigin(PreparedRoutingAccount.View view, int origin, int wildernessLevel)
-	{
-		for (int i = lowerBound(view.origins, origin); i < view.count && view.origins[i] == origin; i++)
-			if (!TRANSPORT_TYPES[view.types[i]].isTeleport() || wildernessLevel <= view.maxWilderness[i])
-				return true;
-		return false;
 	}
 
 	private static void relaxWalking(SearchSpace space, int tile, boolean banked, int from, int cost,
@@ -601,8 +585,6 @@ public final class ExactForwardSearch
 	{
 		return TeleportCapability.at(tile);
 	}
-	// Enum.values() copies on every call, so cache it for the view.types[] lookups.
-	private static final TransportType[] TRANSPORT_TYPES = TransportType.values();
 	private static final TeleportCapability[] CAPABILITIES = TeleportCapability.values();
 	private static final int HUB_STATES = CAPABILITIES.length * 2;
 
@@ -906,6 +888,9 @@ public final class ExactForwardSearch
 		boolean bankGlobalRelevant()
 		{ return account.allowTransports() && account.bankPathEnabled();
 		}
+		boolean hasLocalOrigin(int tile, boolean banked)
+	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.count && view.origins[index] == tile;
+	}
 		/** The node's wilderness/blocked-region status bits, computed on first ask. */
 		private int gateStatus(int node)
 		{
