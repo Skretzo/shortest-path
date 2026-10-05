@@ -22,17 +22,13 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 	private Integer unreachableTargetDistance = 2;
 	private Boolean collisionAwareBlockedTargets = true;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
-	private Boolean includeBankPath = false;
-	private Integer costBankVisit = 0;
-	private Boolean unlockCanoeAxe = false;
-	private Boolean unlockXericsHonour = false;
-	private Boolean unlockDragontoothPassage = false;
+	private boolean includeBankPath = false;
+	private int costBankVisit = 0;
+	private boolean unlockCanoeAxe = false;
+	private boolean unlockXericsHonour = false;
+	private boolean unlockDragontoothPassage = false;
 	private String blockedTeleportItems = "";
-	private Boolean usePoh = false;
-	private Set<PohNexusPortal> pohNexusPortals = null;
-	private Boolean showBankPickupInfo = false;
-	private Boolean showTransportInfo = true;
-	private final java.util.Map<String, Object> extras = new java.util.HashMap<>();
+	private boolean unlockBalloonLogBasket = false;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -93,129 +89,13 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		this.blockedTeleportItems = blockedTeleportItems;
 	}
 
-
-
 	@SuppressWarnings("unused")
-	public void setUsePohValue(boolean usePoh)
+	public void setUnlockBalloonLogBasketValue(boolean unlockBalloonLogBasket)
 	{
-		this.usePoh = usePoh;
+		this.unlockBalloonLogBasket = unlockBalloonLogBasket;
 	}
 
-	@SuppressWarnings("unused")
-	public void setPohNexusPortalsValue(Set<PohNexusPortal> pohNexusPortals)
-	{
-		this.pohNexusPortals = pohNexusPortals;
-	}
-
-	@SuppressWarnings("unused")
-	public void setShowBankPickupInfoValue(boolean showBankPickupInfo)
-	{
-		this.showBankPickupInfo = showBankPickupInfo;
-	}
-
-	@SuppressWarnings("unused")
-	public void setShowTransportInfoValue(boolean showTransportInfo)
-	{
-		this.showTransportInfo = showTransportInfo;
-	}
-
-	/**
-	 * Seed or override a hidden key's value — the {@code when(...).thenReturn}
-	 * replacement now that hidden keys are not mockable interface methods.
-	 */
-	public void set(String keyName, Object v)
-	{
-		extras.put(keyName, v);
-	}
-
-
-	/**
-	 * Baseline-seed every opt-in routing flag to {@code false} — the state
-	 * the old {@code @Mock} config presented (unstubbed booleans read
-	 * {@code false}). Scenario tests that assume transports are off unless
-	 * explicitly enabled call this before their own {@code set}s. Display
-	 * and lifecycle flags are untouched so their declared defaults stay.
-	 */
-	public void disableTransportToggles()
-	{
-		for (String key : new String[]{
-			"avoidWilderness", "includeBankPath", "respawnPrifddinas",
-			"useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes",
-			"useCharterShips", "useShips", "useFairyRings", "useGnomeGliders",
-			"useHotAirBalloons", "useMagicCarpets", "useMagicMushtrees",
-			"useMinecarts", "useQuetzals", "useSpiritTrees",
-			"useTeleportationLevers", "useTeleportationPortals",
-			"useTeleportationSpells", "useTeleportationSpellsHome",
-			"useTeleportationMinigames", "useWildernessObelisks",
-			"useSeasonalTransports", "useSailingMoves",
-			"usePoh", "usePohFairyRing", "usePohSpiritTree",
-			"useTeleportationPortalsPoh", "usePohMountedItems", "usePohObelisk",
-			"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage",
-			"unlockMorUlRek"})
-		{
-			set(key, false);
-		}
-		// Numeric keys whose mock default was 0 rather than the declared
-		// default — reached-expansion and the whistle differential priced
-		// routes differently under the old suite.
-		set("unreachableTargetDistanceThreshold", 0);
-		set("costQuetzalWhistle", 0);
-	}
-
-	public Object value(String keyName)
-	{
-		if (extras.containsKey(keyName))
-		{
-			return extras.get(keyName);
-		}
-		switch (keyName)
-		{
-			case "calculationCutoff":
-				return calculationCutoff;
-			case "unreachableTargetDistanceThreshold":
-				return unreachableTargetDistance;
-			case "collisionAwareBlockedTargets":
-				return collisionAwareBlockedTargets;
-			case "useTeleportationItems":
-				return useTeleportationItems;
-			case "includeBankPath":
-				return includeBankPath;
-			case "costBankVisit":
-				return costBankVisit;
-			case "unlockCanoeAxe":
-				return unlockCanoeAxe;
-			case "unlockXericsHonour":
-				return unlockXericsHonour;
-			case "unlockDragontoothPassage":
-				return unlockDragontoothPassage;
-			case "blockedTeleportItems":
-				return blockedTeleportItems;
-			case "usePoh":
-				return usePoh;
-			case "pohNexusPortals":
-				return pohNexusPortals;
-			case "showBankPickupInfo":
-				return showBankPickupInfo;
-			case "showTransportInfo":
-				return showTransportInfo;
-			default:
-				return null;
-		}
-	}
-
-	/**
-	 * The value a stub read reports for a hidden key — the field value when
-	 * set, else the key's declared default (flag-derived defaults included).
-	 */
-	private Object def(String keyName)
-	{
-		// Mirrors Settings.keyedBase: the declared default runs on the same
-		// resolver, so flag-derived defaults see the flag's own default.
-		Object value = value(keyName);
-		return value != null ? value
-			: ConfigKey.forKey(keyName).resolveDefault(row -> def(row.getKey()));
-	}
-
+	@Override
 	public TeleportationItem useTeleportationItems()
 	{
 		return (TeleportationItem) def("useTeleportationItems");
@@ -268,6 +148,19 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		return (Set<PohNexusPortal>) def("pohNexusPortals");
 	}
 
+	@Override
+	public String blockedTeleportItems()
+	{
+		return blockedTeleportItems;
+	}
+
+	@Override
+	public boolean unlockBalloonLogBasket()
+	{
+		return unlockBalloonLogBasket;
+	}
+
+	@Override
 	public int calculationCutoff()
 	{
 		return ((Number) def("calculationCutoff")).intValue();
