@@ -13,6 +13,8 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private boolean unlockCanoeAxe = false;
 	private boolean unlockXericsHonour = false;
 	private boolean unlockDragontoothPassage = false;
+	private String blockedTeleportItems = "";
+	private boolean unlockBalloonLogBasket = false;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -67,6 +69,18 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.unlockDragontoothPassage = unlockDragontoothPassage;
 	}
 
+	@SuppressWarnings("unused")
+	public void setBlockedTeleportItemsValue(String blockedTeleportItems)
+	{
+		this.blockedTeleportItems = blockedTeleportItems;
+	}
+
+	@SuppressWarnings("unused")
+	public void setUnlockBalloonLogBasketValue(boolean unlockBalloonLogBasket)
+	{
+		this.unlockBalloonLogBasket = unlockBalloonLogBasket;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -107,6 +121,18 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean unlockDragontoothPassage()
 	{
 		return unlockDragontoothPassage;
+	}
+
+	@Override
+	public String blockedTeleportItems()
+	{
+		return blockedTeleportItems;
+	}
+
+	@Override
+	public boolean unlockBalloonLogBasket()
+	{
+		return unlockBalloonLogBasket;
 	}
 
 	@Override
