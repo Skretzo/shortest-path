@@ -142,7 +142,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|use\\w+|cost\\w+|unlock\\w+)$");
+	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|use\\w+|cost\\w+|unlock\\w+|poh\\w+|respawnPrifddinas|unreachableTargetDistanceThreshold|blockedTeleportItems|calculationCutoff)$");
 	// Replaced atomically per plugin message; readers run on threads that
 	// cannot take pathfinderMutex, so they read the volatile reference.
 	private static volatile Map<String, Object> configOverride = Map.of();
