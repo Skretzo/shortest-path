@@ -13,6 +13,7 @@ import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.Util;
+import shortestpath.transport.TransportType;
 
 /**
  * Per-item teleport restriction support: the family map the config panel's
@@ -44,6 +45,19 @@ public final class TeleportRestriction
 
 	private TeleportRestriction()
 	{
+	}
+
+	/**
+	 * The transport types whose item requirements are player-restrictable:
+	 * per-item blocks and threshold overrides only consult these. Other types
+	 * (boats, agility shortcuts, POH teleports, …) keep item requirements as
+	 * pure inventory constraints.
+	 */
+	public static boolean isItemTeleportType(TransportType type)
+	{
+		return TransportType.TELEPORTATION_ITEM.equals(type)
+			|| TransportType.SEASONAL_TRANSPORTS.equals(type)
+			|| TransportType.QUETZAL_WHISTLE.equals(type);
 	}
 
 	/**

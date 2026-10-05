@@ -526,14 +526,7 @@ public class PathfinderConfig
 	 */
 	private int memberThresholdOverride(Transport transport)
 	{
-		if (itemThresholdOverrides.isEmpty())
-		{
-			return 0;
-		}
-		TransportType type = transport.getType();
-		if (!TransportType.TELEPORTATION_ITEM.equals(type)
-			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
-			&& !TransportType.QUETZAL_WHISTLE.equals(type))
+		if (itemThresholdOverrides.isEmpty() || !TeleportRestriction.isItemTeleportType(transport.getType()))
 		{
 			return 0;
 		}
