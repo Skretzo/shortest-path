@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.requirement;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -15,8 +15,8 @@ public class PathfinderConfigPohNexusTest
 	{
 		Set<PohNexusPortal> selected = EnumSet.of(PohNexusPortal.ANNAKARL);
 
-		assertTrue(PathfinderConfig.isPohNexusPortalEnabled(selected, "Annakarl Portal"));
-		assertFalse(PathfinderConfig.isPohNexusPortalEnabled(selected, "Ardougne Portal"));
+		assertTrue(Requirements.isPohNexusPortalEnabled(selected, "Annakarl Portal"));
+		assertFalse(Requirements.isPohNexusPortalEnabled(selected, "Ardougne Portal"));
 	}
 
 	@Test
@@ -24,12 +24,12 @@ public class PathfinderConfigPohNexusTest
 	{
 		Set<PohNexusPortal> selected = EnumSet.of(PohNexusPortal.CAMELOT);
 
-		assertTrue(PathfinderConfig.isPohNexusPortalEnabled(selected, "Camelot Portal"));
-		assertTrue(PathfinderConfig.isPohNexusPortalEnabled(selected, "Seers' Village Portal"));
+		assertTrue(Requirements.isPohNexusPortalEnabled(selected, "Camelot Portal"));
+		assertTrue(Requirements.isPohNexusPortalEnabled(selected, "Seers' Village Portal"));
 
 		selected = EnumSet.noneOf(PohNexusPortal.class);
-		assertFalse(PathfinderConfig.isPohNexusPortalEnabled(selected, "Camelot Portal"));
-		assertFalse(PathfinderConfig.isPohNexusPortalEnabled(selected, "Seers' Village Portal"));
+		assertFalse(Requirements.isPohNexusPortalEnabled(selected, "Camelot Portal"));
+		assertFalse(Requirements.isPohNexusPortalEnabled(selected, "Seers' Village Portal"));
 	}
 
 	@Test
@@ -38,20 +38,20 @@ public class PathfinderConfigPohNexusTest
 		Set<PohNexusPortal> selected = EnumSet.of(PohNexusPortal.RESPAWN);
 		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
 		{
-			assertTrue(PathfinderConfig.isPohNexusPortalEnabled(selected, displayInfo));
+			assertTrue(Requirements.isPohNexusPortalEnabled(selected, displayInfo));
 		}
 
 		selected = EnumSet.noneOf(PohNexusPortal.class);
 		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
 		{
-			assertFalse(PathfinderConfig.isPohNexusPortalEnabled(selected, displayInfo));
+			assertFalse(Requirements.isPohNexusPortalEnabled(selected, displayInfo));
 		}
 	}
 
 	@Test
 	public void testUnknownPortalRemainsEnabled()
 	{
-		assertTrue(PathfinderConfig.isPohNexusPortalEnabled(
+		assertTrue(Requirements.isPohNexusPortalEnabled(
 			EnumSet.noneOf(PohNexusPortal.class), "Boat Portal"));
 	}
 }

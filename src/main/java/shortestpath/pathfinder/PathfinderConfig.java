@@ -38,10 +38,11 @@ import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.requirement.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
-import shortestpath.leagues.LeagueRegion;
-import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 import shortestpath.requirement.RequirementContext;
+import shortestpath.requirement.RequirementHooks;
+import shortestpath.requirement.Requirements;
+import shortestpath.requirement.RoutingPolicy;
 import shortestpath.requirement.OwnedItems;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
@@ -50,16 +51,12 @@ import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
-import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.requirement.model.VarRequirement;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
 {
-	private static final int MAX_SKILL_LEVEL = 99;
 	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
 		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
 		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
@@ -74,23 +71,6 @@ public class PathfinderConfig
 			VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
 			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
 		};
-	/**
-	 * Item ids that only exist on Deadman Mode worlds ({@code WorldType.DEADMAN}).
-	 * Transports requiring them are filtered out on every other world type,
-	 * regardless of the teleportation-item setting.
-	 */
-	private static final Set<Integer> DEADMAN_ONLY_ITEM_IDS = Set.of(
-		ItemID.MAGIC_ROCK_OF_FAIRIES);
-
-	/**
-	 * Respawn landing tiles used by the Respawn Teleport spell and the POH respawn portal.
-	 * Every respawn except Prifddinas exposes an {@code *_SPAWN} varbit; when Prifddinas is
-	 * the active respawn all of them read 0, which is the same signature as the Lumbridge
-	 * default, so both landings are gated on the declared respawn in config instead.
-	 */
-	private static final int LUMBRIDGE_RESPAWN = WorldPointUtil.packWorldPoint(3221, 3218, 0);
-	private static final int PRIFDDINAS_RESPAWN = WorldPointUtil.packWorldPoint(3265, 6077, 0);
-
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
 	/**
@@ -179,6 +159,13 @@ public class PathfinderConfig
 	 */
 	private Requirements requirements;
 	/**
+	 * The seam the gate chain reads the protected override hooks through.
+	 * {@link ConfigHooks} delegates to {@link #getQuestState},
+	 * {@link #varbitChecks} and {@link #varPlayerChecks} so subclass overrides
+	 * stay live for transport and bank-destination verdicts alike.
+	 */
+	private final RequirementHooks requirementHooks = new ConfigHooks();
+	/**
 	 * Reference that points to either allDestinations or filteredDestinations
 	 */
 	private volatile Map<String, Set<Integer>> destinations;
@@ -263,13 +250,6 @@ public class PathfinderConfig
 		double range = (13 * (3 * Math.floorDiv(ranged, 2))) / 40.0;
 		double mage = (13 * (3 * Math.floorDiv(magic, 2))) / 40.0;
 		return (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
-	}
-
-	static String getPlantedSpiritTreeName(int x, int y)
-	{
-		// SpiritTreePatchState owns the patch table (region, varbit, bounds);
-		// this shim keeps the planted-tree gate readable at its call sites.
-		return SpiritTreePatchState.patchNameForTile(x, y);
 	}
 
 	public CollisionMap getMap()
@@ -449,7 +429,7 @@ public class PathfinderConfig
 		for (Integer p : bankLocs)
 		{
 			DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
-			if (requirements.check(req) == RejectionReason.NONE)
+			if (requirements.satisfied(req))
 			{
 				acc.add(p);
 			}
@@ -573,12 +553,16 @@ public class PathfinderConfig
 		questStates = context.getQuestStates();
 		varbitValues = context.getVarbitValues();
 		varPlayerValues = context.getVarPlayerValues();
-		requirements = new Requirements(context);
+		// The policy snapshot is taken only now — after the disableUnless
+		// derivations above — so the chain freezes the effective transport-type
+		// enablement, not the raw config view.
+		RoutingPolicy policy = buildRoutingPolicy();
+		requirements = new Requirements(context, policy, requirementHooks);
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
-			if (!useTransport(transport, requirements))
+			if (!requirements.usable(transport))
 			{
 				continue;
 			}
@@ -598,6 +582,28 @@ public class PathfinderConfig
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
 		transportAvailabilities = new TransportAvailabilities(withoutBank.build(), withBank.build());
+	}
+
+	/**
+	 * Snapshots the routing settings the gate chain reads this refresh: the
+	 * effective transport-type enablement (post-{@code disableUnless}), the
+	 * teleportation-item mode and the POH toggles. Called once per refresh so
+	 * a built chain can never observe later config mutation.
+	 */
+	private RoutingPolicy buildRoutingPolicy()
+	{
+		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
+		for (TransportType type : TransportType.values())
+		{
+			if (transportTypeConfig.isEnabled(type))
+			{
+				enabledTypes.add(type);
+			}
+		}
+		return new RoutingPolicy(enabledTypes, transportTypeConfig.getTeleportationItemSetting(),
+			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
+			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
+			currencyThreshold, includeBankPath);
 	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)
@@ -723,13 +729,31 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Whether the transport may run this refresh. The {@link Requirements} gate
-	 * chain is the single definition of admissibility — a
-	 * {@link RejectionReason#NONE} verdict admits the transport.
+	 * Routes the {@link RequirementHooks} seam the gate chain consumes to the
+	 * protected override points above. Dynamic dispatch keeps test overrides
+	 * live with no test-side changes — an override of {@link #getQuestState},
+	 * {@link #varbitChecks} or {@link #varPlayerChecks} still reaches every
+	 * transport and bank-destination verdict.
 	 */
-	private boolean useTransport(Transport transport, Requirements requirements)
+	private final class ConfigHooks implements RequirementHooks
 	{
-		return requirements.check(transport) == RejectionReason.NONE;
+		@Override
+		public QuestState getQuestState(Quest quest)
+		{
+			return PathfinderConfig.this.getQuestState(quest);
+		}
+
+		@Override
+		public boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+		{
+			return PathfinderConfig.this.varbitChecks(requirements, evaluationTimeMinutes);
+		}
+
+		@Override
+		public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+		{
+			return PathfinderConfig.this.varPlayerChecks(requirements, evaluationTimeMinutes);
+		}
 	}
 
 	/**
@@ -793,50 +817,6 @@ public class PathfinderConfig
 			}
 			availableSpiritTrees = resolved;
 		}
-	}
-
-	static boolean isPohNexusPortalEnabled(Set<PohNexusPortal> enabledPortals, String displayInfo)
-	{
-		PohNexusPortal portal = PohNexusPortal.fromDisplayInfo(displayInfo);
-		return portal == null || enabledPortals.contains(portal);
-	}
-
-	static boolean isPohMountedItemEnabled(Set<PohMountedItem> enabledItems, String objectInfo)
-	{
-		PohMountedItem item = PohMountedItem.fromObjectInfo(objectInfo);
-		return item == null || enabledItems.contains(item);
-	}
-
-	/**
-	 * Whether the transport has an item requirement that can only be satisfied
-	 * by mode-locked items — every alternative in some requirement branch is in
-	 * {@code modeLockedItemIds}. A branch that also lists a normal item keeps
-	 * the transport usable on every world.
-	 */
-	private static boolean requiresModeLockedItem(Transport transport, Set<Integer> modeLockedItemIds)
-	{
-		TransportItems itemRequirements = transport.getItemRequirements();
-		if (itemRequirements == null)
-		{
-			return false;
-		}
-		for (int[] alternatives : itemRequirements.getItems())
-		{
-			boolean allLocked = alternatives.length > 0;
-			for (int itemId : alternatives)
-			{
-				if (!modeLockedItemIds.contains(itemId))
-				{
-					allLocked = false;
-					break;
-				}
-			}
-			if (allLocked)
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private int maximumQuestPoints()
@@ -1050,582 +1030,5 @@ public class PathfinderConfig
 		int ranged = client.getRealSkillLevel(Skill.RANGED);
 		int prayer = client.getRealSkillLevel(Skill.PRAYER);
 		return computeCombatLevel(attack, strength, defence, hitpoints, magic, ranged, prayer);
-	}
-
-	/**
-	 * The ordered gate chain deciding which transports can run this refresh.
-	 * Each named gate answers one rejection question and returns its
-	 * {@link RejectionReason}; {@link #check} evaluates them in the fixed order
-	 * below and returns the first non-{@code NONE} verdict, so the chain is the
-	 * single definition of transport admissibility. A transport passing every
-	 * gate is offered to the eligibility pools.
-	 *
-	 * <p>Boundary rule: facts the game or the config declares about the player —
-	 * skill levels, quest states, var values, owned items, declared unlocks,
-	 * respawn, sailing and league state, planted spirit trees — are read from
-	 * the {@link RequirementContext} snapshot captured once per refresh. Routing
-	 * policy — transport-type enablement, POH toggles, the teleportation-item
-	 * mode, jewellery-box tier and mounted items — is read from the config's
-	 * settings fields. Gates never consult the {@code Client} directly; client
-	 * state is only read while the snapshot is built.
-	 *
-	 * <p>One instance is created per refresh, bound to that refresh's context,
-	 * so a verdict can never mix facts from different refreshes.
-	 */
-	final class Requirements
-	{
-		private final RequirementContext context;
-		// The context's skill-level getter defensively copies, so the
-		// per-refresh instance keeps the snapshot's array rather than copying
-		// it once per transport.
-		private final int[] boostedSkillLevelsAndMore;
-
-		Requirements(RequirementContext context)
-		{
-			this.context = context;
-			this.boostedSkillLevelsAndMore = context.getBoostedSkillLevelsAndMore();
-		}
-
-		/**
-		 * Evaluates the gates in their fixed order and returns the first
-		 * rejection, or {@link RejectionReason#NONE} when every gate passes.
-		 * The order is part of the contract — later gates assume the earlier
-		 * ones passed.
-		 */
-		RejectionReason check(Transport transport)
-		{
-			RejectionReason reason = sailing(transport);
-			if (reason == RejectionReason.NONE) reason = pohDisabled(transport);
-			if (reason == RejectionReason.NONE) reason = leagueRegion(transport);
-			if (reason == RejectionReason.NONE) reason = typeDisabled(transport);
-			if (reason == RejectionReason.NONE) reason = pohVariant(transport);
-			if (reason == RejectionReason.NONE) reason = teleportationItem(transport);
-			if (reason == RejectionReason.NONE) reason = respawn(transport);
-			if (reason == RejectionReason.NONE) reason = unlockGate(transport);
-			if (reason == RejectionReason.NONE) reason = jewelleryBoxTier(transport);
-			if (reason == RejectionReason.NONE) reason = skillLevel(transport);
-			if (reason == RejectionReason.NONE) reason = quest(transport);
-			if (reason == RejectionReason.NONE) reason = varbit(transport);
-			if (reason == RejectionReason.NONE) reason = varplayer(transport);
-			if (reason == RejectionReason.NONE) reason = plantedSpiritTree(transport);
-			if (reason == RejectionReason.NONE) reason = itemRequirement(transport);
-			return reason;
-		}
-
-		/**
-		 * Bank-destination admissibility: a {@link DestinationRequirements} is
-		 * satisfied when its skill, quest, varbit and varplayer sets pass the
-		 * same checks the transport gates above run. An empty requirement is
-		 * always satisfied.
-		 *
-		 * <p>Bank evaluation intentionally reads this refresh's captured
-		 * context values and routes through the shared overridable hooks
-		 * ({@link #varbitChecks}, {@link #varPlayerChecks}, the quest map the
-		 * {@link #getQuestState} hook feeds) instead of querying the client
-		 * per tile as it used to. A bank tile and a transport can therefore
-		 * never disagree about the same requirement inside one refresh, and
-		 * test bypasses cover bank requirements too.
-		 */
-		RejectionReason check(DestinationRequirements requirements)
-		{
-			if (requirements == null || requirements.isEmpty())
-			{
-				return RejectionReason.NONE;
-			}
-			RejectionReason reason = skillLevel(requirements.getSkillLevels());
-			if (reason == RejectionReason.NONE && !completedQuests(requirements.getQuests()))
-			{
-				reason = RejectionReason.QUEST;
-			}
-			if (reason == RejectionReason.NONE
-				&& varbitChecks(requirements.getVarbits(), context.getEvaluationTimeMinutes()))
-			{
-				reason = RejectionReason.VARBIT;
-			}
-			if (reason == RejectionReason.NONE
-				&& varPlayerChecks(requirements.getVarPlayers(), context.getEvaluationTimeMinutes()))
-			{
-				reason = RejectionReason.VARPLAYER;
-			}
-			return reason;
-		}
-
-		// Sailing: suppress teleports while the player is aboard a boat.
-		// We don't model sailing navigation, so teleporting away mid-ocean would produce
-		// confusing suggestions. Pathfinding resumes normally after disembarking.
-		private RejectionReason sailing(Transport transport)
-		{
-			if (context.isOnSailingBoat() && transport.getType().isTeleport())
-			{
-				return RejectionReason.SAILING;
-			}
-			return RejectionReason.NONE;
-		}
-
-		// Master POH gate - if POH is disabled, reject all POH transports
-		private RejectionReason pohDisabled(Transport transport)
-		{
-			if (!usePoh)
-			{
-				int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-				int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-				int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-				int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-				if (ShortestPathPlugin.isInsidePoh(originX, originY) || ShortestPathPlugin.isInsidePoh(destX, destY))
-				{
-					return RejectionReason.POH_DISABLED;
-				}
-			}
-			return RejectionReason.NONE;
-		}
-
-		// League region gate: in seasonal mode, drop transports that touch the
-		// always-blocked region or a region the player has not unlocked.
-		private RejectionReason leagueRegion(Transport transport)
-		{
-			if (!isTransportRegionAllowed(transport))
-			{
-				return RejectionReason.LEAGUE_REGION;
-			}
-			return RejectionReason.NONE;
-		}
-
-		/**
-		 * Whether both endpoints of the supplied transport are in unlocked
-		 * regions for the current league state. Always-unlocked tiles
-		 * (NEUTRAL, Varlamore, Karamja) pass through unchanged on any world.
-		 *
-		 * <p>If the transport declares a {@link Transport#getRegionOverride()
-		 * region override}, it replaces the chunk-classifier result for the
-		 * destination endpoint. Used for shortcuts whose destination chunk
-		 * sits in a different region than the wiki classifies the shortcut
-		 * under (e.g. Trollheim Wilderness climb — destination chunk is
-		 * Wilderness, but the shortcut is wiki-listed as Asgarnia).
-		 */
-		private boolean isTransportRegionAllowed(Transport transport)
-		{
-			LeagueModeState leagueModeState = context.getLeagueModeState();
-			if (!leagueModeState.isSeasonal())
-			{
-				return true;
-			}
-			LeagueRegion origin = LeagueRegionChecker.getRegion(transport.getOrigin());
-			if (!leagueModeState.isUnlocked(origin))
-			{
-				return false;
-			}
-			LeagueRegion destination = transport.getRegionOverride() != null
-				? transport.getRegionOverride()
-				: LeagueRegionChecker.getRegion(transport.getDestination());
-			return leagueModeState.isUnlocked(destination);
-		}
-
-		// Check if transport type is enabled in config
-		private RejectionReason typeDisabled(Transport transport)
-		{
-			if (!transportTypeConfig.isEnabled(transport.getType()))
-			{
-				return RejectionReason.TYPE_DISABLED;
-			}
-			return RejectionReason.NONE;
-		}
-
-		// Handle POH variants for types that have them
-		private RejectionReason pohVariant(Transport transport)
-		{
-			TransportType type = transport.getType();
-			int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-
-			if (!ShortestPathPlugin.isInsidePoh(originX, originY) && !ShortestPathPlugin.isInsidePoh(destX, destY))
-			{
-				return RejectionReason.NONE; // Not a POH transport
-			}
-
-			// POH fairy ring
-			if (TransportType.FAIRY_RING.equals(type))
-			{
-				return usePohFairyRing ? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-			}
-			// POH spirit tree
-			if (TransportType.SPIRIT_TREE.equals(type))
-			{
-				return usePohSpiritTree ? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-			}
-			// POH obelisk
-			if (TransportType.WILDERNESS_OBELISK.equals(type))
-			{
-				return usePohObelisk ? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-			}
-			if (TransportType.TELEPORTATION_PORTAL_POH.equals(type))
-			{
-				return isPohNexusPortalEnabled(enabledPohNexusPortals, transport.getDisplayInfo())
-					? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-			}
-
-			return RejectionReason.NONE;
-		}
-
-		// Handle special cases for teleportation items and seasonal transports
-		private RejectionReason teleportationItem(Transport transport)
-		{
-			TransportType type = transport.getType();
-			if (!TransportType.TELEPORTATION_ITEM.equals(type)
-				&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
-				&& !TransportType.QUETZAL_WHISTLE.equals(type))
-			{
-				return RejectionReason.NONE; // Not a teleportation item type
-			}
-
-			LeagueModeState leagueModeState = context.getLeagueModeState();
-			// Seasonal transports only exist on seasonal worlds; a lingering config
-			// toggle must not leak them into normal worlds.
-			if (TransportType.SEASONAL_TRANSPORTS.equals(type) && !leagueModeState.isSeasonal())
-			{
-				return RejectionReason.SEASONAL_WORLD;
-			}
-
-			// Mode-locked items (e.g. the Deadman-only Trinket of fairies) can never
-			// be obtained on other world types, even when the ALL/UNLOCKED settings
-			// bypass the inventory check.
-			if (!leagueModeState.isDeadman() && requiresModeLockedItem(transport, DEADMAN_ONLY_ITEM_IDS))
-			{
-				return RejectionReason.DEADMAN_ITEM;
-			}
-
-			// The per-item restriction gate seats at this position — after the
-			// seasonal and deadman checks and before the mode dispatch — because
-			// the modes below can bypass item evaluation entirely.
-			switch (transportTypeConfig.getTeleportationItemSetting())
-			{
-				case ALL:
-					return RejectionReason.NONE;
-				case ALL_NON_CONSUMABLE:
-				case UNLOCKED_NON_CONSUMABLE:
-				case INVENTORY_NON_CONSUMABLE:
-				case INVENTORY_AND_BANK_NON_CONSUMABLE:
-					return transport.isConsumable()
-						? RejectionReason.TELEPORT_MODE
-						: RejectionReason.NONE;
-				case UNLOCKED:
-				case INVENTORY:
-				case INVENTORY_AND_BANK:
-					return RejectionReason.NONE; // Will be checked later by the eligibility snapshot
-				case NONE:
-					return RejectionReason.TELEPORT_MODE;
-			}
-			return RejectionReason.NONE;
-		}
-
-		// Respawn rows for Prifddinas (and the colliding Lumbridge default) are
-		// gated on the declared respawn in config, not on varbits
-		private RejectionReason respawn(Transport transport)
-		{
-			if (!checkRespawnGate(transport))
-			{
-				return RejectionReason.RESPAWN_DECLARED;
-			}
-			return RejectionReason.NONE;
-		}
-
-		/**
-		 * Gates respawn-destination transports on the declared respawn in config.
-		 * When the active respawn is Prifddinas every {@code *_SPAWN} varbit reads 0,
-		 * which is indistinguishable from the Lumbridge default, so the config option
-		 * resolves the ambiguity in both directions.
-		 */
-		private boolean checkRespawnGate(Transport transport)
-		{
-			if (!transport.hasDisplayInfo("Respawn"))
-			{
-				return true;
-			}
-			int destination = transport.getDestination();
-			if (destination == PRIFDDINAS_RESPAWN)
-			{
-				return context.isRespawnPrifddinas();
-			}
-			if (destination == LUMBRIDGE_RESPAWN)
-			{
-				return !context.isRespawnPrifddinas();
-			}
-			return true;
-		}
-
-		// Pure-unlock requirements are gated on the declared unlock set here,
-		// ahead of the item evaluation in the eligibility snapshot — teleportation-item
-		// modes can skip that evaluation entirely and must still honour the gate
-		private RejectionReason unlockGate(Transport transport)
-		{
-			if (!checkUnlockGates(transport))
-			{
-				return RejectionReason.UNLOCK_GATE;
-			}
-			return RejectionReason.NONE;
-		}
-
-		/**
-		 * Gates transports carrying a pure-unlock item requirement (every OR branch
-		 * of the requirement is an unlock token) on the declared unlock set. Item
-		 * pools can never satisfy such a requirement, and item evaluation is not the
-		 * only path a transport can take to be counted usable — teleportation-item
-		 * modes skip it entirely — so the gate is checked here for every transport.
-		 */
-		private boolean checkUnlockGates(Transport transport)
-		{
-			Set<Unlock> unlocks = context.getUnlocks();
-			// The POH Honour teleportation box has no Items column to carry the
-			// unlock term, so it is gated here by its display info, the same
-			// singleton pattern as checkRespawnGate.
-			if (TransportType.TELEPORTATION_BOX.equals(transport.getType())
-				&& transport.hasDisplayInfo("Honour")
-				&& !unlocks.contains(Unlock.XERICS_HONOUR))
-			{
-				return false;
-			}
-			TransportItems itemRequirements = transport.getItemRequirements();
-			if (itemRequirements == null)
-			{
-				return true;
-			}
-			for (ItemRequirement requirement : itemRequirements.getRequirements())
-			{
-				if (!requirement.isPureUnlock())
-				{
-					continue;
-				}
-				boolean declared = false;
-				for (ItemRequirement.Branch branch : requirement.getBranches())
-				{
-					if (unlocks.contains(branch.getUnlock()))
-					{
-						declared = true;
-						break;
-					}
-				}
-				if (!declared)
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		// Handle jewellery box tier filtering
-		private RejectionReason jewelleryBoxTier(Transport transport)
-		{
-			if (TransportType.TELEPORTATION_BOX.equals(transport.getType())
-				&& !checkJewelleryBoxTier(transport))
-			{
-				return RejectionReason.JEWELLERY_BOX_TIER;
-			}
-			return RejectionReason.NONE;
-		}
-
-		/**
-		 * Checks if a TELEPORTATION_BOX transport should be used based on POH settings.
-		 * Handles jewellery box tiers and mounted items.
-		 */
-		private boolean checkJewelleryBoxTier(Transport transport)
-		{
-			String objectInfo = transport.getObjectInfo();
-			if (objectInfo == null)
-			{
-				return false;
-			}
-
-			PohMountedItem mountedItem = PohMountedItem.fromObjectInfo(objectInfo);
-			if (mountedItem != null)
-			{
-				// If mounted glory and ornate jewellery box is enabled, skip the glory
-				// because the ornate box already covers all 4 destinations with correct prefixes
-				if (PohMountedItem.GLORY.equals(mountedItem) && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier))
-				{
-					return false;
-				}
-				return isPohMountedItemEnabled(enabledPohMountedItems, objectInfo);
-			}
-
-			// Filter jewellery boxes by tier
-			if (JewelleryBoxTier.NONE.equals(pohJewelleryBoxTier))
-			{
-				return false;
-			}
-
-			// Basic box (37492): destinations 1-9
-			if (objectInfo.contains("Basic Jewellery Box 37492"))
-			{
-				return true; // All tiers include basic
-			}
-
-			// Fancy box (37501): destinations A-J
-			if (objectInfo.contains("Fancy Jewellery Box 37501"))
-			{
-				return JewelleryBoxTier.FANCY.equals(pohJewelleryBoxTier) ||
-					JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
-			}
-
-			// Ornate box (37520): destinations K-R
-			if (objectInfo.contains("Ornate Jewellery Box 37520"))
-			{
-				return JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
-			}
-
-			return false;
-		}
-
-		private RejectionReason skillLevel(Transport transport)
-		{
-			return skillLevel(transport.getSkillLevels());
-		}
-
-		private RejectionReason skillLevel(int[] requiredLevels)
-		{
-			// In leagues some skills are disabled so the max total level is lower than
-			// the standard 2376. Holding the item (e.g. Max cape) already proves the
-			// player is maxed for the available skills, so skip the total-level check.
-			final int totalLevelIndex = Skill.values().length;
-			LeagueModeState leagueModeState = context.getLeagueModeState();
-			for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
-			{
-				if (leagueModeState.isSeasonal() && i == totalLevelIndex)
-				{
-					continue;
-				}
-				int boostedLevel = boostedSkillLevelsAndMore[i];
-				int requiredLevel = requiredLevels[i];
-				if (requiredLevel == SkillRequirementParser.MAX_LEVEL)
-				{
-					requiredLevel = maximumLevel(i);
-				}
-				if (boostedLevel < requiredLevel)
-				{
-					return RejectionReason.SKILL_LEVEL;
-				}
-			}
-			return RejectionReason.NONE;
-		}
-
-		private int maximumLevel(int index)
-		{
-			if (index < Skill.values().length)
-			{
-				return MAX_SKILL_LEVEL;
-			}
-			if (index == Skill.values().length)
-			{
-				return MAX_SKILL_LEVEL * Skill.values().length;
-			}
-			if (index == Skill.values().length + 1)
-			{
-				return 126;
-			}
-			if (index == Skill.values().length + 2)
-			{
-				return context.getCurrentMaxQuestPoints();
-			}
-			return SkillRequirementParser.MAX_LEVEL;
-		}
-
-		private RejectionReason quest(Transport transport)
-		{
-			if (transport.isQuestLocked() && !completedQuests(transport.getQuests()))
-			{
-				return RejectionReason.QUEST;
-			}
-			return RejectionReason.NONE;
-		}
-
-		private boolean completedQuests(Collection<Quest> quests)
-		{
-			Map<Quest, QuestState> questStates = context.getQuestStates();
-			for (Quest quest : quests)
-			{
-				if (!QuestState.FINISHED.equals(questStates.getOrDefault(quest, QuestState.NOT_STARTED)))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		private RejectionReason varbit(Transport transport)
-		{
-			if (varbitChecks(transport, context.getEvaluationTimeMinutes()))
-			{
-				return RejectionReason.VARBIT;
-			}
-			return RejectionReason.NONE;
-		}
-
-		private RejectionReason varplayer(Transport transport)
-		{
-			if (varPlayerChecks(transport, context.getEvaluationTimeMinutes()))
-			{
-				return RejectionReason.VARPLAYER;
-			}
-			return RejectionReason.NONE;
-		}
-
-		private RejectionReason plantedSpiritTree(Transport transport)
-		{
-			TransportType type = transport.getType();
-			if (TransportType.SPIRIT_TREE.equals(type) || TransportType.SEASONAL_TRANSPORTS.equals(type)
-				|| TransportType.TELEPORTATION_ITEM.equals(type))
-			{
-				if (!checkPlantedSpiritTrees(transport))
-				{
-					return RejectionReason.PLANTED_SPIRIT_TREE;
-				}
-			}
-			return RejectionReason.NONE;
-		}
-
-		private boolean checkPlantedSpiritTrees(Transport transport)
-		{
-			int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-
-			// Check planted spirit tree origins (travel FROM a planted tree)
-			if (isPlantedSpiritTreeAllowed(originX, originY))
-			{
-				return false;
-			}
-
-			// Check planted spirit tree destinations (travel TO a planted tree)
-			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-
-			return !isPlantedSpiritTreeAllowed(destX, destY);
-		}
-
-		private boolean isPlantedSpiritTreeAllowed(int x, int y)
-		{
-			String treeName = getPlantedSpiritTreeName(x, y);
-			if (treeName == null)
-			{
-				return false; //
-			}
-			Set<String> availableSpiritTrees = context.getAvailableSpiritTrees();
-			if (availableSpiritTrees == null)
-			{
-				return true;
-			}
-			return !availableSpiritTrees.contains(treeName);
-		}
-
-		// The item OR-lists evaluate against the context's item pools; the
-		// transport is rejected only when neither path state can satisfy them.
-		private RejectionReason itemRequirement(Transport transport)
-		{
-			TransportEligibility eligibility = context.getEligibility();
-			if (!eligibility.usable(transport, false) && !eligibility.usable(transport, true))
-			{
-				return RejectionReason.ITEM_REQUIREMENT;
-			}
-			return RejectionReason.NONE;
-		}
 	}
 }
