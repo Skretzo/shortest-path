@@ -138,13 +138,14 @@ public final class ExactWalkCanonicalizer
 	public static final class Result
 	{
 		private final List<PathStep> path;
-		private final int legs;
+		// Each leg's first and last step index in path, two entries per leg.
+		private final int[] legBounds;
 		private final List<Diagnostic> diagnostics;
 
-		Result(List<PathStep> path, int legs, List<Diagnostic> diagnostics)
+		Result(List<PathStep> path, int[] legBounds, List<Diagnostic> diagnostics)
 		{
 			this.path = path;
-			this.legs = legs;
+			this.legBounds = legBounds;
 			this.diagnostics = diagnostics;
 		}
 
@@ -156,7 +157,19 @@ public final class ExactWalkCanonicalizer
 		/** Walking legs of at least one tick in the route. */
 		public int legs()
 		{
-			return legs;
+			return legBounds.length / 2;
+		}
+
+		/** The index in {@link #path()} of the first step of walking leg {@code leg}. */
+		public int legStart(int leg)
+		{
+			return legBounds[2 * leg];
+		}
+
+		/** The index in {@link #path()} of the last step of walking leg {@code leg}. */
+		public int legEnd(int leg)
+		{
+			return legBounds[2 * leg + 1];
 		}
 
 		/** Legs that kept the search's walk; empty when every leg was canonicalised. */
@@ -187,6 +200,7 @@ public final class ExactWalkCanonicalizer
 		List<PathStep> steps = route.steps();
 		List<PathStep> path = new ArrayList<>(steps);
 		List<Diagnostic> diagnostics = new ArrayList<>();
+		int[] legBounds = new int[8];
 		int legs = 0;
 		int legStart = 0;
 		for (int i = 1; i <= steps.size(); i++)
@@ -195,6 +209,9 @@ public final class ExactWalkCanonicalizer
 			int legEnd = i - 1, ticks = legEnd - legStart;
 			if (ticks > 0)
 			{
+				if (2 * legs == legBounds.length) legBounds = Arrays.copyOf(legBounds, 2 * legBounds.length);
+				legBounds[2 * legs] = legStart;
+				legBounds[2 * legs + 1] = legEnd;
 				legs++;
 				PathStep start = steps.get(legStart);
 				WalkGoal goal = goal(route, legEnd);
@@ -211,7 +228,7 @@ public final class ExactWalkCanonicalizer
 			}
 			legStart = i;
 		}
-		return new Result(List.copyOf(path), legs, List.copyOf(diagnostics));
+		return new Result(List.copyOf(path), Arrays.copyOf(legBounds, 2 * legs), List.copyOf(diagnostics));
 	}
 
 	/** Whether step {@code index} is a walking move from the previous step, as the exact search walks. */
