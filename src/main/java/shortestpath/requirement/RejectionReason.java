@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.requirement;
 
 /**
  * Why a transport was rejected by the requirement gate chain — internal review
@@ -8,7 +8,7 @@ package shortestpath.pathfinder;
  * passed every gate. The constants are returned directly, so the
  * per-transport gate path allocates nothing.
  */
-enum RejectionReason
+public enum RejectionReason
 {
 	/**
 	 * The transport passed every gate.
