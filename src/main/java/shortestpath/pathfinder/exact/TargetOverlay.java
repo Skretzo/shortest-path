@@ -254,8 +254,17 @@ public final class TargetOverlay
 		}
 		attachmentSites[target] = Arrays.copyOf(sites, count);
 		attachmentCosts[target] = new int[count];
+		// Only a synthetic target's attachments enter the reverse search. Walking distances rather
+		// than Chebyshev ones keep a target deep in a winding area from looking close to its
+		// entrances, which would otherwise make the search flood everything within that slack.
+		TargetWalkDistances walk = nodes[target] >= graph.nodeCount()
+			? TargetWalkDistances.search(stat, packed[target], targetComponents) : null;
 		for (int i = 0; i < count; i++)
-			attachmentCosts[target][i] = distance(packed[target], stat.siteTile(attachmentSites[target][i]));
+		{
+			int site = stat.siteTile(attachmentSites[target][i]);
+			int chebyshev = distance(packed[target], site);
+			attachmentCosts[target][i] = walk == null ? chebyshev : walk.bound(site, chebyshev);
+		}
 	}
 
 	private int firstSharedComponent(int[] targetComponents, int site)
