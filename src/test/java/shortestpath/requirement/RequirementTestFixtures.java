@@ -296,7 +296,7 @@ final class RequirementTestFixtures
 	 */
 	static Requirements requirements(RequirementContext context, RoutingPolicy policy)
 	{
-		return new Requirements(context, policy, TestRequirementHooks.forContext(context));
+		return new Requirements(context, policy, new TestRequirementHooks());
 	}
 
 	static Requirements requirements(RequirementContext context, RoutingPolicy policy,
