@@ -4,6 +4,7 @@ public class TestShortestPathConfig implements ShortestPathConfig
 {
 	private int calculationCutoff = 5;
 	private int unreachableTargetDistance = 2;
+	private boolean collisionAwareBlockedTargets = true;
 	private TeleportationItem useTeleportationItems = TeleportationItem.INVENTORY_NON_CONSUMABLE;
 	private boolean includeBankPath = false;
 	private int costBankVisit = 0;
@@ -20,6 +21,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public void setUnreachableTargetDistanceValue(int unreachableTargetDistance)
 	{
 		this.unreachableTargetDistance = unreachableTargetDistance;
+	}
+
+	@SuppressWarnings("unused")
+	public void setCollisionAwareBlockedTargetsValue(boolean collisionAwareBlockedTargets)
+	{
+		this.collisionAwareBlockedTargets = collisionAwareBlockedTargets;
 	}
 
 	@SuppressWarnings("unused")
@@ -110,6 +117,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public int unreachableTargetDistance()
 	{
 		return unreachableTargetDistance;
+	}
+
+	@Override
+	public boolean collisionAwareBlockedTargets()
+	{
+		return collisionAwareBlockedTargets;
 	}
 
 	@Override

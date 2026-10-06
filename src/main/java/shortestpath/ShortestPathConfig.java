@@ -611,6 +611,20 @@ public interface ShortestPathConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "collisionAwareBlockedTargets",
+		name = "Collision-aware blocked targets",
+		description = "When the target tile cannot be stood on, limit the fallback goal tiles to tiles" +
+			"<br>connected to it through the collision map (the same side of walls), instead of every" +
+			"<br>walkable tile within the unreachable target distance",
+		position = 95,
+		section = sectionSettings
+	)
+	default boolean collisionAwareBlockedTargets()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 		name = "Player-Owned House",
 		description = "Options for POH (Player-Owned House) teleports",
