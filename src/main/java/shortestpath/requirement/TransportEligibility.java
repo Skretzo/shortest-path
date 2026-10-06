@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.ItemVariations;
+import shortestpath.pathfinder.HeldItems;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
@@ -60,6 +61,7 @@ public final class TransportEligibility
 	private final TeleportationItem teleportationItemSetting;
 	private final int currencyThreshold;
 	private final Set<Unlock> unlocks;
+	private final HeldItems heldItems;
 
 	public TransportEligibility(
 		Map<Integer, Integer> carriedItems,
@@ -70,7 +72,8 @@ public final class TransportEligibility
 		boolean fairyRingStaffRequired,
 		TeleportationItem teleportationItemSetting,
 		int currencyThreshold,
-		Set<Unlock> unlocks)
+		Set<Unlock> unlocks,
+		boolean bankSeen)
 	{
 		this.carriedItems = Map.copyOf(carriedItems);
 		this.bankPathItems = Map.copyOf(bankPathItems);
@@ -81,6 +84,13 @@ public final class TransportEligibility
 		this.teleportationItemSetting = teleportationItemSetting;
 		this.currencyThreshold = currencyThreshold;
 		this.unlocks = Set.copyOf(unlocks);
+		// What the player holds is a projection of this same collection: the carried
+		// pool, plus the bank contents and a banked pouch's runes once the bank has
+		// been seen — the one item snapshot also answers the target-status question.
+		Map<Integer, Integer> carriedAndBanked = new HashMap<>(carriedItems);
+		bankHas.forEach((itemId, quantity) -> carriedAndBanked.merge(itemId, quantity, Integer::sum));
+		bankPouchRunes.forEach((itemId, quantity) -> carriedAndBanked.merge(itemId, quantity, Integer::sum));
+		this.heldItems = new HeldItems(carriedItems, carriedAndBanked, bankSeen);
 	}
 
 	/**
@@ -97,7 +107,18 @@ public final class TransportEligibility
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerItems);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of());
+			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true);
+	}
+
+	/**
+	 * What the player held when this snapshot was captured — carried items, those plus the
+	 * last-seen bank, and whether the bank has been opened this session. The searches read
+	 * it to decide each target's {@code TargetStatus}; it is derived from the same pools
+	 * the eligibility verdicts use, so both can never observe different item state.
+	 */
+	public HeldItems heldItems()
+	{
+		return heldItems;
 	}
 
 	/**

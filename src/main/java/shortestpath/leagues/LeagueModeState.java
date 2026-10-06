@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import net.runelite.api.Client;
 import net.runelite.api.WorldType;
+import shortestpath.requirement.PlayerStateSource;
 
 /**
  * Snapshot of the player's Demonic Pacts League state, refreshed once per
@@ -109,24 +109,24 @@ public class LeagueModeState
 	private volatile State state = State.EMPTY;
 
 	/**
-	 * Re-reads {@link Client#getWorldType()} and the area-unlock varbits.
-	 * Called from {@code PathfinderConfig.refresh()} which already runs on
-	 * world change, login, and config edits.
+	 * Re-reads the world type and the area-unlock varbits through the player
+	 * state source. Called from {@code PathfinderConfig.refresh()} which
+	 * already runs on world change, login, and config edits.
 	 *
 	 * <p>
-	 * Off the game thread (or on a {@code null} client) this resets to a
-	 * non-seasonal state with no extra unlocks; this is the safe default
-	 * because non-seasonal logic mirrors normal pathfinding.
+	 * On a {@code null} source this resets to a non-seasonal state with no
+	 * extra unlocks; this is the safe default because non-seasonal logic
+	 * mirrors normal pathfinding.
 	 * </p>
 	 */
-	public void refresh(Client client)
+	public void refresh(PlayerStateSource source)
 	{
-		if (client == null)
+		if (source == null)
 		{
 			state = State.EMPTY;
 			return;
 		}
-		EnumSet<WorldType> worldTypes = client.getWorldType();
+		EnumSet<WorldType> worldTypes = source.worldType();
 		boolean seasonal = worldTypes != null && worldTypes.contains(WorldType.SEASONAL);
 		boolean deadman = worldTypes != null && worldTypes.contains(WorldType.DEADMAN);
 
@@ -135,7 +135,7 @@ public class LeagueModeState
 		{
 			for (int varbitId : AREA_SELECTION_VARBITS)
 			{
-				addRegionFromSlot(client, varbitId, next);
+				addRegionFromSlot(source, varbitId, next);
 			}
 		}
 		state = new State(seasonal, deadman, Collections.unmodifiableSet(next));
@@ -202,9 +202,9 @@ public class LeagueModeState
 			: Collections.unmodifiableSet(EnumSet.copyOf(unlocked)));
 	}
 
-	private static void addRegionFromSlot(Client client, int varbitId, Set<LeagueRegion> out)
+	private static void addRegionFromSlot(PlayerStateSource source, int varbitId, Set<LeagueRegion> out)
 	{
-		int value = client.getVarbitValue(varbitId);
+		int value = source.varbit(varbitId);
 		if (value <= 0)
 		{
 			return;

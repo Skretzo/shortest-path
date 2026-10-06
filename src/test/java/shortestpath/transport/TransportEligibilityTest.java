@@ -402,7 +402,7 @@ public class TransportEligibilityTest
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, bankPouchRunes,
-			staffRequired, setting, threshold, Set.of());
+			staffRequired, setting, threshold, Set.of(), true);
 	}
 
 	private Map<Integer, Long> pickups(Transport transport, int bankPouchId)
