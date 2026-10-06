@@ -1111,6 +1111,7 @@ public class PathfinderConfig
 			case INVENTORY_AND_BANK_NON_CONSUMABLE:
 				return !transport.isConsumable();
 			case UNLOCKED:
+				return true; // Ownership is implied by the unlock check; items are never evaluated
 			case INVENTORY:
 			case INVENTORY_AND_BANK:
 				return true; // Will be checked later by hasRequiredItems
@@ -1284,10 +1285,20 @@ public class PathfinderConfig
 			switch (transportTypeConfig.getTeleportationItemSetting())
 			{
 				case ALL:
-				case ALL_NON_CONSUMABLE:
 				case UNLOCKED:
-				case UNLOCKED_NON_CONSUMABLE:
 					return true;
+				case ALL_NON_CONSUMABLE:
+				case UNLOCKED_NON_CONSUMABLE:
+					// Mirror checkTeleportationItemRules: non-consumable modes
+					// reject consumables even when their items are owned.
+					return !transport.isConsumable();
+				case INVENTORY_NON_CONSUMABLE:
+				case INVENTORY_AND_BANK_NON_CONSUMABLE:
+					if (transport.isConsumable())
+					{
+						return false;
+					}
+					break;
 				case NONE:
 					return false;
 				default:
