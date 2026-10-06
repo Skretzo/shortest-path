@@ -461,7 +461,12 @@ public class ShortestPathPlugin extends Plugin
 			if (pathfinder != null)
 			{
 				pathfinder.cancel();
-				pathfinderFuture.cancel(true);
+				// pathfinderFuture is null when a submit threw before the
+				// assignment (e.g. executor shutting down mid-restart).
+				if (pathfinderFuture != null)
+				{
+					pathfinderFuture.cancel(true);
+				}
 				debugState.searchCancelled(pathfinder);
 			}
 			// The displayed path wins over pending queries: it refreshes the transport
@@ -1981,8 +1986,9 @@ public class ShortestPathPlugin extends Plugin
 		}
 		else
 		{
-			return client.isMenuOpen()
-				? calculateMapPoint(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
+			Point menuPoint = lastMenuOpenedPoint;
+			return client.isMenuOpen() && menuPoint != null
+				? calculateMapPoint(menuPoint.getX(), menuPoint.getY())
 				: calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
 		}
 		return WorldPointUtil.UNDEFINED;
