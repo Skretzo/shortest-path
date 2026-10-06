@@ -1,5 +1,6 @@
 package shortestpath.pathfinder;
 
+import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,10 +17,12 @@ public class Pathfinder implements ActiveSearch
 	private final int start;
 	@Getter
 	private final Set<Integer> targets;
-	// Termination set: the requested targets plus, for each blocked target, every
-	// walkable tile within the configured unreachable distance. A blocked tile can
-	// never produce walk-in edges, so without expansion the search would explore the
-	// entire map before giving up (issue #640).
+	// Termination set: the requested targets plus, for each blocked target, fallback
+	// tiles within the configured unreachable distance — every walkable tile in the
+	// square, or only the tiles connected to the target through the collision map
+	// (the same side of walls) when collisionAwareBlockedTargets is on. A blocked
+	// tile can never produce walk-in edges, so without expansion the search would
+	// explore the entire map before giving up (issue #640).
 	private final Set<Integer> goals;
 	// Whether any requested target could possibly terminate the search: non-blocked,
 	// a transport destination, or resolved to at least one walkable nearby tile.
@@ -106,6 +109,12 @@ public class Pathfinder implements ActiveSearch
 			// The scan is bounded: the config allows huge distances and this runs per
 			// pathfinding request on the client thread.
 			final int radius = Math.min(config.getUnreachableTargetDistance(), MAX_GOAL_EXPANSION_RADIUS);
+			// When collisionAwareBlockedTargets is on, walkable fallback goals are
+			// limited to the component of the collision map connected to the target,
+			// so the path cannot "reach the target" on the wrong side of a wall.
+			// Transport destinations stay goals in both modes.
+			final Set<Integer> connectedGoals = config.isCollisionAwareBlockedTargets()
+				? walkConnectedTiles(target, radius) : null;
 			for (int dy = -radius; dy <= radius; dy++)
 			{
 				for (int dx = -radius; dx <= radius; dx++)
@@ -115,7 +124,9 @@ public class Pathfinder implements ActiveSearch
 						continue;
 					}
 					final int neighbour = WorldPointUtil.packWorldPoint(x + dx, y + dy, z);
-					if (!map.isBlocked(x + dx, y + dy, z) || config.isTransportDestination(neighbour))
+					if ((connectedGoals != null ? connectedGoals.contains(neighbour)
+							: !map.isBlocked(x + dx, y + dy, z))
+						|| config.isTransportDestination(neighbour))
 					{
 						if (resolvedGoals == targets)
 						{
@@ -134,6 +145,36 @@ public class Pathfinder implements ActiveSearch
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
 		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets);
 		wildernessLevel = 31;
+	}
+
+	// BFS over the collision map's ordinary walking edges, seeded on the (blocked)
+	// target: the seed expands to the target's adjacent walkable tiles, and each
+	// walkable tile expands to its movement-mask neighbours — the same connectivity
+	// the search itself uses. Bounded to the same Chebyshev square as the old scan,
+	// so a tile inside the radius that is only reachable by leaving the radius and
+	// re-entering it is legitimately missed.
+	private Set<Integer> walkConnectedTiles(int target, int radius)
+	{
+		final Set<Integer> connected = new HashSet<>();
+		final ArrayDeque<Integer> queue = new ArrayDeque<>();
+		connected.add(target);
+		queue.add(target);
+		while (!queue.isEmpty())
+		{
+			final int current = queue.poll();
+			for (int neighbour : map.ordinaryWalkingNeighbors(current))
+			{
+				if (connected.contains(neighbour)
+					|| WorldPointUtil.distanceBetween(target, neighbour) > radius)
+				{
+					continue;
+				}
+				connected.add(neighbour);
+				queue.add(neighbour);
+			}
+		}
+		connected.remove(target);
+		return connected;
 	}
 
 	private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed)
