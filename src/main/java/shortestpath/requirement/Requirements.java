@@ -315,9 +315,10 @@ public final class Requirements
 			return RejectionReason.DEADMAN_ITEM;
 		}
 
-		// The per-item restriction gate seats at this position — after the
-		// seasonal and deadman checks and before the mode dispatch — because
-		// the modes below can bypass item evaluation entirely.
+		// Reserved seat for the per-item restriction gate (BLOCKED_ITEM) —
+		// after the seasonal and deadman checks and before the mode dispatch,
+		// because the modes below can bypass item evaluation entirely. That
+		// gate is not implemented yet; no check emits BLOCKED_ITEM today.
 		switch (policy.teleportationItemSetting())
 		{
 			case ALL:
