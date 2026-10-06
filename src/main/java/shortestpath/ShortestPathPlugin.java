@@ -2033,8 +2033,23 @@ public class ShortestPathPlugin extends Plugin
 				worldMapPointManager.add(marker);
 			}
 
-			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
-			lastLocation = start;
+			// fromLocalInstance needs a live player; during a world hop it is
+			// null, so fall back to the running search's start and bail when
+			// there is nothing to anchor to.
+			int start;
+			if (localPlayer != null)
+			{
+				start = WorldPointUtil.fromLocalInstance(client, localPlayer);
+				lastLocation = start;
+			}
+			else if (startPointSet && pathfinder != null)
+			{
+				start = pathfinder.getStart();
+			}
+			else
+			{
+				return;
+			}
 			if (startPointSet && pathfinder != null)
 			{
 				start = pathfinder.getStart();
