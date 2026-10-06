@@ -56,7 +56,9 @@ public enum RejectionReason
 
 	/**
 	 * A transport that loses every alternative of a required item to the
-	 * player's declared per-item restrictions.
+	 * player's declared per-item restrictions. Reserved for the restriction
+	 * gate, which is not yet implemented — nothing emits this today; the
+	 * constant holds its seat in the teleportation-item gate order.
 	 */
 	BLOCKED_ITEM,
 
