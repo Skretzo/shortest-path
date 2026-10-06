@@ -19,7 +19,7 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
@@ -70,7 +70,7 @@ public class PlayerStateSourceTest
 		MapPlayerStateSource source = new MapPlayerStateSource()
 			.varbit(1234, 7)
 			.varp(4130, 2000)
-			.varp(VarPlayer.QUEST_POINTS, 42)
+			.varp(VarPlayerID.QP, 42)
 			.boostedSkillLevel(Skill.COOKING, 99)
 			.totalLevel(1500)
 			.maximumQuestPoints(200)

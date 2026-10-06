@@ -10,8 +10,8 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueModeState;
@@ -140,7 +140,7 @@ public final class RequirementContext
 		}
 		boostedSkillLevelsAndMore[i++] = source.totalLevel(); // skill total level
 		boostedSkillLevelsAndMore[i++] = source.combatLevel(); // combat level
-		boostedSkillLevelsAndMore[i] = source.varp(VarPlayer.QUEST_POINTS); // quest points
+		boostedSkillLevelsAndMore[i] = source.varp(VarPlayerID.QP); // quest points
 
 		int currentMaxQuestPoints = source.maximumQuestPoints();
 
