@@ -515,7 +515,10 @@ public final class Requirements
 				continue;
 			}
 			int boostedLevel = boostedSkillLevelsAndMore[i];
-			int requiredLevel = requiredLevels[i];
+			// A shorter requirement array (e.g. a hand-built
+			// DestinationRequirements) declares no level for the missing
+			// indices — read 0 rather than throwing.
+			int requiredLevel = i < requiredLevels.length ? requiredLevels[i] : 0;
 			if (requiredLevel == SkillRequirementParser.MAX_LEVEL)
 			{
 				requiredLevel = maximumLevel(i);
