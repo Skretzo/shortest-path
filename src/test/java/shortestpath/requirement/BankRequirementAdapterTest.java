@@ -187,7 +187,7 @@ public class BankRequirementAdapterTest
 
 		RequirementContext context = RequirementContext.capture(
 			source,
-			new TestRequirementHooks(Map.of(), Map.of()),
+			new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE),
 			0L,
 			List.of(),
@@ -208,7 +208,7 @@ public class BankRequirementAdapterTest
 		// And a fresh capture observes the new value.
 		RequirementContext recaptured = RequirementContext.capture(
 			source,
-			new TestRequirementHooks(Map.of(), Map.of()),
+			new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE),
 			0L,
 			List.of(),

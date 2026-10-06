@@ -71,13 +71,13 @@ public class HookLivenessTest
 			.quests(Set.of(Quest.TREE_GNOME_VILLAGE))
 			.build();
 
-		TestRequirementHooks finished = new TestRequirementHooks(Map.of(), Map.of())
+		TestRequirementHooks finished = new TestRequirementHooks()
 			.questState(QuestState.FINISHED);
 		RequirementContext done = capture(new MapPlayerStateSource(), finished,
 			List.of(gated), Map.of());
 		assertTrue(chain(done, finished).usable(gated));
 
-		TestRequirementHooks unfinished = new TestRequirementHooks(Map.of(), Map.of())
+		TestRequirementHooks unfinished = new TestRequirementHooks()
 			.questState(QuestState.NOT_STARTED);
 		RequirementContext notDone = capture(new MapPlayerStateSource(), unfinished,
 			List.of(gated), Map.of());
@@ -91,13 +91,13 @@ public class HookLivenessTest
 		DestinationRequirements gated = RequirementTestFixtures.bankRequirements(
 			null, Set.of(Quest.BONE_VOYAGE), null, null);
 
-		TestRequirementHooks finished = new TestRequirementHooks(Map.of(), Map.of())
+		TestRequirementHooks finished = new TestRequirementHooks()
 			.questState(QuestState.FINISHED);
 		RequirementContext done = capture(new MapPlayerStateSource(), finished,
 			List.of(), Map.of(BANK_TILE, gated));
 		assertTrue(chain(done, finished).satisfied(gated));
 
-		TestRequirementHooks unfinished = new TestRequirementHooks(Map.of(), Map.of())
+		TestRequirementHooks unfinished = new TestRequirementHooks()
 			.questState(QuestState.NOT_STARTED);
 		RequirementContext notDone = capture(new MapPlayerStateSource(), unfinished,
 			List.of(), Map.of(BANK_TILE, gated));
@@ -120,7 +120,7 @@ public class HookLivenessTest
 			.build();
 		RequirementContext context = RequirementTestFixtures.context()
 			.varbitValues(Map.of(4481, 1)).build();
-		TestRequirementHooks hooks = TestRequirementHooks.forContext(context);
+		TestRequirementHooks hooks = new TestRequirementHooks();
 		Requirements requirements = chain(context, hooks);
 
 		// The map satisfies the check; flipping the bypass flag forces the
@@ -139,7 +139,7 @@ public class HookLivenessTest
 			null, null, Set.of(VarRequirement.varbit(4481, 1, VarCheckType.EQUAL)), null);
 		RequirementContext context = RequirementTestFixtures.context()
 			.varbitValues(Map.of(4481, 1)).build();
-		TestRequirementHooks hooks = TestRequirementHooks.forContext(context);
+		TestRequirementHooks hooks = new TestRequirementHooks();
 		Requirements requirements = chain(context, hooks);
 
 		assertTrue(requirements.satisfied(gated));
@@ -163,7 +163,7 @@ public class HookLivenessTest
 			.build();
 		RequirementContext context = RequirementTestFixtures.context()
 			.varPlayerValues(Map.of(4130, 2000)).build();
-		TestRequirementHooks hooks = TestRequirementHooks.forContext(context);
+		TestRequirementHooks hooks = new TestRequirementHooks();
 		Requirements requirements = chain(context, hooks);
 
 		assertTrue(requirements.usable(gated));
@@ -180,7 +180,7 @@ public class HookLivenessTest
 			Set.of(VarRequirement.varPlayer(4130, 1999, VarCheckType.GREATER)));
 		RequirementContext context = RequirementTestFixtures.context()
 			.varPlayerValues(Map.of(4130, 2000)).build();
-		TestRequirementHooks hooks = TestRequirementHooks.forContext(context);
+		TestRequirementHooks hooks = new TestRequirementHooks();
 		Requirements requirements = chain(context, hooks);
 
 		assertTrue(requirements.satisfied(gated));

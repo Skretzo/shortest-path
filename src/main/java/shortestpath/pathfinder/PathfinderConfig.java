@@ -685,9 +685,21 @@ public class PathfinderConfig
 	 */
 	public boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
 	{
+		return varbitChecks(requirements, varbitValues, evaluationTimeMinutes);
+	}
+
+	/**
+	 * Whether any varbit requirement in the collection fails against the
+	 * supplied values. The gate chain passes the maps captured into its own
+	 * {@link RequirementContext}, so a chain from an earlier refresh keeps
+	 * evaluating its own snapshot instead of the live fields.
+	 */
+	public boolean varbitChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
+	{
 		for (VarRequirement varRequirement : requirements)
 		{
-			if (varRequirement.isVarbit() && !varRequirement.check(varbitValues, evaluationTimeMinutes))
+			if (varRequirement.isVarbit() && !varRequirement.check(values, evaluationTimeMinutes))
 			{
 				return true;
 			}
@@ -707,9 +719,20 @@ public class PathfinderConfig
 	 */
 	public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
 	{
+		return varPlayerChecks(requirements, varPlayerValues, evaluationTimeMinutes);
+	}
+
+	/**
+	 * Whether any varplayer requirement in the collection fails against the
+	 * supplied values. Same snapshot binding as
+	 * {@link #varbitChecks(Collection, Map, long)}.
+	 */
+	public boolean varPlayerChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
+	{
 		for (VarRequirement varRequirement : requirements)
 		{
-			if (varRequirement.isVarPlayer() && !varRequirement.check(varPlayerValues, evaluationTimeMinutes))
+			if (varRequirement.isVarPlayer() && !varRequirement.check(values, evaluationTimeMinutes))
 			{
 				return true;
 			}
@@ -733,15 +756,17 @@ public class PathfinderConfig
 		}
 
 		@Override
-		public boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+		public boolean varbitChecks(Collection<VarRequirement> requirements,
+			Map<Integer, Integer> values, long evaluationTimeMinutes)
 		{
-			return PathfinderConfig.this.varbitChecks(requirements, evaluationTimeMinutes);
+			return PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes);
 		}
 
 		@Override
-		public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+		public boolean varPlayerChecks(Collection<VarRequirement> requirements,
+			Map<Integer, Integer> values, long evaluationTimeMinutes)
 		{
-			return PathfinderConfig.this.varPlayerChecks(requirements, evaluationTimeMinutes);
+			return PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
 		}
 	}
 

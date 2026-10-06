@@ -1,6 +1,7 @@
 package shortestpath.requirement;
 
 import java.util.Collection;
+import java.util.Map;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import shortestpath.requirement.model.VarRequirement;
@@ -28,15 +29,20 @@ public interface RequirementHooks
 	QuestState getQuestState(Quest quest);
 
 	/**
-	 * Whether any varbit requirement in the collection fails against this
-	 * refresh's captured values. Returns {@code true} when a check FAILED.
+	 * Whether any varbit requirement in the collection fails against the
+	 * supplied values — the map the calling chain captured into its context,
+	 * so a stale chain always evaluates its own refresh's snapshot rather
+	 * than whatever a newer refresh wrote. Returns {@code true} when a
+	 * check FAILED.
 	 */
-	boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes);
+	boolean varbitChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes);
 
 	/**
-	 * Whether any varplayer requirement in the collection fails against this
-	 * refresh's captured values. Same failure polarity as
-	 * {@link #varbitChecks(Collection, long)}.
+	 * Whether any varplayer requirement in the collection fails against the
+	 * supplied values. Same snapshot binding and failure polarity as
+	 * {@link #varbitChecks(Collection, Map, long)}.
 	 */
-	boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes);
+	boolean varPlayerChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes);
 }

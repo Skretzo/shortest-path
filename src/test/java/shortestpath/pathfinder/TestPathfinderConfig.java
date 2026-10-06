@@ -83,9 +83,23 @@ public class TestPathfinderConfig extends PathfinderConfig
 	}
 
 	@Override
+	public boolean varbitChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
+	{
+		return !bypassVarbitChecks && super.varbitChecks(requirements, values, evaluationTimeMinutes);
+	}
+
+	@Override
 	public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
 	{
 		return !bypassVarPlayerChecks && super.varPlayerChecks(requirements, evaluationTimeMinutes);
+	}
+
+	@Override
+	public boolean varPlayerChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
+	{
+		return !bypassVarPlayerChecks && super.varPlayerChecks(requirements, values, evaluationTimeMinutes);
 	}
 
 	/**

@@ -76,7 +76,7 @@ public class PlayerStateSourceTest
 			.maximumQuestPoints(200)
 			.itemContainer(InventoryID.INV, container(new Item(ItemID.LAWRUNE, 5)));
 
-		TestRequirementHooks hooks = new TestRequirementHooks(Map.of(), Map.of())
+		TestRequirementHooks hooks = new TestRequirementHooks()
 			.questState(QuestState.FINISHED);
 
 		Transport gated = new Transport.TransportBuilder()
@@ -112,7 +112,7 @@ public class PlayerStateSourceTest
 		// the hook-fed quest states, and the carried item through the
 		// eligibility snapshot all evaluate satisfied.
 		Requirements requirements = new Requirements(context,
-			RequirementTestFixtures.policy(MODE), TestRequirementHooks.forContext(context));
+			RequirementTestFixtures.policy(MODE), new TestRequirementHooks());
 		assertEquals(RejectionReason.NONE, requirements.check(gated));
 		assertTrue(requirements.satisfied(bankGated));
 
@@ -131,13 +131,13 @@ public class PlayerStateSourceTest
 	public void captureReflectsTheSailingVarbit()
 	{
 		MapPlayerStateSource ashore = new MapPlayerStateSource();
-		assertFalse(RequirementContext.capture(ashore, new TestRequirementHooks(Map.of(), Map.of()),
+		assertFalse(RequirementContext.capture(ashore, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
 			Set.of(), false, new LeagueModeState(), null).isOnSailingBoat());
 
 		MapPlayerStateSource aboard = new MapPlayerStateSource()
 			.varbit(VarbitID.SAILING_BOARDED_BOAT, 1);
-		assertTrue(RequirementContext.capture(aboard, new TestRequirementHooks(Map.of(), Map.of()),
+		assertTrue(RequirementContext.capture(aboard, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
 			Set.of(), false, new LeagueModeState(), null).isOnSailingBoat());
 	}
@@ -202,7 +202,7 @@ public class PlayerStateSourceTest
 	{
 		PlayerStateSource source = new ClientPlayerStateSource(offThreadClient());
 		assertThrows(IllegalStateException.class, () -> RequirementContext.capture(
-			source, new TestRequirementHooks(Map.of(), Map.of()),
+			source, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
 			Set.of(), false, new LeagueModeState(), null));
 	}
@@ -239,7 +239,7 @@ public class PlayerStateSourceTest
 
 		RequirementContext context = RequirementTestFixtures.context().build();
 		Requirements requirements = new Requirements(context, policy,
-			TestRequirementHooks.forContext(context));
+			new TestRequirementHooks());
 
 		Transport canoe = new Transport.TransportBuilder()
 			.type(TransportType.CANOE).origin(FALADOR).destination(VARROCK).build();
@@ -280,7 +280,7 @@ public class PlayerStateSourceTest
 		RequirementContext context = RequirementTestFixtures.context()
 			.questStates(questStates).varbitValues(varbits).build();
 		Requirements requirements = new Requirements(context,
-			RequirementTestFixtures.policy(MODE), TestRequirementHooks.forContext(context));
+			RequirementTestFixtures.policy(MODE), new TestRequirementHooks());
 
 		Transport gated = new Transport.TransportBuilder()
 			.type(TransportType.TRANSPORT).origin(FALADOR).destination(VARROCK)
