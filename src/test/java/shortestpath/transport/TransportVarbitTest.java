@@ -5,8 +5,8 @@ import java.util.Map;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import shortestpath.transport.parser.VarCheckType;
-import shortestpath.transport.parser.VarRequirement;
+import shortestpath.requirement.model.VarCheckType;
+import shortestpath.requirement.model.VarRequirement;
 
 public class TransportVarbitTest
 {

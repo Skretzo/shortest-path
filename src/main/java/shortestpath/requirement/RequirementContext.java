@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.requirement;
 
 import java.util.Map;
 import java.util.Set;
@@ -6,8 +6,7 @@ import lombok.Getter;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import shortestpath.leagues.LeagueModeState;
-import shortestpath.transport.TransportEligibility;
-import shortestpath.transport.requirement.Unlock;
+import shortestpath.requirement.model.Unlock;
 
 /**
  * Immutable snapshot of every fact the requirement checks need about the player,

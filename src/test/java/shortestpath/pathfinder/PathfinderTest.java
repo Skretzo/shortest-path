@@ -39,20 +39,20 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
-import shortestpath.JewelleryBoxTier;
+import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.TeleportationItem;
+import shortestpath.requirement.TeleportationItem;
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.BankPickupRequirements;
+import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportEligibility;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
 @RunWith(MockitoJUnitRunner.class)

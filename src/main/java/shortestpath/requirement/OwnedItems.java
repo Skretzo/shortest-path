@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.requirement;
 
 import java.util.HashMap;
 import java.util.Map;

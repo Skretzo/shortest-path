@@ -107,11 +107,13 @@ import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
-import shortestpath.transport.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.TeleportationItem;
+import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -179,7 +181,7 @@ public class ShortestPathPlugin extends Plugin
 	public boolean highlightInventoryItems;
 
 	// Bank pickup cache — invalidated when path, bank, or inventory changes.
-	private shortestpath.transport.BankPickupRequirements.BankPickupResult bankPickupCache;
+	private shortestpath.requirement.BankPickupRequirements.BankPickupResult bankPickupCache;
 	private List<PathStep> bankPickupCachePath;
 	private int bankPickupCacheIndex = -1;
 	private boolean bankPickupDirty = true;
@@ -1559,7 +1561,7 @@ public class ShortestPathPlugin extends Plugin
 		// The target's items are only known once the search has its result, which appears just
 		// after the final path: keep recomputing until then.
 		bankPickupDirty = search != null && result == null;
-		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
+		bankPickupCache = shortestpath.requirement.BankPickupRequirements.BankPickupResult.compute(
 				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex,
 				itemsToPickUp(result));
 		return bankPickupCache;

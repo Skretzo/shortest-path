@@ -9,8 +9,8 @@ import java.util.Map;
 import net.runelite.api.coords.WorldPoint;
 import shortestpath.pathfinder.Target;
 import shortestpath.pathfinder.Targets;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * Converts between {@link Targets} and the values other plugins put in the {@code target} of a

@@ -1,4 +1,4 @@
-package shortestpath.transport.requirement;
+package shortestpath.requirement.model;
 
 /**
  * Detected or player-declared unlock states,

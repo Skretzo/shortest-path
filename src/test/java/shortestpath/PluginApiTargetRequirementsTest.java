@@ -25,7 +25,8 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TargetStatus;
-import shortestpath.transport.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.TeleportationItem;
 
 /**
  * The public plugin-message API for item requirements on targets ({@code path}, {@code query},
