@@ -470,20 +470,23 @@ public class PathfinderConfig
 	{
 		if (avoidWilderness)
 		{
+			List<Integer> filteredThisCall = new ArrayList<>(4);
 			locations.removeIf(location ->
 			{
 				boolean inWilderness = WildernessChecker.isInWilderness(location);
 				if (inWilderness)
 				{
-					filteredTargets.add(location);
+					filteredThisCall.add(location);
 				}
 				return inWilderness;
 			});
-			// If we ended up with no valid locations we re-include the filtered locations
+			filteredTargets.addAll(filteredThisCall);
+			// If we ended up with no valid locations we re-include the
+			// locations this call filtered - not targets accumulated while
+			// filtering unrelated earlier searches.
 			if (locations.isEmpty())
 			{
-				locations.addAll(filteredTargets);
-				filteredTargets.clear();
+				locations.addAll(filteredThisCall);
 			}
 		}
 		else if (canReviveFiltered)
