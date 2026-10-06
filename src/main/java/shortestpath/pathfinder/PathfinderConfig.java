@@ -16,15 +16,10 @@ import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.GameState;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.gameval.DBTableID;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
-import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -39,11 +34,12 @@ import shortestpath.requirement.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
+import shortestpath.requirement.ClientPlayerStateSource;
+import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.RequirementContext;
 import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
-import shortestpath.requirement.OwnedItems;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.Transport;
@@ -98,11 +94,14 @@ public class PathfinderConfig
 	private final ShortestPathConfig config;
 	// Centralized transport type enable/disable config
 	private final TransportTypeConfig transportTypeConfig;
-	private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
-	private int currentMaxQuestPoints;
-	private Map<Quest, QuestState> questStates = new HashMap<>();
 	private Map<Integer, Integer> varbitValues = new HashMap<>();
 	private Map<Integer, Integer> varPlayerValues = new HashMap<>();
+	/**
+	 * The single reader of client player state for the capture path. Every
+	 * getter throws off the client thread, so a caller that skips the thread
+	 * fails loudly instead of silently skipping the refresh.
+	 */
+	private final PlayerStateSource playerStateSource;
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
@@ -201,6 +200,7 @@ public class PathfinderConfig
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
 		this.client = client;
+		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
 		this.transportTypeConfig = new TransportTypeConfig(config);
 		this.mapData = SplitFlagMap.fromResources();
@@ -224,6 +224,7 @@ public class PathfinderConfig
 		Map<Integer, DestinationRequirements> bankRequirements)
 	{
 		this.client = client;
+		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
 		this.transportTypeConfig = new TransportTypeConfig(config);
 		this.mapData = mapData;
@@ -240,16 +241,13 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Pure combat-level formula, extracted for testability.
+	 * Pure combat-level formula, extracted for testability; the canonical
+	 * implementation lives on {@link PlayerStateSource} so the capture path
+	 * and this shim always agree.
 	 */
 	static int computeCombatLevel(int attack, int strength, int defence, int hitpoints, int magic, int ranged, int prayer)
 	{
-		// Integer division is intentional here — it matches the OSRS floor(x/2) steps in the formula.
-		double base = 0.25 * (defence + hitpoints + Math.floorDiv(prayer, 2));
-		double melee = (13 * (attack + strength)) / 40.0;
-		double range = (13 * (3 * Math.floorDiv(ranged, 2))) / 40.0;
-		double mage = (13 * (3 * Math.floorDiv(magic, 2))) / 40.0;
-		return (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
+		return PlayerStateSource.computeCombatLevel(attack, strength, defence, hitpoints, magic, ranged, prayer);
 	}
 
 	public CollisionMap getMap()
@@ -329,7 +327,7 @@ public class PathfinderConfig
 			ShortestPathPlugin.override("exactHeuristicWeight", config.exactHeuristicWeight()))) / 100.0;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
-		leagueModeState.refresh(client);
+		leagueModeState.refresh(playerStateSource);
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
@@ -373,19 +371,8 @@ public class PathfinderConfig
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
 		bankVisitCost = ShortestPathPlugin.override("costBankVisit", config.costBankVisit());
 
-		if (GameState.LOGGED_IN.equals(client.getGameState()))
+		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
-			isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
-
-			int i = 0;
-			for (; i < Skill.values().length; i++)
-			{
-				boostedSkillLevelsAndMore[i] = client.getBoostedSkillLevel(Skill.values()[i]);
-			}
-			boostedSkillLevelsAndMore[i++] = client.getTotalLevel(); // skill total level
-			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
-			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
-
 			refreshTransports(evaluationTimeMinutes);
 		}
 
@@ -411,7 +398,7 @@ public class PathfinderConfig
 			accessibleBankTiles = Set.of();
 			return;
 		}
-		if (!GameState.LOGGED_IN.equals(client.getGameState()))
+		if (!GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
 			accessibleBankTiles = Set.copyOf(bankLocs);
 			return;
@@ -527,15 +514,14 @@ public class PathfinderConfig
 
 	private void refreshTransports(long evaluationTimeMinutes)
 	{
-		if (!Thread.currentThread().equals(client.getClientThread()))
-		{
-			return; // Has to run on the client thread; data will be refreshed when path finding commences
-		}
-		currentMaxQuestPoints = maximumQuestPoints();
+		// Has to run on the client thread; every capture read below goes
+		// through the source, which throws off-thread — this explicit check
+		// makes the contract fail at the entry point rather than mid-capture.
+		playerStateSource.checkOnClientThread();
 
 		// Fairy ring staff/diary requirements are enforced by the eligibility snapshot.
 		transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-			client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39);
+			playerStateSource.varbit(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39);
 		transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
 			QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
 		transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
@@ -545,18 +531,21 @@ public class PathfinderConfig
 
 		refreshSpiritTreeAvailability();
 
-		// All player state the checks below read is captured once per refresh in
-		// an immutable snapshot, so no check can observe the game mid-refresh.
-		RequirementContext context = buildRequirementContext(evaluationTimeMinutes);
-		eligibility = context.getEligibility();
-		eligibilityStale = false;
-		questStates = context.getQuestStates();
-		varbitValues = context.getVarbitValues();
-		varPlayerValues = context.getVarPlayerValues();
 		// The policy snapshot is taken only now — after the disableUnless
 		// derivations above — so the chain freezes the effective transport-type
 		// enablement, not the raw config view.
 		RoutingPolicy policy = buildRoutingPolicy();
+
+		// All player state the checks below read is captured once per refresh in
+		// an immutable snapshot, so no check can observe the game mid-refresh.
+		RequirementContext context = RequirementContext.capture(playerStateSource, requirementHooks,
+			policy, evaluationTimeMinutes, Arrays.asList(allTransports), bankRequirements, bank,
+			unlocks, respawnPrifddinas, leagueModeState, availableSpiritTrees);
+		eligibility = context.getEligibility();
+		eligibilityStale = false;
+		varbitValues = context.getVarbitValues();
+		varPlayerValues = context.getVarPlayerValues();
+		isOnSailingBoat = context.isOnSailingBoat();
 		requirements = new Requirements(context, policy, requirementHooks);
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
@@ -678,7 +667,7 @@ public class PathfinderConfig
 
 	public QuestState getQuestState(Quest quest)
 	{
-		return quest.getState(client);
+		return playerStateSource.questState(quest);
 	}
 
 	public boolean varbitChecks(Transport transport, long evaluationTimeMinutes)
@@ -770,21 +759,17 @@ public class PathfinderConfig
 	private void refreshSpiritTreeAvailability()
 	{
 		String inRegionPatch = null;
-		Player localPlayer = client.getLocalPlayer();
+		WorldPoint worldLocation = playerStateSource.localPlayerWorldLocation();
 		// Varbits are not transmitted while a modal widget is open; skip the
 		// live sample (but not the patch-state resolution below) rather than
 		// attribute a stale shared-slot value to the wrong patch. On the
 		// region-entry tick the slot can likewise still carry the previous
 		// region's values, so sample only once the region has settled.
-		if (localPlayer != null && !SpiritTreePatchState.modalWidgetOpen(client))
+		if (worldLocation != null && !playerStateSource.modalWidgetOpen()
+			&& (spiritTreePatchState == null
+				|| spiritTreePatchState.isRegionSettled(worldLocation.getRegionID())))
 		{
-			WorldPoint worldLocation = localPlayer.getWorldLocation();
-			if (worldLocation != null
-				&& (spiritTreePatchState == null
-					|| spiritTreePatchState.isRegionSettled(worldLocation.getRegionID())))
-			{
-				inRegionPatch = SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
-			}
+			inRegionPatch = SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
 		}
 
 		if (spiritTreePatchState != null)
@@ -794,7 +779,7 @@ public class PathfinderConfig
 				// In-region sample is authoritative for this patch — a non-20
 				// read evicts any stale persisted or menu-derived positive.
 				spiritTreePatchState.applyVarbitSample(inRegionPatch,
-					client.getVarbitValue(SpiritTreePatchState.varbitForPatch(inRegionPatch)));
+					playerStateSource.varbit(SpiritTreePatchState.varbitForPatch(inRegionPatch)));
 			}
 			Set<String> resolved = spiritTreePatchState.getTravelableTreesOrNull();
 			if (resolved != null)
@@ -804,7 +789,7 @@ public class PathfinderConfig
 		}
 		else if (inRegionPatch != null)
 		{
-			int varbitValue = client.getVarbitValue(SpiritTreePatchState.varbitForPatch(inRegionPatch));
+			int varbitValue = playerStateSource.varbit(SpiritTreePatchState.varbitForPatch(inRegionPatch));
 			Set<String> resolved = availableSpiritTrees == null
 				? new HashSet<>() : new HashSet<>(availableSpiritTrees);
 			if (SpiritTreePatchState.spiritTreeTravelable(varbitValue))
@@ -819,22 +804,6 @@ public class PathfinderConfig
 		}
 	}
 
-	private int maximumQuestPoints()
-	{
-		return client.getDBTableRows(DBTableID.Quest.ID).stream()
-			.filter(row -> (Integer) client.getDBTableField(
-				row,
-				DBTableID.Quest.COL_RELEASE_TYPE,
-				0
-			)[0] != 0)
-			.mapToInt(row -> (Integer) client.getDBTableField(
-				row,
-				DBTableID.Quest.COL_QUESTPOINTS,
-				0
-			)[0])
-			.sum();
-	}
-
 	/**
 	 * The transport eligibility snapshot captured at refresh time. When it is missing or
 	 * stale (a container change called {@link #invalidateEligibility()}) it is rebuilt,
@@ -845,9 +814,11 @@ public class PathfinderConfig
 	public TransportEligibility getEligibility()
 	{
 		if ((eligibility == null || eligibilityStale)
-			&& Thread.currentThread().equals(client.getClientThread()))
+			&& playerStateSource.isOnClientThread())
 		{
-			eligibility = collectEligibility();
+			eligibility = RequirementContext.collectEligibility(playerStateSource, bank,
+				transportTypeConfig.getTeleportationItemSetting(), currencyThreshold,
+				includeBankPath, unlocks);
 			eligibilityStale = false;
 		}
 		return eligibility;
@@ -863,172 +834,4 @@ public class PathfinderConfig
 		eligibilityStale = true;
 	}
 
-	/**
-	 * Captures the client state both the pathfinding verdicts and the bank-pickup plans
-	 * read: the carried pool (inventory + worn + rune pouch in hand), the bank-path pool
-	 * (which adds the bank contents when bank paths are enabled), the bank contents
-	 * themselves, the runes inside a banked rune pouch, the fairy-ring staff gate and
-	 * the currency threshold.
-	 */
-	private TransportEligibility collectEligibility()
-	{
-		Map<Integer, Integer> carriedItems = collectItems(true, true, false, true);
-		Map<Integer, Integer> bankPathItems = includeBankPath ? collectItems(true, true, true, true) : carriedItems;
-		Map<Integer, Integer> bankHas = new HashMap<>();
-		OwnedItems.addContainer(bankHas, bank);
-		int bankPouchId = -1;
-		for (int pouchId : RUNE_POUCHES)
-		{
-			if (bankHas.containsKey(pouchId))
-			{
-				bankPouchId = pouchId;
-				break;
-			}
-		}
-		Map<Integer, Integer> bankPouchRunes = bankPouchId == -1
-			? Map.of()
-			: OwnedItems.runePouchContents(client);
-		boolean fairyRingStaffRequired =
-			client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1;
-		return new TransportEligibility(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			fairyRingStaffRequired, transportTypeConfig.getTeleportationItemSetting(), currencyThreshold,
-			unlocks);
-	}
-
-	/**
-	 * Item id to quantity over the selected containers, summed across containers.
-	 */
-	private Map<Integer, Integer> collectItems(
-		boolean checkInventory,
-		boolean checkEquipment,
-		boolean checkBank,
-		boolean checkRunePouch)
-	{
-		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
-
-		if (checkInventory)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV));
-		}
-
-		if (checkEquipment)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN));
-		}
-
-		if (checkBank)
-		{
-			TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
-			if (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))
-			{
-				OwnedItems.addContainer(itemsAndQuantities, bank);
-			}
-		}
-
-		if (checkRunePouch)
-		{
-			OwnedItems.addRunePouchContents(client, itemsAndQuantities);
-		}
-
-		return itemsAndQuantities;
-	}
-
-	/**
-	 * Builds the immutable snapshot the requirement checks read this refresh: the
-	 * eligibility item pools, the quest states behind the quest hook and the var
-	 * values behind the var requirements, plus the config-declared and league
-	 * state already captured in {@link #refresh()}. Called once per refresh after
-	 * {@link #refreshSpiritTreeAvailability()} has settled the planted-tree set;
-	 * client thread only.
-	 */
-	private RequirementContext buildRequirementContext(long evaluationTimeMinutes)
-	{
-		TransportEligibility eligibilitySnapshot = collectEligibility();
-
-		Map<Quest, QuestState> capturedQuestStates = new HashMap<>();
-		Map<Integer, Integer> capturedVarbitValues = new HashMap<>();
-		Map<Integer, Integer> capturedVarPlayerValues = new HashMap<>();
-		Set<Quest> refreshedQuests = new HashSet<>();
-		for (Transport transport : allTransports)
-		{
-			captureQuestStates(transport.getQuests(), refreshedQuests, capturedQuestStates);
-			for (VarRequirement varRequirement : transport.getVarRequirements())
-			{
-				if (varRequirement.isVarbit())
-				{
-					capturedVarbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
-				}
-				else
-				{
-					capturedVarPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
-				}
-			}
-		}
-
-		// Bank destinations can carry quest and var ids that no transport
-		// declares; they must land in the same snapshot, because a var or
-		// quest missing from these maps fails closed when the shared
-		// evaluator looks it up.
-		for (DestinationRequirements destinationRequirements : bankRequirements.values())
-		{
-			captureQuestStates(destinationRequirements.getQuests(), refreshedQuests, capturedQuestStates);
-			for (VarRequirement varRequirement : destinationRequirements.getVarbits())
-			{
-				capturedVarbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
-			}
-			for (VarRequirement varRequirement : destinationRequirements.getVarPlayers())
-			{
-				capturedVarPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
-			}
-		}
-
-		return new RequirementContext(evaluationTimeMinutes, boostedSkillLevelsAndMore,
-			currentMaxQuestPoints, capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
-			eligibilitySnapshot, unlocks, respawnPrifddinas, isOnSailingBoat,
-			leagueModeState, availableSpiritTrees);
-	}
-
-	/**
-	 * Captures each quest's state through the {@link #getQuestState} hook,
-	 * skipping quests already captured this refresh and tolerating a hook
-	 * that throws or returns null for a quest it cannot answer.
-	 */
-	private void captureQuestStates(Collection<Quest> quests, Set<Quest> refreshedQuests,
-		Map<Quest, QuestState> capturedQuestStates)
-	{
-		for (Quest quest : quests)
-		{
-			if (!refreshedQuests.add(quest))
-			{
-				continue;
-			}
-			try
-			{
-				QuestState state = getQuestState(quest);
-				if (state != null)
-				{
-					capturedQuestStates.put(quest, state);
-				}
-			}
-			catch (NullPointerException ignored)
-			{
-			}
-		}
-	}
-
-	/**
-	 * Calculates the combat level of the player
-	 */
-	private int getCombatLevel()
-	{
-		int attack = client.getRealSkillLevel(Skill.ATTACK);
-		int strength = client.getRealSkillLevel(Skill.STRENGTH);
-		int defence = client.getRealSkillLevel(Skill.DEFENCE);
-		int hitpoints = client.getRealSkillLevel(Skill.HITPOINTS);
-		int magic = client.getRealSkillLevel(Skill.MAGIC);
-		int ranged = client.getRealSkillLevel(Skill.RANGED);
-		int prayer = client.getRealSkillLevel(Skill.PRAYER);
-		return computeCombatLevel(attack, strength, defence, hitpoints, magic, ranged, prayer);
-	}
 }
