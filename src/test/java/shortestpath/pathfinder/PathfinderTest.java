@@ -78,6 +78,7 @@ public class PathfinderTest
 		when(config.currencyThreshold()).thenReturn(10000000);
 		when(config.collisionAwareBlockedTargets()).thenReturn(true);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
 	}
 
 	@Test
@@ -108,7 +109,7 @@ public class PathfinderTest
 							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(false).get(outside))
 								.filter(t -> t.getDestination() == inside).findFirst().orElseThrow();
 							TransportEligibility eligibility = new TransportEligibility(Map.of(), Map.of(), Map.of(), -1,
-								Map.of(), false, TeleportationItem.NONE, Integer.MAX_VALUE, pathfinderConfig.getUnlocks());
+								Map.of(), false, TeleportationItem.NONE, Integer.MAX_VALUE, pathfinderConfig.getUnlocks(), true);
 							assertTrue(eligibility.satisfiedByPlayer(entry));
 							Pathfinder route = runPathfinder(outside, inside);
 							assertTrue(route.getResult().isReached());
@@ -2777,7 +2778,6 @@ public class PathfinderTest
 		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 
@@ -2789,7 +2789,6 @@ public class PathfinderTest
 		pathfinderConfig = new ChangingTimePathfinderConfig(
 			client, config, QuestState.FINISHED, false, false, refreshTimeMinutes, laterTimeMinutes);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(client.getTotalLevel()).thenReturn(2376);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
@@ -2819,7 +2818,6 @@ public class PathfinderTest
 		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		for (Map.Entry<Integer, Integer> entry : varbitValues.entrySet())
@@ -3157,7 +3155,6 @@ public class PathfinderTest
 	{
 		pathfinderConfig = new TestPathfinderConfig(client, config, questState, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		when(config.usePoh()).thenReturn(false);
