@@ -12,6 +12,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -136,7 +137,9 @@ public class ShortestPathPlugin extends Plugin
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|use\\w+|cost\\w+|unlock\\w+)$");
-	private static final Map<String, Object> configOverride = new HashMap<>(50);
+	// Replaced atomically per plugin message; readers run on threads that
+	// cannot take pathfinderMutex, so they read the volatile reference.
+	private static volatile Map<String, Object> configOverride = Map.of();
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -777,11 +780,8 @@ public class ShortestPathPlugin extends Plugin
 			{
 				synchronized (pathfinderMutex)
 				{
-					ShortestPathPlugin.configOverride.clear();
-					for (String key : configOverride.keySet())
-					{
-						ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
-					}
+					ShortestPathPlugin.configOverride =
+						Collections.unmodifiableMap(new HashMap<>(configOverride));
 				}
 				cacheConfigValues();
 			}
@@ -827,7 +827,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			synchronized (pathfinderMutex)
 			{
-				configOverride.clear();
+				configOverride = Map.of();
 			}
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
