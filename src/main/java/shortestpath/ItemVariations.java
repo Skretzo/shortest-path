@@ -1,6 +1,5 @@
 package shortestpath;
 
-import lombok.Getter;
 import net.runelite.api.gameval.ItemID;
 
 public enum ItemVariations
@@ -766,12 +765,20 @@ public enum ItemVariations
 		ItemID.STEAMRUNE),
 	;
 
-	@Getter
 	private final int[] ids;
 
 	ItemVariations(int... ids)
 	{
 		this.ids = ids;
+	}
+
+	/**
+	 * The enum's ids are shared by every transport row that references the
+	 * variation; hand out a copy so callers cannot write into them.
+	 */
+	public int[] getIds()
+	{
+		return ids.clone();
 	}
 
 	public static int[] staves(ItemVariations itemVariation)
