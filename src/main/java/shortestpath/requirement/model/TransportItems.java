@@ -182,8 +182,10 @@ public class TransportItems
 
 	/**
 	 * {@code true} when any OR branch has an owned offhand id at that branch's quantity.
+	 * Shared with {@code TransportEligibility.ConsumptionLedger#spend}, which allocates
+	 * payments against a pool and must mirror {@link #isSatisfiedBy} exactly.
 	 */
-	private static boolean hasOwnedOffhand(ItemRequirement req, Map<Integer, Integer> itemCounts)
+	public static boolean hasOwnedOffhand(ItemRequirement req, Map<Integer, Integer> itemCounts)
 	{
 		for (ItemRequirement.Branch branch : req.getBranches())
 		{
@@ -195,7 +197,14 @@ public class TransportItems
 		return false;
 	}
 
-	private static boolean existsOneStaffCovering(List<ItemRequirement> leftover, Map<Integer, Integer> itemCounts)
+	/**
+	 * {@code true} when one carried staff covers every leftover requirement — the
+	 * same item id must appear in each requirement's staff lists, since two
+	 * different staves cannot be used together. Shared with
+	 * {@code TransportEligibility.ConsumptionLedger#spend}, which allocates
+	 * payments against a pool and must mirror {@link #isSatisfiedBy} exactly.
+	 */
+	public static boolean existsOneStaffCovering(List<ItemRequirement> leftover, Map<Integer, Integer> itemCounts)
 	{
 		Set<Integer> candidates = null;
 		for (ItemRequirement req : leftover)
@@ -247,7 +256,15 @@ public class TransportItems
 		return owned;
 	}
 
-	private static boolean hasQuantity(Map<Integer, Integer> itemCounts, int itemId, int requiredQuantity, boolean unlimited)
+	/**
+	 * {@code true} when {@code itemCounts} holds at least {@code requiredQuantity} of
+	 * {@code itemId} — or, when {@code unlimited}, at least one of it (a staff or
+	 * offhand substitutes for any quantity). Zero-quantity requirements hold iff the
+	 * item is absent. Shared with {@code TransportEligibility.ConsumptionLedger#spend},
+	 * which allocates payments against a pool and must mirror {@link #isSatisfiedBy}
+	 * exactly.
+	 */
+	public static boolean hasQuantity(Map<Integer, Integer> itemCounts, int itemId, int requiredQuantity, boolean unlimited)
 	{
 		int quantity = itemCounts.getOrDefault(itemId, 0);
 		if (unlimited)

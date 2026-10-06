@@ -2,11 +2,13 @@ package shortestpath.requirement;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -87,8 +89,18 @@ public final class BankPickupRequirements
 				return new BankPickupResult(resultPhrases, resultIds);
 			}
 
-			// Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
-			LinkedHashSet<String> phrases = new LinkedHashSet<>();
+			// The consumption ledger replays the remaining path against a running copy
+			// of the carried pool: payable edges spend their consumables and committed
+			// bank pickups top the pool back up. Pickup quantities for single-alternative
+			// edges merge per displayed item id into one combined leading phrase — the
+			// same requirement resolved via different bank variants keeps separate
+			// entries, since each id is a distinct withdrawal. Edges with several
+			// bank-suppliable alternatives keep their own "or" group; identical groups
+			// from different edges are not deduplicated, because each is a separate
+			// choice the player must satisfy once.
+			TransportEligibility.ConsumptionLedger ledger = eligibility.consumptionLedger();
+			Map<Integer, Long> combined = new LinkedHashMap<>();
+			List<String> alternativeGroups = new ArrayList<>();
 			Set<Integer> itemIds = new HashSet<>();
 			boolean usesFairyRing = false;
 
@@ -97,6 +109,13 @@ public final class BankPickupRequirements
 			{
 				int stepPoint = path.get(i).getPackedPosition();
 				int nextPoint = path.get(i + 1).getPackedPosition();
+				// A step reached via a bank selects the banked availability view, but
+				// deliberately does not refill the ledger's pool: this hint models a
+				// single withdrawal session at the current bank, so the pool only
+				// grows through committed pickups. Refilling at a mid-path bank would
+				// under-ask here. Consumers replaying a routed path call
+				// ConsumptionLedger.visitBank instead — the two interpretations of
+				// isBankVisited are intentionally different.
 				boolean banked = path.get(i + 1).isBankVisited();
 
 				List<Transport> edgeAlternatives = new ArrayList<>();
@@ -165,42 +184,89 @@ public final class BankPickupRequirements
 					continue;
 				}
 
-				// If any alternative is fully satisfied by the player already, no pickup needed.
-				boolean satisfied = false;
+				// When an alternative is payable from the running pool the edge needs no
+				// pickup; its consumables leave the pool for the edges that follow.
+				Transport payable = null;
 				for (Transport t : nonFairy)
 				{
-					if (eligibility.satisfiedByPlayer(t))
+					if (ledger.satisfied(t))
 					{
-						satisfied = true;
+						payable = t;
 						break;
 					}
 				}
-				if (satisfied)
+				if (payable != null)
 				{
+					ledger.spend(payable);
 					continue;
 				}
 
-				// Build phrases (alternatives the bank can fully supply) and collect the
-				// bank item IDs to highlight from the same per-transport plan.
-				LinkedHashSet<String> altStrings = new LinkedHashSet<>();
+				// No alternative is payable: resolve each pickup plan against the running
+				// pool (not the frozen snapshot), keep the highlight ids for every
+				// alternative, then commit a witness — its items top up the pool and
+				// the edge's consumables leave it again. The witness is the first
+				// bank-suppliable alternative in declaration order that withdraws
+				// something; the "or" group still offers the player every suppliable
+				// choice, so picking another alternative leaves the pool modelling a
+				// different mix than the player actually carries downstream.
+				Transport witness = null;
+				TransportEligibility.BankPickupPlan witnessPlan = null;
+				int suppliable = 0;
+				List<String> altStrings = new ArrayList<>();
 				for (Transport t : nonFairy)
 				{
-					TransportEligibility.BankPickupPlan plan = eligibility.bankPickupPlan(t);
-					if (plan.items != null && !plan.items.isEmpty())
-					{
-						// Bank can fully satisfy this alternative: contribute to display phrase.
-						altStrings.add(BankPickupRequirements.formatPickups(client, plan.items));
-					}
+					TransportEligibility.BankPickupPlan plan = ledger.pickupPlan(t);
 					// Always collect the actual bank item IDs for highlighting — the plan's
 					// display IDs are canonical (e.g. air rune) while the bank may only hold
 					// a variant (e.g. mist rune).
 					itemIds.addAll(plan.bankItemIds);
+					if (plan.items == null)
+					{
+						continue;
+					}
+					suppliable++;
+					// The committed witness models what the player withdraws when they
+					// take this edge, so it must be a plan that actually withdraws
+					// something. An empty-items plan only reads as fully supplied
+					// because the plan's player check approximates shared staves and
+					// offhands per requirement; committing it would leave the pool
+					// modelling a pickup the player never made.
+					if (witnessPlan == null && !plan.items.isEmpty())
+					{
+						witness = t;
+						witnessPlan = plan;
+					}
+					if (!plan.items.isEmpty())
+					{
+						// Bank can fully satisfy this alternative: contribute to display phrase.
+						altStrings.add(BankPickupRequirements.formatPickups(client, plan.items));
+					}
 				}
-				if (!altStrings.isEmpty())
+				if (witnessPlan != null)
 				{
-					phrases.add(String.join(" or ", altStrings));
+					ledger.commit(witnessPlan);
+					ledger.spend(witness);
+				}
+				if (suppliable == 1 && witnessPlan != null)
+				{
+					for (Map.Entry<Integer, Long> entry : witnessPlan.items.entrySet())
+					{
+						combined.merge(entry.getKey(), entry.getValue(), Long::sum);
+					}
+				}
+				else if (suppliable >= 2 && !altStrings.isEmpty())
+				{
+					alternativeGroups.add(String.join(" or ", altStrings));
 				}
 			}
+
+			// Combined single-alternative pickups first, then the per-edge alternative
+			// groups in path order, and the fairy staff phrase last.
+			if (!combined.isEmpty())
+			{
+				resultPhrases.add(BankPickupRequirements.formatPickups(client, combined));
+			}
+			resultPhrases.addAll(alternativeGroups);
 
 			// Fairy ring staff (Dramen / Lunar) is a single OR requirement across the whole trip.
 			if (usesFairyRing)
@@ -208,12 +274,11 @@ public final class BankPickupRequirements
 				TransportEligibility.BankPickupPlan staff = eligibility.fairyStaffPickup();
 				if (staff != null)
 				{
-					phrases.add(BankPickupRequirements.formatPickups(client, staff.items));
+					resultPhrases.add(BankPickupRequirements.formatPickups(client, staff.items));
 					itemIds.addAll(staff.bankItemIds);
 				}
 			}
 
-			resultPhrases.addAll(phrases);
 			resultIds.addAll(itemIds);
 			return new BankPickupResult(resultPhrases, resultIds);
 		}
@@ -229,7 +294,8 @@ public final class BankPickupRequirements
 		{
 			int itemId = entry.getKey();
 			long qty = entry.getValue();
-			String itemName = client.getItemDefinition(itemId).getName();
+			ItemComposition definition = client.getItemDefinition(itemId);
+			String itemName = definition == null ? null : definition.getName();
 			if (itemName == null || itemName.isEmpty() || "null".equals(itemName))
 			{
 				itemName = "Unknown item";
@@ -239,7 +305,7 @@ public final class BankPickupRequirements
 			{
 				if (qty > 1)
 				{
-					itemName += " (" + String.format("%,d", qty) + ")";
+					itemName += " (" + String.format(Locale.ROOT, "%,d", qty) + ")";
 				}
 			}
 			else

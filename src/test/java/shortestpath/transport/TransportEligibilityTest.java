@@ -379,6 +379,37 @@ public class TransportEligibilityTest
 	}
 
 	@Test
+	public void usableAsRoutedBypassesUnownedTeleportItems()
+	{
+		// A teleport item routed under a bypassing setting stays usable on the
+		// ledger even though the pool owns none of its items; satisfied() stays
+		// the item-level question for the pickup hint.
+		TransportEligibility eligibility = eligibility(TeleportationItem.ALL, false, Integer.MAX_VALUE);
+		TransportEligibility.ConsumptionLedger ledger = eligibility.consumptionLedger();
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements());
+
+		assertFalse(ledger.satisfied(teleport));
+		assertTrue(ledger.usableAsRouted(teleport));
+	}
+
+	@Test
+	public void usableAsRoutedAppliesTheFairyStaffGate()
+	{
+		// Fairy rings carry no item requirements, so the item-level check passes;
+		// the routed check still enforces the Dramen staff gate.
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+		TransportEligibility.ConsumptionLedger ledger = eligibility.consumptionLedger();
+		Transport fairy = fairyRing();
+
+		assertTrue(ledger.satisfied(fairy));
+		assertFalse(ledger.usableAsRouted(fairy));
+
+		playerHas.put(ItemID.DRAMEN_STAFF, 1);
+		assertTrue(eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE)
+			.consumptionLedger().usableAsRouted(fairy));
+	}
+
+	@Test
 	public void noRequirementsAreUsableAndNeedNoPickup()
 	{
 		Transport free = new Transport.TransportBuilder().type(TransportType.TRANSPORT).build();
