@@ -611,7 +611,7 @@ public final class Requirements
 		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 
 		// Check planted spirit tree origins (travel FROM a planted tree)
-		if (isPlantedSpiritTreeAllowed(originX, originY))
+		if (isUnavailablePlantedSpiritTree(originX, originY))
 		{
 			return false;
 		}
@@ -620,15 +620,22 @@ public final class Requirements
 		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 
-		return !isPlantedSpiritTreeAllowed(destX, destY);
+		return !isUnavailablePlantedSpiritTree(destX, destY);
 	}
 
-	private boolean isPlantedSpiritTreeAllowed(int x, int y)
+	/**
+	 * Whether the tile is a planted spirit-tree patch whose tree the player
+	 * cannot currently use: {@code false} when the tile is not a patch at
+	 * all, {@code true} when no availability observation exists yet (the
+	 * unresolved case) or when the patch is absent from the available set.
+	 * Callers negate this to get "allowed".
+	 */
+	private boolean isUnavailablePlantedSpiritTree(int x, int y)
 	{
 		String treeName = SpiritTreePatchState.patchNameForTile(x, y);
 		if (treeName == null)
 		{
-			return false; //
+			return false;
 		}
 		Set<String> availableSpiritTrees = context.getAvailableSpiritTrees();
 		if (availableSpiritTrees == null)
