@@ -11,9 +11,9 @@ import shortestpath.requirement.model.VarRequirement;
  * production {@code PathfinderConfig} adapter feeds. Quest state comes from a
  * settable field (the hook is consulted while the context captures declared
  * quests); varbit and varplayer evaluation runs the real
- * {@link VarRequirement#check} semantics against the maps captured into the
- * context under test, mirroring how the config's bypassable methods read the
- * per-refresh snapshot.
+ * {@link VarRequirement#check} semantics against the values the chain passes
+ * in — the maps captured into the context under test, mirroring how the
+ * config's bypassable methods receive the per-refresh snapshot.
  *
  * <p>The {@code failVarbits}/{@code failVarPlayers} knobs force the failure
  * polarity ({@code true} = a check FAILED) for liveness assertions: flipping
@@ -22,27 +22,9 @@ import shortestpath.requirement.model.VarRequirement;
  */
 final class TestRequirementHooks implements RequirementHooks
 {
-	private final Map<Integer, Integer> varbitValues;
-	private final Map<Integer, Integer> varPlayerValues;
 	private QuestState questState = QuestState.FINISHED;
 	private boolean failVarbits;
 	private boolean failVarPlayers;
-
-	/**
-	 * Hooks whose var maps are the ones captured in {@code context} — the same
-	 * binding the refresh path produces between the snapshot and the config's
-	 * var-check methods.
-	 */
-	static TestRequirementHooks forContext(RequirementContext context)
-	{
-		return new TestRequirementHooks(context.getVarbitValues(), context.getVarPlayerValues());
-	}
-
-	TestRequirementHooks(Map<Integer, Integer> varbitValues, Map<Integer, Integer> varPlayerValues)
-	{
-		this.varbitValues = varbitValues;
-		this.varPlayerValues = varPlayerValues;
-	}
 
 	TestRequirementHooks questState(QuestState state)
 	{
@@ -69,12 +51,13 @@ final class TestRequirementHooks implements RequirementHooks
 	}
 
 	@Override
-	public boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+	public boolean varbitChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
 	{
 		for (VarRequirement requirement : requirements)
 		{
 			if (requirement.isVarbit()
-				&& (failVarbits || !requirement.check(varbitValues, evaluationTimeMinutes)))
+				&& (failVarbits || !requirement.check(values, evaluationTimeMinutes)))
 			{
 				return true;
 			}
@@ -83,12 +66,13 @@ final class TestRequirementHooks implements RequirementHooks
 	}
 
 	@Override
-	public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+	public boolean varPlayerChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
 	{
 		for (VarRequirement requirement : requirements)
 		{
 			if (requirement.isVarPlayer()
-				&& (failVarPlayers || !requirement.check(varPlayerValues, evaluationTimeMinutes)))
+				&& (failVarPlayers || !requirement.check(values, evaluationTimeMinutes)))
 			{
 				return true;
 			}

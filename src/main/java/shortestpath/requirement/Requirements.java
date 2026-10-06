@@ -156,12 +156,14 @@ public final class Requirements
 			reason = RejectionReason.QUEST;
 		}
 		if (reason == RejectionReason.NONE
-			&& hooks.varbitChecks(requirements.getVarbits(), context.getEvaluationTimeMinutes()))
+			&& hooks.varbitChecks(requirements.getVarbits(), context.getVarbitValues(),
+				context.getEvaluationTimeMinutes()))
 		{
 			reason = RejectionReason.VARBIT;
 		}
 		if (reason == RejectionReason.NONE
-			&& hooks.varPlayerChecks(requirements.getVarPlayers(), context.getEvaluationTimeMinutes()))
+			&& hooks.varPlayerChecks(requirements.getVarPlayers(), context.getVarPlayerValues(),
+				context.getEvaluationTimeMinutes()))
 		{
 			reason = RejectionReason.VARPLAYER;
 		}
@@ -571,7 +573,8 @@ public final class Requirements
 
 	private RejectionReason varbit(Transport transport)
 	{
-		if (hooks.varbitChecks(transport.getVarRequirements(), context.getEvaluationTimeMinutes()))
+		if (hooks.varbitChecks(transport.getVarRequirements(), context.getVarbitValues(),
+			context.getEvaluationTimeMinutes()))
 		{
 			return RejectionReason.VARBIT;
 		}
@@ -580,7 +583,8 @@ public final class Requirements
 
 	private RejectionReason varplayer(Transport transport)
 	{
-		if (hooks.varPlayerChecks(transport.getVarRequirements(), context.getEvaluationTimeMinutes()))
+		if (hooks.varPlayerChecks(transport.getVarRequirements(), context.getVarPlayerValues(),
+			context.getEvaluationTimeMinutes()))
 		{
 			return RejectionReason.VARPLAYER;
 		}
