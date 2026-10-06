@@ -535,11 +535,13 @@ public class PathfinderConfig
 		if (avoidWilderness)
 		{
 			List<Integer> valid = new ArrayList<>(targets.size());
+			List<Target> filteredThisCall = new ArrayList<>(4);
 			for (Target target : targets)
 			{
 				if (WildernessChecker.isInWilderness(target.getPoint()))
 				{
 					filteredTargets.put(target.getPoint(), target);
+					filteredThisCall.add(target);
 				}
 				else
 				{
@@ -547,9 +549,14 @@ public class PathfinderConfig
 				}
 			}
 			kept = targets.restrictTo(valid);
-			// If every target was filtered out we re-include the filtered ones, but an
-			// explicitly empty input has nothing to keep and revives nothing.
-			revive = !targets.isEmpty() && kept.isEmpty();
+			// If we ended up with no valid locations we re-include the
+			// targets this call filtered - not targets accumulated while
+			// filtering unrelated earlier searches. An explicitly empty
+			// input has nothing to keep and revives nothing.
+			if (kept.isEmpty())
+			{
+				return kept.plus(Targets.of(filteredThisCall));
+			}
 		}
 		if (revive)
 		{
