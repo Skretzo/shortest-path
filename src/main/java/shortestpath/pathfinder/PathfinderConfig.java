@@ -144,47 +144,61 @@ public class PathfinderConfig
 	/**
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
 	 */
-	private Set<Integer> accessibleBankTiles = Set.of();
+	// Refresh-written state below is read by the pathfinder executor thread;
+	// volatile keeps the cross-thread contract explicit (as availableSpiritTrees
+	// already does). The two availability maps additionally travel together in
+	// one volatile holder so a search never mixes sides of different refreshes.
+	private volatile Set<Integer> accessibleBankTiles = Set.of();
 	/**
-	 * Which transports are available for the current user configuration in the
-	 * unbanked/banked state.
-	 * - transportAvailabilityWithoutBank answers the question, which transport can a player take right now?
-	 * - transportAvailabilityWithBank answers the question, which transports can a player take if they visit a bank?
+	 * The banked/unbanked availability views of one refresh, published as a
+	 * single volatile reference so a running search can never read one side
+	 * from refresh N and the other from refresh N+1.
 	 */
-	private TransportAvailability transportAvailabilityWithoutBank;
-	private TransportAvailability transportAvailabilityWithBank;
+	private static final class TransportAvailabilities
+	{
+		private final TransportAvailability withoutBank;
+		private final TransportAvailability withBank;
+
+		private TransportAvailabilities(TransportAvailability withoutBank, TransportAvailability withBank)
+		{
+			this.withoutBank = withoutBank;
+			this.withBank = withBank;
+		}
+	}
+
+	private volatile TransportAvailabilities transportAvailabilities;
 	/**
 	 * Reference that points to either allDestinations or filteredDestinations
 	 */
-	private Map<String, Set<Integer>> destinations;
+	private volatile Map<String, Set<Integer>> destinations;
 	@Getter
-	private long calculationCutoffMillis;
+	private volatile long calculationCutoffMillis;
 	@Getter
-	private int unreachableTargetDistance;
+	private volatile int unreachableTargetDistance;
 	@Getter
-	private double exactHeuristicWeight = 1;
+	private volatile double exactHeuristicWeight = 1;
 	@Getter
-	private boolean avoidWilderness;
+	private volatile boolean avoidWilderness;
 	// POH-specific settings (not tied to a single TransportType)
-	private boolean usePohFairyRing,
+	private volatile boolean usePohFairyRing,
 		usePohSpiritTree,
 		usePoh,
 		usePohObelisk,
 		includeBankPath,
 		respawnPrifddinas;
-	private Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
-	private Set<PohMountedItem> enabledPohMountedItems = Set.of();
+	private volatile Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
+	private volatile Set<PohMountedItem> enabledPohMountedItems = Set.of();
 	@Getter
-	private Set<Unlock> unlocks = Set.of();
-	private JewelleryBoxTier pohJewelleryBoxTier;
-	private int costConsumableTeleportationItems;
+	private volatile Set<Unlock> unlocks = Set.of();
+	private volatile JewelleryBoxTier pohJewelleryBoxTier;
+	private volatile int costConsumableTeleportationItems;
 	@Getter
-	private int bankVisitCost;
-	private int currencyThreshold;
+	private volatile int bankVisitCost;
+	private volatile int currencyThreshold;
 	@Getter
-	private boolean isOnSailingBoat;
+	private volatile boolean isOnSailingBoat;
 	@Getter
-	private PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
+	private volatile PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -197,8 +211,9 @@ public class PathfinderConfig
 		remapPohDestinations(loadedTransports);
 		this.allTransports = flatten(loadedTransports);
 		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
+		this.transportAvailabilities = new TransportAvailabilities(
+			new TransportAvailability.Builder(allTransports.length).build(),
+			new TransportAvailability.Builder(allTransports.length).build());
 		this.allDestinations = Destination.loadAllFromResources();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
@@ -217,8 +232,9 @@ public class PathfinderConfig
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = flatten(allTransports);
 		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
+		this.transportAvailabilities = new TransportAvailabilities(
+			new TransportAvailability.Builder(this.allTransports.length).build(),
+			new TransportAvailability.Builder(this.allTransports.length).build());
 		this.allDestinations = allDestinations;
 		this.filteredDestinations = filteredDestinations;
 		this.destinations = allDestinations;
@@ -277,7 +293,7 @@ public class PathfinderConfig
 
 	public TransportAvailability getTransportAvailability(boolean bankVisited)
 	{
-		return bankVisited ? transportAvailabilityWithBank : transportAvailabilityWithoutBank;
+		return bankVisited ? transportAvailabilities.withBank : transportAvailabilities.withoutBank;
 	}
 
 	public boolean isBankPathEnabled()
@@ -626,8 +642,7 @@ public class PathfinderConfig
 
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
-		transportAvailabilityWithoutBank = withoutBank.build();
-		transportAvailabilityWithBank = withBank.build();
+		transportAvailabilities = new TransportAvailabilities(withoutBank.build(), withBank.build());
 	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)

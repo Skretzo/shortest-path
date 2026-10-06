@@ -1,9 +1,9 @@
 package shortestpath.leagues;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.WorldType;
 
@@ -84,18 +84,29 @@ public class LeagueModeState
 			Map.entry(21, LeagueRegion.VARLAMORE));
 	}
 
-	@Getter
-	private boolean seasonal;
-
 	/**
-	 * Whether the player is on a Deadman Mode world ({@link WorldType#DEADMAN};
-	 * tournament worlds are flagged DEADMAN too). Tracked here because this
-	 * object already owns world-type detection.
+	 * Immutable per-refresh league facts. The pathfinding executor thread
+	 * reads this object while the client thread refreshes it, so the state is
+	 * swapped as a single volatile reference rather than mutated in place.
 	 */
-	@Getter
-	private boolean deadman;
+	private static final class State
+	{
+		private static final State EMPTY =
+			new State(false, false, EnumSet.noneOf(LeagueRegion.class));
 
-	private Set<LeagueRegion> unlockedRegions = EnumSet.noneOf(LeagueRegion.class);
+		private final boolean seasonal;
+		private final boolean deadman;
+		private final Set<LeagueRegion> unlockedRegions;
+
+		private State(boolean seasonal, boolean deadman, Set<LeagueRegion> unlockedRegions)
+		{
+			this.seasonal = seasonal;
+			this.deadman = deadman;
+			this.unlockedRegions = unlockedRegions;
+		}
+	}
+
+	private volatile State state = State.EMPTY;
 
 	/**
 	 * Re-reads {@link Client#getWorldType()} and the area-unlock varbits.
@@ -112,14 +123,12 @@ public class LeagueModeState
 	{
 		if (client == null)
 		{
-			seasonal = false;
-			deadman = false;
-			unlockedRegions = EnumSet.noneOf(LeagueRegion.class);
+			state = State.EMPTY;
 			return;
 		}
 		EnumSet<WorldType> worldTypes = client.getWorldType();
-		seasonal = worldTypes != null && worldTypes.contains(WorldType.SEASONAL);
-		deadman = worldTypes != null && worldTypes.contains(WorldType.DEADMAN);
+		boolean seasonal = worldTypes != null && worldTypes.contains(WorldType.SEASONAL);
+		boolean deadman = worldTypes != null && worldTypes.contains(WorldType.DEADMAN);
 
 		EnumSet<LeagueRegion> next = EnumSet.noneOf(LeagueRegion.class);
 		if (seasonal)
@@ -129,7 +138,17 @@ public class LeagueModeState
 				addRegionFromSlot(client, varbitId, next);
 			}
 		}
-		unlockedRegions = next;
+		state = new State(seasonal, deadman, Collections.unmodifiableSet(next));
+	}
+
+	public boolean isSeasonal()
+	{
+		return state.seasonal;
+	}
+
+	public boolean isDeadman()
+	{
+		return state.deadman;
 	}
 
 	/**
@@ -146,7 +165,8 @@ public class LeagueModeState
 		{
 			return true;
 		}
-		if (!seasonal)
+		State current = state;
+		if (!current.seasonal)
 		{
 			return true;
 		}
@@ -154,7 +174,7 @@ public class LeagueModeState
 		{
 			return false;
 		}
-		return unlockedRegions.contains(region);
+		return current.unlockedRegions.contains(region);
 	}
 
 	/**
@@ -164,7 +184,7 @@ public class LeagueModeState
 	 */
 	public boolean isInBlockedRegion(int packedPoint)
 	{
-		if (!seasonal)
+		if (!state.seasonal)
 		{
 			return false;
 		}
@@ -177,10 +197,9 @@ public class LeagueModeState
 	 */
 	public void setForTest(boolean seasonal, Set<LeagueRegion> unlocked)
 	{
-		this.seasonal = seasonal;
-		this.unlockedRegions = unlocked == null
+		this.state = new State(seasonal, state.deadman, unlocked == null
 			? EnumSet.noneOf(LeagueRegion.class)
-			: EnumSet.copyOf(unlocked);
+			: Collections.unmodifiableSet(EnumSet.copyOf(unlocked)));
 	}
 
 	private static void addRegionFromSlot(Client client, int varbitId, Set<LeagueRegion> out)
