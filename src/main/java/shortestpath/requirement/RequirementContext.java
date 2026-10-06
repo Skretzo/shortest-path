@@ -13,6 +13,7 @@ import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
+import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -28,8 +29,8 @@ import shortestpath.transport.Transport;
  * {@code PathfinderConfig} fills), quest states, varbit and varplayer values, the
  * owned-item pools inside {@link TransportEligibility} (carried, bank-path, bank,
  * banked rune pouch and the fairy-ring staff rule), declared unlocks, the
- * respawn declaration, sailing-boat state, league-mode state and the planted
- * spirit trees observed so far.
+ * respawn declaration, sailing-boat state, a frozen league-mode snapshot and
+ * the planted spirit trees observed so far.
  *
  * <p>User routing policy stays out of the snapshot and is applied by the
  * settings filter instead: transport-type enablement, POH toggles, the
@@ -66,8 +67,13 @@ public final class RequirementContext
 	private final boolean respawnPrifddinas;
 	@Getter
 	private final boolean isOnSailingBoat;
+	/**
+	 * The league facts frozen at capture time. Retaining a
+	 * {@link LeagueModeSnapshot} rather than the live {@link LeagueModeState}
+	 * keeps this context from tracking a later refresh's in-place writes.
+	 */
 	@Getter
-	private final LeagueModeState leagueModeState;
+	private final LeagueModeSnapshot leagueModeSnapshot;
 	@Getter
 	private final Set<String> availableSpiritTrees;
 
@@ -95,7 +101,9 @@ public final class RequirementContext
 		this.unlocks = Set.copyOf(unlocks);
 		this.respawnPrifddinas = respawnPrifddinas;
 		this.isOnSailingBoat = isOnSailingBoat;
-		this.leagueModeState = leagueModeState;
+		this.leagueModeSnapshot = leagueModeState == null
+			? LeagueModeSnapshot.NON_SEASONAL
+			: leagueModeState.snapshot();
 		this.availableSpiritTrees = availableSpiritTrees == null
 			? null
 			: Set.copyOf(availableSpiritTrees);
