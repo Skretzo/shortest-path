@@ -611,8 +611,10 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return true;
 		}
+		boolean sameLocation = lastLocation == location;
+		lastLocation = location;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			config.recalculateDistance() < 0 || lastLocation == (lastLocation = location))
+			config.recalculateDistance() < 0 || sameLocation)
 		{
 			return true;
 		}
@@ -713,13 +715,16 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		GameState previousGameState = lastGameState;
+		GameState previousPreviousGameState = lastLastGameState;
+		lastLastGameState = lastGameState;
+		lastGameState = event.getGameState();
+
 		if (pathfinderConfig == null
-			|| !GameState.LOGGING_IN.equals(lastLastGameState)
-			|| !GameState.LOADING.equals(lastLastGameState = lastGameState)
-			|| !GameState.LOGGED_IN.equals(lastGameState = event.getGameState()))
+			|| !GameState.LOGGING_IN.equals(previousPreviousGameState)
+			|| !GameState.LOADING.equals(previousGameState)
+			|| !GameState.LOGGED_IN.equals(lastGameState))
 		{
-			lastLastGameState = lastGameState;
-			lastGameState = event.getGameState();
 			return;
 		}
 
