@@ -274,8 +274,10 @@ public final class RequirementContext
 
 	/**
 	 * Captures each quest's state through the {@code hooks} seam, skipping
-	 * quests already captured this refresh and tolerating a hook that throws
-	 * or returns null for a quest it cannot answer.
+	 * quests already captured this refresh and tolerating a hook that
+	 * returns null or throws {@link NullPointerException} for a quest it
+	 * cannot answer. Any other exception propagates — an unexpected hook
+	 * failure should fail the refresh loudly, not silently drop the quest.
 	 */
 	private static void captureQuestStates(RequirementHooks hooks, Collection<Quest> quests,
 		Set<Quest> refreshedQuests, Map<Quest, QuestState> capturedQuestStates)
