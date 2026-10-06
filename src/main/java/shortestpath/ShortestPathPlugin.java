@@ -95,7 +95,9 @@ import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
-import shortestpath.transport.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.TeleportationItem;
+import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -159,7 +161,7 @@ public class ShortestPathPlugin extends Plugin
 	public boolean highlightInventoryItems;
 
 	// Bank pickup cache — invalidated when path, bank, or inventory changes.
-	private shortestpath.transport.BankPickupRequirements.BankPickupResult bankPickupCache;
+	private shortestpath.requirement.BankPickupRequirements.BankPickupResult bankPickupCache;
 	private List<PathStep> bankPickupCachePath;
 	private int bankPickupCacheIndex = -1;
 	private boolean bankPickupDirty = true;
@@ -1367,7 +1369,7 @@ public class ShortestPathPlugin extends Plugin
 		bankPickupCachePath = path;
 		bankPickupCacheIndex = pathIndex;
 		bankPickupDirty = false;
-		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
+		bankPickupCache = shortestpath.requirement.BankPickupRequirements.BankPickupResult.compute(
 				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex);
 		return bankPickupCache;
 	}

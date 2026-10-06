@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.requirement;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,7 +11,9 @@ import net.runelite.api.ItemContainer;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.TransportItems;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 /**
  * Determines what items need to be picked up from the bank for a given path.

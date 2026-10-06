@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.requirement;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -14,14 +14,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
-import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TestPathfinderConfig;
-import shortestpath.transport.BankPickupRequirements.BankPickupResult;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

@@ -17,10 +17,10 @@ import shortestpath.transport.parser.ItemRequirementParser;
 import shortestpath.transport.parser.QuestParser;
 import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.TransportRecord;
-import shortestpath.transport.parser.VarRequirement;
+import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.parser.VarRequirementParser;
 import shortestpath.transport.parser.WorldPointParser;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * This class represents a travel point between two WorldPoints.

@@ -1,4 +1,4 @@
-package shortestpath.transport.requirement;
+package shortestpath.requirement.model;
 
 /**
  * Player-declared unlock states that the game does not expose to the client,

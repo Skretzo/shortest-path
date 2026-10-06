@@ -14,10 +14,11 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
+import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.transport.parser.FieldParser;
 import shortestpath.transport.parser.QuestParser;
 import shortestpath.transport.parser.SkillRequirementParser;
-import shortestpath.transport.parser.VarRequirement;
+import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.parser.VarRequirementParser;
 
 /**

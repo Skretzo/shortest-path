@@ -16,9 +16,9 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportEligibility;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.requirement.model.ItemRequirement;
 
 public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 {

@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.requirement;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -6,10 +6,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.ItemVariations;
-import shortestpath.TeleportationItem;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
-import shortestpath.transport.requirement.Unlock;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.Unlock;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 /**
  * Immutable snapshot of everything transport item-requirement evaluation needs, captured
