@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.TeleportationItem;
+import shortestpath.requirement.TeleportationItem;
 
 /**
  * Manages the enabled/disabled state and cost thresholds of each TransportType

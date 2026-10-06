@@ -14,7 +14,7 @@ import net.runelite.client.game.ItemManager;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.transport.BankPickupRequirements;
+import shortestpath.requirement.BankPickupRequirements;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {

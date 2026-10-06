@@ -38,6 +38,7 @@ import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.pathfinder.TestPathfinderConfig;
+import shortestpath.requirement.TeleportationItem;
 
 /**
  * Drives a real {@link ShortestPathPlugin} through its public plugin-message API, the way another

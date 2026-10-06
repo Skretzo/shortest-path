@@ -1,4 +1,4 @@
-package shortestpath.transport.parser;
+package shortestpath.requirement.model;
 
 import java.util.Map;
 

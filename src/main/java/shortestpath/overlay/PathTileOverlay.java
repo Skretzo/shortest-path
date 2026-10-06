@@ -40,9 +40,9 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.transport.BankPickupRequirements;
+import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportEligibility;
+import shortestpath.requirement.TransportEligibility;
 
 public class PathTileOverlay extends Overlay
 {

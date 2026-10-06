@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * The items the player holds, as item id to quantity: what they carry (inventory, worn items and

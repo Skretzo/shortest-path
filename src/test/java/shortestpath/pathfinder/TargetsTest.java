@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Set;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 public class TargetsTest
 {

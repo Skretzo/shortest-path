@@ -7,9 +7,9 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ItemVariations;
 import shortestpath.Util;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
-import shortestpath.transport.requirement.Unlock;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.Unlock;
 
 /**
  * Parses item requirements from TSV field values.

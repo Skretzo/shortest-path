@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.requirement;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -27,8 +27,8 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /** The bank step's "Pick up" list for the items a path's target needs on arrival. */
 public class BankPickupTargetItemsTest

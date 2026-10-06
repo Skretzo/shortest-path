@@ -7,11 +7,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.Destination;
-import shortestpath.DestinationRequirements;
+import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.ShortestPathConfig;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
-import shortestpath.transport.parser.VarRequirement;
+import shortestpath.requirement.model.VarRequirement;
 
 // This subclass is used to provide mocked implementations of methods from the normal
 // PathfinderConfig. CRUCIAL: Not implemented via Mockito as these methods are called

@@ -1,5 +1,7 @@
 package shortestpath;
 
+import shortestpath.requirement.TeleportationItem;
+
 public class TestShortestPathConfig implements ShortestPathConfig
 {
 	private int calculationCutoff = 5;

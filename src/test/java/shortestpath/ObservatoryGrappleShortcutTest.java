@@ -8,7 +8,7 @@ import org.junit.Test;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.TransportItems;
 
 import java.util.HashMap;
 import java.util.Map;

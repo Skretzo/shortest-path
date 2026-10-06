@@ -11,8 +11,8 @@ import org.junit.Test;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.parser.ItemRequirementParser;
 import shortestpath.transport.parser.SkillRequirementParser;
-import shortestpath.transport.parser.VarRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.VarRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * Comprehensive unit tests for {@link Transport}

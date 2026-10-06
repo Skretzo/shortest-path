@@ -19,7 +19,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
-import shortestpath.TeleportationItem;
+import shortestpath.requirement.TeleportationItem;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

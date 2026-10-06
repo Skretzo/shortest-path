@@ -21,7 +21,7 @@ import shortestpath.transport.parser.QuestParser;
 import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.TransportRecord;
 import shortestpath.transport.parser.TsvParser;
-import shortestpath.transport.parser.VarRequirement;
+import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.parser.VarRequirementParser;
 
 /**
