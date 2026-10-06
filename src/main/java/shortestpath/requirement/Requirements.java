@@ -11,7 +11,7 @@ import net.runelite.api.gameval.ItemID;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.SpiritTreePatchState;
 import shortestpath.WorldPointUtil;
-import shortestpath.leagues.LeagueModeState;
+import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -222,20 +222,20 @@ public final class Requirements
 	 */
 	private boolean isTransportRegionAllowed(Transport transport)
 	{
-		LeagueModeState leagueModeState = context.getLeagueModeState();
-		if (!leagueModeState.isSeasonal())
+		LeagueModeSnapshot leagueMode = context.getLeagueModeSnapshot();
+		if (!leagueMode.isSeasonal())
 		{
 			return true;
 		}
 		LeagueRegion origin = LeagueRegionChecker.getRegion(transport.getOrigin());
-		if (!leagueModeState.isUnlocked(origin))
+		if (!leagueMode.isUnlocked(origin))
 		{
 			return false;
 		}
 		LeagueRegion destination = transport.getRegionOverride() != null
 			? transport.getRegionOverride()
 			: LeagueRegionChecker.getRegion(transport.getDestination());
-		return leagueModeState.isUnlocked(destination);
+		return leagueMode.isUnlocked(destination);
 	}
 
 	// Check if transport type is enabled in config
@@ -297,10 +297,10 @@ public final class Requirements
 			return RejectionReason.NONE; // Not a teleportation item type
 		}
 
-		LeagueModeState leagueModeState = context.getLeagueModeState();
+		LeagueModeSnapshot leagueMode = context.getLeagueModeSnapshot();
 		// Seasonal transports only exist on seasonal worlds; a lingering config
 		// toggle must not leak them into normal worlds.
-		if (TransportType.SEASONAL_TRANSPORTS.equals(type) && !leagueModeState.isSeasonal())
+		if (TransportType.SEASONAL_TRANSPORTS.equals(type) && !leagueMode.isSeasonal())
 		{
 			return RejectionReason.SEASONAL_WORLD;
 		}
@@ -308,7 +308,7 @@ public final class Requirements
 		// Mode-locked items (e.g. the Deadman-only Trinket of fairies) can never
 		// be obtained on other world types, even when the ALL/UNLOCKED settings
 		// bypass the inventory check.
-		if (!leagueModeState.isDeadman() && requiresModeLockedItem(transport, DEADMAN_ONLY_ITEM_IDS))
+		if (!leagueMode.isDeadman() && requiresModeLockedItem(transport, DEADMAN_ONLY_ITEM_IDS))
 		{
 			return RejectionReason.DEADMAN_ITEM;
 		}
@@ -505,10 +505,10 @@ public final class Requirements
 		// the standard 2376. Holding the item (e.g. Max cape) already proves the
 		// player is maxed for the available skills, so skip the total-level check.
 		final int totalLevelIndex = Skill.values().length;
-		LeagueModeState leagueModeState = context.getLeagueModeState();
+		LeagueModeSnapshot leagueMode = context.getLeagueModeSnapshot();
 		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
 		{
-			if (leagueModeState.isSeasonal() && i == totalLevelIndex)
+			if (leagueMode.isSeasonal() && i == totalLevelIndex)
 			{
 				continue;
 			}
