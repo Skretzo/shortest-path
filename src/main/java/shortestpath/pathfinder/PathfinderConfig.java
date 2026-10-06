@@ -19,11 +19,11 @@ import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.DestinationRequirements;
@@ -377,7 +377,7 @@ public class PathfinderConfig
 			}
 			boostedSkillLevelsAndMore[i++] = client.getTotalLevel(); // skill total level
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
-			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayer.QUEST_POINTS); // quest points
+			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
 
 			refreshTransports(evaluationTimeMinutes);
 		}
