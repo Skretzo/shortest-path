@@ -95,6 +95,8 @@ import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.settings.ConfigChange;
+import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -137,7 +139,6 @@ public class ShortestPathPlugin extends Plugin
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|use\\w+|cost\\w+|unlock\\w+)$");
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -577,16 +578,16 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!CONFIG_GROUP.equals(event.getGroup()))
+		ConfigChange change = settings.onConfigChanged(event);
+		if (change == null)
 		{
 			return;
 		}
 
-		settings.onConfigChanged(event);
-
-		if ("drawDebugPanel".equals(event.getKey()))
+		Set<Effect> effects = change.getEffects();
+		if (effects.contains(Effect.SIDE_EFFECT_DEBUG_OVERLAY))
 		{
-			if (config.drawDebugPanel())
+			if (settings.lifecycle().drawDebugPanel())
 			{
 				overlayManager.add(debugOverlayPanel);
 			}
@@ -597,18 +598,15 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		if ("pathfinderBackend".equals(event.getKey()))
+		if (effects.contains(Effect.SIDE_EFFECT_BACKEND_PREP))
 		{
 			prepareExactBackend();
 		}
 
-		// Transport option changed; rerun pathfinding
-		if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find())
+		// A routing input changed; rerun pathfinding
+		if (effects.contains(Effect.ROUTE_INVALIDATING) && pathfinder != null)
 		{
-			if (pathfinder != null)
-			{
-				restartPathfinding("config: " + event.getKey(), pathfinder.getStart(), pathfinder.getTargets());
-			}
+			restartPathfinding("config: " + change.getKey(), pathfinder.getStart(), pathfinder.getTargets());
 		}
 	}
 
