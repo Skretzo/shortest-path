@@ -44,6 +44,7 @@ import shortestpath.requirement.RequirementContext;
 import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
+import shortestpath.settings.Settings;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.Transport;
@@ -103,6 +104,12 @@ public class PathfinderConfig
 	private final Map<Integer, Target> filteredTargets = new LinkedHashMap<>(4);
 	private final Client client;
 	private final ShortestPathConfig config;
+	/**
+	 * The injected settings seam: {@code refresh()} reads effective (override-
+	 * applied) values through it. Harness constructors self-wrap the stub config
+	 * so override reads are a pure passthrough there.
+	 */
+	private final Settings settings;
 	// Centralized transport type enable/disable config
 	private final TransportTypeConfig transportTypeConfig;
 	private Map<Integer, Integer> varbitValues = new HashMap<>();
@@ -229,7 +236,13 @@ public class PathfinderConfig
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
+		this(client, config, Settings.wrap(config));
+	}
+
+	public PathfinderConfig(Client client, ShortestPathConfig config, Settings settings)
+	{
 		this.client = client;
+		this.settings = settings;
 		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
 		this.transportTypeConfig = new TransportTypeConfig(config);
@@ -255,6 +268,7 @@ public class PathfinderConfig
 		Map<Integer, DestinationRequirements> bankRequirements)
 	{
 		this.client = client;
+		this.settings = Settings.wrap(config);
 		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
 		this.transportTypeConfig = new TransportTypeConfig(config);
@@ -368,7 +382,7 @@ public class PathfinderConfig
 		// @Range only bounds the config panel, so also clamp overrides to the same 100-300% range.
 		aStarHeuristicWeight = Math.max(100, Math.min(300,
 			ShortestPathPlugin.override("aStarHeuristicWeight", config.aStarHeuristicWeight()))) / 100.0;
-		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
+		avoidWilderness = settings.effective().avoidWilderness();
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
 		leagueModeState.refresh(playerStateSource);
 
