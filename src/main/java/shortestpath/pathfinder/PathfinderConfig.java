@@ -377,48 +377,48 @@ public class PathfinderConfig
 		pathfinderBackend = config.pathfinderBackend();
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
-		unreachableTargetDistance = ShortestPathPlugin.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
-		collisionAwareBlockedTargets = ShortestPathPlugin.override("collisionAwareBlockedTargets", config.collisionAwareBlockedTargets());
+		unreachableTargetDistance = settings.effective().unreachableTargetDistance();
+		collisionAwareBlockedTargets = settings.effective().collisionAwareBlockedTargets();
 		// @Range only bounds the config panel, so also clamp overrides to the same 100-300% range.
 		aStarHeuristicWeight = Math.max(100, Math.min(300,
-			ShortestPathPlugin.override("aStarHeuristicWeight", config.aStarHeuristicWeight()))) / 100.0;
+			settings.effective().aStarHeuristicWeight())) / 100.0;
 		avoidWilderness = settings.effective().avoidWilderness();
-		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
+		usePoh = settings.effective().usePoh();
 		leagueModeState.refresh(playerStateSource);
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
 		// POH-specific settings
-		usePohFairyRing = ShortestPathPlugin.override("usePohFairyRing", config.usePohFairyRing());
-		usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
-		usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
+		usePohFairyRing = settings.effective().usePohFairyRing();
+		usePohSpiritTree = settings.effective().usePohSpiritTree();
+		usePohObelisk = settings.effective().usePohObelisk();
 		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
 		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
 		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
-		pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
+		pohJewelleryBoxTier = settings.effective().pohJewelleryBoxTier();
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
-		currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
+		currencyThreshold = settings.effective().currencyThreshold();
 		// Banked teleport items are only usable from the bankVisited path state, so a
 		// mode that collects bank contents must also enable bank-path traversal —
 		// otherwise the banked items are gathered but can never be offered.
 		TeleportationItem teleportationItemSetting = transportTypeConfig.getTeleportationItemSetting();
-		includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath())
+		includeBankPath = settings.effective().includeBankPath()
 			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
 			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
-		respawnPrifddinas = ShortestPathPlugin.override("respawnPrifddinas", config.respawnPrifddinas());
+		respawnPrifddinas = settings.effective().respawnPrifddinas();
 
 		// Unlocks come from detected account state or config declarations.
 		Set<Unlock> declaredUnlocks = EnumSet.noneOf(Unlock.class);
-		if (ShortestPathPlugin.override("unlockCanoeAxe", config.unlockCanoeAxe()))
+		if (settings.effective().unlockCanoeAxe())
 		{
 			declaredUnlocks.add(Unlock.CANOE_AXE);
 		}
-		if (ShortestPathPlugin.override("unlockXericsHonour", config.unlockXericsHonour()))
+		if (settings.effective().unlockXericsHonour())
 		{
 			declaredUnlocks.add(Unlock.XERICS_HONOUR);
 		}
-		if (ShortestPathPlugin.override("unlockDragontoothPassage", config.unlockDragontoothPassage()))
+		if (settings.effective().unlockDragontoothPassage())
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
 		}
@@ -433,8 +433,8 @@ public class PathfinderConfig
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
-		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
-		bankVisitCost = ShortestPathPlugin.override("costBankVisit", config.costBankVisit());
+		costConsumableTeleportationItems = settings.effective().costConsumableTeleportationItems();
+		bankVisitCost = settings.effective().costBankVisit();
 
 		// Reset sailing state every refresh: a stale varbit read (e.g. after logging out aboard a
 		// boat) must not keep the search sailing when there is no boat
@@ -444,7 +444,7 @@ public class PathfinderConfig
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
 			isOnSailingBoat = playerStateSource.varbit(VarbitID.SAILING_BOARDED_BOAT) != 0;
-			sailingMoves = isOnSailingBoat && ShortestPathPlugin.override("useSailingMoves", config.useSailingMoves());
+			sailingMoves = isOnSailingBoat && settings.effective().useSailingMoves();
 			// The game stores the base speed in 1/128ths of a tile per tick; a read above any real
 			// boat's speed is a stale or mis-scaled varbit rather than a fast boat — the moves it
 			// would build are so long nothing can sail them — so estimate instead
