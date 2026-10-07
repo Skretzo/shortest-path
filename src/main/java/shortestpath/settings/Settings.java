@@ -482,12 +482,20 @@ public class Settings
 		return base;
 	}
 
-	private void republish()
+	/**
+	 * Rebuild the views off the current override map and swap the published
+	 * slot. Synchronized so a republish that captured map N cannot finish
+	 * after — and silently revert — an {@link #applyOverrides}/{@link
+	 * #clearOverrides} publication of map N+1: the read of
+	 * {@code published.overrides} and the installation of the rebuilt
+	 * snapshot run under the same monitor as every other publication.
+	 */
+	private synchronized void republish()
 	{
 		publish(published == null ? Map.of() : published.overrides);
 	}
 
-	private void publish(Map<String, Object> overrides)
+	private synchronized void publish(Map<String, Object> overrides)
 	{
 		EffectiveConfig effective = new EffectiveConfig(configured, overrides);
 		published = new Published(
