@@ -37,7 +37,8 @@ public class RoutingSnapshotTest
 			false, false, false, false,
 			Set.of(), Set.of(),
 			JewelleryBoxTier.ORNATE,
-			0, includeBankPath);
+			0, includeBankPath,
+			Set.of(), Map.of());
 	}
 
 	@Test
@@ -145,7 +146,7 @@ public class RoutingSnapshotTest
 
 		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
 			false, true, false, true, Set.of(), Set.of(),
-			JewelleryBoxTier.ORNATE, 42, true);
+			JewelleryBoxTier.ORNATE, 42, true, Set.of(), Map.of());
 
 		assertSame("the built policy is the published snapshot", policy, settings.routing());
 		assertTrue(policy.isTransportTypeEnabled(TransportType.TRANSPORT));
