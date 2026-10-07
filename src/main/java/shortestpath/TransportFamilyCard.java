@@ -48,6 +48,9 @@ class TransportFamilyCard extends JPanel
 	private JButton expander;
 	private boolean detailOpen;
 	private boolean searchExpanded;
+	// Set while a config sync mirrors values into the controls, so the
+	// programmatic selection changes do not write back to config.
+	private boolean syncing;
 
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId)
 	{
@@ -96,7 +99,7 @@ class TransportFamilyCard extends JPanel
 		add(detail);
 
 		applyEnabled(isMasterOn());
-		panel.registerSync(keyName, this::syncFromConfig);
+		panel.settings.listen(keyName, this::syncFromConfig);
 	}
 
 	String getKeyName()
@@ -214,26 +217,35 @@ class TransportFamilyCard extends JPanel
 	}
 
 	/**
-	 * Re-reads the master value from the config proxy and mirrors it into the
-	 * master control + dim state. Runs under the panel's echo guard.
+	 * Re-reads the configured master value and mirrors it into the master
+	 * control + dim state. The {@link #syncing} guard stops the programmatic
+	 * selection change from writing back to config.
 	 */
 	void syncFromConfig()
 	{
-		Object value = panel.configValue(keyName);
-		if (masterControl instanceof JCheckBox)
+		Object value = panel.settings.configuredValue(keyName);
+		syncing = true;
+		try
 		{
-			((JCheckBox) masterControl).setSelected(Boolean.TRUE.equals(value));
+			if (masterControl instanceof JCheckBox)
+			{
+				((JCheckBox) masterControl).setSelected(Boolean.TRUE.equals(value));
+			}
+			else if (masterControl instanceof JComboBox && value instanceof Enum)
+			{
+				((JComboBox<?>) masterControl).setSelectedItem(value);
+			}
 		}
-		else if (masterControl instanceof JComboBox && value instanceof Enum)
+		finally
 		{
-			((JComboBox<?>) masterControl).setSelectedItem(value);
+			syncing = false;
 		}
 		applyEnabled(isMasterOn());
 	}
 
 	private JComponent createMasterControl(String description)
 	{
-		Object value = panel.configValue(keyName);
+		Object value = panel.settings.configuredValue(keyName);
 		if (value instanceof Enum)
 		{
 			@SuppressWarnings("unchecked")
@@ -247,9 +259,9 @@ class TransportFamilyCard extends JPanel
 			{
 				if (e.getStateChange() == ItemEvent.SELECTED)
 				{
-					if (!panel.suppressConfigSync)
+					if (!syncing)
 					{
-						panel.writeConfig(keyName, combo.getSelectedItem());
+						panel.settings.write(keyName, combo.getSelectedItem());
 					}
 					applyEnabled(isMasterOn());
 				}
@@ -262,9 +274,9 @@ class TransportFamilyCard extends JPanel
 		checkBox.setToolTipText(ShortestPathPanel.html(description));
 		checkBox.addActionListener(e ->
 		{
-			if (!panel.suppressConfigSync)
+			if (!syncing)
 			{
-				panel.writeConfig(keyName, checkBox.isSelected());
+				panel.settings.write(keyName, checkBox.isSelected());
 			}
 			applyEnabled(checkBox.isSelected());
 		});

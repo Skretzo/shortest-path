@@ -35,6 +35,7 @@ import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 import net.runelite.client.util.SwingUtil;
 import shortestpath.items.OwnedItems;
 import shortestpath.requirement.TeleportRestriction;
+import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
 
 /**
@@ -61,7 +62,7 @@ class RestrictionListPanel extends JPanel
 	private static final int EXPANDER_WIDTH = 18;
 
 	private final ShortestPathPanel panel;
-	private final ShortestPathConfig config;
+	private final Settings settings;
 	private final Client client;
 	private final ClientThread clientThread;
 
@@ -77,20 +78,24 @@ class RestrictionListPanel extends JPanel
 	private boolean itemsDisabled;
 	private boolean ownedOnly;
 	private String lastQuery = "";
+	// Set while a config sync mirrors the blocked/threshold model into the
+	// controls, so the programmatic selection changes do not write back.
+	private boolean syncing;
 
-	RestrictionListPanel(ShortestPathPanel panel, ShortestPathConfig config, Client client,
+	RestrictionListPanel(ShortestPathPanel panel, Settings settings, Client client,
 		ClientThread clientThread)
 	{
 		this.panel = panel;
-		this.config = config;
+		this.settings = settings;
 		this.client = client;
 		this.clientThread = clientThread;
 
 		setLayout(new DynamicGridLayout(0, 1, 0, 3));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		TeleportRestriction.parseBlocked(config.blockedTeleportItems(), blocked, thresholds);
-		itemsDisabled = TeleportationItem.NONE.equals(config.useTeleportationItems());
+		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds);
+		itemsDisabled = TeleportationItem.NONE.equals(
+			settings.configuredValue("useTeleportationItems"));
 
 		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
 		{
@@ -109,8 +114,8 @@ class RestrictionListPanel extends JPanel
 		footer.add(reset, BorderLayout.CENTER);
 
 		// External edits to either key rebuild the checklist state in place.
-		panel.registerSync("blockedTeleportItems", this::syncFromConfig);
-		panel.registerSync("useTeleportationItems", this::syncFromConfig);
+		settings.listen("blockedTeleportItems", this::syncFromConfig);
+		settings.listen("useTeleportationItems", this::syncFromConfig);
 
 		refreshOwnedItems();
 		applyFilter("");
@@ -221,25 +226,40 @@ class RestrictionListPanel extends JPanel
 
 	/**
 	 * Re-reads the hidden CSV key + the teleportation-items mode and mirrors
-	 * them into every row. Runs under the panel's echo guard, so the setValue /
-	 * setSelected calls this triggers never write back to config.
+	 * them into every row. Runs under the {@link #syncing} guard, so the
+	 * setValue / setSelected calls this triggers never write back to config.
 	 */
 	private void syncFromConfig()
 	{
 		blocked.clear();
 		thresholds.clear();
-		TeleportRestriction.parseBlocked(config.blockedTeleportItems(), blocked, thresholds);
-		itemsDisabled = TeleportationItem.NONE.equals(config.useTeleportationItems());
-		for (RestrictionRow row : rows)
+		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds);
+		itemsDisabled = TeleportationItem.NONE.equals(
+			settings.configuredValue("useTeleportationItems"));
+		syncing = true;
+		try
 		{
-			row.syncFromModel();
+			for (RestrictionRow row : rows)
+			{
+				row.syncFromModel();
+			}
+		}
+		finally
+		{
+			syncing = false;
 		}
 		applyFilter(lastQuery);
 	}
 
+	private String blockedCsv()
+	{
+		Object csv = settings.configuredValue("blockedTeleportItems");
+		return csv instanceof String ? (String) csv : "";
+	}
+
 	private void writeCsv()
 	{
-		panel.writeConfig("blockedTeleportItems", TeleportRestriction.toCsv(blocked, thresholds));
+		settings.write("blockedTeleportItems", TeleportRestriction.toCsv(blocked, thresholds));
 	}
 
 	private void confirmReset()
@@ -342,7 +362,7 @@ class RestrictionListPanel extends JPanel
 			{
 				boolean allowed = allow.isSelected();
 				applyAllowedState(allowed);
-				if (!panel.suppressConfigSync)
+				if (!syncing)
 				{
 					if (allowed)
 					{
@@ -400,7 +420,7 @@ class RestrictionListPanel extends JPanel
 			thresholdSpinner.setToolTipText(ShortestPathPanel.html(thresholdTooltip));
 			thresholdSpinner.addChangeListener(e ->
 			{
-				if (panel.suppressConfigSync)
+				if (syncing)
 				{
 					return;
 				}
@@ -467,7 +487,7 @@ class RestrictionListPanel extends JPanel
 
 		/**
 		 * Mirrors the blocked/threshold model into the controls. Safe under
-		 * the echo guard: suppressed listeners skip the config write.
+		 * the syncing guard: suppressed listeners skip the config write.
 		 */
 		void syncFromModel()
 		{
