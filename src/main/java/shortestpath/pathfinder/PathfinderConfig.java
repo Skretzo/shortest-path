@@ -547,8 +547,12 @@ public class PathfinderConfig
 
 		// The policy snapshot is taken only now — after the disableUnless
 		// derivations above — so the chain freezes the effective transport-type
-		// enablement, not the raw config view.
-		RoutingPolicy policy = buildRoutingPolicy();
+		// enablement, not the raw config view. The service builds it from the
+		// same effective values this refresh already computed.
+		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
+			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
+			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
+			currencyThreshold, includeBankPath);
 
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
@@ -585,28 +589,6 @@ public class PathfinderConfig
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
 		transportAvailabilities = new TransportAvailabilities(withoutBank.build(), withBank.build());
-	}
-
-	/**
-	 * Snapshots the routing settings the gate chain reads this refresh: the
-	 * effective transport-type enablement (post-{@code disableUnless}), the
-	 * teleportation-item mode and the POH toggles. Called once per refresh so
-	 * a built chain can never observe later config mutation.
-	 */
-	private RoutingPolicy buildRoutingPolicy()
-	{
-		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
-		for (TransportType type : TransportType.values())
-		{
-			if (transportTypeConfig.isEnabled(type))
-			{
-				enabledTypes.add(type);
-			}
-		}
-		return new RoutingPolicy(enabledTypes, transportTypeConfig.getTeleportationItemSetting(),
-			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
-			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath);
 	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)

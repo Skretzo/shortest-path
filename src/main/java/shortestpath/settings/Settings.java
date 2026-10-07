@@ -2,6 +2,7 @@ package shortestpath.settings;
 
 import java.awt.Color;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
+import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 
 /**
@@ -193,8 +195,16 @@ public class Settings
 	}
 
 	/**
-	 * Stub surface — the policy-build contract is pinned by
-	 * RoutingSnapshotTest before the implementation lands.
+	 * Snapshots the routing settings the gate chain reads this refresh: the
+	 * effective transport-type enablement (post-{@code disableUnless}), the
+	 * teleportation-item mode and the POH toggles. Called once per refresh —
+	 * after the transport-type derivations have run — so a built chain can
+	 * never observe later config mutation. The built policy is published into
+	 * the {@link #routing()} slot before returning, so the snapshot always
+	 * reflects a complete refresh rather than mid-derivation state.
+	 *
+	 * <p>The scalar arguments are the effective values the caller already
+	 * computed this refresh — production never re-reads config live.
 	 */
 	public RoutingPolicy buildRoutingPolicy(TransportTypeConfig transportTypeConfig,
 		boolean usePoh, boolean usePohFairyRing, boolean usePohSpiritTree,
@@ -202,7 +212,21 @@ public class Settings
 		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold, boolean includeBankPath)
 	{
-		return null;
+		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
+		for (TransportType type : TransportType.values())
+		{
+			if (transportTypeConfig.isEnabled(type))
+			{
+				enabledTypes.add(type);
+			}
+		}
+		RoutingPolicy policy = new RoutingPolicy(enabledTypes,
+			transportTypeConfig.getTeleportationItemSetting(),
+			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
+			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
+			currencyThreshold, includeBankPath);
+		publishRouting(policy);
+		return policy;
 	}
 
 	// ---- Panel write/listen/keyed-read contract ---------------------------
