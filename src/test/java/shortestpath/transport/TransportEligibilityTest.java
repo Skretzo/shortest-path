@@ -7,7 +7,7 @@ import java.util.Set;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.ItemVariations;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;

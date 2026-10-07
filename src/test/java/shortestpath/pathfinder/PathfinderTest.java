@@ -42,7 +42,7 @@ import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;

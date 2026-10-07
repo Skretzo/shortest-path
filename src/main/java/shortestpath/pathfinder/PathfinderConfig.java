@@ -30,7 +30,7 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.SpiritTreePatchState;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
