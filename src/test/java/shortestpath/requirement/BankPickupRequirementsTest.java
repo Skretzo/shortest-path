@@ -21,6 +21,7 @@ import shortestpath.pathfinder.TestPathfinderConfig;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
