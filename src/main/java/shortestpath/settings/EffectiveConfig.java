@@ -396,4 +396,49 @@ public final class EffectiveConfig implements ShortestPathConfig
 	{
 		return override(ConfigKey.POST_TRANSPORTS, base.postTransports());
 	}
+
+	@Override
+	public String unreachableText()
+	{
+		return base.unreachableText();
+	}
+
+	@Override
+	public String builtTeleportationBoxes()
+	{
+		return base.builtTeleportationBoxes();
+	}
+
+	@Override
+	public void setBuiltTeleportationBoxes(String content)
+	{
+		base.setBuiltTeleportationBoxes(content);
+	}
+
+	@Override
+	public String builtTeleportationPortalsPoh()
+	{
+		return base.builtTeleportationPortalsPoh();
+	}
+
+	@Override
+	public void setBuiltTeleportationPortalsPoh(String content)
+	{
+		base.setBuiltTeleportationPortalsPoh(content);
+	}
+
+	@Override
+	public String blockedTeleportItems()
+	{
+		Object value = overrides.get(ConfigKey.BLOCKED_TELEPORT_ITEMS.getKey());
+		return value instanceof String ? (String) value : base.blockedTeleportItems();
+	}
+
+	@Override
+	public boolean unlockBalloonLogBasket()
+	{
+		Object value = overrides.get(ConfigKey.UNLOCK_BALLOON_LOG_BASKET.getKey());
+		return value instanceof Boolean ? (boolean) value : base.unlockBalloonLogBasket();
+	}
+
 }
