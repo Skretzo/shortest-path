@@ -337,6 +337,13 @@ public class ShortestPathPlugin extends Plugin
 		{
 			clientToolbar.removeNavigation(navButton);
 			navButton = null;
+		}
+
+		if (panel != null)
+		{
+			// The settings service is a singleton — release this panel's
+			// listener registrations or they accumulate across enable cycles.
+			panel.dispose();
 			panel = null;
 		}
 
