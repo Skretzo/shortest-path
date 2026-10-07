@@ -775,8 +775,7 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public String blockedTeleportItems()
 	{
-		Object value = overrides.get(ConfigKey.BLOCKED_TELEPORT_ITEMS.getKey());
-		return value instanceof String ? (String) value : base.blockedTeleportItems();
+		return base.blockedTeleportItems();
 	}
 
 	@Override
