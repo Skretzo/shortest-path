@@ -25,18 +25,21 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 
 public class PathMapOverlay extends Overlay
 {
 	private final Client client;
 	private final ShortestPathPlugin plugin;
+	private final Settings settings;
 
 	@Inject
-	private PathMapOverlay(Client client, ShortestPathPlugin plugin)
+	private PathMapOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
 	{
 		this.client = client;
 		this.plugin = plugin;
+		this.settings = settings;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.MANUAL);
@@ -49,7 +52,7 @@ public class PathMapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMap)
+		if (!settings.display().drawMap())
 		{
 			return null;
 		}
@@ -63,9 +66,9 @@ public class PathMapOverlay extends Overlay
 		Area worldMapClipArea = getWorldMapClipArea(worldMapRectangle);
 		graphics.setClip(worldMapClipArea);
 
-		if (plugin.drawCollisionMap)
+		if (settings.display().drawCollisionMap())
 		{
-			graphics.setColor(plugin.colourCollisionMap);
+			graphics.setColor(settings.display().colourCollisionMap());
 			int mapWorldPoint = plugin.calculateMapPoint(worldMapRectangle.x, worldMapRectangle.y);
 			int extentX = WorldPointUtil.unpackWorldX(mapWorldPoint);
 			int extentY = WorldPointUtil.unpackWorldY(mapWorldPoint);
@@ -85,7 +88,7 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (plugin.drawTransports)
+		if (settings.display().drawTransports())
 		{
 			PrimitiveIntHashMap<Transport[]> allTransports = plugin.getAllDisplayTransports();
 			PrimitiveIntHashMap<Transport[]> availableTransports = plugin.getTransports();
@@ -132,7 +135,7 @@ public class PathMapOverlay extends Overlay
 			Color colour = plugin.getPathColor();
 			List<PathStep> path = plugin.getActiveSearch().getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
-			if (TileStyle.ARROW_LINE.equals(plugin.pathStyle))
+			if (TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
 			{
 				graphics.setColor(colour);
 				drawArrowPath(graphics, path);
@@ -155,7 +158,7 @@ public class PathMapOverlay extends Overlay
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
-					graphics.setColor(plugin.colourPathCalculating);
+					graphics.setColor(settings.display().colourPathCalculating());
 					drawOnMap(graphics, target, true, cursorPos);
 				}
 			}

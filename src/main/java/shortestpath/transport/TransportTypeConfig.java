@@ -7,8 +7,8 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathConfig;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
+import shortestpath.settings.Settings;
 
 /**
  * Manages the enabled/disabled state and cost thresholds of each TransportType
@@ -47,12 +47,19 @@ public class TransportTypeConfig
 	private final Map<TransportType, Boolean> enabledStates = new EnumMap<>(TransportType.class);
 	private final Map<TransportType, Integer> costThresholds = new EnumMap<>(TransportType.class);
 	private final ShortestPathConfig config;
+	private final Settings settings;
 	@Getter
 	private TeleportationItem teleportationItemSetting;
 
 	public TransportTypeConfig(ShortestPathConfig config)
 	{
+		this(config, Settings.wrap(config));
+	}
+
+	public TransportTypeConfig(ShortestPathConfig config, Settings settings)
+	{
 		this.config = config;
+		this.settings = settings;
 		refresh();
 	}
 
@@ -63,7 +70,7 @@ public class TransportTypeConfig
 	public void refresh()
 	{
 		// Cache the teleportation item setting
-		teleportationItemSetting = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
+		teleportationItemSetting = settings.coerceTeleportationItem("useTeleportationItems", config.useTeleportationItems());
 
 		for (TransportType type : TransportType.values())
 		{
@@ -106,7 +113,7 @@ public class TransportTypeConfig
 		}
 
 		boolean configValue = type.getEnabledGetter().apply(config);
-		return ShortestPathPlugin.override(type, configValue);
+		return settings.coerceBoolean(type.getEnabledKey(), configValue);
 	}
 
 	/**
@@ -122,7 +129,7 @@ public class TransportTypeConfig
 		}
 
 		int configValue = type.getCostGetter().apply(config);
-		return ShortestPathPlugin.override(type, configValue);
+		return settings.coerceInt(type.getCostKey(), configValue);
 	}
 
 	/**

@@ -11,6 +11,7 @@ import shortestpath.ItemVariations;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 

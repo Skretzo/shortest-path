@@ -4,6 +4,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.TransportType;

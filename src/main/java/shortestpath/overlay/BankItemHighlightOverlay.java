@@ -15,22 +15,25 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.requirement.BankPickupRequirements;
+import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
 	private final ItemManager itemManager;
+	private final Settings settings;
 
 	@Inject
-	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
 	{
 		super(client, plugin);
 		this.itemManager = itemManager;
+		this.settings = settings;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.highlightBankPickupItems)
+		if (!settings.display().highlightBankPickupItems())
 		{
 			return null;
 		}
@@ -82,7 +85,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Color highlight = plugin.colourBankPickupHighlight;
+		Color highlight = settings.display().colourBankPickupHighlight();
 		for (Widget item : items)
 		{
 			if (item == null || item.isHidden() || item.getItemId() < 0)

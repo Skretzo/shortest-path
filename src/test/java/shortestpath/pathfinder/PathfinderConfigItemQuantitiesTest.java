@@ -19,8 +19,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,6 +95,39 @@ public class PathfinderConfigItemQuantitiesTest
 
 		assertFalse(varrockTeleportUsable(false));
 		assertTrue(varrockTeleportUsable(true));
+	}
+
+	/**
+	 * includeBankPath is forced on only by the two modes that gather banked
+	 * items; every other mode leaves the configured value alone.
+	 */
+	@Test
+	public void bankCapableModesForceBankPath()
+	{
+		setupInventory();
+		when(bank.getItems()).thenReturn(new Item[0]);
+
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			boolean bankCapable = mode == TeleportationItem.INVENTORY_AND_BANK
+				|| mode == TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE;
+
+			refresh(false, mode);
+
+			assertEquals("includeBankPath for " + mode,
+				bankCapable, pathfinderConfig.isBankPathEnabled());
+		}
+	}
+
+	@Test
+	public void configuredBankPathStaysOnRegardlessOfMode()
+	{
+		setupInventory();
+		when(bank.getItems()).thenReturn(new Item[0]);
+
+		refresh(true, TeleportationItem.NONE);
+
+		assertTrue(pathfinderConfig.isBankPathEnabled());
 	}
 
 	private void setupInventory(Item... items)

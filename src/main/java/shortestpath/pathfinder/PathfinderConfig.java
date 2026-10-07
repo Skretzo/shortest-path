@@ -32,7 +32,7 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.SpiritTreePatchState;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
@@ -43,6 +43,7 @@ import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
 import shortestpath.requirement.TeleportRestriction;
+import shortestpath.settings.Settings;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.Transport;
@@ -96,6 +97,12 @@ public class PathfinderConfig
 	private final List<Integer> filteredTargets = new ArrayList<>(4);
 	private final Client client;
 	private final ShortestPathConfig config;
+	/**
+	 * The injected settings seam: {@code refresh()} reads effective (override-
+	 * applied) values through it. Harness constructors self-wrap the stub config
+	 * so override reads are a pure passthrough there.
+	 */
+	private final Settings settings;
 	// Centralized transport type enable/disable config
 	private final TransportTypeConfig transportTypeConfig;
 	private Map<Integer, Integer> varbitValues = new HashMap<>();
@@ -224,10 +231,16 @@ public class PathfinderConfig
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
+		this(client, config, Settings.wrap(config));
+	}
+
+	public PathfinderConfig(Client client, ShortestPathConfig config, Settings settings)
+	{
 		this.client = client;
+		this.settings = settings;
 		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
-		this.transportTypeConfig = new TransportTypeConfig(config);
+		this.transportTypeConfig = new TransportTypeConfig(config, settings);
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
 		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
@@ -249,9 +262,10 @@ public class PathfinderConfig
 		Map<Integer, DestinationRequirements> bankRequirements)
 	{
 		this.client = client;
+		this.settings = Settings.wrap(config);
 		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
-		this.transportTypeConfig = new TransportTypeConfig(config);
+		this.transportTypeConfig = new TransportTypeConfig(config, settings);
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = flatten(allTransports);
@@ -346,51 +360,51 @@ public class PathfinderConfig
 		pathfinderBackend = config.pathfinderBackend();
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
-		unreachableTargetDistance = ShortestPathPlugin.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+		unreachableTargetDistance = settings.effective().unreachableTargetDistance();
 		// @Range only bounds the config panel, so also clamp overrides to the same 100-300% range.
 		exactHeuristicWeight = Math.max(100, Math.min(300,
-			ShortestPathPlugin.override("exactHeuristicWeight", config.exactHeuristicWeight()))) / 100.0;
-		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
-		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
+			settings.effective().exactHeuristicWeight())) / 100.0;
+		avoidWilderness = settings.effective().avoidWilderness();
+		usePoh = settings.effective().usePoh();
 		leagueModeState.refresh(playerStateSource);
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
 		// POH-specific settings
-		usePohFairyRing = ShortestPathPlugin.override("usePohFairyRing", config.usePohFairyRing());
-		usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
-		usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
+		usePohFairyRing = settings.effective().usePohFairyRing();
+		usePohSpiritTree = settings.effective().usePohSpiritTree();
+		usePohObelisk = settings.effective().usePohObelisk();
 		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
 		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
 		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
-		pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
+		pohJewelleryBoxTier = settings.effective().pohJewelleryBoxTier();
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
-		currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
+		currencyThreshold = settings.effective().currencyThreshold();
 		// Banked teleport items are only usable from the bankVisited path state, so a
 		// mode that collects bank contents must also enable bank-path traversal —
 		// otherwise the banked items are gathered but can never be offered.
 		TeleportationItem teleportationItemSetting = transportTypeConfig.getTeleportationItemSetting();
-		includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath())
+		includeBankPath = settings.effective().includeBankPath()
 			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
 			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
-		respawnPrifddinas = ShortestPathPlugin.override("respawnPrifddinas", config.respawnPrifddinas());
+		respawnPrifddinas = settings.effective().respawnPrifddinas();
 
 		// Declared unlocks: states the game does not expose to the client, toggled in config.
 		Set<Unlock> declaredUnlocks = EnumSet.noneOf(Unlock.class);
-		if (ShortestPathPlugin.override("unlockCanoeAxe", config.unlockCanoeAxe()))
+		if (settings.effective().unlockCanoeAxe())
 		{
 			declaredUnlocks.add(Unlock.CANOE_AXE);
 		}
-		if (ShortestPathPlugin.override("unlockXericsHonour", config.unlockXericsHonour()))
+		if (settings.effective().unlockXericsHonour())
 		{
 			declaredUnlocks.add(Unlock.XERICS_HONOUR);
 		}
-		if (ShortestPathPlugin.override("unlockDragontoothPassage", config.unlockDragontoothPassage()))
+		if (settings.effective().unlockDragontoothPassage())
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
 		}
-		if (ShortestPathPlugin.override("unlockBalloonLogBasket", config.unlockBalloonLogBasket()))
+		if (settings.effective().unlockBalloonLogBasket())
 		{
 			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
 		}
@@ -406,8 +420,8 @@ public class PathfinderConfig
 		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
-		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
-		bankVisitCost = ShortestPathPlugin.override("costBankVisit", config.costBankVisit());
+		costConsumableTeleportationItems = settings.effective().costConsumableTeleportationItems();
+		bankVisitCost = settings.effective().costBankVisit();
 
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
@@ -625,8 +639,12 @@ public class PathfinderConfig
 
 		// The policy snapshot is taken only now — after the disableUnless
 		// derivations above — so the chain freezes the effective transport-type
-		// enablement, not the raw config view.
-		RoutingPolicy policy = buildRoutingPolicy();
+		// enablement, not the raw config view. The service builds it from the
+		// same effective values this refresh already computed.
+		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
+			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
+			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
+			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides);
 
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
@@ -673,27 +691,6 @@ public class PathfinderConfig
 		transportAvailabilities = new TransportAvailabilities(withoutBank.build(), withBank.build());
 	}
 
-	/**
-	 * Snapshots the routing settings the gate chain reads this refresh: the
-	 * effective transport-type enablement (post-{@code disableUnless}), the
-	 * teleportation-item mode and the POH toggles. Called once per refresh so
-	 * a built chain can never observe later config mutation.
-	 */
-	private RoutingPolicy buildRoutingPolicy()
-	{
-		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
-		for (TransportType type : TransportType.values())
-		{
-			if (transportTypeConfig.isEnabled(type))
-			{
-				enabledTypes.add(type);
-			}
-		}
-		return new RoutingPolicy(enabledTypes, transportTypeConfig.getTeleportationItemSetting(),
-			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
-			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides);
-	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)
 	{

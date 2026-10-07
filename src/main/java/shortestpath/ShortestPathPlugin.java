@@ -12,7 +12,6 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,9 +99,10 @@ import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
-import shortestpath.requirement.TeleportationItem;
 import shortestpath.requirement.TransportEligibility;
-import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.settings.ConfigChange;
+import shortestpath.settings.Effect;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -144,10 +144,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|use\\w+|cost\\w+|unlock\\w+|poh\\w+|respawnPrifddinas|unreachableTargetDistanceThreshold|blockedTeleportItems|calculationCutoff)$");
-	// Replaced atomically per plugin message; readers run on threads that
-	// cannot take pathfinderMutex, so they read the volatile reference.
-	private static volatile Map<String, Object> configOverride = Map.of();
+
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	/**
 	 * Bound on the consumption re-plan loop: a path that still fails validation
@@ -158,17 +155,6 @@ public class ShortestPathPlugin extends Plugin
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
-	public boolean drawCollisionMap;
-	public boolean drawMap;
-	public boolean drawMinimap;
-	public boolean drawTiles;
-	public boolean drawTransports;
-	public boolean showTransportInfo;
-	public boolean showBankPickupInfo;
-	public boolean showUnreachableText;
-	public boolean highlightBankPickupItems;
-	public boolean highlightSpellbookSpells;
-	public boolean highlightInventoryItems;
 
 	// Bank pickup cache — invalidated when path, bank, or inventory changes.
 	private shortestpath.requirement.BankPickupRequirements.BankPickupResult bankPickupCache;
@@ -176,20 +162,6 @@ public class ShortestPathPlugin extends Plugin
 	private int bankPickupCacheIndex = -1;
 	private boolean bankPickupDirty = true;
 
-	public Color colourCollisionMap;
-	Color colourPath;
-	public Color colourPathCalculating;
-	Color colourPathUnreachable;
-	public Color colourText;
-	public Color colourTransports;
-	public Color colourBankPickupHighlight;
-	public Color colourTeleportPulse;
-	public boolean showTeleportPulse;
-	public int tileCounterStep;
-	int unreachableTargetDistance;
-	public String unreachableText;
-	public TileCounter showTileCounter;
-	public TileStyle pathStyle;
 	@Inject
 	private Client client;
 	@Getter
@@ -227,6 +199,8 @@ public class ShortestPathPlugin extends Plugin
 	private PortalNexusKeybinds portalNexusKeybinds;
 	@Inject
 	private SpiritTreePatchState spiritTreePatchState;
+	@Inject
+	private Settings settings;
 	@Inject
 	private ClientToolbar clientToolbar;
 	@Inject
@@ -338,84 +312,6 @@ public class ShortestPathPlugin extends Plugin
 		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
 	}
 
-	public static boolean override(String configOverrideKey, boolean defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Boolean)
-			{
-				return (boolean) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	/**
-	 * Override for TransportType enabled state using the config key name stored in the enum.
-	 */
-	public static boolean override(TransportType type, boolean defaultValue)
-	{
-		String key = type.getEnabledKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	/**
-	 * Override for TransportType cost threshold using the config key name stored in the enum.
-	 */
-	public static int override(TransportType type, int defaultValue)
-	{
-		String key = type.getCostKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	public static int override(String configOverrideKey, int defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Integer)
-			{
-				return (int) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
-				if (teleportationItem != null)
-				{
-					return teleportationItem;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-				if (tier != null)
-				{
-					return tier;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
 	@Provides
 	public ShortestPathConfig provideConfig(ConfigManager configManager)
 	{
@@ -426,9 +322,8 @@ public class ShortestPathPlugin extends Plugin
 	protected void startUp()
 	{
 		shutdown = false;
-		cacheConfigValues();
 
-		pathfinderConfig = new PathfinderConfig(client, config);
+		pathfinderConfig = new PathfinderConfig(client, config, settings);
 		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
@@ -467,7 +362,7 @@ public class ShortestPathPlugin extends Plugin
 		portalNexusKeybinds.loadFromProfile();
 		prepareExactBackend();
 
-		panel = new ShortestPathPanel(config, configManager, client, clientThread, itemManager);
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager);
 		navButton = NavigationButton.builder()
 			.tooltip("Shortest Path")
 			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/panel_icon.png"))
@@ -824,21 +719,21 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (pathfinder == null || !pathfinder.isDone())
 		{
-			return colourPathCalculating;
+			return settings.display().colourPathCalculating();
 		}
 
 		List<PathStep> path = pathfinder.getPath();
 		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
 		{
-			return colourPath;
+			return settings.display().colourPath();
 		}
 
 		if (isPathUnreachable())
 		{
-			return colourPathUnreachable;
+			return settings.display().colourPathUnreachable();
 		}
 
-		return colourPath;
+		return settings.display().colourPath();
 	}
 
 	public boolean isPathUnreachable()
@@ -861,27 +756,23 @@ public class ShortestPathPlugin extends Plugin
 			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
 		}
 
-		return closestTargetDistance > unreachableTargetDistance;
+		return closestTargetDistance > settings.display().unreachableTargetDistance();
 	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!CONFIG_GROUP.equals(event.getGroup()))
+		ConfigChange change = settings.onConfigChanged(event);
+		if (change == null)
 		{
 			return;
 		}
 
-		if (panel != null)
-		{
-			panel.onExternalConfigChanged(event);
-		}
+		Set<Effect> effects = change.getEffects();
 
-		cacheConfigValues();
-
-		if ("drawDebugPanel".equals(event.getKey()))
+		if (effects.contains(Effect.SIDE_EFFECT_DEBUG_OVERLAY))
 		{
-			if (config.drawDebugPanel())
+			if (settings.lifecycle().drawDebugPanel())
 			{
 				overlayManager.add(debugOverlayPanel);
 			}
@@ -892,18 +783,15 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		if ("pathfinderBackend".equals(event.getKey()))
+		if (effects.contains(Effect.SIDE_EFFECT_BACKEND_PREP))
 		{
 			prepareExactBackend();
 		}
 
-		// Transport option changed; rerun pathfinding
-		if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find())
+		// A routing input changed; rerun pathfinding
+		if (effects.contains(Effect.ROUTE_INVALIDATING) && pathfinder != null)
 		{
-			if (pathfinder != null)
-			{
-				restartPathfinding("config: " + event.getKey(), pathfinder.getStart(), pathfinder.getTargets());
-			}
+			restartPathfinding("config: " + change.getKey(), pathfinder.getStart(), pathfinder.getTargets());
 		}
 	}
 
@@ -975,15 +863,13 @@ public class ShortestPathPlugin extends Plugin
 			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
 
 			@SuppressWarnings("unchecked")
-			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
-			if (configOverride != null && !configOverride.isEmpty())
+			Map<String, Object> payloadOverrides = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
+			if (payloadOverrides != null && !payloadOverrides.isEmpty())
 			{
 				synchronized (pathfinderMutex)
 				{
-					ShortestPathPlugin.configOverride =
-						Collections.unmodifiableMap(new HashMap<>(configOverride));
+					settings.applyOverrides(payloadOverrides);
 				}
-				cacheConfigValues();
 			}
 
 			if (objStart == null && objTarget == null)
@@ -1027,9 +913,8 @@ public class ShortestPathPlugin extends Plugin
 		{
 			synchronized (pathfinderMutex)
 			{
-				configOverride = Map.of();
+				settings.clearOverrides();
 			}
-			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
 		}
 	}
@@ -1263,7 +1148,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
 			targets = (pathfinder == null) ? Set.of() : new HashSet<>(pathfinder.getTargets());
-			overrides = configOverride.isEmpty() ? null : new HashMap<>(configOverride);
+			overrides = settings.rawOverrides().isEmpty() ? null : new HashMap<>(settings.rawOverrides());
 		}
 
 		Map<String, Object> data = new HashMap<>();
@@ -1309,7 +1194,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		if (override("postTransports", config.postTransports()))
+		if (settings.effective().postTransports())
 		{
 			Map<String, Object> data = new HashMap<>();
 			List<WorldPoint> transportOrigins = new ArrayList<>();
@@ -2092,85 +1977,6 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		return immediateExitInfo;
-	}
-
-	private Color override(String configOverrideKey, Color defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Color)
-			{
-				return (Color) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	private TileCounter override(String configOverrideKey, TileCounter defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TileCounter tileCounter = TileCounter.fromType((String) value);
-				if (tileCounter != null)
-				{
-					return tileCounter;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	private TileStyle override(String configOverrideKey, TileStyle defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TileStyle tileStyle = TileStyle.fromType((String) value);
-				if (tileStyle != null)
-				{
-					return tileStyle;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	private void cacheConfigValues()
-	{
-		drawCollisionMap = override("drawCollisionMap", config.drawCollisionMap());
-		drawMap = override("drawMap", config.drawMap());
-		drawMinimap = override("drawMinimap", config.drawMinimap());
-		drawTiles = override("drawTiles", config.drawTiles());
-		drawTransports = override("drawTransports", config.drawTransports());
-		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
-		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
-		showUnreachableText = override("showUnreachableText", config.showUnreachableText());
-		highlightBankPickupItems = override("highlightBankPickupItems", config.highlightBankPickupItems());
-		highlightSpellbookSpells = override("highlightSpellbookSpells", config.highlightSpellbookSpells());
-		highlightInventoryItems = override("highlightInventoryItems", config.highlightInventoryItems());
-
-		colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
-		colourPath = override("colourPath", config.colourPath());
-		colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
-		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
-		colourText = override("colourText", config.colourText());
-		colourTransports = override("colourTransports", config.colourTransports());
-		colourBankPickupHighlight = override("colourBankPickupHighlight", config.colourBankPickupHighlight());
-		colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
-
-		tileCounterStep = override("tileCounterStep", config.tileCounterStep());
-		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
-		unreachableText = config.unreachableText();
-
-		showTileCounter = override("showTileCounter", config.showTileCounter());
-		pathStyle = override("pathStyle", config.pathStyle());
-		showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
 	}
 
 	private String simplify(String text)

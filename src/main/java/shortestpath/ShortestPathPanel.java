@@ -9,7 +9,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -40,9 +39,7 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Range;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
@@ -54,15 +51,17 @@ import net.runelite.client.ui.components.TitleCaseListCellRenderer;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;
+import shortestpath.settings.Settings;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
 
 /**
  * Sidebar panel hosting the route-affecting plugin options. The keys stay on
  * {@link ShortestPathConfig} as hidden items; this panel is their only rendered
- * surface and reads/writes them through the config proxy and
- * {@link ConfigManager#setConfiguration}, so live recalculation rides the same
- * {@code ConfigChanged} path as a settings-panel edit.
+ * surface and reads/writes them through the {@link Settings} service — keyed
+ * configured reads for control state, {@link Settings#write} for edits and
+ * {@link Settings#listen} for same-key sync — so live recalculation rides the
+ * same {@code ConfigChanged} path as a settings-panel edit.
  */
 public class ShortestPathPanel extends PluginPanel
 {
@@ -93,8 +92,7 @@ public class ShortestPathPanel extends PluginPanel
 		SECTION_RETRACT_ICON = new ImageIcon(ImageUtil.rotateImage(chevron, Math.PI / 2));
 	}
 
-	private final ShortestPathConfig config;
-	private final ConfigManager configManager;
+	final Settings settings;
 	// Held for the restrictions section (per-item sprites, owned-items
 	// detection) so the constructor signature does not churn as cards land.
 	private final Client client;
@@ -106,8 +104,6 @@ public class ShortestPathPanel extends PluginPanel
 	private final JLabel noResultsLabel;
 	private final Map<String, Boolean> sectionExpandStates = new HashMap<>();
 	private final List<Section> sections = new ArrayList<>();
-	private final Map<String, Method> configMethods = new HashMap<>();
-	private final Map<String, List<Runnable>> syncHandlers = new HashMap<>();
 
 	// Every POH control below the master row; dimmed + disabled while the
 	// master is off, same contract as the transport cards.
@@ -116,30 +112,15 @@ public class ShortestPathPanel extends PluginPanel
 	private Section restrictionsSection;
 	private RestrictionListPanel restrictionListPanel;
 
-	boolean suppressConfigSync;
-
-	ShortestPathPanel(ShortestPathConfig config, ConfigManager configManager, Client client,
+	ShortestPathPanel(Settings settings, Client client,
 		ClientThread clientThread, ItemManager itemManager)
 	{
 		super(false);
 
-		this.config = config;
-		this.configManager = configManager;
+		this.settings = settings;
 		this.client = client;
 		this.clientThread = clientThread;
 		this.itemManager = itemManager;
-
-		// Config getters are looked up by @ConfigItem keyName — the method name
-		// is not guaranteed to match (e.g. unreachableTargetDistanceThreshold
-		// is served by unreachableTargetDistance()).
-		for (Method method : ShortestPathConfig.class.getMethods())
-		{
-			ConfigItem item = method.getAnnotation(ConfigItem.class);
-			if (item != null && method.getParameterCount() == 0 && method.getReturnType() != void.class)
-			{
-				configMethods.putIfAbsent(item.keyName(), method);
-			}
-		}
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -348,7 +329,7 @@ public class ShortestPathPanel extends PluginPanel
 	private void buildRestrictionsSection()
 	{
 		restrictionsSection = createSection("restrictions", "Teleport Restrictions", false);
-		restrictionListPanel = new RestrictionListPanel(this, config, client, clientThread);
+		restrictionListPanel = new RestrictionListPanel(this, settings, client, clientThread);
 		restrictionsSection.rows.add(new SearchRow(restrictionListPanel, searchable("teleport restrictions")));
 
 		JCheckBox owned = new JCheckBox("Owned");
@@ -383,7 +364,7 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		Section poh = createSection("poh", "Player-Owned House", false);
 
-		SearchRow master = checkRow("usePoh", () -> applyPohEnabled(isConfigOn("usePoh")));
+		SearchRow master = checkRow("usePoh", () -> applyPohEnabled(settings.configuredBool("usePoh")));
 		poh.rows.add(master);
 
 		pohSubRows.add(checkRow("usePohFairyRing"));
@@ -394,7 +375,7 @@ public class ShortestPathPanel extends PluginPanel
 		pohSubRows.addAll(setSubListRows("pohMountedItems", PohMountedItem.class));
 		poh.rows.addAll(pohSubRows);
 
-		boolean enabled = isConfigOn("usePoh");
+		boolean enabled = settings.configuredBool("usePoh");
 		for (SearchRow row : pohSubRows)
 		{
 			applyRowDisabledState(row.component, enabled);
@@ -428,7 +409,7 @@ public class ShortestPathPanel extends PluginPanel
 	private TransportFamilyCard addFamilyCard(Section section, String useKey, Integer iconItemId,
 		SearchRow... detailRows)
 	{
-		ConfigItem item = configItem(useKey);
+		ConfigItem item = settings.configItem(useKey);
 		String name = item == null ? useKey : item.name();
 		String title = name.startsWith("Use ") ? name.substring("Use ".length()) : name;
 		String description = item == null ? "" : item.description();
@@ -454,7 +435,7 @@ public class ShortestPathPanel extends PluginPanel
 	private SearchRow[] familyThresholdRows(String useKey)
 	{
 		String costKey = "cost" + useKey.substring("use".length());
-		return configMethods.containsKey(costKey) ? new SearchRow[]{spinnerRow(costKey)} : new SearchRow[0];
+		return settings.configItem(costKey) != null ? new SearchRow[]{spinnerRow(costKey)} : new SearchRow[0];
 	}
 
 	private SearchRow restrictionsPointer()
@@ -486,27 +467,24 @@ public class ShortestPathPanel extends PluginPanel
 
 	private SearchRow checkRow(String keyName, Runnable onChange)
 	{
-		ConfigItem item = configItem(keyName);
+		ConfigItem item = settings.configItem(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
 		JCheckBox checkBox = new JCheckBox();
-		checkBox.setSelected(isConfigOn(keyName));
+		checkBox.setSelected(settings.configuredBool(keyName));
 		checkBox.setToolTipText(html(description));
 		checkBox.addActionListener(e ->
 		{
-			if (!suppressConfigSync)
-			{
-				writeConfig(keyName, checkBox.isSelected());
-			}
+			settings.write(keyName, checkBox.isSelected());
 			if (onChange != null)
 			{
 				onChange.run();
 			}
 		});
-		registerSync(keyName, () ->
+		settings.listen(keyName, () ->
 		{
-			checkBox.setSelected(isConfigOn(keyName));
+			checkBox.setSelected(settings.configuredBool(keyName));
 			if (onChange != null)
 			{
 				onChange.run();
@@ -525,13 +503,13 @@ public class ShortestPathPanel extends PluginPanel
 
 	private SearchRow spinnerRow(String keyName)
 	{
-		ConfigItem item = configItem(keyName);
+		ConfigItem item = settings.configItem(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
-		Object value = configValue(keyName);
+		Object value = settings.configuredValue(keyName);
 		int current = value instanceof Number ? ((Number) value).intValue() : 0;
-		Range range = rangeOf(keyName);
+		Range range = settings.rangeOf(keyName);
 		int min = range == null ? 0 : Math.max(0, range.min());
 		Integer max = range == null || range.max() == Integer.MAX_VALUE ? null : range.max();
 
@@ -539,16 +517,10 @@ public class ShortestPathPanel extends PluginPanel
 			Integer.valueOf(current), Integer.valueOf(min), max, Integer.valueOf(1)));
 		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(SPINNER_FIELD_WIDTH);
 		spinner.setToolTipText(html(description));
-		spinner.addChangeListener(e ->
+		spinner.addChangeListener(e -> settings.write(keyName, spinner.getValue()));
+		settings.listen(keyName, () ->
 		{
-			if (!suppressConfigSync)
-			{
-				writeConfig(keyName, spinner.getValue());
-			}
-		});
-		registerSync(keyName, () ->
-		{
-			Object updated = configValue(keyName);
+			Object updated = settings.configuredValue(keyName);
 			if (updated instanceof Number)
 			{
 				spinner.setValue(((Number) updated).intValue());
@@ -567,11 +539,11 @@ public class ShortestPathPanel extends PluginPanel
 
 	private SearchRow comboRow(String keyName)
 	{
-		ConfigItem item = configItem(keyName);
+		ConfigItem item = settings.configItem(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
-		Object value = configValue(keyName);
+		Object value = settings.configuredValue(keyName);
 		@SuppressWarnings("unchecked")
 		Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
 		JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
@@ -581,12 +553,12 @@ public class ShortestPathPanel extends PluginPanel
 		combo.setToolTipText(html(description));
 		combo.addItemListener(e ->
 		{
-			if (e.getStateChange() == ItemEvent.SELECTED && !suppressConfigSync)
+			if (e.getStateChange() == ItemEvent.SELECTED)
 			{
-				writeConfig(keyName, combo.getSelectedItem());
+				settings.write(keyName, combo.getSelectedItem());
 			}
 		});
-		registerSync(keyName, () -> combo.setSelectedItem(configValue(keyName)));
+		settings.listen(keyName, () -> combo.setSelectedItem(settings.configuredValue(keyName)));
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -605,7 +577,7 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	private <E extends Enum<E>> List<SearchRow> setSubListRows(String keyName, Class<E> type)
 	{
-		ConfigItem item = configItem(keyName);
+		ConfigItem item = settings.configItem(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
@@ -626,22 +598,19 @@ public class ShortestPathPanel extends PluginPanel
 			checkBox.setToolTipText(html(description));
 			checkBox.addActionListener(e ->
 			{
-				if (!suppressConfigSync)
+				EnumSet<E> updated = EnumSet.noneOf(type);
+				updated.addAll(currentSet(keyName, type));
+				if (checkBox.isSelected())
 				{
-					EnumSet<E> updated = EnumSet.noneOf(type);
-					updated.addAll(currentSet(keyName, type));
-					if (checkBox.isSelected())
-					{
-						updated.add(constant);
-					}
-					else
-					{
-						updated.remove(constant);
-					}
-					writeConfig(keyName, updated);
+					updated.add(constant);
 				}
+				else
+				{
+					updated.remove(constant);
+				}
+				settings.write(keyName, updated);
 			});
-			registerSync(keyName, () -> checkBox.setSelected(currentSet(keyName, type).contains(constant)));
+			settings.listen(keyName, () -> checkBox.setSelected(currentSet(keyName, type).contains(constant)));
 
 			JPanel row = new JPanel(new BorderLayout());
 			row.setOpaque(false);
@@ -654,98 +623,22 @@ public class ShortestPathPanel extends PluginPanel
 
 	// ---- Config access ------------------------------------------------------
 
-	private ConfigItem configItem(String keyName)
-	{
-		Method method = configMethods.get(keyName);
-		return method == null ? null : method.getAnnotation(ConfigItem.class);
-	}
-
-	private Range rangeOf(String keyName)
-	{
-		Method method = configMethods.get(keyName);
-		return method == null ? null : method.getAnnotation(Range.class);
-	}
-
 	private String configName(String keyName)
 	{
-		ConfigItem item = configItem(keyName);
+		ConfigItem item = settings.configItem(keyName);
 		return item == null ? keyName : item.name();
-	}
-
-	Object configValue(String keyName)
-	{
-		Method method = configMethods.get(keyName);
-		if (method == null)
-		{
-			return null;
-		}
-		try
-		{
-			return method.invoke(config);
-		}
-		catch (ReflectiveOperationException e)
-		{
-			return null;
-		}
-	}
-
-	private boolean isConfigOn(String keyName)
-	{
-		return Boolean.TRUE.equals(configValue(keyName));
 	}
 
 	@SuppressWarnings("unchecked")
 	private <E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
 	{
 		Set<E> set = EnumSet.noneOf(type);
-		Object value = configValue(keyName);
-		if (value instanceof Set)
+		Set<?> value = settings.configuredSet(keyName);
+		if (value != null)
 		{
 			set.addAll((Set<E>) value);
 		}
 		return set;
-	}
-
-	void registerSync(String keyName, Runnable handler)
-	{
-		syncHandlers.computeIfAbsent(keyName, k -> new ArrayList<>()).add(handler);
-	}
-
-	/**
-	 * All panel-originated config writes funnel through here so the echo guard
-	 * covers every control. {@code setConfiguration} posts {@code ConfigChanged}
-	 * synchronously; the guard stops the panel's own listener from reacting to
-	 * its own write.
-	 */
-	void writeConfig(String keyName, Object value)
-	{
-		suppressConfigSync = true;
-		try
-		{
-			configManager.setConfiguration(ShortestPathPlugin.CONFIG_GROUP, keyName, value);
-			// The ConfigChanged echo is suppressed for panel writes, so
-			// same-key listeners (e.g. the restrictions list watching the
-			// teleportation-items mode) are synced here instead.
-			syncControl(keyName);
-		}
-		finally
-		{
-			suppressConfigSync = false;
-		}
-	}
-
-	/**
-	 * Handles config edits made elsewhere (the settings panel) while this panel
-	 * is open. Updates only the affected control in place so scroll and expand
-	 * state survive the sync.
-	 */
-	void onExternalConfigChanged(ConfigChanged event)
-	{
-		if (suppressConfigSync || !ShortestPathPlugin.CONFIG_GROUP.equals(event.getGroup()))
-		{
-			return;
-		}
-		SwingUtilities.invokeLater(() -> syncControl(event.getKey()));
 	}
 
 	/**
@@ -758,27 +651,6 @@ public class ShortestPathPanel extends PluginPanel
 		if (restrictionListPanel != null)
 		{
 			restrictionListPanel.refreshOwnedItems();
-		}
-	}
-
-	private void syncControl(String keyName)
-	{
-		List<Runnable> handlers = syncHandlers.get(keyName);
-		if (handlers == null)
-		{
-			return;
-		}
-		suppressConfigSync = true;
-		try
-		{
-			for (Runnable handler : handlers)
-			{
-				handler.run();
-			}
-		}
-		finally
-		{
-			suppressConfigSync = false;
 		}
 	}
 
