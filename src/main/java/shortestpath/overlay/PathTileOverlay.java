@@ -37,6 +37,7 @@ import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.ExactPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements;
@@ -375,6 +376,19 @@ public class PathTileOverlay extends Overlay
 			if (plugin.isPathUnreachable() && plugin.showUnreachableText)
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
+			}
+		}
+
+		if (plugin.drawClickPoints && plugin.getActiveSearch() instanceof ExactPathfinder)
+		{
+			ExactPathfinder exact = (ExactPathfinder) plugin.getActiveSearch();
+			if (exact.isDone() && !exact.isShowingProvisionalPath())
+			{
+				List<PathStep> path = exact.getPath();
+				for (int index : exact.getClickPoints())
+				{
+					drawTile(graphics, path.get(index).getPackedPosition(), new Color(255, 0, 255, 150), -1, true);
+				}
 			}
 		}
 
