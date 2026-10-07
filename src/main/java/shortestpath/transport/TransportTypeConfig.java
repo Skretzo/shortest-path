@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.Settings;
 
 /**
  * Manages the enabled/disabled state and cost thresholds of each TransportType
@@ -47,12 +48,19 @@ public class TransportTypeConfig
 	private final Map<TransportType, Boolean> enabledStates = new EnumMap<>(TransportType.class);
 	private final Map<TransportType, Integer> costThresholds = new EnumMap<>(TransportType.class);
 	private final ShortestPathConfig config;
+	private final Settings settings;
 	@Getter
 	private TeleportationItem teleportationItemSetting;
 
 	public TransportTypeConfig(ShortestPathConfig config)
 	{
+		this(config, Settings.wrap(config));
+	}
+
+	public TransportTypeConfig(ShortestPathConfig config, Settings settings)
+	{
 		this.config = config;
+		this.settings = settings;
 		refresh();
 	}
 

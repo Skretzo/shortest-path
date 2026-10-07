@@ -3,6 +3,7 @@ package shortestpath.transport;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
 import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.Settings;
 
 /**
  * Tests for TransportTypeConfig.
@@ -456,6 +458,119 @@ public class TransportTypeConfigTest
 				}
 			}
 		}
+	}
+
+	/**
+	 * Payload overrides stored on the injected Settings must reach the
+	 * transport-type enabled and cost reads through their per-type keys.
+	 */
+	@Test
+	public void testPayloadOverridesReachEnabledAndCost()
+	{
+		setupDefaultMocks();
+		Settings settings = Settings.wrap(config);
+		settings.applyOverrides(Map.of(
+			"useCanoes", false,
+			"costBoats", 42));
+
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config, settings);
+
+		assertFalse("CANOE should be disabled by the useCanoes payload",
+			typeConfig.isEnabled(TransportType.CANOE));
+		assertEquals("BOAT cost should read the costBoats payload",
+			42, typeConfig.getCost(TransportType.BOAT));
+	}
+
+	/**
+	 * A payload for the shared {@code useQuetzals} key must reach both the
+	 * QUETZAL and the QUETZAL_WHISTLE rows, which carry the same enabledKey.
+	 */
+	@Test
+	public void testSharedQuetzalEnabledKeyReachesBothRows()
+	{
+		setupDefaultMocks();
+		Settings settings = Settings.wrap(config);
+		settings.applyOverrides(Map.of("useQuetzals", false));
+
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config, settings);
+
+		assertFalse(typeConfig.isEnabled(TransportType.QUETZAL));
+		assertFalse(typeConfig.isEnabled(TransportType.QUETZAL_WHISTLE));
+	}
+
+	/**
+	 * QUETZAL_WHISTLE reads its own {@code costQuetzalWhistle} key even though
+	 * its cost getter is the shared {@code costQuetzals}.
+	 */
+	@Test
+	public void testQuetzalWhistleCostKeyReachesOnlyTheWhistleRow()
+	{
+		setupDefaultMocks();
+		Settings settings = Settings.wrap(config);
+		settings.applyOverrides(Map.of("costQuetzalWhistle", 7));
+
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config, settings);
+
+		assertEquals("QUETZAL_WHISTLE cost should read the costQuetzalWhistle payload",
+			7, typeConfig.getCost(TransportType.QUETZAL_WHISTLE));
+		assertEquals("QUETZAL cost must not see the whistle-only key",
+			0, typeConfig.getCost(TransportType.QUETZAL));
+	}
+
+	/**
+	 * The {@code costQuetzals} key belongs to the QUETZAL row and must not leak
+	 * into the whistle row despite the shared cost getter.
+	 */
+	@Test
+	public void testQuetzalCostKeyDoesNotReachTheWhistleRow()
+	{
+		setupDefaultMocks();
+		Settings settings = Settings.wrap(config);
+		settings.applyOverrides(Map.of("costQuetzals", 8));
+
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config, settings);
+
+		assertEquals("QUETZAL cost should read the costQuetzals payload",
+			8, typeConfig.getCost(TransportType.QUETZAL));
+		assertEquals("QUETZAL_WHISTLE must not see the costQuetzals key",
+			0, typeConfig.getCost(TransportType.QUETZAL_WHISTLE));
+	}
+
+	/**
+	 * With both quetzal cost keys in the payload, each row resolves the value
+	 * stored under its own key.
+	 */
+	@Test
+	public void testBothQuetzalCostKeysResolveToTheirOwnRows()
+	{
+		setupDefaultMocks();
+		Settings settings = Settings.wrap(config);
+		settings.applyOverrides(Map.of(
+			"costQuetzals", 8,
+			"costQuetzalWhistle", 7));
+
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config, settings);
+
+		assertEquals(8, typeConfig.getCost(TransportType.QUETZAL));
+		assertEquals(7, typeConfig.getCost(TransportType.QUETZAL_WHISTLE));
+	}
+
+	/**
+	 * The {@code useTeleportationItems} payload value arrives as a display
+	 * string and must coerce through TeleportationItem.fromType.
+	 */
+	@Test
+	public void testTeleportationItemOverrideReachesTheSetting()
+	{
+		setupDefaultMocks();
+		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		Settings settings = Settings.wrap(config);
+		settings.applyOverrides(Map.of("useTeleportationItems", "Inventory and Bank"));
+
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config, settings);
+
+		assertEquals(TeleportationItem.INVENTORY_AND_BANK,
+			typeConfig.getTeleportationItemSetting());
 	}
 
 	/**
