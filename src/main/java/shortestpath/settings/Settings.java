@@ -3,7 +3,6 @@ package shortestpath.settings;
 import com.google.gson.reflect.TypeToken;
 
 import java.awt.Color;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -14,7 +13,6 @@ import javax.swing.SwingUtilities;
 import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.*;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.pathfinder.PathfinderBackend;
@@ -113,26 +111,23 @@ public class Settings
 	}
 
 	/**
-	 * keyName → declaring getter, for the {@code @ConfigItem}/{@code @Range}
-	 * annotation lookups controls use. Method-reference getters cannot hand
-	 * back their declaring method, so the keyed annotation table resolves it
-	 * once at class load; the {@code parameterCount}/{@code returnType}
-	 * filter picks the getter out of each getter/setter keyName pair.
+	 * keyName → config-item descriptor, resolved through the config manager's
+	 * descriptor surface ({@link ConfigManager#getConfigDescriptor}) so the
+	 * {@link ConfigItem}/{@link Range} metadata controls use comes from
+	 * RuneLite's own resolution, not plugin-side reflection. Empty on the
+	 * wrap seam, where no manager exists — {@link #configItem} and
+	 * {@link #rangeOf} then return {@code null}.
 	 */
-	private static final Map<String, Method> ITEM_METHODS = itemMethods();
+	private final Map<String, ConfigItemDescriptor> itemDescriptors;
 
-	private static Map<String, Method> itemMethods()
+	private static Map<String, ConfigItemDescriptor> indexItems(ConfigDescriptor descriptor)
 	{
-		Map<String, Method> methods = new HashMap<>();
-		for (Method method : ShortestPathConfig.class.getMethods())
+		Map<String, ConfigItemDescriptor> items = new HashMap<>();
+		for (ConfigItemDescriptor item : descriptor.getItems())
 		{
-			ConfigItem item = method.getAnnotation(ConfigItem.class);
-			if (item != null && method.getParameterCount() == 0 && method.getReturnType() != void.class)
-			{
-				methods.putIfAbsent(item.keyName(), method);
-			}
+			items.putIfAbsent(item.key(), item);
 		}
-		return methods;
+		return items;
 	}
 
 	/**
@@ -348,8 +343,8 @@ public class Settings
 	 */
 	public ConfigItem configItem(String key)
 	{
-		Method method = ITEM_METHODS.get(key);
-		return method == null ? null : method.getAnnotation(ConfigItem.class);
+		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
+		return descriptor == null ? null : descriptor.getItem();
 	}
 
 	/**
@@ -358,8 +353,8 @@ public class Settings
 	 */
 	public Range rangeOf(String key)
 	{
-		Method method = ITEM_METHODS.get(key);
-		return method == null ? null : method.getAnnotation(Range.class);
+		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
+		return descriptor == null ? null : descriptor.getRange();
 	}
 
 	private void fireListeners(String key)
