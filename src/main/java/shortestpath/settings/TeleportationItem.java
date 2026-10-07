@@ -1,4 +1,4 @@
-package shortestpath.requirement;
+package shortestpath.settings;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

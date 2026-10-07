@@ -12,6 +12,7 @@ import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.requirement.model.VarRequirement;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.TransportType;

@@ -19,6 +19,7 @@ import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.requirement.model.VarRequirement;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 
 /**
