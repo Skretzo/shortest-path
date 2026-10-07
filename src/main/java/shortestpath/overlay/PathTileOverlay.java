@@ -41,6 +41,7 @@ import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
+import shortestpath.settings.Settings;
 
 public class PathTileOverlay extends Overlay
 {
@@ -52,15 +53,17 @@ public class PathTileOverlay extends Overlay
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private final ItemManager itemManager;
+	private final Settings settings;
 	private int playerTileLabelOffset = 0;
 	private boolean teleportPulseDrawn = false;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.itemManager = itemManager;
+		this.settings = settings;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -203,7 +206,7 @@ public class PathTileOverlay extends Overlay
 			renderCollisionMap(graphics);
 		}
 
-		if (plugin.drawTiles && plugin.getActiveSearch() != null && plugin.getActiveSearch().getPath() != null)
+		if (settings.display().drawTiles() && plugin.getActiveSearch() != null && plugin.getActiveSearch().getPath() != null)
 		{
 			Color colorCalculating = new Color(
 				plugin.colourPathCalculating.getRed(),

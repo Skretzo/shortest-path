@@ -98,6 +98,7 @@ import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.TeleportationItem;
 import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -217,6 +218,8 @@ public class ShortestPathPlugin extends Plugin
 	private PortalNexusKeybinds portalNexusKeybinds;
 	@Inject
 	private SpiritTreePatchState spiritTreePatchState;
+	@Inject
+	private Settings settings;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -381,7 +384,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		cacheConfigValues();
 
-		pathfinderConfig = new PathfinderConfig(client, config);
+		pathfinderConfig = new PathfinderConfig(client, config, settings);
 		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
@@ -690,6 +693,7 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
+		settings.onConfigChanged(event);
 		cacheConfigValues();
 
 		if ("drawDebugPanel".equals(event.getKey()))
@@ -795,6 +799,7 @@ public class ShortestPathPlugin extends Plugin
 				{
 					ShortestPathPlugin.configOverride =
 						Collections.unmodifiableMap(new HashMap<>(configOverride));
+					settings.applyOverrides(configOverride);
 				}
 				cacheConfigValues();
 			}
@@ -841,6 +846,7 @@ public class ShortestPathPlugin extends Plugin
 			synchronized (pathfinderMutex)
 			{
 				configOverride = Map.of();
+				settings.clearOverrides();
 			}
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
@@ -1067,7 +1073,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
 			targets = (pathfinder == null) ? Set.of() : new HashSet<>(pathfinder.getTargets());
-			overrides = configOverride.isEmpty() ? null : new HashMap<>(configOverride);
+			overrides = settings.rawOverrides().isEmpty() ? null : new HashMap<>(settings.rawOverrides());
 		}
 
 		Map<String, Object> data = new HashMap<>();
@@ -1113,7 +1119,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		if (override("postTransports", config.postTransports()))
+		if (settings.effective().postTransports())
 		{
 			Map<String, Object> data = new HashMap<>();
 			List<WorldPoint> transportOrigins = new ArrayList<>();
