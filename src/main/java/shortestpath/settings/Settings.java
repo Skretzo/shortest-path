@@ -173,6 +173,33 @@ public class Settings
 		routing = policy;
 	}
 
+	// ---- Panel write/listen/keyed-read contract ---------------------------
+	// Stub surface — the contract is pinned by SettingsWriteListenTest before
+	// the implementation lands.
+
+	public void write(String key, Object value)
+	{
+	}
+
+	public void listen(String key, Runnable listener)
+	{
+	}
+
+	public Object configuredValue(String key)
+	{
+		return null;
+	}
+
+	public boolean configuredBool(String key)
+	{
+		return false;
+	}
+
+	public Set<?> configuredSet(String key)
+	{
+		return null;
+	}
+
 	/**
 	 * Apply a plugin-message {@code "config"} payload as the runtime override
 	 * map. The map is copied and stored immutably; an empty (or null) payload
