@@ -397,7 +397,7 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
 		}
-		if (settings.effective().unlockBalloonLogBasket())
+		if (effective.unlockBalloonLogBasket())
 		{
 			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
 		}
