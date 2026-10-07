@@ -51,6 +51,30 @@ public class TransportItems
 	}
 
 	/**
+	 * Whether every ANDed requirement retains an unblocked OR alternative —
+	 * the transport-set gate for player-declared per-item restrictions. A
+	 * transport drops out of consideration only when some requirement's last
+	 * alternative is blocked; blocking one variant of an OR group leaves the
+	 * rest routable. Satisfaction and ownership are separate questions
+	 * answered by {@link #isSatisfiedBy}.
+	 */
+	public boolean survivesBlockedItems(Set<Integer> blockedIds)
+	{
+		if (blockedIds.isEmpty())
+		{
+			return true;
+		}
+		for (ItemRequirement req : requirements)
+		{
+			if (!req.hasUnblockedAlternative(blockedIds))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
 	 * Merges two TransportItems, combining all requirements from both.
 	 * If either is null, returns the other.
 	 */
