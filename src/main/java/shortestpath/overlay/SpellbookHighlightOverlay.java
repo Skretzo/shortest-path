@@ -17,6 +17,7 @@ import net.runelite.api.widgets.Widget;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -77,16 +78,19 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 		SPELL_WIDGET_IDS.put("Battlefront Teleport", InterfaceID.MagicSpellbook.TELEPORT_BATTLEFRONT);
 	}
 
+	private final Settings settings;
+
 	@Inject
-	public SpellbookHighlightOverlay(Client client, ShortestPathPlugin plugin)
+	public SpellbookHighlightOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
 	{
 		super(client, plugin);
+		this.settings = settings;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.highlightSpellbookSpells)
+		if (!settings.display().highlightSpellbookSpells())
 		{
 			return null;
 		}
@@ -116,7 +120,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 		}
 
 		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
-		Color highlight = plugin.colourBankPickupHighlight;
+		Color highlight = settings.display().colourBankPickupHighlight();
 
 		for (Transport transport : transports)
 		{
