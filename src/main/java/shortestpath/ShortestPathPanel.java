@@ -483,17 +483,27 @@ public class ShortestPathPanel extends PluginPanel
 		JCheckBox checkBox = new JCheckBox();
 		checkBox.setSelected(settings.configuredBool(keyName));
 		checkBox.setToolTipText(html(description));
+		boolean[] syncing = new boolean[1];
 		checkBox.addActionListener(e ->
 		{
-			settings.write(keyName, checkBox.isSelected());
-			if (onChange != null)
+			if (!syncing[0])
 			{
-				onChange.run();
+				// write()'s synchronous listener delivery runs onChange —
+				// calling it here too would invoke it twice per click.
+				settings.write(keyName, checkBox.isSelected());
 			}
 		});
 		registerConfigListener(keyName, () ->
 		{
-			checkBox.setSelected(settings.configuredBool(keyName));
+			syncing[0] = true;
+			try
+			{
+				checkBox.setSelected(settings.configuredBool(keyName));
+			}
+			finally
+			{
+				syncing[0] = false;
+			}
 			if (onChange != null)
 			{
 				onChange.run();
