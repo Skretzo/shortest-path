@@ -404,13 +404,28 @@ public class Settings
 	 */
 	public boolean coerceBoolean(String key, boolean base)
 	{
-		Object value = published.overrides.get(key);
+		return coerceBoolean(key, base, published.overrides);
+	}
+
+	/**
+	 * Snapshot variant: coerce against an overrides map the caller already
+	 * captured, so a run of coercions observes one publication rather than
+	 * re-reading the volatile slot per call.
+	 */
+	public boolean coerceBoolean(String key, boolean base, Map<String, Object> overrides)
+	{
+		Object value = overrides.get(key);
 		return value instanceof Boolean ? (boolean) value : base;
 	}
 
 	public int coerceInt(String key, int base)
 	{
-		Object value = published.overrides.get(key);
+		return coerceInt(key, base, published.overrides);
+	}
+
+	public int coerceInt(String key, int base, Map<String, Object> overrides)
+	{
+		Object value = overrides.get(key);
 		return value instanceof Integer ? (int) value : base;
 	}
 
@@ -422,27 +437,34 @@ public class Settings
 
 	public TeleportationItem coerceTeleportationItem(String key, TeleportationItem base)
 	{
-		return coerceStringEnum(key, TeleportationItem::fromType, base);
+		return coerceTeleportationItem(key, base, published.overrides);
+	}
+
+	public TeleportationItem coerceTeleportationItem(String key, TeleportationItem base,
+		Map<String, Object> overrides)
+	{
+		return coerceStringEnum(key, TeleportationItem::fromType, base, overrides);
 	}
 
 	public JewelleryBoxTier coerceJewelleryBoxTier(String key, JewelleryBoxTier base)
 	{
-		return coerceStringEnum(key, JewelleryBoxTier::fromType, base);
+		return coerceStringEnum(key, JewelleryBoxTier::fromType, base, published.overrides);
 	}
 
 	public TileCounter coerceTileCounter(String key, TileCounter base)
 	{
-		return coerceStringEnum(key, TileCounter::fromType, base);
+		return coerceStringEnum(key, TileCounter::fromType, base, published.overrides);
 	}
 
 	public TileStyle coerceTileStyle(String key, TileStyle base)
 	{
-		return coerceStringEnum(key, TileStyle::fromType, base);
+		return coerceStringEnum(key, TileStyle::fromType, base, published.overrides);
 	}
 
-	private <T> T coerceStringEnum(String key, Function<String, T> fromType, T base)
+	private <T> T coerceStringEnum(String key, Function<String, T> fromType, T base,
+		Map<String, Object> overrides)
 	{
-		Object value = published.overrides.get(key);
+		Object value = overrides.get(key);
 		if (value instanceof String)
 		{
 			T parsed = fromType.apply((String) value);

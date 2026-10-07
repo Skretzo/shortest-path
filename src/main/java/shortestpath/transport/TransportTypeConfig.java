@@ -69,13 +69,19 @@ public class TransportTypeConfig
 	 */
 	public void refresh()
 	{
+		// One captured publication for the whole pass: the coerce reads below
+		// draw from this map instead of re-reading the published slot per
+		// call, so a republish landing mid-refresh cannot split the snapshot.
+		Map<String, Object> overrides = settings.rawOverrides();
+
 		// Cache the teleportation item setting
-		teleportationItemSetting = settings.coerceTeleportationItem("useTeleportationItems", config.useTeleportationItems());
+		teleportationItemSetting = settings.coerceTeleportationItem("useTeleportationItems",
+			config.useTeleportationItems(), overrides);
 
 		for (TransportType type : TransportType.values())
 		{
-			enabledStates.put(type, getEnabledState(type));
-			int cost = getCostThreshold(type);
+			enabledStates.put(type, getEnabledState(type, overrides));
+			int cost = getCostThreshold(type, overrides);
 			costThresholds.put(type, cost);
 		}
 	}
@@ -89,7 +95,7 @@ public class TransportTypeConfig
 	 * Special handling for teleportation item types which are controlled by
 	 * the TeleportationItem enum rather than a simple boolean.
 	 */
-	private boolean getEnabledState(TransportType type)
+	private boolean getEnabledState(TransportType type, Map<String, Object> overrides)
 	{
 		// Special handling for teleportation item types
 		if (type == TransportType.TELEPORTATION_ITEM || type == TransportType.TELEPORTATION_BOX)
@@ -113,14 +119,14 @@ public class TransportTypeConfig
 		}
 
 		boolean configValue = type.getEnabledGetter().apply(config);
-		return settings.coerceBoolean(type.getEnabledKey(), configValue);
+		return settings.coerceBoolean(type.getEnabledKey(), configValue, overrides);
 	}
 
 	/**
 	 * Determines the cost threshold for a transport type.
 	 * Uses the costGetter function from TransportType to look up the config value.
 	 */
-	private int getCostThreshold(TransportType type)
+	private int getCostThreshold(TransportType type, Map<String, Object> overrides)
 	{
 		// No cost getter means no additional cost
 		if (!type.hasCostGetter())
@@ -129,7 +135,7 @@ public class TransportTypeConfig
 		}
 
 		int configValue = type.getCostGetter().apply(config);
-		return settings.coerceInt(type.getCostKey(), configValue);
+		return settings.coerceInt(type.getCostKey(), configValue, overrides);
 	}
 
 	/**
