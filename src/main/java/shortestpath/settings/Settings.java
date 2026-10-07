@@ -267,10 +267,25 @@ public class Settings
 	 * inside {@link #write} for write-originated changes and on the EDT for
 	 * external {@link ConfigChanged} events. Multiple listeners per key are
 	 * supported and run in registration order.
+	 *
+	 * <p>Returns a handle that unregisters this listener when run. The
+	 * service is a singleton, so a caller whose lifecycle ends — a panel
+	 * rebuilt on every plugin enable — must drop its registrations or the
+	 * dead component graph stays reachable and keeps firing on each
+	 * subsequent change.
 	 */
-	public void listen(String key, Runnable listener)
+	public Runnable listen(String key, Runnable listener)
 	{
-		listeners.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>()).add(listener);
+		List<Runnable> keyed = listeners.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>());
+		keyed.add(listener);
+		return () ->
+		{
+			keyed.remove(listener);
+			if (keyed.isEmpty())
+			{
+				listeners.remove(key, keyed);
+			}
+		};
 	}
 
 	/**
