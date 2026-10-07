@@ -148,7 +148,7 @@ public class RoutingSnapshotTest
 			JewelleryBoxTier.ORNATE, 42, true);
 
 		assertSame("the built policy is the published snapshot", policy, settings.routing());
-		assertTrue(policy.isTransportTypeEnabled(TransportType.CANOE));
+		assertTrue(policy.isTransportTypeEnabled(TransportType.TRANSPORT));
 		assertFalse("disableUnless-derived state is frozen into the build",
 			policy.isTransportTypeEnabled(TransportType.BOAT));
 		assertTrue(policy.usePohFairyRing());
