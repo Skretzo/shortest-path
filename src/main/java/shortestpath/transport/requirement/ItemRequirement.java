@@ -42,11 +42,29 @@ public class ItemRequirement
 
 		public Branch(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity, Unlock unlock)
 		{
-			this.itemIds = itemIds;
-			this.staffIds = staffIds;
-			this.offhandIds = offhandIds;
+			this.itemIds = itemIds == null ? null : itemIds.clone();
+			this.staffIds = staffIds == null ? null : staffIds.clone();
+			this.offhandIds = offhandIds == null ? null : offhandIds.clone();
 			this.quantity = quantity;
 			this.unlock = unlock;
+		}
+
+		// The array fields are shared requirement data; hand out copies so a
+		// stray write through a getter cannot corrupt it for every config.
+
+		public int[] getItemIds()
+		{
+			return itemIds == null ? null : itemIds.clone();
+		}
+
+		public int[] getStaffIds()
+		{
+			return staffIds == null ? null : staffIds.clone();
+		}
+
+		public int[] getOffhandIds()
+		{
+			return offhandIds == null ? null : offhandIds.clone();
 		}
 
 		/**
@@ -156,6 +174,24 @@ public class ItemRequirement
 			this.offhandIds = Util.concatenate(offhandIdArrays);
 		}
 		this.quantity = maxQuantity;
+	}
+
+	// The array fields are the requirement's own state; hand out copies so a
+	// stray write through a getter cannot corrupt shared requirement data.
+
+	public int[] getItemIds()
+	{
+		return itemIds == null ? null : itemIds.clone();
+	}
+
+	public int[] getStaffIds()
+	{
+		return staffIds == null ? null : staffIds.clone();
+	}
+
+	public int[] getOffhandIds()
+	{
+		return offhandIds == null ? null : offhandIds.clone();
 	}
 
 	/**

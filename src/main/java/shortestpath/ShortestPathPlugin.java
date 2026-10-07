@@ -12,6 +12,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -136,7 +137,9 @@ public class ShortestPathPlugin extends Plugin
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|use\\w+|cost\\w+|unlock\\w+)$");
-	private static final Map<String, Object> configOverride = new HashMap<>(50);
+	// Replaced atomically per plugin message; readers run on threads that
+	// cannot take pathfinderMutex, so they read the volatile reference.
+	private static volatile Map<String, Object> configOverride = Map.of();
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -458,7 +461,12 @@ public class ShortestPathPlugin extends Plugin
 			if (pathfinder != null)
 			{
 				pathfinder.cancel();
-				pathfinderFuture.cancel(true);
+				// pathfinderFuture is null when a submit threw before the
+				// assignment (e.g. executor shutting down mid-restart).
+				if (pathfinderFuture != null)
+				{
+					pathfinderFuture.cancel(true);
+				}
 				debugState.searchCancelled(pathfinder);
 			}
 			// The displayed path wins over pending queries: it refreshes the transport
@@ -608,8 +616,10 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return true;
 		}
+		boolean sameLocation = lastLocation == location;
+		lastLocation = location;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			config.recalculateDistance() < 0 || lastLocation == (lastLocation = location))
+			config.recalculateDistance() < 0 || sameLocation)
 		{
 			return true;
 		}
@@ -710,13 +720,16 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		GameState previousGameState = lastGameState;
+		GameState previousPreviousGameState = lastLastGameState;
+		lastLastGameState = lastGameState;
+		lastGameState = event.getGameState();
+
 		if (pathfinderConfig == null
-			|| !GameState.LOGGING_IN.equals(lastLastGameState)
-			|| !GameState.LOADING.equals(lastLastGameState = lastGameState)
-			|| !GameState.LOGGED_IN.equals(lastGameState = event.getGameState()))
+			|| !GameState.LOGGING_IN.equals(previousPreviousGameState)
+			|| !GameState.LOADING.equals(previousGameState)
+			|| !GameState.LOGGED_IN.equals(lastGameState))
 		{
-			lastLastGameState = lastGameState;
-			lastGameState = event.getGameState();
 			return;
 		}
 
@@ -777,11 +790,8 @@ public class ShortestPathPlugin extends Plugin
 			{
 				synchronized (pathfinderMutex)
 				{
-					ShortestPathPlugin.configOverride.clear();
-					for (String key : configOverride.keySet())
-					{
-						ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
-					}
+					ShortestPathPlugin.configOverride =
+						Collections.unmodifiableMap(new HashMap<>(configOverride));
 				}
 				cacheConfigValues();
 			}
@@ -827,7 +837,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			synchronized (pathfinderMutex)
 			{
-				configOverride.clear();
+				configOverride = Map.of();
 			}
 			cacheConfigValues();
 			setTarget(WorldPointUtil.UNDEFINED);
@@ -1976,8 +1986,9 @@ public class ShortestPathPlugin extends Plugin
 		}
 		else
 		{
-			return client.isMenuOpen()
-				? calculateMapPoint(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
+			Point menuPoint = lastMenuOpenedPoint;
+			return client.isMenuOpen() && menuPoint != null
+				? calculateMapPoint(menuPoint.getX(), menuPoint.getY())
 				: calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
 		}
 		return WorldPointUtil.UNDEFINED;
@@ -2033,8 +2044,23 @@ public class ShortestPathPlugin extends Plugin
 				worldMapPointManager.add(marker);
 			}
 
-			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
-			lastLocation = start;
+			// fromLocalInstance needs a live player; during a world hop it is
+			// null, so fall back to the running search's start and bail when
+			// there is nothing to anchor to.
+			int start;
+			if (localPlayer != null)
+			{
+				start = WorldPointUtil.fromLocalInstance(client, localPlayer);
+				lastLocation = start;
+			}
+			else if (startPointSet && pathfinder != null)
+			{
+				start = pathfinder.getStart();
+			}
+			else
+			{
+				return;
+			}
 			if (startPointSet && pathfinder != null)
 			{
 				start = pathfinder.getStart();

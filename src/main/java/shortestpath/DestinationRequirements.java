@@ -19,7 +19,6 @@ public final class DestinationRequirements
 	 */
 	public static final DestinationRequirements EMPTY = new DestinationRequirements();
 
-	@Getter
 	private final int[] skillLevels;
 	@Getter
 	private final Set<Quest> quests;
@@ -27,6 +26,15 @@ public final class DestinationRequirements
 	private final Set<VarRequirement> varbits;
 	@Getter
 	private final Set<VarRequirement> varPlayers;
+
+	/**
+	 * The stored array is shared requirement data; hand out a copy so a
+	 * stray write cannot corrupt it.
+	 */
+	public int[] getSkillLevels()
+	{
+		return skillLevels.clone();
+	}
 
 	private DestinationRequirements()
 	{
@@ -42,7 +50,7 @@ public final class DestinationRequirements
 		Set<VarRequirement> varbits,
 		Set<VarRequirement> varPlayers)
 	{
-		this.skillLevels = skillLevels != null ? skillLevels : new int[Skill.values().length + 3];
+		this.skillLevels = skillLevels != null ? skillLevels.clone() : new int[Skill.values().length + 3];
 		this.quests = quests != null ? quests : Collections.emptySet();
 		this.varbits = varbits != null ? varbits : Collections.emptySet();
 		this.varPlayers = varPlayers != null ? varPlayers : Collections.emptySet();
