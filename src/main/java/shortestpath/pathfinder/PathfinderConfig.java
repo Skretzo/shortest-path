@@ -32,6 +32,7 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.SpiritTreePatchState;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
+import shortestpath.settings.EffectiveConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
@@ -357,54 +358,58 @@ public class PathfinderConfig
 
 	public void refresh()
 	{
+		// One captured publication for the whole refresh: every effective
+		// read below draws from this snapshot, so a republish landing
+		// mid-refresh cannot mix fields from two publications.
+		EffectiveConfig effective = settings.effective();
 		pathfinderBackend = config.pathfinderBackend();
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
-		unreachableTargetDistance = settings.effective().unreachableTargetDistance();
+		unreachableTargetDistance = effective.unreachableTargetDistance();
 		// @Range only bounds the config panel, so also clamp overrides to the same 100-300% range.
 		exactHeuristicWeight = Math.max(100, Math.min(300,
-			settings.effective().exactHeuristicWeight())) / 100.0;
-		avoidWilderness = settings.effective().avoidWilderness();
-		usePoh = settings.effective().usePoh();
+			effective.exactHeuristicWeight())) / 100.0;
+		avoidWilderness = effective.avoidWilderness();
+		usePoh = effective.usePoh();
 		leagueModeState.refresh(playerStateSource);
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
 		// POH-specific settings
-		usePohFairyRing = settings.effective().usePohFairyRing();
-		usePohSpiritTree = settings.effective().usePohSpiritTree();
-		usePohObelisk = settings.effective().usePohObelisk();
+		usePohFairyRing = effective.usePohFairyRing();
+		usePohSpiritTree = effective.usePohSpiritTree();
+		usePohObelisk = effective.usePohObelisk();
 		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
 		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
 		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
-		pohJewelleryBoxTier = settings.effective().pohJewelleryBoxTier();
+		pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
-		currencyThreshold = settings.effective().currencyThreshold();
+		currencyThreshold = effective.currencyThreshold();
 		// Banked teleport items are only usable from the bankVisited path state, so a
 		// mode that collects bank contents must also enable bank-path traversal —
 		// otherwise the banked items are gathered but can never be offered.
 		TeleportationItem teleportationItemSetting = transportTypeConfig.getTeleportationItemSetting();
-		includeBankPath = settings.effective().includeBankPath()
+		includeBankPath = effective.includeBankPath()
 			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
 			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
-		respawnPrifddinas = settings.effective().respawnPrifddinas();
+		respawnPrifddinas = effective.respawnPrifddinas();
 
 		// Declared unlocks: states the game does not expose to the client, toggled in config.
 		Set<Unlock> declaredUnlocks = EnumSet.noneOf(Unlock.class);
-		if (settings.effective().unlockCanoeAxe())
+		if (effective.unlockCanoeAxe())
 		{
 			declaredUnlocks.add(Unlock.CANOE_AXE);
 		}
-		if (settings.effective().unlockXericsHonour())
+		if (effective.unlockXericsHonour())
 		{
 			declaredUnlocks.add(Unlock.XERICS_HONOUR);
 		}
-		if (settings.effective().unlockDragontoothPassage())
+		if (effective.unlockDragontoothPassage())
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
 		}
-		if (settings.effective().unlockBalloonLogBasket())
+		if (effective.unlockBalloonLogBasket())
 		{
 			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
 		}
@@ -420,8 +425,8 @@ public class PathfinderConfig
 		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
-		costConsumableTeleportationItems = settings.effective().costConsumableTeleportationItems();
-		bankVisitCost = settings.effective().costBankVisit();
+		costConsumableTeleportationItems = effective.costConsumableTeleportationItems();
+		bankVisitCost = effective.costBankVisit();
 
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
