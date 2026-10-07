@@ -19,17 +19,20 @@ import shortestpath.PrimitiveIntList;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.settings.Settings;
 
 public class PathMinimapOverlay extends Overlay
 {
 	private final Client client;
 	private final ShortestPathPlugin plugin;
+	private final Settings settings;
 
 	@Inject
-	private PathMinimapOverlay(Client client, ShortestPathPlugin plugin)
+	private PathMinimapOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
 	{
 		this.client = client;
 		this.plugin = plugin;
+		this.settings = settings;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
@@ -52,7 +55,7 @@ public class PathMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMinimap || plugin.getActiveSearch() == null)
+		if (!settings.display().drawMinimap() || plugin.getActiveSearch() == null)
 		{
 			return null;
 		}
@@ -84,7 +87,7 @@ public class PathMinimapOverlay extends Overlay
 		{
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{
-				drawOnMinimap(graphics, target, plugin.colourPathCalculating);
+				drawOnMinimap(graphics, target, settings.display().colourPathCalculating());
 			}
 		}
 

@@ -19,6 +19,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.client.events.ConfigChanged;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,7 +42,10 @@ import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
+import shortestpath.settings.ConfigChange;
+import shortestpath.settings.Effect;
+import shortestpath.settings.Settings;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
@@ -206,17 +210,28 @@ public class PathfinderTest
 	}
 
 	@Test
-	public void unlockOptionKeysMatchTransportOptionsRegex() throws Exception
+	public void unlockOptionKeysInvalidateTheRoute()
 	{
 		// An unlock* config key must retrigger pathfinding like other transport options.
-		java.lang.reflect.Field field = ShortestPathPlugin.class.getDeclaredField("TRANSPORT_OPTIONS_REGEX");
-		field.setAccessible(true);
-		java.util.regex.Pattern pattern = (java.util.regex.Pattern) field.get(null);
-		assertTrue(pattern.matcher("unlockCanoeAxe").matches());
-		assertTrue(pattern.matcher("unlockXericsHonour").matches());
-		assertTrue(pattern.matcher("unlockDragontoothPassage").matches());
-		assertFalse(pattern.matcher("unlock").matches());
-		assertFalse(pattern.matcher("myUnlockCanoeAxe").matches());
+		Settings settings = Settings.wrap(config);
+		for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage"})
+		{
+			ConfigChanged event = new ConfigChanged();
+			event.setGroup("shortestpath");
+			event.setKey(key);
+			ConfigChange change = settings.onConfigChanged(event);
+			assertNotNull(key + " is in-group and must produce a fact", change);
+			assertTrue(key + " must invalidate a running route",
+				change.getEffects().contains(Effect.ROUTE_INVALIDATING));
+		}
+
+		// A look-alike key outside the table never invalidates.
+		ConfigChanged event = new ConfigChanged();
+		event.setGroup("shortestpath");
+		event.setKey("myUnlockCanoeAxe");
+		ConfigChange change = settings.onConfigChanged(event);
+		assertNotNull(change);
+		assertTrue("unknown keys carry no effects", change.getEffects().isEmpty());
 	}
 
 	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";

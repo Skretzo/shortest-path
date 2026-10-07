@@ -1,6 +1,6 @@
 package shortestpath;
 
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 
 public class TestShortestPathConfig implements ShortestPathConfig
 {
