@@ -2,7 +2,6 @@ package shortestpath.settings;
 
 import java.awt.Color;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -201,7 +200,8 @@ public class Settings
 	 * Consume a config-change event: republish the view snapshots off the
 	 * updated base values and return a fact describing the change for the
 	 * shell to act on. Returns {@code null} for events outside this config
-	 * group.
+	 * group; an in-group key with no registry row produces a fact carrying
+	 * an empty effect set.
 	 */
 	public ConfigChange onConfigChanged(ConfigChanged event)
 	{
@@ -215,20 +215,8 @@ public class Settings
 
 	private static Set<Effect> effectsOf(String key)
 	{
-		if ("drawDebugPanel".equals(key))
-		{
-			return EnumSet.of(Effect.SIDE_EFFECT_DEBUG_OVERLAY);
-		}
-		if ("pathfinderBackend".equals(key))
-		{
-			return EnumSet.of(Effect.SIDE_EFFECT_BACKEND_PREP, Effect.ROUTE_INVALIDATING);
-		}
 		ConfigKey row = ConfigKey.forKey(key);
-		if (row != null && row.isRouteInvalidating())
-		{
-			return EnumSet.of(Effect.ROUTE_INVALIDATING);
-		}
-		return EnumSet.of(Effect.DISPLAY_ONLY);
+		return row == null ? Set.of() : row.getEffects();
 	}
 
 	/**
