@@ -51,7 +51,7 @@ public class CollisionMap
 
 	public boolean n(int x, int y, int z)
 	{
-		return get(x, y, z, 0);
+		return get(x, y, z, SplitFlagMap.FLAG_NORTH);
 	}
 
 	public boolean s(int x, int y, int z)
@@ -61,12 +61,36 @@ public class CollisionMap
 
 	public boolean e(int x, int y, int z)
 	{
-		return get(x, y, z, 1);
+		return get(x, y, z, SplitFlagMap.FLAG_EAST);
 	}
 
 	public boolean w(int x, int y, int z)
 	{
 		return e(x - 1, y, z);
+	}
+
+	// The wall flags record whether a structural boundary (a wall or door
+	// edge) sits on the edge, regardless of whether the edge is currently
+	// passable. They stay unset on edges that are blocked only by an
+	// object's footprint or a tile-level floor/seal block.
+	public boolean wallN(int x, int y, int z)
+	{
+		return get(x, y, z, SplitFlagMap.FLAG_WALL_NORTH);
+	}
+
+	public boolean wallS(int x, int y, int z)
+	{
+		return wallN(x, y - 1, z);
+	}
+
+	public boolean wallE(int x, int y, int z)
+	{
+		return get(x, y, z, SplitFlagMap.FLAG_WALL_EAST);
+	}
+
+	public boolean wallW(int x, int y, int z)
+	{
+		return wallE(x - 1, y, z);
 	}
 
 	private boolean ne(int x, int y, int z)

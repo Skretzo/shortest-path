@@ -22,9 +22,6 @@ public class Pathfinder implements ActiveSearch
 	// goals, so this bounds the enclosure scan; deeper rings only contribute
 	// transport destinations.
 	private static final int ENCLOSURE_SCAN_RADIUS = 4;
-	// Ring penalty when choosing the anchoring candidate: each step further
-	// from the target must buy at least this much extra enclosure to win.
-	private static final int ANCHOR_RING_WEIGHT = 3;
 
 	private final PathfinderStats stats;
 	@Getter
@@ -187,34 +184,32 @@ public class Pathfinder implements ActiveSearch
 		}
 	}
 
-	// A blocked tile's flags report every direction blocked, so wall edges
-	// around the target cannot be detected on the tile itself -- but they
-	// show up indirectly: tiles on the target's side of a wall (its room or
-	// corridor) reach fewer tiles in a few steps than tiles on open ground.
-	// Every walkable tile in the nearest rings is scored that way, and the
-	// candidate with the smallest score anchors the target's side: flooding
-	// from it stays inside the same wall-bounded component, which marks
-	// which neighbours are actually on the target's side. Scoring deeper
-	// rings matters for targets hemmed in by other objects, where every
-	// adjacent tile lies outside the room and only ring 2+ tiles sit inside
-	// it. Transport destinations ignore walls entirely; they are scanned
-	// per Chebyshev ring and count as equally near goals.
+	// A blocked tile's movement flags report every direction blocked, so the
+	// target's own edges cannot tell apart a wall and the object's footprint
+	// -- but the boundary flags still record which edges carry a wall or
+	// door, and those exclude neighbours outright. Where
+	// several sides remain, tiles on the target's side of a wall (its room or
+	// corridor) reach fewer tiles in a few steps than tiles on open ground:
+	// the most enclosed candidate of the innermost ring anchors the side, and
+	// flooding from it stays inside the same wall-bounded component. Scanning
+	// deeper rings matters only for targets hemmed in by other objects, where
+	// every adjacent tile lies outside the room and only ring 2+ tiles sit
+	// inside it. Transport destinations ignore walls entirely; they are
+	// scanned per Chebyshev ring and count as equally near goals.
 	private Set<Integer> expandingConnectedGoals(int target, int radius)
 	{
 		final int x = WorldPointUtil.unpackWorldX(target);
 		final int y = WorldPointUtil.unpackWorldY(target);
 		final int z = WorldPointUtil.unpackWorldPlane(target);
 		final int scan = Math.min(radius, ENCLOSURE_SCAN_RADIUS);
-		// Walkable candidates in the scanned box: {packed, ring, reach}.
+		// Walkable candidates in the innermost non-empty ring: {packed, reach}.
 		final ArrayList<int[]> candidates = new ArrayList<>();
-		// The candidate marking the target's side is the most enclosed one,
-		// but rings further out must be progressively more enclosed to win:
-		// a distant pocket can outscore the room the object actually sits
-		// in, while adjacency should win ties.
+		// The candidate marking the target's side is the most enclosed one
+		// of the nearest ring with any candidate at all.
 		int anchor = -1;
 		int anchorRing = 0;
-		int anchorScore = Integer.MAX_VALUE;
-		for (int d = 1; d <= scan; d++)
+		int anchorReach = Integer.MAX_VALUE;
+		for (int d = 1; d <= scan && anchorRing == 0; d++)
 		{
 			for (int dx = -d; dx <= d; dx++)
 			{
@@ -228,27 +223,34 @@ public class Pathfinder implements ActiveSearch
 					final int ny = y + dy;
 					final int packed = WorldPointUtil.packWorldPoint(nx, ny, z);
 					// The player's own tile is never a useful goal: ending on
-					// the first dequeued node yields an invisible path.
-					if (packed == start || map.isBlocked(nx, ny, z))
+					// the first dequeued node yields an invisible path. A
+					// neighbour behind a structural boundary edge -- a wall
+					// or door rather than the object's own footprint -- is
+					// on the wrong side of the target.
+					if (packed == start || map.isBlocked(nx, ny, z)
+						|| (d == 1 && wallSeparated(x, y, nx, ny, z)))
 					{
 						continue;
 					}
 					final int reach = localReach(packed);
-					candidates.add(new int[] {packed, d, reach});
-					final int score = reach + ANCHOR_RING_WEIGHT * d;
-					if (score < anchorScore)
+					candidates.add(new int[] {packed, reach});
+					if (reach < anchorReach)
 					{
-						anchorScore = score;
+						anchorReach = reach;
 						anchor = packed;
-						anchorRing = d;
 					}
 				}
 			}
+			if (!candidates.isEmpty())
+			{
+				anchorRing = d;
+			}
 		}
 		// Tiles that share the anchor's side of the target's walls. The
-		// flood is bounded by the anchor's own ring so it cannot leak
-		// through a far door or around a wall end and pull in candidates
-		// that are merely reachable rather than on the same side.
+		// flood is bounded by the anchor's own ring and does not cross
+		// boundary edges, so it cannot leak through a far door or around a
+		// wall end and pull in candidates that are merely reachable rather
+		// than on the same side.
 		final Set<Integer> sameSide = new HashSet<>();
 		if (anchor != -1)
 		{
@@ -257,11 +259,15 @@ public class Pathfinder implements ActiveSearch
 			queue.add(anchor);
 			while (!queue.isEmpty())
 			{
-				for (int step : map.ordinaryWalkingNeighbors(queue.poll()))
+				final int from = queue.poll();
+				final int fx = WorldPointUtil.unpackWorldX(from);
+				final int fy = WorldPointUtil.unpackWorldY(from);
+				for (int step : map.ordinaryWalkingNeighbors(from))
 				{
 					final int sx = WorldPointUtil.unpackWorldX(step);
 					final int sy = WorldPointUtil.unpackWorldY(step);
-					if (Math.max(Math.abs(sx - x), Math.abs(sy - y)) <= anchorRing && sameSide.add(step))
+					if (Math.max(Math.abs(sx - x), Math.abs(sy - y)) <= anchorRing
+						&& !wallSeparated(fx, fy, sx, sy, z) && sameSide.add(step))
 					{
 						queue.add(step);
 					}
@@ -271,16 +277,45 @@ public class Pathfinder implements ActiveSearch
 		final Set<Integer> goals = new HashSet<>();
 		for (int d = 1; d <= radius && goals.isEmpty(); d++)
 		{
-			for (int[] candidate : candidates)
+			if (d == anchorRing)
 			{
-				if (candidate[1] == d && sameSide.contains(candidate[0]))
+				for (int[] candidate : candidates)
 				{
-					goals.add(candidate[0]);
+					if (sameSide.contains(candidate[0]))
+					{
+						goals.add(candidate[0]);
+					}
 				}
 			}
 			addTransportRingGoals(goals, x, y, z, d);
 		}
 		return goals;
+	}
+
+	// The boundary flag for the edge between two cardinally adjacent tiles
+	// is stored once, on the lower tile -- mirroring the movement flags.
+	private boolean wallBetween(int ax, int ay, int bx, int by, int z)
+	{
+		if (bx != ax)
+		{
+			return map.wallE(Math.min(ax, bx), ay, z);
+		}
+		return map.wallN(ax, Math.min(ay, by), z);
+	}
+
+	// A cardinal neighbour shares exactly one edge with the target; a
+	// diagonal neighbour counts as separated only when both flanking
+	// cardinal routes to it cross a boundary edge.
+	private boolean wallSeparated(int x, int y, int nx, int ny, int z)
+	{
+		final int dx = nx - x;
+		final int dy = ny - y;
+		if (dx == 0 || dy == 0)
+		{
+			return wallBetween(x, y, nx, ny, z);
+		}
+		return (wallBetween(x, y, x + dx, y, z) || wallBetween(x + dx, y, nx, ny, z))
+			&& (wallBetween(x, y, x, y + dy, z) || wallBetween(x, y + dy, nx, ny, z));
 	}
 
 	// Counts the distinct tiles reachable from packedPoint within
