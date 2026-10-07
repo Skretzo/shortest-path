@@ -9,6 +9,10 @@ public class CollisionMap
 	// Enum.values() makes copies every time which hurts performance in the hotpath
 	private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 
+	// Sailing moves cost the distance they sail (SailingMoves.length), plus a thousandth of a tile per change of
+	// heading, so that of the routes that are equally short the one with the fewest, longest legs wins.
+	private static final int SAILING_COST_PER_TURN = 1;
+
 	private final SplitFlagMap collisionData;
 	// This is only safe if pathfinding is single-threaded. Holds the ids of the neighbour nodes
 	// appended to the NodeGraph during the most recent getNeighbors call.
@@ -191,11 +195,88 @@ public class CollisionMap
 		return n(x, y, z) || s(x, y, z) || e(x, y, z) || w(x, y, z);
 	}
 
-	public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness, NodeGraph graph)
+	/**
+	 * Whether a straight sailing move from tile (x, y, z) by (dx, dy) tiles only crosses open tiles: every tile the
+	 * line between the tile centres passes through must be one walking step from the previous one, so a move never
+	 * passes over a blocked tile (such as the blocked strip along coastlines). Where the line passes exactly through a
+	 * tile corner, both ways around the corner must be open.
+	 */
+	public boolean canSailLine(int x, int y, int z, int dx, int dy)
+	{
+		final int nx = Math.abs(dx);
+		final int ny = Math.abs(dy);
+		final int sx = Integer.signum(dx);
+		final int sy = Integer.signum(dy);
+		// From a blocked tile, such as one a moored boat sits on, any open tile next to it can be entered, as when
+		// walking. Every tile after the first is entered through an open side, so it isn't blocked either.
+		boolean fromBlocked = isBlocked(x, y, z);
+		int cx = x;
+		int cy = y;
+		int ix = 0;
+		int iy = 0;
+		while (ix < nx || iy < ny)
+		{
+			// Compares where the line crosses the next vertical and horizontal tile edges
+			long decision = (long) (1 + 2 * ix) * ny - (long) (1 + 2 * iy) * nx;
+			if (decision == 0)
+			{
+				if (!canCross(cx, cy, z, sx, 0, fromBlocked) || !canCross(cx + sx, cy, z, 0, sy, false)
+					|| !canCross(cx, cy, z, 0, sy, fromBlocked) || !canCross(cx, cy + sy, z, sx, 0, false))
+				{
+					return false;
+				}
+				cx += sx;
+				cy += sy;
+				ix++;
+				iy++;
+			}
+			else if (decision < 0)
+			{
+				if (!canCross(cx, cy, z, sx, 0, fromBlocked))
+				{
+					return false;
+				}
+				cx += sx;
+				ix++;
+			}
+			else
+			{
+				if (!canCross(cx, cy, z, 0, sy, fromBlocked))
+				{
+					return false;
+				}
+				cy += sy;
+				iy++;
+			}
+			fromBlocked = false;
+		}
+		return true;
+	}
+
+	// Whether a boat can cross from tile (x, y, z) into the tile next to it (ex, ey) away, one of which is 0: through
+	// the open side between them, or from a blocked tile into any open one
+	private boolean canCross(int x, int y, int z, int ex, int ey, boolean fromBlocked)
+	{
+		if (fromBlocked)
+		{
+			return !isBlocked(x + ex, y + ey, z);
+		}
+		if (ey == 0)
+		{
+			return ex < 0 ? w(x, y, z) : e(x, y, z);
+		}
+		return ey < 0 ? s(x, y, z) : n(x, y, z);
+	}
+
+	/**
+	 * @param sailing the sailing search's moves and targets, or {@code null} to walk
+	 */
+	public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel,
+		boolean targetInWilderness, NodeGraph graph, SailingSearch sailing)
 	{
 		if (graph.isTile(node))
 		{
-			return getTileNeighbors(node, visited, config, wildernessLevel, graph);
+			return getTileNeighbors(node, visited, config, wildernessLevel, graph, sailing);
 		}
 		else
 		{
@@ -207,7 +288,9 @@ public class CollisionMap
 	//      * Neighbouring tiles we can walk to
 	//      * A transition into banked state, if the current tile is a bank.
 	//      * Transition into abstract global teleport nodes, if we haven't tried that yet.
-	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph)
+	// On a boat, the sailing search gets only the tiles it can sail to instead.
+	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel,
+		NodeGraph graph, SailingSearch sailing)
 	{
 		final int packedPosition = graph.packedPosition(node);
 		final int x = WorldPointUtil.unpackWorldX(packedPosition);
@@ -215,6 +298,14 @@ public class CollisionMap
 		final int z = WorldPointUtil.unpackWorldPlane(packedPosition);
 
 		neighbors.clear();
+
+		// On a boat, only sail: in the 16 boat headings instead of taking walking steps, and without the bank visits,
+		// transports and teleports below, whose costs are in ticks rather than the distance sailed
+		if (sailing != null)
+		{
+			addSailingNeighbors(node, x, y, z, graph.bankVisited(node), visited, graph, sailing);
+			return neighbors;
+		}
 
 		// The banked state is only entered through an explicit, costed transition: standing on a
 		// bank-accessible tile emits a bank-visit edge carrying the configured penalty, so the
@@ -338,6 +429,47 @@ public class CollisionMap
 		}
 
 		return neighbors;
+	}
+
+	// Sailing moves are different lengths, so they are queued by cost (A*) rather than FIFO: each costs the distance it
+	// sails, so the search finds the shortest route rather than the quickest. A tile is only queued again if a route
+	// reaches it for less, since a dearer one would only be dequeued once the tile is done; that's checked before the
+	// line, which costs more.
+	private void addSailingNeighbors(int node, int x, int y, int z, boolean bankVisited, VisitedTiles visited,
+		NodeGraph graph, SailingSearch sailing)
+	{
+		final SailingMoves moves = sailing.moves;
+		// -1 leaving the start, so the first move doesn't count as a turn
+		final int arrivalHeading = sailingArrivalHeading(graph, node, moves);
+		final int costSoFar = graph.cost(node);
+		for (int i = 0; i < moves.size(); i++)
+		{
+			final int dx = moves.dx(i);
+			final int dy = moves.dy(i);
+			final int neighborPacked = WorldPointUtil.packWorldPoint(x + dx, y + dy, z);
+			final int cost = moves.length(i) + (arrivalHeading >= 0 && arrivalHeading != moves.heading(i) ? SAILING_COST_PER_TURN : 0);
+			if (visited.get(neighborPacked, bankVisited)
+				|| costSoFar + cost >= sailing.queuedCost(x + dx, y + dy, z, bankVisited)
+				|| !canSailLine(x, y, z, dx, dy))
+			{
+				continue;
+			}
+			neighbors.add(graph.createWeightedTile(neighborPacked, node, cost, sailing.estimate(x + dx, y + dy), bankVisited));
+		}
+	}
+
+	// The heading of the sailing move that reached node, or -1 if it wasn't reached by one (such as the search's start)
+	private static int sailingArrivalHeading(NodeGraph graph, int node, SailingMoves moves)
+	{
+		int previous = graph.previous(node);
+		if (previous == NodeGraph.NO_NODE || !graph.isWeighted(node))
+		{
+			return -1;
+		}
+		int from = graph.packedPosition(previous);
+		int to = graph.packedPosition(node);
+		return moves.headingOf(WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from),
+			WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from));
 	}
 
 	// The only abstract nodes are currently for global teleports
