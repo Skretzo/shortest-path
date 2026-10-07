@@ -787,7 +787,6 @@ public class ShortestPathPlugin extends Plugin
 			{
 				overlayManager.remove(debugOverlayPanel);
 			}
-			return;
 		}
 
 		if (effects.contains(Effect.SIDE_EFFECT_BACKEND_PREP))
