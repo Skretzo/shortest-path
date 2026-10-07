@@ -37,18 +37,18 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
-import shortestpath.JewelleryBoxTier;
+import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.TeleportationItem;
+import shortestpath.requirement.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
 @RunWith(MockitoJUnitRunner.class)
@@ -73,6 +73,7 @@ public class PathfinderTest
 		when(config.calculationCutoff()).thenReturn(30);
 		when(config.currencyThreshold()).thenReturn(10000000);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
 	}
 
 	@Test
@@ -2241,7 +2242,6 @@ public class PathfinderTest
 		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 
@@ -2253,7 +2253,6 @@ public class PathfinderTest
 		pathfinderConfig = new ChangingTimePathfinderConfig(
 			client, config, QuestState.FINISHED, false, false, refreshTimeMinutes, laterTimeMinutes);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(client.getTotalLevel()).thenReturn(2376);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
@@ -2283,7 +2282,6 @@ public class PathfinderTest
 		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		for (Map.Entry<Integer, Integer> entry : varbitValues.entrySet())
@@ -2621,7 +2619,6 @@ public class PathfinderTest
 	{
 		pathfinderConfig = new TestPathfinderConfig(client, config, questState, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		when(config.usePoh()).thenReturn(false);

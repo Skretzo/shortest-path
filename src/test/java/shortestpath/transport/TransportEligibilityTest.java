@@ -1,37 +1,30 @@
 package shortestpath.transport;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.runelite.api.Client;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.EnumID;
-import net.runelite.api.Item;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
-import net.runelite.api.gameval.VarbitID;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.TeleportationItem;
+import shortestpath.requirement.TransportEligibility;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class BankPickupRequirementsTest
+/**
+ * Snapshot-level coverage for {@link TransportEligibility}: usable() verdicts for
+ * pathfinding, satisfiedByPlayer() for the overlays, and the bank pickup plans plus
+ * bank item highlighting the display layer renders.
+ */
+public class TransportEligibilityTest
 {
-	private static final int POUCH_AIR = 1;
 	private static final int NO_POUCH = -1;
 	private static final int[] NO_SUBSTITUTES = new int[0];
 	// Falador Teleport: 1 law, 3 air, 1 water
@@ -42,54 +35,19 @@ public class BankPickupRequirementsTest
 		new ItemRequirement.Branch(ItemVariations.SHANTAY_PASS.getIds(), null, null, 1),
 		new ItemRequirement.Branch(ItemVariations.COINS.getIds(), null, null, 5))));
 
-	@Mock
-	private Client client;
-	@Mock
-	private ItemContainer inventory;
-	@Mock
-	private ItemContainer equipment;
-	@Mock
-	private EnumComposition runePouchEnum;
-	@Mock
-	private ItemComposition airRune;
-	@Mock
-	private ItemComposition waterRune;
-
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
 	private final Map<Integer, Integer> bankPouchRunes = new HashMap<>();
 
 	@Test
-	public void collectPlayerItemsCountsInventoryEquipmentAndRunePouch()
-	{
-		setupPlayerItems();
-		when(client.getEnum(EnumID.RUNEPOUCH_RUNE)).thenReturn(runePouchEnum);
-		when(runePouchEnum.getIntValue(POUCH_AIR)).thenReturn(ItemID.AIRRUNE);
-		when(client.getVarbitValue(VarbitID.RUNE_POUCH_TYPE_1)).thenReturn(POUCH_AIR);
-		when(client.getVarbitValue(VarbitID.RUNE_POUCH_QUANTITY_1)).thenReturn(5);
-
-		Map<Integer, Integer> collected = BankPickupRequirements.collectPlayerItems(client);
-
-		assertEquals(Integer.valueOf(15), collected.get(ItemID.AIRRUNE));
-		assertEquals(Integer.valueOf(1), collected.get(ItemID.STAFF_OF_FIRE));
-		assertEquals(Integer.valueOf(1), collected.get(ItemID.BH_RUNE_POUCH));
-	}
-
-	@Test
 	public void pickupAsksOnlyForTheShortfall()
 	{
-		when(client.getItemDefinition(ItemID.AIRRUNE)).thenReturn(airRune);
-		when(client.getItemDefinition(ItemID.WATERRUNE)).thenReturn(waterRune);
-		when(airRune.getName()).thenReturn("Air rune");
-		when(waterRune.getName()).thenReturn("Water rune");
 		playerHas.put(ItemID.LAWRUNE, 1);
 		playerHas.put(ItemID.AIRRUNE, 2);
 		bankHas.put(ItemID.AIRRUNE, 1000);
 		bankHas.put(ItemID.WATERRUNE, 1000);
 
-		Map<Integer, Long> pickups = pickups(FALADOR_TELEPORT, NO_POUCH);
-
-		assertEquals("1 Air rune, 1 Water rune", BankPickupRequirements.formatPickups(client, pickups));
+		assertEquals(Map.of(ItemID.AIRRUNE, 1L, ItemID.WATERRUNE, 1L), pickups(FALADOR_TELEPORT, NO_POUCH));
 	}
 
 	@Test
@@ -250,7 +208,7 @@ public class BankPickupRequirementsTest
 
 		assertEquals(Map.of(), pickups(SHANTAY_GATE, NO_POUCH));
 		assertEquals(Set.of(), highlighted(SHANTAY_GATE, NO_POUCH));
-		assertTrue(BankPickupRequirements.transportSatisfiedBy(SHANTAY_GATE, playerHas));
+		assertTrue(eligibility(NO_POUCH).satisfiedByPlayer(SHANTAY_GATE));
 	}
 
 	@Test
@@ -290,17 +248,171 @@ public class BankPickupRequirementsTest
 		assertEquals(Map.of(ItemID.SHANTAY_PASS, 1L), pickups(SHANTAY_GATE, NO_POUCH));
 	}
 
+	@Test
+	public void currencyThresholdBlocksUsableButNotSatisfiedByPlayer()
+	{
+		// The COINS=5 branch exceeds a threshold of 4, so the bank/carry pools cannot
+		// satisfy the transport for pathfinding; the player-side display check ignores
+		// the threshold and reports the coins as sufficient.
+		playerHas.put(ItemID.COINS, 100);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, 4);
+
+		assertFalse(eligibility.usable(SHANTAY_GATE, false));
+		assertFalse(eligibility.usable(SHANTAY_GATE, true));
+		assertTrue(eligibility.satisfiedByPlayer(SHANTAY_GATE));
+	}
+
+	@Test
+	public void bankPathPoolUnlocksUsableOnlyWhenBanked()
+	{
+		bankHas.put(ItemID.SHANTAY_PASS, 1);
+
+		TransportEligibility eligibility = eligibility(NO_POUCH);
+		assertFalse(eligibility.usable(SHANTAY_GATE, false));
+		assertTrue(eligibility.usable(SHANTAY_GATE, true));
+		assertFalse(eligibility.satisfiedByPlayer(SHANTAY_GATE));
+	}
+
+	@Test
+	public void fairyRingNeedsDramenStaffWhenDiaryIncomplete()
+	{
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+
+		assertFalse(eligibility.usable(fairyRing(), false));
+		assertFalse(eligibility.usable(fairyRing(), true));
+	}
+
+	@Test
+	public void fairyRingUsableWithBankedDramenStaffOnlyOnBankPath()
+	{
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+
+		assertFalse(eligibility.usable(fairyRing(), false));
+		assertTrue(eligibility.usable(fairyRing(), true));
+	}
+
+	@Test
+	public void fairyRingNeedsNoStaffWhenDiaryComplete()
+	{
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+
+		assertTrue(eligibility.usable(fairyRing(), false));
+		assertTrue(eligibility.usable(fairyRing(), true));
+	}
+
+	@Test
+	public void fairyStaffPickupReturnsTheDramenStaffInTheBank()
+	{
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		bankHas.put(ItemID.DRAMEN_STAFF_AIR, 1);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+
+		TransportEligibility.BankPickupPlan plan = eligibility.fairyStaffPickup();
+
+		assertNotNull(plan);
+		assertEquals(Map.of(ItemID.DRAMEN_STAFF, 1L), plan.items);
+		assertEquals(Set.of(ItemID.DRAMEN_STAFF, ItemID.DRAMEN_STAFF_AIR), plan.bankItemIds);
+	}
+
+	@Test
+	public void fairyStaffPickupIsNullWhenThePlayerCarriesAStaff()
+	{
+		playerHas.put(ItemID.DRAMEN_STAFF_FIRE, 1);
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+
+		assertNull(eligibility.fairyStaffPickup());
+	}
+
+	@Test
+	public void fairyStaffPickupIsNullWhenTheDiaryIsComplete()
+	{
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+
+		assertNull(eligibility.fairyStaffPickup());
+	}
+
+	@Test
+	public void fairyStaffPickupIsNullWhenTheBankLacksAStaff()
+	{
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+
+		assertNull(eligibility.fairyStaffPickup());
+	}
+
+	@Test
+	public void teleportItemSettingAllBypassesItemRequirements()
+	{
+		TransportEligibility eligibility = eligibility(TeleportationItem.ALL, false, Integer.MAX_VALUE);
+
+		assertTrue(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), false));
+		assertTrue(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), true));
+	}
+
+	@Test
+	public void teleportItemSettingNoneBlocksRegardlessOfItems()
+	{
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+
+		assertFalse(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), false));
+	}
+
+	@Test
+	public void teleportItemSettingInventoryFallsThroughToRequirements()
+	{
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements());
+		TransportEligibility lacking = eligibility(TeleportationItem.INVENTORY, false, Integer.MAX_VALUE);
+
+		assertFalse(lacking.usable(teleport, false));
+
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		TransportEligibility carrying = eligibility(TeleportationItem.INVENTORY, false, Integer.MAX_VALUE);
+
+		assertTrue(carrying.usable(teleport, false));
+	}
+
+	@Test
+	public void noRequirementsAreUsableAndNeedNoPickup()
+	{
+		Transport free = new Transport.TransportBuilder().type(TransportType.TRANSPORT).build();
+		TransportEligibility eligibility = eligibility(NO_POUCH);
+
+		assertTrue(eligibility.usable(free, false));
+		assertTrue(eligibility.usable(free, true));
+		assertTrue(eligibility.satisfiedByPlayer(free));
+		assertNotNull(eligibility.bankPickupPlan(free).items);
+		assertTrue(eligibility.bankPickupPlan(free).items.isEmpty());
+		assertTrue(eligibility.bankPickupPlan(free).bankItemIds.isEmpty());
+	}
+
+	private TransportEligibility eligibility(int bankPouchId)
+	{
+		return TransportEligibility.forPlayerAndBank(playerHas, bankHas, bankPouchId, bankPouchRunes);
+	}
+
+	private TransportEligibility eligibility(TeleportationItem setting, boolean staffRequired, int threshold)
+	{
+		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
+		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
+		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, bankPouchRunes,
+			staffRequired, setting, threshold, Set.of());
+	}
+
 	private Map<Integer, Long> pickups(Transport transport, int bankPouchId)
 	{
-		return BankPickupRequirements.computeBankPickups(transport, playerHas, bankHas, bankPouchId, bankPouchRunes);
+		return eligibility(bankPouchId).bankPickupPlan(transport).items;
 	}
 
 	private Set<Integer> highlighted(Transport transport, int bankPouchId)
 	{
-		Set<Integer> itemIds = new HashSet<>();
-		BankPickupRequirements.collectPartialBankItemIds(
-			transport, playerHas, bankHas, bankPouchId, bankPouchRunes, itemIds);
-		return itemIds;
+		return eligibility(bankPouchId).bankPickupPlan(transport).bankItemIds;
 	}
 
 	private static ItemRequirement rune(ItemVariations rune, int quantity)
@@ -316,12 +428,18 @@ public class BankPickupRequirementsTest
 			.build();
 	}
 
-	private void setupPlayerItems()
+	private static Transport teleportItem(TransportItems requirements)
 	{
-		doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
-		doReturn(equipment).when(client).getItemContainer(InventoryID.WORN);
-		when(inventory.getItems()).thenReturn(new Item[]{
-			new Item(ItemID.AIRRUNE, 10), new Item(ItemID.BH_RUNE_POUCH, 1)});
-		when(equipment.getItems()).thenReturn(new Item[]{new Item(ItemID.STAFF_OF_FIRE, 1)});
+		return new Transport.TransportBuilder()
+			.type(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(requirements)
+			.build();
+	}
+
+	private static Transport fairyRing()
+	{
+		return new Transport.TransportBuilder()
+			.type(TransportType.FAIRY_RING)
+			.build();
 	}
 }

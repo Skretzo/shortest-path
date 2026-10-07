@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import net.runelite.api.Client;
@@ -39,8 +38,9 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.transport.BankPickupRequirements;
+import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
+import shortestpath.requirement.TransportEligibility;
 
 public class PathTileOverlay extends Overlay
 {
@@ -803,13 +803,18 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
-		Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+		// A missing snapshot (pre-login or off the client thread) means no filtering —
+		// the same "show all" the empty-usable fallback below produces anyway.
+		TransportEligibility eligibility = plugin.getPathfinderConfig().getEligibility();
 		List<Transport> usableTransports = new ArrayList<>();
-		for (Transport t : candidateTransports)
+		if (eligibility != null)
 		{
-			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas))
+			for (Transport t : candidateTransports)
 			{
-				usableTransports.add(t);
+				if (eligibility.satisfiedByPlayer(t))
+				{
+					usableTransports.add(t);
+				}
 			}
 		}
 		Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;

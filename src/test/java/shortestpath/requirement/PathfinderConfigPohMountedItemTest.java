@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.requirement;
 
 import java.util.EnumSet;
 import java.util.Map;
@@ -26,7 +26,7 @@ public class PathfinderConfigPohMountedItemTest
 		Set<PohMountedItem> selected = EnumSet.noneOf(PohMountedItem.class);
 		for (String objectInfo : OBJECTS.values())
 		{
-			assertFalse(PathfinderConfig.isPohMountedItemEnabled(selected, objectInfo));
+			assertFalse(Requirements.isPohMountedItemEnabled(selected, objectInfo));
 		}
 	}
 
@@ -43,7 +43,7 @@ public class PathfinderConfigPohMountedItemTest
 		Set<PohMountedItem> selected = EnumSet.allOf(PohMountedItem.class);
 		for (String objectInfo : OBJECTS.values())
 		{
-			assertTrue(PathfinderConfig.isPohMountedItemEnabled(selected, objectInfo));
+			assertTrue(Requirements.isPohMountedItemEnabled(selected, objectInfo));
 		}
 	}
 
@@ -68,7 +68,7 @@ public class PathfinderConfigPohMountedItemTest
 	{
 		String carriedDisplayInfo = "Xeric's talisman: 1. Xeric's Lookout";
 		assertNull(PohMountedItem.fromObjectInfo(carriedDisplayInfo));
-		assertTrue(PathfinderConfig.isPohMountedItemEnabled(
+		assertTrue(Requirements.isPohMountedItemEnabled(
 			EnumSet.noneOf(PohMountedItem.class), carriedDisplayInfo));
 	}
 
@@ -80,11 +80,11 @@ public class PathfinderConfigPohMountedItemTest
 			assertSame(entry.getKey(), PohMountedItem.fromObjectInfo(entry.getValue()));
 			if (entry.getKey().equals(selectedItem))
 			{
-				assertTrue(PathfinderConfig.isPohMountedItemEnabled(selected, entry.getValue()));
+				assertTrue(Requirements.isPohMountedItemEnabled(selected, entry.getValue()));
 			}
 			else
 			{
-				assertFalse(PathfinderConfig.isPohMountedItemEnabled(selected, entry.getValue()));
+				assertFalse(Requirements.isPohMountedItemEnabled(selected, entry.getValue()));
 			}
 		}
 	}

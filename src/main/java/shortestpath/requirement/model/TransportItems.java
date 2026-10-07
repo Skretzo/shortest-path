@@ -1,4 +1,4 @@
-package shortestpath.transport.requirement;
+package shortestpath.requirement.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import lombok.Getter;
+import net.runelite.api.gameval.ItemID;
 
 /**
  * Represents all item requirements for a transport.
@@ -17,6 +18,14 @@ import lombok.Getter;
 @Getter
 public class TransportItems
 {
+	/**
+	 * Item ids treated as spendable currency by {@link #isSatisfiedBy}: a branch priced
+	 * in one of these counts only when the price is within the configured currency
+	 * threshold.
+	 */
+	public static final Set<Integer> CURRENCIES = Set.of(
+		ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
+
 	private final List<ItemRequirement> requirements;
 
 	public TransportItems(List<ItemRequirement> requirements)

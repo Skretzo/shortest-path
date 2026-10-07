@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.requirement;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +22,7 @@ public final class OwnedItems
 
 	public static void addContainer(Map<Integer, Integer> owned, ItemContainer container)
 	{
-		if (container == null)
+		if (container == null || container.getItems() == null)
 		{
 			return;
 		}

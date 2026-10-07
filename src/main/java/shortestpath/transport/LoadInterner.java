@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Quest;
-import shortestpath.transport.parser.VarRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.VarRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * Load-scoped deduplication pools for transport requirement objects and display strings (issue

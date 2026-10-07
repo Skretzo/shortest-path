@@ -12,13 +12,13 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import shortestpath.ItemVariations;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.requirement.model.ItemRequirement;
 
 public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 {
@@ -104,7 +104,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 		// Build set of dramen/lunar staff IDs — skip highlighting when already equipped,
 		// since wearing them passively enables fairy rings without any active use.
 		Set<Integer> dramenStaffIds = new HashSet<>();
-		for (int id : ItemVariations.DRAMEN_STAFF.getIds())
+		for (int id : TransportEligibility.fairyStaffIds())
 		{
 			dramenStaffIds.add(id);
 		}
