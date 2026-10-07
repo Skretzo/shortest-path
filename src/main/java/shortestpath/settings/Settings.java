@@ -702,12 +702,14 @@ public class Settings
 		private final boolean unlockCanoeAxe;
 		private final boolean unlockXericsHonour;
 		private final boolean unlockDragontoothPassage;
+		private final boolean unlockBalloonLogBasket;
 
 		private UnlocksView(ShortestPathConfig config)
 		{
 			unlockCanoeAxe = config.unlockCanoeAxe();
 			unlockXericsHonour = config.unlockXericsHonour();
 			unlockDragontoothPassage = config.unlockDragontoothPassage();
+			unlockBalloonLogBasket = config.unlockBalloonLogBasket();
 		}
 	}
 
