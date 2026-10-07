@@ -843,6 +843,107 @@ public class PathfinderTest
 			1, WorldPointUtil.distanceBetween(end, blockedTarget));
 	}
 
+	private int runBlockedTargetRoute(int sx, int sy, int tx, int ty)
+	{
+		int start = WorldPointUtil.packWorldPoint(sx, sy, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(tx, ty, 0);
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("expected path to a fallback tile near the blocked target",
+			result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		List<PathStep> steps = result.getPathSteps();
+		return steps.get(steps.size() - 1).getPackedPosition();
+	}
+
+	@Test
+	public void testBlockedTargetBehindWallRoutesAroundWall()
+	{
+		// The hunter shop crate at (2568, 3085) in Yanille sits flush against
+		// the building's north wall. The walkable tiles north of it lie on the
+		// far side of that wall: the collision map marks the edge as a
+		// structural boundary, so only the interior side may serve as goals.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(2568, 3085, 0));
+		assertTrue("test requires the north edge to be a wall boundary",
+			map.wallN(2568, 3085, 0));
+		int end = runBlockedTargetRoute(2576, 3089, 2568, 3085);
+		assertTrue("path must end inside the shop, south of the wall",
+			WorldPointUtil.unpackWorldY(end) <= 3085);
+	}
+
+	@Test
+	public void testBlockedTargetInWallColumnUsesCorridorSide()
+	{
+		// The crates at (2533, 3086) and (2533, 3087) in Yanille are embedded
+		// in a wall column. The tiles west of them are the street side of the
+		// wall and must not become goals; the corridor side lies east.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		for (int ty : new int[] {3086, 3087})
+		{
+			assertTrue("test requires a blocked target tile",
+				map.isBlocked(2533, ty, 0));
+			assertTrue("test requires the west edge to be a wall boundary",
+				map.wallW(2533, ty, 0));
+			int end = runBlockedTargetRoute(2526, 3087, 2533, ty);
+			assertTrue("path must end on the corridor side of the wall column",
+				WorldPointUtil.unpackWorldX(end) > 2533);
+		}
+	}
+
+	@Test
+	public void testBlockedTargetHemmedInRoutesInsideRoom()
+	{
+		// The crate at (2533, 3089) sits in a room corner surrounded by other
+		// crates and barrels: it is genuinely unreachable, and every adjacent
+		// walkable tile lies outside the room behind wall edges. The fallback
+		// must look past ring 1 and terminate inside the room instead of in
+		// the street.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(2533, 3089, 0));
+		int end = runBlockedTargetRoute(2526, 3087, 2533, 3089);
+		assertTrue("path must end inside the room, not in the street",
+			WorldPointUtil.unpackWorldX(end) > 2533
+				&& WorldPointUtil.unpackWorldY(end) < 3089);
+	}
+
+	@Test
+	public void testBlockedTargetKeepsNearestUsableEndpoint()
+	{
+		// The barrel at (2536, 3089) blocks the east end of a ruined Yanille
+		// building. Its north edge is a wall, but the ring-1 tile (2537, 3089)
+		// shares an open edge and must stay a goal so the route ends on the
+		// nearest usable tile instead of taking a detour.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(2536, 3089, 0));
+		assertTrue("test requires the north edge to be a wall boundary",
+			map.wallN(2536, 3089, 0));
+		int end = runBlockedTargetRoute(2526, 3087, 2536, 3089);
+		assertEquals("the nearest non-wall-separated tile must remain a goal",
+			WorldPointUtil.packWorldPoint(2537, 3089, 0), end);
+	}
+
 	@Test
 	public void testTeleportItemsAndFairyRingsAvailableAfterBankVisit()
 	{

@@ -20,7 +20,15 @@ import shortestpath.Util;
 
 public class SplitFlagMap
 {
-	private static final int FLAG_COUNT = 2;
+	// Per-tile flag layout matching the collision-map dump format: flags 0/1
+	// record whether the north/south and east/west edges are open for
+	// movement; flags 2/3 mark those edges as structural boundaries written
+	// by walls and doors rather than object footprints or tile-level blocks.
+	public static final int FLAG_NORTH = 0;
+	public static final int FLAG_EAST = 1;
+	public static final int FLAG_WALL_NORTH = 2;
+	public static final int FLAG_WALL_EAST = 3;
+	private static final int FLAG_COUNT = 4;
 	private static final int BITS_PER_PLANE = REGION_SIZE * REGION_SIZE * FLAG_COUNT;
 	private static final int WORDS_PER_PLANE = BITS_PER_PLANE / Long.SIZE;
 	private static final int REGION_MASK = REGION_SIZE - 1;
