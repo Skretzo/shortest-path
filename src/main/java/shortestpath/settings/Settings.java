@@ -25,7 +25,6 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.requirement.RoutingPolicy;
-import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
