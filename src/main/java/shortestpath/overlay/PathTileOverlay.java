@@ -400,7 +400,7 @@ public class PathTileOverlay extends Overlay
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
-		if (plugin.drawTiles && plugin.drawClickPoints && plugin.getActiveSearch() instanceof AStarPathfinder)
+		if (settings.display().drawTiles() && settings.display().drawClickPoints() && plugin.getActiveSearch() instanceof AStarPathfinder)
 		{
 			AStarPathfinder aStar = (AStarPathfinder) plugin.getActiveSearch();
 			if (aStar.isDone() && !aStar.isShowingProvisionalPath())
