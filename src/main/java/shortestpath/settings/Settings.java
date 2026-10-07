@@ -28,6 +28,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.PohMountedItem;
 import shortestpath.transport.PohNexusPortal;
+import shortestpath.transport.TransportTypeConfig;
 
 /**
  * The injected owner of configured state: the base {@link ShortestPathConfig}
@@ -189,6 +190,19 @@ public class Settings
 	public void publishRouting(RoutingPolicy policy)
 	{
 		routing = policy;
+	}
+
+	/**
+	 * Stub surface — the policy-build contract is pinned by
+	 * RoutingSnapshotTest before the implementation lands.
+	 */
+	public RoutingPolicy buildRoutingPolicy(TransportTypeConfig transportTypeConfig,
+		boolean usePoh, boolean usePohFairyRing, boolean usePohSpiritTree,
+		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
+		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
+		int currencyThreshold, boolean includeBankPath)
+	{
+		return null;
 	}
 
 	// ---- Panel write/listen/keyed-read contract ---------------------------
