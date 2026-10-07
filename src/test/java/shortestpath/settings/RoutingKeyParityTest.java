@@ -67,9 +67,13 @@ public class RoutingKeyParityTest
 
 	/** Identifier call sites — {@code name(} — inside a method body. */
 	private static final Pattern CALL = Pattern.compile("([A-Za-z_$][\\w$]*)\\s*\\(");
-	/** {@code ...effective().<method>()} reads on the settings seam. */
+	/**
+	 * {@code effective.<method>()} reads on the settings seam — both the
+	 * {@code settings.effective().x()} call form and the captured
+	 * {@code effective.x()} local form refresh uses for snapshot coherence.
+	 */
 	private static final Pattern EFFECTIVE_READ =
-		Pattern.compile("effective\\(\\)\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
+		Pattern.compile("(?:^|[^\\w$])effective\\s*(?:\\(\\s*\\))?\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
 	/**
 	 * {@code config.<method>()} bypass reads on the raw config proxy. A
 	 * qualified receiver ({@code this.config.x()}) also matches — the
