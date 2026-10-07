@@ -325,6 +325,20 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean collisionAwareBlockedTargets()
+	{
+		Object value = overrides.get(ConfigKey.COLLISION_AWARE_BLOCKED_TARGETS.getKey());
+		return value instanceof Boolean ? (boolean) value : base.collisionAwareBlockedTargets();
+	}
+
+	@Override
+	public boolean useSailingMoves()
+	{
+		Object value = overrides.get(ConfigKey.USE_SAILING_MOVES.getKey());
+		return value instanceof Boolean ? (boolean) value : base.useSailingMoves();
+	}
+
+	@Override
 	public boolean showTransportInfo()
 	{
 		Object value = overrides.get(ConfigKey.SHOW_TRANSPORT_INFO.getKey());
@@ -629,6 +643,13 @@ public final class EffectiveConfig implements ShortestPathConfig
 	{
 		Object value = overrides.get(ConfigKey.DRAW_TILES.getKey());
 		return value instanceof Boolean ? (boolean) value : base.drawTiles();
+	}
+
+	@Override
+	public boolean drawClickPoints()
+	{
+		Object value = overrides.get(ConfigKey.DRAW_CLICK_POINTS.getKey());
+		return value instanceof Boolean ? (boolean) value : base.drawClickPoints();
 	}
 
 	@Override
