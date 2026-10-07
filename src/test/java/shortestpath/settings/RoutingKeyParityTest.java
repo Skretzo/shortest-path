@@ -70,9 +70,14 @@ public class RoutingKeyParityTest
 	/** {@code ...effective().<method>()} reads on the settings seam. */
 	private static final Pattern EFFECTIVE_READ =
 		Pattern.compile("effective\\(\\)\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
-	/** {@code config.<method>()} bypass reads on the raw config proxy. */
+	/**
+	 * {@code config.<method>()} bypass reads on the raw config proxy. A
+	 * qualified receiver ({@code this.config.x()}) also matches — the
+	 * excluded set drops {@code .} precisely so a dotted receiver still
+	 * counts as a config read.
+	 */
 	private static final Pattern CONFIG_READ =
-		Pattern.compile("(?:^|[^\\w$.])config\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
+		Pattern.compile("(?:^|[^\\w$])config\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
 	/** {@code settings.coerce<Kind>("<key>", ...)} override-aware reads. */
 	private static final Pattern COERCE_READ =
 		Pattern.compile("coerce\\w+\\s*\\(\\s*\"([^\"]+)\"");
