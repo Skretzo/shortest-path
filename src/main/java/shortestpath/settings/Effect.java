@@ -13,6 +13,6 @@ public enum Effect
 	SIDE_EFFECT_DEBUG_OVERLAY,
 	/** The selected pathfinding backend must be prepared (grid/prerender warm-up). */
 	SIDE_EFFECT_BACKEND_PREP,
-	/** Only display state changed; caches republish without touching the search. */
+	/** No shell side effect beyond the views republishing; a running search continues. */
 	DISPLAY_ONLY
 }
