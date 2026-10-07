@@ -526,13 +526,31 @@ public class ShortestPathPanel extends PluginPanel
 			Integer.valueOf(current), Integer.valueOf(min), max, Integer.valueOf(1)));
 		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(SPINNER_FIELD_WIDTH);
 		spinner.setToolTipText(html(description));
-		spinner.addChangeListener(e -> settings.write(keyName, spinner.getValue()));
+		// Set while a config sync mirrors the stored value into the control —
+		// the same guard the family cards use, so the programmatic setValue
+		// does not write the mirrored value straight back to config.
+		boolean[] syncing = new boolean[1];
+		spinner.addChangeListener(e ->
+		{
+			if (!syncing[0])
+			{
+				settings.write(keyName, spinner.getValue());
+			}
+		});
 		registerConfigListener(keyName, () ->
 		{
 			Object updated = settings.configuredValue(keyName);
 			if (updated instanceof Number)
 			{
-				spinner.setValue(((Number) updated).intValue());
+				syncing[0] = true;
+				try
+				{
+					spinner.setValue(((Number) updated).intValue());
+				}
+				finally
+				{
+					syncing[0] = false;
+				}
 			}
 		});
 
@@ -560,14 +578,26 @@ public class ShortestPathPanel extends PluginPanel
 		combo.setSelectedItem(value);
 		combo.setPreferredSize(new Dimension(combo.getPreferredSize().width, COMBO_HEIGHT));
 		combo.setToolTipText(html(description));
+		boolean[] syncing = new boolean[1];
 		combo.addItemListener(e ->
 		{
-			if (e.getStateChange() == ItemEvent.SELECTED)
+			if (e.getStateChange() == ItemEvent.SELECTED && !syncing[0])
 			{
 				settings.write(keyName, combo.getSelectedItem());
 			}
 		});
-		registerConfigListener(keyName, () -> combo.setSelectedItem(settings.configuredValue(keyName)));
+		registerConfigListener(keyName, () ->
+		{
+			syncing[0] = true;
+			try
+			{
+				combo.setSelectedItem(settings.configuredValue(keyName));
+			}
+			finally
+			{
+				syncing[0] = false;
+			}
+		});
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -591,6 +621,10 @@ public class ShortestPathPanel extends PluginPanel
 		String description = item == null ? "" : item.description();
 
 		List<SearchRow> rows = new ArrayList<>();
+		// Shared across every member checkbox of this key: set while a config
+		// sync mirrors the stored set into the controls, so the programmatic
+		// setSelected calls do not write the same set back.
+		boolean[] syncing = new boolean[1];
 
 		JPanel groupRow = new JPanel(new BorderLayout());
 		groupRow.setOpaque(false);
@@ -607,6 +641,10 @@ public class ShortestPathPanel extends PluginPanel
 			checkBox.setToolTipText(html(description));
 			checkBox.addActionListener(e ->
 			{
+				if (syncing[0])
+				{
+					return;
+				}
 				EnumSet<E> updated = EnumSet.noneOf(type);
 				updated.addAll(currentSet(keyName, type));
 				if (checkBox.isSelected())
@@ -619,7 +657,18 @@ public class ShortestPathPanel extends PluginPanel
 				}
 				settings.write(keyName, updated);
 			});
-			registerConfigListener(keyName, () -> checkBox.setSelected(currentSet(keyName, type).contains(constant)));
+			registerConfigListener(keyName, () ->
+			{
+				syncing[0] = true;
+				try
+				{
+					checkBox.setSelected(currentSet(keyName, type).contains(constant));
+				}
+				finally
+				{
+					syncing[0] = false;
+				}
+			});
 
 			JPanel row = new JPanel(new BorderLayout());
 			row.setOpaque(false);
