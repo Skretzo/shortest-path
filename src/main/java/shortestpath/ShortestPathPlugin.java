@@ -96,8 +96,6 @@ import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
-import shortestpath.requirement.TeleportationItem;
-import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -295,7 +293,7 @@ public class ShortestPathPlugin extends Plugin
 		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
 	}
 
-	public static boolean override(String configOverrideKey, boolean defaultValue)
+	private boolean override(String configOverrideKey, boolean defaultValue)
 	{
 		if (!configOverride.isEmpty())
 		{
@@ -308,25 +306,7 @@ public class ShortestPathPlugin extends Plugin
 		return defaultValue;
 	}
 
-	/**
-	 * Override for TransportType enabled state using the config key name stored in the enum.
-	 */
-	public static boolean override(TransportType type, boolean defaultValue)
-	{
-		String key = type.getEnabledKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	/**
-	 * Override for TransportType cost threshold using the config key name stored in the enum.
-	 */
-	public static int override(TransportType type, int defaultValue)
-	{
-		String key = type.getCostKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	public static int override(String configOverrideKey, int defaultValue)
+	private int override(String configOverrideKey, int defaultValue)
 	{
 		if (!configOverride.isEmpty())
 		{
@@ -334,40 +314,6 @@ public class ShortestPathPlugin extends Plugin
 			if (value instanceof Integer)
 			{
 				return (int) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
-				if (teleportationItem != null)
-				{
-					return teleportationItem;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-				if (tier != null)
-				{
-					return tier;
-				}
 			}
 		}
 		return defaultValue;
