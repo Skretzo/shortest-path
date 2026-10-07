@@ -65,7 +65,6 @@ enum ConfigKey
 	UNLOCK_XERICS_HONOUR("unlockXericsHonour", ShortestPathConfig::unlockXericsHonour, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	UNLOCK_DRAGONTOOTH_PASSAGE("unlockDragontoothPassage", ShortestPathConfig::unlockDragontoothPassage, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	UNLOCK_MOR_UL_REK("unlockMorUlRek", ShortestPathConfig::unlockMorUlRek, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", ShortestPathConfig::unlockBalloonLogBasket, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	INCLUDE_BANK_PATH("includeBankPath", ShortestPathConfig::includeBankPath, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	CURRENCY_THRESHOLD("currencyThreshold", ShortestPathConfig::currencyThreshold, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	CANCEL_INSTEAD("cancelInstead", ShortestPathConfig::cancelInstead, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
@@ -141,6 +140,8 @@ enum ConfigKey
 	UNREACHABLE_TEXT("unreachableText", ShortestPathConfig::unreachableText, Coercion.NONE, Effect.DISPLAY_ONLY),
 	BUILT_TELEPORTATION_BOXES("builtTeleportationBoxes", ShortestPathConfig::builtTeleportationBoxes, Coercion.NONE, Effect.DISPLAY_ONLY),
 	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", ShortestPathConfig::builtTeleportationPortalsPoh, Coercion.NONE, Effect.DISPLAY_ONLY),
+	BLOCKED_TELEPORT_ITEMS("blockedTeleportItems", ShortestPathConfig::blockedTeleportItems, Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", ShortestPathConfig::unlockBalloonLogBasket, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	;
 
 	private static final Map<String, ConfigKey> BY_KEY;
