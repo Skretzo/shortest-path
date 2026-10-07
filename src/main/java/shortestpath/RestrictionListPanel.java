@@ -114,8 +114,8 @@ class RestrictionListPanel extends JPanel
 		footer.add(reset, BorderLayout.CENTER);
 
 		// External edits to either key rebuild the checklist state in place.
-		settings.listen("blockedTeleportItems", this::syncFromConfig);
-		settings.listen("useTeleportationItems", this::syncFromConfig);
+		panel.registerConfigListener("blockedTeleportItems", this::syncFromConfig);
+		panel.registerConfigListener("useTeleportationItems", this::syncFromConfig);
 
 		refreshOwnedItems();
 		applyFilter("");
