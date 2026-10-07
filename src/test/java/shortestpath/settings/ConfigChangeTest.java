@@ -153,6 +153,7 @@ public class ConfigChangeTest
 		assertRouteInvalidating("calculationCutoff");
 		assertRouteInvalidating("unreachableTargetDistanceThreshold");
 		assertRouteInvalidating("respawnPrifddinas");
+		assertRouteInvalidating("blockedTeleportItems");
 		assertRouteInvalidating("pohNexusPortals");
 		assertRouteInvalidating("pohMountedItems");
 		assertRouteInvalidating("pohJewelleryBoxTier");
