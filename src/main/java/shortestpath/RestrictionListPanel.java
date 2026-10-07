@@ -35,7 +35,7 @@ import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 import net.runelite.client.util.SwingUtil;
 import shortestpath.items.OwnedItems;
 import shortestpath.requirement.TeleportRestriction;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 
 /**
  * The Teleport Restrictions checklist: one row per {@link TeleportRestriction.Family}
