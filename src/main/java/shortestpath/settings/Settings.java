@@ -3,12 +3,16 @@ package shortestpath.settings;
 import java.awt.Color;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.swing.SwingUtilities;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -73,6 +77,20 @@ public class Settings
 	 * transport-type derivations settle; {@code null} until the first build.
 	 */
 	private volatile RoutingPolicy routing;
+
+	/**
+	 * Keyed listeners registered through {@link #listen}. Read on whichever
+	 * thread a {@link ConfigChanged} arrives on, so the lists are copy-on-write.
+	 */
+	private final Map<String, List<Runnable>> listeners = new ConcurrentHashMap<>();
+
+	/**
+	 * Keys with a {@link #write} call on the stack. A {@link ConfigChanged}
+	 * arriving while its key is marked here is write-originated: it still
+	 * republishes and classifies, but its listeners already fired inside
+	 * {@link #write}, so the external-delivery path skips it.
+	 */
+	private final Set<String> writeInFlight = ConcurrentHashMap.newKeySet();
 
 	@Inject
 	public Settings(ConfigManager configManager, ShortestPathConfig configured)
@@ -174,30 +192,92 @@ public class Settings
 	}
 
 	// ---- Panel write/listen/keyed-read contract ---------------------------
-	// Stub surface — the contract is pinned by SettingsWriteListenTest before
-	// the implementation lands.
 
+	/**
+	 * The sole mutation path for persisted settings: delegates straight to
+	 * {@link ConfigManager#setConfiguration}, which dispatches the
+	 * {@link ConfigChanged} synchronously on this thread. The echo is marked
+	 * write-originated so {@link #onConfigChanged} republishes and classifies
+	 * it but skips external listener delivery; same-key listeners fire here
+	 * instead, synchronously, before {@code write} returns. Values pass
+	 * through untouched — {@code Set}-typed values reach the manager as-is.
+	 *
+	 * <p>Unknown keys pass through to the manager unchanged, matching the
+	 * permissive behaviour this contract replaces.
+	 */
 	public void write(String key, Object value)
 	{
+		if (configManager == null)
+		{
+			throw new UnsupportedOperationException(
+				"a wrap-seam settings service has no config manager to write through");
+		}
+		writeInFlight.add(key);
+		try
+		{
+			configManager.setConfiguration(CONFIG_GROUP, key, value);
+			fireListeners(key);
+		}
+		finally
+		{
+			writeInFlight.remove(key);
+		}
 	}
 
+	/**
+	 * Register a callback for changes to {@code key}: it runs synchronously
+	 * inside {@link #write} for write-originated changes and on the EDT for
+	 * external {@link ConfigChanged} events. Multiple listeners per key are
+	 * supported and run in registration order.
+	 */
 	public void listen(String key, Runnable listener)
 	{
+		listeners.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>()).add(listener);
 	}
 
+	/**
+	 * The configured value for {@code key} — the base proxy read, never the
+	 * override-adjusted effective value, so the UI always displays what is
+	 * stored. Unknown keys fail loudly.
+	 */
 	public Object configuredValue(String key)
 	{
-		return null;
+		ConfigKey row = ConfigKey.forKey(key);
+		if (row == null)
+		{
+			throw new IllegalArgumentException("unknown config key: " + key);
+		}
+		return row.getGetter().apply(configured);
 	}
 
+	/** Typed convenience wrapper over {@link #configuredValue}. */
 	public boolean configuredBool(String key)
 	{
-		return false;
+		return Boolean.TRUE.equals(configuredValue(key));
 	}
 
+	/**
+	 * Typed convenience wrapper over {@link #configuredValue}: returns the
+	 * stored {@code Set} untouched, or {@code null} when the key holds no
+	 * set value.
+	 */
 	public Set<?> configuredSet(String key)
 	{
-		return null;
+		Object value = configuredValue(key);
+		return value instanceof Set ? (Set<?>) value : null;
+	}
+
+	private void fireListeners(String key)
+	{
+		List<Runnable> keyed = listeners.get(key);
+		if (keyed == null)
+		{
+			return;
+		}
+		for (Runnable listener : keyed)
+		{
+			listener.run();
+		}
 	}
 
 	/**
@@ -229,6 +309,13 @@ public class Settings
 	 * shell to act on. Returns {@code null} for events outside this config
 	 * group; an in-group key with no registry row produces a fact carrying
 	 * an empty effect set.
+	 *
+	 * <p>Registered listeners for the event's key are delivered on the EDT —
+	 * the same marshalling the panel applied to changes made elsewhere —
+	 * except when the event is the echo of an in-flight {@link #write}: that
+	 * change already delivered its same-key listeners synchronously inside
+	 * {@code write}, so the external path skips it and no write ever echoes
+	 * back to the writer twice.
 	 */
 	public ConfigChange onConfigChanged(ConfigChanged event)
 	{
@@ -237,7 +324,12 @@ public class Settings
 			return null;
 		}
 		republish();
-		return new ConfigChange(event.getKey(), effectsOf(event.getKey()));
+		String key = event.getKey();
+		if (!writeInFlight.contains(key) && listeners.containsKey(key))
+		{
+			SwingUtilities.invokeLater(() -> fireListeners(key));
+		}
+		return new ConfigChange(key, effectsOf(key));
 	}
 
 	private static Set<Effect> effectsOf(String key)
