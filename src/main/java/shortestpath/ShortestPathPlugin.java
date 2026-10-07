@@ -38,6 +38,8 @@ import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.ScriptID;
+import net.runelite.api.WorldEntity;
+import net.runelite.api.WorldEntityConfig;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
@@ -83,6 +85,7 @@ import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
+import shortestpath.pathfinder.BoatHull;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.ExactPathfinder;
@@ -561,23 +564,28 @@ public class ShortestPathPlugin extends Plugin
 	/**
 	 * On a boat, a search that sails the boat's 16 headings at its base speed instead of walking. It starts from the
 	 * boat's exact tile and remembers where the boat sits within it: every sailing move lands whole tiles away, so the
-	 * boat stays at that spot at each turn of the path.
+	 * boat stays at that spot at each turn of the path. The boat's whole hull, from its bounds, must fit along every move
+	 * there.
 	 */
 	private Pathfinder sailingPathfinder(int start, Set<Integer> ends)
 	{
 		int sailingStart = start;
 		sailingPivotX = 0;
 		sailingPivotY = 0;
-		LocalPoint boat = client.getLocalPlayer() == null ? null
-			: WorldPointUtil.boatLocation(client, client.getLocalPlayer());
+		Player localPlayer = client.getLocalPlayer();
+		LocalPoint boat = localPlayer == null ? null : WorldPointUtil.boatLocation(client, localPlayer);
 		if (boat != null && !startPointSet)
 		{
 			sailingStart = WorldPointUtil.fromLocalInstance(client, boat);
 			sailingPivotX = (boat.getX() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
 			sailingPivotY = (boat.getY() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
 		}
+		WorldEntity boatEntity = localPlayer == null ? null : WorldPointUtil.boat(client, localPlayer);
+		WorldEntityConfig bounds = boatEntity == null ? null : boatEntity.getConfig();
+		BoatHull hull = bounds == null ? null : BoatHull.fromBounds(bounds.getBoundsX(), bounds.getBoundsY(),
+			bounds.getBoundsWidth(), bounds.getBoundsHeight(), sailingPivotX, sailingPivotY);
 		return new Pathfinder(pathfinderConfig, sailingStart, ends, this::postPluginMessages,
-			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()));
+			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull);
 	}
 
 	private void ensurePathfindingExecutor()
@@ -727,6 +735,14 @@ public class ShortestPathPlugin extends Plugin
 		if (path == null || pathfinder.getTargets().isEmpty())
 		{
 			return false;
+		}
+
+		// A sailing path arrives once the boat's hull covers the target, with the boat's own tile up to a boat length
+		// from it, so the search says whether it got there
+		if (isSailing())
+		{
+			PathfinderResult result = pathfinder.getResult();
+			return result != null && !result.isReached();
 		}
 
 		// A finished search can produce an empty path when no goal tile could ever be

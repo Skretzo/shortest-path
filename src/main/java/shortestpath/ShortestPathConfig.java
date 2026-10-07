@@ -629,7 +629,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "useSailingMoves",
 		name = "Sail on boats",
 		description = "While on a boat, find a path that sails the boat's 16 headings at its base speed<br>" +
-			"and draw it in blue, instead of a walking path",
+			"with its whole hull clear, and draw it in blue, instead of a walking path",
 		position = 140,
 		section = sectionSettings
 	)

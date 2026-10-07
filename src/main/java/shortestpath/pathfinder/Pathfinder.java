@@ -22,8 +22,8 @@ public class Pathfinder implements ActiveSearch
 	// a transport destination, or resolved to at least one walkable nearby tile.
 	// When false the search is skipped entirely, since no goal can ever be visited.
 	private final boolean hasViableGoal;
-	// When set, sail in the 16 boat headings instead of taking walking steps (see SailingMoves), and arrive next to a
-	// target (see SailingSearch)
+	// When set, sail in the 16 boat headings instead of taking walking steps (see SailingMoves), keeping the boat's whole
+	// hull clear if it has one, and arrive as SailingSearch says
 	private final SailingSearch sailing;
 	private final PathfinderConfig config;
 	private final CollisionMap map;
@@ -81,6 +81,16 @@ public class Pathfinder implements ActiveSearch
 	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback,
 		SailingMoves sailingMoves)
 	{
+		this(config, start, targets, completionCallback, sailingMoves, null);
+	}
+
+	/**
+	 * @param sailingMoves the boat's moves, to sail instead of walk, or {@code null} to walk
+	 * @param boatHull     the boat's hull, which must fit along every sailing move, or {@code null} for just its centre
+	 */
+	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback,
+		SailingMoves sailingMoves, BoatHull boatHull)
+	{
 		stats = new PathfinderStats();
 		this.config = config;
 		this.map = config.getMap();
@@ -90,7 +100,7 @@ public class Pathfinder implements ActiveSearch
 		this.goals = resolved.goals();
 		this.hasViableGoal = resolved.hasViableGoal();
 		this.sailing = sailingMoves == null ? null
-			: new SailingSearch(sailingMoves, targets.stream().mapToInt(Integer::intValue).toArray());
+			: new SailingSearch(sailingMoves, boatHull, targets.stream().mapToInt(Integer::intValue).toArray());
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
@@ -399,7 +409,8 @@ public class Pathfinder implements ActiveSearch
 			{
 				updateWildernessLevel(nodePacked);
 
-				if (goals.contains(nodePacked) || (sailing != null && sailing.hasArrived(nodePacked)))
+				if (goals.contains(nodePacked) || (sailing != null
+					&& sailing.hasArrived(nodePacked, CollisionMap.sailingArrivalHeading(graph, node, sailing.moves))))
 				{
 					bestLastNode = node;
 					reachedTarget = nodePacked;

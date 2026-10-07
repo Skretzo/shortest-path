@@ -434,7 +434,7 @@ public class CollisionMap
 	// Sailing moves are different lengths, so they are queued by cost (A*) rather than FIFO: each costs the distance it
 	// sails, so the search finds the shortest route rather than the quickest. A tile is only queued again if a route
 	// reaches it for less, since a dearer one would only be dequeued once the tile is done; that's checked before the
-	// line, which costs more.
+	// line, which costs more. With a hull, the whole boat must fit along the move, which also keeps its centre clear.
 	private void addSailingNeighbors(int node, int x, int y, int z, boolean bankVisited, VisitedTiles visited,
 		NodeGraph graph, SailingSearch sailing)
 	{
@@ -450,7 +450,7 @@ public class CollisionMap
 			final int cost = moves.length(i) + (arrivalHeading >= 0 && arrivalHeading != moves.heading(i) ? SAILING_COST_PER_TURN : 0);
 			if (visited.get(neighborPacked, bankVisited)
 				|| costSoFar + cost >= sailing.queuedCost(x + dx, y + dy, z, bankVisited)
-				|| !canSailLine(x, y, z, dx, dy))
+				|| !(sailing.hull == null ? canSailLine(x, y, z, dx, dy) : sailing.hull.canMove(this, x, y, z, moves.heading(i), dx, dy)))
 			{
 				continue;
 			}
@@ -459,7 +459,7 @@ public class CollisionMap
 	}
 
 	// The heading of the sailing move that reached node, or -1 if it wasn't reached by one (such as the search's start)
-	private static int sailingArrivalHeading(NodeGraph graph, int node, SailingMoves moves)
+	static int sailingArrivalHeading(NodeGraph graph, int node, SailingMoves moves)
 	{
 		int previous = graph.previous(node);
 		if (previous == NodeGraph.NO_NODE || !graph.isWeighted(node))
