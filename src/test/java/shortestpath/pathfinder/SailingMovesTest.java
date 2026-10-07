@@ -6,6 +6,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.DBTableID;
+import net.runelite.api.gameval.VarbitID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -69,6 +70,18 @@ public class SailingMovesTest
 		assertMove(SailingMoves.forSpeed(1.5), "NNE", 1, 3, 2);
 		assertMove(SailingMoves.forSpeed(3.5), "NNE", 5, 13, 4);
 		assertMove(SailingMoves.forSpeed(3.0), "NE", 9, 9, 4);
+	}
+
+	@Test
+	public void testSailingSpeedIsTheBoatsBaseSpeed()
+	{
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(192);
+		pathfinderConfig.refresh();
+		assertEquals(1.5, pathfinderConfig.getSailingSpeed(), 0);
+
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(0);
+		pathfinderConfig.refresh();
+		assertEquals("Falls back to the estimate", SailingMoves.ESTIMATED_SPEED, pathfinderConfig.getSailingSpeed(), 0);
 	}
 
 	@Test

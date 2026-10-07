@@ -132,7 +132,22 @@ public class PathMapOverlay extends Overlay
 			Color colour = plugin.getPathColor();
 			List<PathStep> path = plugin.getActiveSearch().getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
-			if (TileStyle.ARROW_LINE.equals(plugin.pathStyle))
+			if (plugin.isSailing())
+			{
+				// On a boat the path sails the boat's headings: a line along each heading it holds, with a small square
+				// at the end of each move
+				graphics.setColor(ShortestPathPlugin.COLOUR_SAILING_PATH);
+				for (int i = 0; i < path.size(); i++)
+				{
+					int point = path.get(i).getPackedPosition();
+					if (i > 0)
+					{
+						drawSolidLineOnMap(graphics, path.get(i - 1).getPackedPosition(), point);
+					}
+					drawSmallSquareOnMap(graphics, point);
+				}
+			}
+			else if (TileStyle.ARROW_LINE.equals(plugin.pathStyle))
 			{
 				graphics.setColor(colour);
 				drawArrowPath(graphics, path);
@@ -228,6 +243,33 @@ public class PathMapOverlay extends Overlay
 		{
 			ArrowHead.draw(graphics, x1, y1, x2, y2, 7);
 		}
+	}
+
+	private void drawSmallSquareOnMap(Graphics2D graphics, int point)
+	{
+		int x = plugin.mapWorldPointToGraphicsPointX(point);
+		int y = plugin.mapWorldPointToGraphicsPointY(point);
+		int nextX = plugin.mapWorldPointToGraphicsPointX(WorldPointUtil.dxdy(point, 1, -1));
+		if (x == Integer.MIN_VALUE || y == Integer.MIN_VALUE || nextX == Integer.MIN_VALUE)
+		{
+			return;
+		}
+		int size = Math.max(2, (nextX - x) / 2);
+		graphics.fillRect(x - size / 2, y - size / 2, size, size);
+	}
+
+	private void drawSolidLineOnMap(Graphics2D graphics, int from, int to)
+	{
+		int x1 = plugin.mapWorldPointToGraphicsPointX(from);
+		int y1 = plugin.mapWorldPointToGraphicsPointY(from);
+		int x2 = plugin.mapWorldPointToGraphicsPointX(to);
+		int y2 = plugin.mapWorldPointToGraphicsPointY(to);
+		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE || x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
+		{
+			return;
+		}
+		graphics.setStroke(new BasicStroke(2));
+		graphics.drawLine(x1, y1, x2, y2);
 	}
 
 	private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos)

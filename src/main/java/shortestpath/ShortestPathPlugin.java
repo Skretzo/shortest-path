@@ -34,9 +34,11 @@ import net.runelite.api.GameState;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.ScriptID;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -90,6 +92,7 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
+import shortestpath.pathfinder.SailingMoves;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
@@ -138,6 +141,8 @@ public class ShortestPathPlugin extends Plugin
 	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|collisionAwareBlockedTargets|use\\w+|cost\\w+|unlock\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
+	// Colour of the path while on a boat, which sails the boat's headings
+	public static final Color COLOUR_SAILING_PATH = new Color(0, 120, 255);
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
@@ -233,6 +238,11 @@ public class ShortestPathPlugin extends Plugin
 	private volatile Pathfinder legacyPathfinder;
 	private ExactRoutingStaticProvider exactRoutingStatic;
 	private final ExactRoutingSession exactRoutingSession = new ExactRoutingSession();
+	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
+	@Getter
+	private int sailingPivotX;
+	@Getter
+	private int sailingPivotY;
 	@Getter
 	private PathfinderConfig pathfinderConfig;
 	@Getter
@@ -500,7 +510,12 @@ public class ShortestPathPlugin extends Plugin
 			else
 			{
 				bankPickupDirty = true;
-				if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
+				if (pathfinderConfig.isSailingMoves())
+				{
+					legacyPathfinder = sailingPathfinder(start, ends);
+					pathfinder = legacyPathfinder;
+				}
+				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
 				{
 					try
 					{
@@ -541,6 +556,28 @@ public class ShortestPathPlugin extends Plugin
 				});
 			}
 		}
+	}
+
+	/**
+	 * On a boat, a search that sails the boat's 16 headings at its base speed instead of walking. It starts from the
+	 * boat's exact tile and remembers where the boat sits within it: every sailing move lands whole tiles away, so the
+	 * boat stays at that spot at each turn of the path.
+	 */
+	private Pathfinder sailingPathfinder(int start, Set<Integer> ends)
+	{
+		int sailingStart = start;
+		sailingPivotX = 0;
+		sailingPivotY = 0;
+		LocalPoint boat = client.getLocalPlayer() == null ? null
+			: WorldPointUtil.boatLocation(client, client.getLocalPlayer());
+		if (boat != null && !startPointSet)
+		{
+			sailingStart = WorldPointUtil.fromLocalInstance(client, boat);
+			sailingPivotX = (boat.getX() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
+			sailingPivotY = (boat.getY() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
+		}
+		return new Pathfinder(pathfinderConfig, sailingStart, ends, this::postPluginMessages,
+			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()));
 	}
 
 	private void ensurePathfindingExecutor()
@@ -623,7 +660,39 @@ public class ShortestPathPlugin extends Plugin
 			}
 		}
 
+		// A sailing path has a point at the end of each move, up to a dozen tiles apart, so the boat can be between them
+		if (isSailing())
+		{
+			for (int i = 1; i < path.size(); i++)
+			{
+				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
+					< config.recalculateDistance())
+				{
+					return true;
+				}
+			}
+		}
+
 		return false;
+	}
+
+	// How far a point is from the closest point on the straight line between two others, in tiles counted like
+	// WorldPointUtil#distanceBetween, or Integer.MAX_VALUE on another plane
+	private static int distanceToLine(int point, int from, int to)
+	{
+		if (WorldPointUtil.unpackWorldPlane(point) != WorldPointUtil.unpackWorldPlane(from))
+		{
+			return Integer.MAX_VALUE;
+		}
+		final double px = WorldPointUtil.unpackWorldX(point);
+		final double py = WorldPointUtil.unpackWorldY(point);
+		final double ax = WorldPointUtil.unpackWorldX(from);
+		final double ay = WorldPointUtil.unpackWorldY(from);
+		final double dx = WorldPointUtil.unpackWorldX(to) - ax;
+		final double dy = WorldPointUtil.unpackWorldY(to) - ay;
+		final double lengthSquared = dx * dx + dy * dy;
+		final double t = lengthSquared == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSquared));
+		return (int) Math.round(Math.max(Math.abs(px - (ax + t * dx)), Math.abs(py - (ay + t * dy))));
 	}
 
 	public Color getPathColor()
@@ -1616,6 +1685,16 @@ public class ShortestPathPlugin extends Plugin
 	public CollisionMap getMap()
 	{
 		return pathfinderConfig.getMap();
+	}
+
+	/**
+	 * Whether the path sails the boat's headings (see {@link Pathfinder#isSailing}), so it has a point at the end of
+	 * each move, a few tiles apart, and is drawn as lines along its headings.
+	 */
+	public boolean isSailing()
+	{
+		ActiveSearch search = pathfinder;
+		return search instanceof Pathfinder && ((Pathfinder) search).isSailing();
 	}
 
 	/**
