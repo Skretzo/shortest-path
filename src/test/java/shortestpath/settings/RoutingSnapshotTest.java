@@ -19,6 +19,7 @@ import shortestpath.requirement.RoutingPolicy;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.TransportTypeConfig;
 
 /**
  * Pins the two publication cadences on {@link Settings}: the view snapshots
@@ -126,5 +127,33 @@ public class RoutingSnapshotTest
 		assertNull(settings.onConfigChanged(event));
 
 		assertSame(heldView, settings.bank());
+	}
+
+	/**
+	 * The service builds the routing policy itself: the built snapshot is
+	 * published into the {@link #routing()} slot before the call returns, and
+	 * the enabled-type set is frozen off the (post-disableUnless)
+	 * transport-type view it was handed.
+	 */
+	@Test
+	public void buildRoutingPolicyPublishesTheBuiltSnapshot()
+	{
+		TestShortestPathConfig config = new TestShortestPathConfig();
+		Settings settings = Settings.wrap(config);
+		TransportTypeConfig transportTypeConfig = new TransportTypeConfig(config, settings);
+		transportTypeConfig.setEnabled(TransportType.BOAT, false);
+
+		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
+			false, true, false, true, Set.of(), Set.of(),
+			JewelleryBoxTier.ORNATE, 42, true);
+
+		assertSame("the built policy is the published snapshot", policy, settings.routing());
+		assertTrue(policy.isTransportTypeEnabled(TransportType.CANOE));
+		assertFalse("disableUnless-derived state is frozen into the build",
+			policy.isTransportTypeEnabled(TransportType.BOAT));
+		assertTrue(policy.usePohFairyRing());
+		assertFalse(policy.usePoh());
+		assertEquals(42, policy.currencyThreshold());
+		assertTrue(policy.includeBankPath());
 	}
 }
