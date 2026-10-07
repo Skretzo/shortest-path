@@ -13,7 +13,6 @@ import java.util.Map;
 import org.junit.Test;
 
 import shortestpath.TestShortestPathConfig;
-import shortestpath.settings.TeleportationItem;
 
 /**
  * Pins the {@link Settings} service-level payload contract: apply, clear, and
