@@ -359,6 +359,7 @@ public class Settings
 		private final boolean drawMinimap;
 		private final boolean drawTiles;
 		private final boolean drawTransports;
+		private final boolean drawClickPoints;
 		private final boolean showTransportInfo;
 		private final boolean showBankPickupInfo;
 		private final boolean showUnreachableText;
@@ -387,6 +388,7 @@ public class Settings
 			drawMinimap = effective.drawMinimap();
 			drawTiles = effective.drawTiles();
 			drawTransports = effective.drawTransports();
+			drawClickPoints = effective.drawClickPoints();
 			showTransportInfo = effective.showTransportInfo();
 			showBankPickupInfo = effective.showBankPickupInfo();
 			showUnreachableText = effective.showUnreachableText();
