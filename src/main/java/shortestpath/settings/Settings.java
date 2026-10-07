@@ -1,6 +1,7 @@
 package shortestpath.settings;
 
 import java.awt.Color;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -18,7 +19,9 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Range;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.ShortestPathConfig;
@@ -122,6 +125,29 @@ public class Settings
 	{
 		ConfigGroup group = ShortestPathConfig.class.getAnnotation(ConfigGroup.class);
 		return group == null ? "" : group.value();
+	}
+
+	/**
+	 * keyName → declaring getter, for the {@code @ConfigItem}/{@code @Range}
+	 * annotation lookups controls use. Method-reference getters cannot hand
+	 * back their declaring method, so the keyed annotation table resolves it
+	 * once at class load; the {@code parameterCount}/{@code returnType}
+	 * filter picks the getter out of each getter/setter keyName pair.
+	 */
+	private static final Map<String, Method> ITEM_METHODS = itemMethods();
+
+	private static Map<String, Method> itemMethods()
+	{
+		Map<String, Method> methods = new HashMap<>();
+		for (Method method : ShortestPathConfig.class.getMethods())
+		{
+			ConfigItem item = method.getAnnotation(ConfigItem.class);
+			if (item != null && method.getParameterCount() == 0 && method.getReturnType() != void.class)
+			{
+				methods.putIfAbsent(item.keyName(), method);
+			}
+		}
+		return methods;
 	}
 
 	/**
@@ -304,6 +330,27 @@ public class Settings
 	{
 		Object value = configuredValue(key);
 		return value instanceof Set ? (Set<?>) value : null;
+	}
+
+	/**
+	 * The {@link ConfigItem} declaration for {@code key} — the display name
+	 * and description controls render. {@code null} for keys with no
+	 * {@code @ConfigItem}.
+	 */
+	public ConfigItem configItem(String key)
+	{
+		Method method = ITEM_METHODS.get(key);
+		return method == null ? null : method.getAnnotation(ConfigItem.class);
+	}
+
+	/**
+	 * The {@link Range} declared for {@code key}, or {@code null} when the
+	 * item bounds itself another way.
+	 */
+	public Range rangeOf(String key)
+	{
+		Method method = ITEM_METHODS.get(key);
+		return method == null ? null : method.getAnnotation(Range.class);
 	}
 
 	private void fireListeners(String key)

@@ -392,7 +392,7 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
 		}
-		if (ShortestPathPlugin.override("unlockBalloonLogBasket", config.unlockBalloonLogBasket()))
+		if (settings.effective().unlockBalloonLogBasket())
 		{
 			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
 		}
