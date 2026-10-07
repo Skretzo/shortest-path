@@ -153,6 +153,8 @@ public class SettingsWriteListenTest
 		AtomicInteger fired = new AtomicInteger();
 		AtomicReference<ConfigChange> classified = new AtomicReference<>();
 
+		// any(Object.class) pins the (String, String, Object) overload —
+		// bare any() would resolve to the (String, String, String) one.
 		doAnswer(invocation ->
 		{
 			// Reproduce ConfigManager's synchronous dispatch: mutate the
@@ -161,7 +163,7 @@ public class SettingsWriteListenTest
 			ConfigChanged echo = event(invocation.getArgument(1));
 			classified.set(settings.onConfigChanged(echo));
 			return null;
-		}).when(configManager).setConfiguration(anyString(), anyString(), any());
+		}).when(configManager).setConfiguration(anyString(), anyString(), any(Object.class));
 
 		settings.listen("avoidWilderness", fired::incrementAndGet);
 		settings.write("avoidWilderness", false);
@@ -175,6 +177,12 @@ public class SettingsWriteListenTest
 			9, settings.lifecycle().calculationCutoff());
 	}
 
+	/**
+	 * Marshalling is pinned deterministically by consuming the event on the
+	 * EDT itself: an invokeLater delivery cannot run before the current EDT
+	 * task finishes, so the listener must still be pending when the event
+	 * returns — an inline (unmarshalled) delivery would have already fired.
+	 */
 	@Test
 	public void externalChangeDeliversOnEdtNotInline() throws Exception
 	{
@@ -183,9 +191,11 @@ public class SettingsWriteListenTest
 		AtomicInteger fired = new AtomicInteger();
 
 		settings.listen("avoidWilderness", fired::incrementAndGet);
-		settings.onConfigChanged(event("avoidWilderness"));
-
-		assertEquals("external delivery is marshalled, not inline", 0, fired.get());
+		SwingUtilities.invokeAndWait(() ->
+		{
+			settings.onConfigChanged(event("avoidWilderness"));
+			assertEquals("external delivery is marshalled, not inline", 0, fired.get());
+		});
 		flushEdt();
 		assertEquals("listener ran on the EDT", 1, fired.get());
 	}
@@ -205,7 +215,7 @@ public class SettingsWriteListenTest
 			// write-originated — its listeners still get EDT delivery.
 			settings.onConfigChanged(event("drawMap"));
 			return null;
-		}).when(configManager).setConfiguration(anyString(), anyString(), any());
+		}).when(configManager).setConfiguration(anyString(), anyString(), any(Object.class));
 
 		settings.listen("avoidWilderness", ownKey::incrementAndGet);
 		settings.listen("drawMap", otherKey::incrementAndGet);
