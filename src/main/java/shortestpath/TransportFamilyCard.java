@@ -99,7 +99,7 @@ class TransportFamilyCard extends JPanel
 		add(detail);
 
 		applyEnabled(isMasterOn());
-		panel.settings.listen(keyName, this::syncFromConfig);
+		panel.registerConfigListener(keyName, this::syncFromConfig);
 	}
 
 	String getKeyName()
