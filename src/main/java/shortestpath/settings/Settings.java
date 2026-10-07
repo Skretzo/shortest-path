@@ -17,6 +17,7 @@ import javax.swing.SwingUtilities;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.events.ConfigChanged;
@@ -56,6 +57,7 @@ import shortestpath.transport.TransportTypeConfig;
  * <p>This package is a leaf: it must not reference the plugin class.
  */
 @Singleton
+@Slf4j
 public class Settings
 {
 	private static final String CONFIG_GROUP = resolveConfigGroup();
@@ -331,7 +333,18 @@ public class Settings
 		}
 		for (Runnable listener : keyed)
 		{
-			listener.run();
+			try
+			{
+				listener.run();
+			}
+			catch (RuntimeException e)
+			{
+				// A listener failure must not skip the rest of the list —
+				// on the write path the config value is already persisted,
+				// and on the EDT an uncaught throw kills the remaining
+				// deliveries too.
+				log.warn("settings listener for key {} threw; continuing with remaining listeners", key, e);
+			}
 		}
 	}
 
