@@ -21,6 +21,7 @@ import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
 import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.settings.Settings;
 
 public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 {
@@ -43,18 +44,20 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	// last scanned list doubles as the cache key by reference identity.
 	private List<PathStep> scannedPath;
 	private int lastFairyRingEdgeIndex = -1;
+	private final Settings settings;
 
 	@Inject
-	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
 	{
 		super(client, plugin);
 		this.itemManager = itemManager;
+		this.settings = settings;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.highlightInventoryItems)
+		if (!settings.display().highlightInventoryItems())
 		{
 			return null;
 		}
@@ -125,7 +128,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			dramenStaffIds.add(id);
 		}
 
-		Color highlight = plugin.colourBankPickupHighlight;
+		Color highlight = settings.display().colourBankPickupHighlight();
 
 		// Highlight matching items in the inventory
 		Widget inventoryContainer = client.getWidget(InterfaceID.Inventory.ITEMS);
