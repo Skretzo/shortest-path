@@ -138,10 +138,15 @@ public class ConfigChangeTest
 	}
 
 	/**
-	 * The gap-closure rows: every one of these is read by the refresh path
-	 * but was absent from the restart regex's arm list — the drift class the
-	 * typed table exists to kill. Poh toggles feeding the Set-typed defaults
-	 * count too: the refresh reads the default method, which reads them.
+	 * The gap-closure rows: keys the refresh path reads that the original
+	 * restart regex never matched — its {@code use\w+}/{@code cost\w+}/
+	 * {@code unlock\w+} prefixes and literals could not see the
+	 * {@code poh*} names or the unrelated literals below, which gained
+	 * regex arms only after the misses were noticed. That drift class is
+	 * what the typed table exists to kill. The two {@code use*} toggles
+	 * were covered all along; they are pinned here because the refresh
+	 * reaches them indirectly, through the {@code pohNexusPortals()}/
+	 * {@code pohMountedItems()} default methods.
 	 */
 	@Test
 	public void refreshReadsTheRegexMissedAreRouteInvalidating()
