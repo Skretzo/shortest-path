@@ -397,6 +397,30 @@ public class RoutingKeyParityTest
 	}
 
 	/**
+	 * Regression pin: keys whose refresh reads exercise each scan arm — a
+	 * raw {@code config.} read ({@code blockedTeleportItems}), an
+	 * {@code effective()} read ({@code usePoh}), a {@code coerce*("key", …)}
+	 * literal ({@code useTeleportationItems}), a transport-type driven key
+	 * ({@code costQuetzalWhistle}), and a key reached through a
+	 * {@code ShortestPathConfig} default method
+	 * ({@code useTeleportationPortalsPoh} via {@code pohNexusPortals()}).
+	 * A receiver-shape change that drops one of these fails here with a
+	 * named key rather than surfacing as a misleading "stale row" diff.
+	 */
+	@Test
+	public void sentinelRefreshReadsAreObserved()
+	{
+		for (String key : new String[]{
+			"blockedTeleportItems", "usePoh", "useTeleportationItems",
+			"costQuetzalWhistle", "useTeleportationPortalsPoh"})
+		{
+			assertTrue("refresh-read scan dropped " + key
+				+ " — a receiver shape changed or the read moved",
+				refreshReadKeys.contains(key));
+		}
+	}
+
+	/**
 	 * Vacuity guard: the scan must actually observe reads — an empty
 	 * derived set would pass a degenerate comparison while meaning the
 	 * scanner or the source layout broke.
