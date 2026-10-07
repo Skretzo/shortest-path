@@ -245,7 +245,7 @@ public class PathfinderConfig
 		this.settings = settings;
 		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
-		this.transportTypeConfig = new TransportTypeConfig(config);
+		this.transportTypeConfig = new TransportTypeConfig(config, settings);
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
 		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
@@ -271,7 +271,7 @@ public class PathfinderConfig
 		this.settings = Settings.wrap(config);
 		this.playerStateSource = new ClientPlayerStateSource(client);
 		this.config = config;
-		this.transportTypeConfig = new TransportTypeConfig(config);
+		this.transportTypeConfig = new TransportTypeConfig(config, settings);
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = flatten(allTransports);
