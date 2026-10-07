@@ -91,12 +91,15 @@ public class Settings
 	private final Map<String, List<Runnable>> listeners = new ConcurrentHashMap<>();
 
 	/**
-	 * Keys with a {@link #write} call on the stack. A {@link ConfigChanged}
-	 * arriving while its key is marked here is write-originated: it still
-	 * republishes and classifies, but its listeners already fired inside
-	 * {@link #write}, so the external-delivery path skips it.
+	 * Keys with a {@link #write} call on the stack, mapped to the thread
+	 * performing the write. A {@link ConfigChanged} arriving on that same
+	 * thread while its key is marked here is the write's own synchronous
+	 * echo: it still republishes and classifies, but its listeners already
+	 * fired inside {@link #write}, so the external-delivery path skips it.
+	 * A same-key event arriving on a different thread is genuinely external
+	 * and still delivers.
 	 */
-	private final Set<String> writeInFlight = ConcurrentHashMap.newKeySet();
+	private final Map<String, Thread> writeInFlight = new ConcurrentHashMap<>();
 
 	@Inject
 	public Settings(ConfigManager configManager, ShortestPathConfig configured)
@@ -277,7 +280,7 @@ public class Settings
 			throw new UnsupportedOperationException(
 				"a wrap-seam settings service has no config manager to write through");
 		}
-		writeInFlight.add(key);
+		writeInFlight.put(key, Thread.currentThread());
 		try
 		{
 			configManager.setConfiguration(CONFIG_GROUP, key, value);
@@ -416,7 +419,9 @@ public class Settings
 	 * except when the event is the echo of an in-flight {@link #write}: that
 	 * change already delivered its same-key listeners synchronously inside
 	 * {@code write}, so the external path skips it and no write ever echoes
-	 * back to the writer twice.
+	 * back to the writer twice. The write marker is thread-scoped: a
+	 * same-key event arriving on a different thread mid-write is external,
+	 * not the echo, and still delivers.
 	 */
 	public ConfigChange onConfigChanged(ConfigChanged event)
 	{
@@ -426,7 +431,7 @@ public class Settings
 		}
 		republish();
 		String key = event.getKey();
-		if (!writeInFlight.contains(key) && listeners.containsKey(key))
+		if (writeInFlight.get(key) != Thread.currentThread() && listeners.containsKey(key))
 		{
 			SwingUtilities.invokeLater(() -> fireListeners(key));
 		}
