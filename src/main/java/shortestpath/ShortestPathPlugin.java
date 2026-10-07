@@ -217,7 +217,7 @@ public class ShortestPathPlugin extends Plugin
 		pohService.loadFromProfile();
 		scheduler.prepareBackend();
 
-		panel = new ShortestPathPanel(config, configManager, client, clientThread, itemManager);
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager);
 		navButton = NavigationButton.builder()
 			.tooltip("Shortest Path")
 			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/panel_icon.png"))
@@ -289,11 +289,6 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		Set<Effect> effects = change.getEffects();
-
-		if (panel != null)
-		{
-			panel.onExternalConfigChanged(event);
-		}
 
 		if (effects.contains(Effect.SIDE_EFFECT_DEBUG_OVERLAY))
 		{
