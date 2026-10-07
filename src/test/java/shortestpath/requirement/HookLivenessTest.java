@@ -15,6 +15,7 @@ import shortestpath.leagues.LeagueModeState;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.VarCheckType;
 import shortestpath.requirement.model.VarRequirement;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
