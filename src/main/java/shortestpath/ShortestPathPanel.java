@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -104,6 +105,14 @@ public class ShortestPathPanel extends PluginPanel
 	private final JLabel noResultsLabel;
 	private final Map<String, Boolean> sectionExpandStates = new HashMap<>();
 	private final List<Section> sections = new ArrayList<>();
+
+	/**
+	 * Unregistration handles for every {@link Settings#listen} callback this
+	 * panel (and its cards/restriction list) registered. {@link Settings} is
+	 * a singleton that outlives the panel — {@link #dispose()} runs them all
+	 * on teardown so a dead panel neither keeps firing nor stays reachable.
+	 */
+	private final List<Runnable> unlisteners = new CopyOnWriteArrayList<>();
 
 	// Every POH control below the master row; dimmed + disabled while the
 	// master is off, same contract as the transport cards.
@@ -482,7 +491,7 @@ public class ShortestPathPanel extends PluginPanel
 				onChange.run();
 			}
 		});
-		settings.listen(keyName, () ->
+		registerConfigListener(keyName, () ->
 		{
 			checkBox.setSelected(settings.configuredBool(keyName));
 			if (onChange != null)
@@ -518,7 +527,7 @@ public class ShortestPathPanel extends PluginPanel
 		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(SPINNER_FIELD_WIDTH);
 		spinner.setToolTipText(html(description));
 		spinner.addChangeListener(e -> settings.write(keyName, spinner.getValue()));
-		settings.listen(keyName, () ->
+		registerConfigListener(keyName, () ->
 		{
 			Object updated = settings.configuredValue(keyName);
 			if (updated instanceof Number)
@@ -558,7 +567,7 @@ public class ShortestPathPanel extends PluginPanel
 				settings.write(keyName, combo.getSelectedItem());
 			}
 		});
-		settings.listen(keyName, () -> combo.setSelectedItem(settings.configuredValue(keyName)));
+		registerConfigListener(keyName, () -> combo.setSelectedItem(settings.configuredValue(keyName)));
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -610,7 +619,7 @@ public class ShortestPathPanel extends PluginPanel
 				}
 				settings.write(keyName, updated);
 			});
-			settings.listen(keyName, () -> checkBox.setSelected(currentSet(keyName, type).contains(constant)));
+			registerConfigListener(keyName, () -> checkBox.setSelected(currentSet(keyName, type).contains(constant)));
 
 			JPanel row = new JPanel(new BorderLayout());
 			row.setOpaque(false);
@@ -622,6 +631,30 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	// ---- Config access ------------------------------------------------------
+
+	/**
+	 * Register a {@link Settings#listen} callback owned by this panel; the
+	 * unlisten handle is retained for {@link #dispose()}. Sub-components
+	 * (family cards, the restriction list) register through here too so one
+	 * teardown drops the whole graph.
+	 */
+	void registerConfigListener(String key, Runnable listener)
+	{
+		unlisteners.add(settings.listen(key, listener));
+	}
+
+	/**
+	 * Drop every config listener this panel registered. Called from plugin
+	 * shutdown before the panel reference is released.
+	 */
+	void dispose()
+	{
+		for (Runnable unlisten : unlisteners)
+		{
+			unlisten.run();
+		}
+		unlisteners.clear();
+	}
 
 	private String configName(String keyName)
 	{
