@@ -70,9 +70,14 @@ public class RoutingKeyParityTest
 	/** {@code ...effective().<method>()} reads on the settings seam. */
 	private static final Pattern EFFECTIVE_READ =
 		Pattern.compile("effective\\(\\)\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
-	/** {@code config.<method>()} bypass reads on the raw config proxy. */
+	/**
+	 * {@code config.<method>()} bypass reads on the raw config proxy. A
+	 * qualified receiver ({@code this.config.x()}) also matches — the
+	 * excluded set drops {@code .} precisely so a dotted receiver still
+	 * counts as a config read.
+	 */
 	private static final Pattern CONFIG_READ =
-		Pattern.compile("(?:^|[^\\w$.])config\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
+		Pattern.compile("(?:^|[^\\w$])config\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(");
 	/** {@code settings.coerce<Kind>("<key>", ...)} override-aware reads. */
 	private static final Pattern COERCE_READ =
 		Pattern.compile("coerce\\w+\\s*\\(\\s*\"([^\"]+)\"");
@@ -385,6 +390,30 @@ public class RoutingKeyParityTest
 				+ "follow: ").append(stale);
 		}
 		assertTrue(message.toString(), unread.isEmpty() && stale.isEmpty());
+	}
+
+	/**
+	 * Regression pin: keys whose refresh reads exercise each scan arm — a
+	 * raw {@code config.} read ({@code blockedTeleportItems}), an
+	 * {@code effective()} read ({@code usePoh}), a {@code coerce*("key", …)}
+	 * literal ({@code useTeleportationItems}), a transport-type driven key
+	 * ({@code costQuetzalWhistle}), and a key reached through a
+	 * {@code ShortestPathConfig} default method
+	 * ({@code useTeleportationPortalsPoh} via {@code pohNexusPortals()}).
+	 * A receiver-shape change that drops one of these fails here with a
+	 * named key rather than surfacing as a misleading "stale row" diff.
+	 */
+	@Test
+	public void sentinelRefreshReadsAreObserved()
+	{
+		for (String key : new String[]{
+			"blockedTeleportItems", "usePoh", "useTeleportationItems",
+			"costQuetzalWhistle", "useTeleportationPortalsPoh"})
+		{
+			assertTrue("refresh-read scan dropped " + key
+				+ " — a receiver shape changed or the read moved",
+				refreshReadKeys.contains(key));
+		}
 	}
 
 	/**
