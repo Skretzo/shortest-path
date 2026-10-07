@@ -22,7 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
 import shortestpath.ShortestPathConfig;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
