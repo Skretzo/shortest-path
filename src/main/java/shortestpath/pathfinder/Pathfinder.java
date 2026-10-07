@@ -1,6 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,6 +13,19 @@ import shortestpath.leagues.LeagueModeState;
 
 public class Pathfinder implements ActiveSearch
 {
+	// How many walking steps the enclosure check around a blocked target
+	// takes. Must stay short: within a couple of steps a wall still separates
+	// the two sides, while further out both sides connect around wall ends.
+	private static final int ENCLOSURE_DEPTH = 3;
+	// How far out from a blocked target to score walkable candidates. Tiles
+	// in the innermost ring holding a sufficiently enclosed candidate become
+	// goals, so this bounds the enclosure scan; deeper rings only contribute
+	// transport destinations.
+	private static final int ENCLOSURE_SCAN_RADIUS = 4;
+	// Ring penalty when choosing the anchoring candidate: each step further
+	// from the target must buy at least this much extra enclosure to win.
+	private static final int ANCHOR_RING_WEIGHT = 3;
+
 	private final PathfinderStats stats;
 	@Getter
 	private final int start;
@@ -19,8 +33,8 @@ public class Pathfinder implements ActiveSearch
 	private final Set<Integer> targets;
 	// Termination set: the requested targets plus, for each blocked target, fallback
 	// tiles within the configured unreachable distance — every walkable tile in the
-	// square, or only the tiles connected to the target through the collision map
-	// (the same side of walls) when collisionAwareBlockedTargets is on. A blocked
+	// square, or only the tiles on the target's enclosed (interior) side when
+	// collisionAwareBlockedTargets is on. A blocked
 	// tile can never produce walk-in edges, so without expansion the search would
 	// explore the entire map before giving up (issue #640).
 	private final Set<Integer> goals;
@@ -103,39 +117,30 @@ public class Pathfinder implements ActiveSearch
 				viable = true;
 			}
 			// The target tile is blocked so it can never be walked into. Route to the
-			// nearby tiles within the configured unreachable distance instead:
-			// walkable tiles, and blocked tiles that a transport can land on (a
-			// teleport that lands adjacent to the target still gets close enough).
-			// The scan is bounded: the config allows huge distances and this runs per
-			// pathfinding request on the client thread.
+			// nearest fallback tiles within the configured unreachable distance
+			// instead: walkable tiles, and blocked tiles that a transport can land
+			// on (a teleport that lands adjacent to the target still gets close
+			// enough). Both modes scan expanding rings and keep only the innermost
+			// ring that yields goals, so the path ends on the tiles closest to the
+			// target rather than whichever radius tile is cheapest for the player.
+			// The scan is bounded: the config allows huge distances and this runs
+			// per pathfinding request on the client thread.
 			final int radius = Math.min(config.getUnreachableTargetDistance(), MAX_GOAL_EXPANSION_RADIUS);
-			// When collisionAwareBlockedTargets is on, walkable fallback goals are
-			// limited to the component of the collision map connected to the target,
-			// so the path cannot "reach the target" on the wrong side of a wall.
-			// Transport destinations stay goals in both modes.
-			final Set<Integer> connectedGoals = config.isCollisionAwareBlockedTargets()
-				? walkConnectedTiles(target, radius) : null;
-			for (int dy = -radius; dy <= radius; dy++)
+				// When collisionAwareBlockedTargets is on, walkable fallback goals are
+			// limited to the target's open side, so the path cannot "reach the
+			// target" from the wrong side of a wall. Transport destinations stay
+			// goals in both modes.
+			final Set<Integer> targetGoals = config.isCollisionAwareBlockedTargets()
+				? expandingConnectedGoals(target, radius)
+				: expandingRingGoals(x, y, z, radius);
+			if (!targetGoals.isEmpty())
 			{
-				for (int dx = -radius; dx <= radius; dx++)
+				if (resolvedGoals == targets)
 				{
-					if (dx == 0 && dy == 0)
-					{
-						continue;
-					}
-					final int neighbour = WorldPointUtil.packWorldPoint(x + dx, y + dy, z);
-					if ((connectedGoals != null ? connectedGoals.contains(neighbour)
-							: !map.isBlocked(x + dx, y + dy, z))
-						|| config.isTransportDestination(neighbour))
-					{
-						if (resolvedGoals == targets)
-						{
-							resolvedGoals = new HashSet<>(targets);
-						}
-						resolvedGoals.add(neighbour);
-						viable = true;
-					}
+					resolvedGoals = new HashSet<>(targets);
 				}
+				resolvedGoals.addAll(targetGoals);
+				viable = true;
 			}
 		}
 		this.goals = resolvedGoals;
@@ -147,34 +152,184 @@ public class Pathfinder implements ActiveSearch
 		wildernessLevel = 31;
 	}
 
-	// BFS over the collision map's ordinary walking edges, seeded on the (blocked)
-	// target: the seed expands to the target's adjacent walkable tiles, and each
-	// walkable tile expands to its movement-mask neighbours — the same connectivity
-	// the search itself uses. Bounded to the same Chebyshev square as the old scan,
-	// so a tile inside the radius that is only reachable by leaving the radius and
-	// re-entering it is legitimately missed.
-	private Set<Integer> walkConnectedTiles(int target, int radius)
+	// Expanding Chebyshev rings around a blocked target: returns the innermost
+	// ring that contains any walkable tile or transport destination. Used when
+	// collisionAwareBlockedTargets is off, so connectivity is not considered.
+	private Set<Integer> expandingRingGoals(int x, int y, int z, int radius)
 	{
-		final Set<Integer> connected = new HashSet<>();
-		final ArrayDeque<Integer> queue = new ArrayDeque<>();
-		connected.add(target);
-		queue.add(target);
-		while (!queue.isEmpty())
+		final Set<Integer> goals = new HashSet<>();
+		for (int r = 1; r <= radius && goals.isEmpty(); r++)
 		{
-			final int current = queue.poll();
-			for (int neighbour : map.ordinaryWalkingNeighbors(current))
+			for (int dx = -r; dx <= r; dx++)
 			{
-				if (connected.contains(neighbour)
-					|| WorldPointUtil.distanceBetween(target, neighbour) > radius)
-				{
-					continue;
-				}
-				connected.add(neighbour);
-				queue.add(neighbour);
+				addRingGoal(goals, x + dx, y - r, z);
+				addRingGoal(goals, x + dx, y + r, z);
+			}
+			for (int dy = -r + 1; dy < r; dy++)
+			{
+				addRingGoal(goals, x - r, y + dy, z);
+				addRingGoal(goals, x + r, y + dy, z);
 			}
 		}
-		connected.remove(target);
-		return connected;
+		return goals;
+	}
+
+	private void addRingGoal(Set<Integer> goals, int nx, int ny, int nz)
+	{
+		final int packed = WorldPointUtil.packWorldPoint(nx, ny, nz);
+		if (packed == start)
+		{
+			return;
+		}
+		if (!map.isBlocked(nx, ny, nz) || config.isTransportDestination(packed))
+		{
+			goals.add(packed);
+		}
+	}
+
+	// A blocked tile's flags report every direction blocked, so wall edges
+	// around the target cannot be detected on the tile itself -- but they
+	// show up indirectly: tiles on the target's side of a wall (its room or
+	// corridor) reach fewer tiles in a few steps than tiles on open ground.
+	// Every walkable tile in the nearest rings is scored that way, and the
+	// candidate with the smallest score anchors the target's side: flooding
+	// from it stays inside the same wall-bounded component, which marks
+	// which neighbours are actually on the target's side. Scoring deeper
+	// rings matters for targets hemmed in by other objects, where every
+	// adjacent tile lies outside the room and only ring 2+ tiles sit inside
+	// it. Transport destinations ignore walls entirely; they are scanned
+	// per Chebyshev ring and count as equally near goals.
+	private Set<Integer> expandingConnectedGoals(int target, int radius)
+	{
+		final int x = WorldPointUtil.unpackWorldX(target);
+		final int y = WorldPointUtil.unpackWorldY(target);
+		final int z = WorldPointUtil.unpackWorldPlane(target);
+		final int scan = Math.min(radius, ENCLOSURE_SCAN_RADIUS);
+		// Walkable candidates in the scanned box: {packed, ring, reach}.
+		final ArrayList<int[]> candidates = new ArrayList<>();
+		// The candidate marking the target's side is the most enclosed one,
+		// but rings further out must be progressively more enclosed to win:
+		// a distant pocket can outscore the room the object actually sits
+		// in, while adjacency should win ties.
+		int anchor = -1;
+		int anchorRing = 0;
+		int anchorScore = Integer.MAX_VALUE;
+		for (int d = 1; d <= scan; d++)
+		{
+			for (int dx = -d; dx <= d; dx++)
+			{
+				for (int dy = -d; dy <= d; dy++)
+				{
+					if (Math.max(Math.abs(dx), Math.abs(dy)) != d)
+					{
+						continue;
+					}
+					final int nx = x + dx;
+					final int ny = y + dy;
+					final int packed = WorldPointUtil.packWorldPoint(nx, ny, z);
+					// The player's own tile is never a useful goal: ending on
+					// the first dequeued node yields an invisible path.
+					if (packed == start || map.isBlocked(nx, ny, z))
+					{
+						continue;
+					}
+					final int reach = localReach(packed);
+					candidates.add(new int[] {packed, d, reach});
+					final int score = reach + ANCHOR_RING_WEIGHT * d;
+					if (score < anchorScore)
+					{
+						anchorScore = score;
+						anchor = packed;
+						anchorRing = d;
+					}
+				}
+			}
+		}
+		// Tiles that share the anchor's side of the target's walls. The
+		// flood is bounded by the anchor's own ring so it cannot leak
+		// through a far door or around a wall end and pull in candidates
+		// that are merely reachable rather than on the same side.
+		final Set<Integer> sameSide = new HashSet<>();
+		if (anchor != -1)
+		{
+			final ArrayDeque<Integer> queue = new ArrayDeque<>();
+			sameSide.add(anchor);
+			queue.add(anchor);
+			while (!queue.isEmpty())
+			{
+				for (int step : map.ordinaryWalkingNeighbors(queue.poll()))
+				{
+					final int sx = WorldPointUtil.unpackWorldX(step);
+					final int sy = WorldPointUtil.unpackWorldY(step);
+					if (Math.max(Math.abs(sx - x), Math.abs(sy - y)) <= anchorRing && sameSide.add(step))
+					{
+						queue.add(step);
+					}
+				}
+			}
+		}
+		final Set<Integer> goals = new HashSet<>();
+		for (int d = 1; d <= radius && goals.isEmpty(); d++)
+		{
+			for (int[] candidate : candidates)
+			{
+				if (candidate[1] == d && sameSide.contains(candidate[0]))
+				{
+					goals.add(candidate[0]);
+				}
+			}
+			addTransportRingGoals(goals, x, y, z, d);
+		}
+		return goals;
+	}
+
+	// Counts the distinct tiles reachable from packedPoint within
+	// ENCLOSURE_DEPTH ordinary walking steps -- a proxy for how enclosed the
+	// tile is. Open ground scores near the geometric maximum; rooms and
+	// corridors score lower because walls bound the flood.
+	private int localReach(int packedPoint)
+	{
+		final Set<Integer> seen = new HashSet<>();
+		final ArrayDeque<Integer> queue = new ArrayDeque<>();
+		seen.add(packedPoint);
+		queue.add(packedPoint);
+		for (int depth = 0; depth < ENCLOSURE_DEPTH && !queue.isEmpty(); depth++)
+		{
+			for (int i = queue.size(); i > 0; i--)
+			{
+				for (int neighbour : map.ordinaryWalkingNeighbors(queue.poll()))
+				{
+					if (seen.add(neighbour))
+					{
+						queue.add(neighbour);
+					}
+				}
+			}
+		}
+		return seen.size();
+	}
+
+	private void addTransportRingGoals(Set<Integer> goals, int x, int y, int z, int r)
+	{
+		for (int dx = -r; dx <= r; dx++)
+		{
+			addTransportGoal(goals, x + dx, y - r, z);
+			addTransportGoal(goals, x + dx, y + r, z);
+		}
+		for (int dy = -r + 1; dy < r; dy++)
+		{
+			addTransportGoal(goals, x - r, y + dy, z);
+			addTransportGoal(goals, x + r, y + dy, z);
+		}
+	}
+
+	private void addTransportGoal(Set<Integer> goals, int nx, int ny, int nz)
+	{
+		final int packed = WorldPointUtil.packWorldPoint(nx, ny, nz);
+		if (packed != start && config.isTransportDestination(packed))
+		{
+			goals.add(packed);
+		}
 	}
 
 	private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed)
