@@ -300,11 +300,11 @@ public class Settings
 		published = new Published(
 			overrides,
 			effective,
-			new DisplayView(effective),
-			new PohView(effective),
+			new DisplayView(effective, configured),
+			new PohView(effective, configured),
 			new BankView(effective),
 			new UnlocksView(effective),
-			new LifecycleView(effective));
+			new LifecycleView(effective, configured));
 	}
 
 	private static final class Published
@@ -332,8 +332,23 @@ public class Settings
 	}
 
 	/**
-	 * Immutable snapshot of the display-facing values the plugin caches per
-	 * change — path/transport drawing toggles, colours, and label state.
+	 * Immutable snapshot of the display-facing values the plugin used to cache
+	 * per change — path/transport drawing toggles, colours, counters, and label
+	 * state.
+	 *
+	 * <p>Member mapping (the former plugin field bag, one home each):
+	 * {@code draw*}/{@code show*}/{@code highlight*} toggles, the eight
+	 * {@code colour*} values, {@code tileCounterStep},
+	 * {@code unreachableTargetDistance} (key
+	 * {@code unreachableTargetDistanceThreshold}), {@code showTileCounter},
+	 * {@code pathStyle}, and {@code unreachableText}. The bank-pickup display
+	 * pair ({@code showBankPickupInfo}, {@code colourBankPickupHighlight})
+	 * lives here rather than in {@link BankView} because they are draw-state,
+	 * not routing inputs.
+	 *
+	 * <p>Every member reads the effective (override-aware) value except
+	 * {@code unreachableText}, which reads the configured value: payloads
+	 * never coerced it, and it stays raw here.
 	 */
 	@Getter
 	@Accessors(fluent = true)
@@ -365,38 +380,45 @@ public class Settings
 		private final TileCounter showTileCounter;
 		private final TileStyle pathStyle;
 
-		private DisplayView(ShortestPathConfig config)
+		private DisplayView(ShortestPathConfig effective, ShortestPathConfig configured)
 		{
-			drawCollisionMap = config.drawCollisionMap();
-			drawMap = config.drawMap();
-			drawMinimap = config.drawMinimap();
-			drawTiles = config.drawTiles();
-			drawTransports = config.drawTransports();
-			showTransportInfo = config.showTransportInfo();
-			showBankPickupInfo = config.showBankPickupInfo();
-			showUnreachableText = config.showUnreachableText();
-			highlightBankPickupItems = config.highlightBankPickupItems();
-			highlightSpellbookSpells = config.highlightSpellbookSpells();
-			highlightInventoryItems = config.highlightInventoryItems();
-			showTeleportPulse = config.showTeleportPulse();
-			colourCollisionMap = config.colourCollisionMap();
-			colourPath = config.colourPath();
-			colourPathCalculating = config.colourPathCalculating();
-			colourPathUnreachable = config.colourPathUnreachable();
-			colourText = config.colourText();
-			colourTransports = config.colourTransports();
-			colourBankPickupHighlight = config.colourBankPickupHighlight();
-			colourTeleportPulse = config.colourTeleportPulse();
-			tileCounterStep = config.tileCounterStep();
-			unreachableTargetDistance = config.unreachableTargetDistance();
-			unreachableText = config.unreachableText();
-			showTileCounter = config.showTileCounter();
-			pathStyle = config.pathStyle();
+			drawCollisionMap = effective.drawCollisionMap();
+			drawMap = effective.drawMap();
+			drawMinimap = effective.drawMinimap();
+			drawTiles = effective.drawTiles();
+			drawTransports = effective.drawTransports();
+			showTransportInfo = effective.showTransportInfo();
+			showBankPickupInfo = effective.showBankPickupInfo();
+			showUnreachableText = effective.showUnreachableText();
+			highlightBankPickupItems = effective.highlightBankPickupItems();
+			highlightSpellbookSpells = effective.highlightSpellbookSpells();
+			highlightInventoryItems = effective.highlightInventoryItems();
+			showTeleportPulse = effective.showTeleportPulse();
+			colourCollisionMap = effective.colourCollisionMap();
+			colourPath = effective.colourPath();
+			colourPathCalculating = effective.colourPathCalculating();
+			colourPathUnreachable = effective.colourPathUnreachable();
+			colourText = effective.colourText();
+			colourTransports = effective.colourTransports();
+			colourBankPickupHighlight = effective.colourBankPickupHighlight();
+			colourTeleportPulse = effective.colourTeleportPulse();
+			tileCounterStep = effective.tileCounterStep();
+			unreachableTargetDistance = effective.unreachableTargetDistance();
+			// Payloads never coerced this key — it stays a raw read.
+			unreachableText = configured.unreachableText();
+			showTileCounter = effective.showTileCounter();
+			pathStyle = effective.pathStyle();
 		}
 	}
 
 	/**
 	 * Immutable snapshot of the player-owned-house routing inputs.
+	 *
+	 * <p>The {@code usePoh*} toggles and {@code pohJewelleryBoxTier} read the
+	 * effective (override-aware) value. The two {@code Set} members read the
+	 * configured value: they have no payload coercion, so callers see the same
+	 * bypass semantics the raw {@code config.pohNexusPortals()}/
+	 * {@code config.pohMountedItems()} reads always had.
 	 */
 	@Getter
 	@Accessors(fluent = true)
@@ -412,24 +434,29 @@ public class Settings
 		private final Set<PohNexusPortal> pohNexusPortals;
 		private final Set<PohMountedItem> pohMountedItems;
 
-		private PohView(ShortestPathConfig config)
+		private PohView(ShortestPathConfig effective, ShortestPathConfig configured)
 		{
-			usePoh = config.usePoh();
-			usePohFairyRing = config.usePohFairyRing();
-			usePohSpiritTree = config.usePohSpiritTree();
-			useTeleportationPortalsPoh = config.useTeleportationPortalsPoh();
-			usePohMountedItems = config.usePohMountedItems();
-			usePohObelisk = config.usePohObelisk();
-			pohJewelleryBoxTier = config.pohJewelleryBoxTier();
-			Set<PohNexusPortal> portals = config.pohNexusPortals();
+			usePoh = effective.usePoh();
+			usePohFairyRing = effective.usePohFairyRing();
+			usePohSpiritTree = effective.usePohSpiritTree();
+			useTeleportationPortalsPoh = effective.useTeleportationPortalsPoh();
+			usePohMountedItems = effective.usePohMountedItems();
+			usePohObelisk = effective.usePohObelisk();
+			pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
+			// Set-typed keys are bypass reads — payloads never coerce them.
+			Set<PohNexusPortal> portals = configured.pohNexusPortals();
 			pohNexusPortals = portals == null ? Set.of() : Set.copyOf(portals);
-			Set<PohMountedItem> mounted = config.pohMountedItems();
+			Set<PohMountedItem> mounted = configured.pohMountedItems();
 			pohMountedItems = mounted == null ? Set.of() : Set.copyOf(mounted);
 		}
 	}
 
 	/**
-	 * Immutable snapshot of the bank-path routing inputs.
+	 * Immutable snapshot of the bank-path routing inputs: whether routes may
+	 * detour via a bank, the currency ceiling for paid transports, and the
+	 * cost charged per bank visit. All members read the effective
+	 * (override-aware) value. The bank-pickup <em>display</em> pair lives in
+	 * {@link DisplayView} — this view covers routing inputs only.
 	 */
 	@Getter
 	@Accessors(fluent = true)
@@ -449,7 +476,8 @@ public class Settings
 
 	/**
 	 * Immutable snapshot of the declared unlocks — states the game does not
-	 * expose to the client, toggled in config.
+	 * expose to the client, toggled in config. All members read the effective
+	 * (override-aware) value.
 	 */
 	@Getter
 	@Accessors(fluent = true)
@@ -471,6 +499,11 @@ public class Settings
 	 * Immutable snapshot of the running-search lifecycle inputs: backend
 	 * selection, search cutoffs, and the debug/post toggles that act on a live
 	 * search rather than display state.
+	 *
+	 * <p>These members mirror how the shell and refresh path always read them:
+	 * every member is a raw configured read — lifecycle side-effect inputs
+	 * never consulted the override map — except {@code postTransports}, which
+	 * the transport-posting path has always read through the override layer.
 	 */
 	@Getter
 	@Accessors(fluent = true)
@@ -484,15 +517,15 @@ public class Settings
 		private final boolean drawDebugPanel;
 		private final boolean postTransports;
 
-		private LifecycleView(ShortestPathConfig config)
+		private LifecycleView(ShortestPathConfig effective, ShortestPathConfig configured)
 		{
-			pathfinderBackend = config.pathfinderBackend();
-			calculationCutoff = config.calculationCutoff();
-			recalculateDistance = config.recalculateDistance();
-			reachedDistance = config.reachedDistance();
-			cancelInstead = config.cancelInstead();
-			drawDebugPanel = config.drawDebugPanel();
-			postTransports = config.postTransports();
+			pathfinderBackend = configured.pathfinderBackend();
+			calculationCutoff = configured.calculationCutoff();
+			recalculateDistance = configured.recalculateDistance();
+			reachedDistance = configured.reachedDistance();
+			cancelInstead = configured.cancelInstead();
+			drawDebugPanel = configured.drawDebugPanel();
+			postTransports = effective.postTransports();
 		}
 	}
 }
