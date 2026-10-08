@@ -20,7 +20,6 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.requirement.PlayerStateSource;
 import org.junit.Before;
 import org.junit.Test;
@@ -475,8 +474,8 @@ public class SpiritTreeServiceTest
 		Widget row = mock(Widget.class);
 		when(row.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>");
 
-		ShortestPathPlugin.SpiritTreeMenuSnapshot snapshot =
-			ShortestPathPlugin.parseSpiritTreeMenuRows(new Widget[]{row}, false);
+		SpiritTreeMenuSnapshot snapshot =
+			SpiritTreeService.parseSpiritTreeMenuRows(new Widget[]{row}, false);
 
 		assertEquals(Set.of("Port Sarim"), snapshot.listed);
 		assertTrue(snapshot.available.isEmpty());

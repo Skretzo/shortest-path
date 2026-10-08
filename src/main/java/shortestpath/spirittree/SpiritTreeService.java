@@ -6,12 +6,19 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
 import net.runelite.api.HashTable;
+import net.runelite.api.Player;
 import net.runelite.api.WidgetNode;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.client.util.Text;
+import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetModalMode;
 import net.runelite.client.config.ConfigManager;
 import shortestpath.requirement.PlayerStateSource;
@@ -48,6 +55,9 @@ public class SpiritTreeService
 	 */
 	private static final String CONFIG_GROUP = "shortestpath";
 	private static final String CONFIG_KEY_PREFIX = "spiritTree.";
+
+	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
+	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 
 	// patch name -> {regionID, varbitID, x1, y1, x2, y2} — the single source
 	// for patch metadata: the region-scoped varbit to sample and the tile
@@ -117,7 +127,7 @@ public class SpiritTreeService
 		return new SpiritTreeService();
 	}
 
-	public static boolean spiritTreeTravelable(int varbitValue)
+	static boolean spiritTreeTravelable(int varbitValue)
 	{
 		// Matches PatchImplementation.SPIRIT_TREE: 0-7 weeds, 8-19 growing,
 		// 21-31 diseased, 32-43 dead, 44 grown but check-health-only,
@@ -130,7 +140,7 @@ public class SpiritTreeService
 		return PATCHES.keySet();
 	}
 
-	public static String patchNameForRegion(int regionId)
+	static String patchNameForRegion(int regionId)
 	{
 		return PATCH_BY_REGION.get(regionId);
 	}
@@ -141,7 +151,7 @@ public class SpiritTreeService
 		return entry == null ? -1 : entry[0];
 	}
 
-	public static int varbitForPatch(String patchName)
+	static int varbitForPatch(String patchName)
 	{
 		int[] entry = PATCHES.get(patchName);
 		return entry == null ? -1 : entry[1];
@@ -210,7 +220,7 @@ public class SpiritTreeService
 	 * unknown; any gap (region change, loading tick, logout) un-settles.
 	 * (Same region-stability guard as TimeTrackingPlugin.onGameTick.)
 	 */
-	public void notePlayerRegion(int regionID, int tickCount)
+	void notePlayerRegion(int regionID, int tickCount)
 	{
 		settledRegionID = regionID != -1
 			&& regionID == lastPlayerRegionID
@@ -225,7 +235,7 @@ public class SpiritTreeService
 	 * consecutive recorded ticks — i.e. a {@code FARMING_TRANSMIT_*} read for
 	 * that region can no longer be a stale leftover from the previous region.
 	 */
-	public boolean isRegionSettled(int regionID)
+	boolean isRegionSettled(int regionID)
 	{
 		return regionID != -1 && settledRegionID == regionID;
 	}
@@ -285,7 +295,7 @@ public class SpiritTreeService
 	 * Returns a route-invalidating fact when the resolved set of travelable
 	 * trees changed, null otherwise.
 	 */
-	public TreeChange applyVarbitSample(String patchName, int varbitValue)
+	TreeChange applyVarbitSample(String patchName, int varbitValue)
 	{
 		if (!PATCHES.containsKey(patchName))
 		{
@@ -310,7 +320,7 @@ public class SpiritTreeService
 	 * Returns a route-invalidating fact when the resolved set of travelable
 	 * trees changed, null otherwise.
 	 */
-	public TreeChange applyMenuSnapshot(Set<String> listedTreeNames, Set<String> availableTreeNames)
+	TreeChange applyMenuSnapshot(Set<String> listedTreeNames, Set<String> availableTreeNames)
 	{
 		if (listedTreeNames == null || availableTreeNames == null)
 		{
@@ -383,12 +393,60 @@ public class SpiritTreeService
 	 * live in-region {@code FARMING_TRANSMIT_*} varbit sample, recorded
 	 * observations (RSProfile persistence + menu union), or — when the
 	 * service runs detached (no config manager: tests, dashboard harness)
-	 * — the live sample merged into the published set alone.
+	 * — the live sample merged into the published set alone. An empty
+	 * resolved set means every observed patch reported unusable and blocks
+	 * planted-tree transports honestly; the unresolved {@code null} is kept
+	 * while no source has produced any observation.
 	 * <p>
 	 * Client thread only, called from the engine's transport refresh.
 	 */
 	public void refreshAvailability(PlayerStateSource source)
 	{
+		String inRegionPatch = null;
+		WorldPoint worldLocation = source.localPlayerWorldLocation();
+		// Varbits are not transmitted while a modal widget is open; skip the
+		// live sample (but not the patch-state resolution below) rather than
+		// attribute a stale shared-slot value to the wrong patch. On the
+		// region-entry tick the slot can likewise still carry the previous
+		// region's values, so a tracked service samples only once the region
+		// has settled; a detached service has no settled record to gate on.
+		if (worldLocation != null && !source.modalWidgetOpen()
+			&& (configManager == null
+				|| isRegionSettled(worldLocation.getRegionID())))
+		{
+			inRegionPatch = patchNameForRegion(worldLocation.getRegionID());
+		}
+
+		if (configManager != null)
+		{
+			if (inRegionPatch != null)
+			{
+				// In-region sample is authoritative for this patch — a non-20
+				// read evicts any stale persisted or menu-derived positive.
+				applyVarbitSample(inRegionPatch,
+					source.varbit(varbitForPatch(inRegionPatch)));
+			}
+			Set<String> resolved = getTravelableTreesOrNull();
+			if (resolved != null)
+			{
+				publish(resolved);
+			}
+		}
+		else if (inRegionPatch != null)
+		{
+			int varbitValue = source.varbit(varbitForPatch(inRegionPatch));
+			Set<String> resolved = availableSpiritTrees == null
+				? new HashSet<>() : new HashSet<>(availableSpiritTrees);
+			if (spiritTreeTravelable(varbitValue))
+			{
+				resolved.add(inRegionPatch);
+			}
+			else
+			{
+				resolved.remove(inRegionPatch);
+			}
+			publish(resolved);
+		}
 	}
 
 	/**
@@ -398,7 +456,44 @@ public class SpiritTreeService
 	 */
 	public TreeChange onGameTick()
 	{
-		return null;
+		if (client == null)
+		{
+			return null;
+		}
+
+		Player localPlayer = client.getLocalPlayer();
+		WorldPoint worldLocation = localPlayer == null ? null : localPlayer.getWorldLocation();
+		int playerRegion = worldLocation == null ? -1 : worldLocation.getRegionID();
+		notePlayerRegion(playerRegion, client.getTickCount());
+		TreeChange change = null;
+		if (localPlayer != null
+			// Varbits are not transmitted while a modal widget is open; a stale
+			// read of the shared slot could carry another patch's value.
+			&& !modalWidgetOpen(client)
+			// On the region-entry tick the slot can still carry the previous
+			// region's values; only sample once the region has settled.
+			&& isRegionSettled(playerRegion))
+		{
+			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
+			// a planted spirit tree's varbit is only meaningful while standing in
+			// that patch's region. Sample only on a region match.
+			String spiritTreePatch = patchNameForRegion(playerRegion);
+			if (spiritTreePatch != null)
+			{
+				change = applyVarbitSample(spiritTreePatch,
+					client.getVarbitValue(varbitForPatch(spiritTreePatch)));
+				if (change != null)
+				{
+					publish(getTravelableTrees());
+				}
+			}
+		}
+
+		// Persist after the same-tick sample so a fresh observation is written
+		// on this tick rather than waiting for the next one.
+		persistIfDirty();
+
+		return change;
 	}
 
 	/**
@@ -408,7 +503,97 @@ public class SpiritTreeService
 	 */
 	public TreeChange onMenuOpened(boolean useNewMenu)
 	{
-		return null;
+		// Referencing
+		// https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
+
+		if (client == null)
+		{
+			return null;
+		}
+
+		Widget container;
+		if (useNewMenu)
+		{
+			container = client.getWidget(InterfaceID.MENU_NEW, 9);
+		}
+		else
+		{
+			container = client.getWidget(InterfaceID.MENU, 3);
+		}
+
+		if (container == null)
+		{
+			return null;
+		}
+
+		Widget[] children = container.getDynamicChildren();
+		if (children == null || children.length == 0)
+		{
+			return null;
+		}
+
+		// Tree Gnome Village is always the first row and always available, so an
+		// exact content match identifies the spirit tree menu. Interface group
+		// MENU is a shared container (other MISCB_IF users load on the same
+		// group), and this parse now runs on every load, so a loose check could
+		// persist a false observation from an unrelated interface.
+		String expectedFirstRow =
+			(useNewMenu ? "<col=ffffff>1</col>: " : "<col=735a28>1</col>: ") + "Tree Gnome Village";
+		if (!expectedFirstRow.equals(children[0].getText()))
+		{
+			return null;
+		}
+
+		SpiritTreeMenuSnapshot snapshot = parseSpiritTreeMenuRows(children, useNewMenu);
+
+		// The menu is authoritative for the patches it lists; persisted and
+		// in-region-varbit observations fill the patches the menu never covered.
+		TreeChange change = applyMenuSnapshot(snapshot.listed, snapshot.available);
+		if (change != null)
+		{
+			publish(getTravelableTrees());
+		}
+		return change;
+	}
+
+	/**
+	 * Parses the dynamic children of a spirit tree menu container into the
+	 * listed/available patch-name sets. Package-private for tests.
+	 */
+	static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(Widget[] children, boolean useNewMenu)
+	{
+		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
+		SpiritTreeMenuSnapshot snapshot = new SpiritTreeMenuSnapshot();
+
+		for (Widget child : children)
+		{
+			String text = child.getText();
+			if (text == null)
+			{
+				continue;
+			}
+			Matcher matcher = pattern.matcher(text);
+			if (!matcher.matches())
+			{
+				continue;
+			}
+
+			// Group 3 is spirit tree name; a greyed row can leave markup on it
+			// (e.g. "Port Sarim</col>"), which would miss the patch table and
+			// silently drop the row's eviction signal — strip tags before use.
+			String name = Text.removeTags(matcher.group(3)).trim();
+			snapshot.listed.add(name);
+
+			// Group 2 is the disabled color tag; if present, the tree is unavailable
+			if (matcher.group(2) != null)
+			{
+				continue;
+			}
+
+			snapshot.available.add(name);
+		}
+
+		return snapshot;
 	}
 
 	public TreeChange loadFromProfile()
