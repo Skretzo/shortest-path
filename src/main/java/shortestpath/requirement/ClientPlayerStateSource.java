@@ -13,6 +13,7 @@ import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.DBTableID;
 import shortestpath.SpiritTreePatchState;
+import shortestpath.items.OwnedItems;
 
 /**
  * The {@link Client}-backed {@link PlayerStateSource} and the only client

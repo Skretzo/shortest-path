@@ -194,7 +194,7 @@ public class ExactBankAccessParityTest
 		when(settings.costBankVisit()).thenReturn(bankVisitCost);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
-		config.bank = bank;
+		config.getItemState().noteBankContainer(bank);
 		config.refresh();
 		return config;
 	}

@@ -15,11 +15,9 @@ import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.GameState;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -33,8 +31,10 @@ import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.settings.EffectiveConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.items.ItemStateService;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
+import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.RequirementContext;
@@ -55,20 +55,6 @@ import shortestpath.requirement.model.Unlock;
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
 {
-	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
-		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
-		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
-	);
-	public static final int[] RUNE_POUCH_RUNE_VARBITS =
-		{
-			VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
-			VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
-		};
-	public static final int[] RUNE_POUCH_AMOUNT_VARBITS =
-		{
-			VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
-			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
-		};
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
 	/**
@@ -112,7 +98,6 @@ public class PathfinderConfig
 	private final PlayerStateSource playerStateSource;
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
-	public ItemContainer bank = null;
 	// Written on the client thread and the plugin's patch-state updates, then
 	// snapshotted into each refresh's RequirementContext — volatile keeps the
 	// cross-thread contract explicit.
@@ -122,6 +107,33 @@ public class PathfinderConfig
 	public void setSpiritTreePatchState(SpiritTreePatchState spiritTreePatchState)
 	{
 		this.spiritTreePatchState = spiritTreePatchState;
+	}
+
+	/**
+	 * The item-state seam: owns the live open-bank container that feeds the
+	 * eligibility capture below. The plugin wires the injected singleton in
+	 * production; harnesses and tests keep the default detached instance.
+	 */
+	private ItemStateService itemState = ItemStateService.forTesting();
+
+	public void setItemStateService(ItemStateService itemState)
+	{
+		this.itemState = itemState;
+	}
+
+	public ItemStateService getItemState()
+	{
+		return itemState;
+	}
+
+	/**
+	 * The bank-pickup projection for the active path — owned and cached by the
+	 * item-state service; this facade delegates so overlays reach it through
+	 * the engine config instead of the plugin shell.
+	 */
+	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex)
+	{
+		return itemState.getBankPickup(path, pathIndex, this);
 	}
 	/**
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
@@ -562,7 +574,7 @@ public class PathfinderConfig
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
 		RequirementContext context = RequirementContext.capture(playerStateSource, requirementHooks,
-			policy, evaluationTimeMinutes, Arrays.asList(allTransports), bankRequirements, bank,
+			policy, evaluationTimeMinutes, Arrays.asList(allTransports), bankRequirements, itemState.getBank(),
 			unlocks, respawnPrifddinas, leagueModeState, availableSpiritTrees);
 		eligibility = context.getEligibility();
 		eligibilityStale = false;
@@ -842,7 +854,7 @@ public class PathfinderConfig
 		if ((eligibility == null || eligibilityStale)
 			&& playerStateSource.isOnClientThread())
 		{
-			eligibility = RequirementContext.collectEligibility(playerStateSource, bank,
+			eligibility = ItemStateService.collectEligibility(playerStateSource, itemState.getBank(),
 				transportTypeConfig.getTeleportationItemSetting(), currencyThreshold,
 				includeBankPath, unlocks);
 			eligibilityStale = false;

@@ -1,9 +1,11 @@
 package shortestpath.settings;
 
 /**
- * The consequences a change to a config key carries for the plugin shell.
- * A {@link ConfigChange} carries the set of effects its key triggers; the
- * shell decides how to act on them.
+ * The consequences an observed change carries for the plugin shell — whether
+ * the change came from a config key (via {@link ConfigChange}) or from a
+ * producer observing game state (via the item-state change facts). A change
+ * fact carries the set of effects it triggers; the shell decides how to act
+ * on them.
  */
 public enum Effect
 {
@@ -14,5 +16,7 @@ public enum Effect
 	/** The selected pathfinding backend must be prepared (grid/prerender warm-up). */
 	SIDE_EFFECT_BACKEND_PREP,
 	/** No shell side effect beyond the views republishing; a running search continues. */
-	DISPLAY_ONLY
+	DISPLAY_ONLY,
+	/** The eligibility snapshot is stale; the engine rebuilds it lazily. */
+	ELIGIBILITY_STALE
 }

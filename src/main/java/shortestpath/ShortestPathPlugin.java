@@ -50,7 +50,6 @@ import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
@@ -74,6 +73,8 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
+import shortestpath.items.ItemChange;
+import shortestpath.items.ItemStateService;
 import shortestpath.overlay.BankItemHighlightOverlay;
 import shortestpath.overlay.DebugOverlayPanel;
 import shortestpath.overlay.InventoryHighlightOverlay;
@@ -94,7 +95,6 @@ import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
@@ -145,12 +145,6 @@ public class ShortestPathPlugin extends Plugin
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
 
-	// Bank pickup cache — invalidated when path, bank, or inventory changes.
-	private shortestpath.requirement.BankPickupRequirements.BankPickupResult bankPickupCache;
-	private List<PathStep> bankPickupCachePath;
-	private int bankPickupCacheIndex = -1;
-	private boolean bankPickupDirty = true;
-
 	@Inject
 	private Client client;
 	@Getter
@@ -188,6 +182,8 @@ public class ShortestPathPlugin extends Plugin
 	private PortalNexusKeybinds portalNexusKeybinds;
 	@Inject
 	private SpiritTreePatchState spiritTreePatchState;
+	@Inject
+	private ItemStateService itemState;
 	@Inject
 	private Settings settings;
 	private Point lastMenuOpenedPoint;
@@ -276,6 +272,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
 		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
+		pathfinderConfig.setItemStateService(itemState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load and field write touch the same HashMaps the
@@ -340,6 +337,10 @@ public class ShortestPathPlugin extends Plugin
 
 		// Flush pending observations so the last tick's sample is not lost.
 		spiritTreePatchState.persistIfDirty();
+
+		// The singleton survives restarts; drop the live bank ref and pickup
+		// cache so session state cannot leak into the next enable.
+		itemState.reset();
 	}
 
 	public void restartPathfinding(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
@@ -402,7 +403,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 			else
 			{
-				bankPickupDirty = true;
+				itemState.markBankPickupDirty();
 				if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
 				{
 					try
@@ -1196,16 +1197,8 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		int id = event.getContainerId();
-		if (id == InventoryID.BANK)
-		{
-			pathfinderConfig.bank = event.getItemContainer();
-		}
-		if (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN)
-		{
-			bankPickupDirty = true;
-			pathfinderConfig.invalidateEligibility();
-		}
+		ItemChange change = itemState.onContainerChanged(event.getContainerId(), event.getItemContainer());
+		applyItemChange(change);
 	}
 
 	@Subscribe
@@ -1213,51 +1206,22 @@ public class ShortestPathPlugin extends Plugin
 	{
 		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
 		// snapshot but change without firing a container event.
-		int varbitId = event.getVarbitId();
-		if (varbitId == VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE
-			|| containsVarbit(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS, varbitId)
-			|| containsVarbit(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
-		{
-			bankPickupDirty = true;
-			pathfinderConfig.invalidateEligibility();
-		}
-	}
-
-	private static boolean containsVarbit(int[] varbits, int varbitId)
-	{
-		for (int id : varbits)
-		{
-			if (id == varbitId)
-			{
-				return true;
-			}
-		}
-		return false;
+		ItemChange change = itemState.onVarbitChanged(event.getVarbitId());
+		applyItemChange(change);
 	}
 
 	/**
-	 * Returns the cached bank pickup result for the given path step, recomputing only when
-	 * the path, bank contents, or player inventory has changed since the last call.
+	 * Maps an item-state change fact to its shell follow-up actions: the
+	 * declared {@link Effect#ELIGIBILITY_STALE} effect lazily rebuilds the
+	 * eligibility snapshot. {@code null} facts admit nothing and map to no
+	 * action.
 	 */
-	public BankPickupResult getBankPickup(
-			List<PathStep> path, int pathIndex)
+	private void applyItemChange(ItemChange change)
 	{
-		Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
-		if (pathfinderConfig.bank == null || bankLocations == null
-				|| path == null || pathIndex < 0 || pathIndex >= path.size())
+		if (change != null && change.getEffects().contains(Effect.ELIGIBILITY_STALE))
 		{
-			return null;
+			pathfinderConfig.invalidateEligibility();
 		}
-		if (!bankPickupDirty && path == bankPickupCachePath && pathIndex == bankPickupCacheIndex)
-		{
-			return bankPickupCache;
-		}
-		bankPickupCachePath = path;
-		bankPickupCacheIndex = pathIndex;
-		bankPickupDirty = false;
-		bankPickupCache = shortestpath.requirement.BankPickupRequirements.BankPickupResult.compute(
-				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex);
-		return bankPickupCache;
 	}
 
 	@Subscribe

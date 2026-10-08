@@ -248,6 +248,19 @@ public class BankPickupRequirementsTest
 		assertEquals("2 Law rune, Coins (5)", BankPickupRequirements.formatPickups(client, pickups));
 	}
 
+	@Test
+	public void formatPickupsDegradesWithoutAClient()
+	{
+		// The detached forTesting() item-state service has no client to resolve
+		// names with; the phrases degrade instead of throwing.
+		Map<Integer, Long> pickups = new LinkedHashMap<>();
+		pickups.put(ItemID.LAWRUNE, 2L);
+		pickups.put(ItemID.COINS, 5L);
+
+		assertEquals("2 Unknown item, Unknown item (5)",
+			BankPickupRequirements.formatPickups(null, pickups));
+	}
+
 	private TransportEligibility eligibility(boolean fairyRingStaffRequired)
 	{
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);

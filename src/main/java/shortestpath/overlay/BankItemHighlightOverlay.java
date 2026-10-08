@@ -56,7 +56,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		if (plugin.getPathfinderConfig().bank == null)
+		if (plugin.getPathfinderConfig().getItemState().getBank() == null)
 		{
 			return null;
 		}
@@ -73,7 +73,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		BankPickupRequirements.BankPickupResult pickup = plugin.getBankPickup(path, pathIndex);
+		BankPickupRequirements.BankPickupResult pickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex);
 		if (pickup == null || pickup.bankItemIds.isEmpty())
 		{
 			return null;
