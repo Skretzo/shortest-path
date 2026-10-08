@@ -33,7 +33,7 @@ import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 import net.runelite.client.util.SwingUtil;
-import shortestpath.requirement.OwnedItems;
+import shortestpath.items.OwnedItems;
 import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
