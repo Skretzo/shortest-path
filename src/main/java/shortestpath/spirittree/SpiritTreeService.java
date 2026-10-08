@@ -381,11 +381,13 @@ public class SpiritTreeService
 
 	/**
 	 * Seeds the published set for harnesses and tests — the detached refresh
-	 * arm merges live samples into it. Never called in production.
+	 * arm merges live samples into it. Never called in production. The set
+	 * is defensively copied like {@link #publish} does, so a caller mutating
+	 * its argument later cannot silently change published state.
 	 */
 	public void setAvailableSpiritTreesForTest(Set<String> trees)
 	{
-		this.availableSpiritTrees = trees;
+		this.availableSpiritTrees = trees == null ? null : Set.copyOf(trees);
 	}
 
 	/**
