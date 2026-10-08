@@ -241,7 +241,11 @@ public class InGameWalkRewriterTest
 		}
 	}
 
-	/** A reference of the game's walking BFS (no window): the tiles after {@code from} up to {@code to}. */
+	/**
+	 * A reference of the game's walking BFS (no window): the tiles after {@code from} up to
+	 * {@code to}. The expansion-order tables are deliberately re-derived here rather than read
+	 * from GameWalkOrder, so the test keeps an independent implementation to check against.
+	 */
 	private static List<Integer> gamePath(CollisionMap grid, int from, int to)
 	{
 		int[] dx = {-1, 1, 0, 0, -1, 1, -1, 1}, dy = {0, 0, -1, 1, -1, -1, 1, 1};

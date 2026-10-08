@@ -34,11 +34,7 @@ public final class InGameWalkRewriter
 	private static final int WINDOW = 128;
 	private static final int HALF_WINDOW = WINDOW / 2;
 	private static final int UNVISITED = -1;
-	// CollisionMap.ordinaryWalkingMask bits (0-N, 1-NE, 2-E, 3-SE, 4-S, 5-SW, 6-W, 7-NW) in the
-	// game's expansion order: W, E, S, N, SW, SE, NW, NE.
-	private static final int[] ORDER_BITS = {6, 2, 4, 0, 5, 3, 7, 1};
-	private static final int[] ORDER_DX = {-1, 1, 0, 0, -1, 1, -1, 1};
-	private static final int[] ORDER_DY = {0, 0, -1, 1, -1, -1, 1, 1};
+	// The game's expansion order lives in GameWalkOrder, shared with the canonicaliser.
 
 	private final CollisionMap map;
 	private final int clickRadius;
@@ -196,10 +192,10 @@ public final class InGameWalkRewriter
 			if (distance[at] >= depth) break;
 			int x = at % WINDOW, y = at / WINDOW;
 			int mask = map.ordinaryWalkingMask(WorldPointUtil.packWorldPoint(originX + x, originY + y, plane));
-			for (int i = 0; i < ORDER_BITS.length; i++)
+			for (int i = 0; i < GameWalkOrder.ORDER_BITS.length; i++)
 			{
-				if ((mask & (1 << ORDER_BITS[i])) == 0) continue;
-				int nx = x + ORDER_DX[i], ny = y + ORDER_DY[i];
+				if ((mask & (1 << GameWalkOrder.ORDER_BITS[i])) == 0) continue;
+				int nx = x + GameWalkOrder.ORDER_DX[i], ny = y + GameWalkOrder.ORDER_DY[i];
 				if (nx < 0 || ny < 0 || nx >= WINDOW || ny >= WINDOW) continue;
 				int next = ny * WINDOW + nx;
 				if (distance[next] != UNVISITED) continue;

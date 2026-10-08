@@ -51,11 +51,8 @@ public final class ExactWalkCanonicalizer
 	static final int MAX_EXPANSIONS = 250_000;
 
 	private static final int NONE = 8;
-	// CollisionMap.ordinaryWalkingMask bits (0-N, 1-NE, 2-E, 3-SE, 4-S, 5-SW, 6-W, 7-NW) in the
-	// game's expansion order W, E, S, N, SW, SE, NW, NE; the first four are cardinal.
-	private static final int[] ORDER_BITS = {6, 2, 4, 0, 5, 3, 7, 1};
-	private static final int[] ORDER_DX = {-1, 1, 0, 0, -1, 1, -1, 1};
-	private static final int[] ORDER_DY = {0, 0, -1, 1, -1, -1, 1, 1};
+	// Directions index GameWalkOrder's tables: the game's expansion order W, E, S, N, SW, SE,
+	// NW, NE, of which the first four are cardinal.
 
 	private final CollisionMap map;
 	private final PreparedRoutingAccount account;
@@ -254,7 +251,7 @@ public final class ExactWalkCanonicalizer
 			return false;
 		}
 		int direction = direction(dx, dy);
-		if ((map.ordinaryWalkingMask(a) & 1 << ORDER_BITS[direction]) != 0) return true;
+		if ((map.ordinaryWalkingMask(a) & 1 << GameWalkOrder.ORDER_BITS[direction]) != 0) return true;
 		// The exact search also steps onto a blocked transport origin next to it, to take the transport.
 		return direction < 4 && map.isBlocked(bx, by, plane) && hasLocalOrigin(b, from.isBankVisited());
 	}
@@ -363,7 +360,7 @@ public final class ExactWalkCanonicalizer
 				// Only the start can be blocked (a transport may land on one); leave it as the search does.
 				mask = 0;
 				for (int next : map.ordinaryWalkingNeighbors(packed))
-					mask |= 1 << ORDER_BITS[direction(WorldPointUtil.unpackWorldX(next) - x,
+					mask |= 1 << GameWalkOrder.ORDER_BITS[direction(WorldPointUtil.unpackWorldX(next) - x,
 						WorldPointUtil.unpackWorldY(next) - y)];
 			}
 			else
@@ -372,8 +369,8 @@ public final class ExactWalkCanonicalizer
 			}
 			for (int direction = 0; direction < 8; direction++)
 			{
-				int nx = x + ORDER_DX[direction], ny = y + ORDER_DY[direction];
-				if ((mask & 1 << ORDER_BITS[direction]) == 0)
+				int nx = x + GameWalkOrder.ORDER_DX[direction], ny = y + GameWalkOrder.ORDER_DY[direction];
+				if ((mask & 1 << GameWalkOrder.ORDER_BITS[direction]) == 0)
 				{
 					// A blocked goal tile may still be stepped onto cardinally, as the exact search does.
 					if (direction >= 4 || blocked || !goal.entersBlockedTiles() || !map.isBlocked(nx, ny, plane)
@@ -436,7 +433,7 @@ public final class ExactWalkCanonicalizer
 	private static int direction(int dx, int dy)
 	{
 		for (int i = 0; i < 8; i++)
-			if (ORDER_DX[i] == dx && ORDER_DY[i] == dy) return i;
+			if (GameWalkOrder.ORDER_DX[i] == dx && GameWalkOrder.ORDER_DY[i] == dy) return i;
 		throw new IllegalArgumentException("not a walking move: " + dx + "," + dy);
 	}
 
