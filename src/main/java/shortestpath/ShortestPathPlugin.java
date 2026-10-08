@@ -107,14 +107,12 @@ import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -164,12 +162,6 @@ public class ShortestPathPlugin extends Plugin
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
-
-	// Bank pickup cache — invalidated when path, bank, or inventory changes.
-	private shortestpath.requirement.BankPickupRequirements.BankPickupResult bankPickupCache;
-	private List<PathStep> bankPickupCachePath;
-	private int bankPickupCacheIndex = -1;
-	private boolean bankPickupDirty = true;
 
 	@Inject
 	private Client client;
@@ -437,7 +429,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 			else
 			{
-				bankPickupDirty = true;
+				itemState.markBankPickupDirty();
 				// The boarded-boat varbit can lag the world entity (stale across a teleport or
 				// login), so only sail when the boat is actually in the scene — otherwise the
 				// search would sail its headings across land
@@ -1388,15 +1380,7 @@ public class ShortestPathPlugin extends Plugin
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
 		ItemChange change = itemState.onContainerChanged(event.getContainerId(), event.getItemContainer());
-		if (change == null)
-		{
-			return;
-		}
-		bankPickupDirty = true;
-		if (change.getEffects().contains(Effect.ELIGIBILITY_STALE))
-		{
-			pathfinderConfig.invalidateEligibility();
-		}
+		applyItemChange(change);
 	}
 
 	@Subscribe
@@ -1405,52 +1389,21 @@ public class ShortestPathPlugin extends Plugin
 		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
 		// snapshot but change without firing a container event.
 		ItemChange change = itemState.onVarbitChanged(event.getVarbitId());
-		if (change == null)
-		{
-			return;
-		}
-		bankPickupDirty = true;
-		if (change.getEffects().contains(Effect.ELIGIBILITY_STALE))
-		{
-			pathfinderConfig.invalidateEligibility();
-		}
+		applyItemChange(change);
 	}
 
 	/**
-	 * Returns the cached bank pickup result for the given path step, recomputing only when
-	 * the path, bank contents, or player inventory has changed since the last call.
+	 * Maps an item-state change fact to its shell follow-up actions: the
+	 * declared {@link Effect#ELIGIBILITY_STALE} effect lazily rebuilds the
+	 * eligibility snapshot. {@code null} facts admit nothing and map to no
+	 * action.
 	 */
-	public BankPickupResult getBankPickup(
-			List<PathStep> path, int pathIndex)
+	private void applyItemChange(ItemChange change)
 	{
-		Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
-		if (itemState.getBank() == null || bankLocations == null
-				|| path == null || pathIndex < 0 || pathIndex >= path.size())
+		if (change != null && change.getEffects().contains(Effect.ELIGIBILITY_STALE))
 		{
-			return null;
+			pathfinderConfig.invalidateEligibility();
 		}
-		if (!bankPickupDirty && path == bankPickupCachePath && pathIndex == bankPickupCacheIndex)
-		{
-			return bankPickupCache;
-		}
-		ActiveSearch search = pathfinder;
-		PathfinderResult result = search == null ? null : search.getResult();
-		bankPickupCachePath = path;
-		bankPickupCacheIndex = pathIndex;
-		// The target's items are only known once the search has its result, which appears just
-		// after the final path: keep recomputing until then.
-		bankPickupDirty = search != null && result == null;
-		bankPickupCache = shortestpath.requirement.BankPickupRequirements.BankPickupResult.compute(
-				client, itemState.getBank(), pathfinderConfig, bankLocations, path, pathIndex,
-				itemsToPickUp(result));
-		return bankPickupCache;
-	}
-
-	/** The items a route's target needs from the bank, or {@code null} when it picks none up. */
-	private static TransportItems itemsToPickUp(PathfinderResult result)
-	{
-		Arrival arrival = result == null ? null : result.getArrival();
-		return arrival != null && arrival.picksUpItemsFromBank() ? arrival.getTarget().getRequiredItems() : null;
 	}
 
 	/**
