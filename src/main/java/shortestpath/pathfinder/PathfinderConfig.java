@@ -18,7 +18,6 @@ import net.runelite.api.Constants;
 import net.runelite.api.GameState;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
