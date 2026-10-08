@@ -1067,7 +1067,7 @@ public class ShortestPathPlugin extends Plugin
 			String spiritTreePatch = SpiritTreeService.patchNameForRegion(playerRegion);
 			if (spiritTreePatch != null
 				&& spiritTrees.applyVarbitSample(spiritTreePatch,
-					client.getVarbitValue(SpiritTreeService.varbitForPatch(spiritTreePatch))))
+					client.getVarbitValue(SpiritTreeService.varbitForPatch(spiritTreePatch))) != null)
 			{
 				pathfinderConfig.availableSpiritTrees = spiritTrees.getTravelableTrees();
 				if (pathfinder != null)
@@ -1339,7 +1339,7 @@ public class ShortestPathPlugin extends Plugin
 
 		// The menu is authoritative for the patches it lists; persisted and
 		// in-region-varbit observations fill the patches the menu never covered.
-		if (spiritTrees.applyMenuSnapshot(snapshot.listed, snapshot.available))
+		if (spiritTrees.applyMenuSnapshot(snapshot.listed, snapshot.available) != null)
 		{
 			pathfinderConfig.availableSpiritTrees = spiritTrees.getTravelableTrees();
 
