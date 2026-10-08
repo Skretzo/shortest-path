@@ -199,6 +199,47 @@ public class InGameWalkRewriterTest
 	}
 
 	@Test
+	public void stepIntoAGatedTileIsKeptRatherThanClicked()
+	{
+		// (1,0) is walkable but gated by the league's blocked region; no in-game path lands on
+		// it without crossing the gate, so the step is kept rather than drawn as a click.
+		ExactWalkCanonicalizerTest.Grid grid = new ExactWalkCanonicalizerTest.Grid();
+		List<PathStep> route = steps(0, 0, 1, 0);
+		SearchRestrictions restrictions = SearchRestrictions.of(false, tile -> tile == pack(1, 0));
+
+		InGameWalkRewriter.Result result = new InGameWalkRewriter(grid, restrictions)
+			.rewrite(route, new int[]{0, 1});
+
+		assertEquals(describe(route), describe(result.path()));
+		assertEquals(List.of(), result.clickPoints());
+		assertEquals(List.of(1), result.keptStepIndices());
+	}
+
+	@Test
+	public void restrictedCandidateFallsBackToANearerClick()
+	{
+		// (2,0) is gated: clicking (3,1) would splice the game path (1,0),(2,0),(3,1) through
+		// it, so the click falls back to (2,1), whose game path only crosses (1,0).
+		ExactWalkCanonicalizerTest.Grid grid = new ExactWalkCanonicalizerTest.Grid();
+		List<PathStep> route = steps(0, 0, 1, 1, 2, 1, 3, 1);
+		SearchRestrictions restrictions = SearchRestrictions.of(false, tile -> tile == pack(2, 0));
+
+		InGameWalkRewriter.Result result = new InGameWalkRewriter(grid, restrictions)
+			.rewrite(route, new int[]{0, 3});
+
+		assertEquals(describe(steps(0, 0, 1, 0, 2, 1, 3, 1)), describe(result.path()));
+		assertEquals(List.of(2, 3), result.clickPoints());
+		assertEquals(List.of(), result.keptStepIndices());
+		assertFalse("the splice stepped into a gated tile",
+			tiles(result.path(), 0, 3).contains(pack(2, 0)));
+
+		// Without the restriction the longer click through (2,0) is spliced in.
+		InGameWalkRewriter.Result free = rewrite(grid, route, 0, 3);
+		assertEquals(List.of(3), free.clickPoints());
+		assertTrue(tiles(free.path(), 0, 3).contains(pack(2, 0)));
+	}
+
+	@Test
 	public void legOnBlockedTilesKeepsEveryStep()
 	{
 		// The exact search steps onto and off blocked tiles it reaches by transport; the game's

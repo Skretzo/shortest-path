@@ -390,7 +390,7 @@ public final class ExactPathfinder implements ActiveSearch
 					walkCanonicalizeNanos = System.nanoTime() - phaseStarted;
 					walkDiagnostics = canonical.diagnostics();
 					phaseStarted = System.nanoTime();
-					InGameWalkRewriter.Result walked = new InGameWalkRewriter(collision).rewrite(canonical);
+					InGameWalkRewriter.Result walked = new InGameWalkRewriter(collision, restrictions).rewrite(canonical);
 					walkRewriteNanos = System.nanoTime() - phaseStarted;
 					clickPoints = walked.clickPoints();
 					keptStepIndices = walked.keptStepIndices();

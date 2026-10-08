@@ -22,9 +22,11 @@ import shortestpath.pathfinder.PathStep;
  * whose in-game path is exactly as long as the intended walk to it, and the intended walk up to it
  * is replaced by that in-game path. The in-game path may leave the intended walk between clicks;
  * every click is on it. A shorter in-game path is refused too, as it would change the route's
- * cost. A step no click realises (one the game does not walk, such as onto a blocked transport
- * origin) keeps the intended step. Legs keep their tiles at both ends and their length, so every
- * other step of the route, and the route's cost, are unchanged.
+ * cost. So is one whose traced path steps through a tile the search's {@link SearchRestrictions}
+ * gate off — the game does not know those gates, so keeping the canonical step preserves both
+ * the cost and the restriction. A step no click realises (one the game does not walk, such as
+ * onto a blocked transport origin) keeps the intended step. Legs keep their tiles at both ends
+ * and their length, so every other step of the route, and the route's cost, are unchanged.
  */
 public final class InGameWalkRewriter
 {
@@ -38,21 +40,37 @@ public final class InGameWalkRewriter
 
 	private final CollisionMap map;
 	private final int clickRadius;
+	private final SearchRestrictions restrictions;
 	private final int[] distance = new int[WINDOW * WINDOW];
 	private final int[] parent = new int[WINDOW * WINDOW];
 	private final int[] queue = new int[WINDOW * WINDOW];
 
 	public InGameWalkRewriter(CollisionMap map)
 	{
-		this(map, DEFAULT_CLICK_RADIUS);
+		this(map, DEFAULT_CLICK_RADIUS, SearchRestrictions.none());
 	}
 
 	public InGameWalkRewriter(CollisionMap map, int clickRadius)
 	{
-		if (map == null) throw new NullPointerException();
+		this(map, clickRadius, SearchRestrictions.none());
+	}
+
+	/**
+	 * @param restrictions the search's positional gates: the spliced in-game paths must obey them
+	 * too, or a leg could be drawn through tiles the forward search was not allowed to enter
+	 */
+	public InGameWalkRewriter(CollisionMap map, SearchRestrictions restrictions)
+	{
+		this(map, DEFAULT_CLICK_RADIUS, restrictions);
+	}
+
+	public InGameWalkRewriter(CollisionMap map, int clickRadius, SearchRestrictions restrictions)
+	{
+		if (map == null || restrictions == null) throw new NullPointerException();
 		if (clickRadius < 2) throw new IllegalArgumentException("click radius must reach a diagonal neighbour");
 		this.map = map;
 		this.clickRadius = clickRadius;
+		this.restrictions = restrictions;
 	}
 
 	/** A rewritten route and the indices of its steps the player clicks to walk it. */
@@ -154,9 +172,13 @@ public final class InGameWalkRewriter
 			{
 				int tile = path.get(i).getPackedPosition();
 				if (!withinReach(sx, sy, tile)) continue;
+				// withinReach bounds the tile to (64±15) locally, inside the window: never -1.
 				int local = localIndex(originX, originY, tile);
 				// Exactly as long as the canonical walk: no shorter, which would change the cost.
-				if (local >= 0 && distance[local] == i - current) click = i;
+				if (distance[local] != i - current) continue;
+				// The traced game path must also walk only steps the search's restrictions allow;
+				// a candidate that violates them is refused, and a nearer one is tried instead.
+				if (traceAllowed(originX, originY, plane, local, i - current)) click = i;
 			}
 
 			if (click < 0)
@@ -177,6 +199,26 @@ public final class InGameWalkRewriter
 				current = click;
 			}
 		}
+	}
+
+	/**
+	 * Whether the in-game path traced back {@code hops} steps from local index {@code at} may be
+	 * spliced into the leg: every hop must be a step the search's restrictions allow, directed
+	 * from the tile nearer the click's source to the tile it lands on.
+	 */
+	private boolean traceAllowed(int originX, int originY, int plane, int at, int hops)
+	{
+		for (int i = 0; i < hops; i++, at = parent[at])
+		{
+			int from = parent[at];
+			if (!restrictions.stepAllowed(
+				WorldPointUtil.packWorldPoint(originX + from % WINDOW, originY + from / WINDOW, plane),
+				WorldPointUtil.packWorldPoint(originX + at % WINDOW, originY + at / WINDOW, plane)))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private boolean withinReach(int sx, int sy, int tile)
