@@ -111,7 +111,13 @@ public class DebugOverlayPanel extends OverlayPanel
 
 		List<PathStep> path = search.getPath();
 		String tiles = path == null ? "none" : path.size() + " tiles";
-		components.add(makeLine("Path:", exact == null ? tiles : tiles + ", " + exact.getClickPoints().size() + " clicks"));
+		// While recalculating, the shown path is the previous route but the click count is the
+		// new search's — suppress it rather than mix the two.
+		if (exact != null && !exact.isShowingProvisionalPath())
+		{
+			tiles += ", " + exact.getClickPoints().size() + " clicks";
+		}
+		components.add(makeLine("Path:", tiles));
 
 		PathfinderStats stats = search.getStats();
 		if (stats == null)
@@ -125,7 +131,9 @@ public class DebugOverlayPanel extends OverlayPanel
 			components.add(makeLine("  Walk canonicalize:", millis(exact.getWalkCanonicalizeNanos())));
 			if (!exact.getWalkDiagnostics().isEmpty())
 				components.add(makeLine("  Legs kept as found:", Integer.toString(exact.getWalkDiagnostics().size())));
-			components.add(makeLine("  Walk rewrite:", millis(exact.getWalkRewriteNanos())));
+			int keptSteps = exact.getKeptStepIndices().size();
+			components.add(makeLine("  Walk rewrite:", millis(exact.getWalkRewriteNanos())
+				+ (keptSteps > 0 ? ", " + keptSteps + " kept" : "")));
 			components.add(makeLine("  Target prep:", exact.isTargetReused() ? "reused"
 				: millis(exact.getReverseSearchNanos() + exact.getHeuristicPrepareNanos())));
 			components.add(makeLine("  Graph prep:", exact.isGraphReused() ? "reused"
