@@ -16,7 +16,6 @@ import net.runelite.api.gameval.VarbitID;
 import shortestpath.items.OwnedItems;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueModeState;
-import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.requirement.model.VarRequirement;
@@ -217,7 +216,7 @@ public final class RequirementContext
 		Map<Integer, Integer> bankHas = new HashMap<>();
 		OwnedItems.addContainer(bankHas, bank);
 		int bankPouchId = -1;
-		for (int pouchId : PathfinderConfig.RUNE_POUCHES)
+		for (int pouchId : OwnedItems.RUNE_POUCHES)
 		{
 			if (bankHas.containsKey(pouchId))
 			{
