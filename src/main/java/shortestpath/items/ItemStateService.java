@@ -60,11 +60,22 @@ public class ItemStateService
 
 	/**
 	 * Test/harness seam: returns an instance detached from Guice. The
-	 * production instance is the injected singleton.
+	 * production instance is the injected singleton. Without a client the
+	 * detached instance cannot resolve item names — pickup phrases from
+	 * {@link #getBankPickup} degrade to "Unknown item" placeholders.
 	 */
 	public static ItemStateService forTesting()
 	{
 		return new ItemStateService();
+	}
+
+	/**
+	 * Test/harness seam for callers that exercise {@link #getBankPickup} and
+	 * need real item names in the pickup phrases.
+	 */
+	public static ItemStateService forTesting(Client client)
+	{
+		return new ItemStateService(client);
 	}
 
 	/**
@@ -165,6 +176,9 @@ public class ItemStateService
 	/**
 	 * Returns the cached bank pickup result for the given path step, recomputing only when
 	 * the path, bank contents, or player inventory has changed since the last call.
+	 * On a detached {@link #forTesting()} instance there is no client to resolve item
+	 * names with, so the phrases degrade to "Unknown item" placeholders rather than
+	 * throwing.
 	 */
 	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex, PathfinderConfig pathfinderConfig)
 	{
