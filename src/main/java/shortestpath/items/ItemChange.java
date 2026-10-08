@@ -1,5 +1,6 @@
 package shortestpath.items;
 
+import java.util.Objects;
 import java.util.Set;
 
 import lombok.Getter;
@@ -21,7 +22,7 @@ public final class ItemChange
 
 	ItemChange(String key, Set<Effect> effects)
 	{
-		this.key = key;
+		this.key = Objects.requireNonNull(key);
 		this.effects = Set.copyOf(effects);
 	}
 }
