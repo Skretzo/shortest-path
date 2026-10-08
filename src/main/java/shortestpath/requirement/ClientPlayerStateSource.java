@@ -12,7 +12,7 @@ import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.DBTableID;
-import shortestpath.SpiritTreePatchState;
+import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.items.OwnedItems;
 
 /**
@@ -113,7 +113,7 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 	public boolean modalWidgetOpen()
 	{
 		checkOnClientThread();
-		return SpiritTreePatchState.modalWidgetOpen(client);
+		return SpiritTreeService.modalWidgetOpen(client);
 	}
 
 	@Override
