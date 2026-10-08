@@ -18,7 +18,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -55,20 +54,6 @@ import shortestpath.requirement.model.Unlock;
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
 {
-	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
-		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
-		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
-	);
-	public static final int[] RUNE_POUCH_RUNE_VARBITS =
-		{
-			VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
-			VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
-		};
-	public static final int[] RUNE_POUCH_AMOUNT_VARBITS =
-		{
-			VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
-			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
-		};
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
 	/**
