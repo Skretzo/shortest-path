@@ -88,7 +88,7 @@ public class PathfinderConfigExclusionTest
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.getItemState().noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 
