@@ -25,7 +25,7 @@ import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.SpiritTreePatchState;
+import shortestpath.spirittree.SpiritTreeService;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.settings.EffectiveConfig;
@@ -102,11 +102,11 @@ public class PathfinderConfig
 	// snapshotted into each refresh's RequirementContext — volatile keeps the
 	// cross-thread contract explicit.
 	public volatile Set<String> availableSpiritTrees = null;
-	private SpiritTreePatchState spiritTreePatchState;
+	private SpiritTreeService spiritTrees;
 
-	public void setSpiritTreePatchState(SpiritTreePatchState spiritTreePatchState)
+	public void setSpiritTreeService(SpiritTreeService spiritTrees)
 	{
-		this.spiritTreePatchState = spiritTreePatchState;
+		this.spiritTrees = spiritTrees;
 	}
 
 	/**
@@ -804,22 +804,22 @@ public class PathfinderConfig
 		// region-entry tick the slot can likewise still carry the previous
 		// region's values, so sample only once the region has settled.
 		if (worldLocation != null && !playerStateSource.modalWidgetOpen()
-			&& (spiritTreePatchState == null
-				|| spiritTreePatchState.isRegionSettled(worldLocation.getRegionID())))
+			&& (spiritTrees == null
+				|| spiritTrees.isRegionSettled(worldLocation.getRegionID())))
 		{
-			inRegionPatch = SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
+			inRegionPatch = SpiritTreeService.patchNameForRegion(worldLocation.getRegionID());
 		}
 
-		if (spiritTreePatchState != null)
+		if (spiritTrees != null)
 		{
 			if (inRegionPatch != null)
 			{
 				// In-region sample is authoritative for this patch — a non-20
 				// read evicts any stale persisted or menu-derived positive.
-				spiritTreePatchState.applyVarbitSample(inRegionPatch,
-					playerStateSource.varbit(SpiritTreePatchState.varbitForPatch(inRegionPatch)));
+				spiritTrees.applyVarbitSample(inRegionPatch,
+					playerStateSource.varbit(SpiritTreeService.varbitForPatch(inRegionPatch)));
 			}
-			Set<String> resolved = spiritTreePatchState.getTravelableTreesOrNull();
+			Set<String> resolved = spiritTrees.getTravelableTreesOrNull();
 			if (resolved != null)
 			{
 				availableSpiritTrees = resolved;
@@ -827,10 +827,10 @@ public class PathfinderConfig
 		}
 		else if (inRegionPatch != null)
 		{
-			int varbitValue = playerStateSource.varbit(SpiritTreePatchState.varbitForPatch(inRegionPatch));
+			int varbitValue = playerStateSource.varbit(SpiritTreeService.varbitForPatch(inRegionPatch));
 			Set<String> resolved = availableSpiritTrees == null
 				? new HashSet<>() : new HashSet<>(availableSpiritTrees);
-			if (SpiritTreePatchState.spiritTreeTravelable(varbitValue))
+			if (SpiritTreeService.spiritTreeTravelable(varbitValue))
 			{
 				resolved.add(inRegionPatch);
 			}

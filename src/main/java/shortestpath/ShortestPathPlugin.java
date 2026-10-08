@@ -98,6 +98,7 @@ import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
+import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -181,7 +182,7 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private PortalNexusKeybinds portalNexusKeybinds;
 	@Inject
-	private SpiritTreePatchState spiritTreePatchState;
+	private SpiritTreeService spiritTrees;
 	@Inject
 	private ItemStateService itemState;
 	@Inject
@@ -271,7 +272,7 @@ public class ShortestPathPlugin extends Plugin
 	protected void startUp()
 	{
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
-		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
+		pathfinderConfig.setSpiritTreeService(spiritTrees);
 		pathfinderConfig.setItemStateService(itemState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
@@ -280,8 +281,8 @@ public class ShortestPathPlugin extends Plugin
 			// too — doing them here on the EDT would race that refresh.
 			clientThread.invokeLater(() ->
 			{
-				spiritTreePatchState.loadFromProfile();
-				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+				spiritTrees.loadFromProfile();
+				pathfinderConfig.availableSpiritTrees = spiritTrees.getTravelableTreesOrNull();
 				pathfinderConfig.refresh();
 			});
 		}
@@ -289,8 +290,8 @@ public class ShortestPathPlugin extends Plugin
 		{
 			// No refresh is queued when logged out, so loading here is safe;
 			// RuneScapeProfileChanged reloads once a profile is active anyway.
-			spiritTreePatchState.loadFromProfile();
-			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+			spiritTrees.loadFromProfile();
+			pathfinderConfig.availableSpiritTrees = spiritTrees.getTravelableTreesOrNull();
 		}
 
 		overlayManager.add(pathOverlay);
@@ -336,7 +337,7 @@ public class ShortestPathPlugin extends Plugin
 		keyManager.unregisterKeyListener(clearPathKeylistener);
 
 		// Flush pending observations so the last tick's sample is not lost.
-		spiritTreePatchState.persistIfDirty();
+		spiritTrees.persistIfDirty();
 
 		// The singleton survives restarts; drop the live bank ref and pickup
 		// cache so session state cannot leak into the next enable.
@@ -649,8 +650,8 @@ public class ShortestPathPlugin extends Plugin
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
 		portalNexusKeybinds.loadFromProfile();
-		spiritTreePatchState.loadFromProfile();
-		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+		spiritTrees.loadFromProfile();
+		pathfinderConfig.availableSpiritTrees = spiritTrees.getTravelableTreesOrNull();
 
 		// The new profile may carry different persisted trees, so an in-flight
 		// path computed against the old account's set must be redone — same
@@ -1051,24 +1052,24 @@ public class ShortestPathPlugin extends Plugin
 		Player localPlayer = client.getLocalPlayer();
 		WorldPoint worldLocation = localPlayer == null ? null : localPlayer.getWorldLocation();
 		int playerRegion = worldLocation == null ? -1 : worldLocation.getRegionID();
-		spiritTreePatchState.notePlayerRegion(playerRegion, client.getTickCount());
+		spiritTrees.notePlayerRegion(playerRegion, client.getTickCount());
 		if (localPlayer != null
 			// Varbits are not transmitted while a modal widget is open; a stale
 			// read of the shared slot could carry another patch's value.
-			&& !SpiritTreePatchState.modalWidgetOpen(client)
+			&& !SpiritTreeService.modalWidgetOpen(client)
 			// On the region-entry tick the slot can still carry the previous
 			// region's values; only sample once the region has settled.
-			&& spiritTreePatchState.isRegionSettled(playerRegion))
+			&& spiritTrees.isRegionSettled(playerRegion))
 		{
 			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
 			// a planted spirit tree's varbit is only meaningful while standing in
 			// that patch's region. Sample only on a region match.
-			String spiritTreePatch = SpiritTreePatchState.patchNameForRegion(playerRegion);
+			String spiritTreePatch = SpiritTreeService.patchNameForRegion(playerRegion);
 			if (spiritTreePatch != null
-				&& spiritTreePatchState.applyVarbitSample(spiritTreePatch,
-					client.getVarbitValue(SpiritTreePatchState.varbitForPatch(spiritTreePatch))))
+				&& spiritTrees.applyVarbitSample(spiritTreePatch,
+					client.getVarbitValue(SpiritTreeService.varbitForPatch(spiritTreePatch))))
 			{
-				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
+				pathfinderConfig.availableSpiritTrees = spiritTrees.getTravelableTrees();
 				if (pathfinder != null)
 				{
 					restartPathfinding("spirit tree varbit", pathfinder.getStart(), pathfinder.getTargets());
@@ -1078,7 +1079,7 @@ public class ShortestPathPlugin extends Plugin
 
 		// Persist after the same-tick sample so a fresh observation is written
 		// on this tick rather than waiting for the next one.
-		spiritTreePatchState.persistIfDirty();
+		spiritTrees.persistIfDirty();
 
 		if (localPlayer == null || pathfinder == null)
 		{
@@ -1338,9 +1339,9 @@ public class ShortestPathPlugin extends Plugin
 
 		// The menu is authoritative for the patches it lists; persisted and
 		// in-region-varbit observations fill the patches the menu never covered.
-		if (spiritTreePatchState.applyMenuSnapshot(snapshot.listed, snapshot.available))
+		if (spiritTrees.applyMenuSnapshot(snapshot.listed, snapshot.available))
 		{
-			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
+			pathfinderConfig.availableSpiritTrees = spiritTrees.getTravelableTrees();
 
 			if (pathfinder != null)
 			{
@@ -1354,17 +1355,17 @@ public class ShortestPathPlugin extends Plugin
 	 * menu showed ({@link #listed}) and the subset usable right now
 	 * ({@link #available} — a greyed row means planted but not usable).
 	 */
-	static final class SpiritTreeMenuSnapshot
+	public static final class SpiritTreeMenuSnapshot
 	{
-		final Set<String> listed = new HashSet<>();
-		final Set<String> available = new HashSet<>();
+		public final Set<String> listed = new HashSet<>();
+		public final Set<String> available = new HashSet<>();
 	}
 
 	/**
 	 * Parses the dynamic children of a spirit tree menu container into the
-	 * listed/available patch-name sets. Package-private for tests.
+	 * listed/available patch-name sets. Widened for the moved service tests.
 	 */
-	static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(Widget[] children, boolean useNewMenu)
+	public static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(Widget[] children, boolean useNewMenu)
 	{
 		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
 		SpiritTreeMenuSnapshot snapshot = new SpiritTreeMenuSnapshot();

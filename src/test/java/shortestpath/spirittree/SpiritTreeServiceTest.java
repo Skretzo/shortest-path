@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.spirittree;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -14,23 +14,24 @@ import static org.mockito.Mockito.when;
 import java.util.Set;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
+import shortestpath.ShortestPathPlugin;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SpiritTreePatchStateTest
+public class SpiritTreeServiceTest
 {
-	private SpiritTreePatchState state;
+	private SpiritTreeService state;
 
 	@Before
 	public void setUp()
 	{
-		state = new SpiritTreePatchState();
+		state = new SpiritTreeService();
 	}
 
 	@Test
 	public void grownTreeValueIsTravelable()
 	{
-		assertTrue(SpiritTreePatchState.spiritTreeTravelable(20));
+		assertTrue(SpiritTreeService.spiritTreeTravelable(20));
 	}
 
 	@Test
@@ -45,45 +46,45 @@ public class SpiritTreePatchStateTest
 				continue;
 			}
 			assertFalse("varbit value " + v + " must not be travelable",
-				SpiritTreePatchState.spiritTreeTravelable(v));
+				SpiritTreeService.spiritTreeTravelable(v));
 		}
 	}
 
 	@Test
 	public void decodeBoundaries()
 	{
-		assertFalse(SpiritTreePatchState.spiritTreeTravelable(19));
-		assertTrue(SpiritTreePatchState.spiritTreeTravelable(20));
-		assertFalse(SpiritTreePatchState.spiritTreeTravelable(21));
-		assertFalse(SpiritTreePatchState.spiritTreeTravelable(43));
-		assertFalse(SpiritTreePatchState.spiritTreeTravelable(44));
-		assertFalse(SpiritTreePatchState.spiritTreeTravelable(45));
+		assertFalse(SpiritTreeService.spiritTreeTravelable(19));
+		assertTrue(SpiritTreeService.spiritTreeTravelable(20));
+		assertFalse(SpiritTreeService.spiritTreeTravelable(21));
+		assertFalse(SpiritTreeService.spiritTreeTravelable(43));
+		assertFalse(SpiritTreeService.spiritTreeTravelable(44));
+		assertFalse(SpiritTreeService.spiritTreeTravelable(45));
 	}
 
 	@Test
 	public void patchMapIsTotalAndBidirectional()
 	{
-		assertEquals(5, SpiritTreePatchState.patchNames().size());
-		assertEquals(12082, SpiritTreePatchState.regionForPatch("Port Sarim"));
-		assertEquals(4771, SpiritTreePatchState.varbitForPatch("Port Sarim"));
-		assertEquals(10300, SpiritTreePatchState.regionForPatch("Etceteria"));
-		assertEquals(4772, SpiritTreePatchState.varbitForPatch("Etceteria"));
-		assertEquals(11058, SpiritTreePatchState.regionForPatch("Brimhaven"));
-		assertEquals(4772, SpiritTreePatchState.varbitForPatch("Brimhaven"));
-		assertEquals(6711, SpiritTreePatchState.regionForPatch("Hosidius"));
-		assertEquals(7904, SpiritTreePatchState.varbitForPatch("Hosidius"));
-		assertEquals(4922, SpiritTreePatchState.regionForPatch("Farming Guild"));
-		assertEquals(4771, SpiritTreePatchState.varbitForPatch("Farming Guild"));
+		assertEquals(5, SpiritTreeService.patchNames().size());
+		assertEquals(12082, SpiritTreeService.regionForPatch("Port Sarim"));
+		assertEquals(4771, SpiritTreeService.varbitForPatch("Port Sarim"));
+		assertEquals(10300, SpiritTreeService.regionForPatch("Etceteria"));
+		assertEquals(4772, SpiritTreeService.varbitForPatch("Etceteria"));
+		assertEquals(11058, SpiritTreeService.regionForPatch("Brimhaven"));
+		assertEquals(4772, SpiritTreeService.varbitForPatch("Brimhaven"));
+		assertEquals(6711, SpiritTreeService.regionForPatch("Hosidius"));
+		assertEquals(7904, SpiritTreeService.varbitForPatch("Hosidius"));
+		assertEquals(4922, SpiritTreeService.regionForPatch("Farming Guild"));
+		assertEquals(4771, SpiritTreeService.varbitForPatch("Farming Guild"));
 	}
 
 	@Test
 	public void regionLookupReturnsMappedPatch()
 	{
-		assertEquals("Port Sarim", SpiritTreePatchState.patchNameForRegion(12082));
-		assertEquals("Farming Guild", SpiritTreePatchState.patchNameForRegion(4922));
-		assertNull(SpiritTreePatchState.patchNameForRegion(11826)); // unmapped region
-		assertEquals(-1, SpiritTreePatchState.regionForPatch("Tree Gnome Village"));
-		assertEquals(-1, SpiritTreePatchState.varbitForPatch("Tree Gnome Village"));
+		assertEquals("Port Sarim", SpiritTreeService.patchNameForRegion(12082));
+		assertEquals("Farming Guild", SpiritTreeService.patchNameForRegion(4922));
+		assertNull(SpiritTreeService.patchNameForRegion(11826)); // unmapped region
+		assertEquals(-1, SpiritTreeService.regionForPatch("Tree Gnome Village"));
+		assertEquals(-1, SpiritTreeService.varbitForPatch("Tree Gnome Village"));
 	}
 
 	@Test
@@ -91,12 +92,12 @@ public class SpiritTreePatchStateTest
 	{
 		// The transport rows' destination tiles must land on their patch;
 		// the POH spirit tree tile must not be claimed by any patch.
-		assertEquals("Port Sarim", SpiritTreePatchState.patchNameForTile(3058, 3257));
-		assertEquals("Etceteria", SpiritTreePatchState.patchNameForTile(2613, 3855));
-		assertEquals("Brimhaven", SpiritTreePatchState.patchNameForTile(2800, 3203));
-		assertEquals("Hosidius", SpiritTreePatchState.patchNameForTile(1693, 3540));
-		assertEquals("Farming Guild", SpiritTreePatchState.patchNameForTile(1251, 3750));
-		assertNull(SpiritTreePatchState.patchNameForTile(1858, 7051)); // POH spirit tree
+		assertEquals("Port Sarim", SpiritTreeService.patchNameForTile(3058, 3257));
+		assertEquals("Etceteria", SpiritTreeService.patchNameForTile(2613, 3855));
+		assertEquals("Brimhaven", SpiritTreeService.patchNameForTile(2800, 3203));
+		assertEquals("Hosidius", SpiritTreeService.patchNameForTile(1693, 3540));
+		assertEquals("Farming Guild", SpiritTreeService.patchNameForTile(1251, 3750));
+		assertNull(SpiritTreeService.patchNameForTile(1858, 7051)); // POH spirit tree
 	}
 
 	@Test
@@ -105,17 +106,17 @@ public class SpiritTreePatchStateTest
 		// Every tile covered by a patch's bounds must resolve back to that
 		// patch and lie inside the patch's own region — otherwise the
 		// region-scoped varbit would not describe the tiles the bounds gate.
-		for (String name : SpiritTreePatchState.patchNames())
+		for (String name : SpiritTreeService.patchNames())
 		{
-			int[] bounds = SpiritTreePatchState.boundsForPatch(name);
-			int region = SpiritTreePatchState.regionForPatch(name);
+			int[] bounds = SpiritTreeService.boundsForPatch(name);
+			int region = SpiritTreeService.regionForPatch(name);
 			for (int x = bounds[0]; x <= bounds[2]; x++)
 			{
 				for (int y = bounds[1]; y <= bounds[3]; y++)
 				{
 					assertEquals(name + " tile " + x + "," + y + " outside region " + region,
 						region, (x >> 6) << 8 | (y >> 6));
-					assertEquals(name, SpiritTreePatchState.patchNameForTile(x, y));
+					assertEquals(name, SpiritTreeService.patchNameForTile(x, y));
 				}
 			}
 		}
@@ -124,30 +125,30 @@ public class SpiritTreePatchStateTest
 	@Test
 	public void storedValueRoundTrips()
 	{
-		String stored = SpiritTreePatchState.serializeObserved(20, 1700000000L);
-		assertEquals(Integer.valueOf(20), SpiritTreePatchState.parseStoredValue(stored));
+		String stored = SpiritTreeService.serializeObserved(20, 1700000000L);
+		assertEquals(Integer.valueOf(20), SpiritTreeService.parseStoredValue(stored));
 	}
 
 	@Test
 	public void malformedStoredValuesAreSkipped()
 	{
-		assertNull(SpiritTreePatchState.parseStoredValue(null));
-		assertNull(SpiritTreePatchState.parseStoredValue(""));
-		assertNull(SpiritTreePatchState.parseStoredValue("no-colon"));
-		assertNull(SpiritTreePatchState.parseStoredValue(":"));
-		assertNull(SpiritTreePatchState.parseStoredValue(":123"));
-		assertNull(SpiritTreePatchState.parseStoredValue("20:"));
-		assertNull(SpiritTreePatchState.parseStoredValue("abc:123"));
-		assertNull(SpiritTreePatchState.parseStoredValue("20:abc"));
-		assertNull(SpiritTreePatchState.parseStoredValue("20:123:456"));
-		assertNull(SpiritTreePatchState.parseStoredValue("99999999999999999999999:1"));
+		assertNull(SpiritTreeService.parseStoredValue(null));
+		assertNull(SpiritTreeService.parseStoredValue(""));
+		assertNull(SpiritTreeService.parseStoredValue("no-colon"));
+		assertNull(SpiritTreeService.parseStoredValue(":"));
+		assertNull(SpiritTreeService.parseStoredValue(":123"));
+		assertNull(SpiritTreeService.parseStoredValue("20:"));
+		assertNull(SpiritTreeService.parseStoredValue("abc:123"));
+		assertNull(SpiritTreeService.parseStoredValue("20:abc"));
+		assertNull(SpiritTreeService.parseStoredValue("20:123:456"));
+		assertNull(SpiritTreeService.parseStoredValue("99999999999999999999999:1"));
 	}
 
 	@Test
 	public void emptyStoredConfigYieldsNoDetection()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 
 		assertNull(persisted.getTravelableTreesOrNull());
@@ -272,10 +273,10 @@ public class SpiritTreePatchStateTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000");
 
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 
 		assertEquals(Set.of("Port Sarim"), persisted.getTravelableTrees());
@@ -286,10 +287,10 @@ public class SpiritTreePatchStateTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.11058.4772"))
+			"shortestpath", "spiritTree.11058.4772"))
 			.thenReturn("32:1700000000");
 
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 
 		assertTrue(persisted.getTravelableTrees().isEmpty());
@@ -301,10 +302,10 @@ public class SpiritTreePatchStateTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("garbage");
 
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 
 		assertTrue(persisted.getTravelableTrees().isEmpty());
@@ -314,12 +315,12 @@ public class SpiritTreePatchStateTest
 	public void persistIfDirtyWritesChangedKeys()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.applyVarbitSample("Port Sarim", 20);
 		persisted.persistIfDirty();
 
 		verify(configManager).setRSProfileConfiguration(
-			eq(ShortestPathPlugin.CONFIG_GROUP),
+			eq("shortestpath"),
 			eq("spiritTree.12082.4771"),
 			contains("20:"));
 	}
@@ -328,7 +329,7 @@ public class SpiritTreePatchStateTest
 	public void persistIfDirtySkipsCleanState()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.persistIfDirty();
 		persisted.applyVarbitSample("Port Sarim", 20);
 		persisted.persistIfDirty();
@@ -336,16 +337,16 @@ public class SpiritTreePatchStateTest
 		persisted.persistIfDirty();
 
 		verify(configManager).setRSProfileConfiguration(
-			eq(ShortestPathPlugin.CONFIG_GROUP),
+			eq("shortestpath"),
 			eq("spiritTree.12082.4771"),
 			contains("20:"));
 		// An unobserved patch must not produce any profile write.
 		verify(configManager, never()).setRSProfileConfiguration(
-			eq(ShortestPathPlugin.CONFIG_GROUP),
+			eq("shortestpath"),
 			eq("spiritTree.11058.4772"),
 			contains("0:"));
 		verify(configManager, never()).unsetRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.11058.4772");
+			"shortestpath", "spiritTree.11058.4772");
 	}
 
 	@Test
@@ -353,16 +354,16 @@ public class SpiritTreePatchStateTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000");
 
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 		persisted.applyVarbitSample("Port Sarim", 0); // cleared patch
 		persisted.persistIfDirty();
 
 		verify(configManager).unsetRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
+			"shortestpath", "spiritTree.12082.4771");
 	}
 
 	@Test
@@ -371,7 +372,7 @@ public class SpiritTreePatchStateTest
 		// travelable → non-travelable → travelable must end with a live key
 		// again, not a stale unset or an unwritten second set.
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 
 		persisted.applyVarbitSample("Port Sarim", 20);
 		persisted.persistIfDirty();
@@ -381,11 +382,11 @@ public class SpiritTreePatchStateTest
 		persisted.persistIfDirty();
 
 		verify(configManager, times(2)).setRSProfileConfiguration(
-			eq(ShortestPathPlugin.CONFIG_GROUP),
+			eq("shortestpath"),
 			eq("spiritTree.12082.4771"),
 			contains("20:"));
 		verify(configManager).unsetRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
+			"shortestpath", "spiritTree.12082.4771");
 	}
 
 	@Test
@@ -395,10 +396,10 @@ public class SpiritTreePatchStateTest
 		// again — the absent-key state is already persisted.
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000");
 
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 		persisted.applyVarbitSample("Port Sarim", 32); // dead
 		persisted.persistIfDirty();
@@ -406,7 +407,7 @@ public class SpiritTreePatchStateTest
 		persisted.persistIfDirty();
 
 		verify(configManager).unsetRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
+			"shortestpath", "spiritTree.12082.4771");
 	}
 
 	@Test
@@ -416,10 +417,10 @@ public class SpiritTreePatchStateTest
 		// non-travelable observations; the next dirty flush removes the key.
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("0:1700000000");
 
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 		assertTrue(persisted.getTravelableTrees().isEmpty());
 
@@ -427,7 +428,7 @@ public class SpiritTreePatchStateTest
 		persisted.persistIfDirty();
 
 		verify(configManager).unsetRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771");
+			"shortestpath", "spiritTree.12082.4771");
 	}
 
 	@Test
@@ -435,11 +436,11 @@ public class SpiritTreePatchStateTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, "spiritTree.12082.4771"))
+			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000")
 			.thenReturn(null);
 
-		SpiritTreePatchState persisted = new SpiritTreePatchState(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager);
 		persisted.loadFromProfile();
 		assertEquals(Set.of("Port Sarim"), persisted.getTravelableTrees());
 

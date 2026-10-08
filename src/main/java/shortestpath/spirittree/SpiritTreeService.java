@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.spirittree;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,8 +35,16 @@ import net.runelite.client.config.ConfigManager;
  * evicts the persisted travelable entry for that patch.
  */
 @Singleton
-public class SpiritTreePatchState
+public class SpiritTreeService
 {
+	/**
+	 * The persisted config group — mirrors the {@code @ConfigGroup} value on
+	 * {@link shortestpath.ShortestPathConfig}. Kept as a literal so this leaf
+	 * package neither reads annotations reflectively nor references the plugin
+	 * class; a divergence would surface as every persisted read/write missing
+	 * its namespace.
+	 */
+	private static final String CONFIG_GROUP = "shortestpath";
 	private static final String CONFIG_KEY_PREFIX = "spiritTree.";
 
 	// patch name -> {regionID, varbitID, x1, y1, x2, y2} — the single source
@@ -77,12 +85,12 @@ public class SpiritTreePatchState
 	private int settledRegionID = -1;
 
 	@Inject
-	public SpiritTreePatchState(ConfigManager configManager)
+	public SpiritTreeService(ConfigManager configManager)
 	{
 		this.configManager = configManager;
 	}
 
-	SpiritTreePatchState()
+	SpiritTreeService()
 	{
 		this(null);
 	}
@@ -276,7 +284,7 @@ public class SpiritTreePatchState
 	 * state — a partial snapshot never shrinks unvisited entries.
 	 * Returns true when the resolved set of travelable trees changed.
 	 */
-	boolean applyMenuSnapshot(Set<String> listedTreeNames, Set<String> availableTreeNames)
+	public boolean applyMenuSnapshot(Set<String> listedTreeNames, Set<String> availableTreeNames)
 	{
 		if (listedTreeNames == null || availableTreeNames == null)
 		{
@@ -321,7 +329,7 @@ public class SpiritTreePatchState
 		return observedValues.isEmpty() ? null : getTravelableTrees();
 	}
 
-	void loadFromProfile()
+	public void loadFromProfile()
 	{
 		dirty = false;
 		observedValues.clear();
@@ -333,7 +341,7 @@ public class SpiritTreePatchState
 		for (String patchName : PATCHES.keySet())
 		{
 			String stored = configManager.getRSProfileConfiguration(
-				ShortestPathPlugin.CONFIG_GROUP, configKey(patchName));
+				CONFIG_GROUP, configKey(patchName));
 			Integer value = parseStoredValue(stored);
 			if (value != null)
 			{
@@ -343,7 +351,7 @@ public class SpiritTreePatchState
 		}
 	}
 
-	void persistIfDirty()
+	public void persistIfDirty()
 	{
 		if (!dirty)
 		{
@@ -364,7 +372,7 @@ public class SpiritTreePatchState
 				{
 					continue;
 				}
-				configManager.setRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP,
+				configManager.setRSProfileConfiguration(CONFIG_GROUP,
 					configKey(entry.getKey()), serializeObserved(entry.getValue(), now));
 				lastPersistedValues.put(entry.getKey(), entry.getValue());
 			}
@@ -375,7 +383,7 @@ public class SpiritTreePatchState
 				// residue — rather than leaving a dead value on the profile.
 				// lastPersistedValues holds no marker for an absent key, so a
 				// repeat non-travelable flush does not unset twice.
-				configManager.unsetRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP,
+				configManager.unsetRSProfileConfiguration(CONFIG_GROUP,
 					configKey(entry.getKey()));
 				lastPersistedValues.remove(entry.getKey());
 			}
