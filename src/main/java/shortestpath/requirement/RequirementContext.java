@@ -13,6 +13,7 @@ import net.runelite.api.Skill;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
+import shortestpath.items.OwnedItems;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.PathfinderConfig;
