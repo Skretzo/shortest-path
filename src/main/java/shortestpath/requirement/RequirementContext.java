@@ -10,16 +10,14 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.items.OwnedItems;
+import shortestpath.items.ItemStateService;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.requirement.model.VarRequirement;
-import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 
 /**
@@ -145,7 +143,7 @@ public final class RequirementContext
 
 		int currentMaxQuestPoints = source.maximumQuestPoints();
 
-		TransportEligibility eligibilitySnapshot = collectEligibility(source, bank,
+		TransportEligibility eligibilitySnapshot = ItemStateService.collectEligibility(source, bank,
 			policy.teleportationItemSetting(), policy.currencyThreshold(), policy.includeBankPath(),
 			unlocks);
 
@@ -190,87 +188,6 @@ public final class RequirementContext
 			currentMaxQuestPoints, capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
 			eligibilitySnapshot, unlocks, respawnPrifddinas, onSailingBoat,
 			leagueModeState, availableSpiritTrees);
-	}
-
-	/**
-	 * Captures the client state both the pathfinding verdicts and the bank-pickup plans
-	 * read: the carried pool (inventory + worn + rune pouch in hand), the bank-path pool
-	 * (which adds the bank contents when bank paths are enabled), the bank contents
-	 * themselves, the runes inside a banked rune pouch, the fairy-ring staff gate and
-	 * the currency threshold. Shared by {@link #capture} and the lazy
-	 * {@code getEligibility()} rebuild so exactly one collection path exists.
-	 */
-	public static TransportEligibility collectEligibility(
-		PlayerStateSource source,
-		ItemContainer bank,
-		TeleportationItem teleportationItemSetting,
-		int currencyThreshold,
-		boolean includeBankPath,
-		Set<Unlock> unlocks)
-	{
-		Map<Integer, Integer> carriedItems = collectItems(source, bank,
-			teleportationItemSetting, true, true, false, true);
-		Map<Integer, Integer> bankPathItems = includeBankPath
-			? collectItems(source, bank, teleportationItemSetting, true, true, true, true)
-			: carriedItems;
-		Map<Integer, Integer> bankHas = new HashMap<>();
-		OwnedItems.addContainer(bankHas, bank);
-		int bankPouchId = -1;
-		for (int pouchId : OwnedItems.RUNE_POUCHES)
-		{
-			if (bankHas.containsKey(pouchId))
-			{
-				bankPouchId = pouchId;
-				break;
-			}
-		}
-		Map<Integer, Integer> bankPouchRunes = bankPouchId == -1
-			? Map.of()
-			: source.runePouchContents();
-		boolean fairyRingStaffRequired =
-			source.varbit(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1;
-		return new TransportEligibility(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold,
-			unlocks);
-	}
-
-	/**
-	 * Item id to quantity over the selected containers, summed across containers.
-	 */
-	private static Map<Integer, Integer> collectItems(
-		PlayerStateSource source,
-		ItemContainer bank,
-		TeleportationItem teleportationItemSetting,
-		boolean checkInventory,
-		boolean checkEquipment,
-		boolean checkBank,
-		boolean checkRunePouch)
-	{
-		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
-
-		if (checkInventory)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, source.itemContainer(InventoryID.INV));
-		}
-
-		if (checkEquipment)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, source.itemContainer(InventoryID.WORN));
-		}
-
-		if (checkBank
-			&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting)))
-		{
-			OwnedItems.addContainer(itemsAndQuantities, bank);
-		}
-
-		if (checkRunePouch)
-		{
-			source.addRunePouchContents(itemsAndQuantities);
-		}
-
-		return itemsAndQuantities;
 	}
 
 	/**
