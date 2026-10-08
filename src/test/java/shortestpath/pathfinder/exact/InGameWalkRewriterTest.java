@@ -335,19 +335,27 @@ public class InGameWalkRewriterTest
 	public void legacySearchDoesNotRewriteWalks() throws IOException
 	{
 		Path sourceRoot = Paths.get("src/main/java/shortestpath");
+		if (!Files.isDirectory(sourceRoot))
+		{
+			// Composite builds run tests with the module nested one level down.
+			sourceRoot = Paths.get("shortest-path/src/main/java/shortestpath");
+		}
+		assertTrue("cannot find the plugin sources; run tests from the module or composite "
+			+ "project directory (tried src/main/java/shortestpath and "
+			+ sourceRoot.toAbsolutePath() + ")", Files.isDirectory(sourceRoot));
 		List<String> users;
 		try (Stream<Path> files = Files.walk(sourceRoot))
 		{
 			users = files.filter(path -> path.toString().endsWith(".java"))
 				.filter(path -> !path.getFileName().toString().equals("InGameWalkRewriter.java"))
-				.filter(path -> read(path).contains("InGameWalkRewriter"))
+				.filter(path -> usesInGameWalkRewriter(read(path)))
 				.map(path -> path.getFileName().toString())
 				.sorted()
 				.collect(Collectors.toList());
 		}
 		assertEquals(List.of("ExactPathfinder.java"), users);
-		assertFalse(read(Paths.get("src/main/java/shortestpath/pathfinder/Pathfinder.java"))
-			.contains("InGameWalkRewriter"));
+		assertFalse(usesInGameWalkRewriter(
+			read(sourceRoot.resolve("pathfinder").resolve("Pathfinder.java"))));
 	}
 
 	// ---- helpers ----
@@ -440,6 +448,19 @@ public class InGameWalkRewriterTest
 		int[] costs = new int[size];
 		for (int i = 1; i < size; i++) costs[i] = i;
 		return costs;
+	}
+
+	/**
+	 * Whether {@code source} actually uses the rewriter — imports or constructs it — ignoring
+	 * line comments, so a comment or javadoc mention does not count.
+	 */
+	private static boolean usesInGameWalkRewriter(String source)
+	{
+		String code = source.lines()
+			.map(line -> line.contains("//") ? line.substring(0, line.indexOf("//")) : line)
+			.collect(Collectors.joining("\n"));
+		return code.contains("import shortestpath.pathfinder.exact.InGameWalkRewriter")
+			|| code.contains("new InGameWalkRewriter(");
 	}
 
 	private static String read(Path path)
