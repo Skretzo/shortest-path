@@ -17,7 +17,6 @@ import net.runelite.api.Constants;
 import net.runelite.api.GameState;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -25,7 +24,7 @@ import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.SpiritTreePatchState;
+import shortestpath.spirittree.SpiritTreeService;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
 import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.settings.EffectiveConfig;
@@ -98,15 +97,21 @@ public class PathfinderConfig
 	private final PlayerStateSource playerStateSource;
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
-	// Written on the client thread and the plugin's patch-state updates, then
-	// snapshotted into each refresh's RequirementContext — volatile keeps the
-	// cross-thread contract explicit.
-	public volatile Set<String> availableSpiritTrees = null;
-	private SpiritTreePatchState spiritTreePatchState;
+	// The spirit-tree seam: owns detection, persistence and the published
+	// travelable-tree set that each refresh's RequirementContext snapshots.
+	// The plugin wires the injected singleton in production; harnesses and
+	// tests keep the default detached instance, whose refresh arm merges a
+	// live in-region sample into the published set without persistence.
+	private SpiritTreeService spiritTrees = SpiritTreeService.forTesting();
 
-	public void setSpiritTreePatchState(SpiritTreePatchState spiritTreePatchState)
+	public void setSpiritTreeService(SpiritTreeService spiritTrees)
 	{
-		this.spiritTreePatchState = spiritTreePatchState;
+		this.spiritTrees = spiritTrees;
+	}
+
+	public SpiritTreeService getSpiritTrees()
+	{
+		return spiritTrees;
 	}
 
 	/**
@@ -139,8 +144,8 @@ public class PathfinderConfig
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
 	 */
 	// Refresh-written state below is read by the pathfinder executor thread;
-	// volatile keeps the cross-thread contract explicit (as availableSpiritTrees
-	// already does). The two availability maps additionally travel together in
+	// volatile keeps the cross-thread contract explicit. The two availability
+	// maps additionally travel together in
 	// one volatile holder so a search never mixes sides of different refreshes.
 	private volatile Set<Integer> accessibleBankTiles = Set.of();
 	/**
@@ -560,7 +565,7 @@ public class PathfinderConfig
 		transportTypeConfig.disableUnless(TransportType.SPIRIT_TREE,
 			QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
-		refreshSpiritTreeAvailability();
+		spiritTrees.refreshAvailability(playerStateSource);
 
 		// The policy snapshot is taken only now — after the disableUnless
 		// derivations above — so the chain freezes the effective transport-type
@@ -575,7 +580,7 @@ public class PathfinderConfig
 		// an immutable snapshot, so no check can observe the game mid-refresh.
 		RequirementContext context = RequirementContext.capture(playerStateSource, requirementHooks,
 			policy, evaluationTimeMinutes, Arrays.asList(allTransports), bankRequirements, itemState.getBank(),
-			unlocks, respawnPrifddinas, leagueModeState, availableSpiritTrees);
+			unlocks, respawnPrifddinas, leagueModeState, spiritTrees.getAvailableSpiritTrees());
 		eligibility = context.getEligibility();
 		eligibilityStale = false;
 		varbitValues = context.getVarbitValues();
@@ -780,65 +785,6 @@ public class PathfinderConfig
 			Map<Integer, Integer> values, long evaluationTimeMinutes)
 		{
 			return PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
-		}
-	}
-
-	/**
-	 * Resolves the effective {@link #availableSpiritTrees} from every detection
-	 * source: a live in-region {@code FARMING_TRANSMIT_*} varbit sample, the
-	 * plugin-maintained patch state (RSProfile persistence + menu union), or —
-	 * when no patch-state helper is wired (tests, dashboard harness) — the live
-	 * sample alone. An empty resolved set means every observed patch reported
-	 * unusable and blocks planted-tree transports honestly; the unresolved
-	 * {@code null} is kept while no source has produced any observation.
-	 * <p>
-	 * Client thread only, called from {@link #refreshTransports}.
-	 */
-	private void refreshSpiritTreeAvailability()
-	{
-		String inRegionPatch = null;
-		WorldPoint worldLocation = playerStateSource.localPlayerWorldLocation();
-		// Varbits are not transmitted while a modal widget is open; skip the
-		// live sample (but not the patch-state resolution below) rather than
-		// attribute a stale shared-slot value to the wrong patch. On the
-		// region-entry tick the slot can likewise still carry the previous
-		// region's values, so sample only once the region has settled.
-		if (worldLocation != null && !playerStateSource.modalWidgetOpen()
-			&& (spiritTreePatchState == null
-				|| spiritTreePatchState.isRegionSettled(worldLocation.getRegionID())))
-		{
-			inRegionPatch = SpiritTreePatchState.patchNameForRegion(worldLocation.getRegionID());
-		}
-
-		if (spiritTreePatchState != null)
-		{
-			if (inRegionPatch != null)
-			{
-				// In-region sample is authoritative for this patch — a non-20
-				// read evicts any stale persisted or menu-derived positive.
-				spiritTreePatchState.applyVarbitSample(inRegionPatch,
-					playerStateSource.varbit(SpiritTreePatchState.varbitForPatch(inRegionPatch)));
-			}
-			Set<String> resolved = spiritTreePatchState.getTravelableTreesOrNull();
-			if (resolved != null)
-			{
-				availableSpiritTrees = resolved;
-			}
-		}
-		else if (inRegionPatch != null)
-		{
-			int varbitValue = playerStateSource.varbit(SpiritTreePatchState.varbitForPatch(inRegionPatch));
-			Set<String> resolved = availableSpiritTrees == null
-				? new HashSet<>() : new HashSet<>(availableSpiritTrees);
-			if (SpiritTreePatchState.spiritTreeTravelable(varbitValue))
-			{
-				resolved.add(inRegionPatch);
-			}
-			else
-			{
-				resolved.remove(inRegionPatch);
-			}
-			availableSpiritTrees = resolved;
 		}
 	}
 

@@ -9,7 +9,7 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.ItemID;
 import shortestpath.ShortestPathPlugin;
-import shortestpath.SpiritTreePatchState;
+import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueRegion;
@@ -636,7 +636,7 @@ public final class Requirements
 	 */
 	private boolean isUnavailablePlantedSpiritTree(int x, int y)
 	{
-		String treeName = SpiritTreePatchState.patchNameForTile(x, y);
+		String treeName = SpiritTreeService.patchNameForTile(x, y);
 		if (treeName == null)
 		{
 			return false;
