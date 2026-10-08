@@ -24,14 +24,24 @@ import shortestpath.pathfinder.PathStep;
  * every click is on it. A shorter in-game path is refused too, as it would change the route's
  * cost. So is one whose traced path steps through a tile the search's {@link SearchRestrictions}
  * gate off — the game does not know those gates, so keeping the canonical step preserves both
- * the cost and the restriction. A step no click realises (one the game does not walk, such as
- * onto a blocked transport origin) keeps the intended step. Legs keep their tiles at both ends
- * and their length, so every other step of the route, and the route's cost, are unchanged.
+ * the cost and the restriction — and one needing more than {@link #MAX_CHECKPOINTS} checkpoint
+ * tiles, which the game would walk only up to the 25th corner. A step no click realises (one the
+ * game does not walk, such as onto a blocked transport origin) keeps the intended step; the
+ * client's fallback search for an approximate target when a click is unreachable is deliberately
+ * not emulated. Legs keep their tiles at both ends and their length, so every other step of the
+ * route, and the route's cost, are unchanged.
  */
 public final class InGameWalkRewriter
 {
 	/** Roughly the reach of a minimap click, in tiles. */
 	public static final int DEFAULT_CLICK_RADIUS = 15;
+
+	/**
+	 * Checkpoint tiles the client keeps for one click's walk: the direction-change corners of
+	 * the traced path plus the destination. A click needing more is walked only up to the 25th
+	 * checkpoint and the player stops short, so such a candidate is refused rather than drawn.
+	 */
+	private static final int MAX_CHECKPOINTS = 25;
 
 	private static final int WINDOW = 128;
 	private static final int HALF_WINDOW = WINDOW / 2;
@@ -204,10 +214,13 @@ public final class InGameWalkRewriter
 	/**
 	 * Whether the in-game path traced back {@code hops} steps from local index {@code at} may be
 	 * spliced into the leg: every hop must be a step the search's restrictions allow, directed
-	 * from the tile nearer the click's source to the tile it lands on.
+	 * from the tile nearer the click's source to the tile it lands on, and the path must fit the
+	 * client's per-click budget of {@link #MAX_CHECKPOINTS} checkpoint tiles — its
+	 * direction-change corners plus the destination — or the game would stop short of the click.
 	 */
 	private boolean traceAllowed(int originX, int originY, int plane, int at, int hops)
 	{
+		int previousDx = 0, previousDy = 0, turns = 0;
 		for (int i = 0; i < hops; i++, at = parent[at])
 		{
 			int from = parent[at];
@@ -217,8 +230,12 @@ public final class InGameWalkRewriter
 			{
 				return false;
 			}
+			int dx = at % WINDOW - from % WINDOW, dy = at / WINDOW - from / WINDOW;
+			if (i > 0 && (dx != previousDx || dy != previousDy)) turns++;
+			previousDx = dx;
+			previousDy = dy;
 		}
-		return true;
+		return turns + 1 <= MAX_CHECKPOINTS;
 	}
 
 	private boolean withinReach(int sx, int sy, int tile)

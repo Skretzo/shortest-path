@@ -276,6 +276,47 @@ public class InGameWalkRewriterTest
 	}
 
 	@Test
+	public void clicksBeyondTheCheckpointBudgetAreDecomposed()
+	{
+		// The client walks a click only up to its 25th checkpoint tile (the direction-change
+		// corners plus the destination). This corridor climbs a staircase north-east, runs two
+		// tiles along the top, and descends another staircase south-east — 27 checkpoints to
+		// the end — so the far click is refused and the leg decomposes at step 27, the last
+		// tile whose traced path fits the budget, rather than drawing a walk the game would
+		// cut short. The steps are cardinal: a diagonal zig-zag through a walled channel is
+		// not walkable at all.
+		List<Integer> corridor = new ArrayList<>(List.of(pack(0, 0)));
+		for (int k = 0; k <= 6; k++)
+		{
+			corridor.add(pack(k, k + 1));
+			corridor.add(pack(k + 1, k + 1));
+		}
+		corridor.add(pack(8, 7));
+		corridor.add(pack(9, 7));
+		for (int k = 0; k <= 5; k++)
+		{
+			corridor.add(pack(9 + k, 6 - k));
+			corridor.add(pack(10 + k, 6 - k));
+		}
+		corridor.add(pack(15, 0));
+		Set<Integer> open = new HashSet<>(corridor);
+		Set<Integer> blocked = new HashSet<>();
+		for (int x = -2; x <= 17; x++)
+			for (int y = -2; y <= 9; y++)
+				if (!open.contains(pack(x, y))) blocked.add(pack(x, y));
+		ExactWalkCanonicalizerTest.Grid grid = new ExactWalkCanonicalizerTest.Grid(blocked);
+		List<PathStep> route = new ArrayList<>();
+		for (int tile : corridor) route.add(new PathStep(tile, false));
+
+		InGameWalkRewriter.Result result = rewrite(grid, route, 0, route.size() - 1);
+
+		assertEquals(describe(route), describe(result.path()));
+		assertEquals(List.of(27, route.size() - 1), result.clickPoints());
+		assertEquals(List.of(), result.keptStepIndices());
+		assertClicksFollowTheGame(grid, route, result, 0);
+	}
+
+	@Test
 	public void clickReachIsEuclideanUpToTheRadiusBoundary()
 	{
 		ExactWalkCanonicalizerTest.Grid grid = new ExactWalkCanonicalizerTest.Grid();
