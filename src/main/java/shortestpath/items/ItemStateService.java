@@ -138,11 +138,14 @@ public class ItemStateService
 
 	/**
 	 * Harness/test seeding seam; production writes arrive through
-	 * {@link #onContainerChanged} for the bank container id.
+	 * {@link #onContainerChanged} for the bank container id. Dirties the
+	 * pickup cache like the event path does, so a re-seeded bank is never
+	 * served a projection computed against the previous container.
 	 */
 	public void noteBankContainer(ItemContainer container)
 	{
 		this.bank = container;
+		bankPickupDirty = true;
 	}
 
 	/**
