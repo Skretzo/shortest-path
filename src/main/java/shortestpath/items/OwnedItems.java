@@ -1,13 +1,16 @@
 package shortestpath.items;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import shortestpath.pathfinder.PathfinderConfig;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarbitID;
 
 /**
  * Collects the items a player owns as item id to quantity, summing an item
@@ -19,6 +22,21 @@ public final class OwnedItems
 	private OwnedItems()
 	{
 	}
+
+	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
+		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
+		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
+	);
+	public static final int[] RUNE_POUCH_RUNE_VARBITS =
+		{
+			VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
+			VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
+		};
+	public static final int[] RUNE_POUCH_AMOUNT_VARBITS =
+		{
+			VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
+			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
+		};
 
 	public static void addContainer(Map<Integer, Integer> owned, ItemContainer container)
 	{
@@ -40,7 +58,7 @@ public final class OwnedItems
 	 */
 	public static void addRunePouchContents(Client client, Map<Integer, Integer> owned)
 	{
-		if (PathfinderConfig.RUNE_POUCHES.stream().noneMatch(owned::containsKey))
+		if (RUNE_POUCHES.stream().noneMatch(owned::containsKey))
 		{
 			return;
 		}
@@ -59,11 +77,11 @@ public final class OwnedItems
 		{
 			return runes;
 		}
-		for (int i = 0; i < PathfinderConfig.RUNE_POUCH_RUNE_VARBITS.length; i++)
+		for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++)
 		{
-			int runeEnumId = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS[i]);
+			int runeEnumId = client.getVarbitValue(RUNE_POUCH_RUNE_VARBITS[i]);
 			int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
-			int runeAmount = client.getVarbitValue(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS[i]);
+			int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
 			if (runeId > 0 && runeAmount > 0)
 			{
 				runes.merge(runeId, runeAmount, Integer::sum);

@@ -9,7 +9,6 @@ import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.settings.Effect;
 
 /**
@@ -81,8 +80,8 @@ public class ItemStateService
 	public ItemChange onVarbitChanged(int varbitId)
 	{
 		if (varbitId == VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE
-			|| containsVarbit(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS, varbitId)
-			|| containsVarbit(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
+			|| containsVarbit(OwnedItems.RUNE_POUCH_RUNE_VARBITS, varbitId)
+			|| containsVarbit(OwnedItems.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
 		{
 			return new ItemChange("varbit:" + varbitId, Set.of(Effect.ELIGIBILITY_STALE));
 		}

@@ -11,7 +11,7 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
-import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.items.OwnedItems;
 
 /**
  * Map-backed {@link PlayerStateSource} for client-free requirement tests.
@@ -211,7 +211,7 @@ final class MapPlayerStateSource implements PlayerStateSource
 	{
 		// Same shape as the production reader: the pouch runes are only added
 		// when the carried set already holds a rune pouch.
-		if (PathfinderConfig.RUNE_POUCHES.stream().noneMatch(owned::containsKey))
+		if (OwnedItems.RUNE_POUCHES.stream().noneMatch(owned::containsKey))
 		{
 			return;
 		}
