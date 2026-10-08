@@ -294,7 +294,9 @@ public final class BankPickupRequirements
 		{
 			int itemId = entry.getKey();
 			long qty = entry.getValue();
-			ItemComposition definition = client.getItemDefinition(itemId);
+			// A detached (forTesting) item-state service passes no client —
+			// degrade to the placeholder name rather than throwing.
+			ItemComposition definition = client == null ? null : client.getItemDefinition(itemId);
 			String itemName = definition == null ? null : definition.getName();
 			if (itemName == null || itemName.isEmpty() || "null".equals(itemName))
 			{
