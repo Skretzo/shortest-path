@@ -60,13 +60,13 @@ public final class InGameWalkRewriter
 	{
 		private final List<PathStep> path;
 		private final List<Integer> clickPoints;
-		private final int keptSteps;
+		private final List<Integer> keptStepIndices;
 
-		Result(List<PathStep> path, List<Integer> clickPoints, int keptSteps)
+		Result(List<PathStep> path, List<Integer> clickPoints, List<Integer> keptStepIndices)
 		{
 			this.path = path;
 			this.clickPoints = clickPoints;
-			this.keptSteps = keptSteps;
+			this.keptStepIndices = keptStepIndices;
 		}
 
 		/** The route, as long as the canonical one and with the same steps outside its walking legs. */
@@ -75,16 +75,28 @@ public final class InGameWalkRewriter
 			return path;
 		}
 
-		/** Ascending indices into {@link #path()} of the tiles to click, one per click. */
+		/**
+		 * Ascending indices into {@link #path()} of the tiles to click, one per click. Every
+		 * index is a real click: the game's own walking path lands on that tile.
+		 */
 		public List<Integer> clickPoints()
 		{
 			return clickPoints;
 		}
 
+		/**
+		 * Ascending indices into {@link #path()} of the steps that kept the canonical step
+		 * because no in-game click realises them; they are not clicks.
+		 */
+		public List<Integer> keptStepIndices()
+		{
+			return keptStepIndices;
+		}
+
 		/** Walking steps that kept the canonical step because no in-game click realises them. */
 		public int keptSteps()
 		{
-			return keptSteps;
+			return keptStepIndices.size();
 		}
 	}
 
@@ -108,20 +120,21 @@ public final class InGameWalkRewriter
 	{
 		List<PathStep> rewritten = new ArrayList<>(path);
 		List<Integer> clicks = new ArrayList<>();
-		int kept = 0;
+		List<Integer> kept = new ArrayList<>();
 		for (int leg = 0; leg < legBounds.length; leg += 2)
-			kept += rewriteLeg(path, legBounds[leg], legBounds[leg + 1], rewritten, clicks);
-		return new Result(List.copyOf(rewritten), List.copyOf(clicks), kept);
+			rewriteLeg(path, legBounds[leg], legBounds[leg + 1], rewritten, clicks, kept);
+		return new Result(List.copyOf(rewritten), List.copyOf(clicks), List.copyOf(kept));
 	}
 
 	/**
 	 * Replaces {@code rewritten[from + 1..to]} by the in-game walk along the clicks on
-	 * {@code path[from..to]}, and returns how many steps kept the canonical step.
+	 * {@code path[from..to]}, appending each click's index to {@code clicks} and the index of
+	 * each step the game cannot be made to walk to {@code kept}.
 	 */
-	private int rewriteLeg(List<PathStep> path, int from, int to, List<PathStep> rewritten, List<Integer> clicks)
+	private void rewriteLeg(List<PathStep> path, int from, int to, List<PathStep> rewritten,
+		List<Integer> clicks, List<Integer> kept)
 	{
 		boolean banked = path.get(from).isBankVisited();
-		int kept = 0;
 		int current = from;
 		while (current < to)
 		{
@@ -148,9 +161,11 @@ public final class InGameWalkRewriter
 
 			if (click < 0)
 			{
-				// Not a step the game walks; keep the canonical one.
-				kept++;
-				click = current + 1;
+				// Not a step the game walks; keep the canonical one. Record it as a kept step,
+				// not a click: no click's in-game path lands on it, so showing it as a click
+				// point would mark a tile the game cannot be made to walk to.
+				kept.add(current + 1);
+				current++;
 			}
 			else
 			{
@@ -158,11 +173,10 @@ public final class InGameWalkRewriter
 				for (int i = click; i > current; i--, at = parent[at])
 					rewritten.set(i, new PathStep(WorldPointUtil.packWorldPoint(originX + at % WINDOW,
 						originY + at / WINDOW, plane), banked));
+				clicks.add(click);
+				current = click;
 			}
-			clicks.add(click);
-			current = click;
 		}
-		return kept;
 	}
 
 	private boolean withinReach(int sx, int sy, int tile)

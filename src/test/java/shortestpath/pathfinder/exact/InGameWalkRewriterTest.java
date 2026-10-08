@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -117,8 +118,10 @@ public class InGameWalkRewriterTest
 
 		InGameWalkRewriter.Result result = rewrite(grid, route, 0, 6);
 
-		// (6,0) is unreachable in game, so the click falls back to (5,0), and the last step is kept.
-		assertEquals(List.of(5, 6), result.clickPoints());
+		// (6,0) is unreachable in game, so the click falls back to (5,0), and the last step is
+		// kept — recorded as a kept step, not a click: no click lands on it.
+		assertEquals(List.of(5), result.clickPoints());
+		assertEquals(List.of(6), result.keptStepIndices());
 		assertEquals(1, result.keptSteps());
 		assertEquals(gamePath(grid, pack(0, 0), pack(5, 0)), tiles(result.path(), 0, 5));
 		assertEquals(describe(route.subList(5, 7)), describe(result.path().subList(5, 7)));
@@ -196,6 +199,57 @@ public class InGameWalkRewriterTest
 	}
 
 	@Test
+	public void legOnBlockedTilesKeepsEveryStep()
+	{
+		// The exact search steps onto and off blocked tiles it reaches by transport; the game's
+		// BFS expands nothing from a blocked tile, so a leg lying on them keeps every step.
+		ExactWalkCanonicalizerTest.Grid grid = new ExactWalkCanonicalizerTest.Grid(
+			Set.of(pack(0, 0), pack(1, 0), pack(2, 0), pack(3, 0)));
+		List<PathStep> route = steps(0, 0, 1, 0, 2, 0, 3, 0);
+
+		InGameWalkRewriter.Result result = rewrite(grid, route, 0, 3);
+
+		assertEquals(List.of(), result.clickPoints());
+		assertEquals(List.of(1, 2, 3), result.keptStepIndices());
+		assertEquals(describe(route), describe(result.path()));
+	}
+
+	@Test
+	public void consecutiveStepsTheGameDoesNotWalkAreAllKept()
+	{
+		// A two-tile-thick wall mid-leg: the detour around it is longer than the canonical
+		// walk, so the clicks on the far side are refused, and the game cannot step on or off
+		// the wall tiles either — three steps in a row are kept before real clicks resume.
+		Set<Integer> blocked = new HashSet<>();
+		for (int x = 6; x <= 7; x++)
+			for (int y = -1; y <= 1; y++) blocked.add(pack(x, y));
+		ExactWalkCanonicalizerTest.Grid grid = new ExactWalkCanonicalizerTest.Grid(blocked);
+		List<PathStep> route = steps(0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9, 0);
+
+		InGameWalkRewriter.Result result = rewrite(grid, route, 0, 9);
+
+		assertEquals(List.of(5, 9), result.clickPoints());
+		assertEquals(List.of(6, 7, 8), result.keptStepIndices());
+		assertEquals(describe(route.subList(5, 10)), describe(result.path().subList(5, 10)));
+		assertClicksFollowTheGame(grid, route, result, 0);
+	}
+
+	@Test
+	public void clickReachIsEuclideanUpToTheRadiusBoundary()
+	{
+		ExactWalkCanonicalizerTest.Grid grid = new ExactWalkCanonicalizerTest.Grid();
+		// (15,0) is exactly at a click's reach (15^2 = 225); (15,1) is just beyond it (226).
+		List<PathStep> route = new ArrayList<>(steps(0, 0));
+		for (int x = 1; x <= 15; x++) route.add(step(x, 0));
+		route.add(step(15, 1));
+
+		InGameWalkRewriter.Result result = rewrite(grid, route, 0, 16);
+
+		assertEquals(List.of(15, 16), result.clickPoints());
+		assertClicksFollowTheGame(grid, route, result, 0);
+	}
+
+	@Test
 	public void legacySearchDoesNotRewriteWalks() throws IOException
 	{
 		Path sourceRoot = Paths.get("src/main/java/shortestpath");
@@ -222,22 +276,42 @@ public class InGameWalkRewriterTest
 	}
 
 	/**
-	 * Checks every click is a tile of the canonical walk, every stretch between clicks is the game's
-	 * path between them, and the clicks keep the canonical indices.
+	 * Checks every click is a tile of the canonical walk, every stretch between segment boundaries
+	 * (clicks and kept steps interleaved) is the game's path between them, and the clicks keep the
+	 * canonical indices. A kept step bounds a segment too — it sits between clicks — but ends the
+	 * segment on the canonical tile rather than a walked-to one, so it has no game path to check.
 	 */
 	private static void assertClicksFollowTheGame(CollisionMap grid, List<PathStep> canonical,
 		InGameWalkRewriter.Result result, int legStart)
 	{
+		Set<Integer> kept = new HashSet<>(result.keptStepIndices());
+		List<Integer> boundaries = new ArrayList<>(result.clickPoints());
+		boundaries.addAll(kept);
+		Collections.sort(boundaries);
 		int previous = legStart;
-		for (int click : result.clickPoints())
+		for (int boundary : boundaries)
 		{
-			assertEquals("click " + click + " is not on the canonical walk",
-				canonical.get(click).getPackedPosition(), result.path().get(click).getPackedPosition());
-			List<Integer> game = gamePath(grid, result.path().get(previous).getPackedPosition(),
-				result.path().get(click).getPackedPosition());
-			assertEquals("the game walks " + (click - previous) + " ticks", click - previous, game.size());
-			assertEquals(game, tiles(result.path(), previous, click));
-			previous = click;
+			if (kept.contains(boundary))
+			{
+				// A kept step is the single step after the previous boundary and stays canonical.
+				assertEquals("kept step " + boundary + " does not follow the previous boundary",
+					previous + 1, boundary);
+				assertEquals("kept step " + boundary + " is not the canonical tile",
+					canonical.get(boundary).getPackedPosition(),
+					result.path().get(boundary).getPackedPosition());
+			}
+			else
+			{
+				assertEquals("click " + boundary + " is not on the canonical walk",
+					canonical.get(boundary).getPackedPosition(),
+					result.path().get(boundary).getPackedPosition());
+				List<Integer> game = gamePath(grid, result.path().get(previous).getPackedPosition(),
+					result.path().get(boundary).getPackedPosition());
+				assertEquals("the game walks " + (boundary - previous) + " ticks",
+					boundary - previous, game.size());
+				assertEquals(game, tiles(result.path(), previous, boundary));
+			}
+			previous = boundary;
 		}
 	}
 

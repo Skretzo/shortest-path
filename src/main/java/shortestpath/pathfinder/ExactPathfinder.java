@@ -48,6 +48,7 @@ public final class ExactPathfinder implements ActiveSearch
 	private volatile List<ExactWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
 	private volatile long walkRewriteNanos;
 	private volatile List<Integer> clickPoints = List.of();
+	private volatile List<Integer> keptStepIndices = List.of();
 	private volatile boolean graphReused;
 	private volatile boolean targetReused;
 
@@ -287,6 +288,14 @@ public final class ExactPathfinder implements ActiveSearch
 	{ return clickPoints;
 	}
 
+	/**
+	 * Ascending indices into the route's steps of the walking steps that kept the canonical step
+	 * because no in-game click realises them; empty until a route is found.
+	 */
+	public List<Integer> getKeptStepIndices()
+	{ return keptStepIndices;
+	}
+
 	/** Whether the account graph came from the session rather than being built for this search. */
 	public boolean isGraphReused()
 	{ return graphReused;
@@ -384,6 +393,7 @@ public final class ExactPathfinder implements ActiveSearch
 					InGameWalkRewriter.Result walked = new InGameWalkRewriter(collision).rewrite(canonical);
 					walkRewriteNanos = System.nanoTime() - phaseStarted;
 					clickPoints = walked.clickPoints();
+					keptStepIndices = walked.keptStepIndices();
 					path = walked.path();
 					if (best != null) bestTarget = last(path);
 				}
