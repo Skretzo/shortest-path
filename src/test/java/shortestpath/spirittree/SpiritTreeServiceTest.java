@@ -2,6 +2,7 @@ package shortestpath.spirittree;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.contains;
@@ -12,9 +13,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.Set;
+import net.runelite.api.Client;
+import net.runelite.api.Player;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.requirement.PlayerStateSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -148,7 +155,7 @@ public class SpiritTreeServiceTest
 	public void emptyStoredConfigYieldsNoDetection()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 
 		assertNull(persisted.getTravelableTreesOrNull());
@@ -158,7 +165,7 @@ public class SpiritTreeServiceTest
 	@Test
 	public void varbitSampleMarksGrownTreeTravelable()
 	{
-		assertTrue(state.applyVarbitSample("Port Sarim", 20));
+		assertNotNull(state.applyVarbitSample("Port Sarim", 20));
 		assertEquals(Set.of("Port Sarim"), state.getTravelableTrees());
 	}
 
@@ -167,7 +174,7 @@ public class SpiritTreeServiceTest
 	{
 		// First observation is recorded (null → empty resolved) but the
 		// travelable set itself did not change, so no change is reported.
-		assertFalse(state.applyVarbitSample("Port Sarim", 21));
+		assertNull(state.applyVarbitSample("Port Sarim", 21));
 		assertTrue(state.getTravelableTrees().isEmpty());
 		assertEquals(Set.of(), state.getTravelableTreesOrNull());
 	}
@@ -178,7 +185,7 @@ public class SpiritTreeServiceTest
 		state.applyVarbitSample("Port Sarim", 20);
 		assertEquals(Set.of("Port Sarim"), state.getTravelableTrees());
 
-		assertTrue(state.applyVarbitSample("Port Sarim", 32)); // dead
+		assertNotNull(state.applyVarbitSample("Port Sarim", 32)); // dead
 		assertTrue(state.getTravelableTrees().isEmpty());
 	}
 
@@ -186,9 +193,9 @@ public class SpiritTreeServiceTest
 	public void repeatedSameSampleReportsNoChange()
 	{
 		state.applyVarbitSample("Port Sarim", 20);
-		assertFalse(state.applyVarbitSample("Port Sarim", 20)); // identical read → no change
-		assertTrue(state.applyVarbitSample("Port Sarim", 21));  // travelable → diseased: change
-		assertFalse(state.applyVarbitSample("Port Sarim", 8));  // still not travelable → no change
+		assertNull(state.applyVarbitSample("Port Sarim", 20)); // identical read → no change
+		assertNotNull(state.applyVarbitSample("Port Sarim", 21));  // travelable → diseased: change
+		assertNull(state.applyVarbitSample("Port Sarim", 8));  // still not travelable → no change
 	}
 
 	@Test
@@ -253,7 +260,7 @@ public class SpiritTreeServiceTest
 	{
 		state.applyVarbitSample("Port Sarim", 20);
 		// Menu lists Port Sarim greyed out: authoritative unavailable for a covered patch.
-		assertTrue(state.applyMenuSnapshot(Set.of("Port Sarim"), Set.of()));
+		assertNotNull(state.applyMenuSnapshot(Set.of("Port Sarim"), Set.of()));
 		assertTrue(state.getTravelableTrees().isEmpty());
 	}
 
@@ -276,7 +283,7 @@ public class SpiritTreeServiceTest
 			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000");
 
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 
 		assertEquals(Set.of("Port Sarim"), persisted.getTravelableTrees());
@@ -290,7 +297,7 @@ public class SpiritTreeServiceTest
 			"shortestpath", "spiritTree.11058.4772"))
 			.thenReturn("32:1700000000");
 
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 
 		assertTrue(persisted.getTravelableTrees().isEmpty());
@@ -305,7 +312,7 @@ public class SpiritTreeServiceTest
 			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("garbage");
 
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 
 		assertTrue(persisted.getTravelableTrees().isEmpty());
@@ -315,7 +322,7 @@ public class SpiritTreeServiceTest
 	public void persistIfDirtyWritesChangedKeys()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.applyVarbitSample("Port Sarim", 20);
 		persisted.persistIfDirty();
 
@@ -329,7 +336,7 @@ public class SpiritTreeServiceTest
 	public void persistIfDirtySkipsCleanState()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.persistIfDirty();
 		persisted.applyVarbitSample("Port Sarim", 20);
 		persisted.persistIfDirty();
@@ -357,7 +364,7 @@ public class SpiritTreeServiceTest
 			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000");
 
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 		persisted.applyVarbitSample("Port Sarim", 0); // cleared patch
 		persisted.persistIfDirty();
@@ -372,7 +379,7 @@ public class SpiritTreeServiceTest
 		// travelable → non-travelable → travelable must end with a live key
 		// again, not a stale unset or an unwritten second set.
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 
 		persisted.applyVarbitSample("Port Sarim", 20);
 		persisted.persistIfDirty();
@@ -399,7 +406,7 @@ public class SpiritTreeServiceTest
 			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000");
 
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 		persisted.applyVarbitSample("Port Sarim", 32); // dead
 		persisted.persistIfDirty();
@@ -420,7 +427,7 @@ public class SpiritTreeServiceTest
 			"shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("0:1700000000");
 
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 		assertTrue(persisted.getTravelableTrees().isEmpty());
 
@@ -440,7 +447,7 @@ public class SpiritTreeServiceTest
 			.thenReturn("20:1700000000")
 			.thenReturn(null);
 
-		SpiritTreeService persisted = new SpiritTreeService(configManager);
+		SpiritTreeService persisted = new SpiritTreeService(configManager, null);
 		persisted.loadFromProfile();
 		assertEquals(Set.of("Port Sarim"), persisted.getTravelableTrees());
 
@@ -475,7 +482,196 @@ public class SpiritTreeServiceTest
 		assertTrue(snapshot.available.isEmpty());
 
 		state.applyVarbitSample("Port Sarim", 20);
-		assertTrue(state.applyMenuSnapshot(snapshot.listed, snapshot.available));
+		assertNotNull(state.applyMenuSnapshot(snapshot.listed, snapshot.available));
 		assertTrue(state.getTravelableTrees().isEmpty());
+	}
+
+	// --- Producer-seam contract: publication + facts through the absorbed
+	// entry points (tick, menu, refresh, profile load). ---
+
+	@Test
+	public void publishedSetIsNullBeforeAnyObservation()
+	{
+		assertNull(state.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void loadFromProfilePublishesResolvedSet()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(configManager.getRSProfileConfiguration("shortestpath", "spiritTree.12082.4771"))
+			.thenReturn("20:1700000000");
+
+		SpiritTreeService service = new SpiritTreeService(configManager, null);
+		TreeChange change = service.loadFromProfile();
+
+		// A profile reload re-resolves state, so the fact is unconditional.
+		assertNotNull(change);
+		assertTrue(change.getEffects().contains(shortestpath.settings.Effect.ROUTE_INVALIDATING));
+		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void loadFromProfileWithNoKeysPublishesUnresolvedNull()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		SpiritTreeService service = new SpiritTreeService(configManager, null);
+
+		assertNotNull(service.loadFromProfile());
+		assertNull(service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void trackedRefreshSamplesOnlyAfterRegionSettles()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		SpiritTreeService service = new SpiritTreeService(configManager, null);
+		service.notePlayerRegion(12082, 10); // region-entry tick — not settled
+
+		PlayerStateSource source = mock(PlayerStateSource.class);
+		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(source.varbit(VarbitID.FARMING_TRANSMIT_A)).thenReturn(20);
+
+		service.refreshAvailability(source);
+		assertNull(service.getAvailableSpiritTrees()); // entry-tick sample refused
+
+		service.notePlayerRegion(12082, 11); // second consecutive tick — settled
+		service.refreshAvailability(source);
+
+		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void modalWidgetSuppressesTrackedRefreshSample()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		SpiritTreeService service = new SpiritTreeService(configManager, null);
+		service.notePlayerRegion(12082, 10);
+		service.notePlayerRegion(12082, 11);
+
+		PlayerStateSource source = mock(PlayerStateSource.class);
+		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(source.modalWidgetOpen()).thenReturn(true);
+		when(source.varbit(VarbitID.FARMING_TRANSMIT_A)).thenReturn(20);
+
+		service.refreshAvailability(source);
+
+		assertNull(service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void detachedRefreshMergesLiveSampleWithoutObserving()
+	{
+		SpiritTreeService service = SpiritTreeService.forTesting();
+		service.setAvailableSpiritTreesForTest(Set.of("Etceteria"));
+
+		PlayerStateSource source = mock(PlayerStateSource.class);
+		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(source.varbit(VarbitID.FARMING_TRANSMIT_A)).thenReturn(20);
+
+		service.refreshAvailability(source);
+
+		assertEquals(Set.of("Etceteria", "Port Sarim"), service.getAvailableSpiritTrees());
+		// The merge is published-only: no observation was recorded, so the
+		// raw resolution stays unresolved.
+		assertNull(service.getTravelableTreesOrNull());
+	}
+
+	@Test
+	public void detachedRefreshEvictsStalePublishedPatch()
+	{
+		SpiritTreeService service = SpiritTreeService.forTesting();
+		service.setAvailableSpiritTreesForTest(Set.of("Port Sarim", "Etceteria"));
+
+		PlayerStateSource source = mock(PlayerStateSource.class);
+		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(source.varbit(VarbitID.FARMING_TRANSMIT_A)).thenReturn(32); // dead
+
+		service.refreshAvailability(source);
+
+		assertEquals(Set.of("Etceteria"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void detachedRefreshBypassesRegionSettlement()
+	{
+		SpiritTreeService service = SpiritTreeService.forTesting();
+
+		PlayerStateSource source = mock(PlayerStateSource.class);
+		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(source.varbit(VarbitID.FARMING_TRANSMIT_A)).thenReturn(20);
+
+		// No notePlayerRegion at all — the detached arm never settles.
+		service.refreshAvailability(source);
+
+		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onGameTickSamplesAndPublishesOnceSettled()
+	{
+		Client client = mock(Client.class);
+		Player player = mock(Player.class);
+		when(client.getLocalPlayer()).thenReturn(player);
+		when(player.getWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(client.getTickCount()).thenReturn(10, 11);
+		when(client.getVarbitValue(VarbitID.FARMING_TRANSMIT_A)).thenReturn(20);
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+
+		assertNull(service.onGameTick()); // region-entry tick does not sample
+		TreeChange change = service.onGameTick();
+
+		assertNotNull(change);
+		assertEquals("varbit:Port Sarim", change.getKey());
+		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onGameTickWithoutPlayerReturnsNull()
+	{
+		Client client = mock(Client.class);
+		SpiritTreeService service = new SpiritTreeService(null, client);
+
+		assertNull(service.onGameTick());
+		assertNull(service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onMenuOpenedAppliesMenuAndPublishes()
+	{
+		Client client = mock(Client.class);
+		Widget container = mock(Widget.class);
+		Widget first = mock(Widget.class);
+		Widget listed = mock(Widget.class);
+		Widget greyed = mock(Widget.class);
+		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
+		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, listed, greyed});
+		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
+		when(listed.getText()).thenReturn("<col=735a28>3</col>: Port Sarim");
+		when(greyed.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Etceteria</col>");
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		TreeChange change = service.onMenuOpened(false);
+
+		assertNotNull(change);
+		assertEquals("menu", change.getKey());
+		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onMenuOpenedIgnoresForeignMenu()
+	{
+		Client client = mock(Client.class);
+		Widget container = mock(Widget.class);
+		Widget first = mock(Widget.class);
+		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
+		when(container.getDynamicChildren()).thenReturn(new Widget[]{first});
+		when(first.getText()).thenReturn("<col=735a28>1</col>: Some other interface");
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+
+		assertNull(service.onMenuOpened(false));
+		assertNull(service.getAvailableSpiritTrees());
 	}
 }
