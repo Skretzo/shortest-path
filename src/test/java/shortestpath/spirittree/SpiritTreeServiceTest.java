@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
@@ -672,5 +673,182 @@ public class SpiritTreeServiceTest
 
 		assertNull(service.onMenuOpened(false));
 		assertNull(service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onMenuOpenedWithoutContainerReturnsNull()
+	{
+		Client client = mock(Client.class);
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+
+		assertNull(service.onMenuOpened(false));
+		assertNull(service.onMenuOpened(true));
+	}
+
+	@Test
+	public void onMenuOpenedEmptyChildrenReturnsNull()
+	{
+		Client client = mock(Client.class);
+		Widget container = mock(Widget.class);
+		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
+		when(container.getDynamicChildren()).thenReturn(new Widget[0]);
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+
+		assertNull(service.onMenuOpened(false));
+	}
+
+	@Test
+	public void onMenuOpenedUsesNewMenuArm()
+	{
+		Client client = mock(Client.class);
+		Widget container = mock(Widget.class);
+		Widget first = mock(Widget.class);
+		Widget listed = mock(Widget.class);
+		when(client.getWidget(InterfaceID.MENU_NEW, 9)).thenReturn(container);
+		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, listed});
+		when(first.getText()).thenReturn("<col=ffffff>1</col>: Tree Gnome Village");
+		when(listed.getText()).thenReturn("<col=ffffff>3</col>: Brimhaven");
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		TreeChange change = service.onMenuOpened(true);
+
+		assertNotNull(change);
+		assertEquals(Set.of("Brimhaven"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void greyedMenuRowEvictsStalePositiveFromPublishedSet()
+	{
+		Client client = mock(Client.class);
+		Widget container = mock(Widget.class);
+		Widget first = mock(Widget.class);
+		Widget greyed = mock(Widget.class);
+		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
+		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, greyed});
+		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
+		when(greyed.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>");
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		service.applyVarbitSample("Port Sarim", 20); // prior positive observation
+		TreeChange change = service.onMenuOpened(false);
+
+		assertNotNull(change);
+		// Observed but nothing travelable — empty set, never back to null.
+		assertEquals(Set.of(), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void menuPartialListingKeepsUnlistedPatches()
+	{
+		Client client = mock(Client.class);
+		Widget container = mock(Widget.class);
+		Widget first = mock(Widget.class);
+		Widget listed = mock(Widget.class);
+		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
+		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, listed});
+		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
+		when(listed.getText()).thenReturn("<col=735a28>3</col>: Port Sarim");
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		service.applyVarbitSample("Farming Guild", 20); // menu never lists it
+		service.onMenuOpened(false);
+
+		// A partial snapshot never shrinks unvisited entries.
+		assertEquals(Set.of("Farming Guild", "Port Sarim"), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onGameTickSkipsSampleWhileModalOpen()
+	{
+		Client client = mock(Client.class);
+		Player player = mock(Player.class);
+		net.runelite.api.HashTable<net.runelite.api.WidgetNode> table = mock(net.runelite.api.HashTable.class);
+		net.runelite.api.WidgetNode node = mock(net.runelite.api.WidgetNode.class);
+		when(client.getLocalPlayer()).thenReturn(player);
+		when(player.getWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(client.getTickCount()).thenReturn(10, 11);
+		when(client.getComponentTable()).thenReturn(table);
+		when(table.iterator()).thenAnswer(invocation -> java.util.List.of(node).iterator());
+		when(node.getModalMode()).thenReturn(net.runelite.api.widgets.WidgetModalMode.MODAL_CLICKTHROUGH);
+
+		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		service.onGameTick();
+		assertNull(service.onGameTick()); // settled tick, but the modal suppresses the sample
+
+		verify(client, never()).getVarbitValue(VarbitID.FARMING_TRANSMIT_A);
+		assertNull(service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onGameTickPersistsFreshObservationOnSameTick()
+	{
+		Client client = mock(Client.class);
+		Player player = mock(Player.class);
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(client.getLocalPlayer()).thenReturn(player);
+		when(player.getWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(client.getTickCount()).thenReturn(10, 11);
+		when(client.getVarbitValue(VarbitID.FARMING_TRANSMIT_A)).thenReturn(20);
+
+		SpiritTreeService service = new SpiritTreeService(configManager, client);
+		service.onGameTick();
+		service.onGameTick();
+
+		// persistIfDirty runs inside the tick — the fresh observation is
+		// written on the same tick rather than the next.
+		verify(configManager).setRSProfileConfiguration(
+			eq("shortestpath"), eq("spiritTree.12082.4771"), contains("20:"));
+	}
+
+	@Test
+	public void trackedRefreshDoesNotPublishWhileUnresolved()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		SpiritTreeService service = new SpiritTreeService(configManager, null);
+		service.notePlayerRegion(11826, 10); // unmapped region
+		service.notePlayerRegion(11826, 11);
+
+		PlayerStateSource source = mock(PlayerStateSource.class);
+		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3200, 3200, 0));
+
+		service.refreshAvailability(source);
+
+		// No observation exists and none was sampled — the unresolved null
+		// must not be overwritten by an empty set.
+		assertNull(service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void trackedRefreshNonTravelableSampleEvictsPersistedPositive()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(configManager.getRSProfileConfiguration("shortestpath", "spiritTree.12082.4771"))
+			.thenReturn("20:1700000000");
+		SpiritTreeService service = new SpiritTreeService(configManager, null);
+		service.loadFromProfile();
+		service.notePlayerRegion(12082, 10);
+		service.notePlayerRegion(12082, 11);
+
+		PlayerStateSource source = mock(PlayerStateSource.class);
+		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
+		when(source.varbit(VarbitID.FARMING_TRANSMIT_A)).thenReturn(0); // patch cleared
+
+		service.refreshAvailability(source);
+
+		assertEquals(Set.of(), service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void publishedSetIsImmutable()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(configManager.getRSProfileConfiguration("shortestpath", "spiritTree.12082.4771"))
+			.thenReturn("20:1700000000");
+		SpiritTreeService service = new SpiritTreeService(configManager, null);
+		service.loadFromProfile();
+
+		assertThrows(UnsupportedOperationException.class,
+			() -> service.getAvailableSpiritTrees().add("Hosidius"));
 	}
 }
