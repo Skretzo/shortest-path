@@ -14,6 +14,8 @@ import net.runelite.api.WidgetNode;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.WidgetModalMode;
 import net.runelite.client.config.ConfigManager;
+import shortestpath.requirement.PlayerStateSource;
+import shortestpath.settings.Effect;
 
 /**
  * Per-account availability state for the five plantable spirit tree patches
@@ -74,6 +76,7 @@ public class SpiritTreeService
 	}
 
 	private final ConfigManager configManager;
+	private final Client client;
 	// patch name -> last observed availability value (20 = grown and travelable).
 	private final Map<String, Integer> observedValues = new HashMap<>();
 	private final Map<String, Integer> lastPersistedValues = new HashMap<>();
@@ -84,15 +87,34 @@ public class SpiritTreeService
 	private int lastPlayerRegionTick = -1;
 	private int settledRegionID = -1;
 
+	// The resolved travelable-tree set as last published — null while no
+	// source has produced any observation (tri-state: null = unresolved,
+	// empty = observed but nothing travelable). Written solely inside this
+	// service as a single volatile write of an immutable copy; the engine's
+	// capture step reads it through getAvailableSpiritTrees().
+	private volatile Set<String> availableSpiritTrees;
+
 	@Inject
-	public SpiritTreeService(ConfigManager configManager)
+	public SpiritTreeService(ConfigManager configManager, Client client)
 	{
 		this.configManager = configManager;
+		this.client = client;
 	}
 
 	SpiritTreeService()
 	{
-		this(null);
+		this(null, null);
+	}
+
+	/**
+	 * A detached service for harnesses and tests: no persistence and no
+	 * client, so {@link #refreshAvailability} takes its detached arm and
+	 * merges live samples into the published set instead of recording
+	 * observations.
+	 */
+	public static SpiritTreeService forTesting()
+	{
+		return new SpiritTreeService();
 	}
 
 	public static boolean spiritTreeTravelable(int varbitValue)
@@ -260,13 +282,14 @@ public class SpiritTreeService
 	 * Applies an in-region varbit sample for one patch. The caller must only
 	 * call this while the player is inside the patch's mapped region — the
 	 * varbits are region-scoped and mean different patches elsewhere.
-	 * Returns true when the resolved set of travelable trees changed.
+	 * Returns a route-invalidating fact when the resolved set of travelable
+	 * trees changed, null otherwise.
 	 */
-	public boolean applyVarbitSample(String patchName, int varbitValue)
+	public TreeChange applyVarbitSample(String patchName, int varbitValue)
 	{
 		if (!PATCHES.containsKey(patchName))
 		{
-			return false;
+			return null;
 		}
 		boolean before = isTravelable(patchName);
 		Integer previous = observedValues.get(patchName);
@@ -275,20 +298,23 @@ public class SpiritTreeService
 			observedValues.put(patchName, varbitValue);
 			dirty = true;
 		}
-		return isTravelable(patchName) != before;
+		return isTravelable(patchName) != before
+			? new TreeChange("varbit:" + patchName, Set.of(Effect.ROUTE_INVALIDATING))
+			: null;
 	}
 
 	/**
 	 * Applies a travel-menu parse. The menu is authoritative for the patches it
 	 * lists (greyed or not); patches it does not list keep their existing
 	 * state — a partial snapshot never shrinks unvisited entries.
-	 * Returns true when the resolved set of travelable trees changed.
+	 * Returns a route-invalidating fact when the resolved set of travelable
+	 * trees changed, null otherwise.
 	 */
-	public boolean applyMenuSnapshot(Set<String> listedTreeNames, Set<String> availableTreeNames)
+	public TreeChange applyMenuSnapshot(Set<String> listedTreeNames, Set<String> availableTreeNames)
 	{
 		if (listedTreeNames == null || availableTreeNames == null)
 		{
-			return false;
+			return null;
 		}
 		boolean changed = false;
 		for (String name : listedTreeNames)
@@ -297,9 +323,11 @@ public class SpiritTreeService
 			{
 				continue;
 			}
-			changed |= applyVarbitSample(name, availableTreeNames.contains(name) ? 20 : 0);
+			changed |= applyVarbitSample(name, availableTreeNames.contains(name) ? 20 : 0) != null;
 		}
-		return changed;
+		return changed
+			? new TreeChange("menu", Set.of(Effect.ROUTE_INVALIDATING))
+			: null;
 	}
 
 	/**
@@ -329,26 +357,83 @@ public class SpiritTreeService
 		return observedValues.isEmpty() ? null : getTravelableTrees();
 	}
 
-	public void loadFromProfile()
+	/**
+	 * The resolved travelable-tree set as last published. Tri-state by
+	 * contract: {@code null} while no detection source has produced an
+	 * observation (consumers stay conservative), an empty set when every
+	 * observed patch reported unusable, and the resolved names otherwise.
+	 * The returned set is immutable — publication is a single volatile write.
+	 */
+	public Set<String> getAvailableSpiritTrees()
+	{
+		return availableSpiritTrees;
+	}
+
+	/**
+	 * Seeds the published set for harnesses and tests — the detached refresh
+	 * arm merges live samples into it. Never called in production.
+	 */
+	public void setAvailableSpiritTreesForTest(Set<String> trees)
+	{
+		this.availableSpiritTrees = trees;
+	}
+
+	/**
+	 * Resolves the effective travelable set from every detection source — a
+	 * live in-region {@code FARMING_TRANSMIT_*} varbit sample, recorded
+	 * observations (RSProfile persistence + menu union), or — when the
+	 * service runs detached (no config manager: tests, dashboard harness)
+	 * — the live sample merged into the published set alone.
+	 * <p>
+	 * Client thread only, called from the engine's transport refresh.
+	 */
+	public void refreshAvailability(PlayerStateSource source)
+	{
+	}
+
+	/**
+	 * Per-tick driver: notes the player's region, samples the in-region
+	 * patch varbit once the region has settled, and flushes persistence.
+	 * Returns a route-invalidating fact when the resolved set changed.
+	 */
+	public TreeChange onGameTick()
+	{
+		return null;
+	}
+
+	/**
+	 * Scrapes a freshly opened spirit tree travel menu and applies the
+	 * listed/available snapshot. Returns a route-invalidating fact when the
+	 * resolved set changed, null for unrelated menus and unchanged parses.
+	 */
+	public TreeChange onMenuOpened(boolean useNewMenu)
+	{
+		return null;
+	}
+
+	public TreeChange loadFromProfile()
 	{
 		dirty = false;
 		observedValues.clear();
 		lastPersistedValues.clear();
-		if (configManager == null)
+		if (configManager != null)
 		{
-			return;
-		}
-		for (String patchName : PATCHES.keySet())
-		{
-			String stored = configManager.getRSProfileConfiguration(
-				CONFIG_GROUP, configKey(patchName));
-			Integer value = parseStoredValue(stored);
-			if (value != null)
+			for (String patchName : PATCHES.keySet())
 			{
-				observedValues.put(patchName, value);
-				lastPersistedValues.put(patchName, value);
+				String stored = configManager.getRSProfileConfiguration(
+					CONFIG_GROUP, configKey(patchName));
+				Integer value = parseStoredValue(stored);
+				if (value != null)
+				{
+					observedValues.put(patchName, value);
+					lastPersistedValues.put(patchName, value);
+				}
 			}
 		}
+		// A profile reload always re-resolves state — the returned fact is
+		// unconditional, matching the shell's unconditional restart today.
+		publish(getTravelableTreesOrNull());
+		return new TreeChange("profile", Set.of(Effect.ROUTE_INVALIDATING));
 	}
 
 	public void persistIfDirty()
@@ -388,6 +473,16 @@ public class SpiritTreeService
 				lastPersistedValues.remove(entry.getKey());
 			}
 		}
+	}
+
+	/**
+	 * Single-point publication of the resolved set: one volatile write of an
+	 * immutable copy, so a reader on the pathfinder thread can never observe
+	 * a half-built set. {@code null} publishes the unresolved state verbatim.
+	 */
+	private void publish(Set<String> resolved)
+	{
+		availableSpiritTrees = resolved == null ? null : Set.copyOf(resolved);
 	}
 
 	private boolean isTravelable(String patchName)
