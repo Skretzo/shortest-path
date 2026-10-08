@@ -1,5 +1,6 @@
 package shortestpath.spirittree;
 
+import java.util.Objects;
 import java.util.Set;
 
 import lombok.Getter;
@@ -26,7 +27,7 @@ public final class TreeChange
 
 	TreeChange(String key, Set<Effect> effects)
 	{
-		this.key = key;
+		this.key = Objects.requireNonNull(key);
 		this.effects = Set.copyOf(effects);
 	}
 }
