@@ -145,6 +145,24 @@ public class ItemStateService
 	}
 
 	/**
+	 * Clears the session-scoped state — the live bank reference and the
+	 * bank-pickup projection cache. The service is a singleton on the plugin
+	 * injector, which RuneLite reuses across shutDown/startUp cycles, so the
+	 * shell calls this on shutdown to restore the lifetime the bank field had
+	 * when it lived on the per-session pathfinder config: nothing observed in
+	 * one session may feed eligibility in the next. The pickup cache is left
+	 * dirty so the next {@link #getBankPickup} recomputes.
+	 */
+	public void reset()
+	{
+		bank = null;
+		bankPickupCache = null;
+		bankPickupCachePath = null;
+		bankPickupCacheIndex = -1;
+		bankPickupDirty = true;
+	}
+
+	/**
 	 * Returns the cached bank pickup result for the given path step, recomputing only when
 	 * the path, bank contents, or player inventory has changed since the last call.
 	 */

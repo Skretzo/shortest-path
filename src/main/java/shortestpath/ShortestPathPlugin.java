@@ -337,6 +337,10 @@ public class ShortestPathPlugin extends Plugin
 
 		// Flush pending observations so the last tick's sample is not lost.
 		spiritTreePatchState.persistIfDirty();
+
+		// The singleton survives restarts; drop the live bank ref and pickup
+		// cache so session state cannot leak into the next enable.
+		itemState.reset();
 	}
 
 	public void restartPathfinding(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
