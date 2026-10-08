@@ -13,7 +13,6 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
 import net.runelite.api.WorldType;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
@@ -2310,7 +2309,7 @@ public class PathfinderTest
 		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{300});
 		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{43});
 		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{4});
-		when(client.getVarpValue(VarPlayer.QUEST_POINTS)).thenReturn(currentQuestPoints);
+		when(client.getVarpValue(VarPlayerID.QP)).thenReturn(currentQuestPoints);
 	}
 
 	private void setupEquipment(Item... items)
