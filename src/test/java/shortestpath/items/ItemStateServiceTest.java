@@ -14,7 +14,6 @@ import org.junit.Test;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.settings.Effect;
 
 /**
@@ -102,7 +101,7 @@ public class ItemStateServiceTest
 	{
 		ItemStateService service = ItemStateService.forTesting();
 
-		for (int varbitId : PathfinderConfig.RUNE_POUCH_RUNE_VARBITS)
+		for (int varbitId : OwnedItems.RUNE_POUCH_RUNE_VARBITS)
 		{
 			assertEligibilityStale(service.onVarbitChanged(varbitId),
 				"rune pouch rune varbit " + varbitId);
@@ -114,7 +113,7 @@ public class ItemStateServiceTest
 	{
 		ItemStateService service = ItemStateService.forTesting();
 
-		for (int varbitId : PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS)
+		for (int varbitId : OwnedItems.RUNE_POUCH_AMOUNT_VARBITS)
 		{
 			assertEligibilityStale(service.onVarbitChanged(varbitId),
 				"rune pouch amount varbit " + varbitId);
