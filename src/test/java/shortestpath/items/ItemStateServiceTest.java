@@ -43,7 +43,7 @@ public class ItemStateServiceTest
 		ItemChange change = service.onContainerChanged(InventoryID.BANK, bank);
 
 		assertEligibilityStale(change, "bank container event");
-		assertSame("the open bank stays a live reference, never copied", bank, service.bank());
+		assertSame("the open bank stays a live reference, never copied", bank, service.getBank());
 	}
 
 	@Test
@@ -57,7 +57,7 @@ public class ItemStateServiceTest
 		ItemChange change = service.onContainerChanged(InventoryID.INV, inv);
 
 		assertEligibilityStale(change, "inventory container event");
-		assertSame("inventory events never overwrite the bank ref", bank, service.bank());
+		assertSame("inventory events never overwrite the bank ref", bank, service.getBank());
 	}
 
 	@Test
@@ -71,7 +71,7 @@ public class ItemStateServiceTest
 		ItemChange change = service.onContainerChanged(InventoryID.WORN, worn);
 
 		assertEligibilityStale(change, "equipment container event");
-		assertSame("equipment events never overwrite the bank ref", bank, service.bank());
+		assertSame("equipment events never overwrite the bank ref", bank, service.getBank());
 	}
 
 	@Test
@@ -84,7 +84,7 @@ public class ItemStateServiceTest
 		ItemChange change = service.onContainerChanged(InventoryID.LOOTING_BAG, mock(ItemContainer.class));
 
 		assertNull("an untracked container admits no fact", change);
-		assertSame("an untracked container never overwrites the bank ref", bank, service.bank());
+		assertSame("an untracked container never overwrites the bank ref", bank, service.getBank());
 	}
 
 	@Test
@@ -138,7 +138,7 @@ public class ItemStateServiceTest
 
 		service.noteBankContainer(bank);
 
-		assertSame(bank, service.bank());
+		assertSame(bank, service.getBank());
 	}
 
 	@Test
