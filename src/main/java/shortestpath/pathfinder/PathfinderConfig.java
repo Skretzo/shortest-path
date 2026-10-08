@@ -38,6 +38,7 @@ import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.sailing.SailingMoves;
+import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.RequirementContext;
@@ -140,6 +141,17 @@ public class PathfinderConfig
 	public ItemStateService getItemState()
 	{
 		return itemState;
+	}
+
+	/**
+	 * The bank-pickup projection for the active path — owned and cached by the
+	 * item-state service; this facade delegates so overlays reach it through
+	 * the engine config instead of the plugin shell. {@code search} supplies the
+	 * result the target-item pickup list is derived from.
+	 */
+	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex, ActiveSearch search)
+	{
+		return itemState.getBankPickup(path, pathIndex, this, search);
 	}
 	/**
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
