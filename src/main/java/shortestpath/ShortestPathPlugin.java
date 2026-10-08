@@ -50,7 +50,6 @@ import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
@@ -74,6 +73,8 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
+import shortestpath.items.ItemChange;
+import shortestpath.items.ItemStateService;
 import shortestpath.overlay.BankItemHighlightOverlay;
 import shortestpath.overlay.DebugOverlayPanel;
 import shortestpath.overlay.InventoryHighlightOverlay;
@@ -189,6 +190,8 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private SpiritTreePatchState spiritTreePatchState;
 	@Inject
+	private ItemStateService itemState;
+	@Inject
 	private Settings settings;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
@@ -276,6 +279,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
 		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
+		pathfinderConfig.setItemStateService(itemState);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load and field write touch the same HashMaps the
@@ -1196,14 +1200,14 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		int id = event.getContainerId();
-		if (id == InventoryID.BANK)
+		ItemChange change = itemState.onContainerChanged(event.getContainerId(), event.getItemContainer());
+		if (change == null)
 		{
-			pathfinderConfig.bank = event.getItemContainer();
+			return;
 		}
-		if (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN)
+		bankPickupDirty = true;
+		if (change.getEffects().contains(Effect.ELIGIBILITY_STALE))
 		{
-			bankPickupDirty = true;
 			pathfinderConfig.invalidateEligibility();
 		}
 	}
@@ -1213,26 +1217,16 @@ public class ShortestPathPlugin extends Plugin
 	{
 		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
 		// snapshot but change without firing a container event.
-		int varbitId = event.getVarbitId();
-		if (varbitId == VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE
-			|| containsVarbit(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS, varbitId)
-			|| containsVarbit(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
+		ItemChange change = itemState.onVarbitChanged(event.getVarbitId());
+		if (change == null)
 		{
-			bankPickupDirty = true;
+			return;
+		}
+		bankPickupDirty = true;
+		if (change.getEffects().contains(Effect.ELIGIBILITY_STALE))
+		{
 			pathfinderConfig.invalidateEligibility();
 		}
-	}
-
-	private static boolean containsVarbit(int[] varbits, int varbitId)
-	{
-		for (int id : varbits)
-		{
-			if (id == varbitId)
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
@@ -1243,7 +1237,7 @@ public class ShortestPathPlugin extends Plugin
 			List<PathStep> path, int pathIndex)
 	{
 		Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
-		if (pathfinderConfig.bank == null || bankLocations == null
+		if (itemState.getBank() == null || bankLocations == null
 				|| path == null || pathIndex < 0 || pathIndex >= path.size())
 		{
 			return null;
@@ -1256,7 +1250,7 @@ public class ShortestPathPlugin extends Plugin
 		bankPickupCacheIndex = pathIndex;
 		bankPickupDirty = false;
 		bankPickupCache = shortestpath.requirement.BankPickupRequirements.BankPickupResult.compute(
-				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex);
+				client, itemState.getBank(), pathfinderConfig, bankLocations, path, pathIndex);
 		return bankPickupCache;
 	}
 

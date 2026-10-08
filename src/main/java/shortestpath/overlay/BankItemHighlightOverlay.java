@@ -56,7 +56,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		if (plugin.getPathfinderConfig().bank == null)
+		if (plugin.getPathfinderConfig().getItemState().getBank() == null)
 		{
 			return null;
 		}

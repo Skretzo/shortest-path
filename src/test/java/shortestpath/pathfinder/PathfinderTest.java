@@ -2547,7 +2547,7 @@ public class PathfinderTest
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		when(config.usePoh()).thenReturn(false);
 		doReturn(bankItems).when(bank).getItems();
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.getItemState().noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 
