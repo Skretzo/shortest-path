@@ -189,14 +189,14 @@ final class PluginApiHarness implements AutoCloseable
 	{
 		ItemContainer bank = mock(ItemContainer.class);
 		doReturn(items(idsAndQuantities)).when(bank).getItems();
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.getItemState().noteBankContainer(bank);
 		return this;
 	}
 
 	/** Forgets the bank, as before it is first opened in a session. */
 	PluginApiHarness bankNotSeen()
 	{
-		pathfinderConfig.bank = null;
+		pathfinderConfig.getItemState().noteBankContainer(null);
 		return this;
 	}
 

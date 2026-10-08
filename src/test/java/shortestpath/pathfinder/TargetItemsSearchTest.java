@@ -71,7 +71,7 @@ public class TargetItemsSearchTest
 		settings.setCalculationCutoffValue(50);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
-		config.bank = bank;
+		config.getItemState().noteBankContainer(bank);
 		config.refresh();
 		return config;
 	}
