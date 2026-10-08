@@ -789,7 +789,7 @@ public class PathTileOverlay extends Overlay
 
 		// Check if this is a bank step and items need to be picked up
 		{
-			BankPickupRequirements.BankPickupResult bankPickup = plugin.getBankPickup(path, pathIndex);
+			BankPickupRequirements.BankPickupResult bankPickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex);
 			if (bankPickup != null && !bankPickup.phrases.isEmpty())
 			{
 				List<String> bankPickupItems = bankPickup.phrases;

@@ -73,7 +73,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		BankPickupRequirements.BankPickupResult pickup = plugin.getBankPickup(path, pathIndex);
+		BankPickupRequirements.BankPickupResult pickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex);
 		if (pickup == null || pickup.bankItemIds.isEmpty())
 		{
 			return null;
