@@ -1,6 +1,7 @@
 package shortestpath.requirement;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
@@ -109,17 +109,22 @@ public final class TeleportRestriction
 	 * Loads the bundled family map. Malformed rows are skipped with a warning
 	 * (the checklist degrades to fewer rows rather than crashing); an absent or
 	 * malformed {@code memberLabels} column degrades to an empty map for that
-	 * family.
+	 * family, and a missing resource degrades to an empty list — panel
+	 * construction must not crash on packaging gaps.
 	 */
 	public static List<Family> loadFamilies()
 	{
 		final String contents;
 		try
 		{
-			contents = new String(
-				Util.readAllBytes(
-					Objects.requireNonNull(TeleportRestriction.class.getResourceAsStream(FAMILY_RESOURCE))),
-				StandardCharsets.UTF_8);
+			InputStream stream = TeleportRestriction.class.getResourceAsStream(FAMILY_RESOURCE);
+			if (stream == null)
+			{
+				log.warn("Teleport restriction family resource {} is missing — degrading to no rows",
+					FAMILY_RESOURCE);
+				return Collections.emptyList();
+			}
+			contents = new String(Util.readAllBytes(stream), StandardCharsets.UTF_8);
 		}
 		catch (IOException e)
 		{
