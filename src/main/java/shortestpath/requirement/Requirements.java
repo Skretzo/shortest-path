@@ -270,9 +270,7 @@ public final class Requirements
 	private RejectionReason teleportationItem(Transport transport)
 	{
 		TransportType type = transport.getType();
-		if (!TransportType.TELEPORTATION_ITEM.equals(type)
-			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
-			&& !TransportType.QUETZAL_WHISTLE.equals(type))
+		if (!TeleportRestriction.isItemTeleportType(type))
 		{
 			return RejectionReason.NONE; // Not a teleportation item type
 		}
@@ -293,10 +291,15 @@ public final class Requirements
 			return RejectionReason.DEADMAN_ITEM;
 		}
 
-		// Reserved seat for the per-item restriction gate (BLOCKED_ITEM) —
-		// after the seasonal and deadman checks and before the mode dispatch,
-		// because the modes below can bypass item evaluation entirely. That
-		// gate is not implemented yet; no check emits BLOCKED_ITEM today.
+		// Player-declared per-item restrictions drop the transport from the
+		// candidate set: the modes below can bypass item evaluation entirely,
+		// so the restriction gate runs here, before eligibility is consulted.
+		TransportItems itemRequirements = transport.getItemRequirements();
+		if (itemRequirements != null && !itemRequirements.survivesBlockedItems(policy.blockedItemIds()))
+		{
+			return RejectionReason.BLOCKED_ITEM;
+		}
+
 		switch (policy.teleportationItemSetting())
 		{
 			case ALL:
@@ -309,6 +312,7 @@ public final class Requirements
 					? RejectionReason.TELEPORT_MODE
 					: RejectionReason.NONE;
 			case UNLOCKED:
+				return RejectionReason.NONE; // Ownership is implied by the unlock check; items are never evaluated
 			case INVENTORY:
 			case INVENTORY_AND_BANK:
 				return RejectionReason.NONE; // Will be checked later by the eligibility snapshot
@@ -317,6 +321,8 @@ public final class Requirements
 		}
 		return RejectionReason.NONE;
 	}
+
+
 
 	// Respawn rows for Prifddinas (and the colliding Lumbridge default) are
 	// gated on the declared respawn in config, not on varbits

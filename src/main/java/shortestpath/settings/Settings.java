@@ -18,7 +18,11 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.config.ConfigDescriptor;
+import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigItemDescriptor;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Range;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.ShortestPathConfig;
@@ -111,6 +115,10 @@ public class Settings
 	{
 		this.configManager = configManager;
 		this.configured = configured;
+		ConfigDescriptor descriptor = configManager == null
+			? null
+			: configManager.getConfigDescriptor(configured);
+		this.itemDescriptors = descriptor == null ? Map.of() : indexItems(descriptor);
 		republish();
 	}
 
@@ -127,6 +135,26 @@ public class Settings
 	public static Settings wrap(ShortestPathConfig config)
 	{
 		return new Settings(config);
+	}
+
+	/**
+	 * keyName → config-item descriptor, resolved through the config manager's
+	 * descriptor surface ({@link ConfigManager#getConfigDescriptor}) so the
+	 * {@link ConfigItem}/{@link Range} metadata controls use comes from
+	 * RuneLite's own resolution, not plugin-side reflection. Empty on the
+	 * wrap seam, where no manager exists — {@link #configItem} and
+	 * {@link #rangeOf} then return {@code null}.
+	 */
+	private final Map<String, ConfigItemDescriptor> itemDescriptors;
+
+	private static Map<String, ConfigItemDescriptor> indexItems(ConfigDescriptor descriptor)
+	{
+		Map<String, ConfigItemDescriptor> items = new HashMap<>();
+		for (ConfigItemDescriptor item : descriptor.getItems())
+		{
+			items.putIfAbsent(item.key(), item);
+		}
+		return items;
 	}
 
 	/**
@@ -215,7 +243,8 @@ public class Settings
 		boolean usePoh, boolean usePohFairyRing, boolean usePohSpiritTree,
 		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
 		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
-		int currencyThreshold, boolean includeBankPath)
+		int currencyThreshold, boolean includeBankPath,
+		Set<Integer> blockedItemIds, Map<Integer, Integer> itemThresholdOverrides)
 	{
 		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
 		for (TransportType type : TransportType.values())
@@ -229,7 +258,7 @@ public class Settings
 			transportTypeConfig.getTeleportationItemSetting(),
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath);
+			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides);
 		publishRouting(policy);
 		return policy;
 	}
@@ -323,6 +352,27 @@ public class Settings
 	{
 		Object value = configuredValue(key);
 		return value instanceof Set ? (Set<?>) value : null;
+	}
+
+	/**
+	 * The {@link ConfigItem} declaration for {@code key} — the display name
+	 * and description controls render. {@code null} for keys with no
+	 * {@code @ConfigItem}.
+	 */
+	public ConfigItem configItem(String key)
+	{
+		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
+		return descriptor == null ? null : descriptor.getItem();
+	}
+
+	/**
+	 * The {@link Range} declared for {@code key}, or {@code null} when the
+	 * item bounds itself another way.
+	 */
+	public Range rangeOf(String key)
+	{
+		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
+		return descriptor == null ? null : descriptor.getRange();
 	}
 
 	private void fireListeners(String key)
@@ -694,12 +744,14 @@ public class Settings
 		private final boolean unlockCanoeAxe;
 		private final boolean unlockXericsHonour;
 		private final boolean unlockDragontoothPassage;
+		private final boolean unlockBalloonLogBasket;
 
 		private UnlocksView(ShortestPathConfig config)
 		{
 			unlockCanoeAxe = config.unlockCanoeAxe();
 			unlockXericsHonour = config.unlockXericsHonour();
 			unlockDragontoothPassage = config.unlockDragontoothPassage();
+			unlockBalloonLogBasket = config.unlockBalloonLogBasket();
 		}
 	}
 

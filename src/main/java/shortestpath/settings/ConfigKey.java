@@ -136,6 +136,8 @@ enum ConfigKey
 	UNREACHABLE_TEXT("unreachableText", ShortestPathConfig::unreachableText, Coercion.NONE, Effect.DISPLAY_ONLY),
 	BUILT_TELEPORTATION_BOXES("builtTeleportationBoxes", ShortestPathConfig::builtTeleportationBoxes, Coercion.NONE, Effect.DISPLAY_ONLY),
 	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", ShortestPathConfig::builtTeleportationPortalsPoh, Coercion.NONE, Effect.DISPLAY_ONLY),
+	BLOCKED_TELEPORT_ITEMS("blockedTeleportItems", ShortestPathConfig::blockedTeleportItems, Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", ShortestPathConfig::unlockBalloonLogBasket, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	;
 
 	private static final Map<String, ConfigKey> BY_KEY;

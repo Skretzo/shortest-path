@@ -52,6 +52,13 @@ KNOWN_COLUMNS = {
     "LeagueRegion",
 }
 
+# Files skipped entirely (basenames): generated family->id map resource, not a
+# transport TSV — its familyName/displayItemId/memberItemIds/memberLabels
+# columns are not transport columns.
+SKIP_FILES = {
+    "teleport_restrictions.tsv",
+}
+
 SKILL_NAMES = {
     "attack", "strength", "defence", "ranged", "prayer", "magic",
     "runecraft", "hitpoints", "crafting", "mining", "smithing",
@@ -325,7 +332,8 @@ def main():
     resource_dir = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_DIR
 
     tsv_files = sorted(
-        glob.glob(os.path.join(resource_dir, "**", "*.tsv"), recursive=True)
+        f for f in glob.glob(os.path.join(resource_dir, "**", "*.tsv"), recursive=True)
+        if os.path.basename(f) not in SKIP_FILES
     )
 
     if not tsv_files:
