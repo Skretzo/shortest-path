@@ -93,8 +93,8 @@ import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
+import shortestpath.poh.PohChange;
 import shortestpath.poh.PohService;
-import shortestpath.poh.PortalNexusKeybinds;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
@@ -170,7 +170,7 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private KeyManager keyManager;
 	@Inject
-	private PortalNexusKeybinds portalNexusKeybinds;
+	private PohService pohService;
 	@Inject
 	private SpiritTreeService spiritTrees;
 	@Inject
@@ -284,7 +284,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
-		portalNexusKeybinds.loadFromProfile();
+		applyPohChange(pohService.loadFromProfile(), "profile load");
 		prepareExactBackend();
 	}
 
@@ -625,7 +625,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
-		portalNexusKeybinds.loadFromProfile();
+		applyPohChange(pohService.loadFromProfile(), "profile load");
 		// The new profile may carry different persisted trees, so an in-flight
 		// path computed against the old account's set must be redone — the
 		// load's fact carries that route-invalidating effect unconditionally.
@@ -1008,8 +1008,8 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		portalNexusKeybinds.refreshFromDialog(client);
-		portalNexusKeybinds.persistIfDirty();
+		applyPohChange(pohService.refreshFromDialog(client), "nexus dialog");
+		pohService.persistIfDirty();
 
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
@@ -1186,17 +1186,45 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Maps a POH change fact to its shell follow-up actions. {@link
+	 * Effect#DISPLAY_ONLY} carries no shell action today — the keybind map is
+	 * read lazily by the display path, which sees it hot by reference — so it
+	 * is logged and nothing else runs. The mapper exists so the fact stream is
+	 * consumed symmetrically until the refresh coordinator owns the policy;
+	 * any other effect violates the service contract and is surfaced rather
+	 * than silently swallowed.
+	 */
+	private void applyPohChange(PohChange change, String why)
+	{
+		if (change == null || change.getEffects().isEmpty())
+		{
+			return;
+		}
+		for (Effect effect : change.getEffects())
+		{
+			if (Effect.DISPLAY_ONLY.equals(effect))
+			{
+				log.debug("POH display refresh: {}", why);
+			}
+			else
+			{
+				log.warn("Unhandled POH change effect {} ({})", effect, why);
+			}
+		}
+	}
+
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
-		if (event.getScriptId() != PortalNexusKeybinds.TELENEXUS_CREATE_TELELINE)
+		if (event.getScriptId() != PohService.TELENEXUS_CREATE_TELELINE)
 		{
 			return;
 		}
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			portalNexusKeybinds.putFromDialogLine(client.getTickCount(), widget.getText());
+			applyPohChange(pohService.putFromDialogLine(client.getTickCount(), widget.getText()), "nexus dialog line");
 		}
 	}
 
@@ -1221,7 +1249,9 @@ public class ShortestPathPlugin extends Plugin
 				{
 					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 				}
-				return portalNexusKeybinds.refreshFromDialog(client)
+				PohChange change = pohService.refreshFromDialog(client);
+				applyPohChange(change, "nexus dialog retry");
+				return change != null
 					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 			});
 		}
@@ -1483,7 +1513,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
 		{
-			return portalNexusKeybinds.apply(info);
+			return pohService.apply(info);
 		}
 		return info;
 	}
