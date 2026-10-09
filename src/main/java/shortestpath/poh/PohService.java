@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
@@ -18,6 +19,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.settings.Effect;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -606,5 +608,137 @@ public class PohService
 				}
 			}
 		}
+	}
+
+	public String formatTransportDisplay(Transport transport)
+	{
+		String info = transport.getDisplayInfo();
+		if (info == null || info.isEmpty())
+		{
+			return info;
+		}
+		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
+		{
+			return apply(info);
+		}
+		return info;
+	}
+
+	/**
+	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
+	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
+	 * that information is included instead.
+	 *
+	 * @param destination  The destination point to check
+	 * @param path         The full path
+	 * @param currentIndex The current index in the path
+	 * @param edgeTransports Looks up the transports usable along an edge; the
+	 *                       shell supplies its edge lookup across this seam so
+	 *                       the service never reads pathfinder configuration.
+	 * @return The display info of the POH exit transport, or null if not applicable
+	 */
+	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex,
+		BiFunction<PathStep, PathStep, Set<Transport>> edgeTransports)
+	{
+		if (path == null || currentIndex < 0)
+		{
+			return null;
+		}
+
+		int destX = WorldPointUtil.unpackWorldX(destination);
+		int destY = WorldPointUtil.unpackWorldY(destination);
+
+		// Check if destination is inside POH
+		if (!isInsidePoh(destX, destY))
+		{
+			return null;
+		}
+
+		String immediateExitInfo = null;
+
+		// Look ahead in the path to find the next transport that exits POH
+		for (int i = currentIndex + 1; i < path.size() - 1; i++)
+		{
+			int stepLocation = path.get(i).getPackedPosition();
+			int nextLocation = path.get(i + 1).getPackedPosition();
+
+			int stepX = WorldPointUtil.unpackWorldX(stepLocation);
+			int stepY = WorldPointUtil.unpackWorldY(stepLocation);
+			int nextX = WorldPointUtil.unpackWorldX(nextLocation);
+			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
+
+			// Check if this step is inside POH but next step is outside (exit transport)
+			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
+			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
+
+			if (stepInsidePoh && !nextInsidePoh)
+			{
+				// Found the exit transport - get its display info using bank-aware lookup
+				PathStep currentStep = path.get(i);
+				PathStep nextStep = path.get(i + 1);
+				for (Transport transport : edgeTransports.apply(currentStep, nextStep))
+				{
+					String exitInfo = formatTransportDisplay(transport);
+					if (exitInfo != null && !exitInfo.isEmpty())
+					{
+						TransportType exitType = transport.getType();
+						if (TransportType.TELEPORTATION_BOX.equals(exitType))
+						{
+							String objInfo = transport.getObjectInfo();
+							if (objInfo != null && objInfo.contains("Amulet of Glory"))
+							{
+								immediateExitInfo = "Mounted Glory: " + exitInfo;
+							}
+							else if (objInfo != null && objInfo.contains("Mythical cape"))
+							{
+								immediateExitInfo = "Mythical Cape: " + exitInfo;
+							}
+							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
+							{
+								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
+							}
+							else if (objInfo != null && objInfo.contains("Digsite"))
+							{
+								immediateExitInfo = "Digsite Pendant: " + exitInfo;
+							}
+							else
+							{
+								immediateExitInfo = "Jewelry Box: " + exitInfo;
+							}
+						}
+						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
+						{
+							immediateExitInfo = "Nexus: " + exitInfo;
+						}
+						else if (TransportType.FAIRY_RING.equals(exitType))
+						{
+							immediateExitInfo = "Fairy Ring " + exitInfo;
+						}
+						else if (TransportType.SPIRIT_TREE.equals(exitType))
+						{
+							immediateExitInfo = "Spirit Tree: " + exitInfo;
+						}
+						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
+						{
+							immediateExitInfo = "Obelisk: " + exitInfo;
+						}
+						else
+						{
+							immediateExitInfo = exitInfo;
+						}
+					}
+					break;
+				}
+				break;
+			}
+
+			// If we've left POH without finding a transport, stop looking
+			if (!stepInsidePoh)
+			{
+				break;
+			}
+		}
+
+		return immediateExitInfo;
 	}
 }

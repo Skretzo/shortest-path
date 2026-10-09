@@ -1504,24 +1504,21 @@ public class ShortestPathPlugin extends Plugin
 		return path.get(index + 1);
 	}
 
+	/**
+	 * Delegates to the POH service; kept public for the overlay callers.
+	 */
 	public String formatTransportDisplay(Transport transport)
 	{
-		String info = transport.getDisplayInfo();
-		if (info == null || info.isEmpty())
-		{
-			return info;
-		}
-		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
-		{
-			return pohService.apply(info);
-		}
-		return info;
+		return pohService.formatTransportDisplay(transport);
 	}
 
 	/**
 	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
 	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
 	 * that information is included instead.
+	 * <p>
+	 * Delegates to the POH service, bridging the edge-transport lookup across
+	 * the boundary; kept public for the overlay callers.
 	 *
 	 * @param destination  The destination point to check
 	 * @param path         The full path
@@ -1530,106 +1527,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
 	{
-		if (path == null || currentIndex < 0)
-		{
-			return null;
-		}
-
-		int destX = WorldPointUtil.unpackWorldX(destination);
-		int destY = WorldPointUtil.unpackWorldY(destination);
-
-		// Check if destination is inside POH
-		if (!PohService.isInsidePoh(destX, destY))
-		{
-			return null;
-		}
-
-		String immediateExitInfo = null;
-
-		// Look ahead in the path to find the next transport that exits POH
-		for (int i = currentIndex + 1; i < path.size() - 1; i++)
-		{
-			int stepLocation = path.get(i).getPackedPosition();
-			int nextLocation = path.get(i + 1).getPackedPosition();
-
-			int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-			int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-			int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-
-			// Check if this step is inside POH but next step is outside (exit transport)
-			boolean stepInsidePoh = PohService.isInsidePoh(stepX, stepY);
-			boolean nextInsidePoh = PohService.isInsidePoh(nextX, nextY);
-
-			if (stepInsidePoh && !nextInsidePoh)
-			{
-				// Found the exit transport - get its display info using bank-aware lookup
-				PathStep currentStep = path.get(i);
-				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					String exitInfo = formatTransportDisplay(transport);
-					if (exitInfo != null && !exitInfo.isEmpty())
-					{
-						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType))
-						{
-							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory"))
-							{
-								immediateExitInfo = "Mounted Glory: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Mythical cape"))
-							{
-								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-							{
-								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Digsite"))
-							{
-								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							}
-							else
-							{
-								immediateExitInfo = "Jewelry Box: " + exitInfo;
-							}
-						}
-						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-						{
-							immediateExitInfo = "Nexus: " + exitInfo;
-						}
-						else if (TransportType.FAIRY_RING.equals(exitType))
-						{
-							immediateExitInfo = "Fairy Ring " + exitInfo;
-						}
-						else if (TransportType.SPIRIT_TREE.equals(exitType))
-						{
-							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						}
-						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-						{
-							immediateExitInfo = "Obelisk: " + exitInfo;
-						}
-						else
-						{
-							immediateExitInfo = exitInfo;
-						}
-					}
-					break;
-				}
-				break;
-			}
-
-			// If we've left POH without finding a transport, stop looking
-			if (!stepInsidePoh)
-			{
-				break;
-			}
-		}
-
-		return immediateExitInfo;
+		return pohService.getPohExitInfo(destination, path, currentIndex, this::transportsForEdge);
 	}
 
 	private String simplify(String text)
