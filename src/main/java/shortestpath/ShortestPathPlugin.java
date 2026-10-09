@@ -1,6 +1,5 @@
 package shortestpath;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.Color;
@@ -15,16 +14,10 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -72,10 +65,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ColorUtil;
-import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import shortestpath.items.ItemChange;
 import shortestpath.items.ItemStateService;
@@ -90,11 +80,9 @@ import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
@@ -104,12 +92,10 @@ import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.pathfinder.AStarRoutingStaticProvider;
-import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.poh.PohChange;
 import shortestpath.poh.PohService;
-import shortestpath.scheduler.DebugState;
-import shortestpath.scheduler.PendingTask;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.scheduler.QueryResponder;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
@@ -125,7 +111,7 @@ import shortestpath.requirement.model.ItemRequirement;
 	+
 	"Right click on the world map or shift right click a tile to use", tags = {"pathfinder", "map", "waypoint",
 	"navigation"})
-public class ShortestPathPlugin extends Plugin
+public class ShortestPathPlugin extends Plugin implements QueryResponder
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
 
@@ -150,12 +136,9 @@ public class ShortestPathPlugin extends Plugin
 	private static final String FLASH_ICONS = "Flash icons";
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
-	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	// Colour of the path while on a boat, which sails the boat's headings
 	public static final Color COLOUR_SAILING_PATH = new Color(0, 120, 255);
-	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
-	private final Object pathfinderMutex = new Object();
 
 	@Inject
 	private Client client;
@@ -191,8 +174,6 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private SpriteManager spriteManager;
 	@Inject
-	private WorldMapPointManager worldMapPointManager;
-	@Inject
 	private KeyManager keyManager;
 	@Inject
 	private PohService pohService;
@@ -202,9 +183,9 @@ public class ShortestPathPlugin extends Plugin
 	private ItemStateService itemState;
 	@Inject
 	private Settings settings;
+	@Inject
+	private PathScheduler scheduler;
 	private Point lastMenuOpenedPoint;
-	private WorldMapPoint marker;
-	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
 	private Shape minimapClipFixed;
 	private Shape minimapClipResizeable;
 	private BufferedImage minimapSpriteFixed;
@@ -212,31 +193,11 @@ public class ShortestPathPlugin extends Plugin
 	private Rectangle minimapRectangle = new Rectangle();
 	private GameState lastGameState = null;
 	private GameState lastLastGameState = null;
-	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
-	private Future<?> pathfinderFuture;
-	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
-	// whose query never ran and to know whether a search is reading the transport availability.
-	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
-	// Volatile because the render thread reads it (through getActiveSearch() and friends)
-	// while restarts write it on the client thread under pathfinderMutex.
-	private volatile ActiveSearch pathfinder;
-	private volatile Pathfinder legacyPathfinder;
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
-	private AStarRoutingStaticProvider aStarRoutingStatic;
-	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
-	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
-	@Getter
-	private int sailingPivotX;
-	@Getter
-	private int sailingPivotY;
 	@Getter
 	private PathfinderConfig pathfinderConfig;
-	@Getter
-	private boolean startPointSet = false;
-	@Getter
-	private final DebugState debugState = new DebugState();
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -249,7 +210,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			if (config.clearPathHotkey().matches(e))
 			{
-				setTarget(WorldPointUtil.UNDEFINED);
+				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 			}
 		}
 
@@ -262,7 +223,7 @@ public class ShortestPathPlugin extends Plugin
 
 	public ActiveSearch getActiveSearch()
 	{
-		return pathfinder;
+		return scheduler.getActiveSearch();
 	}
 
 	/**
@@ -270,7 +231,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public Pathfinder getPathfinder()
 	{
-		return legacyPathfinder;
+		return scheduler.getPathfinder();
 	}
 
 	@Provides
@@ -288,6 +249,7 @@ public class ShortestPathPlugin extends Plugin
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
 		pathfinderConfig.setSpiritTreeService(spiritTrees);
 		pathfinderConfig.setItemStateService(itemState);
+		scheduler.attach(pathfinderConfig, itemState, this);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load touches the same HashMaps the
@@ -321,7 +283,7 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		applyPohChange(pohService.loadFromProfile(), "profile load");
-		prepareAStarBackend();
+		scheduler.prepareBackend();
 	}
 
 	@Override
@@ -336,15 +298,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 
-		synchronized (pathfinderMutex)
-		{
-			cancelQueries("SHUTDOWN");
-			if (pathfindingExecutor != null)
-			{
-				pathfindingExecutor.shutdownNow();
-				pathfindingExecutor = null;
-			}
-		}
+		scheduler.shutdown();
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
 
@@ -354,174 +308,6 @@ public class ShortestPathPlugin extends Plugin
 		// The singleton survives restarts; drop the live bank ref and pickup
 		// cache so session state cannot leak into the next enable.
 		itemState.reset();
-	}
-
-	public void restartPathfinding(String reason, int start, Targets ends, boolean canReviveFiltered)
-	{
-		debugState.restartRequested(reason, client.getTickCount());
-		List<PathStep> previousPath;
-		Targets previousTargets;
-		synchronized (pathfinderMutex)
-		{
-			previousPath = pathfinder == null ? null : pathfinder.getPath();
-			previousTargets = pathfinder == null ? null : pathfinder.getTargets();
-			if (pathfinder != null)
-			{
-				pathfinder.cancel();
-				// pathfinderFuture is null when a submit threw before the
-				// assignment (e.g. executor shutting down mid-restart).
-				if (pathfinderFuture != null)
-				{
-					pathfinderFuture.cancel(true);
-				}
-				debugState.searchCancelled(pathfinder);
-			}
-			// The displayed path wins over pending queries: it refreshes the transport
-			// availability, which a running query would otherwise read mid-search, and queued
-			// queries would delay it on the shared single thread.
-			cancelQueries("CANCELLED");
-
-			ensurePathfindingExecutor();
-		}
-
-		getClientThread().invokeLater(() ->
-		{
-			try
-			{
-				startPathfinding(start, ends, canReviveFiltered, previousPath, previousTargets);
-			}
-			catch (RuntimeException error)
-			{
-				debugState.clientError(error, client.getTickCount());
-				debugState.restartOutcome("failed: " + DebugState.describe(error));
-				throw error;
-			}
-		});
-	}
-
-	private void startPathfinding(int start, Targets requestedEnds, boolean canReviveFiltered,
-		List<PathStep> previousPath, Targets previousTargets)
-	{
-		pathfinderConfig.refresh();
-		Targets ends = pathfinderConfig.filterLocations(requestedEnds, canReviveFiltered);
-		synchronized (pathfinderMutex)
-		{
-			if (ends.isEmpty())
-			{
-				debugState.restartOutcome("no targets left after filtering");
-				setTarget(WorldPointUtil.UNDEFINED);
-			}
-			else
-			{
-				itemState.markBankPickupDirty();
-				// The boarded-boat varbit can lag the world entity (stale across a teleport or
-				// login), so only sail when the boat is actually in the scene — otherwise the
-				// search would sail its headings across land
-				Player player = client.getLocalPlayer();
-				if (pathfinderConfig.isSailingMoves() && player != null
-					&& WorldPointUtil.boat(client, player) != null)
-				{
-					// A SailingPathfinder isn't a Pathfinder, so it can't be held by
-					// legacyPathfinder — getPathfinder() reports null while sailing
-					legacyPathfinder = null;
-					pathfinder = sailingPathfinder(start, ends);
-				}
-				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.ASTAR)
-				{
-					try
-					{
-						legacyPathfinder = null;
-						AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
-							aStarRoutingSession, start, ends, this::postPluginMessages);
-						// Recalculating towards the same targets: keep the old route drawn until
-						// the new one is ready.
-						if (ends.equals(previousTargets))
-							aStar.showUntilDone(previousPath);
-						pathfinder = aStar;
-					}
-					catch (RuntimeException error)
-					{
-						debugState.clientError(error, client.getTickCount());
-						legacyPathfinder = null;
-						pathfinder = AStarPathfinder.failed(start, ends, this::postPluginMessages, error);
-					}
-				}
-				else
-				{
-					legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
-					pathfinder = legacyPathfinder;
-				}
-				ActiveSearch search = pathfinder;
-				debugState.searchStarted(search);
-				pathfinderFuture = pathfindingExecutor.submit(() ->
-				{
-					try
-					{
-						search.run();
-					}
-					catch (RuntimeException error)
-					{
-						debugState.searchError(error, client.getTickCount());
-						throw error;
-					}
-				});
-			}
-		}
-	}
-
-	/**
-	 * On a boat, a search that sails the boat's 16 headings at its base speed instead of walking. It starts from the
-	 * boat's exact tile and remembers where the boat sits within it: every sailing move lands whole tiles away, so the
-	 * boat stays at that spot at each turn of the path. The boat's whole hull, from its bounds, must fit along every move
-	 * there.
-	 */
-	private SailingPathfinder sailingPathfinder(int start, Targets ends)
-	{
-		int sailingStart = start;
-		sailingPivotX = 0;
-		sailingPivotY = 0;
-		Player localPlayer = client.getLocalPlayer();
-		LocalPoint boat = localPlayer == null ? null : WorldPointUtil.boatLocation(client, localPlayer);
-		if (boat != null && !startPointSet)
-		{
-			sailingStart = WorldPointUtil.fromLocalInstance(client, boat);
-			sailingPivotX = (boat.getX() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
-			sailingPivotY = (boat.getY() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
-		}
-		WorldEntity boatEntity = localPlayer == null ? null : WorldPointUtil.boat(client, localPlayer);
-		WorldEntityConfig bounds = boatEntity == null ? null : boatEntity.getConfig();
-		BoatHull hull = bounds == null ? null : BoatHull.fromBounds(bounds.getBoundsX(), bounds.getBoundsY(),
-			bounds.getBoundsWidth(), bounds.getBoundsHeight(), sailingPivotX, sailingPivotY);
-		// The heading the boat faces where the route starts, as one of the 16 headings 128 angle units
-		// apart: a target under its hull only counts as reached facing that way — berthed, the boat hasn't
-		// arrived at a target astern of it. The target orientation pairs with the target tile the route
-		// starts from
-		int sailingHeading = boatEntity == null ? WorldPointUtil.UNDEFINED
-			: Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16);
-		return new SailingPathfinder(pathfinderConfig, sailingStart, ends, this::postPluginMessages,
-			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull, sailingHeading);
-	}
-
-	private void ensurePathfindingExecutor()
-	{
-		synchronized (pathfinderMutex)
-		{
-			if (pathfindingExecutor == null)
-			{
-				ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
-				pathfindingExecutor = Executors.newSingleThreadExecutor(shortestPathNaming);
-			}
-		}
-	}
-
-	private AStarRoutingStaticProvider aStarRoutingStatic()
-	{
-		synchronized (pathfinderMutex)
-		{
-			if (aStarRoutingStatic == null)
-				aStarRoutingStatic = new AStarRoutingStaticProvider(pathfinderConfig::getMap);
-			return aStarRoutingStatic;
-		}
 	}
 
 	private void migrateAStarConfiguration()
@@ -537,103 +323,9 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	/**
-	 * Builds the A* backend's static routing data in the background when the A* backend is
-	 * selected, so the first route does not pay for it. The build runs on the pathfinding thread,
-	 * so a search submitted meanwhile simply queues behind it; a failed build is remembered by the
-	 * provider and reported by that search.
-	 */
-	private void prepareAStarBackend()
-	{
-		if (pathfinderConfig == null || config.pathfinderBackend() != PathfinderBackend.ASTAR)
-		{
-			return;
-		}
-		AStarRoutingStaticProvider provider = aStarRoutingStatic();
-		ensurePathfindingExecutor();
-		synchronized (pathfinderMutex)
-		{
-			pathfindingExecutor.submit(() ->
-			{
-				try
-				{
-					provider.get();
-				}
-				catch (RuntimeException error)
-				{
-					log.warn("Failed to build A* routing data", error);
-				}
-			});
-		}
-	}
-
-	public void restartPathfinding(String reason, int start, Targets ends)
-	{
-		restartPathfinding(reason, start, ends, true);
-	}
-
-	public boolean isNearPath(int location)
-	{
-		List<PathStep> path;
-		// The previous route is only on screen until its recalculation finishes; the player is
-		// expected to be off it, so it must not trigger yet another recalculation.
-		if (pathfinder instanceof AStarPathfinder && ((AStarPathfinder) pathfinder).isShowingProvisionalPath())
-		{
-			return true;
-		}
-		boolean sameLocation = lastLocation == location;
-		lastLocation = location;
-		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			config.recalculateDistance() < 0 || sameLocation)
-		{
-			return true;
-		}
-
-		for (PathStep pathStep : path)
-		{
-			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < config.recalculateDistance())
-			{
-				return true;
-			}
-		}
-
-		// A sailing path has a point at the end of each move, up to a dozen tiles apart, so the boat can be between them
-		if (isSailing())
-		{
-			for (int i = 1; i < path.size(); i++)
-			{
-				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
-					< config.recalculateDistance())
-				{
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	// How far a point is from the closest point on the straight line between two others, in tiles counted like
-	// WorldPointUtil#distanceBetween, or Integer.MAX_VALUE on another plane
-	private static int distanceToLine(int point, int from, int to)
-	{
-		if (WorldPointUtil.unpackWorldPlane(point) != WorldPointUtil.unpackWorldPlane(from))
-		{
-			return Integer.MAX_VALUE;
-		}
-		final double px = WorldPointUtil.unpackWorldX(point);
-		final double py = WorldPointUtil.unpackWorldY(point);
-		final double ax = WorldPointUtil.unpackWorldX(from);
-		final double ay = WorldPointUtil.unpackWorldY(from);
-		final double dx = WorldPointUtil.unpackWorldX(to) - ax;
-		final double dy = WorldPointUtil.unpackWorldY(to) - ay;
-		final double lengthSquared = dx * dx + dy * dy;
-		final double t = lengthSquared == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSquared));
-		return (int) Math.round(Math.max(Math.abs(px - (ax + t * dx)), Math.abs(py - (ay + t * dy))));
-	}
-
 	public Color getPathColor()
 	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (pathfinder == null || !pathfinder.isDone())
 		{
 			return settings.display().colourPathCalculating();
@@ -655,6 +347,7 @@ public class ShortestPathPlugin extends Plugin
 
 	public boolean isPathUnreachable()
 	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (pathfinder == null || !pathfinder.isDone())
 		{
 			return false;
@@ -716,13 +409,14 @@ public class ShortestPathPlugin extends Plugin
 
 		if (effects.contains(Effect.SIDE_EFFECT_BACKEND_PREP))
 		{
-			prepareAStarBackend();
+			scheduler.prepareBackend();
 		}
 
 		// A routing input changed; rerun pathfinding
-		if (effects.contains(Effect.ROUTE_INVALIDATING) && pathfinder != null)
+		if (effects.contains(Effect.ROUTE_INVALIDATING) && scheduler.getActiveSearch() != null)
 		{
-			restartPathfinding("config: " + change.getKey(), pathfinder.getStart(), pathfinder.getTargets());
+			ActiveSearch search = scheduler.getActiveSearch();
+			scheduler.restart("config: " + change.getKey(), search.getStart(), search.getTargets());
 		}
 	}
 
@@ -743,10 +437,11 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		prepareAStarBackend();
-		if (pathfinder != null)
+		scheduler.prepareBackend();
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (search != null)
 		{
-			restartPathfinding("configuration profile change", pathfinder.getStart(), pathfinder.getTargets());
+			scheduler.restart("configuration profile change", search.getStart(), search.getTargets());
 		}
 		else
 		{
@@ -782,7 +477,7 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+		scheduler.deferRefresh(client.getTickCount() + 1);
 	}
 
 	/**
@@ -798,7 +493,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+		scheduler.deferRefresh(client.getTickCount() + 1);
 	}
 
 	@Subscribe
@@ -835,10 +530,11 @@ public class ShortestPathPlugin extends Plugin
 			Map<String, Object> payloadOverrides = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
 			if (payloadOverrides != null && !payloadOverrides.isEmpty())
 			{
-				synchronized (pathfinderMutex)
+				scheduler.withSchedulerLock(() ->
 				{
 					settings.applyOverrides(payloadOverrides);
-				}
+					return null;
+				});
 			}
 
 			if (objStart == null && objTarget == null)
@@ -853,9 +549,9 @@ public class ShortestPathPlugin extends Plugin
 				return;
 			}
 
-			ActiveSearch current = pathfinder;
-			boolean useOld = targets.isEmpty() && current != null;
-			restartPathfinding("plugin message", start, useOld ? current.getTargets() : targets, useOld);
+			ActiveSearch search = scheduler.getActiveSearch();
+			boolean useOld = targets.isEmpty() && search != null;
+			scheduler.restart("plugin message", start, useOld ? search.getTargets() : targets, useOld);
 		}
 		else if (PLUGIN_MESSAGE_QUERY.equals(action))
 		{
@@ -872,7 +568,7 @@ public class ShortestPathPlugin extends Plugin
 				postQueryFailure(id, "INVALID");
 				return;
 			}
-			queryPath(id, start, targets);
+			scheduler.queryPath(id, start, targets);
 		}
 		else if (PLUGIN_MESSAGE_GET_TARGET.equals(action))
 		{
@@ -881,11 +577,12 @@ public class ShortestPathPlugin extends Plugin
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
-			synchronized (pathfinderMutex)
+			scheduler.withSchedulerLock(() ->
 			{
 				settings.clearOverrides();
-			}
-			setTarget(WorldPointUtil.UNDEFINED);
+				return null;
+			});
+			scheduler.setTarget(WorldPointUtil.UNDEFINED);
 		}
 	}
 
@@ -922,87 +619,8 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	/**
-	 * Finds a path for another plugin without touching the displayed one, and answers with a
-	 * {@code result} plugin message carrying the caller's {@code id}.
-	 *
-	 * <p>Queries share the single pathfinding thread with the displayed path, so the two never
-	 * search at the same time. The transport availability is only refreshed when no search is
-	 * queued or running, since a search reads it while it runs; otherwise the query uses what the
-	 * previous search was started with. A new displayed path cancels pending queries, so a query
-	 * never runs concurrently with a refresh triggered by {@code restartPathfinding} either.
-	 */
-	private void queryPath(Object id, int start, Targets targets)
-	{
-		clientThread.invokeLater(() ->
-		{
-			synchronized (pathfinderMutex)
-			{
-				if (pathfindingExecutor == null)
-				{
-					postQueryFailure(id, "SHUTDOWN");
-					return;
-				}
-				if (queries.isEmpty() && (pathfinder == null || pathfinder.isDone()))
-				{
-					pathfinderConfig.refresh();
-				}
-				// Plugin queries always run on the legacy backend, even when the user-facing
-				// search opted into a different one: external callers get the proven engine's
-				// routes regardless of the experiment the user has enabled.
-				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
-				QueryTask task = new QueryTask(id);
-				queries.put(query, task);
-				task.future = pathfindingExecutor.submit(() -> runQuery(query, task));
-			}
-		});
-	}
-
-	private void runQuery(Pathfinder query, QueryTask task)
-	{
-		try
-		{
-			query.run();
-			postQueryResult(task.id, query);
-		}
-		catch (RuntimeException | Error e)
-		{
-			postQueryFailure(task.id, "ERROR");
-			throw e;
-		}
-		finally
-		{
-			synchronized (pathfinderMutex)
-			{
-				queries.remove(query);
-			}
-		}
-	}
-
-	/**
-	 * Cancels every pending query while holding {@link #pathfinderMutex}. Queries still in the
-	 * executor queue are dequeued and answered here since their runnable will never execute;
-	 * queries already running are signalled and answer for themselves once they stop.
-	 */
-	private void cancelQueries(String reason)
-	{
-		for (Iterator<Map.Entry<Pathfinder, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
-		{
-			Map.Entry<Pathfinder, QueryTask> entry = it.next();
-			QueryTask task = entry.getValue();
-			if (task.future != null && task.future.cancel(false))
-			{
-				it.remove();
-				postQueryFailure(task.id, reason);
-			}
-			else
-			{
-				entry.getKey().cancel();
-			}
-		}
-	}
-
-	private void postQueryResult(Object id, Pathfinder query)
+	@Override
+	public void postQueryResult(Object id, Pathfinder query)
 	{
 		PathfinderResult result = query.getResult();
 		if (result == null)
@@ -1064,7 +682,8 @@ public class ShortestPathPlugin extends Plugin
 	 * Answers a query that produced no result: a malformed message, a plugin shutdown, a
 	 * cancelled search, or a failure while running.
 	 */
-	private void postQueryFailure(Object id, String reason)
+	@Override
+	public void postQueryFailure(Object id, String reason)
 	{
 		Map<String, Object> data = new HashMap<>();
 		data.put(PLUGIN_MESSAGE_ID, id);
@@ -1081,62 +700,48 @@ public class ShortestPathPlugin extends Plugin
 	 * the caller's {@code id} and a snapshot of the displayed path's start and targets. This is
 	 * a read-only request: it launches no pathfinding work and mutates no state.
 	 *
-	 * <p>The start/targets pair is read while holding {@link #pathfinderMutex} so a request
-	 * arriving mid-search sees one consistent snapshot rather than a torn pair; the mutex is
-	 * released before the response hops to the client thread. When no path is set the response
-	 * carries {@code set=false} and no start or target fields.
+	 * <p>The start/targets/overrides triple is read while holding the scheduler's lock so a
+	 * request arriving mid-search sees one consistent snapshot rather than a torn pair; the
+	 * lock is released before the response hops to the client thread. When no path is set the
+	 * response carries {@code set=false} and no start or target fields.
 	 */
 	private void postCurrentTarget(Object id)
 	{
-		int start;
-		Targets targets;
-		Map<String, Object> overrides;
-		synchronized (pathfinderMutex)
+		Map<String, Object> data = scheduler.withSchedulerLock(() ->
 		{
-			start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
-			targets = (pathfinder == null) ? Targets.NONE : pathfinder.getTargets();
-			overrides = settings.rawOverrides().isEmpty() ? null : new HashMap<>(settings.rawOverrides());
-		}
+			ActiveSearch pathfinder = scheduler.getActiveSearch();
+			int start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
+			Targets targets = (pathfinder == null) ? Targets.NONE : pathfinder.getTargets();
+			Map<String, Object> overrides =
+				settings.rawOverrides().isEmpty() ? null : new HashMap<>(settings.rawOverrides());
 
-		Map<String, Object> data = new HashMap<>();
-		data.put(PLUGIN_MESSAGE_ID, id);
-		data.put("set", !targets.isEmpty());
-		if (!targets.isEmpty())
-		{
-			data.put(PLUGIN_MESSAGE_START,
-				start == WorldPointUtil.UNDEFINED ? null : WorldPointUtil.unpackWorldPoint(start));
-			List<Object> encodedTargets = new ArrayList<>(targets.size());
-			for (Target target : targets)
+			Map<String, Object> message = new HashMap<>();
+			message.put(PLUGIN_MESSAGE_ID, id);
+			message.put("set", !targets.isEmpty());
+			if (!targets.isEmpty())
 			{
-				encodedTargets.add(PluginMessageTargets.encode(target));
+				message.put(PLUGIN_MESSAGE_START,
+					start == WorldPointUtil.UNDEFINED ? null : WorldPointUtil.unpackWorldPoint(start));
+				List<Object> encodedTargets = new ArrayList<>(targets.size());
+				for (Target target : targets)
+				{
+					encodedTargets.add(PluginMessageTargets.encode(target));
+				}
+				message.put(PLUGIN_MESSAGE_TARGET, encodedTargets);
 			}
-			data.put(PLUGIN_MESSAGE_TARGET, encodedTargets);
-		}
-		if (overrides != null)
-		{
-			data.put(PLUGIN_MESSAGE_CONFIG_OVERRIDE, overrides);
-		}
+			if (overrides != null)
+			{
+				message.put(PLUGIN_MESSAGE_CONFIG_OVERRIDE, overrides);
+			}
+			return message;
+		});
 		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_CURRENT_TARGET, data)));
 	}
 
-	/**
-	 * A query that has been submitted to the executor: the caller's {@code id} plus the task's
-	 * future, so it can be answered or cancelled when the displayed path or plugin shutdown
-	 * takes precedence.
-	 */
-	private static class QueryTask
-	{
-		final Object id;
-		Future<?> future;
-
-		QueryTask(Object id)
-		{
-			this.id = id;
-		}
-	}
-
+	@Override
 	public void postPluginMessages()
 	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (pathfinder == null)
 		{
 			return;
@@ -1181,13 +786,7 @@ public class ShortestPathPlugin extends Plugin
 		applyPohChange(pohService.refreshFromDialog(client), "nexus dialog");
 		pohService.persistIfDirty();
 
-		for (int i = 0; i < pendingTasks.size(); i++)
-		{
-			if (pendingTasks.get(i).check(client.getTickCount()))
-			{
-				pendingTasks.remove(i--).run();
-			}
-		}
+		scheduler.drainDueTasks(client.getTickCount());
 
 		Player localPlayer = client.getLocalPlayer();
 
@@ -1196,6 +795,7 @@ public class ShortestPathPlugin extends Plugin
 		// returned fact carries the restart decision.
 		applyTreeChange(spiritTrees.onGameTick(), "spirit tree varbit");
 
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (localPlayer == null || pathfinder == null)
 		{
 			return;
@@ -1217,7 +817,7 @@ public class ShortestPathPlugin extends Plugin
 					Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16))
 					!= WorldPointUtil.UNDEFINED)
 			{
-				setTarget(WorldPointUtil.UNDEFINED);
+				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
 		}
@@ -1225,19 +825,19 @@ public class ShortestPathPlugin extends Plugin
 		{
 			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
 			{
-				setTarget(WorldPointUtil.UNDEFINED);
+				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
 		}
 
-		if (!startPointSet && !isNearPath(currentLocation))
+		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(currentLocation))
 		{
 			if (config.cancelInstead())
 			{
-				setTarget(WorldPointUtil.UNDEFINED);
+				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
-			restartPathfinding("off route", currentLocation, pathfinder.getTargets());
+			scheduler.restart("off route", currentLocation, pathfinder.getTargets());
 		}
 	}
 
@@ -1248,6 +848,7 @@ public class ShortestPathPlugin extends Plugin
 			&& event.getType() == MenuAction.WALK.getId())
 		{
 			addMenuEntry(event, SET, TARGET, 1);
+			ActiveSearch pathfinder = scheduler.getActiveSearch();
 			if (pathfinder != null)
 			{
 				if (!pathfinder.getTargets().isEmpty())
@@ -1288,6 +889,7 @@ public class ShortestPathPlugin extends Plugin
 				client.getMouseCanvasPosition().getY()))
 			{
 				addMenuEntry(event, SET, TARGET, 0);
+				ActiveSearch pathfinder = scheduler.getActiveSearch();
 				if (pathfinder != null)
 				{
 					if (!pathfinder.getTargets().isEmpty())
@@ -1313,7 +915,7 @@ public class ShortestPathPlugin extends Plugin
 
 		final Shape minimap = getMinimapClipArea();
 
-		if (minimap != null && pathfinder != null
+		if (minimap != null && scheduler.getActiveSearch() != null
 			&& minimap.contains(
 			client.getMouseCanvasPosition().getX(),
 			client.getMouseCanvasPosition().getY()))
@@ -1321,7 +923,7 @@ public class ShortestPathPlugin extends Plugin
 			addMenuEntry(event, CLEAR, PATH, 0);
 		}
 
-		if (minimap != null && pathfinder != null
+		if (minimap != null && scheduler.getActiveSearch() != null
 			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
 			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
 		{
@@ -1355,7 +957,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (change != null && change.getEffects().contains(Effect.ELIGIBILITY_STALE))
 		{
-			pathfinderConfig.invalidateEligibility();
+			scheduler.invalidateEligibility();
 		}
 	}
 
@@ -1365,7 +967,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public String getMissingTargetItemsText()
 	{
-		ActiveSearch search = pathfinder;
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search != missingItemsSearch)
 		{
 			missingItemsSearch = search;
@@ -1415,9 +1017,10 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (change != null
 			&& change.getEffects().contains(Effect.ROUTE_INVALIDATING)
-			&& pathfinder != null)
+			&& scheduler.getActiveSearch() != null)
 		{
-			restartPathfinding(reason, pathfinder.getStart(), pathfinder.getTargets());
+			ActiveSearch search = scheduler.getActiveSearch();
+			scheduler.restart(reason, search.getStart(), search.getTargets());
 		}
 	}
 
@@ -1466,7 +1069,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
+		if (scheduler.getActiveSearch() != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
 		{
 			fairyRingPanelOpen = true;
 		}
@@ -1521,7 +1124,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onPostClientTick(PostClientTick event)
 	{
-		if (fairyRingPanelOpen && pathfinder != null)
+		if (fairyRingPanelOpen && scheduler.getActiveSearch() != null)
 		{
 			scrollFairyRingPanel();
 		}
@@ -1529,6 +1132,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private void scrollFairyRingPanel()
 	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		List<PathStep> path;
 
 		if (pathfinder == null
@@ -1638,8 +1242,18 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean isSailing()
 	{
-		ActiveSearch search = pathfinder;
+		ActiveSearch search = scheduler.getActiveSearch();
 		return search instanceof SailingPathfinder;
+	}
+
+	public int getSailingPivotX()
+	{
+		return scheduler.getSailingPivotX();
+	}
+
+	public int getSailingPivotY()
+	{
+		return scheduler.getSailingPivotY();
 	}
 
 	/**
@@ -1799,26 +1413,27 @@ public class ShortestPathPlugin extends Plugin
 
 	private void onMenuOptionClicked(MenuEntry entry)
 	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
 		{
-			setTarget(getSelectedWorldPoint());
+			scheduler.setTarget(getSelectedWorldPoint());
 		}
 		else if (entry.getOption().equals(SET) && pathfinder != null && entry.getTarget().equals(TARGET +
 			ColorUtil.wrapWithColorTag(" " + (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET)))
 		{
-			setTarget(getSelectedWorldPoint(), true);
+			scheduler.setTarget(getSelectedWorldPoint(), true);
 		}
 		else if (entry.getOption().equals(SET) && entry.getTarget().equals(START))
 		{
-			setStart(getSelectedWorldPoint());
+			scheduler.setStart(getSelectedWorldPoint());
 		}
 		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
 		{
-			setTarget(WorldPointUtil.UNDEFINED);
+			scheduler.setTarget(WorldPointUtil.UNDEFINED);
 		}
 		else if (entry.getOption().equals(FIND_CLOSEST))
 		{
-			setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
+			scheduler.setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
 		}
 	}
 
@@ -1839,97 +1454,6 @@ public class ShortestPathPlugin extends Plugin
 				: calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
 		}
 		return WorldPointUtil.UNDEFINED;
-	}
-
-	private void setTarget(int target)
-	{
-		setTarget(target, false);
-	}
-
-	private void setTarget(int target, boolean append)
-	{
-		Set<Integer> targets = new HashSet<>();
-		if (target != WorldPointUtil.UNDEFINED)
-		{
-			targets.add(target);
-		}
-		setTargets(targets, append);
-	}
-
-	private void setTargets(Set<Integer> targets, boolean append)
-	{
-		if (targets == null || targets.isEmpty())
-		{
-			synchronized (pathfinderMutex)
-			{
-				if (pathfinder != null)
-				{
-					pathfinder.cancel();
-				}
-				pathfinder = null;
-				legacyPathfinder = null;
-			}
-
-			worldMapPointManager.removeIf(x -> x == marker);
-			marker = null;
-			startPointSet = false;
-		}
-		else
-		{
-			Player localPlayer = client.getLocalPlayer();
-			if (!startPointSet && localPlayer == null)
-			{
-				return;
-			}
-			worldMapPointManager.removeIf(x -> x == marker);
-			if (targets.size() == 1)
-			{
-				marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(targets.iterator().next()), MARKER_IMAGE);
-				marker.setName("Target");
-				marker.setTarget(marker.getWorldPoint());
-				marker.setJumpOnClick(true);
-				worldMapPointManager.add(marker);
-			}
-
-			// fromLocalInstance needs a live player; during a world hop it is
-			// null, so fall back to the running search's start and bail when
-			// there is nothing to anchor to.
-			int start;
-			if (localPlayer != null)
-			{
-				start = WorldPointUtil.fromLocalInstance(client, localPlayer);
-				lastLocation = start;
-			}
-			else if (startPointSet && pathfinder != null)
-			{
-				start = pathfinder.getStart();
-			}
-			else
-			{
-				return;
-			}
-			if (startPointSet && pathfinder != null)
-			{
-				start = pathfinder.getStart();
-			}
-			// Targets the player picks need no items; adding one keeps the items of those already set.
-			Targets destinations = Targets.at(targets);
-			if (pathfinder != null && append)
-			{
-				destinations = pathfinder.getTargets().plus(destinations);
-			}
-			restartPathfinding(append ? "add target" : "set target", start, destinations, append);
-		}
-	}
-
-	private void setStart(int start)
-	{
-		if (pathfinder == null)
-		{
-			return;
-		}
-		startPointSet = true;
-		restartPathfinding("set start", start, pathfinder.getTargets());
 	}
 
 	public int calculateMapPoint(int pointX, int pointY)
