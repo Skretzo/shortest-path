@@ -19,9 +19,9 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.pathfinder.PathfinderBackend;
-import shortestpath.requirement.model.JewelleryBoxTier;
-import shortestpath.transport.PohMountedItem;
-import shortestpath.transport.PohNexusPortal;
+import shortestpath.poh.JewelleryBoxTier;
+import shortestpath.poh.PohMountedItem;
+import shortestpath.poh.PohNexusPortal;
 
 /**
  * Pins the {@link EffectiveConfig} coercion contract: every coercible category

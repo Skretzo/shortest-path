@@ -1,7 +1,7 @@
 package shortestpath.pathfinder.exact;
 
-import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
+import shortestpath.poh.PohService;
 
 /** Tiny valid static routing data for account/site-graph tests. */
 public final class RoutingStaticTestFixture
@@ -11,7 +11,7 @@ public final class RoutingStaticTestFixture
 	public static final int C = WorldPointUtil.packWorldPoint(1002, 1000, 0);
 	public static final int D = WorldPointUtil.packWorldPoint(1003, 1000, 0);
 	public static final int POH_ORIGIN = WorldPointUtil.packWorldPoint(1900, 7048, 0);
-	public static final int POH_LANDING = WorldPointUtil.packWorldPoint(ShortestPathPlugin.POH_LANDING_X, ShortestPathPlugin.POH_LANDING_Y, 0);
+	public static final int POH_LANDING = WorldPointUtil.packWorldPoint(PohService.POH_LANDING_X, PohService.POH_LANDING_Y, 0);
 	public static final int T3_A = WorldPointUtil.packWorldPoint(1000, 1000, 0);
 	public static final int T3_B = WorldPointUtil.packWorldPoint(1002, 1000, 0);
 	public static final int T3_E = WorldPointUtil.packWorldPoint(1004, 1000, 0);

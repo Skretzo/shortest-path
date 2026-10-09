@@ -18,7 +18,7 @@ import org.junit.Test;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.requirement.RoutingPolicy;
-import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 

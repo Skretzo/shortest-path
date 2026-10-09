@@ -9,12 +9,12 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.settings.TeleportationItem;
-import shortestpath.transport.PohMountedItem;
-import shortestpath.transport.PohNexusPortal;
+import shortestpath.poh.PohMountedItem;
+import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.TransportType;
 
 /**
