@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -21,7 +22,10 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
+import org.mockito.ArgumentCaptor;
 import shortestpath.requirement.PlayerStateSource;
+import shortestpath.scheduler.RefreshCoordinator;
+import shortestpath.settings.Effect;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -501,13 +505,16 @@ public class SpiritTreeServiceTest
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration("shortestpath", "spiritTree.12082.4771"))
 			.thenReturn("20:1700000000");
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
-		SpiritTreeService service = new SpiritTreeService(configManager, null);
-		TreeChange change = service.loadFromProfile();
+		SpiritTreeService service = new SpiritTreeService(configManager, null, coordinator);
+		service.loadFromProfile();
 
-		// A profile reload re-resolves state, so the fact is unconditional.
-		assertNotNull(change);
-		assertTrue(change.getEffects().contains(shortestpath.settings.Effect.ROUTE_INVALIDATING));
+		// A profile reload re-resolves state, so the declare is unconditional.
+		ArgumentCaptor<TreeChange> captor = ArgumentCaptor.forClass(TreeChange.class);
+		verify(coordinator).treeSetChanged(captor.capture());
+		assertEquals("profile", captor.getValue().getKey());
+		assertTrue(captor.getValue().getEffects().contains(Effect.ROUTE_INVALIDATING));
 		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
 	}
 
@@ -515,9 +522,12 @@ public class SpiritTreeServiceTest
 	public void loadFromProfileWithNoKeysPublishesUnresolvedNull()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		SpiritTreeService service = new SpiritTreeService(configManager, null);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SpiritTreeService service = new SpiritTreeService(configManager, null, coordinator);
 
-		assertNotNull(service.loadFromProfile());
+		service.loadFromProfile();
+
+		verify(coordinator).treeSetChanged(any());
 		assertNull(service.getAvailableSpiritTrees());
 	}
 
@@ -616,24 +626,32 @@ public class SpiritTreeServiceTest
 		when(player.getWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
 		when(client.getTickCount()).thenReturn(10, 11);
 		when(client.getVarbitValue(VarbitID.FARMING_TRANSMIT_A)).thenReturn(20);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
 
-		assertNull(service.onGameTick()); // region-entry tick does not sample
-		TreeChange change = service.onGameTick();
+		service.onGameTick(); // region-entry tick does not sample
+		verify(coordinator, never()).treeSetChanged(any());
 
-		assertNotNull(change);
-		assertEquals("varbit:Port Sarim", change.getKey());
+		service.onGameTick();
+
+		ArgumentCaptor<TreeChange> captor = ArgumentCaptor.forClass(TreeChange.class);
+		verify(coordinator).treeSetChanged(captor.capture());
+		assertEquals("varbit:Port Sarim", captor.getValue().getKey());
 		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
 	}
 
 	@Test
-	public void onGameTickWithoutPlayerReturnsNull()
+	public void onGameTickWithoutPlayerDeclaresNothing()
 	{
 		Client client = mock(Client.class);
-		SpiritTreeService service = new SpiritTreeService(null, client);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SpiritTreeService service = new SpiritTreeService(null, client, coordinator);
 
-		assertNull(service.onGameTick());
+		service.onGameTick();
+
+		verify(coordinator, never()).treeSetChanged(any());
 		assertNull(service.getAvailableSpiritTrees());
 	}
 
@@ -650,12 +668,15 @@ public class SpiritTreeServiceTest
 		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
 		when(listed.getText()).thenReturn("<col=735a28>3</col>: Port Sarim");
 		when(greyed.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Etceteria</col>");
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
-		TreeChange change = service.onMenuOpened(false);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+		service.onMenuOpened(false);
 
-		assertNotNull(change);
-		assertEquals("menu", change.getKey());
+		ArgumentCaptor<TreeChange> captor = ArgumentCaptor.forClass(TreeChange.class);
+		verify(coordinator).treeSetChanged(captor.capture());
+		assertEquals("menu", captor.getValue().getKey());
 		assertEquals(Set.of("Port Sarim"), service.getAvailableSpiritTrees());
 	}
 
@@ -668,34 +689,46 @@ public class SpiritTreeServiceTest
 		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
 		when(container.getDynamicChildren()).thenReturn(new Widget[]{first});
 		when(first.getText()).thenReturn("<col=735a28>1</col>: Some other interface");
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
 
-		assertNull(service.onMenuOpened(false));
+		service.onMenuOpened(false);
+
+		verify(coordinator, never()).treeSetChanged(any());
 		assertNull(service.getAvailableSpiritTrees());
 	}
 
 	@Test
-	public void onMenuOpenedWithoutContainerReturnsNull()
+	public void onMenuOpenedWithoutContainerDeclaresNothing()
 	{
 		Client client = mock(Client.class);
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
 
-		assertNull(service.onMenuOpened(false));
-		assertNull(service.onMenuOpened(true));
+		service.onMenuOpened(false);
+		service.onMenuOpened(true);
+
+		verify(coordinator, never()).treeSetChanged(any());
 	}
 
 	@Test
-	public void onMenuOpenedEmptyChildrenReturnsNull()
+	public void onMenuOpenedEmptyChildrenDeclaresNothing()
 	{
 		Client client = mock(Client.class);
 		Widget container = mock(Widget.class);
 		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
 		when(container.getDynamicChildren()).thenReturn(new Widget[0]);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
 
-		assertNull(service.onMenuOpened(false));
+		service.onMenuOpened(false);
+
+		verify(coordinator, never()).treeSetChanged(any());
 	}
 
 	@Test
@@ -709,11 +742,13 @@ public class SpiritTreeServiceTest
 		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, listed});
 		when(first.getText()).thenReturn("<col=ffffff>1</col>: Tree Gnome Village");
 		when(listed.getText()).thenReturn("<col=ffffff>3</col>: Brimhaven");
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
-		TreeChange change = service.onMenuOpened(true);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+		service.onMenuOpened(true);
 
-		assertNotNull(change);
+		verify(coordinator).treeSetChanged(any());
 		assertEquals(Set.of("Brimhaven"), service.getAvailableSpiritTrees());
 	}
 
@@ -729,11 +764,13 @@ public class SpiritTreeServiceTest
 		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
 		when(greyed.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>");
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
 		service.applyVarbitSample("Port Sarim", 20); // prior positive observation
-		TreeChange change = service.onMenuOpened(false);
+		service.onMenuOpened(false);
 
-		assertNotNull(change);
+		verify(coordinator).treeSetChanged(any());
 		// Observed but nothing travelable — empty set, never back to null.
 		assertEquals(Set.of(), service.getAvailableSpiritTrees());
 	}
@@ -772,10 +809,13 @@ public class SpiritTreeServiceTest
 		when(table.iterator()).thenAnswer(invocation -> java.util.List.of(node).iterator());
 		when(node.getModalMode()).thenReturn(net.runelite.api.widgets.WidgetModalMode.MODAL_CLICKTHROUGH);
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
 		service.onGameTick();
-		assertNull(service.onGameTick()); // settled tick, but the modal suppresses the sample
+		service.onGameTick(); // settled tick, but the modal suppresses the sample
 
+		verify(coordinator, never()).treeSetChanged(any());
 		verify(client, never()).getVarbitValue(VarbitID.FARMING_TRANSMIT_A);
 		assertNull(service.getAvailableSpiritTrees());
 	}
