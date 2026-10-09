@@ -93,6 +93,8 @@ import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
+import shortestpath.poh.PohChange;
+import shortestpath.poh.PohService;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
@@ -111,15 +113,6 @@ public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
 
-	// POH (Player Owned House) bounds for detecting when path goes through POH
-	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
-	private static final int POH_MIN_X = 1856;
-	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 7040;
-	private static final int POH_MAX_Y = 7111;
-	// Co-ordinates for Basic theme landing tile
-	public static final int POH_LANDING_X = 1858;
-	public static final int POH_LANDING_Y = 7051;
 	private static final String PLUGIN_MESSAGE_PATH = "path";
 	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
 	private static final String PLUGIN_MESSAGE_START = "start";
@@ -177,7 +170,7 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private KeyManager keyManager;
 	@Inject
-	private PortalNexusKeybinds portalNexusKeybinds;
+	private PohService pohService;
 	@Inject
 	private SpiritTreeService spiritTrees;
 	@Inject
@@ -247,18 +240,6 @@ public class ShortestPathPlugin extends Plugin
 		return legacyPathfinder;
 	}
 
-	/**
-	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
-	 *
-	 * @param x The world X coordinate
-	 * @param y The world Y coordinate
-	 * @return true if inside POH, false otherwise
-	 */
-	public static boolean isInsidePoh(int x, int y)
-	{
-		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
-	}
-
 	@Provides
 	public ShortestPathConfig provideConfig(ConfigManager configManager)
 	{
@@ -303,7 +284,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
-		portalNexusKeybinds.loadFromProfile();
+		applyPohChange(pohService.loadFromProfile(), "profile load");
 		prepareExactBackend();
 	}
 
@@ -644,7 +625,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
-		portalNexusKeybinds.loadFromProfile();
+		applyPohChange(pohService.loadFromProfile(), "profile load");
 		// The new profile may carry different persisted trees, so an in-flight
 		// path computed against the old account's set must be redone — the
 		// load's fact carries that route-invalidating effect unconditionally.
@@ -1027,8 +1008,8 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		portalNexusKeybinds.refreshFromDialog(client);
-		portalNexusKeybinds.persistIfDirty();
+		applyPohChange(pohService.refreshFromDialog(client), "nexus dialog");
+		pohService.persistIfDirty();
 
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
@@ -1205,17 +1186,45 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Maps a POH change fact to its shell follow-up actions. {@link
+	 * Effect#DISPLAY_ONLY} carries no shell action today — the keybind map is
+	 * read lazily by the display path, which sees it hot by reference — so it
+	 * is logged and nothing else runs. The mapper exists so the fact stream is
+	 * consumed symmetrically until the refresh coordinator owns the policy;
+	 * any other effect violates the service contract and is surfaced rather
+	 * than silently swallowed.
+	 */
+	private void applyPohChange(PohChange change, String why)
+	{
+		if (change == null || change.getEffects().isEmpty())
+		{
+			return;
+		}
+		for (Effect effect : change.getEffects())
+		{
+			if (Effect.DISPLAY_ONLY.equals(effect))
+			{
+				log.debug("POH display refresh: {}", why);
+			}
+			else
+			{
+				log.warn("Unhandled POH change effect {} ({})", effect, why);
+			}
+		}
+	}
+
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
-		if (event.getScriptId() != PortalNexusKeybinds.TELENEXUS_CREATE_TELELINE)
+		if (event.getScriptId() != PohService.TELENEXUS_CREATE_TELELINE)
 		{
 			return;
 		}
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			portalNexusKeybinds.putFromDialogLine(client.getTickCount(), widget.getText());
+			applyPohChange(pohService.putFromDialogLine(widget.getText()), "nexus dialog line");
 		}
 	}
 
@@ -1240,7 +1249,9 @@ public class ShortestPathPlugin extends Plugin
 				{
 					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 				}
-				return portalNexusKeybinds.refreshFromDialog(client)
+				PohChange change = pohService.refreshFromDialog(client);
+				applyPohChange(change, "nexus dialog retry");
+				return change != null
 					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 			});
 		}
@@ -1493,24 +1504,21 @@ public class ShortestPathPlugin extends Plugin
 		return path.get(index + 1);
 	}
 
+	/**
+	 * Delegates to the POH service; kept public for the overlay callers.
+	 */
 	public String formatTransportDisplay(Transport transport)
 	{
-		String info = transport.getDisplayInfo();
-		if (info == null || info.isEmpty())
-		{
-			return info;
-		}
-		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
-		{
-			return portalNexusKeybinds.apply(info);
-		}
-		return info;
+		return pohService.formatTransportDisplay(transport);
 	}
 
 	/**
 	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
 	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
 	 * that information is included instead.
+	 * <p>
+	 * Delegates to the POH service, bridging the edge-transport lookup across
+	 * the boundary; kept public for the overlay callers.
 	 *
 	 * @param destination  The destination point to check
 	 * @param path         The full path
@@ -1519,106 +1527,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
 	{
-		if (path == null || currentIndex < 0)
-		{
-			return null;
-		}
-
-		int destX = WorldPointUtil.unpackWorldX(destination);
-		int destY = WorldPointUtil.unpackWorldY(destination);
-
-		// Check if destination is inside POH
-		if (!isInsidePoh(destX, destY))
-		{
-			return null;
-		}
-
-		String immediateExitInfo = null;
-
-		// Look ahead in the path to find the next transport that exits POH
-		for (int i = currentIndex + 1; i < path.size() - 1; i++)
-		{
-			int stepLocation = path.get(i).getPackedPosition();
-			int nextLocation = path.get(i + 1).getPackedPosition();
-
-			int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-			int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-			int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-
-			// Check if this step is inside POH but next step is outside (exit transport)
-			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
-			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
-
-			if (stepInsidePoh && !nextInsidePoh)
-			{
-				// Found the exit transport - get its display info using bank-aware lookup
-				PathStep currentStep = path.get(i);
-				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					String exitInfo = formatTransportDisplay(transport);
-					if (exitInfo != null && !exitInfo.isEmpty())
-					{
-						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType))
-						{
-							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory"))
-							{
-								immediateExitInfo = "Mounted Glory: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Mythical cape"))
-							{
-								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-							{
-								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Digsite"))
-							{
-								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							}
-							else
-							{
-								immediateExitInfo = "Jewelry Box: " + exitInfo;
-							}
-						}
-						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-						{
-							immediateExitInfo = "Nexus: " + exitInfo;
-						}
-						else if (TransportType.FAIRY_RING.equals(exitType))
-						{
-							immediateExitInfo = "Fairy Ring " + exitInfo;
-						}
-						else if (TransportType.SPIRIT_TREE.equals(exitType))
-						{
-							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						}
-						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-						{
-							immediateExitInfo = "Obelisk: " + exitInfo;
-						}
-						else
-						{
-							immediateExitInfo = exitInfo;
-						}
-					}
-					break;
-				}
-				break;
-			}
-
-			// If we've left POH without finding a transport, stop looking
-			if (!stepInsidePoh)
-			{
-				break;
-			}
-		}
-
-		return immediateExitInfo;
+		return pohService.getPohExitInfo(destination, path, currentIndex, this::transportsForEdge);
 	}
 
 	private String simplify(String text)

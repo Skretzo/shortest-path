@@ -6,9 +6,10 @@ import java.util.Map;
 import java.util.Set;
 
 import shortestpath.PrimitiveIntHashMap;
-import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
-import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
+import static shortestpath.poh.PohService.POH_LANDING_X;
+import static shortestpath.poh.PohService.POH_LANDING_Y;
 import shortestpath.WorldPointUtil;
+import shortestpath.poh.PohService;
 import shortestpath.transport.Transport;
 
 public final class TransportAvailability
@@ -97,7 +98,7 @@ public final class TransportAvailability
 				int origin = entry.getKey();
 				int originX = WorldPointUtil.unpackWorldX(origin);
 				int originY = WorldPointUtil.unpackWorldY(origin);
-				if (shortestpath.ShortestPathPlugin.isInsidePoh(originX, originY) && origin != pohLanding)
+				if (PohService.isInsidePoh(originX, originY) && origin != pohLanding)
 				{
 					pohTransports.addAll(entry.getValue());
 					// Kept in the pathfinding view, collapsed out of the display view.

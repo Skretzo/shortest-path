@@ -8,19 +8,16 @@ import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.ItemID;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.poh.PohService;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
-import shortestpath.transport.PohMountedItem;
-import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.parser.SkillRequirementParser;
@@ -191,7 +188,7 @@ public final class Requirements
 			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-			if (ShortestPathPlugin.isInsidePoh(originX, originY) || ShortestPathPlugin.isInsidePoh(destX, destY))
+			if (PohService.isInsidePoh(originX, originY) || PohService.isInsidePoh(destX, destY))
 			{
 				return RejectionReason.POH_DISABLED;
 			}
@@ -253,39 +250,19 @@ public final class Requirements
 	// Handle POH variants for types that have them
 	private RejectionReason pohVariant(Transport transport)
 	{
-		TransportType type = transport.getType();
 		int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 
-		if (!ShortestPathPlugin.isInsidePoh(originX, originY) && !ShortestPathPlugin.isInsidePoh(destX, destY))
+		if (!PohService.isInsidePoh(originX, originY) && !PohService.isInsidePoh(destX, destY))
 		{
 			return RejectionReason.NONE; // Not a POH transport
 		}
 
-		// POH fairy ring
-		if (TransportType.FAIRY_RING.equals(type))
-		{
-			return policy.usePohFairyRing() ? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-		}
-		// POH spirit tree
-		if (TransportType.SPIRIT_TREE.equals(type))
-		{
-			return policy.usePohSpiritTree() ? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-		}
-		// POH obelisk
-		if (TransportType.WILDERNESS_OBELISK.equals(type))
-		{
-			return policy.usePohObelisk() ? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-		}
-		if (TransportType.TELEPORTATION_PORTAL_POH.equals(type))
-		{
-			return isPohNexusPortalEnabled(policy.enabledPohNexusPortals(), transport.getDisplayInfo())
-				? RejectionReason.NONE : RejectionReason.POH_VARIANT;
-		}
-
-		return RejectionReason.NONE;
+		return PohService.variantEnabled(transport, policy.usePohFairyRing(),
+			policy.usePohSpiritTree(), policy.usePohObelisk(), policy.enabledPohNexusPortals())
+			? RejectionReason.NONE : RejectionReason.POH_VARIANT;
 	}
 
 	// Handle special cases for teleportation items and seasonal transports
@@ -438,63 +415,11 @@ public final class Requirements
 	private RejectionReason jewelleryBoxTier(Transport transport)
 	{
 		if (TransportType.TELEPORTATION_BOX.equals(transport.getType())
-			&& !checkJewelleryBoxTier(transport))
+			&& !PohService.jewelleryBoxSatisfied(policy.pohJewelleryBoxTier(), policy.enabledPohMountedItems(), transport))
 		{
 			return RejectionReason.JEWELLERY_BOX_TIER;
 		}
 		return RejectionReason.NONE;
-	}
-
-	/**
-	 * Checks if a TELEPORTATION_BOX transport should be used based on POH settings.
-	 * Handles jewellery box tiers and mounted items.
-	 */
-	private boolean checkJewelleryBoxTier(Transport transport)
-	{
-		String objectInfo = transport.getObjectInfo();
-		if (objectInfo == null)
-		{
-			return false;
-		}
-
-		PohMountedItem mountedItem = PohMountedItem.fromObjectInfo(objectInfo);
-		if (mountedItem != null)
-		{
-			// If mounted glory and ornate jewellery box is enabled, skip the glory
-			// because the ornate box already covers all 4 destinations with correct prefixes
-			if (PohMountedItem.GLORY.equals(mountedItem) && JewelleryBoxTier.ORNATE.equals(policy.pohJewelleryBoxTier()))
-			{
-				return false;
-			}
-			return isPohMountedItemEnabled(policy.enabledPohMountedItems(), objectInfo);
-		}
-
-		// Filter jewellery boxes by tier
-		if (JewelleryBoxTier.NONE.equals(policy.pohJewelleryBoxTier()))
-		{
-			return false;
-		}
-
-		// Basic box (37492): destinations 1-9
-		if (objectInfo.contains("Basic Jewellery Box 37492"))
-		{
-			return true; // All tiers include basic
-		}
-
-		// Fancy box (37501): destinations A-J
-		if (objectInfo.contains("Fancy Jewellery Box 37501"))
-		{
-			return JewelleryBoxTier.FANCY.equals(policy.pohJewelleryBoxTier()) ||
-				JewelleryBoxTier.ORNATE.equals(policy.pohJewelleryBoxTier());
-		}
-
-		// Ornate box (37520): destinations K-R
-		if (objectInfo.contains("Ornate Jewellery Box 37520"))
-		{
-			return JewelleryBoxTier.ORNATE.equals(policy.pohJewelleryBoxTier());
-		}
-
-		return false;
 	}
 
 	private RejectionReason skillLevel(Transport transport)
@@ -659,18 +584,6 @@ public final class Requirements
 			return RejectionReason.ITEM_REQUIREMENT;
 		}
 		return RejectionReason.NONE;
-	}
-
-	static boolean isPohNexusPortalEnabled(Set<PohNexusPortal> enabledPortals, String displayInfo)
-	{
-		PohNexusPortal portal = PohNexusPortal.fromDisplayInfo(displayInfo);
-		return portal == null || enabledPortals.contains(portal);
-	}
-
-	static boolean isPohMountedItemEnabled(Set<PohMountedItem> enabledItems, String objectInfo)
-	{
-		PohMountedItem item = PohMountedItem.fromObjectInfo(objectInfo);
-		return item == null || enabledItems.contains(item);
 	}
 
 	/**

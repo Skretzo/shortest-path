@@ -20,19 +20,17 @@ import net.runelite.api.QuestState;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.spirittree.SpiritTreeService;
-import static shortestpath.ShortestPathPlugin.POH_LANDING_X;
-import static shortestpath.ShortestPathPlugin.POH_LANDING_Y;
 import shortestpath.settings.EffectiveConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemStateService;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
+import shortestpath.poh.PohService;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
@@ -41,8 +39,8 @@ import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
 import shortestpath.settings.Settings;
-import shortestpath.transport.PohNexusPortal;
-import shortestpath.transport.PohMountedItem;
+import shortestpath.poh.PohNexusPortal;
+import shortestpath.poh.PohMountedItem;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportLoader;
@@ -237,7 +235,7 @@ public class PathfinderConfig
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
 		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
-		remapPohDestinations(loadedTransports);
+		PohService.remapPohDestinations(loadedTransports);
 		this.allTransports = flatten(loadedTransports);
 		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
 		this.transportAvailabilities = new TransportAvailabilities(
@@ -638,12 +636,6 @@ public class PathfinderConfig
 			&& leagueModeState.isInBlockedRegion(packedNeighborPosition);
 	}
 
-	/**
-	 * Remaps POH transport destinations to the house landing tile.
-	 * Transports that arrive inside the POH (e.g., fairy ring DIQ, spirit tree "Your house")
-	 * are remapped so chaining with other POH transports is possible.
-	 * Called once at load time since Transport objects in allTransports are shared references.
-	 */
 	private static Transport[] flatten(Map<Integer, Set<Transport>> transports)
 	{
 		List<Transport> all = new ArrayList<>();
@@ -663,24 +655,6 @@ public class PathfinderConfig
 		}
 		builder.remapPohTransports();
 		return builder.build().getDisplayTransports();
-	}
-
-	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)
-	{
-		int pohLanding = WorldPointUtil.packWorldPoint(POH_LANDING_X, POH_LANDING_Y, 0);
-		for (Set<Transport> transportSet : transports.values())
-		{
-			for (Transport transport : transportSet)
-			{
-				int destination = transport.getDestination();
-				int destX = WorldPointUtil.unpackWorldX(destination);
-				int destY = WorldPointUtil.unpackWorldY(destination);
-				if (destination != pohLanding && ShortestPathPlugin.isInsidePoh(destX, destY))
-				{
-					transport.setDestination(pohLanding);
-				}
-			}
-		}
 	}
 
 	public QuestState getQuestState(Quest quest)

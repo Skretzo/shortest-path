@@ -9,6 +9,7 @@ import java.util.Set;
 import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.ShortestPathConfig;
+import shortestpath.poh.PohService;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.requirement.model.VarRequirement;
@@ -40,7 +41,7 @@ public class TestPathfinderConfig extends PathfinderConfig
 		{
 			MAP_DATA = SplitFlagMap.fromResources();
 			ALL_TRANSPORTS = TransportLoader.loadAllFromResources();
-			PathfinderConfig.remapPohDestinations(ALL_TRANSPORTS);
+			PohService.remapPohDestinations(ALL_TRANSPORTS);
 			ALL_DESTINATIONS = Destination.loadAllFromResources();
 			FILTERED_DESTINATIONS = PathfinderConfig.filterDestinations(ALL_DESTINATIONS);
 			BANK_REQUIREMENTS = Destination.loadBankRequirementsFromResources();

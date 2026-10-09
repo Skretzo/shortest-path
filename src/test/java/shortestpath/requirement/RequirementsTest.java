@@ -21,12 +21,12 @@ import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.TeleportationItem;
-import shortestpath.transport.PohMountedItem;
-import shortestpath.transport.PohNexusPortal;
+import shortestpath.poh.PohMountedItem;
+import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
