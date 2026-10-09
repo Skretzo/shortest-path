@@ -106,6 +106,7 @@ import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.poh.PohService;
+import shortestpath.poh.PortalNexusKeybinds;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
