@@ -66,7 +66,6 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
-import shortestpath.items.ItemChange;
 import shortestpath.items.ItemStateService;
 import shortestpath.overlay.BankItemHighlightOverlay;
 import shortestpath.overlay.DebugOverlayPanel;
@@ -85,15 +84,14 @@ import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.poh.PohChange;
 import shortestpath.poh.PohService;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.scheduler.QueryResponder;
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
 import shortestpath.spirittree.SpiritTreeService;
-import shortestpath.spirittree.TreeChange;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -173,6 +171,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	private ItemManager itemManager;
 	@Inject
 	private PathScheduler scheduler;
+	@Inject
+	private RefreshCoordinator coordinator;
 	private ShortestPathPanel panel;
 	private NavigationButton navButton;
 	private Point lastMenuOpenedPoint;
@@ -181,8 +181,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	private BufferedImage minimapSpriteFixed;
 	private BufferedImage minimapSpriteResizeable;
 	private Rectangle minimapRectangle = new Rectangle();
-	private GameState lastGameState = null;
-	private GameState lastLastGameState = null;
 	@Getter
 	private PathfinderConfig pathfinderConfig;
 	private final KeyListener clearPathKeylistener = new KeyListener()
@@ -241,7 +239,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 			// too — doing it here on the EDT would race that refresh.
 			clientThread.invokeLater(() ->
 			{
-				applyTreeChange(spiritTrees.loadFromProfile(), "profile change");
+				spiritTrees.loadFromProfile();
 				pathfinderConfig.refresh();
 			});
 		}
@@ -249,7 +247,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		{
 			// No refresh is queued when logged out, so loading here is safe;
 			// RuneScapeProfileChanged reloads once a profile is active anyway.
-			applyTreeChange(spiritTrees.loadFromProfile(), "profile change");
+			spiritTrees.loadFromProfile();
 		}
 
 		overlayManager.add(pathOverlay);
@@ -266,7 +264,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
-		applyPohChange(pohService.loadFromProfile(), "profile load");
+		pohService.loadFromProfile();
 		scheduler.prepareBackend();
 
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager);
@@ -386,36 +384,13 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 			}
 		}
 
-		if (effects.contains(Effect.SIDE_EFFECT_BACKEND_PREP))
-		{
-			scheduler.prepareBackend();
-		}
-
-		// A routing input changed; rerun pathfinding
-		if (effects.contains(Effect.ROUTE_INVALIDATING) && scheduler.getActiveSearch() != null)
-		{
-			ActiveSearch search = scheduler.getActiveSearch();
-			scheduler.restart("config: " + change.getKey(), search.getStart(), search.getTargets());
-		}
+		coordinator.configChanged(change);
 	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		GameState previousGameState = lastGameState;
-		GameState previousPreviousGameState = lastLastGameState;
-		lastLastGameState = lastGameState;
-		lastGameState = event.getGameState();
-
-		if (pathfinderConfig == null
-			|| !GameState.LOGGING_IN.equals(previousPreviousGameState)
-			|| !GameState.LOADING.equals(previousGameState)
-			|| !GameState.LOGGED_IN.equals(lastGameState))
-		{
-			return;
-		}
-
-		scheduler.deferRefresh(client.getTickCount() + 1);
+		coordinator.gameStateChanged(event.getGameState(), client.getTickCount());
 	}
 
 	/**
@@ -431,17 +406,17 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		{
 			return;
 		}
-		scheduler.deferRefresh(client.getTickCount() + 1);
+		coordinator.worldChanged(client.getTickCount());
 	}
 
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
-		applyPohChange(pohService.loadFromProfile(), "profile load");
+		pohService.loadFromProfile();
 		// The new profile may carry different persisted trees, so an in-flight
 		// path computed against the old account's set must be redone — the
-		// load's fact carries that route-invalidating effect unconditionally.
-		applyTreeChange(spiritTrees.loadFromProfile(), "profile change");
+		// load declares that route-invalidating effect unconditionally.
+		spiritTrees.loadFromProfile();
 	}
 
 	@Subscribe
@@ -483,9 +458,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 				return;
 			}
 
-			ActiveSearch search = scheduler.getActiveSearch();
-			boolean useOld = targets.isEmpty() && search != null;
-			scheduler.restart("plugin message", start, useOld ? search.getTargets() : targets, useOld);
+			coordinator.targetRequest(start, targets);
 		}
 		else if (PLUGIN_MESSAGE_QUERY.equals(action))
 		{
@@ -731,43 +704,26 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		applyPohChange(pohService.refreshFromDialog(client), "nexus dialog");
+		pohService.refreshFromDialog(client);
 		pohService.persistIfDirty();
 
-		scheduler.drainDueTasks(client.getTickCount());
+		coordinator.gameTick(client.getTickCount());
 
 		Player localPlayer = client.getLocalPlayer();
 
 		// The service notes the player's region, samples the in-region patch
-		// varbit once the region has settled, and flushes persistence; the
-		// returned fact carries the restart decision.
-		applyTreeChange(spiritTrees.onGameTick(), "spirit tree varbit");
+		// varbit once the region has settled, and flushes persistence; a
+		// resolved change is declared to the coordinator, which owns the
+		// restart decision.
+		spiritTrees.onGameTick();
 
-		ActiveSearch pathfinder = scheduler.getActiveSearch();
-		if (localPlayer == null || pathfinder == null)
+		if (localPlayer == null || scheduler.getActiveSearch() == null)
 		{
 			return;
 		}
 
-		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
-		for (int target : pathfinder.getTargets())
-		{
-			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
-			{
-				scheduler.setTarget(WorldPointUtil.UNDEFINED);
-				return;
-			}
-		}
-
-		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(currentLocation))
-		{
-			if (config.cancelInstead())
-			{
-				scheduler.setTarget(WorldPointUtil.UNDEFINED);
-				return;
-			}
-			scheduler.restart("off route", currentLocation, pathfinder.getTargets());
-		}
+		coordinator.offRouteTick(client.getTickCount(),
+			WorldPointUtil.fromLocalInstance(client, localPlayer));
 	}
 
 	@Subscribe
@@ -864,8 +820,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
 		int id = event.getContainerId();
-		ItemChange change = itemState.onContainerChanged(id, event.getItemContainer());
-		applyItemChange(change);
+		itemState.onContainerChanged(id, event.getItemContainer());
 		if (panel != null && (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN))
 		{
 			panel.onItemContainersChanged();
@@ -877,67 +832,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	{
 		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
 		// snapshot but change without firing a container event.
-		ItemChange change = itemState.onVarbitChanged(event.getVarbitId());
-		applyItemChange(change);
-	}
-
-	/**
-	 * Maps an item-state change fact to its shell follow-up actions: the
-	 * declared {@link Effect#ELIGIBILITY_STALE} effect lazily rebuilds the
-	 * eligibility snapshot. {@code null} facts admit nothing and map to no
-	 * action.
-	 */
-	private void applyItemChange(ItemChange change)
-	{
-		if (change != null && change.getEffects().contains(Effect.ELIGIBILITY_STALE))
-		{
-			scheduler.invalidateEligibility();
-		}
-	}
-
-	/**
-	 * Maps a spirit-tree change fact to its shell follow-up actions: the
-	 * declared {@link Effect#ROUTE_INVALIDATING} effect restarts pathfinding
-	 * with the running search's own start and targets. {@code null} facts
-	 * admit nothing and map to no action.
-	 */
-	private void applyTreeChange(TreeChange change, String reason)
-	{
-		if (change != null
-			&& change.getEffects().contains(Effect.ROUTE_INVALIDATING)
-			&& scheduler.getActiveSearch() != null)
-		{
-			ActiveSearch search = scheduler.getActiveSearch();
-			scheduler.restart(reason, search.getStart(), search.getTargets());
-		}
-	}
-
-	/**
-	 * Maps a POH change fact to its shell follow-up actions. {@link
-	 * Effect#DISPLAY_ONLY} carries no shell action today — the keybind map is
-	 * read lazily by the display path, which sees it hot by reference — so it
-	 * is logged and nothing else runs. The mapper exists so the fact stream is
-	 * consumed symmetrically until the refresh coordinator owns the policy;
-	 * any other effect violates the service contract and is surfaced rather
-	 * than silently swallowed.
-	 */
-	private void applyPohChange(PohChange change, String why)
-	{
-		if (change == null || change.getEffects().isEmpty())
-		{
-			return;
-		}
-		for (Effect effect : change.getEffects())
-		{
-			if (Effect.DISPLAY_ONLY.equals(effect))
-			{
-				log.debug("POH display refresh: {}", why);
-			}
-			else
-			{
-				log.warn("Unhandled POH change effect {} ({})", effect, why);
-			}
-		}
+		itemState.onVarbitChanged(event.getVarbitId());
 	}
 
 	@Subscribe
@@ -950,7 +845,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			applyPohChange(pohService.putFromDialogLine(widget.getText()), "nexus dialog line");
+			pohService.putFromDialogLine(widget.getText());
 		}
 	}
 
@@ -975,9 +870,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 				{
 					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 				}
-				PohChange change = pohService.refreshFromDialog(client);
-				applyPohChange(change, "nexus dialog retry");
-				return change != null
+				boolean changed = pohService.refreshFromDialog(client);
+				return changed
 					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 			});
 		}
@@ -988,10 +882,10 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		switch (event.getGroupId())
 		{
 			case InterfaceID.MENU:
-				clientThread.invokeLater(() -> applyTreeChange(spiritTrees.onMenuOpened(false), "spirit trees"));
+				clientThread.invokeLater(() -> spiritTrees.onMenuOpened(false));
 				break;
 			case InterfaceID.MENU_NEW:
-				clientThread.invokeLater(() -> applyTreeChange(spiritTrees.onMenuOpened(true), "spirit trees"));
+				clientThread.invokeLater(() -> spiritTrees.onMenuOpened(true));
 				break;
 		}
 	}
