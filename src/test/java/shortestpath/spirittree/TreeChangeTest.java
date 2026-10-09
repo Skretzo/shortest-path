@@ -3,10 +3,14 @@ package shortestpath.spirittree;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 
 /**
@@ -43,11 +47,16 @@ public class TreeChangeTest
 	{
 		// A changed tree set invalidates running paths but never item or
 		// quest eligibility — the service must only ever declare
-		// ROUTE_INVALIDATING. Drive every producer and assert the emitted
-		// effect set carries it and nothing else.
-		SpiritTreeService service = SpiritTreeService.forTesting();
-		TreeChange profile = service.loadFromProfile();
-		assertEquals(Set.of(Effect.ROUTE_INVALIDATING), profile.getEffects());
+		// ROUTE_INVALIDATING. Drive every fact source and assert the emitted
+		// effect set carries it and nothing else; the public entry points
+		// declare theirs to the coordinator while the internal
+		// apply* helpers still hand facts to their caller.
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SpiritTreeService service = SpiritTreeService.forTesting(coordinator);
+		service.loadFromProfile();
+		ArgumentCaptor<TreeChange> captor = ArgumentCaptor.forClass(TreeChange.class);
+		verify(coordinator).treeSetChanged(captor.capture());
+		assertEquals(Set.of(Effect.ROUTE_INVALIDATING), captor.getValue().getEffects());
 
 		TreeChange varbit = service.applyVarbitSample("Port Sarim", 20);
 		assertEquals(Set.of(Effect.ROUTE_INVALIDATING), varbit.getEffects());

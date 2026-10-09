@@ -1,19 +1,22 @@
 package shortestpath.items;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 
 /**
@@ -73,39 +76,47 @@ public class ItemChangeTest
 
 	/**
 	 * The Wave-0 fact-consumption row: every {@link ItemChange} the service's
-	 * producers emit must declare only effects the shell maps — item events
-	 * declare exactly {@link Effect#ELIGIBILITY_STALE} — and every untracked
-	 * input admits no fact at all, so an ignored return can never drop a
-	 * declared effect.
+	 * producers declare must carry only effects the coordinator maps — item
+	 * events declare exactly {@link Effect#ELIGIBILITY_STALE} — and every
+	 * untracked input admits no declare at all, so a dropped branch can never
+	 * lose a declared effect.
 	 */
 	@Test
 	public void everyProducerFactDeclaresExactlyEligibilityStale()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 
+		int admitted = 0;
 		for (int containerId : new int[]{InventoryID.BANK, InventoryID.INV, InventoryID.WORN})
 		{
-			assertEquals("container " + containerId + " declares only the mapped effect",
-				Set.of(Effect.ELIGIBILITY_STALE),
-				service.onContainerChanged(containerId, mock(ItemContainer.class)).getEffects());
+			service.onContainerChanged(containerId, mock(ItemContainer.class));
+			admitted++;
 		}
 
-		assertEquals(Set.of(Effect.ELIGIBILITY_STALE),
-			service.onVarbitChanged(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE).getEffects());
+		service.onVarbitChanged(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE);
+		admitted++;
 		for (int varbitId : OwnedItems.RUNE_POUCH_RUNE_VARBITS)
 		{
-			assertEquals("rune varbit " + varbitId + " declares only the mapped effect",
-				Set.of(Effect.ELIGIBILITY_STALE), service.onVarbitChanged(varbitId).getEffects());
+			service.onVarbitChanged(varbitId);
+			admitted++;
 		}
 		for (int varbitId : OwnedItems.RUNE_POUCH_AMOUNT_VARBITS)
 		{
-			assertEquals("amount varbit " + varbitId + " declares only the mapped effect",
-				Set.of(Effect.ELIGIBILITY_STALE), service.onVarbitChanged(varbitId).getEffects());
+			service.onVarbitChanged(varbitId);
+			admitted++;
 		}
 
-		assertNull("an untracked container admits no fact",
-			service.onContainerChanged(InventoryID.LOOTING_BAG, mock(ItemContainer.class)));
-		assertNull("an untracked varbit admits no fact",
-			service.onVarbitChanged(VarbitID.FAIRY2_QUEENCURE_QUEST));
+		// Untracked inputs declare nothing at all.
+		service.onContainerChanged(InventoryID.LOOTING_BAG, mock(ItemContainer.class));
+		service.onVarbitChanged(VarbitID.FAIRY2_QUEENCURE_QUEST);
+
+		ArgumentCaptor<ItemChange> captor = ArgumentCaptor.forClass(ItemChange.class);
+		verify(coordinator, times(admitted)).itemsChanged(captor.capture());
+		for (ItemChange change : captor.getAllValues())
+		{
+			assertEquals("fact " + change.getKey() + " declares only the mapped effect",
+				Set.of(Effect.ELIGIBILITY_STALE), change.getEffects());
+		}
 	}
 }
