@@ -40,6 +40,7 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.poh.PohService;
 import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
@@ -263,7 +264,7 @@ public class PathTileOverlay extends Overlay
 						|| directionChanges(path.get(i - 1).getPackedPosition(), pathPoint,
 							path.get(i + 1).getPackedPosition());
 					// Skip markers inside POH (no collision data, tiles render at wrong positions)
-					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					if (marker && !PohService.isInsidePoh(pathX, pathY))
 					{
 						drawTile(graphics, pathPoint, color, counter, true);
 						drawTurnMarkerGlyph(graphics, path, i);
@@ -298,7 +299,7 @@ public class PathTileOverlay extends Overlay
 					int tracerPoint = path.get(tracerIndex).getPackedPosition();
 					int tracerX = WorldPointUtil.unpackWorldX(tracerPoint);
 					int tracerY = WorldPointUtil.unpackWorldY(tracerPoint);
-					if (!ShortestPathPlugin.isInsidePoh(tracerX, tracerY))
+					if (!PohService.isInsidePoh(tracerX, tracerY))
 					{
 						Point current = tileCenter(tracerPoint);
 						if (current != null)
@@ -333,7 +334,7 @@ public class PathTileOverlay extends Overlay
 					// never one sprite per tile (per-tile sprite density is too heavy).
 					boolean marker = i % SPRITE_STRIDE == 0 || i == path.size() - 1;
 					// Skip sprites inside POH (no collision data, tiles render at wrong positions)
-					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					if (marker && !PohService.isInsidePoh(pathX, pathY))
 					{
 						Point p = tileCenter(pathPoint);
 						if (p != null)
@@ -377,7 +378,7 @@ public class PathTileOverlay extends Overlay
 					int pathPoint = currentStep.getPackedPosition();
 					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
 					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
-					if (!ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					if (!PohService.isInsidePoh(pathX, pathY))
 					{
 						drawTile(graphics, pathPoint, color, counter, showTiles);
 					}
@@ -409,7 +410,7 @@ public class PathTileOverlay extends Overlay
 				for (int index : aStar.getClickPoints())
 				{
 					int point = path.get(index).getPackedPosition();
-					if (!ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(point),
+					if (!PohService.isInsidePoh(WorldPointUtil.unpackWorldX(point),
 						WorldPointUtil.unpackWorldY(point)))
 					{
 						drawTile(graphics, point, COLOR_CLICK_POINT, -1, true);
@@ -861,8 +862,10 @@ public class PathTileOverlay extends Overlay
 		int playerPackedPoint = WorldPointUtil.packWorldPoint(playerWorldPoint);
 		int px = WorldPointUtil.unpackWorldX(playerPackedPoint);
 		int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
-		boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(lx, ly)
-			&& ShortestPathPlugin.isInsidePoh(px, py);
+		int tx = WorldPointUtil.unpackWorldX(location);
+		int ty = WorldPointUtil.unpackWorldY(location);
+		boolean transportAndPlayerInsidePoh = PohService.isInsidePoh(tx, ty)
+			&& PohService.isInsidePoh(px, py);
 
 		// When inside POH, only show the POH exit info once (not per-transport)
 		if (transportAndPlayerInsidePoh)
