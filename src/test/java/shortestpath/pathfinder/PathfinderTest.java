@@ -1,9 +1,11 @@
 package shortestpath.pathfinder;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,6 +75,7 @@ public class PathfinderTest
 	{
 		when(config.calculationCutoff()).thenReturn(30);
 		when(config.currencyThreshold()).thenReturn(10000000);
+		when(config.collisionAwareBlockedTargets()).thenReturn(true);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 	}
 
@@ -541,6 +544,404 @@ public class PathfinderTest
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
 		testSingleTransportScenario("Fairy ring with Dramen staff worn", 2, TransportType.FAIRY_RING);
+	}
+
+	@Test
+	public void testBlockedTargetExpandsToWalkableNeighbours()
+	{
+		// Issue #640: a blocked target tile can never be walked into. The goal set is
+		// expanded to the walkable tiles within the unreachable distance so the search
+		// terminates on a nearby tile instead of exhausting the whole map.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(3203, 3178, 0);
+		assertTrue("test requires a blocked target tile",
+			pathfinderConfig.getMap().isBlocked(3203, 3178, 0));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("expected path to a walkable tile near the blocked target", result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		List<PathStep> steps = result.getPathSteps();
+		int end = steps.get(steps.size() - 1).getPackedPosition();
+		assertFalse("path must end on a walkable tile", pathfinderConfig.getMap().isBlocked(
+			WorldPointUtil.unpackWorldX(end), WorldPointUtil.unpackWorldY(end),
+			WorldPointUtil.unpackWorldPlane(end)));
+		assertTrue("path must end within the unreachable distance of the blocked target",
+			WorldPointUtil.distanceBetween(end, blockedTarget) <= 2);
+	}
+
+	@Test
+	public void testFullyBlockedTargetShortCircuitsSearch()
+	{
+		// Issue #640: a blocked target that no transport lands on and that has no
+		// walkable tile within the unreachable distance can never be reached, so the
+		// search is skipped entirely instead of exhausting the map.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		// Interior of a large blocked area: the whole 5x5 neighbourhood is blocked.
+		int blockedTarget = WorldPointUtil.packWorldPoint(2114, 5506, 0);
+		assertTrue("test requires a blocked target tile",
+			pathfinderConfig.getMap().isBlocked(2114, 5506, 0));
+		assertFalse("test requires that no transport lands on the target",
+			pathfinderConfig.isTransportDestination(blockedTarget));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertFalse(result.isReached());
+		assertEquals(PathTerminationReason.SEARCH_EXHAUSTED, result.getTerminationReason());
+		assertEquals("a hopeless target must not explore any tile", 0, result.getNodesChecked());
+	}
+
+	@Test
+	public void testBlockedTargetDoesNotSuppressOtherTargets()
+	{
+		// A hopeless blocked target in a multi-target set must not prevent the
+		// remaining viable targets from being reached.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(2114, 5506, 0);
+		int reachableTarget = WorldPointUtil.packWorldPoint(3213, 3428, 0);
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget, reachableTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("the viable target should still be reached", result.isReached());
+		assertEquals(reachableTarget, result.getTarget());
+	}
+
+	@Test
+	public void testBlockedTransportDestinationStillReached()
+	{
+		// Fairy ring tiles are blocked for walking but a ring lands the player on
+		// them, so they must stay reachable and must not be short-circuited.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		when(config.useFairyRings()).thenReturn(true);
+		when(config.usePoh()).thenReturn(true);
+		when(config.usePohFairyRing()).thenReturn(true);
+		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
+		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int ringTile = WorldPointUtil.packWorldPoint(2700, 3247, 0);
+		assertTrue("test requires the fairy ring tile to be blocked",
+			pathfinderConfig.getMap().isBlocked(2700, 3247, 0));
+		assertTrue("test requires a transport landing on the target",
+			pathfinderConfig.isTransportDestination(ringTile));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(ringTile));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("fairy ring target should be reached despite the blocked tile",
+			result.isReached());
+	}
+
+	@Test
+	public void testBlockedTargetReachedViaAdjacentTransportDestination()
+	{
+		// Issue #640: the Jalsavrah teleport lands on (1934, 4428), a blocked tile
+		// adjacent to the likewise blocked (1934, 4427). No walkable tile exists
+		// within the unreachable distance, so the transport landing must count as
+		// a goal instead of the target being treated as hopeless.
+		when(config.unreachableTargetDistance()).thenReturn(2);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
+		setupInventory();
+		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(1934, 4427, 0);
+		int jalsavrahLanding = WorldPointUtil.packWorldPoint(1934, 4428, 0);
+		assertTrue("test requires a blocked target tile",
+			pathfinderConfig.getMap().isBlocked(1934, 4427, 0));
+		assertTrue("test requires the landing tile to be blocked",
+			pathfinderConfig.getMap().isBlocked(1934, 4428, 0));
+		assertTrue("test requires a transport landing adjacent to the target",
+			pathfinderConfig.isTransportDestination(jalsavrahLanding));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("target should be reached via the adjacent teleport landing",
+			result.isReached());
+		List<PathStep> steps = result.getPathSteps();
+		assertEquals("path must end on the Jalsavrah landing tile",
+			jalsavrahLanding, steps.get(steps.size() - 1).getPackedPosition());
+	}
+
+	private static Set<Integer> connectedTilesOracle(CollisionMap map, int target, int radius)
+	{
+		Set<Integer> connected = new HashSet<>();
+		ArrayDeque<Integer> queue = new ArrayDeque<>();
+		connected.add(target);
+		queue.add(target);
+		while (!queue.isEmpty())
+		{
+			int current = queue.poll();
+			for (int neighbour : map.ordinaryWalkingNeighbors(current))
+			{
+				if (connected.contains(neighbour)
+					|| WorldPointUtil.distanceBetween(target, neighbour) > radius)
+				{
+					continue;
+				}
+				connected.add(neighbour);
+				queue.add(neighbour);
+			}
+		}
+		connected.remove(target);
+		return connected;
+	}
+
+	@Test
+	public void testBlockedTargetExpansionStaysOnTargetSideOfWalls()
+	{
+		// Issue #640: with collisionAwareBlockedTargets on (the default), a blocked
+		// target's walkable fallback goals are limited to tiles connected to it
+		// through the collision map, so the path cannot terminate on the far side
+		// of a wall. Target (3258, 3351) is a blocked wall segment in southern
+		// Varrock: the square radius also covers walkable tiles on the other side
+		// of that wall, which must not become goals in this mode.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		int start = WorldPointUtil.packWorldPoint(3258, 3341, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(3258, 3351, 0);
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(3258, 3351, 0));
+		assertFalse("test requires a walkable start tile",
+			map.isBlocked(3258, 3341, 0));
+		Set<Integer> connected = connectedTilesOracle(map, blockedTarget, radius);
+		assertFalse("test requires at least one connected fallback goal",
+			connected.isEmpty());
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("expected path to a tile connected to the blocked target",
+			result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		List<PathStep> steps = result.getPathSteps();
+		int end = steps.get(steps.size() - 1).getPackedPosition();
+		assertFalse("path must end on a walkable tile", map.isBlocked(
+			WorldPointUtil.unpackWorldX(end), WorldPointUtil.unpackWorldY(end),
+			WorldPointUtil.unpackWorldPlane(end)));
+		assertTrue("path must end within the unreachable distance of the blocked target",
+			WorldPointUtil.distanceBetween(end, blockedTarget) <= radius);
+		assertTrue("end tile must be walk-connected to the target (same side of the wall)",
+			connected.contains(end));
+	}
+
+	@Test
+	public void testBlockedTargetDoesNotTerminateOnStartTile()
+	{
+		// When the player stands inside a blocked target's expansion radius, the
+		// player's own tile is itself a fallback goal. Without a guard the search
+		// terminates on the first dequeued node -- the start -- and produces an
+		// invisible one-tile path. Same fixture as the wall tests, but the start
+		// is moved onto a connected fallback tile within the radius.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		int start = WorldPointUtil.packWorldPoint(3256, 3345, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(3258, 3351, 0);
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(3258, 3351, 0));
+		assertFalse("test requires a walkable start tile",
+			map.isBlocked(3256, 3345, 0));
+		Set<Integer> connected = connectedTilesOracle(map, blockedTarget, radius);
+		assertTrue("test requires the start tile to be a connected fallback goal",
+			connected.contains(start));
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue(result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		List<PathStep> steps = result.getPathSteps();
+		assertTrue("a path of a single start tile is meaningless to draw",
+			steps.size() > 1);
+		int end = steps.get(steps.size() - 1).getPackedPosition();
+		assertNotEquals("the search must not terminate on the start tile",
+			start, end);
+		assertTrue("end tile must be walk-connected to the target (same side of the wall)",
+			connected.contains(end));
+	}
+
+	@Test
+	public void testBlockedTargetExpansionOffIgnoresConnectivity()
+	{
+		// With collisionAwareBlockedTargets off, the innermost Chebyshev ring that
+		// contains any walkable tile becomes the goal set, regardless of walking
+		// connectivity to the target. Target (3200, 3340) is a blocked tile on a
+		// Port Sarim jetty: its innermost walkable ring holds only tiles that are
+		// not walk-connected to the target, so off mode terminates there while on
+		// mode would have to expand further.
+		final int radius = 6;
+		when(config.collisionAwareBlockedTargets()).thenReturn(false);
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		int start = WorldPointUtil.packWorldPoint(3200, 3330, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(3200, 3340, 0);
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(3200, 3340, 0));
+		assertFalse("test requires a walkable start tile",
+			map.isBlocked(3200, 3330, 0));
+		Set<Integer> connected = connectedTilesOracle(map, blockedTarget, radius);
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("expected the ring scan to find a fallback goal",
+			result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		List<PathStep> steps = result.getPathSteps();
+		int end = steps.get(steps.size() - 1).getPackedPosition();
+		assertFalse("path must end on a walkable tile", map.isBlocked(
+			WorldPointUtil.unpackWorldX(end), WorldPointUtil.unpackWorldY(end),
+			WorldPointUtil.unpackWorldPlane(end)));
+		assertTrue("path must end within the unreachable distance of the blocked target",
+			WorldPointUtil.distanceBetween(end, blockedTarget) <= radius);
+		assertFalse("off mode must accept a tile not connected to the target",
+			connected.contains(end));
+	}
+
+	@Test
+	public void testBlockedTargetExpansionPrefersNearestRing()
+	{
+		// The ring scan exists so the path ends as close to the blocked target as
+		// possible rather than on whichever expanded tile is cheapest for the
+		// player. Target (3258, 3351) has connected walkable tiles adjacent to it,
+		// so the path must terminate on one -- even though tiles closer to the
+		// start would also satisfy a whole-radius goal set.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		int start = WorldPointUtil.packWorldPoint(3258, 3341, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(3258, 3351, 0);
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue(result.isReached());
+		List<PathStep> steps = result.getPathSteps();
+		int end = steps.get(steps.size() - 1).getPackedPosition();
+		assertEquals("innermost connected layer is adjacent to the target",
+			1, WorldPointUtil.distanceBetween(end, blockedTarget));
+	}
+
+	private int runBlockedTargetRoute(int sx, int sy, int tx, int ty)
+	{
+		int start = WorldPointUtil.packWorldPoint(sx, sy, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(tx, ty, 0);
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
+		pathfinder.run();
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue("expected path to a fallback tile near the blocked target",
+			result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		List<PathStep> steps = result.getPathSteps();
+		return steps.get(steps.size() - 1).getPackedPosition();
+	}
+
+	@Test
+	public void testBlockedTargetBehindWallRoutesAroundWall()
+	{
+		// The hunter shop crate at (2568, 3085) in Yanille sits flush against
+		// the building's north wall. The walkable tiles north of it lie on the
+		// far side of that wall: the collision map marks the edge as a
+		// structural boundary, so only the interior side may serve as goals.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(2568, 3085, 0));
+		assertTrue("test requires the north edge to be a wall boundary",
+			map.wallN(2568, 3085, 0));
+		int end = runBlockedTargetRoute(2576, 3089, 2568, 3085);
+		assertTrue("path must end inside the shop, south of the wall",
+			WorldPointUtil.unpackWorldY(end) <= 3085);
+	}
+
+	@Test
+	public void testBlockedTargetInWallColumnUsesCorridorSide()
+	{
+		// The crates at (2533, 3086) and (2533, 3087) in Yanille are embedded
+		// in a wall column. The tiles west of them are the street side of the
+		// wall and must not become goals; the corridor side lies east.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		for (int ty : new int[] {3086, 3087})
+		{
+			assertTrue("test requires a blocked target tile",
+				map.isBlocked(2533, ty, 0));
+			assertTrue("test requires the west edge to be a wall boundary",
+				map.wallW(2533, ty, 0));
+			int end = runBlockedTargetRoute(2526, 3087, 2533, ty);
+			assertTrue("path must end on the corridor side of the wall column",
+				WorldPointUtil.unpackWorldX(end) > 2533);
+		}
+	}
+
+	@Test
+	public void testBlockedTargetHemmedInRoutesInsideRoom()
+	{
+		// The crate at (2533, 3089) sits in a room corner surrounded by other
+		// crates and barrels: it is genuinely unreachable, and every adjacent
+		// walkable tile lies outside the room behind wall edges. The fallback
+		// must look past ring 1 and terminate inside the room instead of in
+		// the street.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(2533, 3089, 0));
+		int end = runBlockedTargetRoute(2526, 3087, 2533, 3089);
+		assertTrue("path must end inside the room, not in the street",
+			WorldPointUtil.unpackWorldX(end) > 2533
+				&& WorldPointUtil.unpackWorldY(end) < 3089);
+	}
+
+	@Test
+	public void testBlockedTargetKeepsNearestUsableEndpoint()
+	{
+		// The barrel at (2536, 3089) blocks the east end of a ruined Yanille
+		// building. Its north edge is a wall, but the ring-1 tile (2537, 3089)
+		// shares an open edge and must stay a goal so the route ends on the
+		// nearest usable tile instead of taking a detour.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(2536, 3089, 0));
+		assertTrue("test requires the north edge to be a wall boundary",
+			map.wallN(2536, 3089, 0));
+		int end = runBlockedTargetRoute(2526, 3087, 2536, 3089);
+		assertEquals("the nearest non-wall-separated tile must remain a goal",
+			WorldPointUtil.packWorldPoint(2537, 3089, 0), end);
 	}
 
 	@Test

@@ -15,6 +15,13 @@ public class Pathfinder implements ActiveSearch
 	private final int start;
 	@Getter
 	private final Set<Integer> targets;
+	// Termination set resolved by TargetGoals: the requested targets plus, for
+	// each blocked target, its fallback tiles (issue #640).
+	private final Set<Integer> goals;
+	// Whether any requested target could possibly terminate the search: non-blocked,
+	// a transport destination, or resolved to at least one walkable nearby tile.
+	// When false the search is skipped entirely, since no goal can ever be visited.
+	private final boolean hasViableGoal;
 	private final PathfinderConfig config;
 	private final CollisionMap map;
 	private final boolean targetInWilderness;
@@ -67,6 +74,9 @@ public class Pathfinder implements ActiveSearch
 		this.map = config.getMap();
 		this.start = start;
 		this.targets = targets;
+		TargetGoals resolved = TargetGoals.resolve(config, start, targets);
+		this.goals = resolved.goals();
+		this.hasViableGoal = resolved.hasViableGoal();
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
@@ -306,7 +316,10 @@ public class Pathfinder implements ActiveSearch
 		// The cutoff counts time without progress towards the target.
 		SearchDeadline deadline = new SearchDeadline(config.getCalculationCutoffMillis());
 
-		while (!cancelled && (!boundary.isEmpty() || !pending.isEmpty()))
+		// When every target is a blocked tile that no transport lands on and no
+		// walkable tile exists within the unreachable distance, no node can ever
+		// satisfy the goal set — skip the search instead of exhausting the map.
+		while (!cancelled && hasViableGoal && (!boundary.isEmpty() || !pending.isEmpty()))
 		{
 			int boundaryHead = boundary.peekFirst();
 			int pendingHead = pending.peek();
@@ -349,7 +362,7 @@ public class Pathfinder implements ActiveSearch
 			{
 				updateWildernessLevel(nodePacked);
 
-				if (targets.contains(nodePacked))
+				if (goals.contains(nodePacked))
 				{
 					bestLastNode = node;
 					reachedTarget = nodePacked;

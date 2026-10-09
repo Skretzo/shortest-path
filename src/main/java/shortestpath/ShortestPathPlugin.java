@@ -135,7 +135,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|use\\w+|cost\\w+|unlock\\w+)$");
+	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|collisionAwareBlockedTargets|use\\w+|cost\\w+|unlock\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -655,12 +655,15 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
+		if (path == null || pathfinder.getTargets().isEmpty())
 		{
 			return false;
 		}
 
-		int endPoint = path.get(path.size() - 1).getPackedPosition();
+		// A finished search can produce an empty path when no goal tile could ever be
+		// reached (e.g. a blocked target); measure the distance from the start then.
+		int endPoint = path.isEmpty() ? pathfinder.getStart()
+			: path.get(path.size() - 1).getPackedPosition();
 		int closestTargetDistance = Integer.MAX_VALUE;
 		for (int target : pathfinder.getTargets())
 		{
