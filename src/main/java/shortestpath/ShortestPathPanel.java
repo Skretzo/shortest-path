@@ -581,6 +581,20 @@ public class ShortestPathPanel extends PluginPanel
 		String description = item == null ? "" : item.description();
 
 		Object value = settings.configuredValue(keyName);
+		if (!(value instanceof Enum))
+		{
+			// A null or corrupt persisted value gives no enum type to derive
+			// the constants from — render a label-only row (mirroring the
+			// TransportFamilyCard degrade path) rather than throwing during
+			// panel construction.
+			JPanel fallbackRow = new JPanel(new BorderLayout());
+			fallbackRow.setOpaque(false);
+			JLabel fallbackLabel = new JLabel(name);
+			fallbackLabel.setForeground(Color.WHITE);
+			fallbackLabel.setToolTipText(html(description));
+			fallbackRow.add(fallbackLabel, BorderLayout.CENTER);
+			return new SearchRow(fallbackRow, searchable(name));
+		}
 		@SuppressWarnings("unchecked")
 		Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
 		JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
