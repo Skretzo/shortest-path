@@ -91,7 +91,6 @@ import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.poh.PohChange;
 import shortestpath.poh.PohService;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.scheduler.QueryResponder;
@@ -281,7 +280,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
-		coordinator.pohChanged(pohService.loadFromProfile());
+		pohService.loadFromProfile();
 		scheduler.prepareBackend();
 	}
 
@@ -469,7 +468,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
-		coordinator.pohChanged(pohService.loadFromProfile());
+		pohService.loadFromProfile();
 		// The new profile may carry different persisted trees, so an in-flight
 		// path computed against the old account's set must be redone — the
 		// load declares that route-invalidating effect unconditionally.
@@ -751,7 +750,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		coordinator.pohChanged(pohService.refreshFromDialog(client));
+		pohService.refreshFromDialog(client);
 		pohService.persistIfDirty();
 
 		coordinator.gameTick(client.getTickCount());
@@ -938,7 +937,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			coordinator.pohChanged(pohService.putFromDialogLine(widget.getText()));
+			pohService.putFromDialogLine(widget.getText());
 		}
 	}
 
@@ -952,7 +951,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT)
 		{
-			coordinator.pohChanged(pohService.dialogOpened());
+			pohService.dialogOpened();
 		}
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
 			|| event.getGroupId() == InterfaceID.TELENEXUS)
@@ -967,9 +966,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 				{
 					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 				}
-				PohChange change = pohService.refreshFromDialog(client);
-				coordinator.pohChanged(change);
-				return change != null
+				boolean changed = pohService.refreshFromDialog(client);
+				return changed
 					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 			});
 		}
