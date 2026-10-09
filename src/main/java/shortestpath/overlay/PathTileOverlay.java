@@ -802,7 +802,7 @@ public class PathTileOverlay extends Overlay
 		// toLocalInstance and plane-checks the mapped point instead.
 		if (nextStep == null ||
 			(WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane() &&
-				!ShortestPathPlugin.isInsidePoh(lx, ly)
+				!PohService.isInsidePoh(lx, ly)
 			))
 		{
 			return;
