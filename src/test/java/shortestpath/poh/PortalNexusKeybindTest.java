@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.poh;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -178,7 +178,7 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, PortalNexusKeybinds.CONFIG_KEY))
+			"shortestpath", PortalNexusKeybinds.CONFIG_KEY))
 			.thenReturn("2|lassar=Y|waterbirth island=F3");
 
 		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
@@ -193,7 +193,7 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			ShortestPathPlugin.CONFIG_GROUP, PortalNexusKeybinds.CONFIG_KEY))
+			"shortestpath", PortalNexusKeybinds.CONFIG_KEY))
 			.thenReturn("2|lassar=Y")
 			.thenReturn(null);
 
@@ -214,7 +214,7 @@ public class PortalNexusKeybindTest
 		persisted.persistIfDirty();
 
 		verify(configManager).setRSProfileConfiguration(
-			eq(ShortestPathPlugin.CONFIG_GROUP),
+			eq("shortestpath"),
 			eq(PortalNexusKeybinds.CONFIG_KEY),
 			contains("lassar=Y"));
 	}
