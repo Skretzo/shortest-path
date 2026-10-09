@@ -208,11 +208,11 @@ public class BoatHullTest
 		int tile = WorldPointUtil.packWorldPoint(2705, 3049, 0);
 		int eastMove = moves.indexOf(3, 0);
 		int northMove = moves.indexOf(0, 3);
-		assertTrue(search.queueArrival(tile, eastMove, 2705, 3049, 0, false));
-		assertFalse("A move is only let through once", search.queueArrival(tile, eastMove, 2705, 3049, 0, false));
-		assertFalse("Facing north doesn't cover the target", search.queueArrival(tile, northMove, 2705, 3049, 0, false));
+		assertTrue(search.queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
+		assertFalse("A move is only let through once", search.queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
+		assertFalse("Facing north doesn't cover the target", search.queueArrival(tile, northMove, 2705, 3049, 0, BankVisitState.CARRIED));
 		assertFalse("Without a hull, facing doesn't matter", new SailingSearch(moves, null, new int[]{target},
-			new int[]{target}).queueArrival(tile, eastMove, 2705, 3049, 0, false));
+			new int[]{target}).queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
 	}
 
 	@Test

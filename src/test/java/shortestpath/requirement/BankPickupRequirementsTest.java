@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TestPathfinderConfig;
@@ -27,7 +28,7 @@ import shortestpath.transport.TransportType;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /**
@@ -73,15 +74,15 @@ public class BankPickupRequirementsTest
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
 		// The leading walk edge carries no recorded transport, so compute still
 		// consults the availability fallback for it.
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf(edge(TransportType.TRANSPORT, null), LAW_ONLY));
 		when(client.getItemDefinition(ItemID.LAWRUNE)).thenReturn(lawRune);
 		when(lawRune.getName()).thenReturn("Law rune");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, LAW_ONLY));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -97,15 +98,15 @@ public class BankPickupRequirementsTest
 		// of them being free means no pickup for the edge.
 		bankHas.put(ItemID.LAWRUNE, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf(
 				edge(TransportType.TRANSPORT, null),
 				edge(TransportType.TELEPORTATION_SPELL, LAW_ONLY.getItemRequirements())));
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -123,13 +124,13 @@ public class BankPickupRequirementsTest
 		playerHas.put(ItemID.AIRRUNE, 2);
 		bankHas.put(ItemID.AIRRUNE, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf());
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false, FALADOR_TELEPORT));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, FALADOR_TELEPORT));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -145,13 +146,13 @@ public class BankPickupRequirementsTest
 		playerHas.put(ItemID.AIRRUNE, 3);
 		playerHas.put(ItemID.WATERRUNE, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf());
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false, FALADOR_TELEPORT));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, FALADOR_TELEPORT));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -166,15 +167,15 @@ public class BankPickupRequirementsTest
 		bankHas.put(ItemID.DRAMEN_STAFF, 1);
 		bankHas.put(ItemID.DRAMEN_STAFF_AIR, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(true));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf());
 		when(client.getItemDefinition(ItemID.DRAMEN_STAFF)).thenReturn(dramenStaff);
 		when(dramenStaff.getName()).thenReturn("Dramen staff");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false,
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED,
 				new Transport.TransportBuilder().type(TransportType.FAIRY_RING).build()));
 
 		BankPickupResult result = BankPickupResult.compute(
@@ -189,13 +190,13 @@ public class BankPickupRequirementsTest
 	{
 		bankHas.put(ItemID.DRAMEN_STAFF, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf());
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false,
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED,
 				new Transport.TransportBuilder().type(TransportType.FAIRY_RING).build()));
 
 		BankPickupResult result = BankPickupResult.compute(
@@ -209,9 +210,9 @@ public class BankPickupRequirementsTest
 	public void missingEligibilitySnapshotYieldsEmptyResult()
 	{
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, LAW_ONLY));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -224,8 +225,8 @@ public class BankPickupRequirementsTest
 	public void awayFromABankStepYieldsEmptyResult()
 	{
 		List<PathStep> path = List.of(
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, LAW_ONLY));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
