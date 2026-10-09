@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
 import shortestpath.transport.Transport;
@@ -30,8 +31,8 @@ public class PreparedRoutingAccountTest
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(availability, availability, false, java.util.Set.of(), 0, true,
 			ignored -> 0);
 
-		assertEquals(origins.length, account.localCount(false));
-		for (int i = 1; i < account.localCount(false); i++)
-			assertTrue(Integer.compareUnsigned(account.localOrigin(false, i - 1), account.localOrigin(false, i)) <= 0);
+		assertEquals(origins.length, account.localCount(BankVisitState.CARRIED));
+		for (int i = 1; i < account.localCount(BankVisitState.CARRIED); i++)
+			assertTrue(Integer.compareUnsigned(account.localOrigin(BankVisitState.CARRIED, i - 1), account.localOrigin(BankVisitState.CARRIED, i)) <= 0);
 	}
 }

@@ -516,7 +516,7 @@ public class PathfinderTest
 			pathfinder.getResult() != null && pathfinder.getResult().isReached());
 		assertTrue(
 			"INVENTORY_AND_BANK mode should imply bank-path traversal",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertTrue(
 			"banked camulet should be used after banking",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
@@ -538,7 +538,7 @@ public class PathfinderTest
 
 		assertFalse(
 			"INVENTORY mode must not activate the bankVisited path state",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertFalse(
 			"INVENTORY mode must not use a banked camulet",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
@@ -566,7 +566,7 @@ public class PathfinderTest
 			pathfinder.getResult() != null && pathfinder.getResult().isReached());
 		assertTrue(
 			"includeBankPath=true should still bank for the camulet",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertTrue(
 			"banked camulet should be used after banking",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
@@ -1364,7 +1364,7 @@ public class PathfinderTest
 		if (usedFairyRing)
 		{
 			assertTrue("If fairy ring is used, path must visit a bank first to pick up Dramen staff",
-				pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+				pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		}
 		// If no fairy ring was used, that's also acceptable (walking path)
 	}
@@ -1497,7 +1497,7 @@ public class PathfinderTest
 			roguesDen);
 
 		assertFalse("Route should not visit a bank when the minigame teleport is ready",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test
@@ -1523,7 +1523,7 @@ public class PathfinderTest
 			roguesDen);
 
 		assertTrue("Route should visit a bank to fetch the games necklace",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 
 		// Issue #492: the banked games necklace and the Burthorpe Games Room minigame
 		// teleport share the destination tile 2899,3553,0. The step must carry the
@@ -1567,7 +1567,7 @@ public class PathfinderTest
 		assertEquals("Path should end at the Rogues' Den target",
 			roguesDen, path.get(path.size() - 1).getPackedPosition());
 		assertTrue("Route should still visit a bank to fetch the games necklace",
-			path.stream().anyMatch(PathStep::isBankVisited));
+			path.stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test
@@ -2294,13 +2294,13 @@ public class PathfinderTest
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.SKILLCAPE_QP, 1));
 		assertTrue("Quest cape in bank with all quests finished should be usable after banking",
-			hasUsableTeleport("Quest point cape: Teleport", true));
+			hasUsableTeleport("Quest point cape: Teleport", BankVisitState.BANKED));
 
 		setupQuestPointDatabase(342);
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.SKILLCAPE_QP, 1));
 		assertFalse("Quest cape in bank should not be suggested when quests are incomplete",
-			hasUsableTeleport("Quest point cape: Teleport", true));
+			hasUsableTeleport("Quest point cape: Teleport", BankVisitState.BANKED));
 	}
 
 	@Test
@@ -2510,7 +2510,7 @@ public class PathfinderTest
 
 	private boolean hasUsableTeleportTo(int packedDestination)
 	{
-		for (Transport transport : pathfinderConfig.getUsableTeleports(false))
+		for (Transport transport : pathfinderConfig.getUsableTeleports(BankVisitState.CARRIED))
 		{
 			if (transport.getDestination() == packedDestination
 				&& transport.hasDisplayInfo("Respawn"))
@@ -3191,7 +3191,7 @@ public class PathfinderTest
 			int origin = originStep.getPackedPosition();
 			int dest = pathfinder.getPath().get(i).getPackedPosition();
 
-			Set<Transport> stepTransports = transportsForStep(origin, originStep.isBankVisited());
+			Set<Transport> stepTransports = transportsForStep(origin, originStep.getBankVisitState());
 			for (Transport t : stepTransports)
 			{
 				if (t.getDestination() == dest && t.isType(type))
@@ -3233,7 +3233,7 @@ public class PathfinderTest
 			}
 			boolean matchingType = false;
 			boolean explainedByOtherType = false;
-			for (Transport t : transportsForStep(origin, originStep.isBankVisited()))
+			for (Transport t : transportsForStep(origin, originStep.getBankVisitState()))
 			{
 				if (t.getDestination() != dest)
 				{
@@ -3273,13 +3273,13 @@ public class PathfinderTest
 		{
 			PathStep originStep = pathfinder.getPath().get(i - 1);
 			PathStep destStep = pathfinder.getPath().get(i);
-			boolean bankVisited = destStep.isBankVisited();
+			BankVisitState bankVisited = destStep.getBankVisitState();
 			int origin = originStep.getPackedPosition();
-			if (stopAtFirstBank && bankVisited)
+			if (stopAtFirstBank && bankVisited == BankVisitState.BANKED)
 			{
 				return false;
 			}
-			if (startAfterFirstBank && !bankVisited)
+			if (startAfterFirstBank && bankVisited == BankVisitState.CARRIED)
 			{
 				continue;
 			}
@@ -3297,10 +3297,10 @@ public class PathfinderTest
 
 	private boolean hasUsableTeleport(String displayInfo)
 	{
-		return hasUsableTeleport(displayInfo, false);
+		return hasUsableTeleport(displayInfo, BankVisitState.CARRIED);
 	}
 
-	private boolean hasUsableTeleport(String displayInfo, boolean bankVisited)
+	private boolean hasUsableTeleport(String displayInfo, BankVisitState bankVisited)
 	{
 		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
 		{
@@ -3312,7 +3312,7 @@ public class PathfinderTest
 		return false;
 	}
 
-	private Set<Transport> transportsForStep(int origin, boolean bankVisited)
+	private Set<Transport> transportsForStep(int origin, BankVisitState bankVisited)
 	{
 		Set<Transport> stepTransports = new java.util.HashSet<>(Arrays.asList(
 			pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)));
@@ -3353,7 +3353,7 @@ public class PathfinderTest
 			pathfinder.getPath().stream().anyMatch(s -> auburnvaleBankTiles.contains(s.getPackedPosition())));
 		assertTrue(
 			"path should enter post-bank inventory state (for ring of dueling from bank)",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertFalse(
 			"Fortis Colosseum bank tile should not appear on the shortest path when glory gates it off",
 			pathfinder.getPath().stream().anyMatch(s -> s.getPackedPosition() == fortisColosseumBank));
