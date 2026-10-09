@@ -174,6 +174,8 @@ public class TransportDataLintTest
 		for (TeleportRestriction.Family family : families)
 		{
 			Assert.assertFalse("family name must not be empty", family.name().isBlank());
+			Assert.assertTrue("family name is a display label, not an authoring note (<= 80 chars): "
+				+ family.name(), family.name().length() <= 80);
 			Assert.assertTrue("duplicate family name: " + family.name(), familyNames.add(family.name()));
 			Assert.assertFalse("family '" + family.name() + "' must have member ids",
 				family.memberItemIds().isEmpty());
