@@ -23,6 +23,12 @@ public final class ExactPathfinder implements ActiveSearch
 	private final PathfinderStats stats = new PathfinderStats();
 	private final int start;
 	private final Set<Integer> targets;
+	// The tiles the prepared target actually terminates on: the requested
+	// targets plus each blocked target's fallback tiles, resolved the same way
+	// the legacy backend resolves them (issue #640). {@link #targets} stays the
+	// requested set for reporting and restart equality.
+	private final Set<Integer> goals;
+	private final boolean hasViableGoal;
 	private final Runnable completionCallback;
 	private final CollisionMap collision;
 	private final Supplier<RoutingStatic> routingStatic;
@@ -115,6 +121,9 @@ public final class ExactPathfinder implements ActiveSearch
 		this.account = config.prepareExactRoutingAccount(true);
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, this.targets);
+		TargetGoals resolved = TargetGoals.resolve(config, start, this.targets);
+		this.goals = resolved.goals();
+		this.hasViableGoal = resolved.hasViableGoal();
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
@@ -162,6 +171,8 @@ public final class ExactPathfinder implements ActiveSearch
 		this.session = null;
 		this.account = null;
 		this.restrictions = SearchRestrictions.none();
+		this.goals = this.targets;
+		this.hasViableGoal = false;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
@@ -330,12 +341,15 @@ public final class ExactPathfinder implements ActiveSearch
 			AtomicBoolean timedOut = new AtomicBoolean();
 			// A zero cutoff means no cutoff for the exact backend.
 			SearchDeadline deadline = cutoffMillis > 0 ? new SearchDeadline(cutoffMillis) : null;
-			int[] packedTargets = targets.stream().mapToInt(Integer::intValue).toArray();
+			int[] packedTargets = goals.stream().mapToInt(Integer::intValue).toArray();
 			ExactForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
 			int partialCost = PathfinderResult.NO_PATH_COST;
 			exactStats = ExactForwardSearch.Counters.empty();
-			if (!cancelled && packedTargets.length != 0)
+			// When every target is a blocked tile that no transport lands on and
+			// no walkable tile exists within the unreachable distance, no state can
+			// satisfy the goal set — skip the search like the legacy backend does.
+			if (!cancelled && hasViableGoal && packedTargets.length != 0)
 			{
 				// One search towards every target at once; it ends at the cheapest one to reach.
 				phaseStarted = System.nanoTime();
