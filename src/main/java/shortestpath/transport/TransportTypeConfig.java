@@ -7,6 +7,7 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathConfig;
+import shortestpath.poh.PohNexusPortal;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.Settings;
 
