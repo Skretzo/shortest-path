@@ -99,8 +99,26 @@ a **synthetic** node after the graph's nodes, with:
 - its routing components from `RoutingStatic.attachments` (all walkable
   neighbours' components if the tile is blocked);
 - attachment edges to every site in those components, costing
-  `chebyshev(target, site)`. A site shared by several target components is
-  emitted once, under the first shared component.
+  `max(chebyshev(target, site), walk(site, target))`. A site shared by several
+  target components is emitted once, under the first shared component.
+
+`walk` comes from `TargetWalkDistances`, which runs a breadth-first search
+backwards from the target over the static walking edges. It stays within the
+target's routing components and is capped at 65,536 tiles. A site the search did
+not reach gets the frontier's distance, and a site that is not a search tile (a
+blocked transport origin) steps to its nearest reached neighbour. A target that
+is not itself a search tile keeps the Chebyshev costs.
+
+The walking bound stays admissible because sites are every transport endpoint,
+crossing endpoint and bank, and leaving a routing component crosses a cut whose
+endpoints are sites. So the part of a route after its last site is a pure walk
+inside the target's components.
+
+It matters for targets deep in winding areas (dungeons, tunnels, mountain
+paths). There a Chebyshev attachment makes the entrance look close to the
+target, every reverse label inherits that shortfall, and the forward search
+floods everything within it. On the full benchmark corpus the walk costs about
+0.3 ms per target (p50) and at most about 5 ms.
 
 Several targets are allowed (multi-target "find closest"). Every target is
 seeded at 0, so the labels measure the distance to the nearest target.
@@ -191,6 +209,11 @@ kept as the oracle for differential tests.
 Both paths also take the exact `label` when the tile is itself a site or a
 target. Every bucket scan computes `min(label_i + chebyshev(x, tile_i))`.
 
+The value depends only on the state, so each search caches it in pages
+allocated on first touch (`SearchSpace.heuristicPage`). It is computed once per
+state rather than at every improving relaxation, every pop, and for the banked
+twin of a bank-dominated state.
+
 `effectiveHeuristic` then adjusts the value for search state:
 
 - **Bank dominance:** `bestBankCost` is the cheapest `g` seen at an unbanked
@@ -203,7 +226,8 @@ target. Every bucket scan computes `min(label_i + chebyshev(x, tile_i))`.
   `min(globalCost + h(destination))` over that layer's `ALL` globals, computed once
   per search by `globalBounds`. This restores admissibility, because the
   relaxed graph assumes globals are usable sooner than the restricted state
-  allows.
+  allows. The cap ignores the walk to a band where globals can be cast, so it is
+  loose for states deep in the Wilderness.
 - **Weight:** the priority is `g + round(weight · h)`. A weight of 1 is exact,
   and anything greater is an explicitly inexact mode.
 

@@ -95,7 +95,7 @@ public final class ExactForwardSearch
 		boolean restrictedHeuristic = capability != TeleportCapability.ALL && hasGlobals(target.account());
 		MutableCounters counters = new MutableCounters(capability, !restrictedHeuristic);
 		int[] bestBankCost = {ExactCosts.INF};
-		int[] globalBounds = restrictedHeuristic ? globalBounds(target, heuristic, space) : null;
+		int[] globalBounds = restrictedHeuristic ? globalBounds(target, heuristic, space, counters) : null;
 		ExactRoute startPath = ExactRoute.of(List.of(new PathStep(start, false)), new int[1]);
 		Closest closest = new Closest(target);
 		if (cancelled.getAsBoolean()) return Result.cancelled(counters.snapshot(bestBankCost[0]), startPath);
@@ -505,12 +505,22 @@ public final class ExactForwardSearch
 		return new ExactRoute(result, forwardArrivals, forwardCosts);
 	}
 
-	private static int heuristic(PreparedHeuristic heuristic, SearchSpace space, int state)
+	private static int heuristic(PreparedHeuristic heuristic, SearchSpace space, int state, MutableCounters counters)
 	{
+		int[] page = space.heuristicPage(state);
+		int slot = state & SearchSpace.HEURISTIC_PAGE_MASK;
+		int cached = page[slot];
+		if (cached != 0)
+		{
+			counters.heuristicCacheHits++;
+			return cached == SearchSpace.CACHED_INF ? ExactCosts.INF : cached - 1;
+		}
 		int node = state / 2;
-		return space.isBase(node)
+		int value = space.isBase(node)
 			? heuristic.estimateBaseNode(space.tile(node), (state & 1) != 0, space.stat.routingComponent(node))
 			: heuristic.estimate(space.tile(node), (state & 1) != 0, space.components(node));
+		page[slot] = value == ExactCosts.INF ? SearchSpace.CACHED_INF : value + 1;
+		return value;
 	}
 
 	static int priority(int cost, int heuristic, double weight)
@@ -535,17 +545,17 @@ public final class ExactForwardSearch
 		if (banked)
 		{
 			counters.heuristicEvaluations++;
-			resolved = heuristic(heuristic, space, state);
+			resolved = heuristic(heuristic, space, state, counters);
 		}
 		else
 		{
-			int unbanked = heuristic(heuristic, space, state);
+			int unbanked = heuristic(heuristic, space, state, counters);
 			counters.heuristicEvaluations++;
 			if (!optimized || !space.bankGlobalRelevant() || cost <= bestBankCost)
 				resolved = unbanked;
 			else
 			{
-				int bankedHeuristic = heuristic(heuristic, space, state | 1);
+				int bankedHeuristic = heuristic(heuristic, space, state | 1, counters);
 				counters.heuristicEvaluations++;
 				counters.bankDominated++;
 				resolved = bankedHeuristic == ExactCosts.INF ? unbanked : Math.max(unbanked, bankedHeuristic);
@@ -605,7 +615,8 @@ public final class ExactForwardSearch
 		return account.allowTransports() && (account.globalCount(false) != 0 || account.globalCount(true) != 0);
 	}
 
-	private static int[] globalBounds(TargetOverlay target, PreparedHeuristic heuristic, SearchSpace space)
+	private static int[] globalBounds(TargetOverlay target, PreparedHeuristic heuristic, SearchSpace space,
+		MutableCounters counters)
 	{
 		int[] result = {ExactCosts.INF, ExactCosts.INF};
 		for (int layer = 0; layer < 2; layer++)
@@ -616,7 +627,7 @@ public final class ExactForwardSearch
 				int node = space.node(target.account().globalDestination(banked, i));
 				if (node >= 0)
 					result[layer] = Math.min(result[layer], ExactCosts.add(target.account().globalCost(banked, i),
-						heuristic(heuristic, space, stateForNode(node, banked))));
+						heuristic(heuristic, space, stateForNode(node, banked), counters)));
 			}
 		}
 		return result;
@@ -720,7 +731,7 @@ public final class ExactForwardSearch
 			heuristicEvaluations, heuristicUnreachable, bestBankUpdates, bankDominated, bankGlobalSuppressed, rekeys,
 			finalBestBankCost, maxQueueSize, walkingPqPushes, localTransportPqPushes, globalPqPushes,
 			bankingPqPushes, transportCandidates, successfulTransportRelaxations, restrictedHeuristicStates,
-			normalHeuristicStates, restrictedHeuristicZeroes;
+			normalHeuristicStates, restrictedHeuristicZeroes, heuristicCacheHits;
 		private final String initialCapability;
 		private final boolean normalHeuristicEnabledAtStart;
 		private Counters(int statesPopped, int staleEntries, int pqPushes, int uniqueStatesReached, int walkingRelaxations,
@@ -728,9 +739,10 @@ public final class ExactForwardSearch
 			int bankDominated, int bankGlobalSuppressed, int rekeys, int finalBestBankCost, int maxQueueSize,
 			int walkingPqPushes, int localTransportPqPushes, int globalPqPushes, int bankingPqPushes,
 			int transportCandidates, int successfulTransportRelaxations, int restrictedHeuristicStates,
-			int normalHeuristicStates, int restrictedHeuristicZeroes, String initialCapability,
+			int normalHeuristicStates, int restrictedHeuristicZeroes, int heuristicCacheHits, String initialCapability,
 			boolean normalHeuristicEnabledAtStart)
 		{
+			this.heuristicCacheHits = heuristicCacheHits;
 			this.statesPopped = statesPopped; this.staleEntries = staleEntries; this.pqPushes = pqPushes; this.uniqueStatesReached = uniqueStatesReached; this.walkingRelaxations = walkingRelaxations; this.transportRelaxations = transportRelaxations; this.heuristicEvaluations = heuristicEvaluations; this.heuristicUnreachable = heuristicUnreachable; this.bestBankUpdates = bestBankUpdates; this.bankDominated = bankDominated; this.bankGlobalSuppressed = bankGlobalSuppressed; this.rekeys = rekeys; this.finalBestBankCost = finalBestBankCost;
 			this.maxQueueSize = maxQueueSize; this.walkingPqPushes = walkingPqPushes;
 			this.localTransportPqPushes = localTransportPqPushes; this.globalPqPushes = globalPqPushes;
@@ -743,7 +755,7 @@ public final class ExactForwardSearch
 		}
 		public static Counters empty()
 		{ return new Counters(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ExactCosts.INF,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "UNKNOWN", false);
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "UNKNOWN", false);
 		}
 		public Counters plus(Counters other)
 		{
@@ -762,11 +774,16 @@ public final class ExactForwardSearch
 				restrictedHeuristicStates + other.restrictedHeuristicStates,
 				normalHeuristicStates + other.normalHeuristicStates,
 				restrictedHeuristicZeroes + other.restrictedHeuristicZeroes,
+				heuristicCacheHits + other.heuristicCacheHits,
 				initialCapability.equals(other.initialCapability) ? initialCapability : "MIXED",
 				normalHeuristicEnabledAtStart && other.normalHeuristicEnabledAtStart);
 		}
 		public int statesPopped()
 	{ return statesPopped;
+	}
+		/** Heuristic lookups answered from the per-search cache rather than computed. */
+		public int heuristicCacheHits()
+	{ return heuristicCacheHits;
 	}
 		public int staleEntries()
 	{ return staleEntries;
@@ -847,7 +864,7 @@ public final class ExactForwardSearch
 			heuristicEvaluations, heuristicUnreachable, bestBankUpdates, bankDominated, bankGlobalSuppressed, rekeys,
 			maxQueueSize, walkingPqPushes, localTransportPqPushes, globalPqPushes, bankingPqPushes,
 			transportCandidates, successfulTransportRelaxations, restrictedHeuristicStates, normalHeuristicStates;
-		int restrictedHeuristicZeroes;
+		int restrictedHeuristicZeroes, heuristicCacheHits;
 		final String initialCapability;
 		final boolean normalHeuristicEnabledAtStart;
 		MutableCounters(TeleportCapability initialCapability, boolean normalHeuristicEnabledAtStart)
@@ -860,7 +877,7 @@ public final class ExactForwardSearch
 		heuristicEvaluations, heuristicUnreachable, bestBankUpdates, bankDominated, bankGlobalSuppressed, rekeys,
 		finalBestBankCost, maxQueueSize, walkingPqPushes, localTransportPqPushes, globalPqPushes, bankingPqPushes,
 		transportCandidates, successfulTransportRelaxations, restrictedHeuristicStates, normalHeuristicStates,
-		restrictedHeuristicZeroes, initialCapability, normalHeuristicEnabledAtStart);
+		restrictedHeuristicZeroes, heuristicCacheHits, initialCapability, normalHeuristicEnabledAtStart);
 	}
 	}
 
@@ -879,6 +896,17 @@ public final class ExactForwardSearch
 		 * allocated while a gate is active.
 		 */
 		private byte[] gateBits;
+		static final int HEURISTIC_PAGE_BITS = 10;
+		static final int HEURISTIC_PAGE_MASK = (1 << HEURISTIC_PAGE_BITS) - 1;
+		/** Cache encoding of an infinite heuristic; other values are stored plus one, so 0 means absent. */
+		static final int CACHED_INF = -1;
+		/**
+		 * Each tile state's heuristic, filled on first lookup. The heuristic depends only on the
+		 * state, but the search asks for it at every improving relaxation, again when the state
+		 * pops and for the banked twin of a bank-dominated state. Pages are allocated on first
+		 * touch, so a search pays only for the regions it reaches.
+		 */
+		private int[][] heuristicPages;
 		private SearchSpace(RoutingStatic stat, PreparedRoutingAccount account, int[] extraTiles,
 			int[][] extraComponents, int[] extraSites)
 	{ this.stat = stat; this.account = account; this.extraTiles = extraTiles; this.extraComponents = extraComponents;
@@ -923,6 +951,18 @@ public final class ExactForwardSearch
 		int[] components(int node)
 	{ return extraComponents[node - baseCount];
 	}
+		int[] heuristicPage(int state)
+		{
+			if (heuristicPages == null) heuristicPages = new int[((tileCount * 2) >> HEURISTIC_PAGE_BITS) + 1][];
+			int index = state >> HEURISTIC_PAGE_BITS;
+			int[] page = heuristicPages[index];
+			if (page == null)
+			{
+				page = new int[1 << HEURISTIC_PAGE_BITS];
+				heuristicPages[index] = page;
+			}
+			return page;
+		}
 		boolean isBase(int node)
 	{ return node < baseCount;
 	}
