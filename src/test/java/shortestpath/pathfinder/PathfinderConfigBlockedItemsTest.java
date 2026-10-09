@@ -108,8 +108,8 @@ public class PathfinderConfigBlockedItemsTest
 	{
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "", ARDY_CLOAK, KARAMJA_GLOVES);
 
-		assertTrue(usable(cfg, ARDY_CLOAK, false));
-		assertTrue(usable(cfg, KARAMJA_GLOVES, false));
+		assertTrue(usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
+		assertTrue(usable(cfg, KARAMJA_GLOVES, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -121,9 +121,9 @@ public class PathfinderConfigBlockedItemsTest
 				items(KARAMJA_GLOVES_4, ARDY_CLOAK_1), KARAMJA_GLOVES, ARDY_CLOAK);
 
 			assertFalse("blocked item must not route under " + mode,
-				usable(cfg, KARAMJA_GLOVES, false));
+				usable(cfg, KARAMJA_GLOVES, BankVisitState.CARRIED));
 			assertFalse("blocked item must not route under " + mode + " on the bank path",
-				usable(cfg, KARAMJA_GLOVES, true));
+				usable(cfg, KARAMJA_GLOVES, BankVisitState.BANKED));
 		}
 	}
 
@@ -138,7 +138,7 @@ public class PathfinderConfigBlockedItemsTest
 			// NONE rejects every teleport item transport regardless of blocking;
 			// the other eight modes keep the unblocked sibling usable.
 			assertEquals("mode " + mode, mode != TeleportationItem.NONE,
-				usable(cfg, ARDY_CLOAK, false));
+				usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
 		}
 	}
 
@@ -147,7 +147,7 @@ public class PathfinderConfigBlockedItemsTest
 	{
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121", ARDY_CLOAK);
 
-		assertTrue(usable(cfg, ARDY_CLOAK, false));
+		assertTrue(usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -156,7 +156,7 @@ public class PathfinderConfigBlockedItemsTest
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL,
 			"13121,13122,13123,13124,20760", ARDY_CLOAK);
 
-		assertFalse(usable(cfg, ARDY_CLOAK, false));
+		assertFalse(usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -164,7 +164,7 @@ public class PathfinderConfigBlockedItemsTest
 	{
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121", TWO_AND);
 
-		assertFalse(usable(cfg, TWO_AND, false));
+		assertFalse(usable(cfg, TWO_AND, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -172,7 +172,7 @@ public class PathfinderConfigBlockedItemsTest
 	{
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "99999", TWO_AND);
 
-		assertTrue(usable(cfg, TWO_AND, false));
+		assertTrue(usable(cfg, TWO_AND, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -183,7 +183,7 @@ public class PathfinderConfigBlockedItemsTest
 
 		// The UNLOCK_XERICS_HONOUR requirement survives blocking, but the
 		// 13393 requirement is fully blocked, so the transport is rejected.
-		assertFalse(usable(cfg, ITEM_AND_UNLOCK, false));
+		assertFalse(usable(cfg, ITEM_AND_UNLOCK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -193,7 +193,7 @@ public class PathfinderConfigBlockedItemsTest
 		// item ids and can never be blocked, so the requirement stays alive.
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121", ITEM_OR_UNLOCK);
 
-		assertTrue(usable(cfg, ITEM_OR_UNLOCK, false));
+		assertTrue(usable(cfg, ITEM_OR_UNLOCK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -204,7 +204,7 @@ public class PathfinderConfigBlockedItemsTest
 		// the player owns nothing and has not declared the unlock.
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.INVENTORY, "13121", ITEM_OR_UNLOCK);
 
-		assertFalse(usable(cfg, ITEM_OR_UNLOCK, false));
+		assertFalse(usable(cfg, ITEM_OR_UNLOCK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -213,7 +213,7 @@ public class PathfinderConfigBlockedItemsTest
 		when(config.unlockXericsHonour()).thenReturn(true);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13393,13121", PURE_UNLOCK);
 
-		assertTrue(usable(cfg, PURE_UNLOCK, false));
+		assertTrue(usable(cfg, PURE_UNLOCK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -224,7 +224,7 @@ public class PathfinderConfigBlockedItemsTest
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL,
 			csvOf(ItemVariations.FIRE_RUNE.getIds()), RUNE_TELE);
 
-		assertTrue(usable(cfg, RUNE_TELE, false));
+		assertTrue(usable(cfg, RUNE_TELE, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -236,7 +236,7 @@ public class PathfinderConfigBlockedItemsTest
 				ItemVariations.offhands(ItemVariations.FIRE_RUNE)),
 			RUNE_TELE);
 
-		assertFalse(usable(cfg, RUNE_TELE, false));
+		assertFalse(usable(cfg, RUNE_TELE, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -247,8 +247,8 @@ public class PathfinderConfigBlockedItemsTest
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL,
 			"abc," + KARAMJA_GLOVES_4 + ":x," + KARAMJA_GLOVES_4, KARAMJA_GLOVES, ARDY_CLOAK);
 
-		assertFalse(usable(cfg, KARAMJA_GLOVES, false));
-		assertTrue(usable(cfg, ARDY_CLOAK, false));
+		assertFalse(usable(cfg, KARAMJA_GLOVES, BankVisitState.CARRIED));
+		assertTrue(usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -257,8 +257,8 @@ public class PathfinderConfigBlockedItemsTest
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "abc,1:2:3,,:x",
 			KARAMJA_GLOVES, ARDY_CLOAK);
 
-		assertTrue(usable(cfg, KARAMJA_GLOVES, false));
-		assertTrue(usable(cfg, ARDY_CLOAK, false));
+		assertTrue(usable(cfg, KARAMJA_GLOVES, BankVisitState.CARRIED));
+		assertTrue(usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -270,8 +270,8 @@ public class PathfinderConfigBlockedItemsTest
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13103",
 			items(KARAMJA_GLOVES_4), BOAT_ON_GLOVES, KARAMJA_GLOVES);
 
-		assertTrue(usable(cfg, BOAT_ON_GLOVES, false));
-		assertFalse(usable(cfg, KARAMJA_GLOVES, false));
+		assertTrue(usable(cfg, BOAT_ON_GLOVES, BankVisitState.CARRIED));
+		assertFalse(usable(cfg, KARAMJA_GLOVES, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -279,7 +279,7 @@ public class PathfinderConfigBlockedItemsTest
 	{
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121", NO_REQUIREMENTS);
 
-		assertTrue(usable(cfg, NO_REQUIREMENTS, false));
+		assertTrue(usable(cfg, NO_REQUIREMENTS, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -290,10 +290,10 @@ public class PathfinderConfigBlockedItemsTest
 
 		PathfinderConfig unblocked = refreshConfig(TeleportationItem.ALL, "", SEASONAL);
 		assertTrue("seasonal transport must be usable before blocking",
-			usable(unblocked, SEASONAL, false));
+			usable(unblocked, SEASONAL, BankVisitState.CARRIED));
 
 		PathfinderConfig blocked = refreshConfig(TeleportationItem.ALL, "30361", SEASONAL);
-		assertFalse(usable(blocked, SEASONAL, false));
+		assertFalse(usable(blocked, SEASONAL, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -302,10 +302,10 @@ public class PathfinderConfigBlockedItemsTest
 		when(config.useQuetzals()).thenReturn(true);
 
 		PathfinderConfig unblocked = refreshConfig(TeleportationItem.ALL, "", WHISTLE);
-		assertTrue(usable(unblocked, WHISTLE, false));
+		assertTrue(usable(unblocked, WHISTLE, BankVisitState.CARRIED));
 
 		PathfinderConfig blocked = refreshConfig(TeleportationItem.ALL, "29271", WHISTLE);
-		assertFalse(usable(blocked, WHISTLE, false));
+		assertFalse(usable(blocked, WHISTLE, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -316,7 +316,7 @@ public class PathfinderConfigBlockedItemsTest
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.INVENTORY, "13121",
 			items(ARDY_CLOAK_2), ARDY_CLOAK);
 
-		assertTrue(usable(cfg, ARDY_CLOAK, false));
+		assertTrue(usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -327,7 +327,7 @@ public class PathfinderConfigBlockedItemsTest
 
 		// id:N is a threshold record, not a block record — the transport must
 		// stay usable and its additional cost is the pinned value.
-		assertTrue(usable(cfg, ARDY_CLOAK, false));
+		assertTrue(usable(cfg, ARDY_CLOAK, BankVisitState.CARRIED));
 		assertEquals(40, cfg.getAdditionalTransportCost(ARDY_CLOAK));
 	}
 
@@ -530,9 +530,9 @@ public class PathfinderConfigBlockedItemsTest
 		return cfg;
 	}
 
-	private static boolean usable(PathfinderConfig cfg, Transport transport, boolean bankVisited)
+	private static boolean usable(PathfinderConfig cfg, Transport transport, BankVisitState bankVisited)
 	{
-		for (Transport t : cfg.getUsableTeleports(bankVisited ? BankVisitState.BANKED : BankVisitState.CARRIED))
+		for (Transport t : cfg.getUsableTeleports(bankVisited))
 		{
 			if (t == transport)
 			{
