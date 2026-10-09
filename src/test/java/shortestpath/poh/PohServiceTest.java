@@ -4,18 +4,28 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.runelite.api.Client;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -25,11 +35,13 @@ public class PohServiceTest
 	private static final int LANDING = WorldPointUtil.packWorldPoint(1858, 7051, 0);
 
 	private PohService service;
+	private RefreshCoordinator coordinator;
 
 	@Before
 	public void setUp()
 	{
-		service = PohService.forTesting();
+		coordinator = mock(RefreshCoordinator.class);
+		service = PohService.forTesting(coordinator);
 	}
 
 	private static Transport transport(TransportType type, String displayInfo, String objectInfo, int destination)
@@ -210,9 +222,13 @@ public class PohServiceTest
 		service.putFromDialogLine("F3</col>: Varrock");
 		service.putFromDialogLine("0: Lumbridge");
 		service.putFromDialogLine("F12: Lunar Isle");
-		assertNull(service.putFromDialogLine("F13: Catherby"));
-		assertNull(service.putFromDialogLine("Shift+F3: Ourania"));
-		assertNull(service.putFromDialogLine("Waterbirth Island"));
+		service.putFromDialogLine("F13: Catherby");
+		service.putFromDialogLine("Shift+F3: Ourania");
+		service.putFromDialogLine("Waterbirth Island");
+
+		// Only the three keyed lines declare — unsupported or unkeyed
+		// lines carry no keybind information and admit nothing.
+		verify(coordinator, times(3)).pohChanged(any());
 
 		assertEquals("F3: Varrock Portal", service.apply("Varrock Portal"));
 		assertEquals("0: Lumbridge Portal", service.apply("Lumbridge Portal"));
@@ -225,10 +241,47 @@ public class PohServiceTest
 	@Test
 	public void testDialogKeybindLearnEmitsDisplayOnlyFact()
 	{
-		PohChange change = service.putFromDialogLine("Y: Lassar");
+		service.putFromDialogLine("Y: Lassar");
 
-		assertEquals("dialogLine", change.getKey());
-		assertEquals(Set.of(Effect.DISPLAY_ONLY), change.getEffects());
+		ArgumentCaptor<PohChange> captor = ArgumentCaptor.forClass(PohChange.class);
+		verify(coordinator).pohChanged(captor.capture());
+		assertEquals("dialogLine", captor.getValue().getKey());
+		assertEquals(Set.of(Effect.DISPLAY_ONLY), captor.getValue().getEffects());
+	}
+
+	@Test
+	public void testRefreshFromDialogReturnsWhetherItParsed()
+	{
+		// The dialog-retry predicate consumes the boolean as "something
+		// parsed", matching the old non-null fact condition.
+		Client client = mock(Client.class);
+		Widget labels = mock(Widget.class);
+		when(client.getWidget(InterfaceID.TelenexusTeleport.TEXT1)).thenReturn(labels);
+		when(labels.getText()).thenReturn("Y: Lassar");
+
+		assertTrue("a parseable dialog reports a mapping", service.refreshFromDialog(client));
+		verify(coordinator).pohChanged(any());
+		assertEquals("Y: Lassar Portal", service.apply("Lassar Portal"));
+
+		Client empty = mock(Client.class);
+		assertFalse("no keyed widgets means nothing parsed", service.refreshFromDialog(empty));
+		verify(coordinator, times(1)).pohChanged(any());
+	}
+
+	@Test
+	public void testRefreshFromDialogStaysTrueOnAnIdenticalReRead()
+	{
+		// An unchanged re-read still produces a fact — its effect set is
+		// empty, so the coordinator's own guard decides nothing runs — but
+		// the boolean must stay true or the retry loop would spin forever.
+		Client client = mock(Client.class);
+		Widget labels = mock(Widget.class);
+		when(client.getWidget(InterfaceID.TelenexusTeleport.TEXT1)).thenReturn(labels);
+		when(labels.getText()).thenReturn("Y: Lassar");
+
+		assertTrue(service.refreshFromDialog(client));
+		assertTrue(service.refreshFromDialog(client));
+		verify(coordinator, times(2)).pohChanged(any());
 	}
 
 	@Test

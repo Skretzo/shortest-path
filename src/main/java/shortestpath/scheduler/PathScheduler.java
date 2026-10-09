@@ -100,7 +100,7 @@ public class PathScheduler
 		this.responder = responder;
 	}
 
-	public void restart(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
+	void restart(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
 	{
 		// filterLocations edits the set in place, and callers often pass a search's own targets,
 		// which the exact backend holds immutable.
@@ -256,12 +256,12 @@ public class PathScheduler
 		}
 	}
 
-	public void restart(String reason, int start, Set<Integer> ends)
+	void restart(String reason, int start, Set<Integer> ends)
 	{
 		restart(reason, start, ends, true);
 	}
 
-	public boolean isNearPath(int location)
+	boolean isNearPath(int location)
 	{
 		List<PathStep> path;
 		// The previous route is only on screen until its recalculation finishes; the player is
@@ -388,17 +388,22 @@ public class PathScheduler
 
 	/**
 	 * Queues a config refresh to run on a later client tick, after the triggering state change
-	 * has fully settled.
+	 * has fully settled. No-ops before {@code startUp} attaches the config — the pre-init
+	 * guard lives here so callers may declare events unconditionally.
 	 */
-	public void deferRefresh(int tick)
+	void deferRefresh(int tick)
 	{
+		if (pathfinderConfig == null)
+		{
+			return;
+		}
 		pendingTasks.add(new PendingTask(tick, pathfinderConfig::refresh));
 	}
 
 	/**
 	 * Runs each pending task whose tick has arrived, in submission order.
 	 */
-	public void drainDueTasks(int tick)
+	void drainDueTasks(int tick)
 	{
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
@@ -412,7 +417,7 @@ public class PathScheduler
 	/**
 	 * Marks the eligibility snapshot stale; the next config refresh rebuilds it.
 	 */
-	public void invalidateEligibility()
+	void invalidateEligibility()
 	{
 		pathfinderConfig.invalidateEligibility();
 	}
@@ -521,7 +526,7 @@ public class PathScheduler
 		return legacyPathfinder;
 	}
 
-	public boolean isStartPointSet()
+	boolean isStartPointSet()
 	{
 		return startPointSet;
 	}

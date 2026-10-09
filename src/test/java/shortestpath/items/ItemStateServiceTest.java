@@ -11,6 +11,9 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -18,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
@@ -34,6 +38,7 @@ import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
@@ -41,14 +46,15 @@ import shortestpath.transport.TransportType;
 
 /**
  * Pins the item-state producer seam contract: which game inputs the service
- * admits, which {@link ItemChange} fact each admitted input returns, and the
- * ownership rules for the live open-bank reference. The shell relies on a
- * non-null fact meaning "a tracked input changed" and on the declared
- * {@link Effect}s to decide follow-up actions, so ignored/unmapped returns
- * are the failure mode these tests guard against. The adversarial half of
- * this file covers the collection boundary (null/empty containers,
- * non-positive quantities, banked-pouch selection, bank-path pooling) and
- * the bank-pickup cache's (path identity, index, dirty) contract.
+ * admits, which {@link ItemChange} fact each admitted input declares to the
+ * coordinator, and the ownership rules for the live open-bank reference. The
+ * coordinator relies on a declared fact meaning "a tracked input changed" and
+ * on the declared {@link Effect}s to decide follow-up actions, so silent
+ * inputs and declares the old return-null paths guarded are the failure
+ * modes these tests guard against. The adversarial half of this file covers
+ * the collection boundary (null/empty containers, non-positive quantities,
+ * banked-pouch selection, bank-path pooling) and the bank-pickup cache's
+ * (path identity, index, dirty) contract.
  */
 public class ItemStateServiceTest
 {
@@ -59,100 +65,135 @@ public class ItemStateServiceTest
 			change.getEffects().contains(Effect.ELIGIBILITY_STALE));
 	}
 
+	/**
+	 * The fact the service most recently declared on the coordinator,
+	 * asserting the channel saw exactly {@code declared} calls so a dropped
+	 * or duplicated declare fails here rather than downstream.
+	 */
+	private static ItemChange lastDeclared(RefreshCoordinator coordinator, int declared)
+	{
+		ArgumentCaptor<ItemChange> captor = ArgumentCaptor.forClass(ItemChange.class);
+		verify(coordinator, times(declared)).itemsChanged(captor.capture());
+		return captor.getValue();
+	}
+
 	@Test
 	public void bankContainerIsStoredAsLiveRefAndDeclaresEligibilityStale()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 
-		ItemChange change = service.onContainerChanged(InventoryID.BANK, bank);
+		service.onContainerChanged(InventoryID.BANK, bank);
 
-		assertEligibilityStale(change, "bank container event");
+		assertEligibilityStale(lastDeclared(coordinator, 1), "bank container event");
 		assertSame("the open bank stays a live reference, never copied", bank, service.getBank());
 	}
 
 	@Test
 	public void inventoryContainerDeclaresEligibilityStaleButKeepsBankRef()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 		ItemContainer inv = mock(ItemContainer.class);
 		service.onContainerChanged(InventoryID.BANK, bank);
 
-		ItemChange change = service.onContainerChanged(InventoryID.INV, inv);
+		service.onContainerChanged(InventoryID.INV, inv);
 
-		assertEligibilityStale(change, "inventory container event");
+		assertEligibilityStale(lastDeclared(coordinator, 2), "inventory container event");
 		assertSame("inventory events never overwrite the bank ref", bank, service.getBank());
 	}
 
 	@Test
 	public void wornContainerDeclaresEligibilityStaleButKeepsBankRef()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 		ItemContainer worn = mock(ItemContainer.class);
 		service.onContainerChanged(InventoryID.BANK, bank);
 
-		ItemChange change = service.onContainerChanged(InventoryID.WORN, worn);
+		service.onContainerChanged(InventoryID.WORN, worn);
 
-		assertEligibilityStale(change, "equipment container event");
+		assertEligibilityStale(lastDeclared(coordinator, 2), "equipment container event");
 		assertSame("equipment events never overwrite the bank ref", bank, service.getBank());
 	}
 
 	@Test
-	public void unrelatedContainerReturnsNullAndTouchesNoState()
+	public void unrelatedContainerDeclaresNothingAndLeavesTheBankRef()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 		service.onContainerChanged(InventoryID.BANK, bank);
 
-		ItemChange change = service.onContainerChanged(InventoryID.LOOTING_BAG, mock(ItemContainer.class));
+		service.onContainerChanged(InventoryID.LOOTING_BAG, mock(ItemContainer.class));
 
-		assertNull("an untracked container admits no fact", change);
+		verify(coordinator, times(1)).itemsChanged(any());
 		assertSame("an untracked container never overwrites the bank ref", bank, service.getBank());
 	}
 
 	@Test
 	public void lumbridgeDiaryVarbitDeclaresEligibilityStale()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 
-		ItemChange change = service.onVarbitChanged(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE);
+		service.onVarbitChanged(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE);
 
-		assertEligibilityStale(change, "Lumbridge diary varbit");
+		assertEligibilityStale(lastDeclared(coordinator, 1), "Lumbridge diary varbit");
 	}
 
 	@Test
 	public void runePouchRuneVarbitsDeclareEligibilityStale()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 
 		for (int varbitId : OwnedItems.RUNE_POUCH_RUNE_VARBITS)
 		{
-			assertEligibilityStale(service.onVarbitChanged(varbitId),
-				"rune pouch rune varbit " + varbitId);
+			service.onVarbitChanged(varbitId);
+		}
+
+		ArgumentCaptor<ItemChange> captor = ArgumentCaptor.forClass(ItemChange.class);
+		verify(coordinator, times(OwnedItems.RUNE_POUCH_RUNE_VARBITS.length))
+			.itemsChanged(captor.capture());
+		for (ItemChange change : captor.getAllValues())
+		{
+			assertEligibilityStale(change, "rune pouch rune varbit fact " + change.getKey());
 		}
 	}
 
 	@Test
 	public void runePouchAmountVarbitsDeclareEligibilityStale()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 
 		for (int varbitId : OwnedItems.RUNE_POUCH_AMOUNT_VARBITS)
 		{
-			assertEligibilityStale(service.onVarbitChanged(varbitId),
-				"rune pouch amount varbit " + varbitId);
+			service.onVarbitChanged(varbitId);
+		}
+
+		ArgumentCaptor<ItemChange> captor = ArgumentCaptor.forClass(ItemChange.class);
+		verify(coordinator, times(OwnedItems.RUNE_POUCH_AMOUNT_VARBITS.length))
+			.itemsChanged(captor.capture());
+		for (ItemChange change : captor.getAllValues())
+		{
+			assertEligibilityStale(change, "rune pouch amount varbit fact " + change.getKey());
 		}
 	}
 
 	@Test
-	public void unrelatedVarbitReturnsNull()
+	public void unrelatedVarbitDeclaresNothing()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 
-		assertNull("an untracked varbit admits no fact",
-			service.onVarbitChanged(VarbitID.FAIRY2_QUEENCURE_QUEST));
+		service.onVarbitChanged(VarbitID.FAIRY2_QUEENCURE_QUEST);
+
+		verify(coordinator, never()).itemsChanged(any());
 	}
 
 	@Test
@@ -169,10 +210,16 @@ public class ItemStateServiceTest
 	@Test
 	public void changeFactExposesKeyAndEffectsAsAValue()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		ItemStateService service = ItemStateService.forTesting(coordinator);
 
-		ItemChange first = service.onContainerChanged(InventoryID.BANK, mock(ItemContainer.class));
-		ItemChange second = service.onContainerChanged(InventoryID.BANK, mock(ItemContainer.class));
+		service.onContainerChanged(InventoryID.BANK, mock(ItemContainer.class));
+		service.onContainerChanged(InventoryID.BANK, mock(ItemContainer.class));
+
+		ArgumentCaptor<ItemChange> captor = ArgumentCaptor.forClass(ItemChange.class);
+		verify(coordinator, times(2)).itemsChanged(captor.capture());
+		ItemChange first = captor.getAllValues().get(0);
+		ItemChange second = captor.getAllValues().get(1);
 
 		assertEquals("container:" + InventoryID.BANK, first.getKey());
 		assertNotSame("each observed change is its own fact", first, second);
