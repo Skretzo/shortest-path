@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,7 +48,7 @@ public class TransportLoader
 	{
 		List<TransportRecord> records = tsvParser.parse(contents);
 
-		Set<Transport> newTransports = new HashSet<>();
+		Set<Transport> newTransports = new LinkedHashSet<>();
 		for (TransportRecord record : records)
 		{
 			Transport transport = new Transport(record, transportType);
@@ -73,8 +73,8 @@ public class TransportLoader
 		 * by specifying a radius threshold to ignore almost identical coordinates.
 		 * Example: fairy ring AIQ -> AIQ
 		 */
-		Set<Transport> transportOrigins = new HashSet<>();
-		Set<Transport> transportDestinations = new HashSet<>();
+		Set<Transport> transportOrigins = new LinkedHashSet<>();
+		Set<Transport> transportDestinations = new LinkedHashSet<>();
 		for (Transport transport : newTransports)
 		{
 			int origin = transport.getOrigin();
@@ -99,7 +99,7 @@ public class TransportLoader
 				&& destination != Transport.UNDEFINED_DESTINATION && destination != Transport.LOCATION_PERMUTATION
 				&& (origin == Transport.UNDEFINED_ORIGIN || origin != destination))
 			{
-				transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
+				transports.computeIfAbsent(origin, k -> new LinkedHashSet<>()).add(transport);
 			}
 		}
 		for (Transport origin : transportOrigins)
@@ -112,7 +112,7 @@ public class TransportLoader
 				{
 					Transport combined = new Transport(origin, destination);
 					transports
-						.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
+						.computeIfAbsent(origin.getOrigin(), k -> new LinkedHashSet<>())
 						.add(combined);
 				}
 			}

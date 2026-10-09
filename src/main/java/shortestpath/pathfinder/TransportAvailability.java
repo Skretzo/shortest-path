@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,8 +16,11 @@ public final class TransportAvailability
 {
 	public static final Transport[] EMPTY_TRANSPORTS = new Transport[0];
 
-	// Transports grouped by origin tile, stored as flat arrays. The per-origin HashSet/HashMap
-	// wrappers used while building are not retained (issue #491).
+	// Transports grouped by origin tile, stored as flat arrays. The per-origin LinkedHashSet/
+	// HashMap wrappers used while building are not retained (issue #491). The sets iterate in
+	// insertion order, so the emitted arrays follow add() order and pathfinding neighbour
+	// expansion is deterministic across JVM runs. Transport has no equals/hashCode, so a plain
+	// HashSet would iterate in identity-hash order that varies per run.
 	//
 	// transportsPacked is the pathfinding view: a transport is reachable from its literal origin
 	// tile, and POH transports are additionally reachable from the canonical landing tile.
@@ -73,7 +77,7 @@ public final class TransportAvailability
 		Builder(int expectedTransportCount)
 		{
 			this.transportsByOrigin = new HashMap<>(expectedTransportCount / 2);
-			this.usableTeleports = new HashSet<>(expectedTransportCount / 20);
+			this.usableTeleports = new LinkedHashSet<>(expectedTransportCount / 20);
 		}
 
 		void add(Transport transport)
@@ -84,13 +88,13 @@ public final class TransportAvailability
 				return;
 			}
 
-			transportsByOrigin.computeIfAbsent(transport.getOrigin(), ignored -> new HashSet<>()).add(transport);
+			transportsByOrigin.computeIfAbsent(transport.getOrigin(), ignored -> new LinkedHashSet<>()).add(transport);
 		}
 
 		void remapPohTransports()
 		{
 			int pohLanding = WorldPointUtil.packWorldPoint(POH_LANDING_X, POH_LANDING_Y, 0);
-			Set<Transport> pohTransports = new HashSet<>();
+			Set<Transport> pohTransports = new LinkedHashSet<>();
 
 			for (Map.Entry<Integer, Set<Transport>> entry : transportsByOrigin.entrySet())
 			{
@@ -107,7 +111,7 @@ public final class TransportAvailability
 
 			if (!pohTransports.isEmpty())
 			{
-				transportsByOrigin.computeIfAbsent(pohLanding, ignored -> new HashSet<>()).addAll(pohTransports);
+				transportsByOrigin.computeIfAbsent(pohLanding, ignored -> new LinkedHashSet<>()).addAll(pohTransports);
 			}
 		}
 

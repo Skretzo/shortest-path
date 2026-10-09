@@ -488,9 +488,12 @@ public class Pathfinder implements ActiveSearch
 			}
 
 			final boolean neighborIsTransport = graph.isTransport(neighbor);
-			// For delayed-visit nodes (shared destinations), don't mark as visited on enqueue.
-			// They will be checked and marked when dequeued from pending.
-			if (!(neighborIsTransport && graph.isDelayedVisit(neighbor)))
+			// Transports queue on the cost-ordered pending heap, so marking their
+			// destination visited at enqueue would let an expensive queued transport
+			// shadow a cheaper route emitted later; transports are checked and marked
+			// when dequeued instead. Walking-tile and abstract neighbours still claim
+			// their tile at enqueue.
+			if (!neighborIsTransport)
 			{
 				visited.set(neighbor, graph);
 			}
@@ -605,23 +608,26 @@ public class Pathfinder implements ActiveSearch
 			int pendingHead = pending.peek();
 
 			int node;
+			// On a cost tie the pending heap wins: a queued transport that is strictly
+			// cheaper than the walking route must claim its destination before an
+			// equal-cost boundary node can expand and emit a competing walking edge.
 			if (pendingHead != NodeGraph.NO_NODE
-				&& (boundaryHead == NodeGraph.NO_NODE || graph.compareCost(pendingHead) < graph.cost(boundaryHead)))
+				&& (boundaryHead == NodeGraph.NO_NODE || graph.compareCost(pendingHead) <= graph.cost(boundaryHead)))
 			{
 				node = pending.poll();
 
-				// For delayed-visit nodes, check if the destination was already
-				// reached by a cheaper path while this node was queued.
-				if (graph.isDelayedVisit(node))
+				// Every node in pending is transport-flagged (transports and bank-visit
+				// transitions; walking tiles and abstract nodes never enter it) and none
+				// of them claimed their destination at enqueue. The first, cheapest,
+				// dequeue wins the tile; later queued duplicates for the same tile are
+				// dropped here.
+				int packed = graph.packedPosition(node);
+				boolean bank = graph.bankVisited(node);
+				if (visited.get(packed, bank))
 				{
-					int packed = graph.packedPosition(node);
-					boolean bank = graph.bankVisited(node);
-					if (visited.get(packed, bank))
-					{
-						continue;
-					}
-					visited.set(packed, bank);
+					continue;
 				}
+				visited.set(packed, bank);
 			}
 			else
 			{

@@ -240,7 +240,8 @@ public class CollisionMap
 		for (Transport transport : transports)
 		{
 			boolean delayedVisit = transport.getType().sharesDestinationsWith() != null;
-			// Do not consider a transport if we have already visited its target tile.
+			// Do not consider a transport if its target tile is already settled —
+			// dequeued from pending via a cheaper-or-equal route.
 			// For transports that share destinations with a teleport, skip this check
 			// so both can compete in the priority queue (delayed visit).
 			if (!delayedVisit && visited.get(transport.getDestination(), pathBankVisited))

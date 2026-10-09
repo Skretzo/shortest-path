@@ -697,6 +697,9 @@ public class PathfinderConfig
 	 * Transports that arrive inside the POH (e.g., fairy ring DIQ, spirit tree "Your house")
 	 * are remapped so chaining with other POH transports is possible.
 	 * Called once at load time since Transport objects in allTransports are shared references.
+	 * The Set values must iterate in deterministic order (LinkedHashSet as produced by
+	 * TransportLoader); HashSet<Transport> uses identity hashes whose iteration order varies
+	 * per JVM run.
 	 */
 	private static Transport[] flatten(Map<Integer, Set<Transport>> transports)
 	{

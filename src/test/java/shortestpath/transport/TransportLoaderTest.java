@@ -1141,4 +1141,72 @@ public class TransportLoaderTest
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 		Assert.assertTrue("No transports should be created for permutation-only row", transports.isEmpty());
 	}
+
+	@Test
+	public void testPerOriginInsertionOrderIsPreserved()
+	{
+		// Transport has no equals/hashCode, so a HashSet would iterate these in
+		// identity-hash order that varies per JVM run; the loader must preserve
+		// TSV row order so downstream consumers see a deterministic sequence.
+		String contents = "# Origin\tDestination\tDuration\n" +
+			"3200 3200 0\t3301 3300 0\t5\n" +
+			"3200 3200 0\t3302 3300 0\t5\n" +
+			"3200 3200 0\t3303 3300 0\t5\n" +
+			"3200 3200 0\t3304 3300 0\t5\n" +
+			"3200 3200 0\t3305 3300 0\t5\n" +
+			"3200 3200 0\t3306 3300 0\t5\n" +
+			"3200 3200 0\t3307 3300 0\t5\n" +
+			"3200 3200 0\t3308 3300 0\t5\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		Set<Transport> transportSet = transports.get(origin);
+		Assert.assertEquals("Should have eight transports", 8, transportSet.size());
+
+		int expectedX = 3301;
+		for (Transport t : transportSet)
+		{
+			Assert.assertEquals(
+				"Destinations must iterate in TSV row order",
+				WorldPointUtil.packWorldPoint(expectedX++, 3300, 0),
+				t.getDestination());
+		}
+	}
+
+	@Test
+	public void testPermutationProductOrderIsPreserved()
+	{
+		// Fairy-ring-style permutation: the combined transports added to each
+		// origin set must follow the destination rows' first-seen order.
+		String contents = "# Origin\tDestination\tDisplay info\n" +
+			"3100 3100 0\t\tAIQ\n" +
+			"3200 3200 0\t\tBJR\n" +
+			"\t3400 3400 0\tBJR\n" +
+			"\t3300 3300 0\tAIQ\n";
+
+		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+
+		int[] expectedDestinations = {
+			WorldPointUtil.packWorldPoint(3400, 3400, 0),
+			WorldPointUtil.packWorldPoint(3300, 3300, 0),
+		};
+		int[] origins = {
+			WorldPointUtil.packWorldPoint(3100, 3100, 0),
+			WorldPointUtil.packWorldPoint(3200, 3200, 0),
+		};
+		for (int origin : origins)
+		{
+			Set<Transport> transportSet = transports.get(origin);
+			Assert.assertEquals("Each origin should have two combined transports", 2, transportSet.size());
+			int i = 0;
+			for (Transport t : transportSet)
+			{
+				Assert.assertEquals(
+					"Combined transports must iterate in the destinations' first-seen order",
+					expectedDestinations[i++],
+					t.getDestination());
+			}
+		}
+	}
 }

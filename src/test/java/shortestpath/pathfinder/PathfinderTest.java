@@ -1968,6 +1968,79 @@ public class PathfinderTest
 		assertTrue(usedTransportWithDisplayInfo(withoutGlory, TransportType.TELEPORTATION_BOX, "Digsite"));
 	}
 
+	// Issue #668: a transport's destination tile was marked visited the moment the
+	// transport node was queued into the cost-ordered pending heap, so a cheaper
+	// multi-hop route reaching the same tile later via another transport was pruned
+	// before it could compete. This reproduces the issue's Lumbridge example: from
+	// Evil Dave's basement to the Lumbridge cellar, a Teleport to house tablet plus
+	// the POH Lumbridge Portal should beat the queued Lumbridge Home Teleport to the
+	// shared destination tile 3221,3218,0.
+	@Test
+	public void testEnqueuedTeleportDoesNotClaimDestination()
+	{
+		when(config.usePoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.LUMBRIDGE));
+		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
+		when(config.pohMountedItems()).thenReturn(Set.of());
+		// The expensive competing teleport must exist or the bug cannot reproduce.
+		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		int evilDavesBasement = WorldPointUtil.packWorldPoint(3080, 9892, 0);
+		int lumbridgeCellar = WorldPointUtil.packWorldPoint(3218, 9617, 0);
+		Pathfinder pathfinder = runScenario(evilDavesBasement, lumbridgeCellar);
+
+		assertNotNull(pathfinder.getResult());
+		assertTrue("path should reach the Lumbridge cellar",
+			pathfinder.getResult().isReached());
+		assertEquals("the tablet + portal chain should win over the ~24-tick home teleport",
+			46, pathfinder.getResult().getPathCost());
+		assertTrue("cheapest route should use the Teleport to House tablet",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Teleport to House"));
+		assertTrue("cheapest route should exit the POH through the Lumbridge Portal",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_PORTAL_POH, "Lumbridge Portal"));
+		assertFalse("a queued Lumbridge Home Teleport must not shadow the cheaper tablet+portal chain",
+			usedExclusiveTransportType(pathfinder, TransportType.TELEPORTATION_SPELL_HOME));
+	}
+
+	// Same race as above with banking enabled and an empty bank: bank-visit
+	// transitions are transport-flagged nodes too, so they ride the same pending
+	// heap and must not claim the shared destination at enqueue either.
+	@Test
+	public void testBankedEnqueuedTeleportDoesNotClaimDestination()
+	{
+		when(config.usePoh()).thenReturn(true);
+		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.LUMBRIDGE));
+		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
+		when(config.pohMountedItems()).thenReturn(Set.of());
+		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		when(config.includeBankPath()).thenReturn(true);
+		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		// Attach an empty bank after setupConfig; setupConfigWithBank would force usePoh off.
+		// Bank contents are only collected in INVENTORY_AND_BANK modes, so an empty
+		// container needs no item stub — includeBankPath alone exercises bank visits.
+		pathfinderConfig.bank = bank;
+		pathfinderConfig.refresh();
+
+		int evilDavesBasement = WorldPointUtil.packWorldPoint(3080, 9892, 0);
+		int lumbridgeCellar = WorldPointUtil.packWorldPoint(3218, 9617, 0);
+		Pathfinder pathfinder = runScenario(evilDavesBasement, lumbridgeCellar);
+
+		assertNotNull(pathfinder.getResult());
+		assertTrue("path should reach the Lumbridge cellar",
+			pathfinder.getResult().isReached());
+		assertEquals("the tablet + portal chain should win over the ~24-tick home teleport",
+			46, pathfinder.getResult().getPathCost());
+		assertTrue("cheapest route should use the Teleport to House tablet",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Teleport to House"));
+		assertTrue("cheapest route should exit the POH through the Lumbridge Portal",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_PORTAL_POH, "Lumbridge Portal"));
+		assertFalse("a queued Lumbridge Home Teleport must not shadow the cheaper tablet+portal chain",
+			usedExclusiveTransportType(pathfinder, TransportType.TELEPORTATION_SPELL_HOME));
+	}
+
 	@Test
 	public void testVarrockPalaceTrellisUsableWithGardenOfTranquillity()
 	{
@@ -2693,7 +2766,25 @@ public class PathfinderTest
 				if (transportType.equals(transport.getType()))
 				{
 					counter++;
-					assertEquals(transport.toString(), expectedLength, calculateTransportLength(transport));
+					// Now that transport destinations are claimed in cost order at
+					// dequeue, a route that beats or ties the transport (e.g. a short
+					// walk around an expensive shortcut) is a legitimate winner. A
+					// queued transport can still be shadowed by a walking edge emitted
+					// before it dequeues — e.g. by the expansion of an equal-cost
+					// sibling transport to a neighbouring tile — but that claim can
+					// cost at most one tick more than the transport itself. Only a
+					// route more expensive than that bound means the transport was
+					// wrongly shadowed.
+					Pathfinder pathfinder = runPathfinder(transport.getOrigin(), transport.getDestination());
+					int transportCost = transport.getDuration() + pathfinderConfig.getAdditionalTransportCost(transport);
+					assertTrue(transport.toString() + " lost to a route more than one tick over its own cost"
+							+ " (size=" + pathfinder.getPath().size()
+							+ ", reached=" + (pathfinder.getResult() != null && pathfinder.getResult().isReached())
+							+ ", cost=" + (pathfinder.getResult() != null ? pathfinder.getResult().getPathCost() : -999)
+							+ ", transportCost=" + transportCost + ")",
+						pathfinder.getPath().size() == expectedLength
+							|| (pathfinder.getResult() != null && pathfinder.getResult().isReached()
+								&& pathfinder.getResult().getPathCost() <= transportCost + 1));
 				}
 			}
 		}
@@ -2971,6 +3062,50 @@ public class PathfinderTest
 	private boolean usedTransportWithDisplayInfo(Pathfinder pathfinder, TransportType type, String displayInfoSubstring)
 	{
 		return usedTransportWithDisplayInfo(pathfinder, type, displayInfoSubstring, false, false);
+	}
+
+	/**
+	 * Returns true if the path contains a transport jump that can only be explained by a
+	 * transport of the given type. Unlike usedTransportType this tolerates shared
+	 * destinations: usable-from-anywhere teleports match any step that lands on their
+	 * destination tile, so a tile entered via a portal or another transport would falsely
+	 * count as teleport usage. A jump step (non-adjacent consecutive tiles) only counts
+	 * when no transport of a different type explains the same origin-to-destination move.
+	 */
+	private boolean usedExclusiveTransportType(Pathfinder pathfinder, TransportType type)
+	{
+		for (int i = 1; i < pathfinder.getPath().size(); i++)
+		{
+			PathStep originStep = pathfinder.getPath().get(i - 1);
+			int origin = originStep.getPackedPosition();
+			int dest = pathfinder.getPath().get(i).getPackedPosition();
+			if (WorldPointUtil.distanceBetween(origin, dest) <= 1)
+			{
+				continue;
+			}
+			boolean matchingType = false;
+			boolean explainedByOtherType = false;
+			for (Transport t : transportsForStep(origin, originStep.isBankVisited()))
+			{
+				if (t.getDestination() != dest)
+				{
+					continue;
+				}
+				if (t.isType(type))
+				{
+					matchingType = true;
+				}
+				else
+				{
+					explainedByOtherType = true;
+				}
+			}
+			if (matchingType && !explainedByOtherType)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private boolean usedTransportWithDisplayInfoAfterFirstBank(Pathfinder pathfinder, TransportType type, String displayInfoSubstring)

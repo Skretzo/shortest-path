@@ -10,6 +10,7 @@ import shortestpath.pathfinder.exact.ExactForwardSearch;
 import shortestpath.pathfinder.exact.ExactRoute;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.pathfinder.exact.ExactWalkCanonicalizer;
+import shortestpath.pathfinder.exact.InGameWalkRewriter;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
 import shortestpath.pathfinder.exact.PreparedTarget;
 import shortestpath.pathfinder.exact.RoutingStatic;
@@ -45,6 +46,9 @@ public final class ExactPathfinder implements ActiveSearch
 	private volatile long forwardSearchNanos;
 	private volatile long walkCanonicalizeNanos;
 	private volatile List<ExactWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
+	private volatile long walkRewriteNanos;
+	private volatile List<Integer> clickPoints = List.of();
+	private volatile List<Integer> keptStepIndices = List.of();
 	private volatile boolean graphReused;
 	private volatile boolean targetReused;
 
@@ -271,6 +275,27 @@ public final class ExactPathfinder implements ActiveSearch
 	{ return walkDiagnostics;
 	}
 
+	/** Time spent rewriting the canonical walking legs into the game's own walking paths. */
+	public long getWalkRewriteNanos()
+	{ return walkRewriteNanos;
+	}
+
+	/**
+	 * Ascending indices into the route's steps of the tiles the player clicks to walk it in game;
+	 * empty until a route is found.
+	 */
+	public List<Integer> getClickPoints()
+	{ return clickPoints;
+	}
+
+	/**
+	 * Ascending indices into the route's steps of the walking steps that kept the canonical step
+	 * because no in-game click realises them; empty until a route is found.
+	 */
+	public List<Integer> getKeptStepIndices()
+	{ return keptStepIndices;
+	}
+
 	/** Whether the account graph came from the session rather than being built for this search. */
 	public boolean isGraphReused()
 	{ return graphReused;
@@ -356,14 +381,20 @@ public final class ExactPathfinder implements ActiveSearch
 				}
 				if (found != null)
 				{
-					// Publish only the canonical path, so the render thread never shows the raw one:
-					// each walking leg's canonical walk among the equally cheap ones.
+					// Publish only the final path, so the render thread never shows the raw one. First
+					// pick each walking leg's canonical walk among the equally cheap ones, then turn it
+					// into the clicks along it and the paths the game's own walking takes between them.
 					phaseStarted = System.nanoTime();
 					ExactWalkCanonicalizer.Result canonical = new ExactWalkCanonicalizer(collision, account,
 						restrictions).canonicalize(found);
 					walkCanonicalizeNanos = System.nanoTime() - phaseStarted;
 					walkDiagnostics = canonical.diagnostics();
-					path = canonical.path();
+					phaseStarted = System.nanoTime();
+					InGameWalkRewriter.Result walked = new InGameWalkRewriter(collision, restrictions).rewrite(canonical);
+					walkRewriteNanos = System.nanoTime() - phaseStarted;
+					clickPoints = walked.clickPoints();
+					keptStepIndices = walked.keptStepIndices();
+					path = walked.path();
 					if (best != null) bestTarget = last(path);
 				}
 			}

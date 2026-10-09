@@ -1419,6 +1419,18 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "drawClickPoints",
+		name = "Show click points",
+		description = "Highlight exact route click points in magenta in the game view",
+		position = 163,
+		section = sectionDebug
+	)
+	default boolean drawClickPoints()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "postTransports",
 		name = "Post transports",
 		description = "Whether to post the transports used in the current path as a PluginMessage event",
