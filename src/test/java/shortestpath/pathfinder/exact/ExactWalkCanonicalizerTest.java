@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
@@ -192,11 +193,11 @@ public class ExactWalkCanonicalizerTest
 		Grid grid = new Grid();
 		// The search drifted east while walking south to the level 30 line, then teleported.
 		List<PathStep> route = new ArrayList<>();
-		route.add(new PathStep(WorldPointUtil.packWorldPoint(3000, 3800, 0), false));
+		route.add(new PathStep(WorldPointUtil.packWorldPoint(3000, 3800, 0), BankVisitState.CARRIED));
 		for (int i = 1; i <= 41; i++)
-			route.add(new PathStep(WorldPointUtil.packWorldPoint(3000 + (i <= 10 ? i : 10), 3800 - i, 0), false));
+			route.add(new PathStep(WorldPointUtil.packWorldPoint(3000 + (i <= 10 ? i : 10), 3800 - i, 0), BankVisitState.CARRIED));
 		int destination = WorldPointUtil.packWorldPoint(3213, 3424, 0);
-		route.add(new PathStep(destination, false));
+		route.add(new PathStep(destination, BankVisitState.CARRIED));
 		byte[] arrivals = new byte[route.size()];
 		arrivals[route.size() - 1] = ExactRoute.fromHub(TeleportCapability.OVER_20);
 		int[] costs = new int[route.size()];
@@ -271,16 +272,16 @@ public class ExactWalkCanonicalizerTest
 	{
 		Grid grid = new Grid();
 		List<PathStep> route = new ArrayList<>(steps(0, 0, 1, 1, 0, 2));
-		route.add(new PathStep(pack(0, 2), true));
-		route.add(new PathStep(pack(1, 3), true));
-		route.add(new PathStep(pack(0, 4), true));
+		route.add(new PathStep(pack(0, 2), BankVisitState.BANKED));
+		route.add(new PathStep(pack(1, 3), BankVisitState.BANKED));
+		route.add(new PathStep(pack(0, 4), BankVisitState.BANKED));
 
 		ExactWalkCanonicalizer.Result result = canonicalize(grid, NO_TRANSPORTS, route);
 
 		List<PathStep> expected = new ArrayList<>(steps(0, 0, 0, 1, 0, 2));
-		expected.add(new PathStep(pack(0, 2), true));
-		expected.add(new PathStep(pack(0, 3), true));
-		expected.add(new PathStep(pack(0, 4), true));
+		expected.add(new PathStep(pack(0, 2), BankVisitState.BANKED));
+		expected.add(new PathStep(pack(0, 3), BankVisitState.BANKED));
+		expected.add(new PathStep(pack(0, 4), BankVisitState.BANKED));
 		assertEquals(describe(expected), describe(result.path()));
 		assertEquals(2, result.legs());
 	}
@@ -382,14 +383,14 @@ public class ExactWalkCanonicalizerTest
 		List<String> tiles = new ArrayList<>();
 		for (PathStep step : path)
 			tiles.add((x(step.getPackedPosition()) - BASE_X) + "," + (y(step.getPackedPosition()) - BASE_Y)
-				+ (step.isBankVisited() ? " banked" : ""));
+				+ (step.getBankVisitState() == BankVisitState.BANKED ? " banked" : ""));
 		return tiles;
 	}
 
 	private static List<PathStep> steps(int... xy)
 	{
 		List<PathStep> steps = new ArrayList<>();
-		for (int i = 0; i < xy.length; i += 2) steps.add(new PathStep(pack(xy[i], xy[i + 1]), false));
+		for (int i = 0; i < xy.length; i += 2) steps.add(new PathStep(pack(xy[i], xy[i + 1]), BankVisitState.CARRIED));
 		return steps;
 	}
 

@@ -2,6 +2,7 @@ package shortestpath.pathfinder.exact;
 
 import java.util.Arrays;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 
 /** Query-lifetime raw seeds and provenance-reduced exact seed scans. */
@@ -39,17 +40,19 @@ public final class PreparedHeuristic
 		SiteGraph graph = overlay.graph();
 		for (int site = 0; site < graph.spatialNodeCount(); site++)
 		{
-			addSite(raw, reduced, reverse, overlay, site, stat.siteTile(site), stat.siteComponents(site), false);
-			addSite(raw, reduced, reverse, overlay, site, stat.siteTile(site), stat.siteComponents(site), true);
+			addSite(raw, reduced, reverse, overlay, site, stat.siteTile(site), stat.siteComponents(site),
+				BankVisitState.CARRIED);
+			addSite(raw, reduced, reverse, overlay, site, stat.siteTile(site), stat.siteComponents(site),
+				BankVisitState.BANKED);
 		}
 		for (int target = 0; target < overlay.targetCount(); target++)
 		{
 			if (!overlay.synthetic(target))
 				continue;
 			addSite(raw, reduced, reverse, overlay, overlay.targetNode(target), overlay.packedTarget(target),
-				overlay.componentsView(target), false);
+				overlay.componentsView(target), BankVisitState.CARRIED);
 			addSite(raw, reduced, reverse, overlay, overlay.targetNode(target), overlay.packedTarget(target),
-				overlay.componentsView(target), true);
+				overlay.componentsView(target), BankVisitState.BANKED);
 		}
 		int[][] tiles = new int[bucketCount][], labels = new int[bucketCount][];
 		int[][] generatorTiles = new int[bucketCount][], generatorLabels = new int[bucketCount][];
@@ -72,27 +75,27 @@ public final class PreparedHeuristic
 	{
 		return reverse;
 	}
-	public int seedCount(int component, boolean banked)
+	public int seedCount(int component, BankVisitState banked)
 	{
 		return seedTiles[key(component, banked)].length;
 	}
-	public int seedTile(int component, boolean banked, int index)
+	public int seedTile(int component, BankVisitState banked, int index)
 	{
 		return seedTiles[key(component, banked)][index];
 	}
-	public int seedLabel(int component, boolean banked, int index)
+	public int seedLabel(int component, BankVisitState banked, int index)
 	{
 		return seedLabels[key(component, banked)][index];
 	}
-	public int generatorCount(int component, boolean banked)
+	public int generatorCount(int component, BankVisitState banked)
 	{
 		return generatorTiles[key(component, banked)].length;
 	}
-	public int generatorTile(int component, boolean banked, int index)
+	public int generatorTile(int component, BankVisitState banked, int index)
 	{
 		return generatorTiles[key(component, banked)][index];
 	}
-	public int generatorLabel(int component, boolean banked, int index)
+	public int generatorLabel(int component, BankVisitState banked, int index)
 	{
 		return generatorLabels[key(component, banked)][index];
 	}
@@ -114,12 +117,12 @@ public final class PreparedHeuristic
 		return preparationNanos;
 	}
 
-	public int estimate(int packed, boolean banked)
+	public int estimate(int packed, BankVisitState banked)
 	{
 		return estimate(packed, banked, overlay.routingStatic().attachments(packed, overlay.collision()));
 	}
 
-	public int estimate(TargetOverlay candidate, int packed, boolean banked)
+	public int estimate(TargetOverlay candidate, int packed, BankVisitState banked)
 	{
 		candidate.requireCompatible(overlay.graph());
 		if (candidate != overlay)
@@ -128,19 +131,19 @@ public final class PreparedHeuristic
 	}
 
 	/** Evaluate against the collision snapshot used to create the target overlay. */
-	public int estimate(CollisionMap collision, int packed, boolean banked)
+	public int estimate(CollisionMap collision, int packed, BankVisitState banked)
 	{
 		if (collision == null)
 			throw new NullPointerException("collision");
 		return estimate(packed, banked, overlay.routingStatic().attachments(packed, collision));
 	}
 
-	public int estimate(int packed, boolean banked, int[] components)
+	public int estimate(int packed, BankVisitState banked, int[] components)
 	{
 		return estimateTable(packed, banked, components, generatorTiles, generatorLabels, true);
 	}
 
-	public int estimateBaseNode(int packed, boolean banked, int component)
+	public int estimateBaseNode(int packed, BankVisitState banked, int component)
 	{
 		int best = targetLabel(packed, banked);
 		int site = overlay.routingStatic().siteIndex(packed);
@@ -150,17 +153,17 @@ public final class PreparedHeuristic
 	}
 
 	/** Raw seed-scan oracle retained for reduced-generator differential checks. */
-	int estimateRaw(int packed, boolean banked, int[] components)
+	int estimateRaw(int packed, BankVisitState banked, int[] components)
 	{
 		return estimateTable(packed, banked, components, seedTiles, seedLabels, false);
 	}
 
-	int estimateGenerators(int packed, boolean banked, int[] components)
+	int estimateGenerators(int packed, BankVisitState banked, int[] components)
 	{
 		return estimateTable(packed, banked, components, generatorTiles, generatorLabels, false);
 	}
 
-	private int estimateTable(int packed, boolean banked, int[] components, int[][] tiles, int[][] labels,
+	private int estimateTable(int packed, BankVisitState banked, int[] components, int[][] tiles, int[][] labels,
 		boolean fallbackToRaw)
 	{
 		RoutingStatic stat = overlay.routingStatic();
@@ -173,7 +176,7 @@ public final class PreparedHeuristic
 		return best;
 	}
 
-	private int estimateComponent(int packed, boolean banked, int component, int[][] tiles, int[][] labels,
+	private int estimateComponent(int packed, BankVisitState banked, int component, int[][] tiles, int[][] labels,
 		boolean fallbackToRaw)
 	{
 		int key = key(component, banked);
@@ -192,7 +195,7 @@ public final class PreparedHeuristic
 	}
 
 	private static void addSite(IntList[] raw, GeneratorList[] reduced, ReverseLabels reverse,
-		TargetOverlay overlay, int node, int packed, int[] components, boolean banked)
+		TargetOverlay overlay, int node, int packed, int[] components, BankVisitState banked)
 	{
 		int state = SiteGraph.stateId(node, banked);
 		int distance = reverse.label(node, banked);
@@ -209,7 +212,8 @@ public final class PreparedHeuristic
 				? origin : state;
 			int generatorNode = generatorState / 2;
 			int generatorTile = overlay.nodeTile(generatorNode);
-			int generatorLabel = reverse.label(generatorNode, (generatorState & 1) != 0);
+			int generatorLabel = reverse.label(generatorNode,
+				(generatorState & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED);
 			if (reduced[key] == null)
 				reduced[key] = new GeneratorList();
 			reduced[key].add(generatorState, generatorTile, generatorLabel);
@@ -235,15 +239,15 @@ public final class PreparedHeuristic
 		return contains(originComponents, component);
 	}
 
-	private int targetLabel(int packed, boolean banked)
+	private int targetLabel(int packed, BankVisitState banked)
 	{
 		int target = overlay.targetIndex(packed);
 		return target < 0 ? ExactCosts.INF : reverse.targetLabel(target, banked);
 	}
 
-	private static int key(int component, boolean banked)
+	private static int key(int component, BankVisitState banked)
 	{
-		return component * 2 + (banked ? 1 : 0);
+		return component * 2 + (banked == BankVisitState.BANKED ? 1 : 0);
 	}
 
 	private static void add(IntList[] raw, int key, int packed, int label)

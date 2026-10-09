@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
@@ -97,7 +98,7 @@ public final class BankPickupRequirements
 			{
 				int stepPoint = path.get(i).getPackedPosition();
 				int nextPoint = path.get(i + 1).getPackedPosition();
-				boolean banked = path.get(i + 1).isBankVisited();
+				BankVisitState banked = path.get(i + 1).getBankVisitState();
 
 				List<Transport> edgeAlternatives = new ArrayList<>();
 				// When the step carries the transport the search actually used, that single

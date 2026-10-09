@@ -83,6 +83,7 @@ import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.ExactPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
@@ -1400,7 +1401,7 @@ public class ShortestPathPlugin extends Plugin
 	 * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
 	 * <p>
 	 * Do not use this for reasoning about which transports are available at a specific
-	 * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
+	 * step of a path. Use PathfinderConfig.getTransportAvailability(BankVisitState) and the
 	 * path's PathStep state instead.
 	 */
 	public PrimitiveIntHashMap<Transport[]> getTransports()
@@ -1453,13 +1454,16 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return Set.of(nextStep.getTransport());
 		}
-		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
+		BankVisitState bankVisitState =
+			currentStep.getBankVisitState() == BankVisitState.BANKED
+				|| nextStep.getBankVisitState() == BankVisitState.BANKED
+				? BankVisitState.BANKED : BankVisitState.CARRIED;
 		// Get the transports which start from the position of starting step.
 		Set<Transport> stepTransports = new HashSet<>(Arrays.asList(
-			pathfinderConfig.getTransportsPacked(bankVisited)
+			pathfinderConfig.getTransportsPacked(bankVisitState)
 				.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)));
 		// Add the teleports, which might be used from anywhere.
-		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisited)));
+		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisitState)));
 		// Remove transports which do not target the correct location.
 		stepTransports.removeIf(transport -> transport.getDestination() != nextStep.getPackedPosition());
 		// Remove teleports that share destinations with a local transport type on this edge.
