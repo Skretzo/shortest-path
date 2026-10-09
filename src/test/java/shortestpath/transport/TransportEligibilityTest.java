@@ -7,6 +7,7 @@ import java.util.Set;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.ItemVariations;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
@@ -257,8 +258,8 @@ public class TransportEligibilityTest
 		playerHas.put(ItemID.COINS, 100);
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, 4);
 
-		assertFalse(eligibility.usable(SHANTAY_GATE, false));
-		assertFalse(eligibility.usable(SHANTAY_GATE, true));
+		assertFalse(eligibility.usable(SHANTAY_GATE, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
 		assertTrue(eligibility.satisfiedByPlayer(SHANTAY_GATE));
 	}
 
@@ -268,8 +269,8 @@ public class TransportEligibilityTest
 		bankHas.put(ItemID.SHANTAY_PASS, 1);
 
 		TransportEligibility eligibility = eligibility(NO_POUCH);
-		assertFalse(eligibility.usable(SHANTAY_GATE, false));
-		assertTrue(eligibility.usable(SHANTAY_GATE, true));
+		assertFalse(eligibility.usable(SHANTAY_GATE, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
 		assertFalse(eligibility.satisfiedByPlayer(SHANTAY_GATE));
 	}
 
@@ -278,8 +279,8 @@ public class TransportEligibilityTest
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
 
-		assertFalse(eligibility.usable(fairyRing(), false));
-		assertFalse(eligibility.usable(fairyRing(), true));
+		assertFalse(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(fairyRing(), BankVisitState.BANKED));
 	}
 
 	@Test
@@ -288,8 +289,8 @@ public class TransportEligibilityTest
 		bankHas.put(ItemID.DRAMEN_STAFF, 1);
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
 
-		assertFalse(eligibility.usable(fairyRing(), false));
-		assertTrue(eligibility.usable(fairyRing(), true));
+		assertFalse(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(fairyRing(), BankVisitState.BANKED));
 	}
 
 	@Test
@@ -297,8 +298,8 @@ public class TransportEligibilityTest
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
 
-		assertTrue(eligibility.usable(fairyRing(), false));
-		assertTrue(eligibility.usable(fairyRing(), true));
+		assertTrue(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(fairyRing(), BankVisitState.BANKED));
 	}
 
 	@Test
@@ -347,8 +348,8 @@ public class TransportEligibilityTest
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.ALL, false, Integer.MAX_VALUE);
 
-		assertTrue(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), false));
-		assertTrue(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), true));
+		assertTrue(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), BankVisitState.BANKED));
 	}
 
 	@Test
@@ -359,7 +360,7 @@ public class TransportEligibilityTest
 		playerHas.put(ItemID.WATERRUNE, 1);
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
 
-		assertFalse(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), false));
+		assertFalse(eligibility.usable(teleportItem(FALADOR_TELEPORT.getItemRequirements()), BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -368,14 +369,14 @@ public class TransportEligibilityTest
 		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements());
 		TransportEligibility lacking = eligibility(TeleportationItem.INVENTORY, false, Integer.MAX_VALUE);
 
-		assertFalse(lacking.usable(teleport, false));
+		assertFalse(lacking.usable(teleport, BankVisitState.CARRIED));
 
 		playerHas.put(ItemID.LAWRUNE, 1);
 		playerHas.put(ItemID.AIRRUNE, 3);
 		playerHas.put(ItemID.WATERRUNE, 1);
 		TransportEligibility carrying = eligibility(TeleportationItem.INVENTORY, false, Integer.MAX_VALUE);
 
-		assertTrue(carrying.usable(teleport, false));
+		assertTrue(carrying.usable(teleport, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -415,8 +416,8 @@ public class TransportEligibilityTest
 		Transport free = new Transport.TransportBuilder().type(TransportType.TRANSPORT).build();
 		TransportEligibility eligibility = eligibility(NO_POUCH);
 
-		assertTrue(eligibility.usable(free, false));
-		assertTrue(eligibility.usable(free, true));
+		assertTrue(eligibility.usable(free, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(free, BankVisitState.BANKED));
 		assertTrue(eligibility.satisfiedByPlayer(free));
 		assertNotNull(eligibility.bankPickupPlan(free).items);
 		assertTrue(eligibility.bankPickupPlan(free).items.isEmpty());

@@ -36,16 +36,16 @@ public class ReverseLabelsTest
 		assertEquals(graph.nodeCount() + 1, target.queryNodeCount());
 		assertEquals(5, target.attachmentCount());
 		ReverseLabels reverse = ReverseLabels.compute(target);
-		assertEquals(0, reverse.targetLabel(false));
-		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_A), false));
-		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_C), false));
-		assertEquals(ExactCosts.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), false));
+		assertEquals(0, reverse.targetLabel(BankVisitState.CARRIED));
+		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_A), BankVisitState.CARRIED));
+		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_C), BankVisitState.CARRIED));
+		assertEquals(ExactCosts.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), BankVisitState.CARRIED));
 
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, reverse);
-		assertEquals(0, heuristic.estimate(RoutingStaticTestFixture.T3_TARGET, false));
-		assertEquals(1, heuristic.estimate(RoutingStaticTestFixture.T3_SEARCH_0, false));
-		assertEquals(1, heuristic.estimate(RoutingStaticTestFixture.T3_SEARCH_0, false, new int[] {0}));
-		assertEquals(ExactCosts.INF, heuristic.estimate(20000, false, new int[0]));
+		assertEquals(0, heuristic.estimate(RoutingStaticTestFixture.T3_TARGET, BankVisitState.CARRIED));
+		assertEquals(1, heuristic.estimate(RoutingStaticTestFixture.T3_SEARCH_0, BankVisitState.CARRIED));
+		assertEquals(1, heuristic.estimate(RoutingStaticTestFixture.T3_SEARCH_0, BankVisitState.CARRIED, new int[] {0}));
+		assertEquals(ExactCosts.INF, heuristic.estimate(20000, BankVisitState.CARRIED, new int[0]));
 	}
 
 	@Test
@@ -60,12 +60,12 @@ public class ReverseLabelsTest
 		assertTrue(!staticTarget.synthetic());
 		assertEquals(graph.nodeForTile(RoutingStaticTestFixture.T3_D), staticTarget.targetNode());
 		ReverseLabels reverse = ReverseLabels.compute(staticTarget);
-		assertEquals(7, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_B), false));
+		assertEquals(7, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_B), BankVisitState.CARRIED));
 
 		TargetOverlay reverseDirection =
 			new TargetOverlay(graph, collision(RoutingStaticTestFixture.T3_B), RoutingStaticTestFixture.T3_B);
 		reverse = ReverseLabels.compute(reverseDirection);
-		assertEquals(ExactCosts.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), false));
+		assertEquals(ExactCosts.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -78,7 +78,7 @@ public class ReverseLabelsTest
 		SiteGraph graph = new SiteGraph(stat, account);
 		ReverseLabels stale = ReverseLabels.compute(
 			new TargetOverlay(graph, collision(RoutingStaticTestFixture.T3_D), RoutingStaticTestFixture.T3_D));
-		assertEquals(8, stale.label(graph.nodeForTile(RoutingStaticTestFixture.T3_A), false));
+		assertEquals(8, stale.label(graph.nodeForTile(RoutingStaticTestFixture.T3_A), BankVisitState.CARRIED));
 		assertTrue(stale.staleCount() > 0);
 
 		PreparedRoutingAccount bankAccount =
@@ -92,10 +92,10 @@ public class ReverseLabelsTest
 			new TargetOverlay(bankGraph, collision(RoutingStaticTestFixture.T3_D), RoutingStaticTestFixture.T3_D);
 		ReverseLabels reverse = ReverseLabels.compute(target);
 		int bank = bankGraph.nodeForTile(RoutingStaticTestFixture.T3_B);
-		assertEquals(6, reverse.label(bank, false));
-		assertEquals(20, reverse.label(bank, true));
-		assertEquals(6, reverse.label(bankGraph.bankedGlobalHubNode(), true));
-		assertEquals(ExactCosts.INF, reverse.label(bankGraph.bankedGlobalHubNode(), false));
+		assertEquals(6, reverse.label(bank, BankVisitState.CARRIED));
+		assertEquals(20, reverse.label(bank, BankVisitState.BANKED));
+		assertEquals(6, reverse.label(bankGraph.bankedGlobalHubNode(), BankVisitState.BANKED));
+		assertEquals(ExactCosts.INF, reverse.label(bankGraph.bankedGlobalHubNode(), BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -122,7 +122,7 @@ public class ReverseLabelsTest
 				collision(RoutingStaticTestFixture.T3_TARGET), RoutingStaticTestFixture.T3_TARGET);
 		try
 		{
-			heuristic.estimate(otherTarget, RoutingStaticTestFixture.T3_TARGET, false);
+			heuristic.estimate(otherTarget, RoutingStaticTestFixture.T3_TARGET, BankVisitState.CARRIED);
 			fail("another static snapshot must be rejected");
 		}
 		catch (IllegalArgumentException expected)
@@ -154,8 +154,8 @@ public class ReverseLabelsTest
 		RoutingStatic stat = target.routingStatic();
 		int[] labels = new int[target.queryNodeCount() * 2];
 		Arrays.fill(labels, ExactCosts.INF);
-		labels[target.targetState(false)] = 0;
-		labels[target.targetState(true)] = 0;
+		labels[target.targetState(BankVisitState.CARRIED)] = 0;
+		labels[target.targetState(BankVisitState.BANKED)] = 0;
 		boolean changed;
 		do
 		{
@@ -167,7 +167,7 @@ public class ReverseLabelsTest
 					changed |= relax(labels, graph.reverseFromState(edge), labels[state], graph.reverseCost(edge));
 				}
 			}
-			for (boolean banked : new boolean[] {false, true})
+			for (BankVisitState banked : BankVisitState.values())
 			{
 				for (int from = 0; from < graph.spatialNodeCount(); from++)
 				{

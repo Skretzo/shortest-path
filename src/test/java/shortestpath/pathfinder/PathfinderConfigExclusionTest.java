@@ -55,7 +55,7 @@ public class PathfinderConfigExclusionTest
 			new Item(ItemID.LAWRUNE, 1));
 
 		refresh();
-		Transport varrockTeleport = Arrays.stream(pathfinderConfig.getUsableTeleports(false))
+		Transport varrockTeleport = Arrays.stream(pathfinderConfig.getUsableTeleports(BankVisitState.CARRIED))
 			.filter(t -> VARROCK_TELEPORT.equals(t.getDisplayInfo()))
 			.findFirst()
 			.orElseThrow(AssertionError::new);
@@ -94,7 +94,7 @@ public class PathfinderConfigExclusionTest
 
 	private boolean varrockTeleportUsable()
 	{
-		return Arrays.stream(pathfinderConfig.getUsableTeleports(false))
+		return Arrays.stream(pathfinderConfig.getUsableTeleports(BankVisitState.CARRIED))
 			.anyMatch(t -> VARROCK_TELEPORT.equals(t.getDisplayInfo()));
 	}
 }

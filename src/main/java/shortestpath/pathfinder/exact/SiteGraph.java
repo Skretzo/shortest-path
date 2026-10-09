@@ -1,6 +1,7 @@
 package shortestpath.pathfinder.exact;
 
 import java.util.Arrays;
+import shortestpath.pathfinder.BankVisitState;
 
 /** Immutable two-layer account-specific site graph with reverse CSR edges. */
 public final class SiteGraph
@@ -37,14 +38,14 @@ public final class SiteGraph
 		nodeCount = spatialCount + (hasBankedGlobalHub ? 1 : 0);
 
 		EdgeBuilder edges = new EdgeBuilder();
-		addLocalEdges(edges, account.localView(false), false, stat);
-		addLocalEdges(edges, account.localView(true), true, stat);
+		addLocalEdges(edges, account.localView(BankVisitState.CARRIED), BankVisitState.CARRIED, stat);
+		addLocalEdges(edges, account.localView(BankVisitState.BANKED), BankVisitState.BANKED, stat);
 		if (account.bankPathEnabled())
 		{
 			for (int bankSite : bankSites)
 			{
-				edges.add(stateId(bankSite, false), stateId(bankSite, true), account.bankVisitCost(), true,
-					EdgeKind.BANK_TRANSITION);
+				edges.add(stateId(bankSite, BankVisitState.CARRIED), stateId(bankSite, BankVisitState.BANKED),
+					account.bankVisitCost(), true, EdgeKind.BANK_TRANSITION);
 			}
 		}
 		if (hasBankedGlobalHub)
@@ -52,16 +53,16 @@ public final class SiteGraph
 			int hub = spatialCount;
 			for (int bankSite : bankSites)
 			{
-				edges.add(stateId(bankSite, false), stateId(hub, true), account.bankVisitCost(), true,
-					EdgeKind.BANK_GLOBAL_ENTRY);
+				edges.add(stateId(bankSite, BankVisitState.CARRIED), stateId(hub, BankVisitState.BANKED),
+					account.bankVisitCost(), true, EdgeKind.BANK_GLOBAL_ENTRY);
 			}
 			for (int destination : globalDestinations)
 			{
-				int cost = minimumGlobalCost(account.globalView(true), destination);
+				int cost = minimumGlobalCost(account.globalView(BankVisitState.BANKED), destination);
 				if (cost != ExactCosts.INF)
 				{
-					edges.add(stateId(hub, true), stateId(stat.siteIndex(destination), true), cost, false,
-						EdgeKind.BANK_GLOBAL_DESTINATION);
+					edges.add(stateId(hub, BankVisitState.BANKED), stateId(stat.siteIndex(destination), BankVisitState.BANKED),
+						cost, false, EdgeKind.BANK_GLOBAL_DESTINATION);
 				}
 			}
 		}
@@ -70,7 +71,7 @@ public final class SiteGraph
 			int from = stat.crossingFromSite(i);
 			int to = stat.crossingToSite(i);
 			int cost = ExactCosts.validate(stat.crossingCost(i));
-			for (boolean banked : new boolean[] {false, true})
+			for (BankVisitState banked : BankVisitState.values())
 			{
 				edges.add(stateId(from, banked), stateId(to, banked), cost, true, EdgeKind.SEPARATOR);
 				edges.add(stateId(to, banked), stateId(from, banked), cost, true, EdgeKind.SEPARATOR);
@@ -155,15 +156,15 @@ public final class SiteGraph
 		return EdgeKind.values()[reverseKinds[edge]];
 	}
 
-	public static int stateId(int node, boolean banked)
+	public static int stateId(int node, BankVisitState banked)
 	{
 		if (node < 0)
 			throw new IllegalArgumentException("negative site node");
-		return node * 2 + (banked ? 1 : 0);
+		return node * 2 + (banked == BankVisitState.BANKED ? 1 : 0);
 	}
 
 	private static void addLocalEdges(
-		EdgeBuilder edges, PreparedRoutingAccount.View view, boolean banked, RoutingStatic stat)
+		EdgeBuilder edges, PreparedRoutingAccount.View view, BankVisitState banked, RoutingStatic stat)
 	{
 		for (int i = 0; i < view.count; i++)
 		{
@@ -178,7 +179,7 @@ public final class SiteGraph
 
 	private static void validateEndpoints(PreparedRoutingAccount account, RoutingStatic stat)
 	{
-		for (boolean banked : new boolean[] {false, true})
+		for (BankVisitState banked : BankVisitState.values())
 		{
 			PreparedRoutingAccount.View local = account.localView(banked);
 			for (int i = 0; i < local.count; i++)
@@ -219,7 +220,7 @@ public final class SiteGraph
 
 	private static int[] globalDestinations(PreparedRoutingAccount account, RoutingStatic stat)
 	{
-		PreparedRoutingAccount.View view = account.globalView(true);
+		PreparedRoutingAccount.View view = account.globalView(BankVisitState.BANKED);
 		int[] result = new int[view.count];
 		int count = 0;
 		for (int i = 0; i < view.count; i++)

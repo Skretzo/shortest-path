@@ -40,9 +40,9 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.COINS, 3_000), Map.of(), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, first),
-			new PathStep(EDGE_DESTINATION, false, second));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, first),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, second));
 
 		assertSame(second, PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -54,9 +54,9 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.COINS, 6_000), Map.of(), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
-			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, coinFare(3_000)));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -72,10 +72,10 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.COINS, 3_000), Map.of(ItemID.COINS, 10_000), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
-			new PathStep(EDGE_DESTINATION, true),
-			new PathStep(FINAL_TILE, true, coinFare(3_000)));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, BankVisitState.BANKED),
+			new PathStep(FINAL_TILE, BankVisitState.BANKED, coinFare(3_000)));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -91,10 +91,10 @@ public class PathConsumptionValidatorTest
 			Map.of(), Map.of(ItemID.COINS, 3_000), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, true),
-			new PathStep(EDGE_DESTINATION, true, coinFare(3_000)),
-			new PathStep(FINAL_TILE, true, second));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.BANKED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.BANKED, coinFare(3_000)),
+			new PathStep(FINAL_TILE, BankVisitState.BANKED, second));
 
 		assertSame(second, PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -109,9 +109,9 @@ public class PathConsumptionValidatorTest
 			Map.of(), Map.of(ItemID.COINS, 3_000), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_DESTINATION, true, coinFare(3_000)),
-			new PathStep(FINAL_TILE, true));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.BANKED, coinFare(3_000)),
+			new PathStep(FINAL_TILE, BankVisitState.BANKED));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -127,9 +127,9 @@ public class PathConsumptionValidatorTest
 			Map.of(), Map.of(ItemID.COINS, 3_000), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, fare),
-			new PathStep(EDGE_DESTINATION, true));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, fare),
+			new PathStep(EDGE_DESTINATION, BankVisitState.BANKED));
 
 		assertSame(fare, PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -143,9 +143,9 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.LAWRUNE, 1), Map.of(), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, first),
-			new PathStep(EDGE_DESTINATION, false, second));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, first),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, second));
 
 		assertSame(second, PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -159,9 +159,9 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.DRAMEN_STAFF, 1), Map.of(), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, dramenSpell()),
-			new PathStep(EDGE_DESTINATION, false, dramenSpell()));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, dramenSpell()),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, dramenSpell()));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -177,9 +177,9 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.HG_QUETZALWHISTLE_BASIC, 1), TeleportationItem.INVENTORY);
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, first),
-			new PathStep(EDGE_DESTINATION, false, second));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, first),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, second));
 
 		assertSame(second, PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -193,9 +193,9 @@ public class PathConsumptionValidatorTest
 		TransportEligibility eligibility = eligibilityWithSetting(Map.of(), TeleportationItem.ALL);
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, quetzalWhistle()),
-			new PathStep(EDGE_DESTINATION, false, quetzalWhistle()));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, quetzalWhistle()),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, quetzalWhistle()));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -207,9 +207,9 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.ROPE, 1), Map.of(), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, ropeGate()),
-			new PathStep(EDGE_DESTINATION, false, ropeGate()));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, ropeGate()),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, ropeGate()));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -223,10 +223,10 @@ public class PathConsumptionValidatorTest
 			Map.of(ItemID.COINS, 3_000), Map.of(), NO_POUCH, Map.of());
 
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)),
-			new PathStep(FINAL_TILE, false));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, coinFare(3_000)),
+			new PathStep(FINAL_TILE, BankVisitState.CARRIED));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, path));
 	}
@@ -235,8 +235,8 @@ public class PathConsumptionValidatorTest
 	public void missingEligibilitySkipsValidation()
 	{
 		List<PathStep> path = List.of(
-			new PathStep(START, false),
-			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)));
+			new PathStep(START, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, coinFare(3_000)));
 
 		assertNull(PathConsumptionValidator.firstUnpayable(null, path));
 	}
@@ -250,7 +250,7 @@ public class PathConsumptionValidatorTest
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, null));
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility, List.of()));
 		assertNull(PathConsumptionValidator.firstUnpayable(eligibility,
-			List.of(new PathStep(START, false))));
+			List.of(new PathStep(START, BankVisitState.CARRIED))));
 	}
 
 	/**

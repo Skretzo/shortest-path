@@ -10,6 +10,7 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
@@ -115,8 +116,8 @@ public final class BankPickupRequirements
 				// grows through committed pickups. Refilling at a mid-path bank would
 				// under-ask here. Consumers replaying a routed path call
 				// ConsumptionLedger.visitBank instead — the two interpretations of
-				// isBankVisited are intentionally different.
-				boolean banked = path.get(i + 1).isBankVisited();
+				// the bank-visit state are intentionally different.
+				BankVisitState banked = path.get(i + 1).getBankVisitState();
 
 				List<Transport> edgeAlternatives = new ArrayList<>();
 				// When the step carries the transport the search actually used, that single

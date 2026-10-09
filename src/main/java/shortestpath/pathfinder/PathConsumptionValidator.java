@@ -30,7 +30,7 @@ public final class PathConsumptionValidator
 	 * The first transport on {@code path} the ledger cannot pay for after earlier
 	 * consumption, or {@code null} when the path is fully payable — or when there
 	 * is no snapshot or path to validate. Only transports recorded on the path
-	 * steps are considered. {@code bankVisited} is a state flag, not a visit
+	 * steps are considered. {@code bankVisitState} is a state flag, not a visit
 	 * event — every step after the banking point carries it — so the pool
 	 * refills once, on the unbanked-to-banked transition. The refill precedes
 	 * the transition step's own edge: the bank-visit node itself is not a path
@@ -48,7 +48,8 @@ public final class PathConsumptionValidator
 		for (int i = 1; i < path.size(); i++)
 		{
 			PathStep step = path.get(i);
-			if (step.isBankVisited() && !path.get(i - 1).isBankVisited())
+			if (step.getBankVisitState() == BankVisitState.BANKED
+				&& path.get(i - 1).getBankVisitState() != BankVisitState.BANKED)
 			{
 				ledger.visitBank();
 			}

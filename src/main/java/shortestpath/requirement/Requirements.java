@@ -13,6 +13,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.poh.PohService;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.ItemRequirement;
@@ -585,7 +586,7 @@ public final class Requirements
 	private RejectionReason itemRequirement(Transport transport)
 	{
 		TransportEligibility eligibility = context.getEligibility();
-		if (!eligibility.usable(transport, false) && !eligibility.usable(transport, true))
+		if (!eligibility.usable(transport, BankVisitState.CARRIED) && !eligibility.usable(transport, BankVisitState.BANKED))
 		{
 			return RejectionReason.ITEM_REQUIREMENT;
 		}

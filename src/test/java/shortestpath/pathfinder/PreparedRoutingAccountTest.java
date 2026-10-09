@@ -46,20 +46,20 @@ public class PreparedRoutingAccountTest
 			PreparedRoutingAccount.compile(availability(ordinary, wilderness, sharedLocal, carriedLocal),
 				availability(ordinary, wilderness, sharedLocal, bankedLocal), true, Set.of(RoutingStaticTestFixture.BANK), 0, true, ignored -> penalty);
 
-		assertEquals(2, first.localCount(false));
-		assertEquals(2, first.localCount(true));
-		assertEquals(2, first.globalCount(false));
-		assertEquals(2, first.globalCount(true));
-		assertEquals(1, first.globalCount(TeleportCapability.OVER_20, false));
-		assertEquals(1, first.globalCount(TeleportCapability.OVER_20, true));
-		assertEquals(6, first.localCost(false, 0));
-		assertEquals(7, first.localCost(true, 0));
-		assertEquals(6, first.globalCost(TeleportCapability.OVER_20, true, 0));
+		assertEquals(2, first.localCount(BankVisitState.CARRIED));
+		assertEquals(2, first.localCount(BankVisitState.BANKED));
+		assertEquals(2, first.globalCount(BankVisitState.CARRIED));
+		assertEquals(2, first.globalCount(BankVisitState.BANKED));
+		assertEquals(1, first.globalCount(TeleportCapability.OVER_20, BankVisitState.CARRIED));
+		assertEquals(1, first.globalCount(TeleportCapability.OVER_20, BankVisitState.BANKED));
+		assertEquals(6, first.localCost(BankVisitState.CARRIED, 0));
+		assertEquals(7, first.localCost(BankVisitState.BANKED, 0));
+		assertEquals(6, first.globalCost(TeleportCapability.OVER_20, BankVisitState.BANKED, 0));
 		assertEquals(first.fingerprint(), second.fingerprint());
 
 		// The prepared arrays are query-local; later mutation of a source transport cannot alter them.
 		carriedLocal.setDestination(RoutingStaticTestFixture.D);
-		assertEquals(RoutingStaticTestFixture.BANK, first.localDestination(false, 0));
+		assertEquals(RoutingStaticTestFixture.BANK, first.localDestination(BankVisitState.CARRIED, 0));
 	}
 
 	@Test
@@ -68,9 +68,9 @@ public class PreparedRoutingAccountTest
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(
 			availability(global(RoutingStaticTestFixture.C, 1, 29), global(RoutingStaticTestFixture.D, 1, 30)),
 			availability(), false, Set.of(), 0, true, ignored -> 0);
-		assertEquals(2, account.globalCount(false));
-		assertEquals(1, account.globalCount(TeleportCapability.OVER_20, false));
-		assertEquals(30, account.globalMaxWilderness(TeleportCapability.OVER_20, false, 0));
+		assertEquals(2, account.globalCount(BankVisitState.CARRIED));
+		assertEquals(1, account.globalCount(TeleportCapability.OVER_20, BankVisitState.CARRIED));
+		assertEquals(30, account.globalMaxWilderness(TeleportCapability.OVER_20, BankVisitState.CARRIED, 0));
 	}
 
 	@Test
@@ -83,14 +83,14 @@ public class PreparedRoutingAccountTest
 		PreparedRoutingAccount account =
 			PreparedRoutingAccount.compile(builder.build(), availability(), false, Set.of(), 0, true, ignored -> 0);
 		Set<Integer> origins = new HashSet<>();
-		for (int i = 0; i < account.localCount(false); i++)
-			origins.add(account.localOrigin(false, i));
+		for (int i = 0; i < account.localCount(BankVisitState.CARRIED); i++)
+			origins.add(account.localOrigin(BankVisitState.CARRIED, i));
 		assertTrue(origins.contains(RoutingStaticTestFixture.POH_ORIGIN));
 		assertTrue(origins.contains(RoutingStaticTestFixture.POH_LANDING));
 
 		PreparedRoutingAccount unavailable = PreparedRoutingAccount.compile(
 			availability(), availability(), false, Set.of(), 0, true, ignored -> 0);
-		assertEquals(0, unavailable.localCount(false));
+		assertEquals(0, unavailable.localCount(BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -108,21 +108,21 @@ public class PreparedRoutingAccountTest
 
 		assertEquals(7, graph.nodeCount());
 		assertEquals(14, graph.stateCount());
-		assertEquals(bank * 2, SiteGraph.stateId(bank, false));
-		assertEquals(bank * 2 + 1, SiteGraph.stateId(bank, true));
+		assertEquals(bank * 2, SiteGraph.stateId(bank, BankVisitState.CARRIED));
+		assertEquals(bank * 2 + 1, SiteGraph.stateId(bank, BankVisitState.BANKED));
 		assertTrue(graph.hasBankedGlobalHub());
-		assertTrue(has(graph, SiteGraph.stateId(bank, false), SiteGraph.stateId(hub, true), 0,
+		assertTrue(has(graph, SiteGraph.stateId(bank, BankVisitState.CARRIED), SiteGraph.stateId(hub, BankVisitState.BANKED), 0,
 			SiteGraph.EdgeKind.BANK_GLOBAL_ENTRY));
-		assertTrue(has(graph, SiteGraph.stateId(hub, true), SiteGraph.stateId(destination, true), 6,
+		assertTrue(has(graph, SiteGraph.stateId(hub, BankVisitState.BANKED), SiteGraph.stateId(destination, BankVisitState.BANKED), 6,
 			SiteGraph.EdgeKind.BANK_GLOBAL_DESTINATION));
-		assertFalse(has(graph, SiteGraph.stateId(bank, true), SiteGraph.stateId(bank, false), 0, null));
-		assertTrue(has(graph, SiteGraph.stateId(bank, false), SiteGraph.stateId(bank, true), 0,
+		assertFalse(has(graph, SiteGraph.stateId(bank, BankVisitState.BANKED), SiteGraph.stateId(bank, BankVisitState.CARRIED), 0, null));
+		assertTrue(has(graph, SiteGraph.stateId(bank, BankVisitState.CARRIED), SiteGraph.stateId(bank, BankVisitState.BANKED), 0,
 			SiteGraph.EdgeKind.BANK_TRANSITION));
 		assertTrue(
-			has(graph, SiteGraph.stateId(0, false), SiteGraph.stateId(2, false), 1, SiteGraph.EdgeKind.SEPARATOR));
+			has(graph, SiteGraph.stateId(0, BankVisitState.CARRIED), SiteGraph.stateId(2, BankVisitState.CARRIED), 1, SiteGraph.EdgeKind.SEPARATOR));
 		assertTrue(
-			has(graph, SiteGraph.stateId(2, false), SiteGraph.stateId(0, false), 1, SiteGraph.EdgeKind.SEPARATOR));
-		assertTrue(has(graph, SiteGraph.stateId(0, true), SiteGraph.stateId(2, true), 1, SiteGraph.EdgeKind.SEPARATOR));
+			has(graph, SiteGraph.stateId(2, BankVisitState.CARRIED), SiteGraph.stateId(0, BankVisitState.CARRIED), 1, SiteGraph.EdgeKind.SEPARATOR));
+		assertTrue(has(graph, SiteGraph.stateId(0, BankVisitState.BANKED), SiteGraph.stateId(2, BankVisitState.BANKED), 1, SiteGraph.EdgeKind.SEPARATOR));
 	}
 
 	@Test
@@ -161,9 +161,9 @@ public class PreparedRoutingAccountTest
 
 		assertEquals(7, costed.bankVisitCost());
 		assertTrue(free.fingerprint() != costed.fingerprint());
-		assertTrue(has(graph, SiteGraph.stateId(bank, false), SiteGraph.stateId(bank, true), 7,
+		assertTrue(has(graph, SiteGraph.stateId(bank, BankVisitState.CARRIED), SiteGraph.stateId(bank, BankVisitState.BANKED), 7,
 			SiteGraph.EdgeKind.BANK_TRANSITION));
-		assertTrue(has(graph, SiteGraph.stateId(bank, false), SiteGraph.stateId(graph.bankedGlobalHubNode(), true), 7,
+		assertTrue(has(graph, SiteGraph.stateId(bank, BankVisitState.CARRIED), SiteGraph.stateId(graph.bankedGlobalHubNode(), BankVisitState.BANKED), 7,
 			SiteGraph.EdgeKind.BANK_GLOBAL_ENTRY));
 		try
 		{
@@ -188,10 +188,10 @@ public class PreparedRoutingAccountTest
 
 		assertTrue("the static data still has the bank", stat.isBankSite(stat.siteIndex(RoutingStaticTestFixture.BANK)));
 		assertFalse(inaccessible.hasBankedGlobalHub());
-		assertFalse(has(inaccessible, SiteGraph.stateId(bank, false), SiteGraph.stateId(bank, true), 0,
+		assertFalse(has(inaccessible, SiteGraph.stateId(bank, BankVisitState.CARRIED), SiteGraph.stateId(bank, BankVisitState.BANKED), 0,
 			SiteGraph.EdgeKind.BANK_TRANSITION));
 		assertTrue(accessible.hasBankedGlobalHub());
-		assertTrue(has(accessible, SiteGraph.stateId(bank, false), SiteGraph.stateId(bank, true), 0,
+		assertTrue(has(accessible, SiteGraph.stateId(bank, BankVisitState.CARRIED), SiteGraph.stateId(bank, BankVisitState.BANKED), 0,
 			SiteGraph.EdgeKind.BANK_TRANSITION));
 	}
 
@@ -212,7 +212,7 @@ public class PreparedRoutingAccountTest
 		PreparedRoutingAccount overflow = PreparedRoutingAccount.compile(
 			availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, Integer.MAX_VALUE)),
 			availability(), false, Set.of(), 0, true, ignored -> 1);
-		assertEquals(ExactCosts.INF, overflow.localCost(false, 0));
+		assertEquals(ExactCosts.INF, overflow.localCost(BankVisitState.CARRIED, 0));
 		try
 		{
 			PreparedRoutingAccount.compile(

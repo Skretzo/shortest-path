@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.ItemVariations;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
@@ -105,13 +106,13 @@ public final class TransportEligibility
 
 	/**
 	 * Whether the transport's item requirements are met by the carried pool
-	 * ({@code banked} false) or the bank-path pool ({@code banked} true). Teleportation
-	 * item transports are first bypassed or blocked by the teleportation-item setting;
-	 * fairy rings additionally require a Dramen/Lunar staff when the Lumbridge Elite
-	 * diary is incomplete; everything else defers to
+	 * ({@link BankVisitState#CARRIED}) or the bank-path pool ({@link BankVisitState#BANKED}).
+	 * Teleportation item transports are first bypassed or blocked by the
+	 * teleportation-item setting; fairy rings additionally require a Dramen/Lunar
+	 * staff when the Lumbridge Elite diary is incomplete; everything else defers to
 	 * {@link TransportItems#isSatisfiedBy} at the configured currency threshold.
 	 */
-	public boolean usable(Transport transport, boolean banked)
+	public boolean usable(Transport transport, BankVisitState banked)
 	{
 		Boolean typeVerdict = teleportationItemVerdict(transport);
 		if (typeVerdict != null)
@@ -119,7 +120,7 @@ public final class TransportEligibility
 			return typeVerdict;
 		}
 
-		Map<Integer, Integer> ownedItems = banked ? bankPathItems : carriedItems;
+		Map<Integer, Integer> ownedItems = banked == BankVisitState.BANKED ? bankPathItems : carriedItems;
 
 		// Fairy rings require Dramen/Lunar staff unless the Lumbridge Elite diary is complete
 		if (TransportType.FAIRY_RING.equals(transport.getType()) && fairyRingStaffRequired

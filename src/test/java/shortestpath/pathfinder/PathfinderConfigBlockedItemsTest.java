@@ -532,7 +532,7 @@ public class PathfinderConfigBlockedItemsTest
 
 	private static boolean usable(PathfinderConfig cfg, Transport transport, boolean bankVisited)
 	{
-		for (Transport t : cfg.getUsableTeleports(bankVisited))
+		for (Transport t : cfg.getUsableTeleports(bankVisited ? BankVisitState.BANKED : BankVisitState.CARRIED))
 		{
 			if (t == transport)
 			{

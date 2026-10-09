@@ -28,7 +28,7 @@ public class NodeGraphTest
 		assertTrue(graph.isTile(start));
 		assertFalse(graph.isAbstract(start));
 		assertFalse(graph.isTransport(start));
-		assertFalse(graph.bankVisited(start));
+		assertEquals(BankVisitState.CARRIED, graph.bankVisited(start));
 	}
 
 	@Test
@@ -38,7 +38,7 @@ public class NodeGraphTest
 		int a = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int b = WorldPointUtil.packWorldPoint(3205, 3203, 0);
 		int start = graph.createStart(a);
-		int tile = graph.createTile(b, start, false);
+		int tile = graph.createTile(b, start, BankVisitState.CARRIED);
 
 		assertEquals(WorldPointUtil.distanceBetween(a, b), graph.cost(tile));
 		assertEquals(start, graph.previous(tile));
@@ -53,13 +53,13 @@ public class NodeGraphTest
 		int a = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int b = WorldPointUtil.packWorldPoint(3300, 3300, 0);
 		int start = graph.createStart(a);
-		int tileBeforeAbstract = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, false);
-		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tileBeforeAbstract, true);
-		int tileFromAbstract = graph.createTile(b, abstractNode, true);
+		int tileBeforeAbstract = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, BankVisitState.CARRIED);
+		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tileBeforeAbstract, BankVisitState.BANKED);
+		int tileFromAbstract = graph.createTile(b, abstractNode, BankVisitState.BANKED);
 
 		// Reaching a tile from an abstract node adds no travel cost: it inherits the abstract cost.
 		assertEquals(graph.cost(abstractNode), graph.cost(tileFromAbstract));
-		assertTrue(graph.bankVisited(tileFromAbstract));
+		assertEquals(BankVisitState.BANKED, graph.bankVisited(tileFromAbstract));
 	}
 
 	@Test
@@ -67,8 +67,8 @@ public class NodeGraphTest
 	{
 		NodeGraph graph = new NodeGraph(16);
 		int start = graph.createStart(WorldPointUtil.packWorldPoint(3200, 3200, 0));
-		int tile = graph.createTile(WorldPointUtil.packWorldPoint(3210, 3200, 0), start, false);
-		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_OVER_30, tile, false);
+		int tile = graph.createTile(WorldPointUtil.packWorldPoint(3210, 3200, 0), start, BankVisitState.CARRIED);
+		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_OVER_30, tile, BankVisitState.CARRIED);
 
 		assertEquals(graph.cost(tile), graph.cost(abstractNode));
 		assertTrue(graph.isAbstract(abstractNode));
@@ -84,7 +84,7 @@ public class NodeGraphTest
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int destination = WorldPointUtil.packWorldPoint(2800, 3400, 0);
 		int start = graph.createStart(origin);
-		int prev = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, false);
+		int prev = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), start, BankVisitState.CARRIED);
 
 		int travelTime = 6;
 		int additionalCost = 50;
@@ -93,7 +93,7 @@ public class NodeGraphTest
 			.origin(origin)
 			.destination(destination)
 			.build();
-		int transport = graph.createTransport(destination, prev, travelTime, additionalCost, false, true,
+		int transport = graph.createTransport(destination, prev, travelTime, additionalCost, BankVisitState.CARRIED, true,
 			differentialCost, used);
 
 		// No walking-distance term for transports, unlike a walked tile.
@@ -115,14 +115,13 @@ public class NodeGraphTest
 		Transport used = new Transport.TransportBuilder()
 			.destination(WorldPointUtil.packWorldPoint(2800, 3400, 0))
 			.build();
-		int transport = graph.createTransport(WorldPointUtil.packWorldPoint(2800, 3400, 0), start, 6, 0,
-			true, false, 0, used);
+		int transport = graph.createTransport(WorldPointUtil.packWorldPoint(2800, 3400, 0), start, 6, 0, BankVisitState.BANKED, false, 0, used);
 
 		assertTrue(graph.isTransport(transport));
 		assertFalse(graph.isDelayedVisit(transport));
 		assertEquals(0, graph.differentialCost(transport));
 		assertEquals(graph.cost(transport), graph.compareCost(transport));
-		assertTrue(graph.bankVisited(transport));
+		assertEquals(BankVisitState.BANKED, graph.bankVisited(transport));
 	}
 
 	@Test
@@ -140,7 +139,7 @@ public class NodeGraphTest
 		assertTrue(graph.isTransport(bankVisit));
 		assertTrue(graph.isTile(bankVisit));
 		assertFalse(graph.isAbstract(bankVisit));
-		assertTrue(graph.bankVisited(bankVisit));
+		assertEquals(BankVisitState.BANKED, graph.bankVisited(bankVisit));
 
 		// A bank visit is a state change, not a movement step: the tile the player banked
 		// at is already in the path as the preceding step.
@@ -158,12 +157,12 @@ public class NodeGraphTest
 		int b = WorldPointUtil.packWorldPoint(3201, 3200, 0);
 		int c = WorldPointUtil.packWorldPoint(2800, 3400, 0);
 		int start = graph.createStart(a);
-		int tile = graph.createTile(b, start, false);
-		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tile, false);
+		int tile = graph.createTile(b, start, BankVisitState.CARRIED);
+		int abstractNode = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, tile, BankVisitState.CARRIED);
 		Transport teleport = new Transport.TransportBuilder()
 			.destination(c)
 			.build();
-		int teleportDest = graph.createTransport(c, abstractNode, 6, 0, false, false, 0, teleport);
+		int teleportDest = graph.createTransport(c, abstractNode, 6, 0, BankVisitState.CARRIED, false, 0, teleport);
 
 		var steps = graph.getPathSteps(teleportDest);
 		assertEquals(3, steps.size()); // start, tile, teleportDest (abstract is skipped)
