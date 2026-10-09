@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 
@@ -149,7 +150,7 @@ public final class InGameWalkRewriter
 	private void rewriteLeg(List<PathStep> path, int from, int to, List<PathStep> rewritten,
 		List<Integer> clicks, List<Integer> kept)
 	{
-		boolean banked = path.get(from).isBankVisited();
+		BankVisitState banked = path.get(from).getBankVisitState();
 		int current = from;
 		while (current < to)
 		{
