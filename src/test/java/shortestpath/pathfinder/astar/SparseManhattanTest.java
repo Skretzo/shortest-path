@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
 
@@ -29,7 +30,7 @@ public class SparseManhattanTest
 		assertTrue(sparse.sparse());
 		assertTrue(sparse.sparseRelaxationCount() > 0);
 		assertTrue(sparse.attachmentRelaxationCount() > 0);
-		assertEquals(0, sparse.targetLabel(false));
+		assertEquals(0, sparse.targetLabel(BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -43,13 +44,13 @@ public class SparseManhattanTest
 		for (int packed : new int[] {A, B, C, TARGET, OTHER_PLANE,
 			WorldPointUtil.packWorldPoint(1002, 1002, 0)})
 		{
-			assertEquals(heuristic.estimateRaw(packed, false, new int[] {0}),
-				heuristic.estimate(packed, false, new int[] {0}));
-			assertEquals(heuristic.estimateRaw(packed, true, new int[] {0}),
-				heuristic.estimate(packed, true, new int[] {0}));
+			assertEquals(heuristic.estimateRaw(packed, BankVisitState.CARRIED, new int[] {0}),
+				heuristic.estimate(packed, BankVisitState.CARRIED, new int[] {0}));
+			assertEquals(heuristic.estimateRaw(packed, BankVisitState.BANKED, new int[] {0}),
+				heuristic.estimate(packed, BankVisitState.BANKED, new int[] {0}));
 		}
-		assertEquals(heuristic.rawSeedCount(), heuristic.seedCount(0, false) + heuristic.seedCount(0, true)
-			+ heuristic.seedCount(1, false) + heuristic.seedCount(1, true));
+		assertEquals(heuristic.rawSeedCount(), heuristic.seedCount(0, BankVisitState.CARRIED) + heuristic.seedCount(0, BankVisitState.BANKED)
+			+ heuristic.seedCount(1, BankVisitState.CARRIED) + heuristic.seedCount(1, BankVisitState.BANKED));
 		assertEquals(10, heuristic.rawSeedCount());
 		assertEquals(4, heuristic.generatorCount());
 		assertEquals(0.4, heuristic.generatorRatio(), 0.0);

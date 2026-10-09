@@ -1,9 +1,7 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import shortestpath.pathfinder.BankVisitState;
 
 /** Reverse labels in the relaxed graph with a clique oracle and sparse production path. */
 @AllArgsConstructor
@@ -42,7 +40,7 @@ public final class ReverseLabels
 		int pushes = 0;
 		for (int target = 0; target < overlay.targetCount(); target++)
 		{
-			for (boolean banked : new boolean[] {false, true})
+			for (BankVisitState banked : BankVisitState.values())
 			{
 				int seed = overlay.targetState(target, banked);
 				labels[seed] = 0;
@@ -61,7 +59,7 @@ public final class ReverseLabels
 			}
 			settled++;
 			int node = state / 2;
-			boolean banked = (state & 1) != 0;
+			BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 			if (node < graph.nodeCount())
 			{
 				for (int edge = graph.reverseEdgeStart(state); edge < graph.reverseEdgeEnd(state); edge++)
@@ -118,7 +116,7 @@ public final class ReverseLabels
 		int pushes = 0;
 		for (int target = 0; target < overlay.targetCount(); target++)
 		{
-			for (boolean banked : new boolean[] {false, true})
+			for (BankVisitState banked : BankVisitState.values())
 			{
 				int seed = overlay.targetState(target, banked);
 				doubled[seed] = 0;
@@ -140,7 +138,7 @@ public final class ReverseLabels
 			}
 			settled++;
 			int vertex = state / 2;
-			boolean banked = (state & 1) != 0;
+			BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 			if (vertex < graph.nodeCount())
 			{
 				for (int edge = graph.reverseEdgeStart(state); edge < graph.reverseEdgeEnd(state); edge++)
@@ -189,15 +187,19 @@ public final class ReverseLabels
 			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started, true);
 	}
 
-	public int label(int node, boolean banked)
+	public TargetOverlay overlay()
+	{
+		return overlay;
+	}
+	public int label(int node, BankVisitState banked)
 	{
 		return labels[SiteGraph.stateId(node, banked)];
 	}
-	public int targetLabel(boolean banked)
+	public int targetLabel(BankVisitState banked)
 	{
 		return labels[overlay.targetState(banked)];
 	}
-	public int targetLabel(int target, boolean banked)
+	public int targetLabel(int target, BankVisitState banked)
 	{
 		return labels[overlay.targetState(target, banked)];
 	}
