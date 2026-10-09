@@ -5,6 +5,7 @@ import java.util.Arrays;
 import static net.runelite.api.Constants.REGION_SIZE;
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.NodeGraph;
 import shortestpath.pathfinder.SplitFlagMap;
@@ -163,14 +164,14 @@ final class SailingSearch
 	 * The cheapest cost tile (x, y, z) has been queued at so far, or {@link Integer#MAX_VALUE} if it hasn't been; 0 if it's
 	 * off the map, so it never is.
 	 */
-	int queuedCost(int x, int y, int z, boolean bankVisited)
+	int queuedCost(int x, int y, int z, BankVisitState bankVisited)
 	{
 		int region = regionIndex(x, y, z);
 		if (region < 0)
 		{
 			return 0;
 		}
-		int[] costs = queuedCosts[bankVisited ? 1 : 0][region];
+		int[] costs = queuedCosts[bankVisited == BankVisitState.BANKED ? 1 : 0][region];
 		return costs == null ? Integer.MAX_VALUE : costs[tileIndex(x, y)];
 	}
 
@@ -178,10 +179,10 @@ final class SailingSearch
 	 * Notes that tile (x, y, z) is queued at {@code cost}; only lowers the noted cost, so it stays the
 	 * cheapest the tile has been queued at (see {@link #queuedCost}).
 	 */
-	void setQueuedCost(int x, int y, int z, boolean bankVisited, int cost)
+	void setQueuedCost(int x, int y, int z, BankVisitState bankVisited, int cost)
 	{
 		int region = regionIndex(x, y, z);
-		int[][] byRegion = queuedCosts[bankVisited ? 1 : 0];
+		int[][] byRegion = queuedCosts[bankVisited == BankVisitState.BANKED ? 1 : 0];
 		if (byRegion[region] == null)
 		{
 			byRegion[region] = new int[REGION_SIZE * REGION_SIZE];
@@ -199,7 +200,7 @@ final class SailingSearch
 	 *
 	 * @return whether the move should be queued despite its cost
 	 */
-	boolean queueArrival(int packedPosition, int move, int x, int y, int z, boolean bankVisited)
+	boolean queueArrival(int packedPosition, int move, int x, int y, int z, BankVisitState bankVisited)
 	{
 		if (hull == null || arrivedTarget(packedPosition, moves.heading(move)) == WorldPointUtil.UNDEFINED)
 		{
@@ -210,7 +211,7 @@ final class SailingSearch
 		{
 			return false;
 		}
-		int[][] byRegion = queuedArrivals[bankVisited ? 1 : 0];
+		int[][] byRegion = queuedArrivals[bankVisited == BankVisitState.BANKED ? 1 : 0];
 		int[] arrivals = byRegion[region];
 		if (arrivals == null)
 		{
@@ -249,7 +250,7 @@ final class SailingSearch
 	// would arrive on a heading none has tried, since the cheapest route's facing may not cover a target. The cost
 	// check comes first, which costs less than the line or hull check. With a hull, the whole boat must fit along the
 	// move, which also keeps its centre clear.
-	void addNeighbors(CollisionMap map, PrimitiveIntList out, int node, int x, int y, int z, boolean bankVisited,
+	void addNeighbors(CollisionMap map, PrimitiveIntList out, int node, int x, int y, int z, BankVisitState bankVisited,
 		VisitedTiles visited, NodeGraph graph)
 	{
 		// The boat faces the way it sailed into the node — or, on the start node, the way it's pointing, so

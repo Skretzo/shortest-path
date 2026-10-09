@@ -1,6 +1,7 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -144,7 +145,7 @@ public final class TargetOverlay
 	{
 		return attachmentCosts[target][index];
 	}
-	public int targetState(int target, boolean banked)
+	public int targetState(int target, BankVisitState banked)
 	{
 		return SiteGraph.stateId(nodes[target], banked);
 	}
@@ -208,7 +209,7 @@ public final class TargetOverlay
 		return attachmentCost(single(), index);
 	}
 	/** The only target's state; single-target overlays only. */
-	public int targetState(boolean banked)
+	public int targetState(BankVisitState banked)
 	{
 		return targetState(single(), banked);
 	}

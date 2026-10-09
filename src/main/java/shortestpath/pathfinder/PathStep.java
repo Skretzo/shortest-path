@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 public final class PathStep
 {
 	private final int packedPosition;
-	private final boolean bankVisited;
+	private final BankVisitState bankVisitState;
 	/**
 	 * The transport that produced the edge leading to this step, or null when the step
 	 * was reached by walking (or was built without transport identity). Carrying the
@@ -19,10 +19,15 @@ public final class PathStep
 	 */
 	private final Transport transport;
 
-	public PathStep(int packedPosition, boolean bankVisited)
+	public PathStep(int packedPosition, BankVisitState bankVisitState)
 	{
-		this(packedPosition, bankVisited, null);
+		this(packedPosition, bankVisitState, null);
 	}
 
-
+	public PathStep(int packedPosition, BankVisitState bankVisitState, Transport transport)
+	{
+		this.packedPosition = packedPosition;
+		this.bankVisitState = bankVisitState;
+		this.transport = transport;
+	}
 }

@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.settings.Effect;
 import shortestpath.transport.Transport;
@@ -263,10 +264,10 @@ public class PohServiceTest
 		int outside = WorldPointUtil.packWorldPoint(3000, 3300, 0);
 
 		List<PathStep> path = List.of(
-			new PathStep(outside, false),
-			new PathStep(inside1, false),
-			new PathStep(inside2, false),
-			new PathStep(outside, false));
+			new PathStep(outside, BankVisitState.CARRIED),
+			new PathStep(inside1, BankVisitState.CARRIED),
+			new PathStep(inside2, BankVisitState.CARRIED),
+			new PathStep(outside, BankVisitState.CARRIED));
 
 		Transport portal = transport(TransportType.TELEPORTATION_PORTAL_POH, "Lumbridge Portal", null, 0);
 		assertEquals("Nexus: Lumbridge Portal",
@@ -287,9 +288,9 @@ public class PohServiceTest
 
 		// A non-POH destination produces no exit info.
 		List<PathStep> path = List.of(
-			new PathStep(inside1, false),
-			new PathStep(inside2, false),
-			new PathStep(outside, false));
+			new PathStep(inside1, BankVisitState.CARRIED),
+			new PathStep(inside2, BankVisitState.CARRIED),
+			new PathStep(outside, BankVisitState.CARRIED));
 		assertNull(service.getPohExitInfo(outside, path, 0, (a, b) -> Set.of(portal)));
 
 		assertNull(service.getPohExitInfo(LANDING, null, 0, (a, b) -> Set.of(portal)));
@@ -297,9 +298,9 @@ public class PohServiceTest
 
 		// A path that never crosses the boundary produces no exit info.
 		List<PathStep> allInside = List.of(
-			new PathStep(inside1, false),
-			new PathStep(inside2, false),
-			new PathStep(inside1, false));
+			new PathStep(inside1, BankVisitState.CARRIED),
+			new PathStep(inside2, BankVisitState.CARRIED),
+			new PathStep(inside1, BankVisitState.CARRIED));
 		assertNull(service.getPohExitInfo(LANDING, allInside, 0, (a, b) -> Set.of(portal)));
 	}
 }

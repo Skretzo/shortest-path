@@ -8,6 +8,7 @@ import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.IntDeque;
 import shortestpath.pathfinder.IntMinHeap;
@@ -388,7 +389,7 @@ public class SailingPathfinder implements ActiveSearch
 				// is a sailing move that arrives on its own heading, queued for it because the
 				// settled heading didn't cover a target.
 				int packed = graph.packedPosition(node);
-				boolean bank = graph.bankVisited(node);
+				BankVisitState bank = graph.bankVisited(node);
 				if (visited.get(packed, bank)
 					&& !(graph.isWeighted(node)
 						&& sailing.arrivedTarget(packed, sailing.arrivalHeading(graph, node)) != WorldPointUtil.UNDEFINED))
