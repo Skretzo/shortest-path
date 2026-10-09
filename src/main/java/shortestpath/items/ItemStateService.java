@@ -18,22 +18,24 @@ import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.Unlock;
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.settings.TeleportationItem;
 
 /**
  * Owns the plugin's player item state observed from game events — the live
  * open-bank container, the container/varbit inputs that feed the eligibility
- * snapshot, and the bank-pickup projection cache — and reports each admitted
- * change to the shell as an {@link ItemChange} fact. The service never writes
- * back to the engine; the shell maps the fact's declared effects to its
- * follow-up actions, and {@link #getBankPickup} reads the engine config it is
- * handed without retaining it.
+ * snapshot, and the bank-pickup projection cache — and declares each admitted
+ * change to the {@link RefreshCoordinator} as an {@link ItemChange} fact. The
+ * service never writes back to the engine; the coordinator maps the fact's
+ * declared effects to its follow-up actions, and {@link #getBankPickup} reads
+ * the engine config it is handed without retaining it.
  */
 @Singleton
 public class ItemStateService
 {
 	private final Client client;
+	private final RefreshCoordinator coordinator;
 
 	/**
 	 * LIVE reference to the last-opened bank container — never copied or
@@ -48,21 +50,23 @@ public class ItemStateService
 	private boolean bankPickupDirty = true;
 
 	@Inject
-	public ItemStateService(Client client)
+	public ItemStateService(Client client, RefreshCoordinator coordinator)
 	{
 		this.client = client;
+		this.coordinator = coordinator;
 	}
 
 	private ItemStateService()
 	{
-		this(null);
+		this(null, null);
 	}
 
 	/**
 	 * Test/harness seam: returns an instance detached from Guice. The
 	 * production instance is the injected singleton. Without a client the
 	 * detached instance cannot resolve item names — pickup phrases from
-	 * {@link #getBankPickup} degrade to "Unknown item" placeholders.
+	 * {@link #getBankPickup} degrade to "Unknown item" placeholders — and
+	 * without a coordinator its change declares no-op.
 	 */
 	public static ItemStateService forTesting()
 	{
@@ -75,17 +79,26 @@ public class ItemStateService
 	 */
 	public static ItemStateService forTesting(Client client)
 	{
-		return new ItemStateService(client);
+		return new ItemStateService(client, null);
+	}
+
+	/**
+	 * Test seam for asserting change declares: the returned instance hands
+	 * admitted facts to the given (typically mocked) coordinator.
+	 */
+	public static ItemStateService forTesting(RefreshCoordinator coordinator)
+	{
+		return new ItemStateService(null, coordinator);
 	}
 
 	/**
 	 * Consumes an item-container event. The bank container id additionally
 	 * updates the live bank reference; the tracked containers (bank,
-	 * inventory, worn equipment) return a fact declaring
-	 * {@link Effect#ELIGIBILITY_STALE}. Any other container is not item
-	 * state and returns {@code null}.
+	 * inventory, worn equipment) declare a fact carrying
+	 * {@link Effect#ELIGIBILITY_STALE} to the coordinator. Any other
+	 * container is not item state and declares nothing.
 	 */
-	public ItemChange onContainerChanged(int containerId, ItemContainer container)
+	public void onContainerChanged(int containerId, ItemContainer container)
 	{
 		if (containerId == InventoryID.BANK)
 		{
@@ -95,28 +108,40 @@ public class ItemStateService
 			|| containerId == InventoryID.WORN)
 		{
 			bankPickupDirty = true;
-			return new ItemChange("container:" + containerId, Set.of(Effect.ELIGIBILITY_STALE));
+			declare(new ItemChange("container:" + containerId, Set.of(Effect.ELIGIBILITY_STALE)));
 		}
-		return null;
 	}
 
 	/**
 	 * Consumes a varbit event. Rune pouch contents and the Lumbridge Elite
 	 * diary feed the eligibility snapshot but change without firing a
-	 * container event, so their varbits return a fact declaring
-	 * {@link Effect#ELIGIBILITY_STALE}. Any other varbit returns
-	 * {@code null}.
+	 * container event, so their varbits declare a fact carrying
+	 * {@link Effect#ELIGIBILITY_STALE} to the coordinator. Any other varbit
+	 * declares nothing.
 	 */
-	public ItemChange onVarbitChanged(int varbitId)
+	public void onVarbitChanged(int varbitId)
 	{
 		if (varbitId == VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE
 			|| containsVarbit(OwnedItems.RUNE_POUCH_RUNE_VARBITS, varbitId)
 			|| containsVarbit(OwnedItems.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
 		{
 			bankPickupDirty = true;
-			return new ItemChange("varbit:" + varbitId, Set.of(Effect.ELIGIBILITY_STALE));
+			declare(new ItemChange("varbit:" + varbitId, Set.of(Effect.ELIGIBILITY_STALE)));
 		}
-		return null;
+	}
+
+	/**
+	 * Hands an admitted fact to the refresh coordinator. Detached
+	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * no-ops there; a null fact declares nothing, mirroring the return-null
+	 * convention the shell's mapper used to guard.
+	 */
+	private void declare(ItemChange change)
+	{
+		if (change != null && coordinator != null)
+		{
+			coordinator.itemsChanged(change);
+		}
 	}
 
 	private static boolean containsVarbit(int[] varbits, int varbitId)
