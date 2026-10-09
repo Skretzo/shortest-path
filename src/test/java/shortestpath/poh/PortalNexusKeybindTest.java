@@ -2,10 +2,14 @@ package shortestpath.poh;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -16,14 +20,18 @@ import net.runelite.client.config.ConfigManager;
 import org.junit.Before;
 import org.junit.Test;
 
+import shortestpath.scheduler.RefreshCoordinator;
+
 public class PortalNexusKeybindTest
 {
 	private PohService keybinds;
+	private RefreshCoordinator coordinator;
 
 	@Before
 	public void setUp()
 	{
-		keybinds = new PohService();
+		coordinator = mock(RefreshCoordinator.class);
+		keybinds = PohService.forTesting(coordinator);
 	}
 
 	@Test
@@ -181,9 +189,12 @@ public class PortalNexusKeybindTest
 			"shortestpath", PohService.CONFIG_KEY))
 			.thenReturn("2|lassar=Y|waterbirth island=F3");
 
-		PohService persisted = new PohService(configManager);
+		PohService persisted = new PohService(configManager, coordinator);
 		persisted.loadFromProfile();
 
+		// A consulted store always declares — the load is not conditional
+		// on what it found.
+		verify(coordinator).pohChanged(argThat(c -> "profile".equals(c.getKey())));
 		assertEquals("Y: Lassar Portal", persisted.apply("Lassar Portal"));
 		assertEquals("F3: Waterbirth Island Portal", persisted.apply("Waterbirth Island Portal"));
 	}
@@ -315,12 +326,15 @@ public class PortalNexusKeybindTest
 	public void testBareDialogLineProducesNoKey()
 	{
 		// A plugin rewriting the menu can strip the key prefix entirely; a
-		// bare destination name must not be assigned a positional key.
+		// bare destination name must not be assigned a positional key — and
+		// declares nothing to the coordinator.
+		keybinds.putFromDialogLine("<col=ffffff>Harmony Island");
 		keybinds.putFromDialogLine("Lassar");
-		keybinds.putFromDialogLine("Waterbirth Island");
+		keybinds.putFromDialogLine(":  Waterbirth Island");
 
+		verify(coordinator, never()).pohChanged(any());
+		assertEquals("Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
 		assertEquals("Lassar Portal", keybinds.apply("Lassar Portal"));
-		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
