@@ -1,11 +1,11 @@
-package shortestpath;
+package shortestpath.scheduler;
 
 public class PendingTask
 {
 	private final int tick;
 	private final Runnable task;
 
-	PendingTask(int tick, Runnable task)
+	public PendingTask(int tick, Runnable task)
 	{
 		this.tick = tick;
 		this.task = task;
