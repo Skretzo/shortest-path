@@ -147,6 +147,7 @@ public class ShortestPathPlugin extends Plugin
 	public boolean drawMinimap;
 	public boolean drawTiles;
 	public boolean drawTransports;
+	public boolean drawClickPoints;
 	public boolean showTransportInfo;
 	public boolean showBankPickupInfo;
 	public boolean showUnreachableText;
@@ -1907,6 +1908,7 @@ public class ShortestPathPlugin extends Plugin
 		drawMinimap = override("drawMinimap", config.drawMinimap());
 		drawTiles = override("drawTiles", config.drawTiles());
 		drawTransports = override("drawTransports", config.drawTransports());
+		drawClickPoints = override("drawClickPoints", config.drawClickPoints());
 		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
 		showUnreachableText = override("showUnreachableText", config.showUnreachableText());

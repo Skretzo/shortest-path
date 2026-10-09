@@ -37,6 +37,7 @@ import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.ExactPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements;
@@ -68,6 +69,7 @@ public class PathTileOverlay extends Overlay
 
 	private static final Color COLOR_AVAILABLE = Color.WHITE;
 	private static final Color COLOR_UNAVAILABLE = Color.ORANGE;
+	private static final Color COLOR_CLICK_POINT = new Color(255, 0, 255, 150);
 
 	private void renderTransports(Graphics2D graphics)
 	{
@@ -375,6 +377,26 @@ public class PathTileOverlay extends Overlay
 			if (plugin.isPathUnreachable() && plugin.showUnreachableText)
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
+			}
+		}
+
+		// Click points without the path are floating marks, so they follow the same drawTiles
+		// gate and POH skip as the path tiles.
+		if (plugin.drawTiles && plugin.drawClickPoints && plugin.getActiveSearch() instanceof ExactPathfinder)
+		{
+			ExactPathfinder exact = (ExactPathfinder) plugin.getActiveSearch();
+			if (exact.isDone() && !exact.isShowingProvisionalPath())
+			{
+				List<PathStep> path = exact.getPath();
+				for (int index : exact.getClickPoints())
+				{
+					int point = path.get(index).getPackedPosition();
+					if (!ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(point),
+						WorldPointUtil.unpackWorldY(point)))
+					{
+						drawTile(graphics, point, COLOR_CLICK_POINT, -1, true);
+					}
+				}
 			}
 		}
 
