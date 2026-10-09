@@ -3,7 +3,7 @@ package shortestpath.requirement;
 import java.util.EnumSet;
 import java.util.Set;
 import org.junit.Test;
-import shortestpath.transport.PohNexusPortal;
+import shortestpath.poh.PohNexusPortal;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

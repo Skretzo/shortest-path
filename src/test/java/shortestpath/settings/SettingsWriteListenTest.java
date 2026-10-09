@@ -28,7 +28,7 @@ import org.junit.Test;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.TestShortestPathConfig;
-import shortestpath.transport.PohNexusPortal;
+import shortestpath.poh.PohNexusPortal;
 
 /**
  * Pins the panel write/listen/keyed-read contract on {@link Settings} —
