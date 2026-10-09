@@ -64,9 +64,10 @@ public class Settings
 	 * {@link ShortestPathConfig}. Kept as a literal so this leaf package
 	 * neither reads annotations reflectively nor references the plugin class;
 	 * a divergence would surface as every persisted read/write missing its
-	 * namespace.
+	 * namespace. Public so sibling leaf packages (e.g. {@code poh}) reuse the
+	 * one literal rather than duplicating it per call site.
 	 */
-	private static final String CONFIG_GROUP = "shortestpath";
+	public static final String CONFIG_GROUP = "shortestpath";
 
 	/**
 	 * Retained for the persisted write path (panel edits write through the

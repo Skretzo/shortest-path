@@ -21,6 +21,7 @@ import net.runelite.client.util.Text;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.settings.Effect;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -325,7 +326,7 @@ public class PohService
 		{
 			return null;
 		}
-		String stored = configManager.getRSProfileConfiguration("shortestpath", CONFIG_KEY);
+		String stored = configManager.getRSProfileConfiguration(Settings.CONFIG_GROUP, CONFIG_KEY);
 		deserialize(stored, keysByNormalizedName);
 		lastSaved = serialize(keysByNormalizedName);
 		return new PohChange("profile", Set.of(Effect.DISPLAY_ONLY));
@@ -493,7 +494,7 @@ public class PohService
 			return;
 		}
 		lastSaved = serialized;
-		configManager.setRSProfileConfiguration("shortestpath", CONFIG_KEY, serialized);
+		configManager.setRSProfileConfiguration(Settings.CONFIG_GROUP, CONFIG_KEY, serialized);
 	}
 
 	private static void collectKeyedWidgets(Widget widget, Map<String, String> parsed)
