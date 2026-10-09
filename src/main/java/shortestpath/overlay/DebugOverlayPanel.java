@@ -28,13 +28,15 @@ public class DebugOverlayPanel extends OverlayPanel
 
 	private final ShortestPathPlugin plugin;
 	private final Client client;
+	private final DebugState debugState;
 
 	@Inject
-	public DebugOverlayPanel(ShortestPathPlugin plugin, Client client)
+	public DebugOverlayPanel(ShortestPathPlugin plugin, Client client, DebugState debugState)
 	{
 		super(plugin);
 		this.plugin = plugin;
 		this.client = client;
+		this.debugState = debugState;
 
 		setPosition(OverlayPosition.TOP_LEFT);
 		panelComponent.setPreferredSize(new Dimension(PANEL_WIDTH, 0));
@@ -66,7 +68,7 @@ public class DebugOverlayPanel extends OverlayPanel
 	public Dimension render(Graphics2D graphics)
 	{
 		List<LayoutableRenderableEntity> components = panelComponent.getChildren();
-		DebugState debug = plugin.getDebugState();
+		DebugState debug = debugState;
 		int tick = client.getTickCount();
 
 		components.add(
