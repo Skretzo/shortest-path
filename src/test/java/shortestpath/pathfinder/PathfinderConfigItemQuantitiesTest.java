@@ -65,7 +65,7 @@ public class PathfinderConfigItemQuantitiesTest
 
 		refresh(false, TeleportationItem.NONE);
 
-		assertTrue(varrockTeleportUsable(false));
+		assertTrue(varrockTeleportUsable(BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -77,8 +77,8 @@ public class PathfinderConfigItemQuantitiesTest
 
 		refresh(true, TeleportationItem.INVENTORY_AND_BANK);
 
-		assertFalse(varrockTeleportUsable(false));
-		assertTrue(varrockTeleportUsable(true));
+		assertFalse(varrockTeleportUsable(BankVisitState.CARRIED));
+		assertTrue(varrockTeleportUsable(BankVisitState.BANKED));
 	}
 
 	@Test
@@ -94,8 +94,8 @@ public class PathfinderConfigItemQuantitiesTest
 
 		refresh(true, TeleportationItem.INVENTORY_AND_BANK);
 
-		assertFalse(varrockTeleportUsable(false));
-		assertTrue(varrockTeleportUsable(true));
+		assertFalse(varrockTeleportUsable(BankVisitState.CARRIED));
+		assertTrue(varrockTeleportUsable(BankVisitState.BANKED));
 	}
 
 	/**
@@ -153,7 +153,7 @@ public class PathfinderConfigItemQuantitiesTest
 		pathfinderConfig.refresh();
 	}
 
-	private boolean varrockTeleportUsable(boolean bankVisited)
+	private boolean varrockTeleportUsable(BankVisitState bankVisited)
 	{
 		return Arrays.stream(pathfinderConfig.getUsableTeleports(bankVisited))
 			.anyMatch(t -> VARROCK_TELEPORT.equals(t.getDisplayInfo()));
