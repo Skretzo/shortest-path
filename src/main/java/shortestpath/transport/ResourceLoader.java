@@ -507,8 +507,9 @@ public final class ResourceLoader
 
 	/**
 	 * Loads the bundled teleport-restriction family map from
-	 * {@code /transports/teleport_restrictions.tsv}. A missing resource throws
-	 * {@link NullPointerException}; an {@link IOException} is wrapped in
+	 * {@code /transports/teleport_restrictions.tsv}. A missing resource
+	 * degrades to an empty list — panel construction must not crash on
+	 * packaging gaps; an {@link IOException} is wrapped in
 	 * {@link RuntimeException}.
 	 */
 	public static List<TeleportRestriction.Family> families()
@@ -516,10 +517,14 @@ public final class ResourceLoader
 		final String contents;
 		try
 		{
-			contents = new String(
-				Util.readAllBytes(
-					Objects.requireNonNull(ResourceLoader.class.getResourceAsStream(FAMILY_RESOURCE))),
-				StandardCharsets.UTF_8);
+			InputStream stream = ResourceLoader.class.getResourceAsStream(FAMILY_RESOURCE);
+			if (stream == null)
+			{
+				log.warn("Teleport restriction family resource {} is missing — degrading to no rows",
+					FAMILY_RESOURCE);
+				return Collections.emptyList();
+			}
+			contents = new String(Util.readAllBytes(stream), StandardCharsets.UTF_8);
 		}
 		catch (IOException e)
 		{
