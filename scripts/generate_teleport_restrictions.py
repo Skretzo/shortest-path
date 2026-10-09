@@ -29,6 +29,13 @@ most specific variant name ('Karamja gloves 4' over 'Karamja gloves') — and
 ties keep the first occurrence in file order. Ids with no Display info at all
 fall back to the family name.
 
+Raw '#' headers double as authoring notes, so the emitted familyName (and
+the memberLabels fallback, which is the family name) passes through
+clean_family_name(): 'PS:'/'PS -' postscripts, prose ' - '/'. '/' , ' tails,
+and note-style trailing parentheticals are dropped, while qualifiers that
+keep names distinct ('Slayer ring (1-8)', 'Trinket of fairies - Spirit
+Trees', "Sailors' amulet (Charged)") survive.
+
 The output is deterministic: families in file order, member ids sorted,
 memberLabels as 'id=label' pairs sorted by id.
 """
@@ -81,6 +88,62 @@ def parse_item_ids(items_cell, line_no):
             if item_id not in ids:
                 ids.append(item_id)
     return ids
+
+
+def _is_prose(tail):
+    """A ' - ' tail reads as an authoring note (not a short qualifier like
+    'Spirit Trees' or 'Tool Leprechauns') when it starts lowercase or with a
+    digit, or carries sentence punctuation."""
+    if not tail:
+        return True
+    return (tail[0].islower() or tail[0].isdigit()
+            or any(ch in tail for ch in (",", ".", ":", ";")))
+
+
+def _is_note_paren(content):
+    """A trailing '(...)' group is an authoring note when it reads as prose —
+    '(uncharged is 11113)', '(2 has 3 teleports to farm, ...)' — and a
+    qualifier when it is a short tag like '(1-8)' or '(Charged)'."""
+    if not content:
+        return True
+    return (any(ch in content for ch in (",", ";", ":")) or " " in content
+            or content[0].islower())
+
+
+def _depth_zero_cut(name):
+    """Index of the first note delimiter occurring outside parentheses —
+    ' PS:'/'PS -' postscripts, '. '/' , ' sentence tails, or a ' - ' tail
+    that reads like prose — or len(name) when none is present."""
+    depth = 0
+    for i, ch in enumerate(name):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth = max(0, depth - 1)
+        elif depth == 0:
+            if (name.startswith(" PS:", i) or name.startswith(" PS -", i)
+                    or name.startswith(" PS-", i)):
+                return i
+            if name.startswith(". ", i) or name.startswith(", ", i):
+                return i
+            if name.startswith(" - ", i) and _is_prose(name[i + 3:]):
+                return i
+    return len(name)
+
+
+def clean_family_name(name):
+    """Reduce a raw '#' header comment to the display label the restriction
+    checklist renders. Header comments double as authoring notes ('Stony
+    basalt - 6528 is MAKING_FRIENDS_WITH_MY_ARM ...'), so note tails are
+    stripped while qualifiers that keep family names distinct ('Trinket of
+    fairies - Spirit Trees', 'Slayer ring (1-8)') survive."""
+    name = name[:_depth_zero_cut(name)].rstrip(" .-")
+    while name.endswith(")"):
+        open_idx = name.rfind("(")
+        if open_idx < 0 or not _is_note_paren(name[open_idx + 1:-1]):
+            break
+        name = name[:open_idx].rstrip(" .-")
+    return name
 
 
 def main():
@@ -169,6 +232,7 @@ def main():
         fail("no families found — is the source TSV format as expected?")
 
     out_lines = ["# familyName\tdisplayItemId\tmemberItemIds\tmemberLabels"]
+    display_names = set()
     for family in families:
         if not family["ids"]:
             fail(
@@ -176,20 +240,33 @@ def main():
                 "contains no unclaimed item ids should be an annotation or be dropped; "
                 "needs planner review"
             )
+        display_name = clean_family_name(family["name"])
+        if not display_name:
+            fail(
+                f"family header '{family['name']}' reduces to an empty display name — "
+                "the checklist renders familyName verbatim; needs planner review"
+            )
+        if display_name in display_names:
+            fail(
+                f"family '{family['name']}' reduces to display name '{display_name}', "
+                "which an earlier family already emits — the checklist requires unique "
+                "labels; needs planner review"
+            )
+        display_names.add(display_name)
         member_ids = sorted(family["ids"])
         label_entries = []
         for item_id in member_ids:
-            label = labels.get(item_id) or family["name"]
+            label = labels.get(item_id) or display_name
             if any(ch in label for ch in (",", "=", "\t", "\n")):
                 fail(
-                    f"label '{label}' for item id {item_id} (family '{family['name']}') "
+                    f"label '{label}' for item id {item_id} (family '{display_name}') "
                     "contains a schema-breaking character (',', '=', tab or newline)"
                 )
             label_entries.append(f"{item_id}={label}")
         out_lines.append(
             "\t".join(
                 [
-                    family["name"],
+                    display_name,
                     str(member_ids[0]),
                     ",".join(str(i) for i in member_ids),
                     ",".join(label_entries),
