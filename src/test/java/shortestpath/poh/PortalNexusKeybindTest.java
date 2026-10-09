@@ -18,12 +18,12 @@ import org.junit.Test;
 
 public class PortalNexusKeybindTest
 {
-	private PortalNexusKeybinds keybinds;
+	private PohService keybinds;
 
 	@Before
 	public void setUp()
 	{
-		keybinds = new PortalNexusKeybinds();
+		keybinds = new PohService();
 	}
 
 	@Test
@@ -125,14 +125,14 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testNormalizeAliases()
 	{
-		assertEquals("ardougne", PortalNexusKeybinds.normalize("East Ardougne"));
-		assertEquals("kourend", PortalNexusKeybinds.normalize("Kourend Castle"));
-		assertEquals("lassar", PortalNexusKeybinds.normalize("Lassar Portal"));
-		assertEquals("lassar", PortalNexusKeybinds.normalize("Lassar (Ice Mountain)"));
-		assertEquals("ghorrock", PortalNexusKeybinds.normalize("Frozen Waste Plateau"));
-		assertEquals("kharyrll", PortalNexusKeybinds.normalize("Canifis"));
-		assertEquals("fenkenstrain s castle", PortalNexusKeybinds.normalize("Fenken' Castle"));
-		assertEquals("fenkenstrain s castle", PortalNexusKeybinds.normalize("Fenkenstrain's Castle Portal"));
+		assertEquals("ardougne", PohService.normalize("East Ardougne"));
+		assertEquals("kourend", PohService.normalize("Kourend Castle"));
+		assertEquals("lassar", PohService.normalize("Lassar Portal"));
+		assertEquals("lassar", PohService.normalize("Lassar (Ice Mountain)"));
+		assertEquals("ghorrock", PohService.normalize("Frozen Waste Plateau"));
+		assertEquals("kharyrll", PohService.normalize("Canifis"));
+		assertEquals("fenkenstrain s castle", PohService.normalize("Fenken' Castle"));
+		assertEquals("fenkenstrain s castle", PohService.normalize("Fenkenstrain's Castle Portal"));
 	}
 
 	@Test
@@ -145,21 +145,21 @@ public class PortalNexusKeybindTest
 	public void testSerializeRoundTrip()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PortalNexusKeybinds.deserialize("2|ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3", keys);
+		PohService.deserialize("2|ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3", keys);
 
 		assertEquals("K", keys.get("ghorrock"));
 		assertEquals("1", keys.get("harmony island"));
 		assertEquals("Y", keys.get("lassar"));
 		assertEquals("F3", keys.get("waterbirth island"));
 		assertEquals("2|ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3",
-			PortalNexusKeybinds.serialize(keys));
+			PohService.serialize(keys));
 	}
 
 	@Test
 	public void testDeserializeRejectsInvalidKeys()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PortalNexusKeybinds.deserialize("2|a=F13|b=F0|c=0|d=AB|e=Z|f=f5", keys);
+		PohService.deserialize("2|a=F13|b=F0|c=0|d=AB|e=Z|f=f5", keys);
 
 		assertEquals(Map.of("e", "Z", "f", "F5"), keys);
 	}
@@ -168,7 +168,7 @@ public class PortalNexusKeybindTest
 	public void testDeserializeAdmitsFunctionKeys()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PortalNexusKeybinds.deserialize("2|a=F1|b=F10|c=F11|d=F12", keys);
+		PohService.deserialize("2|a=F1|b=F10|c=F11|d=F12", keys);
 
 		assertEquals(Map.of("a", "F1", "b", "F10", "c", "F11", "d", "F12"), keys);
 	}
@@ -178,10 +178,10 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			"shortestpath", PortalNexusKeybinds.CONFIG_KEY))
+			"shortestpath", PohService.CONFIG_KEY))
 			.thenReturn("2|lassar=Y|waterbirth island=F3");
 
-		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
+		PohService persisted = new PohService(configManager);
 		persisted.loadFromProfile();
 
 		assertEquals("Y: Lassar Portal", persisted.apply("Lassar Portal"));
@@ -193,11 +193,11 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
-			"shortestpath", PortalNexusKeybinds.CONFIG_KEY))
+			"shortestpath", PohService.CONFIG_KEY))
 			.thenReturn("2|lassar=Y")
 			.thenReturn(null);
 
-		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
+		PohService persisted = new PohService(configManager);
 		persisted.loadFromProfile();
 		assertEquals("Y: Lassar Portal", persisted.apply("Lassar Portal"));
 
@@ -209,20 +209,20 @@ public class PortalNexusKeybindTest
 	public void testPersistIfDirtyWritesRsProfile()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
+		PohService persisted = new PohService(configManager);
 		persisted.putFromDialogLine("Y: Lassar");
 		persisted.persistIfDirty();
 
 		verify(configManager).setRSProfileConfiguration(
 			eq("shortestpath"),
-			eq(PortalNexusKeybinds.CONFIG_KEY),
+			eq(PohService.CONFIG_KEY),
 			contains("lassar=Y"));
 	}
 
 	@Test
 	public void testKeyedConfigurationSlotsKeepExplicitKeys()
 	{
-		keybinds.replaceIfPresent(PortalNexusKeybinds.parseSlotLabels(
+		keybinds.replaceIfPresent(PohService.parseSlotLabels(
 			Arrays.asList("3: Varrock", "5: Lumbridge")));
 
 		assertEquals("3: Varrock Portal", keybinds.apply("Varrock Portal"));
@@ -234,7 +234,7 @@ public class PortalNexusKeybindTest
 	{
 		// Slot list position is not a keybind; unkeyed labels must not
 		// manufacture one.
-		keybinds.replaceIfPresent(PortalNexusKeybinds.parseSlotLabels(
+		keybinds.replaceIfPresent(PohService.parseSlotLabels(
 			Arrays.asList("Harmony Island", "Lumbridge")));
 
 		assertEquals("Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
@@ -250,7 +250,7 @@ public class PortalNexusKeybindTest
 		names[36] = "Ourania";
 		names[37] = "Waterbirth Island";
 
-		keybinds.replaceIfPresent(PortalNexusKeybinds.parseSlotLabels(Arrays.asList(names)));
+		keybinds.replaceIfPresent(PohService.parseSlotLabels(Arrays.asList(names)));
 
 		assertEquals("Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
 		assertEquals("Ourania Portal", keybinds.apply("Ourania Portal"));
@@ -275,7 +275,7 @@ public class PortalNexusKeybindTest
 	public void testPartialDialogDoesNotPersistAShrink()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
-		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
+		PohService persisted = new PohService(configManager);
 		persisted.putFromDialogLine("1: Harmony Island");
 		persisted.putFromDialogLine("Y: Lassar");
 		persisted.persistIfDirty();
@@ -353,7 +353,7 @@ public class PortalNexusKeybindTest
 		// Pre-versioning payloads can hold position-derived keys that were
 		// never bound; they must not load.
 		Map<String, String> keys = new HashMap<>();
-		PortalNexusKeybinds.deserialize("ghorrock=K|waterbirth island=F3", keys);
+		PohService.deserialize("ghorrock=K|waterbirth island=F3", keys);
 
 		assertEquals(Map.of(), keys);
 	}
