@@ -188,17 +188,15 @@ public class PohService
 	 * keybinds are read from the teleport dialog whenever it is built rather than
 	 * assumed from the default destination list.
 	 *
-	 * Menu keys are positional: the first nine lines bind 1-9, the next twenty-six
-	 * bind A-Z and lines beyond that bind F1-F10 (the nexus holds up to 45 slots).
-	 * The F-key hints are rendered as sprites, so those lines carry no readable
-	 * "key : name" prefix; their key can only be recovered from the line position.
+	 * Only lines carrying an explicit "key : name" prefix produce a mapping.
+	 * Slots whose rendered label has no readable prefix have no keybind — the
+	 * key is drawn as a sprite and cannot be recovered from the line position.
 	 */
 	public static final int TELENEXUS_CREATE_TELELINE = 2675;
 
 	// In-game labels look like "<col=ffffff>1 : Harmony Island" (space before the colon).
-	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z]|F(?:[1-9]|10))\\s*:\\s*(.+)$");
+	private static final Pattern KEYED_LINE = Pattern.compile("^([0-9A-Za-z]|F(?:[1-9]|1[0-2]))\\s*:\\s*(.+)$");
 	private static final Pattern PARENTHETICAL = Pattern.compile("\\(([^()]*)\\)");
-	private static final int MAX_KEYED_LINES = 45;
 	private static final Map<String, String> NAME_ALIASES;
 
 	static
@@ -238,8 +236,6 @@ public class PohService
 	private final Map<String, String> keysByNormalizedName = new HashMap<>();
 	private String lastSaved = "";
 	private boolean dirty;
-	private int dialogTick = -1;
-	private int dialogLineIndex;
 
 	@Inject
 	public PohService(ConfigManager configManager)
@@ -293,37 +289,20 @@ public class PohService
 	}
 
 	/**
-	 * Records one teleport menu line as it is created by the client. Lines are
-	 * created in menu order within a single tick, so the line position doubles
-	 * as the key index; the displayed key is positional (1-9, A-Z, F1-F10).
-	 * An explicit "key : name" prefix in the line text wins when present.
+	 * Records one teleport menu line as it is created by the client. Only an
+	 * explicit "key : name" prefix in the line text produces a mapping; a
+	 * line without a prefix carries no keybind information and is ignored.
 	 */
-	public PohChange putFromDialogLine(int tick, String rawText)
+	public PohChange putFromDialogLine(String rawText)
 	{
-		if (tick != dialogTick)
-		{
-			dialogTick = tick;
-			dialogLineIndex = 0;
-		}
 		String cleaned = rawText == null ? "" : Text.removeTags(rawText).trim();
 		Matcher matcher = KEYED_LINE.matcher(cleaned);
-		String key;
-		String name;
-		if (matcher.matches())
-		{
-			key = matcher.group(1).toUpperCase(Locale.ROOT);
-			name = matcher.group(2);
-		}
-		else
-		{
-			key = keyForIndex(dialogLineIndex);
-			name = cleaned.replaceAll("^[\\s:]+", "");
-		}
-		dialogLineIndex++;
-		if (key.isEmpty())
+		if (!matcher.matches())
 		{
 			return null;
 		}
+		String key = matcher.group(1).toUpperCase(Locale.ROOT);
+		String name = matcher.group(2);
 		putMapping(keysByNormalizedName, name, key);
 		dirty = true;
 		return new PohChange("dialogLine", Set.of(Effect.DISPLAY_ONLY));
@@ -448,52 +427,11 @@ public class PohService
 			return parsed;
 		}
 
-		boolean anyKeyed = false;
 		for (String name : names)
 		{
-			if (KEYED_LINE.matcher(name).matches())
-			{
-				anyKeyed = true;
-				break;
-			}
-		}
-
-		if (anyKeyed)
-		{
-			for (String name : names)
-			{
-				parseKeyedText(name, parsed);
-			}
-			return parsed;
-		}
-
-		for (int i = 0; i < names.size() && i < MAX_KEYED_LINES; i++)
-		{
-			putMapping(parsed, names.get(i), keyForIndex(i));
+			parseKeyedText(name, parsed);
 		}
 		return parsed;
-	}
-
-	/**
-	 * The menu binds keys by line position: 1-9 for the first nine lines, then
-	 * A-Z, then F1-F10 for the last ten slots of a fully upgraded nexus.
-	 * Returns "" when the position has no key.
-	 */
-	static String keyForIndex(int index)
-	{
-		if (index < 0 || index >= MAX_KEYED_LINES)
-		{
-			return "";
-		}
-		if (index < 9)
-		{
-			return String.valueOf((char) ('1' + index));
-		}
-		if (index < 35)
-		{
-			return String.valueOf((char) ('A' + index - 9));
-		}
-		return "F" + (index - 34);
 	}
 
 	static String serialize(Map<String, String> keys)
@@ -531,7 +469,10 @@ public class PohService
 			}
 			String name = entry.substring(0, split);
 			String key = entry.substring(split + 1).toUpperCase(Locale.ROOT);
-			if (key.matches("[1-9A-Z]|F(?:[1-9]|10)"))
+			// Only single-character keys are admitted. Persisted function-key
+			// entries are dropped on load, so profiles poisoned by earlier
+			// position-derived bindings self-heal.
+			if (key.matches("[0-9A-Z]"))
 			{
 				keys.put(name, key);
 			}

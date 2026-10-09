@@ -1224,7 +1224,7 @@ public class ShortestPathPlugin extends Plugin
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			applyPohChange(pohService.putFromDialogLine(client.getTickCount(), widget.getText()), "nexus dialog line");
+			applyPohChange(pohService.putFromDialogLine(widget.getText()), "nexus dialog line");
 		}
 	}
 

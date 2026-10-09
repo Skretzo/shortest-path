@@ -2,6 +2,7 @@ package shortestpath.poh;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
@@ -29,8 +30,8 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testNexusMenuLabelFormat()
 	{
-		keybinds.putFromDialogLine(0, "<col=ffffff>1 : Harmony Island");
-		keybinds.putFromDialogLine(0, "<col=ffffff>Y : Lassar (Ice Mountain)");
+		keybinds.putFromDialogLine("<col=ffffff>1 : Harmony Island");
+		keybinds.putFromDialogLine("<col=ffffff>Y : Lassar (Ice Mountain)");
 
 		assertEquals("1: Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
 		assertEquals("Y: Lassar Portal", keybinds.apply("Lassar Portal"));
@@ -39,11 +40,11 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testParentheticalLocationMatchesSpellName()
 	{
-		keybinds.putFromDialogLine(0, "<col=ffffff>K : Frozen Waste Plateau (Ghorrock)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>A : Canifis (Kharyrll)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>B : Demonic Ruins (Annakarl)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>C : Graveyard of Shadows (Carrallanger)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>D : Edgeville Dungeon (Paddewwa)");
+		keybinds.putFromDialogLine("<col=ffffff>K : Frozen Waste Plateau (Ghorrock)");
+		keybinds.putFromDialogLine("<col=ffffff>A : Canifis (Kharyrll)");
+		keybinds.putFromDialogLine("<col=ffffff>B : Demonic Ruins (Annakarl)");
+		keybinds.putFromDialogLine("<col=ffffff>C : Graveyard of Shadows (Carrallanger)");
+		keybinds.putFromDialogLine("<col=ffffff>D : Edgeville Dungeon (Paddewwa)");
 
 		assertEquals("K: Ghorrock Portal", keybinds.apply("Ghorrock Portal"));
 		assertEquals("A: Kharyrll Portal", keybinds.apply("Kharyrll Portal"));
@@ -55,8 +56,8 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testLiveDialogOrderOverridesDefault()
 	{
-		keybinds.putFromDialogLine(0, "<col=735a28>Y:</col> Lassar");
-		keybinds.putFromDialogLine(0, "<col=735a28>S:</col> Catherby");
+		keybinds.putFromDialogLine("<col=735a28>Y:</col> Lassar");
+		keybinds.putFromDialogLine("<col=735a28>S:</col> Catherby");
 
 		assertEquals("Y: Lassar Portal", keybinds.apply("Lassar Portal"));
 		assertEquals("S: Catherby Portal", keybinds.apply("Catherby Portal"));
@@ -71,7 +72,7 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testApplyReplacesStaleKeyPrefix()
 	{
-		keybinds.putFromDialogLine(0, "Y: Lassar");
+		keybinds.putFromDialogLine("Y: Lassar");
 
 		assertEquals("Y: Lassar Portal", keybinds.apply("S: Lassar Portal"));
 	}
@@ -79,7 +80,7 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testDiaryVariantsShareAKey()
 	{
-		keybinds.putFromDialogLine(0, "4: Varrock");
+		keybinds.putFromDialogLine("4: Varrock");
 
 		assertEquals("4: Varrock Portal", keybinds.apply("Varrock Portal"));
 		assertEquals("4: Grand Exchange Portal", keybinds.apply("Grand Exchange Portal"));
@@ -88,7 +89,7 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testRespawnVariantsShareAKey()
 	{
-		keybinds.putFromDialogLine(0, "7: Respawn point");
+		keybinds.putFromDialogLine("7: Respawn point");
 
 		assertEquals("7: Respawn Portal (Lumbridge)", keybinds.apply("Respawn Portal (Lumbridge)"));
 		assertEquals("7: Respawn Portal (Falador)", keybinds.apply("Respawn Portal (Falador)"));
@@ -97,7 +98,7 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testTruncatedFenkenstrainName()
 	{
-		keybinds.putFromDialogLine(0, "<col=ffffff>8 : Fenken' Castle");
+		keybinds.putFromDialogLine("<col=ffffff>8 : Fenken' Castle");
 
 		assertEquals("8: Fenkenstrain's Castle Portal", keybinds.apply("Fenkenstrain's Castle Portal"));
 	}
@@ -105,7 +106,7 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testOverflowDestinationHasNoKey()
 	{
-		keybinds.putFromDialogLine(0, "Z: Catherby");
+		keybinds.putFromDialogLine("Z: Catherby");
 
 		assertEquals("Weiss Portal", keybinds.apply("Weiss Portal"));
 	}
@@ -133,13 +134,13 @@ public class PortalNexusKeybindTest
 	public void testSerializeRoundTrip()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PohService.deserialize("ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3", keys);
+		PohService.deserialize("ghorrock=K|harmony island=1|lassar=Y|waterbirth island=0", keys);
 
 		assertEquals("K", keys.get("ghorrock"));
 		assertEquals("1", keys.get("harmony island"));
 		assertEquals("Y", keys.get("lassar"));
-		assertEquals("F3", keys.get("waterbirth island"));
-		assertEquals("ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3",
+		assertEquals("0", keys.get("waterbirth island"));
+		assertEquals("ghorrock=K|harmony island=1|lassar=Y|waterbirth island=0",
 			PohService.serialize(keys));
 	}
 
@@ -147,14 +148,31 @@ public class PortalNexusKeybindTest
 	public void testDeserializeRejectsInvalidKeys()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PohService.deserialize("a=F11|b=F0|c=0|d=AB|e=Z|f=f5", keys);
+		PohService.deserialize("a=F11|b=F0|c=0|d=AB|e=Z|f=f5|g=F12", keys);
 
-		assertEquals(Map.of("e", "Z", "f", "F5"), keys);
+		assertEquals(Map.of("c", "0", "e", "Z"), keys);
 	}
 
 	@Test
 	public void testLoadFromProfileAppliesSavedKeys()
 	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(configManager.getRSProfileConfiguration(
+			"shortestpath", PohService.CONFIG_KEY))
+			.thenReturn("lassar=Y|waterbirth island=Z");
+
+		PohService persisted = new PohService(configManager);
+		persisted.loadFromProfile();
+
+		assertEquals("Y: Lassar Portal", persisted.apply("Lassar Portal"));
+		assertEquals("Z: Waterbirth Island Portal", persisted.apply("Waterbirth Island Portal"));
+	}
+
+	@Test
+	public void testLoadFromProfileEvictsPersistedFunctionKeys()
+	{
+		// Profiles poisoned by the old position-derived bindings self-heal:
+		// persisted function-key entries are dropped on load.
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
 			"shortestpath", PohService.CONFIG_KEY))
@@ -164,7 +182,7 @@ public class PortalNexusKeybindTest
 		persisted.loadFromProfile();
 
 		assertEquals("Y: Lassar Portal", persisted.apply("Lassar Portal"));
-		assertEquals("F3: Waterbirth Island Portal", persisted.apply("Waterbirth Island Portal"));
+		assertEquals("Waterbirth Island Portal", persisted.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
@@ -189,7 +207,7 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		PohService persisted = new PohService(configManager);
-		persisted.putFromDialogLine(0, "Y: Lassar");
+		persisted.putFromDialogLine("Y: Lassar");
 		persisted.persistIfDirty();
 
 		verify(configManager).setRSProfileConfiguration(
@@ -209,36 +227,39 @@ public class PortalNexusKeybindTest
 	}
 
 	@Test
-	public void testUnkeyedConfigurationSlotsUseFilledOrder()
+	public void testUnkeyedConfigurationSlotsGetNoKeys()
 	{
-		keybinds.replaceIfPresent(PohService.parseSlotLabels(
-			Arrays.asList("Harmony Island", "Lumbridge")));
+		// An unkeyed slot list carries no key information; nothing is learned.
+		assertTrue(PohService.parseSlotLabels(
+			Arrays.asList("Harmony Island", "Lumbridge")).isEmpty());
 
-		assertEquals("1: Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
-		assertEquals("2: Lumbridge Portal", keybinds.apply("Lumbridge Portal"));
+		assertEquals("Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
+		assertEquals("Lumbridge Portal", keybinds.apply("Lumbridge Portal"));
 	}
 
 	@Test
-	public void testUnkeyedConfigurationSlotsAssignFKeys()
+	public void testUnkeyedConfigurationSlotsGetNoFunctionKeys()
 	{
+		// Slots past the labelled range render their key as a sprite, so the
+		// label has no readable prefix and no key is learned.
 		String[] names = new String[38];
 		Arrays.fill(names, "Lumbridge");
 		names[35] = "Lunar Isle";
 		names[36] = "Ourania";
 		names[37] = "Waterbirth Island";
 
-		keybinds.replaceIfPresent(PohService.parseSlotLabels(Arrays.asList(names)));
+		assertTrue(PohService.parseSlotLabels(Arrays.asList(names)).isEmpty());
 
-		assertEquals("F1: Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
-		assertEquals("F2: Ourania Portal", keybinds.apply("Ourania Portal"));
-		assertEquals("F3: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
+		assertEquals("Ourania Portal", keybinds.apply("Ourania Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
 	public void testPartialDialogDoesNotWipeCachedKeys()
 	{
-		keybinds.putFromDialogLine(0, "1: Harmony Island");
-		keybinds.putFromDialogLine(0, "Y: Lassar");
+		keybinds.putFromDialogLine("1: Harmony Island");
+		keybinds.putFromDialogLine("Y: Lassar");
 
 		Map<String, String> partial = new HashMap<>();
 		partial.put("harmony island", "1");
@@ -253,8 +274,8 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		PohService persisted = new PohService(configManager);
-		persisted.putFromDialogLine(0, "1: Harmony Island");
-		persisted.putFromDialogLine(0, "Y: Lassar");
+		persisted.putFromDialogLine("1: Harmony Island");
+		persisted.putFromDialogLine("Y: Lassar");
 		persisted.persistIfDirty();
 		clearInvocations(configManager);
 
@@ -269,60 +290,56 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testKeyedLineParsesFunctionKeys()
 	{
-		keybinds.putFromDialogLine(0, "F3: Waterbirth Island");
+		keybinds.putFromDialogLine("F3: Waterbirth Island");
+		keybinds.putFromDialogLine("F12: Lunar Isle");
 
 		assertEquals("F3: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("F12: Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
 	}
 
 	@Test
-	public void testFunctionKeyLineAssignsPositionally()
+	public void testFunctionKeyLineParsesExplicitPrefix()
 	{
-		// Lines past slot 35 render their key as a sprite, so the text has no
-		// key prefix; the position in the build sequence determines the key.
-		for (int i = 0; i < 37; i++)
-		{
-			keybinds.putFromDialogLine(0, i + ": destination " + i);
-		}
-		keybinds.putFromDialogLine(0, ":  Waterbirth Island");
+		// Other plugins can render binds inline as "F3</col>: name"; the
+		// explicit prefix is the only source of the mapping.
+		keybinds.putFromDialogLine("F3</col>: Waterbirth Island");
+		keybinds.putFromDialogLine("<col=ffffff>Catherby");
 
 		assertEquals("F3: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("Catherby Portal", keybinds.apply("Catherby Portal"));
 	}
 
 	@Test
-	public void testDialogLineIndexResetsOnNewTick()
+	public void testKeyedLineParsesZero()
 	{
-		keybinds.putFromDialogLine(0, ":  Lassar");
-		keybinds.putFromDialogLine(1, ":  Waterbirth Island");
+		keybinds.putFromDialogLine("0: Lumbridge");
 
-		assertEquals("1: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("0: Lumbridge Portal", keybinds.apply("Lumbridge Portal"));
 	}
 
 	@Test
-	public void testExplicitKeyAdvancesLineIndex()
+	public void testUnsupportedKeyFormsProduceNoMapping()
 	{
-		// A keyed line still consumes a menu position, so a following keyless
-		// line counts it when deriving its own key.
-		for (int i = 0; i < 35; i++)
-		{
-			keybinds.putFromDialogLine(0, (i + 1) + ": destination " + i);
-		}
-		keybinds.putFromDialogLine(0, ":  Lunar Isle");
-		keybinds.putFromDialogLine(0, ":  Ourania");
+		keybinds.putFromDialogLine("F13: Waterbirth Island");
+		keybinds.putFromDialogLine("F20: Lunar Isle");
+		keybinds.putFromDialogLine("Shift+F3: Catherby");
 
-		assertEquals("F1: Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
-		assertEquals("F2: Ourania Portal", keybinds.apply("Ourania Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
+		assertEquals("Catherby Portal", keybinds.apply("Catherby Portal"));
 	}
 
 	@Test
-	public void testKeyForIndexBoundaries()
+	public void testUnkeyedDialogLineLearnsNoKey()
 	{
-		assertEquals("1", PohService.keyForIndex(0));
-		assertEquals("9", PohService.keyForIndex(8));
-		assertEquals("A", PohService.keyForIndex(9));
-		assertEquals("Z", PohService.keyForIndex(34));
-		assertEquals("F1", PohService.keyForIndex(35));
-		assertEquals("F10", PohService.keyForIndex(44));
-		assertEquals("", PohService.keyForIndex(45));
-		assertEquals("", PohService.keyForIndex(-1));
+		// A line without an explicit "key : name" prefix is not a keybind
+		// source, whatever its position in the dialog.
+		assertNull(keybinds.putFromDialogLine("<col=ffffff>Harmony Island"));
+		assertNull(keybinds.putFromDialogLine("Lumbridge"));
+		assertNull(keybinds.putFromDialogLine(":  Waterbirth Island"));
+
+		assertEquals("Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
+		assertEquals("Lumbridge Portal", keybinds.apply("Lumbridge Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 }
