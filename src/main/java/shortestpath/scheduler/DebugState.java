@@ -64,12 +64,12 @@ public final class DebugState
 	{
 	}
 
-	public void restartRequested(String reason, int tick)
+	void restartRequested(String reason, int tick)
 	{
 		restart = new Restart(++restartCount, reason, tick, "pending");
 	}
 
-	public void restartOutcome(String outcome)
+	void restartOutcome(String outcome)
 	{
 		Restart current = restart;
 		if (current != null)
@@ -78,32 +78,32 @@ public final class DebugState
 		}
 	}
 
-	public void searchCancelled(ActiveSearch cancelled)
+	void searchCancelled(ActiveSearch cancelled)
 	{
 		cancelledSearch = cancelled;
 	}
 
-	public void searchStarted(ActiveSearch started)
+	void searchStarted(ActiveSearch started)
 	{
 		search = started;
 		restartOutcome(STARTED);
 	}
 
-	public void clientError(Throwable error, int tick)
+	void clientError(Throwable error, int tick)
 	{
 		clientErrorCount++;
 		clientError = describe(error);
 		clientErrorTick = tick;
 	}
 
-	public void searchError(Throwable error, int tick)
+	void searchError(Throwable error, int tick)
 	{
 		searchErrorCount++;
 		searchError = describe(error);
 		searchErrorTick = tick;
 	}
 
-	public static String describe(Throwable error)
+	static String describe(Throwable error)
 	{
 		String text = error.getClass().getSimpleName()
 			+ (error.getMessage() == null ? "" : ": " + error.getMessage());
