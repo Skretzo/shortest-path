@@ -20,6 +20,7 @@ import net.runelite.client.util.Text;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
@@ -236,25 +237,36 @@ public class PohService
 	static final String CONFIG_KEY = "portalNexusKeybinds";
 
 	private final ConfigManager configManager;
+	private final RefreshCoordinator coordinator;
 	private final Map<String, String> keysByNormalizedName = new HashMap<>();
 	private String lastSaved = "";
 	private boolean dirty;
 
 	@Inject
-	public PohService(ConfigManager configManager)
+	public PohService(ConfigManager configManager, RefreshCoordinator coordinator)
 	{
 		this.configManager = configManager;
+		this.coordinator = coordinator;
+	}
+
+	/**
+	 * Detached-coordinator seam for tests that exercise persistence without
+	 * asserting declares — the declare no-ops on the missing coordinator.
+	 */
+	PohService(ConfigManager configManager)
+	{
+		this(configManager, null);
 	}
 
 	PohService()
 	{
-		this(null);
+		this(null, null);
 	}
 
 	/**
 	 * A detached service for harnesses and tests: no persistence, so every
 	 * RSProfile read/write takes its detached arm instead of touching
-	 * storage.
+	 * storage, and no coordinator, so change declares no-op.
 	 */
 	public static PohService forTesting()
 	{
@@ -262,17 +274,31 @@ public class PohService
 	}
 
 	/**
-	 * Reads the current keybind map from the open Portal Nexus dialog.
-	 * Returns a fact when at least one mapping was found, null otherwise.
+	 * Test seam for asserting change declares: the returned instance hands
+	 * admitted facts to the given (typically mocked) coordinator while
+	 * staying detached from persistence.
 	 */
-	public PohChange refreshFromDialog(Client client)
+	public static PohService forTesting(RefreshCoordinator coordinator)
+	{
+		return new PohService(null, coordinator);
+	}
+
+	/**
+	 * Reads the current keybind map from the open Portal Nexus dialog and
+	 * declares the resulting fact to the coordinator. Returns whether at
+	 * least one mapping was found — the dialog-retry predicate consumes the
+	 * signal as "something parsed", so an identical re-read still answers
+	 * {@code true} even when its fact carries no effects.
+	 */
+	public boolean refreshFromDialog(Client client)
 	{
 		PohChange change = refreshFromTeleportMenu(client);
-		if (change != null)
+		if (change == null)
 		{
-			return change;
+			change = refreshFromConfigurationSlots(client);
 		}
-		return refreshFromConfigurationSlots(client);
+		declare(change);
+		return change != null;
 	}
 
 	public String apply(String displayInfo)
@@ -292,44 +318,45 @@ public class PohService
 	}
 
 	/**
-	 * Records one teleport menu line as it is created by the client. Only an
+	 * Records one teleport menu line as it is created by the client and
+	 * declares the learned-keybind fact to the coordinator. Only an
 	 * explicit "key : name" prefix in the line text produces a mapping; a
 	 * line without a prefix carries no keybind information and is ignored.
 	 */
-	public PohChange putFromDialogLine(String rawText)
+	public void putFromDialogLine(String rawText)
 	{
 		String cleaned = rawText == null ? "" : Text.removeTags(rawText).trim();
 		Matcher matcher = KEYED_LINE.matcher(cleaned);
 		if (!matcher.matches())
 		{
-			return null;
+			return;
 		}
 		String key = matcher.group(1).toUpperCase(Locale.ROOT);
 		String name = matcher.group(2);
 		putMapping(keysByNormalizedName, name, key);
 		dirty = true;
-		return new PohChange("dialogLine", Set.of(Effect.DISPLAY_ONLY));
+		declare(new PohChange("dialogLine", Set.of(Effect.DISPLAY_ONLY)));
 	}
 
 	/**
 	 * Reloads the persisted keybind map for the active profile. A profile load
-	 * always emits a {@code DISPLAY_ONLY} fact once storage was consulted —
-	 * the map it republished may differ from the previous account's — and a
-	 * null fact when running detached (no ConfigManager).
+	 * always declares a {@code DISPLAY_ONLY} fact once storage was consulted —
+	 * the map it republished may differ from the previous account's — and
+	 * declares nothing when running detached (no ConfigManager).
 	 */
-	public PohChange loadFromProfile()
+	public void loadFromProfile()
 	{
 		dirty = false;
 		keysByNormalizedName.clear();
 		lastSaved = "";
 		if (configManager == null)
 		{
-			return null;
+			return;
 		}
 		String stored = configManager.getRSProfileConfiguration(Settings.CONFIG_GROUP, CONFIG_KEY);
 		deserialize(stored, keysByNormalizedName);
 		lastSaved = serialize(keysByNormalizedName);
-		return new PohChange("profile", Set.of(Effect.DISPLAY_ONLY));
+		declare(new PohChange("profile", Set.of(Effect.DISPLAY_ONLY)));
 	}
 
 	public void persistIfDirty()
@@ -340,6 +367,20 @@ public class PohService
 		}
 		dirty = false;
 		saveToProfile();
+	}
+
+	/**
+	 * Hands an admitted fact to the refresh coordinator. Detached
+	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * no-ops there; a null fact declares nothing, mirroring the return-null
+	 * convention the shell's mapper used to guard.
+	 */
+	private void declare(PohChange change)
+	{
+		if (change != null && coordinator != null)
+		{
+			coordinator.pohChanged(change);
+		}
 	}
 
 	PohChange refreshFromTeleportMenu(Client client)
