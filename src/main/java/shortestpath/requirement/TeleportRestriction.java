@@ -104,7 +104,8 @@ public final class TeleportRestriction
 	 * panel-facing signature. Malformed rows are skipped with a warning (the
 	 * checklist degrades to fewer rows rather than crashing); an absent or
 	 * malformed {@code memberLabels} column degrades to an empty map for that
-	 * family.
+	 * family, and a missing resource degrades to an empty list — panel
+	 * construction must not crash on packaging gaps.
 	 */
 	public static List<Family> loadFamilies()
 	{
