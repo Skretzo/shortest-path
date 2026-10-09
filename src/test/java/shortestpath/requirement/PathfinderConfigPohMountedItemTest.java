@@ -6,6 +6,7 @@ import java.util.Set;
 import org.junit.Test;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.poh.PohMountedItem;
+import shortestpath.poh.PohService;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -26,7 +27,7 @@ public class PathfinderConfigPohMountedItemTest
 		Set<PohMountedItem> selected = EnumSet.noneOf(PohMountedItem.class);
 		for (String objectInfo : OBJECTS.values())
 		{
-			assertFalse(Requirements.isPohMountedItemEnabled(selected, objectInfo));
+			assertFalse(PohService.isMountedItemEnabled(selected, objectInfo));
 		}
 	}
 
@@ -43,7 +44,7 @@ public class PathfinderConfigPohMountedItemTest
 		Set<PohMountedItem> selected = EnumSet.allOf(PohMountedItem.class);
 		for (String objectInfo : OBJECTS.values())
 		{
-			assertTrue(Requirements.isPohMountedItemEnabled(selected, objectInfo));
+			assertTrue(PohService.isMountedItemEnabled(selected, objectInfo));
 		}
 	}
 
@@ -68,7 +69,7 @@ public class PathfinderConfigPohMountedItemTest
 	{
 		String carriedDisplayInfo = "Xeric's talisman: 1. Xeric's Lookout";
 		assertNull(PohMountedItem.fromObjectInfo(carriedDisplayInfo));
-		assertTrue(Requirements.isPohMountedItemEnabled(
+		assertTrue(PohService.isMountedItemEnabled(
 			EnumSet.noneOf(PohMountedItem.class), carriedDisplayInfo));
 	}
 
@@ -80,11 +81,11 @@ public class PathfinderConfigPohMountedItemTest
 			assertSame(entry.getKey(), PohMountedItem.fromObjectInfo(entry.getValue()));
 			if (entry.getKey().equals(selectedItem))
 			{
-				assertTrue(Requirements.isPohMountedItemEnabled(selected, entry.getValue()));
+				assertTrue(PohService.isMountedItemEnabled(selected, entry.getValue()));
 			}
 			else
 			{
-				assertFalse(Requirements.isPohMountedItemEnabled(selected, entry.getValue()));
+				assertFalse(PohService.isMountedItemEnabled(selected, entry.getValue()));
 			}
 		}
 	}
