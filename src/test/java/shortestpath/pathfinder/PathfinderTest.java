@@ -41,7 +41,7 @@ import shortestpath.ItemVariations;
 import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
-import shortestpath.ShortestPathPlugin;
+import shortestpath.poh.PohService;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -2436,8 +2436,8 @@ public class PathfinderTest
 					// PathfinderConfig unless usePoh is enabled, and the POH ring
 					// destination is unreachable by walking, so a picked sample would
 					// produce an arbitrarily long exhausted-search path instead of 2.
-					if (ShortestPathPlugin.isInsidePoh(originX, originY)
-						|| ShortestPathPlugin.isInsidePoh(destX, destY))
+					if (PohService.isInsidePoh(originX, originY)
+						|| PohService.isInsidePoh(destX, destY))
 					{
 						continue;
 					}

@@ -93,6 +93,7 @@ import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
+import shortestpath.poh.PohService;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
@@ -111,15 +112,6 @@ public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
 
-	// POH (Player Owned House) bounds for detecting when path goes through POH
-	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
-	private static final int POH_MIN_X = 1856;
-	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 7040;
-	private static final int POH_MAX_Y = 7111;
-	// Co-ordinates for Basic theme landing tile
-	public static final int POH_LANDING_X = 1858;
-	public static final int POH_LANDING_Y = 7051;
 	private static final String PLUGIN_MESSAGE_PATH = "path";
 	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
 	private static final String PLUGIN_MESSAGE_START = "start";
@@ -245,18 +237,6 @@ public class ShortestPathPlugin extends Plugin
 	public Pathfinder getPathfinder()
 	{
 		return legacyPathfinder;
-	}
-
-	/**
-	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
-	 *
-	 * @param x The world X coordinate
-	 * @param y The world Y coordinate
-	 * @return true if inside POH, false otherwise
-	 */
-	public static boolean isInsidePoh(int x, int y)
-	{
-		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
 	}
 
 	@Provides
@@ -1528,7 +1508,7 @@ public class ShortestPathPlugin extends Plugin
 		int destY = WorldPointUtil.unpackWorldY(destination);
 
 		// Check if destination is inside POH
-		if (!isInsidePoh(destX, destY))
+		if (!PohService.isInsidePoh(destX, destY))
 		{
 			return null;
 		}
@@ -1547,8 +1527,8 @@ public class ShortestPathPlugin extends Plugin
 			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
 
 			// Check if this step is inside POH but next step is outside (exit transport)
-			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
-			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
+			boolean stepInsidePoh = PohService.isInsidePoh(stepX, stepY);
+			boolean nextInsidePoh = PohService.isInsidePoh(nextX, nextY);
 
 			if (stepInsidePoh && !nextInsidePoh)
 			{
