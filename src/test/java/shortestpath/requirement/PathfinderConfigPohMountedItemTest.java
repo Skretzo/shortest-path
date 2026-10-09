@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.TestShortestPathConfig;
-import shortestpath.transport.PohMountedItem;
+import shortestpath.poh.PohMountedItem;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
