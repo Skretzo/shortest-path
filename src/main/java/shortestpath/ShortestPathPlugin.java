@@ -108,6 +108,8 @@ import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.poh.PohChange;
 import shortestpath.poh.PohService;
+import shortestpath.scheduler.DebugState;
+import shortestpath.scheduler.PendingTask;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
