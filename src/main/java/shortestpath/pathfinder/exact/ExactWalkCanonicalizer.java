@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 
@@ -202,7 +203,7 @@ public final class ExactWalkCanonicalizer
 				if (walk.outcome == Outcome.CANONICAL)
 				{
 					for (int t = 0; t < ticks; t++)
-						path.set(legStart + 1 + t, new PathStep(walk.tiles[t], start.isBankVisited()));
+						path.set(legStart + 1 + t, new PathStep(walk.tiles[t], start.getBankVisitState()));
 				}
 				else
 				{
@@ -222,7 +223,7 @@ public final class ExactWalkCanonicalizer
 		// A transport can land one tile away; its edge paid the transport's duration, not a walk
 		// tick, so it must not be folded into a walking leg.
 		if (to.getTransport() != null) return false;
-		if (from.isBankVisited() != to.isBankVisited()) return false;
+		if (from.getBankVisitState() != to.getBankVisitState()) return false;
 		int a = from.getPackedPosition(), b = to.getPackedPosition();
 		int plane = WorldPointUtil.unpackWorldPlane(a);
 		if (plane != WorldPointUtil.unpackWorldPlane(b)) return false;
@@ -239,7 +240,7 @@ public final class ExactWalkCanonicalizer
 		int direction = direction(dx, dy);
 		if ((map.ordinaryWalkingMask(a) & 1 << ORDER_BITS[direction]) != 0) return true;
 		// The exact search also steps onto a blocked transport origin next to it, to take the transport.
-		return direction < 4 && map.isBlocked(bx, by, plane) && hasLocalOrigin(b, from.isBankVisited());
+		return direction < 4 && map.isBlocked(bx, by, plane) && hasLocalOrigin(b, from.getBankVisitState());
 	}
 
 	/** Where the leg ending at step {@code end} may end instead, given the route's next action. */
@@ -259,9 +260,9 @@ public final class ExactWalkCanonicalizer
 		}
 		PathStep next = steps.get(end + 1);
 		// A bank visit, or a transport taken with banked items straight after it, stays where it is.
-		if (next.isBankVisited() != last.isBankVisited()) return WalkGoal.tile(tile);
+		if (next.getBankVisitState() != last.getBankVisitState()) return WalkGoal.tile(tile);
 		int[] origins = actionOrigins(tile, next.getPackedPosition(), route.cost(end + 1) - route.cost(end),
-			last.isBankVisited());
+			last.getBankVisitState());
 		return origins == null ? WalkGoal.tile(tile) : WalkGoal.tiles(origins, WorldPointUtil.unpackWorldPlane(tile));
 	}
 
@@ -269,7 +270,7 @@ public final class ExactWalkCanonicalizer
 	 * The origins of the local transport action from {@code origin} to {@code destination} that cost
 	 * {@code cost}, or {@code null} unless exactly one action class matches.
 	 */
-	private int[] actionOrigins(int origin, int destination, int cost, boolean banked)
+	private int[] actionOrigins(int origin, int destination, int cost, BankVisitState banked)
 	{
 		PreparedRoutingAccount.View view = account.localView(banked);
 		int actionClass = Integer.MIN_VALUE;
@@ -291,7 +292,7 @@ public final class ExactWalkCanonicalizer
 		return Arrays.copyOf(origins, count);
 	}
 
-	private boolean hasLocalOrigin(int tile, boolean banked)
+	private boolean hasLocalOrigin(int tile, BankVisitState banked)
 	{
 		PreparedRoutingAccount.View view = account.localView(banked);
 		int index = lowerBound(view.origins, tile);

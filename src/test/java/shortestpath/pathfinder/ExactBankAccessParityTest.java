@@ -108,7 +108,7 @@ public class ExactBankAccessParityTest
 
 			assertTrue(exact.getResult().isReached());
 			assertEquals("Farming " + farmingLevel, legacy.getPathCost(), exact.getResult().getPathCost());
-			assertTrue(exact.getPath().stream().anyMatch(PathStep::isBankVisited));
+			assertTrue(exact.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 			assertEquals("the route still banks, so it pays the visit once",
 				exact(free, null).getResult().getPathCost() + BANK_VISIT_COST, exact.getResult().getPathCost());
 		}
@@ -146,7 +146,7 @@ public class ExactBankAccessParityTest
 	{
 		for (int i = 1; i < path.size(); i++)
 		{
-			if (!path.get(i - 1).isBankVisited() && path.get(i).isBankVisited())
+			if (path.get(i - 1).getBankVisitState() != BankVisitState.BANKED && path.get(i).getBankVisitState() == BankVisitState.BANKED)
 				return path.get(i - 1).getPackedPosition() == tile || path.get(i).getPackedPosition() == tile;
 		}
 		return false;

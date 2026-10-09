@@ -19,11 +19,11 @@ public class VisitedTilesTest
 		VisitedTiles visited = new VisitedTiles(collisionMap(), 0);
 		int tile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 
-		assertTrue(visited.set(tile, true));
+		assertTrue(visited.set(tile, BankVisitState.BANKED));
 
-		assertTrue(visited.get(tile, true));
-		assertTrue(visited.get(tile, false));
-		assertFalse(visited.set(tile, false));
+		assertTrue(visited.get(tile, BankVisitState.BANKED));
+		assertTrue(visited.get(tile, BankVisitState.CARRIED));
+		assertFalse(visited.set(tile, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -31,8 +31,8 @@ public class VisitedTilesTest
 	{
 		VisitedTiles visited = new VisitedTiles(collisionMap(), 0);
 		NodeGraph graph = new NodeGraph(16);
-		int banked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, true);
-		int unbanked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, false);
+		int banked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.BANKED);
+		int unbanked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.CARRIED);
 
 		assertTrue(visited.set(banked, graph));
 
@@ -47,12 +47,12 @@ public class VisitedTilesTest
 		VisitedTiles visited = new VisitedTiles(collisionMap(), 0);
 		int tile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		NodeGraph graph = new NodeGraph(16);
-		int unbanked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, false);
-		int banked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, true);
+		int unbanked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.CARRIED);
+		int banked = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.BANKED);
 
-		assertTrue(visited.set(tile, false));
-		assertTrue(visited.get(tile, false));
-		assertFalse(visited.get(tile, true));
+		assertTrue(visited.set(tile, BankVisitState.CARRIED));
+		assertTrue(visited.get(tile, BankVisitState.CARRIED));
+		assertFalse(visited.get(tile, BankVisitState.BANKED));
 
 		assertTrue(visited.set(unbanked, graph));
 		assertTrue(visited.get(unbanked, graph));
@@ -66,12 +66,12 @@ public class VisitedTilesTest
 		VisitedTiles visited = new VisitedTiles(collisionMap(), 10);
 		int tile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		NodeGraph graph = new NodeGraph(16);
-		int bankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, true);
-		int unbankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, false);
+		int bankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.BANKED);
+		int unbankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.CARRIED);
 
-		assertTrue(visited.set(tile, true));
-		assertTrue(visited.get(tile, true));
-		assertFalse(visited.get(tile, false));
+		assertTrue(visited.set(tile, BankVisitState.BANKED));
+		assertTrue(visited.get(tile, BankVisitState.BANKED));
+		assertFalse(visited.get(tile, BankVisitState.CARRIED));
 
 		assertTrue(visited.set(bankedAbstract, graph));
 		assertTrue(visited.get(bankedAbstract, graph));
@@ -86,11 +86,11 @@ public class VisitedTilesTest
 		VisitedTiles visited = new VisitedTiles(collisionMap(), 10);
 		int tile = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		NodeGraph graph = new NodeGraph(16);
-		int bankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, true);
-		int unbankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, false);
+		int bankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.BANKED);
+		int unbankedAbstract = graph.createAbstract(AbstractNodeKind.GLOBAL_TELEPORTS_NORMAL, NodeGraph.NO_NODE, BankVisitState.CARRIED);
 
-		assertTrue(visited.set(tile, true));
-		assertTrue(visited.set(tile, false));
+		assertTrue(visited.set(tile, BankVisitState.BANKED));
+		assertTrue(visited.set(tile, BankVisitState.CARRIED));
 		assertTrue(visited.set(bankedAbstract, graph));
 		assertTrue(visited.set(unbankedAbstract, graph));
 	}

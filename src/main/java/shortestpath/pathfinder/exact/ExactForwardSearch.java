@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.WildernessChecker;
@@ -96,12 +97,12 @@ public final class ExactForwardSearch
 		MutableCounters counters = new MutableCounters(capability, !restrictedHeuristic);
 		int[] bestBankCost = {ExactCosts.INF};
 		int[] globalBounds = restrictedHeuristic ? globalBounds(target, heuristic, space) : null;
-		ExactRoute startPath = ExactRoute.of(List.of(new PathStep(start, false)), new int[1]);
+		ExactRoute startPath = ExactRoute.of(List.of(new PathStep(start, BankVisitState.CARRIED)), new int[1]);
 		Closest closest = new Closest(target);
 		if (cancelled.getAsBoolean()) return Result.cancelled(counters.snapshot(bestBankCost[0]), startPath);
 
 		ExactMinHeap queue = new ExactMinHeap(Math.min(stateCount, 32_768));
-		int startState = space.state(start, false);
+		int startState = space.state(start, BankVisitState.CARRIED);
 		updateBestBank(space, startState, 0, optimized, bestBankCost, counters);
 		int startH = effectiveHeuristic(heuristic, space, startState, 0, best, restrictedHeuristic, globalBounds,
 			optimized, bestBankCost[0], counters);
@@ -116,7 +117,7 @@ public final class ExactForwardSearch
 		}
 		if (capability != TeleportCapability.ALL)
 		{
-			int hub = hub(tileStates, capability, false);
+			int hub = hub(tileStates, capability, BankVisitState.CARRIED);
 			best[hub] = 0;
 			push(queue, hub, 0, 0, counters, true, PUSH_GLOBAL);
 		}
@@ -138,7 +139,7 @@ public final class ExactForwardSearch
 				continue;
 			}
 			int node = state / 2;
-			boolean banked = (state & 1) != 0;
+			BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 			int tile = space.tile(node);
 			if (capability != TeleportCapability.ALL)
 				activateGlobal(target.account(), tile, state, banked, tileStates, cost, best, previous, transportWins, queue, counters);
@@ -269,7 +270,7 @@ public final class ExactForwardSearch
 		}
 	}
 
-	private static void walkBase(SearchSpace space, int node, boolean banked, int from, int cost, int[] best,
+	private static void walkBase(SearchSpace space, int node, BankVisitState banked, int from, int cost, int[] best,
 		int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic, int[] globalBounds,
 		boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
@@ -285,7 +286,7 @@ public final class ExactForwardSearch
 		emit(space, banked, from, mask, 1, north < 0 ? -1 : north + 1, cost, best, previous, transportWins, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 	}
 
-	private static void emit(SearchSpace space, boolean banked, int from, int mask, int bit, int next, int cost,
+	private static void emit(SearchSpace space, BankVisitState banked, int from, int mask, int bit, int next, int cost,
 		int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
@@ -294,7 +295,7 @@ public final class ExactForwardSearch
 				restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_WALKING);
 	}
 
-	private static void addBlockedOrigins(TargetOverlay target, SearchSpace space, int tile, boolean banked, int from, int cost,
+	private static void addBlockedOrigins(TargetOverlay target, SearchSpace space, int tile, BankVisitState banked, int from, int cost,
 		int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
@@ -307,7 +308,7 @@ public final class ExactForwardSearch
 				relaxWalking(space, next, banked, from, cost, best, previous, transportWins, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
 	}
 
-	private static void relaxWalking(SearchSpace space, int tile, boolean banked, int from, int cost,
+	private static void relaxWalking(SearchSpace space, int tile, BankVisitState banked, int from, int cost,
 		int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
@@ -317,17 +318,17 @@ public final class ExactForwardSearch
 				restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_WALKING);
 	}
 
-	private static void relaxBank(TargetOverlay target, SearchSpace space, int node, boolean banked, int from, int cost,
+	private static void relaxBank(TargetOverlay target, SearchSpace space, int node, BankVisitState banked, int from, int cost,
 		int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight,
 		TeleportCapability capability, int[] bestBankCost)
 	{
-		if (banked || !target.account().bankPathEnabled() || !space.isUsableBankNode(node)) return;
+		if (banked == BankVisitState.BANKED || !target.account().bankPathEnabled() || !space.isUsableBankNode(node)) return;
 		// Every bank charges the same visit cost, so comparing arrival costs with bestBankCost
 		// (an arrival cost too) still orders the banks correctly.
 		int bankedCost = ExactCosts.add(cost, target.account().bankVisitCost());
 		if (bankedCost == ExactCosts.INF) return;
-		relaxState(space, from, stateForNode(node, true), bankedCost, 0, null, best, previous, transportWins, queue, counters,
+		relaxState(space, from, stateForNode(node, BankVisitState.BANKED), bankedCost, 0, null, best, previous, transportWins, queue, counters,
 			restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_BANKING);
 		// With hubs (a start without every global castable) the banked hub of this tile's
 		// capability casts them. Without, they are cast here, as far as this bank tile's own
@@ -335,19 +336,19 @@ public final class ExactForwardSearch
 		if (capability == TeleportCapability.ALL)
 		{
 			TeleportCapability here = capabilityAt(space.tile(node));
-			for (int i = 0; i < target.account().globalCount(here, true); i++)
+			for (int i = 0; i < target.account().globalCount(here, BankVisitState.BANKED); i++)
 			{
-				int destination = target.account().globalDestination(here, true, i);
+				int destination = target.account().globalDestination(here, BankVisitState.BANKED, i);
 				if (!space.globalAllowed(here, destination)) continue;
 				if (!optimized || cost <= bestBankCost[0])
-					relaxTransport(space, from, true, bankedCost, destination, target.account().globalCost(here, true, i), target.account().globalTransport(here, true, i), best, previous, transportWins, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
+					relaxTransport(space, from, BankVisitState.BANKED, bankedCost, destination, target.account().globalCost(here, BankVisitState.BANKED, i), target.account().globalTransport(here, BankVisitState.BANKED, i), best, previous, transportWins, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost, PUSH_GLOBAL);
 				else if (space.node(destination) >= 0)
 					counters.bankGlobalSuppressed++;
 			}
 		}
 	}
 
-	private static void relaxLocalTransports(TargetOverlay target, SearchSpace space, int tile, boolean banked, int from, int cost,
+	private static void relaxLocalTransports(TargetOverlay target, SearchSpace space, int tile, BankVisitState banked, int from, int cost,
 		int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
@@ -365,7 +366,7 @@ public final class ExactForwardSearch
 		}
 	}
 
-	private static void relaxTransport(SearchSpace space, int from, boolean banked, int cost, int destination, int stepCost,
+	private static void relaxTransport(SearchSpace space, int from, BankVisitState banked, int cost, int destination, int stepCost,
 		Transport transport, int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters,
 		boolean restrictedHeuristic, int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight,
 		int[] bestBankCost, int pushKind)
@@ -400,18 +401,18 @@ public final class ExactForwardSearch
 		ExactMinHeap queue, MutableCounters counters, int startState, SearchSpace space, boolean restrictedHeuristic,
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
-		int count = target.account().globalCount(capability, false);
+		int count = target.account().globalCount(capability, BankVisitState.CARRIED);
 		for (int i = 0; i < count; i++)
 		{
 			counters.transportCandidates++;
-			int destination = target.account().globalDestination(capability, false, i);
+			int destination = target.account().globalDestination(capability, BankVisitState.CARRIED, i);
 			// This duplicates the start-capability hub: the hub offers these transports again when
 			// it pops, but seeding them here starts their states without a hub round-trip.
 			if (!space.globalAllowed(capability, destination)) continue;
 			int node = space.node(destination);
 			if (node < 0) continue;
-			int state = stateForNode(node, false);
-			int cost = target.account().globalCost(capability, false, i);
+			int state = stateForNode(node, BankVisitState.CARRIED);
+			int cost = target.account().globalCost(capability, BankVisitState.CARRIED, i);
 			if (cost < best[state])
 			{
 				updateBestBank(space, state, cost, optimized, bestBankCost, counters);
@@ -423,14 +424,14 @@ public final class ExactForwardSearch
 					continue;
 				}
 				best[state] = cost; previous[state] = startState;
-				transportWins.record(state, target.account().globalTransport(capability, false, i), cost);
+				transportWins.record(state, target.account().globalTransport(capability, BankVisitState.CARRIED, i), cost);
 				push(queue, state, cost, priority(cost, h, heuristicWeight), counters, true, PUSH_GLOBAL);
 				counters.successfulTransportRelaxations++;
 		}
 		}
 	}
 
-	private static void activateGlobal(PreparedRoutingAccount account, int tile, int from, boolean banked,
+	private static void activateGlobal(PreparedRoutingAccount account, int tile, int from, BankVisitState banked,
 		int tileStates, int cost, int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters)
 	{
 		TeleportCapability capability = capabilityAt(tile);
@@ -448,7 +449,7 @@ public final class ExactForwardSearch
 		int[] best, int[] previous, TransportWins transportWins, ExactMinHeap queue, MutableCounters counters)
 	{
 		TeleportCapability capability = hubCapability(tileStates, state);
-		boolean banked = ((state - tileStates) & 1) != 0;
+		BankVisitState banked = ((state - tileStates) & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 		// A hub stands for every tile in its wilderness band, so the capability doubles as the
 		// source position legacy checks a global teleport against.
 		int count = target.account().globalCount(capability, banked);
@@ -487,7 +488,9 @@ public final class ExactForwardSearch
 				costs = Arrays.copyOf(costs, count * 2);
 				arrivals = Arrays.copyOf(arrivals, count * 2);
 			}
-			result.add(new PathStep(space.tile(state / 2), (state & 1) != 0, transportWins.at(state, best[state])));
+			result.add(new PathStep(space.tile(state / 2),
+				(state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED,
+				transportWins.at(state, best[state])));
 			costs[count] = state == start ? 0 : best[state];
 			int from = state == start ? start : previous[state];
 			arrivals[count++] = from < tileStates ? ExactRoute.FROM_STEP
@@ -508,9 +511,10 @@ public final class ExactForwardSearch
 	private static int heuristic(PreparedHeuristic heuristic, SearchSpace space, int state)
 	{
 		int node = state / 2;
+		BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 		return space.isBase(node)
-			? heuristic.estimateBaseNode(space.tile(node), (state & 1) != 0, space.stat.routingComponent(node))
-			: heuristic.estimate(space.tile(node), (state & 1) != 0, space.components(node));
+			? heuristic.estimateBaseNode(space.tile(node), banked, space.stat.routingComponent(node))
+			: heuristic.estimate(space.tile(node), banked, space.components(node));
 	}
 
 	static int priority(int cost, int heuristic, double weight)
@@ -530,9 +534,9 @@ public final class ExactForwardSearch
 		int[] best, boolean restrictedHeuristic, int[] globalBounds, boolean optimized, int bestBankCost,
 		MutableCounters counters)
 	{
-		boolean banked = (state & 1) != 0;
+		BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 		int resolved;
-		if (banked)
+		if (banked == BankVisitState.BANKED)
 		{
 			counters.heuristicEvaluations++;
 			resolved = heuristic(heuristic, space, state);
@@ -557,7 +561,7 @@ public final class ExactForwardSearch
 			|| !allGlobalsActivated))
 		{
 			counters.restrictedHeuristicStates++;
-			int restricted = Math.min(resolved, globalBounds[banked ? 1 : 0]);
+			int restricted = Math.min(resolved, globalBounds[banked == BankVisitState.BANKED ? 1 : 0]);
 			if (restricted == ExactCosts.INF)
 			{
 				counters.restrictedHeuristicZeroes++;
@@ -594,7 +598,7 @@ public final class ExactForwardSearch
 		if (uniqueState) counters.uniqueStatesReached++;
 	}
 
-	static int stateForNode(int node, boolean banked)
+	static int stateForNode(int node, BankVisitState banked)
 	{
 		return SiteGraph.stateId(node, banked);
 	}
@@ -602,7 +606,8 @@ public final class ExactForwardSearch
 	private static boolean hasGlobals(PreparedRoutingAccount account)
 	{
 		// Every capability's globals are among ALL's.
-		return account.allowTransports() && (account.globalCount(false) != 0 || account.globalCount(true) != 0);
+		return account.allowTransports() && (account.globalCount(BankVisitState.CARRIED) != 0
+			|| account.globalCount(BankVisitState.BANKED) != 0);
 	}
 
 	private static int[] globalBounds(TargetOverlay target, PreparedHeuristic heuristic, SearchSpace space)
@@ -610,7 +615,7 @@ public final class ExactForwardSearch
 		int[] result = {ExactCosts.INF, ExactCosts.INF};
 		for (int layer = 0; layer < 2; layer++)
 		{
-			boolean banked = layer != 0;
+			BankVisitState banked = layer != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 			for (int i = 0; i < target.account().globalCount(banked); i++)
 			{
 				int node = space.node(target.account().globalDestination(banked, i));
@@ -637,9 +642,9 @@ public final class ExactForwardSearch
 	private static final int HUB_STATES = CAPABILITIES.length * 2;
 
 	/** The hub state casting the globals {@code capability} allows, in one bank layer. */
-	private static int hub(int tileStates, TeleportCapability capability, boolean banked)
+	private static int hub(int tileStates, TeleportCapability capability, BankVisitState banked)
 	{
-		return tileStates + capability.ordinal() * 2 + (banked ? 1 : 0);
+		return tileStates + capability.ordinal() * 2 + (banked == BankVisitState.BANKED ? 1 : 0);
 	}
 	private static TeleportCapability hubCapability(int tileStates, int hubState)
 	{
@@ -914,7 +919,7 @@ public final class ExactForwardSearch
 		int node(int tile)
 	{ int base = stat.searchIndex(tile); if (base >= 0) return base; int extra = binarySearch(extraTiles, tile); return extra < 0 ? -1 : baseCount + extra;
 	}
-		int state(int tile, boolean banked)
+		int state(int tile, BankVisitState banked)
 	{ return stateForNode(node(tile), banked);
 	}
 		int tile(int node)
@@ -936,7 +941,7 @@ public final class ExactForwardSearch
 		boolean bankGlobalRelevant()
 		{ return account.allowTransports() && account.bankPathEnabled();
 		}
-		boolean hasLocalOrigin(int tile, boolean banked)
+		boolean hasLocalOrigin(int tile, BankVisitState banked)
 	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.count && view.origins[index] == tile;
 	}
 		/** The node's wilderness/blocked-region status bits, computed on first ask. */

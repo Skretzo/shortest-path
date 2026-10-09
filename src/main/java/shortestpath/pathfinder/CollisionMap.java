@@ -197,9 +197,9 @@ public class CollisionMap
 		// charge sits on the decision to bank rather than on the edges leaving the bank tile.
 		// The edge is flagged as a transport so Pathfinder queues it on the cost-ordered pending
 		// heap — the FIFO tile boundary queue is only ordered for unit-cost walking edges.
-		boolean pathBankVisited = graph.bankVisited(node);
-		if (!pathBankVisited && config.isBankPathEnabled() && config.bankAccessible(packedPosition)
-			&& !visited.get(packedPosition, true))
+		BankVisitState pathBankVisited = graph.bankVisited(node);
+		if (pathBankVisited != BankVisitState.BANKED && config.isBankPathEnabled() && config.bankAccessible(packedPosition)
+			&& !visited.get(packedPosition, BankVisitState.BANKED))
 		{
 			neighbors.add(graph.createBankVisit(packedPosition, node, config.getBankVisitCost()));
 		}
@@ -321,7 +321,7 @@ public class CollisionMap
 	{
 		neighbors.clear();
 		int sourceTile = graph.getClosestTilePosition(node);
-		boolean bankVisited = graph.bankVisited(node);
+		BankVisitState bankVisited = graph.bankVisited(node);
 		int maxWildernessLevel = graph.abstractKind(node).maxWildernessLevel();
 		for (Transport transport : config.getUsableTeleports(bankVisited))
 		{

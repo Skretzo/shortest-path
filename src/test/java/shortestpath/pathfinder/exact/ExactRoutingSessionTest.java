@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
@@ -71,7 +72,7 @@ public class ExactRoutingSessionTest
 		assertNotSame(inaccessible, again.value());
 		ExactForwardSearch.Result result = search(again.value(), collision);
 		assertFalse(result.reached());
-		assertFalse(result.path().stream().anyMatch(PathStep::isBankVisited));
+		assertFalse(result.path().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test

@@ -114,7 +114,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
-		this.path = List.of(new PathStep(start, false));
+		this.path = List.of(new PathStep(start, BankVisitState.CARRIED));
 	}
 
 	private static Supplier<RoutingStatic> constant(RoutingStatic routingStatic)
@@ -162,7 +162,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
 		this.failure = failure;
-		this.path = List.of(new PathStep(start, false));
+		this.path = List.of(new PathStep(start, BankVisitState.CARRIED));
 	}
 
 	public static ExactPathfinder failed(int start, Set<Integer> targets, Runnable completionCallback, Throwable error)
@@ -369,7 +369,7 @@ public final class ExactPathfinder implements ActiveSearch
 			}
 
 			if (cancelled)
-				result = new PathfinderResult(start, firstTarget(), false, List.of(new PathStep(start, false)), start,
+				result = new PathfinderResult(start, firstTarget(), false, List.of(new PathStep(start, BankVisitState.CARRIED)), start,
 					PathfinderResult.NO_PATH_COST, stats.nodesChecked, stats.transportsChecked, System.nanoTime() - started,
 					PathTerminationReason.CANCELLED);
 			else if (timedOut.get())

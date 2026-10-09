@@ -319,7 +319,7 @@ public class Pathfinder implements ActiveSearch
 				if (graph.isDelayedVisit(node))
 				{
 					int packed = graph.packedPosition(node);
-					boolean bank = graph.bankVisited(node);
+					BankVisitState bank = graph.bankVisited(node);
 					if (visited.get(packed, bank))
 					{
 						continue;

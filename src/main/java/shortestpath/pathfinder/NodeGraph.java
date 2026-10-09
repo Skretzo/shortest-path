@@ -133,12 +133,12 @@ public class NodeGraph
 	 * only when the previous node is itself a tile (mirrors the old {@code Node.cost}); reaching a
 	 * tile from an abstract node adds no travel cost.
 	 */
-	public int createTile(int packedPosition, int previous, boolean bankVisited)
+	public int createTile(int packedPosition, int previous, BankVisitState bankVisited)
 	{
 		final int travelTime = (previous != NO_NODE && isTile(previous))
 			? WorldPointUtil.distanceBetween(this.packedPosition[previous], packedPosition)
 			: 0;
-		final byte flagBits = bankVisited ? FLAG_BANK_VISITED : 0;
+		final byte flagBits = bankVisited == BankVisitState.BANKED ? FLAG_BANK_VISITED : 0;
 		return append(packedPosition, previous, costOf(previous) + travelTime, 0, flagBits, (byte) 0);
 	}
 
@@ -149,10 +149,10 @@ public class NodeGraph
 	 * which transport produced the edge.
 	 */
 	public int createTransport(int packedPosition, int previous, int travelTime, int additionalCost,
-		boolean bankVisited, boolean delayedVisit, int differentialCost, Transport transport)
+		BankVisitState bankVisited, boolean delayedVisit, int differentialCost, Transport transport)
 	{
 		byte flagBits = FLAG_TRANSPORT;
-		if (bankVisited)
+		if (bankVisited == BankVisitState.BANKED)
 		{
 			flagBits |= FLAG_BANK_VISITED;
 		}
@@ -188,10 +188,10 @@ public class NodeGraph
 	 * An abstract search-state node (global teleports). Has no world position and inherits the
 	 * previous node's cost (mirrors the old {@code Node.abstractNode}).
 	 */
-	public int createAbstract(AbstractNodeKind abstractKind, int previous, boolean bankVisited)
+	public int createAbstract(AbstractNodeKind abstractKind, int previous, BankVisitState bankVisited)
 	{
 		byte flagBits = FLAG_ABSTRACT;
-		if (bankVisited)
+		if (bankVisited == BankVisitState.BANKED)
 		{
 			flagBits |= FLAG_BANK_VISITED;
 		}
@@ -227,9 +227,9 @@ public class NodeGraph
 		return cost[id] + differentialCost[id];
 	}
 
-	public boolean bankVisited(int id)
+	public BankVisitState bankVisited(int id)
 	{
-		return (flags[id] & FLAG_BANK_VISITED) != 0;
+		return (flags[id] & FLAG_BANK_VISITED) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 	}
 
 	public boolean isTile(int id)
@@ -311,7 +311,8 @@ public class NodeGraph
 		{
 			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0)
 			{
-				pathSteps.set(--i, new PathStep(packed[node], (flg[node] & FLAG_BANK_VISITED) != 0,
+				pathSteps.set(--i, new PathStep(packed[node],
+					(flg[node] & FLAG_BANK_VISITED) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED,
 					trans[node]));
 			}
 			node = prev[node];

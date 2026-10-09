@@ -292,27 +292,29 @@ public class PathfinderConfig
 	 * "currently relevant" set of transports to render. It must not be used for path-state-sensitive
 	 * logic, because transport availability now depends on whether a path has visited a bank.
 	 * <p>
-	 * Use {@link #getTransportAvailability(boolean)}, {@link #getTransportsPacked(boolean)}, or
-	 * {@link #getUsableTeleports(boolean)} for pathfinding and path analysis code.
+	 * Use {@link #getTransportAvailability(BankVisitState)}, {@link #getTransportsPacked(BankVisitState)}, or
+	 * {@link #getUsableTeleports(BankVisitState)} for pathfinding and path analysis code.
 	 */
 	public PrimitiveIntHashMap<Transport[]> getTransports()
 	{
-		return getTransportAvailability(includeBankPath).getDisplayTransports();
+		return getTransportAvailability(includeBankPath ? BankVisitState.BANKED : BankVisitState.CARRIED)
+			.getDisplayTransports();
 	}
 
-	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(boolean bankVisited)
+	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(BankVisitState bankVisitState)
 	{
-		return getTransportAvailability(bankVisited).getTransportsPacked();
+		return getTransportAvailability(bankVisitState).getTransportsPacked();
 	}
 
-	public Transport[] getUsableTeleports(boolean bankVisited)
+	public Transport[] getUsableTeleports(BankVisitState bankVisitState)
 	{
-		return getTransportAvailability(bankVisited).getUsableTeleports();
+		return getTransportAvailability(bankVisitState).getUsableTeleports();
 	}
 
-	public TransportAvailability getTransportAvailability(boolean bankVisited)
+	public TransportAvailability getTransportAvailability(BankVisitState bankVisitState)
 	{
-		return bankVisited ? transportAvailabilities.withBank : transportAvailabilities.withoutBank;
+		return bankVisitState == BankVisitState.BANKED
+			? transportAvailabilities.withBank : transportAvailabilities.withoutBank;
 	}
 
 	public boolean isBankPathEnabled()
@@ -324,7 +326,7 @@ public class PathfinderConfig
 	public PreparedRoutingAccount prepareExactRoutingAccount(boolean allowTransports)
 	{
 		return PreparedRoutingAccount.compile(
-			getTransportAvailability(false), getTransportAvailability(true), includeBankPath,
+			getTransportAvailability(BankVisitState.CARRIED), getTransportAvailability(BankVisitState.BANKED), includeBankPath,
 			accessibleBankTiles, bankVisitCost, allowTransports, this::getAdditionalTransportCost);
 	}
 
@@ -339,7 +341,7 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Whether standing on this tile may flip the path into {@code bankVisited} (inventory-from-bank) state.
+	 * Whether standing on this tile may flip the path into {@link BankVisitState#BANKED} (inventory-from-bank) state.
 	 */
 	public boolean bankAccessible(int packedPosition)
 	{
@@ -594,8 +596,8 @@ public class PathfinderConfig
 				continue;
 			}
 
-			boolean usableWithoutBank = eligibility.usable(transport, false);
-			boolean usableWithBank = eligibility.usable(transport, true);
+			boolean usableWithoutBank = eligibility.usable(transport, BankVisitState.CARRIED);
+			boolean usableWithBank = eligibility.usable(transport, BankVisitState.BANKED);
 			if (usableWithoutBank)
 			{
 				withoutBank.add(transport);

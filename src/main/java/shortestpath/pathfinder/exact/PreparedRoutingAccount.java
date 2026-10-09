@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.ToIntFunction;
 import shortestpath.PrimitiveIntHashMap;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -128,27 +129,27 @@ public final class PreparedRoutingAccount
 		return String.format("%016x", fingerprint);
 	}
 
-	public int localCount(boolean banked)
+	public int localCount(BankVisitState banked)
 	{
 		return view(local, banked).count;
 	}
-	public int localOrigin(boolean banked, int index)
+	public int localOrigin(BankVisitState banked, int index)
 	{
 		return view(local, banked).origins[index];
 	}
-	public int localDestination(boolean banked, int index)
+	public int localDestination(BankVisitState banked, int index)
 	{
 		return view(local, banked).destinations[index];
 	}
-	public int localCost(boolean banked, int index)
+	public int localCost(BankVisitState banked, int index)
 	{
 		return view(local, banked).costs[index];
 	}
-	public int localType(boolean banked, int index)
+	public int localType(BankVisitState banked, int index)
 	{
 		return view(local, banked).types[index];
 	}
-	public int localMaxWilderness(boolean banked, int index)
+	public int localMaxWilderness(BankVisitState banked, int index)
 	{
 		return view(local, banked).maxWilderness[index];
 	}
@@ -158,69 +159,69 @@ public final class PreparedRoutingAccount
 	 * requirements) to the same destination at the same cost, differing at most in origin. Taking
 	 * any of them leads to the same state, so a route may take the action from whichever origin.
 	 */
-	public int localActionClass(boolean banked, int index)
+	public int localActionClass(BankVisitState banked, int index)
 	{
 		return view(local, banked).actionClasses[index];
 	}
 	/** The global teleports castable outside the wilderness: every global this account has. */
-	public int globalCount(boolean banked)
+	public int globalCount(BankVisitState banked)
 	{
 		return globalCount(TeleportCapability.ALL, banked);
 	}
-	public int globalDestination(boolean banked, int index)
+	public int globalDestination(BankVisitState banked, int index)
 	{
 		return globalDestination(TeleportCapability.ALL, banked, index);
 	}
-	public int globalCost(boolean banked, int index)
+	public int globalCost(BankVisitState banked, int index)
 	{
 		return globalCost(TeleportCapability.ALL, banked, index);
 	}
-	public int globalType(boolean banked, int index)
+	public int globalType(BankVisitState banked, int index)
 	{
 		return globalView(TeleportCapability.ALL, banked).types[index];
 	}
-	public int globalMaxWilderness(boolean banked, int index)
+	public int globalMaxWilderness(BankVisitState banked, int index)
 	{
 		return globalMaxWilderness(TeleportCapability.ALL, banked, index);
 	}
 	/** The global teleports castable with {@code capability}. */
-	public int globalCount(TeleportCapability capability, boolean banked)
+	public int globalCount(TeleportCapability capability, BankVisitState banked)
 	{
 		return globalView(capability, banked).count;
 	}
-	public int globalDestination(TeleportCapability capability, boolean banked, int index)
+	public int globalDestination(TeleportCapability capability, BankVisitState banked, int index)
 	{
 		return globalView(capability, banked).destinations[index];
 	}
-	public int globalCost(TeleportCapability capability, boolean banked, int index)
+	public int globalCost(TeleportCapability capability, BankVisitState banked, int index)
 	{
 		return globalView(capability, banked).costs[index];
 	}
-	public int globalMaxWilderness(TeleportCapability capability, boolean banked, int index)
+	public int globalMaxWilderness(TeleportCapability capability, BankVisitState banked, int index)
 	{
 		return globalView(capability, banked).maxWilderness[index];
 	}
-	public Transport globalTransport(TeleportCapability capability, boolean banked, int index)
+	public Transport globalTransport(TeleportCapability capability, BankVisitState banked, int index)
 	{
 		return globalView(capability, banked).transports[index];
 	}
 
-	View localView(boolean banked)
+	View localView(BankVisitState banked)
 	{
 		return view(local, banked);
 	}
-	View globalView(boolean banked)
+	View globalView(BankVisitState banked)
 	{
 		return globalView(TeleportCapability.ALL, banked);
 	}
-	View globalView(TeleportCapability capability, boolean banked)
+	View globalView(TeleportCapability capability, BankVisitState banked)
 	{
 		return view(global[capability.ordinal()], banked);
 	}
 
-	private static View view(View[] views, boolean banked)
+	private static View view(View[] views, BankVisitState banked)
 	{
-		return views[banked ? 1 : 0];
+		return views[banked == BankVisitState.BANKED ? 1 : 0];
 	}
 
 	private long computeFingerprint()
