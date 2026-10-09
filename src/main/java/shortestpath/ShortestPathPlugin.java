@@ -96,6 +96,8 @@ import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.poh.PohChange;
 import shortestpath.poh.PohService;
+import shortestpath.scheduler.DebugState;
+import shortestpath.scheduler.PendingTask;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
