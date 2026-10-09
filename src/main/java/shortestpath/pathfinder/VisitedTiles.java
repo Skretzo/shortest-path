@@ -30,7 +30,7 @@ public class VisitedTiles
 		visitedRegionsWithBank = new VisitedRegion[widthInclusive * heightInclusive];
 	}
 
-	public boolean get(int packedPoint, boolean bankVisited)
+	public boolean get(int packedPoint, BankVisitState bankVisited)
 	{
 		final int x = WorldPointUtil.unpackWorldX(packedPoint);
 		final int y = WorldPointUtil.unpackWorldY(packedPoint);
@@ -38,9 +38,10 @@ public class VisitedTiles
 		return get(x, y, plane, bankVisited);
 	}
 
-	public boolean get(int x, int y, int plane, boolean bankVisited)
+	public boolean get(int x, int y, int plane, BankVisitState bankVisited)
 	{
-		VisitedRegion[] visitedRegions = bankVisited ? visitedRegionsWithBank : visitedRegionsWithoutBank;
+		VisitedRegion[] visitedRegions = bankVisited == BankVisitState.BANKED
+			? visitedRegionsWithBank : visitedRegionsWithoutBank;
 		final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
 		if (regionIndex < 0 || regionIndex >= visitedRegions.length)
 		{
@@ -57,7 +58,7 @@ public class VisitedTiles
 		return region.get(x % REGION_SIZE, y % REGION_SIZE, plane);
 	}
 
-	public boolean set(int packedPoint, boolean bankVisited)
+	public boolean set(int packedPoint, BankVisitState bankVisited)
 	{
 		final int x = WorldPointUtil.unpackWorldX(packedPoint);
 		final int y = WorldPointUtil.unpackWorldY(packedPoint);
@@ -74,9 +75,9 @@ public class VisitedTiles
 		return getAbstract(graph.abstractKind(id), graph.bankVisited(id));
 	}
 
-	public boolean getAbstract(AbstractNodeKind abstractKind, boolean bankVisited)
+	public boolean getAbstract(AbstractNodeKind abstractKind, BankVisitState bankVisited)
 	{
-		return bankVisited
+		return bankVisited == BankVisitState.BANKED
 			? abstractVisitedWithBank[abstractKind.ordinal()]
 			: abstractVisitedWithoutBank[abstractKind.ordinal()];
 	}
@@ -90,7 +91,7 @@ public class VisitedTiles
 
 		final AbstractNodeKind abstractKind = graph.abstractKind(id);
 		boolean visited = getAbstract(abstractKind, graph.bankVisited(id));
-		if (graph.bankVisited(id))
+		if (graph.bankVisited(id) == BankVisitState.BANKED)
 		{
 			abstractVisitedWithBank[abstractKind.ordinal()] = true;
 		}
@@ -98,14 +99,14 @@ public class VisitedTiles
 		// bank visit cost, so when that cost is positive the banked arrival can be strictly
 		// more expensive than a later unbanked arrival at the same state — marking the
 		// unbanked bucket would prune the cheaper continuation and lose the better route.
-		if (bankVisitCost <= 0 || !graph.bankVisited(id))
+		if (bankVisitCost <= 0 || graph.bankVisited(id) != BankVisitState.BANKED)
 		{
 			abstractVisitedWithoutBank[abstractKind.ordinal()] = true;
 		}
 		return !visited;
 	}
 
-	public boolean set(int x, int y, int plane, boolean bankVisited)
+	public boolean set(int x, int y, int plane, BankVisitState bankVisited)
 	{
 		final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
 		if (regionIndex < 0 || regionIndex >= visitedRegionsWithoutBank.length)
@@ -114,7 +115,7 @@ public class VisitedTiles
 			// further
 		}
 
-		if (bankVisited)
+		if (bankVisited == BankVisitState.BANKED)
 		{
 			boolean unique = setInRegion(visitedRegionsWithBank, regionIndex, x, y, plane);
 			// A banked tile only dominates the equivalent unbanked tile when banking is

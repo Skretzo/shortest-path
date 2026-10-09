@@ -105,7 +105,7 @@ public final class BankPickupRequirements
 			{
 				int stepPoint = path.get(i).getPackedPosition();
 				int nextPoint = path.get(i + 1).getPackedPosition();
-				boolean banked = path.get(i + 1).isBankVisited();
+				BankVisitState banked = path.get(i + 1).getBankVisitState();
 
 				List<Transport> edgeAlternatives = new ArrayList<>();
 				// When the step carries the transport the search actually used, that single

@@ -22,6 +22,7 @@ import org.junit.Test;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.BankVisitState;
 
 public class InGameWalkRewriterTest
 {
@@ -133,10 +134,10 @@ public class InGameWalkRewriterTest
 		AStarWalkCanonicalizerTest.Grid grid = new AStarWalkCanonicalizerTest.Grid();
 		// Walk, bank, teleport, walk: the canonicaliser finds the legs, the rewriter keeps the rest.
 		List<PathStep> route = new ArrayList<>(steps(0, 0, 1, 1, 2, 1));
-		route.add(new PathStep(pack(2, 1), true));
-		route.add(new PathStep(pack(100, 100), true));
-		route.add(new PathStep(pack(101, 101), true));
-		route.add(new PathStep(pack(102, 101), true));
+		route.add(new PathStep(pack(2, 1), BankVisitState.BANKED));
+		route.add(new PathStep(pack(100, 100), BankVisitState.BANKED));
+		route.add(new PathStep(pack(101, 101), BankVisitState.BANKED));
+		route.add(new PathStep(pack(102, 101), BankVisitState.BANKED));
 		int[] costs = {0, 1, 2, 2, 5, 6, 7};
 		AStarWalkCanonicalizer.Result canonical = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS)
 			.canonicalize(AStarRoute.of(route, costs));
@@ -145,10 +146,10 @@ public class InGameWalkRewriterTest
 		InGameWalkRewriter.Result result = new InGameWalkRewriter(grid).rewrite(canonical);
 
 		List<PathStep> expected = new ArrayList<>(steps(0, 0, 1, 0, 2, 1));
-		expected.add(new PathStep(pack(2, 1), true));
-		expected.add(new PathStep(pack(100, 100), true));
-		expected.add(new PathStep(pack(101, 100), true));
-		expected.add(new PathStep(pack(102, 101), true));
+		expected.add(new PathStep(pack(2, 1), BankVisitState.BANKED));
+		expected.add(new PathStep(pack(100, 100), BankVisitState.BANKED));
+		expected.add(new PathStep(pack(101, 100), BankVisitState.BANKED));
+		expected.add(new PathStep(pack(102, 101), BankVisitState.BANKED));
 		assertEquals(describe(expected), describe(result.path()));
 		assertEquals(List.of(2, 6), result.clickPoints());
 	}
@@ -182,7 +183,7 @@ public class InGameWalkRewriterTest
 		{
 			List<Integer> walk = gamePath(grid, pack(e[0], e[1]), pack(e[2], e[3]));
 			List<PathStep> raw = new ArrayList<>(steps(e[0], e[1]));
-			for (int tile : walk) raw.add(new PathStep(tile, false));
+			for (int tile : walk) raw.add(new PathStep(tile, BankVisitState.CARRIED));
 			AStarWalkCanonicalizer.Result canonical = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS)
 				.canonicalize(AStarRoute.of(raw, costs(raw.size())));
 			assertEquals(List.of(), canonical.diagnostics());
@@ -306,7 +307,7 @@ public class InGameWalkRewriterTest
 				if (!open.contains(pack(x, y))) blocked.add(pack(x, y));
 		AStarWalkCanonicalizerTest.Grid grid = new AStarWalkCanonicalizerTest.Grid(blocked);
 		List<PathStep> route = new ArrayList<>();
-		for (int tile : corridor) route.add(new PathStep(tile, false));
+		for (int tile : corridor) route.add(new PathStep(tile, BankVisitState.CARRIED));
 
 		InGameWalkRewriter.Result result = rewrite(grid, route, 0, route.size() - 1);
 
@@ -482,7 +483,7 @@ public class InGameWalkRewriterTest
 		{
 			int packed = step.getPackedPosition();
 			tiles.add((WorldPointUtil.unpackWorldX(packed) - BASE_X) + "," + (WorldPointUtil.unpackWorldY(packed) - BASE_Y)
-				+ (step.isBankVisited() ? " banked" : ""));
+				+ (step.getBankVisitState() == BankVisitState.BANKED ? " banked" : ""));
 		}
 		return tiles;
 	}
@@ -496,7 +497,7 @@ public class InGameWalkRewriterTest
 
 	private static PathStep step(int x, int y)
 	{
-		return new PathStep(pack(x, y), false);
+		return new PathStep(pack(x, y), BankVisitState.CARRIED);
 	}
 
 	private static int pack(int x, int y)

@@ -8,10 +8,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
@@ -54,19 +55,19 @@ public class TransportsForEdgeTest
 
 	private void mockTeleports(Transport... teleports)
 	{
-		when(pathfinderConfig.getUsableTeleports(anyBoolean())).thenReturn(teleports);
+		when(pathfinderConfig.getUsableTeleports(any(BankVisitState.class))).thenReturn(teleports);
 	}
 
 	private void mockLocalTransports(int origin, Transport... local)
 	{
 		PrimitiveIntHashMap<Transport[]> packed = new PrimitiveIntHashMap<>(1);
 		packed.put(origin, local);
-		when(pathfinderConfig.getTransportsPacked(anyBoolean())).thenReturn(packed);
+		when(pathfinderConfig.getTransportsPacked(any(BankVisitState.class))).thenReturn(packed);
 	}
 
 	private void mockNoLocalTransports()
 	{
-		when(pathfinderConfig.getTransportsPacked(anyBoolean())).thenReturn(new PrimitiveIntHashMap<>(0));
+		when(pathfinderConfig.getTransportsPacked(any(BankVisitState.class))).thenReturn(new PrimitiveIntHashMap<>(0));
 	}
 
 	@Test
@@ -76,8 +77,8 @@ public class TransportsForEdgeTest
 		mockNoLocalTransports();
 		// The path walks onto the Lumbridge teleport landing tile — a single-tile
 		// edge that cannot be a teleport, so no teleport hint should be produced.
-		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3222, 3218, 0), false);
-		PathStep to = new PathStep(LUMBRIDGE_LANDING, false);
+		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3222, 3218, 0), BankVisitState.CARRIED);
+		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED);
 		Assert.assertTrue(plugin.transportsForEdge(from, to).isEmpty());
 	}
 
@@ -88,8 +89,8 @@ public class TransportsForEdgeTest
 		mockNoLocalTransports();
 		// Same suppression when the landing tile is the last step of the path:
 		// the path does not go beyond the tile, so no teleport is used.
-		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3221, 3219, 0), false);
-		PathStep to = new PathStep(LUMBRIDGE_LANDING, false);
+		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3221, 3219, 0), BankVisitState.CARRIED);
+		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED);
 		Assert.assertTrue(plugin.transportsForEdge(from, to).isEmpty());
 	}
 
@@ -100,16 +101,16 @@ public class TransportsForEdgeTest
 		mockNoLocalTransports();
 		// Manually constructed steps carry no transport identity; on an actual
 		// jump the teleport remains a candidate.
-		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3200, 3200, 0), false);
-		PathStep to = new PathStep(LUMBRIDGE_LANDING, false);
+		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3200, 3200, 0), BankVisitState.CARRIED);
+		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED);
 		Assert.assertEquals(Set.of(lumbridgeTeleport, lumbridgeHomeTeleport), plugin.transportsForEdge(from, to));
 	}
 
 	@Test
 	public void testRecordedTransportIsReturnedDirectly()
 	{
-		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3200, 3200, 0), false);
-		PathStep to = new PathStep(LUMBRIDGE_LANDING, false, lumbridgeTeleport);
+		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3200, 3200, 0), BankVisitState.CARRIED);
+		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED, lumbridgeTeleport);
 		Assert.assertEquals(Set.of(lumbridgeTeleport), plugin.transportsForEdge(from, to));
 	}
 
@@ -138,8 +139,8 @@ public class TransportsForEdgeTest
 		Assert.assertNotNull(adjacentLocal);
 		mockTeleports(lumbridgeTeleport, lumbridgeHomeTeleport);
 		mockLocalTransports(adjacentLocal.getOrigin(), adjacentLocal);
-		PathStep from = new PathStep(adjacentLocal.getOrigin(), false);
-		PathStep to = new PathStep(adjacentLocal.getDestination(), false);
+		PathStep from = new PathStep(adjacentLocal.getOrigin(), BankVisitState.CARRIED);
+		PathStep to = new PathStep(adjacentLocal.getDestination(), BankVisitState.CARRIED);
 		Assert.assertEquals(Set.of(adjacentLocal), plugin.transportsForEdge(from, to));
 	}
 }

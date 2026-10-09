@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
@@ -30,11 +31,11 @@ public class AStarForwardSearchHotPathTest
 		for (int node = 0; node < stat.searchTileCount(); node++)
 		{
 			assertEquals(stat.searchIndex(stat.searchTile(node)) * 2,
-				AStarForwardSearch.stateForNode(node, false));
+				AStarForwardSearch.stateForNode(node, BankVisitState.CARRIED));
 			assertEquals(stat.searchIndex(stat.searchTile(node)) * 2 + 1,
-				AStarForwardSearch.stateForNode(node, true));
+				AStarForwardSearch.stateForNode(node, BankVisitState.BANKED));
 			assertEquals(isBankTile(stat, stat.searchTile(node)), stat.isBankNode(node));
-			for (boolean banked : new boolean[] {false, true})
+			for (BankVisitState banked : BankVisitState.values())
 				assertEquals(heuristic.estimate(stat.searchTile(node), banked,
 					new int[] {stat.routingComponent(node)}), heuristic.estimateBaseNode(stat.searchTile(node),
 					banked, stat.routingComponent(node)));

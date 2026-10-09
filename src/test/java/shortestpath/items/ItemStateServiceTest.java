@@ -26,6 +26,7 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.ItemVariations;
 import shortestpath.pathfinder.BankPickupProjection;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
@@ -251,8 +252,8 @@ public class ItemStateServiceTest
 
 		assertNotNull(eligibility);
 		assertFalse("no pool satisfies an item requirement without containers",
-			eligibility.usable(THREE_AIR, false));
-		assertFalse(eligibility.usable(THREE_AIR, true));
+			eligibility.usable(THREE_AIR, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.BANKED));
 	}
 
 	@Test
@@ -264,8 +265,8 @@ public class ItemStateServiceTest
 			TeleportationItem.INVENTORY_AND_BANK, true);
 
 		assertNotNull(eligibility);
-		assertFalse(eligibility.usable(THREE_AIR, false));
-		assertFalse(eligibility.usable(THREE_AIR, true));
+		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.BANKED));
 	}
 
 	@Test
@@ -280,7 +281,7 @@ public class ItemStateServiceTest
 			TeleportationItem.INVENTORY_AND_BANK, true);
 
 		assertFalse("a zero-quantity air rune cannot satisfy the requirement",
-			eligibility.usable(needsItem(ItemVariations.AIR_RUNE.getIds(), 1), true));
+			eligibility.usable(needsItem(ItemVariations.AIR_RUNE.getIds(), 1), BankVisitState.BANKED));
 	}
 
 	@Test
@@ -293,8 +294,8 @@ public class ItemStateServiceTest
 		TransportEligibility eligibility = collect(source, service.getBank(),
 			TeleportationItem.INVENTORY_AND_BANK, true);
 
-		assertFalse("the bank item is not carried", eligibility.usable(SHANTAY_GATE, false));
-		assertTrue("the bank item enters the bank-path pool", eligibility.usable(SHANTAY_GATE, true));
+		assertFalse("the bank item is not carried", eligibility.usable(SHANTAY_GATE, BankVisitState.CARRIED));
+		assertTrue("the bank item enters the bank-path pool", eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
 	}
 
 	@Test
@@ -308,7 +309,7 @@ public class ItemStateServiceTest
 			TeleportationItem.INVENTORY_AND_BANK, false);
 
 		assertFalse("with bank paths off the banked pool is the carried pool",
-			eligibility.usable(SHANTAY_GATE, true));
+			eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
 	}
 
 	@Test
@@ -321,9 +322,9 @@ public class ItemStateServiceTest
 		TransportEligibility eligibility = collect(source, service.getBank(),
 			TeleportationItem.INVENTORY_AND_BANK, true);
 
-		assertFalse("pouch runes are not carried", eligibility.usable(THREE_AIR, false));
+		assertFalse("pouch runes are not carried", eligibility.usable(THREE_AIR, BankVisitState.CARRIED));
 		assertTrue("a banked pouch's runes feed the bank-path pool",
-			eligibility.usable(THREE_AIR, true));
+			eligibility.usable(THREE_AIR, BankVisitState.BANKED));
 	}
 
 	@Test
@@ -358,7 +359,7 @@ public class ItemStateServiceTest
 		TransportEligibility eligibility = collect(source, service.getBank(),
 			TeleportationItem.INVENTORY_AND_BANK, true);
 
-		assertFalse(eligibility.usable(THREE_AIR, true));
+		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.BANKED));
 		assertNull("the bank cannot supply the runes", eligibility.bankPickupPlan(THREE_AIR).items);
 	}
 
@@ -395,7 +396,7 @@ public class ItemStateServiceTest
 	{
 		BankPickupProjection projection = new BankPickupProjection();
 		PathfinderConfig config = pickupConfig();
-		List<PathStep> path = List.of(new PathStep(999, false));
+		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED));
 
 		assertNull("no open bank means no projection",
 			pickup(projection, ItemStateService.forTesting(), config, path, 0));
@@ -417,7 +418,7 @@ public class ItemStateServiceTest
 		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
-		List<PathStep> path = List.of(new PathStep(999, false), new PathStep(888, false));
+		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED), new PathStep(888, BankVisitState.CARRIED));
 
 		BankPickupResult first = pickup(projection, service, config, path, 0);
 		BankPickupResult second = pickup(projection, service, config, path, 0);
@@ -432,14 +433,14 @@ public class ItemStateServiceTest
 		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
-		List<PathStep> path = List.of(new PathStep(999, false), new PathStep(888, false));
+		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED), new PathStep(888, BankVisitState.CARRIED));
 
 		BankPickupResult first = pickup(projection, service, config, path, 0);
 
 		assertNotSame("a different index recomputes", first,
 			pickup(projection, service, config, path, 1));
 
-		List<PathStep> equalButSeparate = List.of(new PathStep(999, false), new PathStep(888, false));
+		List<PathStep> equalButSeparate = List.of(new PathStep(999, BankVisitState.CARRIED), new PathStep(888, BankVisitState.CARRIED));
 		assertNotSame("an equal-but-separate path list recomputes — the key is identity",
 			first, pickup(projection, service, config, equalButSeparate, 0));
 	}
@@ -450,7 +451,7 @@ public class ItemStateServiceTest
 		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
-		List<PathStep> path = List.of(new PathStep(999, false));
+		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED));
 
 		BankPickupResult first = pickup(projection, service, config, path, 0);
 		service.noteBankContainer(mock(ItemContainer.class));
@@ -465,7 +466,7 @@ public class ItemStateServiceTest
 		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
-		List<PathStep> path = List.of(new PathStep(999, false));
+		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED));
 
 		BankPickupResult first = pickup(projection, service, config, path, 0);
 		service.onContainerChanged(InventoryID.INV, mock(ItemContainer.class));

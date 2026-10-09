@@ -72,7 +72,7 @@ public class AStarPathfinderTest
 		assertTrue(result.reached());
 		assertEquals(4, result.cost());
 		assertEquals(3, result.path().size());
-		assertTrue(result.path().get(2).isBankVisited());
+		assertTrue(result.path().get(2).getBankVisitState() == BankVisitState.BANKED);
 		assertEquals(RoutingStaticTestFixture.D, result.path().get(2).getPackedPosition());
 	}
 
@@ -89,7 +89,7 @@ public class AStarPathfinderTest
 		AStarForwardSearch.Result result = search(target, RoutingStaticTestFixture.A);
 
 		assertFalse("only the banked teleport reaches D, and this account cannot bank", result.reached());
-		assertFalse(result.path().stream().anyMatch(PathStep::isBankVisited));
+		assertFalse(result.path().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test
@@ -107,9 +107,9 @@ public class AStarPathfinderTest
 			java.util.Set.of(RoutingStaticTestFixture.BANK), 20), RoutingStaticTestFixture.D), RoutingStaticTestFixture.A);
 
 		assertEquals("walk 1 + visit 5 + banked teleport 3", 9, cheapVisit.cost());
-		assertTrue(cheapVisit.path().stream().anyMatch(PathStep::isBankVisited));
+		assertTrue(cheapVisit.path().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertEquals("the direct transport beats 1 + 20 + 3", 10, dearVisit.cost());
-		assertFalse(dearVisit.path().stream().anyMatch(PathStep::isBankVisited));
+		assertFalse(dearVisit.path().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test
@@ -127,7 +127,7 @@ public class AStarPathfinderTest
 
 		assertTrue(account.bankAccessible(RoutingStaticTestFixture.BANK));
 		assertFalse(result.reached());
-		assertFalse(result.path().stream().anyMatch(PathStep::isBankVisited));
+		assertFalse(result.path().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test
@@ -151,8 +151,8 @@ public class AStarPathfinderTest
 	public void previousRouteIsShownUntilTheSearchCompletes()
 		throws Exception
 	{
-		List<PathStep> previous = List.of(new PathStep(RoutingStaticTestFixture.C, false),
-			new PathStep(RoutingStaticTestFixture.D, false));
+		List<PathStep> previous = List.of(new PathStep(RoutingStaticTestFixture.C, BankVisitState.CARRIED),
+			new PathStep(RoutingStaticTestFixture.D, BankVisitState.CARRIED));
 		AStarPathfinder search = pathfinder(0);
 		search.showUntilDone(previous);
 
@@ -170,8 +170,8 @@ public class AStarPathfinderTest
 	public void cancelledSearchKeepsShowingThePreviousRoute()
 		throws Exception
 	{
-		List<PathStep> previous = List.of(new PathStep(RoutingStaticTestFixture.C, false),
-			new PathStep(RoutingStaticTestFixture.D, false));
+		List<PathStep> previous = List.of(new PathStep(RoutingStaticTestFixture.C, BankVisitState.CARRIED),
+			new PathStep(RoutingStaticTestFixture.D, BankVisitState.CARRIED));
 		AStarPathfinder search = pathfinder(0);
 		search.showUntilDone(previous);
 		search.cancel();
@@ -187,7 +187,7 @@ public class AStarPathfinderTest
 		throws Exception
 	{
 		AStarPathfinder search = pathfinder(0);
-		search.showUntilDone(List.of(new PathStep(RoutingStaticTestFixture.C, false)));
+		search.showUntilDone(List.of(new PathStep(RoutingStaticTestFixture.C, BankVisitState.CARRIED)));
 
 		assertFalse(search.isShowingProvisionalPath());
 		assertEquals(1, search.getPath().size());

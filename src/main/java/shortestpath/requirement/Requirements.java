@@ -4,9 +4,11 @@ import java.util.*;
 
 import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
+import shortestpath.ShortestPathPlugin;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.*;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.poh.PohService;
 import shortestpath.requirement.model.*;
 import shortestpath.transport.*;
@@ -577,7 +579,7 @@ public final class Requirements
 	private RejectionReason itemRequirement(Transport transport)
 	{
 		TransportEligibility eligibility = context.getEligibility();
-		if (!eligibility.usable(transport, false) && !eligibility.usable(transport, true))
+		if (!eligibility.usable(transport, BankVisitState.CARRIED) && !eligibility.usable(transport, BankVisitState.BANKED))
 		{
 			return RejectionReason.ITEM_REQUIREMENT;
 		}
