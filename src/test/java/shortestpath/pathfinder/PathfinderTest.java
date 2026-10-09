@@ -945,6 +945,53 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testBlockedWallFaceTargetEndsOnAdjacentFace()
+	{
+		// The rock at (1504, 3859) is a blast-mine wall in Lovakengj: the
+		// target tile is itself the wall object, so every walkable neighbour
+		// lies behind one of its boundary edges. Ring 1 must still resolve
+		// those neighbours -- the rock is mined from the tile touching its
+		// face -- instead of expanding to the pocket behind the wall's west
+		// end, which the route cannot interact from.
+		final int radius = 6;
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(1504, 3859, 0));
+		assertTrue("test requires the north edge to be a wall boundary",
+			map.wallN(1504, 3859, 0));
+		assertFalse("test requires a walkable start tile",
+			map.isBlocked(1504, 3866, 0));
+		int end = runBlockedTargetRoute(1504, 3866, 1504, 3859);
+		assertEquals("the rock face is only usable from its cardinal neighbour",
+			WorldPointUtil.packWorldPoint(1504, 3860, 0), end);
+	}
+
+	@Test
+	public void testBlockedWallFaceTargetOffModeEndsOnAdjacentFace()
+	{
+		// With collisionAwareBlockedTargets off the plain ring scan applies,
+		// but diagonal neighbours still cannot be interacted with: of the
+		// three walkable ring-1 tiles around the blast-mine wall only the
+		// cardinally adjacent face may become a goal.
+		final int radius = 6;
+		when(config.collisionAwareBlockedTargets()).thenReturn(false);
+		when(config.unreachableTargetDistance()).thenReturn(radius);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		setupInventory();
+		final CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile",
+			map.isBlocked(1504, 3859, 0));
+		assertFalse("test requires a walkable start tile",
+			map.isBlocked(1504, 3866, 0));
+		int end = runBlockedTargetRoute(1504, 3866, 1504, 3859);
+		assertEquals("the rock face is only usable from its cardinal neighbour",
+			WorldPointUtil.packWorldPoint(1504, 3860, 0), end);
+	}
+
+	@Test
 	public void testTeleportItemsAndFairyRingsAvailableAfterBankVisit()
 	{
 		// Test scenario: Both Dramen staff AND Ardougne cloak are in the bank

@@ -251,4 +251,30 @@ public class ExactPathfinderBlockedTargetTest
 		assertFalse("off mode must accept a tile not connected to the target",
 			connected.contains(end));
 	}
+
+	@Test
+	public void blockedWallFaceTargetEndsOnAdjacentFace()
+	{
+		// Same Lovakengj blast-mine fixture as the legacy test: the rock at
+		// (1504, 3859) is the wall object itself, so every walkable neighbour
+		// lies behind one of its boundary edges. They must still resolve as
+		// goals -- the cardinally adjacent face specifically -- rather than
+		// expanding to the pocket behind the wall's west end.
+		setup(6);
+		CollisionMap map = pathfinderConfig.getMap();
+		int start = WorldPointUtil.packWorldPoint(1504, 3866, 0);
+		int blockedTarget = WorldPointUtil.packWorldPoint(1504, 3859, 0);
+		assertTrue("test requires a blocked target tile", map.isBlocked(1504, 3859, 0));
+		assertTrue("test requires the north edge to be a wall boundary",
+			map.wallN(1504, 3859, 0));
+		assertFalse("test requires a walkable start tile", map.isBlocked(1504, 3866, 0));
+
+		ExactPathfinder pathfinder = search(start, Set.of(blockedTarget));
+		PathfinderResult result = pathfinder.getResult();
+		assertNotNull(result);
+		assertTrue(result.isReached());
+		assertEquals(PathTerminationReason.TARGET_REACHED, result.getTerminationReason());
+		assertEquals("the rock face is only usable from its cardinal neighbour",
+			WorldPointUtil.packWorldPoint(1504, 3860, 0), end(result));
+	}
 }
