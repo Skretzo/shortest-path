@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.scheduler;
 
 public class PendingTask
 {
@@ -11,12 +11,12 @@ public class PendingTask
 		this.task = task;
 	}
 
-	public boolean check(int tick)
+	boolean check(int tick)
 	{
 		return tick >= this.tick;
 	}
 
-	public void run()
+	void run()
 	{
 		task.run();
 	}
