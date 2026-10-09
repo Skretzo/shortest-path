@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.poh;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +30,7 @@ import net.runelite.client.util.Text;
 @Singleton
 public class PortalNexusKeybinds
 {
-	static final int TELENEXUS_CREATE_TELELINE = 2675;
+	public static final int TELENEXUS_CREATE_TELELINE = 2675;
 
 	// In-game labels look like "<col=ffffff>1 : Harmony Island" (space before the colon).
 	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z]|F(?:[1-9]|1[0-2]))\\s*:\\s*(.+)$");
@@ -117,7 +117,7 @@ public class PortalNexusKeybinds
 	 * every open, so cached mappings for slots the player unassigned must be
 	 * dropped before the new build is observed.
 	 */
-	void dialogOpened()
+	public void dialogOpened()
 	{
 		keysByNormalizedName.clear();
 		dirty = true;
@@ -128,7 +128,7 @@ public class PortalNexusKeybinds
 	 * explicit "key : name" prefix in the line text produces a mapping; a line
 	 * without a readable prefix carries no keybind information and is ignored.
 	 */
-	void putFromDialogLine(String rawText)
+	public void putFromDialogLine(String rawText)
 	{
 		String cleaned = rawText == null ? "" : Text.removeTags(rawText).trim();
 		Matcher matcher = KEYED_LINE.matcher(cleaned);
@@ -140,7 +140,7 @@ public class PortalNexusKeybinds
 		dirty = true;
 	}
 
-	void loadFromProfile()
+	public void loadFromProfile()
 	{
 		dirty = false;
 		keysByNormalizedName.clear();
@@ -149,12 +149,12 @@ public class PortalNexusKeybinds
 		{
 			return;
 		}
-		String stored = configManager.getRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP, CONFIG_KEY);
+		String stored = configManager.getRSProfileConfiguration("shortestpath", CONFIG_KEY);
 		deserialize(stored, keysByNormalizedName);
 		lastSaved = serialize(keysByNormalizedName);
 	}
 
-	void persistIfDirty()
+	public void persistIfDirty()
 	{
 		if (!dirty)
 		{
@@ -310,7 +310,7 @@ public class PortalNexusKeybinds
 			return;
 		}
 		lastSaved = serialized;
-		configManager.setRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP, CONFIG_KEY, serialized);
+		configManager.setRSProfileConfiguration("shortestpath", CONFIG_KEY, serialized);
 	}
 
 	private static void collectKeyedWidgets(Widget widget, Map<String, String> parsed)
