@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.poh;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,7 +29,7 @@ import net.runelite.client.util.Text;
 @Singleton
 public class PortalNexusKeybinds
 {
-	static final int TELENEXUS_CREATE_TELELINE = 2675;
+	public static final int TELENEXUS_CREATE_TELELINE = 2675;
 
 	// In-game labels look like "<col=ffffff>1 : Harmony Island" (space before the colon).
 	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z]|F(?:[1-9]|10))\\s*:\\s*(.+)$");
@@ -123,7 +123,7 @@ public class PortalNexusKeybinds
 	 * as the key index; the displayed key is positional (1-9, A-Z, F1-F10).
 	 * An explicit "key : name" prefix in the line text wins when present.
 	 */
-	void putFromDialogLine(int tick, String rawText)
+	public void putFromDialogLine(int tick, String rawText)
 	{
 		if (tick != dialogTick)
 		{
@@ -152,7 +152,7 @@ public class PortalNexusKeybinds
 		}
 	}
 
-	void loadFromProfile()
+	public void loadFromProfile()
 	{
 		dirty = false;
 		keysByNormalizedName.clear();
@@ -161,12 +161,12 @@ public class PortalNexusKeybinds
 		{
 			return;
 		}
-		String stored = configManager.getRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP, CONFIG_KEY);
+		String stored = configManager.getRSProfileConfiguration("shortestpath", CONFIG_KEY);
 		deserialize(stored, keysByNormalizedName);
 		lastSaved = serialize(keysByNormalizedName);
 	}
 
-	void persistIfDirty()
+	public void persistIfDirty()
 	{
 		if (!dirty)
 		{
@@ -354,7 +354,7 @@ public class PortalNexusKeybinds
 			return;
 		}
 		lastSaved = serialized;
-		configManager.setRSProfileConfiguration(ShortestPathPlugin.CONFIG_GROUP, CONFIG_KEY, serialized);
+		configManager.setRSProfileConfiguration("shortestpath", CONFIG_KEY, serialized);
 	}
 
 	private static void collectKeyedWidgets(Widget widget, Map<String, String> parsed)
