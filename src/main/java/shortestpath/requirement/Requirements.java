@@ -8,12 +8,12 @@ import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.ItemID;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.poh.PohService;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.JewelleryBoxTier;
@@ -191,7 +191,7 @@ public final class Requirements
 			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-			if (ShortestPathPlugin.isInsidePoh(originX, originY) || ShortestPathPlugin.isInsidePoh(destX, destY))
+			if (PohService.isInsidePoh(originX, originY) || PohService.isInsidePoh(destX, destY))
 			{
 				return RejectionReason.POH_DISABLED;
 			}
@@ -259,7 +259,7 @@ public final class Requirements
 		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 
-		if (!ShortestPathPlugin.isInsidePoh(originX, originY) && !ShortestPathPlugin.isInsidePoh(destX, destY))
+		if (!PohService.isInsidePoh(originX, originY) && !PohService.isInsidePoh(destX, destY))
 		{
 			return RejectionReason.NONE; // Not a POH transport
 		}
