@@ -20,6 +20,7 @@ import net.runelite.client.config.ConfigManager;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.SpiritTreePatches;
+import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 
 /**
@@ -63,6 +64,7 @@ public class SpiritTreeService
 
 	private final ConfigManager configManager;
 	private final Client client;
+	private final RefreshCoordinator coordinator;
 	// patch name -> last observed availability value (20 = grown and
 	// travelable). Published as immutable snapshots (copy-on-write writes)
 	// so readers on any thread can never iterate a half-mutated map.
@@ -87,26 +89,48 @@ public class SpiritTreeService
 	@Getter private volatile Set<String> availableSpiritTrees;
 
 	@Inject
-	public SpiritTreeService(ConfigManager configManager, Client client)
+	public SpiritTreeService(ConfigManager configManager, Client client,
+		RefreshCoordinator coordinator)
 	{
 		this.configManager = configManager;
 		this.client = client;
+		this.coordinator = coordinator;
+	}
+
+	/**
+	 * Detached-coordinator seam for tests that exercise the service's state
+	 * and persistence without asserting declares — the declare no-ops on the
+	 * missing coordinator.
+	 */
+	SpiritTreeService(ConfigManager configManager, Client client)
+	{
+		this(configManager, client, null);
 	}
 
 	SpiritTreeService()
 	{
-		this(null, null);
+		this(null, null, null);
 	}
 
 	/**
 	 * A detached service for harnesses and tests: no persistence and no
 	 * client, so {@link #refreshAvailability} takes its detached arm and
 	 * merges live samples into the published set instead of recording
-	 * observations.
+	 * observations. No coordinator either, so change declares no-op.
 	 */
 	public static SpiritTreeService forTesting()
 	{
 		return new SpiritTreeService();
+	}
+
+	/**
+	 * Test seam for asserting change declares: the returned instance hands
+	 * admitted facts to the given (typically mocked) coordinator while
+	 * staying detached from persistence and the client.
+	 */
+	public static SpiritTreeService forTesting(RefreshCoordinator coordinator)
+	{
+		return new SpiritTreeService(null, null, coordinator);
 	}
 
 	static boolean spiritTreeTravelable(int varbitValue)
@@ -354,14 +378,15 @@ public class SpiritTreeService
 
 	/**
 	 * Per-tick driver: notes the player's region, samples the in-region
-	 * patch varbit once the region has settled, and flushes persistence.
-	 * Returns a route-invalidating fact when the resolved set changed.
+	 * patch varbit once the region has settled, flushes persistence, and
+	 * declares a route-invalidating fact to the coordinator when the
+	 * resolved set changed.
 	 */
-	public TreeChange onGameTick()
+	public void onGameTick()
 	{
 		if (client == null)
 		{
-			return null;
+			return;
 		}
 
 		Player localPlayer = client.getLocalPlayer();
@@ -396,22 +421,23 @@ public class SpiritTreeService
 		// on this tick rather than waiting for the next one.
 		persistIfDirty();
 
-		return change;
+		declare(change);
 	}
 
 	/**
 	 * Scrapes a freshly opened spirit tree travel menu and applies the
-	 * listed/available snapshot. Returns a route-invalidating fact when the
-	 * resolved set changed, null for unrelated menus and unchanged parses.
+	 * listed/available snapshot. Declares a route-invalidating fact to the
+	 * coordinator when the resolved set changed; unrelated menus and
+	 * unchanged parses declare nothing.
 	 */
-	public TreeChange onMenuOpened(boolean useNewMenu)
+	public void onMenuOpened(boolean useNewMenu)
 	{
 		// Referencing
 		// https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
 
 		if (client == null)
 		{
-			return null;
+			return;
 		}
 
 		Widget container;
@@ -426,13 +452,13 @@ public class SpiritTreeService
 
 		if (container == null)
 		{
-			return null;
+			return;
 		}
 
 		Widget[] children = container.getDynamicChildren();
 		if (children == null || children.length == 0)
 		{
-			return null;
+			return;
 		}
 
 		// Tree Gnome Village is always the first row and always available, so an
@@ -444,7 +470,7 @@ public class SpiritTreeService
 			(useNewMenu ? "<col=ffffff>1</col>: " : "<col=735a28>1</col>: ") + "Tree Gnome Village";
 		if (!expectedFirstRow.equals(children[0].getText()))
 		{
-			return null;
+			return;
 		}
 
 		SpiritTreeMenuSnapshot snapshot = parseSpiritTreeMenuRows(children, useNewMenu);
@@ -456,7 +482,7 @@ public class SpiritTreeService
 		{
 			publish(getTravelableTrees());
 		}
-		return change;
+		declare(change);
 	}
 
 	/**
@@ -499,7 +525,13 @@ public class SpiritTreeService
 		return snapshot;
 	}
 
-	public TreeChange loadFromProfile()
+	/**
+	 * Reloads the persisted observations for the active profile. A profile
+	 * reload always re-resolves state, so the declared fact is
+	 * unconditional, matching the unconditional restart the shell used to
+	 * apply.
+	 */
+	public void loadFromProfile()
 	{
 		dirty = false;
 		// Build the replacement maps locally and publish them as one
@@ -523,10 +555,10 @@ public class SpiritTreeService
 		}
 		observedValues = Map.copyOf(observed);
 		lastPersistedValues = Map.copyOf(persisted);
-		// A profile reload always re-resolves state — the returned fact is
+		// A profile reload always re-resolves state — the declared fact is
 		// unconditional, matching the shell's unconditional restart today.
 		publish(getTravelableTreesOrNull());
-		return new TreeChange("profile", Set.of(Effect.ROUTE_INVALIDATING));
+		declare(new TreeChange("profile", Set.of(Effect.ROUTE_INVALIDATING)));
 	}
 
 	public void persistIfDirty()
@@ -568,6 +600,20 @@ public class SpiritTreeService
 			}
 		}
 		lastPersistedValues = Map.copyOf(persisted);
+	}
+
+	/**
+	 * Hands an admitted fact to the refresh coordinator. Detached
+	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * no-ops there; a null fact declares nothing, mirroring the return-null
+	 * convention the shell's mapper used to guard.
+	 */
+	private void declare(TreeChange change)
+	{
+		if (change != null && coordinator != null)
+		{
+			coordinator.treeSetChanged(change);
+		}
 	}
 
 	/**
