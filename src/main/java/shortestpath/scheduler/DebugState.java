@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.scheduler;
 
 import lombok.Getter;
 import shortestpath.pathfinder.ActiveSearch;
@@ -56,12 +56,12 @@ public final class DebugState
 	private volatile String searchError;
 	private volatile int searchErrorTick = -1;
 
-	void restartRequested(String reason, int tick)
+	public void restartRequested(String reason, int tick)
 	{
 		restart = new Restart(++restartCount, reason, tick, "pending");
 	}
 
-	void restartOutcome(String outcome)
+	public void restartOutcome(String outcome)
 	{
 		Restart current = restart;
 		if (current != null)
@@ -70,32 +70,32 @@ public final class DebugState
 		}
 	}
 
-	void searchCancelled(ActiveSearch cancelled)
+	public void searchCancelled(ActiveSearch cancelled)
 	{
 		cancelledSearch = cancelled;
 	}
 
-	void searchStarted(ActiveSearch started)
+	public void searchStarted(ActiveSearch started)
 	{
 		search = started;
 		restartOutcome(STARTED);
 	}
 
-	void clientError(Throwable error, int tick)
+	public void clientError(Throwable error, int tick)
 	{
 		clientErrorCount++;
 		clientError = describe(error);
 		clientErrorTick = tick;
 	}
 
-	void searchError(Throwable error, int tick)
+	public void searchError(Throwable error, int tick)
 	{
 		searchErrorCount++;
 		searchError = describe(error);
 		searchErrorTick = tick;
 	}
 
-	static String describe(Throwable error)
+	public static String describe(Throwable error)
 	{
 		String text = error.getClass().getSimpleName()
 			+ (error.getMessage() == null ? "" : ": " + error.getMessage());

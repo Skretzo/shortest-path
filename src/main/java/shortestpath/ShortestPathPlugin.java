@@ -36,6 +36,7 @@ import shortestpath.pathfinder.sailing.*;
 import shortestpath.pathfinder.*;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.poh.*;
+import shortestpath.scheduler.*;
 import shortestpath.settings.*;
 import shortestpath.spirittree.*;
 import shortestpath.transport.*;

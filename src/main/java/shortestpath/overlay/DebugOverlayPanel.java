@@ -6,7 +6,8 @@ import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.*;
 import net.runelite.client.ui.overlay.components.*;
-import shortestpath.*;
+import shortestpath.scheduler.DebugState;
+import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.*;
 
 public class DebugOverlayPanel extends OverlayPanel
