@@ -256,7 +256,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 			// too — doing it here on the EDT would race that refresh.
 			clientThread.invokeLater(() ->
 			{
-				coordinator.treeSetChanged(spiritTrees.loadFromProfile());
+				spiritTrees.loadFromProfile();
 				pathfinderConfig.refresh();
 			});
 		}
@@ -264,7 +264,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		{
 			// No refresh is queued when logged out, so loading here is safe;
 			// RuneScapeProfileChanged reloads once a profile is active anyway.
-			coordinator.treeSetChanged(spiritTrees.loadFromProfile());
+			spiritTrees.loadFromProfile();
 		}
 
 		overlayManager.add(pathOverlay);
@@ -472,8 +472,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		coordinator.pohChanged(pohService.loadFromProfile());
 		// The new profile may carry different persisted trees, so an in-flight
 		// path computed against the old account's set must be redone — the
-		// load's fact carries that route-invalidating effect unconditionally.
-		coordinator.treeSetChanged(spiritTrees.loadFromProfile());
+		// load declares that route-invalidating effect unconditionally.
+		spiritTrees.loadFromProfile();
 	}
 
 	@Subscribe
@@ -759,9 +759,10 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		Player localPlayer = client.getLocalPlayer();
 
 		// The service notes the player's region, samples the in-region patch
-		// varbit once the region has settled, and flushes persistence; the
-		// returned fact carries the restart decision.
-		coordinator.treeSetChanged(spiritTrees.onGameTick());
+		// varbit once the region has settled, and flushes persistence; a
+		// resolved change is declared to the coordinator, which owns the
+		// restart decision.
+		spiritTrees.onGameTick();
 
 		if (localPlayer == null || scheduler.getActiveSearch() == null)
 		{
@@ -870,7 +871,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		coordinator.itemsChanged(itemState.onContainerChanged(event.getContainerId(), event.getItemContainer()));
+		itemState.onContainerChanged(event.getContainerId(), event.getItemContainer());
 	}
 
 	@Subscribe
@@ -878,7 +879,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	{
 		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
 		// snapshot but change without firing a container event.
-		coordinator.itemsChanged(itemState.onVarbitChanged(event.getVarbitId()));
+		itemState.onVarbitChanged(event.getVarbitId());
 	}
 
 	/**
@@ -979,10 +980,10 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		switch (event.getGroupId())
 		{
 			case InterfaceID.MENU:
-				clientThread.invokeLater(() -> coordinator.treeSetChanged(spiritTrees.onMenuOpened(false)));
+				clientThread.invokeLater(() -> spiritTrees.onMenuOpened(false));
 				break;
 			case InterfaceID.MENU_NEW:
-				clientThread.invokeLater(() -> coordinator.treeSetChanged(spiritTrees.onMenuOpened(true)));
+				clientThread.invokeLater(() -> spiritTrees.onMenuOpened(true));
 				break;
 		}
 	}
