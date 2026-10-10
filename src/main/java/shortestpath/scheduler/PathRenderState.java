@@ -1,11 +1,15 @@
 package shortestpath.scheduler;
 
 import java.awt.Color;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.sailing.SailingService;
 import shortestpath.settings.Settings;
 
@@ -76,5 +80,47 @@ public final class PathRenderState
 	public boolean isOnSailingBoat()
 	{
 		return sailing.getState().isAboard();
+	}
+
+	/**
+	 * Whether the finished search's path counts as unreachable — the verdict
+	 * behind the unreachable-path colour. A walking path measures the
+	 * closest target's distance from the path end against the configured
+	 * threshold; a sailing path trusts the search's own reached verdict,
+	 * since the hull covering the target is what arrival means there.
+	 */
+	public boolean isPathUnreachable()
+	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
+		if (pathfinder == null || !pathfinder.isDone())
+		{
+			return false;
+		}
+
+		List<PathStep> path = pathfinder.getPath();
+		if (path == null || pathfinder.getTargets().isEmpty())
+		{
+			return false;
+		}
+
+		// A sailing path arrives once the boat's hull covers the target, with the boat's own tile up to a boat length
+		// from it, so the search says whether it got there
+		if (pathfinder.isSailing())
+		{
+			PathfinderResult result = pathfinder.getResult();
+			return result != null && !result.isReached();
+		}
+
+		// A finished search can produce an empty path when no goal tile could ever be
+		// reached (e.g. a blocked target); measure the distance from the start then.
+		int endPoint = path.isEmpty() ? pathfinder.getStart()
+			: path.get(path.size() - 1).getPackedPosition();
+		int closestTargetDistance = Integer.MAX_VALUE;
+		for (int target : pathfinder.getTargets())
+		{
+			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
+		}
+
+		return closestTargetDistance > settings.display().unreachableTargetDistance();
 	}
 }
