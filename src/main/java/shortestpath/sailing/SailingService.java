@@ -1,5 +1,7 @@
 package shortestpath.sailing;
 
+import java.util.Set;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -12,8 +14,10 @@ import net.runelite.api.WorldEntityConfig;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.WorldPointUtil;
+import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.scheduler.RefreshCoordinator;
+import shortestpath.settings.Effect;
 
 /**
  * Owns the plugin's sailing state observed at refresh time: the boarded-boat
@@ -26,9 +30,10 @@ import shortestpath.scheduler.RefreshCoordinator;
  *
  * <p>The producer contract mirrors the other domain services: capture happens
  * at refresh, and change facts are minted at observation points and declared
- * to the injected {@link RefreshCoordinator} — the observation arm arrives
- * with the coordinator channel, so the injected coordinator is held but not
- * yet consulted. Capture only ever reads; nothing here writes back to the
+ * to the injected {@link RefreshCoordinator} — {@link #onVarbitChanged} is
+ * the observation arm, re-capturing on the four sailing varbit events and
+ * declaring a {@link SailingChange} only when the route-relevant fields
+ * moved. Capture only ever reads; nothing here writes back to the
  * engine.
  */
 @Singleton
@@ -155,6 +160,56 @@ public class SailingService
 		publish(new SailingState(aboard, baseSpeed, speedCap, acceleration,
 			hasBoat, hasBounds, boundsX, boundsY, boundsWidth, boundsHeight,
 			hullConfigId, boatPoint, pivotX, pivotY, heading));
+	}
+
+	/**
+	 * Consumes a varbit event: one of the four sailing varbits re-captures
+	 * and publishes a fresh snapshot, then declares a {@link SailingChange}
+	 * carrying {@link Effect#ROUTE_INVALIDATING} when the new state differs
+	 * on any route-relevant field — boarding or disembarking changes whether
+	 * the shown route is sail-able at all, and a hull or speed change alters
+	 * what the route costs. Any other varbit is not sailing state and
+	 * declares nothing. Positional boat movement is not material — the diff
+	 * only flags changes the route consumes (aboard, hull, speed, bounds,
+	 * config id), so a boat sliding across its tile publishes freely
+	 * without restarting the search.
+	 * <p>
+	 * Client thread only — the shell's varbit events arrive there.
+	 */
+	public void onVarbitChanged(int varbitId)
+	{
+		if (client == null)
+		{
+			return;
+		}
+		if (varbitId != VarbitID.SAILING_BOARDED_BOAT
+			&& varbitId != VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED
+			&& varbitId != VarbitID.SAILING_SIDEPANEL_BOAT_SPEEDCAP
+			&& varbitId != VarbitID.SAILING_SIDEPANEL_BOAT_ACCELERATION)
+		{
+			return;
+		}
+
+		SailingState previous = state;
+		refresh(new ClientPlayerStateSource(client));
+		SailingChange change = previous.materiallyEquals(state)
+			? null
+			: new SailingChange("varbit:" + varbitId, Set.of(Effect.ROUTE_INVALIDATING));
+		declare(change);
+	}
+
+	/**
+	 * Hands an admitted fact to the refresh coordinator. Detached
+	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * no-ops there; a null fact declares nothing, mirroring the return-null
+	 * convention the shell's mapper used to guard.
+	 */
+	private void declare(SailingChange change)
+	{
+		if (change != null && coordinator != null)
+		{
+			coordinator.sailingChanged(change);
+		}
 	}
 
 	/**
