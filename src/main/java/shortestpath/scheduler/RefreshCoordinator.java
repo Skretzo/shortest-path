@@ -14,6 +14,7 @@ import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.PohChange;
+import shortestpath.sailing.SailingChange;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.spirittree.TreeChange;
@@ -91,6 +92,28 @@ public class RefreshCoordinator
 		{
 			ActiveSearch pathfinder = scheduler.getActiveSearch();
 			scheduler.restart(treeRestartReason(change.getKey()), pathfinder.getStart(), pathfinder.getTargets());
+		}
+	}
+
+	/**
+	 * Maps a sailing-state change fact to its follow-up actions: boarding,
+	 * disembarking, or a hull/speed change invalidates the shown route, so
+	 * the declared {@link Effect#ROUTE_INVALIDATING} effect restarts
+	 * pathfinding with the running search's own start and targets. {@code
+	 * null} facts admit nothing and map to no action, and with no search
+	 * running the declare is a no-op.
+	 */
+	public void sailingChanged(SailingChange change)
+	{
+		if (change != null
+			&& change.getEffects().contains(Effect.ROUTE_INVALIDATING)
+			&& scheduler.getActiveSearch() != null)
+		{
+			// A boat-state change is not an off-route drift, so the
+			// cancelInstead config does not gate this channel — the restart
+			// mapping mirrors treeSetChanged exactly.
+			ActiveSearch pathfinder = scheduler.getActiveSearch();
+			scheduler.restart(sailingRestartReason(change.getKey()), pathfinder.getStart(), pathfinder.getTargets());
 		}
 	}
 
@@ -275,5 +298,19 @@ public class RefreshCoordinator
 			return "spirit tree varbit";
 		}
 		return TREE_RESTART_REASONS.getOrDefault(key, key);
+	}
+
+	/**
+	 * The restart reason for a sailing fact: the literal the debug panel's
+	 * restart log is read against, derived from the fact's key so the log
+	 * keeps its familiar text.
+	 */
+	private static String sailingRestartReason(String key)
+	{
+		if (key.startsWith("varbit:"))
+		{
+			return "sailing varbit";
+		}
+		return key;
 	}
 }
