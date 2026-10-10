@@ -257,6 +257,19 @@ public class SailingServiceTest
 	}
 
 	@Test
+	public void resetRepublishesTheEmptySnapshot()
+	{
+		stubVarbits(1, 192, 384, 96);
+		SailingService service = SailingService.forTesting(client);
+		service.refresh(source());
+		assertTrue(service.getState().isAboard());
+
+		service.reset();
+
+		assertSame(SailingState.EMPTY, service.getState());
+	}
+
+	@Test
 	public void untrackedVarbitDeclaresNothing()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
