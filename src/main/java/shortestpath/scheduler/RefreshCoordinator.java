@@ -10,7 +10,6 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.PohChange;
@@ -246,7 +245,7 @@ public class RefreshCoordinator
 		// tile farther than the reached distance on long hulls — check the live boat rather than the
 		// player's tile, and not the search's verdict: that says a route was found, not that it sailed
 		// there. The reached-distance check below still runs for goal-tile arrivals and disembarking.
-		if (pathfinder instanceof SailingPathfinder && config.reachedDistance() >= 0
+		if (pathfinder.isSailing() && config.reachedDistance() >= 0
 			&& boatLocation != WorldPointUtil.UNDEFINED && boatHeading != WorldPointUtil.UNDEFINED
 			&& ((SailingPathfinder) pathfinder).arrivedTarget(boatLocation, boatHeading) != WorldPointUtil.UNDEFINED)
 		{
