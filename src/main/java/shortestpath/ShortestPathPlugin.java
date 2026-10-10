@@ -1449,7 +1449,7 @@ public class ShortestPathPlugin extends Plugin
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			portalNexusKeybinds.putFromDialogLine(client.getTickCount(), widget.getText());
+			portalNexusKeybinds.putFromDialogLine(widget.getText());
 		}
 	}
 
@@ -1461,6 +1461,10 @@ public class ShortestPathPlugin extends Plugin
 			fairyRingPanelOpen = true;
 		}
 
+		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT)
+		{
+			portalNexusKeybinds.dialogOpened();
+		}
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
 			|| event.getGroupId() == InterfaceID.TELENEXUS)
 		{
