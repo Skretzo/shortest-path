@@ -1706,6 +1706,13 @@ public class ShortestPathPlugin extends Plugin
 			{
 				return false; // keep local transports
 			}
+			if (edgeDistance <= 1)
+			{
+				// A single-tile edge is a walked step, so the path did not teleport
+				// here: the destination tile is just a teleport landing site the
+				// path passes through or ends at, and the teleport hint is noise.
+				return true;
+			}
 			TransportType sharedType = t.getType().sharesDestinationsWith();
 			if (sharedType == null)
 			{
