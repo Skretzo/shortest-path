@@ -247,6 +247,8 @@ public class PathfinderConfig
 	 * Whether the player is aboard a boat, read from the sailing service's
 	 * published snapshot — the volatile publication lives there now, so
 	 * render-thread readers see the same value the refresh captured.
+	 * Retained as a source-compatible accessor; plugin internals read the
+	 * flag through {@link shortestpath.scheduler.PathRenderState#isOnSailingBoat()}.
 	 */
 	public boolean isOnSailingBoat()
 	{
