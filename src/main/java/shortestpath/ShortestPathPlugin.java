@@ -589,8 +589,14 @@ public class ShortestPathPlugin extends Plugin
 		WorldEntityConfig bounds = boatEntity == null ? null : boatEntity.getConfig();
 		BoatHull hull = bounds == null ? null : BoatHull.fromBounds(bounds.getBoundsX(), bounds.getBoundsY(),
 			bounds.getBoundsWidth(), bounds.getBoundsHeight(), sailingPivotX, sailingPivotY);
+		// The heading the boat faces where the route starts, as one of the 16 headings 128 angle units
+		// apart: a target under its hull only counts as reached facing that way — berthed, the boat hasn't
+		// arrived at a target astern of it. The target orientation pairs with the target tile the route
+		// starts from
+		int sailingHeading = boatEntity == null ? WorldPointUtil.UNDEFINED
+			: Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16);
 		return new Pathfinder(pathfinderConfig, sailingStart, ends, this::postPluginMessages,
-			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull);
+			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull, sailingHeading);
 	}
 
 	private void ensurePathfindingExecutor()

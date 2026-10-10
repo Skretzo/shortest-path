@@ -210,6 +210,74 @@ public class BoatHullTest
 	}
 
 	@Test
+	public void testTheStartNodeFacesTheWayTheBoatDoes()
+	{
+		// The start node has no move to face, so it faces the heading the boat was pointing where the
+		// route began; a tile a move reached faces the way it sailed there
+		SailingMoves moves = SailingMoves.ESTIMATE;
+		NodeGraph graph = new NodeGraph(4);
+		int start = graph.createStart(WorldPointUtil.packWorldPoint(2948, 3074, 0));
+		int move = moves.indexOf(2, 0);
+		int node = graph.createWeightedTile(WorldPointUtil.packWorldPoint(2950, 3074, 0), start, 2000, 0,
+			false, move);
+
+		SailingSearch facingSouth = new SailingSearch(moves, null, new int[0], new int[0], SOUTH);
+		assertEquals(SOUTH, facingSouth.arrivalHeading(graph, start));
+		assertEquals("A move's own heading wins", EAST, facingSouth.arrivalHeading(graph, node));
+
+		SailingSearch facingUnknown = new SailingSearch(moves, null, new int[0], new int[0]);
+		assertEquals("An unknown start heading still tries them all", WorldPointUtil.UNDEFINED,
+			facingUnknown.arrivalHeading(graph, start));
+	}
+
+	@Test
+	public void testAStartTargetCountsOnlyOnTheBoatsHeading()
+	{
+		// A sloop reaches 7 tiles toward its bow but only 3 astern: a target 5 tiles north is under the
+		// hull only facing north
+		int here = WorldPointUtil.packWorldPoint(2948, 3074, 0);
+		int[] target = {WorldPointUtil.packWorldPoint(2948, 3079, 0)};
+		SailingSearch search = new SailingSearch(SailingMoves.ESTIMATE, hull(SLOOP, 0, 0), target, target);
+
+		assertEquals("Facing south the target is astern, out of the hull", WorldPointUtil.UNDEFINED,
+			search.arrivedTarget(here, SOUTH));
+		assertEquals("Facing north it's under the bow", target[0], search.arrivedTarget(here, NORTH));
+		assertEquals("Unknown heading tries them all", target[0],
+			search.arrivedTarget(here, WorldPointUtil.UNDEFINED));
+	}
+
+	@Test
+	public void testASailingSearchDoesNotArriveOnTheSpotBehindTheStern()
+	{
+		// Aboard at (2948, 3074) facing south, the target at (2948, 3079) is under the hull only facing
+		// north: the search must sail away rather than ending with the boat still on the spot, which is
+		// what trying every heading at the start did
+		int start = WorldPointUtil.packWorldPoint(2948, 3074, 0);
+		int target = WorldPointUtil.packWorldPoint(2948, 3079, 0);
+
+		Pathfinder astern = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0), SOUTH);
+		astern.run();
+		assertFalse("Arrived on the spot facing away from the target",
+			astern.getResult().isReached() && astern.getPath().size() <= 1);
+		assertTrue("But still reached it by sailing", astern.getResult().isReached());
+		assertTrue(astern.getPath().size() > 1);
+
+		Pathfinder facing = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0), NORTH);
+		facing.run();
+		assertTrue(facing.getResult().isReached());
+		assertEquals("A target already under the bow still arrives on the spot", 1, facing.getPath().size());
+
+		Pathfinder noHeading = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0));
+		noHeading.run();
+		assertTrue(noHeading.getResult().isReached());
+		assertEquals("An unknown heading still counts an under-hull target as arrived", 1,
+			noHeading.getPath().size());
+	}
+
+	@Test
 	public void testRaftSailsOutOfTheLumLagoon()
 	{
 		// West out of the Lum Lagoon through the channel past the stepping stone (see above)

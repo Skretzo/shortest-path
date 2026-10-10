@@ -30,6 +30,15 @@ public final class SailingMoves
 	 * of their direction at the common speeds 2 to 4.
 	 */
 	public static final double ESTIMATED_SPEED = 2.0;
+
+	/**
+	 * The fastest a real boat's base speed can be, in tiles per tick: the common speeds are 2 to 4, and
+	 * double the fastest leaves headroom for quicker hulls. A speed above it is a stale or mis-scaled
+	 * reading rather than a faster boat — the moves it builds are so long that nothing can sail them —
+	 * so the estimate is used instead.
+	 */
+	public static final double MAX_SPEED = 8.0;
+
 	public static final SailingMoves ESTIMATE = forSpeed(ESTIMATED_SPEED);
 
 	/**
@@ -57,10 +66,14 @@ public final class SailingMoves
 	}
 
 	/**
-	 * @param tilesPerTick boat speed, e.g. 1.5 or 2.0; must be above zero
+	 * @param tilesPerTick boat speed, e.g. 1.5 or 2.0; an out-of-range value (including NaN) gives the estimate
 	 */
 	public static SailingMoves forSpeed(double tilesPerTick)
 	{
+		if (!(tilesPerTick > 0) || tilesPerTick > MAX_SPEED)
+		{
+			return ESTIMATE;
+		}
 		int[] dx = new int[HEADING_NAMES.length];
 		int[] dy = new int[HEADING_NAMES.length];
 		int[] ticks = new int[HEADING_NAMES.length];

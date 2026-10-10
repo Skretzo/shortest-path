@@ -91,6 +91,18 @@ public class Pathfinder implements ActiveSearch
 	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback,
 		SailingMoves sailingMoves, BoatHull boatHull)
 	{
+		this(config, start, targets, completionCallback, sailingMoves, boatHull, WorldPointUtil.UNDEFINED);
+	}
+
+	/**
+	 * @param sailingMoves   the boat's moves, to sail instead of walk, or {@code null} to walk
+	 * @param boatHull       the boat's hull, which must fit along every sailing move, or {@code null} for just its centre
+	 * @param sailingHeading the heading the boat is facing where the route starts (0 south, 8 north), or -1 when it
+	 *                       isn't known: a target the hull already covers then counts as arrived facing any heading
+	 */
+	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback,
+		SailingMoves sailingMoves, BoatHull boatHull, int sailingHeading)
+	{
 		stats = new PathfinderStats();
 		this.config = config;
 		this.map = config.getMap();
@@ -101,7 +113,7 @@ public class Pathfinder implements ActiveSearch
 		this.hasViableGoal = resolved.hasViableGoal();
 		this.sailing = sailingMoves == null ? null
 			: new SailingSearch(sailingMoves, boatHull, targets.stream().mapToInt(Integer::intValue).toArray(),
-				goals.stream().mapToInt(Integer::intValue).toArray());
+				goals.stream().mapToInt(Integer::intValue).toArray(), sailingHeading);
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
@@ -413,8 +425,7 @@ public class Pathfinder implements ActiveSearch
 				boolean bank = graph.bankVisited(node);
 				if (visited.get(packed, bank)
 					&& !(sailing != null && graph.isWeighted(node)
-						&& sailing.arrivedTarget(packed,
-							CollisionMap.sailingArrivalHeading(graph, node, sailing.moves)) != WorldPointUtil.UNDEFINED))
+						&& sailing.arrivedTarget(packed, sailing.arrivalHeading(graph, node)) != WorldPointUtil.UNDEFINED))
 				{
 					continue;
 				}
@@ -437,7 +448,7 @@ public class Pathfinder implements ActiveSearch
 				updateWildernessLevel(nodePacked);
 
 				final int arrivedTarget = sailing != null
-					? sailing.arrivedTarget(nodePacked, CollisionMap.sailingArrivalHeading(graph, node, sailing.moves))
+					? sailing.arrivedTarget(nodePacked, sailing.arrivalHeading(graph, node))
 					: WorldPointUtil.UNDEFINED;
 				if (goals.contains(nodePacked) || arrivedTarget != WorldPointUtil.UNDEFINED)
 				{

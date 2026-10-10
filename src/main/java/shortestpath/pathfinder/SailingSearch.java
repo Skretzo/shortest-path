@@ -30,6 +30,10 @@ final class SailingSearch
 	private final int[] targets;
 	// The targets plus their fallback tiles: the search can also end by landing on one of them
 	private final int[] goals;
+	// The heading the boat is facing where the route starts, or -1 when that isn't known: the start node has no
+	// move to face, so without it a target under the hull counts as arrived facing any heading — even one the
+	// boat, berthed, isn't pointing
+	private final int initialHeading;
 	// How far from a target the boat's tile can be while arriving, in tiles: next to it diagonally, or with a hull, as
 	// far as the hull reaches plus half a tile's diagonal
 	private final double arrivalReach;
@@ -44,10 +48,16 @@ final class SailingSearch
 
 	SailingSearch(SailingMoves moves, BoatHull hull, int[] targets, int[] goals)
 	{
+		this(moves, hull, targets, goals, WorldPointUtil.UNDEFINED);
+	}
+
+	SailingSearch(SailingMoves moves, BoatHull hull, int[] targets, int[] goals, int initialHeading)
+	{
 		this.moves = moves;
 		this.hull = hull;
 		this.targets = targets;
 		this.goals = goals;
+		this.initialHeading = initialHeading;
 		arrivalReach = hull == null ? Math.sqrt(2) : hull.reach() + Math.sqrt(2) / 2;
 		extent = SplitFlagMap.getRegionExtents();
 		int regions = (extent.getWidth() + 1) * (extent.getHeight() + 1) * PLANES;
@@ -55,6 +65,17 @@ final class SailingSearch
 		queuedCosts[1] = new int[regions][];
 		queuedArrivals[0] = new int[regions][];
 		queuedArrivals[1] = new int[regions][];
+	}
+
+	/**
+	 * The heading the boat faces on {@code node}: the way the move that reached it sailed, or the heading it was
+	 * facing where the route began on the start node, which no move reached. -1 means unknown, which lets
+	 * {@link #arrivedTarget} try every heading.
+	 */
+	int arrivalHeading(NodeGraph graph, int node)
+	{
+		int heading = CollisionMap.sailingArrivalHeading(graph, node, moves);
+		return heading < 0 ? initialHeading : heading;
 	}
 
 	/**
