@@ -200,7 +200,7 @@ public class PohService
 	public static final int TELENEXUS_CREATE_TELELINE = 2675;
 
 	// In-game labels look like "<col=ffffff>1 : Harmony Island" (space before the colon).
-	private static final Pattern KEYED_LINE = Pattern.compile("^([0-9A-Za-z]|F(?:[1-9]|1[0-2]))\\s*:\\s*(.+)$");
+	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z]|F(?:[1-9]|1[0-2]))\\s*:\\s*(.+)$");
 	private static final Pattern PARENTHETICAL = Pattern.compile("\\(([^()]*)\\)");
 	private static final String SERIAL_VERSION = "2";
 	private static final Map<String, String> NAME_ALIASES;
@@ -491,7 +491,7 @@ public class PohService
 			}
 			String name = entry.substring(0, split);
 			String key = entry.substring(split + 1).toUpperCase(Locale.ROOT);
-			if (key.matches("[0-9A-Z]|F(?:[1-9]|1[0-2])"))
+			if (key.matches("[1-9A-Z]|F(?:[1-9]|1[0-2])"))
 			{
 				keys.put(name, key);
 			}
