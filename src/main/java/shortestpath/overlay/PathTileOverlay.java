@@ -726,7 +726,9 @@ public class PathTileOverlay extends Overlay
 	{
 		int location = currentStep.getPackedPosition();
 		if (nextStep == null ||
-			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane())
+			(WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane() &&
+				!ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(location), WorldPointUtil.unpackWorldY(location))
+			))
 		{
 			return;
 		}
