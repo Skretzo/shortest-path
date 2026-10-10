@@ -354,6 +354,15 @@ public class SailingPathfinder implements ActiveSearch
 		}
 	}
 
+	/**
+	 * Always {@code true}: this search sails the boat's headings.
+	 */
+	@Override
+	public boolean isSailing()
+	{
+		return true;
+	}
+
 	@Override
 	public void run()
 	{
