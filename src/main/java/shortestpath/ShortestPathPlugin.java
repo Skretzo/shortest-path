@@ -304,6 +304,9 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		// The singleton survives restarts; drop the live bank ref and pickup
 		// cache so session state cannot leak into the next enable.
 		itemState.reset();
+		// Same lifetime for the sailing snapshot — a stale aboard flag must
+		// not greet the next session before its first refresh publishes.
+		sailing.reset();
 	}
 
 	private void migrateAStarConfiguration()
