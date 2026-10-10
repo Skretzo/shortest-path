@@ -302,6 +302,42 @@ public class SailingServiceTest
 	}
 
 	@Test
+	public void baseSpeedChangeDeclaresARouteInvalidatingFact()
+	{
+		stubVarbits(1, 192, 384, 96);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SailingService service = SailingService.forTesting(client, coordinator);
+		service.refresh(source());
+
+		// The route sails at the base speed, so a change there is material.
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(160);
+		service.onVarbitChanged(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED);
+
+		ArgumentCaptor<SailingChange> captor = ArgumentCaptor.forClass(SailingChange.class);
+		verify(coordinator).sailingChanged(captor.capture());
+		assertTrue(captor.getValue().getEffects().contains(Effect.ROUTE_INVALIDATING));
+	}
+
+	@Test
+	public void unconsumedVarbitChangesDeclareNothing()
+	{
+		stubVarbits(1, 192, 384, 96);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SailingService service = SailingService.forTesting(client, coordinator);
+		service.refresh(source());
+
+		// The speed cap and acceleration varbits are captured for snapshot
+		// fidelity, but nothing routes on them — their changes must not
+		// mint a restart.
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_SPEEDCAP)).thenReturn(300);
+		service.onVarbitChanged(VarbitID.SAILING_SIDEPANEL_BOAT_SPEEDCAP);
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_ACCELERATION)).thenReturn(64);
+		service.onVarbitChanged(VarbitID.SAILING_SIDEPANEL_BOAT_ACCELERATION);
+
+		verify(coordinator, never()).sailingChanged(any());
+	}
+
+	@Test
 	public void boatMovementWithoutMaterialChangeDeclaresNothing()
 	{
 		stubVarbits(1, 192, 384, 96);
