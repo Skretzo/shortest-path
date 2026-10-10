@@ -41,6 +41,7 @@ import shortestpath.poh.PohService;
 import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
+import shortestpath.scheduler.PathRenderState;
 import shortestpath.settings.Settings;
 
 public class PathTileOverlay extends Overlay
@@ -54,16 +55,19 @@ public class PathTileOverlay extends Overlay
 	private final ShortestPathPlugin plugin;
 	private final ItemManager itemManager;
 	private final Settings settings;
+	private final PathRenderState renderState;
 	private int playerTileLabelOffset = 0;
 	private boolean teleportPulseDrawn = false;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
+	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings,
+		PathRenderState renderState)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.itemManager = itemManager;
 		this.settings = settings;
+		this.renderState = renderState;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -217,15 +221,15 @@ public class PathTileOverlay extends Overlay
 
 			List<PathStep> path = plugin.getActiveSearch().getPath();
 			int counter = 0;
-			if (plugin.isSailing())
+			if (renderState.isSailing())
 			{
 				// On a boat the path sails the boat's headings: lines along each heading it holds, drawn through the
 				// spot within each tile where the boat actually sits
-				Color sailingColor = plugin.isPathUnreachable() ? plugin.getPathColor() : ShortestPathPlugin.COLOUR_SAILING_PATH;
+				Color sailingColor = renderState.isPathUnreachable() ? plugin.getPathColor() : PathRenderState.SAILING_PATH_COLOUR;
 				for (int i = 1; i < path.size(); i++)
 				{
 					drawOffsetLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(),
-						plugin.getSailingPivotX(), plugin.getSailingPivotY(), sailingColor);
+						renderState.getSailingPivotX(), renderState.getSailingPivotY(), sailingColor);
 					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, true);
@@ -362,7 +366,7 @@ public class PathTileOverlay extends Overlay
 					showTiles);
 			}
 
-			if (plugin.isPathUnreachable() && settings.display().showUnreachableText())
+			if (renderState.isPathUnreachable() && settings.display().showUnreachableText())
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
 			}
@@ -741,7 +745,7 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 
-		if (plugin.isPathUnreachable() || !plugin.getActiveSearch().isDone())
+		if (renderState.isPathUnreachable() || !plugin.getActiveSearch().isDone())
 		{
 			return;
 		}
@@ -784,8 +788,8 @@ public class PathTileOverlay extends Overlay
 	// unreachable as a result, show a one-time hint on the player tile.
 	private boolean drawSailingDisembarkHint(Graphics2D graphics, int pathIndex)
 	{
-		if (settings.display().showTransportInfo() && pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
-			&& plugin.getActiveSearch().isDone() && plugin.isPathUnreachable())
+		if (settings.display().showTransportInfo() && pathIndex == 0 && renderState.isOnSailingBoat()
+			&& plugin.getActiveSearch().isDone() && renderState.isPathUnreachable())
 		{
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
 				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
