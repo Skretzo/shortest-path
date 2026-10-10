@@ -442,8 +442,11 @@ public class CollisionMap
 		NodeGraph graph, SailingSearch sailing)
 	{
 		final SailingMoves moves = sailing.moves;
-		// -1 leaving the start, so the first move doesn't count as a turn
-		final int arrivalHeading = sailingArrivalHeading(graph, node, moves);
+		// The boat faces the way it sailed into the node — or, on the start node, the way it's pointing, so
+		// carrying straight on isn't a turn but putting about first is
+		final int arrivalHeading = sailing.arrivalHeading(graph, node);
+		// The first move gets the hull's berthed-tile escape: a boat can sit over tiles it then sails off
+		final boolean firstMove = graph.moveIndex(node) < 0;
 		final int costSoFar = graph.cost(node);
 		for (int i = 0; i < moves.size(); i++)
 		{
@@ -455,7 +458,7 @@ public class CollisionMap
 				|| (costSoFar + cost >= sailing.queuedCost(x + dx, y + dy, z, bankVisited)
 					&& !sailing.queueArrival(neighborPacked, i, x + dx, y + dy, z, bankVisited))
 				|| !(sailing.hull == null ? canSailLine(x, y, z, dx, dy)
-					: sailing.hull.canMove(this, x, y, z, moves.heading(i), dx, dy, arrivalHeading < 0)))
+					: sailing.hull.canMove(this, x, y, z, moves.heading(i), dx, dy, firstMove)))
 			{
 				continue;
 			}
@@ -463,7 +466,8 @@ public class CollisionMap
 		}
 	}
 
-	// The heading of the sailing move that reached node, or -1 if it wasn't reached by one (such as the search's start).
+	// The heading of the sailing move that reached node, or -1 if it wasn't reached by one (such as the search's
+	// start, which faces the boat's own heading instead — see SailingSearch.arrivalHeading).
 	// The move is stored on the node rather than recovered from its displacement, which different headings can share
 	// at low speeds
 	static int sailingArrivalHeading(NodeGraph graph, int node, SailingMoves moves)
