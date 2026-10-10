@@ -883,6 +883,9 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
 		// snapshot but change without firing a container event.
 		itemState.onVarbitChanged(event.getVarbitId());
+		// The boat varbits feed the sailing snapshot and may declare a
+		// route-invalidating change through the service.
+		sailing.onVarbitChanged(event.getVarbitId());
 	}
 
 	/**
