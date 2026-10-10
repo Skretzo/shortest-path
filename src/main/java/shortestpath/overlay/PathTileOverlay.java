@@ -225,10 +225,11 @@ public class PathTileOverlay extends Overlay
 			{
 				// On a boat the path sails the boat's headings: lines along each heading it holds, drawn through the
 				// spot within each tile where the boat actually sits
+				Color sailingColor = plugin.isPathUnreachable() ? plugin.getPathColor() : ShortestPathPlugin.COLOUR_SAILING_PATH;
 				for (int i = 1; i < path.size(); i++)
 				{
 					drawOffsetLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(),
-						plugin.getSailingPivotX(), plugin.getSailingPivotY(), ShortestPathPlugin.COLOUR_SAILING_PATH);
+						plugin.getSailingPivotX(), plugin.getSailingPivotY(), sailingColor);
 					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, true);

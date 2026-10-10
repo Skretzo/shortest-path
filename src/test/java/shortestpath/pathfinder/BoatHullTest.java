@@ -6,6 +6,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.DBTableID;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -28,6 +29,8 @@ public class BoatHullTest
 	private static final int[] RAFT = {0, 0, 128, 384};
 	private static final int[] SKIFF = {0, 0, 256, 640};
 	private static final int[] SLOOP = {0, -256, 384, 1280};
+	private static final int SOUTH = 0;
+	private static final int WEST = 4;
 	private static final int NORTH = 8;
 	private static final int NORTH_NORTH_EAST = 9;
 	private static final int EAST = 12;
@@ -146,6 +149,64 @@ public class BoatHullTest
 		pathfinder.run();
 
 		assertFalse(pathfinder.getResult().isReached());
+	}
+
+	@Test
+	public void testBoatSailsOutOfTilesItsHullSitsOn()
+	{
+		// Moored on the 3x2 shipwreck at (2704-2706, 3050-3051), a raft's hull overlaps blocked tiles
+		// where it starts; like a boat on a blocked tile it can sail out of them with its first move,
+		// but not over other blocked tiles its hull doesn't already cover
+		BoatHull raft = hull(RAFT, 0, 0);
+		assertTrue("North over the wreck row its hull sits on", raft.canMove(map, 2705, 3050, 0, NORTH, 0, 3, true));
+		assertTrue("South out of the wreck", raft.canMove(map, 2705, 3050, 0, SOUTH, 0, -3, true));
+		assertFalse("Only the first move gets the escape", raft.canMove(map, 2705, 3050, 0, NORTH, 0, 3));
+		assertFalse("Facing along the wreck, its hull doesn't cover the other row",
+			raft.canMove(map, 2705, 3050, 0, WEST, 0, 3, true));
+
+		int start = WorldPointUtil.packWorldPoint(2705, 3050, 0);
+		int target = WorldPointUtil.packWorldPoint(2705, 3042, 0);
+		findPath(start, target, SailingMoves.forSpeed(1.5), raft);
+	}
+
+	@Test
+	public void testSailingSearchesWhenNoGoalIsViable()
+	{
+		// A target on the shipwreck is blocked, and with the unreachable distance at 0 it resolves to
+		// no goal tiles: a walking search is skipped outright, but a sailing search still runs — its
+		// hull covering the target doesn't need a walkable goal tile
+		when(config.unreachableTargetDistance()).thenReturn(0);
+		pathfinderConfig.refresh();
+		int start = WorldPointUtil.packWorldPoint(2705, 3044, 0);
+		int target = WorldPointUtil.packWorldPoint(2705, 3050, 0);
+
+		Pathfinder walking = new Pathfinder(pathfinderConfig, start, Set.of(target));
+		walking.run();
+		assertEquals(0, walking.getResult().getNodesChecked());
+
+		Pathfinder sailing = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+			SailingMoves.forSpeed(1.5), hull(RAFT, 0, 0));
+		sailing.run();
+		assertTrue(sailing.getResult().getNodesChecked() > 0);
+	}
+
+	@Test
+	public void testACostlierMoveStillQueuesWhenItWouldArrive()
+	{
+		// With the target a tile east, a raft only covers it facing east: if the cheapest route to
+		// that tile faces another way, a costlier move facing east must still be queued
+		SailingMoves moves = SailingMoves.forSpeed(1.5);
+		int target = WorldPointUtil.packWorldPoint(2706, 3049, 0);
+		SailingSearch search = new SailingSearch(moves, hull(RAFT, 0, 0), new int[]{target}, new int[]{target});
+
+		int tile = WorldPointUtil.packWorldPoint(2705, 3049, 0);
+		int eastMove = moves.indexOf(3, 0);
+		int northMove = moves.indexOf(0, 3);
+		assertTrue(search.queueArrival(tile, eastMove, 2705, 3049, 0, false));
+		assertFalse("A move is only let through once", search.queueArrival(tile, eastMove, 2705, 3049, 0, false));
+		assertFalse("Facing north doesn't cover the target", search.queueArrival(tile, northMove, 2705, 3049, 0, false));
+		assertFalse("Without a hull, facing doesn't matter", new SailingSearch(moves, null, new int[]{target},
+			new int[]{target}).queueArrival(tile, eastMove, 2705, 3049, 0, false));
 	}
 
 	@Test

@@ -31,6 +31,8 @@ public final class BoatHull
 	private static final int REGION_SHIFT = Integer.numberOfTrailingZeros(REGION_SIZE);
 	private static final int REGION_MASK = REGION_SIZE - 1;
 	private static final int PLANES = 4;
+	// A shape with no rows, so no tiles count as covered where a move starts
+	private static final int[] EMPTY_SHAPE = {0};
 
 	// The rectangle in the boat's own frame, in local units (128 per tile): its centre across and along the boat
 	// (the bow is toward negative along) and its size
@@ -128,10 +130,36 @@ public final class BoatHull
 	 */
 	public boolean canMove(CollisionMap map, int x, int y, int z, int heading, int dx, int dy)
 	{
+		return canMove(map, x, y, z, heading, dx, dy, false);
+	}
+
+	/**
+	 * Whether the hull, facing {@code heading}, can sail (dx, dy) tiles from tile (x, y, z) without overlapping a tile
+	 * that blocks it anywhere along the way — or only ones it doesn't already cover, when {@code exemptStart} marks
+	 * the search's first move: a berthed boat's hull can overlap blocked tiles where it starts (a moored boat may sit
+	 * over marked tiles), and like {@link CollisionMap#canSailLine}'s first-tile escape they can't stop it leaving.
+	 * Later moves keep the full start check, which also catches the hull turning onto a blocked tile between moves.
+	 */
+	public boolean canMove(CollisionMap map, int x, int y, int z, int heading, int dx, int dy, boolean exemptStart)
+	{
 		final int[] shape = shape(heading, dx, dy);
+		final int[] start = exemptStart ? shape(heading, 0, 0) : EMPTY_SHAPE;
 		for (int row = 0; row < rows(shape); row++)
 		{
-			if (anyBlocked(map, x + shape[1 + 2 * row], x + shape[2 + 2 * row], y + shape[0] + row, z))
+			final int rowY = shape[0] + row;
+			final int lo = shape[1 + 2 * row];
+			final int hi = shape[2 + 2 * row];
+			final int startRow = rowY - start[0];
+			if (startRow < 0 || startRow >= rows(start))
+			{
+				if (anyBlocked(map, x + lo, x + hi, y + rowY, z))
+				{
+					return false;
+				}
+				continue;
+			}
+			if (anyBlocked(map, x + lo, x + Math.min(hi, start[1 + 2 * startRow] - 1), y + rowY, z)
+				|| anyBlocked(map, x + Math.max(lo, start[2 + 2 * startRow] + 1), x + hi, y + rowY, z))
 			{
 				return false;
 			}

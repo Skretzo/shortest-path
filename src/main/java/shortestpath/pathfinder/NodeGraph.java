@@ -189,16 +189,22 @@ public class NodeGraph
 	 * A tile reached by a weighted move (sailing moves). Like a transport destination it is queued
 	 * by {@link #compareCost} and only marked visited when dequeued, so the cheapest way to reach
 	 * it wins. {@code heuristic} is stored as the differential cost, which turns the queue order
-	 * into A*.
+	 * into A*. {@code moveIndex} identifies the sailing move that reached the tile — it decides
+	 * which way the boat faces on it and can't be recovered from the move's displacement, which
+	 * different headings can share at low speeds.
 	 */
-	public int createWeightedTile(int packedPosition, int previous, int moveCost, int heuristic, boolean bankVisited)
+	public int createWeightedTile(int packedPosition, int previous, int moveCost, int heuristic,
+		boolean bankVisited, int moveIndex)
 	{
 		byte flagBits = FLAG_WEIGHTED;
 		if (bankVisited)
 		{
 			flagBits |= FLAG_BANK_VISITED;
 		}
-		return append(packedPosition, previous, costOf(previous) + moveCost, heuristic, flagBits, (byte) 0);
+		// Weighted tiles are never abstract, so the abstractKind slot carries the sailing move
+		// (shifted by one, so the default 0 means no move — the start, walking and transport nodes)
+		return append(packedPosition, previous, costOf(previous) + moveCost, heuristic, flagBits,
+			(byte) (moveIndex + 1));
 	}
 
 	/**
@@ -281,6 +287,16 @@ public class NodeGraph
 	public boolean isWeighted(int id)
 	{
 		return (flags[id] & FLAG_WEIGHTED) != 0;
+	}
+
+	/**
+	 * Index into the search's {@link SailingMoves} of the move that reached this weighted tile,
+	 * or -1 for nodes no sailing move reached (the start, walking tiles, transport destinations).
+	 * Shares the abstractKind slot, which weighted tiles never use.
+	 */
+	public int moveIndex(int id)
+	{
+		return abstractKind[id] - 1;
 	}
 
 	public AbstractNodeKind abstractKind(int id)

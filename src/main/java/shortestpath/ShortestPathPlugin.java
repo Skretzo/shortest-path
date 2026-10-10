@@ -513,7 +513,12 @@ public class ShortestPathPlugin extends Plugin
 			else
 			{
 				bankPickupDirty = true;
-				if (pathfinderConfig.isSailingMoves())
+				// The boarded-boat varbit can lag the world entity (stale across a teleport or
+				// login), so only sail when the boat is actually in the scene — otherwise the
+				// search would sail its headings across land
+				Player player = client.getLocalPlayer();
+				if (pathfinderConfig.isSailingMoves() && player != null
+					&& WorldPointUtil.boat(client, player) != null)
 				{
 					legacyPathfinder = sailingPathfinder(start, ends);
 					pathfinder = legacyPathfinder;
@@ -1275,6 +1280,18 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+		// A sailing path is reached once the boat's hull covers the target, with the boat's own tile
+		// up to a boat length from it, so the search's verdict says it's there — its distance can
+		// never come under the walking reached distance
+		if (isSailing())
+		{
+			PathfinderResult result = pathfinder.getResult();
+			if (result != null && result.isReached())
+			{
+				setTarget(WorldPointUtil.UNDEFINED);
+				return;
+			}
+		}
 		for (int target : pathfinder.getTargets())
 		{
 			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())

@@ -431,10 +431,13 @@ public class CollisionMap
 		return neighbors;
 	}
 
-	// Sailing moves are different lengths, so they are queued by cost (A*) rather than FIFO: each costs the distance it
-	// sails, so the search finds the shortest route rather than the quickest. A tile is only queued again if a route
-	// reaches it for less, since a dearer one would only be dequeued once the tile is done; that's checked before the
-	// line, which costs more. With a hull, the whole boat must fit along the move, which also keeps its centre clear.
+	// Sailing moves are different lengths, so they are queued by cost on the pending heap like transports rather than
+	// the FIFO boundary queue, which is only ordered for unit-cost walking edges: each costs the distance it sails, so
+	// the search finds the shortest route rather than the quickest. A tile is only queued again if a route reaches it
+	// for less, since a dearer one would only be dequeued once the tile is done — or, with a hull, if a dearer move
+	// would arrive on a heading none has tried, since the cheapest route's facing may not cover a target. The cost
+	// check comes first, which costs less than the line or hull check. With a hull, the whole boat must fit along the
+	// move, which also keeps its centre clear.
 	private void addSailingNeighbors(int node, int x, int y, int z, boolean bankVisited, VisitedTiles visited,
 		NodeGraph graph, SailingSearch sailing)
 	{
@@ -449,27 +452,24 @@ public class CollisionMap
 			final int neighborPacked = WorldPointUtil.packWorldPoint(x + dx, y + dy, z);
 			final int cost = moves.length(i) + (arrivalHeading >= 0 && arrivalHeading != moves.heading(i) ? SAILING_COST_PER_TURN : 0);
 			if (visited.get(neighborPacked, bankVisited)
-				|| costSoFar + cost >= sailing.queuedCost(x + dx, y + dy, z, bankVisited)
-				|| !(sailing.hull == null ? canSailLine(x, y, z, dx, dy) : sailing.hull.canMove(this, x, y, z, moves.heading(i), dx, dy)))
+				|| (costSoFar + cost >= sailing.queuedCost(x + dx, y + dy, z, bankVisited)
+					&& !sailing.queueArrival(neighborPacked, i, x + dx, y + dy, z, bankVisited))
+				|| !(sailing.hull == null ? canSailLine(x, y, z, dx, dy)
+					: sailing.hull.canMove(this, x, y, z, moves.heading(i), dx, dy, arrivalHeading < 0)))
 			{
 				continue;
 			}
-			neighbors.add(graph.createWeightedTile(neighborPacked, node, cost, sailing.estimate(x + dx, y + dy), bankVisited));
+			neighbors.add(graph.createWeightedTile(neighborPacked, node, cost, sailing.estimate(x + dx, y + dy), bankVisited, i));
 		}
 	}
 
-	// The heading of the sailing move that reached node, or -1 if it wasn't reached by one (such as the search's start)
+	// The heading of the sailing move that reached node, or -1 if it wasn't reached by one (such as the search's start).
+	// The move is stored on the node rather than recovered from its displacement, which different headings can share
+	// at low speeds
 	static int sailingArrivalHeading(NodeGraph graph, int node, SailingMoves moves)
 	{
-		int previous = graph.previous(node);
-		if (previous == NodeGraph.NO_NODE || !graph.isWeighted(node))
-		{
-			return -1;
-		}
-		int from = graph.packedPosition(previous);
-		int to = graph.packedPosition(node);
-		return moves.headingOf(WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from),
-			WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from));
+		int move = graph.moveIndex(node);
+		return move < 0 ? -1 : moves.heading(move);
 	}
 
 	// The only abstract nodes are currently for global teleports

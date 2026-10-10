@@ -388,6 +388,11 @@ public class PathfinderConfig
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
 		bankVisitCost = ShortestPathPlugin.override("costBankVisit", config.costBankVisit());
 
+		// Reset sailing state every refresh: a stale varbit read (e.g. after logging out aboard a
+		// boat) must not keep the search sailing when there is no boat
+		isOnSailingBoat = false;
+		sailingMoves = false;
+		sailingSpeed = SailingMoves.ESTIMATED_SPEED;
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;

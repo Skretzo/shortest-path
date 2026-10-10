@@ -11,6 +11,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,6 +83,14 @@ public class SailingMovesTest
 		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(0);
 		pathfinderConfig.refresh();
 		assertEquals("Falls back to the estimate", SailingMoves.ESTIMATED_SPEED, pathfinderConfig.getSailingSpeed(), 0);
+	}
+
+	@Test
+	public void testAVeryLowSpeedFallsBackToTheEstimate()
+	{
+		// Below about 0.125 tiles per tick every heading rounds to no movement; a garbage or stale
+		// base-speed reading falls back to the estimate rather than sailing nowhere
+		assertSame(SailingMoves.ESTIMATE, SailingMoves.forSpeed(0.01));
 	}
 
 	@Test

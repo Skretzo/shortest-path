@@ -100,7 +100,8 @@ public class Pathfinder implements ActiveSearch
 		this.goals = resolved.goals();
 		this.hasViableGoal = resolved.hasViableGoal();
 		this.sailing = sailingMoves == null ? null
-			: new SailingSearch(sailingMoves, boatHull, targets.stream().mapToInt(Integer::intValue).toArray());
+			: new SailingSearch(sailingMoves, boatHull, targets.stream().mapToInt(Integer::intValue).toArray(),
+				goals.stream().mapToInt(Integer::intValue).toArray());
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
@@ -236,6 +237,22 @@ public class Pathfinder implements ActiveSearch
 				{
 					continue;
 				}
+				if (graph.isWeighted(neighbor))
+				{
+					// A sailing move crosses its whole span at once; check its midpoint too, so a
+					// leg can't clip a wilderness or league boundary inside its reach
+					final int midPacked = WorldPointUtil.packWorldPoint(
+						(WorldPointUtil.unpackWorldX(nodePacked) + WorldPointUtil.unpackWorldX(neighborPacked)) / 2,
+						(WorldPointUtil.unpackWorldY(nodePacked) + WorldPointUtil.unpackWorldY(neighborPacked)) / 2,
+						WorldPointUtil.unpackWorldPlane(nodePacked));
+					if (config.avoidWilderness(nodePacked, midPacked, targetInWilderness)
+						|| config.avoidWilderness(midPacked, neighborPacked, targetInWilderness)
+						|| config.avoidBlockedRegion(nodePacked, midPacked, targetInBlockedRegion)
+						|| config.avoidBlockedRegion(midPacked, neighborPacked, targetInBlockedRegion))
+					{
+						continue;
+					}
+				}
 			}
 
 			final boolean neighborIsTransport = graph.isTransport(neighbor);
@@ -314,7 +331,9 @@ public class Pathfinder implements ActiveSearch
 
 	private void updateCustomPathWhenUnreachable(int node, int packedPosition)
 	{
-		if (targets.size() <= 1 || shortestAcceptedNode != NodeGraph.NO_NODE)
+		// Not for a sailing search: accepting the first tile near a target could truncate the path
+		// before the hull reaches a heading that covers one
+		if (targets.size() <= 1 || sailing != null || shortestAcceptedNode != NodeGraph.NO_NODE)
 		{
 			return;
 		}
@@ -366,7 +385,10 @@ public class Pathfinder implements ActiveSearch
 		// When every target is a blocked tile that no transport lands on and no
 		// walkable tile exists within the unreachable distance, no node can ever
 		// satisfy the goal set — skip the search instead of exhausting the map.
-		while (!cancelled && hasViableGoal && (!boundary.isEmpty() || !pending.isEmpty()))
+		// A sailing search still runs: its hull can cover a target the walking
+		// goals can't reach, which is what it arrives on rather than the goal set.
+		while (!cancelled && (hasViableGoal || (sailing != null && !targets.isEmpty()))
+			&& (!boundary.isEmpty() || !pending.isEmpty()))
 		{
 			int boundaryHead = boundary.peekFirst();
 			int pendingHead = pending.peek();
@@ -384,10 +406,15 @@ public class Pathfinder implements ActiveSearch
 				// transitions) or a sailing tile; walking tiles and abstract nodes never
 				// enter it, and none of them claimed their destination at enqueue. The
 				// first, cheapest, dequeue wins the tile; later queued duplicates for the
-				// same tile are dropped here.
+				// same tile are dropped here — unless the duplicate is a sailing move that
+				// arrives on its own heading, queued for it because the settled heading
+				// didn't cover a target.
 				int packed = graph.packedPosition(node);
 				boolean bank = graph.bankVisited(node);
-				if (visited.get(packed, bank))
+				if (visited.get(packed, bank)
+					&& !(sailing != null && graph.isWeighted(node)
+						&& sailing.arrivedTarget(packed,
+							CollisionMap.sailingArrivalHeading(graph, node, sailing.moves)) != WorldPointUtil.UNDEFINED))
 				{
 					continue;
 				}
@@ -409,11 +436,15 @@ public class Pathfinder implements ActiveSearch
 			{
 				updateWildernessLevel(nodePacked);
 
-				if (goals.contains(nodePacked) || (sailing != null
-					&& sailing.hasArrived(nodePacked, CollisionMap.sailingArrivalHeading(graph, node, sailing.moves))))
+				final int arrivedTarget = sailing != null
+					? sailing.arrivedTarget(nodePacked, CollisionMap.sailingArrivalHeading(graph, node, sailing.moves))
+					: WorldPointUtil.UNDEFINED;
+				if (goals.contains(nodePacked) || arrivedTarget != WorldPointUtil.UNDEFINED)
 				{
 					bestLastNode = node;
-					reachedTarget = nodePacked;
+					// A sailing arrival reports the target the hull covers, which can sit a
+					// boat length from the boat's tile rather than on it
+					reachedTarget = goals.contains(nodePacked) ? nodePacked : arrivedTarget;
 					if (shortestAcceptedNode != NodeGraph.NO_NODE)
 					{
 						bestLastNode = shortestAcceptedNode;

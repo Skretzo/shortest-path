@@ -93,6 +93,12 @@ public final class SailingMoves
 			names[count] = HEADING_NAMES[heading];
 			count++;
 		}
+		if (count == 0)
+		{
+			// Below about 0.125 tiles per tick every heading rounds to no movement; a garbage or
+			// stale base-speed reading must not produce a search that can never move
+			return ESTIMATE;
+		}
 		return new SailingMoves(tilesPerTick, Arrays.copyOf(dx, count), Arrays.copyOf(dy, count),
 			Arrays.copyOf(ticks, count), Arrays.copyOf(lengths, count), Arrays.copyOf(headings, count),
 			Arrays.copyOf(names, count));

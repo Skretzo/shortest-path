@@ -78,7 +78,8 @@ public class PathMinimapOverlay extends Overlay
 		// On a boat the path sails the boat's headings, with a point a few tiles apart at the end of each move: half-size
 		// blue dots
 		boolean sailing = plugin.isSailing();
-		Color pathColor = sailing ? ShortestPathPlugin.COLOUR_SAILING_PATH : plugin.getPathColor();
+		Color pathColor = sailing && !plugin.isPathUnreachable()
+			? ShortestPathPlugin.COLOUR_SAILING_PATH : plugin.getPathColor();
 		for (PathStep point : pathPoints)
 		{
 			int pathPoint = point.getPackedPosition();

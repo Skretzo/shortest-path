@@ -136,7 +136,7 @@ public class PathMapOverlay extends Overlay
 			{
 				// On a boat the path sails the boat's headings: a line along each heading it holds, with a small square
 				// at the end of each move
-				graphics.setColor(ShortestPathPlugin.COLOUR_SAILING_PATH);
+				graphics.setColor(plugin.isPathUnreachable() ? plugin.getPathColor() : ShortestPathPlugin.COLOUR_SAILING_PATH);
 				for (int i = 0; i < path.size(); i++)
 				{
 					int point = path.get(i).getPackedPosition();
