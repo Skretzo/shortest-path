@@ -1461,6 +1461,10 @@ public class ShortestPathPlugin extends Plugin
 			fairyRingPanelOpen = true;
 		}
 
+		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT)
+		{
+			portalNexusKeybinds.dialogOpened();
+		}
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
 			|| event.getGroupId() == InterfaceID.TELENEXUS)
 		{

@@ -357,4 +357,33 @@ public class PortalNexusKeybindTest
 
 		assertEquals(Map.of(), keys);
 	}
+
+	@Test
+	public void testMenuRebuildDropsUnassignedSlots()
+	{
+		keybinds.putFromDialogLine("1: Harmony Island");
+		keybinds.putFromDialogLine("F3: Waterbirth Island");
+
+		// Reopening the menu re-observes the current bindings; the unassigned
+		// Waterbirth slot produces no line, so its stale key must be dropped.
+		keybinds.dialogOpened();
+		keybinds.putFromDialogLine("1: Harmony Island");
+
+		assertEquals("1: Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+	}
+
+	@Test
+	public void testRefreshAfterReopenDropsStaleKeys()
+	{
+		keybinds.putFromDialogLine("F3: Waterbirth Island");
+		keybinds.dialogOpened();
+
+		Map<String, String> parsed = new HashMap<>();
+		parsed.put("harmony island", "1");
+		keybinds.replaceIfPresent(parsed);
+
+		assertEquals("1: Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+	}
 }

@@ -112,6 +112,18 @@ public class PortalNexusKeybinds
 	}
 
 	/**
+	 * Marks that the teleport menu is (re)building. The dialog is authoritative
+	 * for its hotkeys: keys are relearned from its lines and widget text on
+	 * every open, so cached mappings for slots the player unassigned must be
+	 * dropped before the new build is observed.
+	 */
+	void dialogOpened()
+	{
+		keysByNormalizedName.clear();
+		dirty = true;
+	}
+
+	/**
 	 * Records one teleport menu line as it is created by the client. Only an
 	 * explicit "key : name" prefix in the line text produces a mapping; a line
 	 * without a readable prefix carries no keybind information and is ignored.
