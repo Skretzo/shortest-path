@@ -185,6 +185,49 @@ public class SailingServiceTest
 	}
 
 	@Test
+	public void missingWorldViewCollapsesTheEntitySide()
+	{
+		stubVarbits(1, 192, 384, 96);
+
+		// A live player whose world view is still being rebuilt (mid world
+		// hop): the capture must collapse rather than throw.
+		Player player = mock(Player.class);
+		when(client.getLocalPlayer()).thenReturn(player);
+		when(player.getWorldView()).thenReturn(null);
+
+		SailingService service = SailingService.forTesting(client);
+		service.refresh(source());
+
+		SailingState state = service.getState();
+		assertTrue("the varbit side still reflects the source", state.isAboard());
+		assertFalse(state.hasBoat());
+		assertFalse(state.hasBounds());
+		assertEquals(WorldPointUtil.UNDEFINED, state.getBoatPoint());
+	}
+
+	@Test
+	public void missingTopLevelWorldViewCollapsesTheEntitySide()
+	{
+		stubVarbits(1, 192, 384, 96);
+
+		Player player = mock(Player.class);
+		WorldView boatView = mock(WorldView.class);
+		when(client.getLocalPlayer()).thenReturn(player);
+		when(player.getWorldView()).thenReturn(boatView);
+		when(boatView.getId()).thenReturn(BOAT_WORLDVIEW);
+		when(client.getTopLevelWorldView()).thenReturn(null);
+
+		SailingService service = SailingService.forTesting(client);
+		service.refresh(source());
+
+		SailingState state = service.getState();
+		assertTrue("the varbit side still reflects the source", state.isAboard());
+		assertFalse(state.hasBoat());
+		assertFalse(state.hasBounds());
+		assertEquals(WorldPointUtil.UNDEFINED, state.getBoatPoint());
+	}
+
+	@Test
 	public void loggedOutRefreshReadsNoVarbitsAndClearsThem()
 	{
 		when(client.getGameState()).thenReturn(GameState.LOGIN_SCREEN);
@@ -198,6 +241,11 @@ public class SailingServiceTest
 		assertEquals(0, state.getSpeedCap());
 		assertEquals(0, state.getAcceleration());
 		verify(client, never()).getVarbitValue(anyInt());
+		// The entity side feeds nothing logged out, so it stays unopened —
+		// the world-view graph is the piece a hop can leave half-built.
+		verify(client, never()).getLocalPlayer();
+		assertFalse(state.hasBoat());
+		assertEquals(WorldPointUtil.UNDEFINED, state.getBoatPoint());
 	}
 
 	@Test
