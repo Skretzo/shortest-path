@@ -92,6 +92,7 @@ import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
+import shortestpath.sailing.SailingService;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.scheduler.QueryResponder;
 import shortestpath.scheduler.RefreshCoordinator;
@@ -179,6 +180,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Inject
 	private ItemStateService itemState;
 	@Inject
+	private SailingService sailing;
+	@Inject
 	private Settings settings;
 	@Inject
 	private PathScheduler scheduler;
@@ -245,7 +248,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
 		pathfinderConfig.setSpiritTreeService(spiritTrees);
 		pathfinderConfig.setItemStateService(itemState);
-		scheduler.attach(pathfinderConfig, this);
+		pathfinderConfig.setSailingService(sailing);
+		scheduler.attach(pathfinderConfig, sailing, this);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load touches the same HashMaps the
