@@ -18,7 +18,6 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.pathfinder.PathfinderBackend;
@@ -60,7 +59,14 @@ import shortestpath.transport.TransportTypeConfig;
 @Slf4j
 public class Settings
 {
-	private static final String CONFIG_GROUP = resolveConfigGroup();
+	/**
+	 * The persisted config group — mirrors the {@code @ConfigGroup} value on
+	 * {@link ShortestPathConfig}. Kept as a literal so this leaf package
+	 * neither reads annotations reflectively nor references the plugin class;
+	 * a divergence would surface as every persisted read/write missing its
+	 * namespace.
+	 */
+	private static final String CONFIG_GROUP = "shortestpath";
 
 	/**
 	 * Retained for the persisted write path (panel edits write through the
@@ -120,12 +126,6 @@ public class Settings
 	public static Settings wrap(ShortestPathConfig config)
 	{
 		return new Settings(config);
-	}
-
-	private static String resolveConfigGroup()
-	{
-		ConfigGroup group = ShortestPathConfig.class.getAnnotation(ConfigGroup.class);
-		return group == null ? "" : group.value();
 	}
 
 	/**
