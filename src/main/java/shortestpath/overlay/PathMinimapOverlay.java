@@ -37,8 +37,14 @@ public class PathMinimapOverlay extends Overlay
 
 	public static void renderMinimapRect(Client client, Graphics2D graphics, Point center, Color color)
 	{
+		renderMinimapRect(client, graphics, center, color, 1.0);
+	}
+
+	// The scale overloads draw a sailing path's half-size dots
+	public static void renderMinimapRect(Client client, Graphics2D graphics, Point center, Color color, double scale)
+	{
 		double angle = client.getCameraYawTarget() * Perspective.UNIT14;
-		double tileSize = client.getMinimapZoom();
+		double tileSize = client.getMinimapZoom() * scale;
 		int x = (int) Math.round(center.getX() - tileSize / 2);
 		int y = (int) Math.round(center.getY() - tileSize / 2);
 		int width = (int) Math.round(tileSize);
@@ -69,7 +75,11 @@ public class PathMinimapOverlay extends Overlay
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
 		java.util.List<PathStep> pathPoints = plugin.getActiveSearch().getPath();
-		Color pathColor = plugin.getPathColor();
+		// On a boat the path sails the boat's headings, with a point a few tiles apart at the end of each move: half-size
+		// blue dots
+		boolean sailing = plugin.isSailing();
+		Color pathColor = sailing && !plugin.isPathUnreachable()
+			? ShortestPathPlugin.COLOUR_SAILING_PATH : plugin.getPathColor();
 		for (PathStep point : pathPoints)
 		{
 			int pathPoint = point.getPackedPosition();
@@ -78,7 +88,7 @@ public class PathMinimapOverlay extends Overlay
 				continue;
 			}
 
-			drawOnMinimap(graphics, pathPoint, pathColor);
+			drawOnMinimap(graphics, pathPoint, pathColor, sailing ? 0.5 : 1.0);
 		}
 		for (int target : plugin.getActiveSearch().getTargets())
 		{
@@ -92,6 +102,11 @@ public class PathMinimapOverlay extends Overlay
 	}
 
 	private void drawOnMinimap(Graphics2D graphics, int location, Color color)
+	{
+		drawOnMinimap(graphics, location, color, 1.0);
+	}
+
+	private void drawOnMinimap(Graphics2D graphics, int location, Color color, double scale)
 	{
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
 		for (int i = 0; i < points.size(); i++)
@@ -110,7 +125,7 @@ public class PathMinimapOverlay extends Overlay
 				continue;
 			}
 
-			renderMinimapRect(client, graphics, posOnMinimap, color);
+			renderMinimapRect(client, graphics, posOnMinimap, color, scale);
 		}
 	}
 }

@@ -221,7 +221,20 @@ public class PathTileOverlay extends Overlay
 
 			List<PathStep> path = plugin.getActiveSearch().getPath();
 			int counter = 0;
-			if (TileStyle.LINES.equals(plugin.pathStyle) || TileStyle.ARROW_LINE.equals(plugin.pathStyle))
+			if (plugin.isSailing())
+			{
+				// On a boat the path sails the boat's headings: lines along each heading it holds, drawn through the
+				// spot within each tile where the boat actually sits
+				Color sailingColor = plugin.isPathUnreachable() ? plugin.getPathColor() : ShortestPathPlugin.COLOUR_SAILING_PATH;
+				for (int i = 1; i < path.size(); i++)
+				{
+					drawOffsetLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(),
+						plugin.getSailingPivotX(), plugin.getSailingPivotY(), sailingColor);
+					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
+				}
+				drawUnreachedTargets(graphics, path, colorCalculating, true);
+			}
+			else if (TileStyle.LINES.equals(plugin.pathStyle) || TileStyle.ARROW_LINE.equals(plugin.pathStyle))
 			{
 				boolean arrows = TileStyle.ARROW_LINE.equals(plugin.pathStyle);
 				for (int i = 1; i < path.size(); i++)
@@ -571,6 +584,44 @@ public class PathTileOverlay extends Overlay
 			drawCounter(graphics, p1.getX(), p1.getY(), 0);
 		}
 		drawCounter(graphics, p2.getX(), p2.getY(), counter);
+	}
+
+	// A line between two tiles, shifted from the tile centres by (offsetX, offsetY) local units
+	private void drawOffsetLine(Graphics2D graphics, int startLoc, int endLoc, int offsetX, int offsetY, Color color)
+	{
+		// In an instance the path is in template coordinates, as for the walking path's lines
+		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
+		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
+		if (starts.isEmpty() || ends.isEmpty())
+		{
+			return;
+		}
+
+		final int z = client.getTopLevelWorldView().getPlane();
+		if (WorldPointUtil.unpackWorldPlane(starts.get(0)) != z)
+		{
+			return;
+		}
+
+		LocalPoint start = WorldPointUtil.toLocalPoint(client, starts.get(0));
+		LocalPoint end = WorldPointUtil.toLocalPoint(client, ends.get(0));
+		if (start == null || end == null)
+		{
+			return;
+		}
+		start = new LocalPoint(start.getX() + offsetX, start.getY() + offsetY, start.getWorldView());
+		end = new LocalPoint(end.getX() + offsetX, end.getY() + offsetY, end.getWorldView());
+
+		Point p1 = Perspective.localToCanvas(client, start.getX(), start.getY(), Perspective.getTileHeight(client, start, z));
+		Point p2 = Perspective.localToCanvas(client, end.getX(), end.getY(), Perspective.getTileHeight(client, end, z));
+		if (p1 == null || p2 == null)
+		{
+			return;
+		}
+
+		graphics.setColor(color);
+		graphics.setStroke(new BasicStroke(4));
+		graphics.draw(new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY()));
 	}
 
 	private void drawCounter(Graphics2D graphics, double x, double y, int counter)
