@@ -28,6 +28,7 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.TestItemChange;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.Targets;
 import shortestpath.poh.TestPohChange;
 import shortestpath.sailing.TestSailingChange;
@@ -362,6 +363,53 @@ public class RefreshCoordinatorTest
 		when(config.cancelInstead()).thenReturn(true);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+
+		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
+	}
+
+	// ---------------------------------------------------------------
+	// The sailing reached-verdict branch
+	// ---------------------------------------------------------------
+
+	@Test
+	public void sailingSearchReachedItsTargetClearsThePath()
+	{
+		// A sailing path is reached once the hull covers the target, so the
+		// search's own verdict clears it — the walking target-distance check
+		// is skipped entirely.
+		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		int location = WorldPointUtil.packWorldPoint(1000, 1000, 0);
+		runningSearch(50, Targets.at(Set.of(target)));
+		PathfinderResult result = mock(PathfinderResult.class);
+		when(search.isSailing()).thenReturn(true);
+		when(search.getResult()).thenReturn(result);
+		when(result.isReached()).thenReturn(true);
+
+		coordinator.offRouteTick(20, location);
+
+		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
+		verify(scheduler, never()).isNearPath(anyInt());
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
+	}
+
+	@Test
+	public void sailingSearchNotReachedFallsThroughToTheDistanceCheck()
+	{
+		// Without a reached verdict the sailing branch declines and the
+		// ordinary target-distance check decides — here the player is close
+		// enough to the target to clear.
+		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		int location = WorldPointUtil.packWorldPoint(3200, 3201, 0);
+		runningSearch(50, Targets.at(Set.of(target)));
+		PathfinderResult result = mock(PathfinderResult.class);
+		when(search.isSailing()).thenReturn(true);
+		when(search.getResult()).thenReturn(result);
+		when(result.isReached()).thenReturn(false);
+		when(config.reachedDistance()).thenReturn(10);
+
+		coordinator.offRouteTick(20, location);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
