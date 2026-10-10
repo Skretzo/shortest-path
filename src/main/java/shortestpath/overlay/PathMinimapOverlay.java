@@ -19,6 +19,7 @@ import shortestpath.PrimitiveIntList;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.scheduler.PathRenderState;
 import shortestpath.settings.Settings;
 
 public class PathMinimapOverlay extends Overlay
@@ -26,13 +27,15 @@ public class PathMinimapOverlay extends Overlay
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private final Settings settings;
+	private final PathRenderState renderState;
 
 	@Inject
-	private PathMinimapOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
+	private PathMinimapOverlay(Client client, ShortestPathPlugin plugin, Settings settings, PathRenderState renderState)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.settings = settings;
+		this.renderState = renderState;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
@@ -80,9 +83,9 @@ public class PathMinimapOverlay extends Overlay
 		java.util.List<PathStep> pathPoints = plugin.getActiveSearch().getPath();
 		// On a boat the path sails the boat's headings, with a point a few tiles apart at the end of each move: half-size
 		// blue dots
-		boolean sailing = plugin.isSailing();
-		Color pathColor = sailing && !plugin.isPathUnreachable()
-			? ShortestPathPlugin.COLOUR_SAILING_PATH : plugin.getPathColor();
+		boolean sailing = renderState.isSailing();
+		Color pathColor = sailing && !renderState.isPathUnreachable()
+			? PathRenderState.SAILING_PATH_COLOUR : plugin.getPathColor();
 		for (PathStep point : pathPoints)
 		{
 			int pathPoint = point.getPackedPosition();
