@@ -376,7 +376,7 @@ public class PathScheduler
 
 	private boolean isSailing()
 	{
-		return pathfinder instanceof SailingPathfinder;
+		return pathfinder != null && pathfinder.isSailing();
 	}
 
 	/**
