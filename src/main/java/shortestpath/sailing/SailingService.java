@@ -119,9 +119,12 @@ public class SailingService
 	 * aboard flag, since the side-panel reads are unconditional today —
 	 * and clears to zero otherwise, matching the existing reset. The entity
 	 * side resolves the boat, its hull bounds, packed point, in-tile pivot
-	 * and target orientation through the {@link WorldPointUtil} statics; a
-	 * null client (detached instance), a null local player, or a top-level
-	 * world view collapses it to the no-boat values.
+	 * and target orientation through the {@link WorldPointUtil} statics; it
+	 * runs only while the source reports {@link GameState#LOGGED_IN}, since
+	 * nothing reads the entity fields logged out and the world-view graph
+	 * can be mid-rebuild on the far side of a hop. A null client (detached
+	 * instance), a null local player, or a top-level world view collapses
+	 * it to the no-boat values.
 	 * <p>
 	 * Client thread only, called from the engine's refresh.
 	 */
@@ -135,7 +138,7 @@ public class SailingService
 		int speedCap = loggedIn ? source.varbit(VarbitID.SAILING_SIDEPANEL_BOAT_SPEEDCAP) : 0;
 		int acceleration = loggedIn ? source.varbit(VarbitID.SAILING_SIDEPANEL_BOAT_ACCELERATION) : 0;
 
-		Player localPlayer = client == null ? null : client.getLocalPlayer();
+		Player localPlayer = !loggedIn || client == null ? null : client.getLocalPlayer();
 		WorldEntity boat = localPlayer == null ? null : WorldPointUtil.boat(client, localPlayer);
 		LocalPoint boatLp = localPlayer == null ? null : WorldPointUtil.boatLocation(client, localPlayer);
 		WorldEntityConfig bounds = boat == null ? null : boat.getConfig();
