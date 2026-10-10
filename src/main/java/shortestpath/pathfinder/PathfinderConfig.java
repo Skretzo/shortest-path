@@ -243,8 +243,15 @@ public class PathfinderConfig
 	@Getter
 	private volatile int bankVisitCost;
 	private volatile int currencyThreshold;
-	@Getter
-	private volatile boolean isOnSailingBoat;
+	/**
+	 * Whether the player is aboard a boat, read from the sailing service's
+	 * published snapshot — the volatile publication lives there now, so
+	 * render-thread readers see the same value the refresh captured.
+	 */
+	public boolean isOnSailingBoat()
+	{
+		return sailing.getState().isAboard();
+	}
 	@Getter
 	private volatile PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
 	/**
@@ -672,7 +679,6 @@ public class PathfinderConfig
 		heldItems = eligibility.heldItems();
 		varbitValues = context.getVarbitValues();
 		varPlayerValues = context.getVarPlayerValues();
-		isOnSailingBoat = context.isOnSailingBoat();
 		requirements = new Requirements(context, policy, requirementHooks);
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
