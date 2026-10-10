@@ -140,9 +140,26 @@ public final class TargetGoals
 		for (int r = 1; r <= radius && goals.isEmpty(); r++)
 		{
 			final int[] ring = ringOffsets(r);
+			// Walkable diagonal tiles on the interaction ring are held back:
+			// the target cannot be interacted with from a diagonal tile, so
+			// they count only when no cardinally adjacent tile is usable.
+			final Set<Integer> diagonals = new HashSet<>();
 			for (int i = 0; i < ring.length; i += 2)
 			{
-				addRingGoal(config, map, start, goals, x + ring[i], y + ring[i + 1], z);
+				final int nx = x + ring[i];
+				final int ny = y + ring[i + 1];
+				final int packed = WorldPointUtil.packWorldPoint(nx, ny, z);
+				if (r == 1 && nx != x && ny != y && packed != start
+					&& !map.isBlocked(nx, ny, z))
+				{
+					diagonals.add(packed);
+					continue;
+				}
+				addRingGoal(config, map, start, goals, nx, ny, z);
+			}
+			if (r == 1 && goals.isEmpty())
+			{
+				goals.addAll(diagonals);
 			}
 		}
 		return goals;
@@ -165,15 +182,18 @@ public final class TargetGoals
 	// A blocked tile's movement flags report every direction blocked, so the
 	// target's own edges cannot tell apart a wall and the object's footprint
 	// -- but the boundary flags still record which edges carry a wall or
-	// door, and those exclude neighbours outright. Where
-	// several sides remain, tiles on the target's side of a wall (its room or
-	// corridor) reach fewer tiles in a few steps than tiles on open ground:
-	// the most enclosed candidate of the innermost ring anchors the side, and
-	// flooding from it stays inside the same wall-bounded component. Scanning
-	// deeper rings matters only for targets hemmed in by other objects, where
-	// every adjacent tile lies outside the room and only ring 2+ tiles sit
-	// inside it. Transport destinations ignore walls entirely; they are
-	// scanned per Chebyshev ring and count as equally near goals.
+	// door, and neighbours behind one are kept back while open neighbours
+	// remain. When every walkable neighbour is behind a boundary edge the
+	// target is itself the wall or rock face, and the tiles touching it are
+	// the only ones it can be interacted with from. Where several sides
+	// remain, tiles on the target's side of a wall (its room or corridor)
+	// reach fewer tiles in a few steps than tiles on open ground: the most
+	// enclosed candidate of the innermost ring anchors the side, and flooding
+	// from it stays inside the same wall-bounded component. Scanning deeper
+	// rings matters only for targets hemmed in by other objects, where every
+	// adjacent tile lies outside the room and only ring 2+ tiles sit inside
+	// it. Transport destinations ignore walls entirely; they are scanned per
+	// Chebyshev ring and count as equally near goals.
 	private static Set<Integer> expandingConnectedGoals(PathfinderConfig config, CollisionMap map,
 		int start, int target, int radius)
 	{
@@ -183,6 +203,13 @@ public final class TargetGoals
 		final int scan = Math.min(radius, ENCLOSURE_SCAN_RADIUS);
 		// Walkable candidates in the innermost non-empty ring: {packed, reach}.
 		final ArrayList<int[]> candidates = new ArrayList<>();
+		// Adjacent tiles behind a boundary edge -- a wall or door rather than
+		// the object's own footprint -- may sit on the wrong side of the
+		// target, so they never anchor the side the search expands on. They
+		// remain eligible as goals: when one shares the anchor's side after
+		// all, the boundary is the target's own face -- a wall or rock that
+		// can only be interacted with from the tiles touching it.
+		final Set<Integer> boundaryFaces = new HashSet<>();
 		// The candidate marking the target's side is the most enclosed one
 		// of the nearest ring with any candidate at all.
 		int anchor = -1;
@@ -197,13 +224,14 @@ public final class TargetGoals
 				final int ny = y + ring[i + 1];
 				final int packed = WorldPointUtil.packWorldPoint(nx, ny, z);
 				// The player's own tile is never a useful goal: ending on
-				// the first dequeued node yields an invisible path. A
-				// neighbour behind a structural boundary edge -- a wall
-				// or door rather than the object's own footprint -- is
-				// on the wrong side of the target.
-				if (packed == start || map.isBlocked(nx, ny, z)
-					|| (d == 1 && wallSeparated(map, x, y, nx, ny, z)))
+				// the first dequeued node yields an invisible path.
+				if (packed == start || map.isBlocked(nx, ny, z))
 				{
+					continue;
+				}
+				if (d == 1 && wallSeparated(map, x, y, nx, ny, z))
+				{
+					boundaryFaces.add(packed);
 					continue;
 				}
 				final int reach = localReach(map, packed);
@@ -221,9 +249,9 @@ public final class TargetGoals
 		}
 		// Tiles that share the anchor's side of the target's walls. The
 		// flood is bounded by the anchor's own ring and does not cross
-		// boundary edges, so it cannot leak through a far door or around a
-		// wall end and pull in candidates that are merely reachable rather
-		// than on the same side.
+		// boundary edges. A wall end inside the box is still walked around
+		// -- such tiles are legitimately connected, just not usable goals
+		// when an adjacent face qualifies first.
 		final Set<Integer> sameSide = new HashSet<>();
 		if (anchor != -1)
 		{
@@ -248,9 +276,39 @@ public final class TargetGoals
 			}
 		}
 		final Set<Integer> goals = new HashSet<>();
+		// Adjacent tiles that share the anchor's side are the nearest usable
+		// goals. Cardinal faces are kept apart from diagonals: nothing can be
+		// interacted with from a diagonal tile, so a diagonal only counts when
+		// no cardinally adjacent tile is usable at all.
+		final Set<Integer> diagonals = new HashSet<>();
 		for (int d = 1; d <= radius && goals.isEmpty(); d++)
 		{
-			if (d == anchorRing)
+			if (d == 1)
+			{
+				for (int face : boundaryFaces)
+				{
+					if (sameSide.contains(face))
+					{
+						(isCardinalFace(face, x, y) ? goals : diagonals).add(face);
+					}
+				}
+				if (anchorRing == 1)
+				{
+					for (int[] candidate : candidates)
+					{
+						if (sameSide.contains(candidate[0]))
+						{
+							(isCardinalFace(candidate[0], x, y) ? goals : diagonals)
+								.add(candidate[0]);
+						}
+					}
+				}
+				if (goals.isEmpty())
+				{
+					goals.addAll(diagonals);
+				}
+			}
+			else if (d == anchorRing)
 			{
 				for (int[] candidate : candidates)
 				{
@@ -263,6 +321,14 @@ public final class TargetGoals
 			addTransportRingGoals(config, start, goals, x, y, z, d);
 		}
 		return goals;
+	}
+
+	// Cardinally adjacent to the target: the only direction an object on the
+	// target tile can be interacted with from.
+	private static boolean isCardinalFace(int packed, int x, int y)
+	{
+		return WorldPointUtil.unpackWorldX(packed) == x
+			|| WorldPointUtil.unpackWorldY(packed) == y;
 	}
 
 	// The boundary flag for the edge between two cardinally adjacent tiles
