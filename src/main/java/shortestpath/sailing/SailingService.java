@@ -113,6 +113,18 @@ public class SailingService
 	}
 
 	/**
+	 * Republishes {@link SailingState#EMPTY}. The service is a singleton on
+	 * the plugin injector, which RuneLite reuses across shutDown/startUp
+	 * cycles, so the shell calls this on shutdown to keep one session's
+	 * snapshot from feeding the next enable before its first refresh
+	 * publishes.
+	 */
+	public void reset()
+	{
+		publish(SailingState.EMPTY);
+	}
+
+	/**
 	 * Captures the sailing inputs into one immutable snapshot and publishes
 	 * it. The varbit side reads all four sailing varbits whenever the source
 	 * reports {@link GameState#LOGGED_IN} — deliberately not gated on the
