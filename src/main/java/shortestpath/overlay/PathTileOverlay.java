@@ -21,6 +21,7 @@ import java.util.Set;
 
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
+import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.coords.LocalPoint;
@@ -104,32 +105,28 @@ public class PathTileOverlay extends Overlay
 				boolean isAvailable = Arrays.asList(availableAtOrigin).contains(b);
 				graphics.setColor(isAvailable ? COLOR_AVAILABLE : COLOR_UNAVAILABLE);
 
-				PrimitiveIntList destinations = WorldPointUtil.toLocalInstance(client, b.getDestination());
-				for (int i = 0; i < destinations.size(); i++)
+				int destination = b.getDestination();
+				if (destination == Transport.UNDEFINED_DESTINATION)
 				{
-					int destination = destinations.get(i);
-					if (destination == Transport.UNDEFINED_DESTINATION)
-					{
-						continue;
-					}
-					Point cb = tileCenter(destination);
-					if (cb != null)
-					{
-						graphics.drawLine(ca.getX(), ca.getY(), cb.getX(), cb.getY());
-						drawStart = true;
-					}
-					if (WorldPointUtil.unpackWorldPlane(destination) > WorldPointUtil.unpackWorldPlane(a))
-					{
-						s.append("+");
-					}
-					else if (WorldPointUtil.unpackWorldPlane(destination) < WorldPointUtil.unpackWorldPlane(a))
-					{
-						s.append("-");
-					}
-					else
-					{
-						s.append("=");
-					}
+					continue;
+				}
+				Point cb = tileCenter(destination);
+				if (cb != null)
+				{
+					graphics.drawLine(ca.getX(), ca.getY(), cb.getX(), cb.getY());
+					drawStart = true;
+				}
+				if (WorldPointUtil.unpackWorldPlane(destination) > WorldPointUtil.unpackWorldPlane(a))
+				{
+					s.append("+");
+				}
+				else if (WorldPointUtil.unpackWorldPlane(destination) < WorldPointUtil.unpackWorldPlane(a))
+				{
+					s.append("-");
+				}
+				else
+				{
+					s.append("=");
 				}
 			}
 
@@ -423,26 +420,37 @@ public class PathTileOverlay extends Overlay
 			return null;
 		}
 
-		if (WorldPointUtil.unpackWorldPlane(b) != client.getTopLevelWorldView().getPlane())
+		// Map the canonical point into the viewed instance before checking the
+		// plane — inside an instance (e.g. a POH) the stored template plane can
+		// differ from the instance plane without being on a different floor.
+		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, b);
+		for (int i = 0; i < points.size(); i++)
 		{
-			return null;
+			int point = points.get(i);
+			if (point == WorldPointUtil.UNDEFINED
+				|| WorldPointUtil.unpackWorldPlane(point) != client.getTopLevelWorldView().getPlane())
+			{
+				continue;
+			}
+
+			LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
+			if (lp == null)
+			{
+				continue;
+			}
+
+			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+			if (poly == null)
+			{
+				continue;
+			}
+
+			int cx = poly.getBounds().x + poly.getBounds().width / 2;
+			int cy = poly.getBounds().y + poly.getBounds().height / 2;
+			return new Point(cx, cy);
 		}
 
-		LocalPoint lp = WorldPointUtil.toLocalPoint(client, b);
-		if (lp == null)
-		{
-			return null;
-		}
-
-		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-		if (poly == null)
-		{
-			return null;
-		}
-
-		int cx = poly.getBounds().x + poly.getBounds().width / 2;
-		int cy = poly.getBounds().y + poly.getBounds().height / 2;
-		return new Point(cx, cy);
+		return null;
 	}
 
 	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw)
@@ -776,9 +784,16 @@ public class PathTileOverlay extends Overlay
 	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
 	{
 		int location = currentStep.getPackedPosition();
+		int lx = WorldPointUtil.unpackWorldX(location);
+		int ly = WorldPointUtil.unpackWorldY(location);
+		// Inside an instance the stored template plane can differ from the
+		// viewed instance plane without being on a different floor (a POH with
+		// a basement shifts its ground floor up a plane), so POH steps skip the
+		// plane check here; every draw below re-maps the step through
+		// toLocalInstance and plane-checks the mapped point instead.
 		if (nextStep == null ||
 			(WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane() &&
-				!ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(location), WorldPointUtil.unpackWorldY(location))
+				!ShortestPathPlugin.isInsidePoh(lx, ly)
 			))
 		{
 			return;
@@ -824,8 +839,13 @@ public class PathTileOverlay extends Overlay
 
 		// Workaround for weird pathing inside PoH to instead show info on the player
 		// tile
-		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
-		WorldPoint playerWorldPoint = client.getLocalPlayer().getWorldLocation();
+		Player player = client.getLocalPlayer();
+		if (player == null)
+		{
+			return;
+		}
+		LocalPoint playerLocalPoint = player.getLocalLocation();
+		WorldPoint playerWorldPoint = player.getWorldLocation();
 		if (client.getTopLevelWorldView().isInstance())
 		{
 			playerWorldPoint = WorldPoint.fromLocalInstance(client, playerLocalPoint);
@@ -833,14 +853,17 @@ public class PathTileOverlay extends Overlay
 		int playerPackedPoint = WorldPointUtil.packWorldPoint(playerWorldPoint);
 		int px = WorldPointUtil.unpackWorldX(playerPackedPoint);
 		int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
-		int tx = WorldPointUtil.unpackWorldX(location);
-		int ty = WorldPointUtil.unpackWorldY(location);
-		boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(tx, ty)
+		boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(lx, ly)
 			&& ShortestPathPlugin.isInsidePoh(px, py);
 
 		// When inside POH, only show the POH exit info once (not per-transport)
 		if (transportAndPlayerInsidePoh)
 		{
+			// No floor check here: path steps carry planes from the generic POH
+			// template (the landing is modelled at plane 0), while the player maps
+			// back at whatever template plane their actual house chunks occupy
+			// (e.g. plane 2 for a ground floor) — the two don't correspond, so any
+			// plane comparison would suppress the hint in real houses.
 			String pohExitInfo = plugin.getPohExitInfo(location, path, pathIndex - 1);
 
 			if (pohExitInfo == null)
