@@ -18,11 +18,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.Perspective;
 import net.runelite.api.Player;
-import net.runelite.api.WorldEntity;
-import net.runelite.api.WorldEntityConfig;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
@@ -41,6 +37,8 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
+import shortestpath.sailing.SailingService;
+import shortestpath.sailing.SailingState;
 
 /**
  * Owns the plugin's pathfinding concurrency: the single-worker executor, the mutex that pairs
@@ -64,8 +62,11 @@ public class PathScheduler
 	private final DebugState debugState;
 
 	// Late-bound by attach(): the shell still owns PathfinderConfig construction and the
-	// plugin-message surface, so they cannot ride the constructor.
+	// plugin-message surface, so they cannot ride the constructor. The sailing service
+	// joins them for the same reason — injecting it here would close the
+	// SailingService -> RefreshCoordinator -> PathScheduler Guice cycle.
 	private PathfinderConfig pathfinderConfig;
+	private SailingService sailing;
 	private QueryResponder responder;
 
 	private WorldMapPoint marker;
@@ -99,12 +100,13 @@ public class PathScheduler
 
 	/**
 	 * Binds the shell-owned pieces the scheduler needs: the pathfinder config the shell builds in
-	 * startUp, the item-state service, and the plugin-message responder. Called before anything
-	 * can elicit a search.
+	 * startUp, the sailing service, and the plugin-message responder. Called
+	 * before anything can elicit a search.
 	 */
-	public void attach(PathfinderConfig pathfinderConfig, QueryResponder responder)
+	public void attach(PathfinderConfig pathfinderConfig, SailingService sailing, QueryResponder responder)
 	{
 		this.pathfinderConfig = pathfinderConfig;
+		this.sailing = sailing;
 		this.responder = responder;
 	}
 
@@ -168,9 +170,7 @@ public class PathScheduler
 				// The boarded-boat varbit can lag the world entity (stale across a teleport or
 				// login), so only sail when the boat is actually in the scene — otherwise the
 				// search would sail its headings across land
-				Player player = client.getLocalPlayer();
-				if (pathfinderConfig.isSailingMoves() && player != null
-					&& WorldPointUtil.boat(client, player) != null)
+				if (pathfinderConfig.isSailingMoves() && sailing.getState().hasBoat())
 				{
 					// A SailingPathfinder isn't a Pathfinder, so it can't be held by
 					// legacyPathfinder — getPathfinder() reports null while sailing
@@ -231,24 +231,21 @@ public class PathScheduler
 		int sailingStart = start;
 		sailingPivotX = 0;
 		sailingPivotY = 0;
-		Player localPlayer = client.getLocalPlayer();
-		LocalPoint boat = localPlayer == null ? null : WorldPointUtil.boatLocation(client, localPlayer);
-		if (boat != null && !startPointSet)
+		SailingState state = sailing.getState();
+		if (state.getBoatPoint() != WorldPointUtil.UNDEFINED && !startPointSet)
 		{
-			sailingStart = WorldPointUtil.fromLocalInstance(client, boat);
-			sailingPivotX = (boat.getX() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
-			sailingPivotY = (boat.getY() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
+			sailingStart = state.getBoatPoint();
+			sailingPivotX = state.getPivotX();
+			sailingPivotY = state.getPivotY();
 		}
-		WorldEntity boatEntity = localPlayer == null ? null : WorldPointUtil.boat(client, localPlayer);
-		WorldEntityConfig bounds = boatEntity == null ? null : boatEntity.getConfig();
-		BoatHull hull = bounds == null ? null : BoatHull.fromBounds(bounds.getBoundsX(), bounds.getBoundsY(),
-			bounds.getBoundsWidth(), bounds.getBoundsHeight(), sailingPivotX, sailingPivotY);
+		BoatHull hull = !state.hasBounds() ? null : BoatHull.fromBounds(state.getBoundsX(), state.getBoundsY(),
+			state.getBoundsWidth(), state.getBoundsHeight(), sailingPivotX, sailingPivotY);
 		// The heading the boat faces where the route starts, as one of the 16 headings 128 angle units
 		// apart: a target under its hull only counts as reached facing that way — berthed, the boat hasn't
 		// arrived at a target astern of it. The target orientation pairs with the target tile the route
 		// starts from
-		int sailingHeading = boatEntity == null ? WorldPointUtil.UNDEFINED
-			: Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16);
+		int sailingHeading = state.getHeading() < 0 ? WorldPointUtil.UNDEFINED
+			: Math.floorMod((state.getHeading() + 64) / 128, 16);
 		return new SailingPathfinder(pathfinderConfig, sailingStart, ends, responder::postPluginMessages,
 			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull, sailingHeading);
 	}
