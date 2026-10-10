@@ -1874,7 +1874,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
 	{
-		if (path == null || currentIndex < 0)
+		if (path == null || currentIndex < -1)
 		{
 			return null;
 		}
