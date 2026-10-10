@@ -365,16 +365,23 @@ public class WorldPointUtil
 	}
 
 	/**
-	 * The boat the player is on, or {@code null} when the player is not on a boat.
+	 * The boat the player is on, or {@code null} when the player is not on a boat. The world-view
+	 * chain tolerates transient nulls — during a world hop a live player can sit on a world view
+	 * that is still being rebuilt.
 	 */
 	public static WorldEntity boat(Client client, Player localPlayer)
 	{
 		WorldView worldView = localPlayer.getWorldView();
-		if (worldView.getId() == WorldView.TOPLEVEL)
+		if (worldView == null || worldView.getId() == WorldView.TOPLEVEL)
 		{
 			return null;
 		}
-		return client.getTopLevelWorldView().worldEntities().byIndex(worldView.getId());
+		WorldView topLevel = client.getTopLevelWorldView();
+		if (topLevel == null || topLevel.worldEntities() == null)
+		{
+			return null;
+		}
+		return topLevel.worldEntities().byIndex(worldView.getId());
 	}
 
 	/**
@@ -384,11 +391,16 @@ public class WorldPointUtil
 	 *
 	 * @param client     RuneLite client.
 	 * @param localPoint local scene coordinate.
-	 * @return packed world point.
+	 * @return packed world point, or {@link #UNDEFINED} when the point's world view is unavailable
+	 *         (e.g. still being rebuilt during a world hop).
 	 */
 	public static int fromLocalInstance(Client client, LocalPoint localPoint)
 	{
 		WorldView worldView = client.getWorldView(localPoint.getWorldView());
+		if (worldView == null)
+		{
+			return UNDEFINED;
+		}
 		int plane = worldView.getPlane();
 
 		if (!worldView.isInstance())
