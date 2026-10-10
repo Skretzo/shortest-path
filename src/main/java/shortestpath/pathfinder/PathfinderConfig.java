@@ -397,9 +397,12 @@ public class PathfinderConfig
 		{
 			isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
 			sailingMoves = isOnSailingBoat && ShortestPathPlugin.override("useSailingMoves", config.useSailingMoves());
-			// The game stores the base speed in 1/128ths of a tile per tick
+			// The game stores the base speed in 1/128ths of a tile per tick; a read above any real
+			// boat's speed is a stale or mis-scaled varbit rather than a fast boat — the moves it
+			// would build are so long nothing can sail them — so estimate instead
 			int baseSpeed = client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED);
-			sailingSpeed = baseSpeed > 0 ? baseSpeed / 128.0 : SailingMoves.ESTIMATED_SPEED;
+			double speed = baseSpeed / 128.0;
+			sailingSpeed = baseSpeed > 0 && speed <= SailingMoves.MAX_SPEED ? speed : SailingMoves.ESTIMATED_SPEED;
 
 			int i = 0;
 			for (; i < Skill.values().length; i++)

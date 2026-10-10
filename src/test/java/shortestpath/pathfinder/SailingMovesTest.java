@@ -94,6 +94,38 @@ public class SailingMovesTest
 	}
 
 	@Test
+	public void testAnImpossibleSpeedFallsBackToTheEstimate()
+	{
+		// The moves a far-too-fast reading builds are so long every leg clips a blocked tile and the
+		// search ends at once, so like a negative or NaN one it falls back to the estimate
+		assertSame(SailingMoves.ESTIMATE, SailingMoves.forSpeed(512));
+		assertSame(SailingMoves.ESTIMATE, SailingMoves.forSpeed(SailingMoves.MAX_SPEED + 1));
+		assertSame(SailingMoves.ESTIMATE, SailingMoves.forSpeed(-1));
+		assertSame(SailingMoves.ESTIMATE, SailingMoves.forSpeed(Double.NaN));
+		assertSame(SailingMoves.ESTIMATE, SailingMoves.forSpeed(0));
+		assertTrue(SailingMoves.forSpeed(SailingMoves.MAX_SPEED).size() > 0);
+	}
+
+	@Test
+	public void testAStaleOrMisScaledBaseSpeedFallsBackToTheEstimate()
+	{
+		// The side-panel varbit is in 1/128ths of a tile per tick: a stale or mis-scaled read far above
+		// a real boat's speed is not a faster boat
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(65536);
+		pathfinderConfig.refresh();
+		assertEquals(SailingMoves.ESTIMATED_SPEED, pathfinderConfig.getSailingSpeed(), 0);
+
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn((int) (SailingMoves.MAX_SPEED * 128));
+		pathfinderConfig.refresh();
+		assertEquals("The fastest real speed still counts", SailingMoves.MAX_SPEED,
+			pathfinderConfig.getSailingSpeed(), 0);
+
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn((int) (SailingMoves.MAX_SPEED * 128) + 1);
+		pathfinderConfig.refresh();
+		assertEquals("Just above it does not", SailingMoves.ESTIMATED_SPEED, pathfinderConfig.getSailingSpeed(), 0);
+	}
+
+	@Test
 	public void testOpenSeaTakesTheDirectHeading()
 	{
 		// 15 across and 35 up is 5 NNE moves (38 tiles); N, N, NE five times takes as long but sails 41 tiles
