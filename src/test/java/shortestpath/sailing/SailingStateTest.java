@@ -106,7 +106,7 @@ public class SailingStateTest
 	}
 
 	@Test
-	public void materiallyEqualsFlagsBoundsAndHullChanges()
+	public void materiallyEqualsFlagsBoundsChanges()
 	{
 		SailingState a = material();
 
@@ -118,22 +118,37 @@ public class SailingStateTest
 			a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
 		assertFalse(a.materiallyEquals(state(true, 192, 384, 96, true, true, 1, 2, 3, 3, 42,
 			a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
-		assertFalse("a different hull config is material",
-			a.materiallyEquals(state(true, 192, 384, 96, true, true, 1, 2, 3, 2, 43,
+	}
+
+	@Test
+	public void materiallyEqualsFlagsBaseSpeedChanges()
+	{
+		SailingState a = material();
+
+		assertFalse("the route sails at the base speed, so a change there is material",
+			a.materiallyEquals(state(true, 128, 384, 96, true, true, 1, 2, 3, 2, 42,
 				a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
 	}
 
 	@Test
-	public void materiallyEqualsFlagsSpeedChanges()
+	public void materiallyEqualsIgnoresUnconsumedFields()
 	{
 		SailingState a = material();
 
-		assertFalse(a.materiallyEquals(state(true, 128, 384, 96, true, true, 1, 2, 3, 2, 42,
-			a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
-		assertFalse(a.materiallyEquals(state(true, 192, 256, 96, true, true, 1, 2, 3, 2, 42,
-			a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
-		assertFalse(a.materiallyEquals(state(true, 192, 384, 64, true, true, 1, 2, 3, 2, 42,
-			a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
+		// Captured for snapshot fidelity but read by no routing consumer —
+		// a change on any of them must not mint a route-restarting fact.
+		assertTrue("speed cap is not a routing input",
+			a.materiallyEquals(state(true, 192, 256, 96, true, true, 1, 2, 3, 2, 42,
+				a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
+		assertTrue("acceleration is not a routing input",
+			a.materiallyEquals(state(true, 192, 384, 64, true, true, 1, 2, 3, 2, 42,
+				a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
+		assertTrue("the hull config id is not a routing input",
+			a.materiallyEquals(state(true, 192, 384, 96, true, true, 1, 2, 3, 2, 43,
+				a.getBoatPoint(), a.getPivotX(), a.getPivotY(), a.getHeading())));
+		assertTrue("heading is not a routing input",
+			a.materiallyEquals(state(true, 192, 384, 96, true, true, 1, 2, 3, 2, 42,
+				a.getBoatPoint(), a.getPivotX(), a.getPivotY(), 11)));
 	}
 
 	@Test

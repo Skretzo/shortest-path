@@ -173,9 +173,9 @@ public class SailingService
 	 * the shown route is sail-able at all, and a hull or speed change alters
 	 * what the route costs. Any other varbit is not sailing state and
 	 * declares nothing. Positional boat movement is not material — the diff
-	 * only flags changes the route consumes (aboard, hull, speed, bounds,
-	 * config id), so a boat sliding across its tile publishes freely
-	 * without restarting the search.
+	 * only flags changes the route consumes (aboard, the hull bounds, and
+	 * base speed), so a boat sliding across its tile or a side-panel stat
+	 * nothing routes on publishes freely without restarting the search.
 	 * <p>
 	 * Client thread only — the shell's varbit events arrive there.
 	 */

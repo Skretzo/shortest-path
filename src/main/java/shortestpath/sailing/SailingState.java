@@ -89,12 +89,17 @@ public final class SailingState
 	}
 
 	/**
-	 * Whether two snapshots differ on any route-relevant field: aboard, the
-	 * boat/bounds presence flags, hull config id and bounds, and the speed
-	 * varbits. Positional fields ({@code boatPoint}, {@code pivotX},
-	 * {@code pivotY}, {@code heading}) are deliberately excluded — ordinary
-	 * boat movement never changes a route's sailing inputs, so it must never
-	 * mint a change fact that would restart a search.
+	 * Whether two snapshots differ on a field the route actually consumes:
+	 * {@code aboard} gates the sailing dispatch, the boat/bounds presence
+	 * flags and the bounds feed the hull every move must fit, and
+	 * {@code baseSpeed} prices the sailing moves. Positional fields
+	 * ({@code boatPoint}, {@code pivotX}, {@code pivotY}, {@code heading})
+	 * are deliberately excluded — ordinary boat movement never changes a
+	 * route's sailing inputs — and so are the captured-but-unconsumed
+	 * fields ({@code speedCap}, {@code acceleration},
+	 * {@code hullConfigId}): the snapshot keeps them for fidelity, but no
+	 * consumer reads them, so a diff there must never mint a change fact
+	 * that would restart a search.
 	 */
 	boolean materiallyEquals(SailingState other)
 	{
@@ -102,13 +107,10 @@ public final class SailingState
 			&& aboard == other.aboard
 			&& hasBoat == other.hasBoat
 			&& hasBounds == other.hasBounds
-			&& hullConfigId == other.hullConfigId
 			&& boundsX == other.boundsX
 			&& boundsY == other.boundsY
 			&& boundsWidth == other.boundsWidth
 			&& boundsHeight == other.boundsHeight
-			&& baseSpeed == other.baseSpeed
-			&& speedCap == other.speedCap
-			&& acceleration == other.acceleration;
+			&& baseSpeed == other.baseSpeed;
 	}
 }
