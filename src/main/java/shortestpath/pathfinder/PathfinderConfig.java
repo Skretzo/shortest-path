@@ -10,13 +10,17 @@ import shortestpath.requirement.model.*;
 import shortestpath.poh.*;
 import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.settings.*;
+import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemStateService;
 import shortestpath.leagues.LeagueModeState;
+import shortestpath.leagues.LeagueRegion;
+import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.*;
 import shortestpath.transport.*;
+import shortestpath.sailing.*;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
@@ -104,6 +108,18 @@ public class PathfinderConfig
 	}
 
 	private final BankPickupProjection bankPickupProjection = new BankPickupProjection();
+
+	/**
+	 * The sailing seam: owns the boat-state reads the derived sailing inputs
+	 * below draw from. The plugin wires the injected singleton in production;
+	 * harnesses and tests keep the default detached instance.
+	 */
+	private SailingService sailing = SailingService.forTesting();
+
+	public void setSailingService(SailingService sailing)
+	{
+		this.sailing = sailing;
+	}
 
 	/**
 	 * The bank-pickup projection for the active path — which items the route's
@@ -418,21 +434,24 @@ public class PathfinderConfig
 		costConsumableTeleportationItems = effective.num(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS);
 		bankVisitCost = effective.num(ConfigKey.COST_BANK_VISIT);
 
-		// Reset sailing state every refresh: a stale varbit read (e.g. after logging out aboard a
-		// boat) must not keep the search sailing when there is no boat
-		isOnSailingBoat = false;
+		// Reset the sailing dispatch inputs every refresh: the service owns the
+		// boat-state reads and republishes its snapshot here unconditionally, so a
+		// stale read (e.g. after logging out aboard a boat) can never keep the
+		// search sailing when there is no boat
 		sailingMoves = false;
 		sailingSpeed = SailingMoves.ESTIMATED_SPEED;
+		sailing.refresh(playerStateSource);
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
-			isOnSailingBoat = playerStateSource.varbit(VarbitID.SAILING_BOARDED_BOAT) != 0;
-			sailingMoves = isOnSailingBoat && effective.bool(ConfigKey.USE_SAILING_MOVES);
+			SailingState sailingState = sailing.getState();
+			isOnSailingBoat = sailingState.isAboard();
+			sailingMoves = isOnSailingBoat && effective.useSailingMoves();
 			// The game stores the base speed in 1/128ths of a tile per tick; a read above any real
 			// boat's speed is a stale or mis-scaled varbit rather than a fast boat — the moves it
 			// would build are so long nothing can sail them — so estimate instead
-			int baseSpeed = playerStateSource.varbit(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED);
-			double speed = baseSpeed / 128.0;
-			sailingSpeed = baseSpeed > 0 && speed <= SailingMoves.MAX_SPEED ? speed : SailingMoves.ESTIMATED_SPEED;
+			double speed = sailingState.getBaseSpeed() / 128.0;
+			sailingSpeed = sailingState.getBaseSpeed() > 0 && speed <= SailingMoves.MAX_SPEED
+				? speed : SailingMoves.ESTIMATED_SPEED;
 			refreshTransports(evaluationTimeMinutes);
 		}
 
