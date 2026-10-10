@@ -29,8 +29,8 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testNexusMenuLabelFormat()
 	{
-		keybinds.putFromDialogLine(0, "<col=ffffff>1 : Harmony Island");
-		keybinds.putFromDialogLine(0, "<col=ffffff>Y : Lassar (Ice Mountain)");
+		keybinds.putFromDialogLine("<col=ffffff>1 : Harmony Island");
+		keybinds.putFromDialogLine("<col=ffffff>Y : Lassar (Ice Mountain)");
 
 		assertEquals("1: Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
 		assertEquals("Y: Lassar Portal", keybinds.apply("Lassar Portal"));
@@ -39,11 +39,11 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testParentheticalLocationMatchesSpellName()
 	{
-		keybinds.putFromDialogLine(0, "<col=ffffff>K : Frozen Waste Plateau (Ghorrock)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>A : Canifis (Kharyrll)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>B : Demonic Ruins (Annakarl)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>C : Graveyard of Shadows (Carrallanger)");
-		keybinds.putFromDialogLine(0, "<col=ffffff>D : Edgeville Dungeon (Paddewwa)");
+		keybinds.putFromDialogLine("<col=ffffff>K : Frozen Waste Plateau (Ghorrock)");
+		keybinds.putFromDialogLine("<col=ffffff>A : Canifis (Kharyrll)");
+		keybinds.putFromDialogLine("<col=ffffff>B : Demonic Ruins (Annakarl)");
+		keybinds.putFromDialogLine("<col=ffffff>C : Graveyard of Shadows (Carrallanger)");
+		keybinds.putFromDialogLine("<col=ffffff>D : Edgeville Dungeon (Paddewwa)");
 
 		assertEquals("K: Ghorrock Portal", keybinds.apply("Ghorrock Portal"));
 		assertEquals("A: Kharyrll Portal", keybinds.apply("Kharyrll Portal"));
@@ -55,8 +55,8 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testLiveDialogOrderOverridesDefault()
 	{
-		keybinds.putFromDialogLine(0, "<col=735a28>Y:</col> Lassar");
-		keybinds.putFromDialogLine(0, "<col=735a28>S:</col> Catherby");
+		keybinds.putFromDialogLine("<col=735a28>Y:</col> Lassar");
+		keybinds.putFromDialogLine("<col=735a28>S:</col> Catherby");
 
 		assertEquals("Y: Lassar Portal", keybinds.apply("Lassar Portal"));
 		assertEquals("S: Catherby Portal", keybinds.apply("Catherby Portal"));
@@ -71,24 +71,36 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testApplyReplacesStaleKeyPrefix()
 	{
-		keybinds.putFromDialogLine(0, "Y: Lassar");
+		keybinds.putFromDialogLine("Y: Lassar");
 
 		assertEquals("Y: Lassar Portal", keybinds.apply("S: Lassar Portal"));
 	}
 
 	@Test
-	public void testDiaryVariantsShareAKey()
+	public void testDiaryVariantDoesNotInheritObservedKey()
 	{
-		keybinds.putFromDialogLine(0, "4: Varrock");
+		// "Grand Exchange" is a separate menu line with its own key; copying
+		// Varrock's key to it would show a hint the game did not bind.
+		keybinds.putFromDialogLine("4: Varrock");
 
 		assertEquals("4: Varrock Portal", keybinds.apply("Varrock Portal"));
-		assertEquals("4: Grand Exchange Portal", keybinds.apply("Grand Exchange Portal"));
+		assertEquals("Grand Exchange Portal", keybinds.apply("Grand Exchange Portal"));
+	}
+
+	@Test
+	public void testDiaryVariantParsesOwnKey()
+	{
+		keybinds.putFromDialogLine("4: Varrock");
+		keybinds.putFromDialogLine("5: Grand Exchange");
+
+		assertEquals("4: Varrock Portal", keybinds.apply("Varrock Portal"));
+		assertEquals("5: Grand Exchange Portal", keybinds.apply("Grand Exchange Portal"));
 	}
 
 	@Test
 	public void testRespawnVariantsShareAKey()
 	{
-		keybinds.putFromDialogLine(0, "7: Respawn point");
+		keybinds.putFromDialogLine("7: Respawn point");
 
 		assertEquals("7: Respawn Portal (Lumbridge)", keybinds.apply("Respawn Portal (Lumbridge)"));
 		assertEquals("7: Respawn Portal (Falador)", keybinds.apply("Respawn Portal (Falador)"));
@@ -97,7 +109,7 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testTruncatedFenkenstrainName()
 	{
-		keybinds.putFromDialogLine(0, "<col=ffffff>8 : Fenken' Castle");
+		keybinds.putFromDialogLine("<col=ffffff>8 : Fenken' Castle");
 
 		assertEquals("8: Fenkenstrain's Castle Portal", keybinds.apply("Fenkenstrain's Castle Portal"));
 	}
@@ -105,7 +117,7 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testOverflowDestinationHasNoKey()
 	{
-		keybinds.putFromDialogLine(0, "Z: Catherby");
+		keybinds.putFromDialogLine("Z: Catherby");
 
 		assertEquals("Weiss Portal", keybinds.apply("Weiss Portal"));
 	}
@@ -133,13 +145,13 @@ public class PortalNexusKeybindTest
 	public void testSerializeRoundTrip()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PortalNexusKeybinds.deserialize("ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3", keys);
+		PortalNexusKeybinds.deserialize("2|ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3", keys);
 
 		assertEquals("K", keys.get("ghorrock"));
 		assertEquals("1", keys.get("harmony island"));
 		assertEquals("Y", keys.get("lassar"));
 		assertEquals("F3", keys.get("waterbirth island"));
-		assertEquals("ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3",
+		assertEquals("2|ghorrock=K|harmony island=1|lassar=Y|waterbirth island=F3",
 			PortalNexusKeybinds.serialize(keys));
 	}
 
@@ -147,9 +159,18 @@ public class PortalNexusKeybindTest
 	public void testDeserializeRejectsInvalidKeys()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PortalNexusKeybinds.deserialize("a=F11|b=F0|c=0|d=AB|e=Z|f=f5", keys);
+		PortalNexusKeybinds.deserialize("2|a=F13|b=F0|c=0|d=AB|e=Z|f=f5", keys);
 
 		assertEquals(Map.of("e", "Z", "f", "F5"), keys);
+	}
+
+	@Test
+	public void testDeserializeAdmitsFunctionKeys()
+	{
+		Map<String, String> keys = new HashMap<>();
+		PortalNexusKeybinds.deserialize("2|a=F1|b=F10|c=F11|d=F12", keys);
+
+		assertEquals(Map.of("a", "F1", "b", "F10", "c", "F11", "d", "F12"), keys);
 	}
 
 	@Test
@@ -158,7 +179,7 @@ public class PortalNexusKeybindTest
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
 			ShortestPathPlugin.CONFIG_GROUP, PortalNexusKeybinds.CONFIG_KEY))
-			.thenReturn("lassar=Y|waterbirth island=F3");
+			.thenReturn("2|lassar=Y|waterbirth island=F3");
 
 		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
 		persisted.loadFromProfile();
@@ -173,7 +194,7 @@ public class PortalNexusKeybindTest
 		ConfigManager configManager = mock(ConfigManager.class);
 		when(configManager.getRSProfileConfiguration(
 			ShortestPathPlugin.CONFIG_GROUP, PortalNexusKeybinds.CONFIG_KEY))
-			.thenReturn("lassar=Y")
+			.thenReturn("2|lassar=Y")
 			.thenReturn(null);
 
 		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
@@ -189,7 +210,7 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
-		persisted.putFromDialogLine(0, "Y: Lassar");
+		persisted.putFromDialogLine("Y: Lassar");
 		persisted.persistIfDirty();
 
 		verify(configManager).setRSProfileConfiguration(
@@ -209,17 +230,19 @@ public class PortalNexusKeybindTest
 	}
 
 	@Test
-	public void testUnkeyedConfigurationSlotsUseFilledOrder()
+	public void testUnkeyedConfigurationSlotsProduceNoKeys()
 	{
+		// Slot list position is not a keybind; unkeyed labels must not
+		// manufacture one.
 		keybinds.replaceIfPresent(PortalNexusKeybinds.parseSlotLabels(
 			Arrays.asList("Harmony Island", "Lumbridge")));
 
-		assertEquals("1: Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
-		assertEquals("2: Lumbridge Portal", keybinds.apply("Lumbridge Portal"));
+		assertEquals("Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
+		assertEquals("Lumbridge Portal", keybinds.apply("Lumbridge Portal"));
 	}
 
 	@Test
-	public void testUnkeyedConfigurationSlotsAssignFKeys()
+	public void testUnkeyedConfigurationSlotsProduceNoFKeys()
 	{
 		String[] names = new String[38];
 		Arrays.fill(names, "Lumbridge");
@@ -229,16 +252,16 @@ public class PortalNexusKeybindTest
 
 		keybinds.replaceIfPresent(PortalNexusKeybinds.parseSlotLabels(Arrays.asList(names)));
 
-		assertEquals("F1: Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
-		assertEquals("F2: Ourania Portal", keybinds.apply("Ourania Portal"));
-		assertEquals("F3: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
+		assertEquals("Ourania Portal", keybinds.apply("Ourania Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
 	public void testPartialDialogDoesNotWipeCachedKeys()
 	{
-		keybinds.putFromDialogLine(0, "1: Harmony Island");
-		keybinds.putFromDialogLine(0, "Y: Lassar");
+		keybinds.putFromDialogLine("1: Harmony Island");
+		keybinds.putFromDialogLine("Y: Lassar");
 
 		Map<String, String> partial = new HashMap<>();
 		partial.put("harmony island", "1");
@@ -253,8 +276,8 @@ public class PortalNexusKeybindTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		PortalNexusKeybinds persisted = new PortalNexusKeybinds(configManager);
-		persisted.putFromDialogLine(0, "1: Harmony Island");
-		persisted.putFromDialogLine(0, "Y: Lassar");
+		persisted.putFromDialogLine("1: Harmony Island");
+		persisted.putFromDialogLine("Y: Lassar");
 		persisted.persistIfDirty();
 		clearInvocations(configManager);
 
@@ -269,60 +292,69 @@ public class PortalNexusKeybindTest
 	@Test
 	public void testKeyedLineParsesFunctionKeys()
 	{
-		keybinds.putFromDialogLine(0, "F3: Waterbirth Island");
+		keybinds.putFromDialogLine("F3: Waterbirth Island");
 
 		assertEquals("F3: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
-	public void testFunctionKeyLineAssignsPositionally()
+	public void testUnkeyedDialogLineProducesNoKey()
 	{
-		// Lines past slot 35 render their key as a sprite, so the text has no
-		// key prefix; the position in the build sequence determines the key.
+		// Lines whose hint is drawn as a sprite have no readable prefix and no
+		// key can be assigned to them from their position.
 		for (int i = 0; i < 37; i++)
 		{
-			keybinds.putFromDialogLine(0, i + ": destination " + i);
+			keybinds.putFromDialogLine(i + ": destination " + i);
 		}
-		keybinds.putFromDialogLine(0, ":  Waterbirth Island");
+		keybinds.putFromDialogLine(":  Waterbirth Island");
 
-		assertEquals("F3: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
-	public void testDialogLineIndexResetsOnNewTick()
+	public void testBareDialogLineProducesNoKey()
 	{
-		keybinds.putFromDialogLine(0, ":  Lassar");
-		keybinds.putFromDialogLine(1, ":  Waterbirth Island");
+		// A plugin rewriting the menu can strip the key prefix entirely; a
+		// bare destination name must not be assigned a positional key.
+		keybinds.putFromDialogLine("Lassar");
+		keybinds.putFromDialogLine("Waterbirth Island");
 
-		assertEquals("1: Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
+		assertEquals("Lassar Portal", keybinds.apply("Lassar Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
-	public void testExplicitKeyAdvancesLineIndex()
+	public void testCompositeKeyPrefixProducesNoKey()
 	{
-		// A keyed line still consumes a menu position, so a following keyless
-		// line counts it when deriving its own key.
-		for (int i = 0; i < 35; i++)
-		{
-			keybinds.putFromDialogLine(0, (i + 1) + ": destination " + i);
-		}
-		keybinds.putFromDialogLine(0, ":  Lunar Isle");
-		keybinds.putFromDialogLine(0, ":  Ourania");
+		// User-defined binds can be multi-key combos the single-key pattern
+		// cannot express; showing nothing beats showing an invented key.
+		keybinds.putFromDialogLine("Ctrl+G: Varrock");
+		keybinds.putFromDialogLine("Shift+F3: Waterbirth Island");
 
-		assertEquals("F1: Lunar Isle Portal", keybinds.apply("Lunar Isle Portal"));
-		assertEquals("F2: Ourania Portal", keybinds.apply("Ourania Portal"));
+		assertEquals("Varrock Portal", keybinds.apply("Varrock Portal"));
+		assertEquals("Waterbirth Island Portal", keybinds.apply("Waterbirth Island Portal"));
 	}
 
 	@Test
-	public void testKeyForIndexBoundaries()
+	public void testUnkeyedLinesDoNotDisturbKeyedNeighbours()
 	{
-		assertEquals("1", PortalNexusKeybinds.keyForIndex(0));
-		assertEquals("9", PortalNexusKeybinds.keyForIndex(8));
-		assertEquals("A", PortalNexusKeybinds.keyForIndex(9));
-		assertEquals("Z", PortalNexusKeybinds.keyForIndex(34));
-		assertEquals("F1", PortalNexusKeybinds.keyForIndex(35));
-		assertEquals("F10", PortalNexusKeybinds.keyForIndex(44));
-		assertEquals("", PortalNexusKeybinds.keyForIndex(45));
-		assertEquals("", PortalNexusKeybinds.keyForIndex(-1));
+		keybinds.putFromDialogLine("1: Harmony Island");
+		keybinds.putFromDialogLine("<img=42>");
+		keybinds.putFromDialogLine("");
+		keybinds.putFromDialogLine("4: Varrock");
+
+		assertEquals("1: Harmony Island Portal", keybinds.apply("Harmony Island Portal"));
+		assertEquals("4: Varrock Portal", keybinds.apply("Varrock Portal"));
+	}
+
+	@Test
+	public void testLegacyStoredDataIsDiscarded()
+	{
+		// Pre-versioning payloads can hold position-derived keys that were
+		// never bound; they must not load.
+		Map<String, String> keys = new HashMap<>();
+		PortalNexusKeybinds.deserialize("ghorrock=K|waterbirth island=F3", keys);
+
+		assertEquals(Map.of(), keys);
 	}
 }
