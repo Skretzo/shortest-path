@@ -207,14 +207,14 @@ public class PohServiceTest
 	public void testDialogKeybindsRequireExplicitPrefix()
 	{
 		service.putFromDialogLine("F3</col>: Varrock");
-		service.putFromDialogLine("0: Lumbridge");
+		service.putFromDialogLine("9: Lumbridge");
 		service.putFromDialogLine("F12: Lunar Isle");
 		assertNull(service.putFromDialogLine("F13: Catherby"));
 		assertNull(service.putFromDialogLine("Shift+F3: Ourania"));
 		assertNull(service.putFromDialogLine("Waterbirth Island"));
 
 		assertEquals("F3: Varrock Portal", service.apply("Varrock Portal"));
-		assertEquals("0: Lumbridge Portal", service.apply("Lumbridge Portal"));
+		assertEquals("9: Lumbridge Portal", service.apply("Lumbridge Portal"));
 		assertEquals("F12: Lunar Isle Portal", service.apply("Lunar Isle Portal"));
 		assertEquals("Catherby Portal", service.apply("Catherby Portal"));
 		assertEquals("Ourania Portal", service.apply("Ourania Portal"));
@@ -231,12 +231,12 @@ public class PohServiceTest
 	}
 
 	@Test
-	public void testPersistedFunctionKeysAreEvicted()
+	public void testPersistedFunctionKeysAreRetained()
 	{
 		Map<String, String> keys = new HashMap<>();
-		PohService.deserialize("lassar=Y|waterbirth island=F3|catherby=0", keys);
+		PohService.deserialize("2|lassar=Y|waterbirth island=F3", keys);
 
-		assertEquals(Map.of("lassar", "Y", "catherby", "0"), keys);
+		assertEquals(Map.of("lassar", "Y", "waterbirth island", "F3"), keys);
 	}
 
 	@Test
