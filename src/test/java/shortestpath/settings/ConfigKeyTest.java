@@ -257,6 +257,8 @@ public class ConfigKeyTest
 		assertNotNull("the override key must have its own row", row);
 		assertEquals("the row reads the shared quetzal transport cost",
 			11, row.getGetter().apply(config));
+		assertEquals("the configured-value read returns the stored whistle value",
+			22, row.getConfiguredGetter().apply(config));
 	}
 
 	/**
