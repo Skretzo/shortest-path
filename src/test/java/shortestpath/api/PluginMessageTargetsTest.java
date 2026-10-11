@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.api;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -11,6 +11,7 @@ import java.util.Set;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.Target;
 import shortestpath.pathfinder.Targets;
 import shortestpath.requirement.model.ItemRequirement;
