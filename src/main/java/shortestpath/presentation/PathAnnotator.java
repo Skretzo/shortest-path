@@ -10,15 +10,23 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import net.runelite.api.Client;
+import net.runelite.api.ScriptID;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
 
+import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemStateService;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.BankVisitState;
+import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.NodeGraph;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -49,6 +57,8 @@ public class PathAnnotator
 	 * constructor.
 	 */
 	private PathfinderConfig pathfinderConfig;
+
+	private boolean fairyRingPanelOpen = false;
 
 	@Inject
 	public PathAnnotator(Client client, PohService pohService, ItemStateService itemState)
@@ -327,5 +337,201 @@ public class PathAnnotator
 		}
 
 		return immediateExitInfo;
+	}
+
+	public CollisionMap getMap()
+	{
+		return pathfinderConfig == null ? null : pathfinderConfig.getMap();
+	}
+
+	/**
+	 * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
+	 * <p>
+	 * It collapses banked/unbanked transport availability into a single view via
+	 * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
+	 * <p>
+	 * Do not use this for reasoning about which transports are available at a specific
+	 * step of a path. Use PathfinderConfig.getTransportAvailability(BankVisitState) and the
+	 * path's PathStep state instead.
+	 */
+	public PrimitiveIntHashMap<Transport[]> getTransports()
+	{
+		return pathfinderConfig == null ? null : pathfinderConfig.getTransports();
+	}
+
+	/**
+	 * Every loaded transport grouped by origin for display, including transports the
+	 * player cannot currently use. Same layout as {@link #getTransports()}.
+	 */
+	public PrimitiveIntHashMap<Transport[]> getAllDisplayTransports()
+	{
+		return pathfinderConfig == null ? null : pathfinderConfig.getAllDisplayTransports();
+	}
+
+	public TransportEligibility getEligibility()
+	{
+		return pathfinderConfig == null ? null : pathfinderConfig.getEligibility();
+	}
+
+	/**
+	 * The bank-pickup projection for the active path — the projection cache
+	 * stays on the item-state service; this facade bridges the attached
+	 * engine config in.
+	 */
+	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex)
+	{
+		return itemState == null || pathfinderConfig == null
+			? null
+			: itemState.getBankPickup(path, pathIndex, pathfinderConfig);
+	}
+
+	public Set<Integer> getDestinations(String destinationType)
+	{
+		return pathfinderConfig == null ? null : pathfinderConfig.getDestinations(destinationType);
+	}
+
+	public boolean hasDestination(String destinationType)
+	{
+		return pathfinderConfig != null && pathfinderConfig.hasDestination(destinationType);
+	}
+
+	public boolean isBankOpen()
+	{
+		return itemState != null && itemState.getBank() != null;
+	}
+
+	/**
+	 * The widget-loaded fairy-ring arm: the log panel counts as open only
+	 * while a path is displayed; the flag gates the per-tick scroll.
+	 */
+	public void widgetLoaded(int groupId, ActiveSearch pathfinder)
+	{
+		if (pathfinder != null && groupId == InterfaceID.FAIRYRINGS_LOG)
+		{
+			fairyRingPanelOpen = true;
+		}
+	}
+
+	/**
+	 * The widget-closed fairy-ring arm: the log panel no longer shows.
+	 */
+	public void widgetClosed(int groupId)
+	{
+		if (groupId == InterfaceID.FAIRYRINGS_LOG)
+		{
+			fairyRingPanelOpen = false;
+		}
+	}
+
+	/**
+	 * The post-client-tick fairy-ring arm: while the panel is open and a
+	 * path is displayed, scroll it to the ring code the path uses.
+	 */
+	public void postClientTick(ActiveSearch pathfinder)
+	{
+		if (fairyRingPanelOpen && pathfinder != null)
+		{
+			scrollFairyRingPanel(pathfinder);
+		}
+	}
+
+	private void scrollFairyRingPanel(ActiveSearch pathfinder)
+	{
+		List<PathStep> path;
+
+		if (client == null || pathfinder == null
+			|| (path = pathfinder.getPath()) == null)
+		{
+			return;
+		}
+
+		String fairyRingCode = null;
+
+		for (int i = 1; i < path.size(); i++)
+		{
+			PathStep currentStep = path.get(i - 1);
+			PathStep nextStep = path.get(i);
+			for (Transport transport : transportsForEdge(currentStep, nextStep))
+			{
+				if (TransportType.FAIRY_RING.equals(transport.getType()))
+				{
+					fairyRingCode = transport.getDisplayInfo();
+				}
+			}
+		}
+		if (fairyRingCode == null)
+		{
+			return;
+		}
+
+		Widget codeWidget = null;
+
+		Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
+		if (favesPanel != null)
+		{
+			for (Widget widget : favesPanel.getStaticChildren())
+			{
+				if (widget != null)
+				{
+					String widgetText = widget.getText();
+					if ((fairyRingCode.equals(widgetText)
+						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
+					{
+						codeWidget = widget;
+						break;
+					}
+				}
+			}
+		}
+
+		Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
+		if (contentsList != null && codeWidget == null)
+		{
+			for (Widget widget : contentsList.getDynamicChildren())
+			{
+				if (widget != null)
+				{
+					String widgetText = widget.getText();
+					if ((fairyRingCode.equals(widgetText)
+						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
+					{
+						codeWidget = widget;
+						break;
+					}
+				}
+			}
+		}
+
+		if (codeWidget == null)
+		{
+			return;
+		}
+
+		codeWidget.setTextColor(0x00FF00);
+		String codeWidgetText = codeWidget.getText();
+		if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)"))
+		{
+			codeWidget.setText("(Shortest Path) " + codeWidgetText);
+		}
+
+		if (contentsList == null)
+		{
+			return;
+		}
+
+		int panelScrollY = Math.min(
+			codeWidget.getRelativeY(),
+			contentsList.getScrollHeight() - contentsList.getHeight()
+		);
+
+		contentsList.setScrollY(panelScrollY);
+		contentsList.revalidateScroll();
+
+		client.runScript(
+			ScriptID.UPDATE_SCROLLBAR,
+			InterfaceID.FairyringsLog.SCROLLBAR,
+			InterfaceID.FairyringsLog.CONTENTS,
+			panelScrollY
+		);
 	}
 }
