@@ -14,9 +14,10 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import shortestpath.ItemVariations;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
@@ -46,9 +47,10 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	private int lastFairyRingEdgeIndex = -1;
 
 	@Inject
-	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
+	public InventoryHighlightOverlay(Client client, ItemManager itemManager, Settings settings,
+		PathScheduler scheduler, PathAnnotator annotator)
 	{
-		super(client, plugin, settings);
+		super(client, scheduler, annotator, settings);
 		this.itemManager = itemManager;
 	}
 
@@ -62,7 +64,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	protected Dimension drawHighlights(Graphics2D graphics, List<PathStep> path, int pathIndex,
 		ActiveSearch search)
 	{
-		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
+		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
 		boolean lumbridgeEliteDone = client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
 		// The dramen staff requirement lives outside the transport's item requirements,
@@ -152,7 +154,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			lastFairyRingEdgeIndex = -1;
 			for (int i = 0; i + 1 < path.size(); ++i)
 			{
-				for (Transport transport : plugin.transportsForEdge(path.get(i), path.get(i + 1)))
+				for (Transport transport : annotator.transportsForEdge(path.get(i), path.get(i + 1)))
 				{
 					if (TransportType.FAIRY_RING.equals(transport.getType()))
 					{
