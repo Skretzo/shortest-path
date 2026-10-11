@@ -446,7 +446,8 @@ public class PathfinderConfig
 		usePohFairyRing = effective.usePohFairyRing();
 		usePohSpiritTree = effective.usePohSpiritTree();
 		usePohObelisk = effective.usePohObelisk();
-		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
+		Set<PohNexusPortal> pohNexusPortals = config.pohNexusPortals();
+		enabledPohNexusPortals = pohNexusPortals == null ? Set.of() : Set.copyOf(pohNexusPortals);
 		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
 		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
 		pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
