@@ -32,7 +32,6 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.PrimitiveIntList;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
@@ -42,9 +41,11 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements;
+import shortestpath.presentation.PathAnnotator;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.scheduler.PathRenderState;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 
 public class PathTileOverlay extends Overlay
@@ -55,22 +56,24 @@ public class PathTileOverlay extends Overlay
 	private static final int SPRITE_STRIDE = 10;
 	private static final int SPRITE_ITEM_ID = ItemID.GAUNTLET_ESCAPE_CRYSTAL;
 	private final Client client;
-	private final ShortestPathPlugin plugin;
 	private final ItemManager itemManager;
 	private final Settings settings;
 	private final PathRenderState renderState;
+	private final PathScheduler scheduler;
+	private final PathAnnotator annotator;
 	private int playerTileLabelOffset = 0;
 	private boolean teleportPulseDrawn = false;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings,
-		PathRenderState renderState)
+	public PathTileOverlay(Client client, ItemManager itemManager, Settings settings,
+		PathRenderState renderState, PathScheduler scheduler, PathAnnotator annotator)
 	{
 		this.client = client;
-		this.plugin = plugin;
 		this.itemManager = itemManager;
 		this.settings = settings;
 		this.renderState = renderState;
+		this.scheduler = scheduler;
+		this.annotator = annotator;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -82,8 +85,8 @@ public class PathTileOverlay extends Overlay
 
 	private void renderTransports(Graphics2D graphics)
 	{
-		PrimitiveIntHashMap<Transport[]> allTransports = plugin.getAllDisplayTransports();
-		PrimitiveIntHashMap<Transport[]> availableTransports = plugin.getTransports();
+		PrimitiveIntHashMap<Transport[]> allTransports = annotator.getAllDisplayTransports();
+		PrimitiveIntHashMap<Transport[]> availableTransports = annotator.getTransports();
 
 		for (int a : allTransports.keys())
 		{
@@ -150,7 +153,7 @@ public class PathTileOverlay extends Overlay
 
 	private void renderCollisionMap(Graphics2D graphics)
 	{
-		CollisionMap map = plugin.getMap();
+		CollisionMap map = annotator.getMap();
 		for (Tile[] row : client.getTopLevelWorldView().getScene().getTiles()[client.getTopLevelWorldView().getPlane()])
 		{
 			for (Tile tile : row)
@@ -210,27 +213,27 @@ public class PathTileOverlay extends Overlay
 			renderCollisionMap(graphics);
 		}
 
-		if (settings.display().drawTiles() && plugin.getActiveSearch() != null && plugin.getActiveSearch().getPath() != null)
+		if (settings.display().drawTiles() && scheduler.getActiveSearch() != null && scheduler.getActiveSearch().getPath() != null)
 		{
 			Color colorCalculating = new Color(
 				settings.display().colourPathCalculating().getRed(),
 				settings.display().colourPathCalculating().getGreen(),
 				settings.display().colourPathCalculating().getBlue(),
 				settings.display().colourPathCalculating().getAlpha() / 2);
-			Color pathColor = plugin.getPathColor();
+			Color pathColor = renderState.getPathColor();
 			Color color = new Color(
 				pathColor.getRed(),
 				pathColor.getGreen(),
 				pathColor.getBlue(),
 				pathColor.getAlpha() / 2);
 
-			List<PathStep> path = plugin.getActiveSearch().getPath();
+			List<PathStep> path = scheduler.getActiveSearch().getPath();
 			int counter = 0;
 			if (renderState.isSailing())
 			{
 				// On a boat the path sails the boat's headings: lines along each heading it holds, drawn through the
 				// spot within each tile where the boat actually sits
-				Color sailingColor = renderState.isPathUnreachable() ? plugin.getPathColor() : PathRenderState.SAILING_PATH_COLOUR;
+				Color sailingColor = renderState.isPathUnreachable() ? renderState.getPathColor() : PathRenderState.SAILING_PATH_COLOUR;
 				for (int i = 1; i < path.size(); i++)
 				{
 					drawOffsetLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(),
@@ -274,7 +277,7 @@ public class PathTileOverlay extends Overlay
 						drawTurnMarkerGlyph(graphics, path, i);
 					}
 					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+					drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i);
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
@@ -368,7 +371,7 @@ public class PathTileOverlay extends Overlay
 						}
 					}
 					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+					drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i);
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
@@ -387,7 +390,7 @@ public class PathTileOverlay extends Overlay
 						drawTile(graphics, pathPoint, color, counter, showTiles);
 					}
 					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+					drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i);
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, showTiles);
 			}
@@ -396,7 +399,7 @@ public class PathTileOverlay extends Overlay
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
 			}
-			String missingItems = plugin.getMissingTargetItemsText();
+			String missingItems = annotator.getMissingTargetItemsText(scheduler.getActiveSearch());
 			if (missingItems != null)
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, missingItems, playerTileLabelOffset);
@@ -405,9 +408,9 @@ public class PathTileOverlay extends Overlay
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
-		if (settings.display().drawTiles() && settings.display().drawClickPoints() && plugin.getActiveSearch() instanceof AStarPathfinder)
+		if (settings.display().drawTiles() && settings.display().drawClickPoints() && scheduler.getActiveSearch() instanceof AStarPathfinder)
 		{
-			AStarPathfinder aStar = (AStarPathfinder) plugin.getActiveSearch();
+			AStarPathfinder aStar = (AStarPathfinder) scheduler.getActiveSearch();
 			if (aStar.isDone() && !aStar.isShowingProvisionalPath())
 			{
 				List<PathStep> path = aStar.getPath();
@@ -506,7 +509,7 @@ public class PathTileOverlay extends Overlay
 
 	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
 	{
-		for (int target : plugin.getActiveSearch().getTargets().points())
+		for (int target : scheduler.getActiveSearch().getTargets().points())
 		{
 			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 			{
@@ -650,7 +653,7 @@ public class PathTileOverlay extends Overlay
 		if (counter >= 0 && !TileCounter.DISABLED.equals(settings.display().showTileCounter()))
 		{
 			int n = settings.display().tileCounterStep() > 0 ? settings.display().tileCounterStep() : 1;
-			int s = plugin.getActiveSearch().getPath().size();
+			int s = scheduler.getActiveSearch().getPath().size();
 			if ((counter % n != 0) && (s != (counter + 1)))
 			{
 				return;
@@ -815,19 +818,19 @@ public class PathTileOverlay extends Overlay
 		// Sailing: teleports are suppressed while aboard a boat. When the path is
 		// unreachable as a result, show a one-time hint on the player tile.
 		if (settings.display().showTransportInfo() && pathIndex == 0 && renderState.isOnSailingBoat()
-			&& plugin.getActiveSearch().isDone() && renderState.isPathUnreachable())
+			&& scheduler.getActiveSearch().isDone() && renderState.isPathUnreachable())
 		{
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
 				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
 			return;
 		}
 
-		if (renderState.isPathUnreachable() || !plugin.getActiveSearch().isDone())
+		if (renderState.isPathUnreachable() || !scheduler.getActiveSearch().isDone())
 		{
 			return;
 		}
 		int locationEnd = nextStep.getPackedPosition();
-		Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);
+		Set<Transport> candidateTransports = annotator.transportsForEdge(currentStep, nextStep);
 
 		// Teleports ("use this item/spell") get a pulsing highlight on the tile you cast
 		// from. Only the first teleport edge of the path pulses — the next "teleport
@@ -879,7 +882,7 @@ public class PathTileOverlay extends Overlay
 			// back at whatever template plane their actual house chunks occupy
 			// (e.g. plane 2 for a ground floor) — the two don't correspond, so any
 			// plane comparison would suppress the hint in real houses.
-			String pohExitInfo = plugin.getPohExitInfo(location, path, pathIndex - 1);
+			String pohExitInfo = annotator.getPohExitInfo(location, path, pathIndex - 1);
 
 			if (pohExitInfo == null)
 			{
@@ -899,7 +902,7 @@ public class PathTileOverlay extends Overlay
 
 		// Check if this is a bank step and items need to be picked up
 		{
-			BankPickupRequirements.BankPickupResult bankPickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex, plugin.getActiveSearch());
+			BankPickupRequirements.BankPickupResult bankPickup = annotator.getBankPickup(path, pathIndex, scheduler.getActiveSearch());
 			if (bankPickup != null && !bankPickup.phrases.isEmpty())
 			{
 				List<String> bankPickupItems = bankPickup.phrases;
@@ -918,7 +921,7 @@ public class PathTileOverlay extends Overlay
 		// Only show transports the player can currently use; fall back to all if none are usable.
 		// A missing snapshot (pre-login or off the client thread) means no filtering —
 		// the same "show all" the empty-usable fallback below produces anyway.
-		TransportEligibility eligibility = plugin.getPathfinderConfig().getEligibility();
+		TransportEligibility eligibility = annotator.getEligibility();
 		List<Transport> usableTransports = new ArrayList<>();
 		if (eligibility != null)
 		{
@@ -934,7 +937,7 @@ public class PathTileOverlay extends Overlay
 
 		for (Transport transport : transportsToShow)
 		{
-			String text = plugin.formatTransportDisplay(transport);
+			String text = annotator.formatTransportDisplay(transport);
 			if (text == null || text.isEmpty())
 			{
 				continue;
@@ -942,7 +945,7 @@ public class PathTileOverlay extends Overlay
 
 			// Check if this transport goes to POH - if so, look ahead to find the exit
 			// transport
-			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+			String pohExitInfo = annotator.getPohExitInfo(locationEnd, path, pathIndex);
 			if (pohExitInfo != null)
 			{
 				text = text + " (Exit: " + pohExitInfo + ")";
