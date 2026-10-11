@@ -5990,3 +5990,27 @@
 1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
 1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
 									
+# Tarn's Lair, wall trap passage (run past or search to disarm) and additional passageways									
+3148 4556 0	3147 4556 0	Search Wall 20594						1	
+3147 4556 0	3148 4556 0	Search Wall 20594						1	
+3149 4664 0	3149 4658 0	Enter Passageway 16130						2	
+3149 4658 0	3149 4664 0	Enter Passageway 16129						2	
+3151 4597 1	3155 4597 1	Enter Passageway 20534						2	
+3155 4597 1	3151 4597 1	Enter Passageway 20533						2	
+3149 4604 1	3150 4604 1	Search Wall 20590						1	
+3150 4604 1	3149 4604 1	Search Wall 20590						1	
+3155 4592 1	3155 4593 1	Search Wall 20590						1	
+3155 4593 1	3155 4592 1	Search Wall 20590						1	
+3154 4604 1	3155 4604 1	Search Wall 20590						1	
+3155 4604 1	3154 4604 1	Search Wall 20590						1	
+3156 4596 1	3156 4597 1	Search Wall 20590						1	
+3156 4597 1	3156 4596 1	Search Wall 20590						1	
+3145 4600 0	3146 4600 0	Search Wall 20594						1	
+3146 4600 0	3145 4600 0	Search Wall 20594						1	
+3149 4595 0	3149 4596 0	Search Wall 20594						1	
+3149 4596 0	3149 4595 0	Search Wall 20594						1	
+3146 4589 1	3147 4589 1	Search Wall 20596						1	
+3147 4589 1	3146 4589 1	Search Wall 20596						1	
+3151 4589 1	3152 4589 1	Search Wall 20596						1	
+3152 4589 1	3151 4589 1	Search Wall 20596						1	
+									
