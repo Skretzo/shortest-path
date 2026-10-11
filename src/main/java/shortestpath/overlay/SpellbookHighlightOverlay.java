@@ -14,9 +14,10 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -81,9 +82,10 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 	private final Settings settings;
 
 	@Inject
-	public SpellbookHighlightOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
+	public SpellbookHighlightOverlay(Client client, Settings settings,
+		PathScheduler scheduler, PathAnnotator annotator)
 	{
-		super(client, plugin, settings);
+		super(client, scheduler, annotator, settings);
 		this.settings = settings;
 	}
 
@@ -95,7 +97,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			return null;
@@ -119,7 +121,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
+		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Color highlight = settings.display().colourBankPickupHighlight();
 
 		for (Transport transport : transports)
