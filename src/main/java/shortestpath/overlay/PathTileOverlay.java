@@ -17,8 +17,9 @@ import net.runelite.client.ui.overlay.*;
 import shortestpath.*;
 import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
-import shortestpath.requirement.*;
+import shortestpath.presentation.BankPickupRequirements;
 import shortestpath.transport.Transport;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.settings.Settings;
 

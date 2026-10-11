@@ -18,8 +18,7 @@ import org.junit.Test;
  *
  * <p>The middleware must stay RuneLite-client-free except for the named adapter files that
  * deliberately delegate to {@code (Client)}-taking helpers ({@link ClientPlayerStateSource} is the
- * capture-path source; {@link BankPickupRequirements} exposes the sanctioned statics the display
- * path reuses). The model package is the leaf layer: it must reference
+ * capture-path source). The model package is the leaf layer: it must reference
  * neither the client nor anything under {@code shortestpath.pathfinder}. Per-search restrictions
  * ({@code SearchRestrictions}) belong to the A* backend's search layer and must never leak into
  * the middleware.
@@ -31,7 +30,7 @@ public class RequirementPackageBoundaryTest
 
 	/** Files sanctioned to reference {@code net.runelite.api.Client}. */
 	private static final Set<String> CLIENT_WHITELIST = Set.of(
-		"ClientPlayerStateSource.java", "BankPickupRequirements.java");
+		"ClientPlayerStateSource.java");
 
 	@Test
 	public void clientReferencesAreConfinedToSanctionedAdapters() throws IOException

@@ -17,7 +17,7 @@ import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.sailing.SailingMoves;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.*;
 import shortestpath.transport.*;
 import shortestpath.sailing.*;

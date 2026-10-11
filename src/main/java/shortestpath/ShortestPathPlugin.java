@@ -25,6 +25,7 @@ import shortestpath.items.ItemStateService;
 import shortestpath.overlay.*;
 import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
+import shortestpath.presentation.PathAnnotator;
 import shortestpath.sailing.SailingService;
 import shortestpath.scheduler.*;
 import shortestpath.settings.*;
@@ -116,6 +117,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	private PathRenderState renderState;
 	@Inject
 	private WidgetGeometry geometry;
+	@Inject
+	private PathAnnotator annotator;
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
@@ -173,6 +176,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		pathfinderConfig.setItemStateService(itemState);
 		pathfinderConfig.setSailingService(sailing);
 		scheduler.attach(pathfinderConfig, sailing, this);
+		annotator.attach(pathfinderConfig);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load touches the same HashMaps the

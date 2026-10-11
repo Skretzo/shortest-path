@@ -1,8 +1,9 @@
-package shortestpath.requirement;
+package shortestpath.presentation;
 
 import java.util.*;
 import net.runelite.api.*;
 import shortestpath.pathfinder.*;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.transport.*;
 

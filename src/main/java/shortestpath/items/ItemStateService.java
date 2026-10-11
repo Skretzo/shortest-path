@@ -6,6 +6,7 @@ import javax.inject.*;
 
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.*;
+
 import shortestpath.requirement.*;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.scheduler.RefreshCoordinator;
