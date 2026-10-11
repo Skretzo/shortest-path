@@ -105,7 +105,7 @@ enum ConfigKey
 	COST_MAGIC_MUSHTREES("costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_MINECARTS("costMinecarts", ShortestPathConfig::costMinecarts, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_QUETZALS("costQuetzals", ShortestPathConfig::costQuetzals, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_QUETZAL_WHISTLE("costQuetzalWhistle", ShortestPathConfig::costQuetzals, Coercion.INT, Effect.ROUTE_INVALIDATING), // override key pairs with costQuetzals() rather than costQuetzalWhistle()
+	COST_QUETZAL_WHISTLE("costQuetzalWhistle", ShortestPathConfig::costQuetzals, ShortestPathConfig::costQuetzalWhistle, Coercion.INT, Effect.ROUTE_INVALIDATING), // override key pairs with costQuetzals(); the stored value reads through configuredGetter
 	COST_SPIRIT_TREES("costSpiritTrees", ShortestPathConfig::costSpiritTrees, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_NON_CONSUMABLE_TELEPORTATION_ITEMS("costNonConsumableTeleportationItems", ShortestPathConfig::costNonConsumableTeleportationItems, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_CONSUMABLE_TELEPORTATION_ITEMS("costConsumableTeleportationItems", ShortestPathConfig::costConsumableTeleportationItems, Coercion.INT, Effect.ROUTE_INVALIDATING),
@@ -176,19 +176,32 @@ enum ConfigKey
 	/** Payload/config key name ({@code @ConfigItem.keyName}). */
 	private final String key;
 	/**
-	 * The config getter whose base value this key's payload value pairs with,
-	 * and the read method keyed configured-value lookups invoke. Declared as
-	 * a method reference so reads need no reflection.
+	 * The config getter whose base value this key's payload value pairs with.
+	 * Declared as a method reference so reads need no reflection.
 	 */
 	private final Function<ShortestPathConfig, Object> getter;
+	/**
+	 * The config getter whose stored value this key names — the read keyed
+	 * configured-value lookups invoke. Almost always identical to
+	 * {@link #getter}; it diverges only where the override pairing
+	 * deliberately shares a base getter (e.g. {@code costQuetzalWhistle}
+	 * pairs its payload with {@code costQuetzals} but stores its own value).
+	 */
+	private final Function<ShortestPathConfig, Object> configuredGetter;
 	private final Coercion coercion;
 	/** The effects a change to this key triggers for the shell. */
 	private final Set<Effect> effects;
 
 	ConfigKey(String key, Function<ShortestPathConfig, Object> getter, Coercion coercion, Effect... effects)
 	{
+		this(key, getter, getter, coercion, effects);
+	}
+
+	ConfigKey(String key, Function<ShortestPathConfig, Object> getter, Function<ShortestPathConfig, Object> configuredGetter, Coercion coercion, Effect... effects)
+	{
 		this.key = key;
 		this.getter = getter;
+		this.configuredGetter = configuredGetter;
 		this.coercion = coercion;
 		this.effects = Set.of(effects);
 	}
