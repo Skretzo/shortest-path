@@ -378,11 +378,11 @@ public class PathAnnotator
 	 * stays on the item-state service; this facade bridges the attached
 	 * engine config in.
 	 */
-	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex)
+	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex, ActiveSearch search)
 	{
 		return itemState == null || pathfinderConfig == null
 			? null
-			: itemState.getBankPickup(path, pathIndex, pathfinderConfig);
+			: itemState.getBankPickup(path, pathIndex, pathfinderConfig, search);
 	}
 
 	public Set<Integer> getDestinations(String destinationType)

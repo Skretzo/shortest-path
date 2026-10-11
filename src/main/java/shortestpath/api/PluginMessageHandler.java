@@ -2,12 +2,11 @@ package shortestpath.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.callback.ClientThread;
@@ -15,10 +14,14 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.Arrival;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
+import shortestpath.pathfinder.Target;
+import shortestpath.pathfinder.Targets;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.scheduler.QueryResponder;
@@ -45,6 +48,7 @@ import shortestpath.transport.Transport;
  *
  * <p>This package is a leaf: nothing here may reference the plugin type.
  */
+@Slf4j
 @Singleton
 public class PluginMessageHandler implements QueryResponder
 {
@@ -59,6 +63,9 @@ public class PluginMessageHandler implements QueryResponder
 	private static final String PLUGIN_MESSAGE_GET_TARGET = "getTarget";
 	private static final String PLUGIN_MESSAGE_CURRENT_TARGET = "currentTarget";
 	private static final String PLUGIN_MESSAGE_ID = "id";
+	private static final String PLUGIN_MESSAGE_BANK_VISITED = "bankVisited";
+	private static final String PLUGIN_MESSAGE_TARGET_STATUS = "targetStatus";
+	private static final String PLUGIN_MESSAGE_MISSING_ITEMS = "missingItems";
 
 	private final Client client;
 	private final ClientThread clientThread;
@@ -93,6 +100,10 @@ public class PluginMessageHandler implements QueryResponder
 		if (PLUGIN_MESSAGE_PATH.equals(action))
 		{
 			Map<String, Object> data = event.getData();
+			if (data == null)
+			{
+				return;
+			}
 			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
 			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
 			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
@@ -114,7 +125,7 @@ public class PluginMessageHandler implements QueryResponder
 			}
 
 			int start = parseStart(objStart);
-			Set<Integer> targets = parseTargets(objTarget);
+			Targets targets = decodeTargets(objTarget);
 			if (start == WorldPointUtil.UNDEFINED || targets == null)
 			{
 				return;
@@ -131,7 +142,7 @@ public class PluginMessageHandler implements QueryResponder
 			}
 			Object id = data.get(PLUGIN_MESSAGE_ID);
 			int start = parseStart(data.get(PLUGIN_MESSAGE_START));
-			Set<Integer> targets = parseTargets(data.get(PLUGIN_MESSAGE_TARGET));
+			Targets targets = decodeTargets(data.get(PLUGIN_MESSAGE_TARGET));
 			if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
 			{
 				postQueryFailure(id, "INVALID");
@@ -171,51 +182,21 @@ public class PluginMessageHandler implements QueryResponder
 	}
 
 	/**
-	 * The packed targets of a plugin message: a WorldPoint, a packed Integer, or a Set of either.
-	 * Empty when none were given, and null when any of them is invalid.
+	 * The targets of a plugin message, with the items each needs on arrival; see
+	 * {@link PluginMessageTargets}. {@link Targets#NONE} when none were given, and {@code null} when
+	 * the value is malformed.
 	 */
-	private static Set<Integer> parseTargets(Object objTarget)
+	private static Targets decodeTargets(Object objTarget)
 	{
-		Set<Integer> targets = new HashSet<>();
-		if (objTarget instanceof Integer)
+		try
 		{
-			int packedPoint = (Integer) objTarget;
-			if (packedPoint == WorldPointUtil.UNDEFINED)
-			{
-				return null;
-			}
-			targets.add(packedPoint);
+			return PluginMessageTargets.decode(objTarget);
 		}
-		else if (objTarget instanceof WorldPoint)
+		catch (IllegalArgumentException e)
 		{
-			int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
-			if (packedPoint == WorldPointUtil.UNDEFINED)
-			{
-				return null;
-			}
-			targets.add(packedPoint);
+			log.warn("Ignoring plugin message with invalid target: {}", e.getMessage());
+			return null;
 		}
-		else if (objTarget instanceof Set<?>)
-		{
-			for (Object obj : (Set<?>) objTarget)
-			{
-				int packedPoint = WorldPointUtil.UNDEFINED;
-				if (obj instanceof Integer)
-				{
-					packedPoint = (Integer) obj;
-				}
-				else if (obj instanceof WorldPoint)
-				{
-					packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
-				}
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return null;
-				}
-				targets.add(packedPoint);
-			}
-		}
-		return targets;
 	}
 
 	@Override
@@ -259,7 +240,22 @@ public class PluginMessageHandler implements QueryResponder
 		data.put("cost", result.getPathCost());
 		PathTerminationReason reason = result.getTerminationReason();
 		data.put("reason", reason == null ? null : reason.name());
+		putArrival(data, steps, result.getArrival());
 		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(Settings.CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
+	}
+
+	/**
+	 * Adds the item fields of a {@code result} message: whether the path visits a bank, and the
+	 * reached target's item status and the item groups it is missing. A target that needs no items
+	 * has no status.
+	 */
+	private static void putArrival(Map<String, Object> data, List<PathStep> steps, Arrival arrival)
+	{
+		boolean requiresItems = arrival != null && arrival.getTarget().hasRequiredItems();
+		data.put(PLUGIN_MESSAGE_BANK_VISITED, !steps.isEmpty() && steps.get(steps.size() - 1).getBankVisitState() == BankVisitState.BANKED);
+		data.put(PLUGIN_MESSAGE_TARGET_STATUS, requiresItems ? arrival.getStatus().name() : null);
+		data.put(PLUGIN_MESSAGE_MISSING_ITEMS,
+			requiresItems ? PluginMessageTargets.itemIds(arrival.getMissingItems()) : List.of());
 	}
 
 	/**
@@ -275,6 +271,7 @@ public class PluginMessageHandler implements QueryResponder
 		data.put("path", List.of());
 		data.put(PLUGIN_MESSAGE_TRANSPORTS, List.of());
 		data.put("reason", reason);
+		putArrival(data, List.of(), null);
 		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(Settings.CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
 	}
 
@@ -294,7 +291,7 @@ public class PluginMessageHandler implements QueryResponder
 		{
 			ActiveSearch pathfinder = scheduler.getActiveSearch();
 			int start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
-			Set<Integer> targets = (pathfinder == null) ? Set.of() : new HashSet<>(pathfinder.getTargets());
+			Targets targets = (pathfinder == null) ? Targets.NONE : pathfinder.getTargets();
 			Map<String, Object> overrides =
 				settings.rawOverrides().isEmpty() ? null : new HashMap<>(settings.rawOverrides());
 
@@ -305,12 +302,12 @@ public class PluginMessageHandler implements QueryResponder
 			{
 				message.put(PLUGIN_MESSAGE_START,
 					start == WorldPointUtil.UNDEFINED ? null : WorldPointUtil.unpackWorldPoint(start));
-				List<WorldPoint> unpackedTargets = new ArrayList<>(targets.size());
-				for (int target : targets)
+				List<Object> encodedTargets = new ArrayList<>(targets.size());
+				for (Target target : targets)
 				{
-					unpackedTargets.add(WorldPointUtil.unpackWorldPoint(target));
+					encodedTargets.add(PluginMessageTargets.encode(target));
 				}
-				message.put(PLUGIN_MESSAGE_TARGET, unpackedTargets);
+				message.put(PLUGIN_MESSAGE_TARGET, encodedTargets);
 			}
 			if (overrides != null)
 			{

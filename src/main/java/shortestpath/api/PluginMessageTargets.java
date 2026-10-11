@@ -1,7 +1,8 @@
-package shortestpath;
+package shortestpath.api;
 
 import java.util.*;
 import net.runelite.api.coords.WorldPoint;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.*;
 import shortestpath.requirement.model.*;
 

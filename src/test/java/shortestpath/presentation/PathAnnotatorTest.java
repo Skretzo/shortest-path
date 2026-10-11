@@ -140,7 +140,7 @@ public class PathAnnotatorTest
 		assertNull(detached.getDestinations("fairy_ring"));
 		assertFalse(detached.hasDestination("fairy_ring"));
 		assertFalse(detached.isBankOpen());
-		assertNull(detached.getBankPickup(List.of(), 0));
+		assertNull(detached.getBankPickup(List.of(), 0, null));
 	}
 
 	@Test
@@ -188,8 +188,8 @@ public class PathAnnotatorTest
 
 		List<PathStep> path = List.of(new PathStep(LANDING, BankVisitState.CARRIED));
 		BankPickupResult result = new BankPickupResult(List.of("a rope"), Set.of(954));
-		when(itemState.getBankPickup(path, 0, config)).thenReturn(result);
+		when(itemState.getBankPickup(path, 0, config, null)).thenReturn(result);
 
-		assertSame(result, wired.getBankPickup(path, 0));
+		assertSame(result, wired.getBankPickup(path, 0, null));
 	}
 }

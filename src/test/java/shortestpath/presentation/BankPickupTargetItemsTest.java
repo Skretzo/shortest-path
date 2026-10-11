@@ -1,4 +1,4 @@
-package shortestpath.requirement;
+package shortestpath.presentation;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,6 +28,7 @@ import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
 
