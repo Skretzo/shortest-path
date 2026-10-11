@@ -3,12 +3,8 @@ package shortestpath;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.Color;
-import java.awt.Polygon;
-import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
-import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -27,7 +23,6 @@ import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
-import net.runelite.api.Point;
 import net.runelite.api.ScriptID;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.coords.LocalPoint;
@@ -44,10 +39,7 @@ import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -56,7 +48,6 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.events.RuneScapeProfileChanged;
-import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
@@ -99,6 +90,7 @@ import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.widgets.WidgetGeometry;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -165,8 +157,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
-	private SpriteManager spriteManager;
-	@Inject
 	private KeyManager keyManager;
 	@Inject
 	private PohService pohService;
@@ -184,12 +174,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	private RefreshCoordinator coordinator;
 	@Inject
 	private PathRenderState renderState;
-	private Point lastMenuOpenedPoint;
-	private Shape minimapClipFixed;
-	private Shape minimapClipResizeable;
-	private BufferedImage minimapSpriteFixed;
-	private BufferedImage minimapSpriteResizeable;
-	private Rectangle minimapRectangle = new Rectangle();
+	@Inject
+	private WidgetGeometry geometry;
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
@@ -713,7 +699,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onMenuOpened(MenuOpened event)
 	{
-		lastMenuOpenedPoint = client.getMouseCanvasPosition();
+		geometry.menuOpened(client.getMouseCanvasPosition());
 	}
 
 	@Subscribe
@@ -1265,95 +1251,22 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 
 	private int getSelectedWorldPoint()
 	{
-		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-		{
-			if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
-			{
-				return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
-			}
-		}
-		else
-		{
-			Point menuPoint = lastMenuOpenedPoint;
-			return client.isMenuOpen() && menuPoint != null
-				? calculateMapPoint(menuPoint.getX(), menuPoint.getY())
-				: calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
-		}
-		return WorldPointUtil.UNDEFINED;
+		return geometry.getSelectedWorldPoint();
 	}
 
 	public int calculateMapPoint(int pointX, int pointY)
 	{
-		WorldMap worldMap = client.getWorldMap();
-		float zoom = worldMap.getWorldMapZoom();
-		int mapPoint = WorldPointUtil.packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
-		int middleX = mapWorldPointToGraphicsPointX(mapPoint);
-		int middleY = mapWorldPointToGraphicsPointY(mapPoint);
-
-		if (pointX == Integer.MIN_VALUE || pointY == Integer.MIN_VALUE ||
-			middleX == Integer.MIN_VALUE || middleY == Integer.MIN_VALUE)
-		{
-			return WorldPointUtil.UNDEFINED;
-		}
-
-		final int dx = (int) ((pointX - middleX) / zoom);
-		final int dy = (int) ((-(pointY - middleY)) / zoom);
-
-		return WorldPointUtil.dxdy(mapPoint, dx, dy);
+		return geometry.calculateMapPoint(pointX, pointY);
 	}
 
 	public int mapWorldPointToGraphicsPointX(int packedWorldPoint)
 	{
-		WorldMap worldMap = client.getWorldMap();
-
-		float pixelsPerTile = worldMap.getWorldMapZoom();
-
-		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
-			Rectangle worldMapRect = map.getBounds();
-
-			int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
-
-			Point worldMapPosition = worldMap.getWorldMapPosition();
-
-			int xTileOffset = WorldPointUtil.unpackWorldX(packedWorldPoint) + widthInTiles / 2 - worldMapPosition.getX();
-
-			int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
-			xGraphDiff += (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
-			xGraphDiff += (int) worldMapRect.getX();
-
-			return xGraphDiff;
-		}
-		return Integer.MIN_VALUE;
+		return geometry.mapWorldPointToGraphicsPointX(packedWorldPoint);
 	}
 
 	public int mapWorldPointToGraphicsPointY(int packedWorldPoint)
 	{
-		WorldMap worldMap = client.getWorldMap();
-
-		float pixelsPerTile = worldMap.getWorldMapZoom();
-
-		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
-			Rectangle worldMapRect = map.getBounds();
-
-			int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
-
-			Point worldMapPosition = worldMap.getWorldMapPosition();
-
-			int yTileMax = worldMapPosition.getY() - heightInTiles / 2;
-			int yTileOffset = (yTileMax - WorldPointUtil.unpackWorldY(packedWorldPoint) - 1) * -1;
-
-			int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
-			yGraphDiff -= (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
-			yGraphDiff = worldMapRect.height - yGraphDiff;
-			yGraphDiff += (int) worldMapRect.getY();
-
-			return yGraphDiff;
-		}
-		return Integer.MIN_VALUE;
+		return geometry.mapWorldPointToGraphicsPointY(packedWorldPoint);
 	}
 
 	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
@@ -1375,124 +1288,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 			.onClick(this::onMenuOptionClicked);
 	}
 
-	private Widget getMinimapDrawWidget()
-	{
-		if (client.isResized())
-		{
-			if (client.getVarbitValue(VarbitID.RESIZABLE_STONE_ARRANGEMENT) == 1)
-			{
-				return client.getWidget(InterfaceID.ToplevelPreEoc.MINIMAP);
-			}
-			return client.getWidget(InterfaceID.ToplevelOsrsStretch.MINIMAP);
-		}
-		return client.getWidget(InterfaceID.Toplevel.MINIMAP);
-	}
-
-	private Shape getMinimapClipAreaSimple()
-	{
-		Widget minimapDrawArea = getMinimapDrawWidget();
-
-		if (minimapDrawArea == null || minimapDrawArea.isHidden())
-		{
-			return null;
-		}
-
-		Rectangle bounds = minimapDrawArea.getBounds();
-
-		return new Ellipse2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
-	}
-
 	public Shape getMinimapClipArea()
 	{
-		Widget minimapWidget = getMinimapDrawWidget();
-
-		if (minimapWidget == null || minimapWidget.isHidden() || !minimapRectangle.equals(minimapRectangle = minimapWidget.getBounds()))
-		{
-			minimapClipFixed = null;
-			minimapClipResizeable = null;
-			minimapSpriteFixed = null;
-			minimapSpriteResizeable = null;
-		}
-
-		if (minimapWidget == null || minimapWidget.isHidden())
-		{
-			return null;
-		}
-
-		if (client.isResized())
-		{
-			if (minimapClipResizeable != null)
-			{
-				return minimapClipResizeable;
-			}
-			if (minimapSpriteResizeable == null)
-			{
-				minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZE_MAP_MASK, 0);
-			}
-			if (minimapSpriteResizeable != null)
-			{
-				minimapClipResizeable = bufferedImageToPolygon(minimapSpriteResizeable);
-				return minimapClipResizeable;
-			}
-			return getMinimapClipAreaSimple();
-		}
-		if (minimapClipFixed != null)
-		{
-			return minimapClipFixed;
-		}
-		if (minimapSpriteFixed == null)
-		{
-			minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MAP_MASK, 0);
-		}
-		if (minimapSpriteFixed != null)
-		{
-			minimapClipFixed = bufferedImageToPolygon(minimapSpriteFixed);
-			return minimapClipFixed;
-		}
-		return getMinimapClipAreaSimple();
-	}
-
-	private Polygon bufferedImageToPolygon(BufferedImage image)
-	{
-		Color outsideColour = null;
-		Color previousColour;
-		final int width = image.getWidth();
-		final int height = image.getHeight();
-		List<java.awt.Point> points = new ArrayList<>();
-		for (int y = 0; y < height; y++)
-		{
-			previousColour = outsideColour;
-			for (int x = 0; x < width; x++)
-			{
-				int rgb = image.getRGB(x, y);
-				int a = (rgb & 0xff000000) >>> 24;
-				int r = (rgb & 0x00ff0000) >> 16;
-				int g = (rgb & 0x0000ff00) >> 8;
-				int b = (rgb & 0x000000ff);
-				Color colour = new Color(r, g, b, a);
-				if (x == 0 && y == 0)
-				{
-					outsideColour = colour;
-					previousColour = colour;
-				}
-				if (!colour.equals(outsideColour) && previousColour.equals(outsideColour))
-				{
-					points.add(new java.awt.Point(x, y));
-				}
-				if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour))
-				{
-					points.add(0, new java.awt.Point(x, y));
-				}
-				previousColour = colour;
-			}
-		}
-		int offsetX = minimapRectangle.x;
-		int offsetY = minimapRectangle.y;
-		Polygon polygon = new Polygon();
-		for (java.awt.Point point : points)
-		{
-			polygon.addPoint(point.x + offsetX, point.y + offsetY);
-		}
-		return polygon;
+		return geometry.getMinimapClipArea();
 	}
 }
