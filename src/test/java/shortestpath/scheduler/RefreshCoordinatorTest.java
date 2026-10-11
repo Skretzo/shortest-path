@@ -48,7 +48,8 @@ import shortestpath.spirittree.TestTreeChange;
 public class RefreshCoordinatorTest
 {
 	private PathScheduler scheduler;
-	private ShortestPathConfig config;
+	private TestShortestPathConfig config = new TestShortestPathConfig();
+	private Settings settings;
 	private RefreshCoordinator coordinator;
 	private ActiveSearch search;
 
@@ -56,8 +57,9 @@ public class RefreshCoordinatorTest
 	public void setUp()
 	{
 		scheduler = mock(PathScheduler.class);
-		config = mock(ShortestPathConfig.class);
-		coordinator = new RefreshCoordinator(scheduler, config);
+		config = new TestShortestPathConfig();
+		settings = Settings.wrap(config);
+		coordinator = new RefreshCoordinator(scheduler, settings);
 		search = mock(ActiveSearch.class);
 	}
 
@@ -308,7 +310,7 @@ public class RefreshCoordinatorTest
 		runningSearch(50, Targets.at(Set.of(target)));
 		when(scheduler.isStartPointSet()).thenReturn(false);
 		when(scheduler.isNearPath(location)).thenReturn(false);
-		when(config.cancelInstead()).thenReturn(false);
+		config.set("cancelInstead", false);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -327,7 +329,7 @@ public class RefreshCoordinatorTest
 		runningSearch(50, Targets.at(Set.of(target)));
 		when(scheduler.isStartPointSet()).thenReturn(false);
 		when(scheduler.isNearPath(location)).thenReturn(false);
-		when(config.cancelInstead()).thenReturn(false);
+		config.set("cancelInstead", false);
 
 		coordinator.gameTick(20);
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
@@ -344,7 +346,7 @@ public class RefreshCoordinatorTest
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(3200, 3201, 0);
 		runningSearch(50, Targets.at(Set.of(target)));
-		when(config.reachedDistance()).thenReturn(10);
+		config.set("reachedDistance", 10);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -360,7 +362,11 @@ public class RefreshCoordinatorTest
 		runningSearch(50, Targets.at(Set.of(target)));
 		when(scheduler.isStartPointSet()).thenReturn(false);
 		when(scheduler.isNearPath(location)).thenReturn(false);
-		when(config.cancelInstead()).thenReturn(true);
+		config.set("cancelInstead", true);
+		ConfigChanged republish = new ConfigChanged();
+		republish.setGroup("shortestpath");
+		republish.setKey("cancelInstead");
+		settings.onConfigChanged(republish);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -385,7 +391,7 @@ public class RefreshCoordinatorTest
 		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
 		when(sailingSearch.isSailing()).thenReturn(true);
-		when(config.reachedDistance()).thenReturn(10);
+		config.set("reachedDistance", 10);
 		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(target);
 
 		coordinator.offRouteTick(20, location, boat, 8);
@@ -409,7 +415,7 @@ public class RefreshCoordinatorTest
 		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
 		when(sailingSearch.isSailing()).thenReturn(true);
-		when(config.reachedDistance()).thenReturn(10);
+		config.set("reachedDistance", 10);
 		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(WorldPointUtil.UNDEFINED);
 
 		coordinator.offRouteTick(20, location, boat, 8);

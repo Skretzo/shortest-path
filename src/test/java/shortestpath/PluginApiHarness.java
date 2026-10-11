@@ -151,10 +151,10 @@ final class PluginApiHarness implements AutoCloseable
 		// shell's startUp wires them. The world map point manager moved into the
 		// scheduler with the marker machinery, and the item-state service declares
 		// its change facts straight to the coordinator.
-		scheduler = new shortestpath.scheduler.PathScheduler(client, clientThread, settings,
+		scheduler = new shortestpath.scheduler.PathScheduler(client, clientThread, settingsService,
 			mock(WorldMapPointManager.class), new shortestpath.scheduler.DebugState());
 		shortestpath.scheduler.RefreshCoordinator coordinator =
-			new shortestpath.scheduler.RefreshCoordinator(scheduler, settings);
+			new shortestpath.scheduler.RefreshCoordinator(scheduler, settingsService);
 		itemState = shortestpath.items.ItemStateService.forTesting(coordinator);
 		shortestpath.sailing.SailingService sailing =
 			shortestpath.sailing.SailingService.forTesting(client, coordinator);

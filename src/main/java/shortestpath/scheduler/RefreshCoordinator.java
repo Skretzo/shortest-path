@@ -52,7 +52,6 @@ public class RefreshCoordinator
 		"dialogLine", "nexus dialog line");
 
 	private final PathScheduler scheduler;
-	private final ShortestPathConfig config;
 	private final Settings settings;
 
 	// The login transition memory for gameStateChanged's three-state gate.
@@ -60,10 +59,9 @@ public class RefreshCoordinator
 	private GameState lastLastGameState = null;
 
 	@Inject
-	public RefreshCoordinator(PathScheduler scheduler, ShortestPathConfig config, Settings settings)
+	public RefreshCoordinator(PathScheduler scheduler, Settings settings)
 	{
 		this.scheduler = scheduler;
-		this.config = config;
 		this.settings = settings;
 	}
 
