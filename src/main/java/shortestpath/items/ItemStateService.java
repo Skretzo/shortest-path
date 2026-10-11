@@ -17,7 +17,7 @@ import shortestpath.pathfinder.Arrival;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.TransportItems;

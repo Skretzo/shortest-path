@@ -1,4 +1,4 @@
-package shortestpath.requirement;
+package shortestpath.presentation;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -19,7 +19,8 @@ import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TestPathfinderConfig;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.settings.TeleportationItem;
