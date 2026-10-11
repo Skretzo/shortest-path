@@ -6047,9 +6047,37 @@
 1615 3687 1	1616 3686 2	Climb-up Staircase 12536						1	
 1616 3686 2	1615 3687 1	Climb-down Staircase 12538						1	
 									
+# Legends' Guild, top floor ladder									
+2726 3375 1	2726 3375 2	Climb-up Ladder 16683						2	
+2726 3375 2	2726 3375 1	Climb-down Ladder 16679						2	
+2724 3375 1	2724 3375 2	Climb-up Ladder 16683						2	
+2724 3375 2	2724 3375 1	Climb-down Ladder 16679						2	
+2725 3374 1	2725 3374 2	Climb-up Ladder 16683						2	
+2725 3374 2	2725 3374 1	Climb-down Ladder 16679						2	
+2725 3376 1	2725 3376 2	Climb-up Ladder 16683						2	
+2725 3376 2	2725 3376 1	Climb-down Ladder 16679						2	
+2731 3375 1	2731 3375 2	Climb-up Ladder 16683						2	
+2731 3375 2	2731 3375 1	Climb-down Ladder 16679						2	
+2732 3374 1	2732 3374 2	Climb-up Ladder 16683						2	
+2732 3374 2	2732 3374 1	Climb-down Ladder 16679						2	
+2732 3376 1	2732 3376 2	Climb-up Ladder 16683						2	
+2732 3376 2	2732 3376 1	Climb-down Ladder 16679						2	
+2733 3375 1	2733 3375 2	Climb-up Ladder 16683						2	
+2733 3375 2	2733 3375 1	Climb-down Ladder 16679						2	
+									
 # Kourend Castle, ground to first floor									
 1618 3665 0	1614 3665 1	Climb-up Staircase 11807						1	
 1614 3665 1	1618 3665 0	Climb-down Staircase 11799						1	
 1618 3680 0	1614 3680 1	Climb-up Staircase 11807						1	
 1614 3680 1	1618 3680 0	Climb-down Staircase 11799						1	
+									
+# Legends' Guild, basement									
+2723 3375 0	2727 9774 0	Climb-down Staircase 16664						2	
+2727 9774 0	2723 3374 0	Climb-up Staircase 16665						2	
+									
+# Legends' Guild, ground to first floor									
+2732 3376 0	2732 3380 1	Climb-up Staircase 15653						1	
+2733 3376 0	2732 3380 1	Climb-up Staircase 15653						1	
+2732 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
+2733 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
 									
