@@ -6037,3 +6037,7 @@
 1643 3829 1	1650 3828 2	Climb Stairs 27851						2	
 1650 3828 2	1643 3828 1	Climb Stairs 27852						2	
 									
+# God Wars Dungeon: swimming the river to Zamorak's Fortress (70 Hitpoints)									
+2885 5333 2	2885 5344 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
+2885 5344 2	2885 5333 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
+									
