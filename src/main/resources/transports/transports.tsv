@@ -6071,6 +6071,22 @@
 1389 2918 0	1389 9313 0	Climb-down Staircase 54946						1	
 1389 9313 0	1389 2918 0	Climb-up Staircase 54945						1	
 									
+# Woodcutting Guild Ent dungeon: the cave, the vine back up, and the roots inside									
+1606 3508 0	1596 9900 0	Enter Cave 28855						2	
+1596 9900 0	1606 3508 0	Climb Vine 28856						2	
+1551 9880 0	1551 9882 0	Step-over Root 26721						2	
+1551 9882 0	1551 9880 0	Step-over Root 26721						2	
+1552 9880 0	1552 9882 0	Step-over Root 26720						2	
+1552 9882 0	1552 9880 0	Step-over Root 26720						2	
+1554 9871 0	1556 9871 0	Step-over Root 26720						2	
+1556 9871 0	1554 9871 0	Step-over Root 26720						2	
+1555 9870 0	1555 9872 0	Step-over Root 26720						2	
+1555 9872 0	1555 9870 0	Step-over Root 26720						2	
+1588 9899 0	1590 9899 0	Step-over Root 26721						2	
+1590 9899 0	1588 9899 0	Step-over Root 26721						2	
+1588 9900 0	1590 9900 0	Step-over Root 26720						2	
+1590 9900 0	1588 9900 0	Step-over Root 26720						2	
+									
 # Kourend Castle, ground to first floor									
 1618 3665 0	1614 3665 1	Climb-up Staircase 11807						1	
 1614 3665 1	1618 3665 0	Climb-down Staircase 11799						1	
