@@ -13,7 +13,7 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.requirement.BankPickupRequirements;
+import shortestpath.presentation.BankPickupRequirements;
 import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
