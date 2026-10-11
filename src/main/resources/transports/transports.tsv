@@ -5949,6 +5949,17 @@
 									
 1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
 									
+# Fisher Realm, Sir Percival's castle									
+2633 4682 0	2634 4682 1	Climb-up Staircase 16671						1	
+2635 4681 0	2634 4682 1	Climb-up Staircase 16671						1	
+2634 4682 1	2635 4681 0	Climb-down Staircase 16673						1	
+2640 4681 1	2640 4685 2	Climb-up Staircase 15645						1	
+2640 4685 2	2640 4681 1	Climb-down Staircase 15648						1	
+2647 4684 0	2649 4685 1	Climb-up Staircase 16671						1	
+2651 4685 1	2651 4685 2	Climb-up Ladder 16683						2	
+2651 4685 2	2651 4685 1	Climb-down Ladder 16679						2	
+2649 4685 1	2650 4684 0	Climb-down Staircase 16673						1	
+									
 # Villa Lucens stage									
 1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
 1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
