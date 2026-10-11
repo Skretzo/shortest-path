@@ -12,10 +12,11 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 
 abstract class AbstractHighlightOverlay extends Overlay
@@ -26,13 +27,16 @@ abstract class AbstractHighlightOverlay extends Overlay
 	private static final int REPLANNING_MARGIN_TILES = 5;
 
 	protected final Client client;
-	protected final ShortestPathPlugin plugin;
+	protected final PathScheduler scheduler;
+	protected final PathAnnotator annotator;
 	protected final Settings settings;
 
-	protected AbstractHighlightOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
+	protected AbstractHighlightOverlay(Client client, PathScheduler scheduler, PathAnnotator annotator,
+		Settings settings)
 	{
 		this.client = client;
-		this.plugin = plugin;
+		this.scheduler = scheduler;
+		this.annotator = annotator;
 		this.settings = settings;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
@@ -55,7 +59,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 			return null;
 		}
 
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			return null;
