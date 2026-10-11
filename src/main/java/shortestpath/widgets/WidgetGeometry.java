@@ -60,8 +60,10 @@ public class WidgetGeometry
 	}
 
 	/**
-	 * Detached-sprite seam for tests that exercise the widget reads without
-	 * the mask caches — the sprite arms degrade to the elliptical fallback.
+	 * Detached-sprite seam for tests that exercise only the map reads —
+	 * the clip arms need a sprite manager, so callers probing the minimap
+	 * caches wire the full constructor or
+	 * {@link #forTesting(Client, SpriteManager)}.
 	 */
 	WidgetGeometry(Client client)
 	{
@@ -306,7 +308,7 @@ public class WidgetGeometry
 				int rgb = image.getRGB(x, y);
 				int a = (rgb & 0xff000000) >>> 24;
 				int r = (rgb & 0x00ff0000) >> 16;
-				int g = (rgb & 0x00ff0000) >> 8;
+				int g = (rgb & 0x0000ff00) >> 8;
 				int b = (rgb & 0x000000ff);
 				Color colour = new Color(r, g, b, a);
 				if (x == 0 && y == 0)
