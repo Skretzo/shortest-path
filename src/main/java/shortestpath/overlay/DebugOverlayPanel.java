@@ -7,6 +7,7 @@ import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.*;
 import net.runelite.client.ui.overlay.components.*;
 import shortestpath.scheduler.DebugState;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.*;
 
@@ -16,17 +17,18 @@ public class DebugOverlayPanel extends OverlayPanel
 	private static final Color PROBLEM = Color.RED;
 	private static final long STATIC_BUILD_THRESHOLD_NANOS = 1_000_000;
 
-	private final ShortestPathPlugin plugin;
 	private final Client client;
 	private final DebugState debugState;
+	private final PathScheduler scheduler;
 
 	@Inject
-	public DebugOverlayPanel(ShortestPathPlugin plugin, Client client, DebugState debugState)
+	public DebugOverlayPanel(ShortestPathPlugin plugin, Client client, DebugState debugState,
+		PathScheduler scheduler)
 	{
 		super(plugin);
-		this.plugin = plugin;
 		this.client = client;
 		this.debugState = debugState;
+		this.scheduler = scheduler;
 
 		setPosition(OverlayPosition.TOP_LEFT);
 		panelComponent.setPreferredSize(new Dimension(PANEL_WIDTH, 0));
@@ -76,7 +78,7 @@ public class DebugOverlayPanel extends OverlayPanel
 
 	private void renderSearch(List<LayoutableRenderableEntity> components, DebugState debug)
 	{
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			components.add(makeHeader("No search"));
