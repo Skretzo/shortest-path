@@ -441,12 +441,12 @@ public class PathfinderConfig
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
 		// POH-specific settings
-		usePohFairyRing = effective.bool(ConfigKey.USE_POH_FAIRY_RING);
-		usePohSpiritTree = effective.bool(ConfigKey.USE_POH_SPIRIT_TREE);
-		usePohObelisk = effective.bool(ConfigKey.USE_POH_OBELISK);
-		Set<PohNexusPortal> pohNexusPortals = (Set<PohNexusPortal>) settings.configuredValue("pohNexusPortals");
+		usePohFairyRing = effective.usePohFairyRing();
+		usePohSpiritTree = effective.usePohSpiritTree();
+		usePohObelisk = effective.usePohObelisk();
+		Set<PohNexusPortal> pohNexusPortals = config.pohNexusPortals();
 		enabledPohNexusPortals = pohNexusPortals == null ? Set.of() : Set.copyOf(pohNexusPortals);
-		Set<PohMountedItem> pohMountedItems = (Set<PohMountedItem>) settings.configuredValue("pohMountedItems");
+		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
 		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
 		pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
 
