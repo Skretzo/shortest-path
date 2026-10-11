@@ -6113,6 +6113,12 @@
 2494 5157 0	2496 5157 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
 2496 5157 0	2494 5157 0	Pass Hot vent door 30266						1	
 									
+# Goblin Village sled racing, Scrubfoot's cave									
+2949 3507 0	1975 6220 3	Enter Cave entrance 40887						2	
+1975 6220 3	2949 3508 0	Exit Cave exit 40888						2	
+2949 3508 0	1975 6220 3	Enter Cave entrance 40887						2	
+1927 6223 0	1963 6221 3	Squeeze-through Crevice 40889						2	
+									
 # Kourend Castle, ground to first floor									
 1618 3665 0	1614 3665 1	Climb-up Staircase 11807						1	
 1614 3665 1	1618 3665 0	Climb-down Staircase 11799						1	
