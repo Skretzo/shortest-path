@@ -1,4 +1,4 @@
-package shortestpath;
+package shortestpath.presentation;
 
 import java.util.Map;
 import java.util.Set;
@@ -6,11 +6,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
+import shortestpath.PrimitiveIntHashMap;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -26,8 +27,7 @@ public class TransportsForEdgeTest
 	@Mock
 	PathfinderConfig pathfinderConfig;
 
-	@InjectMocks
-	ShortestPathPlugin plugin;
+	PathAnnotator annotator;
 
 	private Transport lumbridgeTeleport;
 	private Transport lumbridgeHomeTeleport;
@@ -35,6 +35,8 @@ public class TransportsForEdgeTest
 	@Before
 	public void before()
 	{
+		annotator = PathAnnotator.forTesting();
+		annotator.attach(pathfinderConfig);
 		for (Transport transport : TRANSPORTS.get(Transport.UNDEFINED_ORIGIN))
 		{
 			if (transport.getDestination() == LUMBRIDGE_LANDING)
@@ -79,7 +81,7 @@ public class TransportsForEdgeTest
 		// edge that cannot be a teleport, so no teleport hint should be produced.
 		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3222, 3218, 0), BankVisitState.CARRIED);
 		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED);
-		Assert.assertTrue(plugin.transportsForEdge(from, to).isEmpty());
+		Assert.assertTrue(annotator.transportsForEdge(from, to).isEmpty());
 	}
 
 	@Test
@@ -91,7 +93,7 @@ public class TransportsForEdgeTest
 		// the path does not go beyond the tile, so no teleport is used.
 		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3221, 3219, 0), BankVisitState.CARRIED);
 		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED);
-		Assert.assertTrue(plugin.transportsForEdge(from, to).isEmpty());
+		Assert.assertTrue(annotator.transportsForEdge(from, to).isEmpty());
 	}
 
 	@Test
@@ -103,7 +105,7 @@ public class TransportsForEdgeTest
 		// jump the teleport remains a candidate.
 		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3200, 3200, 0), BankVisitState.CARRIED);
 		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED);
-		Assert.assertEquals(Set.of(lumbridgeTeleport, lumbridgeHomeTeleport), plugin.transportsForEdge(from, to));
+		Assert.assertEquals(Set.of(lumbridgeTeleport, lumbridgeHomeTeleport), annotator.transportsForEdge(from, to));
 	}
 
 	@Test
@@ -111,7 +113,7 @@ public class TransportsForEdgeTest
 	{
 		PathStep from = new PathStep(WorldPointUtil.packWorldPoint(3200, 3200, 0), BankVisitState.CARRIED);
 		PathStep to = new PathStep(LUMBRIDGE_LANDING, BankVisitState.CARRIED, lumbridgeTeleport);
-		Assert.assertEquals(Set.of(lumbridgeTeleport), plugin.transportsForEdge(from, to));
+		Assert.assertEquals(Set.of(lumbridgeTeleport), annotator.transportsForEdge(from, to));
 	}
 
 	@Test
@@ -141,6 +143,6 @@ public class TransportsForEdgeTest
 		mockLocalTransports(adjacentLocal.getOrigin(), adjacentLocal);
 		PathStep from = new PathStep(adjacentLocal.getOrigin(), BankVisitState.CARRIED);
 		PathStep to = new PathStep(adjacentLocal.getDestination(), BankVisitState.CARRIED);
-		Assert.assertEquals(Set.of(adjacentLocal), plugin.transportsForEdge(from, to));
+		Assert.assertEquals(Set.of(adjacentLocal), annotator.transportsForEdge(from, to));
 	}
 }
