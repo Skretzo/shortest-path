@@ -334,7 +334,7 @@ public class Settings
 		{
 			throw new IllegalArgumentException("unknown config key: " + key);
 		}
-		return row.getGetter().apply(configured);
+		return row.getConfiguredGetter().apply(configured);
 	}
 
 	/** Typed convenience wrapper over {@link #configuredValue}. */
