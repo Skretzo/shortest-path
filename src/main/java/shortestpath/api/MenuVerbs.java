@@ -74,7 +74,7 @@ public class MenuVerbs
 					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
 				}
-				for (int target : pathfinder.getTargets())
+				for (int target : pathfinder.getTargets().points())
 				{
 					if (target != WorldPointUtil.UNDEFINED)
 					{
@@ -115,7 +115,7 @@ public class MenuVerbs
 						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
 					}
-					for (int target : pathfinder.getTargets())
+					for (int target : pathfinder.getTargets().points())
 					{
 						if (target != WorldPointUtil.UNDEFINED)
 						{
