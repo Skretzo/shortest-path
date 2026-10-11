@@ -1,15 +1,31 @@
 package shortestpath.presentation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
+import net.runelite.api.ItemContainer;
+
+import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
+import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.BankVisitState;
+import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -106,5 +122,74 @@ public class PathAnnotatorTest
 			new PathStep(inside2, BankVisitState.CARRIED),
 			new PathStep(inside1, BankVisitState.CARRIED));
 		assertNull(annotator.getPohExitInfo(LANDING, allInside, 0));
+	}
+
+	// ---------------------------------------------------------------
+	// Display facades — detached arm and attached delegation
+	// ---------------------------------------------------------------
+
+	@Test
+	public void detachedAnnotatorAnswersEveryDisplayReadWithTheEmptyArm()
+	{
+		PathAnnotator detached = PathAnnotator.forTesting();
+
+		assertNull(detached.getMap());
+		assertNull(detached.getTransports());
+		assertNull(detached.getAllDisplayTransports());
+		assertNull(detached.getEligibility());
+		assertNull(detached.getDestinations("fairy_ring"));
+		assertFalse(detached.hasDestination("fairy_ring"));
+		assertFalse(detached.isBankOpen());
+		assertNull(detached.getBankPickup(List.of(), 0));
+	}
+
+	@Test
+	public void displayFacadesDelegateToTheAttachedConfig()
+	{
+		PathfinderConfig config = mock(PathfinderConfig.class);
+		CollisionMap map = mock(CollisionMap.class);
+		PrimitiveIntHashMap<Transport[]> transports = new PrimitiveIntHashMap<>(4);
+		PrimitiveIntHashMap<Transport[]> allTransports = new PrimitiveIntHashMap<>(4);
+		// TransportEligibility is a final value type — a real empty snapshot
+		// proves the pass-through just as well as a mock would.
+		TransportEligibility eligibility =
+			TransportEligibility.forPlayerAndBank(Map.of(), Map.of(), 0, Map.of());
+		Set<Integer> destinations = Set.of(1, 2);
+		when(config.getMap()).thenReturn(map);
+		when(config.getTransports()).thenReturn(transports);
+		when(config.getAllDisplayTransports()).thenReturn(allTransports);
+		when(config.getEligibility()).thenReturn(eligibility);
+		when(config.getDestinations("fairy_ring")).thenReturn(destinations);
+		when(config.hasDestination("fairy_ring")).thenReturn(true);
+
+		annotator.attach(config);
+
+		assertSame(map, annotator.getMap());
+		assertSame(transports, annotator.getTransports());
+		assertSame(allTransports, annotator.getAllDisplayTransports());
+		assertSame(eligibility, annotator.getEligibility());
+		assertSame(destinations, annotator.getDestinations("fairy_ring"));
+		assertTrue(annotator.hasDestination("fairy_ring"));
+	}
+
+	@Test
+	public void isBankOpenAndBankPickupDelegateToItemState()
+	{
+		ItemStateService itemState = mock(ItemStateService.class);
+		PathfinderConfig config = mock(PathfinderConfig.class);
+		PathAnnotator wired = PathAnnotator.forTesting(pohService, itemState);
+		wired.attach(config);
+
+		assertFalse(wired.isBankOpen());
+
+		ItemContainer bank = mock(ItemContainer.class);
+		when(itemState.getBank()).thenReturn(bank);
+		assertTrue(wired.isBankOpen());
+
+		List<PathStep> path = List.of(new PathStep(LANDING, BankVisitState.CARRIED));
+		BankPickupResult result = new BankPickupResult(List.of("a rope"), Set.of(954));
+		when(itemState.getBankPickup(path, 0, config)).thenReturn(result);
+
+		assertSame(result, wired.getBankPickup(path, 0));
 	}
 }

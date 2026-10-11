@@ -123,4 +123,31 @@ public final class PathRenderState
 
 		return closestTargetDistance > settings.display().unreachableTargetDistance();
 	}
+
+	/**
+	 * The path colour the overlays draw: calculating while the search runs,
+	 * unreachable when the finished path falls short of the target, normal
+	 * otherwise.
+	 */
+	public Color getPathColor()
+	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
+		if (pathfinder == null || !pathfinder.isDone())
+		{
+			return settings.display().colourPathCalculating();
+		}
+
+		List<PathStep> path = pathfinder.getPath();
+		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
+		{
+			return settings.display().colourPath();
+		}
+
+		if (isPathUnreachable())
+		{
+			return settings.display().colourPathUnreachable();
+		}
+
+		return settings.display().colourPath();
+	}
 }

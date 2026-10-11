@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.awt.Color;
 import java.util.List;
 import java.util.Set;
 
@@ -240,5 +241,53 @@ public class PathRenderStateTest
 
 		assertTrue(unreachableState.isPathUnreachable());
 		verify(search).getStart();
+	}
+
+	// ---------------------------------------------------------------
+	// getPathColor — the three configured colour arms
+	// ---------------------------------------------------------------
+
+	@Test
+	public void pathColorIsCalculatingWithNoActiveSearch()
+	{
+		assertEquals(new Color(0, 0, 255), unreachableState.getPathColor());
+	}
+
+	@Test
+	public void pathColorIsCalculatingWhileTheSearchRuns()
+	{
+		when(scheduler.getActiveSearch()).thenReturn(search);
+		when(search.isDone()).thenReturn(false);
+
+		assertEquals(new Color(0, 0, 255), unreachableState.getPathColor());
+	}
+
+	@Test
+	public void pathColorIsNormalWithNoPathOrNoTargets()
+	{
+		doneSearch(null, Set.of(packed(9, 9)), false);
+		assertEquals(new Color(255, 0, 0), unreachableState.getPathColor());
+
+		doneSearch(List.of(), Set.of(packed(20, 20)), false);
+		assertEquals(new Color(255, 0, 0), unreachableState.getPathColor());
+
+		doneSearch(List.of(step(5, 5)), Set.of(), false);
+		assertEquals(new Color(255, 0, 0), unreachableState.getPathColor());
+	}
+
+	@Test
+	public void pathColorIsNormalWhenThePathReaches()
+	{
+		doneSearch(List.of(step(10, 10)), Set.of(packed(10 + UNREACHABLE_DISTANCE, 10)), false);
+
+		assertEquals(new Color(255, 0, 0), unreachableState.getPathColor());
+	}
+
+	@Test
+	public void pathColorIsUnreachableBeyondTheDistanceThreshold()
+	{
+		doneSearch(List.of(step(10, 10)), Set.of(packed(10 + UNREACHABLE_DISTANCE + 1, 10)), false);
+
+		assertEquals(new Color(200, 40, 240), unreachableState.getPathColor());
 	}
 }
