@@ -333,53 +333,7 @@ public class Settings
 		{
 			throw new IllegalArgumentException("unknown config key: " + key);
 		}
-		return row.isKeyed() ? keyedBase(row) : row.getConfiguredGetter().apply(configured);
-	}
-
-	/**
-	 * The base (configured-level) value for a hidden key: the stored value
-	 * parsed through {@link ConfigManager}, or — on the {@link #wrap} seam —
-	 * the {@link KeyedValues} the stub config supplies, falling back to the
-	 * key's declared default when nothing is set.
-	 */
-	Object keyedBase(ConfigKey row)
-	{
-		Object value = null;
-		if (configManager != null)
-		{
-			value = configManager.getConfiguration(CONFIG_GROUP, row.getKey(),
-				row.getType() == Set.class ? row.getSetType() : row.getType());
-		}
-		// On harness seams the configured object supplies values the manager
-		// does not have (an unwritten key reads as null through a mock).
-		if (value == null && configured instanceof KeyedValues)
-		{
-			value = ((KeyedValues) configured).value(row.getKey());
-		}
-		return value != null ? value : row.resolveDefault(this::keyedBase);
-	}
-
-	/**
-	 * The display metadata for {@code key} — name, description and range
-	 * bounds — resolved from the bundled {@code config-items.tsv} for hidden
-	 * keys and the config descriptor for visible ones. {@code null} when the
-	 * key carries no metadata.
-	 */
-	public ConfigItems.Meta item(String key)
-	{
-		ConfigItems.Meta meta = ConfigItems.of(key);
-		if (meta != null)
-		{
-			return meta;
-		}
-		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
-		if (descriptor == null)
-		{
-			return null;
-		}
-		Range range = descriptor.getRange();
-		return new ConfigItems.Meta(key, descriptor.getItem().name(), descriptor.getItem().description(),
-			range == null ? null : range.min(), range == null ? null : range.max());
+		return row.getConfiguredGetter().apply(configured);
 	}
 
 	/** Typed convenience wrapper over {@link #configuredValue}. */

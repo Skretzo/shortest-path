@@ -118,7 +118,7 @@ public enum ConfigKey
 	COST_MAGIC_MUSHTREES("costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_MINECARTS("costMinecarts", ShortestPathConfig::costMinecarts, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_QUETZALS("costQuetzals", ShortestPathConfig::costQuetzals, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_QUETZAL_WHISTLE("costQuetzalWhistle", ShortestPathConfig::costQuetzals, Coercion.INT, Effect.ROUTE_INVALIDATING), // override key pairs with costQuetzals() rather than costQuetzalWhistle()
+	COST_QUETZAL_WHISTLE("costQuetzalWhistle", ShortestPathConfig::costQuetzals, ShortestPathConfig::costQuetzalWhistle, Coercion.INT, Effect.ROUTE_INVALIDATING), // override key pairs with costQuetzals(); the stored value reads through configuredGetter
 	COST_SPIRIT_TREES("costSpiritTrees", ShortestPathConfig::costSpiritTrees, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_NON_CONSUMABLE_TELEPORTATION_ITEMS("costNonConsumableTeleportationItems", ShortestPathConfig::costNonConsumableTeleportationItems, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COST_CONSUMABLE_TELEPORTATION_ITEMS("costConsumableTeleportationItems", ShortestPathConfig::costConsumableTeleportationItems, Coercion.INT, Effect.ROUTE_INVALIDATING),
@@ -193,8 +193,8 @@ public enum ConfigKey
 	/** Element class of a {@code Set}-typed hidden key. */
 	private final Class<?> element;
 	/**
-	 * The unwritten default: a literal, or a
-	 * {@code Function<baseResolver, Object>} for flag-derived set defaults.
+	 * The config getter whose base value this key's payload value pairs with.
+	 * Declared as a method reference so reads need no reflection.
 	 */
 	private final Object def;
 	/**
@@ -205,7 +205,13 @@ public enum ConfigKey
 	private final ConfigKey baseKey;
 	/** The config getter a visible key's value pairs with (hidden: null). */
 	private final Function<ShortestPathConfig, Object> getter;
-	/** The config getter a visible key's stored read invokes (hidden: null). */
+	/**
+	 * The config getter whose stored value this key names — the read keyed
+	 * configured-value lookups invoke. Almost always identical to
+	 * {@link #getter}; it diverges only where the override pairing
+	 * deliberately shares a base getter (e.g. {@code costQuetzalWhistle}
+	 * pairs its payload with {@code costQuetzals} but stores its own value).
+	 */
 	private final Function<ShortestPathConfig, Object> configuredGetter;
 	private final Coercion coercion;
 	/** The effects a change to this key triggers for the shell. */
@@ -237,13 +243,14 @@ public enum ConfigKey
 	private ConfigKey(String key, Class<?> type, Class<?> element, Object def,
 		ConfigKey baseKey, Coercion coercion, Effect... effects)
 	{
+		this(key, getter, getter, coercion, effects);
+	}
+
+	ConfigKey(String key, Function<ShortestPathConfig, Object> getter, Function<ShortestPathConfig, Object> configuredGetter, Coercion coercion, Effect... effects)
+	{
 		this.key = key;
-		this.type = type;
-		this.element = element;
-		this.def = def;
-		this.baseKey = baseKey;
-		this.getter = null;
-		this.configuredGetter = null;
+		this.getter = getter;
+		this.configuredGetter = configuredGetter;
 		this.coercion = coercion;
 		this.effects = Set.of(effects);
 	}
