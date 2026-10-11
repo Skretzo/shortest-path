@@ -15,6 +15,7 @@ import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.PohChange;
 import shortestpath.sailing.SailingChange;
 import shortestpath.settings.ConfigChange;
+import shortestpath.settings.Settings;
 import shortestpath.settings.Effect;
 import shortestpath.spirittree.TreeChange;
 
@@ -52,16 +53,18 @@ public class RefreshCoordinator
 
 	private final PathScheduler scheduler;
 	private final ShortestPathConfig config;
+	private final Settings settings;
 
 	// The login transition memory for gameStateChanged's three-state gate.
 	private GameState lastGameState = null;
 	private GameState lastLastGameState = null;
 
 	@Inject
-	public RefreshCoordinator(PathScheduler scheduler, ShortestPathConfig config)
+	public RefreshCoordinator(PathScheduler scheduler, ShortestPathConfig config, Settings settings)
 	{
 		this.scheduler = scheduler;
 		this.config = config;
+		this.settings = settings;
 	}
 
 	/**
@@ -245,7 +248,7 @@ public class RefreshCoordinator
 		// tile farther than the reached distance on long hulls — check the live boat rather than the
 		// player's tile, and not the search's verdict: that says a route was found, not that it sailed
 		// there. The reached-distance check below still runs for goal-tile arrivals and disembarking.
-		if (pathfinder.isSailing() && config.reachedDistance() >= 0
+		if (pathfinder.isSailing() && settings.lifecycle().reachedDistance() >= 0
 			&& boatLocation != WorldPointUtil.UNDEFINED && boatHeading != WorldPointUtil.UNDEFINED
 			&& ((SailingPathfinder) pathfinder).arrivedTarget(boatLocation, boatHeading) != WorldPointUtil.UNDEFINED)
 		{
@@ -255,7 +258,7 @@ public class RefreshCoordinator
 
 		for (int target : pathfinder.getTargets().points())
 		{
-			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
+			if (WorldPointUtil.distanceBetween(currentLocation, target) < settings.lifecycle().reachedDistance())
 			{
 				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;
@@ -264,7 +267,7 @@ public class RefreshCoordinator
 
 		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(currentLocation))
 		{
-			if (config.cancelInstead())
+			if (settings.lifecycle().cancelInstead())
 			{
 				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;

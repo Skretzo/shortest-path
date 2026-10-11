@@ -1,5 +1,6 @@
 package shortestpath.presentation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -10,6 +11,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import net.runelite.api.Client;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
@@ -18,15 +20,18 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.Arrival;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.NodeGraph;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.TransportEligibility;
+import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -59,6 +64,9 @@ public class PathAnnotator
 	private PathfinderConfig pathfinderConfig;
 
 	private boolean fairyRingPanelOpen = false;
+	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
+	private ActiveSearch missingItemsSearch;
+	private String missingItemsText;
 
 	@Inject
 	public PathAnnotator(Client client, PohService pohService, ItemStateService itemState)
@@ -99,6 +107,15 @@ public class PathAnnotator
 	}
 
 	/**
+	 * Test seam for callers that exercise the missing-items label, which
+	 * resolves item names through the client.
+	 */
+	public static PathAnnotator forTesting(Client client, PohService pohService, ItemStateService itemState)
+	{
+		return new PathAnnotator(client, pohService, itemState);
+	}
+
+	/**
 	 * Hands over the engine config the shell constructed in {@code startUp}.
 	 * Every config-backed read resolves through this attachment; reads made
 	 * before it lands take the detached arm.
@@ -106,6 +123,51 @@ public class PathAnnotator
 	public void attach(PathfinderConfig pathfinderConfig)
 	{
 		this.pathfinderConfig = pathfinderConfig;
+	}
+
+	/**
+	 * The label naming the items the displayed route's target needs but the player was not found to
+	 * hold, or {@code null} when nothing is missing. Built once per search, on the client thread.
+	 */
+	public String getMissingTargetItemsText(ActiveSearch search)
+	{
+		if (search != missingItemsSearch)
+		{
+			missingItemsSearch = search;
+			missingItemsText = null;
+		}
+		PathfinderResult result = search == null ? null : search.getResult();
+		if (missingItemsText == null && result != null)
+		{
+			Arrival arrival = result.getArrival();
+			List<ItemRequirement> missing = arrival == null ? List.of() : arrival.getMissingItems();
+			missingItemsText = missing.isEmpty() ? "" : missingItemsLabel(missing);
+		}
+		return missingItemsText == null || missingItemsText.isEmpty() ? null : missingItemsText;
+	}
+
+	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
+	private String missingItemsLabel(List<ItemRequirement> missing)
+	{
+		List<String> groups = new ArrayList<>(missing.size());
+		for (ItemRequirement group : missing)
+		{
+			List<String> names = new ArrayList<>();
+			for (ItemRequirement.Branch branch : group.getBranches())
+			{
+				for (int id : branch.getItemIds())
+				{
+					// Requirement ids come from other plugins' messages; an invalid or renamed
+					// id may resolve to no name rather than crash every rendered frame.
+					ItemComposition def = client.getItemDefinition(id);
+					String name = def == null ? null : def.getName();
+					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
+				}
+			}
+			groups.add(String.join(" or ", names));
+		}
+		return "Not found in inventory or bank: " + String.join(", ", groups)
+			+ (pathfinderConfig.getHeldItems().isBankSeen() ? "" : " (bank not checked)");
 	}
 
 	/**

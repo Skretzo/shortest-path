@@ -39,6 +39,7 @@ import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.sailing.SailingService;
 import shortestpath.sailing.SailingState;
+import shortestpath.settings.Settings;
 
 /**
  * Owns the plugin's pathfinding concurrency: the single-worker executor, the mutex that pairs
@@ -58,6 +59,7 @@ public class PathScheduler
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ShortestPathConfig config;
+	private final Settings settings;
 	private final WorldMapPointManager worldMapPointManager;
 	private final DebugState debugState;
 
@@ -89,13 +91,14 @@ public class PathScheduler
 
 	@Inject
 	public PathScheduler(Client client, ClientThread clientThread, ShortestPathConfig config,
-		WorldMapPointManager worldMapPointManager, DebugState debugState)
+		WorldMapPointManager worldMapPointManager, DebugState debugState, Settings settings)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
 		this.config = config;
 		this.worldMapPointManager = worldMapPointManager;
 		this.debugState = debugState;
+		this.settings = settings;
 	}
 
 	/**
@@ -280,7 +283,7 @@ public class PathScheduler
 	 */
 	public void prepareBackend()
 	{
-		if (pathfinderConfig == null || config.pathfinderBackend() != PathfinderBackend.ASTAR)
+		if (pathfinderConfig == null || settings.lifecycle().pathfinderBackend() != PathfinderBackend.ASTAR)
 		{
 			return;
 		}
@@ -319,14 +322,14 @@ public class PathScheduler
 		boolean sameLocation = lastLocation == location;
 		lastLocation = location;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			config.recalculateDistance() < 0 || sameLocation)
+			settings.lifecycle().recalculateDistance() < 0 || sameLocation)
 		{
 			return true;
 		}
 
 		for (PathStep pathStep : path)
 		{
-			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < config.recalculateDistance())
+			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < settings.lifecycle().recalculateDistance())
 			{
 				return true;
 			}
@@ -338,7 +341,7 @@ public class PathScheduler
 			for (int i = 1; i < path.size(); i++)
 			{
 				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
-					< config.recalculateDistance())
+					< settings.lifecycle().recalculateDistance())
 				{
 					return true;
 				}

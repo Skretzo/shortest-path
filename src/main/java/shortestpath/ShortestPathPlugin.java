@@ -3,8 +3,8 @@ package shortestpath;
 import com.google.inject.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.*;
 import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -25,7 +25,6 @@ import shortestpath.overlay.*;
 import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
-import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.sailing.SailingService;
 import shortestpath.scheduler.*;
 import shortestpath.settings.*;
@@ -99,9 +98,6 @@ public class ShortestPathPlugin extends Plugin
 	private PluginMessageHandler apiHandler;
 	@Inject
 	private MenuVerbs menuVerbs;
-	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
-	private ActiveSearch missingItemsSearch;
-	private String missingItemsText;
 	@Getter
 	private PathfinderConfig pathfinderConfig;
 	private final KeyListener clearPathKeylistener = new KeyListener()
@@ -391,44 +387,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public String getMissingTargetItemsText()
 	{
-		ActiveSearch search = scheduler.getActiveSearch();
-		if (search != missingItemsSearch)
-		{
-			missingItemsSearch = search;
-			missingItemsText = null;
-		}
-		PathfinderResult result = search == null ? null : search.getResult();
-		if (missingItemsText == null && result != null)
-		{
-			Arrival arrival = result.getArrival();
-			List<ItemRequirement> missing = arrival == null ? List.of() : arrival.getMissingItems();
-			missingItemsText = missing.isEmpty() ? "" : missingItemsLabel(missing);
-		}
-		return missingItemsText == null || missingItemsText.isEmpty() ? null : missingItemsText;
-	}
-
-	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
-	private String missingItemsLabel(List<ItemRequirement> missing)
-	{
-		List<String> groups = new ArrayList<>(missing.size());
-		for (ItemRequirement group : missing)
-		{
-			List<String> names = new ArrayList<>();
-			for (ItemRequirement.Branch branch : group.getBranches())
-			{
-				for (int id : branch.getItemIds())
-				{
-					// Requirement ids come from other plugins' messages; an invalid or renamed
-					// id may resolve to no name rather than crash every rendered frame.
-					ItemComposition def = client.getItemDefinition(id);
-					String name = def == null ? null : def.getName();
-					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
-				}
-			}
-			groups.add(String.join(" or ", names));
-		}
-		return "Not found in inventory or bank: " + String.join(", ", groups)
-			+ (pathfinderConfig.getHeldItems().isBankSeen() ? "" : " (bank not checked)");
+		return annotator.getMissingTargetItemsText(scheduler.getActiveSearch());
 	}
 
 	@Subscribe
