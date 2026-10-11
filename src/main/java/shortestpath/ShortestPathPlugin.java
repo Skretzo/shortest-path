@@ -7,7 +7,6 @@ import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -67,16 +66,15 @@ import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.Arrival;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.Target;
 import shortestpath.pathfinder.Targets;
-import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.sailing.SailingService;
@@ -1097,108 +1095,25 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	}
 
 	/**
-	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
-	 * <p>
-	 * The important detail is that path display logic is edge-based, not node-based:
-	 * - origin position comes from currentStep
-	 * - destination position comes from nextStep
-	 * - the applicable transport set may depend on whether the edge transitions into banked state
-	 * <p>
-	 * That last point is the awkward one. Banking is not represented as its own explicit path edge;
-	 * instead the "becomes banked" state change is conflated into the movement/transport edge that
-	 * reaches the banked destination step. As a result, callers cannot safely resolve transports from
-	 * a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
-	 * nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
-	 * transports for the edge between them.
-	 * <p>
-	 * When the destination step carries the transport the search actually chose (steps built by
-	 * {@link NodeGraph#getPathSteps} do), that transport is the answer and this function returns
-	 * it directly as a singleton — reconstruction is only a fallback for identity-less steps
-	 * (e.g. steps built via the two-argument {@link PathStep} constructor). The destination-based
-	 * fallback remains inherently ambiguous when multiple valid transports share the same
-	 * origin/destination pair under the same edge state.
-	 * <p>
-	 * Note that the fallback also performs filtering by the transport target, so callers of this
-	 * function can directly iterate over the returned transports.
+	 * Delegates to the presentation annotator; kept public for the overlay
+	 * callers and the shell's own serializers.
 	 */
 	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
 	{
-		if (currentStep == null || nextStep == null)
-		{
-			return Set.of();
-		}
-		// The step knows which transport produced the edge into it: no reconstruction needed.
-		if (nextStep.getTransport() != null)
-		{
-			return Set.of(nextStep.getTransport());
-		}
-		BankVisitState bankVisitState =
-			currentStep.getBankVisitState() == BankVisitState.BANKED
-				|| nextStep.getBankVisitState() == BankVisitState.BANKED
-				? BankVisitState.BANKED : BankVisitState.CARRIED;
-		// Get the transports which start from the position of starting step.
-		Set<Transport> stepTransports = new HashSet<>(Arrays.asList(
-			pathfinderConfig.getTransportsPacked(bankVisitState)
-				.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)));
-		// Add the teleports, which might be used from anywhere.
-		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisitState)));
-		// Remove transports which do not target the correct location.
-		stepTransports.removeIf(transport -> transport.getDestination() != nextStep.getPackedPosition());
-		// Remove teleports that share destinations with a local transport type on this edge.
-		// For example, if the path uses a QUETZAL (local) transport, suppress QUETZAL_WHISTLE hints.
-		// Also suppress them when the edge distance is within the shared type's radius threshold,
-		// which occurs when the path is simply walking to a landing site (not teleporting to it).
-		Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
-		for (Transport t : stepTransports)
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null)
-			{
-				localTypes.add(t.getType());
-			}
-		}
-		int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
-		stepTransports.removeIf(t ->
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null)
-			{
-				return false; // keep local transports
-			}
-			if (edgeDistance <= 1)
-			{
-				// A single-tile edge is a walked step, so the path did not teleport
-				// here: the destination tile is just a teleport landing site the
-				// path passes through or ends at, and the teleport hint is noise.
-				return true;
-			}
-			TransportType sharedType = t.getType().sharesDestinationsWith();
-			if (sharedType == null)
-			{
-				return false; // not a shared-destination teleport, keep it
-			}
-			// Suppress if a local transport of the shared type is present on this edge (Issue 1),
-			// or if the edge is within the shared type's radius threshold, meaning the path is
-			// walking to the landing site rather than teleporting there (Issue 2).
-			return localTypes.contains(sharedType)
-				|| (sharedType.getRadiusThreshold() != null && edgeDistance <= sharedType.getRadiusThreshold());
-		});
-		return stepTransports;
+		return annotator.transportsForEdge(currentStep, nextStep);
 	}
 
 	public PathStep nextPathStep(List<PathStep> path, int index)
 	{
-		if (path == null || index < 0 || index + 1 >= path.size())
-		{
-			return null;
-		}
-		return path.get(index + 1);
+		return annotator.nextPathStep(path, index);
 	}
 
 	/**
-	 * Delegates to the POH service; kept public for the overlay callers.
+	 * Delegates to the presentation annotator; kept public for the overlay callers.
 	 */
 	public String formatTransportDisplay(Transport transport)
 	{
-		return pohService.formatTransportDisplay(transport);
+		return annotator.formatTransportDisplay(transport);
 	}
 
 	/**
@@ -1206,8 +1121,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
 	 * that information is included instead.
 	 * <p>
-	 * Delegates to the POH service, bridging the edge-transport lookup across
-	 * the boundary; kept public for the overlay callers.
+	 * Delegates to the presentation annotator; kept public for the overlay callers.
 	 *
 	 * @param destination  The destination point to check
 	 * @param path         The full path
@@ -1216,7 +1130,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	 */
 	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
 	{
-		return pohService.getPohExitInfo(destination, path, currentIndex, this::transportsForEdge);
+		return annotator.getPohExitInfo(destination, path, currentIndex);
 	}
 
 	private String simplify(String text)
