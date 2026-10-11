@@ -6065,6 +6065,12 @@
 2733 3375 1	2733 3375 2	Climb-up Ladder 16683						2	
 2733 3375 2	2733 3375 1	Climb-down Ladder 16679						2	
 									
+# Civitas illa Fortis, Alchemical Society basement									
+1388 2918 0	1388 9313 0	Climb-down Staircase 54946						1	
+1388 9313 0	1388 2918 0	Climb-up Staircase 54945						1	
+1389 2918 0	1389 9313 0	Climb-down Staircase 54946						1	
+1389 9313 0	1389 2918 0	Climb-up Staircase 54945						1	
+									
 # Kourend Castle, ground to first floor									
 1618 3665 0	1614 3665 1	Climb-up Staircase 11807						1	
 1614 3665 1	1618 3665 0	Climb-down Staircase 11799						1	
