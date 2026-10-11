@@ -549,8 +549,7 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public int costQuetzalWhistle()
 	{
-		Object value = overrides.get(ConfigKey.COST_QUETZAL_WHISTLE.getKey());
-		return value instanceof Integer ? (int) value : base.costQuetzalWhistle();
+		return base.costQuetzalWhistle();
 	}
 
 	@Override
