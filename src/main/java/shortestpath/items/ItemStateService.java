@@ -10,6 +10,7 @@ import javax.inject.Singleton;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
+
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.Unlock;
