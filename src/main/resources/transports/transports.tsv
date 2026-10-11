@@ -5976,6 +5976,12 @@
 3144 3446 2	3144 3449 1	Climb-down Staircase 2610						1	
 3144 3449 1	3144 3449 0	Climb-down Staircase 2609						1	
 									
+# Wilderness magic axe hut (lockpick and 23 Thieving)									
+3190 3957 0	3190 3958 0	Pick-lock Door 11726	23 Thieving	1523=1				1	
+3190 3958 0	3190 3957 0	Open Door 11726						1	
+3191 3963 0	3191 3962 0	Pick-lock Door 11726	23 Thieving	1523=1				1	
+3191 3962 0	3191 3963 0	Open Door 11726						1	
+									
 # Villa Lucens stage									
 1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
 1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
