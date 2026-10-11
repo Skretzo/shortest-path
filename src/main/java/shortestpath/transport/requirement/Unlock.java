@@ -25,6 +25,11 @@ public enum Unlock
 	 * Xeric's Honour, unlocking the talisman teleports.
 	 */
 	XERICS_HONOUR,
+
+	/**
+	 * Permanent access to Mor Ul Rek's inner city after showing a fire cape.
+	 */
+	MOR_UL_REK,
 	;
 
 	private static final String TOKEN_PREFIX = "UNLOCK_";

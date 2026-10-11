@@ -391,11 +391,25 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "unlockMorUlRek",
+		name = "Mor Ul Rek inner city unlocked",
+		description = "Enable after showing a fire cape to a TzHaar-Ket guard to permanently unlock the inner city.<br>" +
+			"The plugin cannot currently detect this unlock automatically.<br>" +
+			"Once enabled, you do not need to carry a fire cape to use the hot vent doors",
+		position = 68,
+		section = sectionSettings
+	)
+	default boolean unlockMorUlRek()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "includeBankPath",
 		name = "Include path to bank",
 		description = "Whether to include the path to the closest bank<br>" +
 			"when suggesting teleports from the bank",
-		position = 68,
+		position = 69,
 		section = sectionSettings
 	)
 	default boolean includeBankPath()
@@ -408,7 +422,7 @@ public interface ShortestPathConfig extends Config
 		name = "Currency threshold",
 		description = "The maximum amount of currency to use on a single transportation method." +
 			"<br>The currencies affected by the threshold are coins, trading sticks, ecto-tokens and warrior guild tokens.",
-		position = 69,
+		position = 70,
 		section = sectionSettings
 	)
 	default int currencyThreshold()
@@ -421,7 +435,7 @@ public interface ShortestPathConfig extends Config
 		name = "Cancel instead of recalculating",
 		description = "Whether the path should be cancelled rather than recalculated " +
 			"when the recalculate distance limit is exceeded",
-		position = 70,
+		position = 71,
 		section = sectionSettings
 	)
 	default boolean cancelInstead()
@@ -437,7 +451,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "recalculateDistance",
 		name = "Recalculate distance",
 		description = "Distance from the path the player should be for it to be recalculated (-1 for never)",
-		position = 71,
+		position = 72,
 		section = sectionSettings
 	)
 	default int recalculateDistance()
@@ -453,7 +467,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "finishDistance",
 		name = "Finish distance",
 		description = "Distance from the target tile at which the path should be ended (-1 for never)",
-		position = 72,
+		position = 73,
 		section = sectionSettings
 	)
 	default int reachedDistance()
@@ -469,7 +483,7 @@ public interface ShortestPathConfig extends Config
 		name = "Unreachable target distance",
 		description = "Distance from the target at which a finished path is considered not to reach the target." +
 			"<br>Useful for determining if a path is potentially invalid.",
-		position = 73,
+		position = 74,
 		section = sectionSettings
 	)
 	default int unreachableTargetDistance()
@@ -481,7 +495,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showUnreachableText",
 		name = "Show unreachable text",
 		description = "Whether to display text on the player tile when the destination cannot be reached",
-		position = 74,
+		position = 75,
 		section = sectionSettings
 	)
 	default boolean showUnreachableText()
@@ -493,7 +507,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showTileCounter",
 		name = "Show tile counter",
 		description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
-		position = 75,
+		position = 76,
 		section = sectionSettings
 	)
 	default TileCounter showTileCounter()
@@ -505,7 +519,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "tileCounterStep",
 		name = "Tile counter step",
 		description = "The number of tiles between the displayed tile counter numbers",
-		position = 76,
+		position = 77,
 		section = sectionSettings
 	)
 	default int tileCounterStep()
@@ -525,7 +539,7 @@ public interface ShortestPathConfig extends Config
 		name = "Calculation cutoff",
 		description = "The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>" +
 			"made towards the path target before the calculation will be stopped",
-		position = 77,
+		position = 78,
 		section = sectionSettings
 	)
 	default int calculationCutoff()
