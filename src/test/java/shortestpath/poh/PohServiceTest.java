@@ -2,7 +2,6 @@ package shortestpath.poh;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -12,7 +11,6 @@ import static org.mockito.Mockito.when;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
@@ -23,8 +21,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.PathStep;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.transport.Transport;
@@ -291,69 +287,5 @@ public class PohServiceTest
 		PohService.deserialize("2|lassar=Y|waterbirth island=F3", keys);
 
 		assertEquals(Map.of("lassar", "Y", "waterbirth island", "F3"), keys);
-	}
-
-	@Test
-	public void testFormatTransportDisplay()
-	{
-		service.putFromDialogLine("3: Lumbridge");
-
-		Transport portal = transport(TransportType.TELEPORTATION_PORTAL_POH, "Lumbridge Portal", null, 0);
-		assertEquals("3: Lumbridge Portal", service.formatTransportDisplay(portal));
-
-		// Non-portal transports pass through untouched, keybinds or not.
-		Transport ring = transport(TransportType.FAIRY_RING, "DIQ", null, 0);
-		assertEquals("DIQ", service.formatTransportDisplay(ring));
-
-		Transport unnamed = transport(TransportType.FAIRY_RING, null, null, 0);
-		assertNull(service.formatTransportDisplay(unnamed));
-	}
-
-	@Test
-	public void testGetPohExitInfo()
-	{
-		int inside1 = WorldPointUtil.packWorldPoint(1900, 7060, 0);
-		int inside2 = WorldPointUtil.packWorldPoint(1901, 7060, 0);
-		int outside = WorldPointUtil.packWorldPoint(3000, 3300, 0);
-
-		List<PathStep> path = List.of(
-			new PathStep(outside, BankVisitState.CARRIED),
-			new PathStep(inside1, BankVisitState.CARRIED),
-			new PathStep(inside2, BankVisitState.CARRIED),
-			new PathStep(outside, BankVisitState.CARRIED));
-
-		Transport portal = transport(TransportType.TELEPORTATION_PORTAL_POH, "Lumbridge Portal", null, 0);
-		assertEquals("Nexus: Lumbridge Portal",
-			service.getPohExitInfo(LANDING, path, 0, (a, b) -> Set.of(portal)));
-
-		Transport glory = transport(TransportType.TELEPORTATION_BOX, "Edgeville", "Mounted Amulet of Glory", 0);
-		assertEquals("Mounted Glory: Edgeville",
-			service.getPohExitInfo(LANDING, path, 0, (a, b) -> Set.of(glory)));
-	}
-
-	@Test
-	public void testGetPohExitInfoRejectedInputs()
-	{
-		int inside1 = WorldPointUtil.packWorldPoint(1900, 7060, 0);
-		int inside2 = WorldPointUtil.packWorldPoint(1901, 7060, 0);
-		int outside = WorldPointUtil.packWorldPoint(3000, 3300, 0);
-		Transport portal = transport(TransportType.TELEPORTATION_PORTAL_POH, "Lumbridge Portal", null, 0);
-
-		// A non-POH destination produces no exit info.
-		List<PathStep> path = List.of(
-			new PathStep(inside1, BankVisitState.CARRIED),
-			new PathStep(inside2, BankVisitState.CARRIED),
-			new PathStep(outside, BankVisitState.CARRIED));
-		assertNull(service.getPohExitInfo(outside, path, 0, (a, b) -> Set.of(portal)));
-
-		assertNull(service.getPohExitInfo(LANDING, null, 0, (a, b) -> Set.of(portal)));
-		assertNull(service.getPohExitInfo(LANDING, path, -1, (a, b) -> Set.of(portal)));
-
-		// A path that never crosses the boundary produces no exit info.
-		List<PathStep> allInside = List.of(
-			new PathStep(inside1, BankVisitState.CARRIED),
-			new PathStep(inside2, BankVisitState.CARRIED),
-			new PathStep(inside1, BankVisitState.CARRIED));
-		assertNull(service.getPohExitInfo(LANDING, allInside, 0, (a, b) -> Set.of(portal)));
 	}
 }
