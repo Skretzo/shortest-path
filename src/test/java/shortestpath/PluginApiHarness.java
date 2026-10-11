@@ -261,9 +261,9 @@ final class PluginApiHarness implements AutoCloseable
 		{
 			data.put("target", target);
 		}
-		ActiveSearch before = plugin.getActiveSearch();
+		ActiveSearch before = scheduler.getActiveSearch();
 		send("path", data);
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null || search == before)
 		{
 			return search;
@@ -370,6 +370,12 @@ final class PluginApiHarness implements AutoCloseable
 	String missingItemsLabel()
 	{
 		return plugin.getMissingTargetItemsText();
+	}
+
+	/** The search currently displayed by the plugin, as the scheduler reports it. */
+	ActiveSearch activeSearch()
+	{
+		return scheduler.getActiveSearch();
 	}
 
 	@Override

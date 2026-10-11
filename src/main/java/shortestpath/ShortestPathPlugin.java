@@ -20,14 +20,13 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import shortestpath.api.*;
 import shortestpath.items.ItemStateService;
 import shortestpath.overlay.*;
-import shortestpath.pathfinder.*;
+import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.sailing.SailingService;
 import shortestpath.scheduler.*;
 import shortestpath.settings.*;
 import shortestpath.spirittree.SpiritTreeService;
-import shortestpath.transport.Transport;
 import shortestpath.widgets.WidgetGeometry;
 
 @Slf4j
@@ -94,7 +93,6 @@ public class ShortestPathPlugin extends Plugin
 	private PluginMessageHandler apiHandler;
 	@Inject
 	private MenuVerbs menuVerbs;
-	@Getter
 	private PathfinderConfig pathfinderConfig;
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
@@ -117,18 +115,6 @@ public class ShortestPathPlugin extends Plugin
 		{
 		}
 	};
-	public ActiveSearch getActiveSearch()
-	{
-		return scheduler.getActiveSearch();
-	}
-
-	/**
-	 * Legacy source-compatible accessor. Plugin internals use {@link #getActiveSearch()}.
-	 */
-	public Pathfinder getPathfinder()
-	{
-		return scheduler.getPathfinder();
-	}
 
 	@Provides
 	public ShortestPathConfig provideConfig(ConfigManager configManager)
@@ -446,14 +432,5 @@ public class ShortestPathPlugin extends Plugin
 	public void onPostClientTick(PostClientTick event)
 	{
 		annotator.postClientTick(scheduler.getActiveSearch());
-	}
-
-	/**
-	 * Delegates to the presentation annotator; kept public for the overlay
-	 * callers and the shell's own serializers.
-	 */
-	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
-	{
-		return annotator.transportsForEdge(currentStep, nextStep);
 	}
 }
