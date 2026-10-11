@@ -14,9 +14,10 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import shortestpath.ItemVariations;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
@@ -47,9 +48,10 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	private final Settings settings;
 
 	@Inject
-	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
+	public InventoryHighlightOverlay(Client client, ItemManager itemManager, Settings settings,
+		PathScheduler scheduler, PathAnnotator annotator)
 	{
-		super(client, plugin, settings);
+		super(client, scheduler, annotator, settings);
 		this.itemManager = itemManager;
 		this.settings = settings;
 	}
@@ -62,7 +64,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			return null;
@@ -80,7 +82,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
+		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
 		boolean lumbridgeEliteDone = client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
 		// The dramen staff requirement lives outside the transport's item requirements,
