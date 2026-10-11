@@ -6145,3 +6145,6 @@
 # The Darkfrost: the slope down into the Hueycoatl's public arena									
 1524 3290 0	1519 3289 0	Slide Slope 55234						3	
 									
+# Corporeal Beast cave: entrance and exit to the Wilderness									
+2964 4382 2	3206 3681 0	Exit Cave exit 679						2	
+3206 3681 0	2964 4382 2	Enter Cave 678						2	
