@@ -173,8 +173,9 @@ final class PluginApiHarness implements AutoCloseable
 		set("itemState", itemState);
 		set("sailing", sailing);
 		shortestpath.presentation.PathAnnotator annotator =
-			shortestpath.presentation.PathAnnotator.forTesting(pohService, itemState);
+			shortestpath.presentation.PathAnnotator.forTesting(client, pohService, itemState);
 		annotator.attach(pathfinderConfig);
+		set("annotator", annotator);
 		shortestpath.api.PluginMessageHandler apiHandler =
 			new shortestpath.api.PluginMessageHandler(client, clientThread, eventBus, scheduler,
 				coordinator, settingsService, annotator);
