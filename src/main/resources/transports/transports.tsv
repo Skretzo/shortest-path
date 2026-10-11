@@ -5022,9 +5022,14 @@
 # Watchtower									
 2549 3112 2	2549 3112 1	Climb-down Ladder 2797						2	
 2548 3111 2	2549 3112 1	Climb-down Ladder 2797						2	
-2548 3111 1	2549 3112 2	Climb-up Ladder 2796						2	
-2550 3111 1	2549 3112 2	Climb-up Ladder 2796						2	
-2549 3112 1	2549 3112 2	Climb-up Ladder 2796						2	
+2933 4712 2	2549 3112 1	Climb-down Ladder 2797						2	
+2932 4711 2	2549 3112 1	Climb-down Ladder 2797						2	
+2548 3111 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2548 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
+2550 3111 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2550 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
+2549 3112 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2549 3112 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
 2545 3111 1	2544 3112 0	Climb-down Ladder 17122						2	
 2544 3112 1	2544 3112 0	Climb-down Ladder 17122						2	
 2543 3111 1	2544 3112 0	Climb-down Ladder 17122						2	
