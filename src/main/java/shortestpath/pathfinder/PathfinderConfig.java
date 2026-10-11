@@ -487,7 +487,7 @@ public class PathfinderConfig
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
 			SailingState sailingState = sailing.getState();
-			sailingMoves = sailingState.isAboard() && effective.useSailingMoves();
+			sailingMoves = sailingState.isAboard() && effective.bool(ConfigKey.USE_SAILING_MOVES);
 			// The game stores the base speed in 1/128ths of a tile per tick; a read above any real
 			// boat's speed is a stale or mis-scaled varbit rather than a fast boat — the moves it
 			// would build are so long nothing can sail them — so estimate instead
