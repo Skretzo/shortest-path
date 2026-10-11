@@ -11,27 +11,26 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.items.ItemStateService;
+
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.presentation.BankPickupRequirements;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
 	private final ItemManager itemManager;
 	private final Settings settings;
-	private final ItemStateService itemState;
 
 	@Inject
-	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings,
-		ItemStateService itemState)
+	public BankItemHighlightOverlay(Client client, ItemManager itemManager, Settings settings,
+		PathScheduler scheduler, PathAnnotator annotator)
 	{
-		super(client, plugin, settings);
+		super(client, scheduler, annotator, settings);
 		this.itemManager = itemManager;
 		this.settings = settings;
-		this.itemState = itemState;
 	}
 
 	@Override
@@ -42,7 +41,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			return null;
@@ -60,12 +59,12 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		if (itemState.getBank() == null)
+		if (!annotator.isBankOpen())
 		{
 			return null;
 		}
 
-		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
+		Set<Integer> bankLocations = annotator.getDestinations("bank");
 		if (bankLocations == null)
 		{
 			return null;
@@ -77,7 +76,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		BankPickupRequirements.BankPickupResult pickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex, search);
+		BankPickupRequirements.BankPickupResult pickup = annotator.getBankPickup(path, pathIndex, search);
 		if (pickup == null || pickup.bankItemIds.isEmpty())
 		{
 			return null;
