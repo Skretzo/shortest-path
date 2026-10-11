@@ -58,7 +58,6 @@ public class PathScheduler
 
 	private final Client client;
 	private final ClientThread clientThread;
-	private final ShortestPathConfig config;
 	private final Settings settings;
 	private final WorldMapPointManager worldMapPointManager;
 	private final DebugState debugState;
@@ -90,15 +89,14 @@ public class PathScheduler
 	private volatile int sailingPivotY;
 
 	@Inject
-	public PathScheduler(Client client, ClientThread clientThread, ShortestPathConfig config,
-		WorldMapPointManager worldMapPointManager, DebugState debugState, Settings settings)
+	public PathScheduler(Client client, ClientThread clientThread, Settings settings,
+		WorldMapPointManager worldMapPointManager, DebugState debugState)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
-		this.config = config;
+		this.settings = settings;
 		this.worldMapPointManager = worldMapPointManager;
 		this.debugState = debugState;
-		this.settings = settings;
 	}
 
 	/**
