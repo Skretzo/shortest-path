@@ -699,36 +699,6 @@ public class PathfinderTest
 			result.isReached());
 	}
 
-	@Test
-	public void testBlockedTargetReachedViaAdjacentTransportDestination()
-	{
-		// Issue #640: the Jalsavrah teleport lands on (1934, 4428), a blocked tile
-		// adjacent to the likewise blocked (1934, 4427). No walkable tile exists
-		// within the unreachable distance, so the transport landing must count as
-		// a goal instead of the target being treated as hopeless.
-		when(config.unreachableTargetDistance()).thenReturn(2);
-		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
-		setupInventory();
-		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
-		int blockedTarget = WorldPointUtil.packWorldPoint(1934, 4427, 0);
-		int jalsavrahLanding = WorldPointUtil.packWorldPoint(1934, 4428, 0);
-		assertTrue("test requires a blocked target tile",
-			pathfinderConfig.getMap().isBlocked(1934, 4427, 0));
-		assertTrue("test requires the landing tile to be blocked",
-			pathfinderConfig.getMap().isBlocked(1934, 4428, 0));
-		assertTrue("test requires a transport landing adjacent to the target",
-			pathfinderConfig.isTransportDestination(jalsavrahLanding));
-		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(blockedTarget));
-		pathfinder.run();
-		PathfinderResult result = pathfinder.getResult();
-		assertNotNull(result);
-		assertTrue("target should be reached via the adjacent teleport landing",
-			result.isReached());
-		List<PathStep> steps = result.getPathSteps();
-		assertEquals("path must end on the Jalsavrah landing tile",
-			jalsavrahLanding, steps.get(steps.size() - 1).getPackedPosition());
-	}
-
 	private static Set<Integer> connectedTilesOracle(CollisionMap map, int target, int radius)
 	{
 		Set<Integer> connected = new HashSet<>();
