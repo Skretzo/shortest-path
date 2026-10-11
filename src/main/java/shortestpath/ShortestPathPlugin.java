@@ -22,7 +22,6 @@ import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
-import net.runelite.api.ScriptID;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -77,6 +76,7 @@ import shortestpath.pathfinder.Target;
 import shortestpath.pathfinder.Targets;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
+import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.sailing.SailingService;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
@@ -87,8 +87,6 @@ import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
 import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
-import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.widgets.WidgetGeometry;
 
 @Slf4j
@@ -202,8 +200,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		{
 		}
 	};
-	private boolean fairyRingPanelOpen = false;
-
 	public ActiveSearch getActiveSearch()
 	{
 		return scheduler.getActiveSearch();
@@ -299,24 +295,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 
 	public Color getPathColor()
 	{
-		ActiveSearch pathfinder = scheduler.getActiveSearch();
-		if (pathfinder == null || !pathfinder.isDone())
-		{
-			return settings.display().colourPathCalculating();
-		}
-
-		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
-		{
-			return settings.display().colourPath();
-		}
-
-		if (renderState.isPathUnreachable())
-		{
-			return settings.display().colourPathUnreachable();
-		}
-
-		return settings.display().colourPath();
+		return renderState.getPathColor();
 	}
 
 
@@ -888,10 +867,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (scheduler.getActiveSearch() != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = true;
-		}
+		annotator.widgetLoaded(event.getGroupId(), scheduler.getActiveSearch());
 
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT)
 		{
@@ -933,149 +909,28 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onWidgetClosed(WidgetClosed event)
 	{
-		if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = false;
-		}
+		annotator.widgetClosed(event.getGroupId());
 	}
 
 	@Subscribe
 	public void onPostClientTick(PostClientTick event)
 	{
-		if (fairyRingPanelOpen && scheduler.getActiveSearch() != null)
-		{
-			scrollFairyRingPanel();
-		}
-	}
-
-	private void scrollFairyRingPanel()
-	{
-		ActiveSearch pathfinder = scheduler.getActiveSearch();
-		List<PathStep> path;
-
-		if (pathfinder == null
-			|| (path = pathfinder.getPath()) == null)
-		{
-			return;
-		}
-
-		String fairyRingCode = null;
-
-		for (int i = 1; i < path.size(); i++)
-		{
-			PathStep currentStep = path.get(i - 1);
-			PathStep nextStep = path.get(i);
-			for (Transport transport : transportsForEdge(currentStep, nextStep))
-			{
-				if (TransportType.FAIRY_RING.equals(transport.getType()))
-				{
-					fairyRingCode = transport.getDisplayInfo();
-				}
-			}
-		}
-		if (fairyRingCode == null)
-		{
-			return;
-		}
-
-		Widget codeWidget = null;
-
-		Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
-		if (favesPanel != null)
-		{
-			for (Widget widget : favesPanel.getStaticChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
-		if (contentsList != null && codeWidget == null)
-		{
-			for (Widget widget : contentsList.getDynamicChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		if (codeWidget == null)
-		{
-			return;
-		}
-
-		codeWidget.setTextColor(0x00FF00);
-		String codeWidgetText = codeWidget.getText();
-		if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)"))
-		{
-			codeWidget.setText("(Shortest Path) " + codeWidgetText);
-		}
-
-		if (contentsList == null)
-		{
-			return;
-		}
-
-		int panelScrollY = Math.min(
-			codeWidget.getRelativeY(),
-			contentsList.getScrollHeight() - contentsList.getHeight()
-		);
-
-		contentsList.setScrollY(panelScrollY);
-		contentsList.revalidateScroll();
-
-		client.runScript(
-			ScriptID.UPDATE_SCROLLBAR,
-			InterfaceID.FairyringsLog.SCROLLBAR,
-			InterfaceID.FairyringsLog.CONTENTS,
-			panelScrollY
-		);
+		annotator.postClientTick(scheduler.getActiveSearch());
 	}
 
 	public CollisionMap getMap()
 	{
-		return pathfinderConfig.getMap();
+		return annotator.getMap();
 	}
 
-	/**
-	 * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
-	 * <p>
-	 * It collapses banked/unbanked transport availability into a single view via
-	 * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
-	 * <p>
-	 * Do not use this for reasoning about which transports are available at a specific
-	 * step of a path. Use PathfinderConfig.getTransportAvailability(BankVisitState) and the
-	 * path's PathStep state instead.
-	 */
 	public PrimitiveIntHashMap<Transport[]> getTransports()
 	{
-		return pathfinderConfig.getTransports();
+		return annotator.getTransports();
 	}
 
-	/**
-	 * Every loaded transport grouped by origin for display, including transports the
-	 * player cannot currently use. Same layout as {@link #getTransports()}.
-	 */
 	public PrimitiveIntHashMap<Transport[]> getAllDisplayTransports()
 	{
-		return pathfinderConfig.getAllDisplayTransports();
+		return annotator.getAllDisplayTransports();
 	}
 
 	/**
