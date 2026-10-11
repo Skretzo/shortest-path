@@ -462,7 +462,7 @@ public class PluginApiTargetRequirementsTest
 		{
 			ActiveSearch shown = api.path(START, NEAR);
 			api.path(START, target(NEAR, "spade"));
-			assertSame(shown, api.plugin.getActiveSearch());
+			assertSame(shown, api.activeSearch());
 		}
 	}
 
