@@ -6096,6 +6096,11 @@
 3005 3376 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3	
 1752 5137 0	2985 3316 0	Climb Rope 12230						2	
 									
+# Prifddinas: Gauntlet Portal into the Gauntlet lobby									
+3228 6117 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2	
+3228 6116 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2	
+3032 6125 1	3228 6116 0	Channel Teleport Platform 36082			Song of the Elves			2	
+									
 # Kourend Castle, ground to first floor									
 1618 3665 0	1614 3665 1	Climb-up Staircase 11807						1	
 1614 3665 1	1618 3665 0	Climb-down Staircase 11799						1	
