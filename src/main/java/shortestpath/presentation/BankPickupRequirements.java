@@ -1,4 +1,4 @@
-package shortestpath.requirement;
+package shortestpath.presentation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +13,7 @@ import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
