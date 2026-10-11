@@ -2,10 +2,7 @@ package shortestpath;
 
 import com.google.inject.Inject;
 import com.google.inject.Provides;
-import java.awt.Color;
-import java.awt.Shape;
 import java.awt.event.KeyEvent;
-import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +47,6 @@ import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
-import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
@@ -58,7 +54,6 @@ import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.sailing.SailingService;
-import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.ConfigChange;
@@ -125,8 +120,6 @@ public class ShortestPathPlugin extends Plugin
 	private PathScheduler scheduler;
 	@Inject
 	private RefreshCoordinator coordinator;
-	@Inject
-	private PathRenderState renderState;
 	@Inject
 	private WidgetGeometry geometry;
 	@Inject
@@ -264,12 +257,6 @@ public class ShortestPathPlugin extends Plugin
 			migratingAStarConfiguration = false;
 		}
 	}
-
-	public Color getPathColor()
-	{
-		return renderState.getPathColor();
-	}
-
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
@@ -510,21 +497,6 @@ public class ShortestPathPlugin extends Plugin
 		annotator.postClientTick(scheduler.getActiveSearch());
 	}
 
-	public CollisionMap getMap()
-	{
-		return annotator.getMap();
-	}
-
-	public PrimitiveIntHashMap<Transport[]> getTransports()
-	{
-		return annotator.getTransports();
-	}
-
-	public PrimitiveIntHashMap<Transport[]> getAllDisplayTransports()
-	{
-		return annotator.getAllDisplayTransports();
-	}
-
 	/**
 	 * Delegates to the presentation annotator; kept public for the overlay
 	 * callers and the shell's own serializers.
@@ -532,55 +504,5 @@ public class ShortestPathPlugin extends Plugin
 	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
 	{
 		return annotator.transportsForEdge(currentStep, nextStep);
-	}
-
-	public PathStep nextPathStep(List<PathStep> path, int index)
-	{
-		return annotator.nextPathStep(path, index);
-	}
-
-	/**
-	 * Delegates to the presentation annotator; kept public for the overlay callers.
-	 */
-	public String formatTransportDisplay(Transport transport)
-	{
-		return annotator.formatTransportDisplay(transport);
-	}
-
-	/**
-	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
-	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
-	 * that information is included instead.
-	 * <p>
-	 * Delegates to the presentation annotator; kept public for the overlay callers.
-	 *
-	 * @param destination  The destination point to check
-	 * @param path         The full path
-	 * @param currentIndex The current index in the path
-	 * @return The display info of the POH exit transport, or null if not applicable
-	 */
-	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
-	{
-		return annotator.getPohExitInfo(destination, path, currentIndex);
-	}
-
-	public int calculateMapPoint(int pointX, int pointY)
-	{
-		return geometry.calculateMapPoint(pointX, pointY);
-	}
-
-	public int mapWorldPointToGraphicsPointX(int packedWorldPoint)
-	{
-		return geometry.mapWorldPointToGraphicsPointX(packedWorldPoint);
-	}
-
-	public int mapWorldPointToGraphicsPointY(int packedWorldPoint)
-	{
-		return geometry.mapWorldPointToGraphicsPointY(packedWorldPoint);
-	}
-
-	public Shape getMinimapClipArea()
-	{
-		return geometry.getMinimapClipArea();
 	}
 }
