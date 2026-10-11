@@ -270,8 +270,175 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean showSidebarPanel()
 	{
-		Object value = overrides.get(ConfigKey.SHOW_SIDEBAR_PANEL.getKey());
-		return value instanceof Boolean ? (boolean) value : base.showSidebarPanel();
+		return base.pohMountedItems();
+	}
+
+	@Override
+	public boolean usePohMountedItems()
+	{
+		return override(ConfigKey.USE_POH_MOUNTED_ITEMS, base.usePohMountedItems());
+	}
+
+	@Override
+	public boolean usePohObelisk()
+	{
+		return override(ConfigKey.USE_POH_OBELISK, base.usePohObelisk());
+	}
+
+	@Override
+	public int costAgilityShortcuts()
+	{
+		return override(ConfigKey.COST_AGILITY_SHORTCUTS, base.costAgilityShortcuts());
+	}
+
+	@Override
+	public int costGrappleShortcuts()
+	{
+		return override(ConfigKey.COST_GRAPPLE_SHORTCUTS, base.costGrappleShortcuts());
+	}
+
+	@Override
+	public int costBoats()
+	{
+		return override(ConfigKey.COST_BOATS, base.costBoats());
+	}
+
+	@Override
+	public int costCanoes()
+	{
+		return override(ConfigKey.COST_CANOES, base.costCanoes());
+	}
+
+	@Override
+	public int costCharterShips()
+	{
+		return override(ConfigKey.COST_CHARTER_SHIPS, base.costCharterShips());
+	}
+
+	@Override
+	public int costShips()
+	{
+		return override(ConfigKey.COST_SHIPS, base.costShips());
+	}
+
+	@Override
+	public int costFairyRings()
+	{
+		return override(ConfigKey.COST_FAIRY_RINGS, base.costFairyRings());
+	}
+
+	@Override
+	public int costGnomeGliders()
+	{
+		return override(ConfigKey.COST_GNOME_GLIDERS, base.costGnomeGliders());
+	}
+
+	@Override
+	public int costHotAirBalloons()
+	{
+		return override(ConfigKey.COST_HOT_AIR_BALLOONS, base.costHotAirBalloons());
+	}
+
+	@Override
+	public int costMagicCarpets()
+	{
+		return override(ConfigKey.COST_MAGIC_CARPETS, base.costMagicCarpets());
+	}
+
+	@Override
+	public int costMagicMushtrees()
+	{
+		return override(ConfigKey.COST_MAGIC_MUSHTREES, base.costMagicMushtrees());
+	}
+
+	@Override
+	public int costMinecarts()
+	{
+		return override(ConfigKey.COST_MINECARTS, base.costMinecarts());
+	}
+
+	@Override
+	public int costQuetzals()
+	{
+		return override(ConfigKey.COST_QUETZALS, base.costQuetzals());
+	}
+
+	@Override
+	public int costQuetzalWhistle()
+	{
+		return base.costQuetzalWhistle();
+	}
+
+	@Override
+	public int costSpiritTrees()
+	{
+		return override(ConfigKey.COST_SPIRIT_TREES, base.costSpiritTrees());
+	}
+
+	@Override
+	public int costNonConsumableTeleportationItems()
+	{
+		return override(ConfigKey.COST_NON_CONSUMABLE_TELEPORTATION_ITEMS, base.costNonConsumableTeleportationItems());
+	}
+
+	@Override
+	public int costConsumableTeleportationItems()
+	{
+		return override(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS, base.costConsumableTeleportationItems());
+	}
+
+	@Override
+	public int costTeleportationBoxes()
+	{
+		return override(ConfigKey.COST_TELEPORTATION_BOXES, base.costTeleportationBoxes());
+	}
+
+	@Override
+	public int costTeleportationLevers()
+	{
+		return override(ConfigKey.COST_TELEPORTATION_LEVERS, base.costTeleportationLevers());
+	}
+
+	@Override
+	public int costTeleportationPortals()
+	{
+		return override(ConfigKey.COST_TELEPORTATION_PORTALS, base.costTeleportationPortals());
+	}
+
+	@Override
+	public int costTeleportationSpells()
+	{
+		return override(ConfigKey.COST_TELEPORTATION_SPELLS, base.costTeleportationSpells());
+	}
+
+	@Override
+	public int costTeleportationSpellsHome()
+	{
+		return override(ConfigKey.COST_TELEPORTATION_SPELLS_HOME, base.costTeleportationSpellsHome());
+	}
+
+	@Override
+	public int costTeleportationMinigames()
+	{
+		return override(ConfigKey.COST_TELEPORTATION_MINIGAMES, base.costTeleportationMinigames());
+	}
+
+	@Override
+	public int costWildernessObelisks()
+	{
+		return override(ConfigKey.COST_WILDERNESS_OBELISKS, base.costWildernessObelisks());
+	}
+
+	@Override
+	public int costSeasonalTransports()
+	{
+		return override(ConfigKey.COST_SEASONAL_TRANSPORTS, base.costSeasonalTransports());
+	}
+
+	@Override
+	public int costBankVisit()
+	{
+		return override(ConfigKey.COST_BANK_VISIT, base.costBankVisit());
 	}
 
 	@Override
