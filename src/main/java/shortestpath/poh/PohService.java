@@ -237,7 +237,7 @@ public class PohService
 
 	private final ConfigManager configManager;
 	private final RefreshCoordinator coordinator;
-	private final Map<String, String> keysByNormalizedName = new HashMap<>();
+	private volatile Map<String, String> keysByNormalizedName = Map.of();
 	private String lastSaved = "";
 	private boolean dirty;
 
@@ -302,13 +302,14 @@ public class PohService
 
 	public String apply(String displayInfo)
 	{
-		if (displayInfo == null || displayInfo.isEmpty() || keysByNormalizedName.isEmpty())
+		Map<String, String> keys = keysByNormalizedName;
+		if (displayInfo == null || displayInfo.isEmpty() || keys.isEmpty())
 		{
 			return displayInfo;
 		}
 
 		String base = stripKeyPrefix(displayInfo);
-		String key = keysByNormalizedName.get(normalize(base));
+		String key = keys.get(normalize(base));
 		if (key == null)
 		{
 			return base;
@@ -325,7 +326,7 @@ public class PohService
 	public void dialogOpened()
 	{
 		boolean changed = !keysByNormalizedName.isEmpty();
-		keysByNormalizedName.clear();
+		keysByNormalizedName = Map.of();
 		dirty = true;
 		declare(new PohChange("dialogOpen", changed ? Set.of(Effect.DISPLAY_ONLY) : Set.of()));
 	}
@@ -344,7 +345,9 @@ public class PohService
 		{
 			return;
 		}
-		putMapping(keysByNormalizedName, matcher.group(2), matcher.group(1).toUpperCase(Locale.ROOT));
+		Map<String, String> learned = new HashMap<>(keysByNormalizedName);
+		putMapping(learned, matcher.group(2), matcher.group(1).toUpperCase(Locale.ROOT));
+		keysByNormalizedName = learned;
 		dirty = true;
 		declare(new PohChange("dialogLine", Set.of(Effect.DISPLAY_ONLY)));
 	}
@@ -358,15 +361,17 @@ public class PohService
 	public void loadFromProfile()
 	{
 		dirty = false;
-		keysByNormalizedName.clear();
+		keysByNormalizedName = Map.of();
 		lastSaved = "";
 		if (configManager == null)
 		{
 			return;
 		}
 		String stored = configManager.getRSProfileConfiguration(Settings.CONFIG_GROUP, CONFIG_KEY);
-		deserialize(stored, keysByNormalizedName);
-		lastSaved = serialize(keysByNormalizedName);
+		Map<String, String> loaded = new HashMap<>();
+		deserialize(stored, loaded);
+		keysByNormalizedName = loaded;
+		lastSaved = serialize(loaded);
 		declare(new PohChange("profile", Set.of(Effect.DISPLAY_ONLY)));
 	}
 
@@ -447,13 +452,13 @@ public class PohService
 		{
 			return null;
 		}
-		if (keysByNormalizedName.isEmpty() || parsed.size() >= keysByNormalizedName.size())
+		Map<String, String> current = keysByNormalizedName;
+		if (current.isEmpty() || parsed.size() >= current.size())
 		{
-			Set<Effect> effects = keysByNormalizedName.equals(parsed)
+			Set<Effect> effects = current.equals(parsed)
 				? Set.of()
 				: Set.of(Effect.DISPLAY_ONLY);
-			keysByNormalizedName.clear();
-			keysByNormalizedName.putAll(parsed);
+			keysByNormalizedName = Map.copyOf(parsed);
 			dirty = false;
 			saveToProfile();
 			return new PohChange("dialog", effects);
@@ -464,13 +469,15 @@ public class PohService
 		boolean changed = false;
 		for (Map.Entry<String, String> entry : parsed.entrySet())
 		{
-			if (!entry.getValue().equals(keysByNormalizedName.get(entry.getKey())))
+			if (!entry.getValue().equals(current.get(entry.getKey())))
 			{
 				changed = true;
 				break;
 			}
 		}
-		keysByNormalizedName.putAll(parsed);
+		Map<String, String> merged = new HashMap<>(current);
+		merged.putAll(parsed);
+		keysByNormalizedName = merged;
 		return new PohChange("dialog", changed ? Set.of(Effect.DISPLAY_ONLY) : Set.of());
 	}
 
@@ -542,11 +549,12 @@ public class PohService
 
 	private void saveToProfile()
 	{
-		if (configManager == null || keysByNormalizedName.isEmpty())
+		Map<String, String> keys = keysByNormalizedName;
+		if (configManager == null || keys.isEmpty())
 		{
 			return;
 		}
-		String serialized = serialize(keysByNormalizedName);
+		String serialized = serialize(keys);
 		if (serialized.equals(lastSaved))
 		{
 			return;
