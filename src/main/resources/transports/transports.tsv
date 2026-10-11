@@ -5968,6 +5968,14 @@
 2817 3083 0	2816 3083 0	Open Hardwood Grove Doors 9038						1	
 2817 3084 0	2816 3084 0	Open Hardwood Grove Doors 9039						1	
 									
+# Cooks' Guild (32 Cooking and a chef's hat, cooking cape, max cape or Varrock armour 3/4)									
+3143 3443 0	3143 3444 0	Open Door 24958	32 Cooking	1949=1|20205=1|9801=1|9802=1|MAX_CAPE=1|13106=1|13107=1				1	
+3143 3444 0	3143 3443 0	Open Door 24958						1	
+3144 3449 0	3144 3449 1	Climb-up Staircase 2608						1	
+3144 3449 1	3144 3446 2	Climb-up Staircase 2609						1	
+3144 3446 2	3144 3449 1	Climb-down Staircase 2610						1	
+3144 3449 1	3144 3449 0	Climb-down Staircase 2609						1	
+									
 # Villa Lucens stage									
 1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
 1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
