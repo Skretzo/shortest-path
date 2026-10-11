@@ -6,25 +6,16 @@ import java.awt.Color;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.ItemComposition;
-import net.runelite.api.KeyCode;
-import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
@@ -40,7 +31,6 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
@@ -50,10 +40,9 @@ import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.ColorUtil;
-import net.runelite.client.util.Text;
+import shortestpath.api.MenuVerbs;
+import shortestpath.api.PluginMessageHandler;
 import shortestpath.items.ItemStateService;
 import shortestpath.overlay.BankItemHighlightOverlay;
 import shortestpath.overlay.DebugOverlayPanel;
@@ -69,18 +58,13 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.Arrival;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.Target;
-import shortestpath.pathfinder.Targets;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.sailing.SailingService;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
-import shortestpath.scheduler.QueryResponder;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -95,31 +79,10 @@ import shortestpath.widgets.WidgetGeometry;
 	+
 	"Right click on the world map or shift right click a tile to use", tags = {"pathfinder", "map", "waypoint",
 	"navigation"})
-public class ShortestPathPlugin extends Plugin implements QueryResponder
+public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
 
-	private static final String PLUGIN_MESSAGE_PATH = "path";
-	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
-	private static final String PLUGIN_MESSAGE_START = "start";
-	private static final String PLUGIN_MESSAGE_TARGET = "target";
-	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
-	private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
-	private static final String PLUGIN_MESSAGE_QUERY = "query";
-	private static final String PLUGIN_MESSAGE_RESULT = "result";
-	private static final String PLUGIN_MESSAGE_GET_TARGET = "getTarget";
-	private static final String PLUGIN_MESSAGE_CURRENT_TARGET = "currentTarget";
-	private static final String PLUGIN_MESSAGE_ID = "id";
-	private static final String PLUGIN_MESSAGE_BANK_VISITED = "bankVisited";
-	private static final String PLUGIN_MESSAGE_TARGET_STATUS = "targetStatus";
-	private static final String PLUGIN_MESSAGE_MISSING_ITEMS = "missingItems";
-	private static final String CLEAR = "Clear";
-	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
-	private static final String SET = "Set";
-	private static final String FIND_CLOSEST = "Find closest";
-	private static final String FLASH_ICONS = "Flash icons";
-	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
-	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 
 	@Inject
@@ -132,8 +95,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Inject
 	private ConfigManager configManager;
 	private long activeConfigProfileId;
-	@Inject
-	private EventBus eventBus;
 	@Inject
 	private OverlayManager overlayManager;
 	@Inject
@@ -174,6 +135,10 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	private WidgetGeometry geometry;
 	@Inject
 	private PathAnnotator annotator;
+	@Inject
+	private PluginMessageHandler apiHandler;
+	@Inject
+	private MenuVerbs menuVerbs;
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
@@ -228,7 +193,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		pathfinderConfig.setSpiritTreeService(spiritTrees);
 		pathfinderConfig.setItemStateService(itemState);
 		pathfinderConfig.setSailingService(sailing);
-		scheduler.attach(pathfinderConfig, sailing, this);
+		scheduler.attach(pathfinderConfig, sailing, apiHandler);
 		annotator.attach(pathfinderConfig);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
@@ -398,267 +363,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
-		if (!CONFIG_GROUP.equals(event.getNamespace()))
-		{
-			return;
-		}
-
-		String action = event.getName();
-		if (PLUGIN_MESSAGE_PATH.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			if (data == null)
-			{
-				return;
-			}
-			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
-			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
-			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
-
-			@SuppressWarnings("unchecked")
-			Map<String, Object> payloadOverrides = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
-			if (payloadOverrides != null && !payloadOverrides.isEmpty())
-			{
-				scheduler.withSchedulerLock(() ->
-				{
-					settings.applyOverrides(payloadOverrides);
-					return null;
-				});
-			}
-
-			if (objStart == null && objTarget == null)
-			{
-				return;
-			}
-
-			int start = parseStart(objStart);
-			Targets targets = decodeTargets(objTarget);
-			if (start == WorldPointUtil.UNDEFINED || targets == null)
-			{
-				return;
-			}
-
-			coordinator.targetRequest(start, targets);
-		}
-		else if (PLUGIN_MESSAGE_QUERY.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			if (data == null)
-			{
-				return;
-			}
-			Object id = data.get(PLUGIN_MESSAGE_ID);
-			int start = parseStart(data.get(PLUGIN_MESSAGE_START));
-			Targets targets = decodeTargets(data.get(PLUGIN_MESSAGE_TARGET));
-			if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
-			{
-				postQueryFailure(id, "INVALID");
-				return;
-			}
-			scheduler.queryPath(id, start, targets);
-		}
-		else if (PLUGIN_MESSAGE_GET_TARGET.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			postCurrentTarget(data == null ? null : data.get(PLUGIN_MESSAGE_ID));
-		}
-		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
-		{
-			scheduler.withSchedulerLock(() ->
-			{
-				settings.clearOverrides();
-				return null;
-			});
-			scheduler.setTarget(WorldPointUtil.UNDEFINED);
-		}
-	}
-
-	/**
-	 * The packed start of a plugin message path, defaulting to the player's location.
-	 * {@link WorldPointUtil#UNDEFINED} when there is neither.
-	 */
-	private int parseStart(Object objStart)
-	{
-		int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
-			: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
-		if (start == WorldPointUtil.UNDEFINED && client.getLocalPlayer() != null)
-		{
-			start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
-		}
-		return start;
-	}
-
-	/**
-	 * The targets of a plugin message, with the items each needs on arrival; see
-	 * {@link PluginMessageTargets}. {@link Targets#NONE} when none were given, and {@code null} when
-	 * the value is malformed.
-	 */
-	private static Targets decodeTargets(Object objTarget)
-	{
-		try
-		{
-			return PluginMessageTargets.decode(objTarget);
-		}
-		catch (IllegalArgumentException e)
-		{
-			log.warn("Ignoring plugin message with invalid target: {}", e.getMessage());
-			return null;
-		}
-	}
-
-	@Override
-	public void postQueryResult(Object id, Pathfinder query)
-	{
-		PathfinderResult result = query.getResult();
-		if (result == null)
-		{
-			postQueryFailure(id, "ERROR");
-			return;
-		}
-
-		List<PathStep> steps = result.getPathSteps();
-		List<WorldPoint> path = new ArrayList<>(steps.size());
-		List<Map<String, Object>> transports = new ArrayList<>();
-		for (int i = 0; i < steps.size(); i++)
-		{
-			path.add(WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
-			if (i > 0)
-			{
-				for (Transport transport : transportsForEdge(steps.get(i - 1), steps.get(i)))
-				{
-					Map<String, Object> edge = new HashMap<>();
-					edge.put("origin", WorldPointUtil.unpackWorldPoint(steps.get(i - 1).getPackedPosition()));
-					edge.put("destination", WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
-					edge.put("objectInfo", transport.getObjectInfo());
-					edge.put("displayInfo", formatTransportDisplay(transport));
-					transports.add(edge);
-				}
-			}
-		}
-
-		Map<String, Object> data = new HashMap<>();
-		data.put(PLUGIN_MESSAGE_ID, id);
-		data.put("reached", result.isReached());
-		data.put(PLUGIN_MESSAGE_START, WorldPointUtil.unpackWorldPoint(result.getStart()));
-		data.put(PLUGIN_MESSAGE_TARGET, WorldPointUtil.unpackWorldPoint(result.getTarget()));
-		data.put("path", path);
-		data.put(PLUGIN_MESSAGE_TRANSPORTS, transports);
-		data.put("closest", WorldPointUtil.unpackWorldPoint(result.getClosestReachedPoint()));
-		data.put("cost", result.getPathCost());
-		PathTerminationReason reason = result.getTerminationReason();
-		data.put("reason", reason == null ? null : reason.name());
-		putArrival(data, steps, result.getArrival());
-		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
-	}
-
-	/**
-	 * Adds the item fields of a {@code result} message: whether the path visits a bank, and the
-	 * reached target's item status and the item groups it is missing. A target that needs no items
-	 * has no status.
-	 */
-	private static void putArrival(Map<String, Object> data, List<PathStep> steps, Arrival arrival)
-	{
-		boolean requiresItems = arrival != null && arrival.getTarget().hasRequiredItems();
-		data.put(PLUGIN_MESSAGE_BANK_VISITED, !steps.isEmpty() && steps.get(steps.size() - 1).getBankVisitState() == BankVisitState.BANKED);
-		data.put(PLUGIN_MESSAGE_TARGET_STATUS, requiresItems ? arrival.getStatus().name() : null);
-		data.put(PLUGIN_MESSAGE_MISSING_ITEMS,
-			requiresItems ? PluginMessageTargets.itemIds(arrival.getMissingItems()) : List.of());
-	}
-
-	/**
-	 * Answers a query that produced no result: a malformed message, a plugin shutdown, a
-	 * cancelled search, or a failure while running.
-	 */
-	@Override
-	public void postQueryFailure(Object id, String reason)
-	{
-		Map<String, Object> data = new HashMap<>();
-		data.put(PLUGIN_MESSAGE_ID, id);
-		data.put("reached", false);
-		data.put("path", List.of());
-		data.put(PLUGIN_MESSAGE_TRANSPORTS, List.of());
-		data.put("reason", reason);
-		putArrival(data, List.of(), null);
-		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
-	}
-
-	/**
-	 * Answers a {@code getTarget} plugin message with a {@code currentTarget} message carrying
-	 * the caller's {@code id} and a snapshot of the displayed path's start and targets. This is
-	 * a read-only request: it launches no pathfinding work and mutates no state.
-	 *
-	 * <p>The start/targets/overrides triple is read while holding the scheduler's lock so a
-	 * request arriving mid-search sees one consistent snapshot rather than a torn pair; the
-	 * lock is released before the response hops to the client thread. When no path is set the
-	 * response carries {@code set=false} and no start or target fields.
-	 */
-	private void postCurrentTarget(Object id)
-	{
-		Map<String, Object> data = scheduler.withSchedulerLock(() ->
-		{
-			ActiveSearch pathfinder = scheduler.getActiveSearch();
-			int start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
-			Targets targets = (pathfinder == null) ? Targets.NONE : pathfinder.getTargets();
-			Map<String, Object> overrides =
-				settings.rawOverrides().isEmpty() ? null : new HashMap<>(settings.rawOverrides());
-
-			Map<String, Object> message = new HashMap<>();
-			message.put(PLUGIN_MESSAGE_ID, id);
-			message.put("set", !targets.isEmpty());
-			if (!targets.isEmpty())
-			{
-				message.put(PLUGIN_MESSAGE_START,
-					start == WorldPointUtil.UNDEFINED ? null : WorldPointUtil.unpackWorldPoint(start));
-				List<Object> encodedTargets = new ArrayList<>(targets.size());
-				for (Target target : targets)
-				{
-					encodedTargets.add(PluginMessageTargets.encode(target));
-				}
-				message.put(PLUGIN_MESSAGE_TARGET, encodedTargets);
-			}
-			if (overrides != null)
-			{
-				message.put(PLUGIN_MESSAGE_CONFIG_OVERRIDE, overrides);
-			}
-			return message;
-		});
-		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_CURRENT_TARGET, data)));
-	}
-
-	@Override
-	public void postPluginMessages()
-	{
-		ActiveSearch pathfinder = scheduler.getActiveSearch();
-		if (pathfinder == null)
-		{
-			return;
-		}
-		if (settings.effective().postTransports())
-		{
-			Map<String, Object> data = new HashMap<>();
-			List<WorldPoint> transportOrigins = new ArrayList<>();
-			List<WorldPoint> transportDestinations = new ArrayList<>();
-			List<String> transportObjectInfos = new ArrayList<>();
-			List<String> transportDisplayInfos = new ArrayList<>();
-			List<PathStep> currentPath = pathfinder.getPath();
-			for (int i = 1; i < currentPath.size(); i++)
-			{
-				PathStep currentStep = currentPath.get(i - 1);
-				PathStep nextStep = currentPath.get(i);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
-					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
-					transportObjectInfos.add(transport.getObjectInfo());
-					transportDisplayInfos.add(formatTransportDisplay(transport));
-				}
-			}
-			data.put("origin", transportOrigins);
-			data.put("destination", transportDestinations);
-			data.put("objectInfo", transportObjectInfos);
-			data.put("displayInfo", transportDisplayInfos);
-			eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_TRANSPORTS, data));
-		}
+		apiHandler.onPluginMessage(event);
 	}
 
 	@Subscribe
@@ -700,91 +405,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
-		if (client.isKeyPressed(KeyCode.KC_SHIFT)
-			&& event.getType() == MenuAction.WALK.getId())
-		{
-			addMenuEntry(event, SET, TARGET, 1);
-			ActiveSearch pathfinder = scheduler.getActiveSearch();
-			if (pathfinder != null)
-			{
-				if (!pathfinder.getTargets().isEmpty())
-				{
-					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
-				}
-				for (int target : pathfinder.getTargets().points())
-				{
-					if (target != WorldPointUtil.UNDEFINED)
-					{
-						addMenuEntry(event, SET, START, 1);
-						break;
-					}
-				}
-				int selectedTile = getSelectedWorldPoint();
-				List<PathStep> path;
-				if ((path = pathfinder.getPath()) != null)
-				{
-					for (PathStep pathStep : path)
-					{
-						if (pathStep.getPackedPosition() == selectedTile)
-						{
-							addMenuEntry(event, CLEAR, PATH, 1);
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-
-		if (map != null)
-		{
-			if (map.getBounds().contains(
-				client.getMouseCanvasPosition().getX(),
-				client.getMouseCanvasPosition().getY()))
-			{
-				addMenuEntry(event, SET, TARGET, 0);
-				ActiveSearch pathfinder = scheduler.getActiveSearch();
-				if (pathfinder != null)
-				{
-					if (!pathfinder.getTargets().isEmpty())
-					{
-						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
-					}
-					for (int target : pathfinder.getTargets().points())
-					{
-						if (target != WorldPointUtil.UNDEFINED)
-						{
-							addMenuEntry(event, SET, START, 0);
-							addMenuEntry(event, CLEAR, PATH, 0);
-						}
-					}
-				}
-			}
-			if (event.getOption().equals(FLASH_ICONS) && pathfinderConfig.hasDestination(simplify(event.getTarget())))
-			{
-				addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
-			}
-		}
-
-		final Shape minimap = getMinimapClipArea();
-
-		if (minimap != null && scheduler.getActiveSearch() != null
-			&& minimap.contains(
-			client.getMouseCanvasPosition().getX(),
-			client.getMouseCanvasPosition().getY()))
-		{
-			addMenuEntry(event, CLEAR, PATH, 0);
-		}
-
-		if (minimap != null && scheduler.getActiveSearch() != null
-			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
-			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
-		{
-			addMenuEntry(event, CLEAR, PATH, 1);
-		}
+		menuVerbs.onMenuEntryAdded(event);
 	}
 
 	@Subscribe
@@ -972,45 +593,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		return annotator.getPohExitInfo(destination, path, currentIndex);
 	}
 
-	private String simplify(String text)
-	{
-		return Text.removeTags(text).toLowerCase()
-			.replaceAll("[^a-zA-Z ]", "")
-			.replace(" ", "_")
-			.replace("__", "_");
-	}
-
-	private void onMenuOptionClicked(MenuEntry entry)
-	{
-		ActiveSearch pathfinder = scheduler.getActiveSearch();
-		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
-		{
-			scheduler.setTarget(getSelectedWorldPoint());
-		}
-		else if (entry.getOption().equals(SET) && pathfinder != null && entry.getTarget().equals(TARGET +
-			ColorUtil.wrapWithColorTag(" " + (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET)))
-		{
-			scheduler.setTarget(getSelectedWorldPoint(), true);
-		}
-		else if (entry.getOption().equals(SET) && entry.getTarget().equals(START))
-		{
-			scheduler.setStart(getSelectedWorldPoint());
-		}
-		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
-		{
-			scheduler.setTarget(WorldPointUtil.UNDEFINED);
-		}
-		else if (entry.getOption().equals(FIND_CLOSEST))
-		{
-			scheduler.setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
-		}
-	}
-
-	private int getSelectedWorldPoint()
-	{
-		return geometry.getSelectedWorldPoint();
-	}
-
 	public int calculateMapPoint(int pointX, int pointY)
 	{
 		return geometry.calculateMapPoint(pointX, pointY);
@@ -1024,25 +606,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	public int mapWorldPointToGraphicsPointY(int packedWorldPoint)
 	{
 		return geometry.mapWorldPointToGraphicsPointY(packedWorldPoint);
-	}
-
-	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
-	{
-		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
-
-		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
-		{
-			return;
-		}
-
-		client.getMenu().createMenuEntry(position)
-			.setOption(option)
-			.setTarget(target)
-			.setParam0(event.getActionParam0())
-			.setParam1(event.getActionParam1())
-			.setIdentifier(event.getIdentifier())
-			.setType(MenuAction.RUNELITE)
-			.onClick(this::onMenuOptionClicked);
 	}
 
 	public Shape getMinimapClipArea()
