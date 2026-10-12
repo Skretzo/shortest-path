@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import shortestpath.ItemVariations;
@@ -73,6 +74,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 
 		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
+		boolean lumbridgeEliteDone = client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
 
 		for (Transport transport : transports)
 		{
@@ -83,6 +85,13 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 				&& !TransportType.QUETZAL_WHISTLE.equals(type))
 			{
 				continue;
+			}
+			// The fairy ring staff requirement lives outside the transport's item
+			// requirements, so highlight it here: the staff only works equipped, and
+			// the Lumbridge Elite diary removes the requirement entirely.
+			if (TransportType.FAIRY_RING.equals(type) && !lumbridgeEliteDone)
+			{
+				addItemIds(itemsToHighlight, ItemVariations.DRAMEN_STAFF.getIds());
 			}
 			if (transport.getItemRequirements() == null || transport.getItemRequirements().size() == 0)
 			{
