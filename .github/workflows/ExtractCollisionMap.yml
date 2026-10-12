@@ -7,34 +7,47 @@ on:
     - cron: '20 23 * * 3' # Every Wednesday at 23:20 UTC
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: collision-map-extract
+  cancel-in-progress: false
+
 env:
   KAHIP_VERSION: "3.23"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Checkout tooling repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: osrs-pathfinding/shortest-path-tooling
           path: tooling
 
       - name: Checkout runelite
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: runelite/runelite
           path: runelite
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
-          distribution: "adopt"
+          distribution: "temurin"
           java-version: "11"
+
+      # Caches the Gradle wrapper and dependencies shared by the runelite
+      # build, the tooling routingCuts task and the plugin test gate.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Get the cache
         run: |
@@ -42,10 +55,11 @@ jobs:
 
       # Replace the following in the key file
       # Replace the words "mapsquare" with "region" and "key" with "keys" in the keys.json file
+      # The patterns are quote-delimited so they cannot match twice ("keys" -> "keyss")
       - name: Patch the key file
         run: |
-          sed -i 's/mapsquare/region/g' keys.json
-          sed -i 's/key/keys/g' keys.json
+          sed -i 's/"mapsquare"/"region"/g' keys.json
+          sed -i 's/"key"/"keys"/g' keys.json
 
       - name: Insert CollisionMapDumper.java
         run: |
@@ -80,7 +94,7 @@ jobs:
       # regenerated with it and committed in the same commit.
       - name: Restore KaHIP
         id: kahip-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/kahip-bin
           key: kahip-${{ env.KAHIP_VERSION }}-${{ runner.os }}
@@ -103,12 +117,29 @@ jobs:
             -PkahipNodeSeparator="$RUNNER_TEMP/kahip-bin/node_separator" \
             -ProutingCutsOutput="$GITHUB_WORKSPACE/src/main/resources/routing-cuts.bin"
 
+      # Gate: a corrupt or truncated export must never reach master. The zip
+      # integrity check catches a broken archive; the test suite below loads
+      # collision-map.zip and routing-cuts.bin from the real resources, so a
+      # semantically broken map fails the job before the commit step runs.
+      - name: Verify generated artifacts
+        run: |
+          unzip -t src/main/resources/collision-map.zip > /dev/null
+          test -s src/main/resources/routing-cuts.bin
+          ls -lh src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin
+
+      - name: Build and test plugin with new data
+        run: ./gradlew jar test --stacktrace
+
       - name: Clean up the directories
         run: |
           rm -rf runelite cache output cache.jar keys.json cache.zip tooling
 
+      # `add` is an explicit pathspec so the commit can only ever contain the
+      # two generated artifacts, regardless of what else is left in the
+      # workspace.
       - name: Commit changes
-        uses: EndBug/add-and-commit@v10
+        uses: EndBug/add-and-commit@v11
         with:
           default_author: github_actions
+          add: "src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin"
           message: "Update collision map"
