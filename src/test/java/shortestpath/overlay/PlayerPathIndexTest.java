@@ -6,13 +6,14 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 
 public class PlayerPathIndexTest
 {
 	private static PathStep step(int x, int y, int plane)
 	{
-		return new PathStep(WorldPointUtil.packWorldPoint(x, y, plane), false);
+		return new PathStep(WorldPointUtil.packWorldPoint(x, y, plane), BankVisitState.CARRIED);
 	}
 
 	private static int player(int x, int y, int plane)
