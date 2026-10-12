@@ -6087,3 +6087,9 @@
 2732 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
 2733 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
 									
+# Civitas illa Fortis, Alchemical Society basement									
+1388 2918 0	1388 9313 0	Climb-down Staircase 54946						1	
+1388 9313 0	1388 2918 0	Climb-up Staircase 54945						1	
+1389 2918 0	1389 9313 0	Climb-down Staircase 54946						1	
+1389 9313 0	1389 2918 0	Climb-up Staircase 54945						1	
+									
