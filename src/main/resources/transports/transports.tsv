@@ -6043,3 +6043,7 @@
 3151 4589 1	3152 4589 1	Search Wall 20596						1	
 3152 4589 1	3151 4589 1	Search Wall 20596						1	
 									
+# God Wars Dungeon: swimming the river to Zamorak's Fortress (70 Hitpoints)									
+2885 5333 2	2885 5344 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
+2885 5344 2	2885 5333 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
+									
