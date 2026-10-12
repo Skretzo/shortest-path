@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,9 @@ public class GoalStatesTest
 	@BeforeClass
 	public static void config()
 	{
-		config = new TestPathfinderConfig(mock(Client.class), new TestShortestPathConfig());
+		Client client = mock(Client.class);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		config = new TestPathfinderConfig(client, new TestShortestPathConfig());
 		config.refresh();
 	}
 
@@ -129,7 +132,9 @@ public class GoalStatesTest
 	public void filteredTargetsComeBackWithTheirItems()
 	{
 		WildernessSettings settings = new WildernessSettings();
-		PathfinderConfig filtering = new TestPathfinderConfig(mock(Client.class), settings);
+		Client filteringClient = mock(Client.class);
+		when(filteringClient.getClientThread()).thenReturn(Thread.currentThread());
+		PathfinderConfig filtering = new TestPathfinderConfig(filteringClient, settings);
 		int wilderness = WorldPointUtil.packWorldPoint(3100, 3600, 0);
 		Targets targets = Targets.of(List.of(spadeAt(wilderness), Target.at(WALKABLE)));
 
