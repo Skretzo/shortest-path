@@ -6141,3 +6141,10 @@
 2949 3508 0	1975 6220 3	Enter Cave entrance 40887						2	
 1927 6223 0	1963 6221 3	Squeeze-through Crevice 40889						2	
 									
+# Ruins of Camdozaal (Below Ice Mountain)									
+2998 3493 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2	
+2998 3494 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2	
+2998 3495 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2	
+2953 5762 0	2998 3494 0	Exit Ruins Exit 41446			Below Ice Mountain			2	
+2952 5762 0	2998 3494 0	Exit Ruins Exit 41446			Below Ice Mountain			2	
+									
