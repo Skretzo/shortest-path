@@ -5022,9 +5022,14 @@
 # Watchtower									
 2549 3112 2	2549 3112 1	Climb-down Ladder 2797						2	
 2548 3111 2	2549 3112 1	Climb-down Ladder 2797						2	
-2548 3111 1	2549 3112 2	Climb-up Ladder 2796						2	
-2550 3111 1	2549 3112 2	Climb-up Ladder 2796						2	
-2549 3112 1	2549 3112 2	Climb-up Ladder 2796						2	
+2933 4712 2	2549 3112 1	Climb-down Ladder 2797						2	
+2932 4711 2	2549 3112 1	Climb-down Ladder 2797						2	
+2548 3111 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2548 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
+2550 3111 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2550 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
+2549 3112 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2549 3112 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
 2545 3111 1	2544 3112 0	Climb-down Ladder 17122						2	
 2544 3112 1	2544 3112 0	Climb-down Ladder 17122						2	
 2543 3111 1	2544 3112 0	Climb-down Ladder 17122						2	
@@ -5943,3 +5948,45 @@
 # Villa Lucens									
 									
 1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
+# Fisher Realm, Sir Percival's castle									
+2633 4682 0	2634 4682 1	Climb-up Staircase 16671						1	
+2635 4681 0	2634 4682 1	Climb-up Staircase 16671						1	
+2634 4682 1	2635 4681 0	Climb-down Staircase 16673						1	
+2640 4681 1	2640 4685 2	Climb-up Staircase 15645						1	
+2640 4685 2	2640 4681 1	Climb-down Staircase 15648						1	
+2647 4684 0	2649 4685 1	Climb-up Staircase 16671						1	
+2651 4685 1	2651 4685 2	Climb-up Ladder 16683						2	
+2651 4685 2	2651 4685 1	Climb-down Ladder 16679						2	
+2649 4685 1	2650 4684 0	Climb-down Staircase 16673						1	
+									
+# Cooks' Guild (32 Cooking and a chef's hat, cooking cape, max cape or Varrock armour 3/4)									
+3143 3443 0	3143 3444 0	Open Door 24958	32 Cooking	1949=1|20205=1|9801=1|9802=1|MAX_CAPE=1|13106=1|13107=1				1	
+3143 3444 0	3143 3443 0	Open Door 24958						1	
+3144 3449 0	3144 3449 1	Climb-up Staircase 2608						1	
+3144 3449 1	3144 3446 2	Climb-up Staircase 2609						1	
+3144 3446 2	3144 3449 1	Climb-down Staircase 2610						1	
+3144 3449 1	3144 3449 0	Climb-down Staircase 2609						1	
+									
+# Arceuus Library stairs (the railings only lead down)									
+1617 3795 0	1610 3795 1	Climb Stairs 27853						2	
+1617 3796 0	1610 3796 1	Climb Stairs 27854						2	
+1610 3795 1	1617 3795 0	Climb Stairs 27855						2	
+1610 3796 1	1617 3796 0	Climb Stairs 27856						2	
+1617 3826 0	1610 3826 1	Climb Stairs 27853						2	
+1617 3827 0	1610 3827 1	Climb Stairs 27854						2	
+1610 3826 1	1617 3826 0	Climb Stairs 27855						2	
+1610 3827 1	1617 3827 0	Climb Stairs 27856						2	
+1644 3818 0	1644 3825 1	Climb Stairs 27853						2	
+1645 3818 0	1645 3825 1	Climb Stairs 27854						2	
+1644 3825 1	1644 3818 0	Climb Stairs 27855						2	
+1645 3825 1	1645 3818 0	Climb Stairs 27856						2	
+1615 3818 1	1608 3818 2	Climb Stairs 27851						2	
+1615 3819 1	1608 3818 2	Climb Stairs 27851						2	
+1608 3818 2	1615 3818 1	Climb Stairs 27852						2	
+1621 3791 1	1621 3798 2	Climb Stairs 27851						2	
+1622 3791 1	1621 3798 2	Climb Stairs 27851						2	
+1621 3798 2	1621 3791 1	Climb Stairs 27852						2	
+1643 3828 1	1650 3828 2	Climb Stairs 27851						2	
+1643 3829 1	1650 3828 2	Climb Stairs 27851						2	
+1650 3828 2	1643 3828 1	Climb Stairs 27852						2	
+									
