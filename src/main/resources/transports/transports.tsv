@@ -3743,6 +3743,14 @@
 2721 4914 0	2720 4884 2	Enter Door 6310						1	
 2720 4914 0	2720 4884 2	Enter Door 6310						1	
 									
+# Uzer Mastaba									
+3850 4578 0	3485 3023 0	Climb Stairs 50202				11479>3		1	
+3485 3023 0	3850 4578 0	Enter Entry 50201				11479>3		1	
+3886 4598 0	3884 4598 0	Open Imposing doors 50211				11479>9		1	
+3884 4598 0	3886 4598 0	Open Imposing doors 50211				11479>9		1	
+3861 4595 0	3892 4714 0	Climb Stairs 55785				11479>11		1	
+3892 4714 0	3861 4595 0	Climb Stairs 55786				11479>11		1	
+									
 # River Elid Dungeon									
 3371 3129 0	3349 9536 0	Use Rope -> Root 6382							
 3349 9536 0	3371 3129 0	Leave Cave exit 10417							
@@ -5022,9 +5030,14 @@
 # Watchtower									
 2549 3112 2	2549 3112 1	Climb-down Ladder 2797						2	
 2548 3111 2	2549 3112 1	Climb-down Ladder 2797						2	
-2548 3111 1	2549 3112 2	Climb-up Ladder 2796						2	
-2550 3111 1	2549 3112 2	Climb-up Ladder 2796						2	
-2549 3112 1	2549 3112 2	Climb-up Ladder 2796						2	
+2933 4712 2	2549 3112 1	Climb-down Ladder 2797						2	
+2932 4711 2	2549 3112 1	Climb-down Ladder 2797						2	
+2548 3111 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2548 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
+2550 3111 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2550 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
+2549 3112 1	2549 3112 2	Climb-up Ladder 2796					212<14	2	
+2549 3112 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2	
 2545 3111 1	2544 3112 0	Climb-down Ladder 17122						2	
 2544 3112 1	2544 3112 0	Climb-down Ladder 17122						2	
 2543 3111 1	2544 3112 0	Climb-down Ladder 17122						2	
@@ -5943,3 +5956,201 @@
 # Villa Lucens									
 									
 1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
+# Fisher Realm, Sir Percival's castle									
+2633 4682 0	2634 4682 1	Climb-up Staircase 16671						1	
+2635 4681 0	2634 4682 1	Climb-up Staircase 16671						1	
+2634 4682 1	2635 4681 0	Climb-down Staircase 16673						1	
+2640 4681 1	2640 4685 2	Climb-up Staircase 15645						1	
+2640 4685 2	2640 4681 1	Climb-down Staircase 15648						1	
+2647 4684 0	2649 4685 1	Climb-up Staircase 16671						1	
+2651 4685 1	2651 4685 2	Climb-up Ladder 16683						2	
+2651 4685 2	2651 4685 1	Climb-down Ladder 16679						2	
+2649 4685 1	2650 4684 0	Climb-down Staircase 16673						1	
+									
+# Cooks' Guild (32 Cooking and a chef's hat, cooking cape, max cape or Varrock armour 3/4)									
+3143 3443 0	3143 3444 0	Open Door 24958	32 Cooking	1949=1|20205=1|9801=1|9802=1|MAX_CAPE=1|13106=1|13107=1				1	
+3143 3444 0	3143 3443 0	Open Door 24958						1	
+3144 3449 0	3144 3449 1	Climb-up Staircase 2608						1	
+3144 3449 1	3144 3446 2	Climb-up Staircase 2609						1	
+3144 3446 2	3144 3449 1	Climb-down Staircase 2610						1	
+3144 3449 1	3144 3449 0	Climb-down Staircase 2609						1	
+									
+# Arceuus Library stairs (the railings only lead down)									
+1617 3795 0	1610 3795 1	Climb Stairs 27853						2	
+1617 3796 0	1610 3796 1	Climb Stairs 27854						2	
+1610 3795 1	1617 3795 0	Climb Stairs 27855						2	
+1610 3796 1	1617 3796 0	Climb Stairs 27856						2	
+1617 3826 0	1610 3826 1	Climb Stairs 27853						2	
+1617 3827 0	1610 3827 1	Climb Stairs 27854						2	
+1610 3826 1	1617 3826 0	Climb Stairs 27855						2	
+1610 3827 1	1617 3827 0	Climb Stairs 27856						2	
+1644 3818 0	1644 3825 1	Climb Stairs 27853						2	
+1645 3818 0	1645 3825 1	Climb Stairs 27854						2	
+1644 3825 1	1644 3818 0	Climb Stairs 27855						2	
+1645 3825 1	1645 3818 0	Climb Stairs 27856						2	
+1615 3818 1	1608 3818 2	Climb Stairs 27851						2	
+1615 3819 1	1608 3818 2	Climb Stairs 27851						2	
+1608 3818 2	1615 3818 1	Climb Stairs 27852						2	
+1621 3791 1	1621 3798 2	Climb Stairs 27851						2	
+1622 3791 1	1621 3798 2	Climb Stairs 27851						2	
+1621 3798 2	1621 3791 1	Climb Stairs 27852						2	
+1643 3828 1	1650 3828 2	Climb Stairs 27851						2	
+1643 3829 1	1650 3828 2	Climb Stairs 27851						2	
+1650 3828 2	1643 3828 1	Climb Stairs 27852						2	
+									
+									
+# Wilderness magic axe hut (lockpick and 23 Thieving)									
+3190 3957 0	3190 3958 0	Pick-lock Door 11726	23 Thieving	1523=1				1	
+3190 3958 0	3190 3957 0	Open Door 11726						1	
+3191 3963 0	3191 3962 0	Pick-lock Door 11726	23 Thieving	1523=1				1	
+3191 3962 0	3191 3963 0	Open Door 11726						1	
+									
+# Lumbridge Swamp shed									
+3201 3169 0	3202 3169 0	Open Door 2406						1	
+3202 3169 0	3201 3169 0	Open Door 2406						1	
+									
+# Villa Lucens stage									
+1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
+1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
+									
+# Tai Bwo Wannai hardwood grove (100 trading sticks, free with Karamja elite diary)									
+2816 3083 0	2817 3083 0	Open Hardwood Grove Doors 9038		UNLOCK_KARAMJA_ELITE=1||6306=100				1	
+2816 3084 0	2817 3084 0	Open Hardwood Grove Doors 9039		UNLOCK_KARAMJA_ELITE=1||6306=100				1	
+2817 3083 0	2816 3083 0	Open Hardwood Grove Doors 9038						1	
+2817 3084 0	2816 3084 0	Open Hardwood Grove Doors 9039						1	
+									
+# Tarn's Lair, wall trap passage (run past or search to disarm) and additional passageways									
+3148 4556 0	3147 4556 0	Search Wall 20594						1	
+3147 4556 0	3148 4556 0	Search Wall 20594						1	
+3149 4664 0	3149 4658 0	Enter Passageway 16130						2	
+3149 4658 0	3149 4664 0	Enter Passageway 16129						2	
+3151 4597 1	3155 4597 1	Enter Passageway 20534						2	
+3155 4597 1	3151 4597 1	Enter Passageway 20533						2	
+3149 4604 1	3150 4604 1	Search Wall 20590						1	
+3150 4604 1	3149 4604 1	Search Wall 20590						1	
+3155 4592 1	3155 4593 1	Search Wall 20590						1	
+3155 4593 1	3155 4592 1	Search Wall 20590						1	
+3154 4604 1	3155 4604 1	Search Wall 20590						1	
+3155 4604 1	3154 4604 1	Search Wall 20590						1	
+3156 4596 1	3156 4597 1	Search Wall 20590						1	
+3156 4597 1	3156 4596 1	Search Wall 20590						1	
+3145 4600 0	3146 4600 0	Search Wall 20594						1	
+3146 4600 0	3145 4600 0	Search Wall 20594						1	
+3149 4595 0	3149 4596 0	Search Wall 20594						1	
+3149 4596 0	3149 4595 0	Search Wall 20594						1	
+3146 4589 1	3147 4589 1	Search Wall 20596						1	
+3147 4589 1	3146 4589 1	Search Wall 20596						1	
+3151 4589 1	3152 4589 1	Search Wall 20596						1	
+3152 4589 1	3151 4589 1	Search Wall 20596						1	
+									
+# God Wars Dungeon: swimming the river to Zamorak's Fortress (70 Hitpoints)									
+2885 5333 2	2885 5344 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
+2885 5344 2	2885 5333 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
+									
+# Kourend Castle, first to second floor									
+1618 3659 1	1617 3660 2	Climb-up Staircase 12536						1	
+1617 3660 2	1617 3660 1	Climb-down Staircase 12538						1	
+1615 3687 1	1616 3686 2	Climb-up Staircase 12536						1	
+1616 3686 2	1615 3687 1	Climb-down Staircase 12538						1	
+									
+# Kourend Castle, ground to first floor									
+1618 3665 0	1614 3665 1	Climb-up Staircase 11807						1	
+1614 3665 1	1618 3665 0	Climb-down Staircase 11799						1	
+1618 3680 0	1614 3680 1	Climb-up Staircase 11807						1	
+1614 3680 1	1618 3680 0	Climb-down Staircase 11799						1	
+									
+# Legends' Guild, top floor ladder									
+2726 3375 1	2726 3375 2	Climb-up Ladder 16683						2	
+2726 3375 2	2726 3375 1	Climb-down Ladder 16679						2	
+2724 3375 1	2724 3375 2	Climb-up Ladder 16683						2	
+2724 3375 2	2724 3375 1	Climb-down Ladder 16679						2	
+2725 3374 1	2725 3374 2	Climb-up Ladder 16683						2	
+2725 3374 2	2725 3374 1	Climb-down Ladder 16679						2	
+2725 3376 1	2725 3376 2	Climb-up Ladder 16683						2	
+2725 3376 2	2725 3376 1	Climb-down Ladder 16679						2	
+2731 3375 1	2731 3375 2	Climb-up Ladder 16683						2	
+2731 3375 2	2731 3375 1	Climb-down Ladder 16679						2	
+2732 3374 1	2732 3374 2	Climb-up Ladder 16683						2	
+2732 3374 2	2732 3374 1	Climb-down Ladder 16679						2	
+2732 3376 1	2732 3376 2	Climb-up Ladder 16683						2	
+2732 3376 2	2732 3376 1	Climb-down Ladder 16679						2	
+2733 3375 1	2733 3375 2	Climb-up Ladder 16683						2	
+2733 3375 2	2733 3375 1	Climb-down Ladder 16679						2	
+									
+# Legends' Guild, basement									
+2723 3375 0	2727 9774 0	Climb-down Staircase 16664						2	
+2727 9774 0	2723 3374 0	Climb-up Staircase 16665						2	
+									
+# Legends' Guild, ground to first floor									
+2732 3376 0	2732 3380 1	Climb-up Staircase 15653						1	
+2733 3376 0	2732 3380 1	Climb-up Staircase 15653						1	
+2732 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
+2733 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
+									
+# Civitas illa Fortis, Alchemical Society basement									
+1388 2918 0	1388 9313 0	Climb-down Staircase 54946						1	
+1388 9313 0	1388 2918 0	Climb-up Staircase 54945						1	
+1389 2918 0	1389 9313 0	Climb-down Staircase 54946						1	
+1389 9313 0	1389 2918 0	Climb-up Staircase 54945						1	
+									
+# Woodcutting Guild Ent dungeon: the cave, the vine back up, and the roots inside									
+1606 3508 0	1596 9900 0	Enter Cave 28855						2	
+1596 9900 0	1606 3508 0	Climb Vine 28856						2	
+1551 9880 0	1551 9882 0	Step-over Root 26721						2	
+1551 9882 0	1551 9880 0	Step-over Root 26721						2	
+1552 9880 0	1552 9882 0	Step-over Root 26720						2	
+1552 9882 0	1552 9880 0	Step-over Root 26720						2	
+1554 9871 0	1556 9871 0	Step-over Root 26720						2	
+1556 9871 0	1554 9871 0	Step-over Root 26720						2	
+1555 9870 0	1555 9872 0	Step-over Root 26720						2	
+1555 9872 0	1555 9870 0	Step-over Root 26720						2	
+1588 9899 0	1590 9899 0	Step-over Root 26721						2	
+1590 9899 0	1588 9899 0	Step-over Root 26721						2	
+1588 9900 0	1590 9900 0	Step-over Root 26720						2	
+1590 9900 0	1588 9900 0	Step-over Root 26720						2	
+									
+# Falador Park mole hills into the Mole Hole (spade)									
+2984 3387 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3	
+2987 3387 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3	
+2989 3378 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3	
+2996 3377 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3	
+2999 3375 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3	
+3005 3376 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3	
+1752 5137 0	2985 3316 0	Climb Rope 12230						2	
+									
+# Prifddinas: Gauntlet Portal into the Gauntlet lobby									
+3228 6117 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2	
+3228 6116 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2	
+3032 6125 1	3228 6116 0	Channel Teleport Platform 36082			Song of the Elves			2	
+									
+# Mor Ul Rek: hot vent doors (permanent access after showing a fire cape, or a carried cape for first entry)									
+2436 5121 0	2436 5119 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2436 5119 0	2436 5121 0	Pass Hot vent door 30266						1	
+2457 5120 0	2457 5118 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2457 5118 0	2457 5120 0	Pass Hot vent door 30266						1	
+2474 5138 0	2474 5136 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2474 5136 0	2474 5138 0	Pass Hot vent door 30266						1	
+2493 5174 0	2495 5174 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2495 5174 0	2493 5174 0	Pass Hot vent door 30266						1	
+2494 5157 0	2496 5157 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2496 5157 0	2494 5157 0	Pass Hot vent door 30266						1	
+									
+# Goblin Village sled racing, Scrubfoot's cave									
+2949 3507 0	1975 6220 3	Enter Cave entrance 40887						2	
+1975 6220 3	2949 3508 0	Exit Cave exit 40888						2	
+2949 3508 0	1975 6220 3	Enter Cave entrance 40887						2	
+1927 6223 0	1963 6221 3	Squeeze-through Crevice 40889						2	
+									
+# Ruins of Camdozaal (Below Ice Mountain)									
+2998 3493 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2	
+2998 3494 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2	
+2998 3495 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2	
+2953 5762 0	2998 3494 0	Exit Ruins Exit 41446			Below Ice Mountain			2	
+2952 5762 0	2998 3494 0	Exit Ruins Exit 41446			Below Ice Mountain			2	
+									
+# The Darkfrost: the slope down into the Hueycoatl's public arena									
+1524 3290 0	1519 3289 0	Slide Slope 55234						3	
+									
+# Corporeal Beast cave: entrance and exit to the Wilderness									
+2964 4382 2	3206 3681 0	Exit Cave exit 679						2	
+3206 3681 0	2964 4382 2	Enter Cave 678						2	
