@@ -5943,3 +5943,18 @@
 # Villa Lucens									
 									
 1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
+									
+# Wilderness magic axe hut (lockpick and 23 Thieving)									
+3190 3957 0	3190 3958 0	Pick-lock Door 11726	23 Thieving	1523=1				1	
+3190 3958 0	3190 3957 0	Open Door 11726						1	
+3191 3963 0	3191 3962 0	Pick-lock Door 11726	23 Thieving	1523=1				1	
+3191 3962 0	3191 3963 0	Open Door 11726						1	
+									
+# Lumbridge Swamp shed									
+3201 3169 0	3202 3169 0	Open Door 2406						1	
+3202 3169 0	3201 3169 0	Open Door 2406						1	
+									
+# Villa Lucens stage									
+1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
+1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
+									
