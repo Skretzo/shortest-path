@@ -28,8 +28,8 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.TestItemChange;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.Targets;
+import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.TestPohChange;
 import shortestpath.sailing.TestSailingChange;
 import shortestpath.settings.ConfigChange;
@@ -375,18 +375,20 @@ public class RefreshCoordinatorTest
 	@Test
 	public void sailingSearchReachedItsTargetClearsThePath()
 	{
-		// A sailing path is reached once the hull covers the target, so the
-		// search's own verdict clears it — the walking target-distance check
-		// is skipped entirely.
+		// A sailing path arrives once the live boat's hull covers a target —
+		// the search's own verdict is not trusted, so the coordinator checks
+		// the boat's position and heading supplied by the shell.
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(1000, 1000, 0);
+		int boat = WorldPointUtil.packWorldPoint(3200, 3201, 0);
+		SailingPathfinder sailingSearch = mock(SailingPathfinder.class);
+		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
-		PathfinderResult result = mock(PathfinderResult.class);
-		when(search.isSailing()).thenReturn(true);
-		when(search.getResult()).thenReturn(result);
-		when(result.isReached()).thenReturn(true);
+		when(sailingSearch.isSailing()).thenReturn(true);
+		when(config.reachedDistance()).thenReturn(10);
+		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(target);
 
-		coordinator.offRouteTick(20, location);
+		coordinator.offRouteTick(20, location, boat, 8);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 		verify(scheduler, never()).isNearPath(anyInt());
@@ -395,21 +397,22 @@ public class RefreshCoordinatorTest
 	}
 
 	@Test
-	public void sailingSearchNotReachedFallsThroughToTheDistanceCheck()
+	public void sailingSearchNotArrivedFallsThroughToTheDistanceCheck()
 	{
-		// Without a reached verdict the sailing branch declines and the
-		// ordinary target-distance check decides — here the player is close
-		// enough to the target to clear.
+		// Without hull coverage of a target the sailing branch declines and
+		// the ordinary target-distance check decides — here the player is
+		// close enough to the target to clear.
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(3200, 3201, 0);
+		int boat = WorldPointUtil.packWorldPoint(1500, 1500, 0);
+		SailingPathfinder sailingSearch = mock(SailingPathfinder.class);
+		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
-		PathfinderResult result = mock(PathfinderResult.class);
-		when(search.isSailing()).thenReturn(true);
-		when(search.getResult()).thenReturn(result);
-		when(result.isReached()).thenReturn(false);
+		when(sailingSearch.isSailing()).thenReturn(true);
 		when(config.reachedDistance()).thenReturn(10);
+		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(WorldPointUtil.UNDEFINED);
 
-		coordinator.offRouteTick(20, location);
+		coordinator.offRouteTick(20, location, boat, 8);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
