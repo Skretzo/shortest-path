@@ -1,9 +1,9 @@
 package shortestpath.transport.requirement;
 
 /**
- * Player-declared unlock states that the game does not expose to the client,
+ * Detected or player-declared unlock states,
  * referenced by {@code UNLOCK_<NAME>=1} tokens in transport Items cells.
- * An unlock branch satisfies a requirement by declaration alone: it never
+ * An unlock branch satisfies a requirement through account state alone: it never
  * contributes items and is never covered by inventory, staff or offhand ids.
  * An unlock alternative inside an OR group acts as a relief
  * ({@code AXE=1|UNLOCK_CANOE_AXE=1}), while an ANDed pure-unlock requirement
@@ -25,6 +25,11 @@ public enum Unlock
 	 * Xeric's Honour, unlocking the talisman teleports.
 	 */
 	XERICS_HONOUR,
+
+	/**
+	 * Free hardwood grove entry, detected from Karamja elite diary completion.
+	 */
+	KARAMJA_ELITE,
 
 	/**
 	 * Permanent access to Mor Ul Rek's inner city after showing a fire cape.
