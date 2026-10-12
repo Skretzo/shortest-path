@@ -30,6 +30,11 @@ abstract class AbstractHighlightOverlay extends Overlay
 			return -1;
 		}
 		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
+		return playerPathIndex(path, playerLocation, plugin.recalculateDistance);
+	}
+
+	static int playerPathIndex(List<PathStep> path, int playerLocation, int maxDistance)
+	{
 		for (int i = 0; i < path.size(); i++)
 		{
 			if (path.get(i).getPackedPosition() == playerLocation)
@@ -37,6 +42,26 @@ abstract class AbstractHighlightOverlay extends Overlay
 				return i;
 			}
 		}
-		return -1;
+
+		// On an exact-match miss the player may still be close enough to the path that the
+		// route has not been recalculated; keep the highlight on the nearest step for as
+		// long as the displayed route survives. The strict bound mirrors isNearPath, and
+		// steps on other planes (Integer.MAX_VALUE distance) are never candidates.
+		int bestIndex = -1;
+		int bestDistance = Integer.MAX_VALUE;
+		for (int i = 0; i < path.size(); i++)
+		{
+			int distance = WorldPointUtil.distanceBetween(playerLocation, path.get(i).getPackedPosition());
+			if (distance == Integer.MAX_VALUE || (maxDistance >= 0 && distance >= maxDistance))
+			{
+				continue;
+			}
+			if (distance < bestDistance)
+			{
+				bestDistance = distance;
+				bestIndex = i;
+			}
+		}
+		return bestIndex;
 	}
 }
