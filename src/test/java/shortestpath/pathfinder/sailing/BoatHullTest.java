@@ -22,6 +22,7 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.NodeGraph;
 import shortestpath.pathfinder.PathStep;
@@ -225,7 +226,7 @@ public class BoatHullTest
 		int start = graph.createStart(WorldPointUtil.packWorldPoint(2948, 3074, 0));
 		int move = moves.indexOf(2, 0);
 		int node = graph.createWeightedTile(WorldPointUtil.packWorldPoint(2950, 3074, 0), start, 2000, 0,
-			false, move);
+			BankVisitState.CARRIED, move);
 
 		SailingSearch facingSouth = new SailingSearch(moves, null, new int[0], new int[0], SOUTH);
 		assertEquals(SOUTH, facingSouth.arrivalHeading(graph, start));
