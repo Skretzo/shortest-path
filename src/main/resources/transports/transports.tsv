@@ -5943,3 +5943,6 @@
 # Villa Lucens									
 									
 1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
+# Corporeal Beast cave: entrance and exit to the Wilderness									
+2964 4382 2	3206 3681 0	Exit Cave exit 679						2	
+3206 3681 0	2964 4382 2	Enter Cave 678						2	
