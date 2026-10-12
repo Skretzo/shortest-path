@@ -5943,3 +5943,31 @@
 # Villa Lucens									
 									
 1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
+# Legends' Guild, top floor ladder									
+2726 3375 1	2726 3375 2	Climb-up Ladder 16683						2	
+2726 3375 2	2726 3375 1	Climb-down Ladder 16679						2	
+2724 3375 1	2724 3375 2	Climb-up Ladder 16683						2	
+2724 3375 2	2724 3375 1	Climb-down Ladder 16679						2	
+2725 3374 1	2725 3374 2	Climb-up Ladder 16683						2	
+2725 3374 2	2725 3374 1	Climb-down Ladder 16679						2	
+2725 3376 1	2725 3376 2	Climb-up Ladder 16683						2	
+2725 3376 2	2725 3376 1	Climb-down Ladder 16679						2	
+2731 3375 1	2731 3375 2	Climb-up Ladder 16683						2	
+2731 3375 2	2731 3375 1	Climb-down Ladder 16679						2	
+2732 3374 1	2732 3374 2	Climb-up Ladder 16683						2	
+2732 3374 2	2732 3374 1	Climb-down Ladder 16679						2	
+2732 3376 1	2732 3376 2	Climb-up Ladder 16683						2	
+2732 3376 2	2732 3376 1	Climb-down Ladder 16679						2	
+2733 3375 1	2733 3375 2	Climb-up Ladder 16683						2	
+2733 3375 2	2733 3375 1	Climb-down Ladder 16679						2	
+									
+# Legends' Guild, basement									
+2723 3375 0	2727 9774 0	Climb-down Staircase 16664						2	
+2727 9774 0	2723 3374 0	Climb-up Staircase 16665						2	
+									
+# Legends' Guild, ground to first floor									
+2732 3376 0	2732 3380 1	Climb-up Staircase 15653						1	
+2733 3376 0	2732 3380 1	Climb-up Staircase 15653						1	
+2732 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
+2733 3380 1	2732 3376 0	Climb-down Staircase 15654						1	
+									
