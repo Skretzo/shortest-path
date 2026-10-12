@@ -239,6 +239,13 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean unlockMorUlRek()
+	{
+		Object value = overrides.get(ConfigKey.UNLOCK_MOR_UL_REK.getKey());
+		return value instanceof Boolean ? (boolean) value : base.unlockMorUlRek();
+	}
+
+	@Override
 	public boolean includeBankPath()
 	{
 		Object value = overrides.get(ConfigKey.INCLUDE_BANK_PATH.getKey());

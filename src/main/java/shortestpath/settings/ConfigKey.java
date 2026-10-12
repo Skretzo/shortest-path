@@ -64,6 +64,7 @@ enum ConfigKey
 	UNLOCK_CANOE_AXE("unlockCanoeAxe", ShortestPathConfig::unlockCanoeAxe, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	UNLOCK_XERICS_HONOUR("unlockXericsHonour", ShortestPathConfig::unlockXericsHonour, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	UNLOCK_DRAGONTOOTH_PASSAGE("unlockDragontoothPassage", ShortestPathConfig::unlockDragontoothPassage, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	UNLOCK_MOR_UL_REK("unlockMorUlRek", ShortestPathConfig::unlockMorUlRek, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	INCLUDE_BANK_PATH("includeBankPath", ShortestPathConfig::includeBankPath, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	CURRENCY_THRESHOLD("currencyThreshold", ShortestPathConfig::currencyThreshold, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	CANCEL_INSTEAD("cancelInstead", ShortestPathConfig::cancelInstead, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
