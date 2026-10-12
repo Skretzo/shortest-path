@@ -6013,3 +6013,9 @@
 1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
 1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2	
 									
+# Tai Bwo Wannai hardwood grove (100 trading sticks, free with Karamja elite diary)									
+2816 3083 0	2817 3083 0	Open Hardwood Grove Doors 9038		UNLOCK_KARAMJA_ELITE=1||6306=100				1	
+2816 3084 0	2817 3084 0	Open Hardwood Grove Doors 9039		UNLOCK_KARAMJA_ELITE=1||6306=100				1	
+2817 3083 0	2816 3083 0	Open Hardwood Grove Doors 9038						1	
+2817 3084 0	2816 3084 0	Open Hardwood Grove Doors 9039						1	
+									
