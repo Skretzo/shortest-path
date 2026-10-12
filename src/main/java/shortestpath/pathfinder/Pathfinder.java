@@ -130,6 +130,18 @@ public class Pathfinder implements ActiveSearch
 		return sailing != null;
 	}
 
+	/**
+	 * The target the boat, on the tile at {@code packedPosition} and facing {@code heading} (one of the
+	 * 16 headings, or -1 when unknown), has arrived at — see {@link SailingSearch#arrivedTarget}. Lets
+	 * the plugin ask where the live boat is rather than trusting the search's verdict, which says a
+	 * route was found, not that the boat sailed it. {@link WorldPointUtil#UNDEFINED} if it hasn't
+	 * arrived, or when this search walks.
+	 */
+	public int sailingArrivedTarget(int packedPosition, int heading)
+	{
+		return sailing == null ? WorldPointUtil.UNDEFINED : sailing.arrivedTarget(packedPosition, heading);
+	}
+
 	private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed)
 	{
 		if (!league.isSeasonal() || packed == null || packed.isEmpty())

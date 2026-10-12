@@ -1,8 +1,8 @@
 package shortestpath.pathfinder;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 import net.runelite.api.Perspective;
@@ -44,8 +44,10 @@ public final class BoatHull
 	private final int pivotX;
 	private final int pivotY;
 
-	// Tiles the hull covers, relative to the tile it starts on: {first row, then each row's first and last column}
-	private final Map<Long, int[]> shapes = new HashMap<>();
+	// Tiles the hull covers, relative to the tile it starts on: {first row, then each row's first and last column}.
+	// Concurrent: the search fills it on the pathfinding thread while the client thread's arrival
+	// check reads and fills it too (ShortestPathPlugin asks covers() each tick for the live boat)
+	private final Map<Long, int[]> shapes = new ConcurrentHashMap<>();
 	// How far the hull reaches from the centre of the boat's tile, facing any heading, in tiles
 	private final double reach;
 	// Tiles that block a boat, as one bit per tile and one long per row of each region and plane, filled in as the

@@ -1286,6 +1286,25 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+		// A sailing path arrives once the boat's hull covers a target, which can leave the boat's own
+		// tile farther than the reached distance on long hulls — check the live boat rather than the
+		// player's tile, and not the search's verdict: that says a route was found, not that it sailed
+		// there. The reached-distance check below still runs for goal-tile arrivals and disembarking.
+		ActiveSearch search = pathfinder;
+		if (search instanceof Pathfinder && ((Pathfinder) search).isSailing() && config.reachedDistance() >= 0)
+		{
+			LocalPoint boatPoint = WorldPointUtil.boatLocation(client, localPlayer);
+			WorldEntity boatEntity = WorldPointUtil.boat(client, localPlayer);
+			if (boatPoint != null && boatEntity != null
+				&& ((Pathfinder) search).sailingArrivedTarget(
+					WorldPointUtil.fromLocalInstance(client, boatPoint),
+					Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16))
+					!= WorldPointUtil.UNDEFINED)
+			{
+				setTarget(WorldPointUtil.UNDEFINED);
+				return;
+			}
+		}
 		for (int target : pathfinder.getTargets())
 		{
 			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
