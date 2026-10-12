@@ -5961,10 +5961,8 @@
 2649 4685 1	2650 4684 0	Climb-down Staircase 16673						1	
 									
 # Tai Bwo Wannai hardwood grove (100 trading sticks, free with Karamja elite diary)									
-2816 3083 0	2817 3083 0	Quick-Pay(100) Hardwood Grove Doors 9038		6306=100		4566=0		1	
-2816 3084 0	2817 3084 0	Quick-Pay(100) Hardwood Grove Doors 9039		6306=100		4566=0		1	
-2816 3083 0	2817 3083 0	Open Hardwood Grove Doors 9038				4566=1		1	
-2816 3084 0	2817 3084 0	Open Hardwood Grove Doors 9039				4566=1		1	
+2816 3083 0	2817 3083 0	Open Hardwood Grove Doors 9038		UNLOCK_KARAMJA_ELITE=1||6306=100				1	
+2816 3084 0	2817 3084 0	Open Hardwood Grove Doors 9039		UNLOCK_KARAMJA_ELITE=1||6306=100				1	
 2817 3083 0	2816 3083 0	Open Hardwood Grove Doors 9038						1	
 2817 3084 0	2816 3084 0	Open Hardwood Grove Doors 9039						1	
 									
