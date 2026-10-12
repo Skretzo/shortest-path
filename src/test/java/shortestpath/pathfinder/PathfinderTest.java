@@ -107,18 +107,18 @@ public class PathfinderTest
 						int outside = WorldPointUtil.packWorldPoint(2816, y, 0);
 						int inside = WorldPointUtil.packWorldPoint(2817, y, 0);
 						assertEquals(diary == 1 || sticks == 100 && threshold == 100,
-							hasTransportTo(pathfinderConfig.getTransportsPacked(false), outside, inside));
-						assertTrue(hasTransportTo(pathfinderConfig.getTransportsPacked(false), inside, outside));
+							hasTransportTo(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED), outside, inside));
+						assertTrue(hasTransportTo(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED), inside, outside));
 						if (diary == 1)
 						{
-							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(false).get(outside))
+							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED).get(outside))
 								.filter(t -> t.getDestination() == inside).findFirst().orElseThrow();
 							TransportEligibility eligibility = new TransportEligibility(Map.of(), Map.of(), Map.of(), -1,
 								Map.of(), false, TeleportationItem.NONE, Integer.MAX_VALUE, pathfinderConfig.getUnlocks(), true);
 							assertTrue(eligibility.satisfiedByPlayer(entry));
 							Pathfinder route = runPathfinder(outside, inside);
 							assertTrue(route.getResult().isReached());
-							assertFalse(route.getPath().stream().anyMatch(PathStep::isBankVisited));
+							assertFalse(route.getPath().stream().anyMatch(s -> s.getBankVisitState() == BankVisitState.BANKED));
 						}
 					}
 				}
@@ -322,7 +322,7 @@ public class PathfinderTest
 					exits++;
 				}
 				assertEquals("Mor Ul Rek door at " + transport.getOrigin(), entry ? entryAllowed : true,
-					hasTransportTo(pathfinderConfig.getTransportsPacked(false),
+					hasTransportTo(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED),
 						transport.getOrigin(), transport.getDestination()));
 			}
 		}
