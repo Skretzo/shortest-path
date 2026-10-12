@@ -46,6 +46,7 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.BankPickupRequirements;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
@@ -77,6 +78,44 @@ public class PathfinderTest
 		when(config.currencyThreshold()).thenReturn(10000000);
 		when(config.collisionAwareBlockedTargets()).thenReturn(true);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
+	}
+
+	@Test
+	public void eliteDiaryReplacesTradingStickPaymentAtBothDoors()
+	{
+		setupInventory();
+		setupConfigWithBank(new Item(6306, 100));
+		when(config.unreachableTargetDistance()).thenReturn(0);
+		for (int diary : new int[]{0, 1})
+		{
+			when(client.getVarbitValue(VarbitID.KARAMJA_DIARY_ELITE_COMPLETE)).thenReturn(diary);
+			for (int threshold : new int[]{0, 100})
+			{
+				when(config.currencyThreshold()).thenReturn(threshold);
+				for (int sticks : new int[]{0, 99, 100})
+				{
+					setupInventory(new Item(6306, sticks));
+					pathfinderConfig.refresh();
+					for (int y : new int[]{3083, 3084})
+					{
+						int outside = WorldPointUtil.packWorldPoint(2816, y, 0);
+						int inside = WorldPointUtil.packWorldPoint(2817, y, 0);
+						assertEquals(diary == 1 || sticks == 100 && threshold == 100,
+							hasTransportTo(pathfinderConfig.getTransportsPacked(false), outside, inside));
+						assertTrue(hasTransportTo(pathfinderConfig.getTransportsPacked(false), inside, outside));
+						if (diary == 1)
+						{
+							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(false).get(outside))
+								.filter(t -> t.getDestination() == inside).findFirst().orElseThrow();
+							assertTrue(BankPickupRequirements.transportSatisfiedBy(entry, Map.of(), pathfinderConfig.getUnlocks()));
+							Pathfinder route = runPathfinder(outside, inside);
+							assertTrue(route.getResult().isReached());
+							assertFalse(route.getPath().stream().anyMatch(PathStep::isBankVisited));
+						}
+					}
+				}
+			}
+		}
 	}
 
 	@Test
@@ -209,6 +248,60 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testMorUlRekDoorsWithPermanentUnlockAndNoCape()
+	{
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertMorUlRekDoorAvailability(false);
+
+		when(config.unlockMorUlRek()).thenReturn(true);
+		pathfinderConfig.refresh();
+		assertMorUlRekDoorAvailability(true);
+
+		when(config.unlockMorUlRek()).thenReturn(false);
+		pathfinderConfig.refresh();
+		assertMorUlRekDoorAvailability(false);
+	}
+
+	@Test
+	public void testMorUlRekDoorsWithCapeForFirstEntry()
+	{
+		setupInventory(new Item(6570, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertMorUlRekDoorAvailability(true);
+	}
+
+	private void assertMorUlRekDoorAvailability(boolean entryAllowed)
+	{
+		int entries = 0;
+		int exits = 0;
+		for (Set<Transport> set : transports.values())
+		{
+			for (Transport transport : set)
+			{
+				if (!"Pass Hot vent door 30266".equals(transport.getObjectInfo()))
+				{
+					continue;
+				}
+				boolean entry = transport.getItemRequirements() != null;
+				if (entry)
+				{
+					entries++;
+				}
+				else
+				{
+					exits++;
+				}
+				assertEquals("Mor Ul Rek door at " + transport.getOrigin(), entry ? entryAllowed : true,
+					hasTransportTo(pathfinderConfig.getTransportsPacked(false),
+						transport.getOrigin(), transport.getDestination()));
+			}
+		}
+		assertEquals(5, entries);
+		assertEquals(5, exits);
+	}
+
+	@Test
 	public void unlockOptionKeysMatchTransportOptionsRegex() throws Exception
 	{
 		// An unlock* config key must retrigger pathfinding like other transport options.
@@ -218,6 +311,7 @@ public class PathfinderTest
 		assertTrue(pattern.matcher("unlockCanoeAxe").matches());
 		assertTrue(pattern.matcher("unlockXericsHonour").matches());
 		assertTrue(pattern.matcher("unlockDragontoothPassage").matches());
+		assertTrue(pattern.matcher("unlockMorUlRek").matches());
 		assertFalse(pattern.matcher("unlock").matches());
 		assertFalse(pattern.matcher("myUnlockCanoeAxe").matches());
 	}
