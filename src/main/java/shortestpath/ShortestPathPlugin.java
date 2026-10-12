@@ -85,7 +85,7 @@ import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
-import shortestpath.pathfinder.BoatHull;
+import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.ExactPathfinder;
@@ -95,7 +95,8 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
-import shortestpath.pathfinder.SailingMoves;
+import shortestpath.pathfinder.sailing.SailingMoves;
+import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
@@ -521,8 +522,10 @@ public class ShortestPathPlugin extends Plugin
 				if (pathfinderConfig.isSailingMoves() && player != null
 					&& WorldPointUtil.boat(client, player) != null)
 				{
-					legacyPathfinder = sailingPathfinder(start, ends);
-					pathfinder = legacyPathfinder;
+					// A SailingPathfinder isn't a Pathfinder, so it can't be held by
+					// legacyPathfinder — getPathfinder() reports null while sailing
+					legacyPathfinder = null;
+					pathfinder = sailingPathfinder(start, ends);
 				}
 				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
 				{
@@ -573,7 +576,7 @@ public class ShortestPathPlugin extends Plugin
 	 * boat stays at that spot at each turn of the path. The boat's whole hull, from its bounds, must fit along every move
 	 * there.
 	 */
-	private Pathfinder sailingPathfinder(int start, Set<Integer> ends)
+	private SailingPathfinder sailingPathfinder(int start, Set<Integer> ends)
 	{
 		int sailingStart = start;
 		sailingPivotX = 0;
@@ -596,7 +599,7 @@ public class ShortestPathPlugin extends Plugin
 		// starts from
 		int sailingHeading = boatEntity == null ? WorldPointUtil.UNDEFINED
 			: Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16);
-		return new Pathfinder(pathfinderConfig, sailingStart, ends, this::postPluginMessages,
+		return new SailingPathfinder(pathfinderConfig, sailingStart, ends, this::postPluginMessages,
 			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull, sailingHeading);
 	}
 
@@ -1292,12 +1295,12 @@ public class ShortestPathPlugin extends Plugin
 		// player's tile, and not the search's verdict: that says a route was found, not that it sailed
 		// there. The reached-distance check below still runs for goal-tile arrivals and disembarking.
 		ActiveSearch search = pathfinder;
-		if (search instanceof Pathfinder && ((Pathfinder) search).isSailing() && config.reachedDistance() >= 0)
+		if (search instanceof SailingPathfinder && config.reachedDistance() >= 0)
 		{
 			LocalPoint boatPoint = WorldPointUtil.boatLocation(client, localPlayer);
 			WorldEntity boatEntity = WorldPointUtil.boat(client, localPlayer);
 			if (boatPoint != null && boatEntity != null
-				&& ((Pathfinder) search).sailingArrivedTarget(
+				&& ((SailingPathfinder) search).arrivedTarget(
 					WorldPointUtil.fromLocalInstance(client, boatPoint),
 					Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16))
 					!= WorldPointUtil.UNDEFINED)
@@ -1739,13 +1742,13 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * Whether the path sails the boat's headings (see {@link Pathfinder#isSailing}), so it has a point at the end of
+	 * Whether the path sails the boat's headings (a {@link SailingPathfinder}), so it has a point at the end of
 	 * each move, a few tiles apart, and is drawn as lines along its headings.
 	 */
 	public boolean isSailing()
 	{
 		ActiveSearch search = pathfinder;
-		return search instanceof Pathfinder && ((Pathfinder) search).isSailing();
+		return search instanceof SailingPathfinder;
 	}
 
 	/**

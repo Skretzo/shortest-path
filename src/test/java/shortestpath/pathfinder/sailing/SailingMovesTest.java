@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.pathfinder.sailing;
 
 import java.util.List;
 import java.util.Set;
@@ -23,6 +23,11 @@ import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.Pathfinder;
+import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.TestPathfinderConfig;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class SailingMovesTest
@@ -155,7 +160,12 @@ public class SailingMovesTest
 	@Test
 	public void testSearchWithoutSailingMovesStillWalks()
 	{
-		List<PathStep> path = findPath(OPEN_SEA_START, WorldPointUtil.packWorldPoint(2968, 3114, 0), null);
+		int start = OPEN_SEA_START;
+		int target = WorldPointUtil.packWorldPoint(2968, 3114, 0);
+		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(target));
+		pathfinder.run();
+		assertTrue("Target should be reachable", pathfinder.getResult().isReached());
+		List<PathStep> path = pathfinder.getPath();
 
 		assertEquals("40 walking steps plus the start tile", 41, path.size());
 		for (int i = 1; i < path.size(); i++)
@@ -203,12 +213,12 @@ public class SailingMovesTest
 		// A 3x2 shipwreck at (2704-2706, 3050-3051) in open sea
 		CollisionMap map = pathfinderConfig.getMap();
 		assertTrue(map.isBlocked(2705, 3050, 0));
-		assertTrue("Stops short of the wreck", map.canSailLine(2705, 3044, 0, 0, 5));
-		assertFalse("Runs into the wreck", map.canSailLine(2705, 3044, 0, 0, 13));
-		assertFalse("Clips the wreck's corner", map.canSailLine(2702, 3048, 0, 3, 3));
+		assertTrue("Stops short of the wreck", SailingSearch.canSailLine(map, 2705, 3044, 0, 0, 5));
+		assertFalse("Runs into the wreck", SailingSearch.canSailLine(map, 2705, 3044, 0, 0, 13));
+		assertFalse("Clips the wreck's corner", SailingSearch.canSailLine(map, 2702, 3048, 0, 3, 3));
 		// A boat that starts on a blocked tile can sail out of it, but not further into the blocked tiles
-		assertTrue("Leaves the wreck", map.canSailLine(2705, 3050, 0, 0, -3));
-		assertFalse("Stays in the wreck", map.canSailLine(2705, 3050, 0, 0, 3));
+		assertTrue("Leaves the wreck", SailingSearch.canSailLine(map, 2705, 3050, 0, 0, -3));
+		assertFalse("Stays in the wreck", SailingSearch.canSailLine(map, 2705, 3050, 0, 0, 3));
 	}
 
 	@Test
@@ -221,7 +231,7 @@ public class SailingMovesTest
 		pathfinderConfig.refresh();
 		assertTrue(pathfinderConfig.bankAccessible(WorldPointUtil.packWorldPoint(2280, 2544, 0)));
 
-		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, WorldPointUtil.packWorldPoint(2260, 2544, 0),
+		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, WorldPointUtil.packWorldPoint(2260, 2544, 0),
 			Set.of(WorldPointUtil.packWorldPoint(2300, 2548, 0)), null, SailingMoves.ESTIMATE);
 		pathfinder.run();
 
@@ -231,7 +241,7 @@ public class SailingMovesTest
 
 	private List<PathStep> findPath(int start, int target, SailingMoves sailingMoves)
 	{
-		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(target), null, sailingMoves);
+		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null, sailingMoves);
 		pathfinder.run();
 		assertTrue("Target should be reachable", pathfinder.getResult().isReached());
 		return pathfinder.getPath();

@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.pathfinder.sailing;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 import net.runelite.api.Perspective;
+import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.SplitFlagMap;
 
 /**
  * The hull of the player's boat, so that a sailing move is only taken if the whole boat fits along it, not just its
@@ -139,7 +141,7 @@ public final class BoatHull
 	 * Whether the hull, facing {@code heading}, can sail (dx, dy) tiles from tile (x, y, z) without overlapping a tile
 	 * that blocks it anywhere along the way — or only ones it doesn't already cover, when {@code exemptStart} marks
 	 * the search's first move: a berthed boat's hull can overlap blocked tiles where it starts (a moored boat may sit
-	 * over marked tiles), and like {@link CollisionMap#canSailLine}'s first-tile escape they can't stop it leaving.
+	 * over marked tiles), and like {@link SailingSearch#canSailLine}'s first-tile escape they can't stop it leaving.
 	 * Later moves keep the full start check, which also catches the hull turning onto a blocked tile between moves.
 	 */
 	public boolean canMove(CollisionMap map, int x, int y, int z, int heading, int dx, int dy, boolean exemptStart)

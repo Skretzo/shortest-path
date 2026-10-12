@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.pathfinder.sailing;
 
 import java.util.List;
 import java.util.Set;
@@ -21,6 +21,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.NodeGraph;
+import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.Pathfinder;
+import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.pathfinder.TestPathfinderConfig;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class BoatHullTest
@@ -144,8 +150,8 @@ public class BoatHullTest
 	public void testSloopCantGetPastTheElidDeltaIslands()
 	{
 		// As in game, the channels between the islands are too narrow for a sloop
-		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, UNKAH_HARBOUR, Set.of(TOP_OF_ELID_DELTA), null,
-			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0));
+		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, UNKAH_HARBOUR, Set.of(TOP_OF_ELID_DELTA),
+			null, SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0));
 		pathfinder.run();
 
 		assertFalse(pathfinder.getResult().isReached());
@@ -184,7 +190,7 @@ public class BoatHullTest
 		walking.run();
 		assertEquals(0, walking.getResult().getNodesChecked());
 
-		Pathfinder sailing = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+		SailingPathfinder sailing = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
 			SailingMoves.forSpeed(1.5), hull(RAFT, 0, 0));
 		sailing.run();
 		assertTrue(sailing.getResult().getNodesChecked() > 0);
@@ -255,7 +261,7 @@ public class BoatHullTest
 		int start = WorldPointUtil.packWorldPoint(2948, 3074, 0);
 		int target = WorldPointUtil.packWorldPoint(2948, 3079, 0);
 
-		Pathfinder astern = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+		SailingPathfinder astern = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
 			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0), SOUTH);
 		astern.run();
 		assertFalse("Arrived on the spot facing away from the target",
@@ -263,13 +269,13 @@ public class BoatHullTest
 		assertTrue("But still reached it by sailing", astern.getResult().isReached());
 		assertTrue(astern.getPath().size() > 1);
 
-		Pathfinder facing = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+		SailingPathfinder facing = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
 			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0), NORTH);
 		facing.run();
 		assertTrue(facing.getResult().isReached());
 		assertEquals("A target already under the bow still arrives on the spot", 1, facing.getPath().size());
 
-		Pathfinder noHeading = new Pathfinder(pathfinderConfig, start, Set.of(target), null,
+		SailingPathfinder noHeading = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
 			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0));
 		noHeading.run();
 		assertTrue(noHeading.getResult().isReached());
@@ -308,7 +314,7 @@ public class BoatHullTest
 
 	private List<PathStep> findPath(int start, int target, SailingMoves moves, BoatHull hull)
 	{
-		Pathfinder pathfinder = new Pathfinder(pathfinderConfig, start, Set.of(target), null, moves, hull);
+		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null, moves, hull);
 		pathfinder.run();
 		assertTrue("Target should be reachable", pathfinder.getResult().isReached());
 		return pathfinder.getPath();

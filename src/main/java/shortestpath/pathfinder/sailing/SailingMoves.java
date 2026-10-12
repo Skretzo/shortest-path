@@ -1,4 +1,4 @@
-package shortestpath.pathfinder;
+package shortestpath.pathfinder.sailing;
 
 import java.util.Arrays;
 
