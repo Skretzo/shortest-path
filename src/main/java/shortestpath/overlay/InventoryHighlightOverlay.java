@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import shortestpath.ItemVariations;
@@ -37,6 +38,10 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	};
 
 	private final ItemManager itemManager;
+	// Fairy-ring scan cache: pathfinder searches hand out immutable path lists, so the
+	// last scanned list doubles as the cache key by reference identity.
+	private List<PathStep> scannedPath;
+	private int lastFairyRingEdgeIndex = -1;
 
 	@Inject
 	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
@@ -73,6 +78,16 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 
 		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
+		boolean lumbridgeEliteDone = client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
+		// The dramen staff requirement lives outside the transport's item requirements,
+		// and the staff can be equipped ahead of time — so highlight it whenever the
+		// remaining path uses a fairy ring, not only while standing on the ring edge.
+		// The Lumbridge Elite diary removes the requirement entirely.
+		boolean ringAhead = fairyRingAhead(path, pathIndex);
+		if (!lumbridgeEliteDone && ringAhead)
+		{
+			addItemIds(itemsToHighlight, ItemVariations.DRAMEN_STAFF.getIds());
+		}
 
 		for (Transport transport : transports)
 		{
@@ -176,6 +191,32 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 		}
 
 		return null;
+	}
+
+	/**
+	 * Whether any remaining path edge at or after {@code fromIndex} is a fairy ring.
+	 * Scans the whole path once per path instance and caches the last ring edge index;
+	 * a ring is ahead exactly when that index is at or beyond the player's edge.
+	 */
+	private boolean fairyRingAhead(List<PathStep> path, int fromIndex)
+	{
+		if (path != scannedPath)
+		{
+			scannedPath = path;
+			lastFairyRingEdgeIndex = -1;
+			for (int i = 0; i + 1 < path.size(); ++i)
+			{
+				for (Transport transport : plugin.transportsForEdge(path.get(i), path.get(i + 1)))
+				{
+					if (TransportType.FAIRY_RING.equals(transport.getType()))
+					{
+						lastFairyRingEdgeIndex = i;
+						break;
+					}
+				}
+			}
+		}
+		return lastFairyRingEdgeIndex >= fromIndex;
 	}
 
 	private static void addItemIds(Set<Integer> target, int[] ids)
