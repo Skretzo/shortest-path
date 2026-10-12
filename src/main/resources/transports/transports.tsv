@@ -6047,3 +6047,15 @@
 2885 5333 2	2885 5344 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
 2885 5344 2	2885 5333 2	Climb-off Ice bridge 26518	70 Hitpoints					5	
 									
+# Kourend Castle, first to second floor									
+1618 3659 1	1617 3660 2	Climb-up Staircase 12536						1	
+1617 3660 2	1617 3660 1	Climb-down Staircase 12538						1	
+1615 3687 1	1616 3686 2	Climb-up Staircase 12536						1	
+1616 3686 2	1615 3687 1	Climb-down Staircase 12538						1	
+									
+# Kourend Castle, ground to first floor									
+1618 3665 0	1614 3665 1	Climb-up Staircase 11807						1	
+1614 3665 1	1618 3665 0	Climb-down Staircase 11799						1	
+1618 3680 0	1614 3680 1	Climb-up Staircase 11807						1	
+1614 3680 1	1618 3680 0	Climb-down Staircase 11799						1	
+									
