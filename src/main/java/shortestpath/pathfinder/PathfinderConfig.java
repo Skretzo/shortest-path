@@ -368,7 +368,7 @@ public class PathfinderConfig
 			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
 		respawnPrifddinas = ShortestPathPlugin.override("respawnPrifddinas", config.respawnPrifddinas());
 
-		// Declared unlocks: states the game does not expose to the client, toggled in config.
+		// Unlocks come from detected account state or config declarations.
 		Set<Unlock> declaredUnlocks = EnumSet.noneOf(Unlock.class);
 		if (ShortestPathPlugin.override("unlockCanoeAxe", config.unlockCanoeAxe()))
 		{
@@ -381,6 +381,14 @@ public class PathfinderConfig
 		if (ShortestPathPlugin.override("unlockDragontoothPassage", config.unlockDragontoothPassage()))
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
+		}
+		if (client.getVarbitValue(VarbitID.KARAMJA_DIARY_ELITE_COMPLETE) == 1)
+		{
+			declaredUnlocks.add(Unlock.KARAMJA_ELITE);
+		}
+		if (ShortestPathPlugin.override("unlockMorUlRek", config.unlockMorUlRek()))
+		{
+			declaredUnlocks.add(Unlock.MOR_UL_REK);
 		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
