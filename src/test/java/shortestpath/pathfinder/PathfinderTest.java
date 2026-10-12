@@ -333,7 +333,7 @@ public class PathfinderTest
 	{
 		// An unlock* config key must retrigger pathfinding like other transport options.
 		Settings settings = Settings.wrap(config);
-		for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage"})
+		for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage", "unlockMorUlRek"})
 		{
 			ConfigChanged event = new ConfigChanged();
 			event.setGroup("shortestpath");

@@ -83,7 +83,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 	@Inject
 	public SpellbookHighlightOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
 	{
-		super(client, plugin);
+		super(client, plugin, settings);
 		this.settings = settings;
 	}
 

@@ -49,7 +49,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	@Inject
 	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
 	{
-		super(client, plugin);
+		super(client, plugin, settings);
 		this.itemManager = itemManager;
 		this.settings = settings;
 	}
