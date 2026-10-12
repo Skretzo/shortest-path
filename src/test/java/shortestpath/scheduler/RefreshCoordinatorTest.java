@@ -173,7 +173,7 @@ public class RefreshCoordinatorTest
 		coordinator.treeSetChanged(
 			TestTreeChange.of("profile", Set.of(Effect.ROUTE_INVALIDATING)));
 		coordinator.configChanged(configChange("avoidWilderness"));
-		coordinator.offRouteTick(5, WorldPointUtil.packWorldPoint(3100, 3200, 0));
+		coordinator.offRouteTick(5, WorldPointUtil.packWorldPoint(3100, 3200, 0), WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
 		verify(scheduler, never()).restart(anyString(), anyInt(), anySet());
 		verify(scheduler, never()).restart(anyString(), anyInt(), anySet(), anyBoolean());
@@ -272,7 +272,7 @@ public class RefreshCoordinatorTest
 		when(scheduler.isNearPath(location)).thenReturn(false);
 		when(config.cancelInstead()).thenReturn(false);
 
-		coordinator.offRouteTick(20, location);
+		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
 		verify(scheduler).restart("off route", location, Set.of(target));
 		verify(scheduler, never()).drainDueTasks(anyInt());
@@ -292,7 +292,7 @@ public class RefreshCoordinatorTest
 		when(config.cancelInstead()).thenReturn(false);
 
 		coordinator.gameTick(20);
-		coordinator.offRouteTick(20, location);
+		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
 		InOrder order = inOrder(scheduler);
 		order.verify(scheduler).drainDueTasks(20);
@@ -308,7 +308,7 @@ public class RefreshCoordinatorTest
 		runningSearch(50, Set.of(target));
 		when(config.reachedDistance()).thenReturn(10);
 
-		coordinator.offRouteTick(20, location);
+		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 		verify(scheduler, never()).restart(anyString(), anyInt(), anySet(), anyBoolean());
@@ -324,7 +324,7 @@ public class RefreshCoordinatorTest
 		when(scheduler.isNearPath(location)).thenReturn(false);
 		when(config.cancelInstead()).thenReturn(true);
 
-		coordinator.offRouteTick(20, location);
+		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 		verify(scheduler, never()).restart(anyString(), anyInt(), anySet(), anyBoolean());
