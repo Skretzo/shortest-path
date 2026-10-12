@@ -47,17 +47,25 @@ public class PlayerPathIndexTest
 	}
 
 	@Test
-	public void exactlyAtRadiusReturnsMinusOne()
+	public void pastRadiusWithinMarginStillMatches()
 	{
 		List<PathStep> path = Collections.singletonList(step(3000, 3000, 0));
-		assertEquals(-1, AbstractHighlightOverlay.playerPathIndex(path, player(3010, 3000, 0), 10));
+		assertEquals(0, AbstractHighlightOverlay.playerPathIndex(path, player(3010, 3000, 0), 10));
+		assertEquals(0, AbstractHighlightOverlay.playerPathIndex(path, player(3014, 3000, 0), 10));
 	}
 
 	@Test
-	public void beyondRadiusReturnsMinusOne()
+	public void atRadiusPlusMarginReturnsMinusOne()
 	{
 		List<PathStep> path = Collections.singletonList(step(3000, 3000, 0));
 		assertEquals(-1, AbstractHighlightOverlay.playerPathIndex(path, player(3015, 3000, 0), 10));
+	}
+
+	@Test
+	public void beyondRadiusPlusMarginReturnsMinusOne()
+	{
+		List<PathStep> path = Collections.singletonList(step(3000, 3000, 0));
+		assertEquals(-1, AbstractHighlightOverlay.playerPathIndex(path, player(3020, 3000, 0), 10));
 	}
 
 	@Test

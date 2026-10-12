@@ -11,6 +11,11 @@ import shortestpath.pathfinder.PathStep;
 
 abstract class AbstractHighlightOverlay extends Overlay
 {
+	// Extra tiles of grace past the recalculation distance: beyond it the route
+	// recalculates but the stale path stays on screen while the replacement is
+	// being computed, so the nearest step is still the best guide meanwhile.
+	private static final int REPLANNING_MARGIN_TILES = 5;
+
 	protected final Client client;
 	protected final ShortestPathPlugin plugin;
 
@@ -33,7 +38,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 		return playerPathIndex(path, playerLocation, plugin.recalculateDistance);
 	}
 
-	static int playerPathIndex(List<PathStep> path, int playerLocation, int maxDistance)
+	static int playerPathIndex(List<PathStep> path, int playerLocation, int recalculateDistance)
 	{
 		for (int i = 0; i < path.size(); i++)
 		{
@@ -47,6 +52,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 		// route has not been recalculated; keep the highlight on the nearest step for as
 		// long as the displayed route survives. The strict bound mirrors isNearPath, and
 		// steps on other planes (Integer.MAX_VALUE distance) are never candidates.
+		int maxDistance = recalculateDistance < 0 ? -1 : recalculateDistance + REPLANNING_MARGIN_TILES;
 		int bestIndex = -1;
 		int bestDistance = Integer.MAX_VALUE;
 		for (int i = 0; i < path.size(); i++)
