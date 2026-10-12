@@ -1,13 +1,17 @@
-package shortestpath.pathfinder;
+package shortestpath.pathfinder.sailing;
 
 import java.util.Arrays;
 
 import static net.runelite.api.Constants.REGION_SIZE;
+import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.sailing.SailingMoves;
+import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.NodeGraph;
+import shortestpath.pathfinder.SplitFlagMap;
+import shortestpath.pathfinder.VisitedTiles;
 
 /**
- * One sailing search's moves, boat, targets and when it counts as arriving (see {@link Pathfinder}).
+ * One sailing search's moves, boat, targets and when it counts as arriving (see {@link SailingPathfinder}).
  * <p>
  * With the boat's hull, the path arrives once a target tile is inside the hull, where the path ends and facing the way
  * it sailed there. Without one, moves land whole tiles away, often several at a time, so a boat can't stop on every
@@ -24,6 +28,9 @@ final class SailingSearch
 	private static final int REGION_MASK = REGION_SIZE - 1;
 	private static final int PLANES = 4;
 	private static final int HEADINGS = 16;
+	// Sailing moves cost the distance they sail (SailingMoves.length), plus a thousandth of a tile per change of
+	// heading, so that of the routes that are equally short the one with the fewest, longest legs wins.
+	private static final int SAILING_COST_PER_TURN = 1;
 
 	final SailingMoves moves;
 	/** The boat's hull, or {@code null} to keep only the boat's centre clear. */
@@ -75,8 +82,18 @@ final class SailingSearch
 	 */
 	int arrivalHeading(NodeGraph graph, int node)
 	{
-		int heading = CollisionMap.sailingArrivalHeading(graph, node, moves);
+		int heading = sailingArrivalHeading(graph, node, moves);
 		return heading < 0 ? initialHeading : heading;
+	}
+
+	// The heading of the sailing move that reached node, or -1 if it wasn't reached by one (such as the search's
+	// start, which faces the boat's own heading instead — see SailingSearch.arrivalHeading).
+	// The move is stored on the node rather than recovered from its displacement, which different headings can share
+	// at low speeds
+	private static int sailingArrivalHeading(NodeGraph graph, int node, SailingMoves moves)
+	{
+		int move = graph.moveIndex(node);
+		return move < 0 ? -1 : moves.heading(move);
 	}
 
 	/**
@@ -223,6 +240,113 @@ final class SailingSearch
 		{
 			hull.release();
 		}
+	}
+
+	// Sailing moves are different lengths, so they are queued by cost on the pending heap like transports rather than
+	// the FIFO boundary queue, which is only ordered for unit-cost walking edges: each costs the distance it sails, so
+	// the search finds the shortest route rather than the quickest. A tile is only queued again if a route reaches it
+	// for less, since a dearer one would only be dequeued once the tile is done — or, with a hull, if a dearer move
+	// would arrive on a heading none has tried, since the cheapest route's facing may not cover a target. The cost
+	// check comes first, which costs less than the line or hull check. With a hull, the whole boat must fit along the
+	// move, which also keeps its centre clear.
+	void addNeighbors(CollisionMap map, PrimitiveIntList out, int node, int x, int y, int z, boolean bankVisited,
+		VisitedTiles visited, NodeGraph graph)
+	{
+		// The boat faces the way it sailed into the node — or, on the start node, the way it's pointing, so
+		// carrying straight on isn't a turn but putting about first is
+		final int arrivalHeading = arrivalHeading(graph, node);
+		// The first move gets the hull's berthed-tile escape: a boat can sit over tiles it then sails off
+		final boolean firstMove = graph.moveIndex(node) < 0;
+		final int costSoFar = graph.cost(node);
+		for (int i = 0; i < moves.size(); i++)
+		{
+			final int dx = moves.dx(i);
+			final int dy = moves.dy(i);
+			final int neighborPacked = WorldPointUtil.packWorldPoint(x + dx, y + dy, z);
+			final int cost = moves.length(i) + (arrivalHeading >= 0 && arrivalHeading != moves.heading(i) ? SAILING_COST_PER_TURN : 0);
+			if (visited.get(neighborPacked, bankVisited)
+				|| (costSoFar + cost >= queuedCost(x + dx, y + dy, z, bankVisited)
+					&& !queueArrival(neighborPacked, i, x + dx, y + dy, z, bankVisited))
+				|| !(hull == null ? canSailLine(map, x, y, z, dx, dy)
+					: hull.canMove(map, x, y, z, moves.heading(i), dx, dy, firstMove)))
+			{
+				continue;
+			}
+			out.add(graph.createWeightedTile(neighborPacked, node, cost, estimate(x + dx, y + dy), bankVisited, i));
+		}
+	}
+
+	/**
+	 * Whether a straight sailing move from tile (x, y, z) by (dx, dy) tiles only crosses open tiles: every tile the
+	 * line between the tile centres passes through must be one walking step from the previous one, so a move never
+	 * passes over a blocked tile (such as the blocked strip along coastlines). Where the line passes exactly through a
+	 * tile corner, both ways around the corner must be open.
+	 */
+	public static boolean canSailLine(CollisionMap map, int x, int y, int z, int dx, int dy)
+	{
+		final int nx = Math.abs(dx);
+		final int ny = Math.abs(dy);
+		final int sx = Integer.signum(dx);
+		final int sy = Integer.signum(dy);
+		// From a blocked tile, such as one a moored boat sits on, any open tile next to it can be entered, as when
+		// walking. Every tile after the first is entered through an open side, so it isn't blocked either.
+		boolean fromBlocked = map.isBlocked(x, y, z);
+		int cx = x;
+		int cy = y;
+		int ix = 0;
+		int iy = 0;
+		while (ix < nx || iy < ny)
+		{
+			// Compares where the line crosses the next vertical and horizontal tile edges
+			long decision = (long) (1 + 2 * ix) * ny - (long) (1 + 2 * iy) * nx;
+			if (decision == 0)
+			{
+				if (!canCross(map, cx, cy, z, sx, 0, fromBlocked) || !canCross(map, cx + sx, cy, z, 0, sy, false)
+					|| !canCross(map, cx, cy, z, 0, sy, fromBlocked) || !canCross(map, cx, cy + sy, z, sx, 0, false))
+				{
+					return false;
+				}
+				cx += sx;
+				cy += sy;
+				ix++;
+				iy++;
+			}
+			else if (decision < 0)
+			{
+				if (!canCross(map, cx, cy, z, sx, 0, fromBlocked))
+				{
+					return false;
+				}
+				cx += sx;
+				ix++;
+			}
+			else
+			{
+				if (!canCross(map, cx, cy, z, 0, sy, fromBlocked))
+				{
+					return false;
+				}
+				cy += sy;
+				iy++;
+			}
+			fromBlocked = false;
+		}
+		return true;
+	}
+
+	// Whether a boat can cross from tile (x, y, z) into the tile next to it (ex, ey) away, one of which is 0: through
+	// the open side between them, or from a blocked tile into any open one
+	private static boolean canCross(CollisionMap map, int x, int y, int z, int ex, int ey, boolean fromBlocked)
+	{
+		if (fromBlocked)
+		{
+			return !map.isBlocked(x + ex, y + ey, z);
+		}
+		if (ey == 0)
+		{
+			return ex < 0 ? map.w(x, y, z) : map.e(x, y, z);
+		}
+		return ey < 0 ? map.s(x, y, z) : map.n(x, y, z);
 	}
 
 	// Index of the region and plane holding tile (x, y, z), or -1 if it's off the map
