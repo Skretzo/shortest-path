@@ -6123,3 +6123,15 @@
 3228 6116 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2	
 3032 6125 1	3228 6116 0	Channel Teleport Platform 36082			Song of the Elves			2	
 									
+# Mor Ul Rek: hot vent doors (permanent access after showing a fire cape, or a carried cape for first entry)									
+2436 5121 0	2436 5119 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2436 5119 0	2436 5121 0	Pass Hot vent door 30266						1	
+2457 5120 0	2457 5118 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2457 5118 0	2457 5120 0	Pass Hot vent door 30266						1	
+2474 5138 0	2474 5136 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2474 5136 0	2474 5138 0	Pass Hot vent door 30266						1	
+2493 5174 0	2495 5174 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2495 5174 0	2493 5174 0	Pass Hot vent door 30266						1	
+2494 5157 0	2496 5157 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1|UNLOCK_MOR_UL_REK=1				1	
+2496 5157 0	2494 5157 0	Pass Hot vent door 30266						1	
+									

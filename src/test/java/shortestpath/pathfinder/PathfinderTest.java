@@ -248,6 +248,60 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testMorUlRekDoorsWithPermanentUnlockAndNoCape()
+	{
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertMorUlRekDoorAvailability(false);
+
+		when(config.unlockMorUlRek()).thenReturn(true);
+		pathfinderConfig.refresh();
+		assertMorUlRekDoorAvailability(true);
+
+		when(config.unlockMorUlRek()).thenReturn(false);
+		pathfinderConfig.refresh();
+		assertMorUlRekDoorAvailability(false);
+	}
+
+	@Test
+	public void testMorUlRekDoorsWithCapeForFirstEntry()
+	{
+		setupInventory(new Item(6570, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertMorUlRekDoorAvailability(true);
+	}
+
+	private void assertMorUlRekDoorAvailability(boolean entryAllowed)
+	{
+		int entries = 0;
+		int exits = 0;
+		for (Set<Transport> set : transports.values())
+		{
+			for (Transport transport : set)
+			{
+				if (!"Pass Hot vent door 30266".equals(transport.getObjectInfo()))
+				{
+					continue;
+				}
+				boolean entry = transport.getItemRequirements() != null;
+				if (entry)
+				{
+					entries++;
+				}
+				else
+				{
+					exits++;
+				}
+				assertEquals("Mor Ul Rek door at " + transport.getOrigin(), entry ? entryAllowed : true,
+					hasTransportTo(pathfinderConfig.getTransportsPacked(false),
+						transport.getOrigin(), transport.getDestination()));
+			}
+		}
+		assertEquals(5, entries);
+		assertEquals(5, exits);
+	}
+
+	@Test
 	public void unlockOptionKeysMatchTransportOptionsRegex() throws Exception
 	{
 		// An unlock* config key must retrigger pathfinding like other transport options.
@@ -257,6 +311,7 @@ public class PathfinderTest
 		assertTrue(pattern.matcher("unlockCanoeAxe").matches());
 		assertTrue(pattern.matcher("unlockXericsHonour").matches());
 		assertTrue(pattern.matcher("unlockDragontoothPassage").matches());
+		assertTrue(pattern.matcher("unlockMorUlRek").matches());
 		assertFalse(pattern.matcher("unlock").matches());
 		assertFalse(pattern.matcher("myUnlockCanoeAxe").matches());
 	}

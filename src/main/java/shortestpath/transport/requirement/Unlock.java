@@ -30,6 +30,11 @@ public enum Unlock
 	 * Free hardwood grove entry, detected from Karamja elite diary completion.
 	 */
 	KARAMJA_ELITE,
+
+	/**
+	 * Permanent access to Mor Ul Rek's inner city after showing a fire cape.
+	 */
+	MOR_UL_REK,
 	;
 
 	private static final String TOKEN_PREFIX = "UNLOCK_";

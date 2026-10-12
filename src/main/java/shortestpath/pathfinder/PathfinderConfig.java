@@ -386,6 +386,10 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.KARAMJA_ELITE);
 		}
+		if (ShortestPathPlugin.override("unlockMorUlRek", config.unlockMorUlRek()))
+		{
+			declaredUnlocks.add(Unlock.MOR_UL_REK);
+		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
