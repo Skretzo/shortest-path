@@ -20,6 +20,31 @@ import shortestpath.pathfinder.SplitFlagMap;
  */
 public class TransportDataLintTest
 {
+	@Test
+	public void corpTeleportsAndWildernessEntranceUseTheSameCave()
+	{
+		int landing = WorldPointUtil.packWorldPoint(2964, 4382, 2);
+		int wilderness = WorldPointUtil.packWorldPoint(3206, 3681, 0);
+		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		int teleports = 0;
+		for (Set<Transport> set : transports.values())
+		{
+			for (Transport transport : set)
+			{
+				if (transport.getDisplayInfo() != null && transport.getDisplayInfo().endsWith("Corporeal Beast"))
+				{
+					Assert.assertEquals(transport.getDisplayInfo(), landing, transport.getDestination());
+					teleports++;
+				}
+			}
+		}
+		Assert.assertEquals(3, teleports);
+		Assert.assertTrue(transports.getOrDefault(landing, Set.of()).stream()
+			.anyMatch(transport -> transport.getDestination() == wilderness));
+		Assert.assertTrue(transports.getOrDefault(wilderness, Set.of()).stream()
+			.anyMatch(transport -> transport.getDestination() == landing));
+	}
+
 	/**
 	 * Destinations already known to be dead ends, formatted as the failure message lists them. Fix the
 	 * data and remove the entry; the test fails if an entry here no longer is a dead end.
