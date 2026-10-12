@@ -5943,3 +5943,8 @@
 # Villa Lucens									
 									
 1425 2933 0	1427 2933 0	Pass-through Entryway			Death on the Isle			2	
+# Prifddinas: Gauntlet Portal into the Gauntlet lobby									
+3228 6117 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2	
+3228 6116 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2	
+3032 6125 1	3228 6116 0	Channel Teleport Platform 36082			Song of the Elves			2	
+									
