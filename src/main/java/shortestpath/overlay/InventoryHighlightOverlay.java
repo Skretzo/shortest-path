@@ -212,7 +212,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			lastFairyRingEdgeIndex = -1;
 			for (int i = 0; i + 1 < path.size(); ++i)
 			{
-				for (Transport transport : plugin.transportsForEdge(path.get(i), path.get(i + 1)))
+				for (Transport transport : annotator.transportsForEdge(path.get(i), path.get(i + 1)))
 				{
 					if (TransportType.FAIRY_RING.equals(transport.getType()))
 					{
