@@ -695,12 +695,14 @@ public class Settings
 		private final boolean unlockCanoeAxe;
 		private final boolean unlockXericsHonour;
 		private final boolean unlockDragontoothPassage;
+		private final boolean unlockMorUlRek;
 
 		private UnlocksView(ShortestPathConfig config)
 		{
 			unlockCanoeAxe = config.unlockCanoeAxe();
 			unlockXericsHonour = config.unlockXericsHonour();
 			unlockDragontoothPassage = config.unlockDragontoothPassage();
+			unlockMorUlRek = config.unlockMorUlRek();
 		}
 	}
 

@@ -25,7 +25,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 	@Inject
 	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
 	{
-		super(client, plugin);
+		super(client, plugin, settings);
 		this.itemManager = itemManager;
 		this.settings = settings;
 	}
