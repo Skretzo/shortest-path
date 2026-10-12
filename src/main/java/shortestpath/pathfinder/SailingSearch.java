@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.sailing.SailingMoves;
 
 /**
  * One sailing search's moves, boat, targets and when it counts as arriving (see {@link Pathfinder}).

@@ -10,7 +10,7 @@ import java.util.function.LongSupplier;
  * every step but only reads the clock on every {@value #CHECK_INTERVAL}th call, so the cutoff
  * fires at most one interval (well under a millisecond of search) late.
  */
-final class SearchDeadline
+public final class SearchDeadline
 {
 	static final int CHECK_INTERVAL = 1024;
 
@@ -22,7 +22,7 @@ final class SearchDeadline
 	private boolean expired;
 
 	/** A deadline {@code cutoffMillis} from now; zero expires at the first clock read. */
-	SearchDeadline(long cutoffMillis)
+	public SearchDeadline(long cutoffMillis)
 	{
 		this(cutoffMillis, System::nanoTime);
 	}
@@ -38,13 +38,13 @@ final class SearchDeadline
 	 * Restarts the countdown, for cutoffs measured from the last progress rather than from the
 	 * start. Takes effect at the next clock read.
 	 */
-	void progressed()
+	public void progressed()
 	{
 		progressed = true;
 	}
 
 	/** Whether the cutoff has passed, as of the most recent clock read. */
-	boolean expired()
+	public boolean expired()
 	{
 		if (expired)
 			return true;

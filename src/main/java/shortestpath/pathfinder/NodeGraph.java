@@ -290,7 +290,7 @@ public class NodeGraph
 	}
 
 	/**
-	 * Index into the search's {@link SailingMoves} of the move that reached this weighted tile,
+	 * Index into the search's {@link shortestpath.pathfinder.sailing.SailingMoves} of the move that reached this weighted tile,
 	 * or -1 for nodes no sailing move reached (the start, walking tiles, transport destinations).
 	 * Shares the abstractKind slot, which weighted tiles never use.
 	 */

@@ -21,6 +21,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.sailing.SailingMoves;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class BoatHullTest

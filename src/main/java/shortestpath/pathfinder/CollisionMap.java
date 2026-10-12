@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.transport.Transport;
 
 public class CollisionMap

@@ -7,14 +7,14 @@ package shortestpath.pathfinder;
  * no longer boxes node references. Only the operations the pathfinder needs are implemented; it is
  * single-threaded (worker only) like the queue it replaces.
  */
-class IntDeque
+public class IntDeque
 {
 	private int[] elements;
 	private int head;
 	private int tail;
 	private int size;
 
-	IntDeque(int initialCapacity)
+	public IntDeque(int initialCapacity)
 	{
 		elements = new int[Math.max(1, initialCapacity)];
 	}
@@ -24,7 +24,7 @@ class IntDeque
 		return size;
 	}
 
-	boolean isEmpty()
+	public boolean isEmpty()
 	{
 		return size == 0;
 	}
@@ -40,7 +40,7 @@ class IntDeque
 		size++;
 	}
 
-	void addFirst(int value)
+	public void addFirst(int value)
 	{
 		if (size == elements.length)
 		{
@@ -54,7 +54,7 @@ class IntDeque
 	/**
 	 * @return the first element, or {@link NodeGraph#NO_NODE} if empty.
 	 */
-	int peekFirst()
+	public int peekFirst()
 	{
 		return size == 0 ? NodeGraph.NO_NODE : elements[head];
 	}
@@ -62,7 +62,7 @@ class IntDeque
 	/**
 	 * @return the removed first element, or {@link NodeGraph#NO_NODE} if empty.
 	 */
-	int pollFirst()
+	public int pollFirst()
 	{
 		if (size == 0)
 		{
@@ -74,7 +74,7 @@ class IntDeque
 		return value;
 	}
 
-	void clear()
+	public void clear()
 	{
 		head = 0;
 		tail = 0;

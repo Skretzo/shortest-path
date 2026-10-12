@@ -11,13 +11,13 @@ import java.util.Arrays;
  * pathfinder discards stale cheaper duplicates with its dequeue-time visited re-check. Single-threaded
  * (worker only), matching the queue it replaces.
  */
-class IntMinHeap
+public class IntMinHeap
 {
 	private final NodeGraph graph;
 	private int[] heap;
 	private int size;
 
-	IntMinHeap(NodeGraph graph, int initialCapacity)
+	public IntMinHeap(NodeGraph graph, int initialCapacity)
 	{
 		this.graph = graph;
 		this.heap = new int[Math.max(1, initialCapacity)];
@@ -28,7 +28,7 @@ class IntMinHeap
 		return size;
 	}
 
-	boolean isEmpty()
+	public boolean isEmpty()
 	{
 		return size == 0;
 	}
@@ -36,12 +36,12 @@ class IntMinHeap
 	/**
 	 * @return the minimum-cost element, or {@link NodeGraph#NO_NODE} if empty.
 	 */
-	int peek()
+	public int peek()
 	{
 		return size == 0 ? NodeGraph.NO_NODE : heap[0];
 	}
 
-	void add(int id)
+	public void add(int id)
 	{
 		if (size == heap.length)
 		{
@@ -55,7 +55,7 @@ class IntMinHeap
 	/**
 	 * @return the removed minimum-cost element, or {@link NodeGraph#NO_NODE} if empty.
 	 */
-	int poll()
+	public int poll()
 	{
 		if (size == 0)
 		{
@@ -71,7 +71,7 @@ class IntMinHeap
 		return top;
 	}
 
-	void clear()
+	public void clear()
 	{
 		size = 0;
 	}

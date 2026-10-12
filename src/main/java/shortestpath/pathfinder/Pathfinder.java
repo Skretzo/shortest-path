@@ -7,6 +7,7 @@ import lombok.Getter;
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
+import shortestpath.pathfinder.sailing.SailingMoves;
 
 public class Pathfinder implements ActiveSearch
 {

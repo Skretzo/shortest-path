@@ -41,6 +41,7 @@ import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.pathfinder.exact.PreparedRoutingAccount;
+import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.transport.OwnedItems;
 import shortestpath.transport.PohNexusPortal;
 import shortestpath.transport.PohMountedItem;

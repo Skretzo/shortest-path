@@ -95,7 +95,7 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
-import shortestpath.pathfinder.SailingMoves;
+import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.ExactRoutingStaticProvider;
 import shortestpath.pathfinder.exact.ExactRoutingSession;
