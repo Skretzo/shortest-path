@@ -1,6 +1,7 @@
 package shortestpath.transport;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -159,6 +160,17 @@ public final class ResourceLoader
 		internRequirements(transports);
 
 		return transports;
+	}
+
+	/**
+	 * Returns a caller-owned stream over {@code /collision-map.zip}. A missing
+	 * resource throws {@link NullPointerException}; read failures surface to
+	 * the caller (the zip walk wraps them in {@link java.io.UncheckedIOException}).
+	 * The caller is responsible for closing the stream.
+	 */
+	public static InputStream collisionMap()
+	{
+		return Objects.requireNonNull(ResourceLoader.class.getResourceAsStream("/collision-map.zip"));
 	}
 
 	/**
