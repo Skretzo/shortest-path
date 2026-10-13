@@ -157,9 +157,9 @@ public final class RoutingStaticBuilder
 	 * @param rawTransports  the plugin's raw, unfiltered, account-independent transports, keyed by
 	 *                       packed origin tile or {@link shortestpath.WorldPointUtil#UNDEFINED} for
 	 *                       origin-less (global) transports/teleports &mdash;
-	 *                       {@code TransportLoader.loadAllFromResources()}'s direct result. Must
+	 *                       {@code ResourceLoader.transports()}'s direct result. Must
 	 *                       include every {@link TransportType}, seasonal included.
-	 * @param bankTiles      the whole bank destination set ({@code Destination.tsv}'s "bank" column),
+	 * @param bankTiles      the whole bank destination set (the destination TSVs' "bank" column),
 	 *                       with no account filtering.
 	 * @param cuts           candidate separator cut edges as packed {@code (from, to)} pairs:
 	 *                       {@code cuts[2*i]}/{@code cuts[2*i+1]}.
