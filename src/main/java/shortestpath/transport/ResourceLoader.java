@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
+import shortestpath.leagues.LeagueRegion;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.VarRequirement;
@@ -58,6 +59,7 @@ public final class ResourceLoader
 	private static final String FILE_EXTENSION = ".";
 	private static final String DELIM_PATH = "/";
 	private static final String DELIM = " ";
+	private static final String LEAGUE_REGIONS_PATH = "/leagues/regions.tsv";
 
 	private ResourceLoader()
 	{
@@ -420,6 +422,84 @@ public final class ResourceLoader
 	private static String blankToNull(String s)
 	{
 		return s == null || s.isBlank() ? null : s;
+	}
+
+	/**
+	 * Loads the league region mapping from {@code /leagues/regions.tsv}. A
+	 * missing resource or a read failure degrades to an empty map (every tile
+	 * resolves to {@link LeagueRegion#NEUTRAL} downstream) rather than
+	 * crashing — the incumbent posture.
+	 */
+	public static Map<Integer, LeagueRegion> leagueRegions()
+	{
+		try (InputStream in = ResourceLoader.class.getResourceAsStream(LEAGUE_REGIONS_PATH))
+		{
+			if (in == null)
+			{
+				log.warn("League regions resource not found at {}; defaulting all tiles to NEUTRAL", LEAGUE_REGIONS_PATH);
+				return new HashMap<>();
+			}
+			String body = new String(Util.readAllBytes(Objects.requireNonNull(in)), StandardCharsets.UTF_8);
+			return parseLeagueRegions(body);
+		}
+		catch (IOException e)
+		{
+			log.error("Failed to load league regions from {}", LEAGUE_REGIONS_PATH, e);
+			return new HashMap<>();
+		}
+	}
+
+	/**
+	 * Content seam for the league-regions row grammar: two-column
+	 * whitespace-split rows keyed by region id, non-header and
+	 * non-numeric/unknown rows warn-and-skip. Kept verbatim from the
+	 * incumbent reader.
+	 */
+	public static Map<Integer, LeagueRegion> parseLeagueRegions(String tsv)
+	{
+		Map<Integer, LeagueRegion> result = new HashMap<>();
+		if (tsv == null || tsv.isEmpty())
+		{
+			return result;
+		}
+		int lineNumber = 0;
+		for (String rawLine : tsv.split("\\R"))
+		{
+			lineNumber++;
+			String line = rawLine.trim();
+			if (line.isEmpty() || line.startsWith("#"))
+			{
+				continue;
+			}
+			String[] parts = line.split("\\s+", 2);
+			if (parts.length != 2)
+			{
+				log.warn("Skipping malformed league regions row {}: '{}'", lineNumber, rawLine);
+				continue;
+			}
+			final int regionId;
+			try
+			{
+				regionId = Integer.parseInt(parts[0]);
+			}
+			catch (NumberFormatException e)
+			{
+				log.warn("Skipping league regions row {} with non-numeric region id '{}'", lineNumber, parts[0]);
+				continue;
+			}
+			final LeagueRegion region;
+			try
+			{
+				region = LeagueRegion.valueOf(parts[1]);
+			}
+			catch (IllegalArgumentException e)
+			{
+				log.warn("Skipping league regions row {} with unknown region '{}'", lineNumber, parts[1]);
+				continue;
+			}
+			result.put(regionId, region);
+		}
+		return result;
 	}
 
 	/**
