@@ -1697,7 +1697,7 @@ public class PathfinderTest
 		 * Info:
 		 * single_minecart_origin_locations * (number_of_minecart_destinations)
 		 * - self_pairs_with_distance_0
-		 *   1 * 12   // Arceuus (1 origin tile, no self-pair)
+		 *   1 * 12 - 1   // Arceuus (1 origin tile, 1 self-pair)
 		 * + 2 * 12 - 1   // Farming Guild (2 origin tiles, 1 self-pair)
 		 * + 2 * 12 - 1   // Hosidius South
 		 * + 2 * 12 - 1   // Hosidius West
@@ -1709,9 +1709,9 @@ public class PathfinderTest
 		 * + 2 * 12 - 1   // Port Piscarilius
 		 * + 2 * 12 - 1   // Shayzien East
 		 * + 2 * 12 - 1   // Shayzien West
-		 * = 252 - 11 = 241
+		 * = 252 - 12 = 240
 		 */
-		assertEquals(241, countLovakenjMinecarts());
+		assertEquals(240, countLovakenjMinecarts());
 	}
 
 	@Test
@@ -1725,7 +1725,7 @@ public class PathfinderTest
 		varbits.put(7796, 11);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
 
-		assertEquals(241, countLovakenjMinecarts());
+		assertEquals(240, countLovakenjMinecarts());
 	}
 
 	@Test
