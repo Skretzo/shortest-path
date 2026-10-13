@@ -6,7 +6,6 @@ import java.util.Set;
 
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
 import net.runelite.api.gameval.ItemID;
 import shortestpath.ShortestPathPlugin;
 
@@ -18,11 +17,11 @@ import shortestpath.pathfinder.BankVisitState;
 import shortestpath.poh.PohService;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.parser.SkillRequirementParser;
 
 /**
  * The ordered gate chain deciding which transports can run this refresh.
@@ -48,8 +47,6 @@ import shortestpath.transport.parser.SkillRequirementParser;
  */
 public final class Requirements
 {
-	private static final int MAX_SKILL_LEVEL = 99;
-
 	/**
 	 * Item ids that only exist on Deadman Mode worlds ({@code WorldType.DEADMAN}).
 	 * Transports requiring them are filtered out on every other world type,
@@ -70,10 +67,9 @@ public final class Requirements
 	private final RequirementContext context;
 	private final RoutingPolicy policy;
 	private final RequirementHooks hooks;
-	// The context's skill-level getter defensively copies, so the
-	// per-refresh instance keeps the snapshot's array rather than copying
-	// it once per transport.
-	private final int[] boostedSkillLevelsAndMore;
+	// The per-refresh instance pins the snapshot's skill levels once; the
+	// immutable value needs no defensive copy per transport.
+	private final SkillLevels boostedSkillLevelsAndMore;
 
 	public Requirements(RequirementContext context, RoutingPolicy policy, RequirementHooks hooks)
 	{
@@ -429,55 +425,14 @@ public final class Requirements
 		return skillLevel(transport.getSkillLevels());
 	}
 
-	private RejectionReason skillLevel(int[] requiredLevels)
+	private RejectionReason skillLevel(SkillLevels requiredLevels)
 	{
 		// In leagues some skills are disabled so the max total level is lower than
-		// the standard 2376. Holding the item (e.g. Max cape) already proves the
+		// the standard maximum. Holding the item (e.g. Max cape) already proves the
 		// player is maxed for the available skills, so skip the total-level check.
-		final int totalLevelIndex = Skill.values().length;
 		LeagueModeSnapshot leagueMode = context.getLeagueModeSnapshot();
-		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
-		{
-			if (leagueMode.isSeasonal() && i == totalLevelIndex)
-			{
-				continue;
-			}
-			int boostedLevel = boostedSkillLevelsAndMore[i];
-			// A shorter requirement array (e.g. a hand-built
-			// DestinationRequirements) declares no level for the missing
-			// indices — read 0 rather than throwing.
-			int requiredLevel = i < requiredLevels.length ? requiredLevels[i] : 0;
-			if (requiredLevel == SkillRequirementParser.MAX_LEVEL)
-			{
-				requiredLevel = maximumLevel(i);
-			}
-			if (boostedLevel < requiredLevel)
-			{
-				return RejectionReason.SKILL_LEVEL;
-			}
-		}
-		return RejectionReason.NONE;
-	}
-
-	private int maximumLevel(int index)
-	{
-		if (index < Skill.values().length)
-		{
-			return MAX_SKILL_LEVEL;
-		}
-		if (index == Skill.values().length)
-		{
-			return MAX_SKILL_LEVEL * Skill.values().length;
-		}
-		if (index == Skill.values().length + 1)
-		{
-			return 126;
-		}
-		if (index == Skill.values().length + 2)
-		{
-			return context.getCurrentMaxQuestPoints();
-		}
-		return SkillRequirementParser.MAX_LEVEL;
+		return boostedSkillLevelsAndMore.missingRequirement(requiredLevels,
+			leagueMode.isSeasonal(), context.getCurrentMaxQuestPoints());
 	}
 
 	private RejectionReason quest(Transport transport)

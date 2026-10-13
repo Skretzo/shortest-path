@@ -22,6 +22,7 @@ import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.poh.JewelleryBoxTier;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.TeleportationItem;
@@ -930,7 +931,7 @@ public class RequirementsTest
 		Transport ninetyNineCooking = transport(TransportType.TRANSPORT)
 			.skillLevels("99 Cooking").build();
 		assertEquals("the TSV grammar must place Cooking", 99,
-			ninetyNineCooking.getSkillLevels()[Skill.COOKING.ordinal()]);
+			ninetyNineCooking.getSkillLevels().get(Skill.COOKING));
 
 		assertEquals(RejectionReason.NONE,
 			requirements(RequirementTestFixtures.context().build(),
@@ -964,17 +965,18 @@ public class RequirementsTest
 	@Test
 	public void totalAndQuestPointSlotsAreChecked()
 	{
-		int[] required = new int[Skill.values().length + 3];
-		required[Skill.values().length] = 2000;      // total level
-		required[Skill.values().length + 2] = 150;   // quest points
-		Transport gated = transport(TransportType.TRANSPORT).startSkillLevels(required).build();
+		int[] required = new int[SkillLevels.LENGTH];
+		required[SkillLevels.TOTAL_LEVEL_INDEX] = 2000;      // total level
+		required[SkillLevels.QUEST_POINTS_INDEX] = 150;      // quest points
+		Transport gated = transport(TransportType.TRANSPORT)
+			.startSkillLevels(SkillLevels.of(required)).build();
 
 		assertEquals(RejectionReason.NONE,
 			requirements(RequirementTestFixtures.context().build(),
 				RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(gated));
 
 		int[] low = RequirementTestFixtures.maxedSkills();
-		low[Skill.values().length] = 1999;
+		low[SkillLevels.TOTAL_LEVEL_INDEX] = 1999;
 		RequirementContext lowTotal = RequirementTestFixtures.context()
 			.boostedSkillLevelsAndMore(low).build();
 		assertEquals(RejectionReason.SKILL_LEVEL,
