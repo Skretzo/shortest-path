@@ -174,6 +174,27 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testMeiyerditchBoatCanBeBoardedFromRock()
+	{
+		when(config.useBoats()).thenReturn(true);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, Map.of(7255, 88));
+		int rock = WorldPointUtil.packWorldPoint(3605, 3163, 1);
+		for (int destination : new int[]{
+			WorldPointUtil.packWorldPoint(3684, 3176, 0),
+			WorldPointUtil.packWorldPoint(3525, 3170, 0),
+			WorldPointUtil.packWorldPoint(3663, 3277, 0)})
+		{
+			Pathfinder route = runPathfinder(rock, destination);
+			assertTrue("Boat destination should be reached from the rock", route.getResult().isReached());
+			assertTrue("Board the boat from the rock to the requested destination", route.getPath().stream()
+				.map(PathStep::getTransport)
+				.anyMatch(t -> t != null && t.isType(TransportType.BOAT)
+					&& t.getOrigin() == rock && t.getDestination() == destination));
+		}
+	}
+
+	@Test
 	public void testCanoes()
 	{
 		when(config.useCanoes()).thenReturn(true);
