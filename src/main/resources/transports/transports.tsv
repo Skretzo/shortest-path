@@ -2041,11 +2041,11 @@
 2405 3418 0	2409 9812 0	Enter Cave entrance 17209							
 									
 # Tolna's Rift									
-3309 3452 0	3297 9824 0	Enter Rift 13968							
-3297 9824 0	3312 3450 0	Climb-up Rope 13999						2	
-3298 9823 0	3312 3450 0	Climb-up Rope 13999						2	
-3296 9823 0	3312 3450 0	Climb-up Rope 13999						2	
-3297 9822 0	3312 3450 0	Climb-up Rope 13999						2	
+3309 3452 0	3105 5280 0	Enter Rift 13968							
+3105 5280 0	3312 3450 0	Climb-up Rope 13999						2	
+3106 5279 0	3312 3450 0	Climb-up Rope 13999						2	
+3104 5279 0	3312 3450 0	Climb-up Rope 13999						2	
+3105 5278 0	3312 3450 0	Climb-up Rope 13999						2	
 2484 3463 1	2486 3465 2	Climb-up Tree 2447							
 2485 3465 2	2484 3463 1	Climb-down Tree 28800							
 									
