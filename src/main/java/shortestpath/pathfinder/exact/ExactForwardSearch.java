@@ -74,7 +74,20 @@ public final class ExactForwardSearch
 		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
 		Runnable progressed)
 	{
-		if (target == null || heuristic == null || cancelled == null || restrictions == null || progressed == null)
+		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions, progressed,
+			(tile, banked) -> target.isTarget(tile));
+	}
+
+	/**
+	 * {@code goal} decides which target states finish the search; it must only accept target
+	 * tiles, and leaves the prepared heuristic admissible since it can only accept fewer states.
+	 */
+	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
+		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
+		Runnable progressed, GoalTest goal)
+	{
+		if (target == null || heuristic == null || cancelled == null || restrictions == null || progressed == null
+			|| goal == null)
 			throw new NullPointerException();
 		if (heuristic.overlay() != target) throw new IllegalArgumentException("heuristic belongs to another target overlay");
 		validateHeuristicWeight(heuristicWeight);
@@ -153,7 +166,7 @@ public final class ExactForwardSearch
 				continue;
 			}
 			counters.statesPopped++;
-			if (target.isTarget(tile))
+			if (target.isTarget(tile) && goal.accepts(tile, banked))
 				return Result.reached(cost, state, counters.snapshot(bestBankCost[0]), reconstruct(space, startState, state, previous, transportWins, best));
 			if (closest.consider(state, tile, cost))
 				progressed.run();

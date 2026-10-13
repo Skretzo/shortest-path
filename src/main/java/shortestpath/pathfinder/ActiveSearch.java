@@ -1,7 +1,6 @@
 package shortestpath.pathfinder;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * The plugin-facing handle for an active route search.
@@ -12,7 +11,8 @@ public interface ActiveSearch extends Runnable
 
 	int getStart();
 
-	Set<Integer> getTargets();
+	/** Where the route may end, with the items each target needs on arrival. */
+	Targets getTargets();
 
 	List<PathStep> getPath();
 

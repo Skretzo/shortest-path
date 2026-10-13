@@ -14,14 +14,17 @@ public class Pathfinder implements ActiveSearch
 	@Getter
 	private final int start;
 	@Getter
-	private final Set<Integer> targets;
-	// Termination set resolved by TargetGoals: the requested targets plus, for
-	// each blocked target, its fallback tiles (issue #640).
-	private final Set<Integer> goals;
-	// Whether any requested target could possibly terminate the search: non-blocked,
+	private final Targets targets;
+	// Which (tile, bank layer) states terminate the search: the targets plus, for each blocked
+	// target, its fallback tiles (issue #640), each in the layers where the player holds that
+	// target's items.
+	private final GoalStates goals;
+	// Whether any goal could possibly terminate the search: non-blocked,
 	// a transport destination, or resolved to at least one walkable nearby tile.
 	// When false the search is skipped entirely, since no goal can ever be visited.
 	private final boolean hasViableGoal;
+	// Whether the search may visit a bank: the setting, or a target whose items are in the bank.
+	private final boolean bankPathEnabled;
 	private final PathfinderConfig config;
 	private final CollisionMap map;
 	private final boolean targetInWilderness;
@@ -48,6 +51,7 @@ public class Pathfinder implements ActiveSearch
 	private volatile List<PathStep> finalPath = null;
 	private volatile int closestReachedPoint = WorldPointUtil.UNDEFINED;
 	private volatile int finalPathCost = PathfinderResult.NO_PATH_COST;
+	private volatile Arrival arrival;
 	private int bestRemainingDistance = Integer.MAX_VALUE;
 	private int bestTravelledDistance = Integer.MAX_VALUE;
 	private int bestX = Integer.MAX_VALUE;
@@ -67,20 +71,30 @@ public class Pathfinder implements ActiveSearch
 	 */
 	private int wildernessLevel;
 
+	/** A search towards {@code targets} that need no items. */
 	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback)
+	{
+		this(config, start, Targets.at(targets), completionCallback);
+	}
+
+	/**
+	 * A search that ends at whichever of {@code targets} is cheapest to reach holding that target's
+	 * items; see {@link GoalStates}.
+	 */
+	public Pathfinder(PathfinderConfig config, int start, Targets targets, Runnable completionCallback)
 	{
 		stats = new PathfinderStats();
 		this.config = config;
 		this.map = config.getMap();
 		this.start = start;
 		this.targets = targets;
-		TargetGoals resolved = TargetGoals.resolve(config, start, targets);
-		this.goals = resolved.goals();
-		this.hasViableGoal = resolved.hasViableGoal();
+		this.goals = GoalStates.resolve(config, start, targets);
+		this.hasViableGoal = goals.hasViableGoal();
+		this.bankPathEnabled = config.isBankPathEnabled() || goals.needsBank();
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
-		targetInWilderness = WildernessChecker.isInWilderness(targets);
-		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets);
+		targetInWilderness = WildernessChecker.isInWilderness(targets.points());
+		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets.points());
 		wildernessLevel = 31;
 	}
 
@@ -101,6 +115,11 @@ public class Pathfinder implements ActiveSearch
 	}
 
 	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets)
+	{
+		this(config, start, targets, null);
+	}
+
+	public Pathfinder(PathfinderConfig config, int start, Targets targets)
 	{
 		this(config, start, targets, null);
 	}
@@ -164,7 +183,8 @@ public class Pathfinder implements ActiveSearch
 
 		List<PathStep> currentPath = getPath();
 		boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
-		int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
+		int target = reached ? reachedTarget
+			: (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.points().iterator().next());
 		// getStats() only returns non-null once the search has ended, so the snapshot is set.
 		return new PathfinderResult(
 			start,
@@ -176,13 +196,16 @@ public class Pathfinder implements ActiveSearch
 			currentStats.getNodesChecked(),
 			currentStats.getTransportsChecked(),
 			currentStats.getElapsedTimeNanos(),
-			terminationReason
+			terminationReason,
+			null,
+			arrival
 		);
 	}
 
 	private void addNeighbors(int node, boolean nodeIsTile, int nodePacked)
 	{
-		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph);
+		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph,
+			bankPathEnabled);
 		final int count = nodes.size();
 		for (int i = 0; i < count; i++)
 		{
@@ -242,7 +265,7 @@ public class Pathfinder implements ActiveSearch
 		boolean update = false;
 
 		final int travelledDistance = graph.cost(node);
-		for (int target : targets)
+		for (int target : targets.points())
 		{
 			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
 			int x = WorldPointUtil.unpackWorldX(packedPosition);
@@ -272,9 +295,11 @@ public class Pathfinder implements ActiveSearch
 			return;
 		}
 
-		for (int target : targets)
+		final boolean banked = graph.bankVisited(node);
+		for (int target : targets.points())
 		{
-			if (WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.MANHATTAN_DISTANCE_METRIC) <= config.getUnreachableTargetDistance())
+			if (goals.acceptsTarget(target, banked)
+				&& WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.MANHATTAN_DISTANCE_METRIC) <= config.getUnreachableTargetDistance())
 			{
 				shortestAcceptedNode = node;
 				shortestAcceptedTarget = target;
@@ -362,7 +387,7 @@ public class Pathfinder implements ActiveSearch
 			{
 				updateWildernessLevel(nodePacked);
 
-				if (goals.contains(nodePacked))
+				if (goals.accepts(nodePacked, graph.bankVisited(node)))
 				{
 					bestLastNode = node;
 					reachedTarget = nodePacked;
@@ -410,6 +435,10 @@ public class Pathfinder implements ActiveSearch
 			finalPath = graph.getPathSteps(lastNode);
 			closestReachedPoint = graph.getClosestTilePosition(lastNode);
 			finalPathCost = graph.cost(lastNode);
+			if (reachedTarget != WorldPointUtil.UNDEFINED)
+			{
+				arrival = goals.arrival(reachedTarget, graph.bankVisited(lastNode));
+			}
 		}
 		else
 		{

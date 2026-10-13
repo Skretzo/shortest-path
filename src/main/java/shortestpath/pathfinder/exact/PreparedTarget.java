@@ -59,6 +59,17 @@ public final class PreparedTarget
 			restrictions, progressed);
 	}
 
+	/**
+	 * As {@link #search(int, BooleanSupplier, double, SearchRestrictions, Runnable)}, finishing only
+	 * at target states {@code goal} accepts; see {@link GoalTest}.
+	 */
+	public ExactForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight,
+		SearchRestrictions restrictions, Runnable progressed, GoalTest goal)
+	{
+		return ExactForwardSearch.search(overlay, heuristic, start, cancelled, true, heuristicWeight,
+			restrictions, progressed, goal);
+	}
+
 	public TargetOverlay overlay()
 	{
 		return overlay;

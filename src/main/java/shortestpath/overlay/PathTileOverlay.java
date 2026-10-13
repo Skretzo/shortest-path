@@ -388,6 +388,11 @@ public class PathTileOverlay extends Overlay
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
 			}
+			String missingItems = plugin.getMissingTargetItemsText();
+			if (missingItems != null)
+			{
+				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, missingItems, playerTileLabelOffset);
+			}
 		}
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
@@ -493,7 +498,7 @@ public class PathTileOverlay extends Overlay
 
 	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
 	{
-		for (int target : plugin.getActiveSearch().getTargets())
+		for (int target : plugin.getActiveSearch().getTargets().points())
 		{
 			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 			{

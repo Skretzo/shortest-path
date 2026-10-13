@@ -95,6 +95,8 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
+import shortestpath.pathfinder.Arrival;
+import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
@@ -103,6 +105,8 @@ import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -241,6 +245,9 @@ public class ShortestPathPlugin extends Plugin
 	// while restarts write it on the client thread under pathfinderMutex.
 	private volatile ActiveSearch pathfinder;
 	private volatile Pathfinder legacyPathfinder;
+	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
+	private ActiveSearch missingItemsSearch;
+	private String missingItemsText;
 	private ExactRoutingStaticProvider exactRoutingStatic;
 	private final ExactRoutingSession exactRoutingSession = new ExactRoutingSession();
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
@@ -459,18 +466,15 @@ public class ShortestPathPlugin extends Plugin
 		spiritTreePatchState.persistIfDirty();
 	}
 
-	public void restartPathfinding(String reason, int start, Set<Integer> requestedEnds, boolean canReviveFiltered)
+	public void restartPathfinding(String reason, int start, Targets ends, boolean canReviveFiltered)
 	{
-		// filterLocations edits the set in place, and callers often pass a search's own targets,
-		// which the exact backend holds immutable.
-		Set<Integer> ends = new HashSet<>(requestedEnds);
 		debugState.restartRequested(reason, client.getTickCount());
 		List<PathStep> previousPath;
-		Set<Integer> previousTargets;
+		Targets previousTargets;
 		synchronized (pathfinderMutex)
 		{
 			previousPath = pathfinder == null ? null : pathfinder.getPath();
-			previousTargets = pathfinder == null ? null : Set.copyOf(pathfinder.getTargets());
+			previousTargets = pathfinder == null ? null : pathfinder.getTargets();
 			if (pathfinder != null)
 			{
 				pathfinder.cancel();
@@ -500,11 +504,11 @@ public class ShortestPathPlugin extends Plugin
 		});
 	}
 
-	private void startPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered,
-		List<PathStep> previousPath, Set<Integer> previousTargets)
+	private void startPathfinding(int start, Targets requestedEnds, boolean canReviveFiltered,
+		List<PathStep> previousPath, Targets previousTargets)
 	{
 		pathfinderConfig.refresh();
-		pathfinderConfig.filterLocations(ends, canReviveFiltered);
+		Targets ends = pathfinderConfig.filterLocations(requestedEnds, canReviveFiltered);
 		synchronized (pathfinderMutex)
 		{
 			if (ends.isEmpty())
@@ -576,7 +580,7 @@ public class ShortestPathPlugin extends Plugin
 	 * boat stays at that spot at each turn of the path. The boat's whole hull, from its bounds, must fit along every move
 	 * there.
 	 */
-	private SailingPathfinder sailingPathfinder(int start, Set<Integer> ends)
+	private SailingPathfinder sailingPathfinder(int start, Targets ends)
 	{
 		int sailingStart = start;
 		sailingPivotX = 0;
@@ -655,7 +659,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	public void restartPathfinding(String reason, int start, Set<Integer> ends)
+	public void restartPathfinding(String reason, int start, Targets ends)
 	{
 		restartPathfinding(reason, start, ends, true);
 	}
@@ -765,7 +769,7 @@ public class ShortestPathPlugin extends Plugin
 		int endPoint = path.isEmpty() ? pathfinder.getStart()
 			: path.get(path.size() - 1).getPackedPosition();
 		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : pathfinder.getTargets())
+		for (int target : pathfinder.getTargets().points())
 		{
 			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
 		}
@@ -902,8 +906,9 @@ public class ShortestPathPlugin extends Plugin
 				return;
 			}
 
-			boolean useOld = targets.isEmpty() && pathfinder != null;
-			restartPathfinding("plugin message", start, useOld ? pathfinder.getTargets() : targets, useOld);
+			ActiveSearch current = pathfinder;
+			boolean useOld = targets.isEmpty() && current != null;
+			restartPathfinding("plugin message", start, useOld ? current.getTargets() : Targets.at(targets), useOld);
 		}
 		else if (PLUGIN_MESSAGE_QUERY.equals(action))
 		{
@@ -920,7 +925,7 @@ public class ShortestPathPlugin extends Plugin
 				postQueryFailure(id, "INVALID");
 				return;
 			}
-			queryPath(id, start, targets);
+			queryPath(id, start, Targets.at(targets));
 		}
 		else if (PLUGIN_MESSAGE_GET_TARGET.equals(action))
 		{
@@ -1011,7 +1016,7 @@ public class ShortestPathPlugin extends Plugin
 	 * previous search was started with. A new displayed path cancels pending queries, so a query
 	 * never runs concurrently with a refresh triggered by {@code restartPathfinding} either.
 	 */
-	private void queryPath(Object id, int start, Set<Integer> targets)
+	private void queryPath(Object id, int start, Targets targets)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1157,7 +1162,7 @@ public class ShortestPathPlugin extends Plugin
 		synchronized (pathfinderMutex)
 		{
 			start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
-			targets = (pathfinder == null) ? Set.of() : new HashSet<>(pathfinder.getTargets());
+			targets = (pathfinder == null) ? Set.of() : pathfinder.getTargets().points();
 			overrides = configOverride.isEmpty() ? null : new HashMap<>(configOverride);
 		}
 
@@ -1309,7 +1314,7 @@ public class ShortestPathPlugin extends Plugin
 				return;
 			}
 		}
-		for (int target : pathfinder.getTargets())
+		for (int target : pathfinder.getTargets().points())
 		{
 			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
 			{
@@ -1343,7 +1348,7 @@ public class ShortestPathPlugin extends Plugin
 					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
 				}
-				for (int target : pathfinder.getTargets())
+				for (int target : pathfinder.getTargets().points())
 				{
 					if (target != WorldPointUtil.UNDEFINED)
 					{
@@ -1383,7 +1388,7 @@ public class ShortestPathPlugin extends Plugin
 						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
 							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
 					}
-					for (int target : pathfinder.getTargets())
+					for (int target : pathfinder.getTargets().points())
 					{
 						if (target != WorldPointUtil.UNDEFINED)
 						{
@@ -1448,12 +1453,66 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return bankPickupCache;
 		}
+		ActiveSearch search = pathfinder;
+		PathfinderResult result = search == null ? null : search.getResult();
 		bankPickupCachePath = path;
 		bankPickupCacheIndex = pathIndex;
-		bankPickupDirty = false;
+		// The target's items are only known once the search has its result, which appears just
+		// after the final path: keep recomputing until then.
+		bankPickupDirty = search != null && result == null;
 		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
-				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex);
+				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex,
+				itemsToPickUp(result));
 		return bankPickupCache;
+	}
+
+	/** The items a route's target needs from the bank, or {@code null} when it picks none up. */
+	private static TransportItems itemsToPickUp(PathfinderResult result)
+	{
+		Arrival arrival = result == null ? null : result.getArrival();
+		return arrival != null && arrival.picksUpItemsFromBank() ? arrival.getTarget().getRequiredItems() : null;
+	}
+
+	/**
+	 * The label naming the items the displayed route's target needs but the player was not found to
+	 * hold, or {@code null} when nothing is missing. Built once per search, on the client thread.
+	 */
+	public String getMissingTargetItemsText()
+	{
+		ActiveSearch search = pathfinder;
+		if (search != missingItemsSearch)
+		{
+			missingItemsSearch = search;
+			missingItemsText = null;
+		}
+		PathfinderResult result = search == null ? null : search.getResult();
+		if (missingItemsText == null && result != null)
+		{
+			Arrival arrival = result.getArrival();
+			List<ItemRequirement> missing = arrival == null ? List.of() : arrival.getMissingItems();
+			missingItemsText = missing.isEmpty() ? "" : missingItemsLabel(missing);
+		}
+		return missingItemsText == null || missingItemsText.isEmpty() ? null : missingItemsText;
+	}
+
+	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
+	private String missingItemsLabel(List<ItemRequirement> missing)
+	{
+		List<String> groups = new ArrayList<>(missing.size());
+		for (ItemRequirement group : missing)
+		{
+			List<String> names = new ArrayList<>();
+			for (ItemRequirement.Branch branch : group.getBranches())
+			{
+				for (int id : branch.getItemIds())
+				{
+					names.add(client.getItemDefinition(id).getName());
+				}
+			}
+			groups.add(String.join(" or ", names));
+		}
+		return "Not found in inventory or bank: " + String.join(", ", groups)
+			+ (pathfinderConfig.getHeldItems().isBankSeen() ? "" : " (bank not checked)");
 	}
 
 	@Subscribe
@@ -2185,10 +2244,10 @@ public class ShortestPathPlugin extends Plugin
 			{
 				start = pathfinder.getStart();
 			}
-			Set<Integer> destinations = new HashSet<>(targets);
+			Targets destinations = Targets.at(targets);
 			if (pathfinder != null && append)
 			{
-				destinations.addAll(pathfinder.getTargets());
+				destinations = pathfinder.getTargets().plus(destinations);
 			}
 			restartPathfinding(append ? "add target" : "set target", start, destinations, append);
 		}

@@ -191,11 +191,16 @@ public class CollisionMap
 		return n(x, y, z) || s(x, y, z) || e(x, y, z) || w(x, y, z);
 	}
 
-	public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness, NodeGraph graph)
+	/**
+	 * {@code bankPathEnabled} is whether this search may visit a bank: the setting, or a search
+	 * whose target needs items from the bank.
+	 */
+	public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel,
+		boolean targetInWilderness, NodeGraph graph, boolean bankPathEnabled)
 	{
 		if (graph.isTile(node))
 		{
-			return getTileNeighbors(node, visited, config, wildernessLevel, graph);
+			return getTileNeighbors(node, visited, config, wildernessLevel, graph, bankPathEnabled);
 		}
 		else
 		{
@@ -207,7 +212,8 @@ public class CollisionMap
 	//      * Neighbouring tiles we can walk to
 	//      * A transition into banked state, if the current tile is a bank.
 	//      * Transition into abstract global teleport nodes, if we haven't tried that yet.
-	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph)
+	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph,
+		boolean bankPathEnabled)
 	{
 		final int packedPosition = graph.packedPosition(node);
 		final int x = WorldPointUtil.unpackWorldX(packedPosition);
@@ -222,7 +228,7 @@ public class CollisionMap
 		// The edge is flagged as a transport so Pathfinder queues it on the cost-ordered pending
 		// heap — the FIFO tile boundary queue is only ordered for unit-cost walking edges.
 		boolean pathBankVisited = graph.bankVisited(node);
-		if (!pathBankVisited && config.isBankPathEnabled() && config.bankAccessible(packedPosition)
+		if (!pathBankVisited && bankPathEnabled && config.bankAccessible(packedPosition)
 			&& !visited.get(packedPosition, true))
 		{
 			neighbors.add(graph.createBankVisit(packedPosition, node, config.getBankVisitCost()));

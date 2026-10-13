@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -126,7 +127,8 @@ public class PathfinderConfig
 	 * Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers.
 	 */
 	private final Map<Integer, DestinationRequirements> bankRequirements;
-	private final List<Integer> filteredTargets = new ArrayList<>(4);
+	// Targets filterLocations set aside, with their required items, until they become valid again.
+	private final Map<Integer, Target> filteredTargets = new LinkedHashMap<>(4);
 	private final Client client;
 	private final ShortestPathConfig config;
 	// Centralized transport type enable/disable config
@@ -139,6 +141,12 @@ public class PathfinderConfig
 	@Getter
 	private final LeagueModeState leagueModeState = new LeagueModeState();
 	public ItemContainer bank = null;
+	/**
+	 * What the player held at the last {@link #refresh()}, collected on the client thread and read
+	 * by searches when they are created.
+	 */
+	@Getter
+	private HeldItems heldItems = HeldItems.NONE;
 	// Written on the client thread, read by the pathfinder thread in
 	// isPlantedSpiritTreeAllowed — volatile keeps the cross-thread contract explicit.
 	public volatile Set<String> availableSpiritTrees = null;
@@ -310,8 +318,18 @@ public class PathfinderConfig
 	/** Snapshot the already-evaluated account/config state for the exact graph. */
 	public PreparedRoutingAccount prepareExactRoutingAccount(boolean allowTransports)
 	{
+		return prepareExactRoutingAccount(allowTransports, false);
+	}
+
+	/**
+	 * As {@link #prepareExactRoutingAccount(boolean)}; {@code targetsNeedBank} lets the route visit
+	 * a bank even when {@code includeBankPath} is off, for a target whose items are in the bank.
+	 * The banked layer's transports still follow the settings, so that alone unlocks no teleports.
+	 */
+	public PreparedRoutingAccount prepareExactRoutingAccount(boolean allowTransports, boolean targetsNeedBank)
+	{
 		return PreparedRoutingAccount.compile(
-			getTransportAvailability(false), getTransportAvailability(true), includeBankPath,
+			getTransportAvailability(false), getTransportAvailability(true), includeBankPath || targetsNeedBank,
 			accessibleBankTiles, bankVisitCost, allowTransports, this::getAdditionalTransportCost);
 	}
 
@@ -507,33 +525,37 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Changes to the config might have invalidated some locations, e.g. those in the wilderness
+	 * The targets still valid under the config, which might have invalidated some, e.g. those in the
+	 * wilderness. Targets set aside here earlier come back once valid again, required items and all.
 	 */
-	public void filterLocations(Set<Integer> locations, boolean canReviveFiltered)
+	public Targets filterLocations(Targets targets, boolean canReviveFiltered)
 	{
+		Targets kept = targets;
+		boolean revive = canReviveFiltered;
 		if (avoidWilderness)
 		{
-			locations.removeIf(location ->
+			List<Integer> valid = new ArrayList<>(targets.size());
+			for (Target target : targets)
 			{
-				boolean inWilderness = WildernessChecker.isInWilderness(location);
-				if (inWilderness)
+				if (WildernessChecker.isInWilderness(target.getPoint()))
 				{
-					filteredTargets.add(location);
+					filteredTargets.put(target.getPoint(), target);
 				}
-				return inWilderness;
-			});
-			// If we ended up with no valid locations we re-include the filtered locations
-			if (locations.isEmpty())
-			{
-				locations.addAll(filteredTargets);
-				filteredTargets.clear();
+				else
+				{
+					valid.add(target.getPoint());
+				}
 			}
+			kept = targets.restrictTo(valid);
+			// If we ended up with no valid locations we re-include the filtered locations
+			revive = kept.isEmpty();
 		}
-		else if (canReviveFiltered)
-		{ // Re-include previously filtered locations
-			locations.addAll(filteredTargets);
+		if (revive)
+		{
+			kept = kept.plus(Targets.of(filteredTargets.values()));
 			filteredTargets.clear();
 		}
+		return kept;
 	}
 
 	/**
@@ -611,10 +633,11 @@ public class PathfinderConfig
 
 		refreshSpiritTreeAvailability();
 
-		// The owned items depend only on which containers are included, so collect them once rather
-		// than once per transport.
-		Map<Integer, Integer> carriedItems = collectItems(true, true, false, true);
-		Map<Integer, Integer> bankPathItems = includeBankPath ? collectItems(true, true, true, true) : carriedItems;
+		// Collect what the player holds once rather than once per transport.
+		heldItems = collectHeldItems();
+		Map<Integer, Integer> carriedItems = heldItems.carried();
+		Map<Integer, Integer> bankPathItems = includeBankPath && bankTeleportItemsAllowed()
+			? heldItems.carriedAndBanked() : carriedItems;
 		Set<Quest> refreshedQuests = new HashSet<>();
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
@@ -1337,7 +1360,7 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Checks if {@code ownedItems} (from {@link #collectItems}) cover the equipment and inventory
+	 * Checks if {@code ownedItems} (from {@link #collectHeldItems}) cover the equipment and inventory
 	 * items the transport requires
 	 */
 	private boolean hasRequiredItems(Transport transport, Map<Integer, Integer> ownedItems)
@@ -1378,42 +1401,28 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Item id to quantity over the selected containers, summed across containers.
+	 * What the player holds right now: carried items (inventory, worn and rune pouch), and those
+	 * plus the bank as last seen.
 	 */
-	private Map<Integer, Integer> collectItems(
-		boolean checkInventory,
-		boolean checkEquipment,
-		boolean checkBank,
-		boolean checkRunePouch)
+	private HeldItems collectHeldItems()
 	{
-		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
+		Map<Integer, Integer> carried = new HashMap<>(28 + 11);
+		OwnedItems.addContainer(carried, client.getItemContainer(InventoryID.INV));
+		OwnedItems.addContainer(carried, client.getItemContainer(InventoryID.WORN));
+		Map<Integer, Integer> carriedAndBanked = new HashMap<>(carried);
+		OwnedItems.addRunePouchContents(client, carried);
+		OwnedItems.addContainer(carriedAndBanked, bank);
+		// A rune pouch left in the bank still holds its runes.
+		OwnedItems.addRunePouchContents(client, carriedAndBanked);
+		return new HeldItems(carried, carriedAndBanked, bank != null);
+	}
 
-		if (checkInventory)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.INV));
-		}
-
-		if (checkEquipment)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, client.getItemContainer(InventoryID.WORN));
-		}
-
-		if (checkBank)
-		{
-			TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
-			if (TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))
-			{
-				OwnedItems.addContainer(itemsAndQuantities, bank);
-			}
-		}
-
-		if (checkRunePouch)
-		{
-			OwnedItems.addRunePouchContents(client, itemsAndQuantities);
-		}
-
-		return itemsAndQuantities;
+	/** Whether the teleportation item setting lets routes use teleport items from the bank. */
+	private boolean bankTeleportItemsAllowed()
+	{
+		TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
+		return TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
+			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting);
 	}
 
 	/**

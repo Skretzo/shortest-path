@@ -166,7 +166,7 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			for (int target : plugin.getActiveSearch().getTargets())
+			for (int target : plugin.getActiveSearch().getTargets().points())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{

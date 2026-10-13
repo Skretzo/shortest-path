@@ -22,13 +22,11 @@ public final class ExactPathfinder implements ActiveSearch
 {
 	private final PathfinderStats stats = new PathfinderStats();
 	private final int start;
-	private final Set<Integer> targets;
-	// The tiles the prepared target actually terminates on: the requested
-	// targets plus each blocked target's fallback tiles, resolved the same way
-	// the legacy backend resolves them (issue #640). {@link #targets} stays the
-	// requested set for reporting and restart equality.
-	private final Set<Integer> goals;
-	private final boolean hasViableGoal;
+	private final Targets targets;
+	// The states the search terminates on: the targets plus each blocked target's fallback tiles,
+	// resolved the same way the legacy backend resolves them (issue #640), each in the bank layers
+	// where the player holds that target's items. {@code null} for a search that failed to start.
+	private final GoalStates goals;
 	private final Runnable completionCallback;
 	private final CollisionMap collision;
 	private final Supplier<RoutingStatic> routingStatic;
@@ -108,22 +106,39 @@ public final class ExactPathfinder implements ActiveSearch
 		ExactRoutingSession session, int start, Set<Integer> targets, Runnable completionCallback,
 		double heuristicWeight)
 	{
+		this(config, routingStatic, session, start, Targets.at(targets), completionCallback,
+			heuristicWeight);
+	}
+
+	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic,
+		ExactRoutingSession session, int start, Targets targets, Runnable completionCallback)
+	{
+		this(config, routingStatic, session, start, targets, completionCallback,
+			config == null ? 1 : config.getExactHeuristicWeight());
+	}
+
+	/**
+	 * A search that ends at whichever of {@code targets} is cheapest to reach holding that target's
+	 * items; see {@link GoalStates}.
+	 */
+	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic,
+		ExactRoutingSession session, int start, Targets targets, Runnable completionCallback,
+		double heuristicWeight)
+	{
 		if (config == null || routingStatic == null || targets == null) throw new NullPointerException();
 		if (!(heuristicWeight > 0) || !Double.isFinite(heuristicWeight))
 			throw new IllegalArgumentException("heuristic weight must be positive and finite");
 		this.start = start;
-		this.targets = Set.copyOf(targets);
+		this.targets = targets;
 		this.completionCallback = completionCallback;
 		this.collision = config.getMap();
 		this.routingStatic = routingStatic;
 		this.session = session == null ? new ExactRoutingSession() : session;
+		this.goals = GoalStates.resolve(config, start, targets);
 		long phaseStarted = System.nanoTime();
-		this.account = config.prepareExactRoutingAccount(true);
+		this.account = config.prepareExactRoutingAccount(true, goals.needsBank());
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
-		this.restrictions = restrictions(config, this.targets);
-		TargetGoals resolved = TargetGoals.resolve(config, start, this.targets);
-		this.goals = resolved.goals();
-		this.hasViableGoal = resolved.hasViableGoal();
+		this.restrictions = restrictions(config, targets.points());
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
@@ -161,18 +176,17 @@ public final class ExactPathfinder implements ActiveSearch
 		return SearchRestrictions.of(avoidWilderness, blockedRegion);
 	}
 
-	private ExactPathfinder(int start, Set<Integer> targets, Runnable completionCallback, String failure)
+	private ExactPathfinder(int start, Targets targets, Runnable completionCallback, String failure)
 	{
 		this.start = start;
-		this.targets = Set.copyOf(targets);
+		this.targets = targets;
 		this.completionCallback = completionCallback;
 		this.collision = null;
 		this.routingStatic = null;
 		this.session = null;
 		this.account = null;
 		this.restrictions = SearchRestrictions.none();
-		this.goals = this.targets;
-		this.hasViableGoal = false;
+		this.goals = null;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
@@ -180,7 +194,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.path = List.of(new PathStep(start, false));
 	}
 
-	public static ExactPathfinder failed(int start, Set<Integer> targets, Runnable completionCallback, Throwable error)
+	public static ExactPathfinder failed(int start, Targets targets, Runnable completionCallback, Throwable error)
 	{
 		String detail = error.getMessage();
 		return new ExactPathfinder(start, targets, completionCallback,
@@ -199,7 +213,7 @@ public final class ExactPathfinder implements ActiveSearch
 	}
 
 	@Override
-	public Set<Integer> getTargets()
+	public Targets getTargets()
 	{ return targets;
 	}
 
@@ -341,7 +355,7 @@ public final class ExactPathfinder implements ActiveSearch
 			AtomicBoolean timedOut = new AtomicBoolean();
 			// A zero cutoff means no cutoff for the exact backend.
 			SearchDeadline deadline = cutoffMillis > 0 ? new SearchDeadline(cutoffMillis) : null;
-			int[] packedTargets = goals.stream().mapToInt(Integer::intValue).toArray();
+			int[] packedTargets = goals.tiles().stream().mapToInt(Integer::intValue).toArray();
 			ExactForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
 			int partialCost = PathfinderResult.NO_PATH_COST;
@@ -349,7 +363,7 @@ public final class ExactPathfinder implements ActiveSearch
 			// When every target is a blocked tile that no transport lands on and
 			// no walkable tile exists within the unreachable distance, no state can
 			// satisfy the goal set — skip the search like the legacy backend does.
-			if (!cancelled && hasViableGoal && packedTargets.length != 0)
+			if (!cancelled && goals.hasViableGoal() && packedTargets.length != 0)
 			{
 				// One search towards every target at once; it ends at the cheapest one to reach.
 				phaseStarted = System.nanoTime();
@@ -376,7 +390,8 @@ public final class ExactPathfinder implements ActiveSearch
 							return true;
 						}
 						return false;
-					}, heuristicWeight, restrictions, deadline == null ? ExactForwardSearch.NO_PROGRESS : deadline::progressed);
+					}, heuristicWeight, restrictions, deadline == null ? ExactForwardSearch.NO_PROGRESS : deadline::progressed,
+					goals::accepts);
 				forwardSearchNanos = System.nanoTime() - phaseStarted;
 				stats.nodesChecked += current.counters().statesPopped();
 				stats.transportsChecked += current.counters().transportCandidates();
@@ -420,10 +435,12 @@ public final class ExactPathfinder implements ActiveSearch
 			else if (timedOut.get())
 				result = new PathfinderResult(start, bestTarget, best != null, path,
 					last(path), best == null ? partialCost : best.cost(), stats.nodesChecked,
-					stats.transportsChecked, System.nanoTime() - started, PathTerminationReason.CUTOFF_REACHED);
+					stats.transportsChecked, System.nanoTime() - started, PathTerminationReason.CUTOFF_REACHED, null,
+					best == null ? null : arrival(path));
 			else if (best != null)
 				result = new PathfinderResult(start, bestTarget, true, path, last(path), best.cost(), stats.nodesChecked,
-					stats.transportsChecked, System.nanoTime() - started, PathTerminationReason.TARGET_REACHED);
+					stats.transportsChecked, System.nanoTime() - started, PathTerminationReason.TARGET_REACHED, null,
+					arrival(path));
 			else
 				result = new PathfinderResult(start, firstTarget(), false, path, last(path), PathfinderResult.NO_PATH_COST,
 					stats.nodesChecked, stats.transportsChecked, System.nanoTime() - started,
@@ -449,9 +466,16 @@ public final class ExactPathfinder implements ActiveSearch
 		}
 	}
 
+	/** The arrival of a route that reached a goal, read from where and in which layer it ends. */
+	private Arrival arrival(List<PathStep> route)
+	{
+		PathStep end = route.get(route.size() - 1);
+		return goals.arrival(end.getPackedPosition(), end.isBankVisited());
+	}
+
 	private int firstTarget()
 	{
-		return targets.stream().min(Integer::compareUnsigned).orElse(Integer.MIN_VALUE);
+		return targets.points().stream().min(Integer::compareUnsigned).orElse(Integer.MIN_VALUE);
 	}
 
 	private static int last(List<PathStep> steps)

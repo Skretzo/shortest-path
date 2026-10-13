@@ -2130,8 +2130,8 @@ public class PathfinderTest
 		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		// Attach an empty bank after setupConfig; setupConfigWithBank would force usePoh off.
-		// Bank contents are only collected in INVENTORY_AND_BANK modes, so an empty
-		// container needs no item stub — includeBankPath alone exercises bank visits.
+		// includeBankPath alone exercises bank visits.
+		when(bank.getItems()).thenReturn(new Item[0]);
 		pathfinderConfig.bank = bank;
 		pathfinderConfig.refresh();
 
