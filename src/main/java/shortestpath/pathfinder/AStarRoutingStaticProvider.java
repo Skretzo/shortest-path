@@ -6,12 +6,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.Destination;
 import shortestpath.pathfinder.astar.RoutingCuts;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticBuilder;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
 
 /**
  * Builds the A* backend's static routing data once per plugin session, on first use.
@@ -40,8 +39,8 @@ public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 		if (failure != null) throw failure;
 		try
 		{
-			Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
-			Set<Integer> banks = Destination.loadAllFromResources().get("bank");
+			Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
+			Set<Integer> banks = ResourceLoader.destinations().get("bank");
 			RoutingCuts cuts = RoutingCuts.loadFromResources();
 			if (cuts.cutCount() == 0)
 			{
