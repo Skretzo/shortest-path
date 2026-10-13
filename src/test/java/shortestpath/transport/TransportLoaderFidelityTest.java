@@ -21,6 +21,7 @@ import shortestpath.transport.parser.QuestParser;
 import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.TransportRecord;
 import shortestpath.transport.parser.TsvParser;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.parser.VarRequirementParser;
 
@@ -492,9 +493,9 @@ public class TransportLoaderFidelityTest
 						{
 							continue;
 						}
-						int[] levels = new SkillRequirementParser().parse(token);
+						SkillLevels levels = new SkillRequirementParser().parse(token);
 						int set = 0;
-						for (int level : levels)
+						for (int level : levels.toArray())
 						{
 							if (level != 0)
 							{
