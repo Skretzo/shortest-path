@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
 import net.runelite.api.Quest;
-import net.runelite.api.Skill;
 
 /**
  * Optional access requirements for a destination tile (e.g. bank booths). Empty requirements mean
@@ -18,7 +17,8 @@ public final class DestinationRequirements
 	 */
 	public static final DestinationRequirements EMPTY = new DestinationRequirements();
 
-	private final int[] skillLevels;
+	@Getter
+	private final SkillLevels skillLevels;
 	@Getter
 	private final Set<Quest> quests;
 	@Getter
@@ -26,30 +26,21 @@ public final class DestinationRequirements
 	@Getter
 	private final Set<VarRequirement> varPlayers;
 
-	/**
-	 * The stored array is shared requirement data; hand out a copy so a
-	 * stray write cannot corrupt it.
-	 */
-	public int[] getSkillLevels()
-	{
-		return skillLevels.clone();
-	}
-
 	private DestinationRequirements()
 	{
-		this.skillLevels = new int[Skill.values().length + 3];
+		this.skillLevels = SkillLevels.NONE;
 		this.quests = Collections.emptySet();
 		this.varbits = Collections.emptySet();
 		this.varPlayers = Collections.emptySet();
 	}
 
 	public DestinationRequirements(
-		int[] skillLevels,
+		SkillLevels skillLevels,
 		Set<Quest> quests,
 		Set<VarRequirement> varbits,
 		Set<VarRequirement> varPlayers)
 	{
-		this.skillLevels = skillLevels != null ? skillLevels.clone() : new int[Skill.values().length + 3];
+		this.skillLevels = skillLevels != null ? skillLevels : SkillLevels.NONE;
 		this.quests = quests != null ? quests : Collections.emptySet();
 		this.varbits = varbits != null ? varbits : Collections.emptySet();
 		this.varPlayers = varPlayers != null ? varPlayers : Collections.emptySet();
@@ -68,11 +59,7 @@ public final class DestinationRequirements
 		{
 			return a;
 		}
-		int[] skills = new int[Skill.values().length + 3];
-		for (int i = 0; i < skills.length; i++)
-		{
-			skills[i] = Math.max(a.skillLevels[i], b.skillLevels[i]);
-		}
+		SkillLevels skills = SkillLevels.merge(a.skillLevels, b.skillLevels);
 		Set<Quest> q = new HashSet<>(a.quests);
 		q.addAll(b.quests);
 		Set<VarRequirement> vb = new HashSet<>(a.varbits);
@@ -92,13 +79,6 @@ public final class DestinationRequirements
 		{
 			return false;
 		}
-		for (int level : skillLevels)
-		{
-			if (level > 0)
-			{
-				return false;
-			}
-		}
-		return true;
+		return skillLevels.isEmpty();
 	}
 }
