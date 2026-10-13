@@ -2,6 +2,8 @@ package shortestpath.transport;
 
 import lombok.Getter;
 import net.runelite.api.Skill;
+import shortestpath.ShortestPathConfig;
+import shortestpath.requirement.model.SkillLevels;
 
 @Getter
 public enum TransportType
@@ -10,9 +12,9 @@ public enum TransportType
 	AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", "costAgilityShortcuts")
 		{
 			@Override
-			public TransportType refine(int[] skillLevels)
+			public TransportType refine(SkillLevels skillLevels)
 			{
-				if (skillLevels[Skill.RANGED.ordinal()] > 1 || skillLevels[Skill.STRENGTH.ordinal()] > 1)
+				if (skillLevels.get(Skill.RANGED) > 1 || skillLevels.get(Skill.STRENGTH) > 1)
 				{
 					return GRAPPLE_SHORTCUT;
 				}
@@ -180,7 +182,7 @@ public enum TransportType
 	/**
 	 * Refines the TransportType based on the required skill levels.
 	 */
-	public TransportType refine(int[] skillLevels)
+	public TransportType refine(SkillLevels skillLevels)
 	{
 		return this;
 	}
