@@ -226,6 +226,65 @@ public class TransportDataLintTest
 		}
 	}
 
+	/**
+	 * A concrete origin must be walkable, interactable from an open cardinal neighbour, or reached
+	 * by another transport. Global teleports have no concrete origin and are excluded.
+	 */
+	@Test
+	public void testEveryTransportOriginCanBeApproached()
+	{
+		CollisionMap map = new CollisionMap(SplitFlagMap.fromResources());
+		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		Set<Integer> arrivals = new HashSet<>();
+		for (Set<Transport> set : transports.values())
+		{
+			for (Transport transport : set)
+			{
+				arrivals.add(transport.getDestination());
+			}
+		}
+
+		Set<String> inaccessible = new TreeSet<>();
+		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())
+		{
+			int origin = entry.getKey();
+			if (origin == Transport.UNDEFINED_ORIGIN || canApproach(map, arrivals, origin))
+			{
+				continue;
+			}
+			for (Transport transport : entry.getValue())
+			{
+				inaccessible.add(String.format("%d %d %d  %s  %s",
+					WorldPointUtil.unpackWorldX(origin), WorldPointUtil.unpackWorldY(origin),
+					WorldPointUtil.unpackWorldPlane(origin), transport.getType(), transport.getObjectInfo()));
+			}
+		}
+		Assert.assertTrue(String.format("%d transport origins cannot be approached:%n%s",
+			inaccessible.size(), String.join(System.lineSeparator(), inaccessible)), inaccessible.isEmpty());
+	}
+
+	private static boolean canApproach(CollisionMap map, Set<Integer> arrivals, int origin)
+	{
+		int x = WorldPointUtil.unpackWorldX(origin);
+		int y = WorldPointUtil.unpackWorldY(origin);
+		int z = WorldPointUtil.unpackWorldPlane(origin);
+		// shortcut: assumes incoming transports are reachable; trace chains if isolated cycles appear.
+		if (!map.isBlocked(x, y, z) || arrivals.contains(origin))
+		{
+			return true;
+		}
+		int[][] cardinals = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+		for (int[] d : cardinals)
+		{
+			if (!map.isBlocked(x + d[0], y + d[1], z)
+				|| arrivals.contains(WorldPointUtil.packWorldPoint(x + d[0], y + d[1], z)))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static boolean canEscape(CollisionMap map, Map<Integer, Set<Transport>> transports, int destination)
 	{
 		return map.ordinaryWalkingNeighbors(destination).length > 0 || hasOnwardTransport(map, transports, destination);
