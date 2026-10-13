@@ -12,6 +12,7 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import org.junit.Test;
 import shortestpath.requirement.model.DestinationRequirements;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.VarCheckType;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.settings.TeleportationItem;
@@ -54,7 +55,7 @@ public class BankRequirementAdapterTest
 		// A constructed-but-empty requirement is the same fast path: all
 		// fields present and empty/zero still count as no requirements.
 		DestinationRequirements constructed = new DestinationRequirements(
-			new int[Skill.values().length + 3], Set.of(), Set.of(), Set.of());
+			SkillLevels.NONE, Set.of(), Set.of(), Set.of());
 		assertTrue(constructed.isEmpty());
 		assertTrue(requirements.satisfied(constructed));
 	}
@@ -67,10 +68,10 @@ public class BankRequirementAdapterTest
 	public void skillGatedBankFollowsBoostedLevels()
 	{
 		// Cooks' Guild shape: 99 Cooking.
-		int[] skills = new int[Skill.values().length + 3];
+		int[] skills = new int[SkillLevels.LENGTH];
 		skills[Skill.COOKING.ordinal()] = 99;
 		DestinationRequirements guild = RequirementTestFixtures.bankRequirements(
-			skills, null, null, null);
+			SkillLevels.of(skills), null, null, null);
 
 		assertTrue(requirements(RequirementTestFixtures.context().build()).satisfied(guild));
 
@@ -153,10 +154,10 @@ public class BankRequirementAdapterTest
 	public void bankRequirementsCombineConjunctively()
 	{
 		// A tile carrying two requirement kinds needs all of them.
-		int[] skills = new int[Skill.values().length + 3];
+		int[] skills = new int[SkillLevels.LENGTH];
 		skills[Skill.COOKING.ordinal()] = 99;
 		DestinationRequirements both = RequirementTestFixtures.bankRequirements(
-			skills, null, VarRequirementParser.forVarbits().parse("4481=1"), null);
+			SkillLevels.of(skills), null, VarRequirementParser.forVarbits().parse("4481=1"), null);
 
 		RequirementContext varMissing = RequirementTestFixtures.context().build();
 		assertFalse(requirements(varMissing).satisfied(both));
