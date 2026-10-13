@@ -57,6 +57,7 @@ import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
 import shortestpath.spirittree.SpiritTreeService;
+import shortestpath.widgets.GameWidgets;
 import shortestpath.widgets.WidgetGeometry;
 
 @Slf4j
@@ -117,6 +118,9 @@ public class ShortestPathPlugin extends Plugin
 	private RefreshCoordinator coordinator;
 	@Inject
 	private WidgetGeometry geometry;
+
+	@Inject
+	private GameWidgets gameWidgets;
 	@Inject
 	private PathAnnotator annotator;
 	@Inject
@@ -417,8 +421,8 @@ public class ShortestPathPlugin extends Plugin
 			clientThread.invokeLater(() ->
 			{
 				attempts[0]++;
-				boolean dialogOpen = client.getWidget(InterfaceID.TelenexusTeleport.UNIVERSE) != null
-					|| client.getWidget(InterfaceID.Telenexus.UNIVERSE) != null;
+				boolean dialogOpen = gameWidgets.isWidgetOpen(InterfaceID.TelenexusTeleport.UNIVERSE)
+					|| gameWidgets.isWidgetOpen(InterfaceID.Telenexus.UNIVERSE);
 				if (!dialogOpen)
 				{
 					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
