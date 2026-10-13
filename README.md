@@ -16,6 +16,11 @@ Draws the shortest path to a chosen destination on the map (right click a spot o
 
 Read the [plugin wiki](../../wiki) for info about features, examples and plugin options.
 
+## Using Shortest Path from other plugins
+
+Other plugins can show paths and ask for routes through plugin messages: see
+[cross-plugin communication](docs/Cross-plugin-communication.md).
+
 ## Coordinate dump
 
 Generate the transport and destination coordinate JSON with:
