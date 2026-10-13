@@ -337,7 +337,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		pohService.refreshFromDialog(client);
+		pohService.refreshFromDialog();
 		pohService.persistIfDirty();
 
 		coordinator.gameTick(client.getTickCount());
@@ -423,7 +423,7 @@ public class ShortestPathPlugin extends Plugin
 				{
 					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 				}
-				boolean changed = pohService.refreshFromDialog(client);
+				boolean changed = pohService.refreshFromDialog();
 				return changed
 					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 			});
