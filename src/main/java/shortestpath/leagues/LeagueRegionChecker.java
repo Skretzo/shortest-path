@@ -1,16 +1,9 @@
 package shortestpath.leagues;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
-import lombok.extern.slf4j.Slf4j;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.Util;
 import shortestpath.WorldPointUtil;
+import shortestpath.transport.ResourceLoader;
 
 /**
  * Resolves a packed world point to its {@link LeagueRegion} for the Demonic
@@ -31,11 +24,8 @@ import shortestpath.WorldPointUtil;
  * accessible during the league regardless of unlocked areas.
  * </p>
  */
-@Slf4j
 public class LeagueRegionChecker
 {
-	private static final String RESOURCE_PATH = "/leagues/regions.tsv";
-
 	private static volatile Map<Integer, LeagueRegion> regionsById;
 
 	private LeagueRegionChecker()
@@ -77,7 +67,7 @@ public class LeagueRegionChecker
 				snapshot = regionsById;
 				if (snapshot == null)
 				{
-					snapshot = loadFromResource();
+					snapshot = ResourceLoader.leagueRegions();
 					regionsById = snapshot;
 				}
 			}
@@ -97,72 +87,6 @@ public class LeagueRegionChecker
 			regionsById = null;
 			return;
 		}
-		regionsById = parse(tsv);
-	}
-
-	private static Map<Integer, LeagueRegion> loadFromResource()
-	{
-		try (InputStream in = ShortestPathPlugin.class.getResourceAsStream(RESOURCE_PATH))
-		{
-			if (in == null)
-			{
-				log.warn("League regions resource not found at {}; defaulting all tiles to NEUTRAL", RESOURCE_PATH);
-				return new HashMap<>();
-			}
-			String body = new String(Util.readAllBytes(Objects.requireNonNull(in)), StandardCharsets.UTF_8);
-			return parse(body);
-		}
-		catch (IOException e)
-		{
-			log.error("Failed to load league regions from {}", RESOURCE_PATH, e);
-			return new HashMap<>();
-		}
-	}
-
-	private static Map<Integer, LeagueRegion> parse(String tsv)
-	{
-		Map<Integer, LeagueRegion> result = new HashMap<>();
-		if (tsv == null || tsv.isEmpty())
-		{
-			return result;
-		}
-		int lineNumber = 0;
-		for (String rawLine : tsv.split("\\R"))
-		{
-			lineNumber++;
-			String line = rawLine.trim();
-			if (line.isEmpty() || line.startsWith("#"))
-			{
-				continue;
-			}
-			String[] parts = line.split("\\s+", 2);
-			if (parts.length != 2)
-			{
-				log.warn("Skipping malformed league regions row {}: '{}'", lineNumber, rawLine);
-				continue;
-			}
-			final int regionId;
-			try
-			{
-				regionId = Integer.parseInt(parts[0]);
-			}
-			catch (NumberFormatException e)
-			{
-				log.warn("Skipping league regions row {} with non-numeric region id '{}'", lineNumber, parts[0]);
-				continue;
-			}
-			final LeagueRegion region;
-			try
-			{
-				region = LeagueRegion.valueOf(parts[1]);
-			}
-			catch (IllegalArgumentException e)
-			{
-				log.warn("Skipping league regions row {} with unknown region '{}'", lineNumber, parts[1]);
-				continue;
-			}
-			result.put(regionId, region);
-		}
-		return result;
+		regionsById = ResourceLoader.parseLeagueRegions(tsv);
 	}
 }
