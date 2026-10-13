@@ -50,9 +50,6 @@ public class TransportDataLintTest
 	 * data and remove the entry; the test fails if an entry here no longer is a dead end.
 	 */
 	private static final Set<String> KNOWN_DEAD_ENDS = new HashSet<>(Arrays.asList(
-		// Teleports and transports
-		"2483 3188 0  CANOE  Tree Gnome Village",
-		"2506 3584 1  TRANSPORT  ",
 		// Seasonal transports
 		"1253 3750 0  SEASONAL_TRANSPORTS  Fairy Mushroom: Kourend - Farming Guild (planted)",
 		"1304 9398 0  SEASONAL_TRANSPORTS  Map of Alacrity: Varlamore - Tonali cavern: Log balance",
