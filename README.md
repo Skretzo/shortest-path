@@ -18,8 +18,8 @@ Read the [plugin wiki](../../wiki) for info about features, examples and plugin 
 
 ## Using Shortest Path from other plugins
 
-Other plugins can show paths and ask for routes through plugin messages: see
-[cross-plugin communication](docs/Cross-plugin-communication.md).
+Other plugins can show paths, query routes and require items at a destination (a spade for a
+dig spot, quest items) through plugin messages: see [cross-plugin communication](docs/Cross-plugin-communication.md).
 
 ## Coordinate dump
 
