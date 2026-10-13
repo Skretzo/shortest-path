@@ -1,5 +1,6 @@
 package shortestpath.widgets;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -57,7 +58,12 @@ public class GameWidgets
 	 */
 	public List<String> childTexts(int groupId, int childId)
 	{
-		return List.of("unimplemented");
+		if (client == null)
+		{
+			return List.of();
+		}
+		checkOnClientThread();
+		return childTexts(client.getWidget(groupId, childId));
 	}
 
 	/**
@@ -66,17 +72,43 @@ public class GameWidgets
 	 */
 	public List<String> childTexts(int packedId)
 	{
-		return List.of("unimplemented");
+		if (client == null)
+		{
+			return List.of();
+		}
+		checkOnClientThread();
+		return childTexts(client.getWidget(packedId));
 	}
 
 	/**
 	 * The container's own text first, then its ordered dynamic-children
 	 * texts — the keyed-row shape the nexus dialog presents. A missing
-	 * widget yields an empty list.
+	 * widget yields an empty list; a null child slot or null text keeps
+	 * its index as a null element so keyed rows do not shift.
 	 */
 	public List<String> selfAndChildTexts(int packedId)
 	{
-		return List.of("unimplemented");
+		if (client == null)
+		{
+			return List.of();
+		}
+		checkOnClientThread();
+		Widget widget = client.getWidget(packedId);
+		if (widget == null)
+		{
+			return List.of();
+		}
+		List<String> texts = new ArrayList<>();
+		texts.add(widget.getText());
+		Widget[] children = widget.getDynamicChildren();
+		if (children != null)
+		{
+			for (Widget child : children)
+			{
+				texts.add(child == null ? null : child.getText());
+			}
+		}
+		return texts;
 	}
 
 	/**
@@ -84,7 +116,31 @@ public class GameWidgets
 	 */
 	public boolean isWidgetOpen(int packedId)
 	{
-		return true;
+		if (client == null)
+		{
+			return false;
+		}
+		checkOnClientThread();
+		return client.getWidget(packedId) != null;
+	}
+
+	private static List<String> childTexts(Widget widget)
+	{
+		if (widget == null)
+		{
+			return List.of();
+		}
+		Widget[] children = widget.getDynamicChildren();
+		if (children == null || children.length == 0)
+		{
+			return List.of();
+		}
+		List<String> texts = new ArrayList<>(children.length);
+		for (Widget child : children)
+		{
+			texts.add(child == null ? null : child.getText());
+		}
+		return texts;
 	}
 
 	private void checkOnClientThread()
