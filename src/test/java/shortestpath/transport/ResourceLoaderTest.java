@@ -1,23 +1,37 @@
 package shortestpath.transport;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.parser.ItemRequirementParser;
+import shortestpath.leagues.LeagueRegion;
+import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.requirement.model.TransportItems;
+import shortestpath.transport.parser.ItemRequirementParser;
 
 /**
  * Tests for the transports content seam — coverage moved to the loader's
  * typed surface ({@link ResourceLoader#addTransportsFromContents} and
  * {@link ResourceLoader#transports()}).
+ *
+ * <p>The suite also pins each resource's distinct failure posture and the
+ * committed resources' contents: destinations and bank requirements keep
+ * their own row idioms (duplicate-header accumulation, drop-arity and
+ * keep-arity splits respectively), league regions degrade warn-and-skip,
+ * and the collision map hands out a caller-owned stream. The
+ * teleport-restriction families reader is panel-side on this stack — its
+ * coverage lands with the panel rebase, not here.
  */
 public class ResourceLoaderTest
 {
@@ -1202,5 +1216,273 @@ public class ResourceLoaderTest
 					t.getDestination());
 			}
 		}
+	}
+
+	// ------------------------------------------------------------------
+	// Failure-posture pins: each resource keeps its incumbent contract —
+	// the single loader must not flatten six failure policies into one.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void malformedTransportRowsDoNotBlockWellFormedRows()
+	{
+		// A row whose coordinate cell cannot produce a world point degrades
+		// to a permutation marker and contributes no map entry; the loader
+		// keeps going and the well-formed row still lands keyed by origin.
+		String contents = "# Origin\tDestination\tDuration\n" +
+			"not-a-coord\t3300 3300 0\t5\n" +
+			"3200 3200 0\t3300 3300 0\t7\n";
+
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		Assert.assertEquals("Only the well-formed row may land", 1, transports.size());
+		Transport transport = getFirstTransport(transports.get(WorldPointUtil.packWorldPoint(3200, 3200, 0)));
+		Assert.assertEquals(7, transport.getDuration());
+	}
+
+	@Test
+	public void transportSkillLevelsComeBackTyped()
+	{
+		// The loader's transports carry SkillLevels, not the bare int[] —
+		// the typed accessors are the contract.
+		String contents = "# Origin\tDestination\tSkills\n" +
+			"3200 3200 0\t3300 3300 0\t50 Agility\n";
+
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		SkillLevels levels = getFirstTransport(transports.get(WorldPointUtil.packWorldPoint(3200, 3200, 0)))
+			.getSkillLevels();
+		Assert.assertEquals(50, levels.get(Skill.AGILITY));
+		Assert.assertEquals(50, levels.get(Skill.AGILITY.ordinal()));
+		Assert.assertEquals(0, levels.get(Skill.STRENGTH));
+	}
+
+	@Test
+	public void skillCellAbortsRemainingRequirementsOnBadLevel()
+	{
+		// The skill parser's catch wraps the whole per-cell requirement
+		// loop: a non-numeric level aborts the rest of the cell while
+		// requirements already written stay — "70 Ranged" must NOT land.
+		String contents = "# Origin\tDestination\tSkills\n" +
+			"3200 3200 0\t3300 3300 0\t50 Agility;oops Strength;70 Ranged\n";
+
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		SkillLevels levels = getFirstTransport(transports.get(WorldPointUtil.packWorldPoint(3200, 3200, 0)))
+			.getSkillLevels();
+		Assert.assertEquals("Written before the bad token", 50, levels.get(Skill.AGILITY));
+		Assert.assertEquals("Bad token itself is not written", 0, levels.get(Skill.STRENGTH));
+		Assert.assertEquals("Loop aborts before the last requirement", 0, levels.get(Skill.RANGED));
+	}
+
+	// ------------------------------------------------------------------
+	// Destinations seam — header-aware Scanner idiom, kept verbatim:
+	// duplicate-header accumulation and drop-arity field splitting.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void destinationsSeamSkipsBadCoordinates()
+	{
+		Map<String, Set<Integer>> map = new HashMap<>();
+		ResourceLoader.parseDestinations(map, "/destinations/test/mixed.tsv",
+			"# Destination\tInfo\n" +
+				"a b c\trow with an unparseable coordinate\n" +
+				"3200 3200 0\tgood row\n");
+
+		Assert.assertEquals(1, map.size());
+		Assert.assertEquals(
+			Set.of(WorldPointUtil.packWorldPoint(3200, 3200, 0)),
+			map.get("mixed"));
+	}
+
+	@Test
+	public void destinationsSeamAccumulatesDuplicateHeaderCells()
+	{
+		// Repeated header cells accumulate into one list, so a second column
+		// named "Destination" contributes its coordinates too — the
+		// divergence that keeps this loop off a last-wins header map.
+		Map<String, Set<Integer>> map = new HashMap<>();
+		ResourceLoader.parseDestinations(map, "/destinations/test/dupheader.tsv",
+			"# Destination\tDestination\n" +
+				"3200 3200 0\t3300 3300 0\n");
+
+		Set<Integer> points = map.get("dupheader");
+		Assert.assertNotNull(points);
+		Assert.assertEquals(2, points.size());
+		Assert.assertTrue(points.contains(WorldPointUtil.packWorldPoint(3200, 3200, 0)));
+		Assert.assertTrue(points.contains(WorldPointUtil.packWorldPoint(3300, 3300, 0)));
+	}
+
+	@Test
+	public void destinationsSeamReadsRowsWithTrailingEmptyCells()
+	{
+		// Committed-data shape (bank.tsv): rows end in trailing tabs. The
+		// reader's default-arity split drops trailing empty fields; the
+		// leading coordinate still lands exactly once.
+		Map<String, Set<Integer>> map = new HashMap<>();
+		ResourceLoader.parseDestinations(map, "/destinations/test/trailing.tsv",
+			"# Destination\tInfo\tSkills\tQuests\tVarbits\tVarPlayers\n" +
+				"3269 3164 0\tAl Kharid\t\t\t\t\n");
+
+		Assert.assertEquals(
+			Set.of(WorldPointUtil.packWorldPoint(3269, 3164, 0)),
+			map.get("trailing"));
+	}
+
+	@Test
+	public void destinationsEntryPointMatchesCommittedResources()
+	{
+		Map<String, Set<Integer>> all = ResourceLoader.destinations();
+
+		Assert.assertEquals(Set.of("altar", "bank", "anvil", "apothecary"), all.keySet());
+		Assert.assertEquals(49, all.get("altar").size());
+		Assert.assertEquals(289, all.get("bank").size());
+		Assert.assertEquals(79, all.get("anvil").size());
+		Assert.assertEquals(1, all.get("apothecary").size());
+		Assert.assertTrue("Al Kharid bank tile",
+			all.get("bank").contains(WorldPointUtil.packWorldPoint(3269, 3164, 0)));
+	}
+
+	// ------------------------------------------------------------------
+	// Bank-requirements seam — keep-arity split, trimmed headers, per-row
+	// merge. Missing Destination column yields an empty map.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void bankRequirementsSeamSkipsBadCoordinates()
+	{
+		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+			"# Destination\tSkills\n" +
+				"a b c\tskipped row\n" +
+				"3147 3450 0\t99 Cooking\n");
+
+		Assert.assertEquals(1, reqs.size());
+		Assert.assertEquals(99,
+			reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).getSkillLevels().get(Skill.COOKING));
+	}
+
+	@Test
+	public void bankRequirementsSeamYieldsEmptyMapWithoutDestinationColumn()
+	{
+		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+			"# Info\tSkills\n" +
+				"some info\t99 Cooking\n");
+
+		Assert.assertTrue("No Destination column means no requirements", reqs.isEmpty());
+	}
+
+	@Test
+	public void bankRequirementsSeamParsesMaxSentinel()
+	{
+		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+			"# Destination\tSkills\n" +
+				"3147 3450 0\tMax Cooking\n");
+
+		Assert.assertEquals(SkillLevels.MAX_LEVEL,
+			reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).getSkillLevels().get(Skill.COOKING));
+	}
+
+	@Test
+	public void bankRequirementsSeamMergesRowsSharingACoordinate()
+	{
+		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+			"# Destination\tSkills\n" +
+				"3147 3450 0\t99 Cooking\n" +
+				"3147 3450 0\t50 Farming\n");
+
+		Assert.assertEquals(1, reqs.size());
+		SkillLevels levels = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).getSkillLevels();
+		Assert.assertEquals(99, levels.get(Skill.COOKING));
+		Assert.assertEquals(50, levels.get(Skill.FARMING));
+	}
+
+	@Test
+	public void bankRequirementsEntryPointMatchesCommittedResource()
+	{
+		Map<Integer, DestinationRequirements> reqs = ResourceLoader.bankRequirements();
+
+		Assert.assertEquals(289, reqs.size());
+		DestinationRequirements cooksGuild = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0));
+		Assert.assertNotNull("Cooks' Guild bank tile carries a requirement", cooksGuild);
+		Assert.assertEquals(99, cooksGuild.getSkillLevels().get(Skill.COOKING));
+	}
+
+	// ------------------------------------------------------------------
+	// League regions — two-column whitespace grammar, warn-and-skip.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void leagueRegionsSeamWarnsAndSkipsBadRows()
+	{
+		Map<Integer, LeagueRegion> regions = ResourceLoader.parseLeagueRegions(
+			"# regionId\tLeagueRegion\n" +
+				"notanumber\tVARLAMORE\n" +
+				"4137\tNO_SUCH_REGION\n" +
+				"malformed-no-delimiter\n" +
+				"4138\tVARLAMORE\n" +
+				"7515\tMISTHALIN\n");
+
+		Assert.assertEquals("Only well-formed rows land", 2, regions.size());
+		Assert.assertEquals(LeagueRegion.VARLAMORE, regions.get(4138));
+		Assert.assertEquals(LeagueRegion.MISTHALIN, regions.get(7515));
+	}
+
+	@Test
+	public void leagueRegionsSeamTreatsEmptyInputAsEmptyMap()
+	{
+		Assert.assertTrue(ResourceLoader.parseLeagueRegions("").isEmpty());
+		Assert.assertTrue(ResourceLoader.parseLeagueRegions(null).isEmpty());
+	}
+
+	@Test
+	public void leagueRegionsEntryPointMatchesCommittedResource()
+	{
+		Map<Integer, LeagueRegion> regions = ResourceLoader.leagueRegions();
+
+		Assert.assertEquals(1441, regions.size());
+		Assert.assertEquals(LeagueRegion.VARLAMORE, regions.get(4137));
+		Assert.assertEquals(LeagueRegion.MISTHALIN, regions.get(7515));
+	}
+
+	@Test
+	public void transportsEntryPointMatchesCommittedResources()
+	{
+		HashMap<Integer, Set<Transport>> all = ResourceLoader.transports();
+
+		Assert.assertEquals("committed origins", 6633, all.size());
+		int total = 0;
+		for (Set<Transport> set : all.values())
+		{
+			Assert.assertFalse("origin sets are never empty", set.isEmpty());
+			total += set.size();
+		}
+		Assert.assertEquals("committed transports (incl. permutation products)", 15183, total);
+	}
+
+	// ------------------------------------------------------------------
+	// Collision map — caller-owned stream; the zip walk's failure posture
+	// stays with the caller.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void collisionMapReturnsTheCommittedZip() throws IOException
+	{
+		int entries = 0;
+		int packedNames = 0;
+		try (InputStream in = ResourceLoader.collisionMap();
+			ZipInputStream zip = new ZipInputStream(in))
+		{
+			for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry())
+			{
+				entries++;
+				if (entry.getName().matches("\\d+_\\d+"))
+				{
+					packedNames++;
+				}
+			}
+		}
+
+		Assert.assertEquals("Committed collision map region count", 2771, entries);
+		Assert.assertEquals("Every entry is a packed region name", entries, packedNames);
 	}
 }
