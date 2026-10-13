@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import shortestpath.Destination;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
@@ -31,7 +30,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticBuilder;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 
 /**
  * Issue #640 coverage for the A* backend: it terminates on the goal set
@@ -53,8 +52,8 @@ public class AStarPathfinderBlockedTargetTest
 	public static void buildRoutingStatic() throws Exception
 	{
 		CollisionMap collision = new CollisionMap(SplitFlagMap.fromResources());
-		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
-		Set<Integer> banks = Destination.loadAllFromResources().get("bank");
+		Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
+		Set<Integer> banks = ResourceLoader.destinations().get("bank");
 		routingStatic = RoutingStaticBuilder.build(collision, transports,
 			banks == null ? Set.of() : banks, RoutingCuts.loadFromResources().pairs()).routingStatic;
 	}
