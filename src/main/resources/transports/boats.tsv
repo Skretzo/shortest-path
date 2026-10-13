@@ -46,12 +46,11 @@
 2711 3732 0	2660 3989 1	Iceberg Boat 21176			Cold War		9	Iceberg
 								
 # Rellekka, Weiss								
-2707 3735 0	2849 3968 0	Weiss Boat 21176			Making Friends with My Arm		12	Weiss
-2707 3736 0	2849 3968 0	Weiss Boat 21176			Making Friends with My Arm		12	Weiss
-2711 3732 0	2849 3968 0	Weiss Boat 21176			Making Friends with My Arm		12	Weiss
+2707 3735 0	2849 3967 0	Weiss Boat 21176			Making Friends with My Arm		12	Weiss
+2707 3736 0	2849 3967 0	Weiss Boat 21176			Making Friends with My Arm		12	Weiss
+2711 3732 0	2849 3967 0	Weiss Boat 21176			Making Friends with My Arm		12	Weiss
 2848 3966 0	2706 3735 0	Travel Boat 21177			Making Friends with My Arm		12	
 2849 3967 0	2706 3735 0	Travel Boat 21177			Making Friends with My Arm		12	
-2849 3968 0	2706 3735 0	Travel Boat 21177			Making Friends with My Arm		12	
 								
 # Rellekka, Island of Stone								
 2472 3994 0	2621 3692 0	Travel Fremennik Boat 37408			The Fremennik Exiles		6	
@@ -121,9 +120,9 @@
 3525 3170 0	3605 3161 1	Board Boat 38089				7255>41	13	1: Meiyerditch.
 3525 3170 0	3684 3176 0	Board Boat 38089				7255>41	13	2: Icyene Graveyard.
 3525 3170 0	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
-3605 3161 1	3525 3170 0	Board Boat 38089				7255>41	13	1: Burgh de Rott.
-3605 3161 1	3684 3176 0	Board Boat 38089				7255>41	13	2: Icyene Graveyard.
-3605 3161 1	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
+3605 3163 1	3525 3170 0	Board Boat 38089				7255>41	13	1: Burgh de Rott.
+3605 3163 1	3684 3176 0	Board Boat 38089				7255>41	13	2: Icyene Graveyard.
+3605 3163 1	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
 3684 3176 0	3525 3170 0	Board Boat 38089				7255>41	13	1: Burgh de Rott.
 3684 3176 0	3605 3161 1	Board Boat 38089				7255>41	13	2: Meiyerditch.
 3684 3176 0	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
