@@ -20,6 +20,7 @@ import org.junit.Test;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
+import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.requirement.model.SkillLevels;
@@ -997,6 +998,136 @@ public class RequirementsTest
 			.boostedSkillLevelsAndMore(low).build();
 		assertEquals(RejectionReason.SKILL_LEVEL,
 			requirements(context, RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(both));
+	}
+
+	@Test
+	public void nullAndEmptyDestinationRequirementsAreAlwaysSatisfied()
+	{
+		Requirements requirements = requirements(RequirementTestFixtures.context().build(),
+			RequirementTestFixtures.policy(TeleportationItem.INVENTORY));
+		assertEquals(RejectionReason.NONE,
+			requirements.check((DestinationRequirements) null));
+		assertEquals(RejectionReason.NONE,
+			requirements.check(DestinationRequirements.EMPTY));
+	}
+
+	@Test
+	public void emptySkillRequirementsNeverReject()
+	{
+		Transport plain = transport(TransportType.TRANSPORT).build();
+		assertEquals(SkillLevels.NONE, plain.getSkillLevels());
+
+		// An all-zero player still satisfies a transport carrying no
+		// skill requirement at all.
+		RequirementContext empty = RequirementTestFixtures.context()
+			.boostedSkillLevelsAndMore(new int[SkillLevels.LENGTH]).build();
+		assertEquals(RejectionReason.NONE,
+			requirements(empty, RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(plain));
+	}
+
+	@Test
+	public void maxRequirementsAtTheTailSlotsResolveAgainstTheirCaps()
+	{
+		Transport maxedTail = transport(TransportType.TRANSPORT)
+			.skillLevels("Max Total;Max Combat;Max Quest").build();
+
+		// The default fixture's caps: 2376 total, 126 combat, 300 quest
+		// points — a maxed player satisfies all three sentinels.
+		assertEquals(RejectionReason.NONE,
+			requirements(RequirementTestFixtures.context().build(),
+				RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(maxedTail));
+
+		int[] lowTotal = RequirementTestFixtures.maxedSkills();
+		lowTotal[SkillLevels.TOTAL_LEVEL_INDEX] = 99 * Skill.values().length - 1;
+		int[] lowCombat = RequirementTestFixtures.maxedSkills();
+		lowCombat[SkillLevels.COMBAT_LEVEL_INDEX] = 125;
+		int[] lowQuest = RequirementTestFixtures.maxedSkills();
+		lowQuest[SkillLevels.QUEST_POINTS_INDEX] = 299;
+		for (int[] player : new int[][]{lowTotal, lowCombat, lowQuest})
+		{
+			assertEquals(RejectionReason.SKILL_LEVEL,
+				requirements(RequirementTestFixtures.context()
+						.boostedSkillLevelsAndMore(player).build(),
+					RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(maxedTail));
+		}
+	}
+
+	@Test
+	public void maxQuestRequirementFollowsTheContextCap()
+	{
+		Transport maxedCape = transport(TransportType.TRANSPORT)
+			.skillLevels("Max Quest").build();
+
+		// The sentinel resolves against the context's quest-point cap,
+		// not a hard-coded constant.
+		int[] cappedPlayer = RequirementTestFixtures.maxedSkills();
+		cappedPlayer[SkillLevels.QUEST_POINTS_INDEX] = 150;
+		RequirementContext capped = RequirementTestFixtures.context()
+			.currentMaxQuestPoints(150)
+			.boostedSkillLevelsAndMore(cappedPlayer).build();
+		assertEquals(RejectionReason.NONE,
+			requirements(capped, RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(maxedCape));
+
+		int[] belowPlayer = RequirementTestFixtures.maxedSkills();
+		belowPlayer[SkillLevels.QUEST_POINTS_INDEX] = 149;
+		RequirementContext below = RequirementTestFixtures.context()
+			.currentMaxQuestPoints(150)
+			.boostedSkillLevelsAndMore(belowPlayer).build();
+		assertEquals(RejectionReason.SKILL_LEVEL,
+			requirements(below, RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(maxedCape));
+	}
+
+	@Test
+	public void seasonalModeSkipsOnlyTheTotalLevelSlot()
+	{
+		// NEUTRAL endpoints keep the league-region gate out of the way so
+		// the skill gate is what decides.
+		Transport gated = transport(TransportType.TRANSPORT)
+			.origin(POH).destination(POH)
+			.skillLevels("99 Cooking;2000 Total").build();
+
+		// Non-seasonal control: the total slot is enforced.
+		int[] belowTotal = RequirementTestFixtures.maxedSkills();
+		belowTotal[SkillLevels.TOTAL_LEVEL_INDEX] = 1999;
+		assertEquals(RejectionReason.SKILL_LEVEL,
+			requirements(RequirementTestFixtures.context()
+					.boostedSkillLevelsAndMore(belowTotal).build(),
+				RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(gated));
+
+		// Seasonal: the same player passes — only the total slot is
+		// skipped...
+		RequirementContext seasonalContext = RequirementTestFixtures.context()
+			.leagueModeState(seasonal())
+			.boostedSkillLevelsAndMore(belowTotal).build();
+		assertEquals(RejectionReason.NONE,
+			requirements(seasonalContext,
+				RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(gated));
+
+		// ...while a per-skill miss still rejects on the seasonal world.
+		int[] belowSkill = RequirementTestFixtures.maxedSkills();
+		belowSkill[Skill.COOKING.ordinal()] = 50;
+		belowSkill[SkillLevels.TOTAL_LEVEL_INDEX] = 1999;
+		RequirementContext seasonalLowSkill = RequirementTestFixtures.context()
+			.leagueModeState(seasonal())
+			.boostedSkillLevelsAndMore(belowSkill).build();
+		assertEquals(RejectionReason.SKILL_LEVEL,
+			requirements(seasonalLowSkill,
+				RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(gated));
+	}
+
+	@Test
+	public void passingSkillsNeverMaskAFailingQuestGate()
+	{
+		Transport gated = transport(TransportType.TRANSPORT)
+			.skillLevels("99 Cooking")
+			.quests(Set.of(Quest.TREE_GNOME_VILLAGE))
+			.build();
+		// A maxed player missing the quest still hears QUEST — a passing
+		// skill gate cannot mask a later gate's rejection, and the quest
+		// gate reports its own verdict rather than the earlier gate's.
+		assertEquals(RejectionReason.QUEST,
+			requirements(RequirementTestFixtures.context().build(),
+				RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(gated));
 	}
 
 	// ------------------------------------------------------------------
