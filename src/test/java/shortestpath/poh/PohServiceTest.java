@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -11,11 +12,10 @@ import static org.mockito.Mockito.when;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,6 +25,7 @@ import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
+import shortestpath.widgets.GameWidgets;
 
 public class PohServiceTest
 {
@@ -245,23 +246,62 @@ public class PohServiceTest
 		assertEquals(Set.of(Effect.DISPLAY_ONLY), captor.getValue().getEffects());
 	}
 
+	/**
+	 * A widgets seam answering the given packed-id rows and nothing for
+	 * every other id — the dialog reads collapse to ordered string
+	 * fixtures.
+	 */
+	private static GameWidgets stubDialogRows(Map<Integer, List<String>> rows)
+	{
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.selfAndChildTexts(anyInt())).thenReturn(List.of());
+		rows.forEach((id, texts) -> when(widgets.selfAndChildTexts(id)).thenReturn(texts));
+		return widgets;
+	}
+
 	@Test
 	public void testRefreshFromDialogReturnsWhetherItParsed()
 	{
 		// The dialog-retry predicate consumes the boolean as "something
 		// parsed", matching the old non-null fact condition.
-		Client client = mock(Client.class);
-		Widget labels = mock(Widget.class);
-		when(client.getWidget(InterfaceID.TelenexusTeleport.TEXT1)).thenReturn(labels);
-		when(labels.getText()).thenReturn("Y: Lassar");
+		GameWidgets widgets = stubDialogRows(Map.of(
+			InterfaceID.TelenexusTeleport.TEXT1, List.of("Y: Lassar")));
+		PohService dialog = new PohService(null, coordinator, widgets);
 
-		assertTrue("a parseable dialog reports a mapping", service.refreshFromDialog(client));
+		assertTrue("a parseable dialog reports a mapping", dialog.refreshFromDialog());
 		verify(coordinator).pohChanged(any());
-		assertEquals("Y: Lassar Portal", service.apply("Lassar Portal"));
+		assertEquals("Y: Lassar Portal", dialog.apply("Lassar Portal"));
 
-		Client empty = mock(Client.class);
-		assertFalse("no keyed widgets means nothing parsed", service.refreshFromDialog(empty));
+		PohService empty = new PohService(null, coordinator, stubDialogRows(Map.of()));
+		assertFalse("no keyed widgets means nothing parsed", empty.refreshFromDialog());
 		verify(coordinator, times(1)).pohChanged(any());
+	}
+
+	@Test
+	public void testRefreshFromDialogReadsSelfTextBeforeChildren()
+	{
+		// The container's own text leads the row list. A child row
+		// colliding on the same normalized name overwrites it, so the
+		// last-wins outcome proves the self-first ordering held.
+		GameWidgets widgets = stubDialogRows(Map.of(
+			InterfaceID.TelenexusTeleport.TEXT1, List.of("Y: Lassar", "3: Lassar")));
+		PohService dialog = new PohService(null, coordinator, widgets);
+
+		assertTrue(dialog.refreshFromDialog());
+		assertEquals("3: Lassar Portal", dialog.apply("Lassar Portal"));
+	}
+
+	@Test
+	public void testRefreshFromDialogFallsBackToConfigurationSlots()
+	{
+		// When the teleport menu yields nothing, the configuration slot
+		// list supplies the keyed names — and its header rows are ignored.
+		GameWidgets widgets = stubDialogRows(Map.of(
+			InterfaceID.Telenexus.SLOTTED_LIST, List.of("Slots", "4: Camelot")));
+		PohService dialog = new PohService(null, coordinator, widgets);
+
+		assertTrue(dialog.refreshFromDialog());
+		assertEquals("4: Camelot Portal", dialog.apply("Camelot Portal"));
 	}
 
 	@Test
@@ -270,13 +310,12 @@ public class PohServiceTest
 		// An unchanged re-read still produces a fact — its effect set is
 		// empty, so the coordinator's own guard decides nothing runs — but
 		// the boolean must stay true or the retry loop would spin forever.
-		Client client = mock(Client.class);
-		Widget labels = mock(Widget.class);
-		when(client.getWidget(InterfaceID.TelenexusTeleport.TEXT1)).thenReturn(labels);
-		when(labels.getText()).thenReturn("Y: Lassar");
+		GameWidgets widgets = stubDialogRows(Map.of(
+			InterfaceID.TelenexusTeleport.TEXT1, List.of("Y: Lassar")));
+		PohService dialog = new PohService(null, coordinator, widgets);
 
-		assertTrue(service.refreshFromDialog(client));
-		assertTrue(service.refreshFromDialog(client));
+		assertTrue(dialog.refreshFromDialog());
+		assertTrue(dialog.refreshFromDialog());
 		verify(coordinator, times(2)).pohChanged(any());
 	}
 
