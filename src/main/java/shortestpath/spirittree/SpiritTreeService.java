@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -18,12 +19,12 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.util.Text;
-import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetModalMode;
 import net.runelite.client.config.ConfigManager;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
+import shortestpath.widgets.GameWidgets;
 
 /**
  * Per-account availability state for the five plantable spirit tree patches
@@ -89,6 +90,7 @@ public class SpiritTreeService
 	private final ConfigManager configManager;
 	private final Client client;
 	private final RefreshCoordinator coordinator;
+	private final GameWidgets gameWidgets;
 	// patch name -> last observed availability value (20 = grown and travelable).
 	private final Map<String, Integer> observedValues = new HashMap<>();
 	private final Map<String, Integer> lastPersistedValues = new HashMap<>();
@@ -108,11 +110,22 @@ public class SpiritTreeService
 
 	@Inject
 	public SpiritTreeService(ConfigManager configManager, Client client,
-		RefreshCoordinator coordinator)
+		RefreshCoordinator coordinator, GameWidgets gameWidgets)
 	{
 		this.configManager = configManager;
 		this.client = client;
 		this.coordinator = coordinator;
+		this.gameWidgets = gameWidgets;
+	}
+
+	/**
+	 * Detached-widgets seam for tests that exercise the service without the
+	 * menu scrape — the menu read no-ops on the missing service.
+	 */
+	SpiritTreeService(ConfigManager configManager, Client client,
+		RefreshCoordinator coordinator)
+	{
+		this(configManager, client, coordinator, null);
 	}
 
 	/**
@@ -122,7 +135,7 @@ public class SpiritTreeService
 	 */
 	SpiritTreeService(ConfigManager configManager, Client client)
 	{
-		this(configManager, client, null);
+		this(configManager, client, null, null);
 	}
 
 	SpiritTreeService()
@@ -534,28 +547,15 @@ public class SpiritTreeService
 		// Referencing
 		// https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
 
-		if (client == null)
+		if (gameWidgets == null)
 		{
 			return;
 		}
 
-		Widget container;
-		if (useNewMenu)
-		{
-			container = client.getWidget(InterfaceID.MENU_NEW, 9);
-		}
-		else
-		{
-			container = client.getWidget(InterfaceID.MENU, 3);
-		}
-
-		if (container == null)
-		{
-			return;
-		}
-
-		Widget[] children = container.getDynamicChildren();
-		if (children == null || children.length == 0)
+		List<String> texts = useNewMenu
+			? gameWidgets.childTexts(InterfaceID.MENU_NEW, 9)
+			: gameWidgets.childTexts(InterfaceID.MENU, 3);
+		if (texts.isEmpty())
 		{
 			return;
 		}
@@ -567,12 +567,12 @@ public class SpiritTreeService
 		// persist a false observation from an unrelated interface.
 		String expectedFirstRow =
 			(useNewMenu ? "<col=ffffff>1</col>: " : "<col=735a28>1</col>: ") + "Tree Gnome Village";
-		if (!expectedFirstRow.equals(children[0].getText()))
+		if (!expectedFirstRow.equals(texts.get(0)))
 		{
 			return;
 		}
 
-		SpiritTreeMenuSnapshot snapshot = parseSpiritTreeMenuRows(children, useNewMenu);
+		SpiritTreeMenuSnapshot snapshot = parseSpiritTreeMenuRows(texts, useNewMenu);
 
 		// The menu is authoritative for the patches it lists; persisted and
 		// in-region-varbit observations fill the patches the menu never covered.
@@ -585,17 +585,16 @@ public class SpiritTreeService
 	}
 
 	/**
-	 * Parses the dynamic children of a spirit tree menu container into the
+	 * Parses the ordered row texts of a spirit tree menu container into the
 	 * listed/available patch-name sets. Package-private for tests.
 	 */
-	static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(Widget[] children, boolean useNewMenu)
+	static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(List<String> texts, boolean useNewMenu)
 	{
 		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
 		SpiritTreeMenuSnapshot snapshot = new SpiritTreeMenuSnapshot();
 
-		for (Widget child : children)
+		for (String text : texts)
 		{
-			String text = child.getText();
 			if (text == null)
 			{
 				continue;
