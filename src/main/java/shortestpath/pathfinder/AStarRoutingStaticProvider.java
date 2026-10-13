@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.Destination;
 import shortestpath.pathfinder.astar.*;
 import shortestpath.transport.*;
 
@@ -35,8 +34,8 @@ public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 		if (failure != null) throw failure;
 		try
 		{
-			Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
-			Set<Integer> banks = Destination.loadAllFromResources().get("bank");
+			Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
+			Set<Integer> banks = ResourceLoader.destinations().get("bank");
 			RoutingCuts cuts = RoutingCuts.loadFromResources();
 			if (cuts.cutCount() == 0)
 			{

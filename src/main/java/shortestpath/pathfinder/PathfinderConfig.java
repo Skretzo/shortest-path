@@ -5,13 +5,16 @@ import java.util.*;
 import lombok.Getter;
 import net.runelite.api.*;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.*;
 import shortestpath.requirement.model.*;
 import shortestpath.poh.*;
+import shortestpath.*;
 import shortestpath.spirittree.SpiritTreeService;
 import shortestpath.settings.*;
+import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemStateService;
 import shortestpath.leagues.LeagueModeState;
+import shortestpath.leagues.LeagueRegion;
+import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
@@ -245,7 +248,7 @@ public class PathfinderConfig
 		this.transportTypeConfig = new TransportTypeConfig(config, settings);
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
-		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
+		Map<Integer, Set<Transport>> loadedTransports = ResourceLoader.transports();
 		PohService.remapPohDestinations(loadedTransports);
 		this.allTransports = flatten(loadedTransports);
 		this.transportDestinations = collectTransportDestinations(this.allTransports);
@@ -253,10 +256,10 @@ public class PathfinderConfig
 		this.transportAvailabilities = new TransportAvailabilities(
 			new TransportAvailability.Builder(allTransports.length).build(),
 			new TransportAvailability.Builder(allTransports.length).build());
-		this.allDestinations = Destination.loadAllFromResources();
+		this.allDestinations = ResourceLoader.destinations();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
-		this.bankRequirements = Destination.loadBankRequirementsFromResources();
+		this.bankRequirements = ResourceLoader.bankRequirements();
 	}
 
 	protected PathfinderConfig(Client client, ShortestPathConfig config,
