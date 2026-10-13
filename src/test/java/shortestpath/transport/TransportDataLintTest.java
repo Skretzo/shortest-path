@@ -142,7 +142,7 @@ public class TransportDataLintTest
 					String existingInfo = duplicateInfo.get(signature);
 					String newInfo = String.format("MaxWilderness: %d, Skills: %s",
 						transport.getMaxWildernessLevel(),
-						Arrays.toString(transport.getSkillLevels()));
+						Arrays.toString(transport.getSkillLevels().toArray()));
 
 					duplicatesFound.add(String.format("Exact duplicate transport: %s\n" +
 							"First occurrence: %s\n" +
@@ -157,7 +157,7 @@ public class TransportDataLintTest
 					// Store information about this transport for error reporting
 					String info = String.format("MaxWilderness: %d, Skills: %s",
 						transport.getMaxWildernessLevel(),
-						Arrays.toString(transport.getSkillLevels()));
+						Arrays.toString(transport.getSkillLevels().toArray()));
 					duplicateInfo.put(signature, info);
 				}
 			}
