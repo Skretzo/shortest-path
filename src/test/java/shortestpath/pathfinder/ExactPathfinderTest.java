@@ -209,7 +209,7 @@ public class ExactPathfinderTest
 		PathfinderConfig config = mock(PathfinderConfig.class);
 		CollisionMap collision = emptyCollision();
 		when(config.getMap()).thenReturn(collision);
-		when(config.prepareExactRoutingAccount(true))
+		when(config.prepareExactRoutingAccount(true, false))
 			.thenReturn(account(global(RoutingStaticTestFixture.D, 2), new Transport[0], false));
 		when(config.getCalculationCutoffMillis()).thenReturn(cutoffMillis);
 		return new ExactPathfinder(config, stat, null, RoutingStaticTestFixture.A,

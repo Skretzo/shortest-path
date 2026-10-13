@@ -19,6 +19,11 @@ public class PathfinderResult
 	private final long elapsedNanos;
 	private final PathTerminationReason terminationReason;
 	private final String message;
+	/**
+	 * The target the route reaches and whether the player holds its items there; {@code null} when
+	 * no target is reached, or for a search that doesn't check required items.
+	 */
+	private final Arrival arrival;
 
 	public PathfinderResult(
 		int start,
@@ -75,6 +80,24 @@ public class PathfinderResult
 		PathTerminationReason terminationReason,
 		String message)
 	{
+		this(start, target, reached, pathSteps, closestReachedPoint, pathCost, nodesChecked, transportsChecked,
+			elapsedNanos, terminationReason, message, null);
+	}
+
+	public PathfinderResult(
+		int start,
+		int target,
+		boolean reached,
+		List<PathStep> pathSteps,
+		int closestReachedPoint,
+		int pathCost,
+		int nodesChecked,
+		int transportsChecked,
+		long elapsedNanos,
+		PathTerminationReason terminationReason,
+		String message,
+		Arrival arrival)
+	{
 		this.start = start;
 		this.target = target;
 		this.reached = reached;
@@ -86,5 +109,6 @@ public class PathfinderResult
 		this.elapsedNanos = elapsedNanos;
 		this.terminationReason = terminationReason;
 		this.message = message;
+		this.arrival = arrival;
 	}
 }

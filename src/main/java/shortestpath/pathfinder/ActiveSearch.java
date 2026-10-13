@@ -11,7 +11,7 @@ public interface ActiveSearch extends Runnable
 
 	int getStart();
 
-	/** Where the route may end. */
+	/** Where the route may end, with the items each target needs on arrival. */
 	Targets getTargets();
 
 	List<PathStep> getPath();

@@ -60,6 +60,7 @@ public class PathfinderConfigItemQuantitiesTest
 		when(runePouchEnum.getIntValue(POUCH_AIR)).thenReturn(ItemID.AIRRUNE);
 		when(client.getVarbitValue(VarbitID.RUNE_POUCH_TYPE_1)).thenReturn(POUCH_AIR);
 		when(client.getVarbitValue(VarbitID.RUNE_POUCH_QUANTITY_1)).thenReturn(2);
+		when(bank.getItems()).thenReturn(new Item[0]);
 
 		refresh(false, TeleportationItem.NONE);
 

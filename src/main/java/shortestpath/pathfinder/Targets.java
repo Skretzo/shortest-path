@@ -6,10 +6,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import shortestpath.WorldPointUtil;
 
 /**
  * The targets of one route: at most one {@link Target} per tile. A search ends at whichever target
- * is cheapest to reach. Immutable.
+ * is cheapest to reach with that target's items in hand. Immutable.
  */
 public final class Targets implements Iterable<Target>
 {
@@ -22,7 +23,7 @@ public final class Targets implements Iterable<Target>
 		this.byPoint = byPoint;
 	}
 
-	/** Targets at {@code points}. */
+	/** Targets at {@code points} that need no items. */
 	public static Targets at(Collection<Integer> points)
 	{
 		Map<Integer, Target> byPoint = new LinkedHashMap<>();
@@ -33,13 +34,21 @@ public final class Targets implements Iterable<Target>
 		return of(byPoint);
 	}
 
-	/** {@code targets} as one set, keeping one target per tile. */
+	/**
+	 * {@code targets} as one set. The same tile twice is only allowed when both ask for the same
+	 * items; anything else is ambiguous and throws {@link IllegalArgumentException}.
+	 */
 	public static Targets of(Collection<Target> targets)
 	{
 		Map<Integer, Target> byPoint = new LinkedHashMap<>();
 		for (Target target : targets)
 		{
-			byPoint.putIfAbsent(target.getPoint(), target);
+			Target previous = byPoint.putIfAbsent(target.getPoint(), target);
+			if (previous != null && !previous.equals(target))
+			{
+				throw new IllegalArgumentException("target " + WorldPointUtil.unpackWorldPoint(target.getPoint())
+					+ " is given twice with different required items");
+			}
 		}
 		return of(byPoint);
 	}
@@ -76,7 +85,23 @@ public final class Targets implements Iterable<Target>
 		return byPoint.size();
 	}
 
-	/** The targets at exactly {@code points}: these targets where they have one, new ones elsewhere. */
+	/** Whether any target needs items on arrival. */
+	public boolean hasRequiredItems()
+	{
+		for (Target target : byPoint.values())
+		{
+			if (target.hasRequiredItems())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * The targets at exactly {@code points}: these targets where they have one, and targets that need
+	 * no items elsewhere.
+	 */
 	public Targets restrictTo(Collection<Integer> points)
 	{
 		Map<Integer, Target> byPoint = new LinkedHashMap<>();

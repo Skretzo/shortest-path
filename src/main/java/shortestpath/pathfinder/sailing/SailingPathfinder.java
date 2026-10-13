@@ -35,6 +35,8 @@ public class SailingPathfinder implements ActiveSearch
 	private final Stats stats;
 	@Getter
 	private final int start;
+	// The targets keep their required items so a restart after landing honours them, but a
+	// sailing search ignores them: a boat can't visit a bank.
 	@Getter
 	private final Targets targets;
 	// Termination set resolved by TargetGoals: the requested targets plus, for

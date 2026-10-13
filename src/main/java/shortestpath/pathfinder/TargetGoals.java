@@ -2,7 +2,9 @@ package shortestpath.pathfinder;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import shortestpath.WorldPointUtil;
 
@@ -32,11 +34,16 @@ public final class TargetGoals
 
 	private final Set<Integer> goals;
 	private final boolean viable;
+	private final Map<Integer, Set<Integer>> fallbacks;
+	private final Set<Integer> viableTargets;
 
-	private TargetGoals(Set<Integer> goals, boolean viable)
+	private TargetGoals(Set<Integer> goals, boolean viable, Map<Integer, Set<Integer>> fallbacks,
+		Set<Integer> viableTargets)
 	{
 		this.goals = goals;
 		this.viable = viable;
+		this.fallbacks = fallbacks;
+		this.viableTargets = viableTargets;
 	}
 
 	/**
@@ -58,11 +65,27 @@ public final class TargetGoals
 		return viable;
 	}
 
+	/**
+	 * The fallback tiles a blocked {@code target} resolved to; empty for a walkable target or one
+	 * with no usable tile nearby. The target itself is not included.
+	 */
+	public Set<Integer> fallbacks(int target)
+	{
+		return fallbacks.getOrDefault(target, Set.of());
+	}
+
+	/** Whether {@code target} on its own could terminate a search, as {@link #hasViableGoal()}. */
+	public boolean isViable(int target)
+	{
+		return viableTargets.contains(target);
+	}
+
 	public static TargetGoals resolve(PathfinderConfig config, int start, Set<Integer> targets)
 	{
 		final CollisionMap map = config.getMap();
 		Set<Integer> resolvedGoals = targets;
-		boolean viable = false;
+		Map<Integer, Set<Integer>> fallbacks = new HashMap<>();
+		Set<Integer> viableTargets = new HashSet<>();
 		for (int target : targets)
 		{
 			final int x = WorldPointUtil.unpackWorldX(target);
@@ -70,14 +93,14 @@ public final class TargetGoals
 			final int z = WorldPointUtil.unpackWorldPlane(target);
 			if (!map.isBlocked(x, y, z))
 			{
-				viable = true;
+				viableTargets.add(target);
 				continue;
 			}
 			// A transport landing on the target can still visit it even when the tile
 			// is blocked for walking (e.g. fairy rings).
 			if (config.isTransportDestination(target))
 			{
-				viable = true;
+				viableTargets.add(target);
 			}
 			// The target tile is blocked so it can never be walked into. Route to the
 			// nearest fallback tiles within the configured unreachable distance
@@ -103,10 +126,11 @@ public final class TargetGoals
 					resolvedGoals = new HashSet<>(targets);
 				}
 				resolvedGoals.addAll(targetGoals);
-				viable = true;
+				fallbacks.put(target, targetGoals);
+				viableTargets.add(target);
 			}
 		}
-		return new TargetGoals(resolvedGoals, viable);
+		return new TargetGoals(resolvedGoals, !viableTargets.isEmpty(), fallbacks, viableTargets);
 	}
 
 	// The tiles on Chebyshev ring r as flat (dx, dy) pairs, perimeter order.
