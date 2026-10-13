@@ -189,7 +189,7 @@ public class PortalNexusKeybindTest
 			"shortestpath", PohService.CONFIG_KEY))
 			.thenReturn("2|lassar=Y|waterbirth island=F3");
 
-		PohService persisted = new PohService(configManager, coordinator);
+		PohService persisted = new PohService(configManager, coordinator, null);
 		persisted.loadFromProfile();
 
 		// A consulted store always declares — the load is not conditional
