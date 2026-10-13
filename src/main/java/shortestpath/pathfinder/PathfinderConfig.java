@@ -19,7 +19,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
@@ -49,7 +48,7 @@ import shortestpath.poh.PohNexusPortal;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 import shortestpath.requirement.model.VarRequirement;
@@ -283,7 +282,7 @@ public class PathfinderConfig
 		this.transportTypeConfig = new TransportTypeConfig(config, settings);
 		this.mapData = SplitFlagMap.fromResources();
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(mapData));
-		Map<Integer, Set<Transport>> loadedTransports = TransportLoader.loadAllFromResources();
+		Map<Integer, Set<Transport>> loadedTransports = ResourceLoader.transports();
 		PohService.remapPohDestinations(loadedTransports);
 		this.allTransports = flatten(loadedTransports);
 		this.transportDestinations = collectTransportDestinations(this.allTransports);
@@ -291,10 +290,10 @@ public class PathfinderConfig
 		this.transportAvailabilities = new TransportAvailabilities(
 			new TransportAvailability.Builder(allTransports.length).build(),
 			new TransportAvailability.Builder(allTransports.length).build());
-		this.allDestinations = Destination.loadAllFromResources();
+		this.allDestinations = ResourceLoader.destinations();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
-		this.bankRequirements = Destination.loadBankRequirementsFromResources();
+		this.bankRequirements = ResourceLoader.bankRequirements();
 	}
 
 	protected PathfinderConfig(Client client, ShortestPathConfig config,
