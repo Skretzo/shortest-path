@@ -5,12 +5,12 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.TransportType;
 
 public class TransportCountingTest
 {
-	private static final Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+	private static final Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 
 	@Test
 	public void testNumberOfCharterShips()

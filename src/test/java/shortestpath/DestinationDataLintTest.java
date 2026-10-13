@@ -12,12 +12,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
+import shortestpath.transport.ResourceLoader;
 
 /**
  * Loader-fidelity and format lint for the four destination TSV resources
- * consumed by {@link Destination#loadAllFromResources()}.
+ * consumed by {@link ResourceLoader#destinations()}.
  *
- * {@link Destination#addDestinations} degrades silently: a row whose
+ * The destination TSV parse in {@link ResourceLoader} degrades silently: a row whose
  * {@code Destination} cell is not a three-part {@code x y z} coordinate is
  * skipped with at most a {@code log.error}, and a dropped resource produces a
  * missing or empty category with no failure. These tests assert the loaded
@@ -29,7 +30,7 @@ import org.junit.Test;
 public class DestinationDataLintTest
 {
 	/**
-	 * The exact resource paths {@link Destination#loadAllFromResources()}
+	 * The exact resource paths {@link ResourceLoader#destinations()}
 	 * loads, explicitly listed so a change to the consumed set is deliberate.
 	 */
 	private static final String[] DESTINATION_RESOURCES = {
@@ -44,7 +45,7 @@ public class DestinationDataLintTest
 
 	/**
 	 * Columns documented for destination TSVs: the coordinate cell plus the
-	 * requirement/info columns {@link Destination} reads.
+	 * requirement/info columns {@link ResourceLoader} reads.
 	 */
 	private static final Set<String> DOCUMENTED_COLUMNS = new HashSet<>(Arrays.asList(
 		"Destination", "Info", "Skills", "Quests", "Varbits", "VarPlayers"));
@@ -59,7 +60,7 @@ public class DestinationDataLintTest
 	}
 
 	/**
-	 * The category key {@link Destination#addDestinations} derives from a
+	 * The category key the destination TSV parse derives from a
 	 * resource path: the path component immediately preceding the file
 	 * extension (e.g. {@code /destinations/game_features/bank.tsv -> bank}).
 	 */
@@ -100,7 +101,7 @@ public class DestinationDataLintTest
 	}
 
 	/**
-	 * Data rows of a destination file the way {@link Destination#addDestinations}
+	 * Data rows of a destination file the way the destination TSV parse
 	 * sees them: lines after the header, comments and blanks skipped, split on
 	 * tabs (trailing empty cells dropped, matching the loader's split).
 	 */
@@ -140,7 +141,7 @@ public class DestinationDataLintTest
 	}
 
 	/**
-	 * Loader fidelity: {@link Destination#loadAllFromResources()} must return
+	 * Loader fidelity: {@link ResourceLoader#destinations()} must return
 	 * exactly the four consumed categories, each non-empty, and every
 	 * concrete {@code Destination} cell in every committed row must land in
 	 * its category's set. A resource that fails to load or a row the loader
@@ -152,9 +153,9 @@ public class DestinationDataLintTest
 	{
 		List<String> failures = new ArrayList<>();
 
-		Map<String, Set<Integer>> destinations = Destination.loadAllFromResources();
+		Map<String, Set<Integer>> destinations = ResourceLoader.destinations();
 		Assert.assertEquals(
-			"loadAllFromResources() categories differ from the consumed resource set",
+			"destinations() categories differ from the consumed resource set",
 			EXPECTED_CATEGORIES, destinations.keySet());
 
 		for (String path : DESTINATION_RESOURCES)
@@ -164,7 +165,7 @@ public class DestinationDataLintTest
 			if (loaded == null || loaded.isEmpty())
 			{
 				failures.add(String.format(
-					"%s: category '%s' is missing or empty after loadAllFromResources()",
+					"%s: category '%s' is missing or empty after destinations()",
 					path, category));
 				continue;
 			}

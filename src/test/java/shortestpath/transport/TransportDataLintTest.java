@@ -25,7 +25,7 @@ public class TransportDataLintTest
 	{
 		int landing = WorldPointUtil.packWorldPoint(2964, 4382, 2);
 		int wilderness = WorldPointUtil.packWorldPoint(3206, 3681, 0);
-		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 		int teleports = 0;
 		for (Set<Transport> set : transports.values())
 		{
@@ -93,7 +93,7 @@ public class TransportDataLintTest
 	public void testNoDuplicateOriginDestinationPairs()
 	{
 		// Load all transport data from resources
-		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		HashMap<Integer, Set<Transport>> transports = ResourceLoader.transports();
 
 		// Track all origin-destination-type combinations to check for exact duplicates
 		Set<String> transportSignatures = new HashSet<>();
@@ -192,7 +192,7 @@ public class TransportDataLintTest
 	public void testEveryTransportDestinationCanBeWalkedAwayFrom()
 	{
 		CollisionMap map = new CollisionMap(SplitFlagMap.fromResources());
-		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		HashMap<Integer, Set<Transport>> transports = ResourceLoader.transports();
 		Map<Integer, Boolean> escapable = new HashMap<>();
 		Set<String> stranded = new TreeSet<>();
 		for (Set<Transport> set : transports.values())

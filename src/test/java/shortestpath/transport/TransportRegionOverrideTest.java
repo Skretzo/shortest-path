@@ -112,7 +112,7 @@ public class TransportRegionOverrideTest
 		String contents = "# Origin\tDestination\tDuration\tRegion override\n" +
 			"3200 3200 0\t3300 3300 0\t5\tVARLAMORE\n";
 
-		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport t = firstTransport(origin);
@@ -125,7 +125,7 @@ public class TransportRegionOverrideTest
 		String contents = "# Origin\tDestination\tDuration\tRegion override\n" +
 			"3200 3200 0\t3300 3300 0\t5\t\n";
 
-		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport t = firstTransport(origin);
@@ -138,7 +138,7 @@ public class TransportRegionOverrideTest
 		String contents = "# Origin\tDestination\tDuration\n" +
 			"3200 3200 0\t3300 3300 0\t5\n";
 
-		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport t = firstTransport(origin);
@@ -152,7 +152,7 @@ public class TransportRegionOverrideTest
 			"3200 3200 0\t\t5\t\n" +
 			"\t3300 3300 0\t5\tVARLAMORE\n";
 
-		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 
 		Transport t = firstTransport(WorldPointUtil.packWorldPoint(3200, 3200, 0));
 		Assert.assertEquals(WorldPointUtil.packWorldPoint(3300, 3300, 0), t.getDestination());
@@ -166,7 +166,7 @@ public class TransportRegionOverrideTest
 			"3200 3200 0\t\t5\tASGARNIA\n" +
 			"\t3300 3300 0\t5\t\n";
 
-		TransportLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.FAIRY_RING, 0);
 
 		Transport t = firstTransport(WorldPointUtil.packWorldPoint(3200, 3200, 0));
 		Assert.assertEquals(LeagueRegion.ASGARNIA, t.getRegionOverride());
@@ -234,7 +234,7 @@ public class TransportRegionOverrideTest
 			String contents = new String(
 				Util.readAllBytes(Objects.requireNonNull(in)),
 				StandardCharsets.UTF_8);
-			TransportLoader.addTransportsFromContents(
+			ResourceLoader.addTransportsFromContents(
 				loaded, contents, TransportType.SEASONAL_TRANSPORTS, 0);
 		}
 		return loaded;

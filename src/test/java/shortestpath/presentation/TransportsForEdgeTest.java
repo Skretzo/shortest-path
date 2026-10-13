@@ -16,12 +16,12 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TransportsForEdgeTest
 {
-	private static final Map<Integer, Set<Transport>> TRANSPORTS = TransportLoader.loadAllFromResources();
+	private static final Map<Integer, Set<Transport>> TRANSPORTS = ResourceLoader.transports();
 	private static final int LUMBRIDGE_LANDING = WorldPointUtil.packWorldPoint(3221, 3218, 0);
 
 	@Mock

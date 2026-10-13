@@ -53,7 +53,7 @@ import shortestpath.settings.Settings;
 import shortestpath.WorldPointUtil;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
@@ -63,7 +63,7 @@ import shortestpath.requirement.model.TransportItems;
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderTest
 {
-	private static final Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+	private static final Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 	@Mock
 	Client client;
 	@Mock

@@ -8,11 +8,10 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import shortestpath.Destination;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
 
 /**
  * Real-data coverage for {@link RoutingStaticBuilder}: derivation succeeds on the committed
@@ -28,8 +27,8 @@ public class RoutingStaticBuilderRealDataTest
 	public static void buildOnce() throws Exception
 	{
 		collision = new CollisionMap(SplitFlagMap.fromResources());
-		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
-		Set<Integer> banks = Destination.loadAllFromResources().get("bank");
+		Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
+		Set<Integer> banks = ResourceLoader.destinations().get("bank");
 		int[] cuts = RoutingCuts.loadFromResources().pairs();
 		result = RoutingStaticBuilder.build(collision, transports, banks, cuts);
 		System.out.println("real-data build: " + result.diagnostics);

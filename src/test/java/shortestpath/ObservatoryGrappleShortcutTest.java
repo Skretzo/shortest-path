@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.TransportType;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.TransportItems;
@@ -35,7 +35,7 @@ public class ObservatoryGrappleShortcutTest
 	public void setUp()
 	{
 		transports = new HashMap<>();
-		TransportLoader.addTransportsFromContents(transports, TRANSPORT_DATA, TransportType.GRAPPLE_SHORTCUT, 0);
+		ResourceLoader.addTransportsFromContents(transports, TRANSPORT_DATA, TransportType.GRAPPLE_SHORTCUT, 0);
 	}
 
 	private Transport getTransport()

@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 
 public class PrimitiveIntHashMapTests
 {
@@ -38,7 +38,7 @@ public class PrimitiveIntHashMapTests
 	@Test
 	public void tryInsertTransports()
 	{
-		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		HashMap<Integer, Set<Transport>> transports = ResourceLoader.transports();
 		PrimitiveIntHashMap<Set<Transport>> map = new PrimitiveIntHashMap<>(transports.size());
 
 		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())

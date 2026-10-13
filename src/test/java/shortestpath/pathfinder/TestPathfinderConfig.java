@@ -6,12 +6,11 @@ import net.runelite.api.QuestState;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import shortestpath.Destination;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.ShortestPathConfig;
 import shortestpath.poh.PohService;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.requirement.model.VarRequirement;
 
 // This subclass is used to provide mocked implementations of methods from the normal
@@ -40,11 +39,11 @@ public class TestPathfinderConfig extends PathfinderConfig
 		static
 		{
 			MAP_DATA = SplitFlagMap.fromResources();
-			ALL_TRANSPORTS = TransportLoader.loadAllFromResources();
+			ALL_TRANSPORTS = ResourceLoader.transports();
 			PohService.remapPohDestinations(ALL_TRANSPORTS);
-			ALL_DESTINATIONS = Destination.loadAllFromResources();
+			ALL_DESTINATIONS = ResourceLoader.destinations();
 			FILTERED_DESTINATIONS = PathfinderConfig.filterDestinations(ALL_DESTINATIONS);
-			BANK_REQUIREMENTS = Destination.loadBankRequirementsFromResources();
+			BANK_REQUIREMENTS = ResourceLoader.bankRequirements();
 		}
 	}
 
