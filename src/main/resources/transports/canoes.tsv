@@ -35,7 +35,7 @@
 3154 3630 0	3141 3796 0	Paddle Canoe Canoe Station 39638	57 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	20	Wilderness Pond
 						
 # Castle Wars						
-2439 3135 0	2483 3188 0	Paddle Canoe Canoe Station 60845	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
+2439 3135 0	2486 3188 0	Paddle Canoe Canoe Station 60845	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
 2439 3135 0	2577 3261 0	Paddle Canoe Canoe Station 60845	27 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	The Clock Tower
 2439 3135 0	2571 3360 0	Paddle Canoe Canoe Station 60845	42 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Chaos Druid Tower
 2439 3135 0	2523 3408 0	Paddle Canoe Canoe Station 60845	57 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Stronghold
@@ -48,18 +48,18 @@
 						
 # The Clock Tower						
 2579 3260 0	2436 3134 0	Paddle Canoe Canoe Station 60847	27 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Castle Wars
-2579 3260 0	2483 3188 0	Paddle Canoe Canoe Station 60847	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
+2579 3260 0	2486 3188 0	Paddle Canoe Canoe Station 60847	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
 2579 3260 0	2571 3360 0	Paddle Canoe Canoe Station 60847	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Chaos Druid Tower
 2579 3260 0	2523 3408 0	Paddle Canoe Canoe Station 60847	27 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Stronghold
 						
 # Chaos Druid Tower						
 2573 3358 0	2436 3134 0	Paddle Canoe Canoe Station 60848	42 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Castle Wars
-2573 3358 0	2483 3188 0	Paddle Canoe Canoe Station 60848	27 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
+2573 3358 0	2486 3188 0	Paddle Canoe Canoe Station 60848	27 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
 2573 3358 0	2577 3261 0	Paddle Canoe Canoe Station 60848	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	The Clock Tower
 2573 3358 0	2523 3408 0	Paddle Canoe Canoe Station 60848	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Stronghold
 						
 # Tree Gnome Stronghold						
 2525 3408 0	2436 3134 0	Paddle Canoe Canoe Station 60849	57 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Castle Wars
-2525 3408 0	2483 3188 0	Paddle Canoe Canoe Station 60849	42 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
+2525 3408 0	2486 3188 0	Paddle Canoe Canoe Station 60849	42 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Tree Gnome Village
 2525 3408 0	2577 3261 0	Paddle Canoe Canoe Station 60849	27 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	The Clock Tower
 2525 3408 0	2571 3360 0	Paddle Canoe Canoe Station 60849	12 Woodcutting	AXE=1|UNLOCK_CANOE_AXE=1	30	Chaos Druid Tower

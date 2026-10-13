@@ -1474,7 +1474,7 @@
 2508 3640 0	2505 3641 2	Top-floor Staircase 4568							
 2505 3641 1	2506 3642 0	Climb-down Staircase 4569							
 2505 3641 1	2505 3641 2	Climb-up Staircase 4569							
-2505 3641 2	2506 3584 1	Climb-down Staircase 4570							
+2505 3641 2	2506 3642 1	Climb-down Staircase 4570							
 2505 3641 2	2506 3642 0	Bottom-floor Staircase 4570							
 2510 3644 0	2518 9994 0	Climb Iron ladder 4383						2	
 2518 9994 0	2510 3644 0	Climb Iron ladder 4384						2	
