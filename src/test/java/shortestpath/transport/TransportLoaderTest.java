@@ -10,7 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.parser.ItemRequirementParser;
-import shortestpath.transport.parser.SkillRequirementParser;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.requirement.model.TransportItems;
 
@@ -283,9 +283,9 @@ public class TransportLoaderTest
 		Transport transport = getFirstTransport(transports.get(origin));
 
 		// Check skill requirements
-		Assert.assertEquals("Agility level should be 50", 50, transport.getSkillLevels()[Skill.AGILITY.ordinal()]);
-		Assert.assertEquals("Strength level should be 70", 70, transport.getSkillLevels()[Skill.STRENGTH.ordinal()]);
-		Assert.assertEquals("Attack level should be 0 (default)", 0, transport.getSkillLevels()[Skill.ATTACK.ordinal()]);
+		Assert.assertEquals("Agility level should be 50", 50, transport.getSkillLevels().get(Skill.AGILITY));
+		Assert.assertEquals("Strength level should be 70", 70, transport.getSkillLevels().get(Skill.STRENGTH));
+		Assert.assertEquals("Attack level should be 0 (default)", 0, transport.getSkillLevels().get(Skill.ATTACK));
 	}
 
 	@Test
@@ -299,14 +299,11 @@ public class TransportLoaderTest
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport transport = getFirstTransport(transports.get(origin));
 
-		int[] skillLevels = transport.getSkillLevels();
-		int totalLevelIndex = Skill.values().length;
-		int combatLevelIndex = Skill.values().length + 1;
-		int questPointsIndex = Skill.values().length + 2;
+		SkillLevels skillLevels = transport.getSkillLevels();
 
-		Assert.assertEquals("Total level should be 1500", 1500, skillLevels[totalLevelIndex]);
-		Assert.assertEquals("Combat level should be 100", 100, skillLevels[combatLevelIndex]);
-		Assert.assertEquals("Quest points should be 200", 200, skillLevels[questPointsIndex]);
+		Assert.assertEquals("Total level should be 1500", 1500, skillLevels.totalLevel());
+		Assert.assertEquals("Combat level should be 100", 100, skillLevels.combatLevel());
+		Assert.assertEquals("Quest points should be 200", 200, skillLevels.questPoints());
 	}
 
 	@Test
@@ -318,13 +315,12 @@ public class TransportLoaderTest
 		TransportLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
-		int[] skillLevels = getFirstTransport(transports.get(origin)).getSkillLevels();
-		int totalLevelIndex = Skill.values().length;
+		SkillLevels skillLevels = getFirstTransport(transports.get(origin)).getSkillLevels();
 
-		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[Skill.AGILITY.ordinal()]);
-		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex]);
-		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex + 1]);
-		Assert.assertEquals(SkillRequirementParser.MAX_LEVEL, skillLevels[totalLevelIndex + 2]);
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(Skill.AGILITY));
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.totalLevel());
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.combatLevel());
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.questPoints());
 	}
 
 	@Test
@@ -339,7 +335,7 @@ public class TransportLoaderTest
 		Transport transport = getFirstTransport(transports.get(origin));
 
 		// All skill levels should be 0 (default)
-		for (int level : transport.getSkillLevels())
+		for (int level : transport.getSkillLevels().toArray())
 		{
 			Assert.assertEquals("All skill levels should be 0", 0, level);
 		}
@@ -356,14 +352,12 @@ public class TransportLoaderTest
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport transport = getFirstTransport(transports.get(origin));
 
-		Assert.assertEquals("Magic level should be 25", 25, transport.getSkillLevels()[Skill.MAGIC.ordinal()]);
-		Assert.assertEquals("Ranged level should be 60", 60, transport.getSkillLevels()[Skill.RANGED.ordinal()]);
-
-		int totalLevelIndex = Skill.values().length;
-		Assert.assertEquals("Total level should be 1200", 1200, transport.getSkillLevels()[totalLevelIndex]);
+		Assert.assertEquals("Magic level should be 25", 25, transport.getSkillLevels().get(Skill.MAGIC));
+		Assert.assertEquals("Ranged level should be 60", 60, transport.getSkillLevels().get(Skill.RANGED));
+		Assert.assertEquals("Total level should be 1200", 1200, transport.getSkillLevels().totalLevel());
 
 		// Other skills should be 0
-		Assert.assertEquals("Attack should be 0", 0, transport.getSkillLevels()[Skill.ATTACK.ordinal()]);
+		Assert.assertEquals("Attack should be 0", 0, transport.getSkillLevels().get(Skill.ATTACK));
 	}
 
 	@Test
@@ -635,8 +629,7 @@ public class TransportLoaderTest
 		}
 
 		Assert.assertNotNull("Quest point cape teleport should be loaded", cape);
-		int questPointsIndex = Skill.values().length + 2;
-		Assert.assertEquals("Quest points should be dynamic", SkillRequirementParser.MAX_LEVEL, cape.getSkillLevels()[questPointsIndex]);
+		Assert.assertEquals("Quest points should be dynamic", SkillLevels.MAX_LEVEL, cape.getSkillLevels().questPoints());
 		Assert.assertFalse("Cape teleport should not have quest-name requirements", cape.isQuestLocked());
 	}
 
@@ -803,7 +796,7 @@ public class TransportLoaderTest
 		Assert.assertNull("Item requirements should be null", transport.getItemRequirements());
 
 		// All skill levels should be 0
-		for (int level : transport.getSkillLevels())
+		for (int level : transport.getSkillLevels().toArray())
 		{
 			Assert.assertEquals("Skill levels should be 0", 0, level);
 		}
