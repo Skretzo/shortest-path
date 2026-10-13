@@ -95,6 +95,7 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
+import shortestpath.pathfinder.Arrival;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
@@ -104,6 +105,8 @@ import shortestpath.pathfinder.exact.ExactRoutingSession;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.transport.requirement.TransportItems;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -242,6 +245,9 @@ public class ShortestPathPlugin extends Plugin
 	// while restarts write it on the client thread under pathfinderMutex.
 	private volatile ActiveSearch pathfinder;
 	private volatile Pathfinder legacyPathfinder;
+	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
+	private ActiveSearch missingItemsSearch;
+	private String missingItemsText;
 	private ExactRoutingStaticProvider exactRoutingStatic;
 	private final ExactRoutingSession exactRoutingSession = new ExactRoutingSession();
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
@@ -1447,12 +1453,66 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return bankPickupCache;
 		}
+		ActiveSearch search = pathfinder;
+		PathfinderResult result = search == null ? null : search.getResult();
 		bankPickupCachePath = path;
 		bankPickupCacheIndex = pathIndex;
-		bankPickupDirty = false;
+		// The target's items are only known once the search has its result, which appears just
+		// after the final path: keep recomputing until then.
+		bankPickupDirty = search != null && result == null;
 		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
-				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex);
+				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex,
+				itemsToPickUp(result));
 		return bankPickupCache;
+	}
+
+	/** The items a route's target needs from the bank, or {@code null} when it picks none up. */
+	private static TransportItems itemsToPickUp(PathfinderResult result)
+	{
+		Arrival arrival = result == null ? null : result.getArrival();
+		return arrival != null && arrival.picksUpItemsFromBank() ? arrival.getTarget().getRequiredItems() : null;
+	}
+
+	/**
+	 * The label naming the items the displayed route's target needs but the player was not found to
+	 * hold, or {@code null} when nothing is missing. Built once per search, on the client thread.
+	 */
+	public String getMissingTargetItemsText()
+	{
+		ActiveSearch search = pathfinder;
+		if (search != missingItemsSearch)
+		{
+			missingItemsSearch = search;
+			missingItemsText = null;
+		}
+		PathfinderResult result = search == null ? null : search.getResult();
+		if (missingItemsText == null && result != null)
+		{
+			Arrival arrival = result.getArrival();
+			List<ItemRequirement> missing = arrival == null ? List.of() : arrival.getMissingItems();
+			missingItemsText = missing.isEmpty() ? "" : missingItemsLabel(missing);
+		}
+		return missingItemsText == null || missingItemsText.isEmpty() ? null : missingItemsText;
+	}
+
+	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
+	private String missingItemsLabel(List<ItemRequirement> missing)
+	{
+		List<String> groups = new ArrayList<>(missing.size());
+		for (ItemRequirement group : missing)
+		{
+			List<String> names = new ArrayList<>();
+			for (ItemRequirement.Branch branch : group.getBranches())
+			{
+				for (int id : branch.getItemIds())
+				{
+					names.add(client.getItemDefinition(id).getName());
+				}
+			}
+			groups.add(String.join(" or ", names));
+		}
+		return "Not found in inventory or bank: " + String.join(", ", groups)
+			+ (pathfinderConfig.getHeldItems().isBankSeen() ? "" : " (bank not checked)");
 	}
 
 	@Subscribe

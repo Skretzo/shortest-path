@@ -17,6 +17,7 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.transport.requirement.TransportItems;
 import shortestpath.transport.requirement.Unlock;
 
 /**
@@ -62,6 +63,23 @@ public final class BankPickupRequirements
 			Set<Integer> bankLocations,
 			List<PathStep> path,
 			int pathIndex)
+		{
+			return compute(client, bank, pathfinderConfig, bankLocations, path, pathIndex, null);
+		}
+
+		/**
+		 * As {@link #compute(Client, ItemContainer, PathfinderConfig, Set, List, int)}, also
+		 * listing {@code targetItems} — the items the path's target needs on arrival — at the
+		 * bank step where the path visits the bank.
+		 */
+		public static BankPickupResult compute(
+			Client client,
+			ItemContainer bank,
+			PathfinderConfig pathfinderConfig,
+			Set<Integer> bankLocations,
+			List<PathStep> path,
+			int pathIndex,
+			TransportItems targetItems)
 		{
 			List<String> resultPhrases = new ArrayList<>();
 			Set<Integer> resultIds = new HashSet<>();
@@ -229,9 +247,66 @@ public final class BankPickupRequirements
 				}
 			}
 
+			if (targetItems != null && visitsBankAt(path, pathIndex))
+			{
+				addTargetPickups(client, targetItems, playerHas, bankHas, phrases, itemIds);
+			}
+
 			resultPhrases.addAll(phrases);
 			resultIds.addAll(itemIds);
 			return new BankPickupResult(resultPhrases, resultIds);
+		}
+	}
+
+	/**
+	 * Whether the path switches into its banked layer at step {@code index}: on the step before
+	 * the switch or the first banked step, which share the bank tile.
+	 */
+	static boolean visitsBankAt(List<PathStep> path, int index)
+	{
+		boolean banked = path.get(index).isBankVisited();
+		if (!banked)
+		{
+			return index + 1 < path.size() && path.get(index + 1).isBankVisited();
+		}
+		return index == 0 || !path.get(index - 1).isBankVisited();
+	}
+
+	/**
+	 * For each item group of a target's requirement the player doesn't carry, adds the first
+	 * alternative the bank covers to the phrases and every covering bank item to the highlights.
+	 */
+	static void addTargetPickups(Client client, TransportItems targetItems, Map<Integer, Integer> playerHas,
+		Map<Integer, Integer> bankHas, Set<String> phrases, Set<Integer> itemIds)
+	{
+		for (ItemRequirement group : targetItems.getRequirements())
+		{
+			boolean carried = false;
+			for (ItemRequirement.Branch branch : group.getBranches())
+			{
+				carried |= findCovering(branch.getItemIds(), branch.getQuantity(), playerHas, Map.of()) != -1;
+			}
+			if (carried)
+			{
+				continue;
+			}
+			boolean phrased = false;
+			for (ItemRequirement.Branch branch : group.getBranches())
+			{
+				int id = findCovering(branch.getItemIds(), branch.getQuantity(), playerHas, bankHas);
+				if (id == -1)
+				{
+					continue;
+				}
+				addCovering(branch.getItemIds(), branch.getQuantity(), playerHas, bankHas, itemIds);
+				if (!phrased)
+				{
+					Map<Integer, Long> single = new LinkedHashMap<>();
+					single.put(id, (long) branch.getQuantity() - playerHas.getOrDefault(id, 0));
+					phrases.add(formatPickups(client, single));
+					phrased = true;
+				}
+			}
 		}
 	}
 

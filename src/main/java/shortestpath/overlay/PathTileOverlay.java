@@ -388,6 +388,11 @@ public class PathTileOverlay extends Overlay
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
 			}
+			String missingItems = plugin.getMissingTargetItemsText();
+			if (missingItems != null)
+			{
+				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, missingItems, playerTileLabelOffset);
+			}
 		}
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
