@@ -1,11 +1,11 @@
 package shortestpath.poh;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.*;
 import javax.inject.*;
-import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
@@ -13,8 +13,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.*;
 import shortestpath.transport.*;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import shortestpath.widgets.GameWidgets;
 
 /**
  * The single public boundary for POH (Player Owned House) domain behavior:
@@ -226,15 +225,18 @@ public class PohService
 
 	private final ConfigManager configManager;
 	private final RefreshCoordinator coordinator;
+	private final GameWidgets gameWidgets;
 	private volatile Map<String, String> keysByNormalizedName = Map.of();
 	private String lastSaved = "";
 	private boolean dirty;
 
 	@Inject
-	public PohService(ConfigManager configManager, RefreshCoordinator coordinator)
+	public PohService(ConfigManager configManager, RefreshCoordinator coordinator,
+		GameWidgets gameWidgets)
 	{
 		this.configManager = configManager;
 		this.coordinator = coordinator;
+		this.gameWidgets = gameWidgets;
 	}
 
 	/**
@@ -243,12 +245,12 @@ public class PohService
 	 */
 	PohService(ConfigManager configManager)
 	{
-		this(configManager, null);
+		this(configManager, null, null);
 	}
 
 	PohService()
 	{
-		this(null, null);
+		this(null, null, null);
 	}
 
 	/**
@@ -268,7 +270,7 @@ public class PohService
 	 */
 	public static PohService forTesting(RefreshCoordinator coordinator)
 	{
-		return new PohService(null, coordinator);
+		return new PohService(null, coordinator, null);
 	}
 
 	/**
@@ -278,12 +280,16 @@ public class PohService
 	 * signal as "something parsed", so an identical re-read still answers
 	 * {@code true} even when its fact carries no effects.
 	 */
-	public boolean refreshFromDialog(Client client)
+	public boolean refreshFromDialog()
 	{
-		PohChange change = refreshFromTeleportMenu(client);
+		if (gameWidgets == null)
+		{
+			return false;
+		}
+		PohChange change = refreshFromTeleportMenu();
 		if (change == null)
 		{
-			change = refreshFromConfigurationSlots(client);
+			change = refreshFromConfigurationSlots();
 		}
 		declare(change);
 		return change != null;
@@ -388,22 +394,22 @@ public class PohService
 		}
 	}
 
-	PohChange refreshFromTeleportMenu(Client client)
+	PohChange refreshFromTeleportMenu()
 	{
 		Map<String, String> parsed = new HashMap<>();
 		// Primary labels are TEXT1; diary/alternate names (GE, Seers, Yanille) are EXTRAS.
-		collectKeyedWidgets(client.getWidget(InterfaceID.TelenexusTeleport.TEXT1), parsed);
-		collectKeyedWidgets(client.getWidget(InterfaceID.TelenexusTeleport.EXTRAS), parsed);
+		collectKeyedTexts(gameWidgets.selfAndChildTexts(InterfaceID.TelenexusTeleport.TEXT1), parsed);
+		collectKeyedTexts(gameWidgets.selfAndChildTexts(InterfaceID.TelenexusTeleport.EXTRAS), parsed);
 		return replaceIfPresent(parsed);
 	}
 
-	PohChange refreshFromConfigurationSlots(Client client)
+	PohChange refreshFromConfigurationSlots()
 	{
 		List<String> names = new ArrayList<>();
-		collectSlotNames(client.getWidget(InterfaceID.Telenexus.SLOTTED_LIST), names);
+		collectSlotNames(gameWidgets.selfAndChildTexts(InterfaceID.Telenexus.SLOTTED_LIST), names);
 		if (names.isEmpty())
 		{
-			collectSlotNames(client.getWidget(InterfaceID.Telenexus.ROWS2), names);
+			collectSlotNames(gameWidgets.selfAndChildTexts(InterfaceID.Telenexus.ROWS2), names);
 		}
 		return replaceIfPresent(parseSlotLabels(names));
 	}
@@ -552,45 +558,19 @@ public class PohService
 		configManager.setRSProfileConfiguration(Settings.CONFIG_GROUP, CONFIG_KEY, serialized);
 	}
 
-	private static void collectKeyedWidgets(Widget widget, Map<String, String> parsed)
+	private static void collectKeyedTexts(List<String> texts, Map<String, String> parsed)
 	{
-		if (widget == null)
+		for (String text : texts)
 		{
-			return;
-		}
-		parseKeyedText(widget.getText(), parsed);
-		Widget[] children = widget.getDynamicChildren();
-		if (children == null)
-		{
-			return;
-		}
-		for (Widget child : children)
-		{
-			if (child != null)
-			{
-				parseKeyedText(child.getText(), parsed);
-			}
+			parseKeyedText(text, parsed);
 		}
 	}
 
-	private static void collectSlotNames(Widget widget, List<String> names)
+	private static void collectSlotNames(List<String> texts, List<String> names)
 	{
-		if (widget == null)
+		for (String text : texts)
 		{
-			return;
-		}
-		collectSlotName(widget.getText(), names);
-		Widget[] children = widget.getDynamicChildren();
-		if (children == null)
-		{
-			return;
-		}
-		for (Widget child : children)
-		{
-			if (child != null)
-			{
-				collectSlotName(child.getText(), names);
-			}
+			collectSlotName(text, names);
 		}
 	}
 
