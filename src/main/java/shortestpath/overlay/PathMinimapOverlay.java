@@ -90,7 +90,7 @@ public class PathMinimapOverlay extends Overlay
 
 			drawOnMinimap(graphics, pathPoint, pathColor, sailing ? 0.5 : 1.0);
 		}
-		for (int target : plugin.getActiveSearch().getTargets())
+		for (int target : plugin.getActiveSearch().getTargets().points())
 		{
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{

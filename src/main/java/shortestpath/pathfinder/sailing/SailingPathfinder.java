@@ -19,6 +19,7 @@ import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathfinderStats;
 import shortestpath.pathfinder.SearchDeadline;
 import shortestpath.pathfinder.TargetGoals;
+import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.VisitedTiles;
 import shortestpath.pathfinder.WildernessChecker;
 
@@ -35,7 +36,7 @@ public class SailingPathfinder implements ActiveSearch
 	@Getter
 	private final int start;
 	@Getter
-	private final Set<Integer> targets;
+	private final Targets targets;
 	// Termination set resolved by TargetGoals: the requested targets plus, for
 	// each blocked target, its fallback tiles (issue #640).
 	private final Set<Integer> goals;
@@ -117,20 +118,28 @@ public class SailingPathfinder implements ActiveSearch
 	public SailingPathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback,
 		SailingMoves moves, BoatHull boatHull, int sailingHeading)
 	{
+		this(config, start, Targets.at(targets), completionCallback, moves, boatHull, sailingHeading);
+	}
+
+	/** As {@link #SailingPathfinder(PathfinderConfig, int, Set, Runnable, SailingMoves, BoatHull, int)}. */
+	public SailingPathfinder(PathfinderConfig config, int start, Targets targets, Runnable completionCallback,
+		SailingMoves moves, BoatHull boatHull, int sailingHeading)
+	{
 		stats = new Stats();
 		this.config = config;
 		this.map = config.getMap();
 		this.start = start;
 		this.targets = targets;
-		TargetGoals resolved = TargetGoals.resolve(config, start, targets);
+		Set<Integer> points = targets.points();
+		TargetGoals resolved = TargetGoals.resolve(config, start, points);
 		this.goals = resolved.goals();
 		this.hasViableGoal = resolved.hasViableGoal();
-		this.sailing = new SailingSearch(moves, boatHull, targets.stream().mapToInt(Integer::intValue).toArray(),
+		this.sailing = new SailingSearch(moves, boatHull, points.stream().mapToInt(Integer::intValue).toArray(),
 			goals.stream().mapToInt(Integer::intValue).toArray(), sailingHeading);
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
-		targetInWilderness = WildernessChecker.isInWilderness(targets);
-		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets);
+		targetInWilderness = WildernessChecker.isInWilderness(points);
+		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), points);
 		wildernessLevel = 31;
 	}
 
@@ -221,7 +230,7 @@ public class SailingPathfinder implements ActiveSearch
 
 		List<PathStep> currentPath = getPath();
 		boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
-		int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
+		int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.points().iterator().next());
 		// getStats() only returns non-null once the search has ended, so the snapshot is set.
 		return new PathfinderResult(
 			start,
@@ -295,7 +304,7 @@ public class SailingPathfinder implements ActiveSearch
 		boolean update = false;
 
 		final int travelledDistance = graph.cost(node);
-		for (int target : targets)
+		for (int target : targets.points())
 		{
 			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
 			int x = WorldPointUtil.unpackWorldX(packedPosition);

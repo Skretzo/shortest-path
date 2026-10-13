@@ -68,7 +68,7 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : plugin.getActiveSearch().getTargets())
+			for (int target : plugin.getActiveSearch().getTargets().points())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{

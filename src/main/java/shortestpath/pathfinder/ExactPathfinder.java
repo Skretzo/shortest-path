@@ -22,11 +22,9 @@ public final class ExactPathfinder implements ActiveSearch
 {
 	private final PathfinderStats stats = new PathfinderStats();
 	private final int start;
-	private final Set<Integer> targets;
-	// The tiles the prepared target actually terminates on: the requested
-	// targets plus each blocked target's fallback tiles, resolved the same way
-	// the legacy backend resolves them (issue #640). {@link #targets} stays the
-	// requested set for reporting and restart equality.
+	private final Targets targets;
+	// The tiles the prepared target actually terminates on: the targets plus each blocked target's
+	// fallback tiles, resolved the same way the legacy backend resolves them (issue #640).
 	private final Set<Integer> goals;
 	private final boolean hasViableGoal;
 	private final Runnable completionCallback;
@@ -108,11 +106,27 @@ public final class ExactPathfinder implements ActiveSearch
 		ExactRoutingSession session, int start, Set<Integer> targets, Runnable completionCallback,
 		double heuristicWeight)
 	{
+		this(config, routingStatic, session, start, Targets.at(targets), completionCallback,
+			heuristicWeight);
+	}
+
+	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic,
+		ExactRoutingSession session, int start, Targets targets, Runnable completionCallback)
+	{
+		this(config, routingStatic, session, start, targets, completionCallback,
+			config == null ? 1 : config.getExactHeuristicWeight());
+	}
+
+	/** A search that ends at whichever of {@code targets} is cheapest to reach. */
+	public ExactPathfinder(PathfinderConfig config, Supplier<RoutingStatic> routingStatic,
+		ExactRoutingSession session, int start, Targets targets, Runnable completionCallback,
+		double heuristicWeight)
+	{
 		if (config == null || routingStatic == null || targets == null) throw new NullPointerException();
 		if (!(heuristicWeight > 0) || !Double.isFinite(heuristicWeight))
 			throw new IllegalArgumentException("heuristic weight must be positive and finite");
 		this.start = start;
-		this.targets = Set.copyOf(targets);
+		this.targets = targets;
 		this.completionCallback = completionCallback;
 		this.collision = config.getMap();
 		this.routingStatic = routingStatic;
@@ -120,8 +134,8 @@ public final class ExactPathfinder implements ActiveSearch
 		long phaseStarted = System.nanoTime();
 		this.account = config.prepareExactRoutingAccount(true);
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
-		this.restrictions = restrictions(config, this.targets);
-		TargetGoals resolved = TargetGoals.resolve(config, start, this.targets);
+		this.restrictions = restrictions(config, targets.points());
+		TargetGoals resolved = TargetGoals.resolve(config, start, targets.points());
 		this.goals = resolved.goals();
 		this.hasViableGoal = resolved.hasViableGoal();
 		this.cutoffMillis = config.getCalculationCutoffMillis();
@@ -161,17 +175,17 @@ public final class ExactPathfinder implements ActiveSearch
 		return SearchRestrictions.of(avoidWilderness, blockedRegion);
 	}
 
-	private ExactPathfinder(int start, Set<Integer> targets, Runnable completionCallback, String failure)
+	private ExactPathfinder(int start, Targets targets, Runnable completionCallback, String failure)
 	{
 		this.start = start;
-		this.targets = Set.copyOf(targets);
+		this.targets = targets;
 		this.completionCallback = completionCallback;
 		this.collision = null;
 		this.routingStatic = null;
 		this.session = null;
 		this.account = null;
 		this.restrictions = SearchRestrictions.none();
-		this.goals = this.targets;
+		this.goals = targets.points();
 		this.hasViableGoal = false;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
@@ -180,7 +194,7 @@ public final class ExactPathfinder implements ActiveSearch
 		this.path = List.of(new PathStep(start, false));
 	}
 
-	public static ExactPathfinder failed(int start, Set<Integer> targets, Runnable completionCallback, Throwable error)
+	public static ExactPathfinder failed(int start, Targets targets, Runnable completionCallback, Throwable error)
 	{
 		String detail = error.getMessage();
 		return new ExactPathfinder(start, targets, completionCallback,
@@ -199,7 +213,7 @@ public final class ExactPathfinder implements ActiveSearch
 	}
 
 	@Override
-	public Set<Integer> getTargets()
+	public Targets getTargets()
 	{ return targets;
 	}
 
@@ -451,7 +465,7 @@ public final class ExactPathfinder implements ActiveSearch
 
 	private int firstTarget()
 	{
-		return targets.stream().min(Integer::compareUnsigned).orElse(Integer.MIN_VALUE);
+		return targets.points().stream().min(Integer::compareUnsigned).orElse(Integer.MIN_VALUE);
 	}
 
 	private static int last(List<PathStep> steps)

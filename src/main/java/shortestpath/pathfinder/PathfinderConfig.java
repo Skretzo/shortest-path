@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -126,7 +127,8 @@ public class PathfinderConfig
 	 * Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers.
 	 */
 	private final Map<Integer, DestinationRequirements> bankRequirements;
-	private final List<Integer> filteredTargets = new ArrayList<>(4);
+	// Targets filterLocations set aside until they become valid again.
+	private final Map<Integer, Target> filteredTargets = new LinkedHashMap<>(4);
 	private final Client client;
 	private final ShortestPathConfig config;
 	// Centralized transport type enable/disable config
@@ -507,33 +509,37 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Changes to the config might have invalidated some locations, e.g. those in the wilderness
+	 * The targets still valid under the config, which might have invalidated some, e.g. those in the
+	 * wilderness. Targets set aside here earlier come back once valid again.
 	 */
-	public void filterLocations(Set<Integer> locations, boolean canReviveFiltered)
+	public Targets filterLocations(Targets targets, boolean canReviveFiltered)
 	{
+		Targets kept = targets;
+		boolean revive = canReviveFiltered;
 		if (avoidWilderness)
 		{
-			locations.removeIf(location ->
+			List<Integer> valid = new ArrayList<>(targets.size());
+			for (Target target : targets)
 			{
-				boolean inWilderness = WildernessChecker.isInWilderness(location);
-				if (inWilderness)
+				if (WildernessChecker.isInWilderness(target.getPoint()))
 				{
-					filteredTargets.add(location);
+					filteredTargets.put(target.getPoint(), target);
 				}
-				return inWilderness;
-			});
-			// If we ended up with no valid locations we re-include the filtered locations
-			if (locations.isEmpty())
-			{
-				locations.addAll(filteredTargets);
-				filteredTargets.clear();
+				else
+				{
+					valid.add(target.getPoint());
+				}
 			}
+			kept = targets.restrictTo(valid);
+			// If we ended up with no valid locations we re-include the filtered locations
+			revive = kept.isEmpty();
 		}
-		else if (canReviveFiltered)
-		{ // Re-include previously filtered locations
-			locations.addAll(filteredTargets);
+		if (revive)
+		{
+			kept = kept.plus(Targets.of(filteredTargets.values()));
 			filteredTargets.clear();
 		}
+		return kept;
 	}
 
 	/**
