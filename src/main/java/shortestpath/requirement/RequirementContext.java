@@ -38,7 +38,7 @@ public final class RequirementContext
 {
 	@Getter
 	private final long evaluationTimeMinutes;
-	private final int[] boostedSkillLevelsAndMore;
+	private final SkillLevels boostedSkillLevelsAndMore;
 	@Getter
 	private final int currentMaxQuestPoints;
 	@Getter
@@ -80,7 +80,7 @@ public final class RequirementContext
 		Set<String> availableSpiritTrees)
 	{
 		this.evaluationTimeMinutes = evaluationTimeMinutes;
-		this.boostedSkillLevelsAndMore = boostedSkillLevelsAndMore.clone();
+		this.boostedSkillLevelsAndMore = SkillLevels.of(boostedSkillLevelsAndMore);
 		this.currentMaxQuestPoints = currentMaxQuestPoints;
 		this.questStates = Map.copyOf(questStates);
 		this.varbitValues = Map.copyOf(varbitValues);
@@ -119,7 +119,7 @@ public final class RequirementContext
 		LeagueModeState leagueModeState,
 		Set<String> availableSpiritTrees)
 	{
-		int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
+		int[] boostedSkillLevelsAndMore = new int[SkillLevels.LENGTH];
 		boolean onSailingBoat = source.varbit(VarbitID.SAILING_BOARDED_BOAT) != 0;
 		int i = 0;
 		for (; i < Skill.values().length; i++)
@@ -210,8 +210,8 @@ public final class RequirementContext
 	}
 
 
-	public int[] getBoostedSkillLevelsAndMore()
+	public SkillLevels getBoostedSkillLevelsAndMore()
 	{
-		return boostedSkillLevelsAndMore.clone();
+		return boostedSkillLevelsAndMore;
 	}
 }

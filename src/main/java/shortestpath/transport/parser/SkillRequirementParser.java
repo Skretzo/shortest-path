@@ -2,6 +2,7 @@ package shortestpath.transport.parser;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Skill;
+import shortestpath.requirement.model.SkillLevels;
 
 /**
  * Parses skill level requirements from TSV field values.
@@ -18,20 +19,19 @@ import net.runelite.api.Skill;
  * </p>
  */
 @Slf4j
-public class SkillRequirementParser implements FieldParser<int[]>
+public class SkillRequirementParser implements FieldParser<SkillLevels>
 {
-	public static final int MAX_LEVEL = Integer.MAX_VALUE;
 	private static final String DELIM_SPACE = " ";
 	private static final String DELIM_MULTI = ";";
 
 	@Override
-	public int[] parse(String value)
+	public SkillLevels parse(String value)
 	{
-		int[] skillLevels = new int[Skill.values().length + 3];
+		int[] skillLevels = new int[SkillLevels.LENGTH];
 
 		if (value == null)
 		{
-			return skillLevels;
+			return SkillLevels.of(skillLevels);
 		}
 
 		String[] skillRequirements = value.split(DELIM_MULTI);
@@ -52,9 +52,9 @@ public class SkillRequirementParser implements FieldParser<int[]>
 				}
 
 				int level = "Max".equals(levelAndSkill[0])
-					? MAX_LEVEL
+					? SkillLevels.MAX_LEVEL
 					: Integer.parseInt(levelAndSkill[0]);
-				String skillName = levelAndSkill[1] == null ? "" : levelAndSkill[1];
+				String skillName = levelAndSkill[1];
 
 				Skill[] skills = Skill.values();
 				int i = 0;
@@ -86,6 +86,6 @@ public class SkillRequirementParser implements FieldParser<int[]>
 			log.error("Invalid level and skill: {}", value);
 		}
 
-		return skillLevels;
+		return SkillLevels.of(skillLevels);
 	}
 }
