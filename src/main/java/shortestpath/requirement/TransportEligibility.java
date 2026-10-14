@@ -380,6 +380,7 @@ public final class TransportEligibility
 	public BankPickupPlan targetPickupPlan(TransportItems targetItems)
 	{
 		Map<Integer, Long> items = new LinkedHashMap<>();
+		Map<Integer, Long> resolvedItems = new LinkedHashMap<>();
 		Set<Integer> bankItemIds = new HashSet<>();
 		for (ItemRequirement group : targetItems.getRequirements())
 		{
@@ -401,14 +402,16 @@ public final class TransportEligibility
 					continue;
 				}
 				addCovering(branch.getItemIds(), branch.getQuantity(), carriedItems, bankHas, bankItemIds);
+				long withdrawn = branch.getQuantity() - carriedItems.getOrDefault(foundId, 0);
+				resolvedItems.merge(foundId, withdrawn, Long::sum);
 				if (!phrased)
 				{
-					items.put(foundId, (long) branch.getQuantity() - carriedItems.getOrDefault(foundId, 0));
+					items.put(foundId, withdrawn);
 					phrased = true;
 				}
 			}
 		}
-		return new BankPickupPlan(items, bankItemIds);
+		return new BankPickupPlan(items, bankItemIds, resolvedItems, false);
 	}
 
 	/**

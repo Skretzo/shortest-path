@@ -262,9 +262,9 @@ public class BankPickupRequirementsTest
 		when(coins.getName()).thenReturn("Coins");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
-			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, coinFare(3_000)));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -283,9 +283,9 @@ public class BankPickupRequirementsTest
 		when(coins.getName()).thenReturn("Coins");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
-			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, coinFare(3_000)));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -305,9 +305,9 @@ public class BankPickupRequirementsTest
 		when(lawRune.getName()).thenReturn("Law rune");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, LAW_ONLY),
-			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, LAW_ONLY),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, LAW_ONLY));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -323,9 +323,9 @@ public class BankPickupRequirementsTest
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, LAW_ONLY),
-			new PathStep(EDGE_DESTINATION, false, LAW_ONLY));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, LAW_ONLY),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, LAW_ONLY));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -347,9 +347,9 @@ public class BankPickupRequirementsTest
 		when(lawRune.getName()).thenReturn("Law rune");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, LAW_AND_AIR),
-			new PathStep(EDGE_DESTINATION, false, LAW_AND_AIR));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, LAW_AND_AIR),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, LAW_AND_AIR));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -369,10 +369,10 @@ public class BankPickupRequirementsTest
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false,
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED,
 				teleport(rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.WATER_RUNE, 1))),
-			new PathStep(EDGE_DESTINATION, false,
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED,
 				teleport(rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.WATER_RUNE, 1))));
 
 		BankPickupResult result = BankPickupResult.compute(
@@ -391,10 +391,10 @@ public class BankPickupRequirementsTest
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false,
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED,
 				edge(TransportType.TRANSPORT, singleItem(ItemID.ROPE, 1))),
-			new PathStep(EDGE_DESTINATION, false,
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED,
 				edge(TransportType.TRANSPORT, singleItem(ItemID.ROPE, 1))));
 
 		BankPickupResult result = BankPickupResult.compute(
@@ -414,9 +414,9 @@ public class BankPickupRequirementsTest
 		when(quetzalWhistle.getName()).thenReturn("Basic quetzal whistle");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, quetzalWhistle()),
-			new PathStep(EDGE_DESTINATION, false, quetzalWhistle()));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, quetzalWhistle()),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, quetzalWhistle()));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -432,10 +432,10 @@ public class BankPickupRequirementsTest
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false,
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED,
 				edge(TransportType.TELEPORTATION_ITEM, singleItem(ItemID.AMULET_OF_GLORY, 1))),
-			new PathStep(EDGE_DESTINATION, false,
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED,
 				edge(TransportType.TELEPORTATION_ITEM, singleItem(ItemID.AMULET_OF_GLORY, 1))));
 
 		BankPickupResult result = BankPickupResult.compute(
@@ -453,7 +453,7 @@ public class BankPickupRequirementsTest
 		bankHas.put(ItemID.COINS, 10_000);
 		bankHas.put(ItemID.LAWRUNE, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf(
 				coinFare(3_000),
 				edge(TransportType.TELEPORTATION_SPELL, LAW_ONLY.getItemRequirements())));
@@ -463,9 +463,9 @@ public class BankPickupRequirementsTest
 		when(lawRune.getName()).thenReturn("Law rune");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -486,7 +486,7 @@ public class BankPickupRequirementsTest
 		bankHas.put(ItemID.COINS, 10_000);
 		bankHas.put(ItemID.LAWRUNE, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf(
 				coinFare(3_000),
 				edge(TransportType.TELEPORTATION_SPELL, LAW_ONLY.getItemRequirements())));
@@ -496,10 +496,10 @@ public class BankPickupRequirementsTest
 		when(lawRune.getName()).thenReturn("Law rune");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false),
-			new PathStep(EDGE_DESTINATION_2, false, coinFare(3_000)));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION_2, BankVisitState.CARRIED, coinFare(3_000)));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -524,9 +524,9 @@ public class BankPickupRequirementsTest
 		when(coins.getName()).thenReturn("Coins");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
-			new PathStep(EDGE_DESTINATION, false, coinFare(3_000)));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, coinFare(3_000)));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -552,9 +552,9 @@ public class BankPickupRequirementsTest
 		when(lawRune.getName()).thenReturn("Law rune");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, teleport(rune(ItemVariations.LAW_RUNE, 3))),
-			new PathStep(EDGE_DESTINATION, false, teleport(rune(ItemVariations.LAW_RUNE, 4))));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, teleport(rune(ItemVariations.LAW_RUNE, 3))),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, teleport(rune(ItemVariations.LAW_RUNE, 4))));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -576,9 +576,9 @@ public class BankPickupRequirementsTest
 		when(runePouch.getName()).thenReturn("Rune pouch");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, teleport(rune(ItemVariations.LAW_RUNE, 3))),
-			new PathStep(EDGE_DESTINATION, false, teleport(rune(ItemVariations.LAW_RUNE, 2))));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, teleport(rune(ItemVariations.LAW_RUNE, 3))),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, teleport(rune(ItemVariations.LAW_RUNE, 2))));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -598,10 +598,10 @@ public class BankPickupRequirementsTest
 		when(tradeSticks.getName()).thenReturn("Trading sticks");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false,
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED,
 				edge(TransportType.TRANSPORT, singleItem(ItemID.VILLAGE_TRADE_STICKS, 4))),
-			new PathStep(EDGE_DESTINATION, false,
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED,
 				edge(TransportType.TRANSPORT, singleItem(ItemID.VILLAGE_TRADE_STICKS, 4))));
 
 		BankPickupResult result = BankPickupResult.compute(
@@ -621,16 +621,16 @@ public class BankPickupRequirementsTest
 		playerHas.put(ItemID.COINS, 3_000);
 		bankHas.put(ItemID.ROPE, 1);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf());
 		when(client.getItemDefinition(ItemID.ROPE)).thenReturn(rope);
 		when(rope.getName()).thenReturn("Rope");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, coinFare(3_000)),
-			new PathStep(EDGE_DESTINATION, true),
-			new PathStep(EDGE_DESTINATION_2, false,
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, coinFare(3_000)),
+			new PathStep(EDGE_DESTINATION, BankVisitState.BANKED),
+			new PathStep(EDGE_DESTINATION_2, BankVisitState.CARRIED,
 				edge(TransportType.TRANSPORT, singleItem(ItemID.ROPE, 1))));
 
 		BankPickupResult result = BankPickupResult.compute(
@@ -647,7 +647,7 @@ public class BankPickupRequirementsTest
 		// render their "or" group — each is a separate choice the player satisfies.
 		bankHas.put(ItemID.COINS, 20_000);
 		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(false));
-		when(pathfinderConfig.getTransportAvailability(anyBoolean())).thenReturn(
+		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf(
 				coinFare(3_000, BANK_TILE, EDGE_ORIGIN),
 				coinFare(3_000, BANK_TILE, EDGE_ORIGIN),
@@ -657,9 +657,9 @@ public class BankPickupRequirementsTest
 		when(coins.getName()).thenReturn("Coins");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false),
-			new PathStep(EDGE_DESTINATION, false));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -685,9 +685,9 @@ public class BankPickupRequirementsTest
 		when(airRune.getName()).thenReturn("Air rune");
 
 		List<PathStep> path = List.of(
-			new PathStep(BANK_TILE, false),
-			new PathStep(EDGE_ORIGIN, false, teleport(rune(ItemVariations.AIR_RUNE, 3))),
-			new PathStep(EDGE_DESTINATION, false, teleport(rune(ItemVariations.AIR_RUNE, 3))));
+			new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED, teleport(rune(ItemVariations.AIR_RUNE, 3))),
+			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED, teleport(rune(ItemVariations.AIR_RUNE, 3))));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
