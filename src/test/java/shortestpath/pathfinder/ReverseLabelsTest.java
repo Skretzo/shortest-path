@@ -7,15 +7,15 @@ import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import org.junit.Test;
-import shortestpath.pathfinder.exact.ExactCosts;
-import shortestpath.pathfinder.exact.ExactMinHeap;
-import shortestpath.pathfinder.exact.PreparedHeuristic;
-import shortestpath.pathfinder.exact.PreparedRoutingAccount;
-import shortestpath.pathfinder.exact.ReverseLabels;
-import shortestpath.pathfinder.exact.RoutingStatic;
-import shortestpath.pathfinder.exact.RoutingStaticTestFixture;
-import shortestpath.pathfinder.exact.SiteGraph;
-import shortestpath.pathfinder.exact.TargetOverlay;
+import shortestpath.pathfinder.astar.CostArithmetic;
+import shortestpath.pathfinder.astar.AStarMinHeap;
+import shortestpath.pathfinder.astar.PreparedHeuristic;
+import shortestpath.pathfinder.astar.PreparedRoutingAccount;
+import shortestpath.pathfinder.astar.ReverseLabels;
+import shortestpath.pathfinder.astar.RoutingStatic;
+import shortestpath.pathfinder.astar.RoutingStaticTestFixture;
+import shortestpath.pathfinder.astar.SiteGraph;
+import shortestpath.pathfinder.astar.TargetOverlay;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -39,13 +39,13 @@ public class ReverseLabelsTest
 		assertEquals(0, reverse.targetLabel(false));
 		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_A), false));
 		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_C), false));
-		assertEquals(ExactCosts.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), false));
+		assertEquals(CostArithmetic.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), false));
 
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, reverse);
 		assertEquals(0, heuristic.estimate(RoutingStaticTestFixture.T3_TARGET, false));
 		assertEquals(1, heuristic.estimate(RoutingStaticTestFixture.T3_SEARCH_0, false));
 		assertEquals(1, heuristic.estimate(RoutingStaticTestFixture.T3_SEARCH_0, false, new int[] {0}));
-		assertEquals(ExactCosts.INF, heuristic.estimate(20000, false, new int[0]));
+		assertEquals(CostArithmetic.INF, heuristic.estimate(20000, false, new int[0]));
 	}
 
 	@Test
@@ -65,7 +65,7 @@ public class ReverseLabelsTest
 		TargetOverlay reverseDirection =
 			new TargetOverlay(graph, collision(RoutingStaticTestFixture.T3_B), RoutingStaticTestFixture.T3_B);
 		reverse = ReverseLabels.compute(reverseDirection);
-		assertEquals(ExactCosts.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), false));
+		assertEquals(CostArithmetic.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), false));
 	}
 
 	@Test
@@ -95,13 +95,13 @@ public class ReverseLabelsTest
 		assertEquals(6, reverse.label(bank, false));
 		assertEquals(20, reverse.label(bank, true));
 		assertEquals(6, reverse.label(bankGraph.bankedGlobalHubNode(), true));
-		assertEquals(ExactCosts.INF, reverse.label(bankGraph.bankedGlobalHubNode(), false));
+		assertEquals(CostArithmetic.INF, reverse.label(bankGraph.bankedGlobalHubNode(), false));
 	}
 
 	@Test
 	public void heapOrderAndIdentityMismatch() throws Exception
 	{
-		ExactMinHeap heap = new ExactMinHeap(1);
+		AStarMinHeap heap = new AStarMinHeap(1);
 		heap.push(1, 1, 2);
 		heap.push(1, 1, 1);
 		heap.push(3, 3, 0);
@@ -153,7 +153,7 @@ public class ReverseLabelsTest
 		SiteGraph graph = target.graph();
 		RoutingStatic stat = target.routingStatic();
 		int[] labels = new int[target.queryNodeCount() * 2];
-		Arrays.fill(labels, ExactCosts.INF);
+		Arrays.fill(labels, CostArithmetic.INF);
 		labels[target.targetState(false)] = 0;
 		labels[target.targetState(true)] = 0;
 		boolean changed;
@@ -198,7 +198,7 @@ public class ReverseLabelsTest
 
 	private static boolean relax(int[] labels, int state, int base, int edge)
 	{
-		int candidate = ExactCosts.add(base, edge);
+		int candidate = CostArithmetic.add(base, edge);
 		if (candidate >= labels[state])
 		{
 			return false;

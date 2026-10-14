@@ -34,7 +34,7 @@ import net.runelite.client.events.PluginMessage;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.ExactRoutingStaticProvider;
+import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.pathfinder.TestPathfinderConfig;
@@ -52,9 +52,9 @@ import shortestpath.pathfinder.TestPathfinderConfig;
 final class PluginApiHarness implements AutoCloseable
 {
 	private static final long TIMEOUT_SECONDS = 60;
-	// Building the exact backend's static data takes seconds, so every harness shares one.
-	private static final ExactRoutingStaticProvider EXACT_STATIC =
-		new ExactRoutingStaticProvider(() -> new CollisionMap(SplitFlagMap.fromResources()));
+	// Building the A* backend's static data takes seconds, so every harness shares one.
+	private static final AStarRoutingStaticProvider ASTAR_STATIC =
+		new AStarRoutingStaticProvider(() -> new CollisionMap(SplitFlagMap.fromResources()));
 	private static final AtomicInteger IDS = new AtomicInteger();
 
 	final ShortestPathPlugin plugin = new ShortestPathPlugin();
@@ -68,7 +68,7 @@ final class PluginApiHarness implements AutoCloseable
 	/** Plugin settings with the values the tests change. */
 	static final class Settings extends TestShortestPathConfig
 	{
-		PathfinderBackend backend = PathfinderBackend.LEGACY;
+		PathfinderBackend selectedBackend = PathfinderBackend.LEGACY;
 		boolean includeBankPath;
 		int costBankVisit;
 		TeleportationItem teleportationItems = TeleportationItem.NONE;
@@ -77,7 +77,7 @@ final class PluginApiHarness implements AutoCloseable
 		@Override
 		public PathfinderBackend pathfinderBackend()
 		{
-			return backend;
+			return selectedBackend;
 		}
 
 		@Override
@@ -151,7 +151,7 @@ final class PluginApiHarness implements AutoCloseable
 		set("eventBus", eventBus);
 		set("worldMapPointManager", mock(WorldMapPointManager.class));
 		set("pathfinderConfig", pathfinderConfig);
-		set("exactRoutingStatic", EXACT_STATIC);
+		set("aStarRoutingStatic", ASTAR_STATIC);
 	}
 
 	private void set(String name, Object value)

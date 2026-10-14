@@ -10,12 +10,12 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.exact.ExactCosts;
-import shortestpath.pathfinder.exact.PreparedRoutingAccount;
-import shortestpath.pathfinder.exact.RoutingStatic;
-import shortestpath.pathfinder.exact.RoutingStaticTestFixture;
-import shortestpath.pathfinder.exact.SiteGraph;
-import shortestpath.pathfinder.exact.TeleportCapability;
+import shortestpath.pathfinder.astar.CostArithmetic;
+import shortestpath.pathfinder.astar.PreparedRoutingAccount;
+import shortestpath.pathfinder.astar.RoutingStatic;
+import shortestpath.pathfinder.astar.RoutingStaticTestFixture;
+import shortestpath.pathfinder.astar.SiteGraph;
+import shortestpath.pathfinder.astar.TeleportCapability;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -212,7 +212,7 @@ public class PreparedRoutingAccountTest
 		PreparedRoutingAccount overflow = PreparedRoutingAccount.compile(
 			availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, Integer.MAX_VALUE)),
 			availability(), false, Set.of(), 0, true, ignored -> 1);
-		assertEquals(ExactCosts.INF, overflow.localCost(false, 0));
+		assertEquals(CostArithmetic.INF, overflow.localCost(false, 0));
 		try
 		{
 			PreparedRoutingAccount.compile(

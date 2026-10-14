@@ -64,6 +64,7 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
+import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
@@ -88,7 +89,7 @@ import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.ExactPathfinder;
+import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderBackend;
@@ -101,8 +102,8 @@ import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.pathfinder.ExactRoutingStaticProvider;
-import shortestpath.pathfinder.exact.ExactRoutingSession;
+import shortestpath.pathfinder.AStarRoutingStaticProvider;
+import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -150,7 +151,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderBackend|exactHeuristicWeight|collisionAwareBlockedTargets|use\\w+|cost\\w+|unlock\\w+)$");
+	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderAlgorithm|aStarHeuristicWeight|collisionAwareBlockedTargets|use\\w+|cost\\w+|unlock\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 	// Colour of the path while on a boat, which sails the boat's headings
@@ -200,6 +201,10 @@ public class ShortestPathPlugin extends Plugin
 	private ClientThread clientThread;
 	@Inject
 	private ShortestPathConfig config;
+	@Inject
+	private ConfigManager configManager;
+	private long activeConfigProfileId;
+	private boolean migratingAStarConfiguration;
 	@Inject
 	private EventBus eventBus;
 	@Inject
@@ -252,8 +257,8 @@ public class ShortestPathPlugin extends Plugin
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
-	private ExactRoutingStaticProvider exactRoutingStatic;
-	private final ExactRoutingSession exactRoutingSession = new ExactRoutingSession();
+	private AStarRoutingStaticProvider aStarRoutingStatic;
+	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
 	@Getter
 	private int sailingPivotX;
@@ -400,6 +405,8 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		migrateAStarConfiguration();
+		activeConfigProfileId = configManager.getProfile().getId();
 		cacheConfigValues();
 
 		pathfinderConfig = new PathfinderConfig(client, config);
@@ -439,7 +446,7 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		portalNexusKeybinds.loadFromProfile();
-		prepareExactBackend();
+		prepareAStarBackend();
 	}
 
 	@Override
@@ -535,24 +542,24 @@ public class ShortestPathPlugin extends Plugin
 					legacyPathfinder = null;
 					pathfinder = sailingPathfinder(start, ends);
 				}
-				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.EXACT)
+				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.ASTAR)
 				{
 					try
 					{
 						legacyPathfinder = null;
-						ExactPathfinder exact = new ExactPathfinder(pathfinderConfig, exactRoutingStatic(),
-							exactRoutingSession, start, ends, this::postPluginMessages);
+						AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
+							aStarRoutingSession, start, ends, this::postPluginMessages);
 						// Recalculating towards the same targets: keep the old route drawn until
 						// the new one is ready.
 						if (ends.equals(previousTargets))
-							exact.showUntilDone(previousPath);
-						pathfinder = exact;
+							aStar.showUntilDone(previousPath);
+						pathfinder = aStar;
 					}
 					catch (RuntimeException error)
 					{
 						debugState.clientError(error, client.getTickCount());
 						legacyPathfinder = null;
-						pathfinder = ExactPathfinder.failed(start, ends, this::postPluginMessages, error);
+						pathfinder = AStarPathfinder.failed(start, ends, this::postPluginMessages, error);
 					}
 				}
 				else
@@ -623,29 +630,42 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	private ExactRoutingStaticProvider exactRoutingStatic()
+	private AStarRoutingStaticProvider aStarRoutingStatic()
 	{
 		synchronized (pathfinderMutex)
 		{
-			if (exactRoutingStatic == null)
-				exactRoutingStatic = new ExactRoutingStaticProvider(pathfinderConfig::getMap);
-			return exactRoutingStatic;
+			if (aStarRoutingStatic == null)
+				aStarRoutingStatic = new AStarRoutingStaticProvider(pathfinderConfig::getMap);
+			return aStarRoutingStatic;
+		}
+	}
+
+	private void migrateAStarConfiguration()
+	{
+		migratingAStarConfiguration = true;
+		try
+		{
+			PathfinderConfigurationMigration.migrate(configManager, CONFIG_GROUP);
+		}
+		finally
+		{
+			migratingAStarConfiguration = false;
 		}
 	}
 
 	/**
-	 * Builds the exact backend's static routing data in the background when the exact backend is
+	 * Builds the A* backend's static routing data in the background when the A* backend is
 	 * selected, so the first route does not pay for it. The build runs on the pathfinding thread,
 	 * so a search submitted meanwhile simply queues behind it; a failed build is remembered by the
 	 * provider and reported by that search.
 	 */
-	private void prepareExactBackend()
+	private void prepareAStarBackend()
 	{
-		if (config.pathfinderBackend() != PathfinderBackend.EXACT)
+		if (pathfinderConfig == null || config.pathfinderBackend() != PathfinderBackend.ASTAR)
 		{
 			return;
 		}
-		ExactRoutingStaticProvider provider = exactRoutingStatic();
+		AStarRoutingStaticProvider provider = aStarRoutingStatic();
 		ensurePathfindingExecutor();
 		synchronized (pathfinderMutex)
 		{
@@ -657,7 +677,7 @@ public class ShortestPathPlugin extends Plugin
 				}
 				catch (RuntimeException error)
 				{
-					log.warn("Failed to build exact routing data", error);
+					log.warn("Failed to build A* routing data", error);
 				}
 			});
 		}
@@ -673,7 +693,7 @@ public class ShortestPathPlugin extends Plugin
 		List<PathStep> path;
 		// The previous route is only on screen until its recalculation finishes; the player is
 		// expected to be off it, so it must not trigger yet another recalculation.
-		if (pathfinder instanceof ExactPathfinder && ((ExactPathfinder) pathfinder).isShowingProvisionalPath())
+		if (pathfinder instanceof AStarPathfinder && ((AStarPathfinder) pathfinder).isShowingProvisionalPath())
 		{
 			return true;
 		}
@@ -790,6 +810,10 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		cacheConfigValues();
+		if (migratingAStarConfiguration || configManager.getProfile().getId() != activeConfigProfileId)
+		{
+			return;
+		}
 
 		if ("drawDebugPanel".equals(event.getKey()))
 		{
@@ -804,9 +828,9 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		if ("pathfinderBackend".equals(event.getKey()))
+		if ("pathfinderAlgorithm".equals(event.getKey()))
 		{
-			prepareExactBackend();
+			prepareAStarBackend();
 		}
 
 		// Transport option changed; rerun pathfinding
@@ -816,6 +840,47 @@ public class ShortestPathPlugin extends Plugin
 			{
 				restartPathfinding("config: " + event.getKey(), pathfinder.getStart(), pathfinder.getTargets());
 			}
+		}
+	}
+
+	@Subscribe
+	public void onProfileChanged(ProfileChanged event)
+	{
+		long profileId = configManager.getProfile().getId();
+		if (profileId == activeConfigProfileId)
+		{
+			return;
+		}
+
+		migrateAStarConfiguration();
+		activeConfigProfileId = profileId;
+		cacheConfigValues();
+		syncDebugPanelVisibility();
+		if (pathfinderConfig == null)
+		{
+			return;
+		}
+
+		prepareAStarBackend();
+		if (pathfinder != null)
+		{
+			restartPathfinding("configuration profile change", pathfinder.getStart(), pathfinder.getTargets());
+		}
+		else
+		{
+			clientThread.invokeLater(pathfinderConfig::refresh);
+		}
+	}
+
+	private void syncDebugPanelVisibility()
+	{
+		if (config.drawDebugPanel())
+		{
+			overlayManager.add(debugOverlayPanel);
+		}
+		else
+		{
+			overlayManager.remove(debugOverlayPanel);
 		}
 	}
 
