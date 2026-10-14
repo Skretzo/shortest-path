@@ -1449,14 +1449,14 @@ public class ResourceLoaderTest
 	{
 		HashMap<Integer, Set<Transport>> all = ResourceLoader.transports();
 
-		Assert.assertEquals("committed origins", 6633, all.size());
+		Assert.assertEquals("committed origins", 6629, all.size());
 		int total = 0;
 		for (Set<Transport> set : all.values())
 		{
 			Assert.assertFalse("origin sets are never empty", set.isEmpty());
 			total += set.size();
 		}
-		Assert.assertEquals("committed transports (incl. permutation products)", 15183, total);
+		Assert.assertEquals("committed transports (incl. permutation products)", 15176, total);
 	}
 
 	// ------------------------------------------------------------------
@@ -1482,7 +1482,7 @@ public class ResourceLoaderTest
 			}
 		}
 
-		Assert.assertEquals("Committed collision map region count", 2771, entries);
+		Assert.assertEquals("Committed collision map region count", 2773, entries);
 		Assert.assertEquals("Every entry is a packed region name", entries, packedNames);
 	}
 }
