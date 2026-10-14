@@ -59,6 +59,7 @@ final class PluginApiHarness implements AutoCloseable
 	private static final AtomicInteger IDS = new AtomicInteger();
 
 	final ShortestPathPlugin plugin = new ShortestPathPlugin();
+	private shortestpath.scheduler.PathScheduler scheduler;
 	final Settings settings = new Settings();
 	private final Client client = mock(Client.class);
 	private final ItemContainer inventory = mock(ItemContainer.class);
@@ -156,8 +157,14 @@ final class PluginApiHarness implements AutoCloseable
 		set("itemState", itemState);
 		set("pohService", shortestpath.poh.PohService.forTesting());
 		set("eventBus", eventBus);
-		set("worldMapPointManager", mock(WorldMapPointManager.class));
 		set("pathfinderConfig", pathfinderConfig);
+		// The harness builds the plugin without DI, so the scheduler and its attach-time
+		// bindings are seeded the same way the shell's startUp wires them. The world map
+		// point manager moved into the scheduler with the marker machinery.
+		scheduler = new shortestpath.scheduler.PathScheduler(client, clientThread, settings,
+			mock(WorldMapPointManager.class), new shortestpath.scheduler.DebugState());
+		scheduler.attach(pathfinderConfig, itemState, plugin);
+		set("scheduler", scheduler);
 		set("aStarRoutingStatic", ASTAR_STATIC);
 	}
 
@@ -168,6 +175,20 @@ final class PluginApiHarness implements AutoCloseable
 			Field field = ShortestPathPlugin.class.getDeclaredField(name);
 			field.setAccessible(true);
 			field.set(plugin, value);
+		}
+		catch (NoSuchFieldException e)
+		{
+			// Fields the pathfinding machinery move relocated onto the scheduler.
+			try
+			{
+				Field field = shortestpath.scheduler.PathScheduler.class.getDeclaredField(name);
+				field.setAccessible(true);
+				field.set(scheduler, value);
+			}
+			catch (ReflectiveOperationException e2)
+			{
+				throw new AssertionError(e2);
+			}
 		}
 		catch (ReflectiveOperationException e)
 		{
@@ -357,6 +378,19 @@ final class PluginApiHarness implements AutoCloseable
 			Field field = ShortestPathPlugin.class.getDeclaredField(name);
 			field.setAccessible(true);
 			return field.get(plugin);
+		}
+		catch (NoSuchFieldException e)
+		{
+			try
+			{
+				Field field = shortestpath.scheduler.PathScheduler.class.getDeclaredField(name);
+				field.setAccessible(true);
+				return field.get(scheduler);
+			}
+			catch (ReflectiveOperationException e2)
+			{
+				throw new AssertionError(e2);
+			}
 		}
 		catch (ReflectiveOperationException e)
 		{
