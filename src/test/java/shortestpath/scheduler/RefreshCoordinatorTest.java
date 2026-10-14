@@ -129,22 +129,22 @@ public class RefreshCoordinatorTest
 	@Test
 	public void sailingChangedRestartsTheRunningSearch()
 	{
-		runningSearch(42, Set.of(7, 8));
+		runningSearch(42, Targets.at(Set.of(7, 8)));
 
 		coordinator.sailingChanged(TestSailingChange.of(
 			"varbit:" + VarbitID.SAILING_BOARDED_BOAT, Set.of(Effect.ROUTE_INVALIDATING)));
 
-		verify(scheduler).restart("sailing varbit", 42, Set.of(7, 8));
+		verify(scheduler).restart("sailing varbit", 42, Targets.at(Set.of(7, 8)));
 	}
 
 	@Test
 	public void sailingChangedKeepsTheKeyForNonVarbitFacts()
 	{
-		runningSearch(1, Set.of(2));
+		runningSearch(1, Targets.at(Set.of(2)));
 
 		coordinator.sailingChanged(TestSailingChange.of("unlisted-key", Set.of(Effect.ROUTE_INVALIDATING)));
 
-		verify(scheduler).restart("unlisted-key", 1, Set.of(2));
+		verify(scheduler).restart("unlisted-key", 1, Targets.at(Set.of(2)));
 	}
 
 	@Test
