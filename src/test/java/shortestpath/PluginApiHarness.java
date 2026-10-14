@@ -156,10 +156,11 @@ final class PluginApiHarness implements AutoCloseable
 		shortestpath.scheduler.RefreshCoordinator coordinator =
 			new shortestpath.scheduler.RefreshCoordinator(scheduler, settings);
 		itemState = shortestpath.items.ItemStateService.forTesting(coordinator);
+		shortestpath.sailing.SailingService sailing =
+			shortestpath.sailing.SailingService.forTesting(client, coordinator);
 		pathfinderConfig.setItemStateService(itemState);
-		set("itemState", itemState);
-		shortestpath.sailing.SailingService sailing = shortestpath.sailing.SailingService.forTesting(client);
 		pathfinderConfig.setSailingService(sailing);
+		set("itemState", itemState);
 		set("sailing", sailing);
 		scheduler.attach(pathfinderConfig, sailing, plugin);
 		set("scheduler", scheduler);
