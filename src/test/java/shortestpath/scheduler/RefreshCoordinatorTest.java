@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -28,6 +27,7 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.TestItemChange;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.Targets;
 import shortestpath.poh.TestPohChange;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -58,7 +58,7 @@ public class RefreshCoordinatorTest
 		search = mock(ActiveSearch.class);
 	}
 
-	private void runningSearch(int start, Set<Integer> targets)
+	private void runningSearch(int start, Targets targets)
 	{
 		when(scheduler.getActiveSearch()).thenReturn(search);
 		when(search.getStart()).thenReturn(start);
@@ -86,14 +86,14 @@ public class RefreshCoordinatorTest
 	@Test
 	public void itemsChangedIsInvalidateOnly()
 	{
-		runningSearch(7, Set.of(9));
+		runningSearch(7, Targets.at(Set.of(9)));
 
 		coordinator.itemsChanged(
 			TestItemChange.of("container:95", Set.of(Effect.ELIGIBILITY_STALE)));
 
 		verify(scheduler).invalidateEligibility();
-		verify(scheduler, never()).restart(anyString(), anyInt(), anySet());
-		verify(scheduler, never()).restart(anyString(), anyInt(), anySet(), anyBoolean());
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
 	}
 
 	@Test
@@ -107,12 +107,12 @@ public class RefreshCoordinatorTest
 	@Test
 	public void treeSetChangedRestartsTheRunningSearch()
 	{
-		runningSearch(42, Set.of(7, 8));
+		runningSearch(42, Targets.at(Set.of(7, 8)));
 
 		coordinator.treeSetChanged(
 			TestTreeChange.of("varbit:Port Sarim", Set.of(Effect.ROUTE_INVALIDATING)));
 
-		verify(scheduler).restart("spirit tree varbit", 42, Set.of(7, 8));
+		verify(scheduler).restart("spirit tree varbit", 42, Targets.at(Set.of(7, 8)));
 	}
 
 	@Test
@@ -126,22 +126,22 @@ public class RefreshCoordinatorTest
 	@Test
 	public void configChangedRestartsRoutingKeysAndPrepsTheBackend()
 	{
-		runningSearch(11, Set.of(13));
+		runningSearch(11, Targets.at(Set.of(13)));
 
-		coordinator.configChanged(configChange("pathfinderBackend"));
+		coordinator.configChanged(configChange("pathfinderAlgorithm"));
 
 		verify(scheduler).prepareBackend();
-		verify(scheduler).restart("config: pathfinderBackend", 11, Set.of(13));
+		verify(scheduler).restart("config: pathfinderAlgorithm", 11, Targets.at(Set.of(13)));
 	}
 
 	@Test
 	public void configChangedRestartsWithoutBackendPrepForPlainRoutingKeys()
 	{
-		runningSearch(11, Set.of(13));
+		runningSearch(11, Targets.at(Set.of(13)));
 
 		coordinator.configChanged(configChange("avoidWilderness"));
 
-		verify(scheduler).restart("config: avoidWilderness", 11, Set.of(13));
+		verify(scheduler).restart("config: avoidWilderness", 11, Targets.at(Set.of(13)));
 		verify(scheduler, never()).prepareBackend();
 	}
 
@@ -175,8 +175,8 @@ public class RefreshCoordinatorTest
 		coordinator.configChanged(configChange("avoidWilderness"));
 		coordinator.offRouteTick(5, WorldPointUtil.packWorldPoint(3100, 3200, 0), WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
-		verify(scheduler, never()).restart(anyString(), anyInt(), anySet());
-		verify(scheduler, never()).restart(anyString(), anyInt(), anySet(), anyBoolean());
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
 		verify(scheduler, never()).setTarget(anyInt());
 	}
 
@@ -187,17 +187,17 @@ public class RefreshCoordinatorTest
 	@Test
 	public void treeRestartReasonsKeepTheirLiterals()
 	{
-		runningSearch(1, Set.of(2));
+		runningSearch(1, Targets.at(Set.of(2)));
 
 		coordinator.treeSetChanged(TestTreeChange.of("profile", Set.of(Effect.ROUTE_INVALIDATING)));
 		coordinator.treeSetChanged(TestTreeChange.of("menu", Set.of(Effect.ROUTE_INVALIDATING)));
 		coordinator.treeSetChanged(TestTreeChange.of("varbit:Etceteria", Set.of(Effect.ROUTE_INVALIDATING)));
 		coordinator.treeSetChanged(TestTreeChange.of("unlisted-key", Set.of(Effect.ROUTE_INVALIDATING)));
 
-		verify(scheduler).restart("profile change", 1, Set.of(2));
-		verify(scheduler).restart("spirit trees", 1, Set.of(2));
-		verify(scheduler).restart("spirit tree varbit", 1, Set.of(2));
-		verify(scheduler).restart("unlisted-key", 1, Set.of(2));
+		verify(scheduler).restart("profile change", 1, Targets.at(Set.of(2)));
+		verify(scheduler).restart("spirit trees", 1, Targets.at(Set.of(2)));
+		verify(scheduler).restart("spirit tree varbit", 1, Targets.at(Set.of(2)));
+		verify(scheduler).restart("unlisted-key", 1, Targets.at(Set.of(2)));
 	}
 
 	@Test
@@ -267,14 +267,14 @@ public class RefreshCoordinatorTest
 		// the search restarts from the current position.
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(1000, 1000, 0);
-		runningSearch(50, Set.of(target));
+		runningSearch(50, Targets.at(Set.of(target)));
 		when(scheduler.isStartPointSet()).thenReturn(false);
 		when(scheduler.isNearPath(location)).thenReturn(false);
 		when(config.cancelInstead()).thenReturn(false);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
-		verify(scheduler).restart("off route", location, Set.of(target));
+		verify(scheduler).restart("off route", location, Targets.at(Set.of(target)));
 		verify(scheduler, never()).drainDueTasks(anyInt());
 	}
 
@@ -286,7 +286,7 @@ public class RefreshCoordinatorTest
 		// the producer's own declare, not part of either verb.
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(1000, 1000, 0);
-		runningSearch(50, Set.of(target));
+		runningSearch(50, Targets.at(Set.of(target)));
 		when(scheduler.isStartPointSet()).thenReturn(false);
 		when(scheduler.isNearPath(location)).thenReturn(false);
 		when(config.cancelInstead()).thenReturn(false);
@@ -297,7 +297,7 @@ public class RefreshCoordinatorTest
 		InOrder order = inOrder(scheduler);
 		order.verify(scheduler).drainDueTasks(20);
 		order.verify(scheduler).isNearPath(location);
-		order.verify(scheduler).restart("off route", location, Set.of(target));
+		order.verify(scheduler).restart("off route", location, Targets.at(Set.of(target)));
 	}
 
 	@Test
@@ -305,13 +305,13 @@ public class RefreshCoordinatorTest
 	{
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(3200, 3201, 0);
-		runningSearch(50, Set.of(target));
+		runningSearch(50, Targets.at(Set.of(target)));
 		when(config.reachedDistance()).thenReturn(10);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
-		verify(scheduler, never()).restart(anyString(), anyInt(), anySet(), anyBoolean());
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
 	}
 
 	@Test
@@ -319,7 +319,7 @@ public class RefreshCoordinatorTest
 	{
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(1000, 1000, 0);
-		runningSearch(50, Set.of(target));
+		runningSearch(50, Targets.at(Set.of(target)));
 		when(scheduler.isStartPointSet()).thenReturn(false);
 		when(scheduler.isNearPath(location)).thenReturn(false);
 		when(config.cancelInstead()).thenReturn(true);
@@ -327,7 +327,7 @@ public class RefreshCoordinatorTest
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
-		verify(scheduler, never()).restart(anyString(), anyInt(), anySet(), anyBoolean());
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
 	}
 
 	// ---------------------------------------------------------------
@@ -337,18 +337,18 @@ public class RefreshCoordinatorTest
 	@Test
 	public void targetRequestRestartsFromTheMessageStart()
 	{
-		coordinator.targetRequest(5, Set.of(9));
+		coordinator.targetRequest(5, Targets.at(Set.of(9)));
 
-		verify(scheduler).restart("plugin message", 5, Set.of(9), false);
+		verify(scheduler).restart("plugin message", 5, Targets.at(Set.of(9)), false);
 	}
 
 	@Test
 	public void targetRequestWithEmptyTargetsReusesTheRunningOnes()
 	{
-		runningSearch(5, Set.of(3, 4));
+		runningSearch(5, Targets.at(Set.of(3, 4)));
 
-		coordinator.targetRequest(5, Set.of());
+		coordinator.targetRequest(5, Targets.NONE);
 
-		verify(scheduler).restart("plugin message", 5, Set.of(3, 4), true);
+		verify(scheduler).restart("plugin message", 5, Targets.at(Set.of(3, 4)), true);
 	}
 }
