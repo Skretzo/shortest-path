@@ -22,7 +22,7 @@ import shortestpath.ShortestPathConfig;
  * {@link Effect#ROUTE_INVALIDATING} — including keys the reads reach through
  * {@code ShortestPathConfig} default methods ({@code useTeleportationPortalsPoh}
  * and {@code usePohMountedItems}, read inside {@code pohNexusPortals()}/
- * {@code pohMountedItems()}) — while {@code pathfinderBackend} additionally
+ * {@code pohMountedItems()}) — while {@code pathfinderAlgorithm} additionally
  * carries {@link Effect#SIDE_EFFECT_BACKEND_PREP} and {@code drawDebugPanel}
  * carries only {@link Effect#SIDE_EFFECT_DEBUG_OVERLAY}. Rows with no shell
  * consequence beyond view republish carry {@link Effect#DISPLAY_ONLY}.
@@ -36,7 +36,7 @@ import shortestpath.ShortestPathConfig;
 @Getter
 enum ConfigKey
 {
-	PATHFINDER_BACKEND("pathfinderBackend", ShortestPathConfig::pathfinderBackend, Coercion.NONE, Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP),
+	PATHFINDER_ALGORITHM("pathfinderAlgorithm", ShortestPathConfig::pathfinderBackend, Coercion.NONE, Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP),
 	AVOID_WILDERNESS("avoidWilderness", ShortestPathConfig::avoidWilderness, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_AGILITY_SHORTCUTS("useAgilityShortcuts", ShortestPathConfig::useAgilityShortcuts, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_GRAPPLE_SHORTCUTS("useGrappleShortcuts", ShortestPathConfig::useGrappleShortcuts, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
@@ -75,7 +75,7 @@ enum ConfigKey
 	SHOW_TILE_COUNTER("showTileCounter", ShortestPathConfig::showTileCounter, Coercion.TILE_COUNTER, Effect.DISPLAY_ONLY),
 	TILE_COUNTER_STEP("tileCounterStep", ShortestPathConfig::tileCounterStep, Coercion.INT, Effect.DISPLAY_ONLY),
 	CALCULATION_CUTOFF("calculationCutoff", ShortestPathConfig::calculationCutoff, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	EXACT_HEURISTIC_WEIGHT("exactHeuristicWeight", ShortestPathConfig::exactHeuristicWeight, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	A_STAR_HEURISTIC_WEIGHT("aStarHeuristicWeight", ShortestPathConfig::aStarHeuristicWeight, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	COLLISION_AWARE_BLOCKED_TARGETS("collisionAwareBlockedTargets", ShortestPathConfig::collisionAwareBlockedTargets, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_SAILING_MOVES("useSailingMoves", ShortestPathConfig::useSailingMoves, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	SHOW_TRANSPORT_INFO("showTransportInfo", ShortestPathConfig::showTransportInfo, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),

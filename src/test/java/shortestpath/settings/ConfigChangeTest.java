@@ -67,7 +67,7 @@ public class ConfigChangeTest
 		assertRouteInvalidating("avoidWilderness");
 		assertRouteInvalidating("includeBankPath");
 		assertRouteInvalidating("currencyThreshold");
-		assertRouteInvalidating("exactHeuristicWeight");
+		assertRouteInvalidating("aStarHeuristicWeight");
 		assertRouteInvalidating("usePoh");
 		assertRouteInvalidating("costConsumableTeleportationItems");
 		assertRouteInvalidating("unlockCanoeAxe");
@@ -162,9 +162,9 @@ public class ConfigChangeTest
 	}
 
 	@Test
-	public void pathfinderBackendCarriesBothEffects()
+	public void pathfinderAlgorithmCarriesBothEffects()
 	{
-		assertEffects("pathfinderBackend",
+		assertEffects("pathfinderAlgorithm",
 			EnumSet.of(Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP));
 	}
 

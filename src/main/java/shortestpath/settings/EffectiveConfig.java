@@ -324,10 +324,10 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
-	public int exactHeuristicWeight()
+	public int aStarHeuristicWeight()
 	{
-		Object value = overrides.get(ConfigKey.EXACT_HEURISTIC_WEIGHT.getKey());
-		return value instanceof Integer ? (int) value : base.exactHeuristicWeight();
+		Object value = overrides.get(ConfigKey.A_STAR_HEURISTIC_WEIGHT.getKey());
+		return value instanceof Integer ? (int) value : base.aStarHeuristicWeight();
 	}
 
 	@Override

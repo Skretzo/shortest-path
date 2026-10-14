@@ -38,7 +38,7 @@ import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.pathfinder.TestPathfinderConfig;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 
 /**
  * Drives a real {@link ShortestPathPlugin} through its public plugin-message API, the way another
@@ -149,6 +149,7 @@ final class PluginApiHarness implements AutoCloseable
 		set("client", client);
 		set("clientThread", clientThread);
 		set("config", settings);
+		set("settings", shortestpath.settings.Settings.wrap(settings));
 		set("eventBus", eventBus);
 		set("worldMapPointManager", mock(WorldMapPointManager.class));
 		set("pathfinderConfig", pathfinderConfig);
