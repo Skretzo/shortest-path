@@ -19,9 +19,10 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.ExactPathfinder;
+import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderBackend;
+import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TargetStatus;
 
@@ -600,19 +601,31 @@ public class PluginApiTargetRequirementsTest
 		}
 	}
 
-	// ---- The exact backend agrees with legacy ----
+	// ---- The A* backend agrees with legacy ----
 
 	@Test
-	public void exactBackendRoutesThroughTheBankAtTheSameCost()
+	public void legacyIsTheDefaultAndDispatchesToTheLegacyImplementation()
+	{
+		try (PluginApiHarness api = new PluginApiHarness())
+		{
+			assertSame(PathfinderBackend.LEGACY, api.settings.pathfinderBackend());
+			ActiveSearch search = api.path(START, FAR);
+			assertTrue(search instanceof Pathfinder);
+			assertFalse(search instanceof AStarPathfinder);
+		}
+	}
+
+	@Test
+	public void aStarBackendRoutesThroughTheBankAtTheSameCost()
 	{
 		try (PluginApiHarness api = new PluginApiHarness())
 		{
 			api.bank(ItemID.SPADE, 1);
 			int legacy = cost(api.query(START, target(NEAR, ItemID.SPADE)));
 
-			api.settings.backend = PathfinderBackend.EXACT;
+			api.settings.selectedBackend = PathfinderBackend.ASTAR;
 			ActiveSearch search = api.path(START, target(NEAR, ItemID.SPADE));
-			assertTrue(search instanceof ExactPathfinder);
+			assertTrue(search instanceof AStarPathfinder);
 			PathfinderResult result = search.getResult();
 			assertNotNull(result);
 			assertTrue(result.getMessage(), result.isReached());
@@ -623,11 +636,11 @@ public class PluginApiTargetRequirementsTest
 	}
 
 	@Test
-	public void exactBackendHandlesEveryStatus()
+	public void aStarBackendHandlesEveryStatus()
 	{
 		try (PluginApiHarness api = new PluginApiHarness())
 		{
-			api.settings.backend = PathfinderBackend.EXACT;
+			api.settings.selectedBackend = PathfinderBackend.ASTAR;
 
 			api.carry(ItemID.SPADE, 1);
 			ActiveSearch carried = api.path(START, target(NEAR, ItemID.SPADE));

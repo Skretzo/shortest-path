@@ -23,7 +23,7 @@ import org.junit.Test;
 import shortestpath.TeleportationItem;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.exact.RoutingStatic;
+import shortestpath.pathfinder.astar.RoutingStatic;
 
 /**
  * Both searches routing to targets that need a spade, on the real map, from the Lumbridge Castle
@@ -41,7 +41,7 @@ public class TargetItemsSearchTest
 	@BeforeClass
 	public static void buildRoutingStatic()
 	{
-		routingStatic = new ExactRoutingStaticProvider(
+		routingStatic = new AStarRoutingStaticProvider(
 			() -> new CollisionMap(SplitFlagMap.fromResources())).get();
 	}
 
@@ -88,9 +88,9 @@ public class TargetItemsSearchTest
 		return pathfinder.getResult();
 	}
 
-	private static PathfinderResult exact(PathfinderConfig config, Target... targets)
+	private static PathfinderResult aStar(PathfinderConfig config, Target... targets)
 	{
-		ExactPathfinder pathfinder = new ExactPathfinder(config, () -> routingStatic, null, START,
+		AStarPathfinder pathfinder = new AStarPathfinder(config, () -> routingStatic, null, START,
 			Targets.of(List.of(targets)), null, 1);
 		pathfinder.run();
 		return pathfinder.getResult();
@@ -106,7 +106,7 @@ public class TargetItemsSearchTest
 	public void carriedItemsRouteDirectly()
 	{
 		PathfinderConfig config = config(spade(), spade());
-		for (PathfinderResult result : List.of(legacy(config, spadeAt(NEAR)), exact(config, spadeAt(NEAR))))
+		for (PathfinderResult result : List.of(legacy(config, spadeAt(NEAR)), aStar(config, spadeAt(NEAR))))
 		{
 			assertEquals(19, result.getPathCost());
 			assertFalse(banked(result));
@@ -119,7 +119,7 @@ public class TargetItemsSearchTest
 	{
 		PathfinderConfig config = config(new Item[0], spade());
 		assertFalse("bank visits are off in the settings", config.isBankPathEnabled());
-		for (PathfinderResult result : List.of(legacy(config, spadeAt(NEAR)), exact(config, spadeAt(NEAR))))
+		for (PathfinderResult result : List.of(legacy(config, spadeAt(NEAR)), aStar(config, spadeAt(NEAR))))
 		{
 			assertTrue(result.isReached());
 			assertEquals(61, result.getPathCost());
@@ -134,7 +134,7 @@ public class TargetItemsSearchTest
 	{
 		PathfinderConfig config = config(new Item[0], spade());
 		for (PathfinderResult result : List.of(legacy(config, spadeAt(NEAR), Target.at(FARTHER)),
-			exact(config, spadeAt(NEAR), Target.at(FARTHER))))
+			aStar(config, spadeAt(NEAR), Target.at(FARTHER))))
 		{
 			assertEquals(FARTHER, result.getArrival().getTarget().getPoint());
 			assertFalse(banked(result));
@@ -145,7 +145,7 @@ public class TargetItemsSearchTest
 	public void itemsNotFoundRouteDirectlyAndAreReported()
 	{
 		PathfinderConfig config = config(new Item[0], new Item[0]);
-		for (PathfinderResult result : List.of(legacy(config, spadeAt(NEAR)), exact(config, spadeAt(NEAR))))
+		for (PathfinderResult result : List.of(legacy(config, spadeAt(NEAR)), aStar(config, spadeAt(NEAR))))
 		{
 			assertEquals(19, result.getPathCost());
 			assertEquals(TargetStatus.UNKNOWN, result.getArrival().getStatus());

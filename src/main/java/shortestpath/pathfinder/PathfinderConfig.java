@@ -41,7 +41,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
-import shortestpath.pathfinder.exact.PreparedRoutingAccount;
+import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.transport.OwnedItems;
 import shortestpath.transport.PohNexusPortal;
@@ -179,7 +179,7 @@ public class PathfinderConfig
 	@Getter
 	private boolean collisionAwareBlockedTargets;
 	@Getter
-	private double exactHeuristicWeight = 1;
+	private double aStarHeuristicWeight = 1;
 	@Getter
 	private boolean avoidWilderness;
 	// POH-specific settings (not tied to a single TransportType)
@@ -315,18 +315,18 @@ public class PathfinderConfig
 		return includeBankPath;
 	}
 
-	/** Snapshot the already-evaluated account/config state for the exact graph. */
-	public PreparedRoutingAccount prepareExactRoutingAccount(boolean allowTransports)
+	/** Snapshot the already-evaluated account/config state for the A* graph. */
+	public PreparedRoutingAccount prepareAStarRoutingAccount(boolean allowTransports)
 	{
-		return prepareExactRoutingAccount(allowTransports, false);
+		return prepareAStarRoutingAccount(allowTransports, false);
 	}
 
 	/**
-	 * As {@link #prepareExactRoutingAccount(boolean)}; {@code targetsNeedBank} lets the route visit
+	 * As {@link #prepareAStarRoutingAccount(boolean)}; {@code targetsNeedBank} lets the route visit
 	 * a bank even when {@code includeBankPath} is off, for a target whose items are in the bank.
 	 * The banked layer's transports still follow the settings, so that alone unlocks no teleports.
 	 */
-	public PreparedRoutingAccount prepareExactRoutingAccount(boolean allowTransports, boolean targetsNeedBank)
+	public PreparedRoutingAccount prepareAStarRoutingAccount(boolean allowTransports, boolean targetsNeedBank)
 	{
 		return PreparedRoutingAccount.compile(
 			getTransportAvailability(false), getTransportAvailability(true), includeBankPath || targetsNeedBank,
@@ -359,8 +359,8 @@ public class PathfinderConfig
 		unreachableTargetDistance = ShortestPathPlugin.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
 		collisionAwareBlockedTargets = ShortestPathPlugin.override("collisionAwareBlockedTargets", config.collisionAwareBlockedTargets());
 		// @Range only bounds the config panel, so also clamp overrides to the same 100-300% range.
-		exactHeuristicWeight = Math.max(100, Math.min(300,
-			ShortestPathPlugin.override("exactHeuristicWeight", config.exactHeuristicWeight()))) / 100.0;
+		aStarHeuristicWeight = Math.max(100, Math.min(300,
+			ShortestPathPlugin.override("aStarHeuristicWeight", config.aStarHeuristicWeight()))) / 100.0;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
 		leagueModeState.refresh(client);

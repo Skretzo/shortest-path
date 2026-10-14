@@ -22,7 +22,7 @@ public class CollisionMap
 
 	/**
 	 * The region grid bounds to scan when enumerating every collision tile (e.g.
-	 * {@link shortestpath.pathfinder.exact.RoutingStaticBuilder}). Delegates to
+	 * {@link shortestpath.pathfinder.astar.RoutingStaticBuilder}). Delegates to
 	 * {@link SplitFlagMap#getRegionExtents()} by default; overridable so tests can substitute a
 	 * small synthetic extent without touching that shared static state.
 	 */

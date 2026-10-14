@@ -38,7 +38,7 @@ import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.ExactPathfinder;
+import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.BankPickupRequirements;
@@ -397,13 +397,13 @@ public class PathTileOverlay extends Overlay
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
-		if (plugin.drawTiles && plugin.drawClickPoints && plugin.getActiveSearch() instanceof ExactPathfinder)
+		if (plugin.drawTiles && plugin.drawClickPoints && plugin.getActiveSearch() instanceof AStarPathfinder)
 		{
-			ExactPathfinder exact = (ExactPathfinder) plugin.getActiveSearch();
-			if (exact.isDone() && !exact.isShowingProvisionalPath())
+			AStarPathfinder aStar = (AStarPathfinder) plugin.getActiveSearch();
+			if (aStar.isDone() && !aStar.isShowingProvisionalPath())
 			{
-				List<PathStep> path = exact.getPath();
-				for (int index : exact.getClickPoints())
+				List<PathStep> path = aStar.getPath();
+				for (int index : aStar.getClickPoints())
 				{
 					int point = path.get(index).getPackedPosition();
 					if (!ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(point),

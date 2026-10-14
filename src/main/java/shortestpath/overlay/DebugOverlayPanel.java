@@ -14,7 +14,7 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 import shortestpath.DebugState;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.ExactPathfinder;
+import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.PathfinderResult;
@@ -91,11 +91,11 @@ public class DebugOverlayPanel extends OverlayPanel
 			return;
 		}
 
-		ExactPathfinder exact = search instanceof ExactPathfinder ? (ExactPathfinder) search : null;
+		AStarPathfinder aStar = search instanceof AStarPathfinder ? (AStarPathfinder) search : null;
 		PathfinderResult result = search.getResult();
 		boolean problem = search == debug.getCancelledSearch() || isFailure(result);
 		components.add(LineComponent.builder()
-			.left((exact != null ? "Exact" : "Legacy") + " \u00b7 " + state(search, exact, result, debug))
+			.left((aStar != null ? "A*" : "Legacy") + " \u00b7 " + state(search, aStar, result, debug))
 			.leftColor(problem ? PROBLEM : Color.ORANGE)
 			.build());
 
@@ -113,9 +113,9 @@ public class DebugOverlayPanel extends OverlayPanel
 		String tiles = path == null ? "none" : path.size() + " tiles";
 		// While recalculating, the shown path is the previous route but the click count is the
 		// new search's — suppress it rather than mix the two.
-		if (exact != null && !exact.isShowingProvisionalPath())
+		if (aStar != null && !aStar.isShowingProvisionalPath())
 		{
-			tiles += ", " + exact.getClickPoints().size() + " clicks";
+			tiles += ", " + aStar.getClickPoints().size() + " clicks";
 		}
 		components.add(makeLine("Path:", tiles));
 
@@ -125,24 +125,24 @@ public class DebugOverlayPanel extends OverlayPanel
 			return;
 		}
 		components.add(makeLine("Time:", millis(stats.getElapsedTimeNanos())));
-		if (exact != null)
+		if (aStar != null)
 		{
-			components.add(makeLine("  Forward search:", millis(exact.getForwardSearchNanos())));
-			components.add(makeLine("  Walk canonicalize:", millis(exact.getWalkCanonicalizeNanos())));
-			if (!exact.getWalkDiagnostics().isEmpty())
-				components.add(makeLine("  Legs kept as found:", Integer.toString(exact.getWalkDiagnostics().size())));
-			int keptSteps = exact.getKeptStepIndices().size();
-			components.add(makeLine("  Walk rewrite:", millis(exact.getWalkRewriteNanos())
+			components.add(makeLine("  Forward search:", millis(aStar.getForwardSearchNanos())));
+			components.add(makeLine("  Walk canonicalize:", millis(aStar.getWalkCanonicalizeNanos())));
+			if (!aStar.getWalkDiagnostics().isEmpty())
+				components.add(makeLine("  Legs kept as found:", Integer.toString(aStar.getWalkDiagnostics().size())));
+			int keptSteps = aStar.getKeptStepIndices().size();
+			components.add(makeLine("  Walk rewrite:", millis(aStar.getWalkRewriteNanos())
 				+ (keptSteps > 0 ? ", " + keptSteps + " kept" : "")));
-			components.add(makeLine("  Target prep:", exact.isTargetReused() ? "reused"
-				: millis(exact.getReverseSearchNanos() + exact.getHeuristicPrepareNanos())));
-			components.add(makeLine("  Graph prep:", exact.isGraphReused() ? "reused"
-				: millis(exact.getGraphPrepareNanos())));
-			components.add(makeLine("  Account prep:", millis(exact.getAccountPrepareNanos())));
+			components.add(makeLine("  Target prep:", aStar.isTargetReused() ? "reused"
+				: millis(aStar.getReverseSearchNanos() + aStar.getHeuristicPrepareNanos())));
+			components.add(makeLine("  Graph prep:", aStar.isGraphReused() ? "reused"
+				: millis(aStar.getGraphPrepareNanos())));
+			components.add(makeLine("  Account prep:", millis(aStar.getAccountPrepareNanos())));
 			// Static data is built once; only the search that built it spends measurable time on it.
-			if (exact.getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
+			if (aStar.getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
 			{
-				components.add(makeLine("  Static data:", millis(exact.getRoutingStaticNanos())));
+				components.add(makeLine("  Static data:", millis(aStar.getRoutingStaticNanos())));
 			}
 		}
 	}
@@ -177,13 +177,13 @@ public class DebugOverlayPanel extends OverlayPanel
 		}
 	}
 
-	private static String state(ActiveSearch search, ExactPathfinder exact, PathfinderResult result, DebugState debug)
+	private static String state(ActiveSearch search, AStarPathfinder aStar, PathfinderResult result, DebugState debug)
 	{
 		if (search == debug.getCancelledSearch())
 		{
 			return "cancelled, not replaced";
 		}
-		if (exact != null && exact.isShowingProvisionalPath())
+		if (aStar != null && aStar.isShowingProvisionalPath())
 		{
 			return "running, previous route shown";
 		}

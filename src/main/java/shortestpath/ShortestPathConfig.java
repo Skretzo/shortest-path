@@ -30,9 +30,9 @@ public interface ShortestPathConfig extends Config
 	String sectionSettings = "sectionSettings";
 
 	@ConfigItem(
-		keyName = "pathfinderBackend",
-		name = "Pathfinder backend",
-		description = "Backend used for pathfinding",
+		keyName = "pathfinderAlgorithm",
+		name = "Pathfinder algorithm",
+		description = "Algorithm used for pathfinding",
 		position = 40,
 		section = sectionSettings
 	)
@@ -552,15 +552,15 @@ public interface ShortestPathConfig extends Config
 		max = 300
 	)
 	@ConfigItem(
-		keyName = "exactHeuristicWeight",
-		name = "Exact heuristic weight",
-		description = "Makes the exact backend search faster at the price of a suboptimal route.<br>" +
+		keyName = "aStarHeuristicWeight",
+		name = "A* heuristic weight",
+		description = "Makes the A* backend search faster at the price of a suboptimal route.<br>" +
 			"The route costs at most this percentage of the optimal route's cost:<br>" +
 			"100 always finds the optimal route, 300 may find one up to 3x as costly.",
 		position = 81,
 		section = sectionSettings
 	)
-	default int exactHeuristicWeight()
+	default int aStarHeuristicWeight()
 	{
 		return 100;
 	}
