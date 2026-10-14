@@ -463,7 +463,7 @@ public final class AStarPathfinder implements ActiveSearch
 	private Arrival arrival(List<PathStep> route)
 	{
 		PathStep end = route.get(route.size() - 1);
-		return goals.arrival(end.getPackedPosition(), end.isBankVisited());
+		return goals.arrival(end.getPackedPosition(), end.getBankVisitState());
 	}
 
 	private int firstTarget()
