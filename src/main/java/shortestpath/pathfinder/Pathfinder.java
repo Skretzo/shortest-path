@@ -295,7 +295,7 @@ public class Pathfinder implements ActiveSearch
 			return;
 		}
 
-		final boolean banked = graph.bankVisited(node);
+		final BankVisitState banked = graph.bankVisited(node);
 		for (int target : targets.points())
 		{
 			if (goals.acceptsTarget(target, banked)

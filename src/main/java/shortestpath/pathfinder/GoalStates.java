@@ -109,15 +109,15 @@ public final class GoalStates
 	}
 
 	/** Whether reaching {@code tile} in the given bank layer finishes the route. */
-	public boolean accepts(int tile, boolean banked)
+	public boolean accepts(int tile, BankVisitState banked)
 	{
-		return eitherLayerTiles.contains(tile) || banked && bankedOnlyTiles.contains(tile);
+		return eitherLayerTiles.contains(tile) || banked == BankVisitState.BANKED && bankedOnlyTiles.contains(tile);
 	}
 
 	/** Whether a path in the given bank layer may finish at or near the target at {@code point}. */
-	public boolean acceptsTarget(int point, boolean banked)
+	public boolean acceptsTarget(int point, BankVisitState banked)
 	{
-		return (layers.getOrDefault(point, 0) & (banked ? BANKED : UNBANKED)) != 0;
+		return (layers.getOrDefault(point, 0) & (banked == BankVisitState.BANKED ? BANKED : UNBANKED)) != 0;
 	}
 
 	/** Every tile that finishes the route in some layer. */
@@ -146,7 +146,7 @@ public final class GoalStates
 	 * belongs to, the tile itself when it is a target, and otherwise the first target it is a
 	 * fallback tile for. {@code null} when the tile finishes the route for no target.
 	 */
-	public Arrival arrival(int tile, boolean banked)
+	public Arrival arrival(int tile, BankVisitState banked)
 	{
 		Integer reached = acceptsTarget(tile, banked) ? Integer.valueOf(tile) : null;
 		for (int point : targets.points())
