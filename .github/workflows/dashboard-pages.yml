@@ -40,32 +40,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      # The bundle picker prepends each new bundle to the top of the index,
-      # so build order is reversed in the picker UI. Run the seasonal
-      # dashboard FIRST so it ends up at the bottom of the picker, with the
-      # always-on routes/clue/quetzal/unit-tests bundles above it.
-      - name: Build seasonal Demonic Pacts League dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/dashboard/seasonal_briefcase_routes.csv -PdashboardBundle=seasonal-briefcase -PdashboardTitle="Seasonal — Demonic Pacts League" -PdashboardSubtitle="Briefcase teleports + region unlock varbits" -PdashboardSeasonal=true --stacktrace
-        shell: bash
-
-      - name: Build collision map dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/dashboard/collision-map-issues.csv --stacktrace
-        shell: bash
-
-      - name: Build clue locations dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/dashboard/clue_locations_full.csv -PdashboardProfile=false --stacktrace
-        shell: bash
-
-      - name: Build quetzal whistle routes dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/dashboard/quetzal_whistle_routes.csv --stacktrace
-        shell: bash
-
-      - name: Build unit tests dashboard
-        run: ./gradlew dashboard -PdashboardDataset=/dashboard/unit-tests.csv --stacktrace
-        shell: bash
-
-      - name: Build routes dashboard
-        run: ./gradlew dashboard --stacktrace
+      # Builds every published bundle into build/reports/pathfinder-dashboard. Which bundles, their
+      # titles and their order are defined in shortest-path-tooling (pagesBundles in
+      # gradle/dashboards.gradle), so changes to the site don't need to touch this workflow.
+      - name: Build the dashboard site
+        run: ./gradlew pagesSite --stacktrace
         shell: bash
 
       - name: Upload dashboard bundle artifact
