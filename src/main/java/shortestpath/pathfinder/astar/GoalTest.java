@@ -1,5 +1,7 @@
 package shortestpath.pathfinder.astar;
 
+import shortestpath.pathfinder.BankVisitState;
+
 /**
  * Whether reaching a target tile in a bank layer finishes a search. The prepared target and its
  * heuristic count every target tile in both layers; a search may accept fewer of those states, for
@@ -9,5 +11,5 @@ package shortestpath.pathfinder.astar;
 @FunctionalInterface
 public interface GoalTest
 {
-	boolean accepts(int tile, boolean banked);
+	boolean accepts(int tile, BankVisitState banked);
 }

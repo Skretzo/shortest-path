@@ -56,17 +56,17 @@ public class GoalStatesTest
 	public void targetsWithoutItemsFinishInEitherLayer()
 	{
 		GoalStates goals = goals(NOTHING, Target.at(WALKABLE));
-		assertTrue(goals.accepts(WALKABLE, false));
-		assertTrue(goals.accepts(WALKABLE, true));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.BANKED));
 		assertFalse(goals.needsBank());
-		assertEquals(TargetStatus.CARRIED, goals.arrival(WALKABLE, false).getStatus());
+		assertEquals(TargetStatus.CARRIED, goals.arrival(WALKABLE, BankVisitState.CARRIED).getStatus());
 	}
 
 	@Test
 	public void carriedItemsFinishInEitherLayer()
 	{
 		GoalStates goals = goals(SPADE_CARRIED, spadeAt(WALKABLE));
-		assertTrue(goals.accepts(WALKABLE, false));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertFalse(goals.needsBank());
 	}
 
@@ -74,20 +74,20 @@ public class GoalStatesTest
 	public void bankedItemsOnlyFinishAfterABankVisit()
 	{
 		GoalStates goals = goals(SPADE_BANKED, spadeAt(WALKABLE));
-		assertFalse(goals.accepts(WALKABLE, false));
-		assertTrue(goals.accepts(WALKABLE, true));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.BANKED));
 		assertTrue(goals.needsBank());
-		assertNull("an unbanked path does not arrive", goals.arrival(WALKABLE, false));
-		assertEquals(TargetStatus.BANK, goals.arrival(WALKABLE, true).getStatus());
+		assertNull("an unbanked path does not arrive", goals.arrival(WALKABLE, BankVisitState.CARRIED));
+		assertEquals(TargetStatus.BANK, goals.arrival(WALKABLE, BankVisitState.BANKED).getStatus());
 	}
 
 	@Test
 	public void unknownTargetIsDroppedWhileAnotherCanBeCompleted()
 	{
 		GoalStates goals = goals(NOTHING, spadeAt(WALKABLE), Target.at(OTHER));
-		assertFalse(goals.accepts(WALKABLE, false));
-		assertFalse(goals.accepts(WALKABLE, true));
-		assertTrue(goals.accepts(OTHER, false));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.BANKED));
+		assertTrue(goals.accepts(OTHER, BankVisitState.CARRIED));
 		assertEquals(Set.of(OTHER), goals.tiles());
 	}
 
@@ -95,10 +95,10 @@ public class GoalStatesTest
 	public void unknownTargetsFinishAnywhereWhenNothingCanBeCompleted()
 	{
 		GoalStates goals = goals(NOTHING, spadeAt(WALKABLE), spadeAt(OTHER));
-		assertTrue(goals.accepts(WALKABLE, false));
-		assertTrue(goals.accepts(OTHER, true));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertTrue(goals.accepts(OTHER, BankVisitState.BANKED));
 		assertFalse(goals.needsBank());
-		Arrival arrival = goals.arrival(WALKABLE, false);
+		Arrival arrival = goals.arrival(WALKABLE, BankVisitState.CARRIED);
 		assertEquals(TargetStatus.UNKNOWN, arrival.getStatus());
 		assertEquals(TargetsTest.items(ItemID.SPADE).getRequirements(), arrival.getMissingItems());
 	}
@@ -111,9 +111,9 @@ public class GoalStatesTest
 		assertFalse("the blocked target has walkable tiles beside it", fallbacks.isEmpty());
 		for (int fallback : fallbacks)
 		{
-			assertFalse(goals.accepts(fallback, false));
-			assertTrue(goals.accepts(fallback, true));
-			Arrival arrival = goals.arrival(fallback, true);
+			assertFalse(goals.accepts(fallback, BankVisitState.CARRIED));
+			assertTrue(goals.accepts(fallback, BankVisitState.BANKED));
+			Arrival arrival = goals.arrival(fallback, BankVisitState.BANKED);
 			assertEquals("a fallback tile arrives at its target", BLOCKED, arrival.getTarget().getPoint());
 			assertEquals(TargetStatus.BANK, arrival.getStatus());
 		}
@@ -124,8 +124,8 @@ public class GoalStatesTest
 	{
 		GoalStates goals = goals(SPADE_BANKED, spadeAt(WALKABLE), Target.at(OTHER));
 		assertTrue(goals.needsBank());
-		assertTrue(goals.accepts(OTHER, false));
-		assertFalse(goals.accepts(WALKABLE, false));
+		assertTrue(goals.accepts(OTHER, BankVisitState.CARRIED));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 	}
 
 	@Test
