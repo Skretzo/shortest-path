@@ -168,7 +168,7 @@ public class EffectiveConfigTest
 	@Test
 	public void backendKeyIsInert()
 	{
-		EffectiveConfig effective = effectiveWith(Map.of("pathfinderBackend", PathfinderBackend.EXACT));
+		EffectiveConfig effective = effectiveWith(Map.of("pathfinderAlgorithm", PathfinderBackend.ASTAR));
 		assertEquals(PathfinderBackend.LEGACY, effective.pathfinderBackend());
 	}
 
