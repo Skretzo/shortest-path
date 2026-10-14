@@ -256,12 +256,12 @@ public final class BankPickupRequirements
 	 */
 	static boolean visitsBankAt(List<PathStep> path, int index)
 	{
-		boolean banked = path.get(index).isBankVisited();
+		boolean banked = path.get(index).getBankVisitState() == BankVisitState.BANKED;
 		if (!banked)
 		{
-			return index + 1 < path.size() && path.get(index + 1).isBankVisited();
+			return index + 1 < path.size() && path.get(index + 1).getBankVisitState() == BankVisitState.BANKED;
 		}
-		return index == 0 || !path.get(index - 1).isBankVisited();
+		return index == 0 || !(path.get(index - 1).getBankVisitState() == BankVisitState.BANKED);
 	}
 
 	/**

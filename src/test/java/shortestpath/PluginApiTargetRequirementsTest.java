@@ -20,6 +20,7 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.Pathfinder;
@@ -535,7 +536,7 @@ public class PluginApiTargetRequirementsTest
 			PathfinderResult result = search.getResult();
 			assertTrue(result.isReached());
 			assertEquals(WorldPointUtil.packWorldPoint(NEAR), result.getTarget());
-			assertTrue(last(search.getPath()).isBankVisited());
+			assertTrue(last(search.getPath()).getBankVisitState() == BankVisitState.BANKED);
 			assertEquals(TargetStatus.BANK, result.getArrival().getStatus());
 			assertEquals(WorldPointUtil.packWorldPoint(NEAR), result.getArrival().getTarget().getPoint());
 			assertNull("nothing is missing", api.missingItemsLabel());
@@ -677,7 +678,7 @@ public class PluginApiTargetRequirementsTest
 			api.bank(ItemID.SPADE, 1);
 			api.path(START, target(NEAR, ItemID.SPADE));
 			ActiveSearch restarted = api.path(new WorldPoint(3223, 3218, 0), null);
-			assertTrue("the restart still banks for the spade", last(restarted.getPath()).isBankVisited());
+			assertTrue("the restart still banks for the spade", last(restarted.getPath()).getBankVisitState() == BankVisitState.BANKED);
 			assertEquals(Set.of(Map.of("point", NEAR, "requirements", List.of(Map.of(ItemID.SPADE, 1)))),
 				new HashSet<>((List<?>) api.currentTarget().get("target")));
 		}
@@ -691,7 +692,7 @@ public class PluginApiTargetRequirementsTest
 			api.bank(ItemID.SPADE, 1);
 			api.path(START, target(NEAR, ItemID.SPADE));
 			ActiveSearch replaced = api.path(START, NEAR);
-			assertFalse(last(replaced.getPath()).isBankVisited());
+			assertFalse(last(replaced.getPath()).getBankVisitState() == BankVisitState.BANKED);
 			assertEquals(List.of(NEAR), api.currentTarget().get("target"));
 		}
 	}
@@ -705,7 +706,7 @@ public class PluginApiTargetRequirementsTest
 			api.path(START, target(NEAR, ItemID.SPADE));
 			api.send("clear", new HashMap<>());
 			assertEquals(false, api.currentTarget().get("set"));
-			assertFalse(last(api.path(START, NEAR).getPath()).isBankVisited());
+			assertFalse(last(api.path(START, NEAR).getPath()).getBankVisitState() == BankVisitState.BANKED);
 		}
 	}
 
@@ -762,7 +763,7 @@ public class PluginApiTargetRequirementsTest
 			assertNotNull(result);
 			assertTrue(result.getMessage(), result.isReached());
 			assertEquals(legacy, result.getPathCost());
-			assertTrue(last(search.getPath()).isBankVisited());
+			assertTrue(last(search.getPath()).getBankVisitState() == BankVisitState.BANKED);
 			assertEquals(WorldPointUtil.packWorldPoint(NEAR), last(search.getPath()).getPackedPosition());
 		}
 	}
@@ -777,7 +778,7 @@ public class PluginApiTargetRequirementsTest
 			api.carry(ItemID.SPADE, 1);
 			ActiveSearch carried = api.path(START, target(NEAR, ItemID.SPADE));
 			assertEquals(19, carried.getResult().getPathCost());
-			assertFalse(last(carried.getPath()).isBankVisited());
+			assertFalse(last(carried.getPath()).getBankVisitState() == BankVisitState.BANKED);
 
 			api.carry().bank(ItemID.SPADE, 1);
 			ActiveSearch farther = api.path(START, targets(target(NEAR, ItemID.SPADE), FARTHER));
@@ -786,7 +787,7 @@ public class PluginApiTargetRequirementsTest
 
 			ActiveSearch blocked = api.path(START, target(BLOCKED, ItemID.SPADE));
 			assertTrue(blocked.getResult().isReached());
-			assertTrue(last(blocked.getPath()).isBankVisited());
+			assertTrue(last(blocked.getPath()).getBankVisitState() == BankVisitState.BANKED);
 
 			api.bank();
 			ActiveSearch unknown = api.path(START, target(NEAR, ItemID.SPADE));

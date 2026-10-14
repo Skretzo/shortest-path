@@ -3,7 +3,7 @@ package shortestpath.requirement;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -24,6 +24,7 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
@@ -129,14 +130,14 @@ public class BankPickupTargetItemsTest
 	@Test
 	public void bankVisitIsTheStepBeforeAndTheFirstBankedStep()
 	{
-		List<PathStep> path = List.of(new PathStep(NEXT_TILE, false), new PathStep(BANK_TILE, false),
-			new PathStep(BANK_TILE, true), new PathStep(NEXT_TILE, true));
+		List<PathStep> path = List.of(new PathStep(NEXT_TILE, BankVisitState.CARRIED), new PathStep(BANK_TILE, BankVisitState.CARRIED),
+			new PathStep(BANK_TILE, BankVisitState.BANKED), new PathStep(NEXT_TILE, BankVisitState.BANKED));
 		assertFalse(BankPickupRequirements.visitsBankAt(path, 0));
 		assertTrue(BankPickupRequirements.visitsBankAt(path, 1));
 		assertTrue(BankPickupRequirements.visitsBankAt(path, 2));
 		assertFalse(BankPickupRequirements.visitsBankAt(path, 3));
 		assertTrue("a path that starts banked visits at its start",
-			BankPickupRequirements.visitsBankAt(List.of(new PathStep(BANK_TILE, true)), 0));
+			BankPickupRequirements.visitsBankAt(List.of(new PathStep(BANK_TILE, BankVisitState.BANKED)), 0));
 	}
 
 	@Test
@@ -149,13 +150,13 @@ public class BankPickupTargetItemsTest
 		doReturn(empty).when(client).getItemContainer(InventoryID.INV);
 		doReturn(empty).when(client).getItemContainer(InventoryID.WORN);
 		PathfinderConfig config = mock(PathfinderConfig.class);
-		when(config.getTransportAvailability(anyBoolean())).thenReturn(TransportAvailabilityFixture.of());
+		when(config.getTransportAvailability(any())).thenReturn(TransportAvailabilityFixture.of());
 		when(config.getUnlocks()).thenReturn(Set.of());
 		when(config.getEligibility()).thenReturn(
 			TransportEligibility.forPlayerAndBank(Map.of(), Map.of(ItemID.SPADE, 1), -1, Map.of()));
 		TransportItems spade = needs(anyOf(Map.of(ItemID.SPADE, 1)));
-		List<PathStep> path = List.of(new PathStep(BANK_TILE, false), new PathStep(BANK_TILE, true),
-			new PathStep(NEXT_TILE, true), new PathStep(TARGET, true));
+		List<PathStep> path = List.of(new PathStep(BANK_TILE, BankVisitState.CARRIED), new PathStep(BANK_TILE, BankVisitState.BANKED),
+			new PathStep(NEXT_TILE, BankVisitState.BANKED), new PathStep(TARGET, BankVisitState.BANKED));
 		Set<Integer> banks = Set.of(BANK_TILE);
 
 		BankPickupRequirements.BankPickupResult atBank = BankPickupRequirements.BankPickupResult.compute(
@@ -166,8 +167,8 @@ public class BankPickupTargetItemsTest
 		assertTrue("without target items nothing is listed", BankPickupRequirements.BankPickupResult.compute(
 			client, bank, config, banks, path, 0).phrases.isEmpty());
 
-		List<PathStep> walksPast = List.of(new PathStep(BANK_TILE, false), new PathStep(NEXT_TILE, false),
-			new PathStep(TARGET, false));
+		List<PathStep> walksPast = List.of(new PathStep(BANK_TILE, BankVisitState.CARRIED), new PathStep(NEXT_TILE, BankVisitState.CARRIED),
+			new PathStep(TARGET, BankVisitState.CARRIED));
 		assertTrue("a bank tile the path only walks over is no visit", BankPickupRequirements.BankPickupResult
 			.compute(client, bank, config, banks, walksPast, 0, spade).phrases.isEmpty());
 	}
