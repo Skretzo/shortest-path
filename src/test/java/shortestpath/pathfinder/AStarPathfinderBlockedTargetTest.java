@@ -26,7 +26,7 @@ import shortestpath.Destination;
 import shortestpath.ShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.RoutingCuts;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticBuilder;
 import shortestpath.transport.Transport;

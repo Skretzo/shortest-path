@@ -46,7 +46,7 @@ public class PathfinderConfigOverrideTest
 	{
 		settings.applyOverrides(Map.of(
 			"unreachableTargetDistanceThreshold", 250,
-			"exactHeuristicWeight", 250,
+			"aStarHeuristicWeight", 250,
 			"costBankVisit", 9,
 			"includeBankPath", true,
 			"unlockCanoeAxe", true));
@@ -54,7 +54,7 @@ public class PathfinderConfigOverrideTest
 		pathfinderConfig.refresh();
 
 		assertEquals(250, pathfinderConfig.getUnreachableTargetDistance());
-		assertEquals(2.5, pathfinderConfig.getExactHeuristicWeight(), 0.0);
+		assertEquals(2.5, pathfinderConfig.getAStarHeuristicWeight(), 0.0);
 		assertEquals(9, pathfinderConfig.getBankVisitCost());
 		assertTrue(pathfinderConfig.isBankPathEnabled());
 		assertTrue(pathfinderConfig.getUnlocks().contains(Unlock.CANOE_AXE));
@@ -64,15 +64,15 @@ public class PathfinderConfigOverrideTest
 	public void overridePayloadIsIgnoredByRawReads()
 	{
 		when(config.calculationCutoff()).thenReturn(5);
-		when(config.pathfinderBackend()).thenReturn(PathfinderBackend.EXACT);
+		when(config.pathfinderBackend()).thenReturn(PathfinderBackend.ASTAR);
 		settings.applyOverrides(Map.of(
 			"calculationCutoff", 99,
-			"pathfinderBackend", "Legacy"));
+			"pathfinderAlgorithm", "Legacy"));
 
 		pathfinderConfig.refresh();
 
 		assertEquals(5L * Constants.GAME_TICK_LENGTH, pathfinderConfig.getCalculationCutoffMillis());
-		assertEquals(PathfinderBackend.EXACT, pathfinderConfig.getPathfinderBackend());
+		assertEquals(PathfinderBackend.ASTAR, pathfinderConfig.getPathfinderBackend());
 	}
 
 	@Test
