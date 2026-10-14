@@ -1052,7 +1052,7 @@ public class ShortestPathPlugin extends Plugin
 	private static void putArrival(Map<String, Object> data, List<PathStep> steps, Arrival arrival)
 	{
 		boolean requiresItems = arrival != null && arrival.getTarget().hasRequiredItems();
-		data.put(PLUGIN_MESSAGE_BANK_VISITED, !steps.isEmpty() && steps.get(steps.size() - 1).isBankVisited());
+		data.put(PLUGIN_MESSAGE_BANK_VISITED, !steps.isEmpty() && steps.get(steps.size() - 1).getBankVisitState() == BankVisitState.BANKED);
 		data.put(PLUGIN_MESSAGE_TARGET_STATUS, requiresItems ? arrival.getStatus().name() : null);
 		data.put(PLUGIN_MESSAGE_MISSING_ITEMS,
 			requiresItems ? PluginMessageTargets.itemIds(arrival.getMissingItems()) : List.of());
