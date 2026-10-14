@@ -101,7 +101,7 @@ public class TargetItemsSearchTest
 	private static boolean banked(PathfinderResult result)
 	{
 		List<PathStep> path = result.getPathSteps();
-		return path.get(path.size() - 1).isBankVisited();
+		return path.get(path.size() - 1).getBankVisitState() == BankVisitState.BANKED;
 	}
 
 	@Test
