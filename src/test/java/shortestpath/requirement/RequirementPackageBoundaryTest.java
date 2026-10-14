@@ -21,7 +21,7 @@ import org.junit.Test;
  * capture-path source; {@link BankPickupRequirements} exposes the sanctioned statics the display
  * path reuses). The model package is the leaf layer: it must reference
  * neither the client nor anything under {@code shortestpath.pathfinder}. Per-search restrictions
- * ({@code SearchRestrictions}) belong to the exact backend's search layer and must never leak into
+ * ({@code SearchRestrictions}) belong to the A* backend's search layer and must never leak into
  * the middleware.
  */
 public class RequirementPackageBoundaryTest

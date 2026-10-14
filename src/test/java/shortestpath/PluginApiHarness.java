@@ -150,6 +150,9 @@ final class PluginApiHarness implements AutoCloseable
 		set("clientThread", clientThread);
 		set("config", settings);
 		set("settings", shortestpath.settings.Settings.wrap(settings));
+		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting(client);
+		pathfinderConfig.setItemStateService(itemState);
+		set("itemState", itemState);
 		set("eventBus", eventBus);
 		set("worldMapPointManager", mock(WorldMapPointManager.class));
 		set("pathfinderConfig", pathfinderConfig);
