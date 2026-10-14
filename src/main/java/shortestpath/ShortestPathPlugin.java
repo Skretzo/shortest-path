@@ -136,8 +136,6 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 	@Inject
-	private ConfigManager configManager;
-	@Inject
 	private ItemManager itemManager;
 	private ShortestPathPanel panel;
 	private NavigationButton navButton;
