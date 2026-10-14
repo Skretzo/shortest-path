@@ -234,7 +234,7 @@ public class TransportDataLintTest
 	public void testEveryTransportOriginCanBeApproached()
 	{
 		CollisionMap map = new CollisionMap(SplitFlagMap.fromResources());
-		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 		Set<Integer> arrivals = new HashSet<>();
 		for (Set<Transport> set : transports.values())
 		{
