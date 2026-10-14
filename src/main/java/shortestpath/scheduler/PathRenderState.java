@@ -116,7 +116,7 @@ public final class PathRenderState
 		int endPoint = path.isEmpty() ? pathfinder.getStart()
 			: path.get(path.size() - 1).getPackedPosition();
 		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : pathfinder.getTargets())
+		for (int target : pathfinder.getTargets().points())
 		{
 			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
 		}

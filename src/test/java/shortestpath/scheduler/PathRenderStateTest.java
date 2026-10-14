@@ -21,6 +21,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderResult;
+import shortestpath.pathfinder.Targets;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.sailing.SailingService;
 import shortestpath.sailing.SailingState;
@@ -83,7 +84,7 @@ public class PathRenderStateTest
 		when(scheduler.getActiveSearch()).thenReturn(search);
 		when(search.isDone()).thenReturn(true);
 		when(search.getPath()).thenReturn(path);
-		when(search.getTargets()).thenReturn(targets);
+		when(search.getTargets()).thenReturn(Targets.at(targets));
 		when(search.isSailing()).thenReturn(sailingSearch);
 	}
 
