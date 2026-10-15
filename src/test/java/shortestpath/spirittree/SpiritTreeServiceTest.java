@@ -22,6 +22,7 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
 import shortestpath.requirement.PlayerStateSource;
+import shortestpath.requirement.SpiritTreePatches;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -71,27 +72,27 @@ public class SpiritTreeServiceTest
 	@Test
 	public void patchMapIsTotalAndBidirectional()
 	{
-		assertEquals(5, SpiritTreeService.patchNames().size());
-		assertEquals(12082, SpiritTreeService.regionForPatch("Port Sarim"));
-		assertEquals(4771, SpiritTreeService.varbitForPatch("Port Sarim"));
-		assertEquals(10300, SpiritTreeService.regionForPatch("Etceteria"));
-		assertEquals(4772, SpiritTreeService.varbitForPatch("Etceteria"));
-		assertEquals(11058, SpiritTreeService.regionForPatch("Brimhaven"));
-		assertEquals(4772, SpiritTreeService.varbitForPatch("Brimhaven"));
-		assertEquals(6711, SpiritTreeService.regionForPatch("Hosidius"));
-		assertEquals(7904, SpiritTreeService.varbitForPatch("Hosidius"));
-		assertEquals(4922, SpiritTreeService.regionForPatch("Farming Guild"));
-		assertEquals(4771, SpiritTreeService.varbitForPatch("Farming Guild"));
+		assertEquals(5, SpiritTreePatches.patchNames().size());
+		assertEquals(12082, SpiritTreePatches.regionForPatch("Port Sarim"));
+		assertEquals(4771, SpiritTreePatches.varbitForPatch("Port Sarim"));
+		assertEquals(10300, SpiritTreePatches.regionForPatch("Etceteria"));
+		assertEquals(4772, SpiritTreePatches.varbitForPatch("Etceteria"));
+		assertEquals(11058, SpiritTreePatches.regionForPatch("Brimhaven"));
+		assertEquals(4772, SpiritTreePatches.varbitForPatch("Brimhaven"));
+		assertEquals(6711, SpiritTreePatches.regionForPatch("Hosidius"));
+		assertEquals(7904, SpiritTreePatches.varbitForPatch("Hosidius"));
+		assertEquals(4922, SpiritTreePatches.regionForPatch("Farming Guild"));
+		assertEquals(4771, SpiritTreePatches.varbitForPatch("Farming Guild"));
 	}
 
 	@Test
 	public void regionLookupReturnsMappedPatch()
 	{
-		assertEquals("Port Sarim", SpiritTreeService.patchNameForRegion(12082));
-		assertEquals("Farming Guild", SpiritTreeService.patchNameForRegion(4922));
-		assertNull(SpiritTreeService.patchNameForRegion(11826)); // unmapped region
-		assertEquals(-1, SpiritTreeService.regionForPatch("Tree Gnome Village"));
-		assertEquals(-1, SpiritTreeService.varbitForPatch("Tree Gnome Village"));
+		assertEquals("Port Sarim", SpiritTreePatches.patchNameForRegion(12082));
+		assertEquals("Farming Guild", SpiritTreePatches.patchNameForRegion(4922));
+		assertNull(SpiritTreePatches.patchNameForRegion(11826)); // unmapped region
+		assertEquals(-1, SpiritTreePatches.regionForPatch("Tree Gnome Village"));
+		assertEquals(-1, SpiritTreePatches.varbitForPatch("Tree Gnome Village"));
 	}
 
 	@Test
@@ -99,12 +100,12 @@ public class SpiritTreeServiceTest
 	{
 		// The transport rows' destination tiles must land on their patch;
 		// the POH spirit tree tile must not be claimed by any patch.
-		assertEquals("Port Sarim", SpiritTreeService.patchNameForTile(3058, 3257));
-		assertEquals("Etceteria", SpiritTreeService.patchNameForTile(2613, 3855));
-		assertEquals("Brimhaven", SpiritTreeService.patchNameForTile(2800, 3203));
-		assertEquals("Hosidius", SpiritTreeService.patchNameForTile(1693, 3540));
-		assertEquals("Farming Guild", SpiritTreeService.patchNameForTile(1251, 3750));
-		assertNull(SpiritTreeService.patchNameForTile(1858, 7051)); // POH spirit tree
+		assertEquals("Port Sarim", SpiritTreePatches.patchNameForTile(3058, 3257));
+		assertEquals("Etceteria", SpiritTreePatches.patchNameForTile(2613, 3855));
+		assertEquals("Brimhaven", SpiritTreePatches.patchNameForTile(2800, 3203));
+		assertEquals("Hosidius", SpiritTreePatches.patchNameForTile(1693, 3540));
+		assertEquals("Farming Guild", SpiritTreePatches.patchNameForTile(1251, 3750));
+		assertNull(SpiritTreePatches.patchNameForTile(1858, 7051)); // POH spirit tree
 	}
 
 	@Test
@@ -113,17 +114,17 @@ public class SpiritTreeServiceTest
 		// Every tile covered by a patch's bounds must resolve back to that
 		// patch and lie inside the patch's own region — otherwise the
 		// region-scoped varbit would not describe the tiles the bounds gate.
-		for (String name : SpiritTreeService.patchNames())
+		for (String name : SpiritTreePatches.patchNames())
 		{
-			int[] bounds = SpiritTreeService.boundsForPatch(name);
-			int region = SpiritTreeService.regionForPatch(name);
+			int[] bounds = SpiritTreePatches.boundsForPatch(name);
+			int region = SpiritTreePatches.regionForPatch(name);
 			for (int x = bounds[0]; x <= bounds[2]; x++)
 			{
 				for (int y = bounds[1]; y <= bounds[3]; y++)
 				{
 					assertEquals(name + " tile " + x + "," + y + " outside region " + region,
 						region, (x >> 6) << 8 | (y >> 6));
-					assertEquals(name, SpiritTreeService.patchNameForTile(x, y));
+					assertEquals(name, SpiritTreePatches.patchNameForTile(x, y));
 				}
 			}
 		}
