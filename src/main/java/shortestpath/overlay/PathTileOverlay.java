@@ -41,7 +41,7 @@ import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
-import shortestpath.requirement.BankPickupRequirements;
+import shortestpath.presentation.BankPickupRequirements;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.scheduler.PathRenderState;

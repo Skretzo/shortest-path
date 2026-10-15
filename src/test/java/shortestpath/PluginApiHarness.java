@@ -147,12 +147,13 @@ final class PluginApiHarness implements AutoCloseable
 		}).when(eventBus).post(any());
 
 		pathfinderConfig = new TestPathfinderConfig(client, settings);
+		shortestpath.settings.Settings settingsService = shortestpath.settings.Settings.wrap(settings);
 		set("client", client);
 		set("clientThread", clientThread);
 		set("config", settings);
-		set("settings", shortestpath.settings.Settings.wrap(settings));
-		set("pohService", shortestpath.poh.PohService.forTesting());
-		set("eventBus", eventBus);
+		set("settings", settingsService);
+		shortestpath.poh.PohService pohService = shortestpath.poh.PohService.forTesting();
+		set("pohService", pohService);
 		set("pathfinderConfig", pathfinderConfig);
 		// The harness builds the plugin without DI, so the scheduler, the refresh
 		// coordinator and the attach-time bindings are seeded the same way the
@@ -171,7 +172,14 @@ final class PluginApiHarness implements AutoCloseable
 		pathfinderConfig.setSailingService(sailing);
 		set("itemState", itemState);
 		set("sailing", sailing);
-		scheduler.attach(pathfinderConfig, itemState, sailing, plugin);
+		shortestpath.presentation.PathAnnotator annotator =
+			shortestpath.presentation.PathAnnotator.forTesting(pohService, itemState);
+		annotator.attach(pathfinderConfig);
+		shortestpath.api.PluginMessageHandler apiHandler =
+			new shortestpath.api.PluginMessageHandler(client, clientThread, eventBus, scheduler,
+				coordinator, settingsService, annotator);
+		set("apiHandler", apiHandler);
+		scheduler.attach(pathfinderConfig, itemState, sailing, apiHandler);
 		set("scheduler", scheduler);
 		set("coordinator", coordinator);
 		set("aStarRoutingStatic", ASTAR_STATIC);

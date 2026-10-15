@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
@@ -19,7 +18,6 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.PathStep;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
@@ -29,8 +27,7 @@ import shortestpath.transport.TransportType;
 /**
  * The single public boundary for POH (Player Owned House) domain behavior:
  * geometry (the POH bounds and the canonical landing tile), transport
- * destination remapping, feature enablement, portal nexus keybinds, and
- * POH exit-info display.
+ * destination remapping, feature enablement, and portal nexus keybinds.
  * <p>
  * This class owns the geometry contract verbatim — the bounds and landing
  * constants plus the inclusive-bounds {@link #isInsidePoh} predicate that
@@ -39,7 +36,11 @@ import shortestpath.transport.TransportType;
  * transport load path remaps destinations before any service instance could
  * be injected). The portal nexus keybind machinery is instance state: it
  * persists through {@link ConfigManager} (RSProfile) and so needs injection
- * plus a detached-test seam.
+ * plus a detached-test seam. POH exit-info display — the label composition
+ * over the exit transports — lives on the presentation annotator; this
+ * service exposes only the narrow reads it consumes ({@link #apply} for
+ * nexus-keybind label rewriting and the {@link #isInsidePoh} bounds
+ * predicate).
  */
 @Singleton
 public class PohService
@@ -236,7 +237,7 @@ public class PohService
 
 	private final ConfigManager configManager;
 	private final RefreshCoordinator coordinator;
-	private final Map<String, String> keysByNormalizedName = new HashMap<>();
+	private volatile Map<String, String> keysByNormalizedName = Map.of();
 	private String lastSaved = "";
 	private boolean dirty;
 
@@ -301,13 +302,14 @@ public class PohService
 
 	public String apply(String displayInfo)
 	{
-		if (displayInfo == null || displayInfo.isEmpty() || keysByNormalizedName.isEmpty())
+		Map<String, String> keys = keysByNormalizedName;
+		if (displayInfo == null || displayInfo.isEmpty() || keys.isEmpty())
 		{
 			return displayInfo;
 		}
 
 		String base = stripKeyPrefix(displayInfo);
-		String key = keysByNormalizedName.get(normalize(base));
+		String key = keys.get(normalize(base));
 		if (key == null)
 		{
 			return base;
@@ -324,7 +326,7 @@ public class PohService
 	public void dialogOpened()
 	{
 		boolean changed = !keysByNormalizedName.isEmpty();
-		keysByNormalizedName.clear();
+		keysByNormalizedName = Map.of();
 		dirty = true;
 		declare(new PohChange("dialogOpen", changed ? Set.of(Effect.DISPLAY_ONLY) : Set.of()));
 	}
@@ -343,7 +345,9 @@ public class PohService
 		{
 			return;
 		}
-		putMapping(keysByNormalizedName, matcher.group(2), matcher.group(1).toUpperCase(Locale.ROOT));
+		Map<String, String> learned = new HashMap<>(keysByNormalizedName);
+		putMapping(learned, matcher.group(2), matcher.group(1).toUpperCase(Locale.ROOT));
+		keysByNormalizedName = learned;
 		dirty = true;
 		declare(new PohChange("dialogLine", Set.of(Effect.DISPLAY_ONLY)));
 	}
@@ -357,15 +361,17 @@ public class PohService
 	public void loadFromProfile()
 	{
 		dirty = false;
-		keysByNormalizedName.clear();
+		keysByNormalizedName = Map.of();
 		lastSaved = "";
 		if (configManager == null)
 		{
 			return;
 		}
 		String stored = configManager.getRSProfileConfiguration(Settings.CONFIG_GROUP, CONFIG_KEY);
-		deserialize(stored, keysByNormalizedName);
-		lastSaved = serialize(keysByNormalizedName);
+		Map<String, String> loaded = new HashMap<>();
+		deserialize(stored, loaded);
+		keysByNormalizedName = loaded;
+		lastSaved = serialize(loaded);
 		declare(new PohChange("profile", Set.of(Effect.DISPLAY_ONLY)));
 	}
 
@@ -446,13 +452,13 @@ public class PohService
 		{
 			return null;
 		}
-		if (keysByNormalizedName.isEmpty() || parsed.size() >= keysByNormalizedName.size())
+		Map<String, String> current = keysByNormalizedName;
+		if (current.isEmpty() || parsed.size() >= current.size())
 		{
-			Set<Effect> effects = keysByNormalizedName.equals(parsed)
+			Set<Effect> effects = current.equals(parsed)
 				? Set.of()
 				: Set.of(Effect.DISPLAY_ONLY);
-			keysByNormalizedName.clear();
-			keysByNormalizedName.putAll(parsed);
+			keysByNormalizedName = Map.copyOf(parsed);
 			dirty = false;
 			saveToProfile();
 			return new PohChange("dialog", effects);
@@ -463,13 +469,15 @@ public class PohService
 		boolean changed = false;
 		for (Map.Entry<String, String> entry : parsed.entrySet())
 		{
-			if (!entry.getValue().equals(keysByNormalizedName.get(entry.getKey())))
+			if (!entry.getValue().equals(current.get(entry.getKey())))
 			{
 				changed = true;
 				break;
 			}
 		}
-		keysByNormalizedName.putAll(parsed);
+		Map<String, String> merged = new HashMap<>(current);
+		merged.putAll(parsed);
+		keysByNormalizedName = merged;
 		return new PohChange("dialog", changed ? Set.of(Effect.DISPLAY_ONLY) : Set.of());
 	}
 
@@ -541,11 +549,12 @@ public class PohService
 
 	private void saveToProfile()
 	{
-		if (configManager == null || keysByNormalizedName.isEmpty())
+		Map<String, String> keys = keysByNormalizedName;
+		if (configManager == null || keys.isEmpty())
 		{
 			return;
 		}
-		String serialized = serialize(keysByNormalizedName);
+		String serialized = serialize(keys);
 		if (serialized.equals(lastSaved))
 		{
 			return;
@@ -653,135 +662,4 @@ public class PohService
 		}
 	}
 
-	public String formatTransportDisplay(Transport transport)
-	{
-		String info = transport.getDisplayInfo();
-		if (info == null || info.isEmpty())
-		{
-			return info;
-		}
-		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
-		{
-			return apply(info);
-		}
-		return info;
-	}
-
-	/**
-	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
-	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
-	 * that information is included instead.
-	 *
-	 * @param destination  The destination point to check
-	 * @param path         The full path
-	 * @param currentIndex The current index in the path
-	 * @param edgeTransports Looks up the transports usable along an edge; the
-	 *                       shell supplies its edge lookup across this seam so
-	 *                       the service never reads pathfinder configuration.
-	 * @return The display info of the POH exit transport, or null if not applicable
-	 */
-	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex,
-		BiFunction<PathStep, PathStep, Set<Transport>> edgeTransports)
-	{
-		if (path == null || currentIndex < 0)
-		{
-			return null;
-		}
-
-		int destX = WorldPointUtil.unpackWorldX(destination);
-		int destY = WorldPointUtil.unpackWorldY(destination);
-
-		// Check if destination is inside POH
-		if (!isInsidePoh(destX, destY))
-		{
-			return null;
-		}
-
-		String immediateExitInfo = null;
-
-		// Look ahead in the path to find the next transport that exits POH
-		for (int i = currentIndex + 1; i < path.size() - 1; i++)
-		{
-			int stepLocation = path.get(i).getPackedPosition();
-			int nextLocation = path.get(i + 1).getPackedPosition();
-
-			int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-			int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-			int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-
-			// Check if this step is inside POH but next step is outside (exit transport)
-			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
-			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
-
-			if (stepInsidePoh && !nextInsidePoh)
-			{
-				// Found the exit transport - get its display info using bank-aware lookup
-				PathStep currentStep = path.get(i);
-				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : edgeTransports.apply(currentStep, nextStep))
-				{
-					String exitInfo = formatTransportDisplay(transport);
-					if (exitInfo != null && !exitInfo.isEmpty())
-					{
-						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType))
-						{
-							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory"))
-							{
-								immediateExitInfo = "Mounted Glory: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Mythical cape"))
-							{
-								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-							{
-								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Digsite"))
-							{
-								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							}
-							else
-							{
-								immediateExitInfo = "Jewelry Box: " + exitInfo;
-							}
-						}
-						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-						{
-							immediateExitInfo = "Nexus: " + exitInfo;
-						}
-						else if (TransportType.FAIRY_RING.equals(exitType))
-						{
-							immediateExitInfo = "Fairy Ring " + exitInfo;
-						}
-						else if (TransportType.SPIRIT_TREE.equals(exitType))
-						{
-							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						}
-						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-						{
-							immediateExitInfo = "Obelisk: " + exitInfo;
-						}
-						else
-						{
-							immediateExitInfo = exitInfo;
-						}
-					}
-					break;
-				}
-				break;
-			}
-
-			// If we've left POH without finding a transport, stop looking
-			if (!stepInsidePoh)
-			{
-				break;
-			}
-		}
-
-		return immediateExitInfo;
-	}
 }
