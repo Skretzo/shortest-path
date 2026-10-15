@@ -374,15 +374,14 @@ public class PathAnnotator
 	}
 
 	/**
-	 * The bank-pickup projection for the active path — the projection cache
-	 * stays on the item-state service; this facade bridges the attached
-	 * engine config in.
+	 * The bank-pickup projection for the active path — owned and cached by
+	 * the engine config; this facade bridges the attached config in.
 	 */
 	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex, ActiveSearch search)
 	{
-		return itemState == null || pathfinderConfig == null
+		return pathfinderConfig == null
 			? null
-			: itemState.getBankPickup(path, pathIndex, pathfinderConfig, search);
+			: pathfinderConfig.getBankPickup(path, pathIndex, search);
 	}
 
 	public Set<Integer> getDestinations(String destinationType)
