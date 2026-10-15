@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
@@ -104,8 +105,8 @@ public class WildernessGlobalTeleportTest
 	{
 		TeleportCapability capability = TeleportCapability.at(location);
 		Set<Integer> castable = new HashSet<>();
-		for (int i = 0; i < account.globalCount(capability, false); i++)
-			castable.add(account.globalDestination(capability, false, i));
+		for (int i = 0; i < account.globalCount(capability, BankVisitState.CARRIED); i++)
+			castable.add(account.globalDestination(capability, BankVisitState.CARRIED, i));
 		for (int i = 0; i < expected.length; i++)
 			assertEquals(capability + " destination " + i, expected[i],
 				castable.contains(WorldPointUtil.packWorldPoint(1000 + i, 1000, 0)));

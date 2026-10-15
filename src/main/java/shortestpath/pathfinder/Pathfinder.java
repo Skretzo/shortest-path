@@ -295,7 +295,7 @@ public class Pathfinder implements ActiveSearch
 			return;
 		}
 
-		final boolean banked = graph.bankVisited(node);
+		final BankVisitState banked = graph.bankVisited(node);
 		for (int target : targets.points())
 		{
 			if (goals.acceptsTarget(target, banked)
@@ -364,7 +364,7 @@ public class Pathfinder implements ActiveSearch
 				// dequeue wins the tile; later queued duplicates for the same tile are
 				// dropped here.
 				int packed = graph.packedPosition(node);
-				boolean bank = graph.bankVisited(node);
+				BankVisitState bank = graph.bankVisited(node);
 				if (visited.get(packed, bank))
 				{
 					continue;
