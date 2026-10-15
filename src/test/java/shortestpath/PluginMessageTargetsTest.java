@@ -109,6 +109,12 @@ public class PluginMessageTargetsTest
 	}
 
 	@Test(expected = IllegalArgumentException.class)
+	public void nonItemIdMapKeyIsInvalid()
+	{
+		PluginMessageTargets.decodeRequirements(Map.of("spade", 1));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
 	public void nullRequirementElementIsInvalid()
 	{
 		PluginMessageTargets.decodeRequirements(java.util.Arrays.asList(ItemID.SPADE, null));

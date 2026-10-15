@@ -31,6 +31,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
@@ -1565,7 +1566,11 @@ public class ShortestPathPlugin extends Plugin
 			{
 				for (int id : branch.getItemIds())
 				{
-					names.add(client.getItemDefinition(id).getName());
+					// Requirement ids come from other plugins' messages; an invalid or renamed
+					// id may resolve to no name rather than crash every rendered frame.
+					ItemComposition def = client.getItemDefinition(id);
+					String name = def == null ? null : def.getName();
+					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
 				}
 			}
 			groups.add(String.join(" or ", names));

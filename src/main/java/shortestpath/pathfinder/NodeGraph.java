@@ -330,7 +330,10 @@ public class NodeGraph
 		int n = 0;
 		while (node != NO_NODE && node < len)
 		{
-			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0)
+			// A bank visit is elided as a state change, not a step — except when it terminates the
+			// path, where dropping it would lose the final tile's banked state.
+			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0
+				|| (node == id && (flg[node] & FLAG_BANK_VISIT) != 0))
 			{
 				n++;
 			}
@@ -347,7 +350,8 @@ public class NodeGraph
 		int i = n;
 		while (node != NO_NODE && node < len && i > 0)
 		{
-			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0)
+			if ((flg[node] & (FLAG_ABSTRACT | FLAG_BANK_VISIT)) == 0
+				|| (node == id && (flg[node] & FLAG_BANK_VISIT) != 0))
 			{
 				pathSteps.set(--i, new PathStep(packed[node], (flg[node] & FLAG_BANK_VISITED) != 0,
 					trans[node]));
