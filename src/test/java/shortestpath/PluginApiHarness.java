@@ -33,11 +33,9 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathfinderBackend;
-import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.pathfinder.TestPathfinderConfig;
+import shortestpath.pathfinder.TestWorldData;
 import shortestpath.settings.TeleportationItem;
 
 /**
@@ -53,9 +51,6 @@ import shortestpath.settings.TeleportationItem;
 final class PluginApiHarness implements AutoCloseable
 {
 	private static final long TIMEOUT_SECONDS = 60;
-	// Building the A* backend's static data takes seconds, so every harness shares one.
-	private static final AStarRoutingStaticProvider ASTAR_STATIC =
-		new AStarRoutingStaticProvider(() -> new CollisionMap(SplitFlagMap.fromResources()));
 	private static final AtomicInteger IDS = new AtomicInteger();
 
 	final ShortestPathPlugin plugin = new ShortestPathPlugin();
@@ -183,7 +178,9 @@ final class PluginApiHarness implements AutoCloseable
 		scheduler.attach(pathfinderConfig, itemState, sailing, apiHandler);
 		set("scheduler", scheduler);
 		set("coordinator", coordinator);
-		set("aStarRoutingStatic", ASTAR_STATIC);
+		// The A* backend's static data takes seconds to build, so the harness injects the
+		// provider that already memoized it for the whole JVM rather than building its own.
+		set("aStarRoutingStatic", TestWorldData.routingStaticProvider());
 	}
 
 	private void set(String name, Object value)
@@ -386,6 +383,14 @@ final class PluginApiHarness implements AutoCloseable
 	ActiveSearch activeSearch()
 	{
 		return scheduler.getActiveSearch();
+	}
+
+	/** The bank-pickup projection for the shown path, as the annotator reports it. */
+	shortestpath.presentation.BankPickupRequirements.BankPickupResult bankPickup(
+		List<shortestpath.pathfinder.PathStep> path, int index, ActiveSearch search)
+	{
+		return ((shortestpath.presentation.PathAnnotator) get("annotator"))
+			.getBankPickup(path, index, search);
 	}
 
 	@Override
