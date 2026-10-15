@@ -15,8 +15,10 @@ import net.runelite.api.coords.LocalPoint;
 
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.poh.PohService;
+import shortestpath.presentation.PathAnnotator;
 
 /**
  * The shared packed-point projection walk: map a packed world point through
@@ -90,7 +92,7 @@ final class ProjectedTiles
 	 * and per-style counters remain instance state there.
 	 */
 	static void forEachVisibleStep(PathTileOverlay overlay, Graphics2D graphics, List<PathStep> path,
-		Color colorCalculating, IntFunction<PathStep> nextPathStep,
+		PathAnnotator annotator, Color colorCalculating, ActiveSearch search,
 		BiPredicate<List<PathStep>, Integer> markerPredicate,
 		BiConsumer<PathStep, Integer> markerDraw, boolean drawUnreached)
 	{
@@ -104,8 +106,8 @@ final class ProjectedTiles
 			{
 				markerDraw.accept(currentStep, i);
 			}
-			overlay.drawTransportInfo(graphics, currentStep, nextPathStep.apply(i), path, i);
+			overlay.drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i, search);
 		}
-		overlay.drawUnreachedTargets(graphics, path, colorCalculating, drawUnreached);
+		overlay.drawUnreachedTargets(graphics, path, colorCalculating, drawUnreached, search);
 	}
 }
