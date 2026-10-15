@@ -1098,8 +1098,9 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "costTeleportationPortals",
 		name = "Teleportation portal threshold",
-		description = "How many extra tiles a teleportation portal must save<br>" +
-			"to be preferred over walking or other transports",
+		description = "How many extra tiles a teleportation portal (including POH<br>" +
+			"nexus portals) must save to be preferred over walking or<br>" +
+			"other transports",
 		position = 170,
 		section = sectionThresholds
 	)
