@@ -48,8 +48,7 @@ public class AStarBankAccessParityTest
 	@BeforeClass
 	public static void buildRoutingStatic()
 	{
-		routingStatic = new AStarRoutingStaticProvider(
-			() -> new CollisionMap(SplitFlagMap.fromResources())).get();
+		routingStatic = TestWorldData.routingStatic();
 	}
 
 	@Test
