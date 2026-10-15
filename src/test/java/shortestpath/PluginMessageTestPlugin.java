@@ -2,6 +2,7 @@ package shortestpath;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,7 @@ import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Point;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
@@ -54,6 +56,10 @@ public class PluginMessageTestPlugin extends Plugin
 	private static final String QUERY = "Query";
 	private static final String QUERY_TARGET = ColorUtil.wrapWithColorTag("Path to here (PluginMessage)",
 		JagexColors.MENU_TARGET);
+	private static final String TARGET_REQ = ColorUtil.wrapWithColorTag("Target + require item(s) (PluginMessage)",
+		JagexColors.MENU_TARGET);
+	private static final String QUERY_TARGET_REQ = ColorUtil.wrapWithColorTag("Path to here + require item(s) (PluginMessage)",
+		JagexColors.MENU_TARGET);
 	private static final String CONFIG_COLOUR_PATH = ColorUtil.wrapWithColorTag("Yellow path colour (PluginMessage)",
 		JagexColors.MENU_TARGET);
 	private static final String GET_TARGET = "Get";
@@ -63,6 +69,8 @@ public class PluginMessageTestPlugin extends Plugin
 	private final Set<WorldPoint> targets = new HashSet<>(10);
 	private Point lastMenuOpenedPoint;
 	private int getTargetId;
+	// The requirement the "require item(s)" menu entries put on their target, set by "::req".
+	private Object requiredItems;
 
 	@Inject
 	private Client client;
@@ -97,6 +105,11 @@ public class PluginMessageTestPlugin extends Plugin
 				addMenuEntry(SET, TARGET_WP, 1);
 				addMenuEntry(SET, CONFIG_COLOUR_PATH, 1);
 				addMenuEntry(QUERY, QUERY_TARGET, 1);
+				if (requiredItems != null)
+				{
+					addMenuEntry(SET, TARGET_REQ, 1);
+					addMenuEntry(QUERY, QUERY_TARGET_REQ, 1);
+				}
 				addMenuEntry(GET_TARGET, CURRENT_TARGET, 1);
 				if (!targets.isEmpty())
 				{
@@ -119,6 +132,11 @@ public class PluginMessageTestPlugin extends Plugin
 			addMenuEntry(SET, TARGET_WP, 0);
 			addMenuEntry(SET, CONFIG_COLOUR_PATH, 0);
 			addMenuEntry(QUERY, QUERY_TARGET, 0);
+			if (requiredItems != null)
+			{
+				addMenuEntry(SET, TARGET_REQ, 0);
+				addMenuEntry(QUERY, QUERY_TARGET_REQ, 0);
+			}
 			addMenuEntry(GET_TARGET, CURRENT_TARGET, 0);
 			if (!targets.isEmpty())
 			{
@@ -175,6 +193,21 @@ public class PluginMessageTestPlugin extends Plugin
 			eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_QUERY, data));
 			return;
 		}
+		else if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET_REQ))
+		{
+			Map<String, Object> data = new HashMap<>();
+			data.put(PLUGIN_MESSAGE_TARGET, targetWithRequirement(getSelectedWorldPoint()));
+			eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_PATH, data));
+			return;
+		}
+		else if (entry.getOption().equals(QUERY) && entry.getTarget().equals(QUERY_TARGET_REQ))
+		{
+			Map<String, Object> data = new HashMap<>();
+			data.put("id", "test-query-req");
+			data.put(PLUGIN_MESSAGE_TARGET, targetWithRequirement(getSelectedWorldPoint()));
+			eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_QUERY, data));
+			return;
+		}
 		else if (entry.getOption().equals(GET_TARGET) && entry.getTarget().equals(CURRENT_TARGET))
 		{
 			sendGetTarget();
@@ -225,6 +258,68 @@ public class PluginMessageTestPlugin extends Plugin
 		eventBus.post(new PluginMessage(PLUGIN_MESSAGE_NAME, PLUGIN_MESSAGE_PATH, data));
 	}
 
+	/** The clicked point plus every plain target, as a target map carrying the pending requirement. */
+	private Object targetWithRequirement(WorldPoint point)
+	{
+		Map<String, Object> requiring = new HashMap<>();
+		requiring.put("point", point);
+		requiring.put("requirements", requiredItems);
+		if (targets.isEmpty())
+		{
+			return requiring;
+		}
+		List<Object> all = new ArrayList<>(targets);
+		all.add(requiring);
+		return all;
+	}
+
+	/**
+	 * "::req <spec>" sets the items the require-item(s) entries put on their target; "::req" clears
+	 * them. A spec is item ids joined by "+", meaning all of them; inside a group, "," means any one
+	 * and ":" means a quantity. "::req 952" a spade, "::req 952+954:2" a spade and two ropes.
+	 */
+	@Subscribe
+	public void onCommandExecuted(CommandExecuted event)
+	{
+		if (!"req".equals(event.getCommand()))
+		{
+			return;
+		}
+		String[] args = event.getArguments();
+		requiredItems = args.length < 1 ? null : parseRequirement(String.join("", args));
+		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
+			requiredItems == null
+				? "Target requirement cleared; the \"require item(s)\" entries are hidden"
+				: "Targets set through \"require item(s)\" now need " + requiredItems, null);
+	}
+
+	private static Object parseRequirement(String spec)
+	{
+		List<Object> groups = new ArrayList<>();
+		for (String group : spec.split("\\+"))
+		{
+			if (group.contains(","))
+			{
+				Set<Integer> anyOf = new HashSet<>();
+				for (String id : group.split(","))
+				{
+					anyOf.add(Integer.parseInt(id));
+				}
+				groups.add(anyOf);
+			}
+			else if (group.contains(":"))
+			{
+				String[] idAndQty = group.split(":");
+				groups.add(Map.of(Integer.parseInt(idAndQty[0]), Integer.parseInt(idAndQty[1])));
+			}
+			else
+			{
+				groups.add(Integer.parseInt(group));
+			}
+		}
+		return groups.size() == 1 ? groups.get(0) : groups;
+	}
+
 	private void sendGetTarget()
 	{
 		Map<String, Object> data = new HashMap<>();
@@ -247,7 +342,10 @@ public class PluginMessageTestPlugin extends Plugin
 			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
 				"Query " + data.get("id") + ": reached=" + data.get("reached")
 					+ ", reason=" + data.get("reason")
-					+ ", " + path.size() + " steps, transports " + data.get("transports"), null);
+					+ ", " + path.size() + " steps, transports " + data.get("transports")
+					+ ", bankVisited=" + data.get("bankVisited")
+					+ ", targetStatus=" + data.get("targetStatus")
+					+ ", missingItems=" + data.get("missingItems"), null);
 		}
 		else if (PLUGIN_MESSAGE_CURRENT_TARGET.equals(event.getName()))
 		{
