@@ -173,7 +173,7 @@ public class PathAnnotatorTest
 	}
 
 	@Test
-	public void isBankOpenAndBankPickupDelegateToItemState()
+	public void isBankOpenReadsItemStateAndBankPickupReadsConfig()
 	{
 		ItemStateService itemState = mock(ItemStateService.class);
 		PathfinderConfig config = mock(PathfinderConfig.class);
@@ -188,7 +188,7 @@ public class PathAnnotatorTest
 
 		List<PathStep> path = List.of(new PathStep(LANDING, BankVisitState.CARRIED));
 		BankPickupResult result = new BankPickupResult(List.of("a rope"), Set.of(954));
-		when(itemState.getBankPickup(path, 0, config, null)).thenReturn(result);
+		when(config.getBankPickup(path, 0, null)).thenReturn(result);
 
 		assertSame(result, wired.getBankPickup(path, 0, null));
 	}
