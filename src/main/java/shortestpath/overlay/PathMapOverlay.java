@@ -21,6 +21,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
@@ -140,10 +141,11 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (scheduler.getActiveSearch() != null)
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (search != null)
 		{
 			Color colour = renderState.getPathColor();
-			List<PathStep> path = scheduler.getActiveSearch().getPath();
+			List<PathStep> path = search.getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			if (renderState.isSailing())
 			{
@@ -179,7 +181,7 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			for (int target : scheduler.getActiveSearch().getTargets().points())
+			for (int target : search.getTargets().points())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
