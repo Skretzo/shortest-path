@@ -12,7 +12,6 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.items.ItemStateService;
 import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -169,7 +168,7 @@ public final class RequirementContext
 
 		int currentMaxQuestPoints = source.maximumQuestPoints();
 
-		TransportEligibility eligibilitySnapshot = ItemStateService.collectEligibility(source, bank,
+		TransportEligibility eligibilitySnapshot = TransportEligibility.collect(source, bank,
 			policy.teleportationItemSetting(), policy.currencyThreshold(), policy.includeBankPath(),
 			unlocks, balloonLogBasketDestinations);
 
