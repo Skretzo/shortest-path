@@ -100,16 +100,22 @@ public final class TeleportRestriction
 
 	/**
 	 * Loads the bundled family map through {@link ResourceLoader} — the loader
-	 * owns the resource read and the row idiom; this entry point stays for the
-	 * panel-facing signature. Malformed rows are skipped with a warning (the
-	 * checklist degrades to fewer rows rather than crashing); an absent or
-	 * malformed {@code memberLabels} column degrades to an empty map for that
-	 * family, and a missing resource degrades to an empty list — panel
-	 * construction must not crash on packaging gaps.
+	 * owns the resource read and the row idiom; this entry point maps its raw
+	 * rows onto the panel-facing {@link Family} model. Malformed rows are
+	 * skipped with a warning (the checklist degrades to fewer rows rather than
+	 * crashing); an absent or malformed {@code memberLabels} column degrades
+	 * to an empty map for that family, and a missing resource degrades to an
+	 * empty list — panel construction must not crash on packaging gaps.
 	 */
 	public static List<Family> loadFamilies()
 	{
-		return ResourceLoader.families();
+		List<Family> families = new ArrayList<>();
+		for (ResourceLoader.RestrictionFamilyRow row : ResourceLoader.families())
+		{
+			families.add(new Family(row.name(), row.displayItemId(),
+				row.memberItemIds(), row.memberLabels()));
+		}
+		return Collections.unmodifiableList(families);
 	}
 
 	/**
