@@ -3,7 +3,7 @@ package shortestpath.pathfinder;
 import java.util.*;
 import net.runelite.api.*;
 import shortestpath.items.ItemStateService;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.model.TransportItems;
 
 /**
