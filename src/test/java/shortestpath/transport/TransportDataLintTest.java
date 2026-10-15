@@ -423,4 +423,107 @@ public class TransportDataLintTest
 		System.out.printf("Validated %d teleport restriction families covering %d item ids.\n",
 			families.size(), mapItemIds.size());
 	}
+
+	/**
+	 * The balloon log-basket unlock is destination-keyed relief: the shared
+	 * basket storage is invisible to the client, so a trip is satisfied by a
+	 * carried log OR the declared unlock. That places hard constraints on where
+	 * {@code UNLOCK_BALLOON_LOG_BASKET} may appear in
+	 * {@code hot_air_balloons.tsv}:
+	 * <ul>
+	 * <li>exactly six destination-side rows (blank origin field) carry
+	 * {@code <logId>=1|UNLOCK_BALLOON_LOG_BASKET=1} in the Items column;</li>
+	 * <li>the token only ever appears as a {@code |}-OR-branch operand — never
+	 * {@code &}-ANDed (an ANDed token would gate the route behind the toggle
+	 * even for players carrying logs) and never as the sole content of an
+	 * Items cell;</li>
+	 * <li>every {@code Use Basket} departure row (non-blank origin) keeps an
+	 * EMPTY Items cell — departure rows permute to every destination, so an
+	 * origin-side requirement would charge the wrong log type.</li>
+	 * </ul>
+	 * Scope limit: the no-AND/no-pure-cell prohibition is specific to this
+	 * token; other TSVs legitimately use ANDed or standalone unlock cells
+	 * (e.g. {@code 13393=1&UNLOCK_XERICS_HONOUR=1}).
+	 */
+	@Test
+	public void testBalloonLogBasketUnlockPlacement() throws IOException
+	{
+		String tsv = new String(
+			Util.readAllBytes(Objects.requireNonNull(
+				TransportDataLintTest.class.getResourceAsStream("/transports/hot_air_balloons.tsv"))),
+			StandardCharsets.UTF_8);
+
+		int unlockRows = 0;
+		int departureRows = 0;
+		List<String> violations = new ArrayList<>();
+		int lineNo = 0;
+		for (String line : tsv.split("\n"))
+		{
+			lineNo++;
+			if (line.startsWith("#"))
+			{
+				continue;
+			}
+			String[] fields = line.split("\t", -1);
+			String origin = fields[0].trim();
+			String items = fields.length > 3 ? fields[3].trim() : "";
+			boolean lineHasToken = line.contains("UNLOCK_BALLOON_LOG_BASKET");
+
+			if (!origin.isEmpty())
+			{
+				// Departure row: origin-keyed permutation rows must not carry
+				// an Items requirement at all.
+				departureRows++;
+				if (fields.length <= 2 || !fields[2].contains("Use Basket"))
+				{
+					violations.add("line " + lineNo
+						+ ": non-blank-origin row is not a 'Use Basket' departure: " + line);
+				}
+				if (!items.isEmpty())
+				{
+					violations.add("line " + lineNo + ": departure row carries Items '" + items
+						+ "' — destination-keyed consumption requires empty Items on origin rows");
+				}
+				continue;
+			}
+
+			if (lineHasToken && !items.contains("UNLOCK_BALLOON_LOG_BASKET"))
+			{
+				violations.add("line " + lineNo
+					+ ": UNLOCK_BALLOON_LOG_BASKET appears outside the Items column: " + line);
+			}
+			if (!items.contains("UNLOCK_BALLOON_LOG_BASKET"))
+			{
+				continue;
+			}
+			unlockRows++;
+
+			String[] orBranches = items.split("\\|");
+			if (orBranches.length < 2)
+			{
+				violations.add("line " + lineNo + ": Items cell is pure-unlock '" + items
+					+ "' — the unlock must relieve a log requirement, not stand alone");
+			}
+			for (String branch : orBranches)
+			{
+				if (branch.contains("UNLOCK_BALLOON_LOG_BASKET")
+					&& !branch.trim().equals("UNLOCK_BALLOON_LOG_BASKET=1"))
+				{
+					violations.add("line " + lineNo + ": UNLOCK_BALLOON_LOG_BASKET must be a "
+						+ "standalone |-OR-branch operand, never &-ANDed: '" + items + "'");
+				}
+			}
+		}
+
+		Assert.assertEquals("expected exactly 6 destination-side rows carrying "
+			+ "UNLOCK_BALLOON_LOG_BASKET (Entrana, Taverley, Crafting Guild, Varrock, "
+			+ "Castle Wars, Grand Tree)", 6, unlockRows);
+		Assert.assertTrue("hot_air_balloons.tsv should contain 'Use Basket' departure rows",
+			departureRows > 0);
+		Assert.assertTrue("balloon unlock placement violations:\n" + String.join("\n", violations),
+			violations.isEmpty());
+
+		System.out.printf("Validated %d balloon unlock relief rows across %d departure rows.\n",
+			unlockRows, departureRows);
+	}
 }
