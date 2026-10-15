@@ -21,7 +21,6 @@ import net.runelite.api.Quest;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
-import shortestpath.requirement.TeleportRestriction;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.VarRequirement;
@@ -506,13 +505,55 @@ public final class ResourceLoader
 	}
 
 	/**
+	 * A raw parsed row of the bundled teleport-restriction family map. The
+	 * loader owns the resource read and row idiom; the caller maps rows onto
+	 * its own model ({@link shortestpath.requirement.TeleportRestriction.Family}).
+	 */
+	public static final class RestrictionFamilyRow
+	{
+		private final String name;
+		private final int displayItemId;
+		private final Set<Integer> memberItemIds;
+		private final Map<Integer, String> memberLabels;
+
+		public RestrictionFamilyRow(String name, int displayItemId, Set<Integer> memberItemIds,
+			Map<Integer, String> memberLabels)
+		{
+			this.name = name;
+			this.displayItemId = displayItemId;
+			this.memberItemIds = memberItemIds;
+			this.memberLabels = memberLabels;
+		}
+
+		public String name()
+		{
+			return name;
+		}
+
+		public int displayItemId()
+		{
+			return displayItemId;
+		}
+
+		public Set<Integer> memberItemIds()
+		{
+			return memberItemIds;
+		}
+
+		public Map<Integer, String> memberLabels()
+		{
+			return memberLabels;
+		}
+	}
+
+	/**
 	 * Loads the bundled teleport-restriction family map from
 	 * {@code /transports/teleport_restrictions.tsv}. A missing resource
 	 * degrades to an empty list — panel construction must not crash on
 	 * packaging gaps; an {@link IOException} is wrapped in
 	 * {@link RuntimeException}.
 	 */
-	public static List<TeleportRestriction.Family> families()
+	public static List<RestrictionFamilyRow> families()
 	{
 		final String contents;
 		try
@@ -540,9 +581,9 @@ public final class ResourceLoader
 	 * degrades to an empty map for that family. Kept verbatim from the
 	 * incumbent reader. Package-private for tests.
 	 */
-	static List<TeleportRestriction.Family> parseFamilies(String contents)
+	static List<RestrictionFamilyRow> parseFamilies(String contents)
 	{
-		List<TeleportRestriction.Family> families = new ArrayList<>();
+		List<RestrictionFamilyRow> families = new ArrayList<>();
 		for (String line : contents.split("\\R"))
 		{
 			if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
@@ -570,7 +611,7 @@ public final class ResourceLoader
 				Set<Integer> memberItemIds = parseIdSet(fields[2]);
 				Map<Integer, String> memberLabels =
 					fields.length > 3 ? parseMemberLabels(fields[3]) : Collections.emptyMap();
-				families.add(new TeleportRestriction.Family(name, displayItemId,
+				families.add(new RestrictionFamilyRow(name, displayItemId,
 					Collections.unmodifiableSet(memberItemIds),
 					Collections.unmodifiableMap(memberLabels)));
 			}
