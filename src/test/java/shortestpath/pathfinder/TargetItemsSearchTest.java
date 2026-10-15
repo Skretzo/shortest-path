@@ -41,8 +41,7 @@ public class TargetItemsSearchTest
 	@BeforeClass
 	public static void buildRoutingStatic()
 	{
-		routingStatic = new AStarRoutingStaticProvider(
-			() -> new CollisionMap(SplitFlagMap.fromResources())).get();
+		routingStatic = TestWorldData.routingStatic();
 	}
 
 	private static Target spadeAt(int point)
