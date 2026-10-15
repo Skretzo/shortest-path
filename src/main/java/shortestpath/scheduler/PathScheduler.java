@@ -174,7 +174,7 @@ public class PathScheduler
 				if (pathfinderConfig.isSailingMoves() && sailing.getState().hasBoat())
 				{
 					// A SailingPathfinder isn't a Pathfinder, so it can't be held by
-					// legacyPathfinder — getPathfinder() reports null while sailing
+					// legacyPathfinder — the legacy-backend slot stays null while sailing
 					legacyPathfinder = null;
 					pathfinder = sailingPathfinder(start, ends);
 				}
@@ -600,15 +600,6 @@ public class PathScheduler
 	public ActiveSearch getActiveSearch()
 	{
 		return pathfinder;
-	}
-
-	/**
-	 * The legacy-backend search last submitted, for source-compatible callers of the shell's
-	 * {@code getPathfinder()}.
-	 */
-	public Pathfinder getPathfinder()
-	{
-		return legacyPathfinder;
 	}
 
 	public int getSailingPivotX()
