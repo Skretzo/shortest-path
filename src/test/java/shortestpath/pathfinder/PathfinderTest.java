@@ -2169,7 +2169,7 @@ public class PathfinderTest
 		// Attach an empty bank after setupConfig; setupConfigWithBank would force usePoh off.
 		// includeBankPath alone exercises bank visits.
 		when(bank.getItems()).thenReturn(new Item[0]);
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.getItemState().noteBankContainer(bank);
 		pathfinderConfig.refresh();
 
 		int evilDavesBasement = WorldPointUtil.packWorldPoint(3080, 9892, 0);
@@ -3172,7 +3172,7 @@ public class PathfinderTest
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		when(config.usePoh()).thenReturn(false);
 		doReturn(bankItems).when(bank).getItems();
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.getItemState().noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 

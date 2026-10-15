@@ -150,6 +150,9 @@ final class PluginApiHarness implements AutoCloseable
 		set("clientThread", clientThread);
 		set("config", settings);
 		set("settings", shortestpath.settings.Settings.wrap(settings));
+		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting(client);
+		pathfinderConfig.setItemStateService(itemState);
+		set("itemState", itemState);
 		set("eventBus", eventBus);
 		set("worldMapPointManager", mock(WorldMapPointManager.class));
 		set("pathfinderConfig", pathfinderConfig);
@@ -189,14 +192,14 @@ final class PluginApiHarness implements AutoCloseable
 	{
 		ItemContainer bank = mock(ItemContainer.class);
 		doReturn(items(idsAndQuantities)).when(bank).getItems();
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.getItemState().noteBankContainer(bank);
 		return this;
 	}
 
 	/** Forgets the bank, as before it is first opened in a session. */
 	PluginApiHarness bankNotSeen()
 	{
-		pathfinderConfig.bank = null;
+		pathfinderConfig.getItemState().noteBankContainer(null);
 		return this;
 	}
 
