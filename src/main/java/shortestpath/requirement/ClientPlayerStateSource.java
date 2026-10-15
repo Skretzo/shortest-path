@@ -11,8 +11,10 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.HashTable;
+import net.runelite.api.WidgetNode;
 import net.runelite.api.gameval.DBTableID;
-import shortestpath.spirittree.SpiritTreeService;
+import net.runelite.api.widgets.WidgetModalMode;
 import shortestpath.items.OwnedItems;
 
 /**
@@ -113,7 +115,32 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 	public boolean modalWidgetOpen()
 	{
 		checkOnClientThread();
-		return SpiritTreeService.modalWidgetOpen(client);
+		return modalWidgetOpen(client);
+	}
+
+	/**
+	 * Whether a modal widget is currently open. Varbit updates are not
+	 * transmitted while one is, so {@code FARMING_TRANSMIT_*} reads return
+	 * whatever was last received — which can be the value of the other patch
+	 * sharing the region-scoped slot. Callers must skip sampling while this
+	 * returns true rather than record a cross-contaminated value.
+	 * (Same guard as FarmingTracker.updateData.)
+	 */
+	public static boolean modalWidgetOpen(Client client)
+	{
+		HashTable<WidgetNode> componentTable = client.getComponentTable();
+		if (componentTable == null)
+		{
+			return false;
+		}
+		for (WidgetNode widgetNode : componentTable)
+		{
+			if (widgetNode.getModalMode() != WidgetModalMode.NON_MODAL)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

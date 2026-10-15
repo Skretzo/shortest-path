@@ -3,7 +3,6 @@ package shortestpath.spirittree;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -11,17 +10,15 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
-import net.runelite.api.HashTable;
 import net.runelite.api.Player;
-import net.runelite.api.WidgetNode;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.util.Text;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetModalMode;
 import net.runelite.client.config.ConfigManager;
+import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
+import shortestpath.requirement.SpiritTreePatches;
 import shortestpath.settings.Effect;
 
 /**
@@ -59,37 +56,17 @@ public class SpiritTreeService
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 
-	// patch name -> {regionID, varbitID, x1, y1, x2, y2} — the single source
-	// for patch metadata: the region-scoped varbit to sample and the tile
-	// bounds (inclusive) used to gate planted-tree transports. Bounds must
-	// stay inside the patch's own region or the varbit would not describe
-	// the tiles they cover.
-	private static final Map<String, int[]> PATCHES;
-	private static final Map<Integer, String> PATCH_BY_REGION;
-
-	static
-	{
-		Map<String, int[]> patches = new LinkedHashMap<>();
-		patches.put("Port Sarim", new int[]{12082, VarbitID.FARMING_TRANSMIT_A, 3058, 3256, 3062, 3260});
-		patches.put("Etceteria", new int[]{10300, VarbitID.FARMING_TRANSMIT_B, 2611, 3855, 2615, 3860});
-		patches.put("Brimhaven", new int[]{11058, VarbitID.FARMING_TRANSMIT_B, 2800, 3201, 2804, 3205});
-		patches.put("Hosidius", new int[]{6711, VarbitID.FARMING_TRANSMIT_F, 1691, 3540, 1695, 3544});
-		patches.put("Farming Guild", new int[]{4922, VarbitID.FARMING_TRANSMIT_A, 1251, 3748, 1255, 3752});
-		PATCHES = Collections.unmodifiableMap(patches);
-
-		Map<Integer, String> byRegion = new HashMap<>();
-		for (Map.Entry<String, int[]> entry : patches.entrySet())
-		{
-			byRegion.put(entry.getValue()[0], entry.getKey());
-		}
-		PATCH_BY_REGION = Collections.unmodifiableMap(byRegion);
-	}
+	// Patch metadata (region-scoped varbit + tile bounds) lives on the
+	// requirement side in SpiritTreePatches — this service reads it through
+	// the one-way spirittree -> requirement edge.
 
 	private final ConfigManager configManager;
 	private final Client client;
-	// patch name -> last observed availability value (20 = grown and travelable).
-	private final Map<String, Integer> observedValues = new HashMap<>();
-	private final Map<String, Integer> lastPersistedValues = new HashMap<>();
+	// patch name -> last observed availability value (20 = grown and
+	// travelable). Published as immutable snapshots (copy-on-write writes)
+	// so readers on any thread can never iterate a half-mutated map.
+	private volatile Map<String, Integer> observedValues = Map.of();
+	private volatile Map<String, Integer> lastPersistedValues = Map.of();
 	private boolean dirty;
 	// Player region seen on the previous game tick (and at which tick), and
 	// the region considered settled for transmit-slot sampling.
@@ -135,81 +112,6 @@ public class SpiritTreeService
 		return varbitValue == 20;
 	}
 
-	static Set<String> patchNames()
-	{
-		return PATCHES.keySet();
-	}
-
-	static String patchNameForRegion(int regionId)
-	{
-		return PATCH_BY_REGION.get(regionId);
-	}
-
-	static int regionForPatch(String patchName)
-	{
-		int[] entry = PATCHES.get(patchName);
-		return entry == null ? -1 : entry[0];
-	}
-
-	static int varbitForPatch(String patchName)
-	{
-		int[] entry = PATCHES.get(patchName);
-		return entry == null ? -1 : entry[1];
-	}
-
-	/**
-	 * Returns the planted spirit tree patch whose bounds contain the tile,
-	 * or null when the tile is outside every patch. Used to gate planted-tree
-	 * transport origins and destinations against the observed tree set.
-	 */
-	public static String patchNameForTile(int x, int y)
-	{
-		for (Map.Entry<String, int[]> entry : PATCHES.entrySet())
-		{
-			int[] patch = entry.getValue();
-			if (x >= patch[2] && x <= patch[4] && y >= patch[3] && y <= patch[5])
-			{
-				return entry.getKey();
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Inclusive tile bounds {x1, y1, x2, y2} for a patch, or null. Package-private
-	 * for tests that tie the bounds to the patch's region.
-	 */
-	static int[] boundsForPatch(String patchName)
-	{
-		int[] entry = PATCHES.get(patchName);
-		return entry == null ? null : new int[]{entry[2], entry[3], entry[4], entry[5]};
-	}
-
-	/**
-	 * Whether a modal widget is currently open. Varbit updates are not
-	 * transmitted while one is, so {@code FARMING_TRANSMIT_*} reads return
-	 * whatever was last received — which can be the value of the other patch
-	 * sharing the region-scoped slot. Callers must skip sampling while this
-	 * returns true rather than record a cross-contaminated value.
-	 * (Same guard as FarmingTracker.updateData.)
-	 */
-	public static boolean modalWidgetOpen(Client client)
-	{
-		HashTable<WidgetNode> componentTable = client.getComponentTable();
-		if (componentTable == null)
-		{
-			return false;
-		}
-		for (WidgetNode widgetNode : componentTable)
-		{
-			if (widgetNode.getModalMode() != WidgetModalMode.NON_MODAL)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * Records the player's region for this game tick. The
 	 * {@code FARMING_TRANSMIT_*} slots are repopulated for the new region
@@ -242,8 +144,12 @@ public class SpiritTreeService
 
 	static String configKey(String patchName)
 	{
-		int[] entry = PATCHES.get(patchName);
-		return entry == null ? null : CONFIG_KEY_PREFIX + entry[0] + "." + entry[1];
+		if (!SpiritTreePatches.isPatch(patchName))
+		{
+			return null;
+		}
+		return CONFIG_KEY_PREFIX + SpiritTreePatches.regionForPatch(patchName)
+			+ "." + SpiritTreePatches.varbitForPatch(patchName);
 	}
 
 	/**
@@ -297,7 +203,7 @@ public class SpiritTreeService
 	 */
 	TreeChange applyVarbitSample(String patchName, int varbitValue)
 	{
-		if (!PATCHES.containsKey(patchName))
+		if (!SpiritTreePatches.isPatch(patchName))
 		{
 			return null;
 		}
@@ -305,7 +211,9 @@ public class SpiritTreeService
 		Integer previous = observedValues.get(patchName);
 		if (previous == null || previous.intValue() != varbitValue)
 		{
-			observedValues.put(patchName, varbitValue);
+			Map<String, Integer> next = new HashMap<>(observedValues);
+			next.put(patchName, varbitValue);
+			observedValues = Collections.unmodifiableMap(next);
 			dirty = true;
 		}
 		return isTravelable(patchName) != before
@@ -329,7 +237,7 @@ public class SpiritTreeService
 		boolean changed = false;
 		for (String name : listedTreeNames)
 		{
-			if (!PATCHES.containsKey(name))
+			if (!SpiritTreePatches.isPatch(name))
 			{
 				continue;
 			}
@@ -416,7 +324,7 @@ public class SpiritTreeService
 			&& (configManager == null
 				|| isRegionSettled(worldLocation.getRegionID())))
 		{
-			inRegionPatch = patchNameForRegion(worldLocation.getRegionID());
+			inRegionPatch = SpiritTreePatches.patchNameForRegion(worldLocation.getRegionID());
 		}
 
 		if (configManager != null)
@@ -426,7 +334,7 @@ public class SpiritTreeService
 				// In-region sample is authoritative for this patch — a non-20
 				// read evicts any stale persisted or menu-derived positive.
 				applyVarbitSample(inRegionPatch,
-					source.varbit(varbitForPatch(inRegionPatch)));
+					source.varbit(SpiritTreePatches.varbitForPatch(inRegionPatch)));
 			}
 			Set<String> resolved = getTravelableTreesOrNull();
 			if (resolved != null)
@@ -436,7 +344,7 @@ public class SpiritTreeService
 		}
 		else if (inRegionPatch != null)
 		{
-			int varbitValue = source.varbit(varbitForPatch(inRegionPatch));
+			int varbitValue = source.varbit(SpiritTreePatches.varbitForPatch(inRegionPatch));
 			Set<String> resolved = availableSpiritTrees == null
 				? new HashSet<>() : new HashSet<>(availableSpiritTrees);
 			if (spiritTreeTravelable(varbitValue))
@@ -471,7 +379,7 @@ public class SpiritTreeService
 		if (localPlayer != null
 			// Varbits are not transmitted while a modal widget is open; a stale
 			// read of the shared slot could carry another patch's value.
-			&& !modalWidgetOpen(client)
+			&& !ClientPlayerStateSource.modalWidgetOpen(client)
 			// On the region-entry tick the slot can still carry the previous
 			// region's values; only sample once the region has settled.
 			&& isRegionSettled(playerRegion))
@@ -479,11 +387,11 @@ public class SpiritTreeService
 			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
 			// a planted spirit tree's varbit is only meaningful while standing in
 			// that patch's region. Sample only on a region match.
-			String spiritTreePatch = patchNameForRegion(playerRegion);
+			String spiritTreePatch = SpiritTreePatches.patchNameForRegion(playerRegion);
 			if (spiritTreePatch != null)
 			{
 				change = applyVarbitSample(spiritTreePatch,
-					client.getVarbitValue(varbitForPatch(spiritTreePatch)));
+					client.getVarbitValue(SpiritTreePatches.varbitForPatch(spiritTreePatch)));
 				if (change != null)
 				{
 					publish(getTravelableTrees());
@@ -601,22 +509,27 @@ public class SpiritTreeService
 	public TreeChange loadFromProfile()
 	{
 		dirty = false;
-		observedValues.clear();
-		lastPersistedValues.clear();
+		// Build the replacement maps locally and publish them as one
+		// assignment each — a concurrent reader sees the old or the new
+		// snapshot, never a cleared or half-repopulated map.
+		Map<String, Integer> observed = new HashMap<>();
+		Map<String, Integer> persisted = new HashMap<>();
 		if (configManager != null)
 		{
-			for (String patchName : PATCHES.keySet())
+			for (String patchName : SpiritTreePatches.patchNames())
 			{
 				String stored = configManager.getRSProfileConfiguration(
 					CONFIG_GROUP, configKey(patchName));
 				Integer value = parseStoredValue(stored);
 				if (value != null)
 				{
-					observedValues.put(patchName, value);
-					lastPersistedValues.put(patchName, value);
+					observed.put(patchName, value);
+					persisted.put(patchName, value);
 				}
 			}
 		}
+		observedValues = Map.copyOf(observed);
+		lastPersistedValues = Map.copyOf(persisted);
 		// A profile reload always re-resolves state — the returned fact is
 		// unconditional, matching the shell's unconditional restart today.
 		publish(getTravelableTreesOrNull());
@@ -635,9 +548,10 @@ public class SpiritTreeService
 			return;
 		}
 		long now = System.currentTimeMillis() / 1000L;
+		Map<String, Integer> persisted = new HashMap<>(lastPersistedValues);
 		for (Map.Entry<String, Integer> entry : observedValues.entrySet())
 		{
-			Integer last = lastPersistedValues.get(entry.getKey());
+			Integer last = persisted.get(entry.getKey());
 			if (spiritTreeTravelable(entry.getValue()))
 			{
 				if (last != null && last.equals(entry.getValue()))
@@ -646,7 +560,7 @@ public class SpiritTreeService
 				}
 				configManager.setRSProfileConfiguration(CONFIG_GROUP,
 					configKey(entry.getKey()), serializeObserved(entry.getValue(), now));
-				lastPersistedValues.put(entry.getKey(), entry.getValue());
+				persisted.put(entry.getKey(), entry.getValue());
 			}
 			else if (last != null)
 			{
@@ -657,9 +571,10 @@ public class SpiritTreeService
 				// repeat non-travelable flush does not unset twice.
 				configManager.unsetRSProfileConfiguration(CONFIG_GROUP,
 					configKey(entry.getKey()));
-				lastPersistedValues.remove(entry.getKey());
+				persisted.remove(entry.getKey());
 			}
 		}
+		lastPersistedValues = Map.copyOf(persisted);
 	}
 
 	/**
