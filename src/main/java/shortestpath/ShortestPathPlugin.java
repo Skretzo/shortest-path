@@ -3,7 +3,6 @@ package shortestpath;
 import com.google.inject.*;
 import java.awt.event.KeyEvent;
 import java.util.Set;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -48,7 +47,6 @@ public class ShortestPathPlugin extends Plugin
 
 	@Inject
 	private Client client;
-	@Getter
 	@Inject
 	private ClientThread clientThread;
 	@Inject
