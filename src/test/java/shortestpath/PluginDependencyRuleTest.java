@@ -122,12 +122,15 @@ public class PluginDependencyRuleTest
 	 * the build until it is justified here, and an entry whose edge
 	 * disappeared fails until it is removed in the same change.
 	 *
-	 * <p>The {@code items} pairs are the extraction's consumer/producer
-	 * seams: {@code items -> requirement}/{@code requirement -> items}
-	 * share the eligibility snapshot and player-state source, and
+	 * <p>The {@code items} edges are one-way: the package is a pure
+	 * producer of item-state facts and shared container helpers —
 	 * {@code pathfinder -> items} is {@code PathfinderConfig} holding the
 	 * {@code ItemStateService} reference (revision counter + bank state)
-	 * for the config-owned bank-pickup projection. The
+	 * for the config-owned bank-pickup projection, and
+	 * {@code requirement -> items} is the eligibility collection reading
+	 * {@code OwnedItems}. Eligibility assembly itself lives on
+	 * {@code TransportEligibility}, so no items -> requirement edge
+	 * remains. The
 	 * {@code spirittree -> requirement} edge is the service reading
 	 * {@code PlayerStateSource} for the availability refresh and the
 	 * patch table in {@code SpiritTreePatches}; requirement code consumes
@@ -139,15 +142,14 @@ public class PluginDependencyRuleTest
 
 	static
 	{
-		// items package — the extraction's consumer/producer seams.
-		LEAF_EDGES.put("items -> requirement",
-			"ItemStateService.collectEligibility shares PlayerStateSource/TransportEligibility/Unlock; BankPickupResult is shared from presentation/BankPickupRequirements");
+		// items package — a pure producer: outbound edges are only the
+		// settings Effect facts and the coordinator declare channel.
 		LEAF_EDGES.put("items -> settings",
-			"ItemChange/ItemStateService read the TeleportationItem setting and Effect facts");
+			"ItemChange/ItemStateService carry Effect facts on the declared changes");
 		LEAF_EDGES.put("pathfinder -> items",
 			"PathfinderConfig holds the ItemStateService reference (revision counter and bank state) for the config-owned bank-pickup projection");
 		LEAF_EDGES.put("requirement -> items",
-			"ClientPlayerStateSource/RequirementContext read OwnedItems and collectEligibility");
+			"ClientPlayerStateSource and TransportEligibility.collect read OwnedItems");
 
 		// spirittree package — the extraction's seams.
 		LEAF_EDGES.put("pathfinder -> spirittree",

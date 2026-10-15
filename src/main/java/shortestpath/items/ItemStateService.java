@@ -15,15 +15,9 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ConfigManager;
 
-import shortestpath.requirement.PlayerStateSource;
-import shortestpath.requirement.TransportEligibility;
-import shortestpath.requirement.model.Unlock;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
-import shortestpath.settings.TeleportationItem;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 /**
  * Owns the plugin's player item state observed from game events — the live
@@ -355,88 +349,5 @@ public class ItemStateService
 	{
 		bank = null;
 		itemStateRevision++;
-	}
-
-	/**
-	 * Captures the client state both the pathfinding verdicts and the bank-pickup plans
-	 * read: the carried pool (inventory + worn + rune pouch in hand), the bank-path pool
-	 * (which adds the bank contents when bank paths are enabled), the bank contents
-	 * themselves, the runes inside a banked rune pouch, the fairy-ring staff gate and
-	 * the currency threshold. Shared by
-	 * {@link shortestpath.requirement.RequirementContext#capture RequirementContext.capture}
-	 * and the lazy {@code PathfinderConfig#getEligibility()} rebuild so exactly one
-	 * collection path exists.
-	 */
-	public static TransportEligibility collectEligibility(
-		PlayerStateSource source,
-		ItemContainer bank,
-		TeleportationItem teleportationItemSetting,
-		int currencyThreshold,
-		boolean includeBankPath,
-		Set<Unlock> unlocks)
-	{
-		Map<Integer, Integer> carriedItems = collectItems(source, bank,
-			teleportationItemSetting, true, true, false, true);
-		Map<Integer, Integer> bankPathItems = includeBankPath
-			? collectItems(source, bank, teleportationItemSetting, true, true, true, true)
-			: carriedItems;
-		Map<Integer, Integer> bankHas = new HashMap<>();
-		OwnedItems.addContainer(bankHas, bank);
-		int bankPouchId = -1;
-		for (int pouchId : OwnedItems.RUNE_POUCHES)
-		{
-			if (bankHas.containsKey(pouchId))
-			{
-				bankPouchId = pouchId;
-				break;
-			}
-		}
-		Map<Integer, Integer> bankPouchRunes = bankPouchId == -1
-			? Map.of()
-			: source.runePouchContents();
-		boolean fairyRingStaffRequired =
-			source.varbit(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1;
-		return new TransportEligibility(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold,
-			unlocks, bank != null);
-	}
-
-	/**
-	 * Item id to quantity over the selected containers, summed across containers.
-	 */
-	private static Map<Integer, Integer> collectItems(
-		PlayerStateSource source,
-		ItemContainer bank,
-		TeleportationItem teleportationItemSetting,
-		boolean checkInventory,
-		boolean checkEquipment,
-		boolean checkBank,
-		boolean checkRunePouch)
-	{
-		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
-
-		if (checkInventory)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, source.itemContainer(InventoryID.INV));
-		}
-
-		if (checkEquipment)
-		{
-			OwnedItems.addContainer(itemsAndQuantities, source.itemContainer(InventoryID.WORN));
-		}
-
-		if (checkBank
-			&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting)))
-		{
-			OwnedItems.addContainer(itemsAndQuantities, bank);
-		}
-
-		if (checkRunePouch)
-		{
-			source.addRunePouchContents(itemsAndQuantities);
-		}
-
-		return itemsAndQuantities;
 	}
 }
