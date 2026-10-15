@@ -60,6 +60,12 @@ tasks.withType(Checkstyle).configureEach {
 
 test {
     jvmArgs = ['-Xms1g', '-Xmx8g']
+    // Each fork is a separate JVM carrying its own shared fixture statics, so
+    // forks multiply the per-JVM data load; bounding forks at half the
+    // available processors shards the otherwise serial JUnit 4 suite without
+    // letting fixture cost scale with the fork count. Forks are never recycled
+    // mid-suite — that would re-pay every per-JVM fixture load.
+    maxParallelForks = Math.max(1, Runtime.runtime.availableProcessors().intdiv(2))
 }
 
 jacoco {
