@@ -5,12 +5,8 @@ import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
-import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.ShortestPathConfig;
-import shortestpath.poh.PohService;
 import shortestpath.transport.Transport;
-import shortestpath.transport.ResourceLoader;
 import shortestpath.requirement.model.VarRequirement;
 
 // This subclass is used to provide mocked implementations of methods from the normal
@@ -24,29 +20,6 @@ import shortestpath.requirement.model.VarRequirement;
 // Other methods are delegated to a normal PathfinderConfig.
 public class TestPathfinderConfig extends PathfinderConfig
 {
-	/**
-	 * Initialization-on-Demand Holder: loads the five resource-heavy fields exactly once
-	 * per JVM, so every TestPathfinderConfig instance shares the same pre-parsed data.
-	 */
-	private static final class ResourceHolder
-	{
-		static final SplitFlagMap MAP_DATA;
-		static final Map<Integer, Set<Transport>> ALL_TRANSPORTS;
-		static final Map<String, Set<Integer>> ALL_DESTINATIONS;
-		static final Map<String, Set<Integer>> FILTERED_DESTINATIONS;
-		static final Map<Integer, DestinationRequirements> BANK_REQUIREMENTS;
-
-		static
-		{
-			MAP_DATA = SplitFlagMap.fromResources();
-			ALL_TRANSPORTS = ResourceLoader.transports();
-			PohService.remapPohDestinations(ALL_TRANSPORTS);
-			ALL_DESTINATIONS = ResourceLoader.destinations();
-			FILTERED_DESTINATIONS = PathfinderConfig.filterDestinations(ALL_DESTINATIONS);
-			BANK_REQUIREMENTS = ResourceLoader.bankRequirements();
-		}
-	}
-
 	private final QuestState questState;
 	private final boolean bypassVarbitChecks;
 	private final boolean bypassVarPlayerChecks;
@@ -60,11 +33,11 @@ public class TestPathfinderConfig extends PathfinderConfig
 		boolean bypassVarbitChecks, boolean bypassVarPlayerChecks)
 	{
 		super(client, config,
-			ResourceHolder.MAP_DATA,
-			ResourceHolder.ALL_TRANSPORTS,
-			ResourceHolder.ALL_DESTINATIONS,
-			ResourceHolder.FILTERED_DESTINATIONS,
-			ResourceHolder.BANK_REQUIREMENTS);
+			TestWorldData.map(),
+			TestWorldData.transports(),
+			TestWorldData.destinations(),
+			TestWorldData.filteredDestinations(),
+			TestWorldData.bankRequirements());
 		this.questState = questState;
 		this.bypassVarbitChecks = bypassVarbitChecks;
 		this.bypassVarPlayerChecks = bypassVarPlayerChecks;
