@@ -10,7 +10,7 @@ public class VisitedTilesTest
 {
 	private static CollisionMap collisionMap()
 	{
-		return new CollisionMap(SplitFlagMap.fromResources());
+		return new CollisionMap(TestWorldData.map());
 	}
 
 	@Test
