@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import net.runelite.api.Quest;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
+import shortestpath.requirement.TeleportRestriction;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.VarRequirement;
@@ -60,6 +62,7 @@ public final class ResourceLoader
 	private static final String DELIM_PATH = "/";
 	private static final String DELIM = " ";
 	private static final String LEAGUE_REGIONS_PATH = "/leagues/regions.tsv";
+	private static final String FAMILY_RESOURCE = "/transports/teleport_restrictions.tsv";
 
 	private ResourceLoader()
 	{
@@ -500,6 +503,128 @@ public final class ResourceLoader
 			result.put(regionId, region);
 		}
 		return result;
+	}
+
+	/**
+	 * Loads the bundled teleport-restriction family map from
+	 * {@code /transports/teleport_restrictions.tsv}. A missing resource
+	 * degrades to an empty list — panel construction must not crash on
+	 * packaging gaps; an {@link IOException} is wrapped in
+	 * {@link RuntimeException}.
+	 */
+	public static List<TeleportRestriction.Family> families()
+	{
+		final String contents;
+		try
+		{
+			InputStream stream = ResourceLoader.class.getResourceAsStream(FAMILY_RESOURCE);
+			if (stream == null)
+			{
+				log.warn("Teleport restriction family resource {} is missing — degrading to no rows",
+					FAMILY_RESOURCE);
+				return Collections.emptyList();
+			}
+			contents = new String(Util.readAllBytes(stream), StandardCharsets.UTF_8);
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+		return parseFamilies(contents);
+	}
+
+	/**
+	 * Content seam for the teleport-restriction row idiom: positional
+	 * keep-arity field splitting with '#' comment rows skipped, malformed
+	 * rows warn-and-skip, and an absent or malformed memberLabels column
+	 * degrades to an empty map for that family. Kept verbatim from the
+	 * incumbent reader. Package-private for tests.
+	 */
+	static List<TeleportRestriction.Family> parseFamilies(String contents)
+	{
+		List<TeleportRestriction.Family> families = new ArrayList<>();
+		for (String line : contents.split("\\R"))
+		{
+			if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
+			{
+				continue;
+			}
+
+			String[] fields = line.split(DELIM_COLUMN, -1);
+			if (fields.length < 3)
+			{
+				log.warn("Skipping malformed teleport_restrictions row ({} columns): {}", fields.length, line);
+				continue;
+			}
+
+			String name = fields[0].trim();
+			if (name.isEmpty())
+			{
+				log.warn("Skipping teleport_restrictions row with empty family name");
+				continue;
+			}
+
+			try
+			{
+				int displayItemId = Integer.parseInt(fields[1].trim());
+				Set<Integer> memberItemIds = parseIdSet(fields[2]);
+				Map<Integer, String> memberLabels =
+					fields.length > 3 ? parseMemberLabels(fields[3]) : Collections.emptyMap();
+				families.add(new TeleportRestriction.Family(name, displayItemId,
+					Collections.unmodifiableSet(memberItemIds),
+					Collections.unmodifiableMap(memberLabels)));
+			}
+			catch (NumberFormatException e)
+			{
+				log.warn("Skipping malformed teleport_restrictions row: {}", line);
+			}
+		}
+
+		return Collections.unmodifiableList(families);
+	}
+
+	private static Set<Integer> parseIdSet(String column)
+	{
+		Set<Integer> ids = new LinkedHashSet<>();
+		for (String token : column.split(","))
+		{
+			String trimmed = token.trim();
+			if (!trimmed.isEmpty())
+			{
+				ids.add(Integer.parseInt(trimmed));
+			}
+		}
+		return ids;
+	}
+
+	private static Map<Integer, String> parseMemberLabels(String column)
+	{
+		Map<Integer, String> labels = new LinkedHashMap<>();
+		for (String entry : column.split(","))
+		{
+			String trimmed = entry.trim();
+			if (trimmed.isEmpty())
+			{
+				continue;
+			}
+
+			int eq = trimmed.indexOf('=');
+			if (eq < 0)
+			{
+				log.warn("Skipping malformed memberLabels entry: {}", trimmed);
+				continue;
+			}
+
+			try
+			{
+				labels.put(Integer.parseInt(trimmed.substring(0, eq)), trimmed.substring(eq + 1));
+			}
+			catch (NumberFormatException e)
+			{
+				log.warn("Skipping malformed memberLabels entry: {}", trimmed);
+			}
+		}
+		return labels;
 	}
 
 	/**

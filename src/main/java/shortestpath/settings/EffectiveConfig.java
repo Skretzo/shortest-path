@@ -542,8 +542,7 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public int costQuetzalWhistle()
 	{
-		Object value = overrides.get(ConfigKey.COST_QUETZAL_WHISTLE.getKey());
-		return value instanceof Integer ? (int) value : base.costQuetzalWhistle();
+		return base.costQuetzalWhistle();
 	}
 
 	@Override
@@ -798,6 +797,19 @@ public final class EffectiveConfig implements ShortestPathConfig
 	public void setBuiltTeleportationPortalsPoh(String content)
 	{
 		base.setBuiltTeleportationPortalsPoh(content);
+	}
+
+	@Override
+	public String blockedTeleportItems()
+	{
+		return base.blockedTeleportItems();
+	}
+
+	@Override
+	public boolean unlockBalloonLogBasket()
+	{
+		Object value = overrides.get(ConfigKey.UNLOCK_BALLOON_LOG_BASKET.getKey());
+		return value instanceof Boolean ? (boolean) value : base.unlockBalloonLogBasket();
 	}
 
 }

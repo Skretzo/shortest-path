@@ -23,6 +23,7 @@ import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -31,11 +32,15 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.events.RuneScapeProfileChanged;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
 import shortestpath.api.MenuVerbs;
 import shortestpath.api.PluginMessageHandler;
 import shortestpath.items.ItemStateService;
@@ -128,6 +133,12 @@ public class ShortestPathPlugin extends Plugin
 	private PluginMessageHandler apiHandler;
 	@Inject
 	private MenuVerbs menuVerbs;
+	@Inject
+	private ClientToolbar clientToolbar;
+	@Inject
+	private ItemManager itemManager;
+	private ShortestPathPanel panel;
+	private NavigationButton navButton;
 	private PathfinderConfig pathfinderConfig;
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
@@ -203,6 +214,15 @@ public class ShortestPathPlugin extends Plugin
 		keyManager.registerKeyListener(clearPathKeylistener);
 		pohService.loadFromProfile();
 		scheduler.prepareBackend();
+
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager);
+		navButton = NavigationButton.builder()
+			.tooltip("Shortest Path")
+			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/panel_icon.png"))
+			.priority(5)
+			.panel(panel)
+			.build();
+		clientToolbar.addNavigation(navButton);
 	}
 
 	@Override
@@ -220,6 +240,20 @@ public class ShortestPathPlugin extends Plugin
 		scheduler.shutdown();
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
+
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+		}
+
+		if (panel != null)
+		{
+			// The settings service is a singleton — release this panel's
+			// listener registrations or they accumulate across enable cycles.
+			panel.dispose();
+			panel = null;
+		}
 
 		// Flush pending observations so the last tick's sample is not lost.
 		spiritTrees.persistIfDirty();
@@ -260,6 +294,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		Set<Effect> effects = change.getEffects();
+
 		if (effects.contains(Effect.SIDE_EFFECT_DEBUG_OVERLAY))
 		{
 			if (settings.lifecycle().drawDebugPanel())
@@ -393,7 +428,12 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		itemState.onContainerChanged(event.getContainerId(), event.getItemContainer());
+		int id = event.getContainerId();
+		itemState.onContainerChanged(id, event.getItemContainer());
+		if (panel != null && (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN))
+		{
+			panel.onItemContainersChanged();
+		}
 	}
 
 	@Subscribe
