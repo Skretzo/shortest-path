@@ -17,6 +17,7 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
@@ -68,7 +69,8 @@ public class PathMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!settings.display().drawMinimap() || scheduler.getActiveSearch() == null)
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (!settings.display().drawMinimap() || search == null)
 		{
 			return null;
 		}
@@ -84,7 +86,7 @@ public class PathMinimapOverlay extends Overlay
 		}
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		java.util.List<PathStep> pathPoints = scheduler.getActiveSearch().getPath();
+		java.util.List<PathStep> pathPoints = search.getPath();
 		// On a boat the path sails the boat's headings, with a point a few tiles apart at the end of each move: half-size
 		// blue dots
 		boolean sailing = renderState.isSailing();
@@ -100,7 +102,7 @@ public class PathMinimapOverlay extends Overlay
 
 			drawOnMinimap(graphics, pathPoint, pathColor, sailing ? 0.5 : 1.0);
 		}
-		for (int target : scheduler.getActiveSearch().getTargets().points())
+		for (int target : search.getTargets().points())
 		{
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{
