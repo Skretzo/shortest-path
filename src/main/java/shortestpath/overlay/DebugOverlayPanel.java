@@ -13,7 +13,6 @@ import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 import shortestpath.scheduler.DebugState;
 import shortestpath.scheduler.PathScheduler;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
@@ -32,10 +31,9 @@ public class DebugOverlayPanel extends OverlayPanel
 	private final PathScheduler scheduler;
 
 	@Inject
-	public DebugOverlayPanel(ShortestPathPlugin plugin, Client client, DebugState debugState,
-		PathScheduler scheduler)
+	public DebugOverlayPanel(Client client, DebugState debugState, PathScheduler scheduler)
 	{
-		super(plugin);
+		super();
 		this.client = client;
 		this.debugState = debugState;
 		this.scheduler = scheduler;
