@@ -21,7 +21,7 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
-import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.transport.TransportType;
 
 /**

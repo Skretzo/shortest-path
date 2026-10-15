@@ -40,10 +40,10 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
-import shortestpath.requirement.model.JewelleryBoxTier;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
-import shortestpath.ShortestPathPlugin;
+import shortestpath.poh.PohService;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -53,8 +53,8 @@ import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.PohMountedItem;
-import shortestpath.transport.PohNexusPortal;
+import shortestpath.poh.PohMountedItem;
+import shortestpath.poh.PohNexusPortal;
 import shortestpath.requirement.model.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
@@ -3061,8 +3061,8 @@ public class PathfinderTest
 					// PathfinderConfig unless usePoh is enabled, and the POH ring
 					// destination is unreachable by walking, so a picked sample would
 					// produce an arbitrarily long exhausted-search path instead of 2.
-					if (ShortestPathPlugin.isInsidePoh(originX, originY)
-						|| ShortestPathPlugin.isInsidePoh(destX, destY))
+					if (PohService.isInsidePoh(originX, originY)
+						|| PohService.isInsidePoh(destX, destY))
 					{
 						continue;
 					}
