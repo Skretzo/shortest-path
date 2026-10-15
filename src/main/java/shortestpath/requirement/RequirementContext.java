@@ -4,7 +4,6 @@ import java.util.*;
 import lombok.Getter;
 import net.runelite.api.*;
 import net.runelite.api.gameval.*;
-import shortestpath.items.ItemStateService;
 import shortestpath.leagues.*;
 import shortestpath.requirement.model.*;
 import shortestpath.transport.Transport;
@@ -157,7 +156,7 @@ public final class RequirementContext
 
 		int currentMaxQuestPoints = source.maximumQuestPoints();
 
-		TransportEligibility eligibilitySnapshot = ItemStateService.collectEligibility(source, bank,
+		TransportEligibility eligibilitySnapshot = TransportEligibility.collect(source, bank,
 			policy.teleportationItemSetting(), policy.currencyThreshold(), policy.includeBankPath(),
 			unlocks, balloonLogBasketDestinations);
 
