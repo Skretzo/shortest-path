@@ -403,15 +403,6 @@ public class ShortestPathPlugin extends Plugin
 		sailing.onVarbitChanged(event.getVarbitId());
 	}
 
-	/**
-	 * The label naming the items the displayed route's target needs but the player was not found to
-	 * hold, or {@code null} when nothing is missing. Built once per search, on the client thread.
-	 */
-	public String getMissingTargetItemsText()
-	{
-		return annotator.getMissingTargetItemsText(scheduler.getActiveSearch());
-	}
-
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
