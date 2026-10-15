@@ -16,26 +16,30 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.PrimitiveIntList;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.scheduler.PathRenderState;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
+import shortestpath.widgets.WidgetGeometry;
 
 public class PathMinimapOverlay extends Overlay
 {
 	private final Client client;
-	private final ShortestPathPlugin plugin;
 	private final Settings settings;
 	private final PathRenderState renderState;
+	private final PathScheduler scheduler;
+	private final WidgetGeometry geometry;
 
 	@Inject
-	private PathMinimapOverlay(Client client, ShortestPathPlugin plugin, Settings settings, PathRenderState renderState)
+	private PathMinimapOverlay(Client client, Settings settings, PathRenderState renderState,
+		PathScheduler scheduler, WidgetGeometry geometry)
 	{
 		this.client = client;
-		this.plugin = plugin;
 		this.settings = settings;
 		this.renderState = renderState;
+		this.scheduler = scheduler;
+		this.geometry = geometry;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
@@ -64,12 +68,12 @@ public class PathMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!settings.display().drawMinimap() || plugin.getActiveSearch() == null)
+		if (!settings.display().drawMinimap() || scheduler.getActiveSearch() == null)
 		{
 			return null;
 		}
 
-		Shape minimapClipArea = plugin.getMinimapClipArea();
+		Shape minimapClipArea = geometry.getMinimapClipArea();
 		if (minimapClipArea == null)
 		{
 			return null;
@@ -80,12 +84,12 @@ public class PathMinimapOverlay extends Overlay
 		}
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		java.util.List<PathStep> pathPoints = plugin.getActiveSearch().getPath();
+		java.util.List<PathStep> pathPoints = scheduler.getActiveSearch().getPath();
 		// On a boat the path sails the boat's headings, with a point a few tiles apart at the end of each move: half-size
 		// blue dots
 		boolean sailing = renderState.isSailing();
 		Color pathColor = sailing && !renderState.isPathUnreachable()
-			? PathRenderState.SAILING_PATH_COLOUR : plugin.getPathColor();
+			? PathRenderState.SAILING_PATH_COLOUR : renderState.getPathColor();
 		for (PathStep point : pathPoints)
 		{
 			int pathPoint = point.getPackedPosition();
@@ -96,7 +100,7 @@ public class PathMinimapOverlay extends Overlay
 
 			drawOnMinimap(graphics, pathPoint, pathColor, sailing ? 0.5 : 1.0);
 		}
-		for (int target : plugin.getActiveSearch().getTargets().points())
+		for (int target : scheduler.getActiveSearch().getTargets().points())
 		{
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{
