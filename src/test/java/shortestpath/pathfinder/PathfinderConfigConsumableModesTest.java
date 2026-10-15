@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
+import shortestpath.items.ItemStateService;
 import shortestpath.settings.TeleportationItem;
 
 import static org.junit.Assert.assertFalse;
@@ -161,13 +162,16 @@ public class PathfinderConfigConsumableModesTest
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-		pathfinderConfig.bank = bank;
+		ItemStateService itemState = ItemStateService.forTesting();
+		pathfinderConfig.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 
 	private boolean teleportUsable(String displayInfo, boolean bankVisited)
 	{
-		return Arrays.stream(pathfinderConfig.getUsableTeleports(bankVisited))
+		return Arrays.stream(pathfinderConfig.getUsableTeleports(
+				bankVisited ? BankVisitState.BANKED : BankVisitState.CARRIED))
 			.anyMatch(t -> displayInfo.equals(t.getDisplayInfo()));
 	}
 }
