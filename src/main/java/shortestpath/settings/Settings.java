@@ -441,12 +441,6 @@ public class Settings
 		return value instanceof Integer ? (int) value : base;
 	}
 
-	public Color coerceColor(String key, Color base)
-	{
-		Object value = published.overrides.get(key);
-		return value instanceof Color ? (Color) value : base;
-	}
-
 	public TeleportationItem coerceTeleportationItem(String key, TeleportationItem base)
 	{
 		return coerceTeleportationItem(key, base, published.overrides);
@@ -456,21 +450,6 @@ public class Settings
 		Map<String, Object> overrides)
 	{
 		return coerceStringEnum(key, TeleportationItem::fromType, base, overrides);
-	}
-
-	public JewelleryBoxTier coerceJewelleryBoxTier(String key, JewelleryBoxTier base)
-	{
-		return coerceStringEnum(key, JewelleryBoxTier::fromType, base, published.overrides);
-	}
-
-	public TileCounter coerceTileCounter(String key, TileCounter base)
-	{
-		return coerceStringEnum(key, TileCounter::fromType, base, published.overrides);
-	}
-
-	public TileStyle coerceTileStyle(String key, TileStyle base)
-	{
-		return coerceStringEnum(key, TileStyle::fromType, base, published.overrides);
 	}
 
 	private <T> T coerceStringEnum(String key, Function<String, T> fromType, T base,
