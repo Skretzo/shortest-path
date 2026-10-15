@@ -151,19 +151,25 @@ final class PluginApiHarness implements AutoCloseable
 		set("clientThread", clientThread);
 		set("config", settings);
 		set("settings", shortestpath.settings.Settings.wrap(settings));
-		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting(client);
-		pathfinderConfig.setItemStateService(itemState);
-		set("itemState", itemState);
 		set("pohService", shortestpath.poh.PohService.forTesting());
 		set("eventBus", eventBus);
 		set("pathfinderConfig", pathfinderConfig);
-		// The harness builds the plugin without DI, so the scheduler and its attach-time
-		// bindings are seeded the same way the shell's startUp wires them. The world map
-		// point manager moved into the scheduler with the marker machinery.
+		// The harness builds the plugin without DI, so the scheduler, the refresh
+		// coordinator and the attach-time bindings are seeded the same way the
+		// shell's startUp wires them. The world map point manager moved into the
+		// scheduler with the marker machinery, and the item-state service declares
+		// its change facts straight to the coordinator.
 		scheduler = new shortestpath.scheduler.PathScheduler(client, clientThread, settings,
 			mock(WorldMapPointManager.class), new shortestpath.scheduler.DebugState());
+		shortestpath.scheduler.RefreshCoordinator coordinator =
+			new shortestpath.scheduler.RefreshCoordinator(scheduler, settings);
+		shortestpath.items.ItemStateService itemState =
+			new shortestpath.items.ItemStateService(client, coordinator);
+		pathfinderConfig.setItemStateService(itemState);
+		set("itemState", itemState);
 		scheduler.attach(pathfinderConfig, itemState, plugin);
 		set("scheduler", scheduler);
+		set("coordinator", coordinator);
 		set("aStarRoutingStatic", ASTAR_STATIC);
 	}
 
