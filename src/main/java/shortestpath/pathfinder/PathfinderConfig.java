@@ -547,8 +547,9 @@ public class PathfinderConfig
 				}
 			}
 			kept = targets.restrictTo(valid);
-			// If we ended up with no valid locations we re-include the filtered locations
-			revive = kept.isEmpty();
+			// If every target was filtered out we re-include the filtered ones, but an
+			// explicitly empty input has nothing to keep and revives nothing.
+			revive = !targets.isEmpty() && kept.isEmpty();
 		}
 		if (revive)
 		{

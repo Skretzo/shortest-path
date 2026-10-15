@@ -187,7 +187,9 @@ final class PluginMessageTargets
 			{
 				for (int id : branch.getItemIds())
 				{
-					alternatives.put(id, branch.getQuantity());
+					// A group may repeat an id at several quantities; the alternatives are
+					// OR-ed, so the smallest quantity is the most permissive reading.
+					alternatives.merge(id, branch.getQuantity(), Math::min);
 				}
 			}
 			groups.add(alternatives);
