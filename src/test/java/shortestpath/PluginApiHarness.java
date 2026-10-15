@@ -60,6 +60,7 @@ final class PluginApiHarness implements AutoCloseable
 
 	final ShortestPathPlugin plugin = new ShortestPathPlugin();
 	private shortestpath.scheduler.PathScheduler scheduler;
+	private shortestpath.presentation.PathAnnotator annotator;
 	final Settings settings = new Settings();
 	private final Client client = mock(Client.class);
 	private final ItemContainer inventory = mock(ItemContainer.class);
@@ -162,7 +163,7 @@ final class PluginApiHarness implements AutoCloseable
 		pathfinderConfig.setSailingService(sailing);
 		set("itemState", itemState);
 		set("sailing", sailing);
-		shortestpath.presentation.PathAnnotator annotator =
+		annotator =
 			shortestpath.presentation.PathAnnotator.forTesting(client, pohService, itemState);
 		annotator.attach(pathfinderConfig);
 		set("annotator", annotator);
@@ -369,7 +370,7 @@ final class PluginApiHarness implements AutoCloseable
 	/** The missing-items label the displayed path draws on the player's tile, or null. */
 	String missingItemsLabel()
 	{
-		return plugin.getMissingTargetItemsText();
+		return annotator.getMissingTargetItemsText(scheduler.getActiveSearch());
 	}
 
 	/** The search currently displayed by the plugin, as the scheduler reports it. */
