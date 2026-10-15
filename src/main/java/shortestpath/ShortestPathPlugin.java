@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
 import java.util.Set;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -81,7 +80,6 @@ public class ShortestPathPlugin extends Plugin
 
 	@Inject
 	private Client client;
-	@Getter
 	@Inject
 	private ClientThread clientThread;
 	@Inject
