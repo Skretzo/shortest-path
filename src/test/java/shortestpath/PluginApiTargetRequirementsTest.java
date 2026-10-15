@@ -25,6 +25,7 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TargetStatus;
+import shortestpath.transport.BankPickupRequirements.BankPickupResult;
 
 /**
  * The public plugin-message API for item requirements on targets ({@code path}, {@code query},
@@ -463,6 +464,64 @@ public class PluginApiTargetRequirementsTest
 		}
 	}
 
+	@Test
+	public void pathMessageWithoutStartOrTargetIsIgnored()
+	{
+		try (PluginApiHarness api = new PluginApiHarness())
+		{
+			ActiveSearch shown = api.path(START, NEAR);
+			api.send("path", new HashMap<>());
+			assertSame(shown, api.plugin.getActiveSearch());
+		}
+	}
+
+	@Test
+	public void blockedTargetWithUnfoundItemsStillReportsTheTarget()
+	{
+		try (PluginApiHarness api = new PluginApiHarness())
+		{
+			Map<String, Object> result = api.query(START, target(BLOCKED, ItemID.SPADE));
+			assertEquals(true, result.get("reached"));
+			assertEquals("UNKNOWN", result.get("targetStatus"));
+			assertEquals(List.of(List.of(ItemID.SPADE)), result.get("missingItems"));
+			assertEquals(false, result.get("bankVisited"));
+			assertTrue(lastStep(result).distanceTo(BLOCKED) <= 2);
+		}
+	}
+
+	// The Soul Wars lobby bank tile routes through in bankedItemsRouteThroughABankFirst use.
+	private static final WorldPoint SOUL_WARS_BANK = new WorldPoint(2020, 5931, 0);
+
+	@Test
+	public void bankTileTargetReportsTheBankVisit()
+	{
+		try (PluginApiHarness api = new PluginApiHarness())
+		{
+			api.bank(ItemID.SPADE, 1);
+			Map<String, Object> result = api.query(START, target(SOUL_WARS_BANK, ItemID.SPADE));
+			assertEquals(true, result.get("reached"));
+			assertEquals("BANK", result.get("targetStatus"));
+			assertEquals("the route ends inside the bank", true, result.get("bankVisited"));
+			assertEquals(SOUL_WARS_BANK, lastStep(result));
+		}
+	}
+
+	@Test
+	public void bankTileTargetListsThePickupAtTheFinalStep()
+	{
+		try (PluginApiHarness api = new PluginApiHarness())
+		{
+			api.bank(ItemID.SPADE, 1);
+			ActiveSearch search = api.path(START, target(SOUL_WARS_BANK, ItemID.SPADE));
+			List<PathStep> path = search.getPath();
+			assertTrue(last(path).isBankVisited());
+			assertEquals(SOUL_WARS_BANK, WorldPointUtil.unpackWorldPoint(last(path).getPackedPosition()));
+			BankPickupResult pickup = api.plugin.getBankPickup(path, path.size() - 1);
+			assertNotNull(pickup);
+			assertEquals(List.of("1 Item " + ItemID.SPADE), pickup.phrases);
+		}
+	}
+
 	// ---- The displayed path ----
 
 	@Test
@@ -480,6 +539,78 @@ public class PluginApiTargetRequirementsTest
 			assertEquals(WorldPointUtil.packWorldPoint(NEAR), result.getArrival().getTarget().getPoint());
 			assertNull("nothing is missing", api.missingItemsLabel());
 		}
+	}
+
+	@Test
+	public void displayedPathListsTargetItemsAtTheBankStep()
+	{
+		try (PluginApiHarness api = new PluginApiHarness())
+		{
+			api.bank(ItemID.SPADE, 1);
+			ActiveSearch search = api.path(START, target(NEAR, ItemID.SPADE));
+			List<PathStep> path = search.getPath();
+			int lastUnbanked = -1;
+			for (int i = 0; i < path.size(); i++)
+			{
+				if (!path.get(i).isBankVisited())
+				{
+					lastUnbanked = i;
+				}
+			}
+			assertTrue("the route visits a bank", lastUnbanked >= 0 && lastUnbanked < path.size() - 1);
+
+			String pickup = "1 Item " + ItemID.SPADE;
+			BankPickupResult atBank = api.plugin.getBankPickup(path, lastUnbanked);
+			assertNotNull(atBank);
+			assertEquals(List.of(pickup), atBank.phrases);
+			assertEquals(Set.of(ItemID.SPADE), atBank.bankItemIds);
+
+			assertTrue("the target step itself lists no pickup",
+				api.plugin.getBankPickup(path, path.size() - 1).phrases.isEmpty());
+		}
+	}
+
+	@Test
+	public void bankStepListsTransportAndTargetPickupsTogether()
+	{
+		try (PluginApiHarness api = new PluginApiHarness())
+		{
+			api.settings.teleportationItems = TeleportationItem.INVENTORY_AND_BANK;
+			api.bank(ItemID.SPADE, 1, ItemID.RING_OF_DUELING_8, 1);
+			ActiveSearch search = api.path(START, target(EMIRS_ARENA, ItemID.SPADE));
+			assertTrue("the route uses the banked ring",
+				transportsUsed(search).stream().anyMatch(t -> t.contains("Ring of dueling")));
+
+			List<PathStep> path = search.getPath();
+			int lastUnbanked = -1;
+			for (int i = 0; i < path.size(); i++)
+			{
+				if (!path.get(i).isBankVisited())
+				{
+					lastUnbanked = i;
+				}
+			}
+			assertTrue("the route visits a bank", lastUnbanked >= 0 && lastUnbanked < path.size() - 1);
+
+			List<String> pickups = api.plugin.getBankPickup(path, lastUnbanked).phrases;
+			assertTrue("the spade is listed: " + pickups,
+				pickups.contains("1 Item " + ItemID.SPADE));
+			assertTrue("the ring is listed: " + pickups,
+				pickups.stream().anyMatch(p -> p.contains("Item " + ItemID.RING_OF_DUELING_8)));
+		}
+	}
+
+	private static List<String> transportsUsed(ActiveSearch search)
+	{
+		List<String> used = new ArrayList<>();
+		for (PathStep step : search.getPath())
+		{
+			if (step.getTransport() != null)
+			{
+				used.add(String.valueOf(step.getTransport().getDisplayInfo()));
+			}
+		}
+		return used;
 	}
 
 	@Test

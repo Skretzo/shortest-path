@@ -142,12 +142,22 @@ public class NodeGraphTest
 		assertFalse(graph.isAbstract(bankVisit));
 		assertTrue(graph.bankVisited(bankVisit));
 
-		// A bank visit is a state change, not a movement step: the tile the player banked
-		// at is already in the path as the preceding step.
+		// A bank visit mid-path is a state change, not a movement step: it is elided because
+		// the banked flag shows on every step after it. As the final node it is still emitted —
+		// dropping it would lose the path's banked ending.
 		var steps = graph.getPathSteps(bankVisit);
-		assertEquals(1, steps.size());
+		assertEquals(2, steps.size());
 		assertEquals(bankTile, steps.get(0).getPackedPosition());
-		assertNull(steps.get(0).getTransport());
+		assertFalse(steps.get(0).isBankVisited());
+		assertEquals(bankTile, steps.get(1).getPackedPosition());
+		assertTrue(steps.get(1).isBankVisited());
+		assertNull(steps.get(1).getTransport());
+
+		int after = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), bankVisit, true);
+		steps = graph.getPathSteps(after);
+		assertEquals(2, steps.size());
+		assertEquals(bankTile, steps.get(0).getPackedPosition());
+		assertTrue(steps.get(1).isBankVisited());
 	}
 
 	@Test
