@@ -43,6 +43,7 @@ import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
+import shortestpath.settings.Settings;
 
 public class PathTileOverlay extends Overlay
 {
@@ -54,15 +55,17 @@ public class PathTileOverlay extends Overlay
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private final ItemManager itemManager;
+	private final Settings settings;
 	private int playerTileLabelOffset = 0;
 	private boolean teleportPulseDrawn = false;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.itemManager = itemManager;
+		this.settings = settings;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -132,7 +135,7 @@ public class PathTileOverlay extends Overlay
 
 			if (drawStart)
 			{
-				drawTile(graphics, a, plugin.colourTransports, -1, true);
+				drawTile(graphics, a, settings.display().colourTransports(), -1, true);
 			}
 
 			graphics.setColor(Color.WHITE);
@@ -171,7 +174,7 @@ public class PathTileOverlay extends Overlay
 
 				if (map.isBlocked(x, y, z))
 				{
-					graphics.setColor(plugin.colourCollisionMap);
+					graphics.setColor(settings.display().colourCollisionMap());
 					graphics.fill(tilePolygon);
 				}
 				if (!s.isEmpty() && !s.equals("nsew"))
@@ -192,23 +195,23 @@ public class PathTileOverlay extends Overlay
 		playerTileLabelOffset = 0;
 		teleportPulseDrawn = false;
 
-		if (plugin.drawTransports)
+		if (settings.display().drawTransports())
 		{
 			renderTransports(graphics);
 		}
 
-		if (plugin.drawCollisionMap)
+		if (settings.display().drawCollisionMap())
 		{
 			renderCollisionMap(graphics);
 		}
 
-		if (plugin.drawTiles && plugin.getActiveSearch() != null && plugin.getActiveSearch().getPath() != null)
+		if (settings.display().drawTiles() && plugin.getActiveSearch() != null && plugin.getActiveSearch().getPath() != null)
 		{
 			Color colorCalculating = new Color(
-				plugin.colourPathCalculating.getRed(),
-				plugin.colourPathCalculating.getGreen(),
-				plugin.colourPathCalculating.getBlue(),
-				plugin.colourPathCalculating.getAlpha() / 2);
+				settings.display().colourPathCalculating().getRed(),
+				settings.display().colourPathCalculating().getGreen(),
+				settings.display().colourPathCalculating().getBlue(),
+				settings.display().colourPathCalculating().getAlpha() / 2);
 			Color pathColor = plugin.getPathColor();
 			Color color = new Color(
 				pathColor.getRed(),
@@ -231,9 +234,9 @@ public class PathTileOverlay extends Overlay
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
-			else if (TileStyle.LINES.equals(plugin.pathStyle) || TileStyle.ARROW_LINE.equals(plugin.pathStyle))
+			else if (TileStyle.LINES.equals(settings.display().pathStyle()) || TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
 			{
-				boolean arrows = TileStyle.ARROW_LINE.equals(plugin.pathStyle);
+				boolean arrows = TileStyle.ARROW_LINE.equals(settings.display().pathStyle());
 				for (int i = 1; i < path.size(); i++)
 				{
 					PathStep currentStep = path.get(i - 1);
@@ -247,7 +250,7 @@ public class PathTileOverlay extends Overlay
 					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 				}
 			}
-			else if (TileStyle.TURN_MARKERS.equals(plugin.pathStyle))
+			else if (TileStyle.TURN_MARKERS.equals(settings.display().pathStyle()))
 			{
 				for (int i = 0; i < path.size(); i++)
 				{
@@ -270,7 +273,7 @@ public class PathTileOverlay extends Overlay
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
-			else if (TileStyle.TRACER.equals(plugin.pathStyle))
+			else if (TileStyle.TRACER.equals(settings.display().pathStyle()))
 			{
 				// Faint polyline under the moving marker so the full route stays readable
 				// without looking identical to LINES.
@@ -318,7 +321,7 @@ public class PathTileOverlay extends Overlay
 				}
 				drawUnreachedTargets(graphics, path, colorCalculating, true);
 			}
-			else if (TileStyle.SPRITE_MARKERS.equals(plugin.pathStyle))
+			else if (TileStyle.SPRITE_MARKERS.equals(settings.display().pathStyle()))
 			{
 				for (int i = 0; i < path.size(); i++)
 				{
@@ -346,7 +349,7 @@ public class PathTileOverlay extends Overlay
 									graphics.drawImage(sprite, p.getX() - dw / 2, p.getY() - dh / 2, dw, dh, null);
 									int radius = Math.max(dw, dh) / 2 + 3;
 									Color previousColour = graphics.getColor();
-									graphics.setColor(plugin.colourText);
+									graphics.setColor(settings.display().colourText());
 									graphics.drawOval(p.getX() - radius, p.getY() - radius, radius * 2, radius * 2);
 									graphics.setColor(previousColour);
 								}
@@ -366,7 +369,7 @@ public class PathTileOverlay extends Overlay
 			}
 			else
 			{
-				boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
+				boolean showTiles = TileStyle.TILES.equals(settings.display().pathStyle());
 				for (int i = 0; i < path.size(); i++)
 				{
 					// Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
@@ -384,9 +387,9 @@ public class PathTileOverlay extends Overlay
 				drawUnreachedTargets(graphics, path, colorCalculating, showTiles);
 			}
 
-			if (plugin.isPathUnreachable() && plugin.showUnreachableText)
+			if (plugin.isPathUnreachable() && settings.display().showUnreachableText())
 			{
-				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
+				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
 			}
 			String missingItems = plugin.getMissingTargetItemsText();
 			if (missingItems != null)
@@ -397,7 +400,7 @@ public class PathTileOverlay extends Overlay
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
-		if (plugin.drawTiles && plugin.drawClickPoints && plugin.getActiveSearch() instanceof AStarPathfinder)
+		if (settings.display().drawTiles() && settings.display().drawClickPoints() && plugin.getActiveSearch() instanceof AStarPathfinder)
 		{
 			AStarPathfinder aStar = (AStarPathfinder) plugin.getActiveSearch();
 			if (aStar.isDone() && !aStar.isShowingProvisionalPath())
@@ -527,7 +530,7 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 		Color previousColour = graphics.getColor();
-		graphics.setColor(plugin.colourText);
+		graphics.setColor(settings.display().colourText());
 		if (index + 1 < path.size())
 		{
 			Point next = tileCenter(path.get(index + 1).getPackedPosition());
@@ -639,15 +642,15 @@ public class PathTileOverlay extends Overlay
 
 	private void drawCounter(Graphics2D graphics, double x, double y, int counter)
 	{
-		if (counter >= 0 && !TileCounter.DISABLED.equals(plugin.showTileCounter))
+		if (counter >= 0 && !TileCounter.DISABLED.equals(settings.display().showTileCounter()))
 		{
-			int n = plugin.tileCounterStep > 0 ? plugin.tileCounterStep : 1;
+			int n = settings.display().tileCounterStep() > 0 ? settings.display().tileCounterStep() : 1;
 			int s = plugin.getActiveSearch().getPath().size();
 			if ((counter % n != 0) && (s != (counter + 1)))
 			{
 				return;
 			}
-			if (TileCounter.REMAINING.equals(plugin.showTileCounter))
+			if (TileCounter.REMAINING.equals(settings.display().showTileCounter()))
 			{
 				counter = s - counter - 1;
 			}
@@ -656,7 +659,7 @@ public class PathTileOverlay extends Overlay
 				return;
 			}
 			String counterText = Integer.toString(counter);
-			graphics.setColor(plugin.colourText);
+			graphics.setColor(settings.display().colourText());
 			graphics.drawString(
 				counterText,
 				(int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
@@ -723,7 +726,7 @@ public class PathTileOverlay extends Overlay
 
 			final long period = 1400L;
 			final int rings = 2;
-			final Color base = plugin.colourTeleportPulse;
+			final Color base = settings.display().colourTeleportPulse();
 			final Color previousColour = graphics.getColor();
 			final Stroke previousStroke = graphics.getStroke();
 			graphics.setStroke(new BasicStroke(2.2f));
@@ -770,7 +773,7 @@ public class PathTileOverlay extends Overlay
 		int y = (int) (point.getY() - height) - verticalOffset;
 		graphics.setColor(Color.BLACK);
 		graphics.drawString(text, x + 1, y + 1);
-		graphics.setColor(plugin.colourText);
+		graphics.setColor(settings.display().colourText());
 		graphics.drawString(text, x, y);
 		return height;
 	}
@@ -806,7 +809,7 @@ public class PathTileOverlay extends Overlay
 
 		// Sailing: teleports are suppressed while aboard a boat. When the path is
 		// unreachable as a result, show a one-time hint on the player tile.
-		if (plugin.showTransportInfo && pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
+		if (settings.display().showTransportInfo() && pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
 			&& plugin.getActiveSearch().isDone() && plugin.isPathUnreachable())
 		{
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
@@ -824,7 +827,7 @@ public class PathTileOverlay extends Overlay
 		// Teleports ("use this item/spell") get a pulsing highlight on the tile you cast
 		// from. Only the first teleport edge of the path pulses — the next "teleport
 		// now" moment — and the pulse is independent of the transport info labels.
-		if (plugin.showTeleportPulse && !teleportPulseDrawn)
+		if (settings.display().showTeleportPulse() && !teleportPulseDrawn)
 		{
 			for (Transport transport : candidateTransports)
 			{
@@ -837,7 +840,7 @@ public class PathTileOverlay extends Overlay
 			}
 		}
 
-		if (!plugin.showTransportInfo)
+		if (!settings.display().showTransportInfo())
 		{
 			return;
 		}
@@ -898,7 +901,7 @@ public class PathTileOverlay extends Overlay
 
 				// By default, bank pickup info replaces the default transport hint text;
 				// enable the option to show both
-				if (!plugin.showBankPickupInfo)
+				if (!settings.display().showBankPickupInfo())
 				{
 					return;
 				}

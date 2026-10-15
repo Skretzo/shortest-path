@@ -23,7 +23,7 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import shortestpath.ShortestPathConfig;
-import shortestpath.requirement.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;

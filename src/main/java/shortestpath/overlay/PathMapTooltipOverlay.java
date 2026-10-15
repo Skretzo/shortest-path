@@ -20,6 +20,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 
 public class PathMapTooltipOverlay extends Overlay
@@ -32,12 +33,14 @@ public class PathMapTooltipOverlay extends Overlay
 
 	private final Client client;
 	private final ShortestPathPlugin plugin;
+	private final Settings settings;
 
 	@Inject
-	private PathMapTooltipOverlay(Client client, ShortestPathPlugin plugin)
+	private PathMapTooltipOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
 	{
 		this.client = client;
 		this.plugin = plugin;
+		this.settings = settings;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_HIGHEST);
 		setLayer(OverlayLayer.MANUAL);
@@ -47,7 +50,7 @@ public class PathMapTooltipOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMap || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
+		if (!settings.display().drawMap() || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
 		{
 			return null;
 		}
