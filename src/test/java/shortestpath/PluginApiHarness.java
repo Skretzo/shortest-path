@@ -65,6 +65,7 @@ final class PluginApiHarness implements AutoCloseable
 	private final ItemContainer worn = mock(ItemContainer.class);
 	private final BlockingQueue<PluginMessage> posted = new LinkedBlockingQueue<>();
 	private final TestPathfinderConfig pathfinderConfig;
+	private shortestpath.items.ItemStateService itemState;
 
 	/** Plugin settings with the values the tests change. */
 	static final class Settings extends TestShortestPathConfig
@@ -150,7 +151,7 @@ final class PluginApiHarness implements AutoCloseable
 		set("clientThread", clientThread);
 		set("config", settings);
 		set("settings", shortestpath.settings.Settings.wrap(settings));
-		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting(client);
+		itemState = shortestpath.items.ItemStateService.forTesting();
 		pathfinderConfig.setItemStateService(itemState);
 		set("itemState", itemState);
 		set("eventBus", eventBus);
@@ -192,14 +193,14 @@ final class PluginApiHarness implements AutoCloseable
 	{
 		ItemContainer bank = mock(ItemContainer.class);
 		doReturn(items(idsAndQuantities)).when(bank).getItems();
-		pathfinderConfig.getItemState().noteBankContainer(bank);
+		itemState.noteBankContainer(bank);
 		return this;
 	}
 
 	/** Forgets the bank, as before it is first opened in a session. */
 	PluginApiHarness bankNotSeen()
 	{
-		pathfinderConfig.getItemState().noteBankContainer(null);
+		itemState.noteBankContainer(null);
 		return this;
 	}
 

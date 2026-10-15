@@ -1,85 +1,56 @@
 package shortestpath.items;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.Arrival;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.TransportEligibility;
-import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.Effect;
 import shortestpath.settings.TeleportationItem;
 
 /**
  * Owns the plugin's player item state observed from game events — the live
- * open-bank container, the container/varbit inputs that feed the eligibility
- * snapshot, and the bank-pickup projection cache — and reports each admitted
- * change to the shell as an {@link ItemChange} fact. The service never writes
- * back to the engine; the shell maps the fact's declared effects to its
- * follow-up actions, and {@link #getBankPickup} reads the engine config it is
- * handed without retaining it.
+ * open-bank container and the container/varbit inputs that feed the
+ * eligibility snapshot — and reports each admitted change to the shell as an
+ * {@link ItemChange} fact. The service never writes back to the engine; the
+ * shell maps the fact's declared effects to its follow-up actions, and
+ * downstream projections key their caches on {@link #itemStateRevision()}
+ * rather than pulling path types in here.
  */
 @Singleton
 public class ItemStateService
 {
-	private final Client client;
-
 	/**
 	 * LIVE reference to the last-opened bank container — never copied or
 	 * snapshotted, so it reads empty once the bank closes.
 	 */
 	private ItemContainer bank;
 
-	// Bank pickup cache — invalidated when path, bank, or inventory changes.
-	private BankPickupResult bankPickupCache;
-	private List<PathStep> bankPickupCachePath;
-	private int bankPickupCacheIndex = -1;
-	private boolean bankPickupDirty = true;
+	// Bumped by every admitted item-state change; readers that project this
+	// state (e.g. the bank-pickup projection) key their caches on it instead
+	// of this service observing their invalidation needs.
+	private int itemStateRevision;
 
 	@Inject
-	public ItemStateService(Client client)
+	public ItemStateService()
 	{
-		this.client = client;
-	}
-
-	private ItemStateService()
-	{
-		this(null);
 	}
 
 	/**
 	 * Test/harness seam: returns an instance detached from Guice. The
-	 * production instance is the injected singleton. Without a client the
-	 * detached instance cannot resolve item names — pickup phrases from
-	 * {@link #getBankPickup} degrade to "Unknown item" placeholders.
+	 * production instance is the injected singleton.
 	 */
 	public static ItemStateService forTesting()
 	{
 		return new ItemStateService();
-	}
-
-	/**
-	 * Test/harness seam for callers that exercise {@link #getBankPickup} and
-	 * need real item names in the pickup phrases.
-	 */
-	public static ItemStateService forTesting(Client client)
-	{
-		return new ItemStateService(client);
 	}
 
 	/**
@@ -98,7 +69,7 @@ public class ItemStateService
 		if (containerId == InventoryID.BANK || containerId == InventoryID.INV
 			|| containerId == InventoryID.WORN)
 		{
-			bankPickupDirty = true;
+			itemStateRevision++;
 			return new ItemChange("container:" + containerId, Set.of(Effect.ELIGIBILITY_STALE));
 		}
 		return null;
@@ -117,7 +88,7 @@ public class ItemStateService
 			|| containsVarbit(OwnedItems.RUNE_POUCH_RUNE_VARBITS, varbitId)
 			|| containsVarbit(OwnedItems.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
 		{
-			bankPickupDirty = true;
+			itemStateRevision++;
 			return new ItemChange("varbit:" + varbitId, Set.of(Effect.ELIGIBILITY_STALE));
 		}
 		return null;
@@ -142,84 +113,40 @@ public class ItemStateService
 
 	/**
 	 * Harness/test seeding seam; production writes arrive through
-	 * {@link #onContainerChanged} for the bank container id. Dirties the
-	 * pickup cache like the event path does, so a re-seeded bank is never
-	 * served a projection computed against the previous container.
+	 * {@link #onContainerChanged} for the bank container id. Bumps
+	 * {@link #itemStateRevision()} like the event path does, so a re-seeded
+	 * bank is never served by a projection computed against the previous
+	 * container.
 	 */
 	public void noteBankContainer(ItemContainer container)
 	{
 		this.bank = container;
-		bankPickupDirty = true;
+		itemStateRevision++;
 	}
 
 	/**
-	 * Marks the bank pickup projection stale; the next {@link #getBankPickup}
-	 * recomputes. Admitted container/varbit events dirty it internally; the
-	 * shell marks it when a pathfinding restart begins a new path.
+	 * The item-state epoch: bumped by every admitted container/varbit change,
+	 * by {@link #noteBankContainer}, and by {@link #reset}. Readers that cache
+	 * a projection over this state must recompute when it moves.
 	 */
-	public void markBankPickupDirty()
+	public int itemStateRevision()
 	{
-		bankPickupDirty = true;
+		return itemStateRevision;
 	}
 
 	/**
-	 * Clears the session-scoped state — the live bank reference and the
-	 * bank-pickup projection cache. The service is a singleton on the plugin
-	 * injector, which RuneLite reuses across shutDown/startUp cycles, so the
-	 * shell calls this on shutdown to restore the lifetime the bank field had
-	 * when it lived on the per-session pathfinder config: nothing observed in
-	 * one session may feed eligibility in the next. The pickup cache is left
-	 * dirty so the next {@link #getBankPickup} recomputes.
+	 * Clears the session-scoped state — the live bank reference. The service
+	 * is a singleton on the plugin injector, which RuneLite reuses across
+	 * shutDown/startUp cycles, so the shell calls this on shutdown to restore
+	 * the lifetime the bank field had when it lived on the per-session
+	 * pathfinder config: nothing observed in one session may feed eligibility
+	 * in the next. The revision bump keeps downstream caches from serving a
+	 * projection computed against the cleared state.
 	 */
 	public void reset()
 	{
 		bank = null;
-		bankPickupCache = null;
-		bankPickupCachePath = null;
-		bankPickupCacheIndex = -1;
-		bankPickupDirty = true;
-	}
-
-	/**
-	 * Returns the cached bank pickup result for the given path step, recomputing only when
-	 * the path, bank contents, or player inventory has changed since the last call.
-	 * {@code search} is the search the path belongs to: while it has no result yet the
-	 * target's items are unknown, so the projection stays dirty and recomputes until the
-	 * result lands (it appears just after the final path).
-	 * On a detached {@link #forTesting()} instance there is no client to resolve item
-	 * names with, so the phrases degrade to "Unknown item" placeholders rather than
-	 * throwing.
-	 */
-	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex, PathfinderConfig pathfinderConfig,
-		ActiveSearch search)
-	{
-		Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
-		if (bank == null || bankLocations == null
-				|| path == null || pathIndex < 0 || pathIndex >= path.size())
-		{
-			return null;
-		}
-		if (!bankPickupDirty && path == bankPickupCachePath && pathIndex == bankPickupCacheIndex)
-		{
-			return bankPickupCache;
-		}
-		PathfinderResult result = search == null ? null : search.getResult();
-		bankPickupCachePath = path;
-		bankPickupCacheIndex = pathIndex;
-		// The target's items are only known once the search has its result, which appears just
-		// after the final path: keep recomputing until then.
-		bankPickupDirty = search != null && result == null;
-		bankPickupCache = BankPickupResult.compute(
-				client, bank, pathfinderConfig, bankLocations, path, pathIndex,
-				itemsToPickUp(result));
-		return bankPickupCache;
-	}
-
-	/** The items a route's target needs from the bank, or {@code null} when it picks none up. */
-	private static TransportItems itemsToPickUp(PathfinderResult result)
-	{
-		Arrival arrival = result == null ? null : result.getArrival();
-		return arrival != null && arrival.picksUpItemsFromBank() ? arrival.getTarget().getRequiredItems() : null;
+		itemStateRevision++;
 	}
 
 	/**
