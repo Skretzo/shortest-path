@@ -42,8 +42,8 @@ import static org.junit.Assert.*;
  *
  * <p>The same freeze applies to leaf-to-leaf coupling: {@link #LEAF_EDGES}
  * records every package pair linked by a leaf-package import, so a new edge
- * — mutual or one-way — fails the build until it is justified in the table. The resource-anchor sites ({@code TransportLoader},
- * {@code SplitFlagMap}, {@code LeagueRegionChecker}) retired when the data
+ * — mutual or one-way — fails the build until it is justified in the table. The resource-anchor
+ * call sites moved into {@code ResourceLoader} when the data
  * loader landed self-anchored. An unlisted reference site fails the build
  * (new coupling); an allowlist key with no matching site fails it too
  * (stale entry — remove it in the same change that removed the reference).
