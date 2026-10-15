@@ -34,13 +34,13 @@ import shortestpath.transport.parser.VarRequirementParser;
  * parsers log-and-continue on bad tokens. A malformed row can therefore pass a
  * "file loaded" check while producing no transport at all. These tests run
  * every committed row through the real {@link TsvParser} ->
- * {@link TransportLoader#addTransportsFromContents} path and assert that a
+ * {@link ResourceLoader#addTransportsFromContents} path and assert that a
  * concretely-anchored row always yields a {@link Transport} in the loader's
  * map, that header cells match the canonical {@link TransportRecord.Fields}
  * names exactly, and that requirement cells are fully consumed by their
  * parsers. Failures are collected per file so one run reports every bad row.
  */
-public class TransportLoaderFidelityTest
+public class ResourceLoaderFidelityTest
 {
 	/**
 	 * Every committed transport resource the plugin loads. Explicitly listed so
@@ -239,12 +239,12 @@ public class TransportLoaderFidelityTest
 	/**
 	 * Row-count and parse fidelity: every row whose anchor cell is a concrete
 	 * {@code x y z} triple must produce a {@link Transport} through the real
-	 * {@link TsvParser} + {@link TransportLoader#addTransportsFromContents}
+	 * {@link TsvParser} + {@link ResourceLoader#addTransportsFromContents}
 	 * path. A row that is well-formed yet yields no map entry is a silent
 	 * drop, which is exactly what this test exists to catch.
 	 *
 	 * Rows whose concrete origin equals their concrete destination are
-	 * exempt: {@link TransportLoader#addTransportsFromContents} documents
+	 * exempt: {@link ResourceLoader#addTransportsFromContents} documents
 	 * that identical A->A transports are intentionally skipped.
 	 */
 	@Test
@@ -273,7 +273,7 @@ public class TransportLoaderFidelityTest
 			}
 
 			Map<Integer, Set<Transport>> transports = new HashMap<>();
-			TransportLoader.addTransportsFromContents(transports, contents, type,
+			ResourceLoader.addTransportsFromContents(transports, contents, type,
 				type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
 
 			int originIdx = columnIndex(raw.headers, TransportRecord.Fields.ORIGIN);
