@@ -1010,7 +1010,7 @@ public class PathfinderConfig
 		if ((eligibility == null || eligibilityStale)
 			&& playerStateSource.isOnClientThread())
 		{
-			eligibility = ItemStateService.collectEligibility(playerStateSource, itemState.getBank(),
+			eligibility = TransportEligibility.collect(playerStateSource, itemState.getBank(),
 				transportTypeConfig.getTeleportationItemSetting(), currencyThreshold,
 				includeBankPath, unlocks, balloonLogBasketDestinations);
 			eligibilityStale = false;
