@@ -91,8 +91,9 @@ public final class TestWorldData
 
 	private static final class AStarStatic
 	{
-		static final RoutingStatic STATIC = new AStarRoutingStaticProvider(
-			() -> new CollisionMap(CollisionData.DATA)).get();
+		static final AStarRoutingStaticProvider PROVIDER = new AStarRoutingStaticProvider(
+			() -> new CollisionMap(CollisionData.DATA));
+		static final RoutingStatic STATIC = PROVIDER.get();
 	}
 
 	/** The collision map, decompressed once per JVM. */
@@ -141,5 +142,15 @@ public final class TestWorldData
 	public static RoutingStatic routingStatic()
 	{
 		return AStarStatic.STATIC;
+	}
+
+	/**
+	 * The provider that built {@link #routingStatic()}. Injection points typed as the provider —
+	 * the plugin scheduler's {@code aStarRoutingStatic} field — share this instance so their
+	 * {@code get()} returns the already-built static instead of paying a second world build.
+	 */
+	public static AStarRoutingStaticProvider routingStaticProvider()
+	{
+		return AStarStatic.PROVIDER;
 	}
 }
