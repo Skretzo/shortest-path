@@ -34,6 +34,7 @@ import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.poh.PohService;
@@ -80,7 +81,7 @@ public class PathTileOverlay extends Overlay
 	private static final Color COLOR_UNAVAILABLE = Color.ORANGE;
 	private static final Color COLOR_CLICK_POINT = new Color(255, 0, 255, 150);
 
-	private void renderTransports(Graphics2D graphics)
+	private void renderTransports(Graphics2D graphics, ActiveSearch search)
 	{
 		OverlayDrawing.forEachDisplayTransport(annotator.getAllDisplayTransports(), annotator.getTransports(),
 			new OverlayDrawing.TransportVisitor()
@@ -137,7 +138,7 @@ public class PathTileOverlay extends Overlay
 			{
 				if (drawStart)
 				{
-					drawTile(graphics, origin, settings.display().colourTransports(), -1, true);
+					drawTile(graphics, origin, settings.display().colourTransports(), -1, true, search);
 				}
 
 				graphics.setColor(Color.WHITE);
@@ -195,12 +196,15 @@ public class PathTileOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		// One volatile read per render pass: the search can be swapped mid-frame,
+		// so every decision below keys off this single publication.
+		ActiveSearch search = scheduler.getActiveSearch();
 		playerTileLabelOffset = 0;
 		teleportPulseDrawn = false;
 
 		if (settings.display().drawTransports())
 		{
-			renderTransports(graphics);
+			renderTransports(graphics, search);
 		}
 
 		if (settings.display().drawCollisionMap())
@@ -208,7 +212,7 @@ public class PathTileOverlay extends Overlay
 			renderCollisionMap(graphics);
 		}
 
-		if (settings.display().drawTiles() && scheduler.getActiveSearch() != null && scheduler.getActiveSearch().getPath() != null)
+		if (settings.display().drawTiles() && search != null && search.getPath() != null)
 		{
 			Color colorCalculating = new Color(
 				settings.display().colourPathCalculating().getRed(),
@@ -222,7 +226,7 @@ public class PathTileOverlay extends Overlay
 				pathColor.getBlue(),
 				pathColor.getAlpha() / 2);
 
-			List<PathStep> path = scheduler.getActiveSearch().getPath();
+			List<PathStep> path = search.getPath();
 			int counter = 0;
 			if (renderState.isSailing())
 			{
@@ -233,9 +237,9 @@ public class PathTileOverlay extends Overlay
 				{
 					drawOffsetLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(),
 						renderState.getSailingPivotX(), renderState.getSailingPivotY(), sailingColor);
-					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
+					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1, search);
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+				drawUnreachedTargets(graphics, path, colorCalculating, true, search);
 			}
 			else if (TileStyle.LINES.equals(settings.display().pathStyle()) || TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
 			{
@@ -249,8 +253,8 @@ public class PathTileOverlay extends Overlay
 						|| directionChanges(currentStep.getPackedPosition(), nextStep.getPackedPosition(),
 							path.get(i + 1).getPackedPosition()));
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color,
-						1 + counter++, head);
-					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+						1 + counter++, head, search);
+					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, search);
 				}
 			}
 			else if (TileStyle.TURN_MARKERS.equals(settings.display().pathStyle()))
@@ -258,14 +262,13 @@ public class PathTileOverlay extends Overlay
 				// Markers only where the route changes direction, plus both endpoints.
 				// The walker skips marker draws inside POH (no collision data, tiles
 				// render at wrong positions); the index doubles as the tile counter.
-				ProjectedTiles.forEachVisibleStep(this, graphics, path, colorCalculating,
-					i -> annotator.nextPathStep(path, i),
+				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
 					(steps, i) -> i == 0 || i == steps.size() - 1
 						|| directionChanges(steps.get(i - 1).getPackedPosition(),
 							steps.get(i).getPackedPosition(), steps.get(i + 1).getPackedPosition()),
 					(step, i) ->
 					{
-						drawTile(graphics, step.getPackedPosition(), color, i, true);
+						drawTile(graphics, step.getPackedPosition(), color, i, true, search);
 						drawTurnMarkerGlyph(graphics, path, i);
 					},
 					true);
@@ -281,8 +284,8 @@ public class PathTileOverlay extends Overlay
 					PathStep currentStep = path.get(i - 1);
 					PathStep nextStep = path.get(i);
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), tracerLineColour,
-						1 + counter++, false);
-					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+						1 + counter++, false, search);
+					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, search);
 				}
 				if (!path.isEmpty())
 				{
@@ -316,15 +319,14 @@ public class PathTileOverlay extends Overlay
 						}
 					}
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+				drawUnreachedTargets(graphics, path, colorCalculating, true, search);
 			}
 			else if (TileStyle.SPRITE_MARKERS.equals(settings.display().pathStyle()))
 			{
 				// Bounded stride — a sprite every SPRITE_STRIDE tiles plus the destination,
 				// never one sprite per tile (per-tile sprite density is too heavy).
 				// The walker skips sprite draws inside POH, same as the other markers.
-				ProjectedTiles.forEachVisibleStep(this, graphics, path, colorCalculating,
-					i -> annotator.nextPathStep(path, i),
+				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
 					(steps, i) -> i % SPRITE_STRIDE == 0 || i == steps.size() - 1,
 					(step, i) ->
 					{
@@ -352,7 +354,7 @@ public class PathTileOverlay extends Overlay
 										p.getY() - sprite.getHeight() / 2, null);
 								}
 							}
-							drawCounter(graphics, p.getX(), p.getY(), i);
+							drawCounter(graphics, p.getX(), p.getY(), i, search);
 						}
 					},
 					true);
@@ -362,10 +364,9 @@ public class PathTileOverlay extends Overlay
 				// The walker skips tile draws inside POH (no collision data, tiles
 				// render at wrong positions); the index doubles as the tile counter.
 				boolean showTiles = TileStyle.TILES.equals(settings.display().pathStyle());
-				ProjectedTiles.forEachVisibleStep(this, graphics, path, colorCalculating,
-					i -> annotator.nextPathStep(path, i),
+				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
 					(steps, i) -> true,
-					(step, i) -> drawTile(graphics, step.getPackedPosition(), color, i, showTiles),
+					(step, i) -> drawTile(graphics, step.getPackedPosition(), color, i, showTiles, search),
 					showTiles);
 			}
 
@@ -373,7 +374,7 @@ public class PathTileOverlay extends Overlay
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
 			}
-			String missingItems = annotator.getMissingTargetItemsText(scheduler.getActiveSearch());
+			String missingItems = annotator.getMissingTargetItemsText(search);
 			if (missingItems != null)
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, missingItems, playerTileLabelOffset);
@@ -382,9 +383,9 @@ public class PathTileOverlay extends Overlay
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
-		if (settings.display().drawTiles() && settings.display().drawClickPoints() && scheduler.getActiveSearch() instanceof AStarPathfinder)
+		if (settings.display().drawTiles() && settings.display().drawClickPoints() && search instanceof AStarPathfinder)
 		{
-			AStarPathfinder aStar = (AStarPathfinder) scheduler.getActiveSearch();
+			AStarPathfinder aStar = (AStarPathfinder) search;
 			if (aStar.isDone() && !aStar.isShowingProvisionalPath())
 			{
 				List<PathStep> path = aStar.getPath();
@@ -394,7 +395,7 @@ public class PathTileOverlay extends Overlay
 					if (!PohService.isInsidePoh(WorldPointUtil.unpackWorldX(point),
 						WorldPointUtil.unpackWorldY(point)))
 					{
-						drawTile(graphics, point, COLOR_CLICK_POINT, -1, true);
+						drawTile(graphics, point, COLOR_CLICK_POINT, -1, true, search);
 					}
 				}
 			}
@@ -429,7 +430,8 @@ public class PathTileOverlay extends Overlay
 		return centre[0];
 	}
 
-	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw)
+	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw,
+		ActiveSearch search)
 	{
 		if (client == null)
 		{
@@ -444,19 +446,19 @@ public class PathTileOverlay extends Overlay
 					graphics.setColor(color);
 					graphics.fill(poly);
 				}
-
-				drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter);
+				drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter, search);
 				return false;
 			});
 	}
 
-	void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
+	void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw,
+		ActiveSearch search)
 	{
-		for (int target : scheduler.getActiveSearch().getTargets().points())
+		for (int target : search.getTargets().points())
 		{
 			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 			{
-				drawTile(graphics, target, colorCalculating, -1, draw);
+				drawTile(graphics, target, colorCalculating, -1, draw, search);
 			}
 		}
 	}
@@ -498,7 +500,8 @@ public class PathTileOverlay extends Overlay
 		graphics.setColor(previousColour);
 	}
 
-	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead)
+	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead,
+		ActiveSearch search)
 	{
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
 		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
@@ -548,9 +551,9 @@ public class PathTileOverlay extends Overlay
 
 		if (counter == 1)
 		{
-			drawCounter(graphics, p1.getX(), p1.getY(), 0);
+			drawCounter(graphics, p1.getX(), p1.getY(), 0, search);
 		}
-		drawCounter(graphics, p2.getX(), p2.getY(), counter);
+		drawCounter(graphics, p2.getX(), p2.getY(), counter, search);
 	}
 
 	// A line between two tiles, shifted from the tile centres by (offsetX, offsetY) local units
@@ -591,12 +594,12 @@ public class PathTileOverlay extends Overlay
 		graphics.draw(new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY()));
 	}
 
-	private void drawCounter(Graphics2D graphics, double x, double y, int counter)
+	private void drawCounter(Graphics2D graphics, double x, double y, int counter, ActiveSearch search)
 	{
 		if (counter >= 0 && !TileCounter.DISABLED.equals(settings.display().showTileCounter()))
 		{
 			int n = settings.display().tileCounterStep() > 0 ? settings.display().tileCounterStep() : 1;
-			int s = scheduler.getActiveSearch().getPath().size();
+			int s = search.getPath().size();
 			if ((counter % n != 0) && (s != (counter + 1)))
 			{
 				return;
@@ -725,7 +728,8 @@ public class PathTileOverlay extends Overlay
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
+	void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path,
+		int pathIndex, ActiveSearch search)
 	{
 		int location = currentStep.getPackedPosition();
 		int lx = WorldPointUtil.unpackWorldX(location);
@@ -743,12 +747,12 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 
-		if (drawSailingDisembarkHint(graphics, pathIndex))
+		if (drawSailingDisembarkHint(graphics, pathIndex, search))
 		{
 			return;
 		}
 
-		if (renderState.isPathUnreachable() || !scheduler.getActiveSearch().isDone())
+		if (renderState.isPathUnreachable() || !search.isDone())
 		{
 			return;
 		}
@@ -779,7 +783,7 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Check if this is a bank step and items need to be picked up
-		if (drawBankPickupLabel(graphics, location, path, pathIndex))
+		if (drawBankPickupLabel(graphics, location, path, pathIndex, search))
 		{
 			return;
 		}
@@ -789,10 +793,10 @@ public class PathTileOverlay extends Overlay
 
 	// Sailing: teleports are suppressed while aboard a boat. When the path is
 	// unreachable as a result, show a one-time hint on the player tile.
-	private boolean drawSailingDisembarkHint(Graphics2D graphics, int pathIndex)
+	private boolean drawSailingDisembarkHint(Graphics2D graphics, int pathIndex, ActiveSearch search)
 	{
 		if (settings.display().showTransportInfo() && pathIndex == 0 && renderState.isOnSailingBoat()
-			&& scheduler.getActiveSearch().isDone() && renderState.isPathUnreachable())
+			&& search.isDone() && renderState.isPathUnreachable())
 		{
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
 				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
@@ -859,9 +863,9 @@ public class PathTileOverlay extends Overlay
 		drawLabel(graphics, p, text, 0);
 	}
 
-	private boolean drawBankPickupLabel(Graphics2D graphics, int location, List<PathStep> path, int pathIndex)
+	private boolean drawBankPickupLabel(Graphics2D graphics, int location, List<PathStep> path, int pathIndex, ActiveSearch search)
 	{
-		BankPickupRequirements.BankPickupResult bankPickup = annotator.getBankPickup(path, pathIndex, scheduler.getActiveSearch());
+		BankPickupRequirements.BankPickupResult bankPickup = annotator.getBankPickup(path, pathIndex, search);
 		if (bankPickup == null || bankPickup.phrases.isEmpty())
 		{
 			return false;
