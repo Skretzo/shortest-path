@@ -50,6 +50,7 @@ public class PathfinderConfigItemQuantitiesTest
 	private EnumComposition runePouchEnum;
 
 	private PathfinderConfig pathfinderConfig;
+	private final shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting();
 
 	@Test
 	public void runePouchRunesAddToLooseRunes()
@@ -149,7 +150,8 @@ public class PathfinderConfigItemQuantitiesTest
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-		pathfinderConfig.getItemState().noteBankContainer(bank);
+		pathfinderConfig.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 

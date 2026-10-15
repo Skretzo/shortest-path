@@ -12,6 +12,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.requirement.BankPickupRequirements;
@@ -21,13 +22,16 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
 	private final ItemManager itemManager;
 	private final Settings settings;
+	private final ItemStateService itemState;
 
 	@Inject
-	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
+	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings,
+		ItemStateService itemState)
 	{
 		super(client, plugin, settings);
 		this.itemManager = itemManager;
 		this.settings = settings;
+		this.itemState = itemState;
 	}
 
 	@Override
@@ -56,7 +60,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		if (plugin.getPathfinderConfig().getItemState().getBank() == null)
+		if (itemState.getBank() == null)
 		{
 			return null;
 		}

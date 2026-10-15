@@ -25,6 +25,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.ItemVariations;
+import shortestpath.pathfinder.BankPickupProjection;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
@@ -362,7 +363,8 @@ public class ItemStateServiceTest
 	}
 
 	// ------------------------------------------------------------------
-	// Bank-pickup projection — (path, index) identity cache and dirty flag
+	// Bank-pickup projection — keyed on the item-state revision this service
+	// bumps, plus (path identity, index, search identity)
 	// ------------------------------------------------------------------
 
 	private static PathfinderConfig pickupConfig()
@@ -382,83 +384,96 @@ public class ItemStateServiceTest
 		return service;
 	}
 
+	private static BankPickupResult pickup(BankPickupProjection projection, ItemStateService service,
+		PathfinderConfig config, List<PathStep> path, int pathIndex)
+	{
+		return projection.get(null, service, config, path, pathIndex, null);
+	}
+
 	@Test
 	public void getBankPickupGuardsRejectBadInputs()
 	{
+		BankPickupProjection projection = new BankPickupProjection();
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, false));
 
 		assertNull("no open bank means no projection",
-			ItemStateService.forTesting().getBankPickup(path, 0, config, null));
+			pickup(projection, ItemStateService.forTesting(), config, path, 0));
 
 		ItemStateService service = serviceWithBank();
-		assertNull("null path is rejected", service.getBankPickup(null, 0, config, null));
-		assertNull("negative index is rejected", service.getBankPickup(path, -1, config, null));
+		assertNull("null path is rejected", pickup(projection, service, config, null, 0));
+		assertNull("negative index is rejected", pickup(projection, service, config, path, -1));
 		assertNull("out-of-range index is rejected",
-			service.getBankPickup(path, path.size(), config, null));
+			pickup(projection, service, config, path, path.size()));
 
 		when(config.getDestinations("bank")).thenReturn(null);
 		assertNull("a missing bank-destination set is rejected",
-			service.getBankPickup(path, 0, config, null));
+			pickup(projection, service, config, path, 0));
 	}
 
 	@Test
 	public void bankPickupCacheHitsOnSamePathAndIndexIdentity()
 	{
+		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, false), new PathStep(888, false));
 
-		BankPickupResult first = service.getBankPickup(path, 0, config, null);
-		BankPickupResult second = service.getBankPickup(path, 0, config, null);
+		BankPickupResult first = pickup(projection, service, config, path, 0);
+		BankPickupResult second = pickup(projection, service, config, path, 0);
 
-		assertSame("same (path identity, index) reuses the cached result", first, second);
+		assertSame("same (revision, path identity, index, search) reuses the cached result",
+			first, second);
 	}
 
 	@Test
 	public void bankPickupCacheMissesOnDifferentIndexOrPathInstance()
 	{
+		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, false), new PathStep(888, false));
 
-		BankPickupResult first = service.getBankPickup(path, 0, config, null);
+		BankPickupResult first = pickup(projection, service, config, path, 0);
 
-		assertNotSame("a different index recomputes", first, service.getBankPickup(path, 1, config, null));
+		assertNotSame("a different index recomputes", first,
+			pickup(projection, service, config, path, 1));
 
 		List<PathStep> equalButSeparate = List.of(new PathStep(999, false), new PathStep(888, false));
 		assertNotSame("an equal-but-separate path list recomputes — the key is identity",
-			first, service.getBankPickup(equalButSeparate, 0, config, null));
+			first, pickup(projection, service, config, equalButSeparate, 0));
 	}
 
 	@Test
-	public void markBankPickupDirtyForcesRecompute()
+	public void reseededBankForcesPickupRecompute()
 	{
+		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, false));
 
-		BankPickupResult first = service.getBankPickup(path, 0, config, null);
-		service.markBankPickupDirty();
+		BankPickupResult first = pickup(projection, service, config, path, 0);
+		service.noteBankContainer(mock(ItemContainer.class));
 
-		assertNotSame("the explicit dirty mark defeats the cache",
-			first, service.getBankPickup(path, 0, config, null));
+		assertNotSame("a re-seeded bank bumps the revision and defeats the cache",
+			first, pickup(projection, service, config, path, 0));
 	}
 
 	@Test
 	public void containerAndVarbitEventsDirtyThePickupCache()
 	{
+		BankPickupProjection projection = new BankPickupProjection();
 		ItemStateService service = serviceWithBank();
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, false));
 
-		BankPickupResult first = service.getBankPickup(path, 0, config, null);
+		BankPickupResult first = pickup(projection, service, config, path, 0);
 		service.onContainerChanged(InventoryID.INV, mock(ItemContainer.class));
-		BankPickupResult afterContainer = service.getBankPickup(path, 0, config, null);
+		BankPickupResult afterContainer = pickup(projection, service, config, path, 0);
 		assertNotSame("a tracked container event recomputes", first, afterContainer);
 
 		service.onVarbitChanged(OwnedItems.RUNE_POUCH_RUNE_VARBITS[0]);
 		assertNotSame("a tracked varbit event recomputes",
-			afterContainer, service.getBankPickup(path, 0, config, null));
+			afterContainer, pickup(projection, service, config, path, 0));
 	}
 }

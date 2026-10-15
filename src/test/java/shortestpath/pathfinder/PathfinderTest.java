@@ -44,6 +44,7 @@ import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
+import shortestpath.items.ItemStateService;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -73,6 +74,7 @@ public class PathfinderTest
 	@Mock
 	ShortestPathConfig config;
 	private PathfinderConfig pathfinderConfig;
+	private final ItemStateService itemState = ItemStateService.forTesting();
 
 	@Before
 	public void before()
@@ -2169,7 +2171,8 @@ public class PathfinderTest
 		// Attach an empty bank after setupConfig; setupConfigWithBank would force usePoh off.
 		// includeBankPath alone exercises bank visits.
 		when(bank.getItems()).thenReturn(new Item[0]);
-		pathfinderConfig.getItemState().noteBankContainer(bank);
+		pathfinderConfig.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();
 
 		int evilDavesBasement = WorldPointUtil.packWorldPoint(3080, 9892, 0);
@@ -3172,7 +3175,8 @@ public class PathfinderTest
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		when(config.usePoh()).thenReturn(false);
 		doReturn(bankItems).when(bank).getItems();
-		pathfinderConfig.getItemState().noteBankContainer(bank);
+		pathfinderConfig.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 

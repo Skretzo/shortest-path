@@ -433,7 +433,6 @@ public class ShortestPathPlugin extends Plugin
 			}
 			else
 			{
-				itemState.markBankPickupDirty();
 				// The boarded-boat varbit can lag the world entity (stale across a teleport or
 				// login), so only sail when the boat is actually in the scene — otherwise the
 				// search would sail its headings across land
