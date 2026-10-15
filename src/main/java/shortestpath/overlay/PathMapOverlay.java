@@ -25,6 +25,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.scheduler.PathRenderState;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 
@@ -33,13 +34,15 @@ public class PathMapOverlay extends Overlay
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private final Settings settings;
+	private final PathRenderState renderState;
 
 	@Inject
-	private PathMapOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
+	private PathMapOverlay(Client client, ShortestPathPlugin plugin, Settings settings, PathRenderState renderState)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.settings = settings;
+		this.renderState = renderState;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.MANUAL);
@@ -135,11 +138,11 @@ public class PathMapOverlay extends Overlay
 			Color colour = plugin.getPathColor();
 			List<PathStep> path = plugin.getActiveSearch().getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
-			if (plugin.isSailing())
+			if (renderState.isSailing())
 			{
 				// On a boat the path sails the boat's headings: a line along each heading it holds, with a small square
 				// at the end of each move
-				graphics.setColor(plugin.isPathUnreachable() ? plugin.getPathColor() : ShortestPathPlugin.COLOUR_SAILING_PATH);
+				graphics.setColor(renderState.isPathUnreachable() ? plugin.getPathColor() : PathRenderState.SAILING_PATH_COLOUR);
 				for (int i = 0; i < path.size(); i++)
 				{
 					int point = path.get(i).getPackedPosition();

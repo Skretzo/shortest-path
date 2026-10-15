@@ -26,12 +26,10 @@ import net.runelite.api.ItemComposition;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
-import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.ScriptID;
 import net.runelite.api.WorldEntity;
-import net.runelite.api.WorldEntityConfig;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
@@ -76,7 +74,6 @@ import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
-import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.BankVisitState;
@@ -88,10 +85,10 @@ import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.Arrival;
 import shortestpath.pathfinder.Target;
 import shortestpath.pathfinder.Targets;
-import shortestpath.pathfinder.sailing.SailingMoves;
-import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
+import shortestpath.sailing.SailingService;
+import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.scheduler.QueryResponder;
 import shortestpath.scheduler.RefreshCoordinator;
@@ -135,8 +132,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
 	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
-	// Colour of the path while on a boat, which sails the boat's headings
-	public static final Color COLOUR_SAILING_PATH = new Color(0, 120, 255);
 
 	@Inject
 	private Client client;
@@ -180,11 +175,15 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	@Inject
 	private ItemStateService itemState;
 	@Inject
+	private SailingService sailing;
+	@Inject
 	private Settings settings;
 	@Inject
 	private PathScheduler scheduler;
 	@Inject
 	private RefreshCoordinator coordinator;
+	@Inject
+	private PathRenderState renderState;
 	private Point lastMenuOpenedPoint;
 	private Shape minimapClipFixed;
 	private Shape minimapClipResizeable;
@@ -247,7 +246,8 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
 		pathfinderConfig.setSpiritTreeService(spiritTrees);
 		pathfinderConfig.setItemStateService(itemState);
-		scheduler.attach(pathfinderConfig, itemState, this);
+		pathfinderConfig.setSailingService(sailing);
+		scheduler.attach(pathfinderConfig, itemState, sailing, this);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load touches the same HashMaps the
@@ -306,6 +306,9 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		// The singleton survives restarts; drop the live bank ref and pickup
 		// cache so session state cannot leak into the next enable.
 		itemState.reset();
+		// Same lifetime for the sailing snapshot — a stale aboard flag must
+		// not greet the next session before its first refresh publishes.
+		sailing.reset();
 	}
 
 	private void migrateAStarConfiguration()
@@ -335,7 +338,7 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 			return settings.display().colourPath();
 		}
 
-		if (isPathUnreachable())
+		if (renderState.isPathUnreachable())
 		{
 			return settings.display().colourPathUnreachable();
 		}
@@ -343,40 +346,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		return settings.display().colourPath();
 	}
 
-	public boolean isPathUnreachable()
-	{
-		ActiveSearch pathfinder = scheduler.getActiveSearch();
-		if (pathfinder == null || !pathfinder.isDone())
-		{
-			return false;
-		}
-
-		List<PathStep> path = pathfinder.getPath();
-		if (path == null || pathfinder.getTargets().isEmpty())
-		{
-			return false;
-		}
-
-		// A sailing path arrives once the boat's hull covers the target, with the boat's own tile up to a boat length
-		// from it, so the search says whether it got there
-		if (isSailing())
-		{
-			PathfinderResult result = pathfinder.getResult();
-			return result != null && !result.isReached();
-		}
-
-		// A finished search can produce an empty path when no goal tile could ever be
-		// reached (e.g. a blocked target); measure the distance from the start then.
-		int endPoint = path.isEmpty() ? pathfinder.getStart()
-			: path.get(path.size() - 1).getPackedPosition();
-		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : pathfinder.getTargets().points())
-		{
-			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
-		}
-
-		return closestTargetDistance > settings.display().unreachableTargetDistance();
-	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
@@ -879,6 +848,9 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
 		// snapshot but change without firing a container event.
 		itemState.onVarbitChanged(event.getVarbitId());
+		// The boat varbits feed the sailing snapshot and may declare a
+		// route-invalidating change through the service.
+		sailing.onVarbitChanged(event.getVarbitId());
 	}
 
 	/**
@@ -1108,26 +1080,6 @@ public class ShortestPathPlugin extends Plugin implements QueryResponder
 	public CollisionMap getMap()
 	{
 		return pathfinderConfig.getMap();
-	}
-
-	/**
-	 * Whether the path sails the boat's headings (a {@link SailingPathfinder}), so it has a point at the end of
-	 * each move, a few tiles apart, and is drawn as lines along its headings.
-	 */
-	public boolean isSailing()
-	{
-		ActiveSearch search = scheduler.getActiveSearch();
-		return search instanceof SailingPathfinder;
-	}
-
-	public int getSailingPivotX()
-	{
-		return scheduler.getSailingPivotX();
-	}
-
-	public int getSailingPivotY()
-	{
-		return scheduler.getSailingPivotY();
 	}
 
 	/**

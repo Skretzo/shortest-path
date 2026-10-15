@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import net.runelite.api.GameState;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.events.ConfigChanged;
 
 import shortestpath.ShortestPathConfig;
@@ -28,7 +29,9 @@ import shortestpath.WorldPointUtil;
 import shortestpath.items.TestItemChange;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.Targets;
+import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.TestPohChange;
+import shortestpath.sailing.TestSailingChange;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
@@ -124,6 +127,38 @@ public class RefreshCoordinatorTest
 	}
 
 	@Test
+	public void sailingChangedRestartsTheRunningSearch()
+	{
+		runningSearch(42, Targets.at(Set.of(7, 8)));
+
+		coordinator.sailingChanged(TestSailingChange.of(
+			"varbit:" + VarbitID.SAILING_BOARDED_BOAT, Set.of(Effect.ROUTE_INVALIDATING)));
+
+		verify(scheduler).restart("sailing varbit", 42, Targets.at(Set.of(7, 8)));
+	}
+
+	@Test
+	public void sailingChangedKeepsTheKeyForNonVarbitFacts()
+	{
+		runningSearch(1, Targets.at(Set.of(2)));
+
+		coordinator.sailingChanged(TestSailingChange.of("unlisted-key", Set.of(Effect.ROUTE_INVALIDATING)));
+
+		verify(scheduler).restart("unlisted-key", 1, Targets.at(Set.of(2)));
+	}
+
+	@Test
+	public void sailingChangedWithoutRouteInvalidatingDoesNothing()
+	{
+		// An empty effect set — the identical re-read case — and a non-route
+		// effect both admit nothing.
+		coordinator.sailingChanged(TestSailingChange.of("varbit:" + VarbitID.SAILING_BOARDED_BOAT, Set.of()));
+		coordinator.sailingChanged(TestSailingChange.of("varbit:" + VarbitID.SAILING_BOARDED_BOAT, Set.of(Effect.DISPLAY_ONLY)));
+
+		verifyNoInteractions(scheduler);
+	}
+
+	@Test
 	public void configChangedRestartsRoutingKeysAndPrepsTheBackend()
 	{
 		runningSearch(11, Targets.at(Set.of(13)));
@@ -162,6 +197,7 @@ public class RefreshCoordinatorTest
 	{
 		coordinator.itemsChanged(null);
 		coordinator.treeSetChanged(null);
+		coordinator.sailingChanged(null);
 		coordinator.pohChanged(null);
 
 		verifyNoInteractions(scheduler);
@@ -172,6 +208,8 @@ public class RefreshCoordinatorTest
 	{
 		coordinator.treeSetChanged(
 			TestTreeChange.of("profile", Set.of(Effect.ROUTE_INVALIDATING)));
+		coordinator.sailingChanged(TestSailingChange.of(
+			"varbit:" + VarbitID.SAILING_BOARDED_BOAT, Set.of(Effect.ROUTE_INVALIDATING)));
 		coordinator.configChanged(configChange("avoidWilderness"));
 		coordinator.offRouteTick(5, WorldPointUtil.packWorldPoint(3100, 3200, 0), WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -325,6 +363,56 @@ public class RefreshCoordinatorTest
 		when(config.cancelInstead()).thenReturn(true);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+
+		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
+	}
+
+	// ---------------------------------------------------------------
+	// The sailing reached-verdict branch
+	// ---------------------------------------------------------------
+
+	@Test
+	public void sailingSearchReachedItsTargetClearsThePath()
+	{
+		// A sailing path arrives once the live boat's hull covers a target —
+		// the search's own verdict is not trusted, so the coordinator checks
+		// the boat's position and heading supplied by the shell.
+		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		int location = WorldPointUtil.packWorldPoint(1000, 1000, 0);
+		int boat = WorldPointUtil.packWorldPoint(3200, 3201, 0);
+		SailingPathfinder sailingSearch = mock(SailingPathfinder.class);
+		search = sailingSearch;
+		runningSearch(50, Targets.at(Set.of(target)));
+		when(sailingSearch.isSailing()).thenReturn(true);
+		when(config.reachedDistance()).thenReturn(10);
+		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(target);
+
+		coordinator.offRouteTick(20, location, boat, 8);
+
+		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
+		verify(scheduler, never()).isNearPath(anyInt());
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
+	}
+
+	@Test
+	public void sailingSearchNotArrivedFallsThroughToTheDistanceCheck()
+	{
+		// Without hull coverage of a target the sailing branch declines and
+		// the ordinary target-distance check decides — here the player is
+		// close enough to the target to clear.
+		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		int location = WorldPointUtil.packWorldPoint(3200, 3201, 0);
+		int boat = WorldPointUtil.packWorldPoint(1500, 1500, 0);
+		SailingPathfinder sailingSearch = mock(SailingPathfinder.class);
+		search = sailingSearch;
+		runningSearch(50, Targets.at(Set.of(target)));
+		when(sailingSearch.isSailing()).thenReturn(true);
+		when(config.reachedDistance()).thenReturn(10);
+		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(WorldPointUtil.UNDEFINED);
+
+		coordinator.offRouteTick(20, location, boat, 8);
 
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class), anyBoolean());
