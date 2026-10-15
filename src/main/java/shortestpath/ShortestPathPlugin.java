@@ -338,7 +338,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
 
-		if (config.drawDebugPanel())
+		if (settings.lifecycle().drawDebugPanel())
 		{
 			overlayManager.add(debugOverlayPanel);
 		}
@@ -776,7 +776,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private void syncDebugPanelVisibility()
 	{
-		if (config.drawDebugPanel())
+		if (settings.lifecycle().drawDebugPanel())
 		{
 			overlayManager.add(debugOverlayPanel);
 		}
