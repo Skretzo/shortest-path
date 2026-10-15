@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -25,12 +24,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.astar.RoutingCuts;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.pathfinder.astar.RoutingStatic;
-import shortestpath.pathfinder.astar.RoutingStaticBuilder;
-import shortestpath.transport.Transport;
-import shortestpath.transport.ResourceLoader;
 
 /**
  * Issue #640 coverage for the A* backend: it terminates on the goal set
@@ -49,13 +44,9 @@ public class AStarPathfinderBlockedTargetTest
 	private PathfinderConfig pathfinderConfig;
 
 	@BeforeClass
-	public static void buildRoutingStatic() throws Exception
+	public static void buildRoutingStatic()
 	{
-		CollisionMap collision = new CollisionMap(SplitFlagMap.fromResources());
-		Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
-		Set<Integer> banks = ResourceLoader.destinations().get("bank");
-		routingStatic = RoutingStaticBuilder.build(collision, transports,
-			banks == null ? Set.of() : banks, RoutingCuts.loadFromResources().pairs()).routingStatic;
+		routingStatic = TestWorldData.routingStatic();
 	}
 
 	@Before
