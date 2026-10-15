@@ -14,18 +14,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
-import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
 import org.mockito.ArgumentCaptor;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
+import shortestpath.widgets.GameWidgets;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -476,11 +477,8 @@ public class SpiritTreeServiceTest
 		// A greyed row can leave a closing tag on the name capture; the parse
 		// must strip it or the row misses the patch table and the menu loses
 		// its authority to evict a stale positive for that patch.
-		Widget row = mock(Widget.class);
-		when(row.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>");
-
-		SpiritTreeMenuSnapshot snapshot =
-			SpiritTreeService.parseSpiritTreeMenuRows(new Widget[]{row}, false);
+		SpiritTreeMenuSnapshot snapshot = SpiritTreeService.parseSpiritTreeMenuRows(
+			List.of("<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>"), false);
 
 		assertEquals(Set.of("Port Sarim"), snapshot.listed);
 		assertTrue(snapshot.available.isEmpty());
@@ -658,20 +656,15 @@ public class SpiritTreeServiceTest
 	@Test
 	public void onMenuOpenedAppliesMenuAndPublishes()
 	{
-		Client client = mock(Client.class);
-		Widget container = mock(Widget.class);
-		Widget first = mock(Widget.class);
-		Widget listed = mock(Widget.class);
-		Widget greyed = mock(Widget.class);
-		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
-		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, listed, greyed});
-		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
-		when(listed.getText()).thenReturn("<col=735a28>3</col>: Port Sarim");
-		when(greyed.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Etceteria</col>");
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.childTexts(InterfaceID.MENU, 3)).thenReturn(List.of(
+			"<col=735a28>1</col>: Tree Gnome Village",
+			"<col=735a28>3</col>: Port Sarim",
+			"<col=735a28>7</col>: <col=5f5f5f>Etceteria</col>"));
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
 		SpiritTreeService service =
-			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+			new SpiritTreeService(mock(ConfigManager.class), null, coordinator, widgets);
 		service.onMenuOpened(false);
 
 		ArgumentCaptor<TreeChange> captor = ArgumentCaptor.forClass(TreeChange.class);
@@ -683,16 +676,34 @@ public class SpiritTreeServiceTest
 	@Test
 	public void onMenuOpenedIgnoresForeignMenu()
 	{
-		Client client = mock(Client.class);
-		Widget container = mock(Widget.class);
-		Widget first = mock(Widget.class);
-		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
-		when(container.getDynamicChildren()).thenReturn(new Widget[]{first});
-		when(first.getText()).thenReturn("<col=735a28>1</col>: Some other interface");
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.childTexts(InterfaceID.MENU, 3)).thenReturn(
+			List.of("<col=735a28>1</col>: Some other interface"));
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
 		SpiritTreeService service =
-			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+			new SpiritTreeService(mock(ConfigManager.class), null, coordinator, widgets);
+
+		service.onMenuOpened(false);
+
+		verify(coordinator, never()).treeSetChanged(any());
+		assertNull(service.getAvailableSpiritTrees());
+	}
+
+	@Test
+	public void onMenuOpenedRequiresSentinelAtRowZero()
+	{
+		// The sentinel identifies the menu by position alone: a Tree Gnome
+		// Village row anywhere but index 0 must not turn an unrelated
+		// interface into a spirit tree observation.
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.childTexts(InterfaceID.MENU, 3)).thenReturn(List.of(
+			"<col=735a28>3</col>: Port Sarim",
+			"<col=735a28>1</col>: Tree Gnome Village"));
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+
+		SpiritTreeService service =
+			new SpiritTreeService(mock(ConfigManager.class), null, coordinator, widgets);
 
 		service.onMenuOpened(false);
 
@@ -703,10 +714,9 @@ public class SpiritTreeServiceTest
 	@Test
 	public void onMenuOpenedWithoutContainerDeclaresNothing()
 	{
-		Client client = mock(Client.class);
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SpiritTreeService service =
-			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+		SpiritTreeService service = new SpiritTreeService(
+			mock(ConfigManager.class), null, coordinator, GameWidgets.forTesting());
 
 		service.onMenuOpened(false);
 		service.onMenuOpened(true);
@@ -717,14 +727,12 @@ public class SpiritTreeServiceTest
 	@Test
 	public void onMenuOpenedEmptyChildrenDeclaresNothing()
 	{
-		Client client = mock(Client.class);
-		Widget container = mock(Widget.class);
-		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
-		when(container.getDynamicChildren()).thenReturn(new Widget[0]);
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.childTexts(InterfaceID.MENU, 3)).thenReturn(List.of());
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
 		SpiritTreeService service =
-			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+			new SpiritTreeService(mock(ConfigManager.class), null, coordinator, widgets);
 
 		service.onMenuOpened(false);
 
@@ -734,18 +742,14 @@ public class SpiritTreeServiceTest
 	@Test
 	public void onMenuOpenedUsesNewMenuArm()
 	{
-		Client client = mock(Client.class);
-		Widget container = mock(Widget.class);
-		Widget first = mock(Widget.class);
-		Widget listed = mock(Widget.class);
-		when(client.getWidget(InterfaceID.MENU_NEW, 9)).thenReturn(container);
-		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, listed});
-		when(first.getText()).thenReturn("<col=ffffff>1</col>: Tree Gnome Village");
-		when(listed.getText()).thenReturn("<col=ffffff>3</col>: Brimhaven");
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.childTexts(InterfaceID.MENU_NEW, 9)).thenReturn(List.of(
+			"<col=ffffff>1</col>: Tree Gnome Village",
+			"<col=ffffff>3</col>: Brimhaven"));
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 
 		SpiritTreeService service =
-			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+			new SpiritTreeService(mock(ConfigManager.class), null, coordinator, widgets);
 		service.onMenuOpened(true);
 
 		verify(coordinator).treeSetChanged(any());
@@ -755,18 +759,14 @@ public class SpiritTreeServiceTest
 	@Test
 	public void greyedMenuRowEvictsStalePositiveFromPublishedSet()
 	{
-		Client client = mock(Client.class);
-		Widget container = mock(Widget.class);
-		Widget first = mock(Widget.class);
-		Widget greyed = mock(Widget.class);
-		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
-		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, greyed});
-		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
-		when(greyed.getText()).thenReturn("<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>");
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.childTexts(InterfaceID.MENU, 3)).thenReturn(List.of(
+			"<col=735a28>1</col>: Tree Gnome Village",
+			"<col=735a28>7</col>: <col=5f5f5f>Port Sarim</col>"));
 
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 		SpiritTreeService service =
-			new SpiritTreeService(mock(ConfigManager.class), client, coordinator);
+			new SpiritTreeService(mock(ConfigManager.class), null, coordinator, widgets);
 		service.applyVarbitSample("Port Sarim", 20); // prior positive observation
 		service.onMenuOpened(false);
 
@@ -778,16 +778,13 @@ public class SpiritTreeServiceTest
 	@Test
 	public void menuPartialListingKeepsUnlistedPatches()
 	{
-		Client client = mock(Client.class);
-		Widget container = mock(Widget.class);
-		Widget first = mock(Widget.class);
-		Widget listed = mock(Widget.class);
-		when(client.getWidget(InterfaceID.MENU, 3)).thenReturn(container);
-		when(container.getDynamicChildren()).thenReturn(new Widget[]{first, listed});
-		when(first.getText()).thenReturn("<col=735a28>1</col>: Tree Gnome Village");
-		when(listed.getText()).thenReturn("<col=735a28>3</col>: Port Sarim");
+		GameWidgets widgets = mock(GameWidgets.class);
+		when(widgets.childTexts(InterfaceID.MENU, 3)).thenReturn(List.of(
+			"<col=735a28>1</col>: Tree Gnome Village",
+			"<col=735a28>3</col>: Port Sarim"));
 
-		SpiritTreeService service = new SpiritTreeService(mock(ConfigManager.class), client);
+		SpiritTreeService service = new SpiritTreeService(
+			mock(ConfigManager.class), null, null, widgets);
 		service.applyVarbitSample("Farming Guild", 20); // menu never lists it
 		service.onMenuOpened(false);
 
