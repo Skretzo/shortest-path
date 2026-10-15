@@ -13,8 +13,8 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.pathfinder.Target;
 import shortestpath.pathfinder.Targets;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /** Converting the {@code target} of {@code path} and {@code query} messages to and from {@link Targets}. */
 public class PluginMessageTargetsTest

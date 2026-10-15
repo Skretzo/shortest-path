@@ -51,6 +51,7 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
@@ -106,11 +107,13 @@ import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
-import shortestpath.transport.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.TeleportationItem;
+import shortestpath.requirement.model.JewelleryBoxTier;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -178,7 +181,7 @@ public class ShortestPathPlugin extends Plugin
 	public boolean highlightInventoryItems;
 
 	// Bank pickup cache — invalidated when path, bank, or inventory changes.
-	private shortestpath.transport.BankPickupRequirements.BankPickupResult bankPickupCache;
+	private shortestpath.requirement.BankPickupRequirements.BankPickupResult bankPickupCache;
 	private List<PathStep> bankPickupCachePath;
 	private int bankPickupCacheIndex = -1;
 	private boolean bankPickupDirty = true;
@@ -1503,7 +1506,35 @@ public class ShortestPathPlugin extends Plugin
 		if (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN)
 		{
 			bankPickupDirty = true;
+			pathfinderConfig.invalidateEligibility();
 		}
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
+		// snapshot but change without firing a container event.
+		int varbitId = event.getVarbitId();
+		if (varbitId == VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE
+			|| containsVarbit(PathfinderConfig.RUNE_POUCH_RUNE_VARBITS, varbitId)
+			|| containsVarbit(PathfinderConfig.RUNE_POUCH_AMOUNT_VARBITS, varbitId))
+		{
+			bankPickupDirty = true;
+			pathfinderConfig.invalidateEligibility();
+		}
+	}
+
+	private static boolean containsVarbit(int[] varbits, int varbitId)
+	{
+		for (int id : varbits)
+		{
+			if (id == varbitId)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -1530,7 +1561,7 @@ public class ShortestPathPlugin extends Plugin
 		// The target's items are only known once the search has its result, which appears just
 		// after the final path: keep recomputing until then.
 		bankPickupDirty = search != null && result == null;
-		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
+		bankPickupCache = shortestpath.requirement.BankPickupRequirements.BankPickupResult.compute(
 				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex,
 				itemsToPickUp(result));
 		return bankPickupCache;

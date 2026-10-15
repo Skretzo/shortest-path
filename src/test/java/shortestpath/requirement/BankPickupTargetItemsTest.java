@@ -1,4 +1,4 @@
-package shortestpath.transport;
+package shortestpath.requirement;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -27,8 +27,8 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /** The bank step's "Pick up" list for the items a path's target needs on arrival. */
 public class BankPickupTargetItemsTest
@@ -70,7 +70,15 @@ public class BankPickupTargetItemsTest
 
 	private void pickups(TransportItems target)
 	{
-		BankPickupRequirements.addTargetPickups(client, target, playerHas, bankHas, phrases, highlights);
+		TransportEligibility.BankPickupPlan plan =
+			TransportEligibility.forPlayerAndBank(playerHas, bankHas, -1, Map.of()).targetPickupPlan(target);
+		for (Map.Entry<Integer, Long> entry : plan.items.entrySet())
+		{
+			Map<Integer, Long> single = new java.util.LinkedHashMap<>();
+			single.put(entry.getKey(), entry.getValue());
+			phrases.add(BankPickupRequirements.formatPickups(client, single));
+		}
+		highlights.addAll(plan.bankItemIds);
 	}
 
 	@Test
@@ -143,6 +151,8 @@ public class BankPickupTargetItemsTest
 		PathfinderConfig config = mock(PathfinderConfig.class);
 		when(config.getTransportAvailability(anyBoolean())).thenReturn(TransportAvailabilityFixture.of());
 		when(config.getUnlocks()).thenReturn(Set.of());
+		when(config.getEligibility()).thenReturn(
+			TransportEligibility.forPlayerAndBank(Map.of(), Map.of(ItemID.SPADE, 1), -1, Map.of()));
 		TransportItems spade = needs(anyOf(Map.of(ItemID.SPADE, 1)));
 		List<PathStep> path = List.of(new PathStep(BANK_TILE, false), new PathStep(BANK_TILE, true),
 			new PathStep(NEXT_TILE, true), new PathStep(TARGET, true));

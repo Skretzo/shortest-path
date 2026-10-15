@@ -1,4 +1,4 @@
-package shortestpath.transport.requirement;
+package shortestpath.requirement.model;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +7,6 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.Assert;
 import org.junit.Test;
 import shortestpath.ItemVariations;
-import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.transport.parser.ItemRequirementParser;
 
 /**
@@ -294,17 +293,17 @@ public class TransportItemsSatisfactionTest
 
 	private static boolean satisfied(TransportItems items, int... idAndQuantity)
 	{
-		return items.isSatisfiedBy(counts(idAndQuantity), PathfinderConfig.CURRENCIES, Integer.MAX_VALUE);
+		return items.isSatisfiedBy(counts(idAndQuantity), TransportItems.CURRENCIES, Integer.MAX_VALUE);
 	}
 
 	private static boolean satisfiedWithUnlocks(TransportItems items, Set<Unlock> unlocks, int... idAndQuantity)
 	{
-		return items.isSatisfiedBy(counts(idAndQuantity), PathfinderConfig.CURRENCIES, Integer.MAX_VALUE, unlocks);
+		return items.isSatisfiedBy(counts(idAndQuantity), TransportItems.CURRENCIES, Integer.MAX_VALUE, unlocks);
 	}
 
 	private static boolean satisfiedWithThreshold(TransportItems items, int threshold, int... idAndQuantity)
 	{
-		return items.isSatisfiedBy(counts(idAndQuantity), PathfinderConfig.CURRENCIES, threshold);
+		return items.isSatisfiedBy(counts(idAndQuantity), TransportItems.CURRENCIES, threshold);
 	}
 
 	private static Map<Integer, Integer> counts(int... idAndQuantity)

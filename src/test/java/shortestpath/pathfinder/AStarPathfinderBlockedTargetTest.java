@@ -26,6 +26,7 @@ import shortestpath.Destination;
 import shortestpath.ShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.RoutingCuts;
+import shortestpath.requirement.TeleportationItem;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticBuilder;
 import shortestpath.transport.Transport;
@@ -65,6 +66,8 @@ public class AStarPathfinderBlockedTargetTest
 		when(config.collisionAwareBlockedTargets()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
 	}
 
 	private void setup(int unreachableDistance)

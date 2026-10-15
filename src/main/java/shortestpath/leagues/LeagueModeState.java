@@ -1,11 +1,10 @@
 package shortestpath.leagues;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import net.runelite.api.Client;
 import net.runelite.api.WorldType;
+import shortestpath.requirement.PlayerStateSource;
 
 /**
  * Snapshot of the player's Demonic Pacts League state, refreshed once per
@@ -85,48 +84,34 @@ public class LeagueModeState
 	}
 
 	/**
-	 * Immutable per-refresh league facts. The pathfinding executor thread
-	 * reads this object while the client thread refreshes it, so the state is
-	 * swapped as a single volatile reference rather than mutated in place.
+	 * The current facts, replaced wholesale by every {@link #refresh} /
+	 * {@link #setForTest}. Held as one immutable object so a search thread
+	 * reading through this live state always sees a consistent snapshot —
+	 * never torn fields from two overlapping refreshes — and so
+	 * {@link #snapshot()} can hand a per-refresh requirement context a frozen
+	 * view that later refreshes cannot mutate.
 	 */
-	private static final class State
-	{
-		private static final State EMPTY =
-			new State(false, false, EnumSet.noneOf(LeagueRegion.class));
-
-		private final boolean seasonal;
-		private final boolean deadman;
-		private final Set<LeagueRegion> unlockedRegions;
-
-		private State(boolean seasonal, boolean deadman, Set<LeagueRegion> unlockedRegions)
-		{
-			this.seasonal = seasonal;
-			this.deadman = deadman;
-			this.unlockedRegions = unlockedRegions;
-		}
-	}
-
-	private volatile State state = State.EMPTY;
+	private volatile LeagueModeSnapshot current = LeagueModeSnapshot.NON_SEASONAL;
 
 	/**
-	 * Re-reads {@link Client#getWorldType()} and the area-unlock varbits.
-	 * Called from {@code PathfinderConfig.refresh()} which already runs on
-	 * world change, login, and config edits.
+	 * Re-reads the world type and the area-unlock varbits through the player
+	 * state source. Called from {@code PathfinderConfig.refresh()} which
+	 * already runs on world change, login, and config edits.
 	 *
 	 * <p>
-	 * Off the game thread (or on a {@code null} client) this resets to a
-	 * non-seasonal state with no extra unlocks; this is the safe default
-	 * because non-seasonal logic mirrors normal pathfinding.
+	 * On a {@code null} source this resets to a non-seasonal state with no
+	 * extra unlocks; this is the safe default because non-seasonal logic
+	 * mirrors normal pathfinding.
 	 * </p>
 	 */
-	public void refresh(Client client)
+	public void refresh(PlayerStateSource source)
 	{
-		if (client == null)
+		if (source == null)
 		{
-			state = State.EMPTY;
+			current = LeagueModeSnapshot.NON_SEASONAL;
 			return;
 		}
-		EnumSet<WorldType> worldTypes = client.getWorldType();
+		EnumSet<WorldType> worldTypes = source.worldType();
 		boolean seasonal = worldTypes != null && worldTypes.contains(WorldType.SEASONAL);
 		boolean deadman = worldTypes != null && worldTypes.contains(WorldType.DEADMAN);
 
@@ -135,20 +120,35 @@ public class LeagueModeState
 		{
 			for (int varbitId : AREA_SELECTION_VARBITS)
 			{
-				addRegionFromSlot(client, varbitId, next);
+				addRegionFromSlot(source, varbitId, next);
 			}
 		}
-		state = new State(seasonal, deadman, Collections.unmodifiableSet(next));
+		current = new LeagueModeSnapshot(seasonal, deadman, next);
+	}
+
+	/**
+	 * The facts of the last refresh as an immutable value. A per-refresh
+	 * requirement context retains this instead of this live object, so its
+	 * verdicts cannot track a later refresh's writes.
+	 */
+	public LeagueModeSnapshot snapshot()
+	{
+		return current;
 	}
 
 	public boolean isSeasonal()
 	{
-		return state.seasonal;
+		return current.isSeasonal();
 	}
 
+	/**
+	 * Whether the player is on a Deadman Mode world ({@link WorldType#DEADMAN};
+	 * tournament worlds are flagged DEADMAN too). Tracked here because this
+	 * object already owns world-type detection.
+	 */
 	public boolean isDeadman()
 	{
-		return state.deadman;
+		return current.isDeadman();
 	}
 
 	/**
@@ -157,24 +157,7 @@ public class LeagueModeState
 	 */
 	public boolean isUnlocked(LeagueRegion region)
 	{
-		if (region == null)
-		{
-			return true;
-		}
-		if (region.isAlwaysUnlocked())
-		{
-			return true;
-		}
-		State current = state;
-		if (!current.seasonal)
-		{
-			return true;
-		}
-		if (region.isAlwaysBlocked())
-		{
-			return false;
-		}
-		return current.unlockedRegions.contains(region);
+		return current.isUnlocked(region);
 	}
 
 	/**
@@ -184,27 +167,22 @@ public class LeagueModeState
 	 */
 	public boolean isInBlockedRegion(int packedPoint)
 	{
-		if (!state.seasonal)
-		{
-			return false;
-		}
-		return LeagueRegionChecker.getRegion(packedPoint).isAlwaysBlocked();
+		return current.isInBlockedRegion(packedPoint);
 	}
 
 	/**
 	 * Test hook: forces the seasonal flag and unlock set without touching
-	 * the client.
+	 * the client. The Deadman flag keeps its current value, matching the
+	 * pre-snapshot behaviour where this only replaced seasonal state.
 	 */
 	public void setForTest(boolean seasonal, Set<LeagueRegion> unlocked)
 	{
-		this.state = new State(seasonal, state.deadman, unlocked == null
-			? EnumSet.noneOf(LeagueRegion.class)
-			: Collections.unmodifiableSet(EnumSet.copyOf(unlocked)));
+		current = new LeagueModeSnapshot(seasonal, current.isDeadman(), unlocked);
 	}
 
-	private static void addRegionFromSlot(Client client, int varbitId, Set<LeagueRegion> out)
+	private static void addRegionFromSlot(PlayerStateSource source, int varbitId, Set<LeagueRegion> out)
 	{
-		int value = client.getVarbitValue(varbitId);
+		int value = source.varbit(varbitId);
 		if (value <= 0)
 		{
 			return;
