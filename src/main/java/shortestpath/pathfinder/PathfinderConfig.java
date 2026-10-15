@@ -20,11 +20,11 @@ import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.Destination;
 import shortestpath.DestinationRequirements;
@@ -159,60 +159,74 @@ public class PathfinderConfig
 	/**
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
 	 */
-	private Set<Integer> accessibleBankTiles = Set.of();
+	// Refresh-written state below is read by the pathfinder executor thread;
+	// volatile keeps the cross-thread contract explicit (as availableSpiritTrees
+	// already does). The two availability maps additionally travel together in
+	// one volatile holder so a search never mixes sides of different refreshes.
+	private volatile Set<Integer> accessibleBankTiles = Set.of();
 	/**
-	 * Which transports are available for the current user configuration in the
-	 * unbanked/banked state.
-	 * - transportAvailabilityWithoutBank answers the question, which transport can a player take right now?
-	 * - transportAvailabilityWithBank answers the question, which transports can a player take if they visit a bank?
+	 * The banked/unbanked availability views of one refresh, published as a
+	 * single volatile reference so a running search can never read one side
+	 * from refresh N and the other from refresh N+1.
 	 */
-	private TransportAvailability transportAvailabilityWithoutBank;
-	private TransportAvailability transportAvailabilityWithBank;
+	private static final class TransportAvailabilities
+	{
+		private final TransportAvailability withoutBank;
+		private final TransportAvailability withBank;
+
+		private TransportAvailabilities(TransportAvailability withoutBank, TransportAvailability withBank)
+		{
+			this.withoutBank = withoutBank;
+			this.withBank = withBank;
+		}
+	}
+
+	private volatile TransportAvailabilities transportAvailabilities;
 	/**
 	 * Reference that points to either allDestinations or filteredDestinations
 	 */
-	private Map<String, Set<Integer>> destinations;
+	private volatile Map<String, Set<Integer>> destinations;
 	@Getter
-	private long calculationCutoffMillis;
+	private volatile long calculationCutoffMillis;
 	@Getter
-	private int unreachableTargetDistance;
+	private volatile int unreachableTargetDistance;
 	@Getter
-	private boolean collisionAwareBlockedTargets;
+	private volatile boolean collisionAwareBlockedTargets;
 	@Getter
-	private double aStarHeuristicWeight = 1;
+	private volatile double aStarHeuristicWeight = 1;
 	@Getter
-	private boolean avoidWilderness;
+	private volatile boolean avoidWilderness;
 	// POH-specific settings (not tied to a single TransportType)
-	private boolean usePohFairyRing,
+	private volatile boolean usePohFairyRing,
 		usePohSpiritTree,
 		usePoh,
 		usePohObelisk,
 		includeBankPath,
 		respawnPrifddinas;
-	private Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
-	private Set<PohMountedItem> enabledPohMountedItems = Set.of();
+	private volatile Set<PohNexusPortal> enabledPohNexusPortals = Set.of();
+	private volatile Set<PohMountedItem> enabledPohMountedItems = Set.of();
 	@Getter
-	private Set<Unlock> unlocks = Set.of();
-	private JewelleryBoxTier pohJewelleryBoxTier;
-	private int costConsumableTeleportationItems;
+	private volatile Set<Unlock> unlocks = Set.of();
+	private volatile JewelleryBoxTier pohJewelleryBoxTier;
+	private volatile int costConsumableTeleportationItems;
 	@Getter
-	private int bankVisitCost;
-	private int currencyThreshold;
+	private volatile int bankVisitCost;
+	private volatile int currencyThreshold;
 	@Getter
-	private boolean isOnSailingBoat;
+	private volatile boolean isOnSailingBoat;
 	@Getter
-	private PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
+	private volatile PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
 	/**
 	 * On a boat with the option on, search with sailing moves (see {@link SailingMoves}) instead of walking.
 	 */
 	@Getter
-	private boolean sailingMoves;
+	private volatile boolean sailingMoves;
 	/**
 	 * Speed sailing moves are built for: the boat's base speed in tiles per tick, or an estimate when it
 	 * can't be read. Speed boosts are random and temporary, so they are left out.
 	 */
 	@Getter
-	private double sailingSpeed = SailingMoves.ESTIMATED_SPEED;
+	private volatile double sailingSpeed = SailingMoves.ESTIMATED_SPEED;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -226,8 +240,9 @@ public class PathfinderConfig
 		this.allTransports = flatten(loadedTransports);
 		this.transportDestinations = collectTransportDestinations(this.allTransports);
 		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
+		this.transportAvailabilities = new TransportAvailabilities(
+			new TransportAvailability.Builder(allTransports.length).build(),
+			new TransportAvailability.Builder(allTransports.length).build());
 		this.allDestinations = Destination.loadAllFromResources();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
@@ -247,8 +262,9 @@ public class PathfinderConfig
 		this.allTransports = flatten(allTransports);
 		this.transportDestinations = collectTransportDestinations(this.allTransports);
 		this.allDisplayTransports = buildAllDisplayTransports(this.allTransports);
-		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
-		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
+		this.transportAvailabilities = new TransportAvailabilities(
+			new TransportAvailability.Builder(this.allTransports.length).build(),
+			new TransportAvailability.Builder(this.allTransports.length).build());
 		this.allDestinations = allDestinations;
 		this.filteredDestinations = filteredDestinations;
 		this.destinations = allDestinations;
@@ -307,7 +323,7 @@ public class PathfinderConfig
 
 	public TransportAvailability getTransportAvailability(boolean bankVisited)
 	{
-		return bankVisited ? transportAvailabilityWithBank : transportAvailabilityWithoutBank;
+		return bankVisited ? transportAvailabilities.withBank : transportAvailabilities.withoutBank;
 	}
 
 	public boolean isBankPathEnabled()
@@ -438,7 +454,7 @@ public class PathfinderConfig
 			}
 			boostedSkillLevelsAndMore[i++] = client.getTotalLevel(); // skill total level
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
-			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayer.QUEST_POINTS); // quest points
+			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
 
 			refreshTransports(evaluationTimeMinutes);
 		}
@@ -535,11 +551,13 @@ public class PathfinderConfig
 		if (avoidWilderness)
 		{
 			List<Integer> valid = new ArrayList<>(targets.size());
+			List<Target> filteredThisCall = new ArrayList<>(4);
 			for (Target target : targets)
 			{
 				if (WildernessChecker.isInWilderness(target.getPoint()))
 				{
 					filteredTargets.put(target.getPoint(), target);
+					filteredThisCall.add(target);
 				}
 				else
 				{
@@ -547,9 +565,14 @@ public class PathfinderConfig
 				}
 			}
 			kept = targets.restrictTo(valid);
-			// If every target was filtered out we re-include the filtered ones, but an
-			// explicitly empty input has nothing to keep and revives nothing.
-			revive = !targets.isEmpty() && kept.isEmpty();
+			// If we ended up with no valid locations we re-include the
+			// targets this call filtered - not targets accumulated while
+			// filtering unrelated earlier searches. An explicitly empty
+			// input has nothing to keep and revives nothing.
+			if (kept.isEmpty())
+			{
+				return kept.plus(Targets.of(filteredThisCall));
+			}
 		}
 		if (revive)
 		{
@@ -690,8 +713,7 @@ public class PathfinderConfig
 
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
-		transportAvailabilityWithoutBank = withoutBank.build();
-		transportAvailabilityWithBank = withBank.build();
+		transportAvailabilities = new TransportAvailabilities(withoutBank.build(), withBank.build());
 	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)
@@ -1200,6 +1222,7 @@ public class PathfinderConfig
 			case INVENTORY_AND_BANK_NON_CONSUMABLE:
 				return !transport.isConsumable();
 			case UNLOCKED:
+				return true; // Ownership is implied by the unlock check; items are never evaluated
 			case INVENTORY:
 			case INVENTORY_AND_BANK:
 				return true; // Will be checked later by hasRequiredItems
@@ -1373,10 +1396,20 @@ public class PathfinderConfig
 			switch (transportTypeConfig.getTeleportationItemSetting())
 			{
 				case ALL:
-				case ALL_NON_CONSUMABLE:
 				case UNLOCKED:
-				case UNLOCKED_NON_CONSUMABLE:
 					return true;
+				case ALL_NON_CONSUMABLE:
+				case UNLOCKED_NON_CONSUMABLE:
+					// Mirror checkTeleportationItemRules: non-consumable modes
+					// reject consumables even when their items are owned.
+					return !transport.isConsumable();
+				case INVENTORY_NON_CONSUMABLE:
+				case INVENTORY_AND_BANK_NON_CONSUMABLE:
+					if (transport.isConsumable())
+					{
+						return false;
+					}
+					break;
 				case NONE:
 					return false;
 				default:
