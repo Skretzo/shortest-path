@@ -13,8 +13,8 @@ import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
-import net.runelite.api.Skill;
 import shortestpath.requirement.model.DestinationRequirements;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.transport.parser.FieldParser;
 import shortestpath.transport.parser.QuestParser;
 import shortestpath.transport.parser.SkillRequirementParser;
@@ -37,7 +37,7 @@ import shortestpath.transport.parser.VarRequirementParser;
 @Slf4j
 public class Destination
 {
-	private static final FieldParser<int[]> SKILL_PARSER = new SkillRequirementParser();
+	private static final FieldParser<SkillLevels> SKILL_PARSER = new SkillRequirementParser();
 	private static final FieldParser<Set<Quest>> QUEST_PARSER = new QuestParser();
 	private static final FieldParser<Set<VarRequirement>> VARBIT_PARSER = VarRequirementParser.forVarbits();
 	private static final FieldParser<Set<VarRequirement>> VARPLAYER_PARSER = VarRequirementParser.forVarPlayers();
@@ -222,7 +222,7 @@ public class Destination
 					String varbitsStr = fieldAt(fields, varbitsCol);
 					String varPlayersStr = fieldAt(fields, varPlayersCol);
 
-					int[] skillLevels = skillsCol >= 0 ? SKILL_PARSER.parse(blankToNull(skillsStr)) : new int[Skill.values().length + 3];
+					SkillLevels skillLevels = skillsCol >= 0 ? SKILL_PARSER.parse(blankToNull(skillsStr)) : SkillLevels.NONE;
 					Set<Quest> quests = questsCol >= 0 ? QUEST_PARSER.parse(blankToNull(questsStr)) : Set.of();
 					Set<VarRequirement> varbits = varbitsCol >= 0 ? VARBIT_PARSER.parse(blankToNull(varbitsStr)) : Set.of();
 					Set<VarRequirement> varPlayers = varPlayersCol >= 0 ? VARPLAYER_PARSER.parse(blankToNull(varPlayersStr)) : Set.of();

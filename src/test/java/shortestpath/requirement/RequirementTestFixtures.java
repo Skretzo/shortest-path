@@ -10,6 +10,7 @@ import net.runelite.api.Skill;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.poh.JewelleryBoxTier;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.settings.TeleportationItem;
@@ -30,8 +31,8 @@ import shortestpath.transport.TransportType;
  */
 final class RequirementTestFixtures
 {
-	static final int SKILL_SLOTS = Skill.values().length + 3;
-	static final int TOTAL_LEVEL_SLOT = Skill.values().length;
+	static final int SKILL_SLOTS = SkillLevels.LENGTH;
+	static final int TOTAL_LEVEL_SLOT = SkillLevels.TOTAL_LEVEL_INDEX;
 
 	private RequirementTestFixtures()
 	{
@@ -42,9 +43,9 @@ final class RequirementTestFixtures
 	{
 		int[] skills = new int[SKILL_SLOTS];
 		Arrays.fill(skills, 99);
-		skills[TOTAL_LEVEL_SLOT] = 99 * Skill.values().length;
-		skills[TOTAL_LEVEL_SLOT + 1] = 126;
-		skills[TOTAL_LEVEL_SLOT + 2] = 300;
+		skills[SkillLevels.TOTAL_LEVEL_INDEX] = 99 * Skill.values().length;
+		skills[SkillLevels.COMBAT_LEVEL_INDEX] = 126;
+		skills[SkillLevels.QUEST_POINTS_INDEX] = 300;
 		return skills;
 	}
 
@@ -307,7 +308,7 @@ final class RequirementTestFixtures
 	}
 
 	/** Convenience for bank-adapter cases: defaults except where named. */
-	static DestinationRequirements bankRequirements(int[] skillLevels,
+	static DestinationRequirements bankRequirements(SkillLevels skillLevels,
 		Set<Quest> quests, Set<VarRequirement> varbits,
 		Set<VarRequirement> varPlayers)
 	{

@@ -103,9 +103,9 @@ public class PlayerStateSourceTest
 		assertEquals(Integer.valueOf(2000), context.getVarPlayerValues().get(4130));
 		assertEquals(QuestState.FINISHED, context.getQuestStates().get(Quest.TREE_GNOME_VILLAGE));
 		assertEquals(QuestState.FINISHED, context.getQuestStates().get(Quest.BONE_VOYAGE));
-		assertEquals(99, context.getBoostedSkillLevelsAndMore()[Skill.COOKING.ordinal()]);
-		assertEquals(1500, context.getBoostedSkillLevelsAndMore()[Skill.values().length]);
-		assertEquals(42, context.getBoostedSkillLevelsAndMore()[Skill.values().length + 2]);
+		assertEquals(99, context.getBoostedSkillLevelsAndMore().get(Skill.COOKING));
+		assertEquals(1500, context.getBoostedSkillLevelsAndMore().totalLevel());
+		assertEquals(42, context.getBoostedSkillLevelsAndMore().questPoints());
 		assertEquals(200, context.getCurrentMaxQuestPoints());
 		assertFalse(context.isOnSailingBoat());
 
