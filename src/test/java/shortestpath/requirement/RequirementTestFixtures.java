@@ -175,7 +175,7 @@ final class RequirementTestFixtures
 
 	/**
 	 * An eligibility snapshot where the bank-path pool carries extra items the
-	 * carried pool lacks — the shape {@code collectEligibility} produces when
+	 * carried pool lacks — the shape {@code TransportEligibility.collect} produces when
 	 * bank paths are enabled and the bank holds usable items.
 	 */
 	static TransportEligibility bankedEligibility(TeleportationItem mode, Map<Integer, Integer> carried,
