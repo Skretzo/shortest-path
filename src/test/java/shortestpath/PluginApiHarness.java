@@ -389,6 +389,14 @@ final class PluginApiHarness implements AutoCloseable
 		return scheduler.getActiveSearch();
 	}
 
+	/** The bank-pickup projection for the shown path, as the annotator reports it. */
+	shortestpath.presentation.BankPickupRequirements.BankPickupResult bankPickup(
+		List<shortestpath.pathfinder.PathStep> path, int index, ActiveSearch search)
+	{
+		return ((shortestpath.presentation.PathAnnotator) get("annotator"))
+			.getBankPickup(path, index, search);
+	}
+
 	@Override
 	public void close()
 	{

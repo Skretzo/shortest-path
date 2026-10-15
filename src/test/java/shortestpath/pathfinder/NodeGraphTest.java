@@ -147,16 +147,16 @@ public class NodeGraphTest
 		var steps = graph.getPathSteps(bankVisit);
 		assertEquals(2, steps.size());
 		assertEquals(bankTile, steps.get(0).getPackedPosition());
-		assertFalse(steps.get(0).isBankVisited());
+		assertEquals(BankVisitState.CARRIED, steps.get(0).getBankVisitState());
 		assertEquals(bankTile, steps.get(1).getPackedPosition());
-		assertTrue(steps.get(1).isBankVisited());
+		assertEquals(BankVisitState.BANKED, steps.get(1).getBankVisitState());
 		assertNull(steps.get(1).getTransport());
 
-		int after = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), bankVisit, true);
+		int after = graph.createTile(WorldPointUtil.packWorldPoint(3201, 3200, 0), bankVisit, BankVisitState.BANKED);
 		steps = graph.getPathSteps(after);
 		assertEquals(2, steps.size());
 		assertEquals(bankTile, steps.get(0).getPackedPosition());
-		assertTrue(steps.get(1).isBankVisited());
+		assertEquals(BankVisitState.BANKED, steps.get(1).getBankVisitState());
 	}
 
 	@Test
