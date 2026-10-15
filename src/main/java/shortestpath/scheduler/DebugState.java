@@ -1,5 +1,7 @@
-package shortestpath;
+package shortestpath.scheduler;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import lombok.Getter;
 import shortestpath.pathfinder.ActiveSearch;
 
@@ -10,6 +12,7 @@ import shortestpath.pathfinder.ActiveSearch;
  * behind silently. Written by the plugin, read when rendering.
  */
 @Getter
+@Singleton
 public final class DebugState
 {
 	private static final int MAX_MESSAGE_LENGTH = 60;
@@ -55,6 +58,11 @@ public final class DebugState
 	private volatile int searchErrorCount;
 	private volatile String searchError;
 	private volatile int searchErrorTick = -1;
+
+	@Inject
+	public DebugState()
+	{
+	}
 
 	void restartRequested(String reason, int tick)
 	{
