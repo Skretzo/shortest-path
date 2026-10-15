@@ -10,6 +10,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.ui.*;
 import net.runelite.client.ui.overlay.*;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
@@ -54,9 +55,10 @@ public class PathMapTooltipOverlay extends Overlay
 			return null;
 		}
 
-		if (scheduler.getActiveSearch() != null)
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (search != null)
 		{
-			List<PathStep> path = scheduler.getActiveSearch().getPath();
+			List<PathStep> path = search.getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			for (int i = 0; i < path.size(); i++)
 			{
@@ -70,7 +72,7 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : scheduler.getActiveSearch().getTargets().points())
+			for (int target : search.getTargets().points())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
@@ -106,7 +108,7 @@ public class PathMapTooltipOverlay extends Overlay
 		}
 
 		List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
-			n < 0 ? "Unused target" : ("Step " + n + " of " + scheduler.getActiveSearch().getPath().size())));
+			n < 0 ? "Unused target" : ("Step " + n + " of " + path.size())));
 		if (nextPoint != WorldPointUtil.UNDEFINED)
 		{
 			PathStep currentStep = path.get(pathIndex);

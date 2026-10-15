@@ -119,10 +119,11 @@ public class PathMapOverlay extends Overlay
 			});
 		}
 
-		if (scheduler.getActiveSearch() != null)
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (search != null)
 		{
 			Color colour = renderState.getPathColor();
-			List<PathStep> path = scheduler.getActiveSearch().getPath();
+			List<PathStep> path = search.getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			if (renderState.isSailing())
 			{
@@ -158,7 +159,7 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			OverlayDrawing.forEachUnreachedTarget(scheduler.getActiveSearch(), path, target ->
+			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
 			{
 				graphics.setColor(settings.display().colourPathCalculating());
 				drawOnMap(graphics, target, true, cursorPos);
