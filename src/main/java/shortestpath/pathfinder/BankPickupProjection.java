@@ -5,7 +5,7 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
 import shortestpath.items.ItemStateService;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.model.TransportItems;
 
 /**
