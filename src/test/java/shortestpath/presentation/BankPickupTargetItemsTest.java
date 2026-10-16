@@ -24,6 +24,7 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankPickupAnalysis;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -133,12 +134,12 @@ public class BankPickupTargetItemsTest
 	{
 		List<PathStep> path = List.of(new PathStep(NEXT_TILE, BankVisitState.CARRIED), new PathStep(BANK_TILE, BankVisitState.CARRIED),
 			new PathStep(BANK_TILE, BankVisitState.BANKED), new PathStep(NEXT_TILE, BankVisitState.BANKED));
-		assertFalse(BankPickupRequirements.visitsBankAt(path, 0));
-		assertTrue(BankPickupRequirements.visitsBankAt(path, 1));
-		assertTrue(BankPickupRequirements.visitsBankAt(path, 2));
-		assertFalse(BankPickupRequirements.visitsBankAt(path, 3));
+		assertFalse(BankPickupAnalysis.visitsBankAt(path, 0));
+		assertTrue(BankPickupAnalysis.visitsBankAt(path, 1));
+		assertTrue(BankPickupAnalysis.visitsBankAt(path, 2));
+		assertFalse(BankPickupAnalysis.visitsBankAt(path, 3));
 		assertTrue("a path that starts banked visits at its start",
-			BankPickupRequirements.visitsBankAt(List.of(new PathStep(BANK_TILE, BankVisitState.BANKED)), 0));
+			BankPickupAnalysis.visitsBankAt(List.of(new PathStep(BANK_TILE, BankVisitState.BANKED)), 0));
 	}
 
 	@Test
