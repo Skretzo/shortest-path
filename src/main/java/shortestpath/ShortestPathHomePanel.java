@@ -6,11 +6,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
@@ -18,6 +20,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 import shortestpath.settings.TeleportationItem;
 
 /**
@@ -101,11 +104,87 @@ class ShortestPathHomePanel extends PluginPanel
 		content.repaint();
 	}
 
+	/**
+	 * The grouped results view: one category header per category with ≥1
+	 * match, then a clickable result row per match — the restriction
+	 * checklist contributes one row per matching family name. Clicking a
+	 * result deep-links into the category pre-filtered on the query.
+	 */
 	private void showResults(String query)
 	{
-		// The grouped results view is built by the search layer — the tile
-		// grid stands in until it lands.
-		showTiles();
+		String q = query.trim().toLowerCase(Locale.ROOT);
+		content.removeAll();
+		boolean any = false;
+		for (CategoryPanel category : panel.categories())
+		{
+			List<ShortestPathPanel.SearchRow> matches = panel.matchingRows(category, q);
+			if (matches.isEmpty())
+			{
+				continue;
+			}
+			any = true;
+
+			JLabel header = new JLabel(category.categoryName());
+			header.setForeground(ColorScheme.BRAND_ORANGE);
+			header.setFont(FontManager.getRunescapeBoldFont());
+			header.setBorder(new MatteBorder(0, 0, 1, 0, ColorScheme.MEDIUM_GRAY_COLOR));
+			content.add(header);
+
+			for (ShortestPathPanel.SearchRow row : matches)
+			{
+				if (row.component instanceof RestrictionListPanel)
+				{
+					for (String label : panel.restrictionListPanel().matchingLabels(q))
+					{
+						content.add(resultRow(category, row, label));
+					}
+					continue;
+				}
+				content.add(resultRow(category, row, row.display));
+			}
+		}
+
+		if (!any)
+		{
+			JShadowedLabel hint = new JShadowedLabel("<html>No options matching \""
+				+ ShortestPathPanel.escapeHtml(query.trim())
+				+ "\". Clear the search to see everything.</html>");
+			hint.setFont(FontManager.getRunescapeSmallFont());
+			hint.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			hint.setHorizontalAlignment(SwingConstants.CENTER);
+			hint.setBorder(new EmptyBorder(8, 8, 8, 8));
+			content.add(hint);
+		}
+
+		content.revalidate();
+		content.repaint();
+	}
+
+	private JComponent resultRow(CategoryPanel category, ShortestPathPanel.SearchRow row, String display)
+	{
+		JPanel result = new JPanel(new BorderLayout());
+		result.setOpaque(false);
+		result.setBorder(new EmptyBorder(4, 4, 4, 4));
+
+		JLabel label = new JLabel(display);
+		label.setForeground(Color.WHITE);
+		result.add(label, BorderLayout.CENTER);
+
+		JLabel chevron = new JLabel(ShortestPathPanel.SECTION_EXPAND_ICON);
+		result.add(chevron, BorderLayout.EAST);
+
+		MouseAdapter drill = new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				panel.deepLink(category, row);
+			}
+		};
+		result.addMouseListener(drill);
+		label.addMouseListener(drill);
+		chevron.addMouseListener(drill);
+		return result;
 	}
 
 	private JPanel makeTile(CategoryPanel category)
