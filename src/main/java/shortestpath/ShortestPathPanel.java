@@ -183,6 +183,11 @@ public class ShortestPathPanel extends PluginPanel
 
 		// Tile statuses summarize live config: every key a status reads gets
 		// a refresh listener so tiles track panel writes and external edits.
+		// Ordering matters — listeners run in registration order, and the
+		// card / restriction-list syncFromConfig listeners (registered while
+		// the categories were built above) must update their model state
+		// before home::refresh reads it. Keep these registrations last, or
+		// have refresh() re-read config directly, or tiles go stale.
 		for (TransportFamilyCard card : transportCards)
 		{
 			registerConfigListener(card.getKeyName(), home::refresh);
