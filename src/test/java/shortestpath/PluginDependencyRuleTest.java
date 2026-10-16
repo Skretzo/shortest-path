@@ -245,18 +245,16 @@ public class PluginDependencyRuleTest
 			"overlays read the PathAnnotator seam and BankPickupRequirements/BankPickupResult at its new presentation home");
 		LEAF_EDGES.put("overlay -> widgets",
 			"PathMapOverlay/PathMinimapOverlay/PathMapTooltipOverlay read the injected WidgetGeometry for map/minimap geometry");
-		LEAF_EDGES.put("pathfinder -> presentation",
-			"PathfinderConfig owns BankPickupProjection, whose getBankPickup signature references BankPickupResult");
 		LEAF_EDGES.put("presentation -> items",
 			"PathAnnotator reads bank-open state through the injected ItemStateService");
 		LEAF_EDGES.put("presentation -> pathfinder",
-			"PathAnnotator walks edges via PathStep/PathfinderConfig/TransportAvailability; BankPickupRequirements keeps its pathfinder reads");
+			"PathAnnotator walks edges via PathStep/PathfinderConfig/TransportAvailability; BankPickupRequirements formats the pathfinder-owned BankPickupAnalysis");
 		LEAF_EDGES.put("presentation -> poh",
 			"PathAnnotator reads PohService for POH exit info and inside-POH display policy");
 		LEAF_EDGES.put("presentation -> requirement",
-			"BankPickupRequirements carries its TransportEligibility/TransportItems reads through the requirement/ move; PathAnnotator reads TransportEligibility");
+			"PathAnnotator reads TransportEligibility; BankPickupRequirements keeps its TransportItems read");
 		LEAF_EDGES.put("presentation -> transport",
-			"PathAnnotator/BankPickupRequirements read Transport/TransportType for display formatting and eligibility");
+			"PathAnnotator reads Transport/TransportType for display formatting and eligibility");
 
 		// Pre-existing edges frozen at lint introduction.
 		LEAF_EDGES.put("leagues -> requirement",
@@ -282,7 +280,7 @@ public class PluginDependencyRuleTest
 		LEAF_EDGES.put("requirement -> leagues",
 			"requirements consult league-region checks");
 		LEAF_EDGES.put("requirement -> pathfinder",
-			"Requirements/TransportEligibility read BankVisitState; BankPickupRequirements moved to presentation");
+			"Requirements/TransportEligibility read BankVisitState and the HeldItems snapshot");
 		LEAF_EDGES.put("requirement -> settings",
 			"RoutingPolicy/TransportEligibility read settings types");
 		LEAF_EDGES.put("requirement -> transport",
