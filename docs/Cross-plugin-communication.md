@@ -146,7 +146,7 @@ eventBus.post(new PluginMessage("shortestpath", "path", data));
 
 - `boolean`: `avoidWilderness`, `collisionAwareBlockedTargets`, `drawClickPoints`,
   `drawCollisionMap`, `drawMap`, `drawMinimap`, `drawTiles`, `drawTransports`,
-  `highlightBankPickupItems`, `highlightInventoryItems`, `highlightSpellbookSpells`,
+  `filterBankPickupItems`, `highlightBankPickupItems`, `highlightInventoryItems`, `highlightSpellbookSpells`,
   `includeBankPath`, `postTransports`, `respawnPrifddinas`, `showBankPickupInfo`,
   `showTeleportPulse`, `showTransportInfo`, `showUnreachableText`,
   `unlockCanoeAxe`, `unlockDragontoothPassage`, `unlockMorUlRek`, `unlockXericsHonour`, `usePoh`,

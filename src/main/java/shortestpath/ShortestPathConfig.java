@@ -602,6 +602,19 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "filterBankPickupItems",
+		name = "Filter bank to pickup items",
+		description = "When the bank is opened, show only the items that need to be picked up for the current path." +
+			"<br>Viewing a bank tab or searching shows the full bank again until the bank is reopened",
+		position = 136,
+		section = sectionSettings
+	)
+	default boolean filterBankPickupItems()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "highlightSpellbookSpells",
 		name = "Highlight spellbook spells",
 		description = "Highlight spells in the spellbook that need to be cast for the current path step",
