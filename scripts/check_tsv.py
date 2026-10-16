@@ -262,9 +262,6 @@ def check_tsv(filepath):
     # Build per-column validator list (None = no validator)
     validators = [COLUMN_VALIDATORS.get(h) for h in headers]
 
-    # Special-case: track the Items column index for the skill-in-items check
-    items_idx  = next((i for i, h in enumerate(headers) if h == "Items"),  None)
-
     # Check data rows
     col_count_errors = 0
     for lineno, line in enumerate(lines[1:], start=2):
@@ -314,8 +311,6 @@ def check_tsv(filepath):
             errors = result if isinstance(result, list) else [result]
             col_name = headers[col_idx]
             for err in errors:
-                # Extra check: skill-in-items is already covered by validate_items,
-                # but we also keep the human-readable phrasing from validate_skills check
                 issues.append(f"  line {lineno} [{col_name}]: {err}")
 
     if col_count_errors > 5:
