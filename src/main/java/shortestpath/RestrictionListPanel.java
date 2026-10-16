@@ -188,6 +188,41 @@ class RestrictionListPanel extends JPanel
 	}
 
 	/**
+	 * The number of individual item ids on the blocklist — the "N blocked"
+	 * status the home tile shows.
+	 */
+	int blockedItemCount()
+	{
+		return blocked.size();
+	}
+
+	/**
+	 * The display names of the families a query would surface: every family
+	 * whose {@code searchText} (name + member labels) contains the query and
+	 * that passes the current owned-only filter. An empty query lists every
+	 * visible family; teleportation-items-disabled lists nothing because the
+	 * hint replaces the rows entirely.
+	 */
+	List<String> matchingLabels(String query)
+	{
+		List<String> labels = new ArrayList<>();
+		if (itemsDisabled)
+		{
+			return labels;
+		}
+		for (RestrictionRow row : rows)
+		{
+			boolean matches = query.isEmpty() || row.searchText.contains(query);
+			boolean ownedOk = !ownedOnly || row.isOwned();
+			if (matches && ownedOk)
+			{
+				labels.add(row.family.name());
+			}
+		}
+		return labels;
+	}
+
+	/**
 	 * Display-only filter: with {@code ownedOnly} set, families with no member
 	 * id found in inventory, equipment or bank drop out of the list. Routing
 	 * semantics are untouched — the config CSV is never written here.
