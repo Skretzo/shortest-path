@@ -243,7 +243,7 @@ public final class AStarPathfinder implements ActiveSearch
 	/**
 	 * Always {@code false}: sailing dispatch bypasses the backend choice and
 	 * builds a {@link shortestpath.pathfinder.sailing.SailingPathfinder}
-	 * directly, so an exact-backend search is never a sailing search.
+	 * directly, so an A* search is never a sailing search.
 	 */
 	@Override
 	public boolean isSailing()
