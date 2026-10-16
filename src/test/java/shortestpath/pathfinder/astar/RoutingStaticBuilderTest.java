@@ -151,6 +151,33 @@ public class RoutingStaticBuilderTest
 	}
 
 	@Test
+	public void verticalNeighboursDoNotWrapBetweenPlanes() throws Exception
+	{
+		int top = WorldPointUtil.packWorldPoint(10, 32767, 0);
+		int bottom = WorldPointUtil.packWorldPoint(10, 0, 1);
+		SyntheticCollisionMap world = new SyntheticCollisionMap(Set.of(top, bottom), Map.of(), 2)
+		{
+			@Override
+			public SplitFlagMap.RegionExtent regionExtent()
+			{
+				return new SplitFlagMap.RegionExtent(0, 0, 0, 511);
+			}
+
+			@Override
+			public byte getRegionPlaneCounts(int regionIndex)
+			{
+				return 2;
+			}
+		};
+		RoutingStatic stat = RoutingStaticBuilder.build(world,
+			transports(transport(WorldPointUtil.UNDEFINED, bottom, TransportType.SEASONAL_TRANSPORTS)),
+			Set.of(), new int[0], top).routingStatic;
+
+		assertEquals(-1, stat.northNode(stat.searchIndex(top)));
+		assertEquals(-1, stat.southNode(stat.searchIndex(bottom)));
+	}
+
+	@Test
 	public void floodFillKeepsEveryDirectionAndRespectsDiagonalCuts() throws Exception
 	{
 		for (int plane : new int[] {0, 3})

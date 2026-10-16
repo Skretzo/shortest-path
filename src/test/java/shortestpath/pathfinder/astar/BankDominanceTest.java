@@ -45,7 +45,7 @@ public class BankDominanceTest
 	{
 		try
 		{
-			return RoutingStatic.takeOwnership(new int[0], new int[0], new byte[0], new int[0], new int[0],
+			return RoutingStatic.takeOwnership(new int[0], new int[0], new byte[0], new char[0], new char[0],
 				new int[] {A, X, BANK1, BANK2, Y, D}, new int[] {0, 1, 2, 3, 4, 5, 6},
 				new int[] {0, 0, 0, 0, 1, 1}, 2, new int[] {0, 4, 6},
 				new int[] {0, 1, 2, 3, 4, 5}, new int[] {BANK1, BANK2}, new int[0], new int[0], new int[0],

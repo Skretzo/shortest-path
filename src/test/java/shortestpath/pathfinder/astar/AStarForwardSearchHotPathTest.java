@@ -193,7 +193,7 @@ public class AStarForwardSearchHotPathTest
 
 	private static RoutingStatic wildernessStatic() throws Exception
 	{
-		return RoutingStatic.takeOwnership(new int[0], new int[0], new byte[0], new int[0], new int[0],
+		return RoutingStatic.takeOwnership(new int[0], new int[0], new byte[0], new char[0], new char[0],
 			new int[] {OUTSIDE, TARGET, DEEP_WILDERNESS}, new int[] {0, 1, 2, 3}, new int[] {0, 0, 0},
 			1, new int[] {0, 3}, new int[] {0, 1, 2}, new int[0], new int[0], new int[0], new int[0],
 			3, 3, 0, 0, 0, new int[] {0, 0, 0, 0}, new int[0], new int[0]);

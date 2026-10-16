@@ -7,7 +7,9 @@ import shortestpath.pathfinder.CollisionMap;
 /** Immutable primitive-array representation of the A* backend's static routing data. */
 public final class RoutingStatic
 {
-	private final int[] searchTiles, searchComponents, northNodes, southNodes;
+	private final int[] searchTiles, searchComponents;
+	// Zero means absent; other values are distances within the sorted tile array.
+	private final char[] northOffsets, southOffsets;
 	private final byte[] walkingMasks;
 	private final int[] siteTiles, siteComponentOffsets, siteComponentIds;
 	private final int routingComponentCount;
@@ -18,8 +20,8 @@ public final class RoutingStatic
 	private final int sparseUndirectedEdgeCount, sparseAdjacencyCount;
 	private final int[] sparseOffsets, sparseDestinations, sparseWeights;
 
-	private RoutingStatic(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, int[] northNodes,
-		int[] southNodes, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
+	private RoutingStatic(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, char[] northOffsets,
+		char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
 		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
@@ -28,8 +30,8 @@ public final class RoutingStatic
 		this.searchTiles = searchTiles;
 		this.searchComponents = searchComponents;
 		this.walkingMasks = walkingMasks;
-		this.northNodes = northNodes;
-		this.southNodes = southNodes;
+		this.northOffsets = northOffsets;
+		this.southOffsets = southOffsets;
 		this.siteTiles = siteTiles;
 		this.siteComponentOffsets = siteComponentOffsets;
 		this.siteComponentIds = siteComponentIds;
@@ -63,15 +65,15 @@ public final class RoutingStatic
 	 * Takes exclusive ownership of freshly built arrays and validates them before publication.
 	 * Callers must never modify the supplied arrays or expose them to other code after this call.
 	 */
-	static RoutingStatic takeOwnership(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, int[] northNodes,
-		int[] southNodes, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
+	static RoutingStatic takeOwnership(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, char[] northOffsets,
+		char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
 		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
 		int[] sparseOffsets, int[] sparseDestinations, int[] sparseWeights) throws IOException
 	{
 		RoutingStatic result = new RoutingStatic(searchTiles, searchComponents, walkingMasks,
-			northNodes, southNodes, siteTiles, siteComponentOffsets,
+			northOffsets, southOffsets, siteTiles, siteComponentOffsets,
 			siteComponentIds, routingComponentCount, componentSiteOffsets, componentSiteIds,
 			reachableBankTiles, crossingFromSite, crossingToSite, crossingCosts,
 			sparseOriginalCount, sparseVertexCount, sparseSteinerCount, sparseUndirectedEdgeCount, sparseAdjacencyCount,
@@ -84,14 +86,14 @@ public final class RoutingStatic
 	{
 		aligned(searchComponents, searchTiles.length, "search components");
 		aligned(walkingMasks, searchTiles.length, "walking masks");
-		aligned(northNodes, searchTiles.length, "north nodes");
-		aligned(southNodes, searchTiles.length, "south nodes");
+		aligned(northOffsets, searchTiles.length, "north nodes");
+		aligned(southOffsets, searchTiles.length, "south nodes");
 		ascending(searchTiles, "search tiles");
 		ascending(siteTiles, "site tiles");
 		ascending(reachableBankTiles, "reachable bank tiles");
 		refs(searchComponents, routingComponentCount, "search component");
-		nodeRefs(northNodes, searchTiles.length, "north node");
-		nodeRefs(southNodes, searchTiles.length, "south node");
+		nodeOffsets(northOffsets, true);
+		nodeOffsets(southOffsets, false);
 		csr(siteComponentOffsets, siteComponentIds, siteTiles.length, routingComponentCount, "site components");
 		csr(componentSiteOffsets, componentSiteIds, routingComponentCount, siteTiles.length, "component sites");
 		for (int tile : reachableBankTiles)
@@ -139,11 +141,15 @@ public final class RoutingStatic
 				throw new IOException(label + " out of range");
 	}
 
-	private static void nodeRefs(int[] values, int limit, String label) throws IOException
+	private static void nodeOffsets(char[] offsets, boolean north) throws IOException
 	{
-		for (int value : values)
-			if (value != -1 && (value < 0 || value >= limit))
-				throw new IOException(label + " out of range");
+		for (int i = 0; i < offsets.length; i++)
+		{
+			int offset = offsets[i];
+			int node = north ? i + offset : i - offset;
+			if (offset > 32768 || node < 0 || node >= offsets.length)
+				throw new IOException("neighbour offset out of range");
+		}
 	}
 
 	private static void csr(int[] offsets, int[] values, int groups, int limit, String label) throws IOException
@@ -244,11 +250,11 @@ public final class RoutingStatic
 	}
 	public int northNode(int index)
 	{
-		return northNodes[index];
+		return northOffsets[index] == 0 ? -1 : index + northOffsets[index];
 	}
 	public int southNode(int index)
 	{
-		return southNodes[index];
+		return southOffsets[index] == 0 ? -1 : index - southOffsets[index];
 	}
 	public int routingComponent(int index)
 	{

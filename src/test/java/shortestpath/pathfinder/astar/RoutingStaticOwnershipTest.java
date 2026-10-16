@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -39,14 +40,45 @@ public class RoutingStaticOwnershipTest
 		takeOwnership(arrays);
 	}
 
+	@Test
+	public void neighbourOffsetsHandleAbsentAndLargestRowDistance() throws Exception
+	{
+		int count = 32769;
+		Map<String, Object> arrays = arrays();
+		int[] tiles = new int[count];
+		for (int i = 0; i < count; i++) tiles[i] = i;
+		char[] north = new char[count], south = new char[count];
+		north[0] = 32768;
+		south[32768] = 32768;
+		arrays.put("searchTiles", tiles);
+		arrays.put("searchComponents", new int[count]);
+		arrays.put("walkingMasks", new byte[count]);
+		arrays.put("northOffsets", north);
+		arrays.put("southOffsets", south);
+		RoutingStatic stat = takeOwnership(arrays);
+
+		assertEquals(32768, stat.northNode(0));
+		assertEquals(0, stat.southNode(32768));
+		assertEquals(-1, stat.northNode(1));
+		assertEquals(-1, stat.southNode(0));
+	}
+
+	@Test(expected = IOException.class)
+	public void rejectsNeighbourOffsetOutsideTheTileArray() throws Exception
+	{
+		Map<String, Object> arrays = arrays();
+		((char[]) arrays.get("northOffsets"))[0] = 2;
+		takeOwnership(arrays);
+	}
+
 	private static Map<String, Object> arrays()
 	{
 		Map<String, Object> arrays = new LinkedHashMap<>();
 		arrays.put("searchTiles", new int[] {10, 11});
 		arrays.put("searchComponents", new int[] {0, 0});
 		arrays.put("walkingMasks", new byte[] {4, 64});
-		arrays.put("northNodes", new int[] {-1, -1});
-		arrays.put("southNodes", new int[] {-1, -1});
+		arrays.put("northOffsets", new char[2]);
+		arrays.put("southOffsets", new char[2]);
 		arrays.put("siteTiles", new int[] {10, 11});
 		arrays.put("siteComponentOffsets", new int[] {0, 1, 2});
 		arrays.put("siteComponentIds", new int[] {0, 0});
@@ -65,7 +97,7 @@ public class RoutingStaticOwnershipTest
 	private static RoutingStatic takeOwnership(Map<String, Object> a) throws IOException
 	{
 		return RoutingStatic.takeOwnership((int[]) a.get("searchTiles"), (int[]) a.get("searchComponents"),
-			(byte[]) a.get("walkingMasks"), (int[]) a.get("northNodes"), (int[]) a.get("southNodes"),
+			(byte[]) a.get("walkingMasks"), (char[]) a.get("northOffsets"), (char[]) a.get("southOffsets"),
 			(int[]) a.get("siteTiles"), (int[]) a.get("siteComponentOffsets"), (int[]) a.get("siteComponentIds"),
 			1, (int[]) a.get("componentSiteOffsets"), (int[]) a.get("componentSiteIds"),
 			(int[]) a.get("reachableBankTiles"), (int[]) a.get("crossingFromSite"), (int[]) a.get("crossingToSite"),

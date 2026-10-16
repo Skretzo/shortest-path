@@ -805,10 +805,11 @@ public final class RoutingStaticBuilder
 
 	private static final class SearchTiles
 	{
-		final int[] tiles, components, north, south;
+		final int[] tiles, components;
+		final char[] north, south;
 		final byte[] masks;
 
-		SearchTiles(int[] tiles, int[] components, byte[] masks, int[] north, int[] south)
+		SearchTiles(int[] tiles, int[] components, byte[] masks, char[] north, char[] south)
 		{
 			this.tiles = tiles;
 			this.components = components;
@@ -831,12 +832,16 @@ public final class RoutingStaticBuilder
 			componentArray[next] = routingId[i];
 			maskArray[next++] = walkable.masks[i];
 		}
-		int[] north = new int[tileArray.length];
-		int[] south = new int[tileArray.length];
+		char[] north = new char[tileArray.length];
+		char[] south = new char[tileArray.length];
 		for (int i = 0; i < tileArray.length; i++)
 		{
-			north[i] = binarySearchUnsigned(tileArray, tileArray[i] + Y_UNIT);
-			south[i] = binarySearchUnsigned(tileArray, tileArray[i] - Y_UNIT);
+			int y = WorldPointUtil.unpackWorldY(tileArray[i]);
+			int n = y == 32767 ? -1 : binarySearchUnsigned(tileArray, tileArray[i] + Y_UNIT);
+			int s = y == 0 ? -1 : binarySearchUnsigned(tileArray, tileArray[i] - Y_UNIT);
+			// Adjacent rows contain at most 32768 distinct x coordinates, so these offsets fit.
+			north[i] = n < 0 ? 0 : (char) (n - i);
+			south[i] = s < 0 ? 0 : (char) (i - s);
 		}
 		return new SearchTiles(tileArray, componentArray, maskArray, north, south);
 	}
