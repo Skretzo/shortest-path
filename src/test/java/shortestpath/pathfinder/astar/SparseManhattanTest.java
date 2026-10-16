@@ -58,6 +58,23 @@ public class SparseManhattanTest
 		assertTrue(heuristic.preparationNanos() >= 0);
 	}
 
+	@Test
+	public void emptyComponentsStayUnreachableBeforeAndAfterBanking() throws Exception
+	{
+		TargetOverlay target = new TargetOverlay(new SiteGraph(syntheticSparse(), emptyAccount()),
+			attachments(A), TARGET);
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+
+		for (boolean banked : new boolean[] {false, true})
+		{
+			assertEquals(0, heuristic.seedCount(1, banked));
+			assertEquals(0, heuristic.generatorCount(1, banked));
+			assertEquals(CostArithmetic.INF, heuristic.estimate(OTHER_PLANE, banked, new int[] {1}));
+			assertEquals(1, heuristic.estimate(A, banked, new int[] {0}));
+			assertEquals(0, heuristic.estimate(TARGET, banked, new int[] {0}));
+		}
+	}
+
 	private static RoutingStatic syntheticSparse() throws Exception
 	{
 		return RoutingStatic.create(new int[] {A, OTHER_PLANE}, new int[] {0, 1}, new byte[] {0, 0},
