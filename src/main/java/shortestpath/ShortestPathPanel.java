@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -794,8 +795,12 @@ public class ShortestPathPanel extends PluginPanel
 		muxer.pushState(category);
 		if (row != null)
 		{
+			// scrollRectToVisible takes the rect in the component's own
+			// coordinate space — getBounds() is in parent space and would
+			// double the row's offset, scrolling past the match.
 			SwingUtilities.invokeLater(() ->
-				row.component.scrollRectToVisible(row.component.getBounds()));
+				row.component.scrollRectToVisible(
+					new Rectangle(0, 0, row.component.getWidth(), row.component.getHeight())));
 		}
 	}
 
