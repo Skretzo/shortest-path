@@ -606,8 +606,11 @@ public class PathfinderConfig
 				return kept.plus(Targets.of(filteredThisCall));
 			}
 		}
-		if (revive)
+		else if (revive)
 		{
+			// Revive only applies once the wilderness filter is off —
+			// reviving while it is on would re-add targets this same call
+			// just filtered out, making the filter a no-op.
 			kept = kept.plus(Targets.of(filteredTargets.values()));
 			filteredTargets.clear();
 		}
