@@ -307,7 +307,7 @@ public class PathScheduler
 		List<PathStep> path;
 		// The previous route is only on screen until its recalculation finishes; the player is
 		// expected to be off it, so it must not trigger yet another recalculation.
-		if (pathfinder instanceof AStarPathfinder && ((AStarPathfinder) pathfinder).isShowingProvisionalPath())
+		if (pathfinder.isShowingProvisionalPath())
 		{
 			return true;
 		}

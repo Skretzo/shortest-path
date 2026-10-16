@@ -354,6 +354,12 @@ public class SailingPathfinder implements ActiveSearch
 		}
 	}
 
+	@Override
+	public String backendName()
+	{
+		return "Sailing";
+	}
+
 	/**
 	 * Always {@code true}: this search sails the boat's headings.
 	 */

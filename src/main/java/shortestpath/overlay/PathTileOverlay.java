@@ -35,7 +35,6 @@ import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements;
@@ -385,20 +384,17 @@ public class PathTileOverlay extends Overlay
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
-		if (settings.display().drawTiles() && settings.display().drawClickPoints() && search instanceof AStarPathfinder)
+		if (settings.display().drawTiles() && settings.display().drawClickPoints()
+			&& search.isDone() && !search.isShowingProvisionalPath())
 		{
-			AStarPathfinder aStar = (AStarPathfinder) search;
-			if (aStar.isDone() && !aStar.isShowingProvisionalPath())
+			List<PathStep> path = search.getPath();
+			for (int index : search.getClickPoints())
 			{
-				List<PathStep> path = aStar.getPath();
-				for (int index : aStar.getClickPoints())
+				int point = path.get(index).getPackedPosition();
+				if (!PohService.isInsidePoh(WorldPointUtil.unpackWorldX(point),
+					WorldPointUtil.unpackWorldY(point)))
 				{
-					int point = path.get(index).getPackedPosition();
-					if (!PohService.isInsidePoh(WorldPointUtil.unpackWorldX(point),
-						WorldPointUtil.unpackWorldY(point)))
-					{
-						drawTile(graphics, point, COLOR_CLICK_POINT, -1, true, search);
-					}
+					drawTile(graphics, point, COLOR_CLICK_POINT, -1, true, search);
 				}
 			}
 		}
