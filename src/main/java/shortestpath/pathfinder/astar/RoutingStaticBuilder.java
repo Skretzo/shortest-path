@@ -1014,38 +1014,50 @@ public final class RoutingStaticBuilder
 		}
 	}
 
-	/** Open-addressing packed-tile (u32) to array-index map, sized for tens of millions of entries. */
+	/** Each entry covers 64 packed tiles; set bits give membership and the offset from the first tile. */
 	private static final class TileIndex
 	{
 		private final int[] tiles;
 		private final int[] slots; // slots[h] - 1 == index; 0 == empty
+		private final long[] present;
 		private final int mask;
 
 		TileIndex(int[] sortedTiles)
 		{
-			int capacity = nextPowerOfTwo(Math.max(16, sortedTiles.length) * 2);
+			int groups = 0;
+			for (int i = 0; i < sortedTiles.length; i++)
+			{
+				if (i == 0 || (sortedTiles[i] >>> 6) != (sortedTiles[i - 1] >>> 6)) groups++;
+			}
+			int capacity = nextPowerOfTwo(Math.max(16, groups) * 2);
 			tiles = sortedTiles;
 			slots = new int[capacity];
+			present = new long[capacity];
 			mask = capacity - 1;
 			for (int i = 0; i < sortedTiles.length; i++)
 			{
-				int h = hash(sortedTiles[i]) & mask;
-				while (slots[h] != 0)
+				int group = sortedTiles[i] >>> 6;
+				int h = hash(group) & mask;
+				while (slots[h] != 0 && (tiles[slots[h] - 1] >>> 6) != group)
 				{
 					h = (h + 1) & mask;
 				}
-				slots[h] = i + 1;
+				if (slots[h] == 0) slots[h] = i + 1;
+				present[h] |= 1L << (sortedTiles[i] & 63);
 			}
 		}
 
 		int get(int tile)
 		{
-			int h = hash(tile) & mask;
+			int group = tile >>> 6;
+			long bit = 1L << (tile & 63);
+			int h = hash(group) & mask;
 			while (slots[h] != 0)
 			{
-				if (tiles[slots[h] - 1] == tile)
+				int first = slots[h] - 1;
+				if ((tiles[first] >>> 6) == group)
 				{
-					return slots[h] - 1;
+					return (present[h] & bit) == 0 ? -1 : first + Long.bitCount(present[h] & (bit - 1));
 				}
 				h = (h + 1) & mask;
 			}

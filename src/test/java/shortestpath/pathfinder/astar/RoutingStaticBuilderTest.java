@@ -76,8 +76,8 @@ public class RoutingStaticBuilderTest
 	@Test
 	public void tileLookupHandlesCollisionsZeroAndUpperPlanes()
 	{
-		// These ground tiles share a bucket and force the lookup to wrap past the array's end.
-		Set<Integer> tiles = Set.of(tile(0, 0), tile(15, 0), tile(49, 0), tile(31, 1), tile(13, 2),
+		// The ground tiles share a group but leave gaps between their positions.
+		Set<Integer> tiles = Set.of(tile(0, 0), tile(15, 0), tile(49, 0), tile(63, 0), tile(31, 1), tile(13, 2),
 			tile(47, 2), WorldPointUtil.packWorldPoint(1, 1, 2), WorldPointUtil.packWorldPoint(1, 1, 3));
 		RoutingStaticBuilder.WalkingGraph graph = RoutingStaticBuilder.walkingGraph(
 			new SyntheticCollisionMap(tiles, Map.of(), 4), Map.of(), tile(0, 0));
@@ -89,6 +89,7 @@ public class RoutingStaticBuilderTest
 			assertEquals(index, graph.indexOf(graph.tile(index)));
 		}
 		assertEquals(-1, graph.indexOf(tile(29, 3)));
+		assertEquals(-1, graph.indexOf(tile(14, 0)));
 		assertEquals(-1, graph.indexOf(WorldPointUtil.packWorldPoint(2, 1, 3)));
 	}
 
