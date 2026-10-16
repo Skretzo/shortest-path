@@ -444,7 +444,7 @@ public class PathAnnotator
 	{
 		return pathfinderConfig == null
 			? null
-			: pathfinderConfig.getBankPickup(path, pathIndex, search);
+			: BankPickupResult.format(client, pathfinderConfig.getBankPickup(path, pathIndex, search));
 	}
 
 	public Set<Integer> getDestinations(String destinationType)
