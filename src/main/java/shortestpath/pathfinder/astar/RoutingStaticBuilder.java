@@ -223,7 +223,7 @@ public final class RoutingStaticBuilder
 
 		stepStarted = System.nanoTime();
 		List<Crossing> crossings = buildCrossings(cutSet.valid, componentIds, walkable);
-		// Release the full-map scratch arrays before copying the final routing data.
+		// Release the scratch map before assembling and validating the final routing data.
 		walkable = null;
 		componentIds = null;
 		int nonSeparating = cutSet.valid.size() - crossings.size();
@@ -248,7 +248,7 @@ public final class RoutingStaticBuilder
 		}
 
 		stepStarted = System.nanoTime();
-		RoutingStatic result = RoutingStatic.create(search.tiles, search.components, search.masks, search.north,
+		RoutingStatic result = RoutingStatic.takeOwnership(search.tiles, search.components, search.masks, search.north,
 			search.south, sites.siteTiles, sites.siteComponentOffsets, sites.siteComponentIds, routingComponentCount,
 			sites.componentSiteOffsets, sites.componentSiteIds, sites.reachableBankTiles, crossingFrom, crossingTo,
 			crossingCost, sparse.originalCount, sparse.vertexCount, sparse.steinerCount, sparse.undirectedEdgeCount,

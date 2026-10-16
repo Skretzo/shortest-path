@@ -59,19 +59,23 @@ public final class RoutingStatic
 		this.sparseWeights = sparseWeights;
 	}
 
-	static RoutingStatic create(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, int[] northNodes,
+	/**
+	 * Takes exclusive ownership of freshly built arrays and validates them before publication.
+	 * Callers must never modify the supplied arrays or expose them to other code after this call.
+	 */
+	static RoutingStatic takeOwnership(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, int[] northNodes,
 		int[] southNodes, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
 		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
 		int[] sparseOffsets, int[] sparseDestinations, int[] sparseWeights) throws IOException
 	{
-		RoutingStatic result = new RoutingStatic(searchTiles.clone(), searchComponents.clone(), walkingMasks.clone(),
-			northNodes.clone(), southNodes.clone(), siteTiles.clone(), siteComponentOffsets.clone(),
-			siteComponentIds.clone(), routingComponentCount, componentSiteOffsets.clone(), componentSiteIds.clone(),
-			reachableBankTiles.clone(), crossingFromSite.clone(), crossingToSite.clone(), crossingCosts.clone(),
+		RoutingStatic result = new RoutingStatic(searchTiles, searchComponents, walkingMasks,
+			northNodes, southNodes, siteTiles, siteComponentOffsets,
+			siteComponentIds, routingComponentCount, componentSiteOffsets, componentSiteIds,
+			reachableBankTiles, crossingFromSite, crossingToSite, crossingCosts,
 			sparseOriginalCount, sparseVertexCount, sparseSteinerCount, sparseUndirectedEdgeCount, sparseAdjacencyCount,
-			sparseOffsets.clone(), sparseDestinations.clone(), sparseWeights.clone());
+			sparseOffsets, sparseDestinations, sparseWeights);
 		result.validate();
 		return result;
 	}

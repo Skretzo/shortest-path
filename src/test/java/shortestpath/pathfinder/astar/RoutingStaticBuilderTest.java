@@ -342,7 +342,7 @@ public class RoutingStaticBuilderTest
 		RoutingStaticBuilder.Result result =
 			RoutingStaticBuilder.build(chainWorld(), Map.of(), Set.of(), new int[0], A);
 
-		// RoutingStatic.create() already ran full validation inside build(); reaching here means it
+		// RoutingStatic.takeOwnership() already ran full validation inside build(); reaching here means it
 		// passed. Cross-check the natural/routing equivalence explicitly too.
 		assertEquals(result.diagnostics.naturalComponentCount, result.diagnostics.routingComponentCount);
 		assertEquals(0, result.diagnostics.crossingCount);

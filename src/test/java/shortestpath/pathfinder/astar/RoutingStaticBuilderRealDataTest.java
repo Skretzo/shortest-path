@@ -39,7 +39,7 @@ public class RoutingStaticBuilderRealDataTest
 	public void buildsSuccessfullyWithPlausibleCounts()
 	{
 		RoutingStatic mine = result.routingStatic;
-		// RoutingStatic.create() already validated every structural invariant inside build().
+		// RoutingStatic.takeOwnership() already validated every structural invariant inside build().
 		assertTrue("search tile count should be substantial", mine.searchTileCount() > 1_000_000);
 		assertTrue("site count should be substantial", mine.siteCount() > 1_000);
 		assertTrue("at least one reachable bank", mine.reachableBankCount() > 0);
