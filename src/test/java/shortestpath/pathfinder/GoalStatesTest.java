@@ -147,6 +147,23 @@ public class GoalStatesTest
 		assertEquals(spadeAt(wilderness), revived.get(wilderness));
 	}
 
+	@Test
+	public void wildernessStaysFilteredWhenReviveIsRequested()
+	{
+		WildernessSettings settings = new WildernessSettings();
+		Client filteringClient = mock(Client.class);
+		when(filteringClient.getClientThread()).thenReturn(Thread.currentThread());
+		PathfinderConfig filtering = new TestPathfinderConfig(filteringClient, settings);
+		int wilderness = WorldPointUtil.packWorldPoint(3100, 3600, 0);
+		Targets targets = Targets.of(List.of(spadeAt(wilderness), Target.at(WALKABLE)));
+
+		filtering.refresh();
+		// canReviveFiltered must not resurrect wilderness targets while the
+		// wilderness filter is still active — restart paths pass true here,
+		// so a config toggle would otherwise re-add the just-filtered tile.
+		assertEquals(Set.of(WALKABLE), filtering.filterLocations(targets, true).points());
+	}
+
 	private static final class WildernessSettings extends TestShortestPathConfig
 	{
 		boolean avoidWilderness = true;
