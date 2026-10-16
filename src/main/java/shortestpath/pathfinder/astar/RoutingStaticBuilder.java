@@ -180,6 +180,7 @@ public final class RoutingStaticBuilder
 
 		long stepStarted = System.nanoTime();
 		WalkableTiles walkable = enumerateWalkableTiles(collision);
+		int walkableTileCount = walkable.tiles.length;
 		long enumerateWalkableNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
@@ -217,6 +218,9 @@ public final class RoutingStaticBuilder
 
 		stepStarted = System.nanoTime();
 		List<Crossing> crossings = buildCrossings(cutSet.valid, componentIds, walkable);
+		// Release the full-map scratch arrays before copying the final routing data.
+		walkable = null;
+		componentIds = null;
 		int nonSeparating = cutSet.valid.size() - crossings.size();
 		SitesAndAttachments sites = buildSites(rawTransports, bankTiles, crossings, search, collision,
 			routingComponentCount);
@@ -249,7 +253,7 @@ public final class RoutingStaticBuilder
 		long totalNanos = System.nanoTime() - totalStarted;
 		Diagnostics diagnostics = new Diagnostics(enumerateWalkableNanos, naturalComponentsNanos, cutValidationNanos,
 			routingComponentsNanos, reachabilityNanos, searchTilesNanos, sitesAndAttachmentsNanos, sparseNetworkNanos,
-			validateNanos, totalNanos, walkable.tiles.length, naturalComponentCount, maxRoutingComponentId,
+			validateNanos, totalNanos, walkableTileCount, naturalComponentCount, maxRoutingComponentId,
 			largestRoutingComponentSize, reachableNaturalCount, cuts.length / 2, cutSet.duplicateCount,
 			cutSet.invalidCount, nonSeparating, crossings.size(), search.tiles.length, sites.siteTiles.length,
 			sites.reachableBankTiles.length);
