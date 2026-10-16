@@ -14,7 +14,6 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 import shortestpath.scheduler.DebugState;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.PathfinderResult;
@@ -24,7 +23,6 @@ public class DebugOverlayPanel extends OverlayPanel
 {
 	private static final int PANEL_WIDTH = 230;
 	private static final Color PROBLEM = Color.RED;
-	private static final long STATIC_BUILD_THRESHOLD_NANOS = 1_000_000;
 
 	private final Client client;
 	private final DebugState debugState;
@@ -93,11 +91,10 @@ public class DebugOverlayPanel extends OverlayPanel
 			return;
 		}
 
-		AStarPathfinder aStar = search instanceof AStarPathfinder ? (AStarPathfinder) search : null;
 		PathfinderResult result = search.getResult();
 		boolean problem = search == debug.getCancelledSearch() || isFailure(result);
 		components.add(LineComponent.builder()
-			.left((aStar != null ? "A*" : "Legacy") + " \u00b7 " + state(search, aStar, result, debug))
+			.left(search.backendName() + " \u00b7 " + state(search, result, debug))
 			.leftColor(problem ? PROBLEM : Color.ORANGE)
 			.build());
 
@@ -113,11 +110,11 @@ public class DebugOverlayPanel extends OverlayPanel
 
 		List<PathStep> path = search.getPath();
 		String tiles = path == null ? "none" : path.size() + " tiles";
-		// While recalculating, the shown path is the previous route but the click count is the
+				// While recalculating, the shown path is the previous route but the click count is the
 		// new search's — suppress it rather than mix the two.
-		if (aStar != null && !aStar.isShowingProvisionalPath())
+		if (!search.isShowingProvisionalPath())
 		{
-			tiles += ", " + aStar.getClickPoints().size() + " clicks";
+			tiles += ", " + search.getClickPoints().size() + " clicks";
 		}
 		components.add(makeLine("Path:", tiles));
 
@@ -126,27 +123,8 @@ public class DebugOverlayPanel extends OverlayPanel
 		{
 			return;
 		}
-		components.add(makeLine("Time:", millis(stats.getElapsedTimeNanos())));
-		if (aStar != null)
-		{
-			components.add(makeLine("  Forward search:", millis(aStar.getForwardSearchNanos())));
-			components.add(makeLine("  Walk canonicalize:", millis(aStar.getWalkCanonicalizeNanos())));
-			if (!aStar.getWalkDiagnostics().isEmpty())
-				components.add(makeLine("  Legs kept as found:", Integer.toString(aStar.getWalkDiagnostics().size())));
-			int keptSteps = aStar.getKeptStepIndices().size();
-			components.add(makeLine("  Walk rewrite:", millis(aStar.getWalkRewriteNanos())
-				+ (keptSteps > 0 ? ", " + keptSteps + " kept" : "")));
-			components.add(makeLine("  Target prep:", aStar.isTargetReused() ? "reused"
-				: millis(aStar.getReverseSearchNanos() + aStar.getHeuristicPrepareNanos())));
-			components.add(makeLine("  Graph prep:", aStar.isGraphReused() ? "reused"
-				: millis(aStar.getGraphPrepareNanos())));
-			components.add(makeLine("  Account prep:", millis(aStar.getAccountPrepareNanos())));
-			// Static data is built once; only the search that built it spends measurable time on it.
-			if (aStar.getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
-			{
-				components.add(makeLine("  Static data:", millis(aStar.getRoutingStaticNanos())));
-			}
-		}
+		components.add(makeLine("Time:", PathfinderStats.millis(stats.getElapsedTimeNanos())));
+		search.debugStats().forEach((label, text) -> components.add(makeLine("  " + label + ":", text)));
 	}
 
 	private void renderRestart(List<LayoutableRenderableEntity> components, DebugState debug, int tick)
@@ -179,13 +157,13 @@ public class DebugOverlayPanel extends OverlayPanel
 		}
 	}
 
-	private static String state(ActiveSearch search, AStarPathfinder aStar, PathfinderResult result, DebugState debug)
+	private static String state(ActiveSearch search, PathfinderResult result, DebugState debug)
 	{
 		if (search == debug.getCancelledSearch())
 		{
 			return "cancelled, not replaced";
 		}
-		if (aStar != null && aStar.isShowingProvisionalPath())
+		if (search.isShowingProvisionalPath())
 		{
 			return "running, previous route shown";
 		}
@@ -209,10 +187,5 @@ public class DebugOverlayPanel extends OverlayPanel
 	private static String ago(int then, int now)
 	{
 		return then < 0 ? "-" : (now - then) + " ticks ago";
-	}
-
-	private static String millis(long nanos)
-	{
-		return String.format("%.2fms", nanos / 1_000_000.0);
 	}
 }
