@@ -38,6 +38,21 @@ public final class OwnedItems
 			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
 		};
 
+	/**
+	 * Item id to quantity summed across the given containers — the
+	 * "everything the player currently owns" view. Callers hand it the
+	 * containers they mean to union, e.g. inventory + worn + last-seen bank.
+	 */
+	public static Map<Integer, Integer> collect(ItemContainer... containers)
+	{
+		Map<Integer, Integer> owned = new HashMap<>();
+		for (ItemContainer container : containers)
+		{
+			addContainer(owned, container);
+		}
+		return owned;
+	}
+
 	public static void addContainer(Map<Integer, Integer> owned, ItemContainer container)
 	{
 		if (container == null || container.getItems() == null)
