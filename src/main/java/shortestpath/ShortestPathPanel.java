@@ -87,7 +87,7 @@ public class ShortestPathPanel extends PluginPanel
 
 	static
 	{
-		BufferedImage chevron = ImageUtil.loadImageResource(ShortestPathPanel.class, "/expand.png");
+		BufferedImage chevron = ImageUtil.loadImageResource(ShortestPathPanel.class, "/shortestpath/expand.png");
 		chevron = ImageUtil.luminanceOffset(chevron, -121);
 		SECTION_EXPAND_ICON = new ImageIcon(chevron);
 		SECTION_RETRACT_ICON = new ImageIcon(ImageUtil.rotateImage(chevron, Math.PI / 2));

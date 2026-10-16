@@ -216,7 +216,7 @@ public class ShortestPathPlugin extends Plugin
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager);
 		navButton = NavigationButton.builder()
 			.tooltip("Shortest Path")
-			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/panel_icon.png"))
+			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/shortestpath/panel_icon.png"))
 			.priority(5)
 			.panel(panel)
 			.build();
