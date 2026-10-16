@@ -17,7 +17,6 @@ import shortestpath.leagues.LeagueRegion;
 import shortestpath.leagues.LeagueRegionChecker;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.sailing.SailingMoves;
-import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.*;
 import shortestpath.transport.*;
 import shortestpath.sailing.*;
@@ -126,9 +125,9 @@ public class PathfinderConfig
 	 * target needs picked up at a bank step. {@code search} supplies the
 	 * result the target-item pickup list is derived from.
 	 */
-	public BankPickupResult getBankPickup(List<PathStep> path, int pathIndex, ActiveSearch search)
+	public BankPickupAnalysis getBankPickup(List<PathStep> path, int pathIndex, ActiveSearch search)
 	{
-		return bankPickupProjection.get(client, itemState, this, path, pathIndex, search);
+		return bankPickupProjection.get(itemState, this, path, pathIndex, search);
 	}
 	/**
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
