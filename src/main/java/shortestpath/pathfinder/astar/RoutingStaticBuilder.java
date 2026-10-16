@@ -1034,14 +1034,14 @@ public final class RoutingStaticBuilder
 	/** Open-addressing packed-tile (u32) to array-index map, sized for tens of millions of entries. */
 	private static final class TileIndex
 	{
-		private final int[] keys;
+		private final int[] tiles;
 		private final int[] slots; // slots[h] - 1 == index; 0 == empty
 		private final int mask;
 
 		TileIndex(int[] sortedTiles)
 		{
-			int capacity = nextPowerOfTwo(Math.max(16, sortedTiles.length) * 4);
-			keys = new int[capacity];
+			int capacity = nextPowerOfTwo(Math.max(16, sortedTiles.length) * 2);
+			tiles = sortedTiles;
 			slots = new int[capacity];
 			mask = capacity - 1;
 			for (int i = 0; i < sortedTiles.length; i++)
@@ -1051,7 +1051,6 @@ public final class RoutingStaticBuilder
 				{
 					h = (h + 1) & mask;
 				}
-				keys[h] = sortedTiles[i];
 				slots[h] = i + 1;
 			}
 		}
@@ -1061,7 +1060,7 @@ public final class RoutingStaticBuilder
 			int h = hash(tile) & mask;
 			while (slots[h] != 0)
 			{
-				if (keys[h] == tile)
+				if (tiles[slots[h] - 1] == tile)
 				{
 					return slots[h] - 1;
 				}
