@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,11 +23,11 @@ import shortestpath.transport.TransportType;
  *
  * <ol>
  *   <li>Natural components: flood fill over ordinary walking edges.</li>
+ *   <li>Structural reachability: natural components reachable from Lumbridge through any
+ *       transport or global teleport of any type, seasonal included, regardless of requirements.</li>
  *   <li>Routing components: the same flood fill, not crossing cut edges. Cuts that are no longer
  *       walking edges are ignored; cuts that no longer separate two routing components are
  *       dropped. Cuts therefore only affect performance, never routes.</li>
- *   <li>Structural reachability: natural components reachable from Lumbridge through any
- *       transport or global teleport of any type, seasonal included, regardless of requirements.</li>
  *   <li>Search tiles: every tile of a reachable natural component, with its walking mask,
  *       routing component and north/south neighbour indexes.</li>
  *   <li>Sites (transport endpoints, crossing endpoints and reachable banks), their component
@@ -182,8 +183,8 @@ public final class RoutingStaticBuilder
 		long enumerateWalkableNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
-		int[] naturalId = new int[walkable.tiles.length];
-		int naturalComponentCount = floodFillComponents(walkable, null, naturalId);
+		int[] componentIds = new int[walkable.tiles.length];
+		int naturalComponentCount = floodFillComponents(walkable, null, componentIds);
 		long naturalComponentsNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
@@ -191,25 +192,31 @@ public final class RoutingStaticBuilder
 		long cutValidationNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
-		int[] routingId = new int[walkable.tiles.length];
-		int maxRoutingComponentId = floodFillComponents(walkable, cutSet.blocked, routingId);
-		// Component arrays are indexed by id, so capacity is maxComponentId + 1 with empty groups retained.
-		int routingComponentCount = maxRoutingComponentId + 1;
-		int largestRoutingComponentSize = largestGroup(routingId, maxRoutingComponentId);
-		long routingComponentsNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		boolean[] reachableNatural = structuralReachability(collision, walkable, naturalId, naturalComponentCount,
+		boolean[] reachableNatural = structuralReachability(collision, walkable, componentIds, naturalComponentCount,
 			rawTransports, seedTile);
 		int reachableNaturalCount = count(reachableNatural);
+		BitSet reachableTiles = new BitSet(walkable.tiles.length);
+		for (int i = 0; i < componentIds.length; i++)
+		{
+			if (reachableNatural[componentIds[i]]) reachableTiles.set(i);
+		}
 		long reachabilityNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
-		SearchTiles search = buildSearchTiles(walkable, naturalId, routingId, reachableNatural);
+		// Reachability now needs only one bit per tile, so the next pass can reuse the labels.
+		Arrays.fill(componentIds, 0);
+		int maxRoutingComponentId = floodFillComponents(walkable, cutSet.blocked, componentIds);
+		// Component arrays are indexed by id, so capacity is maxComponentId + 1 with empty groups retained.
+		int routingComponentCount = maxRoutingComponentId + 1;
+		int largestRoutingComponentSize = largestGroup(componentIds, maxRoutingComponentId);
+		long routingComponentsNanos = System.nanoTime() - stepStarted;
+
+		stepStarted = System.nanoTime();
+		SearchTiles search = buildSearchTiles(walkable, componentIds, reachableTiles);
 		long searchTilesNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
-		List<Crossing> crossings = buildCrossings(cutSet.valid, routingId, walkable);
+		List<Crossing> crossings = buildCrossings(cutSet.valid, componentIds, walkable);
 		int nonSeparating = cutSet.valid.size() - crossings.size();
 		SitesAndAttachments sites = buildSites(rawTransports, bankTiles, crossings, search, collision,
 			routingComponentCount);
@@ -703,21 +710,16 @@ public final class RoutingStaticBuilder
 		}
 	}
 
-	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] naturalId, int[] routingId,
-		boolean[] reachableNatural)
+	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId, BitSet reachableTiles)
 	{
-		int n = walkable.tiles.length;
 		IntArrayList tiles = new IntArrayList();
 		IntArrayList components = new IntArrayList();
 		ByteArrayList masks = new ByteArrayList();
-		for (int i = 0; i < n; i++)
+		for (int i = reachableTiles.nextSetBit(0); i >= 0; i = reachableTiles.nextSetBit(i + 1))
 		{
-			if (reachableNatural[naturalId[i]])
-			{
-				tiles.add(walkable.tiles[i]);
-				components.add(routingId[i]);
-				masks.add(walkable.masks[i]);
-			}
+			tiles.add(walkable.tiles[i]);
+			components.add(routingId[i]);
+			masks.add(walkable.masks[i]);
 		}
 		int[] tileArray = tiles.toArray();
 		int[] componentArray = components.toArray();
