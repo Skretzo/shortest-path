@@ -102,7 +102,10 @@ class RestrictionListPanel extends JPanel
 			rows.add(new RestrictionRow(family));
 		}
 
-		disabledHint = hintLabel(ShortestPathPanel.RESTRICTIONS_DISABLED_HINT);
+		// HTML wrapping makes the label word-wrap at column width — plain
+		// text renders as a single clipped line.
+		disabledHint = hintLabel(ShortestPathPanel.html(
+			ShortestPathPanel.RESTRICTIONS_DISABLED_HINT));
 		ownedEmpty = hintLabel(ShortestPathPanel.html(
 			ShortestPathPanel.OWNED_EMPTY_LINE_1 + "<br>" + ShortestPathPanel.OWNED_EMPTY_LINE_2));
 
