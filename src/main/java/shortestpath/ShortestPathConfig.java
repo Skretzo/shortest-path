@@ -26,7 +26,7 @@ public interface ShortestPathConfig extends Config
 {
 	@ConfigSection(
 		name = "Settings",
-		description = "Options for the pathfinding. Transport, teleport-restriction and unlock options live in the Shortest Path sidebar panel.",
+		description = "Options for the pathfinding. Transport, teleport-restriction, unlock and routing options live in the Shortest Path sidebar panel.",
 		position = 0
 	)
 	String sectionSettings = "sectionSettings";
@@ -35,8 +35,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "pathfinderAlgorithm",
 		name = "Pathfinder algorithm",
 		description = "Algorithm used for pathfinding",
-		position = 40,
-		section = sectionSettings
+		hidden = true
 	)
 	default PathfinderBackend pathfinderBackend()
 	{
@@ -371,8 +370,7 @@ public interface ShortestPathConfig extends Config
 		description = "Enable after showing a fire cape to a TzHaar-Ket guard to permanently unlock the inner city.<br>" +
 			"The plugin cannot currently detect this unlock automatically.<br>" +
 			"Once enabled, you do not need to carry a fire cape to use the hot vent doors",
-		position = 68,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean unlockMorUlRek()
 	{
@@ -529,8 +527,7 @@ public interface ShortestPathConfig extends Config
 		description = "Makes the A* backend search faster at the price of a suboptimal route.<br>" +
 			"The route costs at most this percentage of the optimal route's cost:<br>" +
 			"100 always finds the optimal route, 300 may find one up to 3x as costly.",
-		position = 81,
-		section = sectionSettings
+		hidden = true
 	)
 	default int aStarHeuristicWeight()
 	{
@@ -603,8 +600,7 @@ public interface ShortestPathConfig extends Config
 		description = "When the target tile cannot be stood on, limit the fallback goal tiles to tiles" +
 			"<br>connected to it through the collision map (the same side of walls), instead of every" +
 			"<br>walkable tile within the unreachable target distance",
-		position = 139,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean collisionAwareBlockedTargets()
 	{
@@ -616,8 +612,7 @@ public interface ShortestPathConfig extends Config
 		name = "Sail on boats",
 		description = "While on a boat, find a path that sails the boat's 16 headings at its base speed<br>" +
 			"with its whole hull clear, and draw it in blue, instead of a walking path",
-		position = 140,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean useSailingMoves()
 	{

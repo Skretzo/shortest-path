@@ -35,16 +35,18 @@ public class ConfigDemotionTest
 	/**
 	 * The exact set of {@code @ConfigItem} keyNames allowed to carry
 	 * {@code hidden = true} — the panel-owned route options plus the internal
-	 * state keys. 70 names; the write-pair keys
+	 * state keys. 75 names; the write-pair keys
 	 * ({@code builtTeleportationBoxes}/{@code builtTeleportationPortalsPoh})
 	 * appear once even though each is declared on both a getter and a
 	 * {@code void set*} method.
 	 */
 	private static final Set<String> PANEL_OWNED_KEYS = new TreeSet<>(Arrays.asList(
+		"aStarHeuristicWeight",
 		"avoidWilderness",
 		"blockedTeleportItems",
 		"builtTeleportationBoxes",
 		"builtTeleportationPortalsPoh",
+		"collisionAwareBlockedTargets",
 		"costAgilityShortcuts",
 		"costBankVisit",
 		"costBoats",
@@ -73,6 +75,7 @@ public class ConfigDemotionTest
 		"costWildernessObelisks",
 		"currencyThreshold",
 		"includeBankPath",
+		"pathfinderAlgorithm",
 		"pohJewelleryBoxTier",
 		"pohMountedItems",
 		"pohNexusPortals",
@@ -80,6 +83,7 @@ public class ConfigDemotionTest
 		"unlockBalloonLogBasket",
 		"unlockCanoeAxe",
 		"unlockDragontoothPassage",
+		"unlockMorUlRek",
 		"unlockXericsHonour",
 		"unreachableTargetDistanceThreshold",
 		"unreachableText",
@@ -100,6 +104,7 @@ public class ConfigDemotionTest
 		"usePohObelisk",
 		"usePohSpiritTree",
 		"useQuetzals",
+		"useSailingMoves",
 		"useSeasonalTransports",
 		"useShips",
 		"useSpiritTrees",
@@ -122,7 +127,7 @@ public class ConfigDemotionTest
 	@Test
 	public void exactlyThePanelOwnedKeysAreHidden()
 	{
-		assertEquals("the pinned boundary is 70 keyNames", 70, PANEL_OWNED_KEYS.size());
+		assertEquals("the pinned boundary is 75 keyNames", 75, PANEL_OWNED_KEYS.size());
 
 		Set<String> hidden = new TreeSet<>();
 		List<String> boundaryViolations = new ArrayList<>();
