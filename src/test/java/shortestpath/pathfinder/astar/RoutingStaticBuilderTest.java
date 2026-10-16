@@ -106,6 +106,45 @@ public class RoutingStaticBuilderTest
 	}
 
 	@Test
+	public void floodFillKeepsEveryDirectionAndRespectsDiagonalCuts() throws Exception
+	{
+		for (int plane : new int[] {0, 3})
+		{
+			int center = WorldPointUtil.packWorldPoint(10, 10, plane);
+			int northwest = WorldPointUtil.packWorldPoint(9, 11, plane);
+			Set<Integer> walkable = new HashSet<>();
+			walkable.add(center);
+			int[][] edges = new int[8][];
+			int count = 0;
+			for (int x = 9; x <= 11; x++)
+			{
+				for (int y = 9; y <= 11; y++)
+				{
+					int neighbor = WorldPointUtil.packWorldPoint(x, y, plane);
+					if (neighbor == center) continue;
+					walkable.add(neighbor);
+					edges[count++] = pair(center, neighbor);
+				}
+			}
+			SyntheticCollisionMap world = new SyntheticCollisionMap(walkable,
+				SyntheticCollisionMap.symmetricAdjacency(edges), plane + 1);
+			RoutingStaticBuilder.Result result = RoutingStaticBuilder.build(world, Map.of(), Set.of(),
+				cuts(pair(center, northwest)), center);
+
+			assertEquals(1, result.diagnostics.naturalComponentCount);
+			assertEquals(2, result.diagnostics.routingComponentCount);
+			assertEquals(1, result.diagnostics.crossingCount);
+			assertEquals(9, result.routingStatic.searchTileCount());
+			int centerComponent = result.routingStatic.routingComponent(result.routingStatic.searchIndex(center));
+			for (int tile : walkable)
+			{
+				int component = result.routingStatic.routingComponent(result.routingStatic.searchIndex(tile));
+				assertEquals(tile != northwest, component == centerComponent);
+			}
+		}
+	}
+
+	@Test
 	public void validSeparatingCutSplitsIntoTwoRoutingComponentsAndOneCrossing() throws Exception
 	{
 		// A duplicate, reversed copy of the same cut must collapse (deduplicated, not double-counted).

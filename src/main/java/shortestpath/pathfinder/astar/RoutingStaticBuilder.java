@@ -416,8 +416,17 @@ public final class RoutingStaticBuilder
 			{
 				int position = queue[head++];
 				int tile = walkable.tiles[position];
-				for (int neighbor : ordinaryNeighborsFromMask(tile, walkable.masks[position]))
+				int x = WorldPointUtil.unpackWorldX(tile);
+				int y = WorldPointUtil.unpackWorldY(tile);
+				int plane = WorldPointUtil.unpackWorldPlane(tile);
+				int mask = Byte.toUnsignedInt(walkable.masks[position]);
+				for (int bit = 0; bit < 8; bit++)
 				{
+					if ((mask & (1 << bit)) == 0)
+					{
+						continue;
+					}
+					int neighbor = WorldPointUtil.packWorldPoint(x + NEIGHBOR_DX[bit], y + NEIGHBOR_DY[bit], plane);
 					int neighborPosition = walkable.index.get(neighbor);
 					if (neighborPosition < 0 || componentOut[neighborPosition] != 0)
 					{
