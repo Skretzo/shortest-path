@@ -22,8 +22,8 @@ public final class RoutingStatic
 	private final int sparseUndirectedEdgeCount, sparseAdjacencyCount;
 	private final int[] sparseOffsets, sparseDestinations, sparseWeights;
 
-	private RoutingStatic(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks, char[] northOffsets,
-		char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
+	private RoutingStatic(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks,
+		char[] northOffsets, char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
 		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
@@ -67,8 +67,8 @@ public final class RoutingStatic
 	 * Takes exclusive ownership of freshly built arrays and validates them before publication.
 	 * Callers must never modify the supplied arrays or expose them to other code after this call.
 	 */
-	static RoutingStatic takeOwnership(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks, char[] northOffsets,
-		char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
+	static RoutingStatic takeOwnership(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks,
+		char[] northOffsets, char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
 		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
@@ -86,11 +86,10 @@ public final class RoutingStatic
 
 	private void validate() throws IOException
 	{
-		if (searchComponents.length() != searchTiles.length)
-			throw new IOException("search components length mismatch");
-		aligned(walkingMasks, searchTiles.length, "walking masks");
-		aligned(northOffsets, searchTiles.length, "north nodes");
-		aligned(southOffsets, searchTiles.length, "south nodes");
+		aligned(searchComponents.length(), searchTiles.length, "search components");
+		aligned(walkingMasks.length, searchTiles.length, "walking masks");
+		aligned(northOffsets.length, searchTiles.length, "north nodes");
+		aligned(southOffsets.length, searchTiles.length, "south nodes");
 		ascending(searchTiles, "search tiles");
 		ascending(siteTiles, "site tiles");
 		ascending(reachableBankTiles, "reachable bank tiles");
@@ -102,8 +101,8 @@ public final class RoutingStatic
 		for (int tile : reachableBankTiles)
 			if (siteIndex(tile) < 0)
 				throw new IOException("reachable bank tile is not a static site: " + Integer.toUnsignedString(tile));
-		aligned(crossingToSite, crossingFromSite.length, "crossing destinations");
-		aligned(crossingCosts, crossingFromSite.length, "crossing costs");
+		aligned(crossingToSite.length, crossingFromSite.length, "crossing destinations");
+		aligned(crossingCosts.length, crossingFromSite.length, "crossing costs");
 		for (int i = 0; i < crossingFromSite.length; i++)
 		{
 			if (crossingFromSite[i] < 0 || crossingFromSite[i] >= siteTiles.length || crossingToSite[i] < 0
@@ -124,9 +123,9 @@ public final class RoutingStatic
 		validateRelations();
 	}
 
-	private static void aligned(Object array, int length, String label) throws IOException
+	private static void aligned(int actualLength, int expectedLength, String label) throws IOException
 	{
-		if (java.lang.reflect.Array.getLength(array) != length)
+		if (actualLength != expectedLength)
 			throw new IOException(label + " length mismatch");
 	}
 
@@ -140,8 +139,11 @@ public final class RoutingStatic
 	private static void refs(TileComponents values, int limit, String label) throws IOException
 	{
 		for (int i = 0; i < values.length(); i++)
-			if (values.get(i) < 0 || values.get(i) >= limit)
+		{
+			int component = values.get(i);
+			if (component < 0 || component >= limit)
 				throw new IOException(label + " out of range");
+		}
 	}
 
 	private static void nodeOffsets(char[] offsets, boolean north) throws IOException

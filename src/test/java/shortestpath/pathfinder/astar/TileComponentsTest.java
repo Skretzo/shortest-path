@@ -20,8 +20,8 @@ public class TileComponentsTest
 		assertEquals(0, components.get(0));
 		assertEquals(32768, components.get(1));
 		assertEquals(65535, components.get(2));
-		assertNotNull(storage(components, "small"));
-		assertNull(storage(components, "large"));
+		assertNotNull(storage(components, "compactIds"));
+		assertNull(storage(components, "wideIds"));
 	}
 
 	@Test
@@ -32,8 +32,8 @@ public class TileComponentsTest
 		components.set(1, 65536);
 		assertEquals(65535, components.get(0));
 		assertEquals(65536, components.get(1));
-		assertNull(storage(components, "small"));
-		assertNotNull(storage(components, "large"));
+		assertNull(storage(components, "compactIds"));
+		assertNotNull(storage(components, "wideIds"));
 	}
 
 	@Test(expected = IllegalArgumentException.class)

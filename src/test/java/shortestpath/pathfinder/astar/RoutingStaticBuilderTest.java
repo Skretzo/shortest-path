@@ -151,6 +151,41 @@ public class RoutingStaticBuilderTest
 	}
 
 	@Test
+	public void fullAndCandidateEnumerationAgreeWithNonzeroRegionOrigin() throws Exception
+	{
+		int a = tile(191, 256), b = tile(192, 256);
+		int upper = WorldPointUtil.packWorldPoint(128, 320, 3);
+		SyntheticCollisionMap world = new SyntheticCollisionMap(Set.of(a, b, upper),
+			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{a, b}}), 4)
+		{
+			@Override
+			public SplitFlagMap.RegionExtent regionExtent()
+			{
+				return new SplitFlagMap.RegionExtent(2, 4, 3, 5);
+			}
+
+			@Override
+			public byte getRegionPlaneCounts(int regionIndex)
+			{
+				return 4;
+			}
+		};
+		Map<Integer, Set<Transport>> transports =
+			transports(transport(WorldPointUtil.UNDEFINED, upper, TransportType.SEASONAL_TRANSPORTS));
+		RoutingStaticBuilder.WalkingGraph full = RoutingStaticBuilder.walkingGraph(world, transports, a);
+		RoutingStatic candidate = RoutingStaticBuilder.build(world, transports, Set.of(), new int[0], a).routingStatic;
+
+		assertEquals(3, full.tileCount());
+		assertEquals(full.tileCount(), candidate.searchTileCount());
+		for (int i = 0; i < full.tileCount(); i++)
+		{
+			assertEquals(full.tile(i), candidate.searchTile(i));
+			assertEquals(i, full.indexOf(candidate.searchTile(i)));
+			assertEquals(Byte.toUnsignedInt(world.ordinaryWalkingMask(full.tile(i))), candidate.walkingMask(i));
+		}
+	}
+
+	@Test
 	public void verticalNeighboursDoNotWrapBetweenPlanes() throws Exception
 	{
 		int top = WorldPointUtil.packWorldPoint(10, 32767, 0);

@@ -43,6 +43,7 @@ public final class RoutingStaticBuilder
 	private static final int SEED_TILE = WorldPointUtil.packWorldPoint(3221, 3218, 0);
 	/** One full {@code y} unit in the packed encoding (bit 15). */
 	private static final int Y_UNIT = 1 << 15;
+	private static final int REGION_SIZE = 64;
 
 	private RoutingStaticBuilder()
 	{
@@ -248,8 +249,8 @@ public final class RoutingStaticBuilder
 		}
 
 		stepStarted = System.nanoTime();
-		RoutingStatic result = RoutingStatic.takeOwnership(search.tiles, search.components, search.masks, search.north,
-			search.south, sites.siteTiles, sites.siteComponentOffsets, sites.siteComponentIds, routingComponentCount,
+		RoutingStatic result = RoutingStatic.takeOwnership(search.tiles, search.components, search.masks, search.northOffsets,
+			search.southOffsets, sites.siteTiles, sites.siteComponentOffsets, sites.siteComponentIds, routingComponentCount,
 			sites.componentSiteOffsets, sites.componentSiteIds, sites.reachableBankTiles, crossingFrom, crossingTo,
 			crossingCost, sparse.originalCount, sparse.vertexCount, sparse.steinerCount, sparse.undirectedEdgeCount,
 			sparse.adjacencyCount(), sparse.offsets, sparse.destinations, sparse.weights);
@@ -350,7 +351,7 @@ public final class RoutingStaticBuilder
 		return new WalkingGraph(walkable, naturalId, naturalComponentCount, reachable);
 	}
 
-	// ---- Step 0: enumerate every collision-walkable tile, ascending unsigned packed order ----
+	// ---- Tile selection and enumeration in ascending unsigned packed order ----
 
 	private static final class WalkableTiles
 	{
@@ -358,70 +359,50 @@ public final class RoutingStaticBuilder
 		final byte[] masks;
 		final TileIndex index;
 
-		WalkableTiles(int[] tiles, byte[] masks, TileIndex index)
+		WalkableTiles(int[] tiles, byte[] masks)
 		{
 			this.tiles = tiles;
 			this.masks = masks;
-			this.index = index;
+			this.index = new TileIndex(tiles);
 		}
 	}
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision)
 	{
-		return enumerateWalkableTiles(collision, null);
+		return enumerateWalkableTiles(collision, TileSelection.allWalkable(collision));
 	}
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision, TileSelection selected)
 	{
-		// Count first so growing buffers and their trimmed copies never overlap in memory.
-		int count = readWalkableTiles(collision, null, null, selected);
-		int[] tiles = new int[count];
-		byte[] masks = new byte[count];
-		readWalkableTiles(collision, tiles, masks, selected);
-		return new WalkableTiles(tiles, masks, new TileIndex(tiles));
-	}
-
-	private static int readWalkableTiles(CollisionMap collision, int[] tiles, byte[] masks, TileSelection selected)
-	{
-		final int regionSize = 64;
-		SplitFlagMap.RegionExtent extent = collision.regionExtent();
-		int widthInclusive = extent.getWidth() + 1;
-		int count = 0;
-		// Packed tiles sort by plane, then y, then x; emit that order to avoid a full-map sort.
+		int[] tiles = new int[selected.tileCount()];
+		byte[] masks = new byte[tiles.length];
+		int next = 0;
+		// Packed tiles sort by plane, then y, then x; emit that order without sorting or copying.
 		for (int plane = 0; plane < 4; plane++)
 		{
-			for (int ry = 0; ry <= extent.getHeight(); ry++)
+			for (int ry = 0; ry < selected.height; ry++)
 			{
-				int baseY = (extent.getMinY() + ry) * regionSize;
-				for (int ly = 0; ly < regionSize; ly++)
+				int baseY = (selected.minY + ry) * REGION_SIZE;
+				for (int ly = 0; ly < REGION_SIZE; ly++)
 				{
-					int y = baseY + ly;
-					for (int rx = 0; rx <= extent.getWidth(); rx++)
+					int rowStart = ly * REGION_SIZE;
+					for (int rx = 0; rx < selected.width; rx++)
 					{
-						int index = rx + ry * widthInclusive;
-						if (plane >= collision.getRegionPlaneCounts(index)) continue;
-						BitSet selectedRegion = selected == null ? null : selected.regions[index * 4 + plane];
-						if (selected != null && selectedRegion == null) continue;
-						int baseX = (extent.getMinX() + rx) * regionSize;
-						for (int lx = 0; lx < regionSize; lx++)
+						BitSet region = selected.regions[(rx + ry * selected.width) * 4 + plane];
+						if (region == null) continue;
+						int baseX = (selected.minX + rx) * REGION_SIZE;
+						for (int bit = region.nextSetBit(rowStart); bit >= 0 && bit < rowStart + REGION_SIZE;
+							bit = region.nextSetBit(bit + 1))
 						{
-							int x = baseX + lx;
-							if (selected == null ? !collision.isBlocked(x, y, plane) : selectedRegion.get(ly * regionSize + lx))
-							{
-								if (tiles != null)
-								{
-									int packed = WorldPointUtil.packWorldPoint(x, y, plane);
-									tiles[count] = packed;
-									masks[count] = collision.ordinaryWalkingMask(packed);
-								}
-								count++;
-							}
+							int tile = WorldPointUtil.packWorldPoint(baseX + (bit & (REGION_SIZE - 1)), baseY + ly, plane);
+							tiles[next] = tile;
+							masks[next++] = collision.ordinaryWalkingMask(tile);
 						}
 					}
 				}
 			}
 		}
-		return count;
+		return new WalkableTiles(tiles, masks);
 	}
 
 	/** Keep endpoint-connected land before allocating arrays; open sea can otherwise look walkable. */
@@ -478,6 +459,47 @@ public final class RoutingStaticBuilder
 			regions = new BitSet[width * height * 4];
 		}
 
+		static TileSelection allWalkable(CollisionMap collision)
+		{
+			TileSelection selected = new TileSelection(collision);
+			for (int ry = 0; ry < selected.height; ry++)
+			{
+				for (int rx = 0; rx < selected.width; rx++)
+				{
+					int region = rx + ry * selected.width;
+					int baseX = (selected.minX + rx) * REGION_SIZE;
+					int baseY = (selected.minY + ry) * REGION_SIZE;
+					for (int plane = 0; plane < Math.min(4, collision.getRegionPlaneCounts(region)); plane++)
+					{
+						for (int ly = 0; ly < REGION_SIZE; ly++)
+						{
+							for (int lx = 0; lx < REGION_SIZE; lx++)
+							{
+								if (!collision.isBlocked(baseX + lx, baseY + ly, plane))
+									selected.mark(region * 4 + plane, ly * REGION_SIZE + lx);
+							}
+						}
+					}
+				}
+			}
+			return selected;
+		}
+
+		int tileCount()
+		{
+			int count = 0;
+			for (BitSet region : regions)
+				if (region != null) count += region.cardinality();
+			return count;
+		}
+
+		private void mark(int region, int bit)
+		{
+			BitSet bits = regions[region];
+			if (bits == null) regions[region] = bits = new BitSet(REGION_SIZE * REGION_SIZE);
+			bits.set(bit);
+		}
+
 		void attach(int tile, CollisionMap collision, IntDeque queue)
 		{
 			if (!collision.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile),
@@ -496,17 +518,16 @@ public final class RoutingStaticBuilder
 			int x = WorldPointUtil.unpackWorldX(tile);
 			int y = WorldPointUtil.unpackWorldY(tile);
 			int plane = WorldPointUtil.unpackWorldPlane(tile);
-			int rx = (x >>> 6) - minX, ry = (y >>> 6) - minY;
+			int rx = x / REGION_SIZE - minX, ry = y / REGION_SIZE - minY;
 			if (rx < 0 || rx >= width || ry < 0 || ry >= height) return;
 			int region = rx + ry * width;
 			if (plane >= collision.getRegionPlaneCounts(region)) return;
 			int index = region * 4 + plane;
-			int bit = (y & 63) * 64 + (x & 63);
+			int bit = (y & (REGION_SIZE - 1)) * REGION_SIZE + (x & (REGION_SIZE - 1));
 			BitSet bits = regions[index];
 			if (bits != null && bits.get(bit)) return;
 			if (collision.isBlocked(x, y, plane)) return;
-			if (bits == null) regions[index] = bits = new BitSet(4096);
-			bits.set(bit);
+			mark(index, bit);
 			queue.addLast(tile);
 		}
 	}
@@ -807,20 +828,21 @@ public final class RoutingStaticBuilder
 	{
 		final int[] tiles;
 		final TileComponents components;
-		final char[] north, south;
+		final char[] northOffsets, southOffsets;
 		final byte[] masks;
 
-		SearchTiles(int[] tiles, TileComponents components, byte[] masks, char[] north, char[] south)
+		SearchTiles(int[] tiles, TileComponents components, byte[] masks, char[] northOffsets, char[] southOffsets)
 		{
 			this.tiles = tiles;
 			this.components = components;
 			this.masks = masks;
-			this.north = north;
-			this.south = south;
+			this.northOffsets = northOffsets;
+			this.southOffsets = southOffsets;
 		}
 	}
 
-	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId, BitSet reachableTiles, int componentCount)
+	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId,
+		BitSet reachableTiles, int componentCount)
 	{
 		int count = reachableTiles.cardinality();
 		int[] tileArray = new int[count];
