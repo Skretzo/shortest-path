@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.IntDeque;
 import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -401,7 +402,7 @@ public final class RoutingStaticBuilder
 	private static int floodFillComponents(WalkableTiles walkable, LongOpenHashSet blocked, int[] componentOut)
 	{
 		int n = walkable.tiles.length;
-		int[] queue = new int[n == 0 ? 1 : n];
+		IntDeque queue = new IntDeque(4096);
 		int nextId = 1;
 		for (int seed = 0; seed < n; seed++)
 		{
@@ -409,12 +410,11 @@ public final class RoutingStaticBuilder
 			{
 				continue;
 			}
-			int head = 0, tail = 0;
-			queue[tail++] = seed;
+			queue.addLast(seed);
 			componentOut[seed] = nextId;
-			while (head < tail)
+			while (!queue.isEmpty())
 			{
-				int position = queue[head++];
+				int position = queue.pollFirst();
 				int tile = walkable.tiles[position];
 				int x = WorldPointUtil.unpackWorldX(tile);
 				int y = WorldPointUtil.unpackWorldY(tile);
@@ -437,7 +437,7 @@ public final class RoutingStaticBuilder
 						continue;
 					}
 					componentOut[neighborPosition] = nextId;
-					queue[tail++] = neighborPosition;
+					queue.addLast(neighborPosition);
 				}
 			}
 			nextId++;

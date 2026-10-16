@@ -29,7 +29,7 @@ public class IntDeque
 		return size == 0;
 	}
 
-	void addLast(int value)
+	public void addLast(int value)
 	{
 		if (size == elements.length)
 		{
