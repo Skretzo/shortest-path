@@ -471,6 +471,11 @@ public class ShortestPathPanel extends PluginPanel
 		Range range = settings.rangeOf(keyName);
 		int min = range == null ? 0 : Math.max(0, range.min());
 		Integer max = range == null || range.max() == Integer.MAX_VALUE ? null : range.max();
+		// A persisted value can land outside the model's bounds (hand-edited
+		// settings, or keys without a @Range bound the stock panel leaves
+		// unclamped) — SpinnerNumberModel throws on that, so clamp to the
+		// nearest bound instead of letting panel construction fail.
+		current = Math.max(min, Math.min(max == null ? Integer.MAX_VALUE : max.intValue(), current));
 
 		JSpinner spinner = new JSpinner(new SpinnerNumberModel(
 			Integer.valueOf(current), Integer.valueOf(min), max, Integer.valueOf(1)));
@@ -495,7 +500,12 @@ public class ShortestPathPanel extends PluginPanel
 				syncing[0] = true;
 				try
 				{
-					spinner.setValue(((Number) updated).intValue());
+					// Same clamp as construction: an out-of-range external
+					// write degrades to the nearest bound rather than
+					// throwing inside the listener chain.
+					int updatedInt = ((Number) updated).intValue();
+					spinner.setValue(Math.max(min,
+						Math.min(max == null ? Integer.MAX_VALUE : max.intValue(), updatedInt)));
 				}
 				finally
 				{
