@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.BitSet;
 import shortestpath.pathfinder.CollisionMap;
 
 /** Immutable primitive-array representation of the A* backend's static routing data. */
@@ -14,7 +15,7 @@ public final class RoutingStatic
 	private final int[] siteTiles, siteComponentOffsets, siteComponentIds;
 	private final int routingComponentCount;
 	private final int[] componentSiteOffsets, componentSiteIds, reachableBankTiles;
-	private final byte[] reachableBankNodes, reachableBankSites;
+	private final BitSet reachableBankNodes, reachableBankSites;
 	private final int[] crossingFromSite, crossingToSite, crossingCosts;
 	private final int sparseOriginalCount, sparseVertexCount, sparseSteinerCount;
 	private final int sparseUndirectedEdgeCount, sparseAdjacencyCount;
@@ -39,14 +40,14 @@ public final class RoutingStatic
 		this.componentSiteOffsets = componentSiteOffsets;
 		this.componentSiteIds = componentSiteIds;
 		this.reachableBankTiles = reachableBankTiles;
-		this.reachableBankNodes = new byte[searchTiles.length];
-		this.reachableBankSites = new byte[siteTiles.length];
+		this.reachableBankNodes = new BitSet(searchTiles.length);
+		this.reachableBankSites = new BitSet(siteTiles.length);
 		for (int tile : reachableBankTiles)
 		{
 			int node = binarySearch(searchTiles, tile);
-			if (node >= 0) reachableBankNodes[node] = 1;
+			if (node >= 0) reachableBankNodes.set(node);
 			int site = binarySearch(siteTiles, tile);
-			if (site >= 0) reachableBankSites[site] = 1;
+			if (site >= 0) reachableBankSites.set(site);
 		}
 		this.crossingFromSite = crossingFromSite;
 		this.crossingToSite = crossingToSite;
@@ -213,12 +214,12 @@ public final class RoutingStatic
 	 */
 	public boolean isBankNode(int node)
 	{
-		return reachableBankNodes[node] != 0;
+		return reachableBankNodes.get(node);
 	}
 	/** Whether the site is a bank in the world; see {@link #isBankNode(int)}. */
 	public boolean isBankSite(int site)
 	{
-		return site >= 0 && reachableBankSites[site] != 0;
+		return site >= 0 && reachableBankSites.get(site);
 	}
 	public int crossingCount()
 	{

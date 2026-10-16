@@ -3,6 +3,7 @@ package shortestpath.pathfinder.astar;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -69,6 +70,26 @@ public class RoutingStaticOwnershipTest
 		Map<String, Object> arrays = arrays();
 		((char[]) arrays.get("northOffsets"))[0] = 2;
 		takeOwnership(arrays);
+	}
+
+	@Test
+	public void bankBitsKeepWordBoundariesAndLastPartialWord() throws Exception
+	{
+		int[] tiles = new int[130];
+		for (int i = 0; i < tiles.length; i++) tiles[i] = i;
+		int[] banks = {0, 63, 64, 129};
+		RoutingStatic stat = RoutingStatic.takeOwnership(tiles, new int[130], new byte[130],
+			new char[130], new char[130], banks, new int[] {0, 1, 2, 3, 4}, new int[4], 1,
+			new int[] {0, 4}, new int[] {0, 1, 2, 3}, banks, new int[0], new int[0], new int[0],
+			4, 4, 0, 0, 0, new int[5], new int[0], new int[0]);
+
+		for (int i = 0; i < tiles.length; i++)
+			assertEquals(i == 0 || i == 63 || i == 64 || i == 129, stat.isBankNode(i));
+		for (int i = 0; i < banks.length; i++) assertEquals(true, stat.isBankSite(i));
+		assertFalse(stat.isBankSite(-1));
+		RoutingStatic emptyBanks = RoutingStaticTestFixture.createT3();
+		assertFalse(emptyBanks.isBankNode(0));
+		assertFalse(emptyBanks.isBankSite(0));
 	}
 
 	private static Map<String, Object> arrays()
