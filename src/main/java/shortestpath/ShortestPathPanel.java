@@ -765,6 +765,31 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
+	 * The rows of {@code category} matching the query — feeds the home
+	 * results view so it renders the same match set the sub-panel would
+	 * filter down to.
+	 */
+	List<SearchRow> matchingRows(CategoryPanel category, String query)
+	{
+		return category.matchingRows(query.toLowerCase(Locale.ROOT));
+	}
+
+	/**
+	 * Push {@code category} filtered on the current query (its
+	 * {@code onActivate} applies it), then scroll the matched row into
+	 * view once the push's layout has settled.
+	 */
+	void deepLink(CategoryPanel category, SearchRow row)
+	{
+		muxer.pushState(category);
+		if (row != null)
+		{
+			SwingUtilities.invokeLater(() ->
+				row.component.scrollRectToVisible(row.component.getBounds()));
+		}
+	}
+
+	/**
 	 * The sidebar activates only this outer panel — forward activation into
 	 * the muxer so the visible sub-panel's {@code onActivate} (the deep-link
 	 * filter + status refresh) fires. {@link MultiplexingPluginPanel} only
