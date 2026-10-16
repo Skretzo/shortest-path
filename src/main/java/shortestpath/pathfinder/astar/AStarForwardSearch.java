@@ -314,10 +314,13 @@ public final class AStarForwardSearch
 		CollisionMap collision = target.collision();
 		if (collision.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile), WorldPointUtil.unpackWorldPlane(tile))) return;
 		int x = WorldPointUtil.unpackWorldX(tile), y = WorldPointUtil.unpackWorldY(tile), plane = WorldPointUtil.unpackWorldPlane(tile);
-		int[] cardinal = {WorldPointUtil.packWorldPoint(x - 1, y, plane), WorldPointUtil.packWorldPoint(x + 1, y, plane), WorldPointUtil.packWorldPoint(x, y - 1, plane), WorldPointUtil.packWorldPoint(x, y + 1, plane)};
-		for (int next : cardinal)
+		for (int direction = 0; direction < 4; direction++)
+		{
+			int next = WorldPointUtil.packWorldPoint(x + GameWalkOrder.ORDER_DX[direction],
+				y + GameWalkOrder.ORDER_DY[direction], plane);
 			if (collision.isBlocked(WorldPointUtil.unpackWorldX(next), WorldPointUtil.unpackWorldY(next), WorldPointUtil.unpackWorldPlane(next)) && space.hasLocalOrigin(next, banked))
 				relaxWalking(space, next, banked, from, cost, best, previous, transportWins, queue, counters, restrictedHeuristic, globalBounds, optimized, heuristic, heuristicWeight, bestBankCost);
+		}
 	}
 
 	private static void relaxWalking(SearchSpace space, int tile, boolean banked, int from, int cost,

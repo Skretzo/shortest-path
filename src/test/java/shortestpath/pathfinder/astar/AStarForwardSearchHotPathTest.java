@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
@@ -75,6 +77,31 @@ public class AStarForwardSearchHotPathTest
 		assertEquals(List.of(RoutingStaticTestFixture.A), tiles(result.path()));
 		assertEquals(List.of(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK), tiles(result.closestPath()));
 		assertEquals(1, result.closestCost());
+	}
+
+	@Test
+	public void entersBlockedTransportOriginsInEachCardinalDirection() throws Exception
+	{
+		int start = WorldPointUtil.packWorldPoint(10, 10, 0);
+		int destination = WorldPointUtil.packWorldPoint(40, 40, 0);
+		int[] origins = {WorldPointUtil.packWorldPoint(9, 10, 0), WorldPointUtil.packWorldPoint(11, 10, 0),
+			WorldPointUtil.packWorldPoint(10, 9, 0), WorldPointUtil.packWorldPoint(10, 11, 0)};
+		for (int origin : origins)
+		{
+			SyntheticCollisionMap collision = new SyntheticCollisionMap(Set.of(start, destination),
+				Map.of(origin, new int[] {start}), 1);
+			Transport transport = local(origin, destination, 3);
+			RoutingStatic stat = RoutingStaticBuilder.build(collision, Map.of(origin, Set.of(transport)),
+				Set.of(), new int[0], start).routingStatic;
+			TargetOverlay target = new TargetOverlay(new SiteGraph(stat, account(transport)), collision, destination);
+
+			AStarForwardSearch.Result result = AStarForwardSearch.search(target,
+				PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start);
+
+			assertTrue(result.reached());
+			assertEquals(4, result.cost());
+			assertEquals(List.of(start, origin, destination), tiles(result.path()));
+		}
 	}
 
 	@Test
