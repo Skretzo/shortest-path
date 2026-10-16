@@ -333,10 +333,10 @@ class RestrictionListPanel extends JPanel
 	{
 		clientThread.invoke(() ->
 		{
-			Map<Integer, Integer> owned = new HashMap<>();
-			OwnedItems.addContainer(owned, client.getItemContainer(InventoryID.INV));
-			OwnedItems.addContainer(owned, client.getItemContainer(InventoryID.WORN));
-			OwnedItems.addContainer(owned, client.getItemContainer(InventoryID.BANK));
+			Map<Integer, Integer> owned = OwnedItems.collect(
+				client.getItemContainer(InventoryID.INV),
+				client.getItemContainer(InventoryID.WORN),
+				client.getItemContainer(InventoryID.BANK));
 			// The last-seen snapshot may only add ids the live containers
 			// lack — a stale extra id keeps its family listed, which is
 			// exactly the wanted behavior.
