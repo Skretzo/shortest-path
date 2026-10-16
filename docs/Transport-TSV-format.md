@@ -101,9 +101,9 @@ Notes: display labels sometimes include an index or letter prefix used by in-gam
 
 ### Consumable (flag)
 
-- Format: `T`, `F`, `yes`, or empty.
+- Format: `T` or `F` (empty is treated as `F`).
 - Meaning: indicates whether using the transport consumes an item/charge.
-- Notes: the parser treats `T` and `yes` (case-insensitive) as true; anything else (including `F` or empty) is false.
+- Notes: rows must be written `T` or `F` — `check_tsv.py` rejects anything else. The parser additionally tolerates `yes` (case-insensitive) as true, but that is a parser leniency, not an authoring option.
 
 ### Wilderness level
 
