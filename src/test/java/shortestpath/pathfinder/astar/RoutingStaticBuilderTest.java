@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
 import shortestpath.transport.Transport;
@@ -103,6 +104,42 @@ public class RoutingStaticBuilderTest
 		assertEquals(3, result.routingStatic.searchTileCount());
 		// With zero cuts, routing ids must exactly track natural ids (same flood fill, no blocking).
 		assertEquals(result.diagnostics.naturalComponentCount, result.diagnostics.routingComponentCount);
+	}
+
+	@Test
+	public void tileEnumerationStaysSortedAcrossRegionsAndPlanes()
+	{
+		int upper = WorldPointUtil.packWorldPoint(1, 1, 3);
+		int[] expected = {tile(63, 0), tile(64, 0), tile(0, 1), tile(1, 64),
+			WorldPointUtil.packWorldPoint(1, 1, 1), upper};
+		Set<Integer> tiles = new HashSet<>();
+		for (int tile : expected) tiles.add(tile);
+		SyntheticCollisionMap world = new SyntheticCollisionMap(tiles,
+			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{expected[0], expected[1]}}), 4)
+		{
+			@Override
+			public SplitFlagMap.RegionExtent regionExtent()
+			{
+				return new SplitFlagMap.RegionExtent(0, 0, 1, 1);
+			}
+
+			@Override
+			public byte getRegionPlaneCounts(int regionIndex)
+			{
+				return (byte) (regionIndex >= 0 && regionIndex < 4 ? 4 : 0);
+			}
+		};
+		RoutingStaticBuilder.WalkingGraph graph = RoutingStaticBuilder.walkingGraph(world, Map.of(), expected[0]);
+
+		assertEquals(expected.length, graph.tileCount());
+		for (int index = 0; index < expected.length; index++)
+		{
+			assertEquals(expected[index], graph.tile(index));
+			assertEquals(index, graph.indexOf(expected[index]));
+		}
+		assertEquals(1, graph.neighbours(0).length);
+		assertEquals(1, graph.neighbours(0)[0]);
+		assertEquals(0, graph.neighbours(expected.length - 1).length);
 	}
 
 	@Test

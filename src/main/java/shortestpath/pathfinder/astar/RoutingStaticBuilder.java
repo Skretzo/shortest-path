@@ -364,25 +364,20 @@ public final class RoutingStaticBuilder
 		int widthInclusive = extent.getWidth() + 1;
 		IntArrayList tiles = new IntArrayList();
 		ByteArrayList masks = new ByteArrayList();
-		for (int ry = 0; ry <= extent.getHeight(); ry++)
+		// Packed tiles sort by plane, then y, then x; emit that order to avoid a full-map sort.
+		for (int plane = 0; plane < 4; plane++)
 		{
-			int regionY = extent.getMinY() + ry;
-			for (int rx = 0; rx <= extent.getWidth(); rx++)
+			for (int ry = 0; ry <= extent.getHeight(); ry++)
 			{
-				int regionX = extent.getMinX() + rx;
-				int index = rx + ry * widthInclusive;
-				int planeCount = collision.getRegionPlaneCounts(index);
-				if (planeCount <= 0)
+				int baseY = (extent.getMinY() + ry) * regionSize;
+				for (int ly = 0; ly < regionSize; ly++)
 				{
-					continue;
-				}
-				int baseX = regionX * regionSize;
-				int baseY = regionY * regionSize;
-				for (int plane = 0; plane < planeCount; plane++)
-				{
-					for (int ly = 0; ly < regionSize; ly++)
+					int y = baseY + ly;
+					for (int rx = 0; rx <= extent.getWidth(); rx++)
 					{
-						int y = baseY + ly;
+						int index = rx + ry * widthInclusive;
+						if (plane >= collision.getRegionPlaneCounts(index)) continue;
+						int baseX = (extent.getMinX() + rx) * regionSize;
 						for (int lx = 0; lx < regionSize; lx++)
 						{
 							int x = baseX + lx;
@@ -399,7 +394,6 @@ public final class RoutingStaticBuilder
 		}
 		int[] tileArray = tiles.toArray();
 		byte[] maskArray = masks.toArray();
-		sortUnsignedWithPayload(tileArray, maskArray);
 		return new WalkableTiles(tileArray, maskArray, new TileIndex(tileArray));
 	}
 
@@ -946,28 +940,6 @@ public final class RoutingStaticBuilder
 		for (int i = 0; i < values.length; i++)
 		{
 			values[i] ^= Integer.MIN_VALUE;
-		}
-	}
-
-	/**
-	 * Sorts {@code keys} into ascending unsigned order, permuting {@code payload} (one byte per
-	 * key) the same way. Packs each (flipped-signed key, payload byte) pair into a single
-	 * {@code long} so the whole sort is a primitive {@code long[]} sort with no boxing, which
-	 * matters at multi-million-tile scale.
-	 */
-	private static void sortUnsignedWithPayload(int[] keys, byte[] payload)
-	{
-		long[] packed = new long[keys.length];
-		for (int i = 0; i < keys.length; i++)
-		{
-			long unsignedKey = Integer.toUnsignedLong(keys[i]);
-			packed[i] = (unsignedKey << 8) | (payload[i] & 0xffL);
-		}
-		Arrays.sort(packed);
-		for (int i = 0; i < keys.length; i++)
-		{
-			keys[i] = (int) (packed[i] >>> 8);
-			payload[i] = (byte) packed[i];
 		}
 	}
 
