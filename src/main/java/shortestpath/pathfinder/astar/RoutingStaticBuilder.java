@@ -218,7 +218,7 @@ public final class RoutingStaticBuilder
 		long routingComponentsNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
-		SearchTiles search = buildSearchTiles(walkable, componentIds, reachableTiles);
+		SearchTiles search = buildSearchTiles(walkable, componentIds, reachableTiles, routingComponentCount);
 		long searchTilesNanos = System.nanoTime() - stepStarted;
 
 		stepStarted = System.nanoTime();
@@ -805,11 +805,12 @@ public final class RoutingStaticBuilder
 
 	private static final class SearchTiles
 	{
-		final int[] tiles, components;
+		final int[] tiles;
+		final TileComponents components;
 		final char[] north, south;
 		final byte[] masks;
 
-		SearchTiles(int[] tiles, int[] components, byte[] masks, char[] north, char[] south)
+		SearchTiles(int[] tiles, TileComponents components, byte[] masks, char[] north, char[] south)
 		{
 			this.tiles = tiles;
 			this.components = components;
@@ -819,17 +820,17 @@ public final class RoutingStaticBuilder
 		}
 	}
 
-	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId, BitSet reachableTiles)
+	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId, BitSet reachableTiles, int componentCount)
 	{
 		int count = reachableTiles.cardinality();
 		int[] tileArray = new int[count];
-		int[] componentArray = new int[count];
+		TileComponents componentArray = new TileComponents(count, componentCount);
 		byte[] maskArray = new byte[count];
 		int next = 0;
 		for (int i = reachableTiles.nextSetBit(0); i >= 0; i = reachableTiles.nextSetBit(i + 1))
 		{
 			tileArray[next] = walkable.tiles[i];
-			componentArray[next] = routingId[i];
+			componentArray.set(next, routingId[i]);
 			maskArray[next++] = walkable.masks[i];
 		}
 		char[] north = new char[tileArray.length];
@@ -988,7 +989,7 @@ public final class RoutingStaticBuilder
 		int index = binarySearchUnsigned(search.tiles, point);
 		if (index >= 0)
 		{
-			return new int[] {search.components[index]};
+			return new int[] {search.components.get(index)};
 		}
 		int[] neighbors = collision.ordinaryWalkingNeighbors(point);
 		int[] buffer = new int[8];
@@ -998,7 +999,7 @@ public final class RoutingStaticBuilder
 			int neighborIndex = binarySearchUnsigned(search.tiles, neighbor);
 			if (neighborIndex >= 0)
 			{
-				int component = search.components[neighborIndex];
+				int component = search.components.get(neighborIndex);
 				if (!contains(buffer, 0, count, component))
 				{
 					buffer[count++] = component;

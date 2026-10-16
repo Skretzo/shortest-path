@@ -8,7 +8,8 @@ import shortestpath.pathfinder.CollisionMap;
 /** Immutable primitive-array representation of the A* backend's static routing data. */
 public final class RoutingStatic
 {
-	private final int[] searchTiles, searchComponents;
+	private final int[] searchTiles;
+	private final TileComponents searchComponents;
 	// Zero means absent; other values are distances within the sorted tile array.
 	private final char[] northOffsets, southOffsets;
 	private final byte[] walkingMasks;
@@ -21,7 +22,7 @@ public final class RoutingStatic
 	private final int sparseUndirectedEdgeCount, sparseAdjacencyCount;
 	private final int[] sparseOffsets, sparseDestinations, sparseWeights;
 
-	private RoutingStatic(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, char[] northOffsets,
+	private RoutingStatic(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks, char[] northOffsets,
 		char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
@@ -66,7 +67,7 @@ public final class RoutingStatic
 	 * Takes exclusive ownership of freshly built arrays and validates them before publication.
 	 * Callers must never modify the supplied arrays or expose them to other code after this call.
 	 */
-	static RoutingStatic takeOwnership(int[] searchTiles, int[] searchComponents, byte[] walkingMasks, char[] northOffsets,
+	static RoutingStatic takeOwnership(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks, char[] northOffsets,
 		char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
@@ -85,7 +86,8 @@ public final class RoutingStatic
 
 	private void validate() throws IOException
 	{
-		aligned(searchComponents, searchTiles.length, "search components");
+		if (searchComponents.length() != searchTiles.length)
+			throw new IOException("search components length mismatch");
 		aligned(walkingMasks, searchTiles.length, "walking masks");
 		aligned(northOffsets, searchTiles.length, "north nodes");
 		aligned(southOffsets, searchTiles.length, "south nodes");
@@ -135,10 +137,10 @@ public final class RoutingStatic
 				throw new IOException(label + " is not strictly ascending at index " + i);
 	}
 
-	private static void refs(int[] values, int limit, String label) throws IOException
+	private static void refs(TileComponents values, int limit, String label) throws IOException
 	{
-		for (int value : values)
-			if (value < 0 || value >= limit)
+		for (int i = 0; i < values.length(); i++)
+			if (values.get(i) < 0 || values.get(i) >= limit)
 				throw new IOException(label + " out of range");
 	}
 
@@ -259,7 +261,7 @@ public final class RoutingStatic
 	}
 	public int routingComponent(int index)
 	{
-		return searchComponents[index];
+		return searchComponents.get(index);
 	}
 	public int siteTile(int index)
 	{
@@ -311,14 +313,14 @@ public final class RoutingStatic
 	{
 		int index = searchIndex(packedPoint);
 		if (index >= 0)
-			return new int[] {searchComponents[index]};
+			return new int[] {searchComponents.get(index)};
 		int[] result = new int[8];
 		int count = 0;
 		for (int neighbor : collision.ordinaryWalkingNeighbors(packedPoint))
 		{
 			int neighborIndex = searchIndex(neighbor);
-			if (neighborIndex >= 0 && !contains(result, 0, count, searchComponents[neighborIndex]))
-				result[count++] = searchComponents[neighborIndex];
+			if (neighborIndex >= 0 && !contains(result, 0, count, searchComponents.get(neighborIndex)))
+				result[count++] = searchComponents.get(neighborIndex);
 		}
 		Arrays.sort(result, 0, count);
 		return Arrays.copyOf(result, count);

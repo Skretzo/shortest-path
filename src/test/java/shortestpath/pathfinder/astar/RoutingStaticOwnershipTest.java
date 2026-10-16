@@ -37,7 +37,9 @@ public class RoutingStaticOwnershipTest
 	public void stillRejectsInvalidArrayReferences() throws Exception
 	{
 		Map<String, Object> arrays = arrays();
-		((int[]) arrays.get("searchComponents"))[0] = 99;
+		TileComponents invalid = new TileComponents(2, 100);
+		invalid.set(0, 99);
+		arrays.put("searchComponents", invalid);
 		takeOwnership(arrays);
 	}
 
@@ -52,7 +54,7 @@ public class RoutingStaticOwnershipTest
 		north[0] = 32768;
 		south[32768] = 32768;
 		arrays.put("searchTiles", tiles);
-		arrays.put("searchComponents", new int[count]);
+		arrays.put("searchComponents", new TileComponents(count, 1));
 		arrays.put("walkingMasks", new byte[count]);
 		arrays.put("northOffsets", north);
 		arrays.put("southOffsets", south);
@@ -78,7 +80,7 @@ public class RoutingStaticOwnershipTest
 		int[] tiles = new int[130];
 		for (int i = 0; i < tiles.length; i++) tiles[i] = i;
 		int[] banks = {0, 63, 64, 129};
-		RoutingStatic stat = RoutingStatic.takeOwnership(tiles, new int[130], new byte[130],
+		RoutingStatic stat = RoutingStatic.takeOwnership(tiles, new TileComponents(130, 1), new byte[130],
 			new char[130], new char[130], banks, new int[] {0, 1, 2, 3, 4}, new int[4], 1,
 			new int[] {0, 4}, new int[] {0, 1, 2, 3}, banks, new int[0], new int[0], new int[0],
 			4, 4, 0, 0, 0, new int[5], new int[0], new int[0]);
@@ -96,7 +98,7 @@ public class RoutingStaticOwnershipTest
 	{
 		Map<String, Object> arrays = new LinkedHashMap<>();
 		arrays.put("searchTiles", new int[] {10, 11});
-		arrays.put("searchComponents", new int[] {0, 0});
+		arrays.put("searchComponents", new TileComponents(2, 1));
 		arrays.put("walkingMasks", new byte[] {4, 64});
 		arrays.put("northOffsets", new char[2]);
 		arrays.put("southOffsets", new char[2]);
@@ -117,7 +119,7 @@ public class RoutingStaticOwnershipTest
 
 	private static RoutingStatic takeOwnership(Map<String, Object> a) throws IOException
 	{
-		return RoutingStatic.takeOwnership((int[]) a.get("searchTiles"), (int[]) a.get("searchComponents"),
+		return RoutingStatic.takeOwnership((int[]) a.get("searchTiles"), (TileComponents) a.get("searchComponents"),
 			(byte[]) a.get("walkingMasks"), (char[]) a.get("northOffsets"), (char[]) a.get("southOffsets"),
 			(int[]) a.get("siteTiles"), (int[]) a.get("siteComponentOffsets"), (int[]) a.get("siteComponentIds"),
 			1, (int[]) a.get("componentSiteOffsets"), (int[]) a.get("componentSiteIds"),
