@@ -359,11 +359,20 @@ public final class RoutingStaticBuilder
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision)
 	{
+		// Count first so growing buffers and their trimmed copies never overlap in memory.
+		int count = readWalkableTiles(collision, null, null);
+		int[] tiles = new int[count];
+		byte[] masks = new byte[count];
+		readWalkableTiles(collision, tiles, masks);
+		return new WalkableTiles(tiles, masks, new TileIndex(tiles));
+	}
+
+	private static int readWalkableTiles(CollisionMap collision, int[] tiles, byte[] masks)
+	{
 		final int regionSize = 64;
 		SplitFlagMap.RegionExtent extent = collision.regionExtent();
 		int widthInclusive = extent.getWidth() + 1;
-		IntArrayList tiles = new IntArrayList();
-		ByteArrayList masks = new ByteArrayList();
+		int count = 0;
 		// Packed tiles sort by plane, then y, then x; emit that order to avoid a full-map sort.
 		for (int plane = 0; plane < 4; plane++)
 		{
@@ -383,18 +392,20 @@ public final class RoutingStaticBuilder
 							int x = baseX + lx;
 							if (!collision.isBlocked(x, y, plane))
 							{
-								int packed = WorldPointUtil.packWorldPoint(x, y, plane);
-								tiles.add(packed);
-								masks.add(collision.ordinaryWalkingMask(packed));
+								if (tiles != null)
+								{
+									int packed = WorldPointUtil.packWorldPoint(x, y, plane);
+									tiles[count] = packed;
+									masks[count] = collision.ordinaryWalkingMask(packed);
+								}
+								count++;
 							}
 						}
 					}
 				}
 			}
 		}
-		int[] tileArray = tiles.toArray();
-		byte[] maskArray = masks.toArray();
-		return new WalkableTiles(tileArray, maskArray, new TileIndex(tileArray));
+		return count;
 	}
 
 	// ---- Step 1/3: flood fill (natural when blocked==null, routing when blocked is a valid-cut set) ----
@@ -706,18 +717,17 @@ public final class RoutingStaticBuilder
 
 	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId, BitSet reachableTiles)
 	{
-		IntArrayList tiles = new IntArrayList();
-		IntArrayList components = new IntArrayList();
-		ByteArrayList masks = new ByteArrayList();
+		int count = reachableTiles.cardinality();
+		int[] tileArray = new int[count];
+		int[] componentArray = new int[count];
+		byte[] maskArray = new byte[count];
+		int next = 0;
 		for (int i = reachableTiles.nextSetBit(0); i >= 0; i = reachableTiles.nextSetBit(i + 1))
 		{
-			tiles.add(walkable.tiles[i]);
-			components.add(routingId[i]);
-			masks.add(walkable.masks[i]);
+			tileArray[next] = walkable.tiles[i];
+			componentArray[next] = routingId[i];
+			maskArray[next++] = walkable.masks[i];
 		}
-		int[] tileArray = tiles.toArray();
-		int[] componentArray = components.toArray();
-		byte[] maskArray = masks.toArray();
 		int[] north = new int[tileArray.length];
 		int[] south = new int[tileArray.length];
 		for (int i = 0; i < tileArray.length; i++)
@@ -970,48 +980,6 @@ public final class RoutingStaticBuilder
 			}
 		}
 		return -1;
-	}
-
-	// ---- Primitive-int growable list / hash structures (avoid boxing at multi-million-tile scale) ----
-
-	private static final class IntArrayList
-	{
-		private int[] data = new int[1024];
-		private int size;
-
-		void add(int value)
-		{
-			if (size == data.length)
-			{
-				data = Arrays.copyOf(data, data.length * 2);
-			}
-			data[size++] = value;
-		}
-
-		int[] toArray()
-		{
-			return Arrays.copyOf(data, size);
-		}
-	}
-
-	private static final class ByteArrayList
-	{
-		private byte[] data = new byte[1024];
-		private int size;
-
-		void add(byte value)
-		{
-			if (size == data.length)
-			{
-				data = Arrays.copyOf(data, data.length * 2);
-			}
-			data[size++] = value;
-		}
-
-		byte[] toArray()
-		{
-			return Arrays.copyOf(data, size);
-		}
 	}
 
 	/** Each entry covers 64 packed tiles; set bits give membership and the offset from the first tile. */
