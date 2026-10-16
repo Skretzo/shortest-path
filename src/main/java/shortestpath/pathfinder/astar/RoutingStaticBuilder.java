@@ -22,7 +22,9 @@ import shortestpath.transport.TransportType;
  * (account-independent) transports and global teleports, the bank list, and separator cut edges.
  *
  * <ol>
- *   <li>Natural components: flood fill over ordinary walking edges.</li>
+ *   <li>Candidate tiles: follow walking edges from the seed and every transport and cut endpoint,
+ *       keeping disconnected space out of the per-tile arrays.</li>
+ *   <li>Natural components: flood fill over ordinary walking edges among candidate tiles.</li>
  *   <li>Structural reachability: natural components reachable from Lumbridge through any
  *       transport or global teleport of any type, seasonal included, regardless of requirements.</li>
  *   <li>Routing components: the same flood fill, not crossing cut edges. Cuts that are no longer
@@ -60,6 +62,7 @@ public final class RoutingStaticBuilder
 		public final long validateNanos;
 		public final long totalNanos;
 
+		/** Tiles considered after removing land with no seed, transport endpoint or cut endpoint. */
 		public final int walkableTileCount;
 		public final int naturalComponentCount;
 		public final int routingComponentCount;
@@ -179,7 +182,9 @@ public final class RoutingStaticBuilder
 		long totalStarted = System.nanoTime();
 
 		long stepStarted = System.nanoTime();
-		WalkableTiles walkable = enumerateWalkableTiles(collision);
+		TileSelection selected = discoverCandidateTiles(collision, rawTransports, cuts, seedTile);
+		WalkableTiles walkable = enumerateWalkableTiles(collision, selected);
+		selected = null;
 		int walkableTileCount = walkable.tiles.length;
 		long enumerateWalkableNanos = System.nanoTime() - stepStarted;
 
@@ -363,15 +368,20 @@ public final class RoutingStaticBuilder
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision)
 	{
+		return enumerateWalkableTiles(collision, null);
+	}
+
+	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision, TileSelection selected)
+	{
 		// Count first so growing buffers and their trimmed copies never overlap in memory.
-		int count = readWalkableTiles(collision, null, null);
+		int count = readWalkableTiles(collision, null, null, selected);
 		int[] tiles = new int[count];
 		byte[] masks = new byte[count];
-		readWalkableTiles(collision, tiles, masks);
+		readWalkableTiles(collision, tiles, masks, selected);
 		return new WalkableTiles(tiles, masks, new TileIndex(tiles));
 	}
 
-	private static int readWalkableTiles(CollisionMap collision, int[] tiles, byte[] masks)
+	private static int readWalkableTiles(CollisionMap collision, int[] tiles, byte[] masks, TileSelection selected)
 	{
 		final int regionSize = 64;
 		SplitFlagMap.RegionExtent extent = collision.regionExtent();
@@ -390,11 +400,13 @@ public final class RoutingStaticBuilder
 					{
 						int index = rx + ry * widthInclusive;
 						if (plane >= collision.getRegionPlaneCounts(index)) continue;
+						BitSet selectedRegion = selected == null ? null : selected.regions[index * 4 + plane];
+						if (selected != null && selectedRegion == null) continue;
 						int baseX = (extent.getMinX() + rx) * regionSize;
 						for (int lx = 0; lx < regionSize; lx++)
 						{
 							int x = baseX + lx;
-							if (!collision.isBlocked(x, y, plane))
+							if (selected == null ? !collision.isBlocked(x, y, plane) : selectedRegion.get(ly * regionSize + lx))
 							{
 								if (tiles != null)
 								{
@@ -410,6 +422,93 @@ public final class RoutingStaticBuilder
 			}
 		}
 		return count;
+	}
+
+	/** Keep endpoint-connected land before allocating arrays; open sea can otherwise look walkable. */
+	private static TileSelection discoverCandidateTiles(CollisionMap collision,
+		Map<Integer, Set<Transport>> rawTransports, int[] cuts, int seedTile)
+	{
+		TileSelection selected = new TileSelection(collision);
+		IntDeque queue = new IntDeque(4096);
+		selected.attach(seedTile, collision, queue);
+		if (queue.isEmpty())
+		{
+			throw new IllegalStateException("missing structural reachability seed: no natural component attaches to the production seed tile");
+		}
+		for (Set<Transport> transports : rawTransports.values())
+		{
+			for (Transport transport : transports)
+			{
+				if (transport.getOrigin() != WorldPointUtil.UNDEFINED)
+					selected.attach(transport.getOrigin(), collision, queue);
+				selected.attach(transport.getDestination(), collision, queue);
+			}
+		}
+		// Preserve cut diagnostics and crossings even when their land is unreachable.
+		for (int tile : cuts) selected.add(tile, collision, queue);
+		while (!queue.isEmpty())
+		{
+			int tile = queue.pollFirst();
+			int x = WorldPointUtil.unpackWorldX(tile);
+			int y = WorldPointUtil.unpackWorldY(tile);
+			int plane = WorldPointUtil.unpackWorldPlane(tile);
+			int mask = Byte.toUnsignedInt(collision.ordinaryWalkingMask(tile));
+			for (int bit = 0; bit < 8; bit++)
+			{
+				if ((mask & (1 << bit)) != 0)
+					selected.add(WorldPointUtil.packWorldPoint(x + NEIGHBOR_DX[bit], y + NEIGHBOR_DY[bit], plane), collision, queue);
+			}
+		}
+		return selected;
+	}
+
+	/** One bit per discovered tile, allocating bits only for regions the discovery reaches. */
+	private static final class TileSelection
+	{
+		final BitSet[] regions;
+		final int minX, minY, width, height;
+
+		TileSelection(CollisionMap collision)
+		{
+			SplitFlagMap.RegionExtent extent = collision.regionExtent();
+			minX = extent.getMinX();
+			minY = extent.getMinY();
+			width = extent.getWidth() + 1;
+			height = extent.getHeight() + 1;
+			regions = new BitSet[width * height * 4];
+		}
+
+		void attach(int tile, CollisionMap collision, IntDeque queue)
+		{
+			if (!collision.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile),
+				WorldPointUtil.unpackWorldPlane(tile)))
+			{
+				add(tile, collision, queue);
+			}
+			else
+			{
+				for (int neighbor : collision.ordinaryWalkingNeighbors(tile)) add(neighbor, collision, queue);
+			}
+		}
+
+		void add(int tile, CollisionMap collision, IntDeque queue)
+		{
+			int x = WorldPointUtil.unpackWorldX(tile);
+			int y = WorldPointUtil.unpackWorldY(tile);
+			int plane = WorldPointUtil.unpackWorldPlane(tile);
+			int rx = (x >>> 6) - minX, ry = (y >>> 6) - minY;
+			if (rx < 0 || rx >= width || ry < 0 || ry >= height) return;
+			int region = rx + ry * width;
+			if (plane >= collision.getRegionPlaneCounts(region)) return;
+			int index = region * 4 + plane;
+			int bit = (y & 63) * 64 + (x & 63);
+			BitSet bits = regions[index];
+			if (bits != null && bits.get(bit)) return;
+			if (collision.isBlocked(x, y, plane)) return;
+			if (bits == null) regions[index] = bits = new BitSet(4096);
+			bits.set(bit);
+			queue.addLast(tile);
+		}
 	}
 
 	// ---- Step 1/3: flood fill (natural when blocked==null, routing when blocked is a valid-cut set) ----
