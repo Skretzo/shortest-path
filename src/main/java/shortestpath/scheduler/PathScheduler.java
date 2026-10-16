@@ -51,7 +51,7 @@ import shortestpath.sailing.SailingState;
 @Singleton
 public class PathScheduler
 {
-	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(PathScheduler.class, "/marker.png");
+	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(PathScheduler.class, "/shortestpath/marker.png");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
 
