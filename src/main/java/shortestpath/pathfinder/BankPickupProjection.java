@@ -2,10 +2,8 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import java.util.Set;
-import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
 import shortestpath.items.ItemStateService;
-import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.model.TransportItems;
 
 /**
@@ -17,17 +15,20 @@ import shortestpath.requirement.model.TransportItems;
  * revision covers container/varbit events, the search identity covers
  * restarts that reuse a path, and a search still awaiting its result
  * recomputes each call since the target's items are not yet known.
+ *
+ * <p>The result is the raw {@link BankPickupAnalysis}; display phrases are
+ * the presentation layer's formatting of it.
  */
 public class BankPickupProjection
 {
-	private BankPickupResult cache;
+	private BankPickupAnalysis cache;
 	private List<PathStep> cachePath;
 	private int cacheIndex = -1;
 	private ActiveSearch cacheSearch;
 	private int cacheRevision = -1;
 	private boolean cachePending;
 
-	public BankPickupResult get(Client client, ItemStateService itemState, PathfinderConfig config,
+	public BankPickupAnalysis get(ItemStateService itemState, PathfinderConfig config,
 		List<PathStep> path, int pathIndex, ActiveSearch search)
 	{
 		Set<Integer> bankLocations = config.getDestinations("bank");
@@ -51,8 +52,8 @@ public class BankPickupProjection
 		cacheIndex = pathIndex;
 		cacheSearch = search;
 		cachePending = pending;
-		cache = BankPickupResult.compute(
-				client, bank, config, bankLocations, path, pathIndex,
+		cache = BankPickupAnalysis.analyze(
+				bank, config, bankLocations, path, pathIndex,
 				itemsToPickUp(result));
 		return cache;
 	}
