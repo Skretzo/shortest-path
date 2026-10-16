@@ -19,6 +19,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -34,6 +36,7 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.settings.Settings;
+import shortestpath.settings.TeleportationItem;
 
 /**
  * Headless structure tests pinning the tile drill-down layout contract:
@@ -307,5 +310,210 @@ public class ShortestPathPanelLayoutTest
 			6, tileGrid().getComponentCount());
 		assertEquals("clearing restores the drilled category's full rows",
 			transports.rows().size(), contentOf(transports).getComponentCount());
+	}
+
+	/**
+	 * The {@code BorderLayout.NORTH} header strip of a category panel — it
+	 * spans the full frame width above the scroll area.
+	 */
+	private static Container headerOf(CategoryPanel category)
+	{
+		return (Container) ((BorderLayout) category.getLayout())
+			.getLayoutComponent(BorderLayout.NORTH);
+	}
+
+	/**
+	 * True when {@code root} (or a descendant) is a label whose text contains
+	 * {@code needle} — walks hint wrappers and other nested containers.
+	 */
+	private static boolean containsLabelText(Container root, String needle)
+	{
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JLabel
+				&& ((JLabel) child).getText() != null
+				&& ((JLabel) child).getText().contains(needle))
+			{
+				return true;
+			}
+			if (child instanceof Container
+				&& containsLabelText((Container) child, needle))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * True when the home content shows a category group header (the results
+	 * view's {@code BRAND_ORANGE} category labels) rather than the tile grid.
+	 */
+	private boolean resultsContainHeader(String name)
+	{
+		return containsLabelText(contentOf(panel.home()), name);
+	}
+
+	@Test
+	public void everyCategoryHasBackHeader()
+	{
+		newPanel();
+		for (CategoryPanel category : panel.categories())
+		{
+			Container header = headerOf(category);
+			assertNotNull(category.categoryName() + " header strip", header);
+			Component west = ((BorderLayout) header.getLayout())
+				.getLayoutComponent(BorderLayout.WEST);
+			assertTrue(category.categoryName() + " back button",
+				west instanceof JButton);
+			JButton back = (JButton) west;
+			assertEquals("Back", back.getToolTipText());
+			assertNotNull("back button carries the rotated chevron",
+				back.getIcon());
+
+			panel.drillInto(category);
+			assertSame(category,
+				panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
+			back.doClick();
+			assertEquals("back pops " + category.categoryName() + " to home",
+				1, panel.muxer().getComponentCount());
+			assertSame(panel.home(), panel.muxer().getComponent(0));
+		}
+	}
+
+	@Test
+	public void ownedCheckboxOnRestrictionsHeader()
+	{
+		newPanel();
+		CategoryPanel restrictions = panel.categories().get(2);
+		assertEquals("Teleport Restrictions", restrictions.categoryName());
+
+		Container header = headerOf(restrictions);
+		Component east = ((BorderLayout) header.getLayout())
+			.getLayoutComponent(BorderLayout.EAST);
+		assertTrue("header EAST holds the Owned filter",
+			east instanceof JCheckBox);
+		JCheckBox owned = (JCheckBox) east;
+		assertEquals("Owned", owned.getText());
+
+		// The header spans the full 242px frame above the scroll area: laid
+		// out there, the checkbox lands fully inside the visible strip...
+		header.setSize(new Dimension(
+			PluginPanel.PANEL_WIDTH + PluginPanel.SCROLLBAR_WIDTH,
+			header.getPreferredSize().height));
+		header.doLayout();
+		assertTrue("Owned checkbox fully inside the header strip",
+			owned.getBounds().getMaxX()
+				<= PluginPanel.PANEL_WIDTH + PluginPanel.SCROLLBAR_WIDTH);
+
+		// ...and it lives on the header, never inside the scroll view where
+		// the 17px scrollbar column could cover it.
+		assertSame(header, owned.getParent());
+		JScrollPane scroll = findScrollPane(restrictions);
+		assertNotNull(scroll);
+		assertFalse("Owned checkbox is not a scroll-view descendant",
+			SwingUtilities.isDescendingFrom(owned,
+				scroll.getViewport().getView()));
+	}
+
+	@Test
+	public void statusRefreshOnExternalChange() throws Exception
+	{
+		newPanel();
+		JLabel transportsStatus = (JLabel) tileNamed("Transports").getComponent(1);
+		JLabel bankStatus = (JLabel) tileNamed("Bank").getComponent(1);
+		assertEquals("Off", bankStatus.getText());
+		int onBefore = Integer.parseInt(
+			transportsStatus.getText().split("/")[0]);
+
+		// The enum-combo card's key: NONE turns that one master off, which
+		// must reach the tile through the external-change path.
+		config.setUseTeleportationItemsValue(TeleportationItem.NONE);
+		settings.onConfigChanged(event("useTeleportationItems"));
+		flushEdt();
+		assertEquals("Transports tile tracks the external edit",
+			(onBefore - 1) + "/" + panel.transportCards().size() + " on",
+			transportsStatus.getText());
+
+		config.setIncludeBankPathValue(true);
+		settings.onConfigChanged(event("includeBankPath"));
+		flushEdt();
+		assertEquals("Bank tile tracks the external edit", "On",
+			bankStatus.getText());
+	}
+
+	@Test
+	public void deepLinkRoundTrip() throws Exception
+	{
+		newPanel();
+		CategoryPanel transports = panel.categories().get(1);
+
+		setSearchText("quetz");
+		assertSame("a query pops back to the home surface",
+			panel.home(),
+			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
+		assertTrue("results view groups under the Transports header",
+			resultsContainHeader("Transports"));
+
+		List<ShortestPathPanel.SearchRow> matches =
+			panel.matchingRows(transports, "quetz");
+		assertFalse(matches.isEmpty());
+		panel.deepLink(transports, matches.get(0));
+		assertSame("deep link pushes the owning category",
+			transports,
+			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
+		assertEquals("filtered landing shows only the matching rows",
+			matches.size(), contentOf(transports).getComponentCount());
+		assertEquals("query survives the deep link",
+			"quetz", panel.getCurrentQuery());
+
+		panel.backToHome();
+		assertSame("back returns to the results view",
+			panel.home(),
+			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
+		assertTrue("results view still groups under Transports",
+			resultsContainHeader("Transports"));
+		assertEquals("quetz", panel.getCurrentQuery());
+
+		setSearchText("");
+		assertEquals("clearing restores the tile grid",
+			6, tileGrid().getComponentCount());
+		assertEquals("clearing restores the drilled category's full rows",
+			transports.rows().size(), contentOf(transports).getComponentCount());
+	}
+
+	@Test
+	public void noMatchShowsHint() throws Exception
+	{
+		newPanel();
+		setSearchText("zzzzz");
+		assertSame(panel.home(),
+			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
+		assertTrue("no-match renders the pinned hint copy",
+			containsLabelText(contentOf(panel.home()),
+				"No options matching"));
+
+		setSearchText("");
+		assertEquals("clearing restores the tile grid",
+			6, tileGrid().getComponentCount());
+	}
+
+	@Test
+	public void itemsDisabledHintSurfaces() throws Exception
+	{
+		newPanel();
+		CategoryPanel restrictions = panel.categories().get(2);
+
+		config.setUseTeleportationItemsValue(TeleportationItem.NONE);
+		settings.onConfigChanged(event("useTeleportationItems"));
+		flushEdt();
+
+		restrictions.applyQuery("");
+		FixedWidthPanel content = contentOf(restrictions);
+		assertSame("restrictions list stays visible carrying the hint",
+			panel.restrictionListPanel(), content.getComponent(0));
+		assertTrue("items-disabled hint replaces the rows",
+			containsLabelText(content,
+				ShortestPathPanel.RESTRICTIONS_DISABLED_HINT));
 	}
 }
