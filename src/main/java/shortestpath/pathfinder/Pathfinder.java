@@ -332,6 +332,12 @@ public class Pathfinder implements ActiveSearch
 		}
 	}
 
+	@Override
+	public String backendName()
+	{
+		return PathfinderBackend.LEGACY.toString();
+	}
+
 	/**
 	 * Always {@code false}: a walking search never sails — sailing searches are
 	 * {@link shortestpath.pathfinder.sailing.SailingPathfinder} instances.
