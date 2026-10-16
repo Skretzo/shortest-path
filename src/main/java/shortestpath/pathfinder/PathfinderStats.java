@@ -22,6 +22,12 @@ public class PathfinderStats
 		return endNanos - startNanos;
 	}
 
+	/** Nanoseconds rendered as a compact milliseconds string for diagnostics. */
+	public static String millis(long nanos)
+	{
+		return String.format("%.2fms", nanos / 1_000_000.0);
+	}
+
 	void start()
 	{
 		started = true;
