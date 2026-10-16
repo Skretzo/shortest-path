@@ -1,6 +1,7 @@
 package shortestpath.presentation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -20,6 +21,7 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.BankVisitState;
+import shortestpath.pathfinder.BankPickupAnalysis;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -187,9 +189,14 @@ public class PathAnnotatorTest
 		assertTrue(wired.isBankOpen());
 
 		List<PathStep> path = List.of(new PathStep(LANDING, BankVisitState.CARRIED));
-		BankPickupResult result = new BankPickupResult(List.of("a rope"), Set.of(954));
-		when(config.getBankPickup(path, 0, null)).thenReturn(result);
+		BankPickupAnalysis analysis = new BankPickupAnalysis(
+			List.of(List.of(Map.of(954, 1L))), Set.of(954));
+		when(config.getBankPickup(path, 0, null)).thenReturn(analysis);
 
-		assertSame(result, wired.getBankPickup(path, 0, null));
+		BankPickupResult result = wired.getBankPickup(path, 0, null);
+		assertNotNull(result);
+		assertEquals(Set.of(954), result.bankItemIds);
+		assertEquals("the raw pickup map is formatted into a phrase",
+			List.of("1 Unknown item"), result.phrases);
 	}
 }

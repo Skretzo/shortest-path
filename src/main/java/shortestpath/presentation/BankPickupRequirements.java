@@ -1,22 +1,17 @@
 package shortestpath.presentation;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
-import shortestpath.pathfinder.BankVisitState;
+import shortestpath.pathfinder.BankPickupAnalysis;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.TransportItems;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
 
 /**
  * Determines what items need to be picked up from the bank for a given path.
@@ -41,6 +36,26 @@ public final class BankPickupRequirements
 		{
 			this.phrases = phrases;
 			this.bankItemIds = bankItemIds;
+		}
+
+		/**
+		 * Formats a raw {@link BankPickupAnalysis} for display: each group of
+		 * alternative pickup maps becomes one phrase joined by " or ", with
+		 * identical phrases collapsed (two edges can ask for the same items).
+		 */
+		public static BankPickupResult format(Client client, BankPickupAnalysis analysis)
+		{
+			if (analysis == null)
+			{
+				return null;
+			}
+			List<String> phrases = new ArrayList<>(new LinkedHashSet<>(
+				analysis.pickupAlternatives.stream()
+					.map(alternatives -> alternatives.stream()
+						.map(items -> formatPickups(client, items))
+						.collect(Collectors.joining(" or ")))
+					.collect(Collectors.toList())));
+			return new BankPickupResult(phrases, analysis.bankItemIds);
 		}
 
 		/**
@@ -83,186 +98,9 @@ public final class BankPickupRequirements
 			int pathIndex,
 			TransportItems targetItems)
 		{
-			List<String> resultPhrases = new ArrayList<>();
-			Set<Integer> resultIds = new HashSet<>();
-
-			if (bank == null || path == null || pathIndex < 0 || pathIndex >= path.size())
-			{
-				return new BankPickupResult(resultPhrases, resultIds);
-			}
-
-			// Only compute for bank steps.
-			int currentPoint = path.get(pathIndex).getPackedPosition();
-			if (!bankLocations.contains(currentPoint))
-			{
-				return new BankPickupResult(resultPhrases, resultIds);
-			}
-
-			// The eligibility snapshot captured at refresh time holds the carried/bank
-			// pools and answers every item question below; without it there is nothing
-			// to show.
-			TransportEligibility eligibility = pathfinderConfig.getEligibility();
-			if (eligibility == null)
-			{
-				return new BankPickupResult(resultPhrases, resultIds);
-			}
-
-			// Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
-			LinkedHashSet<String> phrases = new LinkedHashSet<>();
-			Set<Integer> itemIds = new HashSet<>();
-			boolean usesFairyRing = false;
-
-			// Walk each edge in the remaining path in a single pass.
-			for (int i = pathIndex; i < path.size() - 1; i++)
-			{
-				int stepPoint = path.get(i).getPackedPosition();
-				int nextPoint = path.get(i + 1).getPackedPosition();
-				BankVisitState banked = path.get(i + 1).getBankVisitState();
-
-				List<Transport> edgeAlternatives = new ArrayList<>();
-				// When the step carries the transport the search actually used, that single
-				// transport is the edge — destination-matched alternatives (including a
-				// no-requirement transport sharing the destination) must not suppress the
-				// pickup phrase or bank highlight for the transport the path takes.
-				Transport usedTransport = path.get(i + 1).getTransport();
-				if (usedTransport != null)
-				{
-					edgeAlternatives.add(usedTransport);
-				}
-				else
-				{
-					TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
-					for (Transport t : availability.getTransportsAt(stepPoint))
-					{
-						if (t.getDestination() == nextPoint)
-						{
-							edgeAlternatives.add(t);
-						}
-					}
-					for (Transport t : availability.getUsableTeleports())
-					{
-						if (t.getDestination() == nextPoint)
-						{
-							edgeAlternatives.add(t);
-						}
-					}
-				}
-				if (edgeAlternatives.isEmpty())
-				{
-					continue;
-				}
-
-				// Fairy rings handled once globally via the staff requirement below.
-				List<Transport> nonFairy = new ArrayList<>();
-				for (Transport t : edgeAlternatives)
-				{
-					if (TransportType.FAIRY_RING.equals(t.getType()))
-					{
-						usesFairyRing = true;
-					}
-					else
-					{
-						nonFairy.add(t);
-					}
-				}
-				if (nonFairy.isEmpty())
-				{
-					continue;
-				}
-
-				// If at least one alternative requires no items, nothing to pick up for this edge.
-				boolean anyAlternativeIsFree = false;
-				for (Transport t : nonFairy)
-				{
-					if (t.getItemRequirements() == null || t.getItemRequirements().size() == 0)
-					{
-						anyAlternativeIsFree = true;
-						break;
-					}
-				}
-				if (anyAlternativeIsFree)
-				{
-					continue;
-				}
-
-				// If any alternative is fully satisfied by the player already, no pickup needed.
-				boolean satisfied = false;
-				for (Transport t : nonFairy)
-				{
-					if (eligibility.satisfiedByPlayer(t))
-					{
-						satisfied = true;
-						break;
-					}
-				}
-				if (satisfied)
-				{
-					continue;
-				}
-
-				// Build phrases (alternatives the bank can fully supply) and collect the
-				// bank item IDs to highlight from the same per-transport plan.
-				LinkedHashSet<String> altStrings = new LinkedHashSet<>();
-				for (Transport t : nonFairy)
-				{
-					TransportEligibility.BankPickupPlan plan = eligibility.bankPickupPlan(t);
-					if (plan.items != null && !plan.items.isEmpty())
-					{
-						// Bank can fully satisfy this alternative: contribute to display phrase.
-						altStrings.add(BankPickupRequirements.formatPickups(client, plan.items));
-					}
-					// Always collect the actual bank item IDs for highlighting — the plan's
-					// display IDs are canonical (e.g. air rune) while the bank may only hold
-					// a variant (e.g. mist rune).
-					itemIds.addAll(plan.bankItemIds);
-				}
-				if (!altStrings.isEmpty())
-				{
-					phrases.add(String.join(" or ", altStrings));
-				}
-			}
-
-			// Fairy ring staff (Dramen / Lunar) is a single OR requirement across the whole trip.
-			if (usesFairyRing)
-			{
-				TransportEligibility.BankPickupPlan staff = eligibility.fairyStaffPickup();
-				if (staff != null)
-				{
-					phrases.add(BankPickupRequirements.formatPickups(client, staff.items));
-					itemIds.addAll(staff.bankItemIds);
-				}
-			}
-
-			if (targetItems != null && visitsBankAt(path, pathIndex))
-			{
-				TransportEligibility.BankPickupPlan targetPlan = eligibility.targetPickupPlan(targetItems);
-				for (Map.Entry<Integer, Long> entry : targetPlan.items.entrySet())
-				{
-					Map<Integer, Long> single = new LinkedHashMap<>();
-					single.put(entry.getKey(), entry.getValue());
-					phrases.add(BankPickupRequirements.formatPickups(client, single));
-				}
-				itemIds.addAll(targetPlan.bankItemIds);
-			}
-
-			resultPhrases.addAll(phrases);
-			resultIds.addAll(itemIds);
-			return new BankPickupResult(resultPhrases, resultIds);
+			return format(client, BankPickupAnalysis.analyze(
+				bank, pathfinderConfig, bankLocations, path, pathIndex, targetItems));
 		}
-	}
-
-	/**
-	 * Whether the path switches into its banked layer at step {@code index}: on the step before
-	 * the switch or the first banked step, which share the bank tile.
-	 */
-	static boolean visitsBankAt(List<PathStep> path, int index)
-	{
-		boolean banked = path.get(index).getBankVisitState() == BankVisitState.BANKED;
-		if (!banked)
-		{
-			return index + 1 < path.size() && path.get(index + 1).getBankVisitState() == BankVisitState.BANKED;
-		}
-		return index == 0 || !(path.get(index - 1).getBankVisitState() == BankVisitState.BANKED);
 	}
 
 	/**
