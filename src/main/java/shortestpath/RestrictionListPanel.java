@@ -108,7 +108,7 @@ class RestrictionListPanel extends JPanel
 
 		footer = new JPanel(new BorderLayout());
 		footer.setOpaque(false);
-		footer.setBorder(new EmptyBorder(6, 0, 2, 0));
+		footer.setBorder(new EmptyBorder(8, 0, 4, 0));
 		JButton reset = new JButton("Reset restrictions");
 		reset.addActionListener(e -> confirmReset());
 		footer.add(reset, BorderLayout.CENTER);
@@ -325,7 +325,7 @@ class RestrictionListPanel extends JPanel
 
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 			setOpaque(false);
-			setBorder(new EmptyBorder(3, 0, 3, 0));
+			setBorder(new EmptyBorder(4, 0, 4, 0));
 
 			JPanel header = new JPanel(new BorderLayout(ICON_LABEL_GAP, 0));
 			header.setOpaque(false);
@@ -338,8 +338,10 @@ class RestrictionListPanel extends JPanel
 			header.add(iconLabel, BorderLayout.WEST);
 
 			nameLabel = new JLabel(family.name());
-			String rowTooltip = "Uncheck to never route via " + family.name();
-			nameLabel.setToolTipText(ShortestPathPanel.html(rowTooltip));
+			// Clicking the label expands the row; the uncheck tooltip belongs
+			// on the checkbox alone. The label tooltip carries the full family
+			// name for names that clip at row width.
+			nameLabel.setToolTipText(ShortestPathPanel.html(family.name()));
 			header.add(nameLabel, BorderLayout.CENTER);
 
 			JPanel controls = new JPanel();
@@ -357,7 +359,7 @@ class RestrictionListPanel extends JPanel
 			// Selected state is set before the listener is attached so
 			// construction never fires a spurious config write.
 			allow.setSelected(!isBlocked());
-			allow.setToolTipText(ShortestPathPanel.html(rowTooltip));
+			allow.setToolTipText(ShortestPathPanel.html("Uncheck to never route via " + family.name()));
 			allow.addActionListener(e ->
 			{
 				boolean allowed = allow.isSelected();
@@ -402,12 +404,12 @@ class RestrictionListPanel extends JPanel
 			detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
 			detail.setOpaque(false);
 			// Indented under the icon column so the detail lines up with the name.
-			detail.setBorder(new EmptyBorder(2, DETAIL_INDENT, 4, 0));
+			detail.setBorder(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
 
 			JPanel thresholdRow = new JPanel(new BorderLayout());
 			thresholdRow.setOpaque(false);
 			JLabel thresholdLabel = new JLabel("Min. tiles saved");
-			thresholdLabel.setForeground(Color.WHITE);
+			thresholdLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 			thresholdLabel.setFont(FontManager.getRunescapeSmallFont());
 			String thresholdTooltip = "Tiles this teleport must save to be used. 0 uses the family threshold.";
 			thresholdLabel.setToolTipText(ShortestPathPanel.html(thresholdTooltip));

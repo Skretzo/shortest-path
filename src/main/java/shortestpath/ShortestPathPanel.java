@@ -53,6 +53,7 @@ import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;
 import shortestpath.settings.Settings;
+import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 
@@ -207,6 +208,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		Section section = new Section();
 		section.id = id;
+		section.name = name;
 		section.defaultOpen = defaultOpen;
 
 		section.root = new JPanel();
@@ -289,6 +291,7 @@ public class ShortestPathPanel extends PluginPanel
 			familyThresholdRows("useGrappleShortcuts"));
 		addFamilyCard(transports, "useBoats", null,
 			familyThresholdRows("useBoats"));
+		addFamilyCard(transports, "useSailingMoves", ItemID.SAILING_CHARTING_SPYGLASS);
 		addFamilyCard(transports, "useCanoes", ItemID.CANOEING_PADDLE,
 			familyThresholdRows("useCanoes"));
 		addFamilyCard(transports, "useCharterShips", null,
@@ -360,6 +363,7 @@ public class ShortestPathPanel extends PluginPanel
 		unlocks.rows.add(checkRow("unlockXericsHonour"));
 		unlocks.rows.add(checkRow("unlockDragontoothPassage"));
 		unlocks.rows.add(checkRow("unlockBalloonLogBasket"));
+		unlocks.rows.add(checkRow("unlockMorUlRek"));
 	}
 
 	private void buildBankSection()
@@ -406,6 +410,17 @@ public class ShortestPathPanel extends PluginPanel
 		routing.rows.add(spinnerRow("currencyThreshold"));
 		routing.rows.add(checkRow("respawnPrifddinas"));
 		routing.rows.add(spinnerRow("unreachableTargetDistanceThreshold"));
+		routing.rows.add(checkRow("collisionAwareBlockedTargets"));
+		routing.rows.add(comboRow("pathfinderAlgorithm"));
+
+		// The heuristic weight only steers the A* backend — dim it while
+		// legacy is selected, same contract as the transport cards.
+		SearchRow weightRow = spinnerRow("aStarHeuristicWeight");
+		routing.rows.add(weightRow);
+		Runnable applyWeightEnabled = () -> applyRowDisabledState(weightRow.component,
+			PathfinderBackend.ASTAR.equals(settings.configuredValue("pathfinderAlgorithm")));
+		applyWeightEnabled.run();
+		registerConfigListener("pathfinderAlgorithm", applyWeightEnabled);
 	}
 
 	// ---- Card + row builders ------------------------------------------------
@@ -452,7 +467,7 @@ public class ShortestPathPanel extends PluginPanel
 		JLabel pointer = new JLabel("Manage individual items below");
 		pointer.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		pointer.setFont(FontManager.getRunescapeSmallFont());
-		pointer.setBorder(new EmptyBorder(2, 0, 2, 0));
+		pointer.setBorder(new EmptyBorder(4, 0, 4, 0));
 		pointer.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -793,6 +808,10 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			section.contents.removeAll();
 			boolean anyMatch = false;
+			// A query matching the section's own name shows that whole
+			// section — the names double as search aliases.
+			boolean sectionNameMatch = !query.isEmpty()
+				&& section.name.toLowerCase(Locale.ROOT).contains(query);
 			for (SearchRow row : section.rows)
 			{
 				// The restriction checklist filters itself: family-name hits
@@ -801,7 +820,7 @@ public class ShortestPathPanel extends PluginPanel
 				// instead of dropping it.
 				if (row.component instanceof RestrictionListPanel)
 				{
-					if (((RestrictionListPanel) row.component).applyFilter(query))
+					if (((RestrictionListPanel) row.component).applyFilter(sectionNameMatch ? "" : query))
 					{
 						section.contents.add(row.component);
 						anyMatch = true;
@@ -814,13 +833,14 @@ public class ShortestPathPanel extends PluginPanel
 				{
 					((TransportFamilyCard) row.component).clearSearchExpanded();
 				}
-				if (row.text.contains(query))
+				if (sectionNameMatch || row.text.contains(query))
 				{
 					section.contents.add(row.component);
 					anyMatch = true;
 					// A match on a detail label (e.g. a cost threshold name)
 					// opens the card detail so the matched control is visible.
-					if (row.component instanceof TransportFamilyCard && !query.isEmpty())
+					// A section-name hit shows the rows but expands nothing.
+					if (!sectionNameMatch && row.component instanceof TransportFamilyCard && !query.isEmpty())
 					{
 						TransportFamilyCard card = (TransportFamilyCard) row.component;
 						String cardName = card.getNameLabel().getText().toLowerCase(Locale.ROOT);
@@ -910,6 +930,7 @@ public class ShortestPathPanel extends PluginPanel
 	private static final class Section
 	{
 		String id;
+		String name;
 		boolean defaultOpen;
 		JPanel root;
 		JPanel header;

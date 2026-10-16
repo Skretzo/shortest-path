@@ -94,7 +94,7 @@ class TransportFamilyCard extends JPanel
 		detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
 		detail.setOpaque(false);
 		// Indented under the icon column so detail rows line up with the name.
-		detail.setBorder(new EmptyBorder(2, DETAIL_INDENT, 4, 0));
+		detail.setBorder(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
 		detail.setVisible(false);
 		add(detail);
 
