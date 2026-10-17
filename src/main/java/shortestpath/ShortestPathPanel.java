@@ -227,6 +227,10 @@ public class ShortestPathPanel extends PluginPanel
 		general.addRow(checkRow("respawnPrifddinas"));
 		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
 		general.addRow(checkRow("collisionAwareBlockedTargets"));
+		// Sailing moves is a routing policy with no threshold family —
+		// a plain check row beside the other transport-adjacent policies
+		// rather than a Transports card.
+		general.addRow(checkRow("useSailingMoves"));
 		// The teleport-items mode is a routing policy, so its combo lives
 		// with the other General rows; its Transports card is masterless.
 		general.addRow(comboRow("useTeleportationItems"));
@@ -253,7 +257,6 @@ public class ShortestPathPanel extends PluginPanel
 			familyThresholdRows("useGrappleShortcuts"));
 		addFamilyCard(transports, "useBoats", ItemID.AHOY_TOY_BOAT,
 			familyThresholdRows("useBoats"));
-		addFamilyCard(transports, "useSailingMoves", ItemID.SAILING_CHARTING_SPYGLASS);
 		addFamilyCard(transports, "useCanoes", ItemID.CANOEING_PADDLE,
 			familyThresholdRows("useCanoes"));
 		addFamilyCard(transports, "useCharterShips", ItemID.SHILOSHIPTICKET,
