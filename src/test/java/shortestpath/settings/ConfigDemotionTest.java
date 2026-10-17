@@ -239,4 +239,39 @@ public class ConfigDemotionTest
 			Boolean.TRUE,
 			Settings.wrap(new TestShortestPathConfig()).configuredValue("showSidebarPanel"));
 	}
+
+	/**
+	 * The sidebar-visibility toggle is a Settings-surface item, not a
+	 * panel-owned key: it must exist, stay {@code hidden = false} (so it is
+	 * never absorbed into {@link #PANEL_OWNED_KEYS}), live in the Settings
+	 * section and default on — the sidebar icon is the panel's only entry
+	 * point, so hiding it must be a deliberate opt-out.
+	 */
+	@Test
+	public void sidebarToggleIsAVisibleSettingsItem()
+	{
+		ConfigItem item = null;
+		Method getter = null;
+		for (Method method : ShortestPathConfig.class.getMethods())
+		{
+			ConfigItem found = method.getAnnotation(ConfigItem.class);
+			if (found != null && "showSidebarPanel".equals(found.keyName())
+				&& method.getParameterCount() == 0 && method.getReturnType() != void.class)
+			{
+				item = found;
+				getter = method;
+			}
+		}
+		assertNotNull("a showSidebarPanel @ConfigItem exists", item);
+		assertFalse("the sidebar toggle is not a panel-owned hidden key", item.hidden());
+		assertEquals("the toggle lives in the Settings section",
+			"sectionSettings", item.section());
+		assertEquals("the toggle is a boolean read",
+			boolean.class, getter.getReturnType());
+		// The keyed read rides the ConfigKey registry — a missing row throws,
+		// so this asserts both the row and the getter's default in one call.
+		assertEquals("the sidebar icon shows by default — hiding is opt-out",
+			Boolean.TRUE,
+			Settings.wrap(new TestShortestPathConfig()).configuredValue("showSidebarPanel"));
+	}
 }
