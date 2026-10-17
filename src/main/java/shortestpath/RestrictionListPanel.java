@@ -261,12 +261,20 @@ class RestrictionListPanel extends JPanel
 	}
 
 	/**
-	 * The number of individual item ids on the blocklist — the "N blocked"
-	 * status the home tile shows.
+	 * The number of active restriction records — bare blocked ids,
+	 * {@code id:N} threshold overrides and {@code rep@dest} option blocks
+	 * alike — the "N restricted" status the home tile shows. All three
+	 * kinds suppress routes, so a CSV holding only option blocks or
+	 * thresholds must not read "All allowed".
 	 */
-	int blockedItemCount()
+	int restrictionCount()
 	{
-		return blocked.size();
+		int count = blocked.size() + thresholds.size();
+		for (Set<Integer> dests : optionBlocks.values())
+		{
+			count += dests.size();
+		}
+		return count;
 	}
 
 	/**

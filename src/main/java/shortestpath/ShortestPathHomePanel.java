@@ -313,8 +313,8 @@ class ShortestPathHomePanel extends PluginPanel
 				{
 					return "Items disabled";
 				}
-				int blocked = panel.restrictionListPanel().blockedItemCount();
-				return blocked == 0 ? "All allowed" : blocked + " blocked";
+				int restricted = panel.restrictionListPanel().restrictionCount();
+				return restricted == 0 ? "All allowed" : restricted + " restricted";
 			case "Unlocks":
 				int unlocked = 0;
 				for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour",
