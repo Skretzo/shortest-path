@@ -52,6 +52,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
@@ -90,6 +91,10 @@ public class ShortestPathPanelLayoutTest
 	// cards and tiles request their sprite through loadItemIcon, so an
 	// iconless control shows up as a missing request here.
 	private final List<Integer> iconRequests = new ArrayList<>();
+	// Every sprite archive passed to SpriteManager.getSpriteAsync while the
+	// panel builds — tiles whose imagery is a client sprite (not an item)
+	// route through loadSpriteIcon instead of loadItemIcon.
+	private final List<Integer> spriteRequests = new ArrayList<>();
 
 	private ShortestPathPanel newPanel()
 	{
@@ -99,6 +104,7 @@ public class ShortestPathPanelLayoutTest
 	private ShortestPathPanel newPanel(ItemStateService itemState)
 	{
 		iconRequests.clear();
+		spriteRequests.clear();
 		config = new TestShortestPathConfig();
 		// A mocked ConfigManager routes Settings.write back into the stub
 		// config, so panel-side writes (restriction toggles) round-trip the
@@ -411,8 +417,9 @@ public class ShortestPathPanelLayoutTest
 				&& iconRequests.contains(ItemID.RING_OF_DUELING_8)
 				&& iconRequests.contains(ItemID.CRYSTAL_KEY)
 				&& iconRequests.contains(ItemID.COINS)
-				&& iconRequests.contains(ItemID.POH_TABLET_TELEPORTTOHOUSE)
-				&& iconRequests.contains(ItemID.SOTE_ORB_OF_LIGHT));
+				&& iconRequests.contains(ItemID.POH_TABLET_TELEPORTTOHOUSE));
+		assertTrue("the Display tile requests the settings monitor sprite",
+			spriteRequests.contains(SpriteID.OptionsIcons.DISPLAY));
 	}
 
 	@Test
@@ -1637,8 +1644,8 @@ public class ShortestPathPanelLayoutTest
 				masterBox(row.component));
 		}
 
-		assertTrue("the Display tile requests its sprite",
-			iconRequests.contains(ItemID.SOTE_ORB_OF_LIGHT));
+		assertTrue("the Display tile requests the settings monitor sprite",
+			spriteRequests.contains(SpriteID.OptionsIcons.DISPLAY));
 
 		JLabel status = statusLabelOf(tileNamed("Display"));
 		assertEquals("defaults count four of five toggles on",
