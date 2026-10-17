@@ -64,7 +64,6 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		setOpaque(false);
 
 		header = new JPanel(new BorderLayout());
-		header.setOpaque(false);
 
 		expander = new JButton(ShortestPathPanel.SECTION_EXPAND_ICON);
 		expander.setPreferredSize(new Dimension(ShortestPathPanel.SECTION_TOGGLE_WIDTH, 0));
@@ -85,10 +84,13 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		add(header);
 
 		detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
-		detail.setOpaque(false);
 		detail.setBorder(new EmptyBorder(0, ShortestPathPanel.SUB_LIST_INDENT, 4, 0));
 		detail.setVisible(false);
 		add(detail);
+
+		// The shared two-tone fill: dark header bar over the lighter
+		// detail well.
+		ShortestPathPanel.styleExpandable(header, detail);
 
 		for (E member : members)
 		{
