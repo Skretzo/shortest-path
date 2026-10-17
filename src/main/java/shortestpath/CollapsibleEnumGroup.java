@@ -127,6 +127,11 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel
 		return nameLabel;
 	}
 
+	JLabel getCountLabel()
+	{
+		return countLabel;
+	}
+
 	boolean isDetailOpen()
 	{
 		return detailOpen;
