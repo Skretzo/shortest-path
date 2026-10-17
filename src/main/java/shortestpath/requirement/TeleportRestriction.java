@@ -540,4 +540,34 @@ public final class TeleportRestriction
 	{
 		return representativeIndex().getOrDefault(itemId, -1);
 	}
+
+	/**
+	 * The rep → member-destination → option-group-destinations expansion
+	 * index derived alongside {@link #loadFamilies()}' option groups. A
+	 * {@code rep@dest} record names one option by its canonical destination,
+	 * but any member destination resolves to the same group, so a stale
+	 * record still blocks the whole option.
+	 */
+	public static Map<Integer, Map<Integer, Set<Integer>>> optionExpansionIndex()
+	{
+		// Degenerate until the label-grouped derivation lands.
+		return Collections.emptyMap();
+	}
+
+	/**
+	 * Maps every recorded destination in {@code optionBlocks} through
+	 * {@link #optionExpansionIndex()}, unioning each destination's option
+	 * group; destinations absent from the index pass through as literal
+	 * blocked tiles.
+	 */
+	public static Map<Integer, Set<Integer>> expandOptionDests(
+		Map<Integer, Set<Integer>> optionBlocks)
+	{
+		Map<Integer, Set<Integer>> expanded = new HashMap<>();
+		for (Map.Entry<Integer, Set<Integer>> entry : optionBlocks.entrySet())
+		{
+			expanded.put(entry.getKey(), new HashSet<>(entry.getValue()));
+		}
+		return expanded;
+	}
 }
