@@ -430,7 +430,7 @@ public class ShortestPathPanelLayoutTest
 			assertTrue(row.display + " master control is not under the scrollbar",
 				bounds.getMaxX() <= PluginPanel.PANEL_WIDTH);
 		}
-		assertEquals("all transport cards checked", 23, cards);
+		assertEquals("all transport cards checked", 22, cards);
 	}
 
 	private TransportFamilyCard transportCardByKey(String keyName)
@@ -509,6 +509,35 @@ public class ShortestPathPanelLayoutTest
 			card.isDetailOpen());
 		assertTrue("the detail keeps its threshold rows",
 			card.getComponentCount() > 1);
+	}
+
+	/**
+	 * "Sail On Boats" is a routing policy, not a transport family with
+	 * thresholds — it renders as a plain check row in General alongside
+	 * the other transport-adjacent rows, and the Transports master count
+	 * drops to 22 cards.
+	 */
+	@Test
+	public void sailingMovesIsAGeneralCheckRow()
+	{
+		newPanel();
+		CategoryPanel general = panel.categories().get(0);
+		// The harness has no config descriptors, so the row names its key.
+		assertNotNull("sailing renders as a General check row",
+			labelContaining(contentOf(general), "useSailingMoves"));
+
+		assertNull("no sailing family card remains",
+			transportCardByKey("useSailingMoves"));
+		CategoryPanel transports = panel.categories().get(1);
+		for (ShortestPathPanel.SearchRow row : transports.rows())
+		{
+			assertFalse("sailing left the transports rows",
+				row.text.contains("sailingmoves"));
+		}
+		assertEquals("Transports counts 22 masters",
+			22, panel.transportCards().size());
+		assertTrue("the tile status counts the 22 masters",
+			statusLabelOf(tileNamed("Transports")).getText().endsWith("/22 on"));
 	}
 
 	@Test
