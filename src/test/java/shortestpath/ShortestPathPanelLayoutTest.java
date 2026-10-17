@@ -1595,8 +1595,8 @@ public class ShortestPathPanelLayoutTest
 		}
 		assertEquals("five spellbook groups + the mounted-items group", 6, groups);
 		assertEquals("the collapsed POH category is compact — master + 4 rows "
-				+ "+ 6 group headers instead of 40+ flat member rows",
-			11, pohCategory().rows().size());
+				+ "+ 2 section captions + 6 group headers instead of 40+ flat member rows",
+			13, pohCategory().rows().size());
 	}
 
 	@Test
@@ -1698,5 +1698,116 @@ public class ShortestPathPanelLayoutTest
 		flushEdt();
 		assertFalse("master off dims the group header", ancient.getNameLabel().isEnabled());
 		assertFalse("master off dims the group members", member.isEnabled());
+	}
+
+	// ---- POH section captions ---------------------------------------------
+
+	private ShortestPathPanel.SearchRow pohRowByDisplay(String display)
+	{
+		for (ShortestPathPanel.SearchRow row : pohCategory().rows())
+		{
+			if (display.equals(row.display))
+			{
+				return row;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The five nexus spellbook groups and the mounted-items group share
+	 * identical chrome — without captions the six rows read as one
+	 * undifferentiated list. A "Portal Nexus" caption precedes the
+	 * spellbook groups and a "Mounted Items" caption precedes the
+	 * mounted group.
+	 */
+	@Test
+	public void pohCaptionsDivideNexusGroupsFromMountedItems()
+	{
+		newPanel();
+		List<ShortestPathPanel.SearchRow> rows = pohCategory().rows();
+		int nexusCaption = -1;
+		int mountedCaption = -1;
+		int mountedGroup = -1;
+		int groupsBetween = 0;
+		for (int i = 0; i < rows.size(); i++)
+		{
+			ShortestPathPanel.SearchRow row = rows.get(i);
+			if ("Portal Nexus".equals(row.display))
+			{
+				nexusCaption = i;
+			}
+			else if ("Mounted Items".equals(row.display))
+			{
+				mountedCaption = i;
+			}
+			if (row.component instanceof CollapsibleEnumGroup)
+			{
+				if (nexusCaption >= 0 && mountedCaption < 0)
+				{
+					groupsBetween++;
+				}
+				String groupLabel = stripHtml(
+					((CollapsibleEnumGroup<?>) row.component).getNameLabel().getText());
+				if ("All items".equals(groupLabel))
+				{
+					mountedGroup = i;
+				}
+			}
+		}
+		assertTrue("a 'Portal Nexus' caption row", nexusCaption >= 0);
+		assertTrue("a 'Mounted Items' caption row", mountedCaption >= 0);
+		assertEquals("the nexus caption heads all five spellbook groups",
+			5, groupsBetween);
+		assertTrue("the mounted caption precedes its group",
+			mountedGroup >= 0 && mountedCaption >= 0 && mountedCaption < mountedGroup);
+	}
+
+	/**
+	 * Captions are navigational chrome, not controls — but they join the
+	 * dim contract so a disabled POH greys them out with the rows they
+	 * head.
+	 */
+	@Test
+	public void pohCaptionsDimWithTheMasterToggle() throws Exception
+	{
+		newPanel();
+		ShortestPathPanel.SearchRow caption = pohRowByDisplay("Portal Nexus");
+		assertNotNull("the Portal Nexus caption row", caption);
+		JLabel captionLabel = null;
+		for (JLabel label : labelsIn(caption.component))
+		{
+			if ("Portal Nexus".equals(stripHtml(label.getText())))
+			{
+				captionLabel = label;
+			}
+		}
+		assertNotNull("the caption label", captionLabel);
+		assertFalse("master off dims the caption", captionLabel.isEnabled());
+
+		config.setUsePohValue(true);
+		settings.onConfigChanged(event("usePoh"));
+		flushEdt();
+		assertTrue("master on restores the caption", captionLabel.isEnabled());
+	}
+
+	/**
+	 * A caption carries the section's search text so a "portal nexus"
+	 * query keeps it visible over the groups it heads.
+	 */
+	@Test
+	public void pohCaptionsSurfaceThroughSearch()
+	{
+		newPanel();
+		boolean nexusCaption = false;
+		for (ShortestPathPanel.SearchRow row :
+			panel.matchingRows(pohCategory(), "portal nexus"))
+		{
+			if ("Portal Nexus".equals(row.display))
+			{
+				nexusCaption = true;
+			}
+		}
+		assertTrue("a 'portal nexus' query keeps its caption visible", nexusCaption);
 	}
 }
