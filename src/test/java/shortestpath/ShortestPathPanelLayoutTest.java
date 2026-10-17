@@ -107,6 +107,13 @@ public class ShortestPathPanelLayoutTest
 				Set<BalloonRoute> routes = (Set<BalloonRoute>) value;
 				config.setBalloonLogBasketRoutesValue(routes);
 			}
+			else if ("pohNexusPortals".equals(i.getArgument(1)))
+			{
+				Object value = i.getArgument(2);
+				@SuppressWarnings("unchecked")
+				Set<PohNexusPortal> portals = (Set<PohNexusPortal>) value;
+				config.setPohNexusPortalsValue(portals);
+			}
 			return null;
 		}).when(configManager).setConfiguration(
 			any(String.class), any(String.class), any(Object.class));
@@ -1331,5 +1338,146 @@ public class ShortestPathPanelLayoutTest
 			PohNexusPortal.PortalGroup.values().length, groups.size());
 		assertEquals("the wiki-verified list still covers 40 portals",
 			40, PohNexusPortal.values().length);
+	}
+
+	// ---- POH collapsible groups -----------------------------------------
+
+	private CategoryPanel pohCategory()
+	{
+		return panel.categories().get(5);
+	}
+
+	/** The {@link CollapsibleEnumGroup} row carrying {@code label}. */
+	private CollapsibleEnumGroup<?> groupByLabel(String label)
+	{
+		for (ShortestPathPanel.SearchRow row : pohCategory().rows())
+		{
+			if (row.component instanceof CollapsibleEnumGroup
+				&& label.equals(stripHtml(
+					((CollapsibleEnumGroup<?>) row.component).getNameLabel().getText())))
+			{
+				return (CollapsibleEnumGroup<?>) row.component;
+			}
+		}
+		return null;
+	}
+
+	@Test
+	public void pohCategoryShowsCollapsibleGroupsNotFlatRows()
+	{
+		newPanel();
+		int groups = 0;
+		for (ShortestPathPanel.SearchRow row : pohCategory().rows())
+		{
+			if (row.component instanceof CollapsibleEnumGroup)
+			{
+				groups++;
+			}
+		}
+		assertEquals("five spellbook groups + the mounted-items group", 6, groups);
+		assertEquals("the collapsed POH category is compact — master + 4 rows "
+				+ "+ 6 group headers instead of 40+ flat member rows",
+			11, pohCategory().rows().size());
+	}
+
+	@Test
+	public void memberToggleInsideGroupWritesTheEnumSet() throws Exception
+	{
+		newPanel();
+		// POH master defaults off, which disables the member checkboxes —
+		// enable it so a toggle can round-trip.
+		config.setUsePohValue(true);
+		settings.onConfigChanged(event("usePoh"));
+		flushEdt();
+
+		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
+		assertNotNull(ancient);
+		ancient.setDetailOpen(true);
+		JCheckBox kharyrll = optionBox(ancient, "Kharyrll");
+		assertNotNull(kharyrll);
+		assertFalse(kharyrll.isSelected());
+
+		click(kharyrll);
+		flushEdt();
+		assertTrue("member toggle writes the portal into the EnumSet",
+			config.pohNexusPortals().contains(PohNexusPortal.KHARYRLL));
+		assertFalse("unrelated portals stay unselected",
+			config.pohNexusPortals().contains(PohNexusPortal.VARROCK));
+	}
+
+	@Test
+	public void memberLabelSearchExpandsTheGroup() throws Exception
+	{
+		newPanel();
+		CategoryPanel poh = pohCategory();
+		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
+		assertNotNull(ancient);
+		assertFalse("groups start collapsed", ancient.isDetailOpen());
+
+		assertFalse("a member-label query matches the group's row",
+			panel.matchingRows(poh, "kharyrll").isEmpty());
+		poh.applyQuery("kharyrll");
+		assertTrue("the matched group row stays visible",
+			SwingUtilities.isDescendingFrom(ancient, contentOf(poh)));
+		assertTrue("a member-label query expands the containing group",
+			ancient.isDetailOpen());
+	}
+
+	@Test
+	public void emptyQueryRestoresGroupCollapsedState()
+	{
+		newPanel();
+		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
+		assertNotNull(ancient);
+		ancient.setSearchExpanded();
+		assertTrue(ancient.isDetailOpen());
+
+		pohCategory().applyQuery("");
+		assertFalse("clearing the query collapses search-expanded groups",
+			ancient.isDetailOpen());
+	}
+
+	@Test
+	public void groupCountTracksMemberSelection() throws Exception
+	{
+		newPanel();
+		config.setUsePohValue(true);
+		settings.onConfigChanged(event("usePoh"));
+		flushEdt();
+
+		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
+		assertNotNull(ancient);
+		assertEquals("0/8", ancient.getCountLabel().getText());
+		ancient.setDetailOpen(true);
+
+		JCheckBox kharyrll = optionBox(ancient, "Kharyrll");
+		assertNotNull(kharyrll);
+		click(kharyrll);
+		flushEdt();
+		assertEquals("the header count re-derives on member writes",
+			"1/8", ancient.getCountLabel().getText());
+	}
+
+	@Test
+	public void pohMasterOffDimsGroupsAndMembers() throws Exception
+	{
+		newPanel();
+		config.setUsePohValue(true);
+		settings.onConfigChanged(event("usePoh"));
+		flushEdt();
+
+		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
+		assertNotNull(ancient);
+		ancient.setDetailOpen(true);
+		JCheckBox member = optionBox(ancient, "Kharyrll");
+		assertNotNull(member);
+		assertTrue("members are editable while POH is on", member.isEnabled());
+		assertTrue(ancient.getNameLabel().isEnabled());
+
+		config.setUsePohValue(false);
+		settings.onConfigChanged(event("usePoh"));
+		flushEdt();
+		assertFalse("master off dims the group header", ancient.getNameLabel().isEnabled());
+		assertFalse("master off dims the group members", member.isEnabled());
 	}
 }
