@@ -36,7 +36,7 @@ import shortestpath.settings.TeleportationItem;
  * {@link CategoryPanel} in the order General, Transports, Teleport
  * Restrictions, Unlocks, Bank, Player-Owned House — each a square raised
  * button carrying a centered item icon, the bold category name and a live
- * status line (e.g. {@code "19/23 on"}, {@code "3 blocked"}). Clicking a
+ * status line (e.g. {@code "19/22 on"}, {@code "3 blocked"}). Clicking a
  * tile drills into its sub-panel through the owning panel's muxer.
  *
  * <p>The same {@link FixedWidthPanel} scroll wrap the category panels use
