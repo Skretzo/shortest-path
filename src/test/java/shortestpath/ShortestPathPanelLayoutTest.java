@@ -54,6 +54,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
@@ -207,11 +208,22 @@ public class ShortestPathPanelLayoutTest
 		return surfaces;
 	}
 
+	/**
+	 * The tile grid inside the home content — the JPanel child. The view
+	 * also carries footer note labels beneath the grid, so the lookup
+	 * discriminates on type rather than position.
+	 */
 	private JPanel tileGrid()
 	{
 		FixedWidthPanel content = contentOf(panel.home());
-		assertEquals("tile view shows one grid", 1, content.getComponentCount());
-		return (JPanel) content.getComponent(0);
+		for (Component child : content.getComponents())
+		{
+			if (child instanceof JPanel)
+			{
+				return (JPanel) child;
+			}
+		}
+		throw new AssertionError("tile view contains no grid");
 	}
 
 	/**
@@ -297,6 +309,66 @@ public class ShortestPathPanelLayoutTest
 			assertFalse(expected[i] + " status is populated",
 				statusLabel.getText().isEmpty());
 		}
+	}
+
+	/**
+	 * Below the tile grid the home view carries two small-font footer
+	 * notes: an orange one announcing the A* pathfinder and pointing at
+	 * the General category's Pathfinder Algorithm option, and a muted one
+	 * telling users the remaining plugin options live in the regular
+	 * RuneLite settings panel.
+	 */
+	@Test
+	public void homeTilesCarryFooterNotes()
+	{
+		newPanel();
+		FixedWidthPanel content = contentOf(panel.home());
+
+		int gridIndex = -1;
+		int astarIndex = -1;
+		int settingsIndex = -1;
+		JLabel astarNote = null;
+		JLabel settingsNote = null;
+		Component[] children = content.getComponents();
+		for (int i = 0; i < children.length; i++)
+		{
+			if (children[i] instanceof JPanel)
+			{
+				gridIndex = i;
+				continue;
+			}
+			if (!(children[i] instanceof JLabel))
+			{
+				continue;
+			}
+			String text = ((JLabel) children[i]).getText();
+			if (text != null && text.contains("A*"))
+			{
+				astarNote = (JLabel) children[i];
+				astarIndex = i;
+			}
+			if (text != null && text.contains("plugin settings panel"))
+			{
+				settingsNote = (JLabel) children[i];
+				settingsIndex = i;
+			}
+		}
+
+		assertNotNull("an A* footer note under the tile grid", astarNote);
+		assertTrue("the A* note renders below the grid", astarIndex > gridIndex);
+		assertEquals("the A* note is the orange accent",
+			ColorScheme.BRAND_ORANGE, astarNote.getForeground());
+		assertEquals("the A* note is small font",
+			FontManager.getRunescapeSmallFont(), astarNote.getFont());
+		assertTrue("the A* note points at General's Pathfinder Algorithm option",
+			astarNote.getText().contains("Pathfinder Algorithm"));
+
+		assertNotNull("a settings-panel footer note under the tile grid", settingsNote);
+		assertTrue("the settings note renders below the grid", settingsIndex > gridIndex);
+		assertEquals("the settings note is the muted tone",
+			ColorScheme.LIGHT_GRAY_COLOR, settingsNote.getForeground());
+		assertEquals("the settings note is small font",
+			FontManager.getRunescapeSmallFont(), settingsNote.getFont());
 	}
 
 	/**
