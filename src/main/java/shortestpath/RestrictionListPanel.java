@@ -69,6 +69,10 @@ class RestrictionListPanel extends JPanel
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ItemStateService itemState;
+	// The owning category's match text (lowercased name + aliases) — the
+	// items-disabled hint treats a query that hits it as a name match, so
+	// a category rename cannot silently drop the hint's search surface.
+	private final String categoryMatchText;
 
 	private final List<RestrictionRow> rows = new ArrayList<>();
 	private final Set<Integer> blocked = new HashSet<>();
@@ -90,13 +94,14 @@ class RestrictionListPanel extends JPanel
 	private boolean syncing;
 
 	RestrictionListPanel(ShortestPathPanel panel, Settings settings, Client client,
-		ClientThread clientThread, ItemStateService itemState)
+		ClientThread clientThread, ItemStateService itemState, String categoryMatchText)
 	{
 		this.panel = panel;
 		this.settings = settings;
 		this.client = client;
 		this.clientThread = clientThread;
 		this.itemState = itemState;
+		this.categoryMatchText = categoryMatchText;
 
 		setLayout(new DynamicGridLayout(0, 1, 0, 3));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -147,8 +152,9 @@ class RestrictionListPanel extends JPanel
 		if (itemsDisabled)
 		{
 			// The hint still honours the search filter: a non-matching query
-			// drops the section like every other.
-			showing = query.isEmpty() || "teleport restrictions".contains(query);
+			// drops the section like every other, while a category-name hit
+			// keeps it.
+			showing = query.isEmpty() || categoryMatchText.contains(query);
 			if (showing)
 			{
 				add(disabledHint);
