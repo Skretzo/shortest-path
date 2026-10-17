@@ -10,7 +10,6 @@ import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
 import net.runelite.client.config.Range;
-import net.runelite.client.config.Units;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.JewelleryBoxTier;
@@ -486,8 +485,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showTileCounter",
 		name = "Show Tile Counter",
 		description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
-		position = 76,
-		section = sectionSettings
+		hidden = true
 	)
 	default TileCounter showTileCounter()
 	{
@@ -498,17 +496,13 @@ public interface ShortestPathConfig extends Config
 		keyName = "tileCounterStep",
 		name = "Tile Counter Step",
 		description = "The number of tiles between the displayed tile counter numbers",
-		position = 77,
-		section = sectionSettings
+		hidden = true
 	)
 	default int tileCounterStep()
 	{
 		return 1;
 	}
 
-	@Units(
-		value = Units.TICKS
-	)
 	@Range(
 		min = 1,
 		max = 30
@@ -518,8 +512,7 @@ public interface ShortestPathConfig extends Config
 		name = "Calculation Cutoff",
 		description = "The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>" +
 			"made towards the path target before the calculation will be stopped",
-		position = 78,
-		section = sectionSettings
+		hidden = true
 	)
 	default int calculationCutoff()
 	{
