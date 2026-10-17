@@ -21,7 +21,7 @@ import shortestpath.pathfinder.SplitFlagMap;
  * Only ordinary 8-directional adjacency is modelled; no transport-blocked-origin behaviour is
  * needed since {@link RoutingStaticBuilder} never uses that path.
  */
-final class SyntheticCollisionMap extends CollisionMap
+class SyntheticCollisionMap extends CollisionMap
 {
 	// Matches CollisionMap.ordinaryWalkingNeighbors's own bit layout exactly (0-N..7-NW).
 	private static final int[] DX = {0, 1, 1, 1, 0, -1, -1, -1};

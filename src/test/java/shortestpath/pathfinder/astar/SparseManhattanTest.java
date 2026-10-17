@@ -58,10 +58,27 @@ public class SparseManhattanTest
 		assertTrue(heuristic.preparationNanos() >= 0);
 	}
 
+	@Test
+	public void emptyComponentsStayUnreachableBeforeAndAfterBanking() throws Exception
+	{
+		TargetOverlay target = new TargetOverlay(new SiteGraph(syntheticSparse(), emptyAccount()),
+			attachments(A), TARGET);
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+
+		for (boolean banked : new boolean[] {false, true})
+		{
+			assertEquals(0, heuristic.seedCount(1, banked));
+			assertEquals(0, heuristic.generatorCount(1, banked));
+			assertEquals(CostArithmetic.INF, heuristic.estimate(OTHER_PLANE, banked, new int[] {1}));
+			assertEquals(1, heuristic.estimate(A, banked, new int[] {0}));
+			assertEquals(0, heuristic.estimate(TARGET, banked, new int[] {0}));
+		}
+	}
+
 	private static RoutingStatic syntheticSparse() throws Exception
 	{
-		return RoutingStatic.create(new int[] {A, OTHER_PLANE}, new int[] {0, 1}, new byte[] {0, 0},
-			new int[] {-1, -1}, new int[] {-1, -1}, new int[] {A, B, C, OTHER_PLANE},
+		return RoutingStatic.takeOwnership(new int[] {A, OTHER_PLANE}, RoutingStaticTestFixture.components(0, 1), new byte[] {0, 0},
+			new char[2], new char[2], new int[] {A, B, C, OTHER_PLANE},
 			new int[] {0, 1, 2, 3, 4}, new int[] {0, 0, 0, 1}, 2, new int[] {0, 3, 4},
 			new int[] {0, 1, 2, 3}, new int[0], new int[0], new int[0], new int[0], 4, 5, 1, 3, 6,
 			new int[] {0, 1, 2, 3, 3, 6}, new int[] {4, 4, 4, 0, 1, 2}, new int[] {6, 0, 8, 6, 0, 8});

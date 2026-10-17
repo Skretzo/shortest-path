@@ -7,6 +7,8 @@ import shortestpath.pathfinder.CollisionMap;
 /** Query-lifetime raw seeds and provenance-reduced exact seed scans. */
 public final class PreparedHeuristic
 {
+	private static final int[] EMPTY = new int[0];
+
 	private final TargetOverlay overlay;
 	private final ReverseLabels reverse;
 	private final int[][] seedTiles;
@@ -55,10 +57,10 @@ public final class PreparedHeuristic
 		int[][] generatorTiles = new int[bucketCount][], generatorLabels = new int[bucketCount][];
 		for (int i = 0; i < bucketCount; i++)
 		{
-			tiles[i] = raw[i] == null ? new int[0] : raw[i].tiles();
-			labels[i] = raw[i] == null ? new int[0] : raw[i].labels();
-			generatorTiles[i] = reduced[i] == null ? new int[0] : reduced[i].tiles();
-			generatorLabels[i] = reduced[i] == null ? new int[0] : reduced[i].labels();
+			tiles[i] = raw[i] == null ? EMPTY : raw[i].tiles();
+			labels[i] = raw[i] == null ? EMPTY : raw[i].labels();
+			generatorTiles[i] = reduced[i] == null ? EMPTY : reduced[i].tiles();
+			generatorLabels[i] = reduced[i] == null ? EMPTY : reduced[i].labels();
 		}
 		return new PreparedHeuristic(overlay, reverse, tiles, labels, generatorTiles, generatorLabels,
 			System.nanoTime() - started);

@@ -158,7 +158,7 @@ public class WildernessGlobalTeleportTest
 		for (int i = 0; i < n; i++) members[i] = i;
 		try
 		{
-			return RoutingStatic.create(new int[0], new int[0], new byte[0], new int[0], new int[0], sites, offsets,
+			return RoutingStatic.takeOwnership(new int[0], new TileComponents(0, 1), new byte[0], new char[0], new char[0], sites, offsets,
 				ids, 1, new int[] {0, n}, members, new int[0], new int[0], new int[0], new int[0], n, n, 0, 0, 0,
 				new int[n + 1], new int[0], new int[0]);
 		}
