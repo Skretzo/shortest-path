@@ -213,9 +213,10 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		pohService.loadFromProfile();
+		itemState.loadFromProfile();
 		scheduler.prepareBackend();
 
-		panel = new ShortestPathPanel(settings, client, clientThread, itemManager);
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager, itemState);
 		navButton = NavigationButton.builder()
 			.tooltip("Shortest Path")
 			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/shortestpath/panel_icon.png"))
@@ -375,6 +376,9 @@ public class ShortestPathPlugin extends Plugin
 		// path computed against the old account's set must be redone — the
 		// load declares that route-invalidating effect unconditionally.
 		spiritTrees.loadFromProfile();
+		// The last-seen bank snapshot is scoped per account — the new
+		// profile's record replaces the previous account's.
+		itemState.loadFromProfile();
 	}
 
 	@Subscribe
@@ -430,6 +434,18 @@ public class ShortestPathPlugin extends Plugin
 	{
 		int id = event.getContainerId();
 		itemState.onContainerChanged(id, event.getItemContainer());
+		if (id == InventoryID.BANK)
+		{
+			// The bank-open verdict is a widget read — client-thread only —
+			// so it happens inside the invoke where the interface has
+			// settled; the post-close event arrives with an emptied
+			// container but a closed bank widget, which the service treats
+			// as drain and ignores. Queued ahead of the panel refresh below
+			// so the owned-filter union reads the updated snapshot.
+			clientThread.invoke(() -> itemState.noteLastSeenBank(
+				event.getItemContainer(),
+				gameWidgets.isWidgetOpen(InterfaceID.Bankmain.UNIVERSE)));
+		}
 		if (panel != null && (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN))
 		{
 			panel.onItemContainersChanged();
