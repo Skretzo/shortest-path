@@ -309,6 +309,18 @@ public final class Requirements
 			return RejectionReason.BLOCKED_ITEM;
 		}
 
+		// Destination-scoped option restrictions: a rep@dest block kills the
+		// transport only when every satisfying branch resolves to the blocked
+		// destination — a sibling option of the same family, a cross-family
+		// branch and a non-family item all keep it routable.
+		Map<Integer, Set<Integer>> blockedOptionDests = policy.blockedOptionDests();
+		if (itemRequirements != null && !blockedOptionDests.isEmpty()
+			&& !itemRequirements.survivesOptionBlocks(transport.getDestination(),
+				TeleportRestriction.representativeIndex(), blockedOptionDests))
+		{
+			return RejectionReason.BLOCKED_ITEM;
+		}
+
 		switch (policy.teleportationItemSetting())
 		{
 			case ALL:
