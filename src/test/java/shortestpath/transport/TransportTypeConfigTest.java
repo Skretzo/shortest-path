@@ -282,10 +282,20 @@ public class TransportTypeConfigTest
 		// TRANSPORT has no costKey
 		assertEquals("TRANSPORT (no costKey) should have 0 cost",
 			0, typeConfig.getCost(TransportType.TRANSPORT));
+	}
 
-		// TELEPORTATION_PORTAL_POH has no costKey
-		assertEquals("TELEPORTATION_PORTAL_POH (no costKey) should have 0 cost",
-			0, typeConfig.getCost(TransportType.TELEPORTATION_PORTAL_POH));
+	/**
+	 * Verifies that POH nexus portals share the teleportation portal threshold.
+	 */
+	@Test
+	public void testPohNexusPortalsUseTeleportationPortalThreshold()
+	{
+		setupDefaultMocks();
+		when(config.costTeleportationPortals()).thenReturn(25);
+		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
+
+		assertEquals(25, typeConfig.getCost(TransportType.TELEPORTATION_PORTAL));
+		assertEquals(25, typeConfig.getCost(TransportType.TELEPORTATION_PORTAL_POH));
 	}
 
 	/**
