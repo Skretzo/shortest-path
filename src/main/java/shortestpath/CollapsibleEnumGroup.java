@@ -88,8 +88,8 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		detail.setVisible(false);
 		add(detail);
 
-		// The shared two-tone fill: dark header bar over the lighter
-		// detail well.
+		// The shared expandable chrome: dark header bar over the
+		// category-toned, orange-bordered detail well.
 		ShortestPathPanel.styleExpandable(header, detail);
 
 		for (E member : members)
