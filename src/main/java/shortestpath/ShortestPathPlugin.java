@@ -221,7 +221,10 @@ public class ShortestPathPlugin extends Plugin
 			.priority(5)
 			.panel(panel)
 			.build();
-		clientToolbar.addNavigation(navButton);
+		if (config.showSidebarPanel())
+		{
+			clientToolbar.addNavigation(navButton);
+		}
 	}
 
 	@Override
@@ -293,7 +296,33 @@ public class ShortestPathPlugin extends Plugin
 			}
 		}
 
+		if ("showSidebarPanel".equals(change.getKey()))
+		{
+			syncSidebarButton();
+		}
+
 		coordinator.configChanged(change);
+	}
+
+	/**
+	 * Adds or removes the sidebar navigation button to match the
+	 * {@code showSidebarPanel} setting — the same live-toggle contract the
+	 * other plugins' show-icon options follow.
+	 */
+	private void syncSidebarButton()
+	{
+		if (navButton == null)
+		{
+			return;
+		}
+		if (config.showSidebarPanel())
+		{
+			clientToolbar.addNavigation(navButton);
+		}
+		else
+		{
+			clientToolbar.removeNavigation(navButton);
+		}
 	}
 
 	@Subscribe
@@ -307,6 +336,9 @@ public class ShortestPathPlugin extends Plugin
 
 		activeConfigProfileId = profileId;
 		syncDebugPanelVisibility();
+		// The new profile may carry a different sidebar-visibility value —
+		// re-resolve the nav button just like the debug overlay above.
+		syncSidebarButton();
 		if (pathfinderConfig == null)
 		{
 			return;
