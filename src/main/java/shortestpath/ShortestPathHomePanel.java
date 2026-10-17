@@ -127,6 +127,23 @@ class ShortestPathHomePanel extends PluginPanel
 			grid.add(tile);
 		}
 		content.add(grid);
+
+		// Footer notes under the grid: the orange accent flags the new A*
+		// backend (its option is one click into the General category); the
+		// muted note covers the settings the sidebar does not surface.
+		JLabel astarNote = new JLabel(ShortestPathPanel.html(
+			"<center>New: the faster A* pathfinder - enable it under "
+				+ "General, Pathfinder Algorithm.</center>"));
+		astarNote.setForeground(ColorScheme.BRAND_ORANGE);
+		astarNote.setFont(FontManager.getRunescapeSmallFont());
+		content.add(astarNote);
+
+		JLabel settingsNote = new JLabel(ShortestPathPanel.html(
+			"<center>More settings live in the regular plugin settings panel.</center>"));
+		settingsNote.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		settingsNote.setFont(FontManager.getRunescapeSmallFont());
+		content.add(settingsNote);
+
 		content.revalidate();
 		content.repaint();
 	}
