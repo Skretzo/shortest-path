@@ -88,7 +88,8 @@ public class ShortestPathPanelLayoutTest
 				config.setBlockedTeleportItemsValue(value == null ? "" : String.valueOf(value));
 			}
 			return null;
-		}).when(configManager).setConfiguration(any(String.class), any(String.class), any());
+		}).when(configManager).setConfiguration(
+			any(String.class), any(String.class), any(Object.class));
 		settings = new Settings(configManager, config);
 		Client client = mock(Client.class);
 		ClientThread clientThread = mock(ClientThread.class);
