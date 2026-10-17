@@ -459,7 +459,9 @@ public final class TeleportRestriction
 				{
 					// Destination-scoped option block: rep@packedDest. Entries
 					// never legitimately contain '@' elsewhere — require
-					// exactly two int-parseable parts.
+					// exactly two int-parseable parts. The rep is an item id
+					// and cannot be negative; the destination can — packed
+					// world points at plane >= 2 set the sign bit.
 					String[] parts = entry.split("@", -1);
 					if (parts.length != 2)
 					{
@@ -467,6 +469,10 @@ public final class TeleportRestriction
 					}
 					int rep = Integer.parseInt(parts[0].trim());
 					int dest = Integer.parseInt(parts[1].trim());
+					if (rep < 0)
+					{
+						throw new NumberFormatException("negative rep id");
+					}
 					optionBlocksOut.computeIfAbsent(rep, k -> new HashSet<>()).add(dest);
 					continue;
 				}
@@ -474,12 +480,21 @@ public final class TeleportRestriction
 				int colon = entry.indexOf(':');
 				if (colon < 0)
 				{
-					blockedOut.add(Integer.parseInt(entry));
+					int id = Integer.parseInt(entry);
+					if (id < 0)
+					{
+						throw new NumberFormatException("negative id");
+					}
+					blockedOut.add(id);
 				}
 				else
 				{
 					int id = Integer.parseInt(entry.substring(0, colon).trim());
 					int threshold = Integer.parseInt(entry.substring(colon + 1).trim());
+					if (id < 0 || threshold < 0)
+					{
+						throw new NumberFormatException("negative id or threshold");
+					}
 					thresholdOut.merge(id, threshold, Math::max);
 				}
 			}
