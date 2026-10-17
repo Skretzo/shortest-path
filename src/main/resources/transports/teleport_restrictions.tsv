@@ -30,7 +30,15 @@ Max capes	9813	9813,13068,13069,13221,13222,13280,13342,19476	9813=Quest point c
 Quest items	4251	4251,4252,6099,6100,6101,6102,9469,13102,19564,23946	4251=Ectophial,4252=Ectophial,6099=Teleport crystal,6100=Teleport crystal,6101=Teleport crystal,6102=Teleport crystal,9469=Grand seed pod,13102=Teleport crystal,19564=Royal seed pod,23946=Eternal teleport crystal
 Enchanted lyre	3691	3691,6125,6126,6127,6707,13079,21760,21913,22114,22400,23458,24855,25818	3691=Enchanted lyre,6125=Enchanted lyre,6126=Enchanted lyre,6127=Enchanted lyre,6707=Camulet,13079=Enchanted lyre,21760=Kharedst's memoirs,21913=Mythical cape,22114=Mythical cape,22400=Drakan's medallion,23458=Enchanted lyre (i),24855=Mythical cape,25818=Book of the dead
 Stony basalt	22599	22599,22601	22599=Icy basalt,22601=Stony basalt
-Other	9013	9013,13393,13660,21276,24709,26818,26914,26948,28327,29893	9013=Skull sceptre,13393=Xeric's talisman,13660=Chronicle,21276=Skull sceptre,24709=Hallowed crystal shard,26818=Ring of the elements,26914=Amulet of the eye,26948=Pharaoh's sceptre,28327=Ring of shadows,29893=Pendant of ates
+Pharaoh's sceptre	26948	26948	26948=Pharaoh's sceptre
+Skull sceptre	9013	9013,21276	9013=Skull sceptre,21276=Skull sceptre
+Xeric's talisman	13393	13393	13393=Xeric's talisman
+Chronicle	13660	13660	13660=Chronicle
+Amulet of the eye	26914	26914	26914=Amulet of the eye
+Ring of the elements	26818	26818	26818=Ring of the elements
+Hallowed crystal shard	24709	24709	24709=Hallowed crystal shard
+Ring of shadows	28327	28327	28327=Ring of shadows
+Pendant of ates	29893	29893	29893=Pendant of ates
 Giantsoul amulet	30638	30638	30638=Giantsoul amulet
 Sailors' amulet (Charged)	32399	32399	32399=Sailors' amulet
 Cowbell amulet	33104	33104	33104=Cowbell amulet
