@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,6 +27,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import net.runelite.api.Client;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.ColorScheme;
@@ -71,6 +73,9 @@ class RestrictionListPanel extends JPanel
 	private final List<RestrictionRow> rows = new ArrayList<>();
 	private final Set<Integer> blocked = new HashSet<>();
 	private final Map<Integer, Integer> thresholds = new HashMap<>();
+	// rep (displayItemId) -> blocked option destinations, parsed from and
+	// serialized to rep@dest records in the same blockedTeleportItems CSV.
+	private final Map<Integer, Set<Integer>> optionBlocks = new HashMap<>();
 	private volatile Set<Integer> ownedIds = Collections.emptySet();
 
 	private final JComponent disabledHint;
@@ -96,7 +101,7 @@ class RestrictionListPanel extends JPanel
 		setLayout(new DynamicGridLayout(0, 1, 0, 3));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds);
+		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds, optionBlocks);
 		itemsDisabled = TeleportationItem.NONE.equals(
 			settings.configuredValue("useTeleportationItems"));
 
@@ -280,7 +285,8 @@ class RestrictionListPanel extends JPanel
 	{
 		blocked.clear();
 		thresholds.clear();
-		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds);
+		optionBlocks.clear();
+		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds, optionBlocks);
 		itemsDisabled = TeleportationItem.NONE.equals(
 			settings.configuredValue("useTeleportationItems"));
 		syncing = true;
@@ -306,7 +312,19 @@ class RestrictionListPanel extends JPanel
 
 	private void writeCsv()
 	{
-		settings.write("blockedTeleportItems", TeleportRestriction.toCsv(blocked, thresholds));
+		// A family the master row has fully blocked (rep id in blocked)
+		// never emits rep@dest records — stale records would resurface the
+		// option blocks on unblock. Empty sets never serialize either.
+		Map<Integer, Set<Integer>> serializableBlocks = new HashMap<>();
+		for (Map.Entry<Integer, Set<Integer>> entry : optionBlocks.entrySet())
+		{
+			if (!blocked.contains(entry.getKey()) && !entry.getValue().isEmpty())
+			{
+				serializableBlocks.put(entry.getKey(), entry.getValue());
+			}
+		}
+		settings.write("blockedTeleportItems",
+			TeleportRestriction.toCsv(blocked, thresholds, serializableBlocks));
 	}
 
 	private void confirmReset()
@@ -323,6 +341,7 @@ class RestrictionListPanel extends JPanel
 		{
 			blocked.clear();
 			thresholds.clear();
+			optionBlocks.clear();
 			writeCsv();
 		}
 	}
@@ -356,6 +375,9 @@ class RestrictionListPanel extends JPanel
 		private final JButton expander;
 		private final JPanel detail;
 		private final JSpinner thresholdSpinner;
+		// canonical packedDest -> option checkbox, in the options map's
+		// first-seen order — kept so syncFromModel can mirror external edits.
+		private final Map<Integer, JCheckBox> optionBoxes = new LinkedHashMap<>();
 		private boolean detailOpen;
 		private boolean searchExpanded;
 
@@ -367,6 +389,10 @@ class RestrictionListPanel extends JPanel
 			for (String label : family.memberLabels().values())
 			{
 				sb.append(' ').append(label.toLowerCase(Locale.ROOT));
+			}
+			for (String optionLabel : family.options().values())
+			{
+				sb.append(' ').append(optionLabel.toLowerCase(Locale.ROOT));
 			}
 			this.searchText = sb.toString();
 
@@ -489,10 +515,82 @@ class RestrictionListPanel extends JPanel
 			});
 			thresholdRow.add(thresholdSpinner, BorderLayout.EAST);
 			detail.add(thresholdRow);
+
+			if (family.options().size() > 1)
+			{
+				buildOptionsBlock();
+			}
 			detail.setVisible(false);
 			add(detail);
 
 			syncFromModel();
+		}
+
+		/**
+		 * The "Options:" section of the detail well: one checkbox per
+		 * in-game teleport name (the option group's label), checked when
+		 * the option is routable. Unchecking writes a {@code rep@dest}
+		 * record keyed on the family's displayItemId and the option's
+		 * canonical (first-seen) destination; re-checking removes it.
+		 * The block lives inside the existing detail well — no new
+		 * top-level rows, so collapsed families stay one line each.
+		 */
+		private void buildOptionsBlock()
+		{
+			JLabel optionsHeader = new JLabel("Options:");
+			optionsHeader.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			optionsHeader.setFont(FontManager.getRunescapeSmallFont());
+			detail.add(optionsHeader);
+
+			int rep = family.displayItemId();
+			for (Map.Entry<Integer, String> option : family.options().entrySet())
+			{
+				int dest = option.getKey();
+				String label = option.getValue();
+				if (label == null || label.isBlank())
+				{
+					// Labels arrive pre-derived and are never blank in
+					// practice — fall back to the unpacked coordinates so a
+					// checkbox never renders unlabeled.
+					WorldPoint point = WorldPointUtil.unpackWorldPoint(dest);
+					label = point.getX() + ", " + point.getY() + ", " + point.getPlane();
+				}
+				JCheckBox optionBox = new JCheckBox(label);
+				optionBox.setFont(FontManager.getRunescapeSmallFont());
+				// Selected state is set before the listener attaches, so
+				// construction never fires a spurious config write — the
+				// same discipline the master allow checkbox uses.
+				optionBox.setSelected(
+					!optionBlocks.getOrDefault(rep, Set.of()).contains(dest));
+				optionBox.addActionListener(e ->
+				{
+					if (syncing)
+					{
+						return;
+					}
+					if (optionBox.isSelected())
+					{
+						Set<Integer> dests = optionBlocks.get(rep);
+						if (dests != null)
+						{
+							dests.remove(dest);
+							if (dests.isEmpty())
+							{
+								// No rep key with an empty set — empty
+								// records must never serialize.
+								optionBlocks.remove(rep);
+							}
+						}
+					}
+					else
+					{
+						optionBlocks.computeIfAbsent(rep, k -> new HashSet<>()).add(dest);
+					}
+					writeCsv();
+				});
+				optionBoxes.put(dest, optionBox);
+				detail.add(optionBox);
+			}
 		}
 
 		/**
@@ -535,14 +633,21 @@ class RestrictionListPanel extends JPanel
 		}
 
 		/**
-		 * Mirrors the blocked/threshold model into the controls. Safe under
-		 * the syncing guard: suppressed listeners skip the config write.
+		 * Mirrors the blocked/threshold/option-block model into the
+		 * controls. Safe under the syncing guard: suppressed listeners skip
+		 * the config write.
 		 */
 		void syncFromModel()
 		{
 			boolean blockedNow = isBlocked();
 			allow.setSelected(!blockedNow);
 			thresholdSpinner.setValue(currentThreshold());
+			Set<Integer> blockedDests =
+				optionBlocks.getOrDefault(family.displayItemId(), Set.of());
+			for (Map.Entry<Integer, JCheckBox> entry : optionBoxes.entrySet())
+			{
+				entry.getValue().setSelected(!blockedDests.contains(entry.getKey()));
+			}
 			applyAllowedState(!blockedNow);
 		}
 
