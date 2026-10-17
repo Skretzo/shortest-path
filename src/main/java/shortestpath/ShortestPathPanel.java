@@ -85,10 +85,13 @@ public class ShortestPathPanel extends PluginPanel
 	 * well keeps the category background, ringed by a thin orange border
 	 * that marks the open well as a distinct region. Applied through
 	 * {@link #styleExpandable} so no site can drift to its own colours.
+	 * The detail well's frame is the header-dark tone with the top edge
+	 * left open — the well reads as a boxed continuation of the header
+	 * bar rather than a separate ringed region.
 	 */
 	static final Color EXPANDABLE_HEADER_BACKGROUND = ColorScheme.DARKER_GRAY_COLOR;
 	static final Color EXPANDABLE_DETAIL_BACKGROUND = ColorScheme.DARK_GRAY_COLOR;
-	static final Color EXPANDABLE_DETAIL_BORDER = ColorScheme.BRAND_ORANGE;
+	static final Color EXPANDABLE_DETAIL_BORDER = ColorScheme.DARKER_GRAY_COLOR;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_TOOLTIP =
 		"Only show teleports for items in your inventory, equipment or bank";
@@ -253,7 +256,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		addFamilyCard(transports, "useAgilityShortcuts", ItemID.AGILITY_JUMP,
 			familyThresholdRows("useAgilityShortcuts"));
-		addFamilyCard(transports, "useGrappleShortcuts", ItemID.XBOWS_GRAPPLE_HOOK,
+		addFamilyCard(transports, "useGrappleShortcuts", ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE,
 			familyThresholdRows("useGrappleShortcuts"));
 		addFamilyCard(transports, "useBoats", ItemID.AHOY_TOY_BOAT,
 			familyThresholdRows("useBoats"));
@@ -275,7 +278,9 @@ public class ShortestPathPanel extends PluginPanel
 		balloonDetail.addAll(balloonRouteRows());
 		addFamilyCard(transports, "useHotAirBalloons", ItemID.ZEP_TOY_BALLOON_RED,
 			balloonDetail.toArray(new SearchRow[0]));
-		addFamilyCard(transports, "useMagicCarpets", ItemID.MAGIC_CARPET,
+		// The spriteless MAGIC_CARPET placeholder renders empty — an
+		// opulent-rug sprite is the closest real item to a flying carpet.
+		addFamilyCard(transports, "useMagicCarpets", ItemID.POH_RUG_3,
 			familyThresholdRows("useMagicCarpets"));
 		addFamilyCard(transports, "useMagicMushtrees", ItemID.EVENT_MUSHTREE_DUMMY,
 			familyThresholdRows("useMagicMushtrees"));
@@ -303,7 +308,9 @@ public class ShortestPathPanel extends PluginPanel
 			familyThresholdRows("useTeleportationSpells"));
 		addFamilyCard(transports, "useTeleportationSpellsHome", ItemID.POH_TABLET_TELEPORTTOHOUSE,
 			familyThresholdRows("useTeleportationSpellsHome"));
-		addFamilyCard(transports, "useTeleportationMinigames", ItemID.MINIGAME_TELEPORT,
+		// The MINIGAME_TELEPORT spell-icon item has no inventory sprite —
+		// the spellbook icon's flag motif maps to a real banner item.
+		addFamilyCard(transports, "useTeleportationMinigames", ItemID.CASTLEWARS_SARADOMIN_BANNER,
 			familyThresholdRows("useTeleportationMinigames"));
 		addFamilyCard(transports, "useWildernessObelisks", ItemID.POH_SUPERIOR_GARDEN_WILDERNESS_OBELISK,
 			familyThresholdRows("useWildernessObelisks"));
@@ -955,11 +962,12 @@ public class ShortestPathPanel extends PluginPanel
 	 * Pins the shared expandable contract on a surface's two children:
 	 * the header bar turns opaque in {@link #EXPANDABLE_HEADER_BACKGROUND}
 	 * and the detail well keeps the {@link #EXPANDABLE_DETAIL_BACKGROUND}
-	 * category tone ringed by a thin {@link #EXPANDABLE_DETAIL_BORDER}
-	 * accent. The ring wraps — never replaces — the border each call site
-	 * already installed, so the detail indents and paddings survive.
-	 * Their children keep their transparent fills so the tones show
-	 * through.
+	 * category tone framed by a thin {@link #EXPANDABLE_DETAIL_BORDER}
+	 * border on its left, bottom and right edges — the top edge stays
+	 * open so the well joins the header bar above it. The frame wraps —
+	 * never replaces — the border each call site already installed, so
+	 * the detail indents and paddings survive. Their children keep their
+	 * transparent fills so the tones show through.
 	 */
 	static void styleExpandable(JComponent header, JComponent detail)
 	{
@@ -968,7 +976,7 @@ public class ShortestPathPanel extends PluginPanel
 		detail.setOpaque(true);
 		detail.setBackground(EXPANDABLE_DETAIL_BACKGROUND);
 		detail.setBorder(new CompoundBorder(
-			new MatteBorder(1, 1, 1, 1, EXPANDABLE_DETAIL_BORDER),
+			new MatteBorder(0, 1, 1, 1, EXPANDABLE_DETAIL_BORDER),
 			detail.getBorder()));
 	}
 
