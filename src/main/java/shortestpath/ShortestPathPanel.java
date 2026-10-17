@@ -38,8 +38,10 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
+import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
@@ -121,6 +123,11 @@ public class ShortestPathPanel extends PluginPanel
 	private final ItemManager itemManager;
 	private final SpriteManager spriteManager;
 	private final ItemStateService itemState;
+	// The home footer's gear posts an overlay-config menu click on the
+	// shared bus; the event's overlay must resolve back to this plugin so
+	// the config surface knows which settings page to open.
+	final EventBus eventBus;
+	final Plugin plugin;
 
 	private final IconTextField searchBar;
 	private final MultiplexingPluginPanel muxer;
@@ -146,7 +153,8 @@ public class ShortestPathPanel extends PluginPanel
 
 	ShortestPathPanel(Settings settings, Client client,
 		ClientThread clientThread, ItemManager itemManager,
-		SpriteManager spriteManager, ItemStateService itemState)
+		SpriteManager spriteManager, ItemStateService itemState,
+		EventBus eventBus, Plugin plugin)
 	{
 		super(false);
 
@@ -156,6 +164,8 @@ public class ShortestPathPanel extends PluginPanel
 		this.itemManager = itemManager;
 		this.spriteManager = spriteManager;
 		this.itemState = itemState;
+		this.eventBus = eventBus;
+		this.plugin = plugin;
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);

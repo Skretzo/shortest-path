@@ -181,7 +181,7 @@ public class ShortestPathPanelLayoutTest
 		}).when(eventBus).post(any());
 		plugin = mock(Plugin.class);
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
-			spriteManager, itemState);
+			spriteManager, itemState, eventBus, plugin);
 		panel.onActivate();
 		return panel;
 	}
