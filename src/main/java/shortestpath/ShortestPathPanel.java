@@ -1,7 +1,9 @@
 package shortestpath;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
@@ -14,6 +16,7 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.*;
+import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.components.*;
 import net.runelite.client.util.*;
 import lombok.*;
@@ -22,6 +25,7 @@ import shortestpath.items.ItemStateService;
 import shortestpath.settings.*;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.*;
+import shortestpath.transport.BalloonRoute;
 
 /**
  * Sidebar panel hosting the route-affecting plugin options. The keys stay on
@@ -169,16 +173,7 @@ public class ShortestPathPanel extends PluginPanel
 		// the categories were built above) must update their model state
 		// before home::refresh reads it. Keep these registrations last, or
 		// have refresh() re-read config directly, or tiles go stale.
-		for (TransportFamilyCard card : transportCards)
-		{
-			registerConfigListener(card.getKeyName(), home::refresh);
-		}
-		for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour",
-			"unlockDragontoothPassage", "unlockBalloonLogBasket", "unlockMorUlRek",
-			"includeBankPath", "usePoh", "pathfinderAlgorithm", "blockedTeleportItems"})
-		{
-			registerConfigListener(key, home::refresh);
-		}
+		home.registerRefreshListeners();
 	}
 
 	// ---- Category builders -------------------------------------------------
@@ -229,8 +224,14 @@ public class ShortestPathPanel extends PluginPanel
 			familyThresholdRows("useFairyRings"));
 		addFamilyCard(transports, "useGnomeGliders", ItemID.ALUFT_GNOME_GOGGLES,
 			familyThresholdRows("useGnomeGliders"));
+		// The balloon card's detail well also carries the per-route basket
+		// checkboxes — the legacy single "basket stocked" unlock is gone
+		// from Unlocks now that routes are selected per destination.
+		List<SearchRow> balloonDetail = new ArrayList<>(
+			List.of(familyThresholdRows("useHotAirBalloons")));
+		balloonDetail.addAll(balloonRouteRows());
 		addFamilyCard(transports, "useHotAirBalloons", ItemID.ZEP_TOY_BALLOON_RED,
-			familyThresholdRows("useHotAirBalloons"));
+			balloonDetail.toArray(new SearchRow[0]));
 		addFamilyCard(transports, "useMagicCarpets", ItemID.MAGIC_CARPET,
 			familyThresholdRows("useMagicCarpets"));
 		addFamilyCard(transports, "useMagicMushtrees", ItemID.EVENT_MUSHTREE_DUMMY,
@@ -294,7 +295,6 @@ public class ShortestPathPanel extends PluginPanel
 		unlocks.addRow(checkRow("unlockCanoeAxe"));
 		unlocks.addRow(checkRow("unlockXericsHonour"));
 		unlocks.addRow(checkRow("unlockDragontoothPassage"));
-		unlocks.addRow(checkRow("unlockBalloonLogBasket"));
 		unlocks.addRow(checkRow("unlockMorUlRek"));
 	}
 
@@ -634,6 +634,87 @@ public class ShortestPathPanel extends PluginPanel
 		return rows;
 	}
 
+	/**
+	 * The balloon card's "Log Basket Routes" detail block: a small-font
+	 * header then one labelled checkbox per {@link BalloonRoute}. Checked
+	 * means that route's destination basket is stocked — its log
+	 * requirement is waived. Read/write ride the same {@code Set<Enum>}
+	 * path the POH sub-lists use; labels come from
+	 * {@link BalloonRoute#displayLabel()} ("Grand Tree (magic logs)") so
+	 * the destination and its log type are both searchable.
+	 */
+	private List<SearchRow> balloonRouteRows()
+	{
+		String keyName = "balloonLogBasketRoutes";
+		ConfigItem item = settings.configItem(keyName);
+		String description = item == null ? "" : item.description();
+
+		List<SearchRow> rows = new ArrayList<>();
+		// Shared across the route checkboxes: set while a config sync
+		// mirrors the stored set into the controls, so the programmatic
+		// setSelected calls do not write the same set back.
+		boolean[] syncing = new boolean[1];
+
+		JPanel headerRow = new JPanel(new BorderLayout());
+		headerRow.setOpaque(false);
+		// The basket set is account state, not routing state — it stays
+		// editable while the balloon family itself is switched off.
+		headerRow.putClientProperty(ALWAYS_ENABLED, Boolean.TRUE);
+		JLabel header = new JLabel("Log Basket Routes");
+		header.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		header.setFont(FontManager.getRunescapeSmallFont());
+		header.setToolTipText(html(description));
+		headerRow.add(header, BorderLayout.CENTER);
+		rows.add(new SearchRow(headerRow, "Log Basket Routes",
+			searchable("Log Basket Routes")));
+
+		for (BalloonRoute route : BalloonRoute.values())
+		{
+			JCheckBox checkBox = new JCheckBox(html(route.displayLabel()));
+			checkBox.setSelected(currentSet(keyName, BalloonRoute.class).contains(route));
+			checkBox.setToolTipText(html(description));
+			checkBox.addActionListener(e ->
+			{
+				if (syncing[0])
+				{
+					return;
+				}
+				EnumSet<BalloonRoute> updated = EnumSet.noneOf(BalloonRoute.class);
+				updated.addAll(currentSet(keyName, BalloonRoute.class));
+				if (checkBox.isSelected())
+				{
+					updated.add(route);
+				}
+				else
+				{
+					updated.remove(route);
+				}
+				settings.write(keyName, updated);
+			});
+			registerConfigListener(keyName, () ->
+			{
+				syncing[0] = true;
+				try
+				{
+					checkBox.setSelected(
+						currentSet(keyName, BalloonRoute.class).contains(route));
+				}
+				finally
+				{
+					syncing[0] = false;
+				}
+			});
+
+			JPanel row = new JPanel(new BorderLayout());
+			row.setOpaque(false);
+			row.putClientProperty(ALWAYS_ENABLED, Boolean.TRUE);
+			row.add(checkBox, BorderLayout.CENTER);
+			rows.add(new SearchRow(row, route.displayLabel(),
+				searchable("Log Basket Routes", route.displayLabel())));
+		}
+		return rows;
+	}
+
 	// ---- Config access ------------------------------------------------------
 
 	/**
@@ -867,8 +948,22 @@ public class ShortestPathPanel extends PluginPanel
 		applyEnabledDeep(root, enabled);
 	}
 
+	/**
+	 * Client-property marker keeping a detail-row subtree editable no
+	 * matter the surrounding row/card state — used by controls like the
+	 * balloon log-basket routes, which record account state (which baskets
+	 * the account has stocked) and must stay editable even while the
+	 * transport family itself is switched off.
+	 */
+	static final String ALWAYS_ENABLED = "shortestpath.alwaysEnabled";
+
 	private static void applyEnabledDeep(Component component, boolean enabled)
 	{
+		if (component instanceof JComponent
+			&& Boolean.TRUE.equals(((JComponent) component).getClientProperty(ALWAYS_ENABLED)))
+		{
+			return;
+		}
 		component.setEnabled(enabled);
 		if (component instanceof DimmableJPanel)
 		{
