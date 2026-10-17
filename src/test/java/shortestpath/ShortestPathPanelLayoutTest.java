@@ -1825,16 +1825,18 @@ public class ShortestPathPanelLayoutTest
 	/**
 	 * Group headers and their member checkboxes render like any other
 	 * panel row — the same font and the same plain-white foreground as a
-	 * {@code checkRow} label ("POH Fairy Ring") — not the secondary tone.
-	 * Only the {@code n/total} count keeps the secondary small font.
+	 * {@code checkRow} label — not the secondary tone. Only the
+	 * {@code n/total} count keeps the secondary small font.
 	 */
 	@Test
 	public void enumGroupLabelsMatchThePanelRowTypography()
 	{
 		newPanel();
 
+		// The reference: a sibling checkRow label in the same category
+		// (the harness has no config descriptors, so rows name keys).
 		JLabel reference = labelContaining(
-			contentOf(pohCategory()), "POH Fairy Ring");
+			contentOf(pohCategory()), "usePohFairyRing");
 		assertNotNull("a sibling check row label", reference);
 
 		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
