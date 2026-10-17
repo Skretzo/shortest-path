@@ -551,8 +551,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showTransportInfo",
 		name = "Show Transport Info",
 		description = "Whether to display transport destination hint info, e.g. which chat option and text to click",
-		position = 82,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean showTransportInfo()
 	{
@@ -563,8 +562,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showBankPickupInfo",
 		name = "Show Transport Hint At Pickup",
 		description = "When standing at a bank on the path, also show the transport hint for the next step requiring an item pickup",
-		position = 83,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean showBankPickupInfo()
 	{
@@ -575,8 +573,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "highlightBankPickupItems",
 		name = "Highlight Bank Pickup Items",
 		description = "Highlight items in the bank that need to be picked up for the current path",
-		position = 136,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean highlightBankPickupItems()
 	{
@@ -587,8 +584,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "highlightSpellbookSpells",
 		name = "Highlight Spellbook Spells",
 		description = "Highlight spells in the spellbook that need to be cast for the current path step",
-		position = 137,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean highlightSpellbookSpells()
 	{
@@ -599,8 +595,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "highlightInventoryItems",
 		name = "Highlight Inventory Items",
 		description = "Highlight items in the inventory and equipment that need to be used for the current path step",
-		position = 138,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean highlightInventoryItems()
 	{
