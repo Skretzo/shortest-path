@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -891,6 +892,17 @@ public class ShortestPathPanel extends PluginPanel
 		AsyncBufferedImage image = itemManager.getImage(itemId);
 		image.onLoaded(() -> SwingUtilities.invokeLater(() ->
 			label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
+	}
+
+	/**
+	 * Same item-icon load onto a button — the footer's settings button
+	 * carries the white cog item sprite rather than a bundled PNG.
+	 */
+	void loadItemIcon(int itemId, AbstractButton button, int size)
+	{
+		AsyncBufferedImage image = itemManager.getImage(itemId);
+		image.onLoaded(() -> SwingUtilities.invokeLater(() ->
+			button.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
 	}
 
 	/**
