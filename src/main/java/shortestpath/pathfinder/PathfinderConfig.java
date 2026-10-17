@@ -83,9 +83,9 @@ public class PathfinderConfig
 	private final Map<String, Set<Integer>> allDestinations;
 	private final Map<String, Set<Integer>> filteredDestinations;
 	/**
-	 * Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers.
+	 * Per packed tile, one entry per bank.tsv row; the bank is usable when any row is met.
 	 */
-	private final Map<Integer, DestinationRequirements> bankRequirements;
+	private final Map<Integer, List<DestinationRequirements>> bankRequirements;
 	// Targets filterLocations set aside, with their required items, until they become valid again.
 	private final Map<Integer, Target> filteredTargets = new LinkedHashMap<>(4);
 	private final Client client;
@@ -318,7 +318,7 @@ public class PathfinderConfig
 	protected PathfinderConfig(Client client, ShortestPathConfig config,
 		SplitFlagMap mapData, Map<Integer, Set<Transport>> allTransports,
 		Map<String, Set<Integer>> allDestinations, Map<String, Set<Integer>> filteredDestinations,
-		Map<Integer, DestinationRequirements> bankRequirements)
+		Map<Integer, List<DestinationRequirements>> bankRequirements)
 	{
 		this.client = client;
 		this.settings = Settings.wrap(config);
@@ -594,10 +594,13 @@ public class PathfinderConfig
 		Set<Integer> acc = new HashSet<>(bankLocs.size());
 		for (Integer p : bankLocs)
 		{
-			DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
-			if (requirements.satisfied(req))
+			for (DestinationRequirements req : bankRequirements.getOrDefault(p, List.of(DestinationRequirements.EMPTY)))
 			{
-				acc.add(p);
+				if (requirements.satisfied(req))
+				{
+					acc.add(p);
+					break;
+				}
 			}
 		}
 		accessibleBankTiles = Collections.unmodifiableSet(acc);
