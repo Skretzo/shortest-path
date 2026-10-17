@@ -48,7 +48,6 @@ public class ShortestPathPanel extends PluginPanel
 	static final int SECTION_TOGGLE_WIDTH = 18;
 	static final int CARD_ICON_SIZE = 16;
 	private static final int SPINNER_FIELD_WIDTH = 6;
-	private static final int COMBO_HEIGHT = 22;
 	static final int SUB_LIST_INDENT = 16;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_TOOLTIP =
@@ -532,10 +531,8 @@ public class ShortestPathPanel extends PluginPanel
 		@SuppressWarnings("unchecked")
 		Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
 		JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
-		combo.setRenderer(new TitleCaseListCellRenderer());
-		combo.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
 		combo.setSelectedItem(value);
-		combo.setPreferredSize(new Dimension(combo.getPreferredSize().width, COMBO_HEIGHT));
+		PanelComboStyle.apply(combo);
 		combo.setToolTipText(html(description));
 		boolean[] syncing = new boolean[1];
 		combo.addItemListener(e ->

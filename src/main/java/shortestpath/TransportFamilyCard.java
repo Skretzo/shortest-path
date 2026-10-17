@@ -5,7 +5,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.*;
-import net.runelite.client.ui.components.*;
+import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.util.SwingUtil;
 
 /**
@@ -19,8 +19,6 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 {
 	private static final int ICON_LABEL_GAP = 4;
 	private static final int DETAIL_INDENT = ShortestPathPanel.CARD_ICON_SIZE + ICON_LABEL_GAP;
-	private static final int COMBO_MAX_WIDTH = 110;
-	private static final int COMBO_HEIGHT = 22;
 
 	private final ShortestPathPanel panel;
 	private final String keyName;
@@ -268,10 +266,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			@SuppressWarnings("unchecked")
 			Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
 			JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
-			combo.setRenderer(new TitleCaseListCellRenderer());
-			combo.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
 			combo.setSelectedItem(value);
-			combo.setPreferredSize(new Dimension(Math.min(combo.getPreferredSize().width, COMBO_MAX_WIDTH), COMBO_HEIGHT));
+			PanelComboStyle.apply(combo);
 			combo.setToolTipText(ShortestPathPanel.html(description));
 			combo.addItemListener(e ->
 			{

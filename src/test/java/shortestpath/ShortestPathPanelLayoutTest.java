@@ -17,6 +17,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -1461,23 +1462,25 @@ public class ShortestPathPanelLayoutTest
 			contentOf(panel.categories().get(0)), TeleportationItem.NONE);
 		assertNotNull("the teleport-items mode combo", combo);
 
-		// Raw types: the wildcard combo's renderer capture rejects typed calls.
+		// Raw types: the wildcard combo's renderer capture rejects typed
+		// calls. The renderer is a flyweight — the same JLabel comes back
+		// every call — so each background is read before the next render
+		// repaints it.
 		@SuppressWarnings({"rawtypes", "unchecked"})
 		ListCellRenderer renderer = combo.getRenderer();
 		JList list = new JList();
-		Component face = (Component) renderer.getListCellRendererComponent(
-			list, combo.getSelectedItem(), -1, false, false);
-		Component popupRow = (Component) renderer.getListCellRendererComponent(
-			list, combo.getItemAt(0), 0, false, false);
-		Component selectedRow = (Component) renderer.getListCellRendererComponent(
-			list, combo.getItemAt(0), 0, true, false);
-
 		assertEquals("the closed face renders the dark tone",
-			ColorScheme.DARKER_GRAY_COLOR, face.getBackground());
+			ColorScheme.DARKER_GRAY_COLOR,
+			((Component) renderer.getListCellRendererComponent(
+				list, combo.getSelectedItem(), -1, false, false)).getBackground());
 		assertEquals("popup rows render the lighter grey",
-			ColorScheme.MEDIUM_GRAY_COLOR, popupRow.getBackground());
+			ColorScheme.MEDIUM_GRAY_COLOR,
+			((Component) renderer.getListCellRendererComponent(
+				list, combo.getItemAt(0), 0, false, false)).getBackground());
 		assertFalse("the selected popup row stays visible",
-			ColorScheme.MEDIUM_GRAY_COLOR.equals(selectedRow.getBackground()));
+			ColorScheme.MEDIUM_GRAY_COLOR.equals(
+				((Component) renderer.getListCellRendererComponent(
+					list, combo.getItemAt(0), 0, true, false)).getBackground()));
 	}
 
 	/**
@@ -1522,7 +1525,16 @@ public class ShortestPathPanelLayoutTest
 			assertNotNull(name + " name label", nameLabel);
 			assertTrue(name + " name label carries the html wrap",
 				nameLabel.getText().startsWith("<html>"));
-			nameLabel.setSize(100, 0);
+			// An html label only reflows once a paint pass hands the view a
+			// real width — getPreferredSize() alone reports the unwrapped
+			// one-line span regardless of setSize.
+			int tileEdge = (PluginPanel.PANEL_WIDTH - 2 * 8 - 4) / 2;
+			nameLabel.setSize(tileEdge, 200);
+			BufferedImage scratch =
+				new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D graphics = scratch.createGraphics();
+			nameLabel.paint(graphics);
+			graphics.dispose();
 			int oneLine = nameLabel.getFontMetrics(nameLabel.getFont()).getHeight();
 			assertTrue(name + " wraps to a second line at tile width",
 				nameLabel.getPreferredSize().height > oneLine);
