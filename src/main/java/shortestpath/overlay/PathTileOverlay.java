@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import net.runelite.api.Client;
@@ -33,16 +32,21 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.PrimitiveIntList;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.AStarPathfinder;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.transport.BankPickupRequirements;
+import shortestpath.poh.PohService;
+import shortestpath.presentation.BankPickupRequirements;
+import shortestpath.presentation.PathAnnotator;
 import shortestpath.transport.Transport;
+import shortestpath.requirement.TransportEligibility;
+import shortestpath.scheduler.PathRenderState;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.settings.Settings;
 
 public class PathTileOverlay extends Overlay
 {
@@ -52,17 +56,24 @@ public class PathTileOverlay extends Overlay
 	private static final int SPRITE_STRIDE = 10;
 	private static final int SPRITE_ITEM_ID = ItemID.GAUNTLET_ESCAPE_CRYSTAL;
 	private final Client client;
-	private final ShortestPathPlugin plugin;
 	private final ItemManager itemManager;
+	private final Settings settings;
+	private final PathRenderState renderState;
+	private final PathScheduler scheduler;
+	private final PathAnnotator annotator;
 	private int playerTileLabelOffset = 0;
 	private boolean teleportPulseDrawn = false;
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	public PathTileOverlay(Client client, ItemManager itemManager, Settings settings,
+		PathRenderState renderState, PathScheduler scheduler, PathAnnotator annotator)
 	{
 		this.client = client;
-		this.plugin = plugin;
 		this.itemManager = itemManager;
+		this.settings = settings;
+		this.renderState = renderState;
+		this.scheduler = scheduler;
+		this.annotator = annotator;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -72,10 +83,10 @@ public class PathTileOverlay extends Overlay
 	private static final Color COLOR_UNAVAILABLE = Color.ORANGE;
 	private static final Color COLOR_CLICK_POINT = new Color(255, 0, 255, 150);
 
-	private void renderTransports(Graphics2D graphics)
+	private void renderTransports(Graphics2D graphics, ActiveSearch search)
 	{
-		PrimitiveIntHashMap<Transport[]> allTransports = plugin.getAllDisplayTransports();
-		PrimitiveIntHashMap<Transport[]> availableTransports = plugin.getTransports();
+		PrimitiveIntHashMap<Transport[]> allTransports = annotator.getAllDisplayTransports();
+		PrimitiveIntHashMap<Transport[]> availableTransports = annotator.getTransports();
 
 		for (int a : allTransports.keys())
 		{
@@ -132,7 +143,7 @@ public class PathTileOverlay extends Overlay
 
 			if (drawStart)
 			{
-				drawTile(graphics, a, plugin.colourTransports, -1, true);
+				drawTile(graphics, a, settings.display().colourTransports(), -1, true, search);
 			}
 
 			graphics.setColor(Color.WHITE);
@@ -142,7 +153,7 @@ public class PathTileOverlay extends Overlay
 
 	private void renderCollisionMap(Graphics2D graphics)
 	{
-		CollisionMap map = plugin.getMap();
+		CollisionMap map = annotator.getMap();
 		for (Tile[] row : client.getTopLevelWorldView().getScene().getTiles()[client.getTopLevelWorldView().getPlane()])
 		{
 			for (Tile tile : row)
@@ -171,7 +182,7 @@ public class PathTileOverlay extends Overlay
 
 				if (map.isBlocked(x, y, z))
 				{
-					graphics.setColor(plugin.colourCollisionMap);
+					graphics.setColor(settings.display().colourCollisionMap());
 					graphics.fill(tilePolygon);
 				}
 				if (!s.isEmpty() && !s.equals("nsew"))
@@ -189,51 +200,54 @@ public class PathTileOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		// One volatile read per render pass: the search can be swapped mid-frame,
+		// so every decision below keys off this single publication.
+		ActiveSearch search = scheduler.getActiveSearch();
 		playerTileLabelOffset = 0;
 		teleportPulseDrawn = false;
 
-		if (plugin.drawTransports)
+		if (settings.display().drawTransports())
 		{
-			renderTransports(graphics);
+			renderTransports(graphics, search);
 		}
 
-		if (plugin.drawCollisionMap)
+		if (settings.display().drawCollisionMap())
 		{
 			renderCollisionMap(graphics);
 		}
 
-		if (plugin.drawTiles && plugin.getActiveSearch() != null && plugin.getActiveSearch().getPath() != null)
+		if (settings.display().drawTiles() && search != null && search.getPath() != null)
 		{
 			Color colorCalculating = new Color(
-				plugin.colourPathCalculating.getRed(),
-				plugin.colourPathCalculating.getGreen(),
-				plugin.colourPathCalculating.getBlue(),
-				plugin.colourPathCalculating.getAlpha() / 2);
-			Color pathColor = plugin.getPathColor();
+				settings.display().colourPathCalculating().getRed(),
+				settings.display().colourPathCalculating().getGreen(),
+				settings.display().colourPathCalculating().getBlue(),
+				settings.display().colourPathCalculating().getAlpha() / 2);
+			Color pathColor = renderState.getPathColor();
 			Color color = new Color(
 				pathColor.getRed(),
 				pathColor.getGreen(),
 				pathColor.getBlue(),
 				pathColor.getAlpha() / 2);
 
-			List<PathStep> path = plugin.getActiveSearch().getPath();
+			List<PathStep> path = search.getPath();
 			int counter = 0;
-			if (plugin.isSailing())
+			if (renderState.isSailing())
 			{
 				// On a boat the path sails the boat's headings: lines along each heading it holds, drawn through the
 				// spot within each tile where the boat actually sits
-				Color sailingColor = plugin.isPathUnreachable() ? plugin.getPathColor() : ShortestPathPlugin.COLOUR_SAILING_PATH;
+				Color sailingColor = renderState.isPathUnreachable() ? renderState.getPathColor() : PathRenderState.SAILING_PATH_COLOUR;
 				for (int i = 1; i < path.size(); i++)
 				{
 					drawOffsetLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(),
-						plugin.getSailingPivotX(), plugin.getSailingPivotY(), sailingColor);
-					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1);
+						renderState.getSailingPivotX(), renderState.getSailingPivotY(), sailingColor);
+					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1, search);
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+				drawUnreachedTargets(graphics, path, colorCalculating, true, search);
 			}
-			else if (TileStyle.LINES.equals(plugin.pathStyle) || TileStyle.ARROW_LINE.equals(plugin.pathStyle))
+			else if (TileStyle.LINES.equals(settings.display().pathStyle()) || TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
 			{
-				boolean arrows = TileStyle.ARROW_LINE.equals(plugin.pathStyle);
+				boolean arrows = TileStyle.ARROW_LINE.equals(settings.display().pathStyle());
 				for (int i = 1; i < path.size(); i++)
 				{
 					PathStep currentStep = path.get(i - 1);
@@ -243,11 +257,11 @@ public class PathTileOverlay extends Overlay
 						|| directionChanges(currentStep.getPackedPosition(), nextStep.getPackedPosition(),
 							path.get(i + 1).getPackedPosition()));
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color,
-						1 + counter++, head);
-					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+						1 + counter++, head, search);
+					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, search);
 				}
 			}
-			else if (TileStyle.TURN_MARKERS.equals(plugin.pathStyle))
+			else if (TileStyle.TURN_MARKERS.equals(settings.display().pathStyle()))
 			{
 				for (int i = 0; i < path.size(); i++)
 				{
@@ -260,17 +274,17 @@ public class PathTileOverlay extends Overlay
 						|| directionChanges(path.get(i - 1).getPackedPosition(), pathPoint,
 							path.get(i + 1).getPackedPosition());
 					// Skip markers inside POH (no collision data, tiles render at wrong positions)
-					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					if (marker && !PohService.isInsidePoh(pathX, pathY))
 					{
-						drawTile(graphics, pathPoint, color, counter, true);
+						drawTile(graphics, pathPoint, color, counter, true, search);
 						drawTurnMarkerGlyph(graphics, path, i);
 					}
 					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+					drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i, search);
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+				drawUnreachedTargets(graphics, path, colorCalculating, true, search);
 			}
-			else if (TileStyle.TRACER.equals(plugin.pathStyle))
+			else if (TileStyle.TRACER.equals(settings.display().pathStyle()))
 			{
 				// Faint polyline under the moving marker so the full route stays readable
 				// without looking identical to LINES.
@@ -281,8 +295,8 @@ public class PathTileOverlay extends Overlay
 					PathStep currentStep = path.get(i - 1);
 					PathStep nextStep = path.get(i);
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), tracerLineColour,
-						1 + counter++, false);
-					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+						1 + counter++, false, search);
+					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, search);
 				}
 				if (!path.isEmpty())
 				{
@@ -295,7 +309,7 @@ public class PathTileOverlay extends Overlay
 					int tracerPoint = path.get(tracerIndex).getPackedPosition();
 					int tracerX = WorldPointUtil.unpackWorldX(tracerPoint);
 					int tracerY = WorldPointUtil.unpackWorldY(tracerPoint);
-					if (!ShortestPathPlugin.isInsidePoh(tracerX, tracerY))
+					if (!PohService.isInsidePoh(tracerX, tracerY))
 					{
 						Point current = tileCenter(tracerPoint);
 						if (current != null)
@@ -316,9 +330,9 @@ public class PathTileOverlay extends Overlay
 						}
 					}
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+				drawUnreachedTargets(graphics, path, colorCalculating, true, search);
 			}
-			else if (TileStyle.SPRITE_MARKERS.equals(plugin.pathStyle))
+			else if (TileStyle.SPRITE_MARKERS.equals(settings.display().pathStyle()))
 			{
 				for (int i = 0; i < path.size(); i++)
 				{
@@ -330,7 +344,7 @@ public class PathTileOverlay extends Overlay
 					// never one sprite per tile (per-tile sprite density is too heavy).
 					boolean marker = i % SPRITE_STRIDE == 0 || i == path.size() - 1;
 					// Skip sprites inside POH (no collision data, tiles render at wrong positions)
-					if (marker && !ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					if (marker && !PohService.isInsidePoh(pathX, pathY))
 					{
 						Point p = tileCenter(pathPoint);
 						if (p != null)
@@ -346,7 +360,7 @@ public class PathTileOverlay extends Overlay
 									graphics.drawImage(sprite, p.getX() - dw / 2, p.getY() - dh / 2, dw, dh, null);
 									int radius = Math.max(dw, dh) / 2 + 3;
 									Color previousColour = graphics.getColor();
-									graphics.setColor(plugin.colourText);
+									graphics.setColor(settings.display().colourText());
 									graphics.drawOval(p.getX() - radius, p.getY() - radius, radius * 2, radius * 2);
 									graphics.setColor(previousColour);
 								}
@@ -356,17 +370,17 @@ public class PathTileOverlay extends Overlay
 										p.getY() - sprite.getHeight() / 2, null);
 								}
 							}
-							drawCounter(graphics, p.getX(), p.getY(), counter);
+							drawCounter(graphics, p.getX(), p.getY(), counter, search);
 						}
 					}
 					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+					drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i, search);
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+				drawUnreachedTargets(graphics, path, colorCalculating, true, search);
 			}
 			else
 			{
-				boolean showTiles = TileStyle.TILES.equals(plugin.pathStyle);
+				boolean showTiles = TileStyle.TILES.equals(settings.display().pathStyle());
 				for (int i = 0; i < path.size(); i++)
 				{
 					// Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
@@ -374,21 +388,21 @@ public class PathTileOverlay extends Overlay
 					int pathPoint = currentStep.getPackedPosition();
 					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
 					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
-					if (!ShortestPathPlugin.isInsidePoh(pathX, pathY))
+					if (!PohService.isInsidePoh(pathX, pathY))
 					{
-						drawTile(graphics, pathPoint, color, counter, showTiles);
+						drawTile(graphics, pathPoint, color, counter, showTiles, search);
 					}
 					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
+					drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i, search);
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, showTiles);
+				drawUnreachedTargets(graphics, path, colorCalculating, showTiles, search);
 			}
 
-			if (plugin.isPathUnreachable() && plugin.showUnreachableText)
+			if (renderState.isPathUnreachable() && settings.display().showUnreachableText())
 			{
-				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
+				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
 			}
-			String missingItems = plugin.getMissingTargetItemsText();
+			String missingItems = annotator.getMissingTargetItemsText(search);
 			if (missingItems != null)
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, missingItems, playerTileLabelOffset);
@@ -397,20 +411,17 @@ public class PathTileOverlay extends Overlay
 
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
-		if (plugin.drawTiles && plugin.drawClickPoints && plugin.getActiveSearch() instanceof AStarPathfinder)
+		if (settings.display().drawTiles() && settings.display().drawClickPoints()
+			&& search.isDone() && !search.isShowingProvisionalPath())
 		{
-			AStarPathfinder aStar = (AStarPathfinder) plugin.getActiveSearch();
-			if (aStar.isDone() && !aStar.isShowingProvisionalPath())
+			List<PathStep> path = search.getPath();
+			for (int index : search.getClickPoints())
 			{
-				List<PathStep> path = aStar.getPath();
-				for (int index : aStar.getClickPoints())
+				int point = path.get(index).getPackedPosition();
+				if (!PohService.isInsidePoh(WorldPointUtil.unpackWorldX(point),
+					WorldPointUtil.unpackWorldY(point)))
 				{
-					int point = path.get(index).getPackedPosition();
-					if (!ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(point),
-						WorldPointUtil.unpackWorldY(point)))
-					{
-						drawTile(graphics, point, COLOR_CLICK_POINT, -1, true);
-					}
+					drawTile(graphics, point, COLOR_CLICK_POINT, -1, true, search);
 				}
 			}
 		}
@@ -458,7 +469,8 @@ public class PathTileOverlay extends Overlay
 		return null;
 	}
 
-	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw)
+	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw,
+		ActiveSearch search)
 	{
 		if (client == null)
 		{
@@ -492,17 +504,18 @@ public class PathTileOverlay extends Overlay
 				graphics.fill(poly);
 			}
 
-			drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter);
+			drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter, search);
 		}
 	}
 
-	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
+	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw,
+		ActiveSearch search)
 	{
-		for (int target : plugin.getActiveSearch().getTargets().points())
+		for (int target : search.getTargets().points())
 		{
 			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 			{
-				drawTile(graphics, target, colorCalculating, -1, draw);
+				drawTile(graphics, target, colorCalculating, -1, draw, search);
 			}
 		}
 	}
@@ -527,7 +540,7 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 		Color previousColour = graphics.getColor();
-		graphics.setColor(plugin.colourText);
+		graphics.setColor(settings.display().colourText());
 		if (index + 1 < path.size())
 		{
 			Point next = tileCenter(path.get(index + 1).getPackedPosition());
@@ -544,7 +557,8 @@ public class PathTileOverlay extends Overlay
 		graphics.setColor(previousColour);
 	}
 
-	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead)
+	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead,
+		ActiveSearch search)
 	{
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
 		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
@@ -594,9 +608,9 @@ public class PathTileOverlay extends Overlay
 
 		if (counter == 1)
 		{
-			drawCounter(graphics, p1.getX(), p1.getY(), 0);
+			drawCounter(graphics, p1.getX(), p1.getY(), 0, search);
 		}
-		drawCounter(graphics, p2.getX(), p2.getY(), counter);
+		drawCounter(graphics, p2.getX(), p2.getY(), counter, search);
 	}
 
 	// A line between two tiles, shifted from the tile centres by (offsetX, offsetY) local units
@@ -637,17 +651,17 @@ public class PathTileOverlay extends Overlay
 		graphics.draw(new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY()));
 	}
 
-	private void drawCounter(Graphics2D graphics, double x, double y, int counter)
+	private void drawCounter(Graphics2D graphics, double x, double y, int counter, ActiveSearch search)
 	{
-		if (counter >= 0 && !TileCounter.DISABLED.equals(plugin.showTileCounter))
+		if (counter >= 0 && !TileCounter.DISABLED.equals(settings.display().showTileCounter()))
 		{
-			int n = plugin.tileCounterStep > 0 ? plugin.tileCounterStep : 1;
-			int s = plugin.getActiveSearch().getPath().size();
+			int n = settings.display().tileCounterStep() > 0 ? settings.display().tileCounterStep() : 1;
+			int s = search.getPath().size();
 			if ((counter % n != 0) && (s != (counter + 1)))
 			{
 				return;
 			}
-			if (TileCounter.REMAINING.equals(plugin.showTileCounter))
+			if (TileCounter.REMAINING.equals(settings.display().showTileCounter()))
 			{
 				counter = s - counter - 1;
 			}
@@ -656,7 +670,7 @@ public class PathTileOverlay extends Overlay
 				return;
 			}
 			String counterText = Integer.toString(counter);
-			graphics.setColor(plugin.colourText);
+			graphics.setColor(settings.display().colourText());
 			graphics.drawString(
 				counterText,
 				(int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
@@ -723,7 +737,7 @@ public class PathTileOverlay extends Overlay
 
 			final long period = 1400L;
 			final int rings = 2;
-			final Color base = plugin.colourTeleportPulse;
+			final Color base = settings.display().colourTeleportPulse();
 			final Color previousColour = graphics.getColor();
 			final Stroke previousStroke = graphics.getStroke();
 			graphics.setStroke(new BasicStroke(2.2f));
@@ -770,7 +784,7 @@ public class PathTileOverlay extends Overlay
 		int y = (int) (point.getY() - height) - verticalOffset;
 		graphics.setColor(Color.BLACK);
 		graphics.drawString(text, x + 1, y + 1);
-		graphics.setColor(plugin.colourText);
+		graphics.setColor(settings.display().colourText());
 		graphics.drawString(text, x, y);
 		return height;
 	}
@@ -786,7 +800,8 @@ public class PathTileOverlay extends Overlay
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
+	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path,
+		int pathIndex, ActiveSearch search)
 	{
 		int location = currentStep.getPackedPosition();
 		int lx = WorldPointUtil.unpackWorldX(location);
@@ -798,7 +813,7 @@ public class PathTileOverlay extends Overlay
 		// toLocalInstance and plane-checks the mapped point instead.
 		if (nextStep == null ||
 			(WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane() &&
-				!ShortestPathPlugin.isInsidePoh(lx, ly)
+				!PohService.isInsidePoh(lx, ly)
 			))
 		{
 			return;
@@ -806,25 +821,25 @@ public class PathTileOverlay extends Overlay
 
 		// Sailing: teleports are suppressed while aboard a boat. When the path is
 		// unreachable as a result, show a one-time hint on the player tile.
-		if (plugin.showTransportInfo && pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
-			&& plugin.getActiveSearch().isDone() && plugin.isPathUnreachable())
+		if (settings.display().showTransportInfo() && pathIndex == 0 && renderState.isOnSailingBoat()
+			&& search.isDone() && renderState.isPathUnreachable())
 		{
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
 				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
 			return;
 		}
 
-		if (plugin.isPathUnreachable() || !plugin.getActiveSearch().isDone())
+		if (renderState.isPathUnreachable() || !search.isDone())
 		{
 			return;
 		}
 		int locationEnd = nextStep.getPackedPosition();
-		Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);
+		Set<Transport> candidateTransports = annotator.transportsForEdge(currentStep, nextStep);
 
 		// Teleports ("use this item/spell") get a pulsing highlight on the tile you cast
 		// from. Only the first teleport edge of the path pulses — the next "teleport
 		// now" moment — and the pulse is independent of the transport info labels.
-		if (plugin.showTeleportPulse && !teleportPulseDrawn)
+		if (settings.display().showTeleportPulse() && !teleportPulseDrawn)
 		{
 			for (Transport transport : candidateTransports)
 			{
@@ -837,7 +852,7 @@ public class PathTileOverlay extends Overlay
 			}
 		}
 
-		if (!plugin.showTransportInfo)
+		if (!settings.display().showTransportInfo())
 		{
 			return;
 		}
@@ -858,8 +873,10 @@ public class PathTileOverlay extends Overlay
 		int playerPackedPoint = WorldPointUtil.packWorldPoint(playerWorldPoint);
 		int px = WorldPointUtil.unpackWorldX(playerPackedPoint);
 		int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
-		boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(lx, ly)
-			&& ShortestPathPlugin.isInsidePoh(px, py);
+		int tx = WorldPointUtil.unpackWorldX(location);
+		int ty = WorldPointUtil.unpackWorldY(location);
+		boolean transportAndPlayerInsidePoh = PohService.isInsidePoh(tx, ty)
+			&& PohService.isInsidePoh(px, py);
 
 		// When inside POH, only show the POH exit info once (not per-transport)
 		if (transportAndPlayerInsidePoh)
@@ -869,7 +886,7 @@ public class PathTileOverlay extends Overlay
 			// back at whatever template plane their actual house chunks occupy
 			// (e.g. plane 2 for a ground floor) — the two don't correspond, so any
 			// plane comparison would suppress the hint in real houses.
-			String pohExitInfo = plugin.getPohExitInfo(location, path, pathIndex - 1);
+			String pohExitInfo = annotator.getPohExitInfo(location, path, pathIndex - 1);
 
 			if (pohExitInfo == null)
 			{
@@ -889,7 +906,7 @@ public class PathTileOverlay extends Overlay
 
 		// Check if this is a bank step and items need to be picked up
 		{
-			BankPickupRequirements.BankPickupResult bankPickup = plugin.getBankPickup(path, pathIndex);
+			BankPickupRequirements.BankPickupResult bankPickup = annotator.getBankPickup(path, pathIndex, search);
 			if (bankPickup != null && !bankPickup.phrases.isEmpty())
 			{
 				List<String> bankPickupItems = bankPickup.phrases;
@@ -898,7 +915,7 @@ public class PathTileOverlay extends Overlay
 
 				// By default, bank pickup info replaces the default transport hint text;
 				// enable the option to show both
-				if (!plugin.showBankPickupInfo)
+				if (!settings.display().showBankPickupInfo())
 				{
 					return;
 				}
@@ -906,20 +923,25 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
-		Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
+		// A missing snapshot (pre-login or off the client thread) means no filtering —
+		// the same "show all" the empty-usable fallback below produces anyway.
+		TransportEligibility eligibility = annotator.getEligibility();
 		List<Transport> usableTransports = new ArrayList<>();
-		for (Transport t : candidateTransports)
+		if (eligibility != null)
 		{
-			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas))
+			for (Transport t : candidateTransports)
 			{
-				usableTransports.add(t);
+				if (eligibility.satisfiedByPlayer(t))
+				{
+					usableTransports.add(t);
+				}
 			}
 		}
 		Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
 
 		for (Transport transport : transportsToShow)
 		{
-			String text = plugin.formatTransportDisplay(transport);
+			String text = annotator.formatTransportDisplay(transport);
 			if (text == null || text.isEmpty())
 			{
 				continue;
@@ -927,7 +949,7 @@ public class PathTileOverlay extends Overlay
 
 			// Check if this transport goes to POH - if so, look ahead to find the exit
 			// transport
-			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+			String pohExitInfo = annotator.getPohExitInfo(locationEnd, path, pathIndex);
 			if (pohExitInfo != null)
 			{
 				text = text + " (Exit: " + pohExitInfo + ")";

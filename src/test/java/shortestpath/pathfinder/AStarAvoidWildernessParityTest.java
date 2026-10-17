@@ -22,7 +22,7 @@ import net.runelite.api.gameval.InventoryID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import shortestpath.ShortestPathConfig;
-import shortestpath.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.pathfinder.astar.RoutingStatic;
@@ -55,8 +55,7 @@ public class AStarAvoidWildernessParityTest
 	@BeforeClass
 	public static void buildRoutingStatic()
 	{
-		routingStatic = new AStarRoutingStaticProvider(
-			() -> new CollisionMap(SplitFlagMap.fromResources())).get();
+		routingStatic = TestWorldData.routingStatic();
 	}
 
 	@Test

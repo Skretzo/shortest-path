@@ -20,7 +20,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import shortestpath.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.RoutingStatic;
@@ -41,8 +41,7 @@ public class TargetItemsSearchTest
 	@BeforeClass
 	public static void buildRoutingStatic()
 	{
-		routingStatic = new AStarRoutingStaticProvider(
-			() -> new CollisionMap(SplitFlagMap.fromResources())).get();
+		routingStatic = TestWorldData.routingStatic();
 	}
 
 	private static Target spadeAt(int point)
@@ -71,7 +70,9 @@ public class TargetItemsSearchTest
 		settings.setCalculationCutoffValue(50);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
-		config.bank = bank;
+		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting();
+		config.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		config.refresh();
 		return config;
 	}
@@ -99,7 +100,7 @@ public class TargetItemsSearchTest
 	private static boolean banked(PathfinderResult result)
 	{
 		List<PathStep> path = result.getPathSteps();
-		return path.get(path.size() - 1).isBankVisited();
+		return path.get(path.size() - 1).getBankVisitState() == BankVisitState.BANKED;
 	}
 
 	@Test

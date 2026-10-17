@@ -19,8 +19,9 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
-import shortestpath.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.NodeGraph;
 import shortestpath.pathfinder.PathStep;
@@ -208,11 +209,11 @@ public class BoatHullTest
 		int tile = WorldPointUtil.packWorldPoint(2705, 3049, 0);
 		int eastMove = moves.indexOf(3, 0);
 		int northMove = moves.indexOf(0, 3);
-		assertTrue(search.queueArrival(tile, eastMove, 2705, 3049, 0, false));
-		assertFalse("A move is only let through once", search.queueArrival(tile, eastMove, 2705, 3049, 0, false));
-		assertFalse("Facing north doesn't cover the target", search.queueArrival(tile, northMove, 2705, 3049, 0, false));
+		assertTrue(search.queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
+		assertFalse("A move is only let through once", search.queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
+		assertFalse("Facing north doesn't cover the target", search.queueArrival(tile, northMove, 2705, 3049, 0, BankVisitState.CARRIED));
 		assertFalse("Without a hull, facing doesn't matter", new SailingSearch(moves, null, new int[]{target},
-			new int[]{target}).queueArrival(tile, eastMove, 2705, 3049, 0, false));
+			new int[]{target}).queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -225,7 +226,7 @@ public class BoatHullTest
 		int start = graph.createStart(WorldPointUtil.packWorldPoint(2948, 3074, 0));
 		int move = moves.indexOf(2, 0);
 		int node = graph.createWeightedTile(WorldPointUtil.packWorldPoint(2950, 3074, 0), start, 2000, 0,
-			false, move);
+			BankVisitState.CARRIED, move);
 
 		SailingSearch facingSouth = new SailingSearch(moves, null, new int[0], new int[0], SOUTH);
 		assertEquals(SOUTH, facingSouth.arrivalHeading(graph, start));

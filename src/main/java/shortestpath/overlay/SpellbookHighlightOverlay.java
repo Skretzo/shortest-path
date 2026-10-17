@@ -14,9 +14,11 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -77,21 +79,25 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 		SPELL_WIDGET_IDS.put("Battlefront Teleport", InterfaceID.MagicSpellbook.TELEPORT_BATTLEFRONT);
 	}
 
+	private final Settings settings;
+
 	@Inject
-	public SpellbookHighlightOverlay(Client client, ShortestPathPlugin plugin)
+	public SpellbookHighlightOverlay(Client client, Settings settings,
+		PathScheduler scheduler, PathAnnotator annotator)
 	{
-		super(client, plugin);
+		super(client, scheduler, annotator, settings);
+		this.settings = settings;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.highlightSpellbookSpells)
+		if (!settings.display().highlightSpellbookSpells())
 		{
 			return null;
 		}
 
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			return null;
@@ -115,8 +121,8 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
-		Color highlight = plugin.colourBankPickupHighlight;
+		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
+		Color highlight = settings.display().colourBankPickupHighlight();
 
 		for (Transport transport : transports)
 		{

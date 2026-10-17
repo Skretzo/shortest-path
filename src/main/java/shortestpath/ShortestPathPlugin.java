@@ -1,48 +1,15 @@
 package shortestpath;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
-import java.awt.Color;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.event.KeyEvent;
-import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.KeyCode;
-import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
-import net.runelite.api.Perspective;
 import net.runelite.api.Player;
-import net.runelite.api.Point;
-import net.runelite.api.ScriptID;
 import net.runelite.api.WorldEntity;
-import net.runelite.api.WorldEntityConfig;
 import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
@@ -50,15 +17,13 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -67,18 +32,19 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.events.RuneScapeProfileChanged;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.JagexColors;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
-import net.runelite.client.util.Text;
+import shortestpath.api.MenuVerbs;
+import shortestpath.api.PluginMessageHandler;
+import shortestpath.items.ItemStateService;
 import shortestpath.overlay.BankItemHighlightOverlay;
 import shortestpath.overlay.DebugOverlayPanel;
 import shortestpath.overlay.InventoryHighlightOverlay;
@@ -87,29 +53,18 @@ import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
-import shortestpath.pathfinder.sailing.BoatHull;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.AStarPathfinder;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.Pathfinder;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.pathfinder.PathTerminationReason;
-import shortestpath.pathfinder.Arrival;
-import shortestpath.pathfinder.Target;
-import shortestpath.pathfinder.Targets;
-import shortestpath.pathfinder.sailing.SailingMoves;
-import shortestpath.pathfinder.sailing.SailingPathfinder;
-import shortestpath.pathfinder.TransportAvailability;
-import shortestpath.pathfinder.AStarRoutingStaticProvider;
-import shortestpath.pathfinder.astar.AStarRoutingSession;
-import shortestpath.transport.BankPickupRequirements.BankPickupResult;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.ItemRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.poh.PohService;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.sailing.SailingService;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.scheduler.RefreshCoordinator;
+import shortestpath.settings.ConfigChange;
+import shortestpath.settings.Effect;
+import shortestpath.settings.Settings;
+import shortestpath.spirittree.SpiritTreeService;
+import shortestpath.widgets.GameWidgets;
+import shortestpath.widgets.WidgetGeometry;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -121,84 +76,10 @@ public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
 
-	// POH (Player Owned House) bounds for detecting when path goes through POH
-	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
-	private static final int POH_MIN_X = 1856;
-	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 7040;
-	private static final int POH_MAX_Y = 7111;
-	// Co-ordinates for Basic theme landing tile
-	public static final int POH_LANDING_X = 1858;
-	public static final int POH_LANDING_Y = 7051;
-	private static final String PLUGIN_MESSAGE_PATH = "path";
-	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
-	private static final String PLUGIN_MESSAGE_START = "start";
-	private static final String PLUGIN_MESSAGE_TARGET = "target";
-	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
-	private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
-	private static final String PLUGIN_MESSAGE_QUERY = "query";
-	private static final String PLUGIN_MESSAGE_RESULT = "result";
-	private static final String PLUGIN_MESSAGE_GET_TARGET = "getTarget";
-	private static final String PLUGIN_MESSAGE_CURRENT_TARGET = "currentTarget";
-	private static final String PLUGIN_MESSAGE_ID = "id";
-	private static final String PLUGIN_MESSAGE_BANK_VISITED = "bankVisited";
-	private static final String PLUGIN_MESSAGE_TARGET_STATUS = "targetStatus";
-	private static final String PLUGIN_MESSAGE_MISSING_ITEMS = "missingItems";
-	private static final String CLEAR = "Clear";
-	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
-	private static final String SET = "Set";
-	private static final String FIND_CLOSEST = "Find closest";
-	private static final String FLASH_ICONS = "Flash icons";
-	private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
-	private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
-	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pathfinderAlgorithm|aStarHeuristicWeight|collisionAwareBlockedTargets|use\\w+|cost\\w+|unlock\\w+)$");
-	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
-	// Colour of the path while on a boat, which sails the boat's headings
-	public static final Color COLOUR_SAILING_PATH = new Color(0, 120, 255);
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
-	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
-	private final Object pathfinderMutex = new Object();
-	public boolean drawCollisionMap;
-	public boolean drawMap;
-	public boolean drawMinimap;
-	public boolean drawTiles;
-	public boolean drawTransports;
-	public boolean drawClickPoints;
-	public boolean showTransportInfo;
-	public boolean showBankPickupInfo;
-	public boolean showUnreachableText;
-	public boolean highlightBankPickupItems;
-	public boolean filterBankPickupItems;
-	public boolean highlightSpellbookSpells;
-	public boolean highlightInventoryItems;
 
-	// Bank pickup cache — invalidated when path, bank, or inventory changes.
-	private shortestpath.transport.BankPickupRequirements.BankPickupResult bankPickupCache;
-	private List<PathStep> bankPickupCachePath;
-	private int bankPickupCacheIndex = -1;
-	private boolean bankPickupDirty = true;
-
-	public Color colourCollisionMap;
-	Color colourPath;
-	public Color colourPathCalculating;
-	Color colourPathUnreachable;
-	public Color colourText;
-	public Color colourTransports;
-	public Color colourBankPickupHighlight;
-	public Color colourTeleportPulse;
-	public boolean showTeleportPulse;
-	public int tileCounterStep;
-	public int recalculateDistance;
-	int unreachableTargetDistance;
-	public String unreachableText;
-	public TileCounter showTileCounter;
-	public TileStyle pathStyle;
 	@Inject
 	private Client client;
-	@Getter
 	@Inject
 	private ClientThread clientThread;
 	@Inject
@@ -207,8 +88,6 @@ public class ShortestPathPlugin extends Plugin
 	private ConfigManager configManager;
 	private long activeConfigProfileId;
 	private boolean migratingAStarConfiguration;
-	@Inject
-	private EventBus eventBus;
 	@Inject
 	private OverlayManager overlayManager;
 	@Inject
@@ -230,50 +109,43 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
-	private SpriteManager spriteManager;
-	@Inject
-	private WorldMapPointManager worldMapPointManager;
-	@Inject
 	private KeyManager keyManager;
 	@Inject
-	private PortalNexusKeybinds portalNexusKeybinds;
+	private PohService pohService;
 	@Inject
-	private SpiritTreePatchState spiritTreePatchState;
-	private Point lastMenuOpenedPoint;
-	private WorldMapPoint marker;
-	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
-	private Shape minimapClipFixed;
-	private Shape minimapClipResizeable;
-	private BufferedImage minimapSpriteFixed;
-	private BufferedImage minimapSpriteResizeable;
-	private Rectangle minimapRectangle = new Rectangle();
-	private GameState lastGameState = null;
-	private GameState lastLastGameState = null;
-	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
-	private Future<?> pathfinderFuture;
-	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
-	// whose query never ran and to know whether a search is reading the transport availability.
-	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
-	// Volatile because the render thread reads it (through getActiveSearch() and friends)
-	// while restarts write it on the client thread under pathfinderMutex.
-	private volatile ActiveSearch pathfinder;
-	private volatile Pathfinder legacyPathfinder;
-	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
-	private ActiveSearch missingItemsSearch;
-	private String missingItemsText;
-	private AStarRoutingStaticProvider aStarRoutingStatic;
-	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
-	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
-	@Getter
-	private int sailingPivotX;
-	@Getter
-	private int sailingPivotY;
-	@Getter
+	private SpiritTreeService spiritTrees;
+	@Inject
+	private ItemStateService itemState;
+	@Inject
+	private SailingService sailing;
+	@Inject
+	private Settings settings;
+	@Inject
+	private PathScheduler scheduler;
+	@Inject
+	private RefreshCoordinator coordinator;
+	@Inject
+	private WidgetGeometry geometry;
+
+	@Inject
+	private GameWidgets gameWidgets;
+	@Inject
+	private PathAnnotator annotator;
+	@Inject
+	private PluginMessageHandler apiHandler;
+	@Inject
+	private MenuVerbs menuVerbs;
+	@Inject
+	private ClientToolbar clientToolbar;
+	@Inject
+	private ItemManager itemManager;
+	@Inject
+	private SpriteManager spriteManager;
+	@Inject
+	private EventBus eventBus;
+	private ShortestPathPanel panel;
+	private NavigationButton navButton;
 	private PathfinderConfig pathfinderConfig;
-	@Getter
-	private boolean startPointSet = false;
-	@Getter
-	private final DebugState debugState = new DebugState();
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -286,7 +158,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			if (config.clearPathHotkey().matches(e))
 			{
-				setTarget(WorldPointUtil.UNDEFINED);
+				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 			}
 		}
 
@@ -295,110 +167,6 @@ public class ShortestPathPlugin extends Plugin
 		{
 		}
 	};
-	private boolean fairyRingPanelOpen = false;
-
-	public ActiveSearch getActiveSearch()
-	{
-		return pathfinder;
-	}
-
-	/**
-	 * Legacy source-compatible accessor. Plugin internals use {@link #getActiveSearch()}.
-	 */
-	public Pathfinder getPathfinder()
-	{
-		return legacyPathfinder;
-	}
-
-	/**
-	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
-	 *
-	 * @param x The world X coordinate
-	 * @param y The world Y coordinate
-	 * @return true if inside POH, false otherwise
-	 */
-	public static boolean isInsidePoh(int x, int y)
-	{
-		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
-	}
-
-	public static boolean override(String configOverrideKey, boolean defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Boolean)
-			{
-				return (boolean) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	/**
-	 * Override for TransportType enabled state using the config key name stored in the enum.
-	 */
-	public static boolean override(TransportType type, boolean defaultValue)
-	{
-		String key = type.getEnabledKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	/**
-	 * Override for TransportType cost threshold using the config key name stored in the enum.
-	 */
-	public static int override(TransportType type, int defaultValue)
-	{
-		String key = type.getCostKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	public static int override(String configOverrideKey, int defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Integer)
-			{
-				return (int) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
-				if (teleportationItem != null)
-				{
-					return teleportationItem;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-				if (tier != null)
-				{
-					return tier;
-				}
-			}
-		}
-		return defaultValue;
-	}
 
 	@Provides
 	public ShortestPathConfig provideConfig(ConfigManager configManager)
@@ -411,19 +179,21 @@ public class ShortestPathPlugin extends Plugin
 	{
 		migrateAStarConfiguration();
 		activeConfigProfileId = configManager.getProfile().getId();
-		cacheConfigValues();
 
-		pathfinderConfig = new PathfinderConfig(client, config);
-		pathfinderConfig.setSpiritTreePatchState(spiritTreePatchState);
+		pathfinderConfig = new PathfinderConfig(client, config, settings);
+		pathfinderConfig.setSpiritTreeService(spiritTrees);
+		pathfinderConfig.setItemStateService(itemState);
+		pathfinderConfig.setSailingService(sailing);
+		scheduler.attach(pathfinderConfig, sailing, apiHandler);
+		annotator.attach(pathfinderConfig);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
-			// The profile load and field write touch the same HashMaps the
-			// queued refresh() iterates, so they must run on the client thread
-			// too — doing them here on the EDT would race that refresh.
+			// The profile load touches the same HashMaps the
+			// queued refresh() iterates, so it must run on the client thread
+			// too — doing it here on the EDT would race that refresh.
 			clientThread.invokeLater(() ->
 			{
-				spiritTreePatchState.loadFromProfile();
-				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+				spiritTrees.loadFromProfile();
 				pathfinderConfig.refresh();
 			});
 		}
@@ -431,8 +201,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			// No refresh is queued when logged out, so loading here is safe;
 			// RuneScapeProfileChanged reloads once a profile is active anyway.
-			spiritTreePatchState.loadFromProfile();
-			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+			spiritTrees.loadFromProfile();
 		}
 
 		overlayManager.add(pathOverlay);
@@ -444,14 +213,28 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(inventoryHighlightOverlay);
 		eventBus.register(bankPickupFilter);
 
-		if (config.drawDebugPanel())
+		if (settings.lifecycle().drawDebugPanel())
 		{
 			overlayManager.add(debugOverlayPanel);
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
-		portalNexusKeybinds.loadFromProfile();
-		prepareAStarBackend();
+		pohService.loadFromProfile();
+		itemState.loadFromProfile();
+		scheduler.prepareBackend();
+
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
+			spriteManager, itemState, eventBus, this);
+		navButton = NavigationButton.builder()
+			.tooltip("Shortest Path")
+			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/shortestpath/panel_icon.png"))
+			.priority(5)
+			.panel(panel)
+			.build();
+		if (config.showSidebarPanel())
+		{
+			clientToolbar.addNavigation(navButton);
+		}
 	}
 
 	@Override
@@ -468,183 +251,33 @@ public class ShortestPathPlugin extends Plugin
 		eventBus.unregister(bankPickupFilter);
 		bankPickupFilter.reset();
 
-		synchronized (pathfinderMutex)
-		{
-			cancelQueries("SHUTDOWN");
-			if (pathfindingExecutor != null)
-			{
-				pathfindingExecutor.shutdownNow();
-				pathfindingExecutor = null;
-			}
-		}
+		scheduler.shutdown();
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
 
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+		}
+
+		if (panel != null)
+		{
+			// The settings service is a singleton — release this panel's
+			// listener registrations or they accumulate across enable cycles.
+			panel.dispose();
+			panel = null;
+		}
+
 		// Flush pending observations so the last tick's sample is not lost.
-		spiritTreePatchState.persistIfDirty();
-	}
+		spiritTrees.persistIfDirty();
 
-	public void restartPathfinding(String reason, int start, Targets ends, boolean canReviveFiltered)
-	{
-		debugState.restartRequested(reason, client.getTickCount());
-		List<PathStep> previousPath;
-		Targets previousTargets;
-		synchronized (pathfinderMutex)
-		{
-			previousPath = pathfinder == null ? null : pathfinder.getPath();
-			previousTargets = pathfinder == null ? null : pathfinder.getTargets();
-			if (pathfinder != null)
-			{
-				pathfinder.cancel();
-				pathfinderFuture.cancel(true);
-				debugState.searchCancelled(pathfinder);
-			}
-			// The displayed path wins over pending queries: it refreshes the transport
-			// availability, which a running query would otherwise read mid-search, and queued
-			// queries would delay it on the shared single thread.
-			cancelQueries("CANCELLED");
-
-			ensurePathfindingExecutor();
-		}
-
-		getClientThread().invokeLater(() ->
-		{
-			try
-			{
-				startPathfinding(start, ends, canReviveFiltered, previousPath, previousTargets);
-			}
-			catch (RuntimeException error)
-			{
-				debugState.clientError(error, client.getTickCount());
-				debugState.restartOutcome("failed: " + DebugState.describe(error));
-				throw error;
-			}
-		});
-	}
-
-	private void startPathfinding(int start, Targets requestedEnds, boolean canReviveFiltered,
-		List<PathStep> previousPath, Targets previousTargets)
-	{
-		pathfinderConfig.refresh();
-		Targets ends = pathfinderConfig.filterLocations(requestedEnds, canReviveFiltered);
-		synchronized (pathfinderMutex)
-		{
-			if (ends.isEmpty())
-			{
-				debugState.restartOutcome("no targets left after filtering");
-				setTarget(WorldPointUtil.UNDEFINED);
-			}
-			else
-			{
-				bankPickupDirty = true;
-				// The boarded-boat varbit can lag the world entity (stale across a teleport or
-				// login), so only sail when the boat is actually in the scene — otherwise the
-				// search would sail its headings across land
-				Player player = client.getLocalPlayer();
-				if (pathfinderConfig.isSailingMoves() && player != null
-					&& WorldPointUtil.boat(client, player) != null)
-				{
-					// A SailingPathfinder isn't a Pathfinder, so it can't be held by
-					// legacyPathfinder — getPathfinder() reports null while sailing
-					legacyPathfinder = null;
-					pathfinder = sailingPathfinder(start, ends);
-				}
-				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.ASTAR)
-				{
-					try
-					{
-						legacyPathfinder = null;
-						AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
-							aStarRoutingSession, start, ends, this::postPluginMessages);
-						// Recalculating towards the same targets: keep the old route drawn until
-						// the new one is ready.
-						if (ends.equals(previousTargets))
-							aStar.showUntilDone(previousPath);
-						pathfinder = aStar;
-					}
-					catch (RuntimeException error)
-					{
-						debugState.clientError(error, client.getTickCount());
-						legacyPathfinder = null;
-						pathfinder = AStarPathfinder.failed(start, ends, this::postPluginMessages, error);
-					}
-				}
-				else
-				{
-					legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
-					pathfinder = legacyPathfinder;
-				}
-				ActiveSearch search = pathfinder;
-				debugState.searchStarted(search);
-				pathfinderFuture = pathfindingExecutor.submit(() ->
-				{
-					try
-					{
-						search.run();
-					}
-					catch (RuntimeException error)
-					{
-						debugState.searchError(error, client.getTickCount());
-						throw error;
-					}
-				});
-			}
-		}
-	}
-
-	/**
-	 * On a boat, a search that sails the boat's 16 headings at its base speed instead of walking. It starts from the
-	 * boat's exact tile and remembers where the boat sits within it: every sailing move lands whole tiles away, so the
-	 * boat stays at that spot at each turn of the path. The boat's whole hull, from its bounds, must fit along every move
-	 * there.
-	 */
-	private SailingPathfinder sailingPathfinder(int start, Targets ends)
-	{
-		int sailingStart = start;
-		sailingPivotX = 0;
-		sailingPivotY = 0;
-		Player localPlayer = client.getLocalPlayer();
-		LocalPoint boat = localPlayer == null ? null : WorldPointUtil.boatLocation(client, localPlayer);
-		if (boat != null && !startPointSet)
-		{
-			sailingStart = WorldPointUtil.fromLocalInstance(client, boat);
-			sailingPivotX = (boat.getX() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
-			sailingPivotY = (boat.getY() & (Perspective.LOCAL_TILE_SIZE - 1)) - Perspective.LOCAL_HALF_TILE_SIZE;
-		}
-		WorldEntity boatEntity = localPlayer == null ? null : WorldPointUtil.boat(client, localPlayer);
-		WorldEntityConfig bounds = boatEntity == null ? null : boatEntity.getConfig();
-		BoatHull hull = bounds == null ? null : BoatHull.fromBounds(bounds.getBoundsX(), bounds.getBoundsY(),
-			bounds.getBoundsWidth(), bounds.getBoundsHeight(), sailingPivotX, sailingPivotY);
-		// The heading the boat faces where the route starts, as one of the 16 headings 128 angle units
-		// apart: a target under its hull only counts as reached facing that way — berthed, the boat hasn't
-		// arrived at a target astern of it. The target orientation pairs with the target tile the route
-		// starts from
-		int sailingHeading = boatEntity == null ? WorldPointUtil.UNDEFINED
-			: Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16);
-		return new SailingPathfinder(pathfinderConfig, sailingStart, ends, this::postPluginMessages,
-			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull, sailingHeading);
-	}
-
-	private void ensurePathfindingExecutor()
-	{
-		synchronized (pathfinderMutex)
-		{
-			if (pathfindingExecutor == null)
-			{
-				ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
-				pathfindingExecutor = Executors.newSingleThreadExecutor(shortestPathNaming);
-			}
-		}
-	}
-
-	private AStarRoutingStaticProvider aStarRoutingStatic()
-	{
-		synchronized (pathfinderMutex)
-		{
-			if (aStarRoutingStatic == null)
-				aStarRoutingStatic = new AStarRoutingStaticProvider(pathfinderConfig::getMap);
-			return aStarRoutingStatic;
-		}
+		// The singleton survives restarts; drop the live bank ref so session
+		// state cannot leak into the next enable.
+		itemState.reset();
+		// Same lifetime for the sailing snapshot — a stale aboard flag must
+		// not greet the next session before its first refresh publishes.
+		sailing.reset();
 	}
 
 	private void migrateAStarConfiguration()
@@ -660,171 +293,25 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	/**
-	 * Builds the A* backend's static routing data in the background when the A* backend is
-	 * selected, so the first route does not pay for it. The build runs on the pathfinding thread,
-	 * so a search submitted meanwhile simply queues behind it; a failed build is remembered by the
-	 * provider and reported by that search.
-	 */
-	private void prepareAStarBackend()
-	{
-		if (pathfinderConfig == null || config.pathfinderBackend() != PathfinderBackend.ASTAR)
-		{
-			return;
-		}
-		AStarRoutingStaticProvider provider = aStarRoutingStatic();
-		ensurePathfindingExecutor();
-		synchronized (pathfinderMutex)
-		{
-			pathfindingExecutor.submit(() ->
-			{
-				try
-				{
-					provider.get();
-				}
-				catch (RuntimeException error)
-				{
-					log.warn("Failed to build A* routing data", error);
-				}
-			});
-		}
-	}
-
-	public void restartPathfinding(String reason, int start, Targets ends)
-	{
-		restartPathfinding(reason, start, ends, true);
-	}
-
-	public boolean isNearPath(int location)
-	{
-		List<PathStep> path;
-		// The previous route is only on screen until its recalculation finishes; the player is
-		// expected to be off it, so it must not trigger yet another recalculation.
-		if (pathfinder instanceof AStarPathfinder && ((AStarPathfinder) pathfinder).isShowingProvisionalPath())
-		{
-			return true;
-		}
-		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			config.recalculateDistance() < 0 || lastLocation == (lastLocation = location))
-		{
-			return true;
-		}
-
-		for (PathStep pathStep : path)
-		{
-			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < config.recalculateDistance())
-			{
-				return true;
-			}
-		}
-
-		// A sailing path has a point at the end of each move, up to a dozen tiles apart, so the boat can be between them
-		if (isSailing())
-		{
-			for (int i = 1; i < path.size(); i++)
-			{
-				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
-					< config.recalculateDistance())
-				{
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	// How far a point is from the closest point on the straight line between two others, in tiles counted like
-	// WorldPointUtil#distanceBetween, or Integer.MAX_VALUE on another plane
-	private static int distanceToLine(int point, int from, int to)
-	{
-		if (WorldPointUtil.unpackWorldPlane(point) != WorldPointUtil.unpackWorldPlane(from))
-		{
-			return Integer.MAX_VALUE;
-		}
-		final double px = WorldPointUtil.unpackWorldX(point);
-		final double py = WorldPointUtil.unpackWorldY(point);
-		final double ax = WorldPointUtil.unpackWorldX(from);
-		final double ay = WorldPointUtil.unpackWorldY(from);
-		final double dx = WorldPointUtil.unpackWorldX(to) - ax;
-		final double dy = WorldPointUtil.unpackWorldY(to) - ay;
-		final double lengthSquared = dx * dx + dy * dy;
-		final double t = lengthSquared == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSquared));
-		return (int) Math.round(Math.max(Math.abs(px - (ax + t * dx)), Math.abs(py - (ay + t * dy))));
-	}
-
-	public Color getPathColor()
-	{
-		if (pathfinder == null || !pathfinder.isDone())
-		{
-			return colourPathCalculating;
-		}
-
-		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
-		{
-			return colourPath;
-		}
-
-		if (isPathUnreachable())
-		{
-			return colourPathUnreachable;
-		}
-
-		return colourPath;
-	}
-
-	public boolean isPathUnreachable()
-	{
-		if (pathfinder == null || !pathfinder.isDone())
-		{
-			return false;
-		}
-
-		List<PathStep> path = pathfinder.getPath();
-		if (path == null || pathfinder.getTargets().isEmpty())
-		{
-			return false;
-		}
-
-		// A sailing path arrives once the boat's hull covers the target, with the boat's own tile up to a boat length
-		// from it, so the search says whether it got there
-		if (isSailing())
-		{
-			PathfinderResult result = pathfinder.getResult();
-			return result != null && !result.isReached();
-		}
-
-		// A finished search can produce an empty path when no goal tile could ever be
-		// reached (e.g. a blocked target); measure the distance from the start then.
-		int endPoint = path.isEmpty() ? pathfinder.getStart()
-			: path.get(path.size() - 1).getPackedPosition();
-		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : pathfinder.getTargets().points())
-		{
-			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
-		}
-
-		return closestTargetDistance > unreachableTargetDistance;
-	}
-
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!CONFIG_GROUP.equals(event.getGroup()))
+		ConfigChange change = settings.onConfigChanged(event);
+		if (change == null)
 		{
 			return;
 		}
 
-		cacheConfigValues();
 		if (migratingAStarConfiguration || configManager.getProfile().getId() != activeConfigProfileId)
 		{
 			return;
 		}
 
-		if ("drawDebugPanel".equals(event.getKey()))
+		Set<Effect> effects = change.getEffects();
+
+		if (effects.contains(Effect.SIDE_EFFECT_DEBUG_OVERLAY))
 		{
-			if (config.drawDebugPanel())
+			if (settings.lifecycle().drawDebugPanel())
 			{
 				overlayManager.add(debugOverlayPanel);
 			}
@@ -832,21 +319,34 @@ public class ShortestPathPlugin extends Plugin
 			{
 				overlayManager.remove(debugOverlayPanel);
 			}
+		}
+
+		if ("showSidebarPanel".equals(change.getKey()))
+		{
+			syncSidebarButton();
+		}
+
+		coordinator.configChanged(change);
+	}
+
+	/**
+	 * Adds or removes the sidebar navigation button to match the
+	 * {@code showSidebarPanel} setting — the same live-toggle contract the
+	 * other plugins' show-icon options follow.
+	 */
+	private void syncSidebarButton()
+	{
+		if (navButton == null)
+		{
 			return;
 		}
-
-		if ("pathfinderAlgorithm".equals(event.getKey()))
+		if (config.showSidebarPanel())
 		{
-			prepareAStarBackend();
+			clientToolbar.addNavigation(navButton);
 		}
-
-		// Transport option changed; rerun pathfinding
-		if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find())
+		else
 		{
-			if (pathfinder != null)
-			{
-				restartPathfinding("config: " + event.getKey(), pathfinder.getStart(), pathfinder.getTargets());
-			}
+			clientToolbar.removeNavigation(navButton);
 		}
 	}
 
@@ -861,19 +361,16 @@ public class ShortestPathPlugin extends Plugin
 
 		migrateAStarConfiguration();
 		activeConfigProfileId = profileId;
-		cacheConfigValues();
 		syncDebugPanelVisibility();
+		// The new profile may carry a different sidebar-visibility value —
+		// re-resolve the nav button just like the debug overlay above.
+		syncSidebarButton();
 		if (pathfinderConfig == null)
 		{
 			return;
 		}
 
-		prepareAStarBackend();
-		if (pathfinder != null)
-		{
-			restartPathfinding("configuration profile change", pathfinder.getStart(), pathfinder.getTargets());
-		}
-		else
+		if (!coordinator.profileChanged())
 		{
 			clientThread.invokeLater(pathfinderConfig::refresh);
 		}
@@ -881,7 +378,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private void syncDebugPanelVisibility()
 	{
-		if (config.drawDebugPanel())
+		if (settings.lifecycle().drawDebugPanel())
 		{
 			overlayManager.add(debugOverlayPanel);
 		}
@@ -894,17 +391,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (pathfinderConfig == null
-			|| !GameState.LOGGING_IN.equals(lastLastGameState)
-			|| !GameState.LOADING.equals(lastLastGameState = lastGameState)
-			|| !GameState.LOGGED_IN.equals(lastGameState = event.getGameState()))
-		{
-			lastLastGameState = lastGameState;
-			lastGameState = event.getGameState();
-			return;
-		}
-
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+		coordinator.gameStateChanged(event.getGameState(), client.getTickCount());
 	}
 
 	/**
@@ -920,696 +407,126 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+		coordinator.worldChanged(client.getTickCount());
 	}
 
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
-		portalNexusKeybinds.loadFromProfile();
-		spiritTreePatchState.loadFromProfile();
-		pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
-
+		pohService.loadFromProfile();
 		// The new profile may carry different persisted trees, so an in-flight
-		// path computed against the old account's set must be redone — same
-		// restart the tick and menu writers issue after changing the field.
-		if (pathfinder != null)
-		{
-			restartPathfinding("profile change", pathfinder.getStart(), pathfinder.getTargets());
-		}
+		// path computed against the old account's set must be redone — the
+		// load declares that route-invalidating effect unconditionally.
+		spiritTrees.loadFromProfile();
+		// The last-seen bank snapshot is scoped per account — the new
+		// profile's record replaces the previous account's.
+		itemState.loadFromProfile();
 	}
 
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
-		if (!CONFIG_GROUP.equals(event.getNamespace()))
-		{
-			return;
-		}
-
-		String action = event.getName();
-		if (PLUGIN_MESSAGE_PATH.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			if (data == null)
-			{
-				return;
-			}
-			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
-			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
-			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
-
-			@SuppressWarnings("unchecked")
-			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
-			if (configOverride != null && !configOverride.isEmpty())
-			{
-				synchronized (pathfinderMutex)
-				{
-					ShortestPathPlugin.configOverride.clear();
-					for (String key : configOverride.keySet())
-					{
-						ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
-					}
-				}
-				cacheConfigValues();
-			}
-
-			if (objStart == null && objTarget == null)
-			{
-				return;
-			}
-
-			int start = parseStart(objStart);
-			Targets targets = decodeTargets(objTarget);
-			if (start == WorldPointUtil.UNDEFINED || targets == null)
-			{
-				return;
-			}
-
-			ActiveSearch current = pathfinder;
-			boolean useOld = targets.isEmpty() && current != null;
-			restartPathfinding("plugin message", start, useOld ? current.getTargets() : targets, useOld);
-		}
-		else if (PLUGIN_MESSAGE_QUERY.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			if (data == null)
-			{
-				return;
-			}
-			Object id = data.get(PLUGIN_MESSAGE_ID);
-			int start = parseStart(data.get(PLUGIN_MESSAGE_START));
-			Targets targets = decodeTargets(data.get(PLUGIN_MESSAGE_TARGET));
-			if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
-			{
-				postQueryFailure(id, "INVALID");
-				return;
-			}
-			queryPath(id, start, targets);
-		}
-		else if (PLUGIN_MESSAGE_GET_TARGET.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			postCurrentTarget(data == null ? null : data.get(PLUGIN_MESSAGE_ID));
-		}
-		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
-		{
-			synchronized (pathfinderMutex)
-			{
-				configOverride.clear();
-			}
-			cacheConfigValues();
-			setTarget(WorldPointUtil.UNDEFINED);
-		}
-	}
-
-	/**
-	 * The packed start of a plugin message path, defaulting to the player's location.
-	 * {@link WorldPointUtil#UNDEFINED} when there is neither.
-	 */
-	private int parseStart(Object objStart)
-	{
-		int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
-			: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
-		if (start == WorldPointUtil.UNDEFINED && client.getLocalPlayer() != null)
-		{
-			start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
-		}
-		return start;
-	}
-
-	/**
-	 * The targets of a plugin message, with the items each needs on arrival; see
-	 * {@link PluginMessageTargets}. {@link Targets#NONE} when none were given, and {@code null} when
-	 * the value is malformed.
-	 */
-	private static Targets decodeTargets(Object objTarget)
-	{
-		try
-		{
-			return PluginMessageTargets.decode(objTarget);
-		}
-		catch (IllegalArgumentException e)
-		{
-			log.warn("Ignoring plugin message with invalid target: {}", e.getMessage());
-			return null;
-		}
-	}
-
-	/**
-	 * Finds a path for another plugin without touching the displayed one, and answers with a
-	 * {@code result} plugin message carrying the caller's {@code id}.
-	 *
-	 * <p>Queries share the single pathfinding thread with the displayed path, so the two never
-	 * search at the same time. The transport availability is only refreshed when no search is
-	 * queued or running, since a search reads it while it runs; otherwise the query uses what the
-	 * previous search was started with. A new displayed path cancels pending queries, so a query
-	 * never runs concurrently with a refresh triggered by {@code restartPathfinding} either.
-	 */
-	private void queryPath(Object id, int start, Targets targets)
-	{
-		clientThread.invokeLater(() ->
-		{
-			synchronized (pathfinderMutex)
-			{
-				if (pathfindingExecutor == null)
-				{
-					postQueryFailure(id, "SHUTDOWN");
-					return;
-				}
-				if (queries.isEmpty() && (pathfinder == null || pathfinder.isDone()))
-				{
-					pathfinderConfig.refresh();
-				}
-				// Plugin queries always run on the legacy backend, even when the user-facing
-				// search opted into a different one: external callers get the proven engine's
-				// routes regardless of the experiment the user has enabled.
-				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
-				QueryTask task = new QueryTask(id);
-				queries.put(query, task);
-				task.future = pathfindingExecutor.submit(() -> runQuery(query, task));
-			}
-		});
-	}
-
-	private void runQuery(Pathfinder query, QueryTask task)
-	{
-		try
-		{
-			query.run();
-			postQueryResult(task.id, query);
-		}
-		catch (RuntimeException | Error e)
-		{
-			postQueryFailure(task.id, "ERROR");
-			throw e;
-		}
-		finally
-		{
-			synchronized (pathfinderMutex)
-			{
-				queries.remove(query);
-			}
-		}
-	}
-
-	/**
-	 * Cancels every pending query while holding {@link #pathfinderMutex}. Queries still in the
-	 * executor queue are dequeued and answered here since their runnable will never execute;
-	 * queries already running are signalled and answer for themselves once they stop.
-	 */
-	private void cancelQueries(String reason)
-	{
-		for (Iterator<Map.Entry<Pathfinder, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
-		{
-			Map.Entry<Pathfinder, QueryTask> entry = it.next();
-			QueryTask task = entry.getValue();
-			if (task.future != null && task.future.cancel(false))
-			{
-				it.remove();
-				postQueryFailure(task.id, reason);
-			}
-			else
-			{
-				entry.getKey().cancel();
-			}
-		}
-	}
-
-	private void postQueryResult(Object id, Pathfinder query)
-	{
-		PathfinderResult result = query.getResult();
-		if (result == null)
-		{
-			postQueryFailure(id, "ERROR");
-			return;
-		}
-
-		List<PathStep> steps = result.getPathSteps();
-		List<WorldPoint> path = new ArrayList<>(steps.size());
-		List<Map<String, Object>> transports = new ArrayList<>();
-		for (int i = 0; i < steps.size(); i++)
-		{
-			path.add(WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
-			if (i > 0)
-			{
-				for (Transport transport : transportsForEdge(steps.get(i - 1), steps.get(i)))
-				{
-					Map<String, Object> edge = new HashMap<>();
-					edge.put("origin", WorldPointUtil.unpackWorldPoint(steps.get(i - 1).getPackedPosition()));
-					edge.put("destination", WorldPointUtil.unpackWorldPoint(steps.get(i).getPackedPosition()));
-					edge.put("objectInfo", transport.getObjectInfo());
-					edge.put("displayInfo", formatTransportDisplay(transport));
-					transports.add(edge);
-				}
-			}
-		}
-
-		Map<String, Object> data = new HashMap<>();
-		data.put(PLUGIN_MESSAGE_ID, id);
-		data.put("reached", result.isReached());
-		data.put(PLUGIN_MESSAGE_START, WorldPointUtil.unpackWorldPoint(result.getStart()));
-		data.put(PLUGIN_MESSAGE_TARGET, WorldPointUtil.unpackWorldPoint(result.getTarget()));
-		data.put("path", path);
-		data.put(PLUGIN_MESSAGE_TRANSPORTS, transports);
-		data.put("closest", WorldPointUtil.unpackWorldPoint(result.getClosestReachedPoint()));
-		data.put("cost", result.getPathCost());
-		PathTerminationReason reason = result.getTerminationReason();
-		data.put("reason", reason == null ? null : reason.name());
-		putArrival(data, steps, result.getArrival());
-		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
-	}
-
-	/**
-	 * Adds the item fields of a {@code result} message: whether the path visits a bank, and the
-	 * reached target's item status and the item groups it is missing. A target that needs no items
-	 * has no status.
-	 */
-	private static void putArrival(Map<String, Object> data, List<PathStep> steps, Arrival arrival)
-	{
-		boolean requiresItems = arrival != null && arrival.getTarget().hasRequiredItems();
-		data.put(PLUGIN_MESSAGE_BANK_VISITED, !steps.isEmpty() && steps.get(steps.size() - 1).isBankVisited());
-		data.put(PLUGIN_MESSAGE_TARGET_STATUS, requiresItems ? arrival.getStatus().name() : null);
-		data.put(PLUGIN_MESSAGE_MISSING_ITEMS,
-			requiresItems ? PluginMessageTargets.itemIds(arrival.getMissingItems()) : List.of());
-	}
-
-	/**
-	 * Answers a query that produced no result: a malformed message, a plugin shutdown, a
-	 * cancelled search, or a failure while running.
-	 */
-	private void postQueryFailure(Object id, String reason)
-	{
-		Map<String, Object> data = new HashMap<>();
-		data.put(PLUGIN_MESSAGE_ID, id);
-		data.put("reached", false);
-		data.put("path", List.of());
-		data.put(PLUGIN_MESSAGE_TRANSPORTS, List.of());
-		data.put("reason", reason);
-		putArrival(data, List.of(), null);
-		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_RESULT, data)));
-	}
-
-	/**
-	 * Answers a {@code getTarget} plugin message with a {@code currentTarget} message carrying
-	 * the caller's {@code id} and a snapshot of the displayed path's start and targets. This is
-	 * a read-only request: it launches no pathfinding work and mutates no state.
-	 *
-	 * <p>The start/targets pair is read while holding {@link #pathfinderMutex} so a request
-	 * arriving mid-search sees one consistent snapshot rather than a torn pair; the mutex is
-	 * released before the response hops to the client thread. When no path is set the response
-	 * carries {@code set=false} and no start or target fields.
-	 */
-	private void postCurrentTarget(Object id)
-	{
-		int start;
-		Targets targets;
-		Map<String, Object> overrides;
-		synchronized (pathfinderMutex)
-		{
-			start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
-			targets = (pathfinder == null) ? Targets.NONE : pathfinder.getTargets();
-			overrides = configOverride.isEmpty() ? null : new HashMap<>(configOverride);
-		}
-
-		Map<String, Object> data = new HashMap<>();
-		data.put(PLUGIN_MESSAGE_ID, id);
-		data.put("set", !targets.isEmpty());
-		if (!targets.isEmpty())
-		{
-			data.put(PLUGIN_MESSAGE_START,
-				start == WorldPointUtil.UNDEFINED ? null : WorldPointUtil.unpackWorldPoint(start));
-			List<Object> encodedTargets = new ArrayList<>(targets.size());
-			for (Target target : targets)
-			{
-				encodedTargets.add(PluginMessageTargets.encode(target));
-			}
-			data.put(PLUGIN_MESSAGE_TARGET, encodedTargets);
-		}
-		if (overrides != null)
-		{
-			data.put(PLUGIN_MESSAGE_CONFIG_OVERRIDE, overrides);
-		}
-		clientThread.invokeLater(() -> eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_CURRENT_TARGET, data)));
-	}
-
-	/**
-	 * A query that has been submitted to the executor: the caller's {@code id} plus the task's
-	 * future, so it can be answered or cancelled when the displayed path or plugin shutdown
-	 * takes precedence.
-	 */
-	private static class QueryTask
-	{
-		final Object id;
-		Future<?> future;
-
-		QueryTask(Object id)
-		{
-			this.id = id;
-		}
-	}
-
-	public void postPluginMessages()
-	{
-		if (pathfinder == null)
-		{
-			return;
-		}
-		if (override("postTransports", config.postTransports()))
-		{
-			Map<String, Object> data = new HashMap<>();
-			List<WorldPoint> transportOrigins = new ArrayList<>();
-			List<WorldPoint> transportDestinations = new ArrayList<>();
-			List<String> transportObjectInfos = new ArrayList<>();
-			List<String> transportDisplayInfos = new ArrayList<>();
-			List<PathStep> currentPath = pathfinder.getPath();
-			for (int i = 1; i < currentPath.size(); i++)
-			{
-				PathStep currentStep = currentPath.get(i - 1);
-				PathStep nextStep = currentPath.get(i);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
-					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
-					transportObjectInfos.add(transport.getObjectInfo());
-					transportDisplayInfos.add(formatTransportDisplay(transport));
-				}
-			}
-			data.put("origin", transportOrigins);
-			data.put("destination", transportDestinations);
-			data.put("objectInfo", transportObjectInfos);
-			data.put("displayInfo", transportDisplayInfos);
-			eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_TRANSPORTS, data));
-		}
+		apiHandler.onPluginMessage(event);
 	}
 
 	@Subscribe
 	public void onMenuOpened(MenuOpened event)
 	{
-		lastMenuOpenedPoint = client.getMouseCanvasPosition();
+		geometry.menuOpened(client.getMouseCanvasPosition());
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		portalNexusKeybinds.refreshFromDialog(client);
-		portalNexusKeybinds.persistIfDirty();
+		pohService.refreshFromDialog();
+		pohService.persistIfDirty();
 
-		for (int i = 0; i < pendingTasks.size(); i++)
-		{
-			if (pendingTasks.get(i).check(client.getTickCount()))
-			{
-				pendingTasks.remove(i--).run();
-			}
-		}
+		coordinator.gameTick(client.getTickCount());
 
 		Player localPlayer = client.getLocalPlayer();
-		WorldPoint worldLocation = localPlayer == null ? null : localPlayer.getWorldLocation();
-		int playerRegion = worldLocation == null ? -1 : worldLocation.getRegionID();
-		spiritTreePatchState.notePlayerRegion(playerRegion, client.getTickCount());
-		if (localPlayer != null
-			// Varbits are not transmitted while a modal widget is open; a stale
-			// read of the shared slot could carry another patch's value.
-			&& !SpiritTreePatchState.modalWidgetOpen(client)
-			// On the region-entry tick the slot can still carry the previous
-			// region's values; only sample once the region has settled.
-			&& spiritTreePatchState.isRegionSettled(playerRegion))
-		{
-			// The FARMING_TRANSMIT_* varbits are region-scoped scratch slots, so
-			// a planted spirit tree's varbit is only meaningful while standing in
-			// that patch's region. Sample only on a region match.
-			String spiritTreePatch = SpiritTreePatchState.patchNameForRegion(playerRegion);
-			if (spiritTreePatch != null
-				&& spiritTreePatchState.applyVarbitSample(spiritTreePatch,
-					client.getVarbitValue(SpiritTreePatchState.varbitForPatch(spiritTreePatch))))
-			{
-				pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
-				if (pathfinder != null)
-				{
-					restartPathfinding("spirit tree varbit", pathfinder.getStart(), pathfinder.getTargets());
-				}
-			}
-		}
 
-		// Persist after the same-tick sample so a fresh observation is written
-		// on this tick rather than waiting for the next one.
-		spiritTreePatchState.persistIfDirty();
+		// The service notes the player's region, samples the in-region patch
+		// varbit once the region has settled, and flushes persistence; a
+		// resolved change is declared to the coordinator, which owns the
+		// restart decision.
+		spiritTrees.onGameTick();
 
-		if (localPlayer == null || pathfinder == null)
+		if (localPlayer == null || scheduler.getActiveSearch() == null)
 		{
 			return;
 		}
 
-		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
-		// A sailing path arrives once the boat's hull covers a target, which can leave the boat's own
-		// tile farther than the reached distance on long hulls — check the live boat rather than the
-		// player's tile, and not the search's verdict: that says a route was found, not that it sailed
-		// there. The reached-distance check below still runs for goal-tile arrivals and disembarking.
-		ActiveSearch search = pathfinder;
-		if (search instanceof SailingPathfinder && config.reachedDistance() >= 0)
-		{
-			LocalPoint boatPoint = WorldPointUtil.boatLocation(client, localPlayer);
-			WorldEntity boatEntity = WorldPointUtil.boat(client, localPlayer);
-			if (boatPoint != null && boatEntity != null
-				&& ((SailingPathfinder) search).arrivedTarget(
-					WorldPointUtil.fromLocalInstance(client, boatPoint),
-					Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16))
-					!= WorldPointUtil.UNDEFINED)
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-				return;
-			}
-		}
-		for (int target : pathfinder.getTargets().points())
-		{
-			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-				return;
-			}
-		}
-
-		if (!startPointSet && !isNearPath(currentLocation))
-		{
-			if (config.cancelInstead())
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-				return;
-			}
-			restartPathfinding("off route", currentLocation, pathfinder.getTargets());
-		}
+		LocalPoint boatPoint = WorldPointUtil.boatLocation(client, localPlayer);
+		WorldEntity boatEntity = WorldPointUtil.boat(client, localPlayer);
+		coordinator.offRouteTick(client.getTickCount(),
+			WorldPointUtil.fromLocalInstance(client, localPlayer),
+			boatPoint == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.fromLocalInstance(client, boatPoint),
+			boatEntity == null ? WorldPointUtil.UNDEFINED
+				: Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16));
 	}
 
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
-		if (client.isKeyPressed(KeyCode.KC_SHIFT)
-			&& event.getType() == MenuAction.WALK.getId())
-		{
-			addMenuEntry(event, SET, TARGET, 1);
-			if (pathfinder != null)
-			{
-				if (!pathfinder.getTargets().isEmpty())
-				{
-					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
-				}
-				for (int target : pathfinder.getTargets().points())
-				{
-					if (target != WorldPointUtil.UNDEFINED)
-					{
-						addMenuEntry(event, SET, START, 1);
-						break;
-					}
-				}
-				int selectedTile = getSelectedWorldPoint();
-				List<PathStep> path;
-				if ((path = pathfinder.getPath()) != null)
-				{
-					for (PathStep pathStep : path)
-					{
-						if (pathStep.getPackedPosition() == selectedTile)
-						{
-							addMenuEntry(event, CLEAR, PATH, 1);
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-
-		if (map != null)
-		{
-			if (map.getBounds().contains(
-				client.getMouseCanvasPosition().getX(),
-				client.getMouseCanvasPosition().getY()))
-			{
-				addMenuEntry(event, SET, TARGET, 0);
-				if (pathfinder != null)
-				{
-					if (!pathfinder.getTargets().isEmpty())
-					{
-						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
-					}
-					for (int target : pathfinder.getTargets().points())
-					{
-						if (target != WorldPointUtil.UNDEFINED)
-						{
-							addMenuEntry(event, SET, START, 0);
-							addMenuEntry(event, CLEAR, PATH, 0);
-						}
-					}
-				}
-			}
-			if (event.getOption().equals(FLASH_ICONS) && pathfinderConfig.hasDestination(simplify(event.getTarget())))
-			{
-				addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
-			}
-		}
-
-		final Shape minimap = getMinimapClipArea();
-
-		if (minimap != null && pathfinder != null
-			&& minimap.contains(
-			client.getMouseCanvasPosition().getX(),
-			client.getMouseCanvasPosition().getY()))
-		{
-			addMenuEntry(event, CLEAR, PATH, 0);
-		}
-
-		if (minimap != null && pathfinder != null
-			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
-			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
-		{
-			addMenuEntry(event, CLEAR, PATH, 1);
-		}
+		menuVerbs.onMenuEntryAdded(event);
 	}
 
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
 		int id = event.getContainerId();
+		itemState.onContainerChanged(id, event.getItemContainer());
 		if (id == InventoryID.BANK)
 		{
-			pathfinderConfig.bank = event.getItemContainer();
+			// The bank-open verdict is a widget read — client-thread only —
+			// so it happens inside the invoke where the interface has
+			// settled; the post-close event arrives with an emptied
+			// container but a closed bank widget, which the service treats
+			// as drain and ignores. Queued ahead of the panel refresh below
+			// so the owned-filter union reads the updated snapshot.
+			clientThread.invoke(() -> itemState.noteLastSeenBank(
+				event.getItemContainer(),
+				gameWidgets.isWidgetOpen(InterfaceID.Bankmain.UNIVERSE)));
 		}
-		if (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN)
+		if (panel != null && (id == InventoryID.BANK || id == InventoryID.INV || id == InventoryID.WORN))
 		{
-			bankPickupDirty = true;
+			panel.onItemContainersChanged();
 		}
 	}
 
-	/**
-	 * Returns the cached bank pickup result for the given path step, recomputing only when
-	 * the path, bank contents, or player inventory has changed since the last call.
-	 */
-	public BankPickupResult getBankPickup(
-			List<PathStep> path, int pathIndex)
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
 	{
-		Set<Integer> bankLocations = pathfinderConfig.getDestinations("bank");
-		if (pathfinderConfig.bank == null || bankLocations == null
-				|| path == null || pathIndex < 0 || pathIndex >= path.size())
-		{
-			return null;
-		}
-		if (!bankPickupDirty && path == bankPickupCachePath && pathIndex == bankPickupCacheIndex)
-		{
-			return bankPickupCache;
-		}
-		ActiveSearch search = pathfinder;
-		PathfinderResult result = search == null ? null : search.getResult();
-		bankPickupCachePath = path;
-		bankPickupCacheIndex = pathIndex;
-		// The target's items are only known once the search has its result, which appears just
-		// after the final path: keep recomputing until then.
-		bankPickupDirty = search != null && result == null;
-		bankPickupCache = shortestpath.transport.BankPickupRequirements.BankPickupResult.compute(
-				client, pathfinderConfig.bank, pathfinderConfig, bankLocations, path, pathIndex,
-				itemsToPickUp(result));
-		return bankPickupCache;
-	}
-
-	/** The items a route's target needs from the bank, or {@code null} when it picks none up. */
-	private static TransportItems itemsToPickUp(PathfinderResult result)
-	{
-		Arrival arrival = result == null ? null : result.getArrival();
-		return arrival != null && arrival.picksUpItemsFromBank() ? arrival.getTarget().getRequiredItems() : null;
-	}
-
-	/**
-	 * The label naming the items the displayed route's target needs but the player was not found to
-	 * hold, or {@code null} when nothing is missing. Built once per search, on the client thread.
-	 */
-	public String getMissingTargetItemsText()
-	{
-		ActiveSearch search = pathfinder;
-		if (search != missingItemsSearch)
-		{
-			missingItemsSearch = search;
-			missingItemsText = null;
-		}
-		PathfinderResult result = search == null ? null : search.getResult();
-		if (missingItemsText == null && result != null)
-		{
-			Arrival arrival = result.getArrival();
-			List<ItemRequirement> missing = arrival == null ? List.of() : arrival.getMissingItems();
-			missingItemsText = missing.isEmpty() ? "" : missingItemsLabel(missing);
-		}
-		return missingItemsText == null || missingItemsText.isEmpty() ? null : missingItemsText;
-	}
-
-	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
-	private String missingItemsLabel(List<ItemRequirement> missing)
-	{
-		List<String> groups = new ArrayList<>(missing.size());
-		for (ItemRequirement group : missing)
-		{
-			List<String> names = new ArrayList<>();
-			for (ItemRequirement.Branch branch : group.getBranches())
-			{
-				for (int id : branch.getItemIds())
-				{
-					// Requirement ids come from other plugins' messages; an invalid or renamed
-					// id may resolve to no name rather than crash every rendered frame.
-					ItemComposition def = client.getItemDefinition(id);
-					String name = def == null ? null : def.getName();
-					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
-				}
-			}
-			groups.add(String.join(" or ", names));
-		}
-		return "Not found in inventory or bank: " + String.join(", ", groups)
-			+ (pathfinderConfig.getHeldItems().isBankSeen() ? "" : " (bank not checked)");
+		// Rune pouch contents and the Lumbridge Elite diary feed the eligibility
+		// snapshot but change without firing a container event.
+		itemState.onVarbitChanged(event.getVarbitId());
+		// The boat varbits feed the sailing snapshot and may declare a
+		// route-invalidating change through the service.
+		sailing.onVarbitChanged(event.getVarbitId());
 	}
 
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
-		if (event.getScriptId() != PortalNexusKeybinds.TELENEXUS_CREATE_TELELINE)
+		if (event.getScriptId() != PohService.TELENEXUS_CREATE_TELELINE)
 		{
 			return;
 		}
 		Widget widget = client.getScriptActiveWidget();
 		if (widget != null)
 		{
-			portalNexusKeybinds.putFromDialogLine(widget.getText());
+			pohService.putFromDialogLine(widget.getText());
 		}
 	}
 
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = true;
-		}
+		annotator.widgetLoaded(event.getGroupId(), scheduler.getActiveSearch());
 
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT)
 		{
-			portalNexusKeybinds.dialogOpened();
+			pohService.dialogOpened();
 		}
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
 			|| event.getGroupId() == InterfaceID.TELENEXUS)
@@ -1618,13 +535,14 @@ public class ShortestPathPlugin extends Plugin
 			clientThread.invokeLater(() ->
 			{
 				attempts[0]++;
-				boolean dialogOpen = client.getWidget(InterfaceID.TelenexusTeleport.UNIVERSE) != null
-					|| client.getWidget(InterfaceID.Telenexus.UNIVERSE) != null;
+				boolean dialogOpen = gameWidgets.isWidgetOpen(InterfaceID.TelenexusTeleport.UNIVERSE)
+					|| gameWidgets.isWidgetOpen(InterfaceID.Telenexus.UNIVERSE);
 				if (!dialogOpen)
 				{
 					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 				}
-				return portalNexusKeybinds.refreshFromDialog(client)
+				boolean changed = pohService.refreshFromDialog();
+				return changed
 					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
 			});
 		}
@@ -1635,10 +553,10 @@ public class ShortestPathPlugin extends Plugin
 		switch (event.getGroupId())
 		{
 			case InterfaceID.MENU:
-				clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
+				clientThread.invokeLater(() -> spiritTrees.onMenuOpened(false));
 				break;
 			case InterfaceID.MENU_NEW:
-				clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
+				clientThread.invokeLater(() -> spiritTrees.onMenuOpened(true));
 				break;
 		}
 	}
@@ -1646,906 +564,12 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onWidgetClosed(WidgetClosed event)
 	{
-		if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = false;
-		}
+		annotator.widgetClosed(event.getGroupId());
 	}
 
 	@Subscribe
 	public void onPostClientTick(PostClientTick event)
 	{
-		if (fairyRingPanelOpen && pathfinder != null)
-		{
-			scrollFairyRingPanel();
-		}
-	}
-
-	private void parseSpiritTreeWidget(boolean useNewMenu)
-	{
-		// Referencing
-		// https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
-
-		Widget container;
-		if (useNewMenu)
-		{
-			container = client.getWidget(InterfaceID.MENU_NEW, 9);
-		}
-		else
-		{
-			container = client.getWidget(InterfaceID.MENU, 3);
-		}
-
-		if (container == null)
-		{
-			return;
-		}
-
-		Widget[] children = container.getDynamicChildren();
-		if (children == null || children.length == 0)
-		{
-			return;
-		}
-
-		// Tree Gnome Village is always the first row and always available, so an
-		// exact content match identifies the spirit tree menu. Interface group
-		// MENU is a shared container (other MISCB_IF users load on the same
-		// group), and this parse now runs on every load, so a loose check could
-		// persist a false observation from an unrelated interface.
-		String expectedFirstRow =
-			(useNewMenu ? "<col=ffffff>1</col>: " : "<col=735a28>1</col>: ") + "Tree Gnome Village";
-		if (!expectedFirstRow.equals(children[0].getText()))
-		{
-			return;
-		}
-
-		SpiritTreeMenuSnapshot snapshot = parseSpiritTreeMenuRows(children, useNewMenu);
-
-		// The menu is authoritative for the patches it lists; persisted and
-		// in-region-varbit observations fill the patches the menu never covered.
-		if (spiritTreePatchState.applyMenuSnapshot(snapshot.listed, snapshot.available))
-		{
-			pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTrees();
-
-			if (pathfinder != null)
-			{
-				restartPathfinding("spirit trees", pathfinder.getStart(), pathfinder.getTargets());
-			}
-		}
-	}
-
-	/**
-	 * Parsed contents of one spirit tree travel menu: every patch row the
-	 * menu showed ({@link #listed}) and the subset usable right now
-	 * ({@link #available} — a greyed row means planted but not usable).
-	 */
-	static final class SpiritTreeMenuSnapshot
-	{
-		final Set<String> listed = new HashSet<>();
-		final Set<String> available = new HashSet<>();
-	}
-
-	/**
-	 * Parses the dynamic children of a spirit tree menu container into the
-	 * listed/available patch-name sets. Package-private for tests.
-	 */
-	static SpiritTreeMenuSnapshot parseSpiritTreeMenuRows(Widget[] children, boolean useNewMenu)
-	{
-		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
-		SpiritTreeMenuSnapshot snapshot = new SpiritTreeMenuSnapshot();
-
-		for (Widget child : children)
-		{
-			String text = child.getText();
-			if (text == null)
-			{
-				continue;
-			}
-			Matcher matcher = pattern.matcher(text);
-			if (!matcher.matches())
-			{
-				continue;
-			}
-
-			// Group 3 is spirit tree name; a greyed row can leave markup on it
-			// (e.g. "Port Sarim</col>"), which would miss the patch table and
-			// silently drop the row's eviction signal — strip tags before use.
-			String name = Text.removeTags(matcher.group(3)).trim();
-			snapshot.listed.add(name);
-
-			// Group 2 is the disabled color tag; if present, the tree is unavailable
-			if (matcher.group(2) != null)
-			{
-				continue;
-			}
-
-			snapshot.available.add(name);
-		}
-
-		return snapshot;
-	}
-
-	private void scrollFairyRingPanel()
-	{
-		List<PathStep> path;
-
-		if (pathfinder == null
-			|| (path = pathfinder.getPath()) == null)
-		{
-			return;
-		}
-
-		String fairyRingCode = null;
-
-		for (int i = 1; i < path.size(); i++)
-		{
-			PathStep currentStep = path.get(i - 1);
-			PathStep nextStep = path.get(i);
-			for (Transport transport : transportsForEdge(currentStep, nextStep))
-			{
-				if (TransportType.FAIRY_RING.equals(transport.getType()))
-				{
-					fairyRingCode = transport.getDisplayInfo();
-				}
-			}
-		}
-		if (fairyRingCode == null)
-		{
-			return;
-		}
-
-		Widget codeWidget = null;
-
-		Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
-		if (favesPanel != null)
-		{
-			for (Widget widget : favesPanel.getStaticChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
-		if (contentsList != null && codeWidget == null)
-		{
-			for (Widget widget : contentsList.getDynamicChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		if (codeWidget == null)
-		{
-			return;
-		}
-
-		codeWidget.setTextColor(0x00FF00);
-		String codeWidgetText = codeWidget.getText();
-		if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)"))
-		{
-			codeWidget.setText("(Shortest Path) " + codeWidgetText);
-		}
-
-		if (contentsList == null)
-		{
-			return;
-		}
-
-		int panelScrollY = Math.min(
-			codeWidget.getRelativeY(),
-			contentsList.getScrollHeight() - contentsList.getHeight()
-		);
-
-		contentsList.setScrollY(panelScrollY);
-		contentsList.revalidateScroll();
-
-		client.runScript(
-			ScriptID.UPDATE_SCROLLBAR,
-			InterfaceID.FairyringsLog.SCROLLBAR,
-			InterfaceID.FairyringsLog.CONTENTS,
-			panelScrollY
-		);
-	}
-
-	public CollisionMap getMap()
-	{
-		return pathfinderConfig.getMap();
-	}
-
-	/**
-	 * Whether the path sails the boat's headings (a {@link SailingPathfinder}), so it has a point at the end of
-	 * each move, a few tiles apart, and is drawn as lines along its headings.
-	 */
-	public boolean isSailing()
-	{
-		ActiveSearch search = pathfinder;
-		return search instanceof SailingPathfinder;
-	}
-
-	/**
-	 * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
-	 * <p>
-	 * It collapses banked/unbanked transport availability into a single view via
-	 * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
-	 * <p>
-	 * Do not use this for reasoning about which transports are available at a specific
-	 * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
-	 * path's PathStep state instead.
-	 */
-	public PrimitiveIntHashMap<Transport[]> getTransports()
-	{
-		return pathfinderConfig.getTransports();
-	}
-
-	/**
-	 * Every loaded transport grouped by origin for display, including transports the
-	 * player cannot currently use. Same layout as {@link #getTransports()}.
-	 */
-	public PrimitiveIntHashMap<Transport[]> getAllDisplayTransports()
-	{
-		return pathfinderConfig.getAllDisplayTransports();
-	}
-
-	/**
-	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
-	 * <p>
-	 * The important detail is that path display logic is edge-based, not node-based:
-	 * - origin position comes from currentStep
-	 * - destination position comes from nextStep
-	 * - the applicable transport set may depend on whether the edge transitions into banked state
-	 * <p>
-	 * That last point is the awkward one. Banking is not represented as its own explicit path edge;
-	 * instead the "becomes banked" state change is conflated into the movement/transport edge that
-	 * reaches the banked destination step. As a result, callers cannot safely resolve transports from
-	 * a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
-	 * nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
-	 * transports for the edge between them.
-	 * <p>
-	 * When the destination step carries the transport the search actually chose (steps built by
-	 * {@link NodeGraph#getPathSteps} do), that transport is the answer and this function returns
-	 * it directly as a singleton — reconstruction is only a fallback for identity-less steps
-	 * (e.g. steps built via the two-argument {@link PathStep} constructor). The destination-based
-	 * fallback remains inherently ambiguous when multiple valid transports share the same
-	 * origin/destination pair under the same edge state.
-	 * <p>
-	 * Note that the fallback also performs filtering by the transport target, so callers of this
-	 * function can directly iterate over the returned transports.
-	 */
-	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
-	{
-		if (currentStep == null || nextStep == null)
-		{
-			return Set.of();
-		}
-		// The step knows which transport produced the edge into it: no reconstruction needed.
-		if (nextStep.getTransport() != null)
-		{
-			return Set.of(nextStep.getTransport());
-		}
-		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
-		// Get the transports which start from the position of starting step.
-		Set<Transport> stepTransports = new HashSet<>(Arrays.asList(
-			pathfinderConfig.getTransportsPacked(bankVisited)
-				.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)));
-		// Add the teleports, which might be used from anywhere.
-		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisited)));
-		// Remove transports which do not target the correct location.
-		stepTransports.removeIf(transport -> transport.getDestination() != nextStep.getPackedPosition());
-		// Remove teleports that share destinations with a local transport type on this edge.
-		// For example, if the path uses a QUETZAL (local) transport, suppress QUETZAL_WHISTLE hints.
-		// Also suppress them when the edge distance is within the shared type's radius threshold,
-		// which occurs when the path is simply walking to a landing site (not teleporting to it).
-		Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
-		for (Transport t : stepTransports)
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null)
-			{
-				localTypes.add(t.getType());
-			}
-		}
-		int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
-		stepTransports.removeIf(t ->
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null)
-			{
-				return false; // keep local transports
-			}
-			if (edgeDistance <= 1)
-			{
-				// A single-tile edge is a walked step, so the path did not teleport
-				// here: the destination tile is just a teleport landing site the
-				// path passes through or ends at, and the teleport hint is noise.
-				return true;
-			}
-			TransportType sharedType = t.getType().sharesDestinationsWith();
-			if (sharedType == null)
-			{
-				return false; // not a shared-destination teleport, keep it
-			}
-			// Suppress if a local transport of the shared type is present on this edge (Issue 1),
-			// or if the edge is within the shared type's radius threshold, meaning the path is
-			// walking to the landing site rather than teleporting there (Issue 2).
-			return localTypes.contains(sharedType)
-				|| (sharedType.getRadiusThreshold() != null && edgeDistance <= sharedType.getRadiusThreshold());
-		});
-		return stepTransports;
-	}
-
-	public PathStep nextPathStep(List<PathStep> path, int index)
-	{
-		if (path == null || index < 0 || index + 1 >= path.size())
-		{
-			return null;
-		}
-		return path.get(index + 1);
-	}
-
-	public String formatTransportDisplay(Transport transport)
-	{
-		String info = transport.getDisplayInfo();
-		if (info == null || info.isEmpty())
-		{
-			return info;
-		}
-		if (TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()))
-		{
-			return portalNexusKeybinds.apply(info);
-		}
-		return info;
-	}
-
-	/**
-	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
-	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
-	 * that information is included instead.
-	 *
-	 * @param destination  The destination point to check
-	 * @param path         The full path
-	 * @param currentIndex The current index in the path
-	 * @return The display info of the POH exit transport, or null if not applicable
-	 */
-	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
-	{
-		if (path == null || currentIndex < -1)
-		{
-			return null;
-		}
-
-		int destX = WorldPointUtil.unpackWorldX(destination);
-		int destY = WorldPointUtil.unpackWorldY(destination);
-
-		// Check if destination is inside POH
-		if (!isInsidePoh(destX, destY))
-		{
-			return null;
-		}
-
-		String immediateExitInfo = null;
-
-		// Look ahead in the path to find the next transport that exits POH
-		for (int i = currentIndex + 1; i < path.size() - 1; i++)
-		{
-			int stepLocation = path.get(i).getPackedPosition();
-			int nextLocation = path.get(i + 1).getPackedPosition();
-
-			int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-			int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-			int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-
-			// Check if this step is inside POH but next step is outside (exit transport)
-			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
-			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
-
-			if (stepInsidePoh && !nextInsidePoh)
-			{
-				// Found the exit transport - get its display info using bank-aware lookup
-				PathStep currentStep = path.get(i);
-				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					String exitInfo = formatTransportDisplay(transport);
-					if (exitInfo != null && !exitInfo.isEmpty())
-					{
-						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType))
-						{
-							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory"))
-							{
-								immediateExitInfo = "Mounted Glory: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Mythical cape"))
-							{
-								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-							{
-								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Digsite"))
-							{
-								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							}
-							else
-							{
-								immediateExitInfo = "Jewelry Box: " + exitInfo;
-							}
-						}
-						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-						{
-							immediateExitInfo = "Nexus: " + exitInfo;
-						}
-						else if (TransportType.FAIRY_RING.equals(exitType))
-						{
-							immediateExitInfo = "Fairy Ring " + exitInfo;
-						}
-						else if (TransportType.SPIRIT_TREE.equals(exitType))
-						{
-							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						}
-						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-						{
-							immediateExitInfo = "Obelisk: " + exitInfo;
-						}
-						else
-						{
-							immediateExitInfo = exitInfo;
-						}
-					}
-					break;
-				}
-				break;
-			}
-
-			// If we've left POH without finding a transport, stop looking
-			if (!stepInsidePoh)
-			{
-				break;
-			}
-		}
-
-		return immediateExitInfo;
-	}
-
-	private Color override(String configOverrideKey, Color defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Color)
-			{
-				return (Color) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	private TileCounter override(String configOverrideKey, TileCounter defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TileCounter tileCounter = TileCounter.fromType((String) value);
-				if (tileCounter != null)
-				{
-					return tileCounter;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	private TileStyle override(String configOverrideKey, TileStyle defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TileStyle tileStyle = TileStyle.fromType((String) value);
-				if (tileStyle != null)
-				{
-					return tileStyle;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	private void cacheConfigValues()
-	{
-		drawCollisionMap = override("drawCollisionMap", config.drawCollisionMap());
-		drawMap = override("drawMap", config.drawMap());
-		drawMinimap = override("drawMinimap", config.drawMinimap());
-		drawTiles = override("drawTiles", config.drawTiles());
-		drawTransports = override("drawTransports", config.drawTransports());
-		drawClickPoints = override("drawClickPoints", config.drawClickPoints());
-		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
-		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
-		showUnreachableText = override("showUnreachableText", config.showUnreachableText());
-		highlightBankPickupItems = override("highlightBankPickupItems", config.highlightBankPickupItems());
-		filterBankPickupItems = override("filterBankPickupItems", config.filterBankPickupItems());
-		highlightSpellbookSpells = override("highlightSpellbookSpells", config.highlightSpellbookSpells());
-		highlightInventoryItems = override("highlightInventoryItems", config.highlightInventoryItems());
-
-		colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
-		colourPath = override("colourPath", config.colourPath());
-		colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
-		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
-		colourText = override("colourText", config.colourText());
-		colourTransports = override("colourTransports", config.colourTransports());
-		colourBankPickupHighlight = override("colourBankPickupHighlight", config.colourBankPickupHighlight());
-		colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
-
-		tileCounterStep = override("tileCounterStep", config.tileCounterStep());
-		recalculateDistance = override("recalculateDistance", config.recalculateDistance());
-		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
-		unreachableText = config.unreachableText();
-
-		showTileCounter = override("showTileCounter", config.showTileCounter());
-		pathStyle = override("pathStyle", config.pathStyle());
-		showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
-	}
-
-	private String simplify(String text)
-	{
-		return Text.removeTags(text).toLowerCase()
-			.replaceAll("[^a-zA-Z ]", "")
-			.replace(" ", "_")
-			.replace("__", "_");
-	}
-
-	private void onMenuOptionClicked(MenuEntry entry)
-	{
-		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
-		{
-			setTarget(getSelectedWorldPoint());
-		}
-		else if (entry.getOption().equals(SET) && pathfinder != null && entry.getTarget().equals(TARGET +
-			ColorUtil.wrapWithColorTag(" " + (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET)))
-		{
-			setTarget(getSelectedWorldPoint(), true);
-		}
-		else if (entry.getOption().equals(SET) && entry.getTarget().equals(START))
-		{
-			setStart(getSelectedWorldPoint());
-		}
-		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
-		{
-			setTarget(WorldPointUtil.UNDEFINED);
-		}
-		else if (entry.getOption().equals(FIND_CLOSEST))
-		{
-			setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
-		}
-	}
-
-	private int getSelectedWorldPoint()
-	{
-		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-		{
-			if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
-			{
-				return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
-			}
-		}
-		else
-		{
-			return client.isMenuOpen()
-				? calculateMapPoint(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
-				: calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
-		}
-		return WorldPointUtil.UNDEFINED;
-	}
-
-	private void setTarget(int target)
-	{
-		setTarget(target, false);
-	}
-
-	private void setTarget(int target, boolean append)
-	{
-		Set<Integer> targets = new HashSet<>();
-		if (target != WorldPointUtil.UNDEFINED)
-		{
-			targets.add(target);
-		}
-		setTargets(targets, append);
-	}
-
-	private void setTargets(Set<Integer> targets, boolean append)
-	{
-		if (targets == null || targets.isEmpty())
-		{
-			synchronized (pathfinderMutex)
-			{
-				if (pathfinder != null)
-				{
-					pathfinder.cancel();
-				}
-				pathfinder = null;
-				legacyPathfinder = null;
-			}
-
-			worldMapPointManager.removeIf(x -> x == marker);
-			marker = null;
-			startPointSet = false;
-		}
-		else
-		{
-			Player localPlayer = client.getLocalPlayer();
-			if (!startPointSet && localPlayer == null)
-			{
-				return;
-			}
-			worldMapPointManager.removeIf(x -> x == marker);
-			if (targets.size() == 1)
-			{
-				marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(targets.iterator().next()), MARKER_IMAGE);
-				marker.setName("Target");
-				marker.setTarget(marker.getWorldPoint());
-				marker.setJumpOnClick(true);
-				worldMapPointManager.add(marker);
-			}
-
-			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
-			lastLocation = start;
-			if (startPointSet && pathfinder != null)
-			{
-				start = pathfinder.getStart();
-			}
-			// Targets the player picks need no items; adding one keeps the items of those already set.
-			Targets destinations = Targets.at(targets);
-			if (pathfinder != null && append)
-			{
-				destinations = pathfinder.getTargets().plus(destinations);
-			}
-			restartPathfinding(append ? "add target" : "set target", start, destinations, append);
-		}
-	}
-
-	private void setStart(int start)
-	{
-		if (pathfinder == null)
-		{
-			return;
-		}
-		startPointSet = true;
-		restartPathfinding("set start", start, pathfinder.getTargets());
-	}
-
-	public int calculateMapPoint(int pointX, int pointY)
-	{
-		WorldMap worldMap = client.getWorldMap();
-		float zoom = worldMap.getWorldMapZoom();
-		int mapPoint = WorldPointUtil.packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
-		int middleX = mapWorldPointToGraphicsPointX(mapPoint);
-		int middleY = mapWorldPointToGraphicsPointY(mapPoint);
-
-		if (pointX == Integer.MIN_VALUE || pointY == Integer.MIN_VALUE ||
-			middleX == Integer.MIN_VALUE || middleY == Integer.MIN_VALUE)
-		{
-			return WorldPointUtil.UNDEFINED;
-		}
-
-		final int dx = (int) ((pointX - middleX) / zoom);
-		final int dy = (int) ((-(pointY - middleY)) / zoom);
-
-		return WorldPointUtil.dxdy(mapPoint, dx, dy);
-	}
-
-	public int mapWorldPointToGraphicsPointX(int packedWorldPoint)
-	{
-		WorldMap worldMap = client.getWorldMap();
-
-		float pixelsPerTile = worldMap.getWorldMapZoom();
-
-		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
-			Rectangle worldMapRect = map.getBounds();
-
-			int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
-
-			Point worldMapPosition = worldMap.getWorldMapPosition();
-
-			int xTileOffset = WorldPointUtil.unpackWorldX(packedWorldPoint) + widthInTiles / 2 - worldMapPosition.getX();
-
-			int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
-			xGraphDiff += (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
-			xGraphDiff += (int) worldMapRect.getX();
-
-			return xGraphDiff;
-		}
-		return Integer.MIN_VALUE;
-	}
-
-	public int mapWorldPointToGraphicsPointY(int packedWorldPoint)
-	{
-		WorldMap worldMap = client.getWorldMap();
-
-		float pixelsPerTile = worldMap.getWorldMapZoom();
-
-		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
-			Rectangle worldMapRect = map.getBounds();
-
-			int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
-
-			Point worldMapPosition = worldMap.getWorldMapPosition();
-
-			int yTileMax = worldMapPosition.getY() - heightInTiles / 2;
-			int yTileOffset = (yTileMax - WorldPointUtil.unpackWorldY(packedWorldPoint) - 1) * -1;
-
-			int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
-			yGraphDiff -= (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
-			yGraphDiff = worldMapRect.height - yGraphDiff;
-			yGraphDiff += (int) worldMapRect.getY();
-
-			return yGraphDiff;
-		}
-		return Integer.MIN_VALUE;
-	}
-
-	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
-	{
-		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
-
-		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
-		{
-			return;
-		}
-
-		client.getMenu().createMenuEntry(position)
-			.setOption(option)
-			.setTarget(target)
-			.setParam0(event.getActionParam0())
-			.setParam1(event.getActionParam1())
-			.setIdentifier(event.getIdentifier())
-			.setType(MenuAction.RUNELITE)
-			.onClick(this::onMenuOptionClicked);
-	}
-
-	private Widget getMinimapDrawWidget()
-	{
-		if (client.isResized())
-		{
-			if (client.getVarbitValue(VarbitID.RESIZABLE_STONE_ARRANGEMENT) == 1)
-			{
-				return client.getWidget(InterfaceID.ToplevelPreEoc.MINIMAP);
-			}
-			return client.getWidget(InterfaceID.ToplevelOsrsStretch.MINIMAP);
-		}
-		return client.getWidget(InterfaceID.Toplevel.MINIMAP);
-	}
-
-	private Shape getMinimapClipAreaSimple()
-	{
-		Widget minimapDrawArea = getMinimapDrawWidget();
-
-		if (minimapDrawArea == null || minimapDrawArea.isHidden())
-		{
-			return null;
-		}
-
-		Rectangle bounds = minimapDrawArea.getBounds();
-
-		return new Ellipse2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
-	}
-
-	public Shape getMinimapClipArea()
-	{
-		Widget minimapWidget = getMinimapDrawWidget();
-
-		if (minimapWidget == null || minimapWidget.isHidden() || !minimapRectangle.equals(minimapRectangle = minimapWidget.getBounds()))
-		{
-			minimapClipFixed = null;
-			minimapClipResizeable = null;
-			minimapSpriteFixed = null;
-			minimapSpriteResizeable = null;
-		}
-
-		if (minimapWidget == null || minimapWidget.isHidden())
-		{
-			return null;
-		}
-
-		if (client.isResized())
-		{
-			if (minimapClipResizeable != null)
-			{
-				return minimapClipResizeable;
-			}
-			if (minimapSpriteResizeable == null)
-			{
-				minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZE_MAP_MASK, 0);
-			}
-			if (minimapSpriteResizeable != null)
-			{
-				minimapClipResizeable = bufferedImageToPolygon(minimapSpriteResizeable);
-				return minimapClipResizeable;
-			}
-			return getMinimapClipAreaSimple();
-		}
-		if (minimapClipFixed != null)
-		{
-			return minimapClipFixed;
-		}
-		if (minimapSpriteFixed == null)
-		{
-			minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MAP_MASK, 0);
-		}
-		if (minimapSpriteFixed != null)
-		{
-			minimapClipFixed = bufferedImageToPolygon(minimapSpriteFixed);
-			return minimapClipFixed;
-		}
-		return getMinimapClipAreaSimple();
-	}
-
-	private Polygon bufferedImageToPolygon(BufferedImage image)
-	{
-		Color outsideColour = null;
-		Color previousColour;
-		final int width = image.getWidth();
-		final int height = image.getHeight();
-		List<java.awt.Point> points = new ArrayList<>();
-		for (int y = 0; y < height; y++)
-		{
-			previousColour = outsideColour;
-			for (int x = 0; x < width; x++)
-			{
-				int rgb = image.getRGB(x, y);
-				int a = (rgb & 0xff000000) >>> 24;
-				int r = (rgb & 0x00ff0000) >> 16;
-				int g = (rgb & 0x0000ff00) >> 8;
-				int b = (rgb & 0x000000ff);
-				Color colour = new Color(r, g, b, a);
-				if (x == 0 && y == 0)
-				{
-					outsideColour = colour;
-					previousColour = colour;
-				}
-				if (!colour.equals(outsideColour) && previousColour.equals(outsideColour))
-				{
-					points.add(new java.awt.Point(x, y));
-				}
-				if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour))
-				{
-					points.add(0, new java.awt.Point(x, y));
-				}
-				previousColour = colour;
-			}
-		}
-		int offsetX = minimapRectangle.x;
-		int offsetY = minimapRectangle.y;
-		Polygon polygon = new Polygon();
-		for (java.awt.Point point : points)
-		{
-			polygon.addPoint(point.x + offsetX, point.y + offsetY);
-		}
-		return polygon;
+		annotator.postClientTick(scheduler.getActiveSearch());
 	}
 }

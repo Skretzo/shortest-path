@@ -52,6 +52,13 @@ KNOWN_COLUMNS = {
     "LeagueRegion",
 }
 
+# Files skipped entirely (basenames): generated family->id map resource, not a
+# transport TSV — its familyName/displayItemId/memberItemIds/memberLabels
+# columns are not transport columns.
+SKIP_FILES = {
+    "teleport_restrictions.tsv",
+}
+
 SKILL_NAMES = {
     "attack", "strength", "defence", "ranged", "prayer", "magic",
     "runecraft", "hitpoints", "crafting", "mining", "smithing",
@@ -195,14 +202,27 @@ def validate_consumable(value):
     return None
 
 
-def validate_region_override(value):
+def validate_region_id(value):
+    """Return error string if value is not a non-negative integer region id."""
+    v = value.strip()
+    if not v:
+        return None
+    try:
+        if int(v) < 0:
+            return f"region id '{v}' must be >= 0"
+    except ValueError:
+        return f"region id '{v}' is not an integer"
+    return None
+
+
+def validate_league_region(value):
     """Return error string if value is not a valid LeagueRegion name."""
     v = value.strip()
     if not v:
         return None
     if v not in LEAGUE_REGIONS:
         return (
-            f"region override '{v}' is not a valid LeagueRegion "
+            f"'{v}' is not a valid LeagueRegion "
             f"(expected one of: {', '.join(sorted(LEAGUE_REGIONS))})"
         )
     return None
@@ -219,7 +239,10 @@ COLUMN_VALIDATORS = {
     "Duration":         validate_duration,
     "Wilderness level": validate_wilderness_level,
     "Consumable":       validate_consumable,
-    "Region override":  validate_region_override,
+    "Region override":  validate_league_region,
+    # leagues/regions.tsv columns (regionId -> LeagueRegion mapping)
+    "regionId":         validate_region_id,
+    "LeagueRegion":     validate_league_region,
 }
 
 
@@ -254,9 +277,6 @@ def check_tsv(filepath):
 
     # Build per-column validator list (None = no validator)
     validators = [COLUMN_VALIDATORS.get(h) for h in headers]
-
-    # Special-case: track the Items column index for the skill-in-items check
-    items_idx  = next((i for i, h in enumerate(headers) if h == "Items"),  None)
 
     # Check data rows
     col_count_errors = 0
@@ -307,8 +327,6 @@ def check_tsv(filepath):
             errors = result if isinstance(result, list) else [result]
             col_name = headers[col_idx]
             for err in errors:
-                # Extra check: skill-in-items is already covered by validate_items,
-                # but we also keep the human-readable phrasing from validate_skills check
                 issues.append(f"  line {lineno} [{col_name}]: {err}")
 
     if col_count_errors > 5:
@@ -325,7 +343,8 @@ def main():
     resource_dir = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_DIR
 
     tsv_files = sorted(
-        glob.glob(os.path.join(resource_dir, "**", "*.tsv"), recursive=True)
+        f for f in glob.glob(os.path.join(resource_dir, "**", "*.tsv"), recursive=True)
+        if os.path.basename(f) not in SKIP_FILES
     )
 
     if not tsv_files:

@@ -21,7 +21,10 @@ import net.runelite.client.plugins.bank.BankSearch;
 import shortestpath.overlay.AbstractHighlightOverlay;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.transport.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.settings.Settings;
 
 /**
  * Filters the open bank down to the items the current path needs to pick up, the same items
@@ -37,7 +40,9 @@ public class BankPickupFilter
 
 	private final Client client;
 	private final ClientThread clientThread;
-	private final ShortestPathPlugin plugin;
+	private final Settings settings;
+	private final PathScheduler scheduler;
+	private final PathAnnotator annotator;
 	private final BankSearch bankSearch;
 
 	// The items the bank was last laid out with; empty while the bank is not filtered.
@@ -45,11 +50,14 @@ public class BankPickupFilter
 	private boolean dismissed;
 
 	@Inject
-	BankPickupFilter(Client client, ClientThread clientThread, ShortestPathPlugin plugin, BankSearch bankSearch)
+	BankPickupFilter(Client client, ClientThread clientThread, Settings settings, PathScheduler scheduler,
+		PathAnnotator annotator, BankSearch bankSearch)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
-		this.plugin = plugin;
+		this.settings = settings;
+		this.scheduler = scheduler;
+		this.annotator = annotator;
 		this.bankSearch = bankSearch;
 	}
 
@@ -146,19 +154,20 @@ public class BankPickupFilter
 
 	private Set<Integer> wantedItemIds()
 	{
-		if (!plugin.filterBankPickupItems || dismissed || client.getLocalPlayer() == null)
+		if (!settings.display().filterBankPickupItems() || dismissed || client.getLocalPlayer() == null)
 		{
 			return Set.of();
 		}
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		List<PathStep> path = search == null ? null : search.getPath();
 		if (path == null || path.isEmpty())
 		{
 			return Set.of();
 		}
 		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
-		int pathIndex = AbstractHighlightOverlay.playerPathIndex(path, playerLocation, plugin.recalculateDistance);
-		BankPickupResult pickup = plugin.getBankPickup(path, pathIndex);
+		int pathIndex = AbstractHighlightOverlay.playerPathIndex(path, playerLocation,
+			settings.lifecycle().recalculateDistance());
+		BankPickupResult pickup = annotator.getBankPickup(path, pathIndex, search);
 		return pickup == null ? Set.of() : pickup.bankItemIds;
 	}
 

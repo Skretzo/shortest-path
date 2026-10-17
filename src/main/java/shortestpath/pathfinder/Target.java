@@ -2,7 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * A tile a search may end on, with the items the player must hold when they arrive there: a spade

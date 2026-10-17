@@ -14,12 +14,15 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import shortestpath.ItemVariations;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
 import shortestpath.transport.Transport;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.settings.Settings;
 
 public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 {
@@ -42,23 +45,26 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	// last scanned list doubles as the cache key by reference identity.
 	private List<PathStep> scannedPath;
 	private int lastFairyRingEdgeIndex = -1;
+	private final Settings settings;
 
 	@Inject
-	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	public InventoryHighlightOverlay(Client client, ItemManager itemManager, Settings settings,
+		PathScheduler scheduler, PathAnnotator annotator)
 	{
-		super(client, plugin);
+		super(client, scheduler, annotator, settings);
 		this.itemManager = itemManager;
+		this.settings = settings;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.highlightInventoryItems)
+		if (!settings.display().highlightInventoryItems())
 		{
 			return null;
 		}
 
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			return null;
@@ -76,7 +82,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
+		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
 		boolean lumbridgeEliteDone = client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
 		// The dramen staff requirement lives outside the transport's item requirements,
@@ -119,12 +125,12 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 		// Build set of dramen/lunar staff IDs — skip highlighting when already equipped,
 		// since wearing them passively enables fairy rings without any active use.
 		Set<Integer> dramenStaffIds = new HashSet<>();
-		for (int id : ItemVariations.DRAMEN_STAFF.getIds())
+		for (int id : TransportEligibility.fairyStaffIds())
 		{
 			dramenStaffIds.add(id);
 		}
 
-		Color highlight = plugin.colourBankPickupHighlight;
+		Color highlight = settings.display().colourBankPickupHighlight();
 
 		// Highlight matching items in the inventory
 		Widget inventoryContainer = client.getWidget(InterfaceID.Inventory.ITEMS);
@@ -206,7 +212,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			lastFairyRingEdgeIndex = -1;
 			for (int i = 0; i + 1 < path.size(); ++i)
 			{
-				for (Transport transport : plugin.transportsForEdge(path.get(i), path.get(i + 1)))
+				for (Transport transport : annotator.transportsForEdge(path.get(i), path.get(i + 1)))
 				{
 					if (TransportType.FAIRY_RING.equals(transport.getType()))
 					{

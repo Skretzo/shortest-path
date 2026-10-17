@@ -15,13 +15,13 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
 import net.runelite.api.WorldType;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.client.events.ConfigChanged;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,25 +40,28 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
-import shortestpath.JewelleryBoxTier;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.TeleportationItem;
+import shortestpath.items.ItemStateService;
+import shortestpath.poh.PohService;
+import shortestpath.settings.TeleportationItem;
+import shortestpath.settings.ConfigChange;
+import shortestpath.settings.Effect;
+import shortestpath.settings.Settings;
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.BankPickupRequirements;
+import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.PohMountedItem;
-import shortestpath.transport.PohNexusPortal;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.poh.PohMountedItem;
+import shortestpath.poh.PohNexusPortal;
+import shortestpath.requirement.model.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderTest
 {
-	private static final Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+	private static final Map<Integer, Set<Transport>> transports = TestWorldData.rawTransports();
 	@Mock
 	Client client;
 	@Mock
@@ -70,6 +73,7 @@ public class PathfinderTest
 	@Mock
 	ShortestPathConfig config;
 	private PathfinderConfig pathfinderConfig;
+	private final ItemStateService itemState = ItemStateService.forTesting();
 
 	@Before
 	public void before()
@@ -78,6 +82,7 @@ public class PathfinderTest
 		when(config.currencyThreshold()).thenReturn(10000000);
 		when(config.collisionAwareBlockedTargets()).thenReturn(true);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
 	}
 
 	@Test
@@ -101,16 +106,18 @@ public class PathfinderTest
 						int outside = WorldPointUtil.packWorldPoint(2816, y, 0);
 						int inside = WorldPointUtil.packWorldPoint(2817, y, 0);
 						assertEquals(diary == 1 || sticks == 100 && threshold == 100,
-							hasTransportTo(pathfinderConfig.getTransportsPacked(false), outside, inside));
-						assertTrue(hasTransportTo(pathfinderConfig.getTransportsPacked(false), inside, outside));
+							hasTransportTo(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED), outside, inside));
+						assertTrue(hasTransportTo(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED), inside, outside));
 						if (diary == 1)
 						{
-							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(false).get(outside))
+							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED).get(outside))
 								.filter(t -> t.getDestination() == inside).findFirst().orElseThrow();
-							assertTrue(BankPickupRequirements.transportSatisfiedBy(entry, Map.of(), pathfinderConfig.getUnlocks()));
+							TransportEligibility eligibility = new TransportEligibility(Map.of(), Map.of(), Map.of(), -1,
+								Map.of(), false, TeleportationItem.NONE, Integer.MAX_VALUE, pathfinderConfig.getUnlocks(), true);
+							assertTrue(eligibility.satisfiedByPlayer(entry));
 							Pathfinder route = runPathfinder(outside, inside);
 							assertTrue(route.getResult().isReached());
-							assertFalse(route.getPath().stream().anyMatch(PathStep::isBankVisited));
+							assertFalse(route.getPath().stream().anyMatch(s -> s.getBankVisitState() == BankVisitState.BANKED));
 						}
 					}
 				}
@@ -314,7 +321,7 @@ public class PathfinderTest
 					exits++;
 				}
 				assertEquals("Mor Ul Rek door at " + transport.getOrigin(), entry ? entryAllowed : true,
-					hasTransportTo(pathfinderConfig.getTransportsPacked(false),
+					hasTransportTo(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED),
 						transport.getOrigin(), transport.getDestination()));
 			}
 		}
@@ -323,18 +330,28 @@ public class PathfinderTest
 	}
 
 	@Test
-	public void unlockOptionKeysMatchTransportOptionsRegex() throws Exception
+	public void unlockOptionKeysInvalidateTheRoute()
 	{
 		// An unlock* config key must retrigger pathfinding like other transport options.
-		java.lang.reflect.Field field = ShortestPathPlugin.class.getDeclaredField("TRANSPORT_OPTIONS_REGEX");
-		field.setAccessible(true);
-		java.util.regex.Pattern pattern = (java.util.regex.Pattern) field.get(null);
-		assertTrue(pattern.matcher("unlockCanoeAxe").matches());
-		assertTrue(pattern.matcher("unlockXericsHonour").matches());
-		assertTrue(pattern.matcher("unlockDragontoothPassage").matches());
-		assertTrue(pattern.matcher("unlockMorUlRek").matches());
-		assertFalse(pattern.matcher("unlock").matches());
-		assertFalse(pattern.matcher("myUnlockCanoeAxe").matches());
+		Settings settings = Settings.wrap(config);
+		for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage", "unlockMorUlRek"})
+		{
+			ConfigChanged event = new ConfigChanged();
+			event.setGroup("shortestpath");
+			event.setKey(key);
+			ConfigChange change = settings.onConfigChanged(event);
+			assertNotNull(key + " is in-group and must produce a fact", change);
+			assertTrue(key + " must invalidate a running route",
+				change.getEffects().contains(Effect.ROUTE_INVALIDATING));
+		}
+
+		// A look-alike key outside the table never invalidates.
+		ConfigChanged event = new ConfigChanged();
+		event.setGroup("shortestpath");
+		event.setKey("myUnlockCanoeAxe");
+		ConfigChange change = settings.onConfigChanged(event);
+		assertNotNull(change);
+		assertTrue("unknown keys carry no effects", change.getEffects().isEmpty());
 	}
 
 	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";
@@ -498,7 +515,7 @@ public class PathfinderTest
 			pathfinder.getResult() != null && pathfinder.getResult().isReached());
 		assertTrue(
 			"INVENTORY_AND_BANK mode should imply bank-path traversal",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertTrue(
 			"banked camulet should be used after banking",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
@@ -520,7 +537,7 @@ public class PathfinderTest
 
 		assertFalse(
 			"INVENTORY mode must not activate the bankVisited path state",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertFalse(
 			"INVENTORY mode must not use a banked camulet",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
@@ -548,7 +565,7 @@ public class PathfinderTest
 			pathfinder.getResult() != null && pathfinder.getResult().isReached());
 		assertTrue(
 			"includeBankPath=true should still bank for the camulet",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertTrue(
 			"banked camulet should be used after banking",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Camulet: Enakhra's Temple"));
@@ -1346,7 +1363,7 @@ public class PathfinderTest
 		if (usedFairyRing)
 		{
 			assertTrue("If fairy ring is used, path must visit a bank first to pick up Dramen staff",
-				pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+				pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		}
 		// If no fairy ring was used, that's also acceptable (walking path)
 	}
@@ -1479,7 +1496,7 @@ public class PathfinderTest
 			roguesDen);
 
 		assertFalse("Route should not visit a bank when the minigame teleport is ready",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test
@@ -1505,7 +1522,7 @@ public class PathfinderTest
 			roguesDen);
 
 		assertTrue("Route should visit a bank to fetch the games necklace",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 
 		// Issue #492: the banked games necklace and the Burthorpe Games Room minigame
 		// teleport share the destination tile 2899,3553,0. The step must carry the
@@ -1549,7 +1566,7 @@ public class PathfinderTest
 		assertEquals("Path should end at the Rogues' Den target",
 			roguesDen, path.get(path.size() - 1).getPackedPosition());
 		assertTrue("Route should still visit a bank to fetch the games necklace",
-			path.stream().anyMatch(PathStep::isBankVisited));
+			path.stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 	}
 
 	@Test
@@ -2153,7 +2170,8 @@ public class PathfinderTest
 		// Attach an empty bank after setupConfig; setupConfigWithBank would force usePoh off.
 		// includeBankPath alone exercises bank visits.
 		when(bank.getItems()).thenReturn(new Item[0]);
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();
 
 		int evilDavesBasement = WorldPointUtil.packWorldPoint(3080, 9892, 0);
@@ -2257,12 +2275,12 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertTrue("Quest cape in inventory with all quests finished should be usable",
-			hasUsableTeleport("Quest point cape: Teleport"));
+			hasUsableTeleport("Quest point cape: Legends' Guild"));
 
 		setupQuestPointDatabase(342);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertFalse("Quest cape should not teleport when quests are incomplete",
-			hasUsableTeleport("Quest point cape: Teleport"));
+			hasUsableTeleport("Quest point cape: Legends' Guild"));
 	}
 
 	@Test
@@ -2275,13 +2293,13 @@ public class PathfinderTest
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.SKILLCAPE_QP, 1));
 		assertTrue("Quest cape in bank with all quests finished should be usable after banking",
-			hasUsableTeleport("Quest point cape: Teleport", true));
+			hasUsableTeleport("Quest point cape: Legends' Guild", BankVisitState.BANKED));
 
 		setupQuestPointDatabase(342);
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.SKILLCAPE_QP, 1));
 		assertFalse("Quest cape in bank should not be suggested when quests are incomplete",
-			hasUsableTeleport("Quest point cape: Teleport", true));
+			hasUsableTeleport("Quest point cape: Legends' Guild", BankVisitState.BANKED));
 	}
 
 	@Test
@@ -2491,7 +2509,7 @@ public class PathfinderTest
 
 	private boolean hasUsableTeleportTo(int packedDestination)
 	{
-		for (Transport transport : pathfinderConfig.getUsableTeleports(false))
+		for (Transport transport : pathfinderConfig.getUsableTeleports(BankVisitState.CARRIED))
 		{
 			if (transport.getDestination() == packedDestination
 				&& transport.hasDisplayInfo("Respawn"))
@@ -2775,7 +2793,6 @@ public class PathfinderTest
 		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 
@@ -2787,7 +2804,6 @@ public class PathfinderTest
 		pathfinderConfig = new ChangingTimePathfinderConfig(
 			client, config, QuestState.FINISHED, false, false, refreshTimeMinutes, laterTimeMinutes);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(client.getTotalLevel()).thenReturn(2376);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
@@ -2817,7 +2833,6 @@ public class PathfinderTest
 		);
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		for (Map.Entry<Integer, Integer> entry : varbitValues.entrySet())
@@ -2843,7 +2858,7 @@ public class PathfinderTest
 		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{300});
 		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{43});
 		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{4});
-		when(client.getVarpValue(VarPlayer.QUEST_POINTS)).thenReturn(currentQuestPoints);
+		when(client.getVarpValue(VarPlayerID.QP)).thenReturn(currentQuestPoints);
 	}
 
 	private void setupEquipment(Item... items)
@@ -3048,8 +3063,8 @@ public class PathfinderTest
 					// PathfinderConfig unless usePoh is enabled, and the POH ring
 					// destination is unreachable by walking, so a picked sample would
 					// produce an arbitrarily long exhausted-search path instead of 2.
-					if (ShortestPathPlugin.isInsidePoh(originX, originY)
-						|| ShortestPathPlugin.isInsidePoh(destX, destY))
+					if (PohService.isInsidePoh(originX, originY)
+						|| PohService.isInsidePoh(destX, destY))
 					{
 						continue;
 					}
@@ -3155,12 +3170,12 @@ public class PathfinderTest
 	{
 		pathfinderConfig = new TestPathfinderConfig(client, config, questState, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
 		when(config.usePoh()).thenReturn(false);
 		doReturn(bankItems).when(bank).getItems();
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 
@@ -3175,7 +3190,7 @@ public class PathfinderTest
 			int origin = originStep.getPackedPosition();
 			int dest = pathfinder.getPath().get(i).getPackedPosition();
 
-			Set<Transport> stepTransports = transportsForStep(origin, originStep.isBankVisited());
+			Set<Transport> stepTransports = transportsForStep(origin, originStep.getBankVisitState());
 			for (Transport t : stepTransports)
 			{
 				if (t.getDestination() == dest && t.isType(type))
@@ -3217,7 +3232,7 @@ public class PathfinderTest
 			}
 			boolean matchingType = false;
 			boolean explainedByOtherType = false;
-			for (Transport t : transportsForStep(origin, originStep.isBankVisited()))
+			for (Transport t : transportsForStep(origin, originStep.getBankVisitState()))
 			{
 				if (t.getDestination() != dest)
 				{
@@ -3257,13 +3272,13 @@ public class PathfinderTest
 		{
 			PathStep originStep = pathfinder.getPath().get(i - 1);
 			PathStep destStep = pathfinder.getPath().get(i);
-			boolean bankVisited = destStep.isBankVisited();
+			BankVisitState bankVisited = destStep.getBankVisitState();
 			int origin = originStep.getPackedPosition();
-			if (stopAtFirstBank && bankVisited)
+			if (stopAtFirstBank && bankVisited == BankVisitState.BANKED)
 			{
 				return false;
 			}
-			if (startAfterFirstBank && !bankVisited)
+			if (startAfterFirstBank && bankVisited == BankVisitState.CARRIED)
 			{
 				continue;
 			}
@@ -3281,10 +3296,10 @@ public class PathfinderTest
 
 	private boolean hasUsableTeleport(String displayInfo)
 	{
-		return hasUsableTeleport(displayInfo, false);
+		return hasUsableTeleport(displayInfo, BankVisitState.CARRIED);
 	}
 
-	private boolean hasUsableTeleport(String displayInfo, boolean bankVisited)
+	private boolean hasUsableTeleport(String displayInfo, BankVisitState bankVisited)
 	{
 		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
 		{
@@ -3296,7 +3311,7 @@ public class PathfinderTest
 		return false;
 	}
 
-	private Set<Transport> transportsForStep(int origin, boolean bankVisited)
+	private Set<Transport> transportsForStep(int origin, BankVisitState bankVisited)
 	{
 		Set<Transport> stepTransports = new java.util.HashSet<>(Arrays.asList(
 			pathfinderConfig.getTransportsPacked(bankVisited).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)));
@@ -3337,7 +3352,7 @@ public class PathfinderTest
 			pathfinder.getPath().stream().anyMatch(s -> auburnvaleBankTiles.contains(s.getPackedPosition())));
 		assertTrue(
 			"path should enter post-bank inventory state (for ring of dueling from bank)",
-			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
+			pathfinder.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 		assertFalse(
 			"Fortis Colosseum bank tile should not appear on the shortest path when glory gates it off",
 			pathfinder.getPath().stream().anyMatch(s -> s.getPackedPosition() == fortisColosseumBank));

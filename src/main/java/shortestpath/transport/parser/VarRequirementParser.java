@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
+import shortestpath.requirement.model.VarCheckType;
+import shortestpath.requirement.model.VarRequirement;
 
 /**
  * Parses variable requirement strings into VarRequirement objects.

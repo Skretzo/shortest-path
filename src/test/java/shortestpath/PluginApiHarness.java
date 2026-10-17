@@ -33,11 +33,10 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathfinderBackend;
-import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.pathfinder.TestPathfinderConfig;
+import shortestpath.pathfinder.TestWorldData;
+import shortestpath.settings.TeleportationItem;
 
 /**
  * Drives a real {@link ShortestPathPlugin} through its public plugin-message API, the way another
@@ -52,18 +51,18 @@ import shortestpath.pathfinder.TestPathfinderConfig;
 final class PluginApiHarness implements AutoCloseable
 {
 	private static final long TIMEOUT_SECONDS = 60;
-	// Building the A* backend's static data takes seconds, so every harness shares one.
-	private static final AStarRoutingStaticProvider ASTAR_STATIC =
-		new AStarRoutingStaticProvider(() -> new CollisionMap(SplitFlagMap.fromResources()));
 	private static final AtomicInteger IDS = new AtomicInteger();
 
 	final ShortestPathPlugin plugin = new ShortestPathPlugin();
+	private shortestpath.scheduler.PathScheduler scheduler;
+	private shortestpath.presentation.PathAnnotator annotator;
 	final Settings settings = new Settings();
 	private final Client client = mock(Client.class);
 	private final ItemContainer inventory = mock(ItemContainer.class);
 	private final ItemContainer worn = mock(ItemContainer.class);
 	private final BlockingQueue<PluginMessage> posted = new LinkedBlockingQueue<>();
 	private final TestPathfinderConfig pathfinderConfig;
+	private shortestpath.items.ItemStateService itemState;
 
 	/** Plugin settings with the values the tests change. */
 	static final class Settings extends TestShortestPathConfig
@@ -145,13 +144,44 @@ final class PluginApiHarness implements AutoCloseable
 		}).when(eventBus).post(any());
 
 		pathfinderConfig = new TestPathfinderConfig(client, settings);
+		shortestpath.settings.Settings settingsService = shortestpath.settings.Settings.wrap(settings);
 		set("client", client);
 		set("clientThread", clientThread);
 		set("config", settings);
-		set("eventBus", eventBus);
-		set("worldMapPointManager", mock(WorldMapPointManager.class));
+		set("settings", settingsService);
+		shortestpath.poh.PohService pohService = shortestpath.poh.PohService.forTesting();
+		set("pohService", pohService);
 		set("pathfinderConfig", pathfinderConfig);
-		set("aStarRoutingStatic", ASTAR_STATIC);
+		// The harness builds the plugin without DI, so the scheduler, the refresh
+		// coordinator and the attach-time bindings are seeded the same way the
+		// shell's startUp wires them. The world map point manager moved into the
+		// scheduler with the marker machinery, and the item-state service declares
+		// its change facts straight to the coordinator.
+		scheduler = new shortestpath.scheduler.PathScheduler(client, clientThread, settings,
+			mock(WorldMapPointManager.class), new shortestpath.scheduler.DebugState());
+		shortestpath.scheduler.RefreshCoordinator coordinator =
+			new shortestpath.scheduler.RefreshCoordinator(scheduler, settings);
+		itemState = shortestpath.items.ItemStateService.forTesting(coordinator);
+		shortestpath.sailing.SailingService sailing =
+			shortestpath.sailing.SailingService.forTesting(client, coordinator);
+		pathfinderConfig.setItemStateService(itemState);
+		pathfinderConfig.setSailingService(sailing);
+		set("itemState", itemState);
+		set("sailing", sailing);
+		annotator =
+			shortestpath.presentation.PathAnnotator.forTesting(client, pohService, itemState);
+		annotator.attach(pathfinderConfig);
+		set("annotator", annotator);
+		shortestpath.api.PluginMessageHandler apiHandler =
+			new shortestpath.api.PluginMessageHandler(client, clientThread, eventBus, scheduler,
+				coordinator, settingsService, annotator);
+		set("apiHandler", apiHandler);
+		scheduler.attach(pathfinderConfig, sailing, apiHandler);
+		set("scheduler", scheduler);
+		set("coordinator", coordinator);
+		// The A* backend's static data takes seconds to build, so the harness injects the
+		// provider that already memoized it for the whole JVM rather than building its own.
+		set("aStarRoutingStatic", TestWorldData.routingStaticProvider());
 	}
 
 	private void set(String name, Object value)
@@ -161,6 +191,20 @@ final class PluginApiHarness implements AutoCloseable
 			Field field = ShortestPathPlugin.class.getDeclaredField(name);
 			field.setAccessible(true);
 			field.set(plugin, value);
+		}
+		catch (NoSuchFieldException e)
+		{
+			// Fields the pathfinding machinery move relocated onto the scheduler.
+			try
+			{
+				Field field = shortestpath.scheduler.PathScheduler.class.getDeclaredField(name);
+				field.setAccessible(true);
+				field.set(scheduler, value);
+			}
+			catch (ReflectiveOperationException e2)
+			{
+				throw new AssertionError(e2);
+			}
 		}
 		catch (ReflectiveOperationException e)
 		{
@@ -187,14 +231,14 @@ final class PluginApiHarness implements AutoCloseable
 	{
 		ItemContainer bank = mock(ItemContainer.class);
 		doReturn(items(idsAndQuantities)).when(bank).getItems();
-		pathfinderConfig.bank = bank;
+		itemState.noteBankContainer(bank);
 		return this;
 	}
 
 	/** Forgets the bank, as before it is first opened in a session. */
 	PluginApiHarness bankNotSeen()
 	{
-		pathfinderConfig.bank = null;
+		itemState.noteBankContainer(null);
 		return this;
 	}
 
@@ -225,9 +269,9 @@ final class PluginApiHarness implements AutoCloseable
 		{
 			data.put("target", target);
 		}
-		ActiveSearch before = plugin.getActiveSearch();
+		ActiveSearch before = scheduler.getActiveSearch();
 		send("path", data);
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null || search == before)
 		{
 			return search;
@@ -333,7 +377,21 @@ final class PluginApiHarness implements AutoCloseable
 	/** The missing-items label the displayed path draws on the player's tile, or null. */
 	String missingItemsLabel()
 	{
-		return plugin.getMissingTargetItemsText();
+		return annotator.getMissingTargetItemsText(scheduler.getActiveSearch());
+	}
+
+	/** The search currently displayed by the plugin, as the scheduler reports it. */
+	ActiveSearch activeSearch()
+	{
+		return scheduler.getActiveSearch();
+	}
+
+	/** The bank-pickup projection for the shown path, as the annotator reports it. */
+	shortestpath.presentation.BankPickupRequirements.BankPickupResult bankPickup(
+		List<shortestpath.pathfinder.PathStep> path, int index, ActiveSearch search)
+	{
+		return ((shortestpath.presentation.PathAnnotator) get("annotator"))
+			.getBankPickup(path, index, search);
 	}
 
 	@Override
@@ -350,6 +408,19 @@ final class PluginApiHarness implements AutoCloseable
 			Field field = ShortestPathPlugin.class.getDeclaredField(name);
 			field.setAccessible(true);
 			return field.get(plugin);
+		}
+		catch (NoSuchFieldException e)
+		{
+			try
+			{
+				Field field = shortestpath.scheduler.PathScheduler.class.getDeclaredField(name);
+				field.setAccessible(true);
+				return field.get(scheduler);
+			}
+			catch (ReflectiveOperationException e2)
+			{
+				throw new AssertionError(e2);
+			}
 		}
 		catch (ReflectiveOperationException e)
 		{

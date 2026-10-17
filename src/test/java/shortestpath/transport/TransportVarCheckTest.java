@@ -3,7 +3,7 @@ package shortestpath.transport;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
-import shortestpath.transport.parser.VarCheckType;
+import shortestpath.requirement.model.VarCheckType;
 
 public class TransportVarCheckTest
 {

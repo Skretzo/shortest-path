@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
@@ -104,8 +105,8 @@ public class WildernessGlobalTeleportTest
 	{
 		TeleportCapability capability = TeleportCapability.at(location);
 		Set<Integer> castable = new HashSet<>();
-		for (int i = 0; i < account.globalCount(capability, false); i++)
-			castable.add(account.globalDestination(capability, false, i));
+		for (int i = 0; i < account.globalCount(capability, BankVisitState.CARRIED); i++)
+			castable.add(account.globalDestination(capability, BankVisitState.CARRIED, i));
 		for (int i = 0; i < expected.length; i++)
 			assertEquals(capability + " destination " + i, expected[i],
 				castable.contains(WorldPointUtil.packWorldPoint(1000 + i, 1000, 0)));
@@ -158,7 +159,7 @@ public class WildernessGlobalTeleportTest
 		for (int i = 0; i < n; i++) members[i] = i;
 		try
 		{
-			return RoutingStatic.create(new int[0], new int[0], new byte[0], new int[0], new int[0], sites, offsets,
+			return RoutingStatic.takeOwnership(new int[0], new TileComponents(0, 1), new byte[0], new char[0], new char[0], sites, offsets,
 				ids, 1, new int[] {0, n}, members, new int[0], new int[0], new int[0], new int[0], n, n, 0, 0, 0,
 				new int[n + 1], new int[0], new int[0]);
 		}

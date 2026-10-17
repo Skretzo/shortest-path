@@ -1,0 +1,73 @@
+package shortestpath.requirement.model;
+
+/**
+ * Detected or player-declared unlock states,
+ * referenced by {@code UNLOCK_<NAME>=1} tokens in transport Items cells.
+ * An unlock branch satisfies a requirement through account state alone: it never
+ * contributes items and is never covered by inventory, staff or offhand ids.
+ * An unlock alternative inside an OR group acts as a relief
+ * ({@code AXE=1|UNLOCK_CANOE_AXE=1}), while an ANDed pure-unlock requirement
+ * acts as a gate ({@code 13393=1&UNLOCK_XERICS_HONOUR=1}).
+ */
+public enum Unlock
+{
+	/**
+	 * An axe stored at a canoe station, usable instead of a carried axe.
+	 */
+	CANOE_AXE,
+
+	/**
+	 * Dragontooth Island free passage, paying no ecto-token toll.
+	 */
+	DRAGONTOOTH,
+
+	/**
+	 * Xeric's Honour, unlocking the talisman teleports.
+	 */
+	XERICS_HONOUR,
+
+	/**
+	 * Free hardwood grove entry, detected from Karamja elite diary completion.
+	 */
+	KARAMJA_ELITE,
+
+	/**
+	 * Permanent access to Mor Ul Rek's inner city after showing a fire cape.
+	 */
+	MOR_UL_REK,
+
+	/**
+	 * Logs deposited in a balloon route's destination basket, which the pilot
+	 * consumes per destination (regular, oak, willow, yew or magic). The
+	 * stored stack is not exposed to the client, so the player declares it
+	 * per route through the {@code balloonLogBasketRoutes} config set — the
+	 * unlock is granted only to a transport whose destination is one of the
+	 * selected routes, never globally.
+	 */
+	BALLOON_LOG_BASKET,
+	;
+
+	private static final String TOKEN_PREFIX = "UNLOCK_";
+
+	/**
+	 * Resolves an {@code UNLOCK_<NAME>} token to its unlock, or {@code null}
+	 * when the token does not name a known unlock. Callers that accept the
+	 * token class must fail loudly on {@code null} so that a typo'd unlock
+	 * name can never silently drop a requirement.
+	 */
+	public static Unlock fromName(String name)
+	{
+		if (name == null || !name.startsWith(TOKEN_PREFIX))
+		{
+			return null;
+		}
+		try
+		{
+			return Unlock.valueOf(name.substring(TOKEN_PREFIX.length()));
+		}
+		catch (IllegalArgumentException e)
+		{
+			return null;
+		}
+	}
+}

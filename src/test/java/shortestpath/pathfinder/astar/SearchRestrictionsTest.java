@@ -170,8 +170,8 @@ public class SearchRestrictionsTest
 		siteOffsets[n] = n;
 		try
 		{
-			return RoutingStatic.create(tiles, new int[n], new byte[] {4, 68, 64, 0, 0},
-				new int[] {-1, -1, -1, -1, -1}, new int[] {-1, -1, -1, -1, -1}, tiles, siteOffsets,
+			return RoutingStatic.takeOwnership(tiles, new TileComponents(n, 1), new byte[] {4, 68, 64, 0, 0},
+				new char[5], new char[5], tiles, siteOffsets,
 				new int[n], 1, new int[] {0, n}, componentMembers, new int[0], new int[0], new int[0],
 				new int[0], n, n, 0, 0, 0, sparseOffsets, new int[0], new int[0]);
 		}

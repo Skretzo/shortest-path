@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Map;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.TransportAvailabilityFixture;
 import shortestpath.transport.Transport;
@@ -58,8 +59,8 @@ public class MultiTargetTest
 		assertMinimumOverSingles(graph, t3Collision(), targets, labels, false);
 		for (int i = 0; i < multi.targetCount(); i++)
 		{
-			assertEquals(0, labels.targetLabel(i, false));
-			assertEquals(0, labels.targetLabel(i, true));
+			assertEquals(0, labels.targetLabel(i, BankVisitState.CARRIED));
+			assertEquals(0, labels.targetLabel(i, BankVisitState.BANKED));
 		}
 	}
 
@@ -91,7 +92,7 @@ public class MultiTargetTest
 
 		for (int packed : SparseFixture.PROBES)
 		{
-			for (boolean banked : new boolean[] {false, true})
+			for (BankVisitState banked : BankVisitState.values())
 			{
 				for (int[] components : new int[][] {{0}, {1}, {0, 1}})
 				{
@@ -228,8 +229,8 @@ public class MultiTargetTest
 
 		static RoutingStatic create() throws Exception
 		{
-			return RoutingStatic.create(new int[] {A, OTHER_PLANE}, new int[] {0, 1}, new byte[] {0, 0},
-				new int[] {-1, -1}, new int[] {-1, -1}, new int[] {A, B, C, OTHER_PLANE},
+			return RoutingStatic.takeOwnership(new int[] {A, OTHER_PLANE}, RoutingStaticTestFixture.components(0, 1), new byte[] {0, 0},
+				new char[2], new char[2], new int[] {A, B, C, OTHER_PLANE},
 				new int[] {0, 1, 2, 3, 4}, new int[] {0, 0, 0, 1}, 2, new int[] {0, 3, 4},
 				new int[] {0, 1, 2, 3}, new int[0], new int[0], new int[0], new int[0], 4, 5, 1, 3, 6,
 				new int[] {0, 1, 2, 3, 3, 6}, new int[] {4, 4, 4, 0, 1, 2}, new int[] {6, 0, 8, 6, 0, 8});

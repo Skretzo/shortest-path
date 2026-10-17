@@ -4,14 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Quest;
-import shortestpath.transport.parser.VarRequirement;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.VarRequirement;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * Load-scoped deduplication pools for transport requirement objects and display strings (issue
  * #491). Identical requirements and labels are extremely common across the permuted transport rows,
- * so a single canonical instance is shared. The interner is local to a {@code loadAllFromResources}
- * call and discarded afterwards, so the pools themselves are never retained.
+ * so a single canonical instance is shared. The interner is local to a {@code
+ * ResourceLoader.transports()} call and discarded afterwards, so the pools themselves are never
+ * retained.
  */
 final class LoadInterner
 {

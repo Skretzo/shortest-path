@@ -35,7 +35,7 @@ public class SeaReachabilityTest
 	public static void load()
 	{
 		map = new CollisionMap(SplitFlagMap.fromResources());
-		transports = TransportLoader.loadAllFromResources();
+		transports = ResourceLoader.transports();
 	}
 
 	@Test

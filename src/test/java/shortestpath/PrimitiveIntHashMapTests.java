@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.TransportType;
 
 public class PrimitiveIntHashMapTests
 {
@@ -38,7 +38,28 @@ public class PrimitiveIntHashMapTests
 	@Test
 	public void tryInsertTransports()
 	{
-		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		// Synthetic stand-in for the transport map this test used to load: a
+		// deterministic spread of packed world-point keys carrying builder-made
+		// transports exercises the same put/append/get paths — the container
+		// semantics never depended on the world data.
+		HashMap<Integer, Set<Transport>> transports = new HashMap<>();
+		for (int plane = 0; plane < 2; plane++)
+		{
+			for (int x = 3000; x < 3032; x++)
+			{
+				for (int y = 3000; y < 3016; y++)
+				{
+					int packedPoint = WorldPointUtil.packWorldPoint(x, y, plane);
+					Set<Transport> transportsFromOrigin = new HashSet<>();
+					transportsFromOrigin.add(new Transport.TransportBuilder()
+						.origin(packedPoint)
+						.destination(WorldPointUtil.packWorldPoint(x, y + 1, plane))
+						.type(TransportType.TRANSPORT)
+						.build());
+					transports.put(packedPoint, transportsFromOrigin);
+				}
+			}
+		}
 		PrimitiveIntHashMap<Set<Transport>> map = new PrimitiveIntHashMap<>(transports.size());
 
 		for (Map.Entry<Integer, Set<Transport>> entry : transports.entrySet())
