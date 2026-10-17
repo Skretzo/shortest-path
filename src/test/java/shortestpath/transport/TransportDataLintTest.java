@@ -429,10 +429,13 @@ public class TransportDataLintTest
 	 * family (its {@code Items} cell contributes a member item id) carries a
 	 * {@code Display info} cell usable as the destination-option checkbox
 	 * text: non-blank, and with a non-blank tail when the cell uses the
-	 * {@code "<item>: <destination>"} form. Also asserts that within each
-	 * family no two distinct destinations share one label — such a pair would
-	 * render indistinguishable checkboxes. {@code Ardougne cloaks} must yield
-	 * at least two options as the concrete drift tripwire.
+	 * {@code "<item>: <destination>"} form. Within each family, rows sharing
+	 * a destination must share one label — a second label for the same tile
+	 * silently loses to first-wins in option derivation, while same-label
+	 * rows covering multiple tiles are the intended grouping mechanism (one
+	 * in-game teleport name, several arrivals). Pins the Ardougne-cloaks,
+	 * Teleport-to-house and Skills-necklace option counts plus the Farming
+	 * Guild group's two-tile expansion.
 	 */
 	@Test
 	public void testRestrictionServingRowLabels() throws IOException
@@ -441,11 +444,15 @@ public class TransportDataLintTest
 		Assert.assertFalse("teleport_restrictions.tsv should contain at least one family",
 			families.isEmpty());
 
-		// member id -> owning families, mirroring the production serving rule
-		Set<Integer> memberIds = new HashSet<>();
+		// member id -> owning family name, first-wins like the production
+		// serving rule
+		Map<Integer, String> memberToFamily = new HashMap<>();
 		for (TeleportRestriction.Family family : families)
 		{
-			memberIds.addAll(family.memberItemIds());
+			for (int member : family.memberItemIds())
+			{
+				memberToFamily.putIfAbsent(member, family.name());
+			}
 		}
 
 		String itemsTsv = new String(
@@ -455,6 +462,8 @@ public class TransportDataLintTest
 		List<TransportRecord> records = new TsvParser().parse(itemsTsv);
 
 		List<String> violations = new ArrayList<>();
+		// family name -> destination cell -> option label its rows carry
+		Map<String, Map<String, String>> servedLabels = new HashMap<>();
 		int servingRows = 0;
 		for (TransportRecord record : records)
 		{
@@ -463,7 +472,7 @@ public class TransportDataLintTest
 			{
 				continue;
 			}
-			boolean serves = false;
+			Set<String> served = new HashSet<>();
 			String normalized = items.replace(" ", "").replace("&&", "&").replace("||", "|")
 				.toUpperCase();
 			for (String andPart : normalized.split("&"))
@@ -476,19 +485,20 @@ public class TransportDataLintTest
 					}
 					String name = orPart.split("=", 2)[0];
 					if (!name.isEmpty() && name.chars().allMatch(Character::isDigit)
-						&& memberIds.contains(Integer.parseInt(name)))
+						&& memberToFamily.containsKey(Integer.parseInt(name)))
 					{
-						serves = true;
+						served.add(memberToFamily.get(Integer.parseInt(name)));
 					}
 				}
 			}
-			if (!serves)
+			if (served.isEmpty())
 			{
 				continue;
 			}
 			servingRows++;
 			String displayInfo = record.getDisplayInfo();
 			String trimmed = displayInfo == null ? "" : displayInfo.trim();
+			String label = null;
 			if (trimmed.isEmpty())
 			{
 				violations.add("blank Display info on family-serving row to '"
@@ -497,10 +507,31 @@ public class TransportDataLintTest
 			else
 			{
 				int colon = trimmed.indexOf(':');
-				if (colon >= 0 && trimmed.substring(colon + 1).trim().isEmpty())
+				String tail = colon >= 0 ? trimmed.substring(colon + 1).trim() : trimmed;
+				if (tail.isEmpty())
 				{
 					violations.add("blank label tail after ':' on family-serving row '"
 						+ trimmed + "'");
+				}
+				else
+				{
+					label = tail;
+				}
+			}
+			if (label == null)
+			{
+				continue;
+			}
+			for (String family : served)
+			{
+				Map<String, String> byDest =
+					servedLabels.computeIfAbsent(family, k -> new HashMap<>());
+				String previous = byDest.putIfAbsent(record.getDestination(), label);
+				if (previous != null && !previous.equals(label))
+				{
+					violations.add("family '" + family + "' destination '"
+						+ record.getDestination() + "' carries two labels ('" + previous
+						+ "' vs '" + label + "') — a tile must belong to exactly one option");
 				}
 			}
 		}
@@ -508,39 +539,52 @@ public class TransportDataLintTest
 		Assert.assertTrue("unusable family-serving row labels:\n" + String.join("\n", violations),
 			violations.isEmpty());
 
-		// Within a family every distinct destination needs a distinguishing
-		// label — same-label-different-destination yields indistinguishable
-		// checkboxes
 		for (TeleportRestriction.Family family : families)
 		{
-			Map<Integer, String> options = family.options();
 			Assert.assertFalse("family '" + family.name()
-				+ "' should expose at least one destination option", options.isEmpty());
-			Map<String, List<Integer>> byLabel = new HashMap<>();
-			for (Map.Entry<Integer, String> option : options.entrySet())
-			{
-				byLabel.computeIfAbsent(option.getValue(), k -> new ArrayList<>())
-					.add(option.getKey());
-			}
-			for (Map.Entry<String, List<Integer>> entry : byLabel.entrySet())
-			{
-				Assert.assertEquals("family '" + family.name() + "' label '" + entry.getKey()
-					+ "' must not cover multiple destinations: " + entry.getValue(),
-					1, entry.getValue().size());
-			}
+				+ "' should expose at least one destination option",
+				family.options().isEmpty());
 		}
 
-		// Concrete drift tripwire: the cloaks serve Kandarin Monastery and
-		// Ardougne Farm — if derivation or labels regress this fails first
+		// Concrete drift tripwires — the pinned cases the option UI relies
+		// on: the cloaks serve the monastery and farm entries; the house
+		// tablet's varbit-gated portal towns collapse to one "Outside the
+		// house" option next to "Inside the house"; the skills necklace's
+		// gated Farming Guild arrivals collapse to one "Farming Guild"
+		// option covering both tiles while the other guilds stay distinct.
 		TeleportRestriction.Family ardougne = families.stream()
 			.filter(f -> f.name().equals("Ardougne cloaks"))
 			.findFirst()
 			.orElseThrow(() -> new AssertionError("Ardougne cloaks family missing"));
-		Assert.assertTrue("Ardougne cloaks should expose the monastery and farm destinations",
-			ardougne.options().size() >= 2);
+		Assert.assertEquals("Ardougne cloaks should expose the monastery and farm options",
+			2, ardougne.options().size());
 
-		System.out.printf("Validated %d family-serving rows; labels distinguish destinations "
-			+ "within all %d families.\n", servingRows, families.size());
+		TeleportRestriction.Family house = families.stream()
+			.filter(f -> f.name().equals("Teleport to house"))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("Teleport to house family missing"));
+		Assert.assertEquals("Teleport to house should expose Inside/Outside the house only",
+			2, house.options().size());
+
+		TeleportRestriction.Family necklace = families.stream()
+			.filter(f -> f.name().equals("Skills necklace (1-6)"))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("Skills necklace family missing"));
+		Assert.assertEquals("Skills necklace should expose its six menu destinations",
+			6, necklace.options().size());
+		Assert.assertTrue("Farming Guild must be one option",
+			necklace.options().containsValue("Farming Guild"));
+
+		// The Farming Guild option covers both gated arrivals: expanding a
+		// record on the canonical destination yields both tiles.
+		int outside = WorldPointUtil.packWorldPoint(1248, 3719, 0);
+		int inside = WorldPointUtil.packWorldPoint(1248, 3725, 0);
+		Assert.assertEquals("the Farming Guild option covers both its tiles",
+			Set.of(outside, inside),
+			TeleportRestriction.expandOptionDests(Map.of(11105, Set.of(outside))).get(11105));
+
+		System.out.printf("Validated %d family-serving rows; every destination belongs to "
+			+ "exactly one option within all %d families.\n", servingRows, families.size());
 	}
 
 	/**
