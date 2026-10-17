@@ -262,6 +262,13 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean showSidebarPanel()
+	{
+		Object value = overrides.get(ConfigKey.SHOW_SIDEBAR_PANEL.getKey());
+		return value instanceof Boolean ? (boolean) value : base.showSidebarPanel();
+	}
+
+	@Override
 	public boolean cancelInstead()
 	{
 		Object value = overrides.get(ConfigKey.CANCEL_INSTEAD.getKey());
