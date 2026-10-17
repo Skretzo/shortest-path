@@ -305,6 +305,9 @@ class ShortestPathHomePanel extends PluginPanel
 	private JButton configButton()
 	{
 		JButton button = footerButton(CONFIG_ICON, "Plugin Settings");
+		// The bundled PNG reads as a wrench — the real cog is the white
+		// cog item sprite, swapped in once the image lands.
+		panel.loadItemIcon(ItemID.WHITECOG, button, FOOTER_ICON_SIZE);
 		button.addActionListener(e -> panel.eventBus.post(new OverlayMenuClicked(
 			new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, null, null),
 			configOverlay)));
