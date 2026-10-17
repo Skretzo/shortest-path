@@ -73,6 +73,16 @@ public class ShortestPathPanel extends PluginPanel
 	static final int CARD_ICON_SIZE = 16;
 	private static final int SPINNER_FIELD_WIDTH = 6;
 	static final int SUB_LIST_INDENT = 16;
+	/**
+	 * The two-tone fill every expandable surface shares — transport cards,
+	 * restriction rows and collapsible enum groups alike: the collapsed
+	 * header bar carries the dark tone while the expanded detail well reads
+	 * the lighter medium grey, visibly distinct from the category
+	 * background the surfaces float on. Applied through
+	 * {@link #styleExpandable} so no site can drift to its own colours.
+	 */
+	static final Color EXPANDABLE_HEADER_BACKGROUND = ColorScheme.DARKER_GRAY_COLOR;
+	static final Color EXPANDABLE_DETAIL_BACKGROUND = ColorScheme.MEDIUM_GRAY_COLOR;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_TOOLTIP =
 		"Only show teleports for items in your inventory, equipment or bank";
@@ -958,6 +968,21 @@ public class ShortestPathPanel extends PluginPanel
 	static String html(String text)
 	{
 		return "<html>" + text + "</html>";
+	}
+
+	/**
+	 * Pins the shared two-tone contract on an expandable surface's two
+	 * children: the header bar turns opaque in
+	 * {@link #EXPANDABLE_HEADER_BACKGROUND} and the detail well opaque in
+	 * {@link #EXPANDABLE_DETAIL_BACKGROUND}. Their children keep their
+	 * transparent fills so the tones show through.
+	 */
+	static void styleExpandable(JComponent header, JComponent detail)
+	{
+		header.setOpaque(true);
+		header.setBackground(EXPANDABLE_HEADER_BACKGROUND);
+		detail.setOpaque(true);
+		detail.setBackground(EXPANDABLE_DETAIL_BACKGROUND);
 	}
 
 	/**

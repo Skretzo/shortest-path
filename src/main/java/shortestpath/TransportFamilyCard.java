@@ -71,7 +71,6 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 
 		header = new DimmableJPanel();
 		header.setLayout(new BorderLayout());
-		header.setOpaque(false);
 
 		nameArea = new JPanel(new BorderLayout(ICON_LABEL_GAP, 0));
 		nameArea.setOpaque(false);
@@ -103,11 +102,14 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		add(header);
 
 		detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
-		detail.setOpaque(false);
 		// Indented under the icon column so detail rows line up with the name.
 		detail.setBorder(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
 		detail.setVisible(false);
 		add(detail);
+
+		// The shared two-tone fill: dark header bar over the lighter
+		// detail well.
+		ShortestPathPanel.styleExpandable(header, detail);
 
 		applyEnabled(isMasterOn());
 		panel.registerConfigListener(keyName, this::syncFromConfig);
