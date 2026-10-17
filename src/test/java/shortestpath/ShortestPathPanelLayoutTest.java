@@ -1541,6 +1541,54 @@ public class ShortestPathPanelLayoutTest
 		}
 	}
 
+	// ---- Expandable surfaces: the shared two-tone fill -------------------
+
+	/**
+	 * Every expandable surface paints the same two-tone fill: the header
+	 * bar — the line carrying the name, expander and master control — is an
+	 * opaque {@code DARKER_GRAY_COLOR} strip, and the detail well that opens
+	 * beneath it is opaque {@code MEDIUM_GRAY_COLOR}, visibly lighter and
+	 * distinct from the {@code DARK_GRAY_COLOR} category background the
+	 * collapsed surfaces float on. Transport cards, restriction rows and the
+	 * collapsible enum groups all share the one pairing so no site can
+	 * drift to its own colours.
+	 */
+	@Test
+	public void expandableSurfacesShareTheTwoToneFill()
+	{
+		newPanel();
+
+		TransportFamilyCard card = transportCardByKey("useAgilityShortcuts");
+		assertNotNull("a transport card", card);
+		assertTwoTone(card, "transport card");
+
+		JPanel row = restrictionRowByName("Ardougne Cloaks");
+		assertNotNull("a restriction row", row);
+		assertTwoTone(row, "restriction row");
+
+		CollapsibleEnumGroup<?> group = groupByLabel("Ancient");
+		assertNotNull("a collapsible enum group", group);
+		assertTwoTone(group, "enum group");
+	}
+
+	/**
+	 * Pins child 0 as the opaque dark header bar and the last child as the
+	 * opaque medium-grey detail well — every expandable surface builds its
+	 * header and detail as its only two children, in that order.
+	 */
+	private static void assertTwoTone(JComponent surface, String what)
+	{
+		JComponent header = (JComponent) surface.getComponent(0);
+		JComponent detail = (JComponent) surface.getComponent(
+			surface.getComponentCount() - 1);
+		assertTrue(what + " header bar is opaque", header.isOpaque());
+		assertEquals(what + " header bar carries the dark tone",
+			ColorScheme.DARKER_GRAY_COLOR, header.getBackground());
+		assertTrue(what + " detail well is opaque", detail.isOpaque());
+		assertEquals(what + " detail well carries the lighter tone",
+			ColorScheme.MEDIUM_GRAY_COLOR, detail.getBackground());
+	}
+
 	// ---- POH portal-nexus grouping ---------------------------------------
 
 	@Test
