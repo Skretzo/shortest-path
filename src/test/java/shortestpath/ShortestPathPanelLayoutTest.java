@@ -298,7 +298,7 @@ public class ShortestPathPanelLayoutTest
 		assertSame(panel.home(), panel.muxer().getComponent(0));
 
 		String[] expected = {"General", "Transports", "Teleport Restrictions",
-			"Unlocks", "Bank", "Player-Owned House", "Highlights"};
+			"Unlocks", "Bank", "Player-Owned House", "Display"};
 		JPanel grid = tileGrid();
 		assertEquals(7, grid.getComponentCount());
 		for (int i = 0; i < expected.length; i++)
@@ -1604,43 +1604,43 @@ public class ShortestPathPanelLayoutTest
 		assertEquals("1/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
 	}
 
-	// ---- Highlights category -----------------------------------------------
+	// ---- Display category -----------------------------------------------
 
-	private CategoryPanel highlightsCategory()
+	private CategoryPanel displayCategory()
 	{
 		return panel.categories().get(6);
 	}
 
 	/**
-	 * The seventh home tile drills into "Highlights": five plain check
+	 * The seventh home tile drills into "Display": five plain check
 	 * rows — one per display-side toggle — a live {@code n/5 on} status
 	 * line and a real item sprite. The display defaults leave four of the
 	 * five toggles on ({@code showBankPickupInfo} defaults off).
 	 */
 	@Test
-	public void highlightsTileCoversTheFiveDisplayToggles() throws Exception
+	public void displayTileCoversTheFiveDisplayToggles() throws Exception
 	{
 		newPanel();
-		CategoryPanel highlights = highlightsCategory();
-		assertEquals("Highlights", highlights.categoryName());
-		assertEquals("five highlight check rows", 5, highlights.rows().size());
+		CategoryPanel display = displayCategory();
+		assertEquals("Display", display.categoryName());
+		assertEquals("five highlight check rows", 5, display.rows().size());
 
 		String[] keys = {"showTransportInfo", "showBankPickupInfo",
 			"highlightBankPickupItems", "highlightSpellbookSpells",
 			"highlightInventoryItems"};
 		for (int i = 0; i < keys.length; i++)
 		{
-			ShortestPathPanel.SearchRow row = highlights.rows().get(i);
+			ShortestPathPanel.SearchRow row = display.rows().get(i);
 			// The harness has no config descriptors, so rows name their key.
 			assertEquals(keys[i] + " row in build order", keys[i], row.display);
 			assertNotNull(keys[i] + " row carries a checkbox",
 				masterBox(row.component));
 		}
 
-		assertTrue("the Highlights tile requests its sprite",
+		assertTrue("the Display tile requests its sprite",
 			iconRequests.contains(ItemID.SOTE_ORB_OF_LIGHT));
 
-		JLabel status = statusLabelOf(tileNamed("Highlights"));
+		JLabel status = statusLabelOf(tileNamed("Display"));
 		assertEquals("defaults count four of five toggles on",
 			"4/5 on", status.getText());
 
@@ -1657,14 +1657,14 @@ public class ShortestPathPanelLayoutTest
 	 * query lands just the matching rows.
 	 */
 	@Test
-	public void highlightsRowsSurfaceThroughSearch()
+	public void displayRowsSurfaceThroughSearch()
 	{
 		newPanel();
-		CategoryPanel highlights = highlightsCategory();
+		CategoryPanel display = displayCategory();
 		assertEquals("a category-name query lists every highlight row",
-			5, panel.matchingRows(highlights, "highlights").size());
+			5, panel.matchingRows(display, "display").size());
 		assertEquals("a key-label query narrows to the matching rows",
-			2, panel.matchingRows(highlights, "bankpickup").size());
+			2, panel.matchingRows(display, "bankpickup").size());
 	}
 
 	// ---- Combo styling + tile-name fit ------------------------------------
