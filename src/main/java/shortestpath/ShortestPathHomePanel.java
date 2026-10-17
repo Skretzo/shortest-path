@@ -3,6 +3,8 @@ package shortestpath;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -370,6 +372,14 @@ class ShortestPathHomePanel extends PluginPanel
 	{
 		private static final SoftBevelBorder RAISED = new SoftBevelBorder(BevelBorder.RAISED);
 		private static final SoftBevelBorder LOWERED = new SoftBevelBorder(BevelBorder.LOWERED);
+		/**
+		 * The tile's own text inset. The hand-painted bevel is paint-only
+		 * while the LAF's button border — though never painted — still
+		 * contributes its (generous) insets to the layout and would
+		 * silently shrink the label column; an explicit empty border
+		 * keeps the allotted label width deterministic.
+		 */
+		private static final int TILE_TEXT_INSET = 4;
 
 		private final JLabel iconLabel;
 		private final JLabel statusLabel;
@@ -383,6 +393,8 @@ class ShortestPathHomePanel extends PluginPanel
 			setBorderPainted(false);
 			setFocusPainted(false);
 			setOpaque(false);
+			setBorder(new EmptyBorder(TILE_TEXT_INSET, TILE_TEXT_INSET,
+				TILE_TEXT_INSET, TILE_TEXT_INSET));
 			setToolTipText(name);
 			addActionListener(e -> onClick.run());
 			// Armed/pressed transitions repaint so the pressed animation
@@ -401,13 +413,36 @@ class ShortestPathHomePanel extends PluginPanel
 				ShortestPathPanel.html("<center>" + name + "</center>"),
 				SwingConstants.CENTER);
 			nameLabel.setForeground(Color.WHITE);
-			nameLabel.setFont(FontManager.getRunescapeBoldFont());
+			// Html only wraps at spaces, so a single token wider than the
+			// allotted label width ("Player-Owned") would clip mid-glyph
+			// in bold — such names fall back to the small font.
+			Font bold = FontManager.getRunescapeBoldFont();
+			nameLabel.setFont(
+				widestTokenWidth(name, nameLabel.getFontMetrics(bold))
+					<= TILE_EDGE - 2 * TILE_TEXT_INSET
+				? bold
+				: FontManager.getRunescapeSmallFont());
 			add(nameLabel, BorderLayout.CENTER);
 
 			statusLabel = new JLabel("", SwingConstants.CENTER);
 			statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 			statusLabel.setFont(FontManager.getRunescapeSmallFont());
 			add(statusLabel, BorderLayout.SOUTH);
+		}
+
+		/**
+		 * The widest unbreakable run in a tile name — the html wrap only
+		 * breaks at spaces, so this is the minimum width the name can
+		 * render without clipping.
+		 */
+		private static int widestTokenWidth(String name, FontMetrics metrics)
+		{
+			int widest = 0;
+			for (String token : name.split(" "))
+			{
+				widest = Math.max(widest, metrics.stringWidth(token));
+			}
+			return widest;
 		}
 
 		/**
