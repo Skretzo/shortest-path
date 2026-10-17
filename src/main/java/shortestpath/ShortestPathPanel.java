@@ -864,6 +864,17 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
+	 * Same item-icon load onto a button — the footer's settings button
+	 * carries the white cog item sprite rather than a bundled PNG.
+	 */
+	void loadItemIcon(int itemId, AbstractButton button, int size)
+	{
+		AsyncBufferedImage image = itemManager.getImage(itemId);
+		image.onLoaded(() -> SwingUtilities.invokeLater(() ->
+			button.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
+	}
+
+	/**
 	 * The client-sprite counterpart to {@link #loadItemIcon}: some tiles
 	 * carry cache sprites rather than item imagery (the Display tile uses
 	 * the Settings&gt;Display monitor glyph). {@code getSpriteAsync} runs
