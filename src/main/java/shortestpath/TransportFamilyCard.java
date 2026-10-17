@@ -107,8 +107,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		detail.setVisible(false);
 		add(detail);
 
-		// The shared two-tone fill: dark header bar over the lighter
-		// detail well.
+		// The shared expandable chrome: dark header bar over the
+		// category-toned, orange-bordered detail well.
 		ShortestPathPanel.styleExpandable(header, detail);
 
 		applyEnabled(isMasterOn());
