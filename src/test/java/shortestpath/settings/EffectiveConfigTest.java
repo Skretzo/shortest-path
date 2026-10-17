@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.Method;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,6 +23,7 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
+import shortestpath.transport.BalloonRoute;
 
 /**
  * Pins the {@link EffectiveConfig} coercion contract: every coercible category
@@ -153,6 +155,52 @@ public class EffectiveConfigTest
 
 
 
+
+	@Test
+	public void balloonFlagOverrideReachesTheUnwrittenRouteSet()
+	{
+		// The route set is payload-inert, but its unwritten default derives
+		// from the legacy flag — an override on the flag must move the
+		// derived set too, or the snapshot advertises the unlock while
+		// routing unlocks nothing.
+		EffectiveConfig effective = effectiveWith(Map.of("unlockBalloonLogBasket", true));
+		assertTrue(effective.unlockBalloonLogBasket());
+		assertEquals(EnumSet.allOf(BalloonRoute.class), effective.balloonLogBasketRoutes());
+	}
+
+	@Test
+	public void balloonFlagOffOverrideClearsTheFlagDerivedRouteSet()
+	{
+		TestShortestPathConfig stub = new TestShortestPathConfig();
+		stub.setUnlockBalloonLogBasketValue(true);
+		Settings settings = Settings.wrap(stub);
+		settings.applyOverrides(Map.of("unlockBalloonLogBasket", false));
+		assertEquals(EnumSet.noneOf(BalloonRoute.class),
+			settings.effective().balloonLogBasketRoutes());
+	}
+
+	@Test
+	public void writtenBalloonRouteSetWinsOverFlagOverride()
+	{
+		// The first written set takes over: an explicit partial selection
+		// is not re-derived from the flag.
+		TestShortestPathConfig stub = new TestShortestPathConfig();
+		stub.setBalloonLogBasketRoutesValue(EnumSet.of(BalloonRoute.GRAND_TREE));
+		Settings settings = Settings.wrap(stub);
+		settings.applyOverrides(Map.of("unlockBalloonLogBasket", true));
+		assertEquals(EnumSet.of(BalloonRoute.GRAND_TREE),
+			settings.effective().balloonLogBasketRoutes());
+	}
+
+	@Test
+	public void balloonRouteSetPayloadStaysInert()
+	{
+		// The set key itself keeps its NONE coercion — a payload carrying
+		// a set value never reaches the getter.
+		EffectiveConfig effective = effectiveWith(Map.of(
+			"balloonLogBasketRoutes", Set.of(BalloonRoute.GRAND_TREE)));
+		assertEquals(base().balloonLogBasketRoutes(), effective.balloonLogBasketRoutes());
+	}
 
 	@Test
 	public void backendKeyIsInert()
