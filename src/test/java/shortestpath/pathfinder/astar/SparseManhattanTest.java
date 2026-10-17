@@ -66,7 +66,7 @@ public class SparseManhattanTest
 			attachments(A), TARGET);
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
 
-		for (boolean banked : new boolean[] {false, true})
+		for (BankVisitState banked : BankVisitState.values())
 		{
 			assertEquals(0, heuristic.seedCount(1, banked));
 			assertEquals(0, heuristic.generatorCount(1, banked));
