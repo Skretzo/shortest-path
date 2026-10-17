@@ -47,6 +47,7 @@ import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.poh.PohMountedItem;
+import shortestpath.transport.BalloonRoute;
 import shortestpath.transport.Transport;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.ResourceLoader;
@@ -240,6 +241,15 @@ public class PathfinderConfig
 	private volatile Set<PohMountedItem> enabledPohMountedItems = Set.of();
 	@Getter
 	private volatile Set<Unlock> unlocks = Set.of();
+	/**
+	 * Packed destinations of the balloon routes whose log basket the player
+	 * declared stocked via {@code balloonLogBasketRoutes}. The eligibility
+	 * snapshot grants {@link Unlock#BALLOON_LOG_BASKET} only to a balloon
+	 * transport landing on one of these tiles — the legacy
+	 * {@code unlockBalloonLogBasket} flag no longer adds the unlock globally;
+	 * it only derives the route set's unwritten-key default.
+	 */
+	private volatile Set<Integer> balloonLogBasketDestinations = Set.of();
 	/**
 	 * Item ids the player excluded from routing via the hidden
 	 * {@code blockedTeleportItems} CSV ({@code id} records), and per-item
@@ -484,11 +494,23 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.MOR_UL_REK);
 		}
-		if (effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET))
-		{
-			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
-		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
+
+		// The basket unlock is per balloon route: the configured
+		// balloonLogBasketRoutes set becomes the packed destinations the
+		// eligibility snapshot grants Unlock.BALLOON_LOG_BASKET to — never a
+		// global declared unlock. An unwritten key reads the legacy
+		// unlockBalloonLogBasket flag's default (all six or none).
+		Set<BalloonRoute> basketRoutes = effective.balloonLogBasketRoutes();
+		Set<Integer> basketDests = new HashSet<>();
+		if (basketRoutes != null)
+		{
+			for (BalloonRoute route : basketRoutes)
+			{
+				basketDests.add(route.getPackedDestination());
+			}
+		}
+		balloonLogBasketDestinations = Set.copyOf(basketDests);
 
 		// Player-declared per-item restrictions: a bare id blocks the item from
 		// routing entirely, while id:N pins the tiles-saved threshold used to
@@ -772,7 +794,8 @@ public class PathfinderConfig
 		// an immutable snapshot, so no check can observe the game mid-refresh.
 		RequirementContext context = RequirementContext.capture(playerStateSource, requirementHooks,
 			policy, evaluationTimeMinutes, Arrays.asList(allTransports), bankRequirements, itemState.getBank(),
-			unlocks, respawnPrifddinas, leagueModeState, spiritTrees.getAvailableSpiritTrees());
+			unlocks, respawnPrifddinas, leagueModeState, spiritTrees.getAvailableSpiritTrees(),
+			balloonLogBasketDestinations);
 		eligibility = context.getEligibility();
 		eligibilityStale = false;
 		heldItems = eligibility.heldItems();
@@ -989,7 +1012,7 @@ public class PathfinderConfig
 		{
 			eligibility = ItemStateService.collectEligibility(playerStateSource, itemState.getBank(),
 				transportTypeConfig.getTeleportationItemSetting(), currencyThreshold,
-				includeBankPath, unlocks);
+				includeBankPath, unlocks, balloonLogBasketDestinations);
 			eligibilityStale = false;
 			heldItems = eligibility.heldItems();
 		}
