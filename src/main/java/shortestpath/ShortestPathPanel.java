@@ -617,7 +617,8 @@ public class ShortestPathPanel extends PluginPanel
 		List<SearchRow> rows = new ArrayList<>();
 		for (G group : groupOrder)
 		{
-			rows.add(enumSetGroupRow(keyName, type, titleCase(group.name()), buckets.get(group)));
+			rows.add(enumSetGroupRow(keyName, type,
+				titleCase(group.name().toLowerCase(Locale.ROOT)), buckets.get(group)));
 		}
 		return rows;
 	}
