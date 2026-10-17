@@ -110,6 +110,28 @@ class CategoryPanel extends PluginPanel
 	}
 
 	/**
+	 * Whether {@code query} (already lowercased) hits the category's own
+	 * name/alias — the case where every row counts as a match regardless
+	 * of its own search text. The home results view applies the same
+	 * normalization the drilled category uses in {@link #applyQuery}.
+	 */
+	boolean nameMatches(String query)
+	{
+		return !query.isEmpty() && matchText.contains(query);
+	}
+
+	/**
+	 * The category's own match text (lowercased name + aliases). Rows
+	 * that self-filter — the restriction checklist's items-disabled
+	 * hint — match on this text rather than a second hardcoded copy,
+	 * so renaming the category or its alias cannot desync them.
+	 */
+	String matchText()
+	{
+		return matchText;
+	}
+
+	/**
 	 * Extra header slot on the right edge — the Restrictions category parks
 	 * its "Owned" checkbox here.
 	 */

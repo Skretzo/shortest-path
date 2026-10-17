@@ -147,13 +147,29 @@ class ShortestPathHomePanel extends PluginPanel
 			header.setBorder(new MatteBorder(0, 0, 1, 0, ColorScheme.MEDIUM_GRAY_COLOR));
 			content.add(header);
 
+			boolean nameMatch = category.nameMatches(q);
 			for (ShortestPathPanel.SearchRow row : matches)
 			{
 				if (row.component instanceof RestrictionListPanel)
 				{
-					for (String label : panel.restrictionListPanel().matchingLabels(q))
+					// The checklist expands through its own label matcher:
+					// a category-name hit lists every family — the same
+					// normalization the drilled category applies — and
+					// the row's own display is the fallback so the header
+					// never dangles over zero result rows (items disabled,
+					// or the Owned filter emptying the list).
+					List<String> labels = panel.restrictionListPanel()
+						.matchingLabels(nameMatch ? "" : q);
+					if (labels.isEmpty())
 					{
-						content.add(resultRow(category, row, label));
+						content.add(resultRow(category, row, row.display));
+					}
+					else
+					{
+						for (String label : labels)
+						{
+							content.add(resultRow(category, row, label));
+						}
 					}
 					continue;
 				}
