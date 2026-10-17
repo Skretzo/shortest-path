@@ -171,6 +171,7 @@ public class ShortestPathPlugin extends Plugin
 	public boolean showBankPickupInfo;
 	public boolean showUnreachableText;
 	public boolean highlightBankPickupItems;
+	public boolean filterBankPickupItems;
 	public boolean highlightSpellbookSpells;
 	public boolean highlightInventoryItems;
 
@@ -220,6 +221,8 @@ public class ShortestPathPlugin extends Plugin
 	private PathMapTooltipOverlay pathMapTooltipOverlay;
 	@Inject
 	private BankItemHighlightOverlay bankItemHighlightOverlay;
+	@Inject
+	private BankPickupFilter bankPickupFilter;
 	@Inject
 	private SpellbookHighlightOverlay spellbookHighlightOverlay;
 	@Inject
@@ -439,6 +442,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(bankItemHighlightOverlay);
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
+		eventBus.register(bankPickupFilter);
 
 		if (config.drawDebugPanel())
 		{
@@ -461,6 +465,8 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(spellbookHighlightOverlay);
 		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
+		eventBus.unregister(bankPickupFilter);
+		bankPickupFilter.reset();
 
 		synchronized (pathfinderMutex)
 		{
@@ -2179,6 +2185,7 @@ public class ShortestPathPlugin extends Plugin
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
 		showUnreachableText = override("showUnreachableText", config.showUnreachableText());
 		highlightBankPickupItems = override("highlightBankPickupItems", config.highlightBankPickupItems());
+		filterBankPickupItems = override("filterBankPickupItems", config.filterBankPickupItems());
 		highlightSpellbookSpells = override("highlightSpellbookSpells", config.highlightSpellbookSpells());
 		highlightInventoryItems = override("highlightInventoryItems", config.highlightInventoryItems());
 

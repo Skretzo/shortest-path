@@ -9,7 +9,7 @@ import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
 
-abstract class AbstractHighlightOverlay extends Overlay
+public abstract class AbstractHighlightOverlay extends Overlay
 {
 	// Extra tiles of grace past the recalculation distance: beyond it the route
 	// recalculates but the stale path stays on screen while the replacement is
@@ -38,7 +38,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 		return playerPathIndex(path, playerLocation, plugin.recalculateDistance);
 	}
 
-	static int playerPathIndex(List<PathStep> path, int playerLocation, int recalculateDistance)
+	public static int playerPathIndex(List<PathStep> path, int playerLocation, int recalculateDistance)
 	{
 		for (int i = 0; i < path.size(); i++)
 		{
