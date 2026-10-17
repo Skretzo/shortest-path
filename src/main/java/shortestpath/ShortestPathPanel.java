@@ -294,7 +294,8 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		restrictionsCategory = new CategoryPanel(this, "Teleport Restrictions", "");
 		categories.add(restrictionsCategory);
-		restrictionListPanel = new RestrictionListPanel(this, settings, client, clientThread, itemState);
+		restrictionListPanel = new RestrictionListPanel(this, settings, client,
+			clientThread, itemState, restrictionsCategory.matchText());
 		restrictionsCategory.addRow(restrictionListPanel,
 			"Teleport Restrictions", searchable("teleport restrictions"));
 
