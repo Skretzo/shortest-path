@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Set;
@@ -89,6 +90,10 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		}
 
 		Color highlight = settings.display().colourBankPickupHighlight();
+		// Items scrolled out of view keep their positions above or below the bank, so only the
+		// visible part of the item area is drawn on.
+		Shape clip = graphics.getClip();
+		graphics.clip(bankContainer.getBounds());
 		for (Widget item : items)
 		{
 			if (item == null || item.isHidden() || item.getItemId() < 0)
@@ -104,6 +109,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 				}
 			}
 		}
+		graphics.setClip(clip);
 
 		return null;
 	}
