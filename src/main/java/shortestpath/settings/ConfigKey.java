@@ -68,6 +68,7 @@ enum ConfigKey
 	UNLOCK_MOR_UL_REK("unlockMorUlRek", ShortestPathConfig::unlockMorUlRek, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	INCLUDE_BANK_PATH("includeBankPath", ShortestPathConfig::includeBankPath, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	CURRENCY_THRESHOLD("currencyThreshold", ShortestPathConfig::currencyThreshold, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	SHOW_SIDEBAR_PANEL("showSidebarPanel", ShortestPathConfig::showSidebarPanel, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	CANCEL_INSTEAD("cancelInstead", ShortestPathConfig::cancelInstead, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	RECALCULATE_DISTANCE("recalculateDistance", ShortestPathConfig::recalculateDistance, Coercion.INT, Effect.DISPLAY_ONLY),
 	FINISH_DISTANCE("finishDistance", ShortestPathConfig::reachedDistance, Coercion.INT, Effect.DISPLAY_ONLY), // keyName differs from method name

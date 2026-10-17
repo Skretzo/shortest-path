@@ -33,6 +33,18 @@ public interface ShortestPathConfig extends Config
 	String sectionSettings = "sectionSettings";
 
 	@ConfigItem(
+		keyName = "showSidebarPanel",
+		name = "Show Sidebar Panel",
+		description = "Whether the Shortest Path icon is shown in the RuneLite sidebar",
+		position = 70,
+		section = sectionSettings
+	)
+	default boolean showSidebarPanel()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "pathfinderAlgorithm",
 		name = "Pathfinder Algorithm",
 		description = "Algorithm used for pathfinding",
