@@ -493,10 +493,12 @@ public class PathfinderConfig
 
 		// Player-declared per-item restrictions: a bare id blocks the item from
 		// routing entirely, while id:N pins the tiles-saved threshold used to
-		// price transports that reference the id. A rep@dest record blocks one
-		// destination option of the family that representative id heads — the
-		// map is frozen deep so the refresh snapshot can never observe a later
-		// config edit through a shared inner set.
+		// price transports that reference the id. A rep@dest record blocks the
+		// option of the family that representative id heads — the engine-facing
+		// set holds the option's whole label-group destination set, expanded
+		// here so a blocked option suppresses every tile variant it covers.
+		// The map is frozen deep so the refresh snapshot can never observe a
+		// later config edit through a shared inner set.
 		Set<Integer> blockedItems = new HashSet<>();
 		Map<Integer, Integer> thresholdOverrides = new HashMap<>();
 		Map<Integer, Set<Integer>> optionBlocks = new HashMap<>();
@@ -505,7 +507,8 @@ public class PathfinderConfig
 		blockedItemIds = Set.copyOf(blockedItems);
 		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
 		Map<Integer, Set<Integer>> frozenOptionBlocks = new HashMap<>();
-		for (Map.Entry<Integer, Set<Integer>> entry : optionBlocks.entrySet())
+		for (Map.Entry<Integer, Set<Integer>> entry
+			: TeleportRestriction.expandOptionDests(optionBlocks).entrySet())
 		{
 			frozenOptionBlocks.put(entry.getKey(), Set.copyOf(entry.getValue()));
 		}
