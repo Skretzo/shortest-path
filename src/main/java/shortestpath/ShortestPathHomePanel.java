@@ -80,11 +80,13 @@ class ShortestPathHomePanel extends PluginPanel
 	/**
 	 * The display-side toggles the Display tile counts — shared by the
 	 * category builder, the refresh-listener registration and the status
-	 * computation so the tile can never read "n/4" over five rows.
+	 * computation so the tile can never read "n/3" over the wrong row
+	 * count. Booleans only: the tile-counter combo and spinner render in
+	 * the same category but carry no on/off state to count.
 	 */
 	static final String[] DISPLAY_KEYS = {
-		"showTransportInfo", "showBankPickupInfo", "highlightBankPickupItems",
-		"highlightSpellbookSpells", "highlightInventoryItems"};
+		"showTransportInfo", "highlightSpellbookSpells",
+		"highlightInventoryItems"};
 
 	private static final int FOOTER_BUTTON_EDGE = 22;
 	private static final int FOOTER_ICON_SIZE = 18;

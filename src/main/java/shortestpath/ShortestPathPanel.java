@@ -231,7 +231,7 @@ public class ShortestPathPanel extends PluginPanel
 		CategoryPanel general = new CategoryPanel(this, "General", "routing");
 		categories.add(general);
 		// Routing policies first, then the path-lifecycle controls, then
-		// the respawn flag, then the backend selectors.
+		// the backend selectors.
 		general.addRow(checkRow("avoidWilderness"));
 		general.addRow(checkRow("collisionAwareBlockedTargets"));
 		// Sailing moves is a routing policy with no threshold family —
@@ -244,7 +244,7 @@ public class ShortestPathPanel extends PluginPanel
 		general.addRow(spinnerRow("finishDistance"));
 		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
 		general.addRow(checkRow("showUnreachableText"));
-		general.addRow(checkRow("respawnPrifddinas"));
+		general.addRow(spinnerRow("calculationCutoff"));
 		// The teleport-items mode is a routing policy, so its combo lives
 		// with the other General rows; its Transports card is masterless.
 		general.addRow(comboRow("useTeleportationItems"));
@@ -358,6 +358,9 @@ public class ShortestPathPanel extends PluginPanel
 		unlocks.addRow(checkRow("unlockXericsHonour"));
 		unlocks.addRow(checkRow("unlockDragontoothPassage"));
 		unlocks.addRow(checkRow("unlockMorUlRek"));
+		// The respawn flag is account state the client cannot read — it
+		// sits with the unlocks rather than the General routing policies.
+		unlocks.addRow(checkRow("respawnPrifddinas"));
 	}
 
 	private void buildBankCategory()
@@ -366,6 +369,10 @@ public class ShortestPathPanel extends PluginPanel
 		categories.add(bank);
 		bank.addRow(checkRow("includeBankPath"));
 		bank.addRow(spinnerRow("costBankVisit"));
+		// The bank-pickup display pair belongs with the bank routing
+		// options — the hint and item highlight only act on bank visits.
+		bank.addRow(checkRow("showBankPickupInfo"));
+		bank.addRow(checkRow("highlightBankPickupItems"));
 	}
 
 	private void buildPohCategory()
@@ -412,6 +419,10 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			display.addRow(checkRow(key));
 		}
+		// The tile counter moved over from the stock settings surface —
+		// a mode combo and its step spinner, not plain toggles.
+		display.addRow(comboRow("showTileCounter"));
+		display.addRow(spinnerRow("tileCounterStep"));
 	}
 
 	private void applyPohEnabled(boolean enabled)
