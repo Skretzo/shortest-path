@@ -62,6 +62,7 @@ public final class ResourceLoader
 	private static final String DELIM = " ";
 	private static final String LEAGUE_REGIONS_PATH = "/leagues/regions.tsv";
 	private static final String FAMILY_RESOURCE = "/transports/teleport_restrictions.tsv";
+	private static final String TELEPORTATION_ITEMS_RESOURCE = "/transports/teleportation_items.tsv";
 
 	private ResourceLoader()
 	{
@@ -569,6 +570,37 @@ public final class ResourceLoader
 			throw new RuntimeException(e);
 		}
 		return parseFamilies(contents);
+	}
+
+	/**
+	 * Loads the raw records of {@code /transports/teleportation_items.tsv}
+	 * through the shared {@link TsvParser} — the same resource
+	 * {@link TransportType#TELEPORTATION_ITEM} loads its transports from.
+	 * Records stay raw field maps; domain mapping is the caller's job (same
+	 * division as {@link #families()}/{@link #parseFamilies}). A missing
+	 * resource degrades to an empty list with a warning; an
+	 * {@link IOException} is wrapped in {@link RuntimeException}.
+	 */
+	public static List<TransportRecord> teleportationItemRecords()
+	{
+		final String contents;
+		try
+		{
+			InputStream stream =
+				ResourceLoader.class.getResourceAsStream(TELEPORTATION_ITEMS_RESOURCE);
+			if (stream == null)
+			{
+				log.warn("Teleportation items resource {} is missing — degrading to no records",
+					TELEPORTATION_ITEMS_RESOURCE);
+				return Collections.emptyList();
+			}
+			contents = new String(Util.readAllBytes(stream), StandardCharsets.UTF_8);
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+		return tsvParser.parse(contents);
 	}
 
 	/**
