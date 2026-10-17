@@ -425,6 +425,125 @@ public class TransportDataLintTest
 	}
 
 	/**
+	 * Asserts every {@code teleportation_items.tsv} row serving a restriction
+	 * family (its {@code Items} cell contributes a member item id) carries a
+	 * {@code Display info} cell usable as the destination-option checkbox
+	 * text: non-blank, and with a non-blank tail when the cell uses the
+	 * {@code "<item>: <destination>"} form. Also asserts that within each
+	 * family no two distinct destinations share one label — such a pair would
+	 * render indistinguishable checkboxes. {@code Ardougne cloaks} must yield
+	 * at least two options as the concrete drift tripwire.
+	 */
+	@Test
+	public void testRestrictionServingRowLabels() throws IOException
+	{
+		List<TeleportRestriction.Family> families = TeleportRestriction.loadFamilies();
+		Assert.assertFalse("teleport_restrictions.tsv should contain at least one family",
+			families.isEmpty());
+
+		// member id -> owning families, mirroring the production serving rule
+		Set<Integer> memberIds = new HashSet<>();
+		for (TeleportRestriction.Family family : families)
+		{
+			memberIds.addAll(family.memberItemIds());
+		}
+
+		String itemsTsv = new String(
+			Util.readAllBytes(Objects.requireNonNull(
+				TeleportRestriction.class.getResourceAsStream("/transports/teleportation_items.tsv"))),
+			StandardCharsets.UTF_8);
+		List<TransportRecord> records = new TsvParser().parse(itemsTsv);
+
+		List<String> violations = new ArrayList<>();
+		int servingRows = 0;
+		for (TransportRecord record : records)
+		{
+			String items = record.getItems();
+			if (items == null || items.isEmpty())
+			{
+				continue;
+			}
+			boolean serves = false;
+			String normalized = items.replace(" ", "").replace("&&", "&").replace("||", "|")
+				.toUpperCase();
+			for (String andPart : normalized.split("&"))
+			{
+				for (String orPart : andPart.split("\\|"))
+				{
+					if (orPart.isEmpty() || orPart.startsWith("UNLOCK_"))
+					{
+						continue;
+					}
+					String name = orPart.split("=", 2)[0];
+					if (!name.isEmpty() && name.chars().allMatch(Character::isDigit)
+						&& memberIds.contains(Integer.parseInt(name)))
+					{
+						serves = true;
+					}
+				}
+			}
+			if (!serves)
+			{
+				continue;
+			}
+			servingRows++;
+			String displayInfo = record.getDisplayInfo();
+			String trimmed = displayInfo == null ? "" : displayInfo.trim();
+			if (trimmed.isEmpty())
+			{
+				violations.add("blank Display info on family-serving row to '"
+					+ record.getDestination() + "'");
+			}
+			else
+			{
+				int colon = trimmed.indexOf(':');
+				if (colon >= 0 && trimmed.substring(colon + 1).trim().isEmpty())
+				{
+					violations.add("blank label tail after ':' on family-serving row '"
+						+ trimmed + "'");
+				}
+			}
+		}
+		Assert.assertTrue("expected family-serving rows in teleportation_items.tsv", servingRows > 0);
+		Assert.assertTrue("unusable family-serving row labels:\n" + String.join("\n", violations),
+			violations.isEmpty());
+
+		// Within a family every distinct destination needs a distinguishing
+		// label — same-label-different-destination yields indistinguishable
+		// checkboxes
+		for (TeleportRestriction.Family family : families)
+		{
+			Map<Integer, String> options = family.options();
+			Assert.assertFalse("family '" + family.name()
+				+ "' should expose at least one destination option", options.isEmpty());
+			Map<String, List<Integer>> byLabel = new HashMap<>();
+			for (Map.Entry<Integer, String> option : options.entrySet())
+			{
+				byLabel.computeIfAbsent(option.getValue(), k -> new ArrayList<>())
+					.add(option.getKey());
+			}
+			for (Map.Entry<String, List<Integer>> entry : byLabel.entrySet())
+			{
+				Assert.assertEquals("family '" + family.name() + "' label '" + entry.getKey()
+					+ "' must not cover multiple destinations: " + entry.getValue(),
+					1, entry.getValue().size());
+			}
+		}
+
+		// Concrete drift tripwire: the cloaks serve Kandarin Monastery and
+		// Ardougne Farm — if derivation or labels regress this fails first
+		TeleportRestriction.Family ardougne = families.stream()
+			.filter(f -> f.name().equals("Ardougne cloaks"))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("Ardougne cloaks family missing"));
+		Assert.assertTrue("Ardougne cloaks should expose the monastery and farm destinations",
+			ardougne.options().size() >= 2);
+
+		System.out.printf("Validated %d family-serving rows; labels distinguish destinations "
+			+ "within all %d families.\n", servingRows, families.size());
+	}
+
+	/**
 	 * The balloon log-basket unlock is destination-keyed relief: the shared
 	 * basket storage is invisible to the client, so a trip is satisfied by a
 	 * carried log OR the declared unlock. That places hard constraints on where
