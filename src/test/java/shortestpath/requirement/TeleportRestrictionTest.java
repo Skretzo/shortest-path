@@ -377,7 +377,7 @@ public class TeleportRestrictionTest
 	public void constructionCapeMergesHomeAndPortalRowsUnderTheTownName()
 	{
 		TeleportRestriction.Family capes =
-			familyNamed("The Construction cape's home teleports");
+			familyNamed("Construction cape");
 		Assert.assertTrue(capes.options().containsValue("Rimmington"));
 		Assert.assertTrue(capes.options().containsValue("Aldarin"));
 		Assert.assertFalse(capes.options().containsValue("Home (Rimmington)"));
@@ -390,7 +390,7 @@ public class TeleportRestrictionTest
 	@Test
 	public void maxCapeMergesTeleToPohRowsUnderPohPortals()
 	{
-		TeleportRestriction.Family maxCapes = familyNamed("Max capes");
+		TeleportRestriction.Family maxCapes = familyNamed("Max cape");
 		Assert.assertTrue(maxCapes.options().containsValue("POH Portals: Rimmington"));
 		Assert.assertTrue(maxCapes.options().containsValue("POH Portals: Aldarin"));
 		Assert.assertFalse(maxCapes.options().containsValue("Tele to POH (Rimmington)"));

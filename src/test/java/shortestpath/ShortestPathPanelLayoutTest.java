@@ -797,11 +797,11 @@ public class ShortestPathPanelLayoutTest
 	/**
 	 * General reads in three groups: routing toggles and the currency
 	 * threshold first, then the path-lifecycle controls moved in from the
-	 * settings panel — cancel/recalculate/finish distances plus the
-	 * unreachable pair — then the respawn flag, and finally the backend
-	 * selectors (teleport-item mode, algorithm, A* weight). The lifecycle
-	 * keys render per their config type: the two booleans as check rows,
-	 * the two {@code @Range} ints as spinners.
+	 * settings panel — cancel/recalculate/finish distances, the
+	 * unreachable pair and the calculation cutoff — and finally the
+	 * backend selectors (teleport-item mode, algorithm, A* weight). The
+	 * lifecycle keys render per their config type: the two booleans as
+	 * check rows, the {@code @Range} ints as spinners.
 	 */
 	@Test
 	public void generalGroupsRoutingLifecycleAndBackendRows()
@@ -821,7 +821,7 @@ public class ShortestPathPanelLayoutTest
 				"useSailingMoves", "currencyThreshold",
 				"cancelInstead", "recalculateDistance", "finishDistance",
 				"unreachableTargetDistanceThreshold", "showUnreachableText",
-				"respawnPrifddinas",
+				"calculationCutoff",
 				"useTeleportationItems", "pathfinderAlgorithm",
 				"aStarHeuristicWeight"),
 			displays);
@@ -1652,7 +1652,8 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		CategoryPanel unlocks = panel.categories().get(3);
 		assertEquals("Unlocks", unlocks.categoryName());
-		assertEquals("four real unlock toggles", 4, unlocks.rows().size());
+		assertEquals("four unlock toggles plus the respawn flag", 5,
+			unlocks.rows().size());
 		for (ShortestPathPanel.SearchRow row : unlocks.rows())
 		{
 			assertFalse("no balloon row remains in Unlocks",
@@ -1752,21 +1753,22 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	/**
-	 * The seventh home tile drills into "Display": five plain check
-	 * rows — one per display-side toggle — a live {@code n/5 on} status
-	 * line and a real item sprite. The display defaults leave four of the
-	 * five toggles on ({@code showBankPickupInfo} defaults off).
+	 * The seventh home tile drills into "Display": the three plain check
+	 * rows the toggle keys map to, the tile-counter mode combo and its
+	 * step spinner — a live {@code n/3 on} status line counting the
+	 * boolean rows only, and a real item sprite. All three display
+	 * toggles default on.
 	 */
 	@Test
-	public void displayTileCoversTheFiveDisplayToggles() throws Exception
+	public void displayTileCoversTheDisplayRows() throws Exception
 	{
 		newPanel();
 		CategoryPanel display = displayCategory();
 		assertEquals("Display", display.categoryName());
-		assertEquals("five highlight check rows", 5, display.rows().size());
+		assertEquals("three check rows plus the tile-counter pair", 5,
+			display.rows().size());
 
-		String[] keys = {"showTransportInfo", "showBankPickupInfo",
-			"highlightBankPickupItems", "highlightSpellbookSpells",
+		String[] keys = {"showTransportInfo", "highlightSpellbookSpells",
 			"highlightInventoryItems"};
 		for (int i = 0; i < keys.length; i++)
 		{
@@ -1776,19 +1778,27 @@ public class ShortestPathPanelLayoutTest
 			assertNotNull(keys[i] + " row carries a checkbox",
 				masterBox(row.component));
 		}
+		assertEquals("showTileCounter row in build order", "showTileCounter",
+			display.rows().get(3).display);
+		assertFalse("showTileCounter renders a combo",
+			combosIn(display.rows().get(3).component).isEmpty());
+		assertEquals("tileCounterStep row in build order", "tileCounterStep",
+			display.rows().get(4).display);
+		assertNotNull("tileCounterStep renders a spinner",
+			spinnerIn(display.rows().get(4).component));
 
 		assertTrue("the Display tile requests the settings monitor sprite",
 			spriteRequests.contains(SpriteID.OptionsIcons.DISPLAY));
 
 		JLabel status = statusLabelOf(tileNamed("Display"));
-		assertEquals("defaults count four of five toggles on",
-			"4/5 on", status.getText());
+		assertEquals("defaults count all three toggles on",
+			"3/3 on", status.getText());
 
-		config.setShowBankPickupInfoValue(true);
-		settings.onConfigChanged(event("showBankPickupInfo"));
+		config.setShowTransportInfoValue(false);
+		settings.onConfigChanged(event("showTransportInfo"));
 		flushEdt();
 		assertEquals("the tile status tracks external edits",
-			"5/5 on", status.getText());
+			"2/3 on", status.getText());
 	}
 
 	/**
@@ -1801,10 +1811,10 @@ public class ShortestPathPanelLayoutTest
 	{
 		newPanel();
 		CategoryPanel display = displayCategory();
-		assertEquals("a category-name query lists every highlight row",
+		assertEquals("a category-name query lists every display row",
 			5, panel.matchingRows(display, "display").size());
 		assertEquals("a key-label query narrows to the matching rows",
-			2, panel.matchingRows(display, "bankpickup").size());
+			2, panel.matchingRows(display, "tilecounter").size());
 	}
 
 	// ---- Combo styling + tile-name fit ------------------------------------
