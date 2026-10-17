@@ -2,6 +2,7 @@ package shortestpath;
 
 import java.util.EnumSet;
 import java.util.Set;
+import shortestpath.poh.PohNexusPortal;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.BalloonRoute;
 
@@ -21,6 +22,10 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	// Null means the key was never written: like the interface default, the
 	// route set then derives from the legacy unlockBalloonLogBasket flag.
 	private Set<BalloonRoute> balloonLogBasketRoutes = null;
+	private boolean usePoh = false;
+	// Null means the key was never written: like the interface default, the
+	// portal set then derives from the legacy useTeleportationPortalsPoh flag.
+	private Set<PohNexusPortal> pohNexusPortals = null;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -93,6 +98,18 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.balloonLogBasketRoutes = balloonLogBasketRoutes;
 	}
 
+	@SuppressWarnings("unused")
+	public void setUsePohValue(boolean usePoh)
+	{
+		this.usePoh = usePoh;
+	}
+
+	@SuppressWarnings("unused")
+	public void setPohNexusPortalsValue(Set<PohNexusPortal> pohNexusPortals)
+	{
+		this.pohNexusPortals = pohNexusPortals;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -157,6 +174,20 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		return unlockBalloonLogBasket
 			? EnumSet.allOf(BalloonRoute.class)
 			: EnumSet.noneOf(BalloonRoute.class);
+	}
+
+	@Override
+	public boolean usePoh()
+	{
+		return usePoh;
+	}
+
+	@Override
+	public Set<PohNexusPortal> pohNexusPortals()
+	{
+		return pohNexusPortals != null
+			? pohNexusPortals
+			: ShortestPathConfig.super.pohNexusPortals();
 	}
 
 	@Override
