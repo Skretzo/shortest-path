@@ -549,7 +549,7 @@ public class ShortestPathPanelLayoutTest
 				&& iconRequests.contains(ItemID.CANOEING_PADDLE)
 				&& iconRequests.contains(ItemID.RING_OF_DUELING_8)
 				&& iconRequests.contains(ItemID.CRYSTAL_KEY)
-				&& iconRequests.contains(ItemID.COINS)
+				&& iconRequests.contains(ItemID.COINS_10000)
 				&& iconRequests.contains(ItemID.POH_TABLET_TELEPORTTOHOUSE));
 		assertTrue("the Display tile requests the settings monitor sprite",
 			spriteRequests.contains(SpriteID.OptionsIcons.DISPLAY));
@@ -847,7 +847,7 @@ public class ShortestPathPanelLayoutTest
 			ItemID.AHOY_TOY_BOAT, ItemID.SHILOSHIPTICKET,
 			ItemID.GRANDTREE_WARSHIP, ItemID.ALUFT_GNOME_GOGGLES,
 			ItemID.ZEP_TOY_BALLOON_RED, ItemID.EVENT_MUSHTREE_DUMMY,
-			ItemID.POH_LEVER_OAK, ItemID.POH_DUMMY_PORTALNEXUS,
+			ItemID.POH_LEVER_OAK, ItemID.DT2_ANIMA_PORTAL,
 			ItemID.POH_SUPERIOR_GARDEN_WILDERNESS_OBELISK,
 			ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE,
 			ItemID.POH_RUG_3,

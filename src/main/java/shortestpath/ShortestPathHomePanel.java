@@ -402,7 +402,7 @@ class ShortestPathHomePanel extends PluginPanel
 			case "Unlocks":
 				return ItemID.CRYSTAL_KEY;
 			case "Bank":
-				return ItemID.COINS;
+				return ItemID.COINS_10000;
 			case "Player-Owned House":
 				return ItemID.POH_TABLET_TELEPORTTOHOUSE;
 			default:

@@ -313,7 +313,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		addFamilyCard(transports, "useTeleportationLevers", ItemID.POH_LEVER_OAK,
 			familyThresholdRows("useTeleportationLevers"));
-		addFamilyCard(transports, "useTeleportationPortals", ItemID.POH_DUMMY_PORTALNEXUS,
+		addFamilyCard(transports, "useTeleportationPortals", ItemID.DT2_ANIMA_PORTAL,
 			familyThresholdRows("useTeleportationPortals"));
 		addFamilyCard(transports, "useTeleportationSpells", ItemID.LAWRUNE,
 			familyThresholdRows("useTeleportationSpells"));
