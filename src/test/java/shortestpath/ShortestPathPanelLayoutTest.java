@@ -1734,15 +1734,15 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	@Test
-	public void unlocksTileCountsFourKeys() throws Exception
+	public void unlocksTileCountsFiveKeys() throws Exception
 	{
 		newPanel();
-		assertEquals("0/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
+		assertEquals("0/5 on", statusLabelOf(tileNamed("Unlocks")).getText());
 
 		config.setUnlockCanoeAxeValue(true);
 		settings.onConfigChanged(event("unlockCanoeAxe"));
 		flushEdt();
-		assertEquals("1/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
+		assertEquals("1/5 on", statusLabelOf(tileNamed("Unlocks")).getText());
 	}
 
 	// ---- Display category -----------------------------------------------
