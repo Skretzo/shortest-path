@@ -17,6 +17,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
@@ -1538,6 +1539,44 @@ public class ShortestPathPanelLayoutTest
 			int oneLine = nameLabel.getFontMetrics(nameLabel.getFont()).getHeight();
 			assertTrue(name + " wraps to a second line at tile width",
 				nameLabel.getPreferredSize().height > oneLine);
+		}
+	}
+
+	/**
+	 * A tile-name token can never clip mid-glyph: html only wraps at
+	 * spaces, so an unbreakable run wider than the label's allotted width
+	 * ("Player-Owned") renders half-cut. Laid out at the tile edge, every
+	 * token of every tile label must measure inside the label's real
+	 * width — a token that cannot fit falls back to the small font.
+	 */
+	@Test
+	public void tileNameTokensFitInsideTheTileEdge()
+	{
+		newPanel();
+		int tileEdge = (PluginPanel.PANEL_WIDTH - 2 * 8 - 4) / 2;
+		for (Component child : tileGrid().getComponents())
+		{
+			JComponent tile = (JComponent) child;
+			tile.setSize(tileEdge, tileEdge);
+			tile.doLayout();
+			for (JLabel label : labelsIn(tile))
+			{
+				String text = stripHtml(label.getText());
+				if (text == null || text.isEmpty())
+				{
+					continue;
+				}
+				int allotted = label.getWidth();
+				assertTrue("tile label is laid out with a real width",
+					allotted > 0);
+				FontMetrics metrics = label.getFontMetrics(label.getFont());
+				for (String token : text.split(" "))
+				{
+					assertTrue("\"" + token + "\" fits its " + allotted
+							+ "px label width in the label's resolved font",
+						metrics.stringWidth(token) <= allotted);
+				}
+			}
 		}
 	}
 
