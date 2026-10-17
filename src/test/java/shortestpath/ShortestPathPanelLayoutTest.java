@@ -1222,6 +1222,37 @@ public class ShortestPathPanelLayoutTest
 		assertTrue("clearing restores the allowed state", farm.isSelected());
 	}
 
+	@Test
+	public void nonCanonicalOptionBlockResyncsTheCheckbox() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		// The Farming Guild option group covers two arrivals; the stored
+		// record names the non-canonical member — the engine expands it to
+		// the whole group, so the checkbox must deselect too.
+		int insideGuild = WorldPointUtil.packWorldPoint(1248, 3725, 0);
+		config.setBlockedTeleportItemsValue("11105@" + insideGuild);
+		settings.onConfigChanged(event("blockedTeleportItems"));
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Skills Necklace (1-6)");
+		assertNotNull(row);
+		expandRow(row);
+		flushEdt();
+		JCheckBox guild = optionBox(row, "Farming Guild");
+		assertNotNull("Farming Guild option checkbox", guild);
+		assertFalse("a non-canonical member record blocks the whole option",
+			guild.isSelected());
+
+		click(guild);
+		flushEdt();
+		assertFalse("re-checking removes the non-canonical record",
+			config.blockedTeleportItems().contains("11105@" + insideGuild));
+		assertFalse("empty rep keys never serialize",
+			config.blockedTeleportItems().contains("@"));
+	}
+
 	// ---- Balloon log-basket routes -----------------------------------------
 
 	@Test
