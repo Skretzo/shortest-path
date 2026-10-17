@@ -31,7 +31,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.ListCellRenderer;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
@@ -44,6 +46,7 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
@@ -949,15 +952,17 @@ public class ShortestPathPanelLayoutTest
 		return null;
 	}
 
-	/** Strips the {@code <html>} wrap longer labels carry so they wrap at the
-	 *  fixed viewport width — assertions compare the visible text only. */
+	/** Strips the {@code <html>} wrap (and any centering tag inside it) that
+	 *  longer labels carry so they wrap at the fixed viewport width —
+	 *  assertions compare the visible text only. */
 	private static String stripHtml(String text)
 	{
 		if (text == null)
 		{
 			return null;
 		}
-		return text.replace("<html>", "").replace("</html>", "");
+		return text.replace("<html>", "").replace("</html>", "")
+			.replace("<center>", "").replace("</center>", "");
 	}
 
 	private static boolean containsLabelEqual(Container root, String text)
@@ -1394,6 +1399,134 @@ public class ShortestPathPanelLayoutTest
 		settings.onConfigChanged(event("unlockCanoeAxe"));
 		flushEdt();
 		assertEquals("1/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
+	}
+
+	// ---- Combo styling + tile-name fit ------------------------------------
+
+	/**
+	 * Every combo the panel builds — the General {@code comboRow} rows and a
+	 * transport card's enum master — runs through one shared styling path:
+	 * the same renderer class, the same dark closed-face background and the
+	 * same preferred-width cap, so a long enum constant can never squeeze
+	 * its row's label column into wrapping (the 3-line teleport-items row
+	 * defect).
+	 */
+	@Test
+	public void everyComboSharesOneStylingPath()
+	{
+		newPanel();
+
+		List<JComboBox<?>> combos = new ArrayList<>();
+		for (JComponent surface : surfaces())
+		{
+			combos.addAll(combosIn(surface));
+		}
+		assertFalse("the panel builds combos", combos.isEmpty());
+		assertTrue("the General rows and the POH tier combo all surface",
+			combos.size() >= 3);
+
+		// A card bound to an enum-valued key exercises the master-combo
+		// branch — no shipped card is enum-mastered today (the teleport
+		// items card is masterless), so the path is proven on a live one.
+		TransportFamilyCard card = new TransportFamilyCard(panel,
+			"useTeleportationItems", "Teleportation Items", "", null);
+		assertTrue("an enum-valued master renders a combo",
+			card.getMasterControl() instanceof JComboBox);
+		combos.add((JComboBox<?>) card.getMasterControl());
+
+		Class<?> rendererClass = combos.get(0).getRenderer().getClass();
+		for (JComboBox<?> combo : combos)
+		{
+			assertSame("one renderer class across panel and card combos",
+				rendererClass, combo.getRenderer().getClass());
+			assertEquals("the closed face keeps the dark tone",
+				ColorScheme.DARKER_GRAY_COLOR, combo.getBackground());
+			assertTrue("the combo's preferred width is capped",
+				combo.getPreferredSize().width <= 110);
+		}
+	}
+
+	/**
+	 * The contrast direction: the closed face renders the dark tone while
+	 * the expanded popup rows render the lighter medium grey — and the
+	 * selection stays visible on it (the LAF's selection colour is the same
+	 * medium grey, so a renderer that left it alone would hide the
+	 * highlight).
+	 */
+	@Test
+	public void comboPopupRowsRenderLighterThanTheClosedFace()
+	{
+		newPanel();
+		JComboBox<?> combo = comboContaining(
+			contentOf(panel.categories().get(0)), TeleportationItem.NONE);
+		assertNotNull("the teleport-items mode combo", combo);
+
+		// Raw types: the wildcard combo's renderer capture rejects typed calls.
+		@SuppressWarnings({"rawtypes", "unchecked"})
+		ListCellRenderer renderer = combo.getRenderer();
+		JList list = new JList();
+		Component face = (Component) renderer.getListCellRendererComponent(
+			list, combo.getSelectedItem(), -1, false, false);
+		Component popupRow = (Component) renderer.getListCellRendererComponent(
+			list, combo.getItemAt(0), 0, false, false);
+		Component selectedRow = (Component) renderer.getListCellRendererComponent(
+			list, combo.getItemAt(0), 0, true, false);
+
+		assertEquals("the closed face renders the dark tone",
+			ColorScheme.DARKER_GRAY_COLOR, face.getBackground());
+		assertEquals("popup rows render the lighter grey",
+			ColorScheme.MEDIUM_GRAY_COLOR, popupRow.getBackground());
+		assertFalse("the selected popup row stays visible",
+			ColorScheme.MEDIUM_GRAY_COLOR.equals(selectedRow.getBackground()));
+	}
+
+	/**
+	 * The teleport-items mode combo in General is the widest enum on the
+	 * panel ("Inventory and Bank (perm)") — uncapped it squeezes the row's
+	 * label column until the html-wrapped label needs three lines. Capping
+	 * the combo's preferred width keeps the whole row one line tall.
+	 */
+	@Test
+	public void teleportItemsComboRowStaysOneLine()
+	{
+		newPanel();
+		JComboBox<?> combo = comboContaining(
+			contentOf(panel.categories().get(0)), TeleportationItem.NONE);
+		assertNotNull("the teleport-items mode combo", combo);
+		assertTrue("the mode combo's preferred width is capped like the "
+				+ "card combos", combo.getPreferredSize().width <= 110);
+	}
+
+	/**
+	 * The long category names never clip on the square tiles: "Teleport
+	 * Restrictions" and "Player-Owned House" exceed the ~102px tile edge on
+	 * one line, so the name label wraps to two centered lines rather than
+	 * truncating.
+	 */
+	@Test
+	public void longTileNamesWrapInsteadOfClipping()
+	{
+		newPanel();
+		for (String name : new String[]{"Teleport Restrictions", "Player-Owned House"})
+		{
+			JComponent tile = tileNamed(name);
+			assertNotNull(name + " tile", tile);
+			JLabel nameLabel = null;
+			for (JLabel label : labelsIn(tile))
+			{
+				if (stripHtml(label.getText()).contains(name))
+				{
+					nameLabel = label;
+				}
+			}
+			assertNotNull(name + " name label", nameLabel);
+			assertTrue(name + " name label carries the html wrap",
+				nameLabel.getText().startsWith("<html>"));
+			nameLabel.setSize(100, 0);
+			int oneLine = nameLabel.getFontMetrics(nameLabel.getFont()).getHeight();
+			assertTrue(name + " wraps to a second line at tile width",
+				nameLabel.getPreferredSize().height > oneLine);
+		}
 	}
 
 	// ---- POH portal-nexus grouping ---------------------------------------
