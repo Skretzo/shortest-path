@@ -477,7 +477,6 @@ class RestrictionListPanel extends JPanel
 			setBorder(new EmptyBorder(4, 0, 4, 0));
 
 			JPanel header = new JPanel(new BorderLayout(ICON_LABEL_GAP, 0));
-			header.setOpaque(false);
 
 			iconLabel = new JLabel();
 			iconLabel.setPreferredSize(new Dimension(
@@ -555,9 +554,12 @@ class RestrictionListPanel extends JPanel
 			add(header);
 
 			detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
-			detail.setOpaque(false);
 			// Indented under the icon column so the detail lines up with the name.
 			detail.setBorder(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
+			// The shared two-tone fill: the row stops being transparent
+			// end-to-end and paints a dark header bar over the lighter
+			// detail well, like the transport cards.
+			ShortestPathPanel.styleExpandable(header, detail);
 
 			JPanel thresholdRow = new JPanel(new BorderLayout());
 			thresholdRow.setOpaque(false);
