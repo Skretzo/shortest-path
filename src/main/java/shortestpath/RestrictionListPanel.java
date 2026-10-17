@@ -33,6 +33,7 @@ import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 import net.runelite.client.util.SwingUtil;
+import shortestpath.items.ItemStateService;
 import shortestpath.items.OwnedItems;
 import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
@@ -65,6 +66,7 @@ class RestrictionListPanel extends JPanel
 	private final Settings settings;
 	private final Client client;
 	private final ClientThread clientThread;
+	private final ItemStateService itemState;
 
 	private final List<RestrictionRow> rows = new ArrayList<>();
 	private final Set<Integer> blocked = new HashSet<>();
@@ -83,12 +85,13 @@ class RestrictionListPanel extends JPanel
 	private boolean syncing;
 
 	RestrictionListPanel(ShortestPathPanel panel, Settings settings, Client client,
-		ClientThread clientThread)
+		ClientThread clientThread, ItemStateService itemState)
 	{
 		this.panel = panel;
 		this.settings = settings;
 		this.client = client;
 		this.clientThread = clientThread;
+		this.itemState = itemState;
 
 		setLayout(new DynamicGridLayout(0, 1, 0, 3));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -240,8 +243,10 @@ class RestrictionListPanel extends JPanel
 	/**
 	 * Re-reads inventory, equipment and bank contents for the Owned filter.
 	 * The container reads run on the client thread; the Swing rebuild hops
-	 * back to the EDT. The bank container is only populated once the user has
-	 * opened the bank this session.
+	 * back to the EDT. The bank contributes its live container while open
+	 * plus the per-account last-seen snapshot the item-state service persists
+	 * — bank items keep counting as owned once the bank is closed and across
+	 * sessions, without any per-session open requirement.
 	 */
 	void refreshOwnedItems()
 	{
@@ -251,6 +256,10 @@ class RestrictionListPanel extends JPanel
 			OwnedItems.addContainer(owned, client.getItemContainer(InventoryID.INV));
 			OwnedItems.addContainer(owned, client.getItemContainer(InventoryID.WORN));
 			OwnedItems.addContainer(owned, client.getItemContainer(InventoryID.BANK));
+			// The last-seen snapshot may only add ids the live containers
+			// lack — a stale extra id keeps its family listed, which is
+			// exactly the wanted behavior.
+			owned.putAll(itemState.lastSeenBank());
 			SwingUtilities.invokeLater(() ->
 			{
 				ownedIds = owned.keySet();
