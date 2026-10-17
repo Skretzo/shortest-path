@@ -93,7 +93,7 @@ class ShortestPathHomePanel extends PluginPanel
 
 	private static final ImageIcon GITHUB_ICON = footerIcon("github_icon.png");
 	private static final ImageIcon DISCORD_ICON = footerIcon("discord_icon.png");
-	private static final ImageIcon CONFIG_ICON = footerIcon("config_icon.png");
+	private static final ImageIcon CONFIG_ICON = footerIcon("settings_icon.png");
 
 	private final ShortestPathPanel panel;
 	private final FixedWidthPanel content;
@@ -305,9 +305,6 @@ class ShortestPathHomePanel extends PluginPanel
 	private JButton configButton()
 	{
 		JButton button = footerButton(CONFIG_ICON, "Plugin Settings");
-		// The bundled PNG reads as a wrench — the real cog is the white
-		// cog item sprite, swapped in once the image lands.
-		panel.loadItemIcon(ItemID.WHITECOG, button, FOOTER_ICON_SIZE);
 		button.addActionListener(e -> panel.eventBus.post(new OverlayMenuClicked(
 			new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, null, null),
 			configOverlay)));
