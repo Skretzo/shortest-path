@@ -15,6 +15,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.poh.PohMountedItem;
+import shortestpath.transport.BalloonRoute;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config
@@ -26,6 +27,17 @@ public interface ShortestPathConfig extends Config
 	)
 	String sectionSettings = "sectionSettings";
 
+	@ConfigItem(
+		keyName = "showSidebarPanel",
+		name = "Show Sidebar Panel",
+		description = "Whether the Shortest Path icon is shown in the RuneLite sidebar",
+		position = 70,
+		section = sectionSettings
+	)
+	default boolean showSidebarPanel()
+	{
+		return true;
+	}
 
 	
 	
