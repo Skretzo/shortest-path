@@ -14,6 +14,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -38,6 +39,10 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.MatteBorder;
 
 import org.junit.Test;
 
@@ -1580,42 +1585,45 @@ public class ShortestPathPanelLayoutTest
 		}
 	}
 
-	// ---- Expandable surfaces: the shared two-tone fill -------------------
+	// ---- Expandable surfaces: dark header over a background-toned,
+	// ---- orange-bordered detail well -----------------------------------
 
 	/**
-	 * Every expandable surface paints the same two-tone fill: the header
-	 * bar — the line carrying the name, expander and master control — is an
-	 * opaque {@code DARKER_GRAY_COLOR} strip, and the detail well that opens
-	 * beneath it is opaque {@code MEDIUM_GRAY_COLOR}, visibly lighter and
-	 * distinct from the {@code DARK_GRAY_COLOR} category background the
-	 * collapsed surfaces float on. Transport cards, restriction rows and the
+	 * Every expandable surface paints the same chrome: the header bar — the
+	 * line carrying the name, expander and master control — is an opaque
+	 * {@code DARKER_GRAY_COLOR} strip, and the detail well that opens
+	 * beneath it keeps the category's {@code DARK_GRAY_COLOR} background,
+	 * ringed by a thin {@code BRAND_ORANGE} border so an open well reads as
+	 * a distinct region. Transport cards, restriction rows and the
 	 * collapsible enum groups all share the one pairing so no site can
 	 * drift to its own colours.
 	 */
 	@Test
-	public void expandableSurfacesShareTheTwoToneFill()
+	public void expandableSurfacesShareTheBorderedWellChrome()
 	{
 		newPanel();
 
 		TransportFamilyCard card = transportCardByKey("useAgilityShortcuts");
 		assertNotNull("a transport card", card);
-		assertTwoTone(card, "transport card");
+		assertWellChrome(card, "transport card");
 
 		JPanel row = restrictionRowByName("Ardougne Cloaks");
 		assertNotNull("a restriction row", row);
-		assertTwoTone(row, "restriction row");
+		assertWellChrome(row, "restriction row");
 
 		CollapsibleEnumGroup<?> group = groupByLabel("Ancient");
 		assertNotNull("a collapsible enum group", group);
-		assertTwoTone(group, "enum group");
+		assertWellChrome(group, "enum group");
 	}
 
 	/**
 	 * Pins child 0 as the opaque dark header bar and the last child as the
-	 * opaque medium-grey detail well — every expandable surface builds its
-	 * header and detail as its only two children, in that order.
+	 * detail well — category-toned (transparent or {@code DARK_GRAY_COLOR},
+	 * never the light medium-grey fill) and carrying the thin orange
+	 * accent border. Every expandable surface builds its header and detail
+	 * as its only two children, in that order.
 	 */
-	private static void assertTwoTone(JComponent surface, String what)
+	private static void assertWellChrome(JComponent surface, String what)
 	{
 		JComponent header = (JComponent) surface.getComponent(0);
 		JComponent detail = (JComponent) surface.getComponent(
@@ -1623,9 +1631,36 @@ public class ShortestPathPanelLayoutTest
 		assertTrue(what + " header bar is opaque", header.isOpaque());
 		assertEquals(what + " header bar carries the dark tone",
 			ColorScheme.DARKER_GRAY_COLOR, header.getBackground());
-		assertTrue(what + " detail well is opaque", detail.isOpaque());
-		assertEquals(what + " detail well carries the lighter tone",
-			ColorScheme.MEDIUM_GRAY_COLOR, detail.getBackground());
+		assertFalse(what + " detail well never paints the light fill",
+			ColorScheme.MEDIUM_GRAY_COLOR.equals(detail.getBackground()));
+		assertTrue(what + " detail well keeps the category tone",
+			!detail.isOpaque()
+				|| ColorScheme.DARK_GRAY_COLOR.equals(detail.getBackground()));
+		assertTrue(what + " detail well carries the orange accent border",
+			hasAccentBorder(detail.getBorder(), ColorScheme.BRAND_ORANGE));
+	}
+
+	/**
+	 * Whether {@code border} — or either side of a {@link CompoundBorder} —
+	 * is a line/matte edge painted in {@code colour}.
+	 */
+	private static boolean hasAccentBorder(Border border, Color colour)
+	{
+		if (border instanceof CompoundBorder)
+		{
+			CompoundBorder compound = (CompoundBorder) border;
+			return hasAccentBorder(compound.getOutsideBorder(), colour)
+				|| hasAccentBorder(compound.getInsideBorder(), colour);
+		}
+		if (border instanceof LineBorder)
+		{
+			return colour.equals(((LineBorder) border).getLineColor());
+		}
+		if (border instanceof MatteBorder)
+		{
+			return colour.equals(((MatteBorder) border).getMatteColor());
+		}
+		return false;
 	}
 
 	// ---- POH portal-nexus grouping ---------------------------------------
