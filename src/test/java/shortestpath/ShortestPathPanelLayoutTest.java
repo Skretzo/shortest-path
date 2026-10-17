@@ -1822,6 +1822,39 @@ public class ShortestPathPanelLayoutTest
 		assertFalse("master off dims the group members", member.isEnabled());
 	}
 
+	/**
+	 * Group headers and their member checkboxes render like any other
+	 * panel row — the same font and the same plain-white foreground as a
+	 * {@code checkRow} label ("POH Fairy Ring") — not the secondary tone.
+	 * Only the {@code n/total} count keeps the secondary small font.
+	 */
+	@Test
+	public void enumGroupLabelsMatchThePanelRowTypography()
+	{
+		newPanel();
+
+		JLabel reference = labelContaining(
+			contentOf(pohCategory()), "POH Fairy Ring");
+		assertNotNull("a sibling check row label", reference);
+
+		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
+		assertNotNull(ancient);
+		assertEquals("group name uses the row foreground",
+			reference.getForeground(), ancient.getNameLabel().getForeground());
+		assertEquals("group name uses the row font",
+			reference.getFont(), ancient.getNameLabel().getFont());
+
+		JCheckBox member = optionBox(ancient, "Kharyrll");
+		assertNotNull("a member checkbox", member);
+		assertEquals("member checkbox uses the row foreground",
+			reference.getForeground(), member.getForeground());
+		assertEquals("member checkbox uses the row font",
+			reference.getFont(), member.getFont());
+
+		assertEquals("the count label keeps the secondary tone",
+			ColorScheme.LIGHT_GRAY_COLOR, ancient.getCountLabel().getForeground());
+	}
+
 	// ---- POH section captions ---------------------------------------------
 
 	private ShortestPathPanel.SearchRow pohRowByDisplay(String display)
