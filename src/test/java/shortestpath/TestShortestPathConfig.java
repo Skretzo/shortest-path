@@ -1,5 +1,11 @@
 package shortestpath;
 
+import java.util.EnumSet;
+import java.util.Set;
+import shortestpath.poh.PohNexusPortal;
+import shortestpath.settings.TeleportationItem;
+import shortestpath.transport.BalloonRoute;
+
 public class TestShortestPathConfig implements ShortestPathConfig
 {
 	private int calculationCutoff = 5;
@@ -11,6 +17,16 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private boolean unlockCanoeAxe = false;
 	private boolean unlockXericsHonour = false;
 	private boolean unlockDragontoothPassage = false;
+	private String blockedTeleportItems = "";
+	private boolean unlockBalloonLogBasket = false;
+	// Null means the key was never written: like the interface default, the
+	// route set then derives from the legacy unlockBalloonLogBasket flag.
+	private Set<BalloonRoute> balloonLogBasketRoutes = null;
+	private boolean usePoh = false;
+	// Null means the key was never written: like the interface default, the
+	// portal set then derives from the legacy useTeleportationPortalsPoh flag.
+	private Set<PohNexusPortal> pohNexusPortals = null;
+	private boolean showBankPickupInfo = false;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -65,6 +81,42 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.unlockDragontoothPassage = unlockDragontoothPassage;
 	}
 
+	@SuppressWarnings("unused")
+	public void setBlockedTeleportItemsValue(String blockedTeleportItems)
+	{
+		this.blockedTeleportItems = blockedTeleportItems;
+	}
+
+	@SuppressWarnings("unused")
+	public void setUnlockBalloonLogBasketValue(boolean unlockBalloonLogBasket)
+	{
+		this.unlockBalloonLogBasket = unlockBalloonLogBasket;
+	}
+
+	@SuppressWarnings("unused")
+	public void setBalloonLogBasketRoutesValue(Set<BalloonRoute> balloonLogBasketRoutes)
+	{
+		this.balloonLogBasketRoutes = balloonLogBasketRoutes;
+	}
+
+	@SuppressWarnings("unused")
+	public void setUsePohValue(boolean usePoh)
+	{
+		this.usePoh = usePoh;
+	}
+
+	@SuppressWarnings("unused")
+	public void setPohNexusPortalsValue(Set<PohNexusPortal> pohNexusPortals)
+	{
+		this.pohNexusPortals = pohNexusPortals;
+	}
+
+	@SuppressWarnings("unused")
+	public void setShowBankPickupInfoValue(boolean showBankPickupInfo)
+	{
+		this.showBankPickupInfo = showBankPickupInfo;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -108,6 +160,44 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public String blockedTeleportItems()
+	{
+		return blockedTeleportItems;
+	}
+
+	@Override
+	public boolean unlockBalloonLogBasket()
+	{
+		return unlockBalloonLogBasket;
+	}
+
+	@Override
+	public Set<BalloonRoute> balloonLogBasketRoutes()
+	{
+		if (balloonLogBasketRoutes != null)
+		{
+			return balloonLogBasketRoutes;
+		}
+		return unlockBalloonLogBasket
+			? EnumSet.allOf(BalloonRoute.class)
+			: EnumSet.noneOf(BalloonRoute.class);
+	}
+
+	@Override
+	public boolean usePoh()
+	{
+		return usePoh;
+	}
+
+	@Override
+	public Set<PohNexusPortal> pohNexusPortals()
+	{
+		return pohNexusPortals != null
+			? pohNexusPortals
+			: ShortestPathConfig.super.pohNexusPortals();
+	}
+
+	@Override
 	public int calculationCutoff()
 	{
 		return calculationCutoff;
@@ -123,6 +213,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean collisionAwareBlockedTargets()
 	{
 		return collisionAwareBlockedTargets;
+	}
+
+	@Override
+	public boolean showBankPickupInfo()
+	{
+		return showBankPickupInfo;
 	}
 
 	@Override

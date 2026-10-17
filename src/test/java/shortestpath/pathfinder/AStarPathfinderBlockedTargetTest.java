@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -22,14 +21,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import shortestpath.Destination;
 import shortestpath.ShortestPathConfig;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.astar.RoutingCuts;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.pathfinder.astar.RoutingStatic;
-import shortestpath.pathfinder.astar.RoutingStaticBuilder;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
 
 /**
  * Issue #640 coverage for the A* backend: it terminates on the goal set
@@ -49,13 +44,9 @@ public class AStarPathfinderBlockedTargetTest
 	private PathfinderConfig pathfinderConfig;
 
 	@BeforeClass
-	public static void buildRoutingStatic() throws Exception
+	public static void buildRoutingStatic()
 	{
-		CollisionMap collision = new CollisionMap(SplitFlagMap.fromResources());
-		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
-		Set<Integer> banks = Destination.loadAllFromResources().get("bank");
-		routingStatic = RoutingStaticBuilder.build(collision, transports,
-			banks == null ? Set.of() : banks, RoutingCuts.loadFromResources().pairs()).routingStatic;
+		routingStatic = TestWorldData.routingStatic();
 	}
 
 	@Before
@@ -65,6 +56,8 @@ public class AStarPathfinderBlockedTargetTest
 		when(config.collisionAwareBlockedTargets()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
 	}
 
 	private void setup(int unreachableDistance)

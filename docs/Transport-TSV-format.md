@@ -1,6 +1,6 @@
 # Transport TSV format
 
-This document describes the canonical column set and allowed values used across all files in `src/main/resources/transports/` (loaded by `TransportLoader.loadAllFromResources`). It reflects the actual parser behavior in `shortestpath.Transport`.
+This document describes the canonical column set and allowed values used across all files in `src/main/resources/transports/` (loaded by `ResourceLoader.transports()`). It reflects the actual parser behavior in `shortestpath.transport.parser`.
 
 All transport TSV files share the same structure: rows are tab-separated fields, comment lines start with `#`, and many columns are optional depending on the transport type. The focus below is on columns and permitted value formats rather than file-specific variants.
 
@@ -77,7 +77,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
     - In an OR group the unlock is a relief alternative, e.g. `AXE=1|UNLOCK_CANOE_AXE=1` accepts a carried axe or an axe stored at a canoe station.
     - As an ANDed requirement it is a gate, e.g. `13393=1&UNLOCK_XERICS_HONOUR=1` requires carrying Xeric's talisman *and* having earned Xeric's Honour; the gate applies even when item evaluation is skipped (teleportation-item modes).
     - Names are case-insensitive (the cell is uppercased before parsing), but unlike unknown item names, an unknown `UNLOCK_*` name is a loud parse error that fails the row — it never silently drops the requirement. `=0` quantities are malformed: unlock tokens must be written `=1`.
-    - Current names: `UNLOCK_CANOE_AXE` (axe stored at a canoe station), `UNLOCK_DRAGONTOOTH` (Dragontooth Island free passage), `UNLOCK_XERICS_HONOUR` (Xeric's Honour).
+    - Current names: `UNLOCK_CANOE_AXE` (axe stored at a canoe station), `UNLOCK_DRAGONTOOTH` (Dragontooth Island free passage), `UNLOCK_XERICS_HONOUR` (Xeric's Honour), `UNLOCK_KARAMJA_ELITE` (free hardwood grove entry from Karamja elite diary completion), `UNLOCK_MOR_UL_REK` (permanent inner-city access after showing a fire cape), `UNLOCK_BALLOON_LOG_BASKET` (logs stored in the shared balloon-station basket — relief for the destination log, e.g. `1511=1|UNLOCK_BALLOON_LOG_BASKET=1`, not a standalone gate).
 
 ### Quests
 
@@ -101,9 +101,9 @@ Notes: display labels sometimes include an index or letter prefix used by in-gam
 
 ### Consumable (flag)
 
-- Format: `T`, `F`, `yes`, or empty.
+- Format: `T` or `F` (empty is treated as `F`).
 - Meaning: indicates whether using the transport consumes an item/charge.
-- Notes: the parser treats `T` and `yes` (case-insensitive) as true; anything else (including `F` or empty) is false.
+- Notes: rows must be written `T` or `F` — `check_tsv.py` rejects anything else. The parser additionally tolerates `yes` (case-insensitive) as true, but that is a parser leniency, not an authoring option.
 
 ### Wilderness level
 
@@ -148,7 +148,7 @@ Use rows with empty `Origin` and a concrete `Destination` to declare that “thi
 3221 3218 0				23	Lumbridge Home Teleport	20	4070=0	4560=0;892@30
 ```
 
-The parser pairs every such origin row with every destination row in the same file type to produce edges, skipping pairs whose origin and destination are equal or closer than a small per-type radius threshold. Current thresholds (tiles) by type: Gnome gliders: 6; Hot air balloons: 7; Magic mushtrees: 5; Spirit trees: 5; others default to 0.
+The parser pairs every such origin row with every destination row in the same file type to produce edges, skipping pairs whose origin and destination are equal or closer than a small per-type radius threshold. Current thresholds (tiles) by type: Fairy rings: 6; Gnome gliders: 6; Hot air balloons: 7; Magic mushtrees: 5; Quetzals: 5; Spirit trees: 5; others default to 0.
 
 ## Seasonal transports (Demonic Pacts League)
 

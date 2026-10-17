@@ -5,9 +5,11 @@ import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.settings.Settings;
 
 abstract class AbstractHighlightOverlay extends Overlay
 {
@@ -17,12 +19,17 @@ abstract class AbstractHighlightOverlay extends Overlay
 	private static final int REPLANNING_MARGIN_TILES = 5;
 
 	protected final Client client;
-	protected final ShortestPathPlugin plugin;
+	protected final PathScheduler scheduler;
+	protected final PathAnnotator annotator;
+	protected final Settings settings;
 
-	protected AbstractHighlightOverlay(Client client, ShortestPathPlugin plugin)
+	protected AbstractHighlightOverlay(Client client, PathScheduler scheduler, PathAnnotator annotator,
+		Settings settings)
 	{
 		this.client = client;
-		this.plugin = plugin;
+		this.scheduler = scheduler;
+		this.annotator = annotator;
+		this.settings = settings;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
@@ -35,7 +42,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 			return -1;
 		}
 		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
-		return playerPathIndex(path, playerLocation, plugin.recalculateDistance);
+		return playerPathIndex(path, playerLocation, settings.lifecycle().recalculateDistance());
 	}
 
 	static int playerPathIndex(List<PathStep> path, int playerLocation, int recalculateDistance)

@@ -3,13 +3,11 @@ package shortestpath.pathfinder;
 import net.runelite.api.Client;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
+import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
-import shortestpath.Destination;
-import shortestpath.DestinationRequirements;
 import shortestpath.ShortestPathConfig;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.requirement.model.VarRequirement;
 
 // This subclass is used to provide mocked implementations of methods from the normal
 // PathfinderConfig. CRUCIAL: Not implemented via Mockito as these methods are called
@@ -22,29 +20,6 @@ import shortestpath.transport.TransportLoader;
 // Other methods are delegated to a normal PathfinderConfig.
 public class TestPathfinderConfig extends PathfinderConfig
 {
-	/**
-	 * Initialization-on-Demand Holder: loads the five resource-heavy fields exactly once
-	 * per JVM, so every TestPathfinderConfig instance shares the same pre-parsed data.
-	 */
-	private static final class ResourceHolder
-	{
-		static final SplitFlagMap MAP_DATA;
-		static final Map<Integer, Set<Transport>> ALL_TRANSPORTS;
-		static final Map<String, Set<Integer>> ALL_DESTINATIONS;
-		static final Map<String, Set<Integer>> FILTERED_DESTINATIONS;
-		static final Map<Integer, DestinationRequirements> BANK_REQUIREMENTS;
-
-		static
-		{
-			MAP_DATA = SplitFlagMap.fromResources();
-			ALL_TRANSPORTS = TransportLoader.loadAllFromResources();
-			PathfinderConfig.remapPohDestinations(ALL_TRANSPORTS);
-			ALL_DESTINATIONS = Destination.loadAllFromResources();
-			FILTERED_DESTINATIONS = PathfinderConfig.filterDestinations(ALL_DESTINATIONS);
-			BANK_REQUIREMENTS = Destination.loadBankRequirementsFromResources();
-		}
-	}
-
 	private final QuestState questState;
 	private final boolean bypassVarbitChecks;
 	private final boolean bypassVarPlayerChecks;
@@ -58,11 +33,11 @@ public class TestPathfinderConfig extends PathfinderConfig
 		boolean bypassVarbitChecks, boolean bypassVarPlayerChecks)
 	{
 		super(client, config,
-			ResourceHolder.MAP_DATA,
-			ResourceHolder.ALL_TRANSPORTS,
-			ResourceHolder.ALL_DESTINATIONS,
-			ResourceHolder.FILTERED_DESTINATIONS,
-			ResourceHolder.BANK_REQUIREMENTS);
+			TestWorldData.map(),
+			TestWorldData.transports(),
+			TestWorldData.destinations(),
+			TestWorldData.filteredDestinations(),
+			TestWorldData.bankRequirements());
 		this.questState = questState;
 		this.bypassVarbitChecks = bypassVarbitChecks;
 		this.bypassVarPlayerChecks = bypassVarPlayerChecks;
@@ -75,14 +50,44 @@ public class TestPathfinderConfig extends PathfinderConfig
 	}
 
 	@Override
-	public boolean varbitChecks(Transport transport, long evaluationTimeMinutes)
+	public boolean varbitChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
 	{
-		return !bypassVarbitChecks && super.varbitChecks(transport, evaluationTimeMinutes);
+		return !bypassVarbitChecks && super.varbitChecks(requirements, evaluationTimeMinutes);
 	}
 
 	@Override
-	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
+	public boolean varbitChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
 	{
-		return !bypassVarPlayerChecks && super.varPlayerChecks(transport, evaluationTimeMinutes);
+		return !bypassVarbitChecks && super.varbitChecks(requirements, values, evaluationTimeMinutes);
+	}
+
+	@Override
+	public boolean varPlayerChecks(Collection<VarRequirement> requirements, long evaluationTimeMinutes)
+	{
+		return !bypassVarPlayerChecks && super.varPlayerChecks(requirements, evaluationTimeMinutes);
+	}
+
+	@Override
+	public boolean varPlayerChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes)
+	{
+		return !bypassVarPlayerChecks && super.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+	}
+
+	/**
+	 * Builds a real {@link TransportAvailability} holding the given transports. Mockito's
+	 * default mock maker cannot mock the final class, so tests that need availability
+	 * lookups go through this instead.
+	 */
+	public static TransportAvailability availabilityOf(Transport... transports)
+	{
+		TransportAvailability.Builder builder = new TransportAvailability.Builder(transports.length);
+		for (Transport transport : transports)
+		{
+			builder.add(transport);
+		}
+		builder.remapPohTransports();
+		return builder.build();
 	}
 }

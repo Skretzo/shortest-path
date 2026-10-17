@@ -1,18 +1,25 @@
 package shortestpath.transport;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import org.junit.Assert;
 import org.junit.Test;
+import shortestpath.Util;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
+import shortestpath.requirement.TeleportRestriction;
+import shortestpath.transport.parser.TransportRecord;
+import shortestpath.transport.parser.TsvParser;
 
 /**
  * Unit tests for validating transport data integrity.
@@ -25,7 +32,7 @@ public class TransportDataLintTest
 	{
 		int landing = WorldPointUtil.packWorldPoint(2964, 4382, 2);
 		int wilderness = WorldPointUtil.packWorldPoint(3206, 3681, 0);
-		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 		int teleports = 0;
 		for (Set<Transport> set : transports.values())
 		{
@@ -93,7 +100,7 @@ public class TransportDataLintTest
 	public void testNoDuplicateOriginDestinationPairs()
 	{
 		// Load all transport data from resources
-		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		HashMap<Integer, Set<Transport>> transports = ResourceLoader.transports();
 
 		// Track all origin-destination-type combinations to check for exact duplicates
 		Set<String> transportSignatures = new HashSet<>();
@@ -142,7 +149,7 @@ public class TransportDataLintTest
 					String existingInfo = duplicateInfo.get(signature);
 					String newInfo = String.format("MaxWilderness: %d, Skills: %s",
 						transport.getMaxWildernessLevel(),
-						Arrays.toString(transport.getSkillLevels()));
+						Arrays.toString(transport.getSkillLevels().toArray()));
 
 					duplicatesFound.add(String.format("Exact duplicate transport: %s\n" +
 							"First occurrence: %s\n" +
@@ -157,7 +164,7 @@ public class TransportDataLintTest
 					// Store information about this transport for error reporting
 					String info = String.format("MaxWilderness: %d, Skills: %s",
 						transport.getMaxWildernessLevel(),
-						Arrays.toString(transport.getSkillLevels()));
+						Arrays.toString(transport.getSkillLevels().toArray()));
 					duplicateInfo.put(signature, info);
 				}
 			}
@@ -192,7 +199,7 @@ public class TransportDataLintTest
 	public void testEveryTransportDestinationCanBeWalkedAwayFrom()
 	{
 		CollisionMap map = new CollisionMap(SplitFlagMap.fromResources());
-		HashMap<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		HashMap<Integer, Set<Transport>> transports = ResourceLoader.transports();
 		Map<Integer, Boolean> escapable = new HashMap<>();
 		Set<String> stranded = new TreeSet<>();
 		for (Set<Transport> set : transports.values())
@@ -234,7 +241,7 @@ public class TransportDataLintTest
 	public void testEveryTransportOriginCanBeApproached()
 	{
 		CollisionMap map = new CollisionMap(SplitFlagMap.fromResources());
-		Map<Integer, Set<Transport>> transports = TransportLoader.loadAllFromResources();
+		Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 		Set<Integer> arrivals = new HashSet<>();
 		for (Set<Transport> set : transports.values())
 		{
@@ -313,5 +320,373 @@ public class TransportDataLintTest
 			}
 		}
 		return false;
+	}
+	/**
+	 * Validates the generated teleport restriction family map against
+	 * {@code teleportation_items.tsv}: every numeric id referenced by an Items
+	 * cell belongs to exactly one family, every map member id exists in the
+	 * TSV, family names are non-empty and unique, and every member id carries
+	 * a non-empty display label.
+	 */
+	@Test
+	public void testTeleportRestrictionFamilyMap() throws IOException
+	{
+		List<TeleportRestriction.Family> families = TeleportRestriction.loadFamilies();
+		Assert.assertFalse("teleport_restrictions.tsv should contain at least one family", families.isEmpty());
+
+		// Collect the raw numeric item ids referenced by the source TSV's Items
+		// cells (UNLOCK_* tokens are unlock requirements, not item ids)
+		String itemsTsv = new String(
+			Util.readAllBytes(Objects.requireNonNull(
+				TeleportRestriction.class.getResourceAsStream("/transports/teleportation_items.tsv"))),
+			StandardCharsets.UTF_8);
+		List<TransportRecord> records = new TsvParser().parse(itemsTsv);
+
+		Set<Integer> tsvItemIds = new HashSet<>();
+		for (TransportRecord record : records)
+		{
+			String items = record.getItems();
+			if (items == null || items.isEmpty())
+			{
+				continue;
+			}
+			String normalized = items.replace(" ", "").replace("&&", "&").replace("||", "|").toUpperCase();
+			for (String andPart : normalized.split("&"))
+			{
+				for (String orPart : andPart.split("\\|"))
+				{
+					if (orPart.isEmpty() || orPart.startsWith("UNLOCK_"))
+					{
+						continue;
+					}
+					String name = orPart.split("=", 2)[0];
+					if (name.chars().allMatch(Character::isDigit))
+					{
+						tsvItemIds.add(Integer.parseInt(name));
+					}
+				}
+			}
+		}
+		Assert.assertFalse("teleportation_items.tsv should reference item ids", tsvItemIds.isEmpty());
+
+		// Every TSV id must belong to exactly one family (the member sets form a
+		// partition); family names must be non-empty and unique; every member id
+		// must carry a non-empty label whose key is a member id
+		Set<String> familyNames = new HashSet<>();
+		Map<Integer, String> idOwner = new HashMap<>();
+		List<String> duplicates = new ArrayList<>();
+		for (TeleportRestriction.Family family : families)
+		{
+			Assert.assertFalse("family name must not be empty", family.name().isBlank());
+			Assert.assertTrue("family name is a display label, not an authoring note (<= 80 chars): "
+				+ family.name(), family.name().length() <= 80);
+			Assert.assertTrue("duplicate family name: " + family.name(), familyNames.add(family.name()));
+			Assert.assertFalse("family '" + family.name() + "' must have member ids",
+				family.memberItemIds().isEmpty());
+			Assert.assertTrue("displayItemId must be a member id in family '" + family.name() + "'",
+				family.memberItemIds().contains(family.displayItemId()));
+
+			for (int id : family.memberItemIds())
+			{
+				Assert.assertTrue("member ids must be positive item ids", id > 0);
+				String label = family.memberLabels().get(id);
+				Assert.assertNotNull("member id " + id + " in family '" + family.name()
+					+ "' has no memberLabels entry", label);
+				Assert.assertFalse("member id " + id + " in family '" + family.name()
+					+ "' has an empty memberLabels entry", label.isEmpty());
+				if (idOwner.put(id, family.name()) != null)
+				{
+					duplicates.add(id + " in '" + idOwner.get(id) + "' and '" + family.name() + "'");
+				}
+			}
+
+			for (int labelKey : family.memberLabels().keySet())
+			{
+				Assert.assertTrue("memberLabels key " + labelKey + " is not a member id of family '"
+					+ family.name() + "'", family.memberItemIds().contains(labelKey));
+			}
+		}
+		Assert.assertTrue("item ids must belong to exactly one family: " + duplicates,
+			duplicates.isEmpty());
+
+		Set<Integer> mapItemIds = idOwner.keySet();
+		Set<Integer> missingFromMap = new HashSet<>(tsvItemIds);
+		missingFromMap.removeAll(mapItemIds);
+		Assert.assertTrue("Items-cell ids missing from the family map: " + missingFromMap,
+			missingFromMap.isEmpty());
+
+		Set<Integer> missingFromTsv = new HashSet<>(mapItemIds);
+		missingFromTsv.removeAll(tsvItemIds);
+		Assert.assertTrue("family map member ids not found in teleportation_items.tsv: " + missingFromTsv,
+			missingFromTsv.isEmpty());
+
+		System.out.printf("Validated %d teleport restriction families covering %d item ids.\n",
+			families.size(), mapItemIds.size());
+	}
+
+	/**
+	 * Asserts every {@code teleportation_items.tsv} row serving a restriction
+	 * family (its {@code Items} cell contributes a member item id) carries a
+	 * {@code Display info} cell usable as the destination-option checkbox
+	 * text: non-blank, and with a non-blank tail when the cell uses the
+	 * {@code "<item>: <destination>"} form. Within each family, rows sharing
+	 * a destination must share one label — a second label for the same tile
+	 * silently loses to first-wins in option derivation, while same-label
+	 * rows covering multiple tiles are the intended grouping mechanism (one
+	 * in-game teleport name, several arrivals). Pins the Ardougne-cloaks,
+	 * Teleport-to-house and Skills-necklace option counts plus the Farming
+	 * Guild group's two-tile expansion.
+	 */
+	@Test
+	public void testRestrictionServingRowLabels() throws IOException
+	{
+		List<TeleportRestriction.Family> families = TeleportRestriction.loadFamilies();
+		Assert.assertFalse("teleport_restrictions.tsv should contain at least one family",
+			families.isEmpty());
+
+		// member id -> owning family name, first-wins like the production
+		// serving rule
+		Map<Integer, String> memberToFamily = new HashMap<>();
+		for (TeleportRestriction.Family family : families)
+		{
+			for (int member : family.memberItemIds())
+			{
+				memberToFamily.putIfAbsent(member, family.name());
+			}
+		}
+
+		String itemsTsv = new String(
+			Util.readAllBytes(Objects.requireNonNull(
+				TeleportRestriction.class.getResourceAsStream("/transports/teleportation_items.tsv"))),
+			StandardCharsets.UTF_8);
+		List<TransportRecord> records = new TsvParser().parse(itemsTsv);
+
+		List<String> violations = new ArrayList<>();
+		// family name -> destination cell -> option label its rows carry
+		Map<String, Map<String, String>> servedLabels = new HashMap<>();
+		int servingRows = 0;
+		for (TransportRecord record : records)
+		{
+			String items = record.getItems();
+			if (items == null || items.isEmpty())
+			{
+				continue;
+			}
+			Set<String> served = new HashSet<>();
+			String normalized = items.replace(" ", "").replace("&&", "&").replace("||", "|")
+				.toUpperCase();
+			for (String andPart : normalized.split("&"))
+			{
+				for (String orPart : andPart.split("\\|"))
+				{
+					if (orPart.isEmpty() || orPart.startsWith("UNLOCK_"))
+					{
+						continue;
+					}
+					String name = orPart.split("=", 2)[0];
+					if (!name.isEmpty() && name.chars().allMatch(Character::isDigit)
+						&& memberToFamily.containsKey(Integer.parseInt(name)))
+					{
+						served.add(memberToFamily.get(Integer.parseInt(name)));
+					}
+				}
+			}
+			if (served.isEmpty())
+			{
+				continue;
+			}
+			servingRows++;
+			String displayInfo = record.getDisplayInfo();
+			String trimmed = displayInfo == null ? "" : displayInfo.trim();
+			String label = null;
+			if (trimmed.isEmpty())
+			{
+				violations.add("blank Display info on family-serving row to '"
+					+ record.getDestination() + "'");
+			}
+			else
+			{
+				int colon = trimmed.indexOf(':');
+				String tail = colon >= 0 ? trimmed.substring(colon + 1).trim() : trimmed;
+				if (tail.isEmpty())
+				{
+					violations.add("blank label tail after ':' on family-serving row '"
+						+ trimmed + "'");
+				}
+				else
+				{
+					label = tail;
+				}
+			}
+			if (label == null)
+			{
+				continue;
+			}
+			for (String family : served)
+			{
+				Map<String, String> byDest =
+					servedLabels.computeIfAbsent(family, k -> new HashMap<>());
+				String previous = byDest.putIfAbsent(record.getDestination(), label);
+				if (previous != null && !previous.equals(label))
+				{
+					violations.add("family '" + family + "' destination '"
+						+ record.getDestination() + "' carries two labels ('" + previous
+						+ "' vs '" + label + "') — a tile must belong to exactly one option");
+				}
+			}
+		}
+		Assert.assertTrue("expected family-serving rows in teleportation_items.tsv", servingRows > 0);
+		Assert.assertTrue("unusable family-serving row labels:\n" + String.join("\n", violations),
+			violations.isEmpty());
+
+		for (TeleportRestriction.Family family : families)
+		{
+			Assert.assertFalse("family '" + family.name()
+				+ "' should expose at least one destination option",
+				family.options().isEmpty());
+		}
+
+		// Concrete drift tripwires — the pinned cases the option UI relies
+		// on: the cloaks serve the monastery and farm entries; the house
+		// tablet's varbit-gated portal towns collapse to one "Outside the
+		// house" option next to "Inside the house"; the skills necklace's
+		// gated Farming Guild arrivals collapse to one "Farming Guild"
+		// option covering both tiles while the other guilds stay distinct.
+		TeleportRestriction.Family ardougne = families.stream()
+			.filter(f -> f.name().equals("Ardougne cloaks"))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("Ardougne cloaks family missing"));
+		Assert.assertEquals("Ardougne cloaks should expose the monastery and farm options",
+			2, ardougne.options().size());
+
+		TeleportRestriction.Family house = families.stream()
+			.filter(f -> f.name().equals("Teleport to house"))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("Teleport to house family missing"));
+		Assert.assertEquals("Teleport to house should expose Inside/Outside the house only",
+			2, house.options().size());
+
+		TeleportRestriction.Family necklace = families.stream()
+			.filter(f -> f.name().equals("Skills necklace (1-6)"))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("Skills necklace family missing"));
+		Assert.assertEquals("Skills necklace should expose its six menu destinations",
+			6, necklace.options().size());
+		Assert.assertTrue("Farming Guild must be one option",
+			necklace.options().containsValue("Farming Guild"));
+
+		// The Farming Guild option covers both gated arrivals: expanding a
+		// record on the canonical destination yields both tiles.
+		int outside = WorldPointUtil.packWorldPoint(1248, 3719, 0);
+		int inside = WorldPointUtil.packWorldPoint(1248, 3725, 0);
+		Assert.assertEquals("the Farming Guild option covers both its tiles",
+			Set.of(outside, inside),
+			TeleportRestriction.expandOptionDests(Map.of(11105, Set.of(outside))).get(11105));
+
+		System.out.printf("Validated %d family-serving rows; every destination belongs to "
+			+ "exactly one option within all %d families.\n", servingRows, families.size());
+	}
+
+	/**
+	 * The balloon log-basket unlock is destination-keyed relief: the shared
+	 * basket storage is invisible to the client, so a trip is satisfied by a
+	 * carried log OR the declared unlock. That places hard constraints on where
+	 * {@code UNLOCK_BALLOON_LOG_BASKET} may appear in
+	 * {@code hot_air_balloons.tsv}:
+	 * <ul>
+	 * <li>exactly six destination-side rows (blank origin field) carry
+	 * {@code <logId>=1|UNLOCK_BALLOON_LOG_BASKET=1} in the Items column;</li>
+	 * <li>the token only ever appears as a {@code |}-OR-branch operand — never
+	 * {@code &}-ANDed (an ANDed token would gate the route behind the toggle
+	 * even for players carrying logs) and never as the sole content of an
+	 * Items cell;</li>
+	 * <li>every {@code Use Basket} departure row (non-blank origin) keeps an
+	 * EMPTY Items cell — departure rows permute to every destination, so an
+	 * origin-side requirement would charge the wrong log type.</li>
+	 * </ul>
+	 * Scope limit: the no-AND/no-pure-cell prohibition is specific to this
+	 * token; other TSVs legitimately use ANDed or standalone unlock cells
+	 * (e.g. {@code 13393=1&UNLOCK_XERICS_HONOUR=1}).
+	 */
+	@Test
+	public void testBalloonLogBasketUnlockPlacement() throws IOException
+	{
+		String tsv = new String(
+			Util.readAllBytes(Objects.requireNonNull(
+				TransportDataLintTest.class.getResourceAsStream("/transports/hot_air_balloons.tsv"))),
+			StandardCharsets.UTF_8);
+
+		int unlockRows = 0;
+		int departureRows = 0;
+		List<String> violations = new ArrayList<>();
+		int lineNo = 0;
+		for (String line : tsv.split("\n"))
+		{
+			lineNo++;
+			if (line.startsWith("#"))
+			{
+				continue;
+			}
+			String[] fields = line.split("\t", -1);
+			String origin = fields[0].trim();
+			String items = fields.length > 3 ? fields[3].trim() : "";
+			boolean lineHasToken = line.contains("UNLOCK_BALLOON_LOG_BASKET");
+
+			if (!origin.isEmpty())
+			{
+				// Departure row: origin-keyed permutation rows must not carry
+				// an Items requirement at all.
+				departureRows++;
+				if (fields.length <= 2 || !fields[2].contains("Use Basket"))
+				{
+					violations.add("line " + lineNo
+						+ ": non-blank-origin row is not a 'Use Basket' departure: " + line);
+				}
+				if (!items.isEmpty())
+				{
+					violations.add("line " + lineNo + ": departure row carries Items '" + items
+						+ "' — destination-keyed consumption requires empty Items on origin rows");
+				}
+				continue;
+			}
+
+			if (lineHasToken && !items.contains("UNLOCK_BALLOON_LOG_BASKET"))
+			{
+				violations.add("line " + lineNo
+					+ ": UNLOCK_BALLOON_LOG_BASKET appears outside the Items column: " + line);
+			}
+			if (!items.contains("UNLOCK_BALLOON_LOG_BASKET"))
+			{
+				continue;
+			}
+			unlockRows++;
+
+			String[] orBranches = items.split("\\|");
+			if (orBranches.length < 2)
+			{
+				violations.add("line " + lineNo + ": Items cell is pure-unlock '" + items
+					+ "' — the unlock must relieve a log requirement, not stand alone");
+			}
+			for (String branch : orBranches)
+			{
+				if (branch.contains("UNLOCK_BALLOON_LOG_BASKET")
+					&& !branch.trim().equals("UNLOCK_BALLOON_LOG_BASKET=1"))
+				{
+					violations.add("line " + lineNo + ": UNLOCK_BALLOON_LOG_BASKET must be a "
+						+ "standalone |-OR-branch operand, never &-ANDed: '" + items + "'");
+				}
+			}
+		}
+
+		Assert.assertEquals("expected exactly 6 destination-side rows carrying "
+			+ "UNLOCK_BALLOON_LOG_BASKET (Entrana, Taverley, Crafting Guild, Varrock, "
+			+ "Castle Wars, Grand Tree)", 6, unlockRows);
+		Assert.assertTrue("hot_air_balloons.tsv should contain 'Use Basket' departure rows",
+			departureRows > 0);
+		Assert.assertTrue("balloon unlock placement violations:\n" + String.join("\n", violations),
+			violations.isEmpty());
+
+		System.out.printf("Validated %d balloon unlock relief rows across %d departure rows.\n",
+			unlockRows, departureRows);
 	}
 }

@@ -23,7 +23,7 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import shortestpath.ShortestPathConfig;
-import shortestpath.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
@@ -48,8 +48,7 @@ public class AStarBankAccessParityTest
 	@BeforeClass
 	public static void buildRoutingStatic()
 	{
-		routingStatic = new AStarRoutingStaticProvider(
-			() -> new CollisionMap(SplitFlagMap.fromResources())).get();
+		routingStatic = TestWorldData.routingStatic();
 	}
 
 	@Test
@@ -108,7 +107,7 @@ public class AStarBankAccessParityTest
 
 			assertTrue(aStar.getResult().isReached());
 			assertEquals("Farming " + farmingLevel, legacy.getPathCost(), aStar.getResult().getPathCost());
-			assertTrue(aStar.getPath().stream().anyMatch(PathStep::isBankVisited));
+			assertTrue(aStar.getPath().stream().anyMatch(step -> step.getBankVisitState() == BankVisitState.BANKED));
 			assertEquals("the route still banks, so it pays the visit once",
 				aStar(free, null).getResult().getPathCost() + BANK_VISIT_COST, aStar.getResult().getPathCost());
 		}
@@ -146,7 +145,7 @@ public class AStarBankAccessParityTest
 	{
 		for (int i = 1; i < path.size(); i++)
 		{
-			if (!path.get(i - 1).isBankVisited() && path.get(i).isBankVisited())
+			if (path.get(i - 1).getBankVisitState() != BankVisitState.BANKED && path.get(i).getBankVisitState() == BankVisitState.BANKED)
 				return path.get(i - 1).getPackedPosition() == tile || path.get(i).getPackedPosition() == tile;
 		}
 		return false;
@@ -194,7 +193,9 @@ public class AStarBankAccessParityTest
 		when(settings.costBankVisit()).thenReturn(bankVisitCost);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
-		config.bank = bank;
+		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting();
+		config.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		config.refresh();
 		return config;
 	}

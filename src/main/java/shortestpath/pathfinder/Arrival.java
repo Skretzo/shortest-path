@@ -1,7 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.util.List;
-import shortestpath.transport.requirement.ItemRequirement;
+import shortestpath.requirement.model.ItemRequirement;
 
 /**
  * The target a finished route reaches, and whether the player will hold its items there. Immutable.

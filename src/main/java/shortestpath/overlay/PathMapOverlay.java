@@ -19,24 +19,38 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.PrimitiveIntHashMap;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathRenderState;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
+import shortestpath.widgets.WidgetGeometry;
 
 public class PathMapOverlay extends Overlay
 {
 	private final Client client;
-	private final ShortestPathPlugin plugin;
+	private final Settings settings;
+	private final PathRenderState renderState;
+	private final PathScheduler scheduler;
+	private final WidgetGeometry geometry;
+	private final PathAnnotator annotator;
 
 	@Inject
-	private PathMapOverlay(Client client, ShortestPathPlugin plugin)
+	private PathMapOverlay(Client client, Settings settings, PathRenderState renderState,
+		PathScheduler scheduler, WidgetGeometry geometry, PathAnnotator annotator)
 	{
 		this.client = client;
-		this.plugin = plugin;
+		this.settings = settings;
+		this.renderState = renderState;
+		this.scheduler = scheduler;
+		this.geometry = geometry;
+		this.annotator = annotator;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.MANUAL);
@@ -49,7 +63,7 @@ public class PathMapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMap)
+		if (!settings.display().drawMap())
 		{
 			return null;
 		}
@@ -63,15 +77,15 @@ public class PathMapOverlay extends Overlay
 		Area worldMapClipArea = getWorldMapClipArea(worldMapRectangle);
 		graphics.setClip(worldMapClipArea);
 
-		if (plugin.drawCollisionMap)
+		if (settings.display().drawCollisionMap())
 		{
-			graphics.setColor(plugin.colourCollisionMap);
-			int mapWorldPoint = plugin.calculateMapPoint(worldMapRectangle.x, worldMapRectangle.y);
+			graphics.setColor(settings.display().colourCollisionMap());
+			int mapWorldPoint = geometry.calculateMapPoint(worldMapRectangle.x, worldMapRectangle.y);
 			int extentX = WorldPointUtil.unpackWorldX(mapWorldPoint);
 			int extentY = WorldPointUtil.unpackWorldY(mapWorldPoint);
 			int extentWidth = getWorldMapExtentWidth(worldMapRectangle);
 			int extentHeight = getWorldMapExtentHeight(worldMapRectangle);
-			final CollisionMap map = plugin.getMap();
+			final CollisionMap map = annotator.getMap();
 			final int z = client.getTopLevelWorldView().getPlane();
 			for (int x = extentX; x < (extentX + extentWidth + 1); x++)
 			{
@@ -85,10 +99,10 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (plugin.drawTransports)
+		if (settings.display().drawTransports())
 		{
-			PrimitiveIntHashMap<Transport[]> allTransports = plugin.getAllDisplayTransports();
-			PrimitiveIntHashMap<Transport[]> availableTransports = plugin.getTransports();
+			PrimitiveIntHashMap<Transport[]> allTransports = annotator.getAllDisplayTransports();
+			PrimitiveIntHashMap<Transport[]> availableTransports = annotator.getTransports();
 
 			for (int a : allTransports.keys())
 			{
@@ -97,8 +111,8 @@ public class PathMapOverlay extends Overlay
 					continue; // skip teleports
 				}
 
-				int mapAX = plugin.mapWorldPointToGraphicsPointX(a);
-				int mapAY = plugin.mapWorldPointToGraphicsPointY(a);
+				int mapAX = geometry.mapWorldPointToGraphicsPointX(a);
+				int mapAY = geometry.mapWorldPointToGraphicsPointY(a);
 				if (!worldMapClipArea.contains(mapAX, mapAY))
 				{
 					continue;
@@ -113,8 +127,8 @@ public class PathMapOverlay extends Overlay
 						continue; // skip teleports
 					}
 
-					int mapBX = plugin.mapWorldPointToGraphicsPointX(b.getDestination());
-					int mapBY = plugin.mapWorldPointToGraphicsPointY(b.getDestination());
+					int mapBX = geometry.mapWorldPointToGraphicsPointX(b.getDestination());
+					int mapBY = geometry.mapWorldPointToGraphicsPointY(b.getDestination());
 					if (!worldMapClipArea.contains(mapBX, mapBY))
 					{
 						continue;
@@ -127,16 +141,17 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (plugin.getActiveSearch() != null)
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (search != null)
 		{
-			Color colour = plugin.getPathColor();
-			List<PathStep> path = plugin.getActiveSearch().getPath();
+			Color colour = renderState.getPathColor();
+			List<PathStep> path = search.getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
-			if (plugin.isSailing())
+			if (renderState.isSailing())
 			{
 				// On a boat the path sails the boat's headings: a line along each heading it holds, with a small square
 				// at the end of each move
-				graphics.setColor(plugin.isPathUnreachable() ? plugin.getPathColor() : ShortestPathPlugin.COLOUR_SAILING_PATH);
+				graphics.setColor(renderState.isPathUnreachable() ? renderState.getPathColor() : PathRenderState.SAILING_PATH_COLOUR);
 				for (int i = 0; i < path.size(); i++)
 				{
 					int point = path.get(i).getPackedPosition();
@@ -147,7 +162,7 @@ public class PathMapOverlay extends Overlay
 					drawSmallSquareOnMap(graphics, point);
 				}
 			}
-			else if (TileStyle.ARROW_LINE.equals(plugin.pathStyle))
+			else if (TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
 			{
 				graphics.setColor(colour);
 				drawArrowPath(graphics, path);
@@ -166,11 +181,11 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			for (int target : plugin.getActiveSearch().getTargets().points())
+			for (int target : search.getTargets().points())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
-					graphics.setColor(plugin.colourPathCalculating);
+					graphics.setColor(settings.display().colourPathCalculating());
 					drawOnMap(graphics, target, true, cursorPos);
 				}
 			}
@@ -227,10 +242,10 @@ public class PathMapOverlay extends Overlay
 
 	private void drawMapSegment(Graphics2D graphics, int from, int to, Stroke stroke)
 	{
-		int x1 = plugin.mapWorldPointToGraphicsPointX(from);
-		int y1 = plugin.mapWorldPointToGraphicsPointY(from);
-		int x2 = plugin.mapWorldPointToGraphicsPointX(to);
-		int y2 = plugin.mapWorldPointToGraphicsPointY(to);
+		int x1 = geometry.mapWorldPointToGraphicsPointX(from);
+		int y1 = geometry.mapWorldPointToGraphicsPointY(from);
+		int x2 = geometry.mapWorldPointToGraphicsPointX(to);
+		int y2 = geometry.mapWorldPointToGraphicsPointY(to);
 		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE
 			|| x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
 		{
@@ -247,9 +262,9 @@ public class PathMapOverlay extends Overlay
 
 	private void drawSmallSquareOnMap(Graphics2D graphics, int point)
 	{
-		int x = plugin.mapWorldPointToGraphicsPointX(point);
-		int y = plugin.mapWorldPointToGraphicsPointY(point);
-		int nextX = plugin.mapWorldPointToGraphicsPointX(WorldPointUtil.dxdy(point, 1, -1));
+		int x = geometry.mapWorldPointToGraphicsPointX(point);
+		int y = geometry.mapWorldPointToGraphicsPointY(point);
+		int nextX = geometry.mapWorldPointToGraphicsPointX(WorldPointUtil.dxdy(point, 1, -1));
 		if (x == Integer.MIN_VALUE || y == Integer.MIN_VALUE || nextX == Integer.MIN_VALUE)
 		{
 			return;
@@ -260,10 +275,10 @@ public class PathMapOverlay extends Overlay
 
 	private void drawSolidLineOnMap(Graphics2D graphics, int from, int to)
 	{
-		int x1 = plugin.mapWorldPointToGraphicsPointX(from);
-		int y1 = plugin.mapWorldPointToGraphicsPointY(from);
-		int x2 = plugin.mapWorldPointToGraphicsPointX(to);
-		int y2 = plugin.mapWorldPointToGraphicsPointY(to);
+		int x1 = geometry.mapWorldPointToGraphicsPointX(from);
+		int y1 = geometry.mapWorldPointToGraphicsPointY(from);
+		int x2 = geometry.mapWorldPointToGraphicsPointX(to);
+		int y2 = geometry.mapWorldPointToGraphicsPointY(to);
 		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE || x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
 		{
 			return;
@@ -279,10 +294,10 @@ public class PathMapOverlay extends Overlay
 
 	private void drawOnMap(Graphics2D graphics, int point, int offsetPoint, boolean checkHover, Point cursorPos)
 	{
-		int startX = plugin.mapWorldPointToGraphicsPointX(point);
-		int startY = plugin.mapWorldPointToGraphicsPointY(point);
-		int endX = plugin.mapWorldPointToGraphicsPointX(offsetPoint);
-		int endY = plugin.mapWorldPointToGraphicsPointY(offsetPoint);
+		int startX = geometry.mapWorldPointToGraphicsPointX(point);
+		int startY = geometry.mapWorldPointToGraphicsPointY(point);
+		int endX = geometry.mapWorldPointToGraphicsPointX(offsetPoint);
+		int endY = geometry.mapWorldPointToGraphicsPointY(offsetPoint);
 
 		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
 			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
@@ -337,12 +352,12 @@ public class PathMapOverlay extends Overlay
 	private int getWorldMapExtentWidth(Rectangle baseRectangle)
 	{
 		return (WorldPointUtil.unpackWorldX(
-			plugin.calculateMapPoint(
+			geometry.calculateMapPoint(
 				baseRectangle.x + baseRectangle.width,
 				baseRectangle.y + baseRectangle.height))
 			-
 			WorldPointUtil.unpackWorldX(
-				plugin.calculateMapPoint(
+				geometry.calculateMapPoint(
 					baseRectangle.x,
 					baseRectangle.y)));
 	}
@@ -350,12 +365,12 @@ public class PathMapOverlay extends Overlay
 	private int getWorldMapExtentHeight(Rectangle baseRectangle)
 	{
 		return (WorldPointUtil.unpackWorldY(
-			plugin.calculateMapPoint(
+			geometry.calculateMapPoint(
 				baseRectangle.x,
 				baseRectangle.y))
 			-
 			WorldPointUtil.unpackWorldY(
-				plugin.calculateMapPoint(
+				geometry.calculateMapPoint(
 					baseRectangle.x + baseRectangle.width,
 					baseRectangle.y + baseRectangle.height)));
 	}

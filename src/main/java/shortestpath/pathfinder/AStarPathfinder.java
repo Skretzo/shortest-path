@@ -1,6 +1,8 @@
 package shortestpath.pathfinder;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntPredicate;
@@ -142,7 +144,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
-		this.path = List.of(new PathStep(start, false));
+		this.path = List.of(new PathStep(start, BankVisitState.CARRIED));
 	}
 
 	private static Supplier<RoutingStatic> constant(RoutingStatic routingStatic)
@@ -191,7 +193,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
 		this.failure = failure;
-		this.path = List.of(new PathStep(start, false));
+		this.path = List.of(new PathStep(start, BankVisitState.CARRIED));
 	}
 
 	public static AStarPathfinder failed(int start, Targets targets, Runnable completionCallback, Throwable error)
@@ -235,6 +237,7 @@ public final class AStarPathfinder implements ActiveSearch
 	}
 
 	/** Whether {@link #getPath()} is still the previous route passed to {@link #showUntilDone}. */
+	@Override
 	public boolean isShowingProvisionalPath()
 	{
 		return provisionalPath != null;
@@ -243,6 +246,23 @@ public final class AStarPathfinder implements ActiveSearch
 	@Override
 	public boolean isDone()
 	{ return done;
+	}
+
+	@Override
+	public String backendName()
+	{
+		return PathfinderBackend.ASTAR.toString();
+	}
+
+	/**
+	 * Always {@code false}: sailing dispatch bypasses the backend choice and
+	 * builds a {@link shortestpath.pathfinder.sailing.SailingPathfinder}
+	 * directly, so an A* search is never a sailing search.
+	 */
+	@Override
+	public boolean isSailing()
+	{
+		return false;
 	}
 
 	@Override
@@ -309,6 +329,7 @@ public final class AStarPathfinder implements ActiveSearch
 	 * Ascending indices into the route's steps of the tiles the player clicks to walk it in game;
 	 * empty until a route is found.
 	 */
+	@Override
 	public List<Integer> getClickPoints()
 	{ return clickPoints;
 	}
@@ -327,6 +348,34 @@ public final class AStarPathfinder implements ActiveSearch
 	}
 
 	/** Whether this search's target set was already prepared in the session. */
+	// Static data is built once; only the search that built it spends measurable time on it.
+	private static final long STATIC_BUILD_THRESHOLD_NANOS = 1_000_000;
+
+	@Override
+	public Map<String, String> debugStats()
+	{
+		Map<String, String> entries = new LinkedHashMap<>();
+		entries.put("Forward search", PathfinderStats.millis(getForwardSearchNanos()));
+		entries.put("Walk canonicalize", PathfinderStats.millis(getWalkCanonicalizeNanos()));
+		if (!getWalkDiagnostics().isEmpty())
+		{
+			entries.put("Legs kept as found", Integer.toString(getWalkDiagnostics().size()));
+		}
+		int keptSteps = getKeptStepIndices().size();
+		entries.put("Walk rewrite", PathfinderStats.millis(getWalkRewriteNanos())
+			+ (keptSteps > 0 ? ", " + keptSteps + " kept" : ""));
+		entries.put("Target prep", isTargetReused() ? "reused"
+			: PathfinderStats.millis(getReverseSearchNanos() + getHeuristicPrepareNanos()));
+		entries.put("Graph prep", isGraphReused() ? "reused"
+			: PathfinderStats.millis(getGraphPrepareNanos()));
+		entries.put("Account prep", PathfinderStats.millis(getAccountPrepareNanos()));
+		if (getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
+		{
+			entries.put("Static data", PathfinderStats.millis(getRoutingStaticNanos()));
+		}
+		return entries;
+	}
+
 	public boolean isTargetReused()
 	{ return targetReused;
 	}
@@ -429,7 +478,7 @@ public final class AStarPathfinder implements ActiveSearch
 			}
 
 			if (cancelled)
-				result = new PathfinderResult(start, firstTarget(), false, List.of(new PathStep(start, false)), start,
+				result = new PathfinderResult(start, firstTarget(), false, List.of(new PathStep(start, BankVisitState.CARRIED)), start,
 					PathfinderResult.NO_PATH_COST, stats.nodesChecked, stats.transportsChecked, System.nanoTime() - started,
 					PathTerminationReason.CANCELLED);
 			else if (timedOut.get())
@@ -470,7 +519,7 @@ public final class AStarPathfinder implements ActiveSearch
 	private Arrival arrival(List<PathStep> route)
 	{
 		PathStep end = route.get(route.size() - 1);
-		return goals.arrival(end.getPackedPosition(), end.isBankVisited());
+		return goals.arrival(end.getPackedPosition(), end.getBankVisitState());
 	}
 
 	private int firstTarget()

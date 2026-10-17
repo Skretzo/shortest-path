@@ -6,9 +6,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.TransportType;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.SkillLevels;
+import shortestpath.requirement.model.TransportItems;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +35,7 @@ public class ObservatoryGrappleShortcutTest
 	public void setUp()
 	{
 		transports = new HashMap<>();
-		TransportLoader.addTransportsFromContents(transports, TRANSPORT_DATA, TransportType.GRAPPLE_SHORTCUT, 0);
+		ResourceLoader.addTransportsFromContents(transports, TRANSPORT_DATA, TransportType.GRAPPLE_SHORTCUT, 0);
 	}
 
 	private Transport getTransport()
@@ -54,7 +55,7 @@ public class ObservatoryGrappleShortcutTest
 	{
 		Transport transport = getTransport();
 
-		int agilityLevel = transport.getSkillLevels()[Skill.AGILITY.ordinal()];
+		int agilityLevel = transport.getSkillLevels().get(Skill.AGILITY);
 		Assert.assertEquals("Transport should require 23 Agility", 23, agilityLevel);
 	}
 
@@ -149,23 +150,22 @@ public class ObservatoryGrappleShortcutTest
 	{
 		Transport transport = getTransport();
 
-		int[] skillLevels = transport.getSkillLevels();
+		SkillLevels skillLevels = transport.getSkillLevels();
 
 		// Check all skills except Agility should be 0
 		for (Skill skill : Skill.values())
 		{
 			if (skill != Skill.AGILITY)
 			{
-				int level = skillLevels[skill.ordinal()];
+				int level = skillLevels.get(skill);
 				Assert.assertEquals("Skill " + skill.getName() + " should not be required", 0, level);
 			}
 		}
 
-		// Check total level, combat level, and quest points (last 3 indices)
-		int totalLevelIndex = Skill.values().length;
-		Assert.assertEquals("Total level should not be required", 0, skillLevels[totalLevelIndex]);
-		Assert.assertEquals("Combat level should not be required", 0, skillLevels[totalLevelIndex + 1]);
-		Assert.assertEquals("Quest points should not be required", 0, skillLevels[totalLevelIndex + 2]);
+		// Check total level, combat level, and quest points (the +3 tail)
+		Assert.assertEquals("Total level should not be required", 0, skillLevels.get(SkillLevels.TOTAL_LEVEL_INDEX));
+		Assert.assertEquals("Combat level should not be required", 0, skillLevels.get(SkillLevels.COMBAT_LEVEL_INDEX));
+		Assert.assertEquals("Quest points should not be required", 0, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
 	}
 
 	/**

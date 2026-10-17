@@ -1,0 +1,492 @@
+package shortestpath.requirement.model;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import net.runelite.api.gameval.ItemID;
+import org.junit.Assert;
+import org.junit.Test;
+import shortestpath.ItemVariations;
+import shortestpath.transport.parser.ItemRequirementParser;
+
+/**
+ * Combination staves, tomes and leftover runes for {@link TransportItems#isSatisfiedBy}.
+ */
+public class TransportItemsSatisfactionTest
+{
+	@Test
+	public void mistStaffAndLawUnlocksFalador()
+	{
+		Assert.assertTrue(satisfied(faladorTeleport(),
+			ItemID.MIST_BATTLESTAFF, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void mysticMistStaffAndLawUnlocksFalador()
+	{
+		Assert.assertTrue(satisfied(faladorTeleport(),
+			ItemID.MYSTIC_MIST_BATTLESTAFF, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void lawRunesAloneDoNotUnlockFalador()
+	{
+		Assert.assertFalse(satisfied(faladorTeleport(),
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void mistStaffStillWorksWhenAirRunesAreAlsoPresent()
+	{
+		Assert.assertTrue(satisfied(faladorTeleport(),
+			ItemID.MIST_BATTLESTAFF, 1,
+			ItemID.AIRRUNE, 3,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void mistStaffAndWaterRunesUnlockFalador()
+	{
+		Assert.assertTrue(satisfied(faladorTeleport(),
+			ItemID.MIST_BATTLESTAFF, 1,
+			ItemID.WATERRUNE, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void twoSingleElementStavesCannotCoverFalador()
+	{
+		Assert.assertFalse(satisfied(faladorTeleport(),
+			ItemID.STAFF_OF_AIR, 1,
+			ItemID.STAFF_OF_WATER, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void dustStaffAndLawUnlocksHouseTeleport()
+	{
+		Assert.assertTrue(satisfied(houseTeleport(),
+			ItemID.DUST_BATTLESTAFF, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void mysticDustStaffAndLawUnlocksHouseTeleport()
+	{
+		Assert.assertTrue(satisfied(houseTeleport(),
+			ItemID.MYSTIC_DUST_BATTLESTAFF, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void dustStaffPlusTomeOfFireCoversEarthAndFire()
+	{
+		Assert.assertTrue(satisfied(earthAndFire(),
+			ItemID.DUST_BATTLESTAFF, 1,
+			ItemID.TOME_OF_FIRE, 1));
+	}
+
+	@Test
+	public void dustStaffAloneDoesNotCoverEarthAndFire()
+	{
+		Assert.assertFalse(satisfied(earthAndFire(),
+			ItemID.DUST_BATTLESTAFF, 1));
+	}
+
+	@Test
+	public void dustAndLavaStavesPreferLavaForEarthAndFire()
+	{
+		Assert.assertTrue(satisfied(earthAndFire(),
+			ItemID.DUST_BATTLESTAFF, 1,
+			ItemID.LAVA_BATTLESTAFF, 1));
+	}
+
+	@Test
+	public void smokeStaffAndLawUnlocksVarrock()
+	{
+		Assert.assertTrue(satisfied(varrockTeleport(),
+			ItemID.SMOKE_BATTLESTAFF, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void mysticAirStaffWithFireAndLawUnlocksVarrock()
+	{
+		Assert.assertTrue(satisfied(varrockTeleport(),
+			ItemID.MYSTIC_AIR_STAFF, 1,
+			ItemID.FIRERUNE, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void airStaffWithTomeOfFireAndLawUnlocksVarrock()
+	{
+		Assert.assertTrue(satisfied(varrockTeleport(),
+			ItemID.STAFF_OF_AIR, 1,
+			ItemID.TOME_OF_FIRE, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void twoTomesCannotCoverEarthAndFire()
+	{
+		Assert.assertFalse(satisfied(earthAndFire(),
+			ItemID.TOME_OF_EARTH, 1,
+			ItemID.TOME_OF_FIRE, 1));
+	}
+
+	@Test
+	public void shantayPassAloneSatisfiesUnequalOrGroup()
+	{
+		Assert.assertTrue(satisfied(shantayGate(),
+			ItemID.SHANTAY_PASS, 1));
+	}
+
+	@Test
+	public void fiveCoinsSatisfyUnequalOrGroup()
+	{
+		Assert.assertTrue(satisfied(shantayGate(),
+			ItemID.COINS, 5));
+	}
+
+	@Test
+	public void fourCoinsDoNotSatisfyUnequalOrGroup()
+	{
+		Assert.assertFalse(satisfied(shantayGate(),
+			ItemID.COINS, 4));
+	}
+
+	@Test
+	public void passBranchWinsWhenCoinBranchExceedsCurrencyThreshold()
+	{
+		Assert.assertTrue(satisfiedWithThreshold(shantayGate(), 0,
+			ItemID.SHANTAY_PASS, 1,
+			ItemID.COINS, 100));
+	}
+
+	@Test
+	public void coinsAloneAreBlockedByCurrencyThreshold()
+	{
+		Assert.assertFalse(satisfiedWithThreshold(shantayGate(), 0,
+			ItemID.COINS, 100));
+		Assert.assertTrue(satisfiedWithThreshold(shantayGate(), 5,
+			ItemID.COINS, 100));
+	}
+
+	@Test
+	public void staffCoveringOneRuneBranchSatisfiesOrGroup()
+	{
+		TransportItems runes = new ItemRequirementParser().parse("AIR_RUNE=3|WATER_RUNE=5&LAW_RUNE=1");
+		Assert.assertTrue(satisfied(runes,
+			ItemID.STAFF_OF_AIR, 1,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void noRuneStaffFailsRuneOrGroup()
+	{
+		TransportItems runes = new ItemRequirementParser().parse("AIR_RUNE=3|WATER_RUNE=5&LAW_RUNE=1");
+		Assert.assertFalse(satisfied(runes,
+			ItemID.LAWRUNE, 1));
+	}
+
+	@Test
+	public void unlockBranchParsesAsReliefAlternative()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull("An UNLOCK_* cell must parse", items);
+		Assert.assertEquals(1, items.getRequirements().size());
+		ItemRequirement req = items.getRequirements().get(0);
+		Assert.assertEquals(2, req.getBranches().size());
+		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
+		ItemRequirement.Branch unlock = req.getBranches().get(1);
+		Assert.assertNull(unlock.getItemIds());
+		Assert.assertEquals(Unlock.CANOE_AXE, unlock.getUnlock());
+		Assert.assertTrue(unlock.isUnlockOnly());
+	}
+
+	@Test
+	public void andedUnlockParsesAsPureGateRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertEquals(2, items.getRequirements().size());
+		Assert.assertFalse(items.getRequirements().get(0).isPureUnlock());
+		Assert.assertTrue(items.getRequirements().get(1).isPureUnlock());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unknownUnlockNameIsALoudParseFailure()
+	{
+		new ItemRequirementParser().parse("UNLOCK_BOGUS=1");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void zeroQuantityUnlockIsMalformed()
+	{
+		new ItemRequirementParser().parse("UNLOCK_CANOE_AXE=0");
+	}
+
+	@Test
+	public void declaredUnlockRelievesItemRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.CANOE_AXE)));
+	}
+
+	@Test
+	public void undeclaredUnlockDoesNotRelieveItemRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1));
+	}
+
+	@Test
+	public void declaredUnlockOnlySatisfiesItself()
+	{
+		// A declared unlock must never relieve an unrelated requirement.
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.DRAGONTOOTH)));
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+	}
+
+	@Test
+	public void unlockGateNeedsItemAndUnlock()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		// Item without the declared unlock does not satisfy the gate.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(), 13393, 1));
+		// The declared unlock alone does not relieve the item term.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		// Item and declared unlock together satisfy the gate.
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR), 13393, 1));
+	}
+
+	@Test
+	public void pureUnlockRequirementIsSatisfiedOnlyWhenDeclared()
+	{
+		TransportItems items = new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		// No amount of items can cover an unlock-only branch.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1, ItemID.COINS, 999999));
+	}
+
+	@Test
+	public void unlockBranchesEmitNoNullItemArrays()
+	{
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1&13393=1&UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		for (int[] alternatives : items.getItems())
+		{
+			Assert.assertNotNull(alternatives);
+		}
+	}
+
+	/**
+	 * Logs already deposited in a balloon station's basket are invisible to
+	 * the client, so a pilot request is satisfied either by a carried log or
+	 * by the declared storage unlock.
+	 */
+	@Test
+	public void balloonLogBasketUnlockResolvesFromName()
+	{
+		Assert.assertNotNull("UNLOCK_BALLOON_LOG_BASKET must name a real unlock",
+			Unlock.fromName("UNLOCK_BALLOON_LOG_BASKET"));
+	}
+
+	@Test
+	public void balloonLogBasketUnlockParsesAsReliefAlternative()
+	{
+		TransportItems items = new ItemRequirementParser().parse("1511=1|UNLOCK_BALLOON_LOG_BASKET=1");
+		Assert.assertNotNull("An UNLOCK_* cell must parse", items);
+		Assert.assertEquals(1, items.getRequirements().size());
+		ItemRequirement req = items.getRequirements().get(0);
+		Assert.assertEquals(2, req.getBranches().size());
+		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
+		ItemRequirement.Branch unlock = req.getBranches().get(1);
+		Assert.assertNull(unlock.getItemIds());
+		Assert.assertEquals(Unlock.BALLOON_LOG_BASKET, unlock.getUnlock());
+		Assert.assertTrue(unlock.isUnlockOnly());
+	}
+
+	@Test
+	public void declaredBalloonLogBasketRelievesLogRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("1511=1|UNLOCK_BALLOON_LOG_BASKET=1");
+		Assert.assertNotNull(items);
+		// Stored basket declared: the pilot flies without any carried log.
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.BALLOON_LOG_BASKET)));
+		// Nothing carried and nothing stored: the requirement gates.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		// A carried log satisfies the item branch even with no unlock declared.
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(), 1511, 1));
+	}
+
+	/**
+	 * Blocking is structural: a transport drops out only when some ANDed
+	 * requirement loses every OR alternative to blocked item ids. Ownership is
+	 * never consulted here — that question belongs to {@code isSatisfiedBy}.
+	 */
+	@Test
+	public void blockedLastAlternativeKillsTheRequirement()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(items.survivesBlockedItems(Set.of(13121)));
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(99999)));
+		Assert.assertTrue(items.survivesBlockedItems(Set.of()));
+	}
+
+	@Test
+	public void orGroupSurvivesOnItsUnblockedBranch()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1|13124=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(13121)));
+		Assert.assertFalse(items.survivesBlockedItems(Set.of(13121, 13124)));
+	}
+
+	@Test
+	public void andedRequirementsDieWhenEitherLosesEveryBranch()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1|13122=1&13124=1");
+		Assert.assertNotNull(items);
+		// First requirement survives on 13122, second is fully blocked.
+		Assert.assertFalse(items.survivesBlockedItems(Set.of(13121, 13124)));
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(13121)));
+	}
+
+	@Test
+	public void unlockBranchesCanNeverBeBlocked()
+	{
+		TransportItems items = new ItemRequirementParser().parse("13121=1|UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(items.survivesBlockedItems(Set.of(13121)));
+
+		TransportItems pureUnlock = new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(pureUnlock);
+		Assert.assertTrue(pureUnlock.survivesBlockedItems(Set.of(13121, 13124)));
+	}
+
+	@Test
+	public void unblockedStaffSubstituteKeepsBranchAlive()
+	{
+		// A fire-rune requirement whose every rune variant is blocked still
+		// survives while a fire staff substitute is not.
+		TransportItems items = new ItemRequirementParser().parse("FIRE_RUNE=1");
+		Assert.assertNotNull(items);
+		Set<Integer> allRunes =
+			Arrays.stream(ItemVariations.FIRE_RUNE.getIds()).boxed().collect(Collectors.toSet());
+		Assert.assertTrue(items.survivesBlockedItems(allRunes));
+	}
+
+	private static boolean satisfied(TransportItems items, int... idAndQuantity)
+	{
+		return items.isSatisfiedBy(counts(idAndQuantity), TransportItems.CURRENCIES, Integer.MAX_VALUE);
+	}
+
+	private static boolean satisfiedWithUnlocks(TransportItems items, Set<Unlock> unlocks, int... idAndQuantity)
+	{
+		return items.isSatisfiedBy(counts(idAndQuantity), TransportItems.CURRENCIES, Integer.MAX_VALUE, unlocks);
+	}
+
+	private static boolean satisfiedWithThreshold(TransportItems items, int threshold, int... idAndQuantity)
+	{
+		return items.isSatisfiedBy(counts(idAndQuantity), TransportItems.CURRENCIES, threshold);
+	}
+
+	private static Map<Integer, Integer> counts(int... idAndQuantity)
+	{
+		Map<Integer, Integer> itemCounts = new HashMap<>();
+		for (int i = 0; i < idAndQuantity.length; i += 2)
+		{
+			itemCounts.put(idAndQuantity[i], idAndQuantity[i + 1]);
+		}
+		return itemCounts;
+	}
+
+	private static TransportItems shantayGate()
+	{
+		return new ItemRequirementParser().parse("SHANTAY_PASS=1|COINS=5");
+	}
+
+	private static TransportItems faladorTeleport()
+	{
+		return new TransportItems(
+			new int[][]{
+				ItemVariations.AIR_RUNE.getIds(),
+				ItemVariations.WATER_RUNE.getIds(),
+				ItemVariations.LAW_RUNE.getIds()},
+			new int[][]{
+				ItemVariations.STAFF_OF_AIR.getIds(),
+				ItemVariations.STAFF_OF_WATER.getIds(),
+				ItemVariations.staves(ItemVariations.LAW_RUNE)},
+			new int[][]{
+				ItemVariations.offhands(ItemVariations.AIR_RUNE),
+				ItemVariations.offhands(ItemVariations.WATER_RUNE),
+				ItemVariations.offhands(ItemVariations.LAW_RUNE)},
+			new int[]{3, 1, 1});
+	}
+
+	private static TransportItems houseTeleport()
+	{
+		return new TransportItems(
+			new int[][]{
+				ItemVariations.AIR_RUNE.getIds(),
+				ItemVariations.EARTH_RUNE.getIds(),
+				ItemVariations.LAW_RUNE.getIds()},
+			new int[][]{
+				ItemVariations.STAFF_OF_AIR.getIds(),
+				ItemVariations.STAFF_OF_EARTH.getIds(),
+				ItemVariations.staves(ItemVariations.LAW_RUNE)},
+			new int[][]{
+				ItemVariations.offhands(ItemVariations.AIR_RUNE),
+				ItemVariations.offhands(ItemVariations.EARTH_RUNE),
+				ItemVariations.offhands(ItemVariations.LAW_RUNE)},
+			new int[]{1, 1, 1});
+	}
+
+	private static TransportItems varrockTeleport()
+	{
+		return new TransportItems(
+			new int[][]{
+				ItemVariations.AIR_RUNE.getIds(),
+				ItemVariations.FIRE_RUNE.getIds(),
+				ItemVariations.LAW_RUNE.getIds()},
+			new int[][]{
+				ItemVariations.STAFF_OF_AIR.getIds(),
+				ItemVariations.STAFF_OF_FIRE.getIds(),
+				ItemVariations.staves(ItemVariations.LAW_RUNE)},
+			new int[][]{
+				ItemVariations.offhands(ItemVariations.AIR_RUNE),
+				ItemVariations.offhands(ItemVariations.FIRE_RUNE),
+				ItemVariations.offhands(ItemVariations.LAW_RUNE)},
+			new int[]{3, 1, 1});
+	}
+
+	private static TransportItems earthAndFire()
+	{
+		return new TransportItems(
+			new int[][]{
+				ItemVariations.EARTH_RUNE.getIds(),
+				ItemVariations.FIRE_RUNE.getIds()},
+			new int[][]{
+				ItemVariations.STAFF_OF_EARTH.getIds(),
+				ItemVariations.STAFF_OF_FIRE.getIds()},
+			new int[][]{
+				ItemVariations.offhands(ItemVariations.EARTH_RUNE),
+				ItemVariations.offhands(ItemVariations.FIRE_RUNE)},
+			new int[]{1, 1});
+	}
+}

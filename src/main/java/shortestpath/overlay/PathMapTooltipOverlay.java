@@ -17,10 +17,14 @@ import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.ShortestPathPlugin;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
+import shortestpath.widgets.WidgetGeometry;
 
 public class PathMapTooltipOverlay extends Overlay
 {
@@ -31,13 +35,20 @@ public class PathMapTooltipOverlay extends Overlay
 	private static final int TOOLTIP_TEXT_OFFSET_HEIGHT = -2;
 
 	private final Client client;
-	private final ShortestPathPlugin plugin;
+	private final Settings settings;
+	private final PathScheduler scheduler;
+	private final WidgetGeometry geometry;
+	private final PathAnnotator annotator;
 
 	@Inject
-	private PathMapTooltipOverlay(Client client, ShortestPathPlugin plugin)
+	private PathMapTooltipOverlay(Client client, Settings settings, PathScheduler scheduler,
+		WidgetGeometry geometry, PathAnnotator annotator)
 	{
 		this.client = client;
-		this.plugin = plugin;
+		this.settings = settings;
+		this.scheduler = scheduler;
+		this.geometry = geometry;
+		this.annotator = annotator;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_HIGHEST);
 		setLayer(OverlayLayer.MANUAL);
@@ -47,14 +58,15 @@ public class PathMapTooltipOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMap || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
+		if (!settings.display().drawMap() || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
 		{
 			return null;
 		}
 
-		if (plugin.getActiveSearch() != null)
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (search != null)
 		{
-			List<PathStep> path = plugin.getActiveSearch().getPath();
+			List<PathStep> path = search.getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			for (int i = 0; i < path.size(); i++)
 			{
@@ -68,7 +80,7 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : plugin.getActiveSearch().getTargets().points())
+			for (int target : search.getTargets().points())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
@@ -84,10 +96,10 @@ public class PathMapTooltipOverlay extends Overlay
 		List<PathStep> path, int pathIndex)
 	{
 		int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
-		int startX = plugin.mapWorldPointToGraphicsPointX(point);
-		int startY = plugin.mapWorldPointToGraphicsPointY(point);
-		int endX = plugin.mapWorldPointToGraphicsPointX(offsetPoint);
-		int endY = plugin.mapWorldPointToGraphicsPointY(offsetPoint);
+		int startX = geometry.mapWorldPointToGraphicsPointX(point);
+		int startY = geometry.mapWorldPointToGraphicsPointY(point);
+		int endX = geometry.mapWorldPointToGraphicsPointX(offsetPoint);
+		int endY = geometry.mapWorldPointToGraphicsPointY(offsetPoint);
 
 		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
 			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
@@ -104,19 +116,19 @@ public class PathMapTooltipOverlay extends Overlay
 		}
 
 		List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
-			n < 0 ? "Unused target" : ("Step " + n + " of " + plugin.getActiveSearch().getPath().size())));
+			n < 0 ? "Unused target" : ("Step " + n + " of " + path.size())));
 		if (nextPoint != WorldPointUtil.UNDEFINED)
 		{
 			PathStep currentStep = path.get(pathIndex);
-			PathStep nextStep = plugin.nextPathStep(path, pathIndex);
-			for (Transport transport : plugin.transportsForEdge(currentStep, nextStep))
+			PathStep nextStep = annotator.nextPathStep(path, pathIndex);
+			for (Transport transport : annotator.transportsForEdge(currentStep, nextStep))
 			{
-				String displayInfo = plugin.formatTransportDisplay(transport);
+				String displayInfo = annotator.formatTransportDisplay(transport);
 				if (displayInfo != null && !displayInfo.isEmpty())
 				{
 					// Check if this transport goes to POH - if so, look ahead to find the exit
 					// transport
-					String pohExitInfo = plugin.getPohExitInfo(nextPoint, path, pathIndex);
+					String pohExitInfo = annotator.getPohExitInfo(nextPoint, path, pathIndex);
 					if (pohExitInfo != null)
 					{
 						displayInfo = displayInfo + " (Exit: " + pohExitInfo + ")";

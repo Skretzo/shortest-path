@@ -19,8 +19,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
-import shortestpath.TeleportationItem;
+import shortestpath.settings.TeleportationItem;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,6 +50,7 @@ public class PathfinderConfigItemQuantitiesTest
 	private EnumComposition runePouchEnum;
 
 	private PathfinderConfig pathfinderConfig;
+	private final shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting();
 
 	@Test
 	public void runePouchRunesAddToLooseRunes()
@@ -64,7 +66,7 @@ public class PathfinderConfigItemQuantitiesTest
 
 		refresh(false, TeleportationItem.NONE);
 
-		assertTrue(varrockTeleportUsable(false));
+		assertTrue(varrockTeleportUsable(BankVisitState.CARRIED));
 	}
 
 	@Test
@@ -76,8 +78,8 @@ public class PathfinderConfigItemQuantitiesTest
 
 		refresh(true, TeleportationItem.INVENTORY_AND_BANK);
 
-		assertFalse(varrockTeleportUsable(false));
-		assertTrue(varrockTeleportUsable(true));
+		assertFalse(varrockTeleportUsable(BankVisitState.CARRIED));
+		assertTrue(varrockTeleportUsable(BankVisitState.BANKED));
 	}
 
 	@Test
@@ -93,8 +95,41 @@ public class PathfinderConfigItemQuantitiesTest
 
 		refresh(true, TeleportationItem.INVENTORY_AND_BANK);
 
-		assertFalse(varrockTeleportUsable(false));
-		assertTrue(varrockTeleportUsable(true));
+		assertFalse(varrockTeleportUsable(BankVisitState.CARRIED));
+		assertTrue(varrockTeleportUsable(BankVisitState.BANKED));
+	}
+
+	/**
+	 * includeBankPath is forced on only by the two modes that gather banked
+	 * items; every other mode leaves the configured value alone.
+	 */
+	@Test
+	public void bankCapableModesForceBankPath()
+	{
+		setupInventory();
+		when(bank.getItems()).thenReturn(new Item[0]);
+
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			boolean bankCapable = mode == TeleportationItem.INVENTORY_AND_BANK
+				|| mode == TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE;
+
+			refresh(false, mode);
+
+			assertEquals("includeBankPath for " + mode,
+				bankCapable, pathfinderConfig.isBankPathEnabled());
+		}
+	}
+
+	@Test
+	public void configuredBankPathStaysOnRegardlessOfMode()
+	{
+		setupInventory();
+		when(bank.getItems()).thenReturn(new Item[0]);
+
+		refresh(true, TeleportationItem.NONE);
+
+		assertTrue(pathfinderConfig.isBankPathEnabled());
 	}
 
 	private void setupInventory(Item... items)
@@ -115,11 +150,12 @@ public class PathfinderConfigItemQuantitiesTest
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-		pathfinderConfig.bank = bank;
+		pathfinderConfig.setItemStateService(itemState);
+		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();
 	}
 
-	private boolean varrockTeleportUsable(boolean bankVisited)
+	private boolean varrockTeleportUsable(BankVisitState bankVisited)
 	{
 		return Arrays.stream(pathfinderConfig.getUsableTeleports(bankVisited))
 			.anyMatch(t -> VARROCK_TELEPORT.equals(t.getDisplayInfo()));

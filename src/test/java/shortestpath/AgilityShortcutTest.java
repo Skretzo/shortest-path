@@ -3,7 +3,7 @@ package shortestpath;
 import net.runelite.client.game.AgilityShortcut;
 import org.junit.Test;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.pathfinder.TestWorldData;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -62,7 +62,7 @@ public class AgilityShortcutTest
 	@Test
 	public void everyEnumHasTsvEntry()
 	{
-		Map<Integer, Set<Transport>> allTransports = TransportLoader.loadAllFromResources();
+		Map<Integer, Set<Transport>> allTransports = TestWorldData.rawTransports();
 		TransportData transportData = extractTransportData(allTransports);
 
 		List<String> missingShortcuts = findMissingShortcuts(transportData);

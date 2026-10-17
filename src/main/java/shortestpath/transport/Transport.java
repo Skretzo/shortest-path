@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
-import net.runelite.api.Skill;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.transport.parser.FieldParser;
@@ -17,10 +16,11 @@ import shortestpath.transport.parser.ItemRequirementParser;
 import shortestpath.transport.parser.QuestParser;
 import shortestpath.transport.parser.SkillRequirementParser;
 import shortestpath.transport.parser.TransportRecord;
-import shortestpath.transport.parser.VarRequirement;
+import shortestpath.requirement.model.SkillLevels;
+import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.parser.VarRequirementParser;
 import shortestpath.transport.parser.WorldPointParser;
-import shortestpath.transport.requirement.TransportItems;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * This class represents a travel point between two WorldPoints.
@@ -35,16 +35,13 @@ public class Transport
 	 */
 	public static final int LOCATION_PERMUTATION = WorldPointUtil.packWorldPoint(-1, -1, 1);
 	/**
-	 * Shared, never-mutated all-zero skill array. Most transports require no skills, so they point
-	 * at this singleton instead of each allocating their own {@code int[]} (issue #491).
-	 */
-	private static final int[] NO_SKILLS = new int[Skill.values().length + 3];
-	/**
 	 * The skill levels, total level, combat level and quest points required to use
-	 * this transport. Defaults to {@link #NO_SKILLS} until real requirements are set.
+	 * this transport. Most transports require no skills, so they point at the shared
+	 * {@link SkillLevels#NONE} singleton instead of each allocating their own copy
+	 * (issue #491).
 	 */
 	@Getter
-	private int[] skillLevels = NO_SKILLS;
+	private SkillLevels skillLevels = SkillLevels.NONE;
 	/**
 	 * Variable requirements (varbits and varplayers) for the transport to be valid.
 	 * All must pass.
@@ -262,23 +259,6 @@ public class Transport
 	}
 
 	/**
-	 * Hands back the shared {@link #NO_SKILLS} singleton when no skill requirement is set, so
-	 * all-zero skill arrays do not allocate a per-transport {@code int[]}. A non-empty builder array
-	 * is handed over directly (the single-use builder is discarded afterwards).
-	 */
-	private static int[] compactSkills(int[] skills)
-	{
-		for (int level : skills)
-		{
-			if (level != 0)
-			{
-				return skills;
-			}
-		}
-		return NO_SKILLS;
-	}
-
-	/**
 	 * Load-time flyweight: replaces this transport's requirement objects with shared canonical
 	 * instances from the supplied pools, so transports with identical item or var requirements share
 	 * one {@code TransportItems}/{@code VarRequirement} instance (and the int[] arrays inside them)
@@ -403,9 +383,9 @@ public class Transport
 
 	public static class TransportBuilder
 	{
-		private final int[] skillLevels = new int[Skill.values().length + 3];
+		private final int[] skillLevels = new int[SkillLevels.LENGTH];
 		private final Set<VarRequirement> varRequirements = new HashSet<>();
-		private final FieldParser<int[]> skillParser = new SkillRequirementParser();
+		private final FieldParser<SkillLevels> skillParser = new SkillRequirementParser();
 		private final FieldParser<TransportItems> itemParser = new ItemRequirementParser();
 		private final FieldParser<Set<Quest>> questParser = new QuestParser();
 		private final VarRequirementParser varbitParser = VarRequirementParser.forVarbits();
@@ -449,22 +429,22 @@ public class Transport
 
 		public TransportBuilder skillLevels(String value)
 		{
-			int[] parsedSkills = skillParser.parse(value);
+			SkillLevels parsedSkills = skillParser.parse(value);
 			for (int i = 0; i < skillLevels.length; i++)
 			{
-				if (parsedSkills[i] > 0)
+				if (parsedSkills.get(i) > 0)
 				{
-					skillLevels[i] = parsedSkills[i];
+					skillLevels[i] = parsedSkills.get(i);
 				}
 			}
 			return this;
 		}
 
-		public TransportBuilder startSkillLevels(int[] otherSkillLevels)
+		public TransportBuilder startSkillLevels(SkillLevels otherSkillLevels)
 		{
 			for (int i = 0; i < skillLevels.length; i++)
 			{
-				this.skillLevels[i] = Math.max(this.skillLevels[i], otherSkillLevels[i]);
+				this.skillLevels[i] = Math.max(this.skillLevels[i], otherSkillLevels.get(i));
 			}
 			return this;
 		}
@@ -615,7 +595,7 @@ public class Transport
 			Transport transport = new Transport();
 			transport.origin = this.origin;
 			transport.destination = this.destination;
-			transport.skillLevels = compactSkills(this.skillLevels);
+			transport.skillLevels = SkillLevels.of(this.skillLevels);
 			transport.quests = compactQuests(this.quests);
 			transport.itemRequirements = this.itemRequirements;
 			transport.type = this.type;

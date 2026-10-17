@@ -11,31 +11,37 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import shortestpath.ShortestPathPlugin;
+
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.transport.BankPickupRequirements;
+import shortestpath.presentation.BankPickupRequirements;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.scheduler.PathScheduler;
+import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
 	private final ItemManager itemManager;
+	private final Settings settings;
 
 	@Inject
-	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager)
+	public BankItemHighlightOverlay(Client client, ItemManager itemManager, Settings settings,
+		PathScheduler scheduler, PathAnnotator annotator)
 	{
-		super(client, plugin);
+		super(client, scheduler, annotator, settings);
 		this.itemManager = itemManager;
+		this.settings = settings;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.highlightBankPickupItems)
+		if (!settings.display().highlightBankPickupItems())
 		{
 			return null;
 		}
 
-		ActiveSearch search = plugin.getActiveSearch();
+		ActiveSearch search = scheduler.getActiveSearch();
 		if (search == null)
 		{
 			return null;
@@ -53,12 +59,12 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		if (plugin.getPathfinderConfig().bank == null)
+		if (!annotator.isBankOpen())
 		{
 			return null;
 		}
 
-		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
+		Set<Integer> bankLocations = annotator.getDestinations("bank");
 		if (bankLocations == null)
 		{
 			return null;
@@ -70,7 +76,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		BankPickupRequirements.BankPickupResult pickup = plugin.getBankPickup(path, pathIndex);
+		BankPickupRequirements.BankPickupResult pickup = annotator.getBankPickup(path, pathIndex, search);
 		if (pickup == null || pickup.bankItemIds.isEmpty())
 		{
 			return null;
@@ -82,7 +88,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Color highlight = plugin.colourBankPickupHighlight;
+		Color highlight = settings.display().colourBankPickupHighlight();
 		for (Widget item : items)
 		{
 			if (item == null || item.isHidden() || item.getItemId() < 0)
