@@ -35,6 +35,7 @@ import org.junit.Test;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
@@ -65,6 +66,10 @@ public class ShortestPathPanelLayoutTest
 	private TestShortestPathConfig config;
 	private Settings settings;
 	private ShortestPathPanel panel;
+	// Every item id passed to ItemManager.getImage while the panel builds —
+	// cards and tiles request their sprite through loadItemIcon, so an
+	// iconless control shows up as a missing request here.
+	private final List<Integer> iconRequests = new ArrayList<>();
 
 	private ShortestPathPanel newPanel()
 	{
@@ -73,6 +78,7 @@ public class ShortestPathPanelLayoutTest
 
 	private ShortestPathPanel newPanel(ItemStateService itemState)
 	{
+		iconRequests.clear();
 		config = new TestShortestPathConfig();
 		// A mocked ConfigManager routes Settings.write back into the stub
 		// config, so panel-side writes (restriction toggles) round-trip the
@@ -102,8 +108,11 @@ public class ShortestPathPanelLayoutTest
 			return null;
 		}).when(clientThread).invoke(any(Runnable.class));
 		ItemManager itemManager = mock(ItemManager.class);
-		when(itemManager.getImage(anyInt())).thenAnswer(
-			i -> new AsyncBufferedImage(clientThread, 16, 16, BufferedImage.TYPE_INT_ARGB));
+		when(itemManager.getImage(anyInt())).thenAnswer(i ->
+		{
+			iconRequests.add((Integer) i.getArgument(0));
+			return new AsyncBufferedImage(clientThread, 16, 16, BufferedImage.TYPE_INT_ARGB);
+		});
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager, itemState);
 		panel.onActivate();
 		return panel;
@@ -174,17 +183,65 @@ public class ShortestPathPanelLayoutTest
 		return (JPanel) content.getComponent(0);
 	}
 
-	private JPanel tileNamed(String name)
+	/**
+	 * The grid tile for {@code name}: whichever grid child carries a label
+	 * with that exact text. Shape-agnostic so it holds across the tile
+	 * restyle (plain panel vs. button component).
+	 */
+	private JComponent tileNamed(String name)
 	{
 		for (Component child : tileGrid().getComponents())
 		{
-			JLabel nameLabel = (JLabel) ((JPanel) child).getComponent(0);
-			if (name.equals(nameLabel.getText()))
+			if (child instanceof Container
+				&& containsLabelEqual((Container) child, name))
 			{
-				return (JPanel) child;
+				return (JComponent) child;
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * The tile's live status line — the last {@link JLabel} in the tile
+	 * subtree (icon/name sit above it in every tile shape).
+	 */
+	private static JLabel statusLabelOf(JComponent tile)
+	{
+		JLabel found = null;
+		for (Component child : tile.getComponents())
+		{
+			if (child instanceof JLabel)
+			{
+				found = (JLabel) child;
+			}
+			if (child instanceof Container)
+			{
+				JLabel nested = statusLabelOf((JComponent) child);
+				if (nested != null)
+				{
+					found = nested;
+				}
+			}
+		}
+		return found;
+	}
+
+	/** Every {@link JLabel} anywhere under {@code root}. */
+	private static List<JLabel> labelsIn(Container root)
+	{
+		List<JLabel> labels = new ArrayList<>();
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JLabel)
+			{
+				labels.add((JLabel) child);
+			}
+			if (child instanceof Container)
+			{
+				labels.addAll(labelsIn((Container) child));
+			}
+		}
+		return labels;
 	}
 
 	@Test
@@ -201,13 +258,66 @@ public class ShortestPathPanelLayoutTest
 		assertEquals(6, grid.getComponentCount());
 		for (int i = 0; i < expected.length; i++)
 		{
-			JPanel tile = (JPanel) grid.getComponent(i);
-			JLabel nameLabel = (JLabel) tile.getComponent(0);
-			JLabel statusLabel = (JLabel) tile.getComponent(1);
-			assertEquals(expected[i], nameLabel.getText());
+			JComponent tile = (JComponent) grid.getComponent(i);
+			assertTrue(expected[i] + " tile carries its name",
+				containsLabelEqual(tile, expected[i]));
+			JLabel statusLabel = statusLabelOf(tile);
+			assertNotNull(expected[i] + " status line", statusLabel);
 			assertFalse(expected[i] + " status is populated",
 				statusLabel.getText().isEmpty());
 		}
+	}
+
+	/**
+	 * The home tiles are large square buttons: laid out at the fixed panel
+	 * width each tile's bounds are square, it is a real {@link JButton}
+	 * (Swing's armed/pressed model drives the press state), and it carries
+	 * the icon + name + status trio of labels.
+	 */
+	@Test
+	public void tilesAreSquareRaisedIconButtons()
+	{
+		newPanel();
+		JPanel grid = tileGrid();
+		grid.setSize(new Dimension(PluginPanel.PANEL_WIDTH - 16,
+			grid.getPreferredSize().height));
+		grid.doLayout();
+
+		for (Component child : grid.getComponents())
+		{
+			assertTrue("tile is a raised button with Swing's armed/pressed model",
+				child instanceof JButton);
+			JComponent tile = (JComponent) child;
+			assertTrue("tile bounds are square at the fixed panel width",
+				Math.abs(tile.getBounds().width - tile.getBounds().height) <= 2);
+			assertTrue("tile carries the icon + name + status labels",
+				labelsIn(tile).size() >= 3);
+		}
+
+		assertTrue("tiles request their category item sprites",
+			iconRequests.contains(ItemID.TRAIL_SEXTANT)
+				&& iconRequests.contains(ItemID.CANOEING_PADDLE)
+				&& iconRequests.contains(ItemID.RING_OF_DUELING_8)
+				&& iconRequests.contains(ItemID.CRYSTAL_KEY)
+				&& iconRequests.contains(ItemID.COINS)
+				&& iconRequests.contains(ItemID.POH_TABLET_TELEPORTTOHOUSE));
+	}
+
+	@Test
+	public void tileClickDrillsIntoCategory() throws Exception
+	{
+		newPanel();
+		CategoryPanel unlocks = panel.categories().get(3);
+		JComponent tile = tileNamed("Unlocks");
+		assertNotNull(tile);
+		assertTrue("tile fires like a button", tile instanceof JButton);
+
+		((JButton) tile).doClick();
+		flushEdt();
+		assertSame("clicking a tile drills into its category",
+			unlocks,
+			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
+		panel.backToHome();
 	}
 
 	@Test
@@ -289,7 +399,7 @@ public class ShortestPathPanelLayoutTest
 	public void statusLinesLive() throws Exception
 	{
 		newPanel();
-		JLabel bankStatus = (JLabel) tileNamed("Bank").getComponent(1);
+		JLabel bankStatus = statusLabelOf(tileNamed("Bank"));
 		assertEquals("Off", bankStatus.getText());
 
 		config.setIncludeBankPathValue(true);
@@ -455,8 +565,8 @@ public class ShortestPathPanelLayoutTest
 	public void statusRefreshOnExternalChange() throws Exception
 	{
 		newPanel();
-		JLabel transportsStatus = (JLabel) tileNamed("Transports").getComponent(1);
-		JLabel bankStatus = (JLabel) tileNamed("Bank").getComponent(1);
+		JLabel transportsStatus = statusLabelOf(tileNamed("Transports"));
+		JLabel bankStatus = statusLabelOf(tileNamed("Bank"));
 		assertEquals("Off", bankStatus.getText());
 		int onBefore = Integer.parseInt(
 			transportsStatus.getText().split("/")[0]);
