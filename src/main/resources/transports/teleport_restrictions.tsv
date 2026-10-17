@@ -34,7 +34,11 @@ Max cape	13280	13280,13342	13280=Max cape,13342=Max cape
 Quest point cape	9813	9813,13068	9813=Quest point cape,13068=Quest point cape
 Music cape	13221	13221,13222	13221=Music cape,13222=Music cape
 Diary cape	13069	13069,19476	13069=Achievement diary cape,19476=Achievement diary cape
-Quest items	4251	4251,4252,6099,6100,6101,6102,9469,13102,19564,23946	4251=Ectophial,4252=Ectophial,6099=Teleport crystal,6100=Teleport crystal,6101=Teleport crystal,6102=Teleport crystal,9469=Grand seed pod,13102=Teleport crystal,19564=Royal seed pod,23946=Eternal teleport crystal
+Ectophial	4251	4251,4252	4251=Ectophial,4252=Ectophial
+Teleport crystal	6099	6099,6100,6101,6102,13102	6099=Teleport crystal,6100=Teleport crystal,6101=Teleport crystal,6102=Teleport crystal,13102=Teleport crystal
+Eternal teleport crystal	23946	23946	23946=Eternal teleport crystal
+Royal seed pod	19564	19564	19564=Royal seed pod
+Grand seed pod	9469	9469	9469=Grand seed pod
 Enchanted lyre	3691	3691,6125,6126,6127,13079,23458	3691=Enchanted lyre,6125=Enchanted lyre,6126=Enchanted lyre,6127=Enchanted lyre,13079=Enchanted lyre,23458=Enchanted lyre (i)
 Camulet	6707	6707	6707=Camulet
 Kharedst's memoirs	21760	21760	21760=Kharedst's memoirs

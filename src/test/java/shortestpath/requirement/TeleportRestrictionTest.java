@@ -398,14 +398,16 @@ public class TeleportRestrictionTest
 
 	/**
 	 * Royal and Grand seed pods are different items whose teleports land on
-	 * the same Grand Tree tile — one destination, one option named for where
-	 * the teleport goes.
+	 * the same Grand Tree tile — each per-item family yields its own option
+	 * named for where the teleport goes.
 	 */
 	@Test
-	public void questItemsSeedPodsShareTheGrandTreeOption()
+	public void seedPodFamiliesShareTheGrandTreeOption()
 	{
-		TeleportRestriction.Family questItems = familyNamed("Quest items");
-		Assert.assertTrue(questItems.options().containsValue("Grand Tree"));
+		Assert.assertTrue(familyNamed("Royal seed pod").options()
+			.containsValue("Grand Tree"));
+		Assert.assertTrue(familyNamed("Grand seed pod").options()
+			.containsValue("Grand Tree"));
 	}
 
 	/**

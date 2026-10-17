@@ -334,14 +334,18 @@
 2467 3459 0			13069=1||19476=1		4	Achievement diary cape: F. Elder Gnome child	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 3096 3227 0			13069=1||19476=1		4	Achievement diary cape: G. Twiggy O'Korn	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 										
-# Quest items										
+# Ectophial										
 # Ectophial - includes the empty version										
 3660 3522 0			4251=1||4252=1		4	Ectophial	F	20		
+# Teleport crystal										
 2330 3171 0			6099=1||6100=1||6101=1||6102=1||13102=1		4	Teleport crystal: Lletya	T	20		
 3264 6066 0			6099=1||6100=1||6101=1||6102=1||13102=1	Song of the Elves	4	Teleport crystal: Prifddinas	T	20		
+# Eternal teleport crystal										
 2330 3171 0			23946=1		4	Eternal teleport crystal: Lletya	F	20		
 3264 6066 0			23946=1	Song of the Elves	4	Eternal teleport crystal: Prifddinas	F	20		
+# Royal seed pod										
 2465 3495 0			19564=1		13	Royal seed pod: Grand Tree	F	30		
+# Grand seed pod										
 2465 3495 0			9469=1		13	Grand seed pod: Grand Tree	T	30		
 # Enchanted lyre - 4493 is DIARY_FREMENNIK_HARD, 4494 is DIARY_FREMENNIK_ELITE										
 2662 3644 0			3691=1||6125=1||6126=1||6127=1||13079=1		4	Enchanted lyre: Rellekka	T	20		
