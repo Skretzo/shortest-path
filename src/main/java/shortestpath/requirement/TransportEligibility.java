@@ -66,6 +66,12 @@ public final class TransportEligibility
 	 * transport may land on to be granted {@link Unlock#BALLOON_LOG_BASKET}.
 	 */
 	private final Set<Integer> balloonLogBasketDestinations;
+	/**
+	 * {@link #unlocks} plus {@link Unlock#BALLOON_LOG_BASKET} — precomputed
+	 * once so {@link #unlocksFor} hands out the same immutable set to every
+	 * eligible balloon transport instead of allocating per call.
+	 */
+	private final Set<Unlock> unlocksWithBalloonBasket;
 	private final HeldItems heldItems;
 
 	public TransportEligibility(
@@ -108,6 +114,10 @@ public final class TransportEligibility
 		this.currencyThreshold = currencyThreshold;
 		this.unlocks = Set.copyOf(unlocks);
 		this.balloonLogBasketDestinations = Set.copyOf(balloonLogBasketDestinations);
+		Set<Unlock> withBasket = EnumSet.noneOf(Unlock.class);
+		withBasket.addAll(unlocks);
+		withBasket.add(Unlock.BALLOON_LOG_BASKET);
+		this.unlocksWithBalloonBasket = Collections.unmodifiableSet(withBasket);
 		// What the player holds is a projection of this same collection: the carried
 		// pool, plus the bank contents and a banked pouch's runes once the bank has
 		// been seen — the one item snapshot also answers the target-status question.
@@ -244,6 +254,23 @@ public final class TransportEligibility
 
 
 	/**
+	 * The unlocks one transport's requirements are evaluated with: the declared
+	 * unlocks, plus {@link Unlock#BALLOON_LOG_BASKET} when the transport is a
+	 * hot-air balloon whose destination basket the player declared stocked.
+	 * The grant is destination-scoped — only balloon rows carry the
+	 * {@code UNLOCK_BALLOON_LOG_BASKET} token, so nothing else can consume it,
+	 * and a balloon route whose destination is not configured still demands
+	 * its specific log.
+	 */
+	private Set<Unlock> unlocksFor(Transport transport)
+	{
+		return TransportType.HOT_AIR_BALLOON.equals(transport.getType())
+			&& balloonLogBasketDestinations.contains(transport.getDestination())
+			? unlocksWithBalloonBasket
+			: unlocks;
+	}
+
+	/**
 	 * Whether the transport's item requirements are met by the carried pool
 	 * ({@link BankVisitState#CARRIED}) or the bank-path pool ({@link BankVisitState#BANKED}).
 	 * Teleportation item transports are first bypassed or blocked by the
@@ -293,7 +320,8 @@ public final class TransportEligibility
 
 		TransportItems transportItems = transport.getItemRequirements();
 		return transportItems == null
-			|| transportItems.isSatisfiedBy(ownedItems, TransportItems.CURRENCIES, currencyThreshold, unlocks);
+			|| transportItems.isSatisfiedBy(ownedItems, TransportItems.CURRENCIES, currencyThreshold,
+				unlocksFor(transport));
 	}
 
 	/**
@@ -304,7 +332,8 @@ public final class TransportEligibility
 	{
 		TransportItems transportItems = transport.getItemRequirements();
 		return transportItems == null
-			|| transportItems.isSatisfiedBy(carriedItems, TransportItems.CURRENCIES, Integer.MAX_VALUE, unlocks);
+			|| transportItems.isSatisfiedBy(carriedItems, TransportItems.CURRENCIES, Integer.MAX_VALUE,
+				unlocksFor(transport));
 	}
 
 	/**
@@ -334,7 +363,9 @@ public final class TransportEligibility
 		// Prefer the bank rune pouch over individual runes. This avoids surfacing
 		// combination rune variants (mist, dust, etc.) when the pouch already covers
 		// the requirement.
-		Map<Integer, Integer> carried = carriedWithBankPouch(transport, carriedItems, bankHas, bankPouchRunes, unlocks);
+		Set<Unlock> transportUnlocks = unlocksFor(transport);
+		Map<Integer, Integer> carried = carriedWithBankPouch(transport, carriedItems, bankHas, bankPouchRunes,
+			transportUnlocks);
 		if (carried != carriedItems)
 		{
 			items.put(bankPouchId, 1L);
@@ -344,7 +375,7 @@ public final class TransportEligibility
 		boolean fullySupplied = true;
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			if (playerSatisfies(req, carried, unlocks))
+			if (playerSatisfies(req, carried, transportUnlocks))
 			{
 				continue;
 			}
