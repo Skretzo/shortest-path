@@ -346,9 +346,13 @@ public class ShortestPathPanel extends PluginPanel
 		pohSubRows.add(checkRow("usePohSpiritTree"));
 		pohSubRows.add(checkRow("usePohObelisk"));
 		pohSubRows.add(comboRow("pohJewelleryBoxTier"));
+		// The five nexus groups and the mounted group share identical
+		// chrome — the captions split them into their two named sets.
+		pohSubRows.add(captionRow("Portal Nexus", configName("pohNexusPortals")));
 		pohSubRows.addAll(setGroupedSubListRows("pohNexusPortals", PohNexusPortal.class, PohNexusPortal::group));
+		pohSubRows.add(captionRow("Mounted Items", configName("pohMountedItems")));
 		pohSubRows.add(enumSetGroupRow("pohMountedItems", PohMountedItem.class,
-			"Mounted Items", List.of(PohMountedItem.values())));
+			"All items", List.of(PohMountedItem.values())));
 		for (SearchRow row : pohSubRows)
 		{
 			poh.addRow(row);
@@ -590,6 +594,25 @@ public class ShortestPathPanel extends PluginPanel
 		row.add(label, BorderLayout.CENTER);
 		row.add(combo, BorderLayout.EAST);
 		return new SearchRow(row, name, searchable(name));
+	}
+
+	/**
+	 * A small-font section caption inside the POH sub-list — names the
+	 * grouped rows that follow it. The caption is pure chrome: it owns no
+	 * control, but it rides {@code pohSubRows} so it dims with the master
+	 * toggle, and its search text covers the section's config name so a
+	 * matching query keeps it visible over the groups it heads.
+	 */
+	private SearchRow captionRow(String caption, String configName)
+	{
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		row.setBorder(new EmptyBorder(0, SUB_LIST_INDENT, 0, 0));
+		JLabel label = new JLabel(caption);
+		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		label.setFont(FontManager.getRunescapeSmallFont());
+		row.add(label, BorderLayout.CENTER);
+		return new SearchRow(row, caption, searchable(caption, configName));
 	}
 
 	/**
