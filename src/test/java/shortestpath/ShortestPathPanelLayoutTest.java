@@ -5,7 +5,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,11 +33,14 @@ import javax.swing.SwingUtilities;
 import org.junit.Test;
 
 import net.runelite.api.Client;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
+import shortestpath.items.ItemStateService;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
 
@@ -62,14 +68,27 @@ public class ShortestPathPanelLayoutTest
 
 	private ShortestPathPanel newPanel()
 	{
+		return newPanel(ItemStateService.forTesting());
+	}
+
+	private ShortestPathPanel newPanel(ItemStateService itemState)
+	{
 		config = new TestShortestPathConfig();
 		settings = Settings.wrap(config);
 		Client client = mock(Client.class);
 		ClientThread clientThread = mock(ClientThread.class);
+		// The Owned filter's container reads post through clientThread.invoke;
+		// run them inline so a refresh completes on the test thread, leaving
+		// only the Swing rebuild for flushEdt().
+		doAnswer(i ->
+		{
+			((Runnable) i.getArgument(0)).run();
+			return null;
+		}).when(clientThread).invoke(any(Runnable.class));
 		ItemManager itemManager = mock(ItemManager.class);
 		when(itemManager.getImage(anyInt())).thenAnswer(
 			i -> new AsyncBufferedImage(clientThread, 16, 16, BufferedImage.TYPE_INT_ARGB));
-		panel = new ShortestPathPanel(settings, client, clientThread, itemManager);
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager, itemState);
 		panel.onActivate();
 		return panel;
 	}
@@ -515,5 +534,51 @@ public class ShortestPathPanelLayoutTest
 		assertTrue("items-disabled hint replaces the rows",
 			containsLabelText(content,
 				ShortestPathPanel.RESTRICTIONS_DISABLED_HINT));
+	}
+
+	private static ItemContainer containerWith(Item... items)
+	{
+		ItemContainer container = mock(ItemContainer.class);
+		doReturn(items).when(container).getItems();
+		return container;
+	}
+
+	@Test
+	public void ownedFilterUnionsTheLastSeenBankSnapshot() throws Exception
+	{
+		// The Ardougne-cloaks family (member ids 13121..13124, 20760) exists
+		// only in the remembered bank snapshot — every live container is
+		// empty (the client mock serves nulls), so the family counts as
+		// owned only if the filter unions the service's persisted record.
+		ItemStateService itemState = ItemStateService.forTesting();
+		itemState.noteLastSeenBank(containerWith(new Item(13121, 1)), true);
+		newPanel(itemState);
+		flushEdt();
+
+		RestrictionListPanel restrictions = panel.restrictionListPanel();
+		restrictions.setOwnedOnly(true);
+		flushEdt();
+
+		assertTrue("bank-snapshot-only families stay listed under the Owned filter",
+			restrictions.matchingLabels("").contains("Ardougne cloaks"));
+
+		restrictions.setOwnedOnly(false);
+		flushEdt();
+	}
+
+	@Test
+	public void ownedFilterEmptyEverywhereDropsEveryFamily() throws Exception
+	{
+		// Control for the union assertion above: with nothing owned in any
+		// source (empty snapshot, null live containers) no family survives.
+		newPanel();
+		flushEdt();
+
+		RestrictionListPanel restrictions = panel.restrictionListPanel();
+		restrictions.setOwnedOnly(true);
+		flushEdt();
+
+		assertTrue("with nothing owned anywhere the owned list is empty",
+			restrictions.matchingLabels("").isEmpty());
 	}
 }
