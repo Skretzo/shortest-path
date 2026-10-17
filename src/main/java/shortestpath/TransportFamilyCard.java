@@ -15,7 +15,7 @@ import net.runelite.client.util.SwingUtil;
  * enum-valued masters (teleportation items) render an enum combo. Detail rows
  * live in an indented well that is dimmed and disabled while the master is off.
  */
-class TransportFamilyCard extends JPanel
+class TransportFamilyCard extends JPanel implements SearchExpandable
 {
 	private static final int ICON_LABEL_GAP = 4;
 	private static final int DETAIL_INDENT = ShortestPathPanel.CARD_ICON_SIZE + ICON_LABEL_GAP;
@@ -108,7 +108,8 @@ class TransportFamilyCard extends JPanel
 		return keyName;
 	}
 
-	JLabel getNameLabel()
+	@Override
+	public JLabel getNameLabel()
 	{
 		return nameLabel;
 	}
@@ -164,7 +165,8 @@ class TransportFamilyCard extends JPanel
 	 * visible. Only fires on cards the user had collapsed, and
 	 * {@link #clearSearchExpanded()} restores them when the query clears.
 	 */
-	void setSearchExpanded()
+	@Override
+	public void setSearchExpanded()
 	{
 		if (expander != null && !detailOpen)
 		{
@@ -173,7 +175,8 @@ class TransportFamilyCard extends JPanel
 		}
 	}
 
-	void clearSearchExpanded()
+	@Override
+	public void clearSearchExpanded()
 	{
 		if (searchExpanded)
 		{

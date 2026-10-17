@@ -33,7 +33,7 @@ import net.runelite.client.util.SwingUtil;
  * is display structure only — the config key, type and persistence are
  * untouched.</p>
  */
-class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel
+class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchExpandable
 {
 	private final ShortestPathPanel panel;
 	private final String keyName;
@@ -122,7 +122,8 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel
 		installExpandListener();
 	}
 
-	JLabel getNameLabel()
+	@Override
+	public JLabel getNameLabel()
 	{
 		return nameLabel;
 	}
@@ -151,7 +152,8 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel
 	 * visible. {@link #clearSearchExpanded()} restores the collapsed state
 	 * when the query clears — the same contract transport cards follow.
 	 */
-	void setSearchExpanded()
+	@Override
+	public void setSearchExpanded()
 	{
 		if (!detailOpen)
 		{
@@ -160,7 +162,8 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel
 		}
 	}
 
-	void clearSearchExpanded()
+	@Override
+	public void clearSearchExpanded()
 	{
 		if (searchExpanded)
 		{
