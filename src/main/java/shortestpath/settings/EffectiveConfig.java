@@ -1,6 +1,7 @@
 package shortestpath.settings;
 
 import java.awt.Color;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -816,7 +817,25 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public Set<BalloonRoute> balloonLogBasketRoutes()
 	{
-		return base.balloonLogBasketRoutes();
+		// The unwritten-key default derives from the legacy
+		// unlockBalloonLogBasket flag — re-derive it through the
+		// override-aware flag so a payload on that flag still produces
+		// "all routes" (or none) instead of advertising the unlock while
+		// routing sees the base flag's value. A written set equal to the
+		// flag-derived default is indistinguishable from unwritten here,
+		// and re-deriving it loses nothing: its value carried no more
+		// than the flag itself did. Any other written set wins outright.
+		Set<BalloonRoute> routes = base.balloonLogBasketRoutes();
+		Set<BalloonRoute> flagDerived = base.unlockBalloonLogBasket()
+			? EnumSet.allOf(BalloonRoute.class)
+			: EnumSet.noneOf(BalloonRoute.class);
+		if (routes == null || routes.equals(flagDerived))
+		{
+			return unlockBalloonLogBasket()
+				? EnumSet.allOf(BalloonRoute.class)
+				: EnumSet.noneOf(BalloonRoute.class);
+		}
+		return routes;
 	}
 
 }
