@@ -219,15 +219,21 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		CategoryPanel general = new CategoryPanel(this, "General", "routing");
 		categories.add(general);
+		// Routing policies first, then the path-lifecycle controls, then
+		// the respawn flag, then the backend selectors.
 		general.addRow(checkRow("avoidWilderness"));
-		general.addRow(spinnerRow("currencyThreshold"));
-		general.addRow(checkRow("respawnPrifddinas"));
-		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
 		general.addRow(checkRow("collisionAwareBlockedTargets"));
 		// Sailing moves is a routing policy with no threshold family —
 		// a plain check row beside the other transport-adjacent policies
 		// rather than a Transports card.
 		general.addRow(checkRow("useSailingMoves"));
+		general.addRow(spinnerRow("currencyThreshold"));
+		general.addRow(checkRow("cancelInstead"));
+		general.addRow(spinnerRow("recalculateDistance"));
+		general.addRow(spinnerRow("finishDistance"));
+		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
+		general.addRow(checkRow("showUnreachableText"));
+		general.addRow(checkRow("respawnPrifddinas"));
 		// The teleport-items mode is a routing policy, so its combo lives
 		// with the other General rows; its Transports card is masterless.
 		general.addRow(comboRow("useTeleportationItems"));
@@ -516,7 +522,10 @@ public class ShortestPathPanel extends PluginPanel
 		Object value = settings.configuredValue(keyName);
 		int current = value instanceof Number ? ((Number) value).intValue() : 0;
 		Range range = settings.rangeOf(keyName);
-		int min = range == null ? 0 : Math.max(0, range.min());
+		// The declared range is honoured verbatim: keys like
+		// recalculateDistance/finishDistance take a negative min whose
+		// -1 sentinel means "never", so no floor is applied.
+		int min = range == null ? 0 : range.min();
 		Integer max = range == null || range.max() == Integer.MAX_VALUE ? null : range.max();
 		// A persisted value can land outside the model's bounds (hand-edited
 		// settings, or keys without a @Range bound the stock panel leaves
