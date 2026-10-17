@@ -625,10 +625,21 @@ public class ShortestPathPanelLayoutTest
 			ItemID.ZEP_TOY_BALLOON_RED, ItemID.EVENT_MUSHTREE_DUMMY,
 			ItemID.POH_LEVER_OAK, ItemID.POH_DUMMY_PORTALNEXUS,
 			ItemID.POH_SUPERIOR_GARDEN_WILDERNESS_OBELISK,
+			ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE,
+			ItemID.POH_RUG_3,
+			ItemID.CASTLEWARS_SARADOMIN_BANNER,
 		};
 		for (int id : requested)
 		{
 			assertTrue("card icon " + id + " was requested",
+				iconRequests.contains(id));
+		}
+		// The rejected sprite ids stay swapped out: the bare grapple hook,
+		// the spriteless magic-carpet placeholder and the spell-icon item.
+		for (int id : new int[]{ItemID.XBOWS_GRAPPLE_HOOK,
+			ItemID.MAGIC_CARPET, ItemID.MINIGAME_TELEPORT})
+		{
+			assertFalse("replaced icon " + id + " is no longer requested",
 				iconRequests.contains(id));
 		}
 	}
@@ -1687,17 +1698,17 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	// ---- Expandable surfaces: dark header over a background-toned,
-	// ---- orange-bordered detail well -----------------------------------
+	// ---- dark-framed detail well ---------------------------------------
 
 	/**
 	 * Every expandable surface paints the same chrome: the header bar — the
 	 * line carrying the name, expander and master control — is an opaque
 	 * {@code DARKER_GRAY_COLOR} strip, and the detail well that opens
-	 * beneath it keeps the category's {@code DARK_GRAY_COLOR} background,
-	 * ringed by a thin {@code BRAND_ORANGE} border so an open well reads as
-	 * a distinct region. Transport cards, restriction rows and the
-	 * collapsible enum groups all share the one pairing so no site can
-	 * drift to its own colours.
+	 * beneath it keeps the category's {@code DARK_GRAY_COLOR} background
+	 * inside a header-dark frame that omits its top edge — the well reads
+	 * as a continuation of the bar, boxed on the three open sides.
+	 * Transport cards, restriction rows and the collapsible enum groups
+	 * all share the one pairing so no site can drift to its own colours.
 	 */
 	@Test
 	public void expandableSurfacesShareTheBorderedWellChrome()
@@ -1720,8 +1731,9 @@ public class ShortestPathPanelLayoutTest
 	/**
 	 * Pins child 0 as the opaque dark header bar and the last child as the
 	 * detail well — category-toned (transparent or {@code DARK_GRAY_COLOR},
-	 * never the light medium-grey fill) and carrying the thin orange
-	 * accent border. Every expandable surface builds its header and detail
+	 * never the light medium-grey fill) and carrying the dark frame border
+	 * on its left, bottom and right edges only (the header bar supplies
+	 * the top edge). Every expandable surface builds its header and detail
 	 * as its only two children, in that order.
 	 */
 	private static void assertWellChrome(JComponent surface, String what)
@@ -1737,8 +1749,14 @@ public class ShortestPathPanelLayoutTest
 		assertTrue(what + " detail well keeps the category tone",
 			!detail.isOpaque()
 				|| ColorScheme.DARK_GRAY_COLOR.equals(detail.getBackground()));
-		assertTrue(what + " detail well carries the orange accent border",
-			hasAccentBorder(detail.getBorder(), ColorScheme.BRAND_ORANGE));
+		assertTrue(what + " detail well carries the dark frame border",
+			hasAccentBorder(detail.getBorder(), ColorScheme.DARKER_GRAY_COLOR));
+		Insets frame = frameInsets(detail.getBorder(), detail);
+		assertNotNull(what + " detail well carries a matte frame", frame);
+		assertEquals(what + " frame leaves the top edge open — the header "
+				+ "bar closes it", 0, frame.top);
+		assertTrue(what + " frame boxes the left, bottom and right edges",
+			frame.left >= 1 && frame.bottom >= 1 && frame.right >= 1);
 	}
 
 	/**
@@ -1762,6 +1780,27 @@ public class ShortestPathPanelLayoutTest
 			return colour.equals(((MatteBorder) border).getMatteColor());
 		}
 		return false;
+	}
+
+	/**
+	 * The insets of the {@link MatteBorder} — or {@link LineBorder} — in
+	 * {@code border}, looking through either side of a
+	 * {@link CompoundBorder}; {@code null} when no framed edge exists.
+	 */
+	private static Insets frameInsets(Border border, JComponent owner)
+	{
+		if (border instanceof CompoundBorder)
+		{
+			CompoundBorder compound = (CompoundBorder) border;
+			Insets outside = frameInsets(compound.getOutsideBorder(), owner);
+			return outside != null ? outside
+				: frameInsets(compound.getInsideBorder(), owner);
+		}
+		if (border instanceof MatteBorder || border instanceof LineBorder)
+		{
+			return border.getBorderInsets(owner);
+		}
+		return null;
 	}
 
 	// ---- POH portal-nexus grouping ---------------------------------------
