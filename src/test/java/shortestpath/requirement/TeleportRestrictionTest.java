@@ -455,6 +455,68 @@ public class TeleportRestrictionTest
 		Assert.assertEquals(Set.of(54321), expanded.get(11105));
 	}
 
+	/**
+	 * The catch-all {@code # Other} bucket is split so every item family
+	 * carries its own name in the restriction checklist — the blocker UI
+	 * groups by family, so a shared bucket hid nine unrelated items under
+	 * one meaningless heading.
+	 */
+	@Test
+	public void theOtherBucketIsSplitIntoNamedItemFamilies()
+	{
+		Set<String> names = new HashSet<>();
+		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
+		{
+			names.add(family.name());
+		}
+		Assert.assertFalse("no catch-all 'Other' family", names.contains("Other"));
+		for (String expected : new String[]{
+			"Pharaoh's sceptre", "Skull sceptre", "Xeric's talisman", "Chronicle",
+			"Amulet of the eye", "Ring of the elements", "Hallowed crystal shard",
+			"Ring of shadows", "Pendant of ates"})
+		{
+			Assert.assertTrue("family '" + expected + "' is its own checklist group",
+				names.contains(expected));
+		}
+	}
+
+	/**
+	 * The charged Skull sceptre (9013) and its uncharged variant (21276)
+	 * are one item for restriction purposes — toggling one must cover both,
+	 * so they stay members of a single family.
+	 */
+	@Test
+	public void skullSceptreGroupsBothItemIdsUnderOneFamily()
+	{
+		TeleportRestriction.Family sceptre = familyNamed("Skull sceptre");
+		Assert.assertEquals(Set.of(9013, 21276), sceptre.memberItemIds());
+		Assert.assertEquals(9013, sceptre.displayItemId());
+	}
+
+	/**
+	 * A family's rep is its lowest member id — the checklist's display icon
+	 * and every stored rep-{@code @}-dest record key off it.
+	 */
+	@Test
+	public void splitFamiliesUseTheirLowestMemberIdAsTheDisplayId()
+	{
+		Map<String, Integer> expectedReps = Map.of(
+			"Pharaoh's sceptre", 26948,
+			"Xeric's talisman", 13393,
+			"Chronicle", 13660,
+			"Amulet of the eye", 26914,
+			"Ring of the elements", 26818,
+			"Hallowed crystal shard", 24709,
+			"Ring of shadows", 28327,
+			"Pendant of ates", 29893);
+		for (Map.Entry<String, Integer> entry : expectedReps.entrySet())
+		{
+			TeleportRestriction.Family family = familyNamed(entry.getKey());
+			Assert.assertEquals(entry.getKey() + " reps by its lowest member id",
+				(int) entry.getValue(), family.displayItemId());
+		}
+	}
+
 	private static TeleportRestriction.Family familyNamed(String name)
 	{
 		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
