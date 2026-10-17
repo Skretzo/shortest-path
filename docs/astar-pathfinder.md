@@ -36,6 +36,10 @@ requirements or reads the client directly.
   see [astar-heuristic.md](astar-heuristic.md). The session keeps recent
   targets for reuse while the graph and collision map are unchanged.
 - **Search state** (`AStarForwardSearch`) belongs to one active search.
+  Costs and predecessors use 1,024-entry pages allocated on first write,
+  including bank layers and teleport hubs. Reading an untouched page returns
+  the initial value without allocating it. Only the small page directories
+  are allocated for the full state space upfront.
 
 ## Routing cuts
 
