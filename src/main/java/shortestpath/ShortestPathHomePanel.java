@@ -2,20 +2,26 @@ package shortestpath;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.border.BevelBorder;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import javax.swing.border.SoftBevelBorder;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
@@ -26,20 +32,31 @@ import shortestpath.settings.TeleportationItem;
 /**
  * The sidebar's home view: a 2x3 grid of category tiles — one per
  * {@link CategoryPanel} in the order General, Transports, Teleport
- * Restrictions, Unlocks, Bank, Player-Owned House — each carrying the
- * category name plus a live status line (e.g. {@code "19/23 on"},
- * {@code "3 blocked"}). Clicking a tile drills into its sub-panel through
- * the owning panel's muxer.
+ * Restrictions, Unlocks, Bank, Player-Owned House — each a square raised
+ * button carrying a centered item icon, the bold category name and a live
+ * status line (e.g. {@code "19/23 on"}, {@code "3 blocked"}). Clicking a
+ * tile drills into its sub-panel through the owning panel's muxer.
  *
  * <p>The same {@link FixedWidthPanel} scroll wrap the category panels use
  * keeps the home view at viewport width with the same 8px content inset.</p>
  */
 class ShortestPathHomePanel extends PluginPanel
 {
+	private static final int GRID_HGAP = 4;
+	private static final int GRID_VGAP = 4;
+	/**
+	 * One tile edge: the content column (viewport width minus the 8px side
+	 * insets) minus the grid's horizontal gap, split across the two
+	 * columns — reporting it as both width and height yields square cells
+	 * once the uniform grid resolves.
+	 */
+	private static final int TILE_EDGE = (PluginPanel.PANEL_WIDTH - 2 * 8 - GRID_HGAP) / 2;
+	private static final int TILE_ICON_SIZE = 32;
+
 	private final ShortestPathPanel panel;
 	private final FixedWidthPanel content;
 
-	private final List<JPanel> tiles = new ArrayList<>();
+	private final List<JComponent> tiles = new ArrayList<>();
 	private final List<JLabel> statusLabels = new ArrayList<>();
 
 	ShortestPathHomePanel(ShortestPathPanel panel)
@@ -93,9 +110,9 @@ class ShortestPathHomePanel extends PluginPanel
 	private void showTiles()
 	{
 		content.removeAll();
-		JPanel grid = new JPanel(new DynamicGridLayout(3, 2, 4, 4));
+		JPanel grid = new JPanel(new DynamicGridLayout(3, 2, GRID_HGAP, GRID_VGAP));
 		grid.setOpaque(false);
-		for (JPanel tile : tiles)
+		for (JComponent tile : tiles)
 		{
 			grid.add(tile);
 		}
@@ -187,35 +204,38 @@ class ShortestPathHomePanel extends PluginPanel
 		return result;
 	}
 
-	private JPanel makeTile(CategoryPanel category)
+	/**
+	 * The item sprite a category's tile carries — every tile icon routes
+	 * through {@link ShortestPathPanel#loadItemIcon} so the home grid shows
+	 * the same item imagery the transport cards do.
+	 */
+	private static int iconFor(String categoryName)
 	{
-		JPanel tile = new JPanel(new BorderLayout());
-		tile.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		tile.setOpaque(true);
-		tile.setBorder(new EmptyBorder(6, 8, 6, 8));
-
-		JLabel nameLabel = new JLabel(category.categoryName());
-		nameLabel.setForeground(Color.WHITE);
-		nameLabel.setFont(FontManager.getRunescapeBoldFont());
-		tile.add(nameLabel, BorderLayout.CENTER);
-
-		JLabel statusLabel = new JLabel();
-		statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		statusLabel.setFont(FontManager.getRunescapeSmallFont());
-		tile.add(statusLabel, BorderLayout.SOUTH);
-		statusLabels.add(statusLabel);
-
-		MouseAdapter drill = new MouseAdapter()
+		switch (categoryName)
 		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				panel.drillInto(category);
-			}
-		};
-		tile.addMouseListener(drill);
-		nameLabel.addMouseListener(drill);
-		statusLabel.addMouseListener(drill);
+			case "General":
+				return ItemID.TRAIL_SEXTANT;
+			case "Transports":
+				return ItemID.CANOEING_PADDLE;
+			case "Teleport Restrictions":
+				return ItemID.RING_OF_DUELING_8;
+			case "Unlocks":
+				return ItemID.CRYSTAL_KEY;
+			case "Bank":
+				return ItemID.COINS;
+			case "Player-Owned House":
+				return ItemID.POH_TABLET_TELEPORTTOHOUSE;
+			default:
+				return ItemID.TRAIL_SEXTANT;
+		}
+	}
+
+	private JComponent makeTile(CategoryPanel category)
+	{
+		Tile tile = new Tile(category.categoryName(),
+			() -> panel.drillInto(category));
+		panel.loadItemIcon(iconFor(category.categoryName()), tile.iconLabel, TILE_ICON_SIZE);
+		statusLabels.add(tile.statusLabel);
 		return tile;
 	}
 
@@ -286,5 +306,86 @@ class ShortestPathHomePanel extends PluginPanel
 	{
 		applyQuery(panel.getCurrentQuery());
 		refresh();
+	}
+
+	/**
+	 * One home-grid tile: a square raised button — centered category icon
+	 * on top, the bold category name beneath it and the live status line at
+	 * the bottom — painted with a bevelled edge that lowers while the
+	 * button is pressed and an orange accent that lifts while armed
+	 * (hover). A real {@link JButton}, so Swing's button model supplies the
+	 * armed/pressed states and the click action for free; the labels inside
+	 * carry no listeners of their own, so a click anywhere on the tile
+	 * reaches the button.
+	 */
+	private static final class Tile extends JButton
+	{
+		private static final SoftBevelBorder RAISED = new SoftBevelBorder(BevelBorder.RAISED);
+		private static final SoftBevelBorder LOWERED = new SoftBevelBorder(BevelBorder.LOWERED);
+
+		private final JLabel iconLabel;
+		private final JLabel statusLabel;
+
+		Tile(String name, Runnable onClick)
+		{
+			setLayout(new BorderLayout());
+			// The bevel + fill are painted by hand, so the platform button
+			// chrome stays off — only the model states are wanted.
+			setContentAreaFilled(false);
+			setBorderPainted(false);
+			setFocusPainted(false);
+			setOpaque(false);
+			setToolTipText(name);
+			addActionListener(e -> onClick.run());
+			// Armed/pressed transitions repaint so the pressed animation
+			// shows even though no UI delegate draws a state effect.
+			getModel().addChangeListener(e -> repaint());
+
+			iconLabel = new JLabel();
+			iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			iconLabel.setPreferredSize(new Dimension(0, TILE_ICON_SIZE + 8));
+			add(iconLabel, BorderLayout.NORTH);
+
+			JLabel nameLabel = new JLabel(name, SwingConstants.CENTER);
+			nameLabel.setForeground(Color.WHITE);
+			nameLabel.setFont(FontManager.getRunescapeBoldFont());
+			add(nameLabel, BorderLayout.CENTER);
+
+			statusLabel = new JLabel("", SwingConstants.CENTER);
+			statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			statusLabel.setFont(FontManager.getRunescapeSmallFont());
+			add(statusLabel, BorderLayout.SOUTH);
+		}
+
+		/**
+		 * Square preferred size: the uniform grid then resolves every cell
+		 * to the same square bounds at the pinned content width.
+		 */
+		@Override
+		public Dimension getPreferredSize()
+		{
+			return new Dimension(TILE_EDGE, TILE_EDGE);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g)
+		{
+			g.setColor(ColorScheme.DARKER_GRAY_COLOR);
+			g.fillRect(0, 0, getWidth(), getHeight());
+			super.paintComponent(g);
+
+			(getModel().isPressed() ? LOWERED : RAISED)
+				.paintBorder(this, g, 0, 0, getWidth(), getHeight());
+
+			g.setColor(ColorScheme.BRAND_ORANGE);
+			if (getModel().isArmed())
+			{
+				g.drawRect(3, 3, getWidth() - 7, getHeight() - 7);
+			}
+			else
+			{
+				g.drawLine(3, getHeight() - 4, getWidth() - 4, getHeight() - 4);
+			}
+		}
 	}
 }
