@@ -193,22 +193,22 @@ class CategoryPanel extends PluginPanel
 				}
 				continue;
 			}
-			if (query.isEmpty() && row.component instanceof TransportFamilyCard)
+			if (query.isEmpty() && row.component instanceof SearchExpandable)
 			{
-				((TransportFamilyCard) row.component).clearSearchExpanded();
+				((SearchExpandable) row.component).clearSearchExpanded();
 			}
 			if (query.isEmpty() || nameMatch || row.text.contains(query))
 			{
 				content.add(row.component);
-				// A match on a detail label (not the card name) opens the
-				// card detail so the matched control is visible.
-				if (!query.isEmpty() && !nameMatch && row.component instanceof TransportFamilyCard)
+				// A match on a detail label (not the component's own name)
+				// opens the detail well so the matched control is visible.
+				if (!query.isEmpty() && !nameMatch && row.component instanceof SearchExpandable)
 				{
-					TransportFamilyCard card = (TransportFamilyCard) row.component;
-					String cardName = card.getNameLabel().getText().toLowerCase(Locale.ROOT);
-					if (!cardName.contains(query))
+					SearchExpandable expandable = (SearchExpandable) row.component;
+					String rowName = expandable.getNameLabel().getText().toLowerCase(Locale.ROOT);
+					if (!rowName.contains(query))
 					{
-						card.setSearchExpanded();
+						expandable.setSearchExpanded();
 					}
 				}
 			}
