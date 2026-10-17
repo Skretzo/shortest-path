@@ -34,7 +34,7 @@ import shortestpath.settings.TeleportationItem;
 /**
  * The sidebar's home view: a two-column grid of category tiles — one per
  * {@link CategoryPanel} in the order General, Transports, Teleport
- * Restrictions, Unlocks, Bank, Player-Owned House, Highlights — each a
+ * Restrictions, Unlocks, Bank, Player-Owned House, Display — each a
  * square raised button carrying a centered item icon, the bold category
  * name and a live status line (e.g. {@code "19/22 on"}, {@code "3 blocked"}).
  * Clicking a tile drills into its sub-panel through the owning panel's
@@ -64,11 +64,11 @@ class ShortestPathHomePanel extends PluginPanel
 		"unlockCanoeAxe", "unlockXericsHonour",
 		"unlockDragontoothPassage", "unlockMorUlRek"};
 	/**
-	 * The display-side toggles the Highlights tile counts — shared by the
+	 * The display-side toggles the Display tile counts — shared by the
 	 * category builder, the refresh-listener registration and the status
 	 * computation so the tile can never read "n/4" over five rows.
 	 */
-	static final String[] HIGHLIGHT_KEYS = {
+	static final String[] DISPLAY_KEYS = {
 		"showTransportInfo", "showBankPickupInfo", "highlightBankPickupItems",
 		"highlightSpellbookSpells", "highlightInventoryItems"};
 
@@ -281,7 +281,7 @@ class ShortestPathHomePanel extends PluginPanel
 				return ItemID.COINS;
 			case "Player-Owned House":
 				return ItemID.POH_TABLET_TELEPORTTOHOUSE;
-			case "Highlights":
+			case "Display":
 				return ItemID.SOTE_ORB_OF_LIGHT;
 			default:
 				return ItemID.TRAIL_SEXTANT;
@@ -315,7 +315,7 @@ class ShortestPathHomePanel extends PluginPanel
 		{
 			panel.registerConfigListener(key, this::refresh);
 		}
-		for (String key : HIGHLIGHT_KEYS)
+		for (String key : DISPLAY_KEYS)
 		{
 			panel.registerConfigListener(key, this::refresh);
 		}
@@ -378,16 +378,16 @@ class ShortestPathHomePanel extends PluginPanel
 				return panel.settings.configuredBool("includeBankPath") ? "On" : "Off";
 			case "Player-Owned House":
 				return panel.settings.configuredBool("usePoh") ? "On" : "Off";
-			case "Highlights":
+			case "Display":
 				int lit = 0;
-				for (String key : HIGHLIGHT_KEYS)
+				for (String key : DISPLAY_KEYS)
 				{
 					if (panel.settings.configuredBool(key))
 					{
 						lit++;
 					}
 				}
-				return lit + "/" + HIGHLIGHT_KEYS.length + " on";
+				return lit + "/" + DISPLAY_KEYS.length + " on";
 			default:
 				return "";
 		}

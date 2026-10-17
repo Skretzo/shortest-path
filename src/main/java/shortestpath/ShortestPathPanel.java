@@ -197,7 +197,7 @@ public class ShortestPathPanel extends PluginPanel
 		buildUnlocksCategory();
 		buildBankCategory();
 		buildPohCategory();
-		buildHighlightsCategory();
+		buildDisplayCategory();
 
 		home = new ShortestPathHomePanel(this);
 		muxer = new MultiplexingPluginPanel(home);
@@ -393,13 +393,13 @@ public class ShortestPathPanel extends PluginPanel
 	 * overlay highlights. They share a category of plain check rows — no
 	 * master/dim contract, since each toggle stands alone.
 	 */
-	private void buildHighlightsCategory()
+	private void buildDisplayCategory()
 	{
-		CategoryPanel highlights = new CategoryPanel(this, "Highlights", "");
-		categories.add(highlights);
-		for (String key : ShortestPathHomePanel.HIGHLIGHT_KEYS)
+		CategoryPanel display = new CategoryPanel(this, "Display", "");
+		categories.add(display);
+		for (String key : ShortestPathHomePanel.DISPLAY_KEYS)
 		{
-			highlights.addRow(checkRow(key));
+			display.addRow(checkRow(key));
 		}
 	}
 
