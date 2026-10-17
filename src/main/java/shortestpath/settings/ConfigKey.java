@@ -22,7 +22,8 @@ import shortestpath.ShortestPathConfig;
  * {@link Effect#ROUTE_INVALIDATING} — including keys the reads reach through
  * {@code ShortestPathConfig} default methods ({@code useTeleportationPortalsPoh}
  * and {@code usePohMountedItems}, read inside {@code pohNexusPortals()}/
- * {@code pohMountedItems()}) — while {@code pathfinderAlgorithm} additionally
+ * {@code pohMountedItems()}, and {@code unlockBalloonLogBasket}, read inside
+ * {@code balloonLogBasketRoutes()}) — while {@code pathfinderAlgorithm} additionally
  * carries {@link Effect#SIDE_EFFECT_BACKEND_PREP} and {@code drawDebugPanel}
  * carries only {@link Effect#SIDE_EFFECT_DEBUG_OVERLAY}. Rows with no shell
  * consequence beyond view republish carry {@link Effect#DISPLAY_ONLY}.
@@ -142,6 +143,7 @@ enum ConfigKey
 	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", ShortestPathConfig::builtTeleportationPortalsPoh, Coercion.NONE, Effect.DISPLAY_ONLY),
 	BLOCKED_TELEPORT_ITEMS("blockedTeleportItems", ShortestPathConfig::blockedTeleportItems, Coercion.NONE, Effect.ROUTE_INVALIDATING),
 	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", ShortestPathConfig::unlockBalloonLogBasket, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	BALLOON_LOG_BASKET_ROUTES("balloonLogBasketRoutes", ShortestPathConfig::balloonLogBasketRoutes, Coercion.NONE, Effect.ROUTE_INVALIDATING),
 	;
 
 	private static final Map<String, ConfigKey> BY_KEY;

@@ -12,6 +12,7 @@ import shortestpath.TileStyle;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
+import shortestpath.transport.BalloonRoute;
 
 /**
  * Hand-written decorator over a base {@link ShortestPathConfig} that applies
@@ -810,6 +811,12 @@ public final class EffectiveConfig implements ShortestPathConfig
 	{
 		Object value = overrides.get(ConfigKey.UNLOCK_BALLOON_LOG_BASKET.getKey());
 		return value instanceof Boolean ? (boolean) value : base.unlockBalloonLogBasket();
+	}
+
+	@Override
+	public Set<BalloonRoute> balloonLogBasketRoutes()
+	{
+		return base.balloonLogBasketRoutes();
 	}
 
 }

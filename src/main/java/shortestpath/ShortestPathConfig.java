@@ -16,6 +16,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.poh.PohMountedItem;
+import shortestpath.transport.BalloonRoute;
 
 
 
@@ -1481,6 +1482,32 @@ public interface ShortestPathConfig extends Config
 	default boolean unlockBalloonLogBasket()
 	{
 		return false;
+	}
+
+	/**
+	 * The balloon routes whose destination basket holds the required logs.
+	 * While this key has never been written its default derives from the
+	 * legacy {@link #unlockBalloonLogBasket()} flag (on =&gt; every route,
+	 * off =&gt; none); the first written per-route set takes over
+	 * permanently, after which the flag keeps meaning only for profiles that
+	 * never wrote this key.
+	 */
+	@ConfigItem(
+		keyName = "balloonLogBasketRoutes",
+		name = "Balloon log basket routes",
+		description = "The balloon routes whose destination basket is stocked with logs.<br>" +
+			"The game does not expose the stored logs to the client,<br>" +
+			"so the plugin cannot detect them automatically.<br>" +
+			"Managed by the Shortest Path sidebar; defaults to every route<br>" +
+			"when the legacy basket toggle is set, and to none otherwise",
+		hidden = true
+	)
+	@SuppressWarnings("unused")
+	default Set<BalloonRoute> balloonLogBasketRoutes()
+	{
+		return unlockBalloonLogBasket()
+			? EnumSet.allOf(BalloonRoute.class)
+			: EnumSet.noneOf(BalloonRoute.class);
 	}
 
 }

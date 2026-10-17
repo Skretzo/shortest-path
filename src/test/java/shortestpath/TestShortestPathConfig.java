@@ -1,6 +1,9 @@
 package shortestpath;
 
+import java.util.EnumSet;
+import java.util.Set;
 import shortestpath.settings.TeleportationItem;
+import shortestpath.transport.BalloonRoute;
 
 public class TestShortestPathConfig implements ShortestPathConfig
 {
@@ -15,6 +18,9 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private boolean unlockDragontoothPassage = false;
 	private String blockedTeleportItems = "";
 	private boolean unlockBalloonLogBasket = false;
+	// Null means the key was never written: like the interface default, the
+	// route set then derives from the legacy unlockBalloonLogBasket flag.
+	private Set<BalloonRoute> balloonLogBasketRoutes = null;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -81,6 +87,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		this.unlockBalloonLogBasket = unlockBalloonLogBasket;
 	}
 
+	@SuppressWarnings("unused")
+	public void setBalloonLogBasketRoutesValue(Set<BalloonRoute> balloonLogBasketRoutes)
+	{
+		this.balloonLogBasketRoutes = balloonLogBasketRoutes;
+	}
+
 	@Override
 	public TeleportationItem useTeleportationItems()
 	{
@@ -133,6 +145,18 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean unlockBalloonLogBasket()
 	{
 		return unlockBalloonLogBasket;
+	}
+
+	@Override
+	public Set<BalloonRoute> balloonLogBasketRoutes()
+	{
+		if (balloonLogBasketRoutes != null)
+		{
+			return balloonLogBasketRoutes;
+		}
+		return unlockBalloonLogBasket
+			? EnumSet.allOf(BalloonRoute.class)
+			: EnumSet.noneOf(BalloonRoute.class);
 	}
 
 	@Override
