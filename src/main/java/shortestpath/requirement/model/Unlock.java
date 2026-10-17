@@ -37,10 +37,12 @@ public enum Unlock
 	MOR_UL_REK,
 
 	/**
-	 * Logs deposited in the shared balloon-station basket, which the pilot
+	 * Logs deposited in a balloon route's destination basket, which the pilot
 	 * consumes per destination (regular, oak, willow, yew or magic). The
-	 * stored stack is not exposed to the client, so it is declared by the
-	 * player instead of being read from inventory.
+	 * stored stack is not exposed to the client, so the player declares it
+	 * per route through the {@code balloonLogBasketRoutes} config set — the
+	 * unlock is granted only to a transport whose destination is one of the
+	 * selected routes, never globally.
 	 */
 	BALLOON_LOG_BASKET,
 	;

@@ -8,6 +8,7 @@ import lombok.Getter;
 import shortestpath.*;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.*;
+import shortestpath.transport.BalloonRoute;
 
 /**
  * Registry of every config key: one row per persisted key name, recording
@@ -80,6 +81,7 @@ public enum ConfigKey
 	UNLOCK_MOR_UL_REK,
 	INCLUDE_BANK_PATH,
 	CURRENCY_THRESHOLD,
+	SHOW_SIDEBAR_PANEL,
 	CANCEL_INSTEAD,
 	RECALCULATE_DISTANCE,
 	FINISH_DISTANCE,
@@ -154,7 +156,8 @@ public enum ConfigKey
 	BUILT_TELEPORTATION_BOXES,
 	BUILT_TELEPORTATION_PORTALS_POH,
 	BLOCKED_TELEPORT_ITEMS,
-	UNLOCK_BALLOON_LOG_BASKET;
+	UNLOCK_BALLOON_LOG_BASKET,
+	BALLOON_LOG_BASKET_ROUTES;
 	;
 
 	private static final Map<String, ConfigKey> BY_KEY;
@@ -202,7 +205,7 @@ public enum ConfigKey
 	/** Persisted type of a hidden key; {@code null} on proxy-backed rows. */
 	private final Class<?> type;
 	/** Element class of a {@code Set}-typed hidden key. */
-	private final Class<?> element;
+	private final Class<? extends Enum> element;
 	/**
 	 * The unwritten default: a literal, or a
 	 * {@code Function<baseResolver, Object>} for flag-derived set defaults.
