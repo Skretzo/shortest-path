@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import java.util.TreeSet;
 import org.junit.Test;
 
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 
@@ -176,6 +178,33 @@ public class ConfigDemotionTest
 
 		assertEquals("hidden keyName set is exactly the panel-owned set",
 			PANEL_OWNED_KEYS, hidden);
+	}
+
+	/**
+	 * The settings panel keeps exactly its five real sections — Settings,
+	 * Display, Colours, Hotkeys and Debug Options. The two "(Moved To
+	 * Sidebar)" pointer sections rendered as empty collapsible headers
+	 * once their items went hidden, so they are deleted outright: a
+	 * hidden item needs no section to stay hidden. Pinning the set
+	 * catches both a re-appearing stub section and an accidentally
+	 * dropped real one.
+	 */
+	@Test
+	public void onlyTheRealSettingsSectionsRemain()
+	{
+		Set<String> sectionNames = new TreeSet<>();
+		for (Field field : ShortestPathConfig.class.getDeclaredFields())
+		{
+			ConfigSection section = field.getAnnotation(ConfigSection.class);
+			if (section != null)
+			{
+				sectionNames.add(section.name());
+			}
+		}
+		assertEquals("the settings surface keeps exactly its five sections",
+			new TreeSet<>(Arrays.asList(
+				"Settings", "Display", "Colours", "Hotkeys", "Debug Options")),
+			sectionNames);
 	}
 
 	/**

@@ -371,6 +371,12 @@ public class ShortestPathPanelLayoutTest
 			ColorScheme.LIGHT_GRAY_COLOR, settingsNote.getForeground());
 		assertEquals("the settings note is small font",
 			FontManager.getRunescapeSmallFont(), settingsNote.getFont());
+		assertTrue("the settings note enumerates what remains in the "
+				+ "settings panel",
+			settingsNote.getText().contains("Display")
+				&& settingsNote.getText().contains("Colours")
+				&& settingsNote.getText().contains("Hotkeys")
+				&& settingsNote.getText().contains("Debug"));
 	}
 
 	/**
