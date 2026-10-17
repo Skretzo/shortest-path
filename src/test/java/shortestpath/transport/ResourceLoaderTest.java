@@ -631,7 +631,7 @@ public class ResourceLoaderTest
 		{
 			for (Transport transport : originTransports)
 			{
-				if ("Quest point cape: Teleport".equals(transport.getDisplayInfo()))
+				if ("Quest point cape: Legends' Guild".equals(transport.getDisplayInfo()))
 				{
 					cape = transport;
 					break;
