@@ -44,6 +44,7 @@ import net.runelite.client.ui.components.IconTextField;
 import net.runelite.client.ui.components.TitleCaseListCellRenderer;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
+import shortestpath.items.ItemStateService;
 import shortestpath.settings.Settings;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.PohMountedItem;
@@ -77,7 +78,7 @@ public class ShortestPathPanel extends PluginPanel
 	static final String OWNED_EMPTY_LINE_1 =
 		"No teleport items detected in inventory, equipment or bank.";
 	static final String OWNED_EMPTY_LINE_2 =
-		"Open your bank once so the plugin can see its contents.";
+		"Bank items are remembered from the last time you opened it on this account.";
 	static final String RESTRICTIONS_DISABLED_HINT =
 		"Teleportation items are disabled. Enable \"Use teleportation items\" "
 			+ "in Transports to restrict individual items.";
@@ -99,6 +100,7 @@ public class ShortestPathPanel extends PluginPanel
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ItemManager itemManager;
+	private final ItemStateService itemState;
 
 	private final IconTextField searchBar;
 	private final MultiplexingPluginPanel muxer;
@@ -123,7 +125,7 @@ public class ShortestPathPanel extends PluginPanel
 	private String currentQuery = "";
 
 	ShortestPathPanel(Settings settings, Client client,
-		ClientThread clientThread, ItemManager itemManager)
+		ClientThread clientThread, ItemManager itemManager, ItemStateService itemState)
 	{
 		super(false);
 
@@ -131,6 +133,7 @@ public class ShortestPathPanel extends PluginPanel
 		this.client = client;
 		this.clientThread = clientThread;
 		this.itemManager = itemManager;
+		this.itemState = itemState;
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -285,7 +288,7 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		restrictionsCategory = new CategoryPanel(this, "Teleport Restrictions", "");
 		categories.add(restrictionsCategory);
-		restrictionListPanel = new RestrictionListPanel(this, settings, client, clientThread);
+		restrictionListPanel = new RestrictionListPanel(this, settings, client, clientThread, itemState);
 		restrictionsCategory.addRow(restrictionListPanel,
 			"Teleport Restrictions", searchable("teleport restrictions"));
 
