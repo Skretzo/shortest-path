@@ -120,7 +120,7 @@ class RestrictionListPanel extends JPanel
 		footer = new JPanel(new BorderLayout());
 		footer.setOpaque(false);
 		footer.setBorder(new EmptyBorder(8, 0, 4, 0));
-		JButton reset = new JButton("Reset restrictions");
+		JButton reset = new JButton("Reset Restrictions");
 		reset.addActionListener(e -> confirmReset());
 		footer.add(reset, BorderLayout.CENTER);
 
@@ -227,7 +227,7 @@ class RestrictionListPanel extends JPanel
 			boolean ownedOk = !ownedOnly || row.isOwned();
 			if (matches && ownedOk)
 			{
-				labels.add(row.family.name());
+				labels.add(ShortestPathPanel.titleCase(row.family.name()));
 			}
 		}
 		return labels;
@@ -331,7 +331,7 @@ class RestrictionListPanel extends JPanel
 	{
 		int result = JOptionPane.showOptionDialog(this,
 			"Remove all teleport restrictions? All blocked items will be re-enabled.",
-			"Reset restrictions",
+			"Reset Restrictions",
 			JOptionPane.YES_NO_OPTION,
 			JOptionPane.WARNING_MESSAGE,
 			null,
@@ -410,7 +410,11 @@ class RestrictionListPanel extends JPanel
 			panel.loadItemIcon(family.displayItemId(), iconLabel);
 			header.add(iconLabel, BorderLayout.WEST);
 
-			nameLabel = new JLabel(family.name());
+			// The wrap makes long family names break onto a second line at
+			// row width instead of clipping; Title Case matches the config
+			// names (the raw name stays the search identity below).
+			nameLabel = new JLabel(ShortestPathPanel.html(
+				ShortestPathPanel.titleCase(family.name())));
 			// Clicking the label expands the row; the uncheck tooltip belongs
 			// on the checkbox alone. The label tooltip carries the full family
 			// name for names that clip at row width.
@@ -481,7 +485,7 @@ class RestrictionListPanel extends JPanel
 
 			JPanel thresholdRow = new JPanel(new BorderLayout());
 			thresholdRow.setOpaque(false);
-			JLabel thresholdLabel = new JLabel("Min. tiles saved");
+			JLabel thresholdLabel = new JLabel(ShortestPathPanel.html("Min. Tiles Saved"));
 			thresholdLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 			thresholdLabel.setFont(FontManager.getRunescapeSmallFont());
 			String thresholdTooltip = "Tiles this teleport must save to be used. 0 uses the family threshold.";
@@ -555,7 +559,7 @@ class RestrictionListPanel extends JPanel
 					WorldPoint point = WorldPointUtil.unpackWorldPoint(dest);
 					label = point.getX() + ", " + point.getY() + ", " + point.getPlane();
 				}
-				JCheckBox optionBox = new JCheckBox(label);
+				JCheckBox optionBox = new JCheckBox(ShortestPathPanel.html(label));
 				optionBox.setFont(FontManager.getRunescapeSmallFont());
 				// Selected state is set before the listener attaches, so
 				// construction never fires a spurious config write — the
