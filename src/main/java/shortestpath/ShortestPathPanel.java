@@ -613,11 +613,13 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * A small-font section caption inside the POH sub-list — names the
-	 * grouped rows that follow it. The caption is pure chrome: it owns no
-	 * control, but it rides {@code pohSubRows} so it dims with the master
-	 * toggle, and its search text covers the section's config name so a
-	 * matching query keeps it visible over the groups it heads.
+	 * A section caption inside the POH sub-list — names the grouped rows
+	 * that follow it, rendered in the panel's regular row typography so it
+	 * reads as an ordinary label rather than a small secondary hint. The
+	 * caption is pure chrome: it owns no control, but it rides
+	 * {@code pohSubRows} so it dims with the master toggle, and its search
+	 * text covers the section's config name so a matching query keeps it
+	 * visible over the groups it heads.
 	 */
 	private SearchRow captionRow(String caption, String configName)
 	{
@@ -625,8 +627,7 @@ public class ShortestPathPanel extends PluginPanel
 		row.setOpaque(false);
 		row.setBorder(new EmptyBorder(0, SUB_LIST_INDENT, 0, 0));
 		JLabel label = new JLabel(caption);
-		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		label.setFont(FontManager.getRunescapeSmallFont());
+		label.setForeground(Color.WHITE);
 		row.add(label, BorderLayout.CENTER);
 		return new SearchRow(row, caption, searchable(caption, configName));
 	}

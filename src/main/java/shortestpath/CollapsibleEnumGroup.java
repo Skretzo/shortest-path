@@ -1,7 +1,6 @@
 package shortestpath;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -75,10 +74,6 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		header.add(expander, BorderLayout.WEST);
 
 		nameLabel = new JLabel(ShortestPathPanel.html(groupLabel));
-		// The panel's row typography: the default (regular-size) font in
-		// plain white, matching the checkRow labels beside the groups —
-		// only the n/total count keeps the secondary tone.
-		nameLabel.setForeground(Color.WHITE);
 		nameLabel.setToolTipText(ShortestPathPanel.html(description));
 		header.add(nameLabel, BorderLayout.CENTER);
 
@@ -100,7 +95,6 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		for (E member : members)
 		{
 			JCheckBox checkBox = new JCheckBox(ShortestPathPanel.html(member.toString()));
-			checkBox.setForeground(Color.WHITE);
 			checkBox.setSelected(panel.currentSet(keyName, type).contains(member));
 			checkBox.setToolTipText(ShortestPathPanel.html(description));
 			checkBox.addActionListener(e ->
