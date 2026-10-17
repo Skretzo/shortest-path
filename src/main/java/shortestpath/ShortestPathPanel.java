@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
@@ -45,7 +44,6 @@ import net.runelite.client.ui.MultiplexingPluginPanel;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.ui.components.IconTextField;
-import net.runelite.client.ui.components.TitleCaseListCellRenderer;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 import shortestpath.items.ItemStateService;
@@ -75,7 +73,6 @@ public class ShortestPathPanel extends PluginPanel
 	static final int SECTION_TOGGLE_WIDTH = 18;
 	static final int CARD_ICON_SIZE = 16;
 	private static final int SPINNER_FIELD_WIDTH = 6;
-	private static final int COMBO_HEIGHT = 22;
 	static final int SUB_LIST_INDENT = 16;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_TOOLTIP =
@@ -555,10 +552,8 @@ public class ShortestPathPanel extends PluginPanel
 		@SuppressWarnings("unchecked")
 		Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
 		JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
-		combo.setRenderer(new TitleCaseListCellRenderer());
-		combo.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
 		combo.setSelectedItem(value);
-		combo.setPreferredSize(new Dimension(combo.getPreferredSize().width, COMBO_HEIGHT));
+		PanelComboStyle.apply(combo);
 		combo.setToolTipText(html(description));
 		boolean[] syncing = new boolean[1];
 		combo.addItemListener(e ->
