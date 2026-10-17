@@ -131,6 +131,31 @@ public final class RequirementContext
 		LeagueModeState leagueModeState,
 		Set<String> availableSpiritTrees)
 	{
+		return capture(source, hooks, policy, evaluationTimeMinutes, transports,
+			bankRequirements, bank, unlocks, respawnPrifddinas, leagueModeState,
+			availableSpiritTrees, Set.of());
+	}
+
+	/**
+	 * As {@link #capture(PlayerStateSource, RequirementHooks, RoutingPolicy, long,
+	 * Collection, Map, ItemContainer, Set, boolean, LeagueModeState, Set)},
+	 * additionally forwarding the packed destinations of the balloon routes whose
+	 * log basket the player declared stocked into the eligibility snapshot.
+	 */
+	public static RequirementContext capture(
+		PlayerStateSource source,
+		RequirementHooks hooks,
+		RoutingPolicy policy,
+		long evaluationTimeMinutes,
+		Collection<Transport> transports,
+		Map<Integer, DestinationRequirements> bankRequirements,
+		ItemContainer bank,
+		Set<Unlock> unlocks,
+		boolean respawnPrifddinas,
+		LeagueModeState leagueModeState,
+		Set<String> availableSpiritTrees,
+		Set<Integer> balloonLogBasketDestinations)
+	{
 		int[] boostedSkillLevelsAndMore = new int[SkillLevels.LENGTH];
 		boolean onSailingBoat = source.varbit(VarbitID.SAILING_BOARDED_BOAT) != 0;
 		int i = 0;
@@ -146,7 +171,7 @@ public final class RequirementContext
 
 		TransportEligibility eligibilitySnapshot = ItemStateService.collectEligibility(source, bank,
 			policy.teleportationItemSetting(), policy.currencyThreshold(), policy.includeBankPath(),
-			unlocks);
+			unlocks, balloonLogBasketDestinations);
 
 		Map<Quest, QuestState> capturedQuestStates = new HashMap<>();
 		Map<Integer, Integer> capturedVarbitValues = new HashMap<>();

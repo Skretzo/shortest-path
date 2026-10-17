@@ -5,7 +5,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarbitID;
 import shortestpath.ItemVariations;
+import shortestpath.items.OwnedItems;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.HeldItems;
 import shortestpath.requirement.model.ItemRequirement;
@@ -65,7 +69,13 @@ public final class TransportEligibility
 	private final TeleportationItem teleportationItemSetting;
 	private final int currencyThreshold;
 	private final Set<Unlock> unlocks;
-	@Getter @Accessors(fluent = true) private final HeldItems heldItems;
+	/**
+	 * Packed destinations of the balloon routes whose log basket the player
+	 * declared stocked — the destinations a {@link TransportType#HOT_AIR_BALLOON}
+	 * transport may land on to be granted {@link Unlock#BALLOON_LOG_BASKET}.
+	 */
+	private final Set<Integer> balloonLogBasketDestinations;
+	private final HeldItems heldItems;
 
 	public TransportEligibility(
 		Map<Integer, Integer> carriedItems,
@@ -79,6 +89,24 @@ public final class TransportEligibility
 		Set<Unlock> unlocks,
 		boolean bankSeen)
 	{
+		this(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
+			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold,
+			unlocks, bankSeen, Set.of());
+	}
+
+	public TransportEligibility(
+		Map<Integer, Integer> carriedItems,
+		Map<Integer, Integer> bankPathItems,
+		Map<Integer, Integer> bankHas,
+		int bankPouchId,
+		Map<Integer, Integer> bankPouchRunes,
+		boolean fairyRingStaffRequired,
+		TeleportationItem teleportationItemSetting,
+		int currencyThreshold,
+		Set<Unlock> unlocks,
+		boolean bankSeen,
+		Set<Integer> balloonLogBasketDestinations)
+	{
 		this.carriedItems = Map.copyOf(carriedItems);
 		this.bankPathItems = Map.copyOf(bankPathItems);
 		this.bankHas = Map.copyOf(bankHas);
@@ -88,6 +116,7 @@ public final class TransportEligibility
 		this.teleportationItemSetting = teleportationItemSetting;
 		this.currencyThreshold = currencyThreshold;
 		this.unlocks = Set.copyOf(unlocks);
+		this.balloonLogBasketDestinations = Set.copyOf(balloonLogBasketDestinations);
 		// What the player holds is a projection of this same collection: the carried
 		// pool, plus the bank contents and a banked pouch's runes once the bank has
 		// been seen — the one item snapshot also answers the target-status question.
@@ -112,6 +141,107 @@ public final class TransportEligibility
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
 			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true);
+	}
+
+	/**
+	 * Captures the client state both the pathfinding verdicts and the bank-pickup plans
+	 * read: the carried pool (inventory + worn + rune pouch in hand), the bank-path pool
+	 * (which adds the bank contents when bank paths are enabled), the bank contents
+	 * themselves, the runes inside a banked rune pouch, the fairy-ring staff gate and
+	 * the currency threshold. Shared by
+	 * {@link RequirementContext#capture RequirementContext.capture}
+	 * and the lazy {@code PathfinderConfig#getEligibility()} rebuild so exactly one
+	 * collection path exists.
+	 */
+	public static TransportEligibility collect(
+		PlayerStateSource source,
+		ItemContainer bank,
+		TeleportationItem teleportationItemSetting,
+		int currencyThreshold,
+		boolean includeBankPath,
+		Set<Unlock> unlocks)
+	{
+		return collect(source, bank, teleportationItemSetting, currencyThreshold,
+			includeBankPath, unlocks, Set.of());
+	}
+
+	/**
+	 * As {@link #collect(PlayerStateSource, ItemContainer, TeleportationItem, int,
+	 * boolean, Set)}, additionally capturing the packed destinations of the balloon
+	 * routes whose log basket the player declared stocked.
+	 */
+	public static TransportEligibility collect(
+		PlayerStateSource source,
+		ItemContainer bank,
+		TeleportationItem teleportationItemSetting,
+		int currencyThreshold,
+		boolean includeBankPath,
+		Set<Unlock> unlocks,
+		Set<Integer> balloonLogBasketDestinations)
+	{
+		Map<Integer, Integer> carriedItems = collectItems(source, bank,
+			teleportationItemSetting, true, true, false, true);
+		Map<Integer, Integer> bankPathItems = includeBankPath
+			? collectItems(source, bank, teleportationItemSetting, true, true, true, true)
+			: carriedItems;
+		Map<Integer, Integer> bankHas = new HashMap<>();
+		OwnedItems.addContainer(bankHas, bank);
+		int bankPouchId = -1;
+		for (int pouchId : OwnedItems.RUNE_POUCHES)
+		{
+			if (bankHas.containsKey(pouchId))
+			{
+				bankPouchId = pouchId;
+				break;
+			}
+		}
+		Map<Integer, Integer> bankPouchRunes = bankPouchId == -1
+			? Map.of()
+			: source.runePouchContents();
+		boolean fairyRingStaffRequired =
+			source.varbit(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1;
+		return new TransportEligibility(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
+			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold,
+			unlocks, bank != null, balloonLogBasketDestinations);
+	}
+
+	/**
+	 * Item id to quantity over the selected containers, summed across containers.
+	 */
+	private static Map<Integer, Integer> collectItems(
+		PlayerStateSource source,
+		ItemContainer bank,
+		TeleportationItem teleportationItemSetting,
+		boolean checkInventory,
+		boolean checkEquipment,
+		boolean checkBank,
+		boolean checkRunePouch)
+	{
+		Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
+
+		if (checkInventory)
+		{
+			OwnedItems.addContainer(itemsAndQuantities, source.itemContainer(InventoryID.INV));
+		}
+
+		if (checkEquipment)
+		{
+			OwnedItems.addContainer(itemsAndQuantities, source.itemContainer(InventoryID.WORN));
+		}
+
+		if (checkBank
+			&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
+				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting)))
+		{
+			OwnedItems.addContainer(itemsAndQuantities, bank);
+		}
+
+		if (checkRunePouch)
+		{
+			source.addRunePouchContents(itemsAndQuantities);
+		}
+
+		return itemsAndQuantities;
 	}
 
 	/**
