@@ -766,6 +766,33 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	@Test
+	public void restrictionTileCountsEveryRecordKind() throws Exception
+	{
+		newPanel();
+		flushEdt();
+		JLabel status = statusLabelOf(tileNamed("Teleport Restrictions"));
+		assertEquals("All allowed", status.getText());
+
+		// A rep@dest option block alone is an active restriction even
+		// though no bare item id is blocked.
+		int farmDest = WorldPointUtil.packWorldPoint(2665, 3374, 0);
+		config.setBlockedTeleportItemsValue("13121@" + farmDest);
+		settings.onConfigChanged(event("blockedTeleportItems"));
+		flushEdt();
+		assertEquals("an option block counts", "1 restricted", status.getText());
+
+		config.setBlockedTeleportItemsValue("13121:5");
+		settings.onConfigChanged(event("blockedTeleportItems"));
+		flushEdt();
+		assertEquals("a threshold override counts", "1 restricted", status.getText());
+
+		config.setBlockedTeleportItemsValue("13121,13121:5");
+		settings.onConfigChanged(event("blockedTeleportItems"));
+		flushEdt();
+		assertEquals("block and threshold sum", "2 restricted", status.getText());
+	}
+
+	@Test
 	public void deepLinkRoundTrip() throws Exception
 	{
 		newPanel();
