@@ -419,8 +419,7 @@ public interface ShortestPathConfig extends Config
 		name = "Cancel Instead Of Recalculating",
 		description = "Whether the path should be cancelled rather than recalculated " +
 			"when the recalculate distance limit is exceeded",
-		position = 71,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean cancelInstead()
 	{
@@ -435,8 +434,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "recalculateDistance",
 		name = "Recalculate Distance",
 		description = "Distance from the path the player should be for it to be recalculated (-1 for never)",
-		position = 72,
-		section = sectionSettings
+		hidden = true
 	)
 	default int recalculateDistance()
 	{
@@ -451,8 +449,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "finishDistance",
 		name = "Finish Distance",
 		description = "Distance from the target tile at which the path should be ended (-1 for never)",
-		position = 73,
-		section = sectionSettings
+		hidden = true
 	)
 	default int reachedDistance()
 	{
@@ -478,8 +475,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "showUnreachableText",
 		name = "Show Unreachable Text",
 		description = "Whether to display text on the player tile when the destination cannot be reached",
-		position = 75,
-		section = sectionSettings
+		hidden = true
 	)
 	default boolean showUnreachableText()
 	{
