@@ -26,6 +26,7 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	// Null means the key was never written: like the interface default, the
 	// portal set then derives from the legacy useTeleportationPortalsPoh flag.
 	private Set<PohNexusPortal> pohNexusPortals = null;
+	private boolean showBankPickupInfo = false;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -108,6 +109,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public void setPohNexusPortalsValue(Set<PohNexusPortal> pohNexusPortals)
 	{
 		this.pohNexusPortals = pohNexusPortals;
+	}
+
+	@SuppressWarnings("unused")
+	public void setShowBankPickupInfoValue(boolean showBankPickupInfo)
+	{
+		this.showBankPickupInfo = showBankPickupInfo;
 	}
 
 	@Override
@@ -206,6 +213,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean collisionAwareBlockedTargets()
 	{
 		return collisionAwareBlockedTargets;
+	}
+
+	@Override
+	public boolean showBankPickupInfo()
+	{
+		return showBankPickupInfo;
 	}
 
 	@Override
