@@ -65,7 +65,7 @@ import shortestpath.transport.BalloonRoute;
 
 /**
  * Headless structure tests pinning the tile drill-down layout contract:
- * the six-tile home rooted in the muxer, drill/back stack mechanics, every
+ * the seven-tile home rooted in the muxer, drill/back stack mechanics, every
  * scroll view pinned to the 225px viewport (so the scrollbar never covers
  * content or the master toggles), a real left inset on every scroll
  * surface, live tile statuses, and the grouped search results + filtered
@@ -288,7 +288,7 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	@Test
-	public void homeIsMuxRootWithSixTiles()
+	public void homeIsMuxRootWithSevenTiles()
 	{
 		newPanel();
 
@@ -296,9 +296,9 @@ public class ShortestPathPanelLayoutTest
 		assertSame(panel.home(), panel.muxer().getComponent(0));
 
 		String[] expected = {"General", "Transports", "Teleport Restrictions",
-			"Unlocks", "Bank", "Player-Owned House"};
+			"Unlocks", "Bank", "Player-Owned House", "Highlights"};
 		JPanel grid = tileGrid();
-		assertEquals(6, grid.getComponentCount());
+		assertEquals(7, grid.getComponentCount());
 		for (int i = 0; i < expected.length; i++)
 		{
 			JComponent tile = (JComponent) grid.getComponent(i);
@@ -403,7 +403,8 @@ public class ShortestPathPanelLayoutTest
 				&& iconRequests.contains(ItemID.RING_OF_DUELING_8)
 				&& iconRequests.contains(ItemID.CRYSTAL_KEY)
 				&& iconRequests.contains(ItemID.COINS)
-				&& iconRequests.contains(ItemID.POH_TABLET_TELEPORTTOHOUSE));
+				&& iconRequests.contains(ItemID.POH_TABLET_TELEPORTTOHOUSE)
+				&& iconRequests.contains(ItemID.SOTE_ORB_OF_LIGHT));
 	}
 
 	@Test
@@ -752,7 +753,7 @@ public class ShortestPathPanelLayoutTest
 
 		setSearchText("");
 		assertEquals("clearing restores the tile grid",
-			6, tileGrid().getComponentCount());
+			7, tileGrid().getComponentCount());
 		assertEquals("clearing restores the drilled category's full rows",
 			transports.rows().size(), contentOf(transports).getComponentCount());
 	}
@@ -949,7 +950,7 @@ public class ShortestPathPanelLayoutTest
 
 		setSearchText("");
 		assertEquals("clearing restores the tile grid",
-			6, tileGrid().getComponentCount());
+			7, tileGrid().getComponentCount());
 		assertEquals("clearing restores the drilled category's full rows",
 			transports.rows().size(), contentOf(transports).getComponentCount());
 	}
@@ -967,7 +968,7 @@ public class ShortestPathPanelLayoutTest
 
 		setSearchText("");
 		assertEquals("clearing restores the tile grid",
-			6, tileGrid().getComponentCount());
+			7, tileGrid().getComponentCount());
 	}
 
 	@Test
@@ -1518,6 +1519,69 @@ public class ShortestPathPanelLayoutTest
 		settings.onConfigChanged(event("unlockCanoeAxe"));
 		flushEdt();
 		assertEquals("1/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
+	}
+
+	// ---- Highlights category -----------------------------------------------
+
+	private CategoryPanel highlightsCategory()
+	{
+		return panel.categories().get(6);
+	}
+
+	/**
+	 * The seventh home tile drills into "Highlights": five plain check
+	 * rows — one per display-side toggle — a live {@code n/5 on} status
+	 * line and a real item sprite. The display defaults leave four of the
+	 * five toggles on ({@code showBankPickupInfo} defaults off).
+	 */
+	@Test
+	public void highlightsTileCoversTheFiveDisplayToggles() throws Exception
+	{
+		newPanel();
+		CategoryPanel highlights = highlightsCategory();
+		assertEquals("Highlights", highlights.categoryName());
+		assertEquals("five highlight check rows", 5, highlights.rows().size());
+
+		String[] keys = {"showTransportInfo", "showBankPickupInfo",
+			"highlightBankPickupItems", "highlightSpellbookSpells",
+			"highlightInventoryItems"};
+		for (int i = 0; i < keys.length; i++)
+		{
+			ShortestPathPanel.SearchRow row = highlights.rows().get(i);
+			// The harness has no config descriptors, so rows name their key.
+			assertEquals(keys[i] + " row in build order", keys[i], row.display);
+			assertNotNull(keys[i] + " row carries a checkbox",
+				masterBox(row.component));
+		}
+
+		assertTrue("the Highlights tile requests its sprite",
+			iconRequests.contains(ItemID.SOTE_ORB_OF_LIGHT));
+
+		JLabel status = statusLabelOf(tileNamed("Highlights"));
+		assertEquals("defaults count four of five toggles on",
+			"4/5 on", status.getText());
+
+		config.setShowBankPickupInfoValue(true);
+		settings.onConfigChanged(event("showBankPickupInfo"));
+		flushEdt();
+		assertEquals("the tile status tracks external edits",
+			"5/5 on", status.getText());
+	}
+
+	/**
+	 * Highlights rows ride the same search surface as every other
+	 * category: a category-name query lands all five rows, a key-label
+	 * query lands just the matching rows.
+	 */
+	@Test
+	public void highlightsRowsSurfaceThroughSearch()
+	{
+		newPanel();
+		CategoryPanel highlights = highlightsCategory();
+		assertEquals("a category-name query lists every highlight row",
+			5, panel.matchingRows(highlights, "highlights").size());
+		assertEquals("a key-label query narrows to the matching rows",
+			2, panel.matchingRows(highlights, "bankpickup").size());
 	}
 
 	// ---- Combo styling + tile-name fit ------------------------------------
