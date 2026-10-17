@@ -2276,12 +2276,12 @@ public class PathfinderTest
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertTrue("Quest cape in inventory with all quests finished should be usable",
-			hasUsableTeleport("Quest point cape: Teleport"));
+			hasUsableTeleport("Quest point cape: Legends' Guild"));
 
 		setupQuestPointDatabase(342);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertFalse("Quest cape should not teleport when quests are incomplete",
-			hasUsableTeleport("Quest point cape: Teleport"));
+			hasUsableTeleport("Quest point cape: Legends' Guild"));
 	}
 
 	@Test
@@ -2294,13 +2294,13 @@ public class PathfinderTest
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.SKILLCAPE_QP, 1));
 		assertTrue("Quest cape in bank with all quests finished should be usable after banking",
-			hasUsableTeleport("Quest point cape: Teleport", BankVisitState.BANKED));
+			hasUsableTeleport("Quest point cape: Legends' Guild", BankVisitState.BANKED));
 
 		setupQuestPointDatabase(342);
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.SKILLCAPE_QP, 1));
 		assertFalse("Quest cape in bank should not be suggested when quests are incomplete",
-			hasUsableTeleport("Quest point cape: Teleport", BankVisitState.BANKED));
+			hasUsableTeleport("Quest point cape: Legends' Guild", BankVisitState.BANKED));
 	}
 
 	@Test
