@@ -1731,10 +1731,10 @@ public class ShortestPathPanelLayoutTest
 	/**
 	 * Pins child 0 as the opaque dark header bar and the last child as the
 	 * detail well — category-toned (transparent or {@code DARK_GRAY_COLOR},
-	 * never the light medium-grey fill) and carrying the dark frame border
-	 * on its left, bottom and right edges only (the header bar supplies
-	 * the top edge). Every expandable surface builds its header and detail
-	 * as its only two children, in that order.
+	 * never the light medium-grey fill) and carrying the 3px dark frame
+	 * border on its left, bottom and right edges only (the header bar
+	 * supplies the top edge). Every expandable surface builds its header
+	 * and detail as its only two children, in that order.
 	 */
 	private static void assertWellChrome(JComponent surface, String what)
 	{
@@ -1755,8 +1755,9 @@ public class ShortestPathPanelLayoutTest
 		assertNotNull(what + " detail well carries a matte frame", frame);
 		assertEquals(what + " frame leaves the top edge open — the header "
 				+ "bar closes it", 0, frame.top);
-		assertTrue(what + " frame boxes the left, bottom and right edges",
-			frame.left >= 1 && frame.bottom >= 1 && frame.right >= 1);
+		assertEquals(what + " frame boxes the left edge at 3px", 3, frame.left);
+		assertEquals(what + " frame boxes the bottom edge at 3px", 3, frame.bottom);
+		assertEquals(what + " frame boxes the right edge at 3px", 3, frame.right);
 	}
 
 	/**
