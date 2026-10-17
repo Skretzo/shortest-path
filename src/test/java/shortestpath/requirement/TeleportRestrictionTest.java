@@ -155,4 +155,170 @@ public class TeleportRestrictionTest
 		Assert.assertEquals(Set.of(123), blocked);
 		Assert.assertEquals(Map.of(123, 30), thresholds);
 	}
+
+	@Test
+	public void repAtDestRecordsParseIntoTheOptionBlockMap()
+	{
+		Set<Integer> blocked = new HashSet<>();
+		Map<Integer, Integer> thresholds = new HashMap<>();
+		Map<Integer, Set<Integer>> options = new HashMap<>();
+
+		TeleportRestriction.parseBlocked("13121@87359490,1706,13121@999,2552@5",
+			blocked, thresholds, options);
+
+		Assert.assertEquals(Set.of(1706), blocked);
+		Assert.assertTrue(thresholds.isEmpty());
+		Assert.assertEquals(Map.of(13121, Set.of(87359490, 999), 2552, Set.of(5)), options);
+	}
+
+	@Test
+	public void malformedAtRecordsAreSkippedAndGoodEntriesSurvive()
+	{
+		Set<Integer> blocked = new HashSet<>();
+		Map<Integer, Integer> thresholds = new HashMap<>();
+		Map<Integer, Set<Integer>> options = new HashMap<>();
+
+		// "x@" and "@y" each have one empty side; "a@b" has no ints; "1@2@3"
+		// carries a second '@' making the split unparseable; "@" alone has
+		// two empty sides. The valid sibling must survive untouched.
+		TeleportRestriction.parseBlocked("x@,@y,a@b,1@2@3,@,13121@1234,42",
+			blocked, thresholds, options);
+
+		Assert.assertEquals(Set.of(42), blocked);
+		Assert.assertTrue(thresholds.isEmpty());
+		Assert.assertEquals(Map.of(13121, Set.of(1234)), options);
+	}
+
+	@Test
+	public void toCsvSortsOptionRecordsByRepThenDestination()
+	{
+		String csv = TeleportRestriction.toCsv(Set.of(300, 100), Map.of(200, 5),
+			Map.of(20, Set.of(9, 3), 7, Set.of(11)));
+
+		Assert.assertEquals("100,300,200:5,7@11,20@3,20@9", csv);
+	}
+
+	@Test
+	public void repAtDestRecordsRoundTripThroughSerializeAndParse()
+	{
+		Map<Integer, Set<Integer>> options =
+			Map.of(13121, Set.of(87359490, 999), 2552, Set.of(42));
+
+		String csv = TeleportRestriction.toCsv(Set.of(12), Map.of(34, 7), options);
+		Assert.assertEquals("12,34:7,2552@42,13121@999,13121@87359490", csv);
+
+		Set<Integer> parsedBlocked = new HashSet<>();
+		Map<Integer, Integer> parsedThresholds = new HashMap<>();
+		Map<Integer, Set<Integer>> parsedOptions = new HashMap<>();
+		TeleportRestriction.parseBlocked(csv, parsedBlocked, parsedThresholds, parsedOptions);
+
+		Assert.assertEquals(Set.of(12), parsedBlocked);
+		Assert.assertEquals(Map.of(34, 7), parsedThresholds);
+		Assert.assertEquals(options, parsedOptions);
+	}
+
+	@Test
+	public void preFeatureCsvParsesIdenticallyThroughTheThreeOutputOverload()
+	{
+		Set<Integer> blocked = new HashSet<>();
+		Map<Integer, Integer> thresholds = new HashMap<>();
+		Map<Integer, Set<Integer>> options = new HashMap<>();
+
+		TeleportRestriction.parseBlocked("123,abc,42:30,42:10", blocked, thresholds, options);
+
+		Assert.assertEquals(Set.of(123), blocked);
+		Assert.assertEquals(Map.of(42, 30), thresholds);
+		Assert.assertTrue(options.isEmpty());
+	}
+
+	@Test
+	public void representativeForResolvesMembersToTheirFamilyDisplayId()
+	{
+		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13121));
+		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13122));
+		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13123));
+		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13124));
+		Assert.assertEquals(13121, TeleportRestriction.representativeFor(20760));
+
+		Assert.assertTrue("non-member ids resolve negatively",
+			TeleportRestriction.representativeFor(995) < 0);
+		Assert.assertTrue("unknown ids resolve negatively",
+			TeleportRestriction.representativeFor(12345) < 0);
+	}
+
+	@Test
+	public void representativeIndexCoversEveryFamilyMember()
+	{
+		Map<Integer, Integer> index = TeleportRestriction.representativeIndex();
+		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
+		{
+			for (int member : family.memberItemIds())
+			{
+				Assert.assertEquals("member " + member + " of " + family.name(),
+					family.displayItemId(), (int) index.getOrDefault(member, -1));
+			}
+		}
+	}
+
+	/**
+	 * The Ardougne-cloaks family serves two distinct destinations: the
+	 * monastery row every cloak reaches plus the farm rows gated on diary
+	 * tier — both must surface with their Display-info labels.
+	 */
+	@Test
+	public void ardougneCloaksExposeTheirTwoDestinationOptions()
+	{
+		int monastery = shortestpath.WorldPointUtil.packWorldPoint(2607, 3221, 0);
+		int farm = shortestpath.WorldPointUtil.packWorldPoint(2665, 3374, 0);
+
+		Assert.assertEquals(
+			Map.of(monastery, "Kandarin Monastery", farm, "Ardougne Farm"),
+			familyNamed("Ardougne cloaks").options());
+	}
+
+	/**
+	 * The three varbit-gated Ardougne-farm rows (and the three Morytania
+	 * slime-pit rows) share their destination and label — they collapse to
+	 * one option, not three.
+	 */
+	@Test
+	public void servingRowsSharingADestinationDedupeToOneOption()
+	{
+		Assert.assertEquals(2, familyNamed("Morytania legs").options().size());
+		Assert.assertEquals(2, familyNamed("Ardougne cloaks").options().size());
+	}
+
+	/**
+	 * A {@code Display info} cell carrying no {@code ':'} labels its option
+	 * by the whole cell text.
+	 */
+	@Test
+	public void noColonDisplayInfoLabelsByTheWholeCell()
+	{
+		TeleportRestriction.Family cowbell = familyNamed("Cowbell amulet");
+		Assert.assertEquals(1, cowbell.options().size());
+		Assert.assertTrue(cowbell.options().containsValue("Cowbell amulet"));
+	}
+
+	/**
+	 * A family whose serving rows all reach one destination yields exactly
+	 * one option entry — the UI grants it no option surface.
+	 */
+	@Test
+	public void singleDestinationFamilyYieldsOneOptionEntry()
+	{
+		Assert.assertEquals(1, familyNamed("Fremennik sea boots").options().size());
+	}
+
+	private static TeleportRestriction.Family familyNamed(String name)
+	{
+		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
+		{
+			if (family.name().equals(name))
+			{
+				return family;
+			}
+		}
+		throw new AssertionError("no restriction family named " + name);
+	}
 }
