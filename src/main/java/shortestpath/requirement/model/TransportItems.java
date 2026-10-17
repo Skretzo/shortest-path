@@ -85,6 +85,17 @@ public final class TransportItems
 	public boolean survivesOptionBlocks(int packedDest,
 		Map<Integer, Integer> repIndex, Map<Integer, Set<Integer>> blockedDests)
 	{
+		if (blockedDests.isEmpty())
+		{
+			return true;
+		}
+		for (ItemRequirement req : requirements)
+		{
+			if (!req.hasUnoptionBlockedAlternative(packedDest, repIndex, blockedDests))
+			{
+				return false;
+			}
+		}
 		return true;
 	}
 
