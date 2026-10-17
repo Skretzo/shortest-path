@@ -9,7 +9,10 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -26,24 +29,15 @@ import org.mockito.ArgumentCaptor;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
-import shortestpath.ItemVariations;
+import net.runelite.client.config.ConfigManager;
 import shortestpath.pathfinder.BankPickupProjection;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
-import shortestpath.requirement.PlayerStateSource;
-import shortestpath.requirement.TransportEligibility;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.Unlock;
+import shortestpath.pathfinder.BankPickupAnalysis;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
-import shortestpath.settings.TeleportationItem;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
 
 /**
  * Pins the item-state producer seam contract: which game inputs the service
@@ -235,179 +229,252 @@ public class ItemStateServiceTest
 	}
 
 	// ------------------------------------------------------------------
-	// collectEligibility — adversarial container and pouch cases
+	// Last-seen bank snapshot — the display-side per-account record feeding
+	// the panel's Owned filter. Distinct from the live bank ref: captured
+	// only while the bank is open, persisted under "lastSeenBankItems"
+	// through RSProfile, surviving reset() and sessions, never consulted
+	// by eligibility. These tests pin the capture/persist/load lifecycle
+	// adversarially: the post-close drain, the legitimately emptied bank,
+	// identical re-captures, corrupt profile data, and per-account scoping.
 	// ------------------------------------------------------------------
 
-	private static final Transport THREE_AIR = needsItem(ItemVariations.AIR_RUNE.getIds(), 3);
-	private static final Transport SHANTAY_GATE = needsItem(ItemVariations.SHANTAY_PASS.getIds(), 1);
+	private static Item[] items(int... ids)
+	{
+		Item[] items = new Item[ids.length];
+		for (int i = 0; i < ids.length; i++)
+		{
+			items[i] = new Item(ids[i], 1);
+		}
+		return items;
+	}
 
-	private static ItemContainer containerOf(Item... items)
+	private static ItemContainer containerWith(Item... contents)
 	{
 		ItemContainer container = mock(ItemContainer.class);
-		when(container.getItems()).thenReturn(items);
+		doReturn(contents).when(container).getItems();
 		return container;
 	}
 
-	/**
-	 * A {@code PlayerStateSource} Mockito stub: inventory/worn containers and
-	 * the pouch runes are fixed; {@code addRunePouchContents} behaves like the
-	 * real source — the pouch runes land in {@code owned} only when a pouch is
-	 * already there. The Lumbridge diary varbit reads 0 (incomplete).
-	 */
-	private static PlayerStateSource sourceWith(ItemContainer inventory, ItemContainer worn,
-		Map<Integer, Integer> pouchRunes)
+	@Test
+	public void noteLastSeenBankCapturesContentsWhileOpen()
 	{
-		PlayerStateSource source = mock(PlayerStateSource.class);
-		when(source.itemContainer(InventoryID.INV)).thenReturn(inventory);
-		when(source.itemContainer(InventoryID.WORN)).thenReturn(worn);
-		when(source.runePouchContents()).thenReturn(pouchRunes);
-		doAnswer(invocation ->
+		ItemStateService service = ItemStateService.forTesting();
+
+		service.noteLastSeenBank(containerWith(new Item(4151, 3), new Item(13121, 1)), true);
+
+		assertEquals(Map.of(4151, 3, 13121, 1), service.lastSeenBank());
+	}
+
+	@Test
+	public void noteLastSeenBankPersistsSortedCsvUnderRsProfile()
+	{
+		ConfigManager config = mock(ConfigManager.class);
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+
+		service.noteLastSeenBank(containerWith(new Item(13121, 1), new Item(4151, 3)), true);
+
+		verify(config).setRSProfileConfiguration(
+			"shortestpath", "lastSeenBankItems", "4151:3,13121:1");
+	}
+
+	@Test
+	public void noteLastSeenBankWhileClosedLeavesTheSnapshotUntouched()
+	{
+		ConfigManager config = mock(ConfigManager.class);
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		service.noteLastSeenBank(containerWith(items(13121)), true);
+
+		// The post-close event arrives carrying an emptied container — the
+		// bank is gone, not emptied — so it must not overwrite the snapshot.
+		service.noteLastSeenBank(containerWith(), false);
+
+		assertEquals(Map.of(13121, 1), service.lastSeenBank());
+		verify(config, times(1)).setRSProfileConfiguration(anyString(), anyString(), any());
+		verify(config, never()).unsetRSProfileConfiguration(anyString(), anyString());
+	}
+
+	@Test
+	public void emptiedBankWhileOpenPersistsAsAnUnset()
+	{
+		ConfigManager config = mock(ConfigManager.class);
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		service.noteLastSeenBank(containerWith(items(13121)), true);
+
+		// A legitimately emptied bank (opened with zero items) must replace
+		// the snapshot — distinct from the post-close drain, which is ignored.
+		service.noteLastSeenBank(containerWith(), true);
+
+		assertEquals(Map.of(), service.lastSeenBank());
+		verify(config).unsetRSProfileConfiguration("shortestpath", "lastSeenBankItems");
+	}
+
+	@Test
+	public void loadFromProfileRepopulatesTheSnapshot()
+	{
+		ConfigManager config = mock(ConfigManager.class);
+		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+			.thenReturn("13121:1,4151:3");
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+
+		service.loadFromProfile();
+
+		assertEquals(Map.of(13121, 1, 4151, 3), service.lastSeenBank());
+	}
+
+	@Test
+	public void loadFromProfileBlankOrMissingYieldsNoSnapshot()
+	{
+		ConfigManager config = mock(ConfigManager.class);
+		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+			.thenReturn("13121:1");
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		service.loadFromProfile();
+		assertEquals(Map.of(13121, 1), service.lastSeenBank());
+
+		for (String blank : new String[] {null, "", "   "})
 		{
-			Map<Integer, Integer> owned = invocation.getArgument(0);
-			if (OwnedItems.RUNE_POUCHES.stream().anyMatch(owned::containsKey))
-			{
-				pouchRunes.forEach((runeId, amount) -> owned.merge(runeId, amount, Integer::sum));
-			}
-			return null;
-		}).when(source).addRunePouchContents(any());
-		return source;
-	}
-
-	private static TransportEligibility collect(PlayerStateSource source, ItemContainer bank,
-		TeleportationItem setting, boolean includeBankPath)
-	{
-		return ItemStateService.collectEligibility(source, bank, setting,
-			Integer.MAX_VALUE, includeBankPath, Set.<Unlock>of());
-	}
-
-	private static Transport needsItem(int[] itemIds, int quantity)
-	{
-		return new Transport.TransportBuilder()
-			.type(TransportType.TRANSPORT)
-			.itemRequirements(new TransportItems(List.of(
-				new ItemRequirement(itemIds, new int[0], new int[0], quantity))))
-			.build();
+			when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+				.thenReturn(blank);
+			service.loadFromProfile();
+			assertEquals("a missing or blank value clears the snapshot, got [" + blank + "]",
+				Map.of(), service.lastSeenBank());
+		}
 	}
 
 	@Test
-	public void collectEligibilityToleratesNullContainers()
+	public void lastSeenBankStaysScopedToTheActiveProfile()
 	{
-		PlayerStateSource source = sourceWith(null, null, Map.of());
+		ConfigManager config = mock(ConfigManager.class);
+		// Account A's profile holds a snapshot…
+		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+			.thenReturn("13121:1");
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		service.loadFromProfile();
+		assertEquals(Map.of(13121, 1), service.lastSeenBank());
 
-		TransportEligibility eligibility = collect(source, null,
-			TeleportationItem.INVENTORY_AND_BANK, true);
+		// …logging into account B (whose profile never stored one) must not
+		// surface A's items: each load reads only the active profile's key.
+		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+			.thenReturn(null);
+		service.loadFromProfile();
 
-		assertNotNull(eligibility);
-		assertFalse("no pool satisfies an item requirement without containers",
-			eligibility.usable(THREE_AIR, BankVisitState.CARRIED));
-		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.BANKED));
+		assertEquals("another account's snapshot must not leak across profiles",
+			Map.of(), service.lastSeenBank());
+		verify(config, times(2))
+			.getRSProfileConfiguration("shortestpath", "lastSeenBankItems");
 	}
 
 	@Test
-	public void collectEligibilityToleratesEmptyContainers()
+	public void snapshotWritesGoThroughRsProfileNeverGlobalConfig()
 	{
-		PlayerStateSource source = sourceWith(containerOf(), containerOf(), Map.of());
+		ConfigManager config = mock(ConfigManager.class);
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
 
-		TransportEligibility eligibility = collect(source, containerOf(),
-			TeleportationItem.INVENTORY_AND_BANK, true);
+		service.noteLastSeenBank(containerWith(items(13121)), true);
 
-		assertNotNull(eligibility);
-		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.CARRIED));
-		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.BANKED));
+		verify(config).setRSProfileConfiguration(
+			eq("shortestpath"), eq("lastSeenBankItems"), any());
+		verify(config, never()).setConfiguration(anyString(), anyString(), anyString());
+		verify(config, never()).setConfiguration(anyString(), anyString(), any(Object.class));
+		verify(config, never()).setConfiguration(anyString(), anyString(), anyString(), anyString());
+		verify(config, never()).setConfiguration(anyString(), anyString(), anyString(), any(Object.class));
 	}
 
 	@Test
-	public void nonPositiveQuantitiesAreSkippedByCollection()
+	public void malformedProfileEntriesAreSkippedAndValidSiblingsSurvive()
 	{
-		// A zero-quantity stack and a placeholder (negative id) slot must not
-		// count as owned items — the bank effectively holds nothing usable.
-		ItemContainer bank = containerOf(new Item(ItemID.AIRRUNE, 0), new Item(-1, 5));
-		PlayerStateSource source = sourceWith(null, null, Map.of());
+		ConfigManager config = mock(ConfigManager.class);
+		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+			.thenReturn("abc,1:x,-5:2,:7,3:,4:0,13121:1, 4151:2 ");
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
 
-		TransportEligibility eligibility = collect(source, bank,
-			TeleportationItem.INVENTORY_AND_BANK, true);
+		service.loadFromProfile();
 
-		assertFalse("a zero-quantity air rune cannot satisfy the requirement",
-			eligibility.usable(needsItem(ItemVariations.AIR_RUNE.getIds(), 1), BankVisitState.BANKED));
+		assertEquals("only the well-formed entries survive",
+			Map.of(13121, 1, 4151, 2), service.lastSeenBank());
+
+		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+			.thenReturn("not a csv at all");
+		service.loadFromProfile();
+		assertEquals("whole-string garbage yields an empty snapshot, never a throw",
+			Map.of(), service.lastSeenBank());
 	}
 
 	@Test
-	public void bankSeededViaNoteBankContainerFeedsTheBankedPool()
+	public void recapturingIdenticalContentsSkipsTheRewrite()
+	{
+		ConfigManager config = mock(ConfigManager.class);
+		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+
+		service.noteLastSeenBank(containerWith(items(13121)), true);
+		service.noteLastSeenBank(containerWith(items(13121)), true);
+
+		verify(config, times(1))
+			.setRSProfileConfiguration("shortestpath", "lastSeenBankItems", "13121:1");
+	}
+
+	@Test
+	public void detachedServiceCapturesInMemoryOnlyAndNeverThrows()
 	{
 		ItemStateService service = ItemStateService.forTesting();
-		service.noteBankContainer(containerOf(new Item(ItemID.SHANTAY_PASS, 1)));
-		PlayerStateSource source = sourceWith(null, null, Map.of());
 
-		TransportEligibility eligibility = collect(source, service.getBank(),
-			TeleportationItem.INVENTORY_AND_BANK, true);
+		service.noteLastSeenBank(containerWith(items(13121)), true);
+		assertEquals(Map.of(13121, 1), service.lastSeenBank());
 
-		assertFalse("the bank item is not carried", eligibility.usable(SHANTAY_GATE, BankVisitState.CARRIED));
-		assertTrue("the bank item enters the bank-path pool", eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
+		// No config manager: the load clears to empty rather than throwing.
+		service.loadFromProfile();
+		assertEquals(Map.of(), service.lastSeenBank());
 	}
 
 	@Test
-	public void includeBankPathOffLeavesBankItemsOutOfTheBankedPool()
+	public void resetDropsTheLiveBankButKeepsTheLastSeenSnapshot()
 	{
 		ItemStateService service = ItemStateService.forTesting();
-		service.noteBankContainer(containerOf(new Item(ItemID.SHANTAY_PASS, 1)));
-		PlayerStateSource source = sourceWith(null, null, Map.of());
+		service.noteBankContainer(mock(ItemContainer.class));
+		service.noteLastSeenBank(containerWith(items(13121)), true);
 
-		TransportEligibility eligibility = collect(source, service.getBank(),
-			TeleportationItem.INVENTORY_AND_BANK, false);
+		service.reset();
 
-		assertFalse("with bank paths off the banked pool is the carried pool",
-			eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
+		assertNull("reset clears the session-scoped live bank", service.getBank());
+		assertEquals("the remembered snapshot survives by design",
+			Map.of(13121, 1), service.lastSeenBank());
 	}
 
 	@Test
-	public void bankedRunePouchSuppliesItsRunesOnTheBankPath()
+	public void lastSeenBankMapIsImmutablePerCall()
 	{
 		ItemStateService service = ItemStateService.forTesting();
-		service.noteBankContainer(containerOf(new Item(ItemID.BH_RUNE_POUCH, 1)));
-		PlayerStateSource source = sourceWith(null, null, Map.of(ItemID.AIRRUNE, 3));
+		service.noteLastSeenBank(containerWith(items(13121)), true);
 
-		TransportEligibility eligibility = collect(source, service.getBank(),
-			TeleportationItem.INVENTORY_AND_BANK, true);
-
-		assertFalse("pouch runes are not carried", eligibility.usable(THREE_AIR, BankVisitState.CARRIED));
-		assertTrue("a banked pouch's runes feed the bank-path pool",
-			eligibility.usable(THREE_AIR, BankVisitState.BANKED));
+		try
+		{
+			service.lastSeenBank().put(999, 1);
+			fail("the served snapshot must be immutable");
+		}
+		catch (UnsupportedOperationException expected)
+		{
+		}
+		assertEquals("the rejected write left the snapshot untouched",
+			Map.of(13121, 1), service.lastSeenBank());
 	}
 
 	@Test
-	public void firstPouchInDeclaredOrderIsSelected()
+	public void persistedCsvRoundTripsBackThroughLoad()
 	{
-		// The bank holds two pouch variants; the selector must pick the one
-		// earliest in the declared pouch order (BH before DIVINE).
-		ItemStateService service = ItemStateService.forTesting();
-		service.noteBankContainer(containerOf(
-			new Item(ItemID.DIVINE_RUNE_POUCH, 1), new Item(ItemID.BH_RUNE_POUCH, 1)));
-		PlayerStateSource source = sourceWith(null, null, Map.of(ItemID.AIRRUNE, 3));
+		ConfigManager config = mock(ConfigManager.class);
+		ItemStateService writer = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		writer.noteLastSeenBank(containerWith(new Item(13121, 2), new Item(4151, 3)), true);
 
-		TransportEligibility eligibility = collect(source, service.getBank(),
-			TeleportationItem.INVENTORY_AND_BANK, true);
-		TransportEligibility.BankPickupPlan plan = eligibility.bankPickupPlan(THREE_AIR);
+		ArgumentCaptor<Object> written = ArgumentCaptor.forClass(Object.class);
+		verify(config).setRSProfileConfiguration(
+			eq("shortestpath"), eq("lastSeenBankItems"), written.capture());
 
-		assertTrue("the declared-first pouch supplies the runes",
-			plan.bankItemIds.contains(ItemID.BH_RUNE_POUCH));
-		assertFalse("a later pouch is never the selected one",
-			plan.bankItemIds.contains(ItemID.DIVINE_RUNE_POUCH));
-	}
+		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
+			.thenReturn((String) written.getValue());
+		ItemStateService reader = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		reader.loadFromProfile();
 
-	@Test
-	public void bankWithoutPouchNeverConsultsPouchRunes()
-	{
-		// The source reports pouch runes, but without a pouch in the bank the
-		// bank-pouch rune pool must stay empty and the pickup unsatisfiable.
-		ItemStateService service = ItemStateService.forTesting();
-		service.noteBankContainer(containerOf());
-		PlayerStateSource source = sourceWith(null, null, Map.of(ItemID.AIRRUNE, 3));
-
-		TransportEligibility eligibility = collect(source, service.getBank(),
-			TeleportationItem.INVENTORY_AND_BANK, true);
-
-		assertFalse(eligibility.usable(THREE_AIR, BankVisitState.BANKED));
-		assertNull("the bank cannot supply the runes", eligibility.bankPickupPlan(THREE_AIR).items);
+		assertEquals(Map.of(13121, 2, 4151, 3), reader.lastSeenBank());
 	}
 
 	// ------------------------------------------------------------------
@@ -432,10 +499,10 @@ public class ItemStateServiceTest
 		return service;
 	}
 
-	private static BankPickupResult pickup(BankPickupProjection projection, ItemStateService service,
+	private static BankPickupAnalysis pickup(BankPickupProjection projection, ItemStateService service,
 		PathfinderConfig config, List<PathStep> path, int pathIndex)
 	{
-		return projection.get(null, service, config, path, pathIndex, null);
+		return projection.get(service, config, path, pathIndex, null);
 	}
 
 	@Test
@@ -467,8 +534,8 @@ public class ItemStateServiceTest
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED), new PathStep(888, BankVisitState.CARRIED));
 
-		BankPickupResult first = pickup(projection, service, config, path, 0);
-		BankPickupResult second = pickup(projection, service, config, path, 0);
+		BankPickupAnalysis first = pickup(projection, service, config, path, 0);
+		BankPickupAnalysis second = pickup(projection, service, config, path, 0);
 
 		assertSame("same (revision, path identity, index, search) reuses the cached result",
 			first, second);
@@ -482,7 +549,7 @@ public class ItemStateServiceTest
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED), new PathStep(888, BankVisitState.CARRIED));
 
-		BankPickupResult first = pickup(projection, service, config, path, 0);
+		BankPickupAnalysis first = pickup(projection, service, config, path, 0);
 
 		assertNotSame("a different index recomputes", first,
 			pickup(projection, service, config, path, 1));
@@ -500,7 +567,7 @@ public class ItemStateServiceTest
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED));
 
-		BankPickupResult first = pickup(projection, service, config, path, 0);
+		BankPickupAnalysis first = pickup(projection, service, config, path, 0);
 		service.noteBankContainer(mock(ItemContainer.class));
 
 		assertNotSame("a re-seeded bank bumps the revision and defeats the cache",
@@ -515,9 +582,9 @@ public class ItemStateServiceTest
 		PathfinderConfig config = pickupConfig();
 		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED));
 
-		BankPickupResult first = pickup(projection, service, config, path, 0);
+		BankPickupAnalysis first = pickup(projection, service, config, path, 0);
 		service.onContainerChanged(InventoryID.INV, mock(ItemContainer.class));
-		BankPickupResult afterContainer = pickup(projection, service, config, path, 0);
+		BankPickupAnalysis afterContainer = pickup(projection, service, config, path, 0);
 		assertNotSame("a tracked container event recomputes", first, afterContainer);
 
 		service.onVarbitChanged(OwnedItems.RUNE_POUCH_RUNE_VARBITS[0]);
