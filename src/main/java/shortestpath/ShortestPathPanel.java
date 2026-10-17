@@ -11,11 +11,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -72,7 +76,7 @@ public class ShortestPathPanel extends PluginPanel
 	static final int CARD_ICON_SIZE = 16;
 	private static final int SPINNER_FIELD_WIDTH = 6;
 	private static final int COMBO_HEIGHT = 22;
-	private static final int SUB_LIST_INDENT = 16;
+	static final int SUB_LIST_INDENT = 16;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_TOOLTIP =
 		"Only show teleports for items in your inventory, equipment or bank";
@@ -337,8 +341,9 @@ public class ShortestPathPanel extends PluginPanel
 		pohSubRows.add(checkRow("usePohSpiritTree"));
 		pohSubRows.add(checkRow("usePohObelisk"));
 		pohSubRows.add(comboRow("pohJewelleryBoxTier"));
-		pohSubRows.addAll(setSubListRows("pohNexusPortals", PohNexusPortal.class));
-		pohSubRows.addAll(setSubListRows("pohMountedItems", PohMountedItem.class));
+		pohSubRows.addAll(setGroupedSubListRows("pohNexusPortals", PohNexusPortal.class, PohNexusPortal::group));
+		pohSubRows.add(enumSetGroupRow("pohMountedItems", PohMountedItem.class,
+			"Mounted Items", List.of(PohMountedItem.values())));
 		for (SearchRow row : pohSubRows)
 		{
 			poh.addRow(row);
@@ -586,73 +591,55 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * A {@code Set<Enum>} config rendered as a group label followed by one
-	 * indented checkbox row per enum constant; toggling a box writes the
-	 * mutated set back through the shared config path.
+	 * A {@code Set<Enum>} config rendered as one {@link CollapsibleEnumGroup}
+	 * per value of {@code groupingFn}, emitted in the group enum's
+	 * declaration order (e.g. PortalGroup STANDARD … OTHER). Grouping is
+	 * display-only — the member checkboxes keep the same
+	 * read-set → checkbox → write-EnumSet mechanics the flat sub-list used.
 	 */
-	private <E extends Enum<E>> List<SearchRow> setSubListRows(String keyName, Class<E> type)
+	private <E extends Enum<E>, G extends Enum<G>> List<SearchRow> setGroupedSubListRows(
+		String keyName, Class<E> type, Function<E, G> groupingFn)
+	{
+		Map<G, List<E>> buckets = new LinkedHashMap<>();
+		for (E constant : type.getEnumConstants())
+		{
+			buckets.computeIfAbsent(groupingFn.apply(constant), g -> new ArrayList<>())
+				.add(constant);
+		}
+		List<G> groupOrder = new ArrayList<>(buckets.keySet());
+		groupOrder.sort(Comparator.comparingInt(Enum::ordinal));
+		List<SearchRow> rows = new ArrayList<>();
+		for (G group : groupOrder)
+		{
+			rows.add(enumSetGroupRow(keyName, type, titleCase(group.name()), buckets.get(group)));
+		}
+		return rows;
+	}
+
+	/**
+	 * One {@link CollapsibleEnumGroup} over {@code members} as a searchable
+	 * row: display text is the group label, search text covers the config
+	 * name, the label and every member label so a member-only query still
+	 * surfaces (and expands) the group.
+	 */
+	private <E extends Enum<E>> SearchRow enumSetGroupRow(
+		String keyName, Class<E> type, String groupLabel, List<E> members)
 	{
 		ConfigItem item = settings.configItem(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
-		List<SearchRow> rows = new ArrayList<>();
-		// Shared across every member checkbox of this key: set while a config
-		// sync mirrors the stored set into the controls, so the programmatic
-		// setSelected calls do not write the same set back.
-		boolean[] syncing = new boolean[1];
-
-		JPanel groupRow = new JPanel(new BorderLayout());
-		groupRow.setOpaque(false);
-		JLabel groupLabel = new JLabel(html(name));
-		groupLabel.setForeground(Color.WHITE);
-		groupLabel.setToolTipText(html(description));
-		groupRow.add(groupLabel, BorderLayout.CENTER);
-		rows.add(new SearchRow(groupRow, name, searchable(name)));
-
-		for (E constant : type.getEnumConstants())
+		CollapsibleEnumGroup<E> group = new CollapsibleEnumGroup<>(
+			this, keyName, type, groupLabel, members, description);
+		List<String> searchParts = new ArrayList<>();
+		searchParts.add(name);
+		searchParts.add(groupLabel);
+		for (E member : members)
 		{
-			JCheckBox checkBox = new JCheckBox(html(constant.toString()));
-			checkBox.setSelected(currentSet(keyName, type).contains(constant));
-			checkBox.setToolTipText(html(description));
-			checkBox.addActionListener(e ->
-			{
-				if (syncing[0])
-				{
-					return;
-				}
-				EnumSet<E> updated = EnumSet.noneOf(type);
-				updated.addAll(currentSet(keyName, type));
-				if (checkBox.isSelected())
-				{
-					updated.add(constant);
-				}
-				else
-				{
-					updated.remove(constant);
-				}
-				settings.write(keyName, updated);
-			});
-			registerConfigListener(keyName, () ->
-			{
-				syncing[0] = true;
-				try
-				{
-					checkBox.setSelected(currentSet(keyName, type).contains(constant));
-				}
-				finally
-				{
-					syncing[0] = false;
-				}
-			});
-
-			JPanel row = new JPanel(new BorderLayout());
-			row.setOpaque(false);
-			row.setBorder(new EmptyBorder(0, SUB_LIST_INDENT, 0, 0));
-			row.add(checkBox, BorderLayout.CENTER);
-			rows.add(new SearchRow(row, constant.toString(), searchable(name, constant.toString())));
+			searchParts.add(member.toString());
 		}
-		return rows;
+		return new SearchRow(group, groupLabel,
+			searchable(searchParts.toArray(new String[0])));
 	}
 
 	/**
@@ -769,7 +756,7 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	@SuppressWarnings("unchecked")
-	private <E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
+	<E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
 	{
 		Set<E> set = EnumSet.noneOf(type);
 		Set<?> value = settings.configuredSet(keyName);
