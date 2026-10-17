@@ -47,6 +47,7 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
+import shortestpath.poh.PohNexusPortal;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.BalloonRoute;
@@ -1312,5 +1313,23 @@ public class ShortestPathPanelLayoutTest
 		settings.onConfigChanged(event("unlockCanoeAxe"));
 		flushEdt();
 		assertEquals("1/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
+	}
+
+	// ---- POH portal-nexus grouping ---------------------------------------
+
+	@Test
+	public void pohNexusPortalGroupsCoverAllPortals()
+	{
+		EnumSet<PohNexusPortal.PortalGroup> groups =
+			EnumSet.noneOf(PohNexusPortal.PortalGroup.class);
+		for (PohNexusPortal portal : PohNexusPortal.values())
+		{
+			assertNotNull(portal + " carries a spellbook group", portal.group());
+			groups.add(portal.group());
+		}
+		assertEquals("all five buckets are used",
+			PohNexusPortal.PortalGroup.values().length, groups.size());
+		assertEquals("the wiki-verified list still covers 40 portals",
+			40, PohNexusPortal.values().length);
 	}
 }
