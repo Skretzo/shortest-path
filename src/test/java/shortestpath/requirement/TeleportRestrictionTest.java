@@ -310,6 +310,131 @@ public class TeleportRestrictionTest
 		Assert.assertEquals(1, familyNamed("Fremennik sea boots").options().size());
 	}
 
+	/**
+	 * The Skills necklace's two Farming Guild arrivals (the plain landing and
+	 * the 45-Farming inside arrival) are one in-game teleport name — they
+	 * collapse into a single option covering both tiles, while the other
+	 * guilds keep their distinct entries.
+	 */
+	@Test
+	public void skillsNecklaceCollapsesTheFarmingGuildArrivalsIntoOneOption()
+	{
+		TeleportRestriction.Family necklace = familyNamed("Skills necklace (1-6)");
+		int farmingGuild = 0;
+		for (String label : necklace.options().values())
+		{
+			if ("Farming Guild".equals(label))
+			{
+				farmingGuild++;
+			}
+		}
+		Assert.assertEquals("the two Farming Guild arrivals collapse to one option",
+			1, farmingGuild);
+		Assert.assertEquals("the six real menu entries stay distinct options",
+			6, necklace.options().size());
+	}
+
+	/**
+	 * The house tablet's ten varbit-gated portal towns are not ten player
+	 * choices: the in-game menu is "Inside the house" / "Outside the house",
+	 * so the family yields exactly those two options.
+	 */
+	@Test
+	public void teleportToHouseTabletYieldsInsideAndOutsideOnly()
+	{
+		TeleportRestriction.Family house = familyNamed("Teleport to house");
+		Assert.assertEquals(2, house.options().size());
+		Assert.assertTrue(house.options().containsValue("Inside the house"));
+		Assert.assertTrue(house.options().containsValue("Outside the house"));
+	}
+
+	/**
+	 * The Construction cape's varbit-gated home arrivals and its direct
+	 * portal teleports reach the same tiles — they merge under the plain
+	 * portal-town name rather than a "Home (town)" variant.
+	 */
+	@Test
+	public void constructionCapeMergesHomeAndPortalRowsUnderTheTownName()
+	{
+		TeleportRestriction.Family capes =
+			familyNamed("The Construction cape's home teleports");
+		Assert.assertTrue(capes.options().containsValue("Rimmington"));
+		Assert.assertTrue(capes.options().containsValue("Aldarin"));
+		Assert.assertFalse(capes.options().containsValue("Home (Rimmington)"));
+	}
+
+	/**
+	 * The Max cape's varbit-gated "Tele to POH" town arrivals merge into its
+	 * unconditional "POH Portals" submenu entries on the shared tiles.
+	 */
+	@Test
+	public void maxCapeMergesTeleToPohRowsUnderPohPortals()
+	{
+		TeleportRestriction.Family maxCapes = familyNamed("Max capes");
+		Assert.assertTrue(maxCapes.options().containsValue("POH Portals: Rimmington"));
+		Assert.assertTrue(maxCapes.options().containsValue("POH Portals: Aldarin"));
+		Assert.assertFalse(maxCapes.options().containsValue("Tele to POH (Rimmington)"));
+	}
+
+	/**
+	 * Royal and Grand seed pods are different items whose teleports land on
+	 * the same Grand Tree tile — one destination, one option named for where
+	 * the teleport goes.
+	 */
+	@Test
+	public void questItemsSeedPodsShareTheGrandTreeOption()
+	{
+		TeleportRestriction.Family questItems = familyNamed("Quest items");
+		Assert.assertTrue(questItems.options().containsValue("Grand Tree"));
+	}
+
+	/**
+	 * An option record naming a group's canonical destination expands to
+	 * every destination in the group, so the policy gate sees literal tiles.
+	 */
+	@Test
+	public void expandOptionDestsExpandsACanonicalDestToItsGroup()
+	{
+		int outside = shortestpath.WorldPointUtil.packWorldPoint(1248, 3719, 0);
+		int inside = shortestpath.WorldPointUtil.packWorldPoint(1248, 3725, 0);
+
+		Map<Integer, Set<Integer>> expanded = TeleportRestriction.expandOptionDests(
+			Map.of(11105, Set.of(outside)));
+
+		Assert.assertEquals(Set.of(outside, inside), expanded.get(11105));
+	}
+
+	/**
+	 * A stale record naming a non-canonical member of the group resolves to
+	 * the same full group — TSV reordering can never orphan a stored block.
+	 */
+	@Test
+	public void expandOptionDestsExpandsANonCanonicalMemberDestToTheSameGroup()
+	{
+		int outside = shortestpath.WorldPointUtil.packWorldPoint(1248, 3719, 0);
+		int inside = shortestpath.WorldPointUtil.packWorldPoint(1248, 3725, 0);
+
+		Map<Integer, Set<Integer>> expanded = TeleportRestriction.expandOptionDests(
+			Map.of(11105, Set.of(inside)));
+
+		Assert.assertEquals(Set.of(outside, inside), expanded.get(11105));
+	}
+
+	/**
+	 * Records naming an unknown rep, or a rep whose dest belongs to no option
+	 * group, pass through as literal blocked tiles — hand-edited or stale CSV
+	 * degrades harmlessly rather than dropping the block.
+	 */
+	@Test
+	public void expandOptionDestsPassesUnknownRepsAndDestsThrough()
+	{
+		Map<Integer, Set<Integer>> expanded = TeleportRestriction.expandOptionDests(
+			Map.of(99999, Set.of(12345), 11105, Set.of(54321)));
+
+		Assert.assertEquals(Set.of(12345), expanded.get(99999));
+		Assert.assertEquals(Set.of(54321), expanded.get(11105));
+	}
+
 	private static TeleportRestriction.Family familyNamed(String name)
 	{
 		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
