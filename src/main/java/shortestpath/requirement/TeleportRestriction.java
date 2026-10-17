@@ -2,13 +2,19 @@ package shortestpath.requirement;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
+import shortestpath.WorldPointUtil;
 import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.TransportType;
+import shortestpath.transport.parser.TransportRecord;
 
 /**
  * Per-item teleport restriction support: the family map the config panel's
@@ -67,14 +73,22 @@ public final class TeleportRestriction
 		private final int displayItemId;
 		private final Set<Integer> memberItemIds;
 		private final Map<Integer, String> memberLabels;
+		private final Map<Integer, String> options;
 
 		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
 			Map<Integer, String> memberLabels)
+		{
+			this(name, displayItemId, memberItemIds, memberLabels, Collections.emptyMap());
+		}
+
+		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
+			Map<Integer, String> memberLabels, Map<Integer, String> options)
 		{
 			this.name = name;
 			this.displayItemId = displayItemId;
 			this.memberItemIds = memberItemIds;
 			this.memberLabels = memberLabels;
+			this.options = options;
 		}
 
 		public String name()
@@ -96,6 +110,20 @@ public final class TeleportRestriction
 		{
 			return memberLabels;
 		}
+
+		/**
+		 * The family's distinct teleport destinations as a packed-destination
+		 * → label map in first-seen order. Labels come straight from the
+		 * source TSV's {@code Display info} cells (the tail after the first
+		 * {@code ':'}, or the whole cell when it carries no {@code ':'}) —
+		 * the checkbox's display string is data, so a bad label is repaired
+		 * in {@code teleportation_items.tsv}, not in code. A family whose
+		 * serving rows all reach one destination yields a single entry.
+		 */
+		public Map<Integer, String> options()
+		{
+			return options;
+		}
 	}
 
 	/**
@@ -109,23 +137,231 @@ public final class TeleportRestriction
 	 */
 	public static List<Family> loadFamilies()
 	{
-		List<Family> families = new ArrayList<>();
-		for (ResourceLoader.RestrictionFamilyRow row : ResourceLoader.families())
+		List<ResourceLoader.RestrictionFamilyRow> rows = ResourceLoader.families();
+		List<Map<Integer, String>> options = deriveOptions(rows);
+		List<Family> families = new ArrayList<>(rows.size());
+		for (int i = 0; i < rows.size(); i++)
 		{
+			ResourceLoader.RestrictionFamilyRow row = rows.get(i);
 			families.add(new Family(row.name(), row.displayItemId(),
-				row.memberItemIds(), row.memberLabels()));
+				row.memberItemIds(), row.memberLabels(), options.get(i)));
 		}
 		return Collections.unmodifiableList(families);
 	}
 
 	/**
+	 * Derives each family's destination-keyed option map in one pass over the
+	 * bundled {@code teleportation_items.tsv} records. A record SERVES every
+	 * family index its {@code Items} cell contributes a member id to — a
+	 * cross-family OR row lands the same destination option in each family it
+	 * serves. For every serving record the {@code Destination} cell packs to
+	 * the option key and the {@code Display info} tail (after the first
+	 * {@code ':'}; the whole cell when it carries none; the raw coordinates
+	 * when the cell is blank) supplies the label. Serving records sharing a
+	 * destination dedupe to one option; a conflicting label for an
+	 * already-seen destination keeps the first text and warns.
+	 */
+	private static List<Map<Integer, String>> deriveOptions(
+		List<ResourceLoader.RestrictionFamilyRow> rows)
+	{
+		Map<Integer, Integer> memberToFamily = new HashMap<>();
+		for (int i = 0; i < rows.size(); i++)
+		{
+			for (int memberId : rows.get(i).memberItemIds())
+			{
+				Integer previous = memberToFamily.putIfAbsent(memberId, i);
+				if (previous != null && !previous.equals(i))
+				{
+					log.warn("Item id {} claimed by families '{}' and '{}' — '{}' serves it",
+						memberId, rows.get(previous).name(), rows.get(i).name(),
+						rows.get(previous).name());
+				}
+			}
+		}
+
+		List<Map<Integer, String>> options = new ArrayList<>(rows.size());
+		for (int i = 0; i < rows.size(); i++)
+		{
+			options.add(new LinkedHashMap<>());
+		}
+		if (memberToFamily.isEmpty())
+		{
+			return freezeOptions(options);
+		}
+
+		for (TransportRecord record : ResourceLoader.teleportationItemRecords())
+		{
+			Set<Integer> served = servedFamilyIndexes(record.getItems(), memberToFamily);
+			if (served.isEmpty())
+			{
+				continue;
+			}
+
+			int[] destination = parseDestination(record.getDestination());
+			if (destination == null)
+			{
+				log.warn("Skipping teleportation_items row with unparseable Destination '{}'",
+					record.getDestination());
+				continue;
+			}
+
+			int packedDest =
+				WorldPointUtil.packWorldPoint(destination[0], destination[1], destination[2]);
+			String label = optionLabel(record.getDisplayInfo(), destination);
+
+			for (int familyIdx : served)
+			{
+				Map<Integer, String> familyOptions = options.get(familyIdx);
+				String existing = familyOptions.get(packedDest);
+				if (existing == null)
+				{
+					familyOptions.put(packedDest, label);
+				}
+				else if (!existing.equals(label))
+				{
+					log.warn("Conflicting option label for family '{}' destination {} "
+						+ "('{}' vs '{}') — keeping the first", rows.get(familyIdx).name(),
+						record.getDestination(), existing, label);
+				}
+			}
+		}
+
+		return freezeOptions(options);
+	}
+
+	private static List<Map<Integer, String>> freezeOptions(List<Map<Integer, String>> options)
+	{
+		List<Map<Integer, String>> frozen = new ArrayList<>(options.size());
+		for (Map<Integer, String> familyOptions : options)
+		{
+			frozen.add(Collections.unmodifiableMap(familyOptions));
+		}
+		return Collections.unmodifiableList(frozen);
+	}
+
+	/**
+	 * The family indexes a record's {@code Items} cell serves: every operand's
+	 * digit item id is looked up in the member index. Mirrors the
+	 * ItemRequirementParser operand grammar in miniature — spaces stripped,
+	 * {@code &&}/{@code ||} normalized, operands split on {@code &}/{@code |},
+	 * the {@code NAME} side of {@code NAME=qty} taken, {@code UNLOCK_}
+	 * prefixes skipped. Non-digit operands warn and skip rather than throw —
+	 * this scan never breaks on data.
+	 */
+	private static Set<Integer> servedFamilyIndexes(String itemsCell,
+		Map<Integer, Integer> memberToFamily)
+	{
+		Set<Integer> served = new LinkedHashSet<>();
+		if (itemsCell == null || itemsCell.isEmpty())
+		{
+			return served;
+		}
+
+		String normalized = itemsCell.replace(" ", "")
+			.replace("&&", "&")
+			.replace("||", "|");
+		for (String operand : normalized.split("[&|]"))
+		{
+			if (operand.isEmpty())
+			{
+				continue;
+			}
+			int eq = operand.indexOf('=');
+			String name = eq >= 0 ? operand.substring(0, eq) : operand;
+			if (name.startsWith("UNLOCK_"))
+			{
+				continue;
+			}
+			try
+			{
+				Integer familyIdx = memberToFamily.get(Integer.parseInt(name));
+				if (familyIdx != null)
+				{
+					served.add(familyIdx);
+				}
+			}
+			catch (NumberFormatException e)
+			{
+				log.warn("Skipping non-item operand '{}' in Items cell '{}'", name, itemsCell);
+			}
+		}
+		return served;
+	}
+
+	/**
+	 * Parses a {@code "x y z"} destination cell to its three coordinates;
+	 * {@code null} when the cell is missing, blank, or not exactly three
+	 * integers.
+	 */
+	private static int[] parseDestination(String cell)
+	{
+		if (cell == null || cell.isBlank())
+		{
+			return null;
+		}
+		String[] parts = cell.trim().split("\\s+");
+		if (parts.length != 3)
+		{
+			return null;
+		}
+		try
+		{
+			return new int[]{
+				Integer.parseInt(parts[0]),
+				Integer.parseInt(parts[1]),
+				Integer.parseInt(parts[2])};
+		}
+		catch (NumberFormatException e)
+		{
+			return null;
+		}
+	}
+
+	/**
+	 * The GUI label for one serving row: the {@code Display info} tail after
+	 * the first {@code ':'}, the whole trimmed cell when it carries none, or
+	 * the raw {@code "x, y, z"} coordinates when the cell (or its tail) is
+	 * blank.
+	 */
+	private static String optionLabel(String displayInfo, int[] destination)
+	{
+		if (displayInfo != null)
+		{
+			int colon = displayInfo.indexOf(':');
+			String label = colon >= 0
+				? displayInfo.substring(colon + 1).trim()
+				: displayInfo.trim();
+			if (!label.isEmpty())
+			{
+				return label;
+			}
+		}
+		return destination[0] + ", " + destination[1] + ", " + destination[2];
+	}
+
+	/**
 	 * Parses the {@code blockedTeleportItems} CSV into a blocked-id set and a
-	 * per-item threshold map. {@code id} records add to {@code blockedOut};
-	 * {@code id:N} records merge into {@code thresholdOut} keeping the max N
-	 * per id. Malformed entries are skipped with a warning; this method never
-	 * throws on user-authored input.
+	 * per-item threshold map, discarding any {@code rep@dest} option-block
+	 * records. Delegates to the three-output overload so the panel keeps
+	 * compiling on the two-output call until the option UI lands.
 	 */
 	public static void parseBlocked(String csv, Set<Integer> blockedOut, Map<Integer, Integer> thresholdOut)
+	{
+		parseBlocked(csv, blockedOut, thresholdOut, new HashMap<>());
+	}
+
+	/**
+	 * Parses the {@code blockedTeleportItems} CSV into a blocked-id set, a
+	 * per-item threshold map and a per-family destination-block map.
+	 * {@code id} records add to {@code blockedOut}; {@code id:N} records
+	 * merge into {@code thresholdOut} keeping the max N per id;
+	 * {@code repId@packedDest} records merge into {@code optionBlocksOut} —
+	 * the rep id is the family's {@code displayItemId}, so the panel and the
+	 * engine share one key space. Malformed entries are skipped with a
+	 * warning; this method never throws on user-authored input.
+	 */
+	public static void parseBlocked(String csv, Set<Integer> blockedOut,
+		Map<Integer, Integer> thresholdOut, Map<Integer, Set<Integer>> optionBlocksOut)
 	{
 		if (csv == null || csv.isBlank())
 		{
@@ -140,9 +376,26 @@ public final class TeleportRestriction
 				continue;
 			}
 
-			int colon = entry.indexOf(':');
 			try
 			{
+				int at = entry.indexOf('@');
+				if (at >= 0)
+				{
+					// Destination-scoped option block: rep@packedDest. Entries
+					// never legitimately contain '@' elsewhere — require
+					// exactly two int-parseable parts.
+					String[] parts = entry.split("@", -1);
+					if (parts.length != 2)
+					{
+						throw new NumberFormatException("expected rep@dest");
+					}
+					int rep = Integer.parseInt(parts[0].trim());
+					int dest = Integer.parseInt(parts[1].trim());
+					optionBlocksOut.computeIfAbsent(rep, k -> new HashSet<>()).add(dest);
+					continue;
+				}
+
+				int colon = entry.indexOf(':');
 				if (colon < 0)
 				{
 					blockedOut.add(Integer.parseInt(entry));
@@ -162,11 +415,22 @@ public final class TeleportRestriction
 	}
 
 	/**
-	 * Serializes a blocked-id set and threshold map back to the CSV contract:
-	 * sorted blocked ids first, then sorted {@code id:N} threshold records.
-	 * Empty (or null) inputs produce {@code ""}.
+	 * Serializes a blocked-id set and threshold map back to the CSV contract,
+	 * dropping any option blocks. Delegates to the three-input overload.
 	 */
 	public static String toCsv(Set<Integer> blocked, Map<Integer, Integer> thresholds)
+	{
+		return toCsv(blocked, thresholds, Map.of());
+	}
+
+	/**
+	 * Serializes a blocked-id set, threshold map and option-block map back to
+	 * the CSV contract: sorted blocked ids first, then sorted {@code id:N}
+	 * threshold records, then {@code rep@dest} records sorted by rep then
+	 * destination. Empty (or null) inputs produce {@code ""}.
+	 */
+	public static String toCsv(Set<Integer> blocked, Map<Integer, Integer> thresholds,
+		Map<Integer, Set<Integer>> optionBlocks)
 	{
 		StringBuilder sb = new StringBuilder();
 
@@ -198,6 +462,82 @@ public final class TeleportRestriction
 			}
 		}
 
+		if (optionBlocks != null)
+		{
+			List<Integer> reps = new ArrayList<>(optionBlocks.keySet());
+			Collections.sort(reps);
+			for (int rep : reps)
+			{
+				List<Integer> dests = new ArrayList<>(optionBlocks.get(rep));
+				Collections.sort(dests);
+				for (int dest : dests)
+				{
+					if (sb.length() > 0)
+					{
+						sb.append(',');
+					}
+					sb.append(rep).append('@').append(dest);
+				}
+			}
+		}
+
 		return sb.toString();
+	}
+
+	/**
+	 * The lazily-built memberId → representative (displayItemId) index over
+	 * {@link #loadFamilies()}, published through a volatile reference and
+	 * built once inside a synchronized holder — the families are static
+	 * bundled resources, so one immutable index serves every caller. Two
+	 * families claiming the same member id must not happen; if the data ever
+	 * drifts there the first family written wins and a warning is logged.
+	 */
+	private static volatile Map<Integer, Integer> representativeIndexHolder;
+
+	public static Map<Integer, Integer> representativeIndex()
+	{
+		Map<Integer, Integer> index = representativeIndexHolder;
+		if (index == null)
+		{
+			synchronized (TeleportRestriction.class)
+			{
+				index = representativeIndexHolder;
+				if (index == null)
+				{
+					index = buildRepresentativeIndex();
+					representativeIndexHolder = index;
+				}
+			}
+		}
+		return index;
+	}
+
+	private static Map<Integer, Integer> buildRepresentativeIndex()
+	{
+		Map<Integer, Integer> index = new HashMap<>();
+		for (Family family : loadFamilies())
+		{
+			for (int memberId : family.memberItemIds())
+			{
+				Integer previous = index.putIfAbsent(memberId, family.displayItemId());
+				if (previous != null && previous != family.displayItemId())
+				{
+					log.warn("Item id {} claimed by multiple restriction families "
+						+ "('{}' wins)", memberId, family.name());
+				}
+			}
+		}
+		return Collections.unmodifiableMap(index);
+	}
+
+	/**
+	 * The representative (displayItemId) of the family {@code itemId} belongs
+	 * to, or a negative value when the id belongs to no restriction family.
+	 * The CSV {@code rep@dest} record stores the display id, so panel and
+	 * engine share one key space.
+	 */
+	public static int representativeFor(int itemId)
+	{
+		return representativeIndex().getOrDefault(itemId, -1);
 	}
 }
