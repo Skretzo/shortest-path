@@ -21,7 +21,10 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -46,6 +49,7 @@ import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
+import shortestpath.transport.BalloonRoute;
 
 /**
  * Headless structure tests pinning the tile drill-down layout contract:
@@ -94,6 +98,13 @@ public class ShortestPathPanelLayoutTest
 			{
 				Object value = i.getArgument(2);
 				config.setBlockedTeleportItemsValue(value == null ? "" : String.valueOf(value));
+			}
+			else if ("balloonLogBasketRoutes".equals(i.getArgument(1)))
+			{
+				Object value = i.getArgument(2);
+				@SuppressWarnings("unchecked")
+				Set<BalloonRoute> routes = (Set<BalloonRoute>) value;
+				config.setBalloonLogBasketRoutesValue(routes);
 			}
 			return null;
 		}).when(configManager).setConfiguration(
@@ -1201,5 +1212,105 @@ public class ShortestPathPanelLayoutTest
 		settings.onConfigChanged(event("blockedTeleportItems"));
 		flushEdt();
 		assertTrue("clearing restores the allowed state", farm.isSelected());
+	}
+
+	// ---- Balloon log-basket routes -----------------------------------------
+
+	@Test
+	public void unlocksCategoryDropsTheBalloonRow()
+	{
+		newPanel();
+		CategoryPanel unlocks = panel.categories().get(3);
+		assertEquals("Unlocks", unlocks.categoryName());
+		assertEquals("four real unlock toggles", 4, unlocks.rows().size());
+		for (ShortestPathPanel.SearchRow row : unlocks.rows())
+		{
+			assertFalse("no balloon row remains in Unlocks",
+				row.display.toLowerCase(Locale.ROOT).contains("balloon")
+					|| row.text.toLowerCase(Locale.ROOT).contains("balloon"));
+		}
+	}
+
+	@Test
+	public void balloonCardCarriesPerRouteLogBasketCheckboxes()
+	{
+		newPanel();
+		TransportFamilyCard card = transportCardByKey("useHotAirBalloons");
+		assertNotNull(card);
+		card.setDetailOpen(true);
+		assertTrue("the balloon card still expands", card.isDetailOpen());
+
+		assertNotNull("the detail carries the Log Basket Routes header",
+			labelContaining(card, "Log Basket Routes"));
+		List<JCheckBox> boxes = labeledCheckboxesIn(card);
+		assertEquals("one checkbox per balloon route",
+			BalloonRoute.values().length, boxes.size());
+		for (BalloonRoute route : BalloonRoute.values())
+		{
+			assertNotNull(route.displayLabel() + " checkbox",
+				optionBox(card, route.displayLabel()));
+		}
+	}
+
+	@Test
+	public void balloonRouteCheckboxWritesAndResyncsTheRouteSet() throws Exception
+	{
+		newPanel();
+		flushEdt();
+		TransportFamilyCard card = transportCardByKey("useHotAirBalloons");
+		card.setDetailOpen(true);
+		JCheckBox grandTree = optionBox(card, "Grand Tree (magic logs)");
+		assertNotNull(grandTree);
+		assertFalse("default legacy flag off selects no routes",
+			grandTree.isSelected());
+
+		click(grandTree);
+		flushEdt();
+		assertTrue("checking writes the route into the set",
+			config.balloonLogBasketRoutes().contains(BalloonRoute.GRAND_TREE));
+		assertFalse("unrelated routes stay unselected",
+			config.balloonLogBasketRoutes().contains(BalloonRoute.VARROCK));
+
+		click(grandTree);
+		flushEdt();
+		assertFalse("unchecking removes the route",
+			config.balloonLogBasketRoutes().contains(BalloonRoute.GRAND_TREE));
+
+		// External config edits mirror back into the checkboxes.
+		config.setBalloonLogBasketRoutesValue(EnumSet.of(BalloonRoute.GRAND_TREE));
+		settings.onConfigChanged(event("balloonLogBasketRoutes"));
+		flushEdt();
+		assertTrue("external write selects the box", grandTree.isSelected());
+
+		config.setBalloonLogBasketRoutesValue(EnumSet.noneOf(BalloonRoute.class));
+		settings.onConfigChanged(event("balloonLogBasketRoutes"));
+		flushEdt();
+		assertFalse("external clear unchecks the box", grandTree.isSelected());
+	}
+
+	@Test
+	public void balloonRouteLabelsJoinTheCardSearchText() throws Exception
+	{
+		newPanel();
+		CategoryPanel transports = panel.categories().get(1);
+		TransportFamilyCard card = transportCardByKey("useHotAirBalloons");
+		assertNotNull(card);
+
+		transports.applyQuery("magic logs");
+		assertTrue("a route-label query surfaces the card expanded",
+			card.isDetailOpen());
+		transports.applyQuery("");
+	}
+
+	@Test
+	public void unlocksTileCountsFourKeys() throws Exception
+	{
+		newPanel();
+		assertEquals("0/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
+
+		config.setUnlockCanoeAxeValue(true);
+		settings.onConfigChanged(event("unlockCanoeAxe"));
+		flushEdt();
+		assertEquals("1/4 on", statusLabelOf(tileNamed("Unlocks")).getText());
 	}
 }
