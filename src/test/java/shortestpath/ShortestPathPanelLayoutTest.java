@@ -822,6 +822,22 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	@Test
+	public void categoryNameQueryListsTheRestrictionFamilies() throws Exception
+	{
+		newPanel();
+		// "restrictions" hits the category's own name but no family label:
+		// the results view must expand the checklist like the drilled
+		// category does rather than render a dangling header over zero rows.
+		setSearchText("restrictions");
+
+		FixedWidthPanel homeContent = contentOf(panel.home());
+		assertTrue("name-hit query groups under the category header",
+			resultsContainHeader("Teleport Restrictions"));
+		assertTrue("and lists families beneath it",
+			containsLabelText(homeContent, "Ardougne Cloaks"));
+	}
+
+	@Test
 	public void itemsDisabledHintSurfaces() throws Exception
 	{
 		newPanel();
