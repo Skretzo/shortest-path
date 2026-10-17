@@ -39,6 +39,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
@@ -118,6 +119,7 @@ public class ShortestPathPanel extends PluginPanel
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ItemManager itemManager;
+	private final SpriteManager spriteManager;
 	private final ItemStateService itemState;
 
 	private final IconTextField searchBar;
@@ -143,7 +145,8 @@ public class ShortestPathPanel extends PluginPanel
 	private String currentQuery = "";
 
 	ShortestPathPanel(Settings settings, Client client,
-		ClientThread clientThread, ItemManager itemManager, ItemStateService itemState)
+		ClientThread clientThread, ItemManager itemManager,
+		SpriteManager spriteManager, ItemStateService itemState)
 	{
 		super(false);
 
@@ -151,6 +154,7 @@ public class ShortestPathPanel extends PluginPanel
 		this.client = client;
 		this.clientThread = clientThread;
 		this.itemManager = itemManager;
+		this.spriteManager = spriteManager;
 		this.itemState = itemState;
 
 		setLayout(new BorderLayout());
@@ -863,6 +867,21 @@ public class ShortestPathPanel extends PluginPanel
 		AsyncBufferedImage image = itemManager.getImage(itemId);
 		image.onLoaded(() -> SwingUtilities.invokeLater(() ->
 			label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
+	}
+
+	/**
+	 * The client-sprite counterpart to {@link #loadItemIcon}: some tiles
+	 * carry cache sprites rather than item imagery (the Display tile uses
+	 * the Settings&gt;Display monitor glyph). {@code getSpriteAsync} runs
+	 * through {@link ClientThread}, which re-queues the request until the
+	 * sprite cache is loaded — the icon lands whenever the client reaches
+	 * the login screen.
+	 */
+	void loadSpriteIcon(int spriteId, JLabel label, int size)
+	{
+		spriteManager.getSpriteAsync(spriteId, 0, image ->
+			SwingUtilities.invokeLater(() ->
+				label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
 	}
 
 	// ---- Navigation ---------------------------------------------------------
