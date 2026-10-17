@@ -199,6 +199,68 @@ class RestrictionListPanel extends JPanel
 	}
 
 	/**
+	 * The destination group {@code canonicalDest}'s option covers for the
+	 * family headed by {@code rep}, or {@code null} when it resolves to no
+	 * option group.
+	 */
+	private static Set<Integer> optionGroup(int rep, int canonicalDest)
+	{
+		Map<Integer, Set<Integer>> repIndex =
+			TeleportRestriction.optionExpansionIndex().get(rep);
+		return repIndex == null ? null : repIndex.get(canonicalDest);
+	}
+
+	/**
+	 * Whether {@code canonicalDest}'s option is blocked for the family
+	 * headed by {@code rep}: the recorded set blocks the option when it
+	 * intersects the option's whole destination group — not only when it
+	 * names the canonical key. The engine expands any member destination
+	 * to the full option ({@link TeleportRestriction#expandOptionDests}),
+	 * so a record naming a non-canonical member — a hand edit, or a TSV
+	 * reorder that changed which destination is first-seen — blocks the
+	 * option, and the checkbox must render the same way. Falls back to the
+	 * literal canonical key when the destination resolves to no group.
+	 */
+	private boolean isOptionBlocked(int rep, int canonicalDest)
+	{
+		Set<Integer> recorded = optionBlocks.getOrDefault(rep, Set.of());
+		Set<Integer> group = optionGroup(rep, canonicalDest);
+		return group == null
+			? recorded.contains(canonicalDest)
+			: !Collections.disjoint(group, recorded);
+	}
+
+	/**
+	 * Removes every recorded destination of {@code canonicalDest}'s option
+	 * group — canonical and non-canonical member records alike — so
+	 * re-checking the option box genuinely unblocks an option whose stored
+	 * record named a non-canonical member tile.
+	 */
+	private void clearOptionBlock(int rep, int canonicalDest)
+	{
+		Set<Integer> recorded = optionBlocks.get(rep);
+		if (recorded == null)
+		{
+			return;
+		}
+		Set<Integer> group = optionGroup(rep, canonicalDest);
+		if (group == null)
+		{
+			recorded.remove(canonicalDest);
+		}
+		else
+		{
+			recorded.removeAll(group);
+		}
+		if (recorded.isEmpty())
+		{
+			// No rep key with an empty set — empty
+			// records must never serialize.
+			optionBlocks.remove(rep);
+		}
+	}
+
+	/**
 	 * The number of individual item ids on the blocklist — the "N blocked"
 	 * status the home tile shows.
 	 */
@@ -564,8 +626,7 @@ class RestrictionListPanel extends JPanel
 				// Selected state is set before the listener attaches, so
 				// construction never fires a spurious config write — the
 				// same discipline the master allow checkbox uses.
-				optionBox.setSelected(
-					!optionBlocks.getOrDefault(rep, Set.of()).contains(dest));
+				optionBox.setSelected(!isOptionBlocked(rep, dest));
 				optionBox.addActionListener(e ->
 				{
 					if (syncing)
@@ -574,17 +635,7 @@ class RestrictionListPanel extends JPanel
 					}
 					if (optionBox.isSelected())
 					{
-						Set<Integer> dests = optionBlocks.get(rep);
-						if (dests != null)
-						{
-							dests.remove(dest);
-							if (dests.isEmpty())
-							{
-								// No rep key with an empty set — empty
-								// records must never serialize.
-								optionBlocks.remove(rep);
-							}
-						}
+						clearOptionBlock(rep, dest);
 					}
 					else
 					{
@@ -646,11 +697,10 @@ class RestrictionListPanel extends JPanel
 			boolean blockedNow = isBlocked();
 			allow.setSelected(!blockedNow);
 			thresholdSpinner.setValue(currentThreshold());
-			Set<Integer> blockedDests =
-				optionBlocks.getOrDefault(family.displayItemId(), Set.of());
 			for (Map.Entry<Integer, JCheckBox> entry : optionBoxes.entrySet())
 			{
-				entry.getValue().setSelected(!blockedDests.contains(entry.getKey()));
+				entry.getValue().setSelected(
+					!isOptionBlocked(family.displayItemId(), entry.getKey()));
 			}
 			applyAllowedState(!blockedNow);
 		}
