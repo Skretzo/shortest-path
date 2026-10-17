@@ -727,9 +727,18 @@ public class ShortestPathPanel extends PluginPanel
 
 	void loadItemIcon(int itemId, JLabel label)
 	{
+		loadItemIcon(itemId, label, CARD_ICON_SIZE);
+	}
+
+	/**
+	 * Same item-icon load at a caller-chosen edge size — the home tiles
+	 * render their category sprite larger than the 16px card icons.
+	 */
+	void loadItemIcon(int itemId, JLabel label, int size)
+	{
 		AsyncBufferedImage image = itemManager.getImage(itemId);
 		image.onLoaded(() -> SwingUtilities.invokeLater(() ->
-			label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, CARD_ICON_SIZE, CARD_ICON_SIZE)))));
+			label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
 	}
 
 	// ---- Navigation ---------------------------------------------------------
