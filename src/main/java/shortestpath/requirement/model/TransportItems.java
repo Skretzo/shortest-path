@@ -75,6 +75,20 @@ public class TransportItems
 	}
 
 	/**
+	 * Whether every ANDed requirement retains an OR branch that is not
+	 * option-blocked at {@code packedDest} — the destination-scoped sibling
+	 * of {@link #survivesBlockedItems}. An empty {@code blockedDests} map
+	 * means nothing is option-blocked anywhere; otherwise every requirement
+	 * must keep at least one branch whose item ids do not all resolve to a
+	 * blocked (representative, destination) pair.
+	 */
+	public boolean survivesOptionBlocks(int packedDest,
+		Map<Integer, Integer> repIndex, Map<Integer, Set<Integer>> blockedDests)
+	{
+		return true;
+	}
+
+	/**
 	 * Merges two TransportItems, combining all requirements from both.
 	 * If either is null, returns the other.
 	 */

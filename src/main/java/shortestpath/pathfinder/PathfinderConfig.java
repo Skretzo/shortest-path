@@ -252,6 +252,7 @@ public class PathfinderConfig
 	 */
 	private volatile Set<Integer> blockedItemIds = Set.of();
 	private volatile Map<Integer, Integer> itemThresholdOverrides = Map.of();
+	private volatile Map<Integer, Set<Integer>> blockedOptionDests = Map.of();
 	private volatile JewelleryBoxTier pohJewelleryBoxTier;
 	private volatile int costConsumableTeleportationItems;
 	@Getter
@@ -493,12 +494,23 @@ public class PathfinderConfig
 
 		// Player-declared per-item restrictions: a bare id blocks the item from
 		// routing entirely, while id:N pins the tiles-saved threshold used to
-		// price transports that reference the id.
+		// price transports that reference the id. A rep@dest record blocks one
+		// destination option of the family that representative id heads — the
+		// map is frozen deep so the refresh snapshot can never observe a later
+		// config edit through a shared inner set.
 		Set<Integer> blockedItems = new HashSet<>();
 		Map<Integer, Integer> thresholdOverrides = new HashMap<>();
-		TeleportRestriction.parseBlocked(config.blockedTeleportItems(), blockedItems, thresholdOverrides);
+		Map<Integer, Set<Integer>> optionBlocks = new HashMap<>();
+		TeleportRestriction.parseBlocked(config.blockedTeleportItems(), blockedItems,
+			thresholdOverrides, optionBlocks);
 		blockedItemIds = Set.copyOf(blockedItems);
 		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
+		Map<Integer, Set<Integer>> frozenOptionBlocks = new HashMap<>();
+		for (Map.Entry<Integer, Set<Integer>> entry : optionBlocks.entrySet())
+		{
+			frozenOptionBlocks.put(entry.getKey(), Set.copyOf(entry.getValue()));
+		}
+		blockedOptionDests = Map.copyOf(frozenOptionBlocks);
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = effective.costConsumableTeleportationItems();
@@ -752,7 +764,8 @@ public class PathfinderConfig
 		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides);
+			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides,
+			blockedOptionDests);
 
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
