@@ -190,6 +190,26 @@ public class TeleportRestrictionTest
 	}
 
 	@Test
+	public void negativeIdsThresholdsAndRepsAreSkipped()
+	{
+		Set<Integer> blocked = new HashSet<>();
+		Map<Integer, Integer> thresholds = new HashMap<>();
+		Map<Integer, Set<Integer>> options = new HashMap<>();
+
+		// "-5" is a parseable int but no item id is negative; "12:-3" and
+		// "-7:4" carry negative halves that are equally meaningless; a
+		// negative rep is no displayItemId. All skip like non-numerics.
+		// The destination half stays unchecked: packed destinations at
+		// plane >= 2 set the sign bit and are legitimately negative.
+		TeleportRestriction.parseBlocked("-5,12:-3,-7:4,-13121@999,13121@-87359490",
+			blocked, thresholds, options);
+
+		Assert.assertTrue(blocked.isEmpty());
+		Assert.assertTrue(thresholds.isEmpty());
+		Assert.assertEquals(Map.of(13121, Set.of(-87359490)), options);
+	}
+
+	@Test
 	public void toCsvSortsOptionRecordsByRepThenDestination()
 	{
 		String csv = TeleportRestriction.toCsv(Set.of(300, 100), Map.of(200, 5),
