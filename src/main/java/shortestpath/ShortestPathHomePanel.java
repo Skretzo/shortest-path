@@ -240,6 +240,28 @@ class ShortestPathHomePanel extends PluginPanel
 	}
 
 	/**
+	 * Registers the config keys the tile statuses summarize: every key a
+	 * status reads gets a {@link #refresh()} listener so tiles track panel
+	 * writes and external edits. Called from the owning panel's constructor
+	 * after the categories exist — the card and restriction-list sync
+	 * listeners registered during those builds must keep running first, or
+	 * the statuses would read stale model state.
+	 */
+	void registerRefreshListeners()
+	{
+		for (TransportFamilyCard card : panel.transportCards())
+		{
+			panel.registerConfigListener(card.getKeyName(), this::refresh);
+		}
+		for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour",
+			"unlockDragontoothPassage", "unlockMorUlRek", "balloonLogBasketRoutes",
+			"includeBankPath", "usePoh", "pathfinderAlgorithm", "blockedTeleportItems"})
+		{
+			panel.registerConfigListener(key, this::refresh);
+		}
+	}
+
+	/**
 	 * Recomputes every tile's status line from live config. Bound to the
 	 * summarized keys through {@code registerConfigListener} so tile
 	 * statuses track both panel writes and external edits.
@@ -280,14 +302,14 @@ class ShortestPathHomePanel extends PluginPanel
 			case "Unlocks":
 				int unlocked = 0;
 				for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour",
-					"unlockDragontoothPassage", "unlockBalloonLogBasket", "unlockMorUlRek"})
+					"unlockDragontoothPassage", "unlockMorUlRek"})
 				{
 					if (panel.settings.configuredBool(key))
 					{
 						unlocked++;
 					}
 				}
-				return unlocked + "/5 on";
+				return unlocked + "/4 on";
 			case "Bank":
 				return panel.settings.configuredBool("includeBankPath") ? "On" : "Off";
 			case "Player-Owned House":
