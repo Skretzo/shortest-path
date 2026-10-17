@@ -52,12 +52,16 @@ import org.junit.Test;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.MenuAction;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
+import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -89,6 +93,7 @@ public class ShortestPathPanelLayoutTest
 	private TestShortestPathConfig config;
 	private Settings settings;
 	private ShortestPathPanel panel;
+	private Plugin plugin;
 	// Every item id passed to ItemManager.getImage while the panel builds —
 	// cards and tiles request their sprite through loadItemIcon, so an
 	// iconless control shows up as a missing request here.
@@ -97,6 +102,9 @@ public class ShortestPathPanelLayoutTest
 	// panel builds — tiles whose imagery is a client sprite (not an item)
 	// route through loadSpriteIcon instead of loadItemIcon.
 	private final List<Integer> spriteRequests = new ArrayList<>();
+	// Every event the panel posts on the shared bus — the footer gear
+	// opens the classic config page by posting an overlay-menu click.
+	private final List<Object> postedEvents = new ArrayList<>();
 
 	private ShortestPathPanel newPanel()
 	{
@@ -107,6 +115,7 @@ public class ShortestPathPanelLayoutTest
 	{
 		iconRequests.clear();
 		spriteRequests.clear();
+		postedEvents.clear();
 		config = new TestShortestPathConfig();
 		// A mocked ConfigManager routes Settings.write back into the stub
 		// config, so panel-side writes (restriction toggles) round-trip the
@@ -164,6 +173,13 @@ public class ShortestPathPanelLayoutTest
 			spriteRequests.add((Integer) i.getArgument(0));
 			return null;
 		}).when(spriteManager).getSpriteAsync(anyInt(), anyInt(), any(Consumer.class));
+		EventBus eventBus = mock(EventBus.class);
+		doAnswer(i ->
+		{
+			postedEvents.add(i.getArgument(0));
+			return null;
+		}).when(eventBus).post(any());
+		plugin = mock(Plugin.class);
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
 			spriteManager, itemState);
 		panel.onActivate();
@@ -352,8 +368,10 @@ public class ShortestPathPanelLayoutTest
 		Component[] children = content.getComponents();
 		for (int i = 0; i < children.length; i++)
 		{
-			if (children[i] instanceof JPanel)
+			if (children[i] instanceof JPanel && gridIndex < 0)
 			{
+				// First JPanel is the tile grid — later JPanels (the
+				// footer link row) are not it.
 				gridIndex = i;
 				continue;
 			}
@@ -395,6 +413,109 @@ public class ShortestPathPanelLayoutTest
 				&& settingsNote.getText().contains("Colours")
 				&& settingsNote.getText().contains("Hotkeys")
 				&& settingsNote.getText().contains("Debug"));
+	}
+
+	/** The direct-child {@link JButton} of {@code row} with this tooltip. */
+	private static JButton footerButton(Container row, String tooltip)
+	{
+		for (Component child : row.getComponents())
+		{
+			if (child instanceof JButton
+				&& tooltip.equals(((JButton) child).getToolTipText()))
+			{
+				return (JButton) child;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Under the footer notes (and a thin divider) the home view carries a
+	 * row of small square chromeless buttons: GitHub and Discord glyphs
+	 * opening the project links through the system browser, and a gear
+	 * that opens the plugin's classic settings page by posting the same
+	 * overlay-config menu click an overlay right-click would.
+	 */
+	@Test
+	public void homeFooterCarriesLinkButtons() throws Exception
+	{
+		newPanel();
+		FixedWidthPanel content = contentOf(panel.home());
+
+		// The link row is the JPanel below the settings note whose direct
+		// children are the three chromeless buttons.
+		JPanel linkRow = null;
+		int linkRowIndex = -1;
+		int settingsIndex = -1;
+		Component[] children = content.getComponents();
+		for (int i = 0; i < children.length; i++)
+		{
+			if (children[i] instanceof JLabel
+				&& ((JLabel) children[i]).getText() != null
+				&& ((JLabel) children[i]).getText().contains("plugin settings panel"))
+			{
+				settingsIndex = i;
+			}
+			if (children[i] instanceof JPanel
+				&& footerButton((Container) children[i], "GitHub") != null)
+			{
+				linkRow = (JPanel) children[i];
+				linkRowIndex = i;
+			}
+		}
+		assertNotNull("a link-button row under the footer notes", linkRow);
+		assertTrue("the link row renders below the settings note",
+			linkRowIndex > settingsIndex);
+		assertTrue("the link row carries a top divider border",
+			linkRow.getBorder() instanceof CompoundBorder
+				&& ((CompoundBorder) linkRow.getBorder()).getOutsideBorder()
+					instanceof MatteBorder);
+
+		List<JButton> buttons = new ArrayList<>();
+		for (Component child : linkRow.getComponents())
+		{
+			if (child instanceof JButton)
+			{
+				buttons.add((JButton) child);
+			}
+		}
+		assertEquals("three footer buttons", 3, buttons.size());
+		assertEquals("GitHub", buttons.get(0).getToolTipText());
+		assertEquals("Discord", buttons.get(1).getToolTipText());
+		assertEquals("Plugin Settings", buttons.get(2).getToolTipText());
+
+		for (JButton button : buttons)
+		{
+			assertTrue("footer buttons are chromeless",
+				!button.isContentAreaFilled()
+					&& !button.isBorderPainted()
+					&& !button.isOpaque());
+			Dimension preferred = button.getPreferredSize();
+			assertEquals("footer buttons are square",
+				preferred.width, preferred.height);
+			assertTrue("footer buttons are icon-sized",
+				preferred.width <= 28);
+			assertNotNull("footer buttons carry an icon", button.getIcon());
+		}
+
+		assertEquals("https://github.com/Skretzo/shortest-path",
+			buttons.get(0).getActionCommand());
+		assertEquals("https://discord.gg/uX47xg8u3M",
+			buttons.get(1).getActionCommand());
+
+		buttons.get(2).doClick();
+		flushEdt();
+		assertEquals("the gear posts exactly one event",
+			1, postedEvents.size());
+		Object posted = postedEvents.get(0);
+		assertTrue("the gear posts an overlay-menu click",
+			posted instanceof OverlayMenuClicked);
+		OverlayMenuClicked clicked = (OverlayMenuClicked) posted;
+		assertEquals("the click carries the overlay-config menu action",
+			MenuAction.RUNELITE_OVERLAY_CONFIG, clicked.getEntry().getMenuAction());
+		assertNotNull("the click carries an overlay", clicked.getOverlay());
+		assertSame("the overlay resolves to our plugin so its config page opens",
+			plugin, clicked.getOverlay().getPlugin());
 	}
 
 	/**
