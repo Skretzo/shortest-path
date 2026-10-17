@@ -150,7 +150,9 @@ class ShortestPathHomePanel extends PluginPanel
 		content.add(astarNote);
 
 		JLabel settingsNote = new JLabel(ShortestPathPanel.html(
-			"<center>More settings live in the regular plugin settings panel.</center>"));
+			"<center>More settings live in the regular plugin settings panel: "
+				+ "Display (world map, minimap, tiles, path style, teleport "
+				+ "pulse), Colours, Hotkeys and Debug options.</center>"));
 		settingsNote.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		settingsNote.setFont(FontManager.getRunescapeSmallFont());
 		content.add(settingsNote);

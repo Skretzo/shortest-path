@@ -623,14 +623,6 @@ public interface ShortestPathConfig extends Config
 		return true;
 	}
 
-	@ConfigSection(
-		name = "Player-Owned House (Moved To Sidebar)",
-		description = "These options moved to the Shortest Path sidebar panel. Click the Shortest Path icon in the RuneLite toolbar.",
-		position = 96,
-		closedByDefault = true
-	)
-	String sectionPoh = "sectionPoh";
-
 	@ConfigItem(
 		keyName = "usePoh",
 		name = "Enable POH Teleports",
@@ -742,14 +734,6 @@ public interface ShortestPathConfig extends Config
 	{
 		return false;
 	}
-
-	@ConfigSection(
-		name = "Transport Thresholds (Moved To Sidebar)",
-		description = "These options moved to the Shortest Path sidebar panel. Click the Shortest Path icon in the RuneLite toolbar.",
-		position = 105,
-		closedByDefault = true
-	)
-	String sectionThresholds = "sectionThresholds";
 
 	@Range(
 		max = 10000
