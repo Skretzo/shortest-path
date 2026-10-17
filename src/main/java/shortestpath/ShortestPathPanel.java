@@ -988,7 +988,7 @@ public class ShortestPathPanel extends PluginPanel
 	 * Pins the shared expandable contract on a surface's two children:
 	 * the header bar turns opaque in {@link #EXPANDABLE_HEADER_BACKGROUND}
 	 * and the detail well keeps the {@link #EXPANDABLE_DETAIL_BACKGROUND}
-	 * category tone framed by a thin {@link #EXPANDABLE_DETAIL_BORDER}
+	 * category tone framed by a 3px {@link #EXPANDABLE_DETAIL_BORDER}
 	 * border on its left, bottom and right edges — the top edge stays
 	 * open so the well joins the header bar above it. The frame wraps —
 	 * never replaces — the border each call site already installed, so
@@ -1002,7 +1002,7 @@ public class ShortestPathPanel extends PluginPanel
 		detail.setOpaque(true);
 		detail.setBackground(EXPANDABLE_DETAIL_BACKGROUND);
 		detail.setBorder(new CompoundBorder(
-			new MatteBorder(0, 1, 1, 1, EXPANDABLE_DETAIL_BORDER),
+			new MatteBorder(0, 3, 3, 3, EXPANDABLE_DETAIL_BORDER),
 			detail.getBorder()));
 	}
 
