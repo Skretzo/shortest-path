@@ -1924,35 +1924,31 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	/**
-	 * Group headers and their member checkboxes render like any other
-	 * panel row — the same font and the same plain-white foreground as a
-	 * {@code checkRow} label — not the secondary tone. Only the
-	 * {@code n/total} count keeps the secondary small font.
+	 * Group headers and their member checkboxes inherit the LAF defaults —
+	 * no explicit foreground or font is set on them, so they render in the
+	 * LAF's own tones like any undecorated label/checkbox. Only the
+	 * {@code n/total} count carries a deliberate style (secondary small
+	 * font); the panel's plain-white row typography belongs to the section
+	 * captions, not the group rows.
 	 */
 	@Test
-	public void enumGroupLabelsMatchThePanelRowTypography()
+	public void enumGroupLabelsInheritTheLafTone()
 	{
 		newPanel();
 
-		// The reference: a sibling checkRow label in the same category
-		// (the harness has no config descriptors, so rows name keys).
-		JLabel reference = labelContaining(
-			contentOf(pohCategory()), "usePohFairyRing");
-		assertNotNull("a sibling check row label", reference);
-
 		CollapsibleEnumGroup<?> ancient = groupByLabel("Ancient");
 		assertNotNull(ancient);
-		assertEquals("group name uses the row foreground",
-			reference.getForeground(), ancient.getNameLabel().getForeground());
-		assertEquals("group name uses the row font",
-			reference.getFont(), ancient.getNameLabel().getFont());
+		assertEquals("group name inherits the label LAF foreground",
+			new JLabel().getForeground(), ancient.getNameLabel().getForeground());
+		assertEquals("group name inherits the label LAF font",
+			new JLabel().getFont(), ancient.getNameLabel().getFont());
 
 		JCheckBox member = optionBox(ancient, "Kharyrll");
 		assertNotNull("a member checkbox", member);
-		assertEquals("member checkbox uses the row foreground",
-			reference.getForeground(), member.getForeground());
-		assertEquals("member checkbox uses the row font",
-			reference.getFont(), member.getFont());
+		assertEquals("member checkbox inherits the checkbox LAF foreground",
+			new JCheckBox().getForeground(), member.getForeground());
+		assertEquals("member checkbox inherits the checkbox LAF font",
+			new JCheckBox().getFont(), member.getFont());
 
 		assertEquals("the count label keeps the secondary tone",
 			ColorScheme.LIGHT_GRAY_COLOR, ancient.getCountLabel().getForeground());
@@ -2019,6 +2015,41 @@ public class ShortestPathPanelLayoutTest
 			5, groupsBetween);
 		assertTrue("the mounted caption precedes its group",
 			mountedGroup >= 0 && mountedCaption >= 0 && mountedCaption < mountedGroup);
+	}
+
+	/**
+	 * The section captions render like a regular panel row — the default
+	 * (regular-size) font in the same foreground a sibling
+	 * {@code checkRow} label carries — so "Portal Nexus" and "Mounted
+	 * Items" read as ordinary labels over the grouped rows they head, not
+	 * as small secondary hints.
+	 */
+	@Test
+	public void pohCaptionsUseThePanelRowTypography()
+	{
+		newPanel();
+
+		// The reference: a sibling checkRow label in the same category
+		// (the harness has no config descriptors, so rows name keys).
+		JLabel reference = labelContaining(
+			contentOf(pohCategory()), "usePohFairyRing");
+		assertNotNull("a sibling check row label", reference);
+
+		ShortestPathPanel.SearchRow caption = pohRowByDisplay("Portal Nexus");
+		assertNotNull("the Portal Nexus caption row", caption);
+		JLabel captionLabel = null;
+		for (JLabel label : labelsIn(caption.component))
+		{
+			if ("Portal Nexus".equals(stripHtml(label.getText())))
+			{
+				captionLabel = label;
+			}
+		}
+		assertNotNull("the caption label", captionLabel);
+		assertEquals("the caption uses the row foreground",
+			reference.getForeground(), captionLabel.getForeground());
+		assertEquals("the caption uses the regular row font",
+			reference.getFont(), captionLabel.getFont());
 	}
 
 	/**
