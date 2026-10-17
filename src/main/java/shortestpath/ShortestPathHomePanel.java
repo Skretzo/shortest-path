@@ -394,7 +394,12 @@ class ShortestPathHomePanel extends PluginPanel
 			iconLabel.setPreferredSize(new Dimension(0, TILE_ICON_SIZE + 8));
 			add(iconLabel, BorderLayout.NORTH);
 
-			JLabel nameLabel = new JLabel(name, SwingConstants.CENTER);
+			// The html wrap keeps long names ("Teleport Restrictions",
+			// "Player-Owned House") readable at the ~102px tile edge —
+			// they wrap to a second centered line instead of clipping.
+			JLabel nameLabel = new JLabel(
+				ShortestPathPanel.html("<center>" + name + "</center>"),
+				SwingConstants.CENTER);
 			nameLabel.setForeground(Color.WHITE);
 			nameLabel.setFont(FontManager.getRunescapeBoldFont());
 			add(nameLabel, BorderLayout.CENTER);
