@@ -1,6 +1,7 @@
 package shortestpath.requirement;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.poh.JewelleryBoxTier;
@@ -46,6 +47,7 @@ public final class RoutingPolicy
 	@Getter @Accessors(fluent = true) private final boolean includeBankPath;
 	@Getter @Accessors(fluent = true) private final Set<Integer> blockedItemIds;
 	private final Map<Integer, Integer> itemThresholdOverrides;
+	private final Map<Integer, Set<Integer>> blockedOptionDests;
 
 	public RoutingPolicy(
 		Set<TransportType> enabledTypes,
@@ -62,6 +64,28 @@ public final class RoutingPolicy
 		Set<Integer> blockedItemIds,
 		Map<Integer, Integer> itemThresholdOverrides)
 	{
+		this(enabledTypes, teleportationItemSetting, usePoh, usePohFairyRing,
+			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
+			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
+			includeBankPath, blockedItemIds, itemThresholdOverrides, Map.of());
+	}
+
+	public RoutingPolicy(
+		Set<TransportType> enabledTypes,
+		TeleportationItem teleportationItemSetting,
+		boolean usePoh,
+		boolean usePohFairyRing,
+		boolean usePohSpiritTree,
+		boolean usePohObelisk,
+		Set<PohNexusPortal> enabledPohNexusPortals,
+		Set<PohMountedItem> enabledPohMountedItems,
+		JewelleryBoxTier pohJewelleryBoxTier,
+		int currencyThreshold,
+		boolean includeBankPath,
+		Set<Integer> blockedItemIds,
+		Map<Integer, Integer> itemThresholdOverrides,
+		Map<Integer, Set<Integer>> blockedOptionDests)
+	{
 		this.enabledTypes = enabledTypes.isEmpty()
 			? EnumSet.noneOf(TransportType.class)
 			: EnumSet.copyOf(enabledTypes);
@@ -77,6 +101,14 @@ public final class RoutingPolicy
 		this.includeBankPath = includeBankPath;
 		this.blockedItemIds = Set.copyOf(blockedItemIds);
 		this.itemThresholdOverrides = Map.copyOf(itemThresholdOverrides);
+		// Inner sets are copied too — a mutable set handed out through the
+		// outer map would defeat the freeze every other collection gets.
+		Map<Integer, Set<Integer>> optionDests = new HashMap<>();
+		for (Map.Entry<Integer, Set<Integer>> entry : blockedOptionDests.entrySet())
+		{
+			optionDests.put(entry.getKey(), Set.copyOf(entry.getValue()));
+		}
+		this.blockedOptionDests = Map.copyOf(optionDests);
 	}
 
 	/**
@@ -116,5 +148,17 @@ public final class RoutingPolicy
 	public Map<Integer, Integer> itemThresholdOverrides()
 	{
 		return itemThresholdOverrides;
+	}
+
+	/**
+	 * Destination-scoped restriction blocks parsed from the {@code rep@dest}
+	 * records of {@code blockedTeleportItems}: a family's representative
+	 * (display) item id to the packed destinations the player excluded for
+	 * it. Inner destination sets are frozen at construction, matching the
+	 * snapshot rule every other collection follows.
+	 */
+	public Map<Integer, Set<Integer>> blockedOptionDests()
+	{
+		return blockedOptionDests;
 	}
 }

@@ -2,6 +2,7 @@ package shortestpath.requirement.model;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import lombok.Getter;
@@ -95,6 +96,39 @@ public final class ItemRequirement
 				{
 					hasIds = true;
 					if (!blockedIds.contains(itemId))
+					{
+						return true;
+					}
+				}
+			}
+			return !hasIds;
+		}
+
+		/**
+		 * Any item id that is not option-blocked at {@code packedDest} keeps
+		 * the branch alive: an id whose representative lookup is negative is
+		 * not a family member and can never be option-blocked; a member id
+		 * survives when its representative's blocked set lacks this
+		 * destination. Staff and offhand ids do not participate — they are
+		 * substitutes, not the family's served items. A branch carrying no
+		 * item ids at all — an unlock alternative — can never be blocked.
+		 */
+		public boolean hasUnblockedOptionId(int packedDest, Map<Integer, Integer> repIndex,
+			Map<Integer, Set<Integer>> blockedDests)
+		{
+			boolean hasIds = false;
+			if (itemIds != null)
+			{
+				for (int itemId : itemIds)
+				{
+					hasIds = true;
+					Integer rep = repIndex.get(itemId);
+					if (rep == null)
+					{
+						return true;
+					}
+					Set<Integer> dests = blockedDests.get(rep);
+					if (dests == null || !dests.contains(packedDest))
 					{
 						return true;
 					}
@@ -252,6 +286,29 @@ public final class ItemRequirement
 		for (Branch branch : branches)
 		{
 			if (branch.hasUnblockedId(blockedIds))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether this requirement keeps at least one OR alternative that is not
+	 * option-blocked at {@code packedDest}: a branch survives on an item id
+	 * whose family representative lookup is negative (a non-family item can
+	 * never be option-blocked) or whose representative's blocked-destination
+	 * set does not contain {@code packedDest}. Staff and offhand substitutes
+	 * do not participate — they carry ids from unrelated items. Structural
+	 * like {@link #hasUnblockedAlternative}, independent of what the player
+	 * owns.
+	 */
+	public boolean hasUnoptionBlockedAlternative(int packedDest,
+		Map<Integer, Integer> repIndex, Map<Integer, Set<Integer>> blockedDests)
+	{
+		for (Branch branch : branches)
+		{
+			if (branch.hasUnblockedOptionId(packedDest, repIndex, blockedDests))
 			{
 				return true;
 			}
