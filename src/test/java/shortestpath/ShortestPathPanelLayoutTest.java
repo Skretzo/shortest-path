@@ -3,6 +3,7 @@ package shortestpath;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -382,7 +384,14 @@ public class ShortestPathPanelLayoutTest
 			cards++;
 			TransportFamilyCard card = (TransportFamilyCard) row.component;
 			JComponent master = card.getMasterControl();
-			assertNotNull(row.display + " master control", master);
+			if (master == null)
+			{
+				// The teleport-items card is masterless — its mode combo
+				// lives in General; every other card carries a master.
+				assertEquals("only the teleport-items card is masterless",
+					"useTeleportationItems", card.getKeyName());
+				continue;
+			}
 
 			card.setSize(new Dimension(PluginPanel.PANEL_WIDTH,
 				card.getPreferredSize().height));
@@ -392,7 +401,157 @@ public class ShortestPathPanelLayoutTest
 			assertTrue(row.display + " master control is not under the scrollbar",
 				bounds.getMaxX() <= PluginPanel.PANEL_WIDTH);
 		}
-		assertEquals("all ~21 transport cards checked", 23, cards);
+		assertEquals("all transport cards checked", 23, cards);
+	}
+
+	private TransportFamilyCard transportCardByKey(String keyName)
+	{
+		for (TransportFamilyCard card : panel.transportCards())
+		{
+			if (keyName.equals(card.getKeyName()))
+			{
+				return card;
+			}
+		}
+		return null;
+	}
+
+	private static List<JComboBox<?>> combosIn(Container root)
+	{
+		List<JComboBox<?>> combos = new ArrayList<>();
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JComboBox)
+			{
+				combos.add((JComboBox<?>) child);
+			}
+			if (child instanceof Container)
+			{
+				combos.addAll(combosIn((Container) child));
+			}
+		}
+		return combos;
+	}
+
+	/**
+	 * The {@link JComboBox} under {@code root} whose item list contains
+	 * {@code item} — identifies which enum a combo binds rather than just
+	 * that some combo exists.
+	 */
+	private static JComboBox<?> comboContaining(Container root, Object item)
+	{
+		for (JComboBox<?> combo : combosIn(root))
+		{
+			for (int i = 0; i < combo.getItemCount(); i++)
+			{
+				if (item.equals(combo.getItemAt(i)))
+				{
+					return combo;
+				}
+			}
+		}
+		return null;
+	}
+
+	@Test
+	public void teleportationItemsModeComboLivesInGeneral()
+	{
+		newPanel();
+		CategoryPanel general = panel.categories().get(0);
+		assertEquals("General", general.categoryName());
+
+		assertNotNull("the teleport-items mode combo renders in General",
+			comboContaining(contentOf(general), TeleportationItem.NONE));
+	}
+
+	@Test
+	public void teleportationItemsCardIsMasterless()
+	{
+		newPanel();
+		TransportFamilyCard card = transportCardByKey("useTeleportationItems");
+		assertNotNull("teleport-items transports card", card);
+
+		assertNull("the card carries no master control — the mode combo "
+				+ "lives in General", card.getMasterControl());
+		assertTrue("mode != NONE counts the card as on", card.isMasterOn());
+
+		card.setDetailOpen(true);
+		assertTrue("masterless card still expands its detail",
+			card.isDetailOpen());
+		assertTrue("the detail keeps its threshold rows",
+			card.getComponentCount() > 1);
+	}
+
+	@Test
+	public void everyTransportCardRequestsAnIcon()
+	{
+		newPanel();
+		// A card built with a null icon id never reaches getImage — the
+		// requested ids therefore prove every card carries a sprite,
+		// including the nine that were iconless.
+		int[] requested = {
+			ItemID.AHOY_TOY_BOAT, ItemID.SHILOSHIPTICKET,
+			ItemID.GRANDTREE_WARSHIP, ItemID.ALUFT_GNOME_GOGGLES,
+			ItemID.ZEP_TOY_BALLOON_RED, ItemID.EVENT_MUSHTREE_DUMMY,
+			ItemID.POH_LEVER_OAK, ItemID.POH_DUMMY_PORTALNEXUS,
+			ItemID.POH_SUPERIOR_GARDEN_WILDERNESS_OBELISK,
+		};
+		for (int id : requested)
+		{
+			assertTrue("card icon " + id + " was requested",
+				iconRequests.contains(id));
+		}
+	}
+
+	/**
+	 * Long labels must wrap at the 225px content width instead of clipping:
+	 * every row-type label is {@code <html>}-wrapped so the layout breaks it
+	 * onto multiple lines, and a long label constrained to the row width
+	 * actually grows in height rather than staying one clipped line.
+	 */
+	@Test
+	public void labelsWrapInsteadOfClipping() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JLabel rowLabel = labelContaining(
+			contentOf(panel.categories().get(0)), "avoidWilderness");
+		assertNotNull("General check row label", rowLabel);
+		assertTrue("row labels are html-wrapped",
+			rowLabel.getText().startsWith("<html>"));
+
+		TransportFamilyCard card = transportCardByKey("useAgilityShortcuts");
+		assertNotNull(card);
+		assertTrue("card name labels are html-wrapped",
+			card.getNameLabel().getText().startsWith("<html>"));
+
+		JPanel row = restrictionRowByName("Ardougne Cloaks");
+		assertNotNull(row);
+		assertNotNull("family name is rendered Title-Case",
+			labelContaining(row, "Ardougne Cloaks"));
+		expandRow(row);
+		flushEdt();
+		JCheckBox option = optionBox(row, "Kandarin Monastery");
+		assertNotNull(option);
+		assertTrue("option labels are html-wrapped",
+			option.getText().startsWith("<html>"));
+
+		// Behavioral wrap check: the items-disabled hint is the longest
+		// label in the panel — sized to row width it must grow past one
+		// line (wrapped) rather than clip.
+		config.setUseTeleportationItemsValue(TeleportationItem.NONE);
+		settings.onConfigChanged(event("useTeleportationItems"));
+		flushEdt();
+		CategoryPanel restrictions = panel.categories().get(2);
+		restrictions.applyQuery("");
+		JLabel hint = labelContaining(contentOf(restrictions),
+			"Teleportation items are disabled");
+		assertNotNull("items-disabled hint", hint);
+		hint.setSize(200, 0);
+		int oneLine = hint.getFontMetrics(hint.getFont()).getHeight();
+		assertTrue("the hint wraps onto multiple lines inside the viewport",
+			hint.getPreferredSize().height > oneLine);
 	}
 
 	@Test
@@ -686,7 +845,7 @@ public class ShortestPathPanelLayoutTest
 		flushEdt();
 
 		assertTrue("bank-snapshot-only families stay listed under the Owned filter",
-			restrictions.matchingLabels("").contains("Ardougne cloaks"));
+			restrictions.matchingLabels("").contains("Ardougne Cloaks"));
 
 		restrictions.setOwnedOnly(false);
 		flushEdt();
@@ -728,11 +887,22 @@ public class ShortestPathPanelLayoutTest
 		return null;
 	}
 
+	/** Strips the {@code <html>} wrap longer labels carry so they wrap at the
+	 *  fixed viewport width — assertions compare the visible text only. */
+	private static String stripHtml(String text)
+	{
+		if (text == null)
+		{
+			return null;
+		}
+		return text.replace("<html>", "").replace("</html>", "");
+	}
+
 	private static boolean containsLabelEqual(Container root, String text)
 	{
 		for (Component child : root.getComponents())
 		{
-			if (child instanceof JLabel && text.equals(((JLabel) child).getText()))
+			if (child instanceof JLabel && text.equals(stripHtml(((JLabel) child).getText())))
 			{
 				return true;
 			}
@@ -743,6 +913,29 @@ public class ShortestPathPanelLayoutTest
 			}
 		}
 		return false;
+	}
+
+	/** The first {@link JLabel} under {@code root} containing {@code needle}. */
+	private static JLabel labelContaining(Container root, String needle)
+	{
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JLabel
+				&& ((JLabel) child).getText() != null
+				&& ((JLabel) child).getText().contains(needle))
+			{
+				return (JLabel) child;
+			}
+			if (child instanceof Container)
+			{
+				JLabel found = labelContaining((Container) child, needle);
+				if (found != null)
+				{
+					return found;
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -775,7 +968,7 @@ public class ShortestPathPanelLayoutTest
 	{
 		for (JCheckBox box : labeledCheckboxesIn(row))
 		{
-			if (label.equals(box.getText()))
+			if (label.equals(stripHtml(box.getText())))
 			{
 				return box;
 			}
@@ -843,7 +1036,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		flushEdt();
 
-		JPanel row = restrictionRowByName("Ardougne cloaks");
+		JPanel row = restrictionRowByName("Ardougne Cloaks");
 		assertNotNull("Ardougne cloaks row", row);
 		expandRow(row);
 		flushEdt();
@@ -865,7 +1058,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		flushEdt();
 
-		JPanel row = restrictionRowByName("Skills necklace (1-6)");
+		JPanel row = restrictionRowByName("Skills Necklace (1-6)");
 		assertNotNull(row);
 		expandRow(row);
 		flushEdt();
@@ -875,7 +1068,7 @@ public class ShortestPathPanelLayoutTest
 		int farmingGuild = 0;
 		for (JCheckBox box : boxes)
 		{
-			if ("Farming Guild".equals(box.getText()))
+			if ("Farming Guild".equals(stripHtml(box.getText())))
 			{
 				farmingGuild++;
 			}
@@ -890,7 +1083,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		flushEdt();
 
-		JPanel row = restrictionRowByName("Teleport to house");
+		JPanel row = restrictionRowByName("Teleport To House");
 		assertNotNull(row);
 		expandRow(row);
 		flushEdt();
@@ -908,7 +1101,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		flushEdt();
 
-		JPanel row = restrictionRowByName("Fremennik sea boots");
+		JPanel row = restrictionRowByName("Fremennik Sea Boots");
 		assertNotNull(row);
 		expandRow(row);
 		flushEdt();
@@ -925,7 +1118,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		flushEdt();
 
-		JPanel row = restrictionRowByName("Ardougne cloaks");
+		JPanel row = restrictionRowByName("Ardougne Cloaks");
 		assertNotNull(row);
 		expandRow(row);
 		flushEdt();
@@ -953,7 +1146,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		flushEdt();
 
-		JPanel row = restrictionRowByName("Ardougne cloaks");
+		JPanel row = restrictionRowByName("Ardougne Cloaks");
 		assertNotNull(row);
 		expandRow(row);
 		flushEdt();
@@ -981,7 +1174,7 @@ public class ShortestPathPanelLayoutTest
 
 		assertTrue("an option-label query surfaces the family",
 			panel.restrictionListPanel().matchingLabels("farm")
-				.contains("Ardougne cloaks"));
+				.contains("Ardougne Cloaks"));
 	}
 
 	@Test
@@ -995,7 +1188,7 @@ public class ShortestPathPanelLayoutTest
 		settings.onConfigChanged(event("blockedTeleportItems"));
 		flushEdt();
 
-		JPanel row = restrictionRowByName("Ardougne cloaks");
+		JPanel row = restrictionRowByName("Ardougne Cloaks");
 		assertNotNull(row);
 		JCheckBox farm = optionBox(row, "Ardougne Farm");
 		JCheckBox monastery = optionBox(row, "Kandarin Monastery");
