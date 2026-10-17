@@ -556,9 +556,9 @@ class RestrictionListPanel extends JPanel
 			detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
 			// Indented under the icon column so the detail lines up with the name.
 			detail.setBorder(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
-			// The shared two-tone fill: the row stops being transparent
-			// end-to-end and paints a dark header bar over the lighter
-			// detail well, like the transport cards.
+			// The shared expandable chrome: the header paints as an
+			// opaque dark bar while the detail well keeps the category
+			// background behind a thin orange border, like the cards.
 			ShortestPathPanel.styleExpandable(header, detail);
 
 			JPanel thresholdRow = new JPanel(new BorderLayout());

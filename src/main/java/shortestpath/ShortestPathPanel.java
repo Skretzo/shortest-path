@@ -28,7 +28,9 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import net.runelite.api.Client;
@@ -77,15 +79,16 @@ public class ShortestPathPanel extends PluginPanel
 	private static final int SPINNER_FIELD_WIDTH = 6;
 	static final int SUB_LIST_INDENT = 16;
 	/**
-	 * The two-tone fill every expandable surface shares — transport cards,
+	 * The chrome every expandable surface shares — transport cards,
 	 * restriction rows and collapsible enum groups alike: the collapsed
-	 * header bar carries the dark tone while the expanded detail well reads
-	 * the lighter medium grey, visibly distinct from the category
-	 * background the surfaces float on. Applied through
+	 * header bar carries an opaque dark tone while the expanded detail
+	 * well keeps the category background, ringed by a thin orange border
+	 * that marks the open well as a distinct region. Applied through
 	 * {@link #styleExpandable} so no site can drift to its own colours.
 	 */
 	static final Color EXPANDABLE_HEADER_BACKGROUND = ColorScheme.DARKER_GRAY_COLOR;
-	static final Color EXPANDABLE_DETAIL_BACKGROUND = ColorScheme.MEDIUM_GRAY_COLOR;
+	static final Color EXPANDABLE_DETAIL_BACKGROUND = ColorScheme.DARK_GRAY_COLOR;
+	static final Color EXPANDABLE_DETAIL_BORDER = ColorScheme.BRAND_ORANGE;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_TOOLTIP =
 		"Only show teleports for items in your inventory, equipment or bank";
@@ -945,11 +948,14 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * Pins the shared two-tone contract on an expandable surface's two
-	 * children: the header bar turns opaque in
-	 * {@link #EXPANDABLE_HEADER_BACKGROUND} and the detail well opaque in
-	 * {@link #EXPANDABLE_DETAIL_BACKGROUND}. Their children keep their
-	 * transparent fills so the tones show through.
+	 * Pins the shared expandable contract on a surface's two children:
+	 * the header bar turns opaque in {@link #EXPANDABLE_HEADER_BACKGROUND}
+	 * and the detail well keeps the {@link #EXPANDABLE_DETAIL_BACKGROUND}
+	 * category tone ringed by a thin {@link #EXPANDABLE_DETAIL_BORDER}
+	 * accent. The ring wraps — never replaces — the border each call site
+	 * already installed, so the detail indents and paddings survive.
+	 * Their children keep their transparent fills so the tones show
+	 * through.
 	 */
 	static void styleExpandable(JComponent header, JComponent detail)
 	{
@@ -957,6 +963,9 @@ public class ShortestPathPanel extends PluginPanel
 		header.setBackground(EXPANDABLE_HEADER_BACKGROUND);
 		detail.setOpaque(true);
 		detail.setBackground(EXPANDABLE_DETAIL_BACKGROUND);
+		detail.setBorder(new CompoundBorder(
+			new MatteBorder(1, 1, 1, 1, EXPANDABLE_DETAIL_BORDER),
+			detail.getBorder()));
 	}
 
 	/**
