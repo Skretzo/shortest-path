@@ -127,6 +127,49 @@ public final class TeleportRestriction
 	}
 
 	/**
+	 * The option derivation's two products: the per-family option maps the
+	 * panel renders (canonical destination → label) and the rep →
+	 * member-destination → group-destinations expansion index that resolves
+	 * {@code rep@dest} records back to whole option groups. Both are derived
+	 * in the same pass so they can never disagree about group membership.
+	 */
+	private static final class DerivedOptions
+	{
+		private final List<ResourceLoader.RestrictionFamilyRow> rows;
+		private final List<Map<Integer, String>> options;
+		private final Map<Integer, Map<Integer, Set<Integer>>> expansion;
+
+		DerivedOptions(List<ResourceLoader.RestrictionFamilyRow> rows,
+			List<Map<Integer, String>> options,
+			Map<Integer, Map<Integer, Set<Integer>>> expansion)
+		{
+			this.rows = rows;
+			this.options = options;
+			this.expansion = expansion;
+		}
+	}
+
+	private static volatile DerivedOptions derivedOptionsHolder;
+
+	private static DerivedOptions derivedOptions()
+	{
+		DerivedOptions derived = derivedOptionsHolder;
+		if (derived == null)
+		{
+			synchronized (TeleportRestriction.class)
+			{
+				derived = derivedOptionsHolder;
+				if (derived == null)
+				{
+					derived = deriveOptions(ResourceLoader.families());
+					derivedOptionsHolder = derived;
+				}
+			}
+		}
+		return derived;
+	}
+
+	/**
 	 * Loads the bundled family map through {@link ResourceLoader} — the loader
 	 * owns the resource read and the row idiom; this entry point maps its raw
 	 * rows onto the panel-facing {@link Family} model. Malformed rows are
@@ -137,31 +180,40 @@ public final class TeleportRestriction
 	 */
 	public static List<Family> loadFamilies()
 	{
-		List<ResourceLoader.RestrictionFamilyRow> rows = ResourceLoader.families();
-		List<Map<Integer, String>> options = deriveOptions(rows);
-		List<Family> families = new ArrayList<>(rows.size());
-		for (int i = 0; i < rows.size(); i++)
+		DerivedOptions derived = derivedOptions();
+		List<Family> families = new ArrayList<>(derived.rows.size());
+		for (int i = 0; i < derived.rows.size(); i++)
 		{
-			ResourceLoader.RestrictionFamilyRow row = rows.get(i);
+			ResourceLoader.RestrictionFamilyRow row = derived.rows.get(i);
 			families.add(new Family(row.name(), row.displayItemId(),
-				row.memberItemIds(), row.memberLabels(), options.get(i)));
+				row.memberItemIds(), row.memberLabels(), derived.options.get(i)));
 		}
 		return Collections.unmodifiableList(families);
 	}
 
 	/**
-	 * Derives each family's destination-keyed option map in one pass over the
-	 * bundled {@code teleportation_items.tsv} records. A record SERVES every
-	 * family index its {@code Items} cell contributes a member id to — a
-	 * cross-family OR row lands the same destination option in each family it
-	 * serves. For every serving record the {@code Destination} cell packs to
-	 * the option key and the {@code Display info} tail (after the first
-	 * {@code ':'}; the whole cell when it carries none; the raw coordinates
-	 * when the cell is blank) supplies the label. Serving records sharing a
-	 * destination dedupe to one option; a conflicting label for an
-	 * already-seen destination keeps the first text and warns.
+	 * Derives each family's label-keyed option map in one pass over the
+	 * bundled {@code teleportation_items.tsv} records, alongside the
+	 * rep → destination → option-group expansion index. A record SERVES
+	 * every family index its {@code Items} cell contributes a member id to —
+	 * a cross-family OR row lands the same destination option in each family
+	 * it serves.
+	 *
+	 * <p>
+	 * Option identity is the in-game teleport name: every serving record's
+	 * {@code Display info} tail (after the first {@code ':'}; the whole cell
+	 * when it carries none; the raw coordinates when the cell is blank) names
+	 * the option its {@code Destination} joins. Rows sharing a label collapse
+	 * into one option covering all their destinations — varbit- and
+	 * skill-gated tile variants of a single menu entry. A destination claimed
+	 * by an earlier label never joins a later group: a conflicting label for
+	 * an already-seen destination keeps the first label and warns, and a
+	 * label left with no destination yields no option. The map key is the
+	 * group's canonical (first-seen) destination so {@code rep@dest} records
+	 * keep their tile-shaped second half.
+	 * </p>
 	 */
-	private static List<Map<Integer, String>> deriveOptions(
+	private static DerivedOptions deriveOptions(
 		List<ResourceLoader.RestrictionFamilyRow> rows)
 	{
 		Map<Integer, Integer> memberToFamily = new HashMap<>();
@@ -179,64 +231,88 @@ public final class TeleportRestriction
 			}
 		}
 
-		List<Map<Integer, String>> options = new ArrayList<>(rows.size());
+		// family index -> option label -> the ordered group of destinations
+		// that label claims (first-seen label order); family index ->
+		// destination -> owning label (one tile, one option).
+		List<Map<String, LinkedHashSet<Integer>>> labelGroups = new ArrayList<>(rows.size());
+		List<Map<Integer, String>> claimed = new ArrayList<>(rows.size());
 		for (int i = 0; i < rows.size(); i++)
 		{
-			options.add(new LinkedHashMap<>());
-		}
-		if (memberToFamily.isEmpty())
-		{
-			return freezeOptions(options);
+			labelGroups.add(new LinkedHashMap<>());
+			claimed.add(new HashMap<>());
 		}
 
-		for (TransportRecord record : ResourceLoader.teleportationItemRecords())
+		if (!memberToFamily.isEmpty())
 		{
-			Set<Integer> served = servedFamilyIndexes(record.getItems(), memberToFamily);
-			if (served.isEmpty())
+			for (TransportRecord record : ResourceLoader.teleportationItemRecords())
 			{
-				continue;
-			}
-
-			int[] destination = parseDestination(record.getDestination());
-			if (destination == null)
-			{
-				log.warn("Skipping teleportation_items row with unparseable Destination '{}'",
-					record.getDestination());
-				continue;
-			}
-
-			int packedDest =
-				WorldPointUtil.packWorldPoint(destination[0], destination[1], destination[2]);
-			String label = optionLabel(record.getDisplayInfo(), destination);
-
-			for (int familyIdx : served)
-			{
-				Map<Integer, String> familyOptions = options.get(familyIdx);
-				String existing = familyOptions.get(packedDest);
-				if (existing == null)
+				Set<Integer> served = servedFamilyIndexes(record.getItems(), memberToFamily);
+				if (served.isEmpty())
 				{
-					familyOptions.put(packedDest, label);
+					continue;
 				}
-				else if (!existing.equals(label))
+
+				int[] destination = parseDestination(record.getDestination());
+				if (destination == null)
 				{
-					log.warn("Conflicting option label for family '{}' destination {} "
-						+ "('{}' vs '{}') — keeping the first", rows.get(familyIdx).name(),
-						record.getDestination(), existing, label);
+					log.warn("Skipping teleportation_items row with unparseable Destination '{}'",
+						record.getDestination());
+					continue;
+				}
+
+				int packedDest =
+					WorldPointUtil.packWorldPoint(destination[0], destination[1], destination[2]);
+				String label = optionLabel(record.getDisplayInfo(), destination);
+
+				for (int familyIdx : served)
+				{
+					String owner = claimed.get(familyIdx).get(packedDest);
+					if (owner != null)
+					{
+						if (!owner.equals(label))
+						{
+							log.warn("Conflicting option label for family '{}' destination {} "
+								+ "('{}' vs '{}') — keeping the first",
+								rows.get(familyIdx).name(), record.getDestination(),
+								owner, label);
+						}
+						continue;
+					}
+					claimed.get(familyIdx).put(packedDest, label);
+					labelGroups.get(familyIdx)
+						.computeIfAbsent(label, k -> new LinkedHashSet<>())
+						.add(packedDest);
 				}
 			}
 		}
 
-		return freezeOptions(options);
-	}
-
-	private static List<Map<Integer, String>> freezeOptions(List<Map<Integer, String>> options)
-	{
-		List<Map<Integer, String>> frozen = new ArrayList<>(options.size());
-		for (Map<Integer, String> familyOptions : options)
+		List<Map<Integer, String>> options = new ArrayList<>(rows.size());
+		Map<Integer, Map<Integer, Set<Integer>>> expansion = new HashMap<>();
+		for (int i = 0; i < rows.size(); i++)
 		{
-			frozen.add(Collections.unmodifiableMap(familyOptions));
+			Map<Integer, String> familyOptions = new LinkedHashMap<>();
+			Map<Integer, Set<Integer>> destToGroup = new HashMap<>();
+			for (Map.Entry<String, LinkedHashSet<Integer>> group : labelGroups.get(i).entrySet())
+			{
+				Set<Integer> groupDests = Collections.unmodifiableSet(group.getValue());
+				// The canonical destination is the group's first-seen tile —
+				// the key rep@dest records store and expand through.
+				familyOptions.put(group.getValue().iterator().next(), group.getKey());
+				for (int dest : group.getValue())
+				{
+					destToGroup.put(dest, groupDests);
+				}
+			}
+			options.add(Collections.unmodifiableMap(familyOptions));
+			if (!destToGroup.isEmpty())
+			{
+				expansion.put(rows.get(i).displayItemId(),
+					Collections.unmodifiableMap(destToGroup));
+			}
 		}
-		return Collections.unmodifiableList(frozen);
+
+		return new DerivedOptions(rows, Collections.unmodifiableList(options),
+			Collections.unmodifiableMap(expansion));
 	}
 
 	/**
@@ -546,27 +622,46 @@ public final class TeleportRestriction
 	 * index derived alongside {@link #loadFamilies()}' option groups. A
 	 * {@code rep@dest} record names one option by its canonical destination,
 	 * but any member destination resolves to the same group, so a stale
-	 * record still blocks the whole option.
+	 * record still blocks the whole option. Unmodifiable; representatives
+	 * with no option rows are absent.
 	 */
 	public static Map<Integer, Map<Integer, Set<Integer>>> optionExpansionIndex()
 	{
-		// Degenerate until the label-grouped derivation lands.
-		return Collections.emptyMap();
+		return derivedOptions().expansion;
 	}
 
 	/**
 	 * Maps every recorded destination in {@code optionBlocks} through
 	 * {@link #optionExpansionIndex()}, unioning each destination's option
-	 * group; destinations absent from the index pass through as literal
-	 * blocked tiles.
+	 * group — one record suppresses every tile variant of the option it
+	 * names. Destinations absent from the index pass through as literal
+	 * blocked tiles, so a stale {@code blockedTeleportItems} row degrades to
+	 * its written destination rather than silently widening. The returned
+	 * sets are fresh copies; callers may freeze or mutate them independently
+	 * of the index.
 	 */
 	public static Map<Integer, Set<Integer>> expandOptionDests(
 		Map<Integer, Set<Integer>> optionBlocks)
 	{
+		Map<Integer, Map<Integer, Set<Integer>>> index = optionExpansionIndex();
 		Map<Integer, Set<Integer>> expanded = new HashMap<>();
 		for (Map.Entry<Integer, Set<Integer>> entry : optionBlocks.entrySet())
 		{
-			expanded.put(entry.getKey(), new HashSet<>(entry.getValue()));
+			Map<Integer, Set<Integer>> repIndex = index.get(entry.getKey());
+			Set<Integer> dests = new LinkedHashSet<>();
+			for (int dest : entry.getValue())
+			{
+				Set<Integer> group = repIndex == null ? null : repIndex.get(dest);
+				if (group == null)
+				{
+					dests.add(dest);
+				}
+				else
+				{
+					dests.addAll(group);
+				}
+			}
+			expanded.put(entry.getKey(), dests);
 		}
 		return expanded;
 	}
