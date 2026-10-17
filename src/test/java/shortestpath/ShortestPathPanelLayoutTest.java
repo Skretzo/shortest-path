@@ -74,7 +74,22 @@ public class ShortestPathPanelLayoutTest
 	private ShortestPathPanel newPanel(ItemStateService itemState)
 	{
 		config = new TestShortestPathConfig();
-		settings = Settings.wrap(config);
+		// A mocked ConfigManager routes Settings.write back into the stub
+		// config, so panel-side writes (restriction toggles) round-trip the
+		// way production's real manager does — including the synchronous
+		// same-key listener echo.
+		net.runelite.client.config.ConfigManager configManager =
+			mock(net.runelite.client.config.ConfigManager.class);
+		doAnswer(i ->
+		{
+			if ("blockedTeleportItems".equals(i.getArgument(1)))
+			{
+				Object value = i.getArgument(2);
+				config.setBlockedTeleportItemsValue(value == null ? "" : String.valueOf(value));
+			}
+			return null;
+		}).when(configManager).setConfiguration(any(String.class), any(String.class), any());
+		settings = new Settings(configManager, config);
 		Client client = mock(Client.class);
 		ClientThread clientThread = mock(ClientThread.class);
 		// The Owned filter's container reads post through clientThread.invoke;
@@ -580,5 +595,307 @@ public class ShortestPathPanelLayoutTest
 
 		assertTrue("with nothing owned anywhere the owned list is empty",
 			restrictions.matchingLabels("").isEmpty());
+	}
+
+	// ---- Teleport-restriction option checkboxes ---------------------------
+
+	/**
+	 * The restriction row carrying the family name {@code familyName} — a
+	 * direct child of the list panel found by an exact-label match so
+	 * lookalike names ("Slayer ring" vs "Slayer ring (1-8)") stay distinct.
+	 */
+	private JPanel restrictionRowByName(String familyName)
+	{
+		for (Component child : panel.restrictionListPanel().getComponents())
+		{
+			if (child instanceof JPanel
+				&& containsLabelEqual((Container) child, familyName))
+			{
+				return (JPanel) child;
+			}
+		}
+		return null;
+	}
+
+	private static boolean containsLabelEqual(Container root, String text)
+	{
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JLabel && text.equals(((JLabel) child).getText()))
+			{
+				return true;
+			}
+			if (child instanceof Container
+				&& containsLabelEqual((Container) child, text))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Every labeled checkbox inside {@code root}: the option checkboxes
+	 * carry the option's in-game teleport name while the master allow
+	 * checkbox is textless, so text is the discriminator.
+	 */
+	private static List<JCheckBox> labeledCheckboxesIn(Container root)
+	{
+		List<JCheckBox> boxes = new ArrayList<>();
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JCheckBox)
+			{
+				JCheckBox box = (JCheckBox) child;
+				if (box.getText() != null && !box.getText().isEmpty())
+				{
+					boxes.add(box);
+				}
+			}
+			else if (child instanceof Container)
+			{
+				boxes.addAll(labeledCheckboxesIn((Container) child));
+			}
+		}
+		return boxes;
+	}
+
+	private static JCheckBox optionBox(Container row, String label)
+	{
+		for (JCheckBox box : labeledCheckboxesIn(row))
+		{
+			if (label.equals(box.getText()))
+			{
+				return box;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The row's master allow checkbox — the textless JCheckBox in the header
+	 * controls.
+	 */
+	private static JCheckBox masterBox(Container root)
+	{
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JCheckBox
+				&& (((JCheckBox) child).getText() == null
+					|| ((JCheckBox) child).getText().isEmpty()))
+			{
+				return (JCheckBox) child;
+			}
+			if (child instanceof Container)
+			{
+				JCheckBox found = masterBox((Container) child);
+				if (found != null)
+				{
+					return found;
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Opens the row's detail well via its expander button. */
+	private static void expandRow(Container row) throws Exception
+	{
+		SwingUtilities.invokeAndWait(() -> clickFirstButton(row));
+	}
+
+	private static boolean clickFirstButton(Container root)
+	{
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JButton)
+			{
+				((JButton) child).doClick();
+				return true;
+			}
+			if (child instanceof Container && clickFirstButton((Container) child))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static void click(JCheckBox box) throws Exception
+	{
+		SwingUtilities.invokeAndWait(box::doClick);
+	}
+
+	@Test
+	public void ardougneCloaksRowRendersItsTwoOptionCheckboxes() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Ardougne cloaks");
+		assertNotNull("Ardougne cloaks row", row);
+		expandRow(row);
+		flushEdt();
+
+		List<JCheckBox> boxes = labeledCheckboxesIn(row);
+		assertEquals("one checkbox per option", 2, boxes.size());
+		assertNotNull("Kandarin Monastery option", optionBox(row, "Kandarin Monastery"));
+		assertNotNull("Ardougne Farm option", optionBox(row, "Ardougne Farm"));
+		assertTrue("unchecked options mean allowed",
+			optionBox(row, "Kandarin Monastery").isSelected());
+		assertTrue(optionBox(row, "Ardougne Farm").isSelected());
+		assertTrue("the Options block carries its header",
+			containsLabelEqual(row, "Options:"));
+	}
+
+	@Test
+	public void skillsNecklaceGroupsTheFarmingGuildArrivalsIntoOneCheckbox() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Skills necklace (1-6)");
+		assertNotNull(row);
+		expandRow(row);
+		flushEdt();
+
+		List<JCheckBox> boxes = labeledCheckboxesIn(row);
+		assertEquals("six guild options", 6, boxes.size());
+		int farmingGuild = 0;
+		for (JCheckBox box : boxes)
+		{
+			if ("Farming Guild".equals(box.getText()))
+			{
+				farmingGuild++;
+			}
+		}
+		assertEquals("the inside/outside arrivals collapse to one option",
+			1, farmingGuild);
+	}
+
+	@Test
+	public void teleportToHouseRendersInsideAndOutsideOnly() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Teleport to house");
+		assertNotNull(row);
+		expandRow(row);
+		flushEdt();
+
+		List<JCheckBox> boxes = labeledCheckboxesIn(row);
+		assertEquals("the ten portal towns collapse to two options",
+			2, boxes.size());
+		assertNotNull(optionBox(row, "Inside the house"));
+		assertNotNull(optionBox(row, "Outside the house"));
+	}
+
+	@Test
+	public void singleOptionFamilyRendersNoOptionsBlock() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Fremennik sea boots");
+		assertNotNull(row);
+		expandRow(row);
+		flushEdt();
+
+		assertTrue("a one-option family has no option checkboxes",
+			labeledCheckboxesIn(row).isEmpty());
+		assertFalse("and no Options header",
+			containsLabelEqual(row, "Options:"));
+	}
+
+	@Test
+	public void optionCheckboxWritesAndRemovesTheRepDestRecord() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Ardougne cloaks");
+		assertNotNull(row);
+		expandRow(row);
+		flushEdt();
+
+		JCheckBox farm = optionBox(row, "Ardougne Farm");
+		assertNotNull(farm);
+		int farmDest = WorldPointUtil.packWorldPoint(2665, 3374, 0);
+
+		click(farm);
+		flushEdt();
+		assertTrue("unchecking writes rep@canonicalDest",
+			config.blockedTeleportItems().contains("13121@" + farmDest));
+
+		click(farm);
+		flushEdt();
+		assertFalse("re-checking removes the record",
+			config.blockedTeleportItems().contains("13121@" + farmDest));
+		assertFalse("empty rep keys never serialize",
+			config.blockedTeleportItems().contains("@"));
+	}
+
+	@Test
+	public void masterBlockSuppressesOptionRecordsInCsv() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Ardougne cloaks");
+		assertNotNull(row);
+		expandRow(row);
+		flushEdt();
+
+		JCheckBox farm = optionBox(row, "Ardougne Farm");
+		assertNotNull("Ardougne Farm option checkbox", farm);
+		click(farm);
+		flushEdt();
+		assertTrue(config.blockedTeleportItems().contains("@"));
+
+		click(masterBox(row));
+		flushEdt();
+		String csv = config.blockedTeleportItems();
+		assertTrue("the master block writes bare member ids",
+			csv.contains("13121") && csv.contains("20760"));
+		assertFalse("a blocked family never emits rep@dest records",
+			csv.contains("@"));
+	}
+
+	@Test
+	public void optionLabelsJoinTheRowSearchText() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		assertTrue("an option-label query surfaces the family",
+			panel.restrictionListPanel().matchingLabels("farm")
+				.contains("Ardougne cloaks"));
+	}
+
+	@Test
+	public void externalOptionBlockResyncsTheCheckboxes() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		int farmDest = WorldPointUtil.packWorldPoint(2665, 3374, 0);
+		config.setBlockedTeleportItemsValue("13121@" + farmDest);
+		settings.onConfigChanged(event("blockedTeleportItems"));
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Ardougne cloaks");
+		assertNotNull(row);
+		JCheckBox farm = optionBox(row, "Ardougne Farm");
+		JCheckBox monastery = optionBox(row, "Kandarin Monastery");
+		assertNotNull("Ardougne Farm option checkbox", farm);
+		assertNotNull("Kandarin Monastery option checkbox", monastery);
+		assertFalse("external record unchecks the option", farm.isSelected());
+		assertTrue("sibling options stay allowed", monastery.isSelected());
+
+		config.setBlockedTeleportItemsValue("");
+		settings.onConfigChanged(event("blockedTeleportItems"));
+		flushEdt();
+		assertTrue("clearing restores the allowed state", farm.isSelected());
 	}
 }
