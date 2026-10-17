@@ -75,8 +75,13 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		// drawHighlights, so the widget is non-null here (the gate returns
 		// false on a null/hidden container).
 		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
+		// Items scrolled out of view keep their positions above or below the bank, so only the
+		// visible part of the item area is drawn on.
+		Shape clip = graphics.getClip();
+		graphics.clip(bankContainer.getBounds());
 		drawItemOutlines(graphics, itemManager, bankContainer.getChildren(), pickup.bankItemIds,
 			highlight);
+		graphics.setClip(clip);
 
 		return null;
 	}
