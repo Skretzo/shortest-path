@@ -52,6 +52,14 @@ class ShortestPathHomePanel extends PluginPanel
 	 */
 	private static final int TILE_EDGE = (PluginPanel.PANEL_WIDTH - 2 * 8 - GRID_HGAP) / 2;
 	private static final int TILE_ICON_SIZE = 32;
+	/**
+	 * The unlock keys the Unlocks tile counts — one list shared by the
+	 * refresh-listener registration and the status computation so adding
+	 * an unlock row can never leave the tile reading "n/4".
+	 */
+	private static final String[] UNLOCK_KEYS = {
+		"unlockCanoeAxe", "unlockXericsHonour",
+		"unlockDragontoothPassage", "unlockMorUlRek"};
 
 	private final ShortestPathPanel panel;
 	private final FixedWidthPanel content;
@@ -269,8 +277,11 @@ class ShortestPathHomePanel extends PluginPanel
 		{
 			panel.registerConfigListener(card.getKeyName(), this::refresh);
 		}
-		for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour",
-			"unlockDragontoothPassage", "unlockMorUlRek", "balloonLogBasketRoutes",
+		for (String key : UNLOCK_KEYS)
+		{
+			panel.registerConfigListener(key, this::refresh);
+		}
+		for (String key : new String[]{"balloonLogBasketRoutes",
 			"includeBankPath", "usePoh", "pathfinderAlgorithm", "blockedTeleportItems"})
 		{
 			panel.registerConfigListener(key, this::refresh);
@@ -317,15 +328,14 @@ class ShortestPathHomePanel extends PluginPanel
 				return restricted == 0 ? "All allowed" : restricted + " restricted";
 			case "Unlocks":
 				int unlocked = 0;
-				for (String key : new String[]{"unlockCanoeAxe", "unlockXericsHonour",
-					"unlockDragontoothPassage", "unlockMorUlRek"})
+				for (String key : UNLOCK_KEYS)
 				{
 					if (panel.settings.configuredBool(key))
 					{
 						unlocked++;
 					}
 				}
-				return unlocked + "/4 on";
+				return unlocked + "/" + UNLOCK_KEYS.length + " on";
 			case "Bank":
 				return panel.settings.configuredBool("includeBankPath") ? "On" : "Off";
 			case "Player-Owned House":
