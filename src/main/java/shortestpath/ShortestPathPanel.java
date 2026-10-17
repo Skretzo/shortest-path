@@ -80,8 +80,8 @@ public class ShortestPathPanel extends PluginPanel
 	static final String OWNED_EMPTY_LINE_2 =
 		"Bank items are remembered from the last time you opened it on this account.";
 	static final String RESTRICTIONS_DISABLED_HINT =
-		"Teleportation items are disabled. Enable \"Use teleportation items\" "
-			+ "in Transports to restrict individual items.";
+		"Teleportation items are disabled. Enable \"Use Teleportation Items\" "
+			+ "in General to restrict individual items.";
 
 	static final ImageIcon SECTION_EXPAND_ICON;
 	static final ImageIcon SECTION_RETRACT_ICON;
@@ -214,6 +214,9 @@ public class ShortestPathPanel extends PluginPanel
 		general.addRow(checkRow("respawnPrifddinas"));
 		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
 		general.addRow(checkRow("collisionAwareBlockedTargets"));
+		// The teleport-items mode is a routing policy, so its combo lives
+		// with the other General rows; its Transports card is masterless.
+		general.addRow(comboRow("useTeleportationItems"));
 		general.addRow(comboRow("pathfinderAlgorithm"));
 
 		// The heuristic weight only steers the A* backend — dim it while
@@ -235,24 +238,24 @@ public class ShortestPathPanel extends PluginPanel
 			familyThresholdRows("useAgilityShortcuts"));
 		addFamilyCard(transports, "useGrappleShortcuts", ItemID.XBOWS_GRAPPLE_HOOK,
 			familyThresholdRows("useGrappleShortcuts"));
-		addFamilyCard(transports, "useBoats", null,
+		addFamilyCard(transports, "useBoats", ItemID.AHOY_TOY_BOAT,
 			familyThresholdRows("useBoats"));
 		addFamilyCard(transports, "useSailingMoves", ItemID.SAILING_CHARTING_SPYGLASS);
 		addFamilyCard(transports, "useCanoes", ItemID.CANOEING_PADDLE,
 			familyThresholdRows("useCanoes"));
-		addFamilyCard(transports, "useCharterShips", null,
+		addFamilyCard(transports, "useCharterShips", ItemID.SHILOSHIPTICKET,
 			familyThresholdRows("useCharterShips"));
-		addFamilyCard(transports, "useShips", null,
+		addFamilyCard(transports, "useShips", ItemID.GRANDTREE_WARSHIP,
 			familyThresholdRows("useShips"));
 		addFamilyCard(transports, "useFairyRings", ItemID.DRAMEN_STAFF,
 			familyThresholdRows("useFairyRings"));
-		addFamilyCard(transports, "useGnomeGliders", null,
+		addFamilyCard(transports, "useGnomeGliders", ItemID.ALUFT_GNOME_GOGGLES,
 			familyThresholdRows("useGnomeGliders"));
-		addFamilyCard(transports, "useHotAirBalloons", null,
+		addFamilyCard(transports, "useHotAirBalloons", ItemID.ZEP_TOY_BALLOON_RED,
 			familyThresholdRows("useHotAirBalloons"));
 		addFamilyCard(transports, "useMagicCarpets", ItemID.MAGIC_CARPET,
 			familyThresholdRows("useMagicCarpets"));
-		addFamilyCard(transports, "useMagicMushtrees", null,
+		addFamilyCard(transports, "useMagicMushtrees", ItemID.EVENT_MUSHTREE_DUMMY,
 			familyThresholdRows("useMagicMushtrees"));
 		addFamilyCard(transports, "useMinecarts", ItemID.DWARF_MINECART_TICKET_KELDA_ICE,
 			familyThresholdRows("useMinecarts"));
@@ -262,15 +265,17 @@ public class ShortestPathPanel extends PluginPanel
 		addFamilyCard(transports, "useSpiritTrees", ItemID.PLANTPOT_SPIRIT_TREE_SAPLING,
 			familyThresholdRows("useSpiritTrees"));
 
-		addFamilyCard(transports, "useTeleportationItems", ItemID.RING_OF_DUELING_8,
+		// Masterless: the mode combo lives in General — this card groups the
+		// teleport-item cost thresholds and still counts in "n/N on" while
+		// the mode is anything but NONE.
+		addFamilyCard(transports, "useTeleportationItems", ItemID.RING_OF_DUELING_8, true,
 			spinnerRow("costConsumableTeleportationItems"),
 			spinnerRow("costNonConsumableTeleportationItems"),
-			spinnerRow("costTeleportationBoxes"),
-			restrictionsPointer());
+			spinnerRow("costTeleportationBoxes"));
 
-		addFamilyCard(transports, "useTeleportationLevers", null,
+		addFamilyCard(transports, "useTeleportationLevers", ItemID.POH_LEVER_OAK,
 			familyThresholdRows("useTeleportationLevers"));
-		addFamilyCard(transports, "useTeleportationPortals", null,
+		addFamilyCard(transports, "useTeleportationPortals", ItemID.POH_DUMMY_PORTALNEXUS,
 			familyThresholdRows("useTeleportationPortals"));
 		addFamilyCard(transports, "useTeleportationSpells", ItemID.LAWRUNE,
 			familyThresholdRows("useTeleportationSpells"));
@@ -278,7 +283,7 @@ public class ShortestPathPanel extends PluginPanel
 			familyThresholdRows("useTeleportationSpellsHome"));
 		addFamilyCard(transports, "useTeleportationMinigames", ItemID.MINIGAME_TELEPORT,
 			familyThresholdRows("useTeleportationMinigames"));
-		addFamilyCard(transports, "useWildernessObelisks", null,
+		addFamilyCard(transports, "useWildernessObelisks", ItemID.POH_SUPERIOR_GARDEN_WILDERNESS_OBELISK,
 			familyThresholdRows("useWildernessObelisks"));
 		addFamilyCard(transports, "useSeasonalTransports", ItemID.LEAGUE_TWISTED_HOME_TELEPORT,
 			familyThresholdRows("useSeasonalTransports"));
@@ -367,12 +372,23 @@ public class ShortestPathPanel extends PluginPanel
 	private TransportFamilyCard addFamilyCard(CategoryPanel category, String useKey, Integer iconItemId,
 		SearchRow... detailRows)
 	{
+		return addFamilyCard(category, useKey, iconItemId, false, detailRows);
+	}
+
+	/**
+	 * {@code masterless} cards render no master control — their on/off state
+	 * is owned elsewhere (the teleport-items mode combo lives in General) and
+	 * {@link TransportFamilyCard#isMasterOn()} reads it straight from config.
+	 */
+	private TransportFamilyCard addFamilyCard(CategoryPanel category, String useKey, Integer iconItemId,
+		boolean masterless, SearchRow... detailRows)
+	{
 		ConfigItem item = settings.configItem(useKey);
 		String name = item == null ? useKey : item.name();
 		String title = name.startsWith("Use ") ? name.substring("Use ".length()) : name;
 		String description = item == null ? "" : item.description();
 
-		TransportFamilyCard card = new TransportFamilyCard(this, useKey, title, description, iconItemId);
+		TransportFamilyCard card = new TransportFamilyCard(this, useKey, title, description, iconItemId, masterless);
 		transportCards.add(card);
 
 		List<String> searchParts = new ArrayList<>();
@@ -395,27 +411,6 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		String costKey = "cost" + useKey.substring("use".length());
 		return settings.configItem(costKey) != null ? new SearchRow[]{spinnerRow(costKey)} : new SearchRow[0];
-	}
-
-	private SearchRow restrictionsPointer()
-	{
-		JLabel pointer = new JLabel("Manage individual items below");
-		pointer.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		pointer.setFont(FontManager.getRunescapeSmallFont());
-		pointer.setBorder(new EmptyBorder(4, 0, 4, 0));
-		pointer.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				drillInto(restrictionsCategory);
-			}
-		});
-		JPanel row = new JPanel(new BorderLayout());
-		row.setOpaque(false);
-		row.add(pointer, BorderLayout.CENTER);
-		return new SearchRow(row, "Manage individual items below",
-			searchable("Manage individual items below"));
 	}
 
 	private SearchRow checkRow(String keyName)
@@ -461,7 +456,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
-		JLabel label = new JLabel(name);
+		JLabel label = new JLabel(html(name));
 		label.setForeground(Color.WHITE);
 		label.setToolTipText(html(description));
 		row.add(label, BorderLayout.CENTER);
@@ -525,7 +520,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
-		JLabel label = new JLabel(name);
+		JLabel label = new JLabel(html(name));
 		label.setForeground(Color.WHITE);
 		label.setToolTipText(html(description));
 		row.add(label, BorderLayout.CENTER);
@@ -548,7 +543,7 @@ public class ShortestPathPanel extends PluginPanel
 			// panel construction.
 			JPanel fallbackRow = new JPanel(new BorderLayout());
 			fallbackRow.setOpaque(false);
-			JLabel fallbackLabel = new JLabel(name);
+			JLabel fallbackLabel = new JLabel(html(name));
 			fallbackLabel.setForeground(Color.WHITE);
 			fallbackLabel.setToolTipText(html(description));
 			fallbackRow.add(fallbackLabel, BorderLayout.CENTER);
@@ -558,6 +553,7 @@ public class ShortestPathPanel extends PluginPanel
 		Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
 		JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
 		combo.setRenderer(new TitleCaseListCellRenderer());
+		combo.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
 		combo.setSelectedItem(value);
 		combo.setPreferredSize(new Dimension(combo.getPreferredSize().width, COMBO_HEIGHT));
 		combo.setToolTipText(html(description));
@@ -584,7 +580,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
-		JLabel label = new JLabel(name);
+		JLabel label = new JLabel(html(name));
 		label.setForeground(Color.WHITE);
 		label.setToolTipText(html(description));
 		row.add(label, BorderLayout.CENTER);
@@ -611,7 +607,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel groupRow = new JPanel(new BorderLayout());
 		groupRow.setOpaque(false);
-		JLabel groupLabel = new JLabel(name);
+		JLabel groupLabel = new JLabel(html(name));
 		groupLabel.setForeground(Color.WHITE);
 		groupLabel.setToolTipText(html(description));
 		groupRow.add(groupLabel, BorderLayout.CENTER);
@@ -619,7 +615,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		for (E constant : type.getEnumConstants())
 		{
-			JCheckBox checkBox = new JCheckBox(constant.toString());
+			JCheckBox checkBox = new JCheckBox(html(constant.toString()));
 			checkBox.setSelected(currentSet(keyName, type).contains(constant));
 			checkBox.setToolTipText(html(description));
 			checkBox.addActionListener(e ->
@@ -870,9 +866,47 @@ public class ShortestPathPanel extends PluginPanel
 		return String.join(" ", parts).toLowerCase(Locale.ROOT);
 	}
 
+	/**
+	 * Wraps {@code text} in an {@code <html>} body: a label or checkbox
+	 * renders {@code <html>}-tagged content word-wrapped to its laid-out
+	 * width instead of clipping at the fixed 225px viewport. Applied to
+	 * every panel label that can outgrow its row.
+	 */
 	static String html(String text)
 	{
 		return "<html>" + text + "</html>";
+	}
+
+	/**
+	 * Capitalises the first letter of every word — the same convention
+	 * RuneLite's {@code TitleCaseListCellRenderer} applies to enum values —
+	 * so data-derived labels (restriction family names) match the Title
+	 * Case the config names carry. Word boundaries: whitespace, '(' and
+	 * '-'.
+	 */
+	static String titleCase(String text)
+	{
+		StringBuilder sb = new StringBuilder(text.length());
+		boolean wordStart = true;
+		for (int i = 0; i < text.length(); i++)
+		{
+			char c = text.charAt(i);
+			if (c == ' ' || c == '\t' || c == '(' || c == '-')
+			{
+				wordStart = true;
+			}
+			else if (wordStart && Character.isLetter(c))
+			{
+				c = Character.toUpperCase(c);
+				wordStart = false;
+			}
+			else
+			{
+				wordStart = false;
+			}
+			sb.append(c);
+		}
+		return sb.toString();
 	}
 
 	static String escapeHtml(String text)

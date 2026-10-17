@@ -37,6 +37,10 @@ class TransportFamilyCard extends JPanel
 
 	private final ShortestPathPanel panel;
 	private final String keyName;
+	// True when the family's on/off state is owned by a control elsewhere
+	// (the teleport-items mode combo lives in General): no master control
+	// renders, and isMasterOn() reads the configured value directly.
+	private final boolean masterless;
 
 	private final DimmableJPanel header;
 	private final JPanel nameArea;
@@ -54,8 +58,15 @@ class TransportFamilyCard extends JPanel
 
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId)
 	{
+		this(panel, keyName, title, description, iconItemId, false);
+	}
+
+	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId,
+		boolean masterless)
+	{
 		this.panel = panel;
 		this.keyName = keyName;
+		this.masterless = masterless;
 
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -77,7 +88,7 @@ class TransportFamilyCard extends JPanel
 		}
 		nameArea.add(iconLabel, BorderLayout.WEST);
 
-		nameLabel = new JLabel(title);
+		nameLabel = new JLabel(ShortestPathPanel.html(title));
 		nameLabel.setToolTipText(ShortestPathPanel.html(description));
 		nameArea.add(nameLabel, BorderLayout.CENTER);
 		header.add(nameArea, BorderLayout.CENTER);
@@ -86,8 +97,11 @@ class TransportFamilyCard extends JPanel
 		headerControls.setOpaque(false);
 		headerControls.setLayout(new BoxLayout(headerControls, BoxLayout.X_AXIS));
 
-		masterControl = createMasterControl(description);
-		headerControls.add(masterControl);
+		masterControl = masterless ? null : createMasterControl(description);
+		if (masterControl != null)
+		{
+			headerControls.add(masterControl);
+		}
 		header.add(headerControls, BorderLayout.EAST);
 		add(header);
 
@@ -196,6 +210,17 @@ class TransportFamilyCard extends JPanel
 
 	boolean isMasterOn()
 	{
+		if (masterless)
+		{
+			// No master control to ask — the configured value itself says
+			// whether the family routes (enums: anything but NONE).
+			Object value = panel.settings.configuredValue(keyName);
+			if (value instanceof Enum)
+			{
+				return !"NONE".equals(((Enum<?>) value).name());
+			}
+			return Boolean.TRUE.equals(value);
+		}
 		if (masterControl instanceof JCheckBox)
 		{
 			return ((JCheckBox) masterControl).isSelected();
@@ -240,6 +265,8 @@ class TransportFamilyCard extends JPanel
 		{
 			syncing = false;
 		}
+		// Masterless cards hold no control to mirror into — only the dim
+		// state follows the configured value.
 		applyEnabled(isMasterOn());
 	}
 
@@ -252,6 +279,7 @@ class TransportFamilyCard extends JPanel
 			Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
 			JComboBox<Enum<?>> combo = new JComboBox<Enum<?>>(type.getEnumConstants()); // NOPMD: UseDiamondOperator
 			combo.setRenderer(new TitleCaseListCellRenderer());
+			combo.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
 			combo.setSelectedItem(value);
 			combo.setPreferredSize(new Dimension(Math.min(combo.getPreferredSize().width, COMBO_MAX_WIDTH), COMBO_HEIGHT));
 			combo.setToolTipText(ShortestPathPanel.html(description));
