@@ -40,6 +40,38 @@ public class ItemRequirementParserTest
 	}
 
 	@Test(expected = IllegalArgumentException.class)
+	public void nonNumericUnlockQuantityIsRejected()
+	{
+		new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=abc");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void missingQuantityUnlockIsRejected()
+	{
+		new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void overflowingUnlockQuantityIsRejected()
+	{
+		new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=99999999999");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void leadingZeroUnlockQuantityIsRejected()
+	{
+		// '=1' is a grammar contract: only the literal string "1" is legal,
+		// matching check_tsv.py's string-level check.
+		new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=01");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void signedUnlockQuantityIsRejected()
+	{
+		new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=+1");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
 	public void nonOneUnlockInsideOrGroupIsRejected()
 	{
 		new ItemRequirementParser().parse("AXE=1|UNLOCK_XERICS_HONOUR=2");
