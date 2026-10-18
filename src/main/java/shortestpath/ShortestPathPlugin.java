@@ -53,6 +53,7 @@ import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.PluginOverlays;
+import shortestpath.overlay.ScrollBookHighlightOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
@@ -102,6 +103,8 @@ public class ShortestPathPlugin extends Plugin
 	private SpellbookHighlightOverlay spellbookHighlightOverlay;
 	@Inject
 	private InventoryHighlightOverlay inventoryHighlightOverlay;
+	@Inject
+	private ScrollBookHighlightOverlay scrollBookHighlightOverlay;
 	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
@@ -208,7 +211,7 @@ public class ShortestPathPlugin extends Plugin
 
 		pluginOverlays = new PluginOverlays(pathOverlay, pathMinimapOverlay,
 			pathMapOverlay, pathMapTooltipOverlay, bankItemHighlightOverlay,
-			spellbookHighlightOverlay, inventoryHighlightOverlay, debugOverlayPanel);
+			spellbookHighlightOverlay, inventoryHighlightOverlay, scrollBookHighlightOverlay, debugOverlayPanel);
 		pluginOverlays.register(overlayManager, settings.lifecycle().drawDebugPanel());
 
 		keyManager.registerKeyListener(clearPathKeylistener);
