@@ -1241,6 +1241,28 @@ public class ResourceLoaderTest
 	}
 
 	@Test
+	public void recordThrowingInTransportCtorIsSkippedNotFatal()
+	{
+		// A record whose field fails loudly inside the Transport constructor —
+		// here an unknown unlock name in the Items cell — must be skipped with
+		// a warning; its file-mates still load and no exception escapes.
+		String contents = "# Origin\tDestination\tDuration\tItems\n" +
+			"3200 3200 0\t3300 3300 0\t5\t995=5\n" +
+			"3400 3400 0\t3500 3500 0\t7\tUNLOCK_TYPO=1\n" +
+			"3600 3600 0\t3700 3700 0\t9\t561=10\n";
+
+		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
+
+		Assert.assertEquals("Only the well-formed records may land", 2, transports.size());
+		Assert.assertTrue("First valid record's origin should land",
+			transports.containsKey(WorldPointUtil.packWorldPoint(3200, 3200, 0)));
+		Assert.assertTrue("Second valid record's origin should land",
+			transports.containsKey(WorldPointUtil.packWorldPoint(3600, 3600, 0)));
+		Assert.assertFalse("Malformed record's origin must not land",
+			transports.containsKey(WorldPointUtil.packWorldPoint(3400, 3400, 0)));
+	}
+
+	@Test
 	public void transportSkillLevelsComeBackTyped()
 	{
 		// The loader's transports carry SkillLevels, not the bare int[] —

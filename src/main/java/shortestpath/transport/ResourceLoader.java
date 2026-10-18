@@ -96,7 +96,19 @@ public final class ResourceLoader
 		Set<Transport> newTransports = new LinkedHashSet<>();
 		for (TransportRecord record : records)
 		{
-			Transport transport = new Transport(record, transportType);
+			final Transport transport;
+			try
+			{
+				transport = new Transport(record, transportType);
+			}
+			catch (IllegalArgumentException e)
+			{
+				// One malformed record must not take down the whole file:
+				// skip it and keep loading its file-mates.
+				log.warn("Skipping malformed {} transport record ({} -> {}): {}",
+					transportType, record.getOrigin(), record.getDestination(), e.getMessage());
+				continue;
+			}
 			newTransports.add(transport);
 		}
 
