@@ -76,6 +76,11 @@ Typical fix:
    two stay in sync and fails with a pointer to the script if they
    don't.
 
+   Adding rows never breaks the committed-data checks — they only pin
+   floors. If your change *removes* rows or tiles, `ResourceLoaderTest`
+   trips on the shrunken count; lowering the floor is the deliberate
+   acknowledgement, so commit it with the change.
+
    In the tooling repo, `./gradlew test` also runs the dashboard
    scenario corpus, and `maintenance.py verify` adds the collision-map
    diff.
