@@ -4904,6 +4904,14 @@
 2118 3895 0	2118 3893 1	Climb Ladder 16960						2	
 									
 # Zanaris									
+2469 4438 0	2470 4438 0	Open Magic door 12045		1601=1				1	
+2470 4438 0	2469 4438 0	Open Magic door 12045						1	
+2469 4437 0	2470 4437 0	Open Magic door 12047		1601=1				1	
+2470 4437 0	2469 4437 0	Open Magic door 12047						1	
+2466 4434 0	2466 4433 0	Open Magic door 12045		1601=1				1	
+2466 4433 0	2466 4434 0	Open Magic door 12045						1	
+2465 4434 0	2465 4433 0	Open Magic door 12047		1601=1				1	
+2465 4433 0	2465 4434 0	Open Magic door 12047						1	
 2452 4473 0	3201 3169 0	Use Fairy ring 12094						6	
 3202 3169 0	2452 4473 0	Open Door 2406						6	
 2486 4471 0	3260 3171 0	Use Fairy ring 12003						6	
