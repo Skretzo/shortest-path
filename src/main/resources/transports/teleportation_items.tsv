@@ -596,3 +596,11 @@
 1629 3673 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Kourend Castle	T	20	12310=1	
 1681 3134 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Civitas illa Fortis	T	20	9805=1	
 3263 6066 0			21129=1||21132=1||21134=1||21136=1||21138=1	Song of the Elves	4	Ring of returning: Prifddinas	T	20	668=0;3910=0;621=0;10528=0;12310=0;9805=0	
+										
+# Ghommal's hilt (daily limits are the per-hilt use counters: hilt 1 has 3, hilt 2 has 5, hilt 3+ unlimited teleports to Trollheim; hilt 4 has 3, hilt 5 has 5, hilt 6 unlimited teleports to Mor Ul Rek - needs the fire-cape unlock)										
+2900 3748 0			25926=1		4	Ghommal's hilt: Trollheim	F	20	12875<3	
+2900 3748 0			25928=1		4	Ghommal's hilt: Trollheim	F	20	12875<5	
+2900 3748 0			25930=1||25932=1||25934=1||25936=1||27550=1||27551=1||27552=1||27553=1		4	Ghommal's hilt: Trollheim	F	20		
+2544 5139 0			25932=1&UNLOCK_MOR_UL_REK=1		4	Ghommal's hilt: Mor Ul Rek	F	20	12876<3	
+2544 5139 0			25934=1||27550=1||27551=1&UNLOCK_MOR_UL_REK=1		4	Ghommal's hilt: Mor Ul Rek	F	20	12876<5	
+2544 5139 0			25936=1||27552=1||27553=1&UNLOCK_MOR_UL_REK=1		4	Ghommal's hilt: Mor Ul Rek	F	20		

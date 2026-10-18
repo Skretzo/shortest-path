@@ -402,6 +402,71 @@ public class PathfinderTest
 		}
 	}
 
+	private static final String GHOMMALS_TROLLHEIM = "Ghommal's hilt: Trollheim";
+	private static final String GHOMMALS_MOR_UL_REK = "Ghommal's hilt: Mor Ul Rek";
+
+	private boolean hiltTeleportUsable(int itemId, int trollheimUses, int morUlRekUses, String destination)
+	{
+		setupInventory(new Item(itemId, 1));
+		config.set("unlockMorUlRek", true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY, Map.of(
+			VarbitID.CA_TELEPORT_COUNT_TROLLHEIM, trollheimUses,
+			VarbitID.CA_TELEPORT_COUNT_MORULREK, morUlRekUses));
+		return hasUsableTeleport(destination);
+	}
+
+	@Test
+	public void ghommalsHiltTrollheimStopsAtTheDailyLimitOfLowTiers()
+	{
+		assertTrue(hiltTeleportUsable(ItemID.CA_OFFHAND_EASY, 2, 0, GHOMMALS_TROLLHEIM));
+		assertFalse(hiltTeleportUsable(ItemID.CA_OFFHAND_EASY, 3, 0, GHOMMALS_TROLLHEIM));
+		assertTrue(hiltTeleportUsable(ItemID.CA_OFFHAND_MEDIUM, 4, 0, GHOMMALS_TROLLHEIM));
+		assertFalse(hiltTeleportUsable(ItemID.CA_OFFHAND_MEDIUM, 5, 0, GHOMMALS_TROLLHEIM));
+	}
+
+	@Test
+	public void ghommalsHiltTrollheimIsUnlimitedFromTheThirdTier()
+	{
+		for (int hilt : new int[]{ItemID.CA_OFFHAND_HARD, ItemID.CA_OFFHAND_ELITE, ItemID.CA_OFFHAND_MASTER,
+			ItemID.CA_OFFHAND_GRANDMASTER, ItemID.INFERNAL_DEFENDER_GHOMMAL_5, ItemID.INFERNAL_DEFENDER_GHOMMAL_6_TROUVER})
+		{
+			assertTrue("item " + hilt, hiltTeleportUsable(hilt, 5, 0, GHOMMALS_TROLLHEIM));
+		}
+	}
+
+	@Test
+	public void ghommalsHiltMorUlRekStopsAtTheDailyLimitOfLowTiers()
+	{
+		assertTrue(hiltTeleportUsable(ItemID.CA_OFFHAND_ELITE, 0, 2, GHOMMALS_MOR_UL_REK));
+		assertFalse(hiltTeleportUsable(ItemID.CA_OFFHAND_ELITE, 0, 3, GHOMMALS_MOR_UL_REK));
+		for (int hilt : new int[]{ItemID.CA_OFFHAND_MASTER, ItemID.INFERNAL_DEFENDER_GHOMMAL_5,
+			ItemID.INFERNAL_DEFENDER_GHOMMAL_5_TROUVER})
+		{
+			assertTrue("item " + hilt, hiltTeleportUsable(hilt, 0, 4, GHOMMALS_MOR_UL_REK));
+			assertFalse("item " + hilt, hiltTeleportUsable(hilt, 0, 5, GHOMMALS_MOR_UL_REK));
+		}
+	}
+
+	@Test
+	public void ghommalsHiltMorUlRekIsUnlimitedAtTheSixthTier()
+	{
+		for (int hilt : new int[]{ItemID.CA_OFFHAND_GRANDMASTER, ItemID.INFERNAL_DEFENDER_GHOMMAL_6,
+			ItemID.INFERNAL_DEFENDER_GHOMMAL_6_TROUVER})
+		{
+			assertTrue("item " + hilt, hiltTeleportUsable(hilt, 0, 5, GHOMMALS_MOR_UL_REK));
+		}
+	}
+
+	@Test
+	public void ghommalsHiltMorUlRekNeedsTheInnerCityUnlock()
+	{
+		setupInventory(new Item(ItemID.CA_OFFHAND_GRANDMASTER, 1));
+		config.set("unlockMorUlRek", false);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY, Map.of());
+		assertFalse(hasUsableTeleport(GHOMMALS_MOR_UL_REK));
+		assertTrue(hasUsableTeleport(GHOMMALS_TROLLHEIM));
+	}
+
 	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";
 	private static final String XERICS_LOOKOUT = "Xeric's talisman: 1. Xeric's Lookout";
 
