@@ -101,6 +101,37 @@ public class PathAnnotatorTest
 	}
 
 	@Test
+	public void testGetPohExitInfoFirstEdgeTeleport()
+	{
+		int outside = WorldPointUtil.packWorldPoint(3000, 3300, 0);
+
+		// A route that leaves the POH on its first edge arrives here with
+		// currentIndex = -1: the overlay passes pathIndex - 1 so the scan
+		// starts at the current edge, and global teleports are always
+		// first-edge exits because their abstract node hangs off the start
+		// tile. The guard must admit exactly -1.
+		Transport pod = transport(TransportType.TELEPORTATION_ITEM, "Grand seed pod", null, 0);
+		List<PathStep> path = List.of(
+			new PathStep(LANDING, BankVisitState.CARRIED),
+			new PathStep(outside, BankVisitState.CARRIED, pod));
+		assertEquals("Grand seed pod",
+			annotator.getPohExitInfo(LANDING, path, -1));
+	}
+
+	@Test
+	public void testGetPohExitInfoFirstEdgePortal()
+	{
+		int outside = WorldPointUtil.packWorldPoint(3000, 3300, 0);
+
+		Transport portal = transport(TransportType.TELEPORTATION_PORTAL_POH, "Lumbridge Portal", null, 0);
+		List<PathStep> path = List.of(
+			new PathStep(LANDING, BankVisitState.CARRIED),
+			new PathStep(outside, BankVisitState.CARRIED, portal));
+		assertEquals("Nexus: Lumbridge Portal",
+			annotator.getPohExitInfo(LANDING, path, -1));
+	}
+
+	@Test
 	public void testGetPohExitInfoRejectedInputs()
 	{
 		int inside1 = WorldPointUtil.packWorldPoint(1900, 7060, 0);
@@ -116,7 +147,9 @@ public class PathAnnotatorTest
 		assertNull(annotator.getPohExitInfo(outside, path, 0));
 
 		assertNull(annotator.getPohExitInfo(LANDING, null, 0));
-		assertNull(annotator.getPohExitInfo(LANDING, path, -1));
+		// -1 is admitted (scan from the first edge); only values below it
+		// are rejected.
+		assertNull(annotator.getPohExitInfo(LANDING, path, -2));
 
 		// A path that never crosses the boundary produces no exit info.
 		List<PathStep> allInside = List.of(
