@@ -230,6 +230,8 @@
 3128 3832 0			21389=1		4	Master scroll book: Revenant cave teleport	T	20	6056>0	
 1645 3580 0			23387=1		4	Watson teleport	T	20		
 1645 3580 0			21389=1		4	Master scroll book: Watson teleport	T	20	8253>0	
+4063 4557 0			29684=1	While Guthix Sleeps	4	Guthixian temple teleport	T	20		
+4063 4557 0			21389=1	While Guthix Sleeps	4	Master scroll book: Guthixian temple teleport	T	20	10967>0	
 										
 # Crafting cape										
 2931 3286 0		99 Crafting	9780=1||9781=1		4	Crafting cape: Teleport	F	20		
