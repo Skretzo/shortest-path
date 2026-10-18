@@ -283,6 +283,78 @@ public class TransportItemsSatisfactionTest
 	}
 
 	@Test
+	public void soulRiftPureUnlockSatisfiedOnlyWhenDeclared()
+	{
+		TransportItems items = new ItemRequirementParser().parse("UNLOCK_SOUL_RIFT=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.SOUL_RIFT)));
+		// No amount of items can cover an unlock-only branch.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1, ItemID.COINS, 999999));
+		// A sibling unlock declared instead does not satisfy it.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.BLOOD_RIFT)));
+	}
+
+	@Test
+	public void bloodRiftPureUnlockSatisfiedOnlyWhenDeclared()
+	{
+		TransportItems items = new ItemRequirementParser().parse("UNLOCK_BLOOD_RIFT=1");
+		Assert.assertNotNull(items);
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.BLOOD_RIFT)));
+		// No amount of items can cover an unlock-only branch.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1, ItemID.COINS, 999999));
+		// A sibling unlock declared instead does not satisfy it.
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.SOUL_RIFT)));
+	}
+
+	/**
+	 * The whole four-cell truth table for an unlock as an OR relief vs an AND
+	 * gate: `item|UNLOCK` accepts either alternative, `item&UNLOCK` demands
+	 * both. The dark-essence block stands in for "some carried item" — the
+	 * unlock mechanic is earned by using it on the rift, never by carrying it.
+	 */
+	@Test
+	public void soulRiftOrReliefVsAndGateTruthTable()
+	{
+		TransportItems relief = new ItemRequirementParser()
+			.parse(ItemID.ARCEUUS_ESSENCE_BLOCK_DARK + "=1|UNLOCK_SOUL_RIFT=1");
+		Assert.assertNotNull(relief);
+		Assert.assertFalse(satisfiedWithUnlocks(relief, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(relief, Set.of(), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+		Assert.assertTrue(satisfiedWithUnlocks(relief, Set.of(Unlock.SOUL_RIFT)));
+		Assert.assertTrue(satisfiedWithUnlocks(relief, Set.of(Unlock.SOUL_RIFT), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+
+		TransportItems gate = new ItemRequirementParser()
+			.parse(ItemID.ARCEUUS_ESSENCE_BLOCK_DARK + "=1&UNLOCK_SOUL_RIFT=1");
+		Assert.assertNotNull(gate);
+		Assert.assertFalse(satisfiedWithUnlocks(gate, Set.of()));
+		Assert.assertFalse(satisfiedWithUnlocks(gate, Set.of(), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+		Assert.assertFalse(satisfiedWithUnlocks(gate, Set.of(Unlock.SOUL_RIFT)));
+		Assert.assertTrue(satisfiedWithUnlocks(gate, Set.of(Unlock.SOUL_RIFT), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+	}
+
+	@Test
+	public void bloodRiftOrReliefVsAndGateTruthTable()
+	{
+		TransportItems relief = new ItemRequirementParser()
+			.parse(ItemID.ARCEUUS_ESSENCE_BLOCK_DARK + "=1|UNLOCK_BLOOD_RIFT=1");
+		Assert.assertNotNull(relief);
+		Assert.assertFalse(satisfiedWithUnlocks(relief, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(relief, Set.of(), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+		Assert.assertTrue(satisfiedWithUnlocks(relief, Set.of(Unlock.BLOOD_RIFT)));
+		Assert.assertTrue(satisfiedWithUnlocks(relief, Set.of(Unlock.BLOOD_RIFT), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+
+		TransportItems gate = new ItemRequirementParser()
+			.parse(ItemID.ARCEUUS_ESSENCE_BLOCK_DARK + "=1&UNLOCK_BLOOD_RIFT=1");
+		Assert.assertNotNull(gate);
+		Assert.assertFalse(satisfiedWithUnlocks(gate, Set.of()));
+		Assert.assertFalse(satisfiedWithUnlocks(gate, Set.of(), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+		Assert.assertFalse(satisfiedWithUnlocks(gate, Set.of(Unlock.BLOOD_RIFT)));
+		Assert.assertTrue(satisfiedWithUnlocks(gate, Set.of(Unlock.BLOOD_RIFT), ItemID.ARCEUUS_ESSENCE_BLOCK_DARK, 1));
+	}
+
+	@Test
 	public void unlockBranchesEmitNoNullItemArrays()
 	{
 		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_CANOE_AXE=1&13393=1&UNLOCK_XERICS_HONOUR=1");

@@ -12,6 +12,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.Unlock;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -379,6 +380,81 @@ public class TransportEligibilityTest
 		assertTrue(carrying.usable(teleport, BankVisitState.CARRIED));
 	}
 
+	/**
+	 * A transport whose whole Items cell is a bare {@code UNLOCK_<NAME>=1}
+	 * (the rift rows' shape) must stay unusable while the snapshot declares
+	 * nothing — an empty unlock set or empty item pools can never satisfy it,
+	 * and once the unlock is declared the transport opens under both pools.
+	 */
+	@Test
+	public void pureUnlockTransportIsUnusableUntilTheUnlockIsDeclared()
+	{
+		Transport soulRift = unlockGatedTransport(Unlock.SOUL_RIFT);
+		TransportEligibility eligibility = eligibility(NO_POUCH);
+
+		// Empty unlock snapshot and absent items: unusable, never an NPE.
+		assertFalse(eligibility.usable(soulRift, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(soulRift, BankVisitState.BANKED));
+		assertFalse(eligibility.satisfiedByPlayer(soulRift));
+
+		// Items in hand cannot cover an unlock-only branch either.
+		playerHas.put(ItemID.COINS, 999999);
+		assertFalse(eligibility(NO_POUCH).usable(soulRift, BankVisitState.CARRIED));
+
+		TransportEligibility declared = eligibilityWithUnlocks(
+			TeleportationItem.NONE, Set.of(Unlock.SOUL_RIFT));
+		assertTrue(declared.usable(soulRift, BankVisitState.CARRIED));
+		assertTrue(declared.usable(soulRift, BankVisitState.BANKED));
+		assertTrue(declared.satisfiedByPlayer(soulRift));
+	}
+
+	/**
+	 * The rift transports are regular {@link TransportType#TRANSPORT} rows,
+	 * so the teleportation-item setting can never skip their requirement
+	 * evaluation: the pure-unlock gate holds under every mode, on and off.
+	 */
+	@Test
+	public void pureUnlockGateHoldsUnderEveryTeleportationItemMode()
+	{
+		Transport soulRift = unlockGatedTransport(Unlock.SOUL_RIFT);
+		Transport bloodRift = unlockGatedTransport(Unlock.BLOOD_RIFT);
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			assertFalse("soul rift offered under " + mode + " without the declared unlock",
+				eligibilityWithUnlocks(mode, Set.of()).usable(soulRift, BankVisitState.CARRIED));
+			assertTrue("soul rift still gated under " + mode + " with the unlock declared",
+				eligibilityWithUnlocks(mode, Set.of(Unlock.SOUL_RIFT)).usable(soulRift, BankVisitState.CARRIED));
+			assertFalse("blood rift offered under " + mode + " without the declared unlock",
+				eligibilityWithUnlocks(mode, Set.of()).usable(bloodRift, BankVisitState.CARRIED));
+			assertTrue("blood rift still gated under " + mode + " with the unlock declared",
+				eligibilityWithUnlocks(mode, Set.of(Unlock.BLOOD_RIFT)).usable(bloodRift, BankVisitState.CARRIED));
+		}
+	}
+
+	/**
+	 * The teleportation-item modes that skip item evaluation bypass
+	 * {@link #usable} for {@link TransportType#TELEPORTATION_ITEM} transports
+	 * entirely — an undeclared unlock cannot re-close them at this layer.
+	 * The gate's enforcement there lives in the requirement chain; pinning
+	 * the bypass keeps the two verdict layers' ownership visible.
+	 */
+	@Test
+	public void teleportItemBypassModesDoNotReGateUnlockRequirementsAtUsable()
+	{
+		Transport gatedTeleport = teleportItem(new TransportItems(List.of(
+			new ItemRequirement(List.of(
+				new ItemRequirement.Branch(null, null, null, 1, Unlock.SOUL_RIFT))))));
+
+		assertTrue(eligibilityWithUnlocks(TeleportationItem.ALL, Set.of())
+			.usable(gatedTeleport, BankVisitState.CARRIED));
+		assertTrue(eligibilityWithUnlocks(TeleportationItem.UNLOCKED, Set.of())
+			.usable(gatedTeleport, BankVisitState.CARRIED));
+		assertFalse(eligibilityWithUnlocks(TeleportationItem.INVENTORY, Set.of())
+			.usable(gatedTeleport, BankVisitState.CARRIED));
+		assertFalse(eligibilityWithUnlocks(TeleportationItem.NONE, Set.of())
+			.usable(gatedTeleport, BankVisitState.CARRIED));
+	}
+
 	@Test
 	public void noRequirementsAreUsableAndNeedNoPickup()
 	{
@@ -404,6 +480,14 @@ public class TransportEligibilityTest
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, bankPouchRunes,
 			staffRequired, setting, threshold, Set.of(), true);
+	}
+
+	private TransportEligibility eligibilityWithUnlocks(TeleportationItem setting, Set<Unlock> unlocks)
+	{
+		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
+		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
+		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, bankPouchRunes,
+			false, setting, Integer.MAX_VALUE, unlocks, true);
 	}
 
 	private Map<Integer, Long> pickups(Transport transport, int bankPouchId)
@@ -441,6 +525,16 @@ public class TransportEligibilityTest
 	{
 		return new Transport.TransportBuilder()
 			.type(TransportType.FAIRY_RING)
+			.build();
+	}
+
+	private static Transport unlockGatedTransport(Unlock unlock)
+	{
+		return new Transport.TransportBuilder()
+			.type(TransportType.TRANSPORT)
+			.itemRequirements(new TransportItems(List.of(
+				new ItemRequirement(List.of(
+					new ItemRequirement.Branch(null, null, null, 1, unlock))))))
 			.build();
 	}
 }
