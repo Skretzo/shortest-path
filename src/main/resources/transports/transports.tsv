@@ -2130,9 +2130,6 @@
 3588 3173 0	3590 3173 1	Climb-up Floor 18124							
 3589 3174 1	3588 3173 0	Climb-down Floor 18122							
 3589 3174 0	3590 3173 1	Climb-up Floor 18124							
-3589 3173 1	3588 3173 0	Climb-down Floor 18122							
-3588 3173 1	3588 3173 0	Climb-down Floor 18122							
-3589 3173 0	3590 3173 1	Climb-up Floor 18124							
 3588 3211 0	3588 3209 1	Climb-up Ladder 18000						2	
 3588 3209 1	3588 3211 0	Climb-down Ladder 17999						2	
 3589 3214 0	3589 3215 0	Open Barricade 18054							
