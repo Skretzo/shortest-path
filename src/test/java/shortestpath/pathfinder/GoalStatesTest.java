@@ -46,6 +46,11 @@ public class GoalStatesTest
 		return Target.requiring(point, TargetsTest.items(ItemID.SPADE));
 	}
 
+	private static TargetGoals tiles(Set<Integer> points)
+	{
+		return TargetGoals.resolve(points, config::isTransportDestination, TargetGoals.collisionRule(config, START));
+	}
+
 	private static boolean needsBank(HeldItems held, Target... targets)
 	{
 		return GoalStates.needsBank(Targets.of(List.of(targets)), held);
@@ -54,7 +59,7 @@ public class GoalStatesTest
 	private static GoalStates goals(HeldItems held, Target... targets)
 	{
 		Targets all = Targets.of(List.of(targets));
-		return GoalStates.resolve(TargetGoals.resolve(config, START, all.points()), all, held);
+		return GoalStates.resolve(tiles(all.points()), all, held);
 	}
 
 	@Test
@@ -112,7 +117,7 @@ public class GoalStatesTest
 	public void fallbackTilesFinishInTheirTargetsLayers()
 	{
 		GoalStates goals = goals(SPADE_BANKED, spadeAt(BLOCKED));
-		Set<Integer> fallbacks = TargetGoals.resolve(config, START, Set.of(BLOCKED)).fallbacks(BLOCKED);
+		Set<Integer> fallbacks = tiles(Set.of(BLOCKED)).fallbacks(BLOCKED);
 		assertFalse("the blocked target has walkable tiles beside it", fallbacks.isEmpty());
 		for (int fallback : fallbacks)
 		{

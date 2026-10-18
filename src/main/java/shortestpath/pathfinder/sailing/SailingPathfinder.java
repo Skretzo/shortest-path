@@ -2,6 +2,7 @@ package shortestpath.pathfinder.sailing;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.IntPredicate;
 
 import lombok.Getter;
 import shortestpath.PrimitiveIntList;
@@ -10,6 +11,7 @@ import shortestpath.leagues.LeagueModeState;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.GoalRule;
 import shortestpath.pathfinder.IntDeque;
 import shortestpath.pathfinder.IntMinHeap;
 import shortestpath.pathfinder.NodeGraph;
@@ -41,12 +43,15 @@ public class SailingPathfinder implements ActiveSearch
 	@Getter
 	private final Targets targets;
 	// Termination set resolved by TargetGoals: the requested targets plus, for
-	// each blocked target, its fallback tiles (issue #640).
-	private final Set<Integer> goals;
+	// each blocked target, its fallback tiles (issue #640). Resolved at the start
+	// of run(), with the rule taken when the search is created.
+	private Set<Integer> goals;
 	// Whether any requested target could possibly terminate the search: non-blocked,
 	// a transport destination, or resolved to at least one walkable nearby tile.
 	// When false the search is skipped entirely, since no goal can ever be visited.
-	private final boolean hasViableGoal;
+	private boolean hasViableGoal;
+	private final GoalRule goalRule;
+	private final IntPredicate transportDestination;
 	private final SailingSearch sailing;
 	private final PathfinderConfig config;
 	private final CollisionMap map;
@@ -134,11 +139,10 @@ public class SailingPathfinder implements ActiveSearch
 		this.start = start;
 		this.targets = targets;
 		Set<Integer> points = targets.points();
-		TargetGoals resolved = TargetGoals.resolve(config, start, points);
-		this.goals = resolved.goals();
-		this.hasViableGoal = resolved.hasViableGoal();
+		this.goalRule = TargetGoals.collisionRule(config, start);
+		this.transportDestination = config::isTransportDestination;
 		this.sailing = new SailingSearch(moves, boatHull, points.stream().mapToInt(Integer::intValue).toArray(),
-			goals.stream().mapToInt(Integer::intValue).toArray(), sailingHeading);
+			new int[0], sailingHeading);
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(points);
@@ -373,6 +377,10 @@ public class SailingPathfinder implements ActiveSearch
 	public void run()
 	{
 		stats.start();
+		TargetGoals resolved = TargetGoals.resolve(targets.points(), transportDestination, goalRule);
+		goals = resolved.goals();
+		hasViableGoal = resolved.hasViableGoal();
+		sailing.setGoals(goals.stream().mapToInt(Integer::intValue).toArray());
 		boundary.addFirst(graph.createStart(start));
 
 		// The cutoff counts time without progress towards the target.

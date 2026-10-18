@@ -28,8 +28,12 @@ public final class AStarPathfinder implements ActiveSearch
 	@Getter private final Targets targets;
 	// The states the search terminates on: the targets plus each blocked target's fallback tiles,
 	// resolved the same way the legacy backend resolves them (issue #640), each in the bank layers
-	// where the player holds that target's items. {@code null} for a search that failed to start.
-	private final GoalStates goals;
+	// where the player holds that target's items. Resolved in run(), from the rule and items taken
+	// when the search is created. {@code null} until then, and for a search that failed to start.
+	private GoalStates goals;
+	private final GoalRule goalRule;
+	private final IntPredicate transportDestination;
+	private final HeldItems heldItems;
 	private final Runnable completionCallback;
 	private final CollisionMap collision;
 	private final Supplier<RoutingStatic> routingStatic;
@@ -137,9 +141,11 @@ public final class AStarPathfinder implements ActiveSearch
 		this.collision = config.getMap();
 		this.routingStatic = routingStatic;
 		this.session = session == null ? new AStarRoutingSession() : session;
-		this.goals = GoalStates.resolve(config, start, targets);
+		this.goalRule = TargetGoals.collisionRule(config, start);
+		this.transportDestination = config::isTransportDestination;
+		this.heldItems = config.getHeldItems();
 		long phaseStarted = System.nanoTime();
-		this.account = config.prepareAStarRoutingAccount(true, GoalStates.needsBank(targets, config.getHeldItems()));
+		this.account = config.prepareAStarRoutingAccount(true, GoalStates.needsBank(targets, heldItems));
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, targets.points());
 		this.cutoffMillis = config.getCalculationCutoffMillis();
@@ -190,6 +196,9 @@ public final class AStarPathfinder implements ActiveSearch
 		this.account = null;
 		this.restrictions = SearchRestrictions.none();
 		this.goals = null;
+		this.goalRule = null;
+		this.transportDestination = null;
+		this.heldItems = null;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
@@ -390,6 +399,8 @@ public final class AStarPathfinder implements ActiveSearch
 			long phaseStarted = System.nanoTime();
 			RoutingStatic staticData = routingStatic.get();
 			routingStaticNanos = System.nanoTime() - phaseStarted;
+			goals = GoalStates.resolve(TargetGoals.resolve(targets.points(), transportDestination, goalRule), targets,
+				heldItems);
 			phaseStarted = System.nanoTime();
 			AStarRoutingSession.Lookup<SiteGraph> graph = session.graph(staticData, account);
 			graphPrepareNanos = System.nanoTime() - phaseStarted;
