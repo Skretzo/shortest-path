@@ -44,6 +44,10 @@ public class ItemRequirement
 
 		public Branch(int[] itemIds, int[] staffIds, int[] offhandIds, int quantity, Unlock unlock)
 		{
+			if (unlock != null && (itemIds != null || staffIds != null || offhandIds != null))
+			{
+				throw new IllegalArgumentException("An unlock branch carries no item ids");
+			}
 			this.itemIds = itemIds == null ? null : itemIds.clone();
 			this.staffIds = staffIds == null ? null : staffIds.clone();
 			this.offhandIds = offhandIds == null ? null : offhandIds.clone();

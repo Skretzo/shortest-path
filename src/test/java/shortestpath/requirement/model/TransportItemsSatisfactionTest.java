@@ -231,6 +231,61 @@ public class TransportItemsSatisfactionTest
 		new ItemRequirementParser().parse("UNLOCK_CANOE_AXE=0");
 	}
 
+	@Test(expected = IllegalArgumentException.class)
+	public void unlockBranchRejectsItemIds()
+	{
+		new ItemRequirement.Branch(new int[]{1}, null, null, 1, Unlock.XERICS_HONOUR);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unlockBranchRejectsStaffIds()
+	{
+		new ItemRequirement.Branch(null, new int[]{2}, null, 1, Unlock.XERICS_HONOUR);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unlockBranchRejectsOffhandIds()
+	{
+		new ItemRequirement.Branch(null, null, new int[]{3}, 1, Unlock.XERICS_HONOUR);
+	}
+
+	@Test
+	public void unlockOnlyAndItemOnlyBranchesConstruct()
+	{
+		// The only legal unlock shape carries no item ids; an id-bearing
+		// branch with no unlock is the legacy item shape.
+		ItemRequirement.Branch unlockOnly = new ItemRequirement.Branch(null, null, null, 1, Unlock.XERICS_HONOUR);
+		Assert.assertTrue(unlockOnly.isUnlockOnly());
+		Assert.assertEquals(Unlock.XERICS_HONOUR, unlockOnly.getUnlock());
+		Assert.assertNull(unlockOnly.getItemIds());
+
+		ItemRequirement.Branch itemOnly = new ItemRequirement.Branch(
+			new int[]{1}, new int[]{2}, new int[]{3}, 1, null);
+		Assert.assertFalse(itemOnly.isUnlockOnly());
+		Assert.assertNull(itemOnly.getUnlock());
+	}
+
+	@Test
+	public void isUnlockOnlyAgreesWithGetUnlockOnParsedBranches()
+	{
+		// Every branch shape the parser can emit must satisfy
+		// isUnlockOnly() == (getUnlock() != null) — the construction
+		// invariant keeps the two predicates from ever diverging.
+		for (String cell : new String[]{"AXE=1|UNLOCK_XERICS_HONOUR=1", "UNLOCK_CANOE_AXE=1"})
+		{
+			TransportItems items = new ItemRequirementParser().parse(cell);
+			Assert.assertNotNull(items);
+			for (ItemRequirement req : items.getRequirements())
+			{
+				for (ItemRequirement.Branch branch : req.getBranches())
+				{
+					Assert.assertEquals("isUnlockOnly must agree with getUnlock on " + cell,
+						branch.getUnlock() != null, branch.isUnlockOnly());
+				}
+			}
+		}
+	}
+
 	@Test
 	public void declaredUnlockRelievesItemRequirement()
 	{
