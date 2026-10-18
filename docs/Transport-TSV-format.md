@@ -78,6 +78,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
     - As an ANDed requirement it is a gate, e.g. `13393=1&UNLOCK_XERICS_HONOUR=1` requires carrying Xeric's talisman *and* having earned Xeric's Honour; the gate applies even when item evaluation is skipped (teleportation-item modes).
     - Names are case-insensitive (the cell is uppercased before parsing), but unlike unknown item names, an unknown `UNLOCK_*` name is a loud parse error that fails the row — it never silently drops the requirement. `=0` quantities are malformed: unlock tokens must be written `=1`.
     - Current names: `UNLOCK_CANOE_AXE` (axe stored at a canoe station), `UNLOCK_DRAGONTOOTH` (Dragontooth Island free passage), `UNLOCK_XERICS_HONOUR` (Xeric's Honour), `UNLOCK_KARAMJA_ELITE` (free hardwood grove entry from Karamja elite diary completion), `UNLOCK_MOR_UL_REK` (permanent inner-city access after showing a fire cape), `UNLOCK_BALLOON_LOG_BASKET` (logs stored in the shared balloon-station basket — relief for the destination log, e.g. `1511=1|UNLOCK_BALLOON_LOG_BASKET=1`, not a standalone gate).
+- `teleportation_items.tsv` only: every numeric item id feeds `teleport_restrictions.tsv`, the generated family map behind the config panel's restriction checklist. After adding or removing an id, run `python3 scripts/generate_teleport_restrictions.py` and commit the regenerated file — `TransportDataLintTest` fails the build when the two drift apart.
 
 ### Quests
 
