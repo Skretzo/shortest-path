@@ -2,6 +2,7 @@ package shortestpath.requirement.model;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -444,6 +445,65 @@ public class TransportItemsSatisfactionTest
 		Set<Integer> allRunes =
 			Arrays.stream(ItemVariations.FIRE_RUNE.getIds()).boxed().collect(Collectors.toSet());
 		Assert.assertTrue(items.survivesBlockedItems(allRunes));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void emptyBranchListIsRejected()
+	{
+		new ItemRequirement(List.of());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void nullBranchListIsRejected()
+	{
+		new ItemRequirement(null);
+	}
+
+	@Test
+	public void idlessBranchIsNeverUnlockSatisfied()
+	{
+		// A branch carrying no ids and no unlock is the empty shape: it is not
+		// an unlock branch (unlock == null), so it never routes into the
+		// unlock path — it is simply unsatisfiable, whatever is declared or
+		// held. This asserts the shape, not a leak.
+		ItemRequirement.Branch empty = new ItemRequirement.Branch(null, null, null, 1, null);
+		Assert.assertFalse(empty.isUnlockOnly());
+		Assert.assertNull(empty.getUnlock());
+		Assert.assertNull(empty.getItemIds());
+
+		TransportItems items = new TransportItems(List.of(new ItemRequirement(List.of(empty))));
+		Assert.assertFalse("the empty branch is not a pure-unlock requirement",
+			items.getRequirements().get(0).isPureUnlock());
+		Assert.assertFalse("no declared unlock can satisfy the empty branch",
+			satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR, Unlock.CANOE_AXE), 13393, 99));
+	}
+
+	@Test
+	public void honourOrBranchRelievesAndUndeclaredDoesNot()
+	{
+		// The OR group is satisfied by items OR by the declared unlock; an
+		// undeclared honour — or a different declared unlock — never relieves
+		// the axe term.
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.DRAGONTOOTH)));
+	}
+
+	@Test
+	public void eitherUnlockAlternativeSatisfiesAPureUnlockOrGroup()
+	{
+		// A pure-unlock requirement with alternatives is an OR gate: any one
+		// of its declared unlocks satisfies it.
+		TransportItems items =
+			new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(items.getRequirements().get(0).isPureUnlock());
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.CANOE_AXE)));
 	}
 
 	private static boolean satisfied(TransportItems items, int... idAndQuantity)

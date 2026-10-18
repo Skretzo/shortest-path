@@ -1,5 +1,6 @@
 package shortestpath.transport;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.Unlock;
+import shortestpath.transport.parser.ItemRequirementParser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,6 +38,14 @@ public class TransportEligibilityTest
 	private static final Transport SHANTAY_GATE = teleport(new ItemRequirement(List.of(
 		new ItemRequirement.Branch(ItemVariations.SHANTAY_PASS.getIds(), null, null, 1),
 		new ItemRequirement.Branch(ItemVariations.COINS.getIds(), null, null, 5))));
+	// The ANDed gate shape: the Xeric's talisman AND the declared Honour unlock.
+	private static final TransportItems TALISMAN_AND_GATE =
+		new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=1");
+	private static final Transport HONOUR_ITEM_TELEPORT = teleportItem(TALISMAN_AND_GATE);
+	private static final Transport HONOUR_SPELL_TELEPORT = new Transport.TransportBuilder()
+		.type(TransportType.TELEPORTATION_SPELL)
+		.itemRequirements(TALISMAN_AND_GATE)
+		.build();
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
@@ -393,6 +404,93 @@ public class TransportEligibilityTest
 		assertTrue(eligibility.bankPickupPlan(free).bankItemIds.isEmpty());
 	}
 
+	/**
+	 * The item-question side of the unlock gate under every item mode: the
+	 * talisman is carried, the gate is not declared. {@code usable()} only
+	 * answers the item question — modes that bypass item evaluation entirely
+	 * report the transport usable even without the declared unlock, and the
+	 * admissibility gate that actually keeps it out of the route set lives in
+	 * the Requirements chain (pinned per mode there). This matrix pins the
+	 * semantics this layer owns, per mode, so adjacent modes can never merge
+	 * or swap outcomes.
+	 */
+	@Test
+	public void unlockGatedItemTeleportFollowsEachModesItemSemantics()
+	{
+		playerHas.put(ItemID.XERIC_TALISMAN, 1);
+
+		Map<TeleportationItem, Boolean> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, false);
+		expected.put(TeleportationItem.INVENTORY, false);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, false);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, false);
+		// The item-bypass modes return before item evaluation runs; their
+		// usable() says nothing about the gate — Requirements.check does.
+		expected.put(TeleportationItem.UNLOCKED, true);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.ALL, true);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, true);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			TransportEligibility eligibility = eligibility(mode, false, Integer.MAX_VALUE, Set.of());
+			assertEquals("usable() under " + mode + " without the declared unlock",
+				expected.get(mode), eligibility.usable(HONOUR_ITEM_TELEPORT, BankVisitState.CARRIED));
+			// The overlay check has no mode bypass: an undeclared unlock is
+			// never satisfied, whatever the teleportation-item mode.
+			assertFalse("satisfiedByPlayer under " + mode + " without the declared unlock",
+				eligibility.satisfiedByPlayer(HONOUR_ITEM_TELEPORT));
+		}
+	}
+
+	/**
+	 * The declared side of the same matrix: with the Honour unlock declared
+	 * and the talisman carried, every mode but NONE offers the transport —
+	 * the declared unlock satisfies the gate term, never the item term.
+	 */
+	@Test
+	public void unlockGatedItemTeleportIsUsableWithTheDeclaredUnlockPerItsMode()
+	{
+		playerHas.put(ItemID.XERIC_TALISMAN, 1);
+
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			TransportEligibility eligibility = eligibility(mode, false, Integer.MAX_VALUE,
+				Set.of(Unlock.XERICS_HONOUR));
+			assertEquals("usable() under " + mode + " with the declared unlock",
+				mode != TeleportationItem.NONE,
+				eligibility.usable(HONOUR_ITEM_TELEPORT, BankVisitState.CARRIED));
+			assertTrue("satisfiedByPlayer under " + mode + " with the declared unlock",
+				eligibility.satisfiedByPlayer(HONOUR_ITEM_TELEPORT));
+		}
+	}
+
+	/**
+	 * A teleportation spell is outside the item-mode family entirely: its
+	 * unlock gate must be honoured by item evaluation under every mode, so
+	 * the undeclared gate is never usable and the declared one always is.
+	 */
+	@Test
+	public void unlockGatedSpellTeleportIgnoresTheItemModeSetting()
+	{
+		playerHas.put(ItemID.XERIC_TALISMAN, 1);
+
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			TransportEligibility undeclared = eligibility(mode, false, Integer.MAX_VALUE, Set.of());
+			assertFalse("spell gated under " + mode + " without the declared unlock",
+				undeclared.usable(HONOUR_SPELL_TELEPORT, BankVisitState.CARRIED));
+
+			TransportEligibility declared = eligibility(mode, false, Integer.MAX_VALUE,
+				Set.of(Unlock.XERICS_HONOUR));
+			assertTrue("spell usable under " + mode + " with the declared unlock",
+				declared.usable(HONOUR_SPELL_TELEPORT, BankVisitState.CARRIED));
+		}
+	}
+
 	private TransportEligibility eligibility(int bankPouchId)
 	{
 		return TransportEligibility.forPlayerAndBank(playerHas, bankHas, bankPouchId, bankPouchRunes);
@@ -400,10 +498,16 @@ public class TransportEligibilityTest
 
 	private TransportEligibility eligibility(TeleportationItem setting, boolean staffRequired, int threshold)
 	{
+		return eligibility(setting, staffRequired, threshold, Set.of());
+	}
+
+	private TransportEligibility eligibility(TeleportationItem setting, boolean staffRequired, int threshold,
+		Set<Unlock> unlocks)
+	{
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, bankPouchRunes,
-			staffRequired, setting, threshold, Set.of(), true);
+			staffRequired, setting, threshold, unlocks, true);
 	}
 
 	private Map<Integer, Long> pickups(Transport transport, int bankPouchId)

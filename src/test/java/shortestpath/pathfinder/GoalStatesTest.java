@@ -161,6 +161,27 @@ public class GoalStatesTest
 	}
 
 	@Test
+	public void configDeclaredBasketNeverLeaksIntoTargetStatus()
+	{
+		// The balloon-basket flag produces per-route basket destinations, not
+		// a base unlock — end to end through config.getUnlocks(), a declared
+		// basket still cannot satisfy an honour-gated target.
+		TestShortestPathConfig basketConfig = new TestShortestPathConfig();
+		basketConfig.setUnlockBalloonLogBasketValue(true);
+		Client basketClient = mock(Client.class);
+		when(basketClient.getClientThread()).thenReturn(Thread.currentThread());
+		PathfinderConfig configured = new TestPathfinderConfig(basketClient, basketConfig);
+		configured.refresh();
+
+		Target gated = Target.requiring(WALKABLE,
+			new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1"));
+		GoalStates goals = GoalStates.resolve(configured, START,
+			Targets.of(List.of(gated, Target.at(OTHER))));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertEquals(Set.of(OTHER), goals.tiles());
+	}
+
+	@Test
 	public void arrivalMissingItemsHonorDeclaredUnlocks()
 	{
 		// With the honour declared, the missing-items report for an unreachable

@@ -104,6 +104,37 @@ public class HeldItemsTest
 	}
 
 	@Test
+	public void declaredUnlockSatisfiesAMixedOrGroupWithoutTheItem()
+	{
+		// OR semantics: the unlock alternative relieves the whole mixed group
+		// with empty hands; undeclared, the group gates. A held axe covers the
+		// item branch with no unlock declared.
+		TransportItems axeOrHonour = new ItemRequirementParser().parse("AXE=1|UNLOCK_XERICS_HONOUR=1");
+		HeldItems empty = new HeldItems(Map.of(), Map.of(), false);
+		assertEquals(TargetStatus.CARRIED,
+			empty.statusOf(axeOrHonour, Set.of(Unlock.XERICS_HONOUR)));
+		assertEquals(TargetStatus.UNKNOWN, empty.statusOf(axeOrHonour, Set.of()));
+
+		HeldItems axe = new HeldItems(Map.of(ItemID.BRONZE_AXE, 1), Map.of(), false);
+		assertEquals(TargetStatus.CARRIED, axe.statusOf(axeOrHonour, Set.of()));
+	}
+
+	@Test
+	public void eitherDeclaredUnlockSatisfiesAnUnlockOrGroup()
+	{
+		// A pure-unlock requirement with alternatives is satisfied by any one
+		// of its declared unlocks.
+		TransportItems alternatives =
+			new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1|UNLOCK_CANOE_AXE=1");
+		HeldItems empty = new HeldItems(Map.of(), Map.of(), false);
+		assertEquals(TargetStatus.UNKNOWN, empty.statusOf(alternatives, Set.of()));
+		assertEquals(TargetStatus.CARRIED,
+			empty.statusOf(alternatives, Set.of(Unlock.XERICS_HONOUR)));
+		assertEquals(TargetStatus.CARRIED,
+			empty.statusOf(alternatives, Set.of(Unlock.CANOE_AXE)));
+	}
+
+	@Test
 	public void missingKeepsDeclarationOrder()
 	{
 		// Unsatisfied groups come back in the order they were declared,
