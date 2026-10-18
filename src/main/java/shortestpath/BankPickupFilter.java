@@ -5,15 +5,20 @@ import java.util.List;
 import java.util.Set;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
+import net.runelite.api.ScriptEvent;
 import net.runelite.api.ScriptID;
+import net.runelite.api.SoundEffectID;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
+import net.runelite.api.gameval.VarClientID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -22,7 +27,6 @@ import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.bank.BankSearch;
-import net.runelite.client.plugins.banktags.BankTagsService;
 import shortestpath.overlay.AbstractHighlightOverlay;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
@@ -33,9 +37,9 @@ import shortestpath.settings.Settings;
 
 /**
  * Filters the open bank down to the items the current path needs to pick up, the same items
- * the bank highlight outlines. The bank is put in its search state the way the Bank Tags plugin
- * shows a tag tab, so the filter works without that plugin. A button next to Quest Helper's opens
- * it, and viewing another tab or searching closes it.
+ * the bank highlight outlines. A button next to Quest Helper's opens it as a temporary tab, the
+ * same way Quest Helper shows its own tab: the bank is put in its search state without the Bank
+ * Tags plugin and nothing is saved. Viewing another tab, the potion store or searching closes it.
  */
 @Singleton
 public class BankPickupFilter
@@ -48,7 +52,7 @@ public class BankPickupFilter
 	private static final String VIEW_TAB = "View tab";
 	private static final String VIEW_TAG_TAB = "View tag tab";
 	private static final String VIEW_ALL_ITEMS = "View all items";
-	private static final String SEARCH = "Search";
+	private static final String POTION_STORE = "Potion store";
 	private static final int POTION_STORE_TAB = 15;
 	// Centered between Quest Helper and the close button
 	private static final int BUTTON_X = 434;
@@ -63,18 +67,17 @@ public class BankPickupFilter
 	private final PathScheduler scheduler;
 	private final PathAnnotator annotator;
 	private final BankSearch bankSearch;
-	private final BankTagsService bankTagsService;
 
 	// The items the bank was last laid out with; empty while the bank is not filtered.
 	private Set<Integer> filteredItemIds = Set.of();
-	// Stays open across bank visits, like other tabs
+	// Stays open across bank visits, like other tabs; never saved
 	private boolean open;
 	private Widget buttonBackground;
 	private Widget buttonIcon;
 
 	@Inject
 	BankPickupFilter(Client client, ClientThread clientThread, Settings settings, PathScheduler scheduler,
-		PathAnnotator annotator, BankSearch bankSearch, BankTagsService bankTagsService)
+		PathAnnotator annotator, BankSearch bankSearch)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
@@ -82,7 +85,6 @@ public class BankPickupFilter
 		this.scheduler = scheduler;
 		this.annotator = annotator;
 		this.bankSearch = bankSearch;
-		this.bankTagsService = bankTagsService;
 	}
 
 	/** Restores the unfiltered bank, for when the plugin shuts down with the bank open. */
@@ -112,6 +114,13 @@ public class BankPickupFilter
 		if (event.getGroupId() == InterfaceID.BANKMAIN)
 		{
 			createButton();
+			if (open)
+			{
+				// Reopen the tab once the bank has built, as Quest Helper does
+				boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
+				open = false;
+				clientThread.invokeLater(() -> openTab(wasInPotionStorage));
+			}
 		}
 	}
 
@@ -145,34 +154,36 @@ public class BankPickupFilter
 		if (open && !BUTTON_NAME.equals(event.getMenuTarget())
 			&& WidgetUtil.componentToInterface(event.getParam1()) == InterfaceID.BANKMAIN
 			&& (option.startsWith(VIEW_TAB) || option.startsWith(VIEW_TAG_TAB) || option.equals(VIEW_ALL_ITEMS)
-			|| option.equals(SEARCH)))
+			|| option.startsWith(POTION_STORE)))
 		{
 			// Runs before the click is handled, so the relayout that follows shows the other view.
-			open = false;
-			filteredItemIds = Set.of();
+			closeTab();
 		}
 	}
 
-	// Runs last so other plugins' searches are on the stack
-	@Subscribe(priority = -1)
+	@Subscribe
+	public void onScriptPreFired(ScriptPreFired event)
+	{
+		if (event.getScriptId() == ScriptID.BANKMAIN_SEARCH_TOGGLE && open)
+		{
+			closeTab();
+			// Open the search input rather than closing the search the tab was shown with
+			client.setVarcStrValue(VarClientID.MESLAYERINPUT, "");
+			client.setVarcIntValue(VarClientID.MESLAYERMODE, 0);
+		}
+	}
+
+	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
 		if (event.getScriptId() == ScriptID.BANKMAIN_SEARCHING)
 		{
 			// Every bank layout asks whether the bank is searching; answering yes runs the
 			// bankSearchFilter callback for each item.
-			int[] intStack = client.getIntStack();
-			int searching = client.getIntStackSize() - 1;
-			// Stay closed over other filters (a tag tab would save these items)
-			if (intStack[searching] == 1 || bankTagsService.getActiveTag() != null
-				|| client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
-			{
-				open = false;
-			}
 			filteredItemIds = wantedItemIds();
 			if (!filteredItemIds.isEmpty())
 			{
-				intStack[searching] = 1;
+				client.getIntStack()[client.getIntStackSize() - 1] = 1;
 			}
 		}
 		else if (event.getScriptId() == ScriptID.BANKMAIN_FINISHBUILDING)
@@ -196,7 +207,12 @@ public class BankPickupFilter
 		}
 		int[] intStack = client.getIntStack();
 		int intStackSize = client.getIntStackSize();
-		if ("bankSearchFilter".equals(event.getEventName()))
+		if ("getSearchingTagTab".equals(event.getEventName()))
+		{
+			// Laid out like a tag tab rather than a typed search
+			intStack[intStackSize - 1] = 1;
+		}
+		else if ("bankSearchFilter".equals(event.getEventName()))
 		{
 			int itemId = intStack[intStackSize - 1];
 			intStack[intStackSize - 2] = filteredItemIds.contains(itemId) ? 1 : 0;
@@ -256,7 +272,7 @@ public class BankPickupFilter
 		buttonBackground = createGraphic(parent, SpriteID.Miscgraphics3.UNKNOWN_BUTTON_SQUARE_SMALL,
 			BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_X, BUTTON_Y);
 		buttonBackground.setHasListener(true);
-		buttonBackground.setOnOpListener((JavaScriptCallback) event -> toggleFilter());
+		buttonBackground.setOnOpListener((JavaScriptCallback) this::onButtonClicked);
 		buttonIcon = createGraphic(parent, SpriteID.WorldmapIcon.PLANET, ICON_SIZE, ICON_SIZE,
 			BUTTON_X + (BUTTON_WIDTH - ICON_SIZE) / 2, BUTTON_Y + (BUTTON_HEIGHT - ICON_SIZE) / 2);
 		updateButton();
@@ -274,14 +290,54 @@ public class BankPickupFilter
 		return widget;
 	}
 
-	private void toggleFilter()
+	private void onButtonClicked(ScriptEvent event)
 	{
-		open = !open;
-		if (!open)
+		if (event.getOp() != 1)
 		{
-			filteredItemIds = Set.of();
+			return;
 		}
-		bankSearch.layoutBank();
+		boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
+		client.setVarbit(VarbitID.BANK_CURRENTTAB, 0);
+		if (open)
+		{
+			closeTab();
+			bankSearch.reset(true);
+		}
+		else
+		{
+			openTab(wasInPotionStorage);
+		}
+		client.playSoundEffect(SoundEffectID.UI_BOOP);
+	}
+
+	private void openTab(boolean wasInPotionStorage)
+	{
+		if (open || buttonBackground == null)
+		{
+			return;
+		}
+		if (wasInPotionStorage)
+		{
+			// The potion store would stay open behind the tab and break deposits
+			client.menuAction(-1, InterfaceID.Bankmain.POTIONSTORE_BUTTON, MenuAction.CC_OP, 1, -1, POTION_STORE, "");
+		}
+		open = true;
+		// Clears any search and lays the bank out as the tab
+		bankSearch.reset(true);
+		// The search button's timer would otherwise restore its searching look, as in bankmain_search_setbutton
+		Widget searchButton = client.getWidget(InterfaceID.Bankmain.SEARCH);
+		if (searchButton != null)
+		{
+			searchButton.setOnTimerListener((Object[]) null);
+			searchButton.setSpriteId(SpriteID.Miscgraphics.EQUIPMENT_SLOT_TILE);
+		}
+		updateButton();
+	}
+
+	private void closeTab()
+	{
+		open = false;
+		filteredItemIds = Set.of();
 		updateButton();
 	}
 

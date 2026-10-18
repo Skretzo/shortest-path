@@ -37,9 +37,7 @@ import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
-import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.banktags.BankTagsPlugin;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -74,7 +72,6 @@ import shortestpath.widgets.WidgetGeometry;
 	+
 	"Right click on the world map or shift right click a tile to use", tags = {"pathfinder", "map", "waypoint",
 	"navigation"})
-@PluginDependency(BankTagsPlugin.class)
 public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
