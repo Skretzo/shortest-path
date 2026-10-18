@@ -92,7 +92,7 @@ public class Pathfinder implements ActiveSearch
 		this.targets = targets;
 		this.goals = GoalStates.resolve(config, start, targets);
 		this.hasViableGoal = goals.hasViableGoal();
-		this.bankPathEnabled = config.isBankPathEnabled() || goals.needsBank();
+		this.bankPathEnabled = config.isBankPathEnabled() || GoalStates.needsBank(targets, config.getHeldItems());
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets.points());
