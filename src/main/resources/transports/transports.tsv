@@ -5288,11 +5288,11 @@
 1553 3033 1	1553 3033 0	Climb-down Ladder 52620						2	
 1556 3034 1	1556 3034 2	Climb-up Ladder 52614						2	
 1556 3034 2	1556 3034 1	Climb-down Ladder 52620						2	
-1533 3051 0	1533 9446 0	Enter Cave 51761						2	
-1533 3050 0	1533 9446 0	Enter Cave 51761						2	
-1533 9447 0	1533 3051 0	Exit Cave 51760						2	
-1533 9446 0	1533 3051 0	Exit Cave 51760						2	
-1533 9445 0	1533 3051 0	Exit Cave 51760						2	
+1533 3051 0	1538 9446 0	Enter Cave 51761						2	
+1533 3050 0	1538 9446 0	Enter Cave 51761						2	
+1538 9447 0	1533 3051 0	Exit Cave 51760						2	
+1538 9446 0	1533 3051 0	Exit Cave 51760						2	
+1538 9445 0	1533 3051 0	Exit Cave 51760						2	
 									
 # Farming Guild (Kebos Lowlands)									
 # Main entrance gate - 45 Farming required. Coords inferred from skills necklace teleport endpoints (outside: 1248,3719 / inside: 1248,3725).									
