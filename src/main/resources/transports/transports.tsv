@@ -151,6 +151,9 @@
 3220 9532 2	3226 9542 0	Enter Tunnel 6658						2	
 									
 # Tears of Guthix									
+3227 9526 2	3224 9504 2	Attract Light creature 5435		4702=1		451>0			Travel across the chasm.
+3227 9526 2	4075 4601 0	Attract Light creature 5435		4702=1		451>0;9653>709			Travel into the chasm.
+4075 4601 0	3228 9526 2	Attract Light creature 5435		4702=1		451>0;9653>709			Return to the Chasm of Tears
 3239 9525 2	3241 9525 2	Climb Rocks 6673						4	
 3241 9525 2	3239 9525 2	Climb Rocks 6673						4	
 3239 9524 2	3241 9524 2	Climb Rocks 6673						4	
@@ -158,6 +161,14 @@
 3238 9497 2	3240 9497 2	Climb Rocks 6672						4	
 3238 9498 2	3240 9498 2	Climb Rocks 6672						4	
 3238 9499 2	3240 9499 2	Climb Rocks 6672						4	
+									
+# Ancient Guthixian Temple									
+4065 4555 0	4065 4554 1	Climb-up Wall 53623							
+4065 4554 1	4065 4555 0	Jump-down Wall 53676							
+4066 4553 1	4066 4552 2	Climb-up Wall 53624							
+4066 4552 2	4066 4553 1	Jump-down Wall 53676							
+4063 4550 2	4061 4466 0	Climb-through Opening 53622				9653>759;10820=0			
+4061 4466 0	4063 4550 2	Crawl-through Hole 53637				9653>759			
 									
 # Farm between Lumbridge and Draynor									
 3197 3278 0	3197 3275 0	Climb-over Stile 12982						6	
