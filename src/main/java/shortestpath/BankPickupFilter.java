@@ -14,6 +14,7 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InterfaceID;
@@ -122,6 +123,10 @@ public class BankPickupFilter
 				clientThread.invokeLater(() -> openTab(wasInPotionStorage));
 			}
 		}
+		else if (event.getGroupId() == InterfaceID.SHARED_BANK)
+		{
+			updateButton();
+		}
 	}
 
 	@Subscribe
@@ -132,6 +137,15 @@ public class BankPickupFilter
 			filteredItemIds = Set.of();
 			buttonBackground = null;
 			buttonIcon = null;
+		}
+		else if (event.getGroupId() == InterfaceID.SHARED_BANK)
+		{
+			// Back in the bank, so show the tab again
+			clientThread.invokeLater(() ->
+			{
+				relayoutIfOpen();
+				updateButton();
+			});
 		}
 	}
 
@@ -162,6 +176,16 @@ public class BankPickupFilter
 	}
 
 	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		// The potion store opens by switching tabs, whatever its menu option reads
+		if (open && event.getVarbitId() == VarbitID.BANK_CURRENTTAB && event.getValue() == POTION_STORE_TAB)
+		{
+			closeTab();
+		}
+	}
+
+	@Subscribe
 	public void onScriptPreFired(ScriptPreFired event)
 	{
 		if (event.getScriptId() == ScriptID.BANKMAIN_SEARCH_TOGGLE && open)
@@ -180,6 +204,11 @@ public class BankPickupFilter
 		{
 			// Every bank layout asks whether the bank is searching; answering yes runs the
 			// bankSearchFilter callback for each item.
+			if (open && client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
+			{
+				// A searching bank would close the potion store straight away
+				closeTab();
+			}
 			filteredItemIds = wantedItemIds();
 			if (!filteredItemIds.isEmpty())
 			{
@@ -226,7 +255,8 @@ public class BankPickupFilter
 
 	private Set<Integer> wantedItemIds()
 	{
-		return open ? pathItemIds() : Set.of();
+		// Group storage runs the bank's search scripts too; leave it unfiltered
+		return open && !isGroupStorageOpen() ? pathItemIds() : Set.of();
 	}
 
 	private Set<Integer> pathItemIds()
@@ -252,6 +282,12 @@ public class BankPickupFilter
 	{
 		Widget bankContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
 		return bankContainer != null && !bankContainer.isHidden();
+	}
+
+	private boolean isGroupStorageOpen()
+	{
+		Widget groupStorage = client.getWidget(InterfaceID.SharedBank.UNIVERSE);
+		return groupStorage != null && !groupStorage.isHidden();
 	}
 
 	private void relayoutIfOpen()
@@ -347,7 +383,7 @@ public class BankPickupFilter
 		{
 			return;
 		}
-		boolean shown = !pathItemIds().isEmpty();
+		boolean shown = !isGroupStorageOpen() && !pathItemIds().isEmpty();
 		boolean filtering = shown && open;
 		buttonBackground.setHidden(!shown);
 		buttonIcon.setHidden(!shown);
