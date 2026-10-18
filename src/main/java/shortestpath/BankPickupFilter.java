@@ -3,7 +3,9 @@ package shortestpath;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
@@ -77,6 +79,7 @@ public class BankPickupFilter
 	private static final int ITEM_START_X = 51;
 	// From bankmain_init
 	private static final int BANK_DRAG_DEAD_TIME = 5;
+	private static final int BANK_ITEM_SLOTS = 1410;
 
 	private final Client client;
 	private final ClientThread clientThread;
@@ -99,6 +102,9 @@ public class BankPickupFilter
 	private boolean drawingOverTagTab;
 	// Undraggable until the next layout
 	private final List<Widget> drawnItems = new ArrayList<>();
+	// Kept as placeholders once withdrawn
+	private final Set<Integer> visitItemIds = new HashSet<>();
+	private Targets visitItemsFor;
 	private Widget buttonBackground;
 	private Widget buttonIcon;
 
@@ -174,6 +180,7 @@ public class BankPickupFilter
 			searchShowing = false;
 			drawingOverTagTab = false;
 			drawnItems.clear();
+			visitItemIds.clear();
 			buttonBackground = null;
 			buttonIcon = null;
 		}
@@ -316,7 +323,25 @@ public class BankPickupFilter
 	private Set<Integer> wantedItemIds()
 	{
 		// Group storage runs the bank's search scripts too; leave it unfiltered
-		return open && !isGroupStorageOpen() ? pathItemIds() : Set.of();
+		if (!open || isGroupStorageOpen())
+		{
+			return Set.of();
+		}
+		ActiveSearch search = scheduler.getActiveSearch();
+		Targets targets = search == null ? null : search.getTargets();
+		if (!Objects.equals(targets, visitItemsFor))
+		{
+			visitItemIds.clear();
+			visitItemsFor = targets;
+		}
+		Set<Integer> pathItemIds = pathItemIds();
+		if (pathItemIds.isEmpty())
+		{
+			// Everything is grabbed, so show the bank as normal
+			return Set.of();
+		}
+		visitItemIds.addAll(pathItemIds);
+		return new HashSet<>(visitItemIds);
 	}
 
 	private Set<Integer> pathItemIds()
@@ -393,6 +418,7 @@ public class BankPickupFilter
 		List<Integer> itemIds = new ArrayList<>(filteredItemIds);
 		itemIds.sort(Comparator.naturalOrder());
 		int position = 0;
+		int spareSlot = Math.min(BANK_ITEM_SLOTS, children.length) - 1;
 		for (int itemId : itemIds)
 		{
 			int slot = bank.find(itemId);
@@ -402,8 +428,23 @@ public class BankPickupFilter
 				// Its own slot's widget, so clicks withdraw from that slot
 				drawItem(children[slot], itemId, item.getQuantity(), position);
 				drawnItems.add(children[slot]);
-				position++;
 			}
+			else
+			{
+				// Withdrawn: a placeholder in a slot widget the bank isn't using
+				while (spareSlot >= 0 && bank.getItem(spareSlot) != null)
+				{
+					spareSlot--;
+				}
+				if (spareSlot < 0)
+				{
+					continue;
+				}
+				drawItem(children[spareSlot], itemId, 0, position);
+				drawnItems.add(children[spareSlot]);
+				spareSlot--;
+			}
+			position++;
 		}
 		int rows = (position + ITEMS_PER_ROW - 1) / ITEMS_PER_ROW;
 		itemContainer.setScrollHeight(Math.max(rows * ITEM_Y_SPACING, itemContainer.getHeight()));
@@ -423,7 +464,16 @@ public class BankPickupFilter
 		widget.setItemQuantity(quantity);
 		widget.setName("<col=ff9040>" + definition.getName() + "</col>");
 		widget.clearActions();
-		setWithdrawActions(widget, definition);
+		if (quantity > 0)
+		{
+			setWithdrawActions(widget, definition);
+		}
+		else
+		{
+			// Like the bank's own placeholders
+			widget.setItemQuantityMode(ItemQuantityMode.ALWAYS);
+			widget.setOpacity(120);
+		}
 		// Dragging would rearrange the tag tab's layout or the bank itself
 		widget.setDragDeadTime(1000);
 		widget.setOnDragCompleteListener((JavaScriptCallback) event -> client.setDraggedOnWidget(null));
