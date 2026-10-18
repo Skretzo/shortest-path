@@ -584,8 +584,8 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "autoOpenBankPickupFilter",
 		name = "Auto Open Path Items",
-		description = "Open the Path Items tab by itself when you open the bank for a new route that needs bank items." +
-			"<br>It won't open over another tab or the potion store",
+		description = "Open the Path Items tab by itself when the route needs items from the bank." +
+			"<br>It won't open over Quest Helper's tab, a search or the potion store",
 		hidden = true
 	)
 	default boolean autoOpenBankPickupFilter()

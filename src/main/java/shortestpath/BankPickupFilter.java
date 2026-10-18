@@ -94,8 +94,7 @@ public class BankPickupFilter
 	private boolean reopen;
 	// Waits for the bank's first layout
 	private boolean autoOpenPending;
-	// Once per route
-	private Targets autoOpenedFor;
+	private boolean closedThisVisit;
 	private boolean tagTabShowing;
 	// Quest Helper's tab or a typed search
 	private boolean searchShowing;
@@ -176,6 +175,7 @@ public class BankPickupFilter
 			reopen = open;
 			open = false;
 			autoOpenPending = false;
+			closedThisVisit = false;
 			tagTabShowing = false;
 			searchShowing = false;
 			drawingOverTagTab = false;
@@ -197,14 +197,15 @@ public class BankPickupFilter
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (scheduler.getActiveSearch() == null)
+		if (isBankOpen())
 		{
-			autoOpenedFor = null;
-		}
-		// The bank doesn't rebuild itself for every change to the needed items
-		if (isBankOpen() && !wantedItemIds().equals(filteredItemIds))
-		{
-			bankSearch.layoutBank();
+			// The route can start needing bank items while it's open, such as after a deposit
+			autoOpen();
+			// The bank doesn't rebuild itself for every change to the needed items
+			if (!wantedItemIds().equals(filteredItemIds))
+			{
+				bankSearch.layoutBank();
+			}
 		}
 		updateButton();
 	}
@@ -605,14 +606,11 @@ public class BankPickupFilter
 
 	private void autoOpen()
 	{
-		ActiveSearch search = scheduler.getActiveSearch();
-		if (open || tagTabShowing || searchShowing || search == null || !settings.display().autoOpenBankPickupFilter()
-			|| search.getTargets().equals(autoOpenedFor) || isGroupStorageOpen() || isPotionStoreOpen()
-			|| pathItemIds().isEmpty())
+		if (open || closedThisVisit || searchShowing || !settings.display().autoOpenBankPickupFilter()
+			|| isGroupStorageOpen() || pathItemIds().isEmpty())
 		{
 			return;
 		}
-		autoOpenedFor = search.getTargets();
 		openTab();
 	}
 
@@ -620,6 +618,7 @@ public class BankPickupFilter
 	{
 		open = false;
 		filteredItemIds = Set.of();
+		closedThisVisit = true;
 		updateButton();
 	}
 
