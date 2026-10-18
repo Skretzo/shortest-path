@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.Unlock;
 
 /**
  * The items the player holds, as item id to quantity: what they carry (inventory, worn items and
@@ -48,11 +49,20 @@ public final class HeldItems
 	/** Whether {@code required} is carried, covered once the bank is added, or neither. */
 	public TargetStatus statusOf(TransportItems required)
 	{
-		if (covers(carried, required))
+		return statusOf(required, Set.of());
+	}
+
+	/**
+	 * As {@link #statusOf(TransportItems)}, with the player's declared
+	 * {@link Unlock unlocks} relieving unlock branches.
+	 */
+	public TargetStatus statusOf(TransportItems required, Set<Unlock> unlocks)
+	{
+		if (covers(carried, required, unlocks))
 		{
 			return TargetStatus.CARRIED;
 		}
-		if (covers(carriedAndBanked, required))
+		if (covers(carriedAndBanked, required, unlocks))
 		{
 			return TargetStatus.BANK;
 		}
@@ -62,10 +72,19 @@ public final class HeldItems
 	/** The item groups of {@code required} that the carried items and the bank together don't cover. */
 	public List<ItemRequirement> missing(TransportItems required)
 	{
+		return missing(required, Set.of());
+	}
+
+	/**
+	 * As {@link #missing(TransportItems)}, with the player's declared
+	 * {@link Unlock unlocks} relieving unlock branches.
+	 */
+	public List<ItemRequirement> missing(TransportItems required, Set<Unlock> unlocks)
+	{
 		List<ItemRequirement> missing = new ArrayList<>();
 		for (ItemRequirement group : required.getRequirements())
 		{
-			if (!covers(carriedAndBanked, new TransportItems(List.of(group))))
+			if (!covers(carriedAndBanked, new TransportItems(List.of(group)), unlocks))
 			{
 				missing.add(group);
 			}
@@ -74,8 +93,8 @@ public final class HeldItems
 	}
 
 	// Required items are held, never spent, so no currency threshold applies.
-	private static boolean covers(Map<Integer, Integer> items, TransportItems required)
+	private static boolean covers(Map<Integer, Integer> items, TransportItems required, Set<Unlock> unlocks)
 	{
-		return required.isSatisfiedBy(items, Set.of(), Integer.MAX_VALUE);
+		return required.isSatisfiedBy(items, Set.of(), Integer.MAX_VALUE, unlocks);
 	}
 }

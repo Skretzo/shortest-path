@@ -16,6 +16,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
+import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.Unlock;
+import shortestpath.transport.parser.ItemRequirementParser;
 
 /** Which (tile, bank layer) states finish a route, from the targets' items and the map. */
 public class GoalStatesTest
@@ -48,8 +51,13 @@ public class GoalStatesTest
 
 	private static GoalStates goals(HeldItems held, Target... targets)
 	{
+		return goals(held, Set.of(), targets);
+	}
+
+	private static GoalStates goals(HeldItems held, Set<Unlock> unlocks, Target... targets)
+	{
 		Targets all = Targets.of(List.of(targets));
-		return GoalStates.resolve(TargetGoals.resolve(config, START, all.points()), all, held);
+		return GoalStates.resolve(TargetGoals.resolve(config, START, all.points()), all, held, unlocks);
 	}
 
 	@Test
@@ -101,6 +109,67 @@ public class GoalStatesTest
 		Arrival arrival = goals.arrival(WALKABLE, BankVisitState.CARRIED);
 		assertEquals(TargetStatus.UNKNOWN, arrival.getStatus());
 		assertEquals(TargetsTest.items(ItemID.SPADE).getRequirements(), arrival.getMissingItems());
+	}
+
+	@Test
+	public void declaredUnlockMarksGatedTargetCarried()
+	{
+		TestShortestPathConfig honourConfig = new TestShortestPathConfig();
+		honourConfig.setUnlockXericsHonourValue(true);
+		Client honourClient = mock(Client.class);
+		when(honourClient.getClientThread()).thenReturn(Thread.currentThread());
+		PathfinderConfig configured = new TestPathfinderConfig(honourClient, honourConfig);
+		configured.refresh();
+
+		Target gated = Target.requiring(WALKABLE,
+			new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1"));
+		GoalStates goals = GoalStates.resolve(configured, START, Targets.of(List.of(gated)));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertEquals(TargetStatus.CARRIED, goals.arrival(WALKABLE, BankVisitState.CARRIED).getStatus());
+	}
+
+	@Test
+	public void declaredUnlockThreadsThroughResolve()
+	{
+		GoalStates goals = goals(NOTHING, Set.of(Unlock.XERICS_HONOUR),
+			Target.requiring(WALKABLE, new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1")),
+			Target.at(OTHER));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+	}
+
+	@Test
+	public void undeclaredUnlockLeavesGatedTargetUnknown()
+	{
+		GoalStates goals = goals(NOTHING, Set.of(),
+			Target.requiring(WALKABLE, new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1")),
+			Target.at(OTHER));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.BANKED));
+		assertEquals(Set.of(OTHER), goals.tiles());
+	}
+
+	@Test
+	public void balloonLogBasketUnlockDoesNotSatisfyAnUnrelatedGate()
+	{
+		// The basket unlock is granted only to balloon transports by the
+		// eligibility snapshot — it must never satisfy an honour-gated target.
+		GoalStates goals = goals(NOTHING, Set.of(Unlock.BALLOON_LOG_BASKET),
+			Target.requiring(WALKABLE, new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1")),
+			Target.at(OTHER));
+		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertEquals(Set.of(OTHER), goals.tiles());
+	}
+
+	@Test
+	public void arrivalMissingItemsHonorDeclaredUnlocks()
+	{
+		// With the honour declared, the missing-items report for an unreachable
+		// gate names the unheld talisman but not the satisfied unlock group.
+		TransportItems gate = new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=1");
+		GoalStates goals = goals(NOTHING, Set.of(Unlock.XERICS_HONOUR), Target.requiring(WALKABLE, gate));
+		Arrival arrival = goals.arrival(WALKABLE, BankVisitState.CARRIED);
+		assertEquals(TargetStatus.UNKNOWN, arrival.getStatus());
+		assertEquals(List.of(gate.getRequirements().get(0)), arrival.getMissingItems());
 	}
 
 	@Test

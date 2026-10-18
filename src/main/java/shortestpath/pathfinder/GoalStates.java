@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import shortestpath.requirement.model.Unlock;
+
 /**
  * The search states that finish a route: a goal tile, in a bank layer where the player holds that
  * target's items.
@@ -36,6 +38,7 @@ public final class GoalStates
 	private final Targets targets;
 	private final TargetGoals tiles;
 	private final HeldItems heldItems;
+	private final Set<Unlock> unlocks;
 	private final Map<Integer, TargetStatus> statuses;
 	// The layers each target finishes the route in, as UNBANKED/BANKED bits.
 	private final Map<Integer, Integer> layers;
@@ -45,12 +48,13 @@ public final class GoalStates
 	private final Set<Integer> allTiles;
 	private final boolean viable;
 
-	private GoalStates(Targets targets, TargetGoals tiles, HeldItems heldItems, Map<Integer, TargetStatus> statuses,
-		Map<Integer, Integer> layers)
+	private GoalStates(Targets targets, TargetGoals tiles, HeldItems heldItems, Set<Unlock> unlocks,
+		Map<Integer, TargetStatus> statuses, Map<Integer, Integer> layers)
 	{
 		this.targets = targets;
 		this.tiles = tiles;
 		this.heldItems = heldItems;
+		this.unlocks = unlocks;
 		this.statuses = statuses;
 		this.layers = layers;
 		Set<Integer> eitherLayer = new HashSet<>();
@@ -82,17 +86,19 @@ public final class GoalStates
 	/** Resolves {@code targets} against the map and the items {@code config} last collected. */
 	public static GoalStates resolve(PathfinderConfig config, int start, Targets targets)
 	{
-		return resolve(TargetGoals.resolve(config, start, targets.points()), targets, config.getHeldItems());
+		return resolve(TargetGoals.resolve(config, start, targets.points()), targets, config.getHeldItems(),
+			config.getUnlocks());
 	}
 
-	static GoalStates resolve(TargetGoals tiles, Targets targets, HeldItems heldItems)
+	static GoalStates resolve(TargetGoals tiles, Targets targets, HeldItems heldItems, Set<Unlock> unlocks)
 	{
 		Map<Integer, TargetStatus> statuses = new HashMap<>();
 		Map<Integer, Integer> layers = new HashMap<>();
 		boolean anyCompletable = false;
 		for (Target target : targets)
 		{
-			TargetStatus status = target.hasRequiredItems() ? heldItems.statusOf(target.getRequiredItems())
+			TargetStatus status = target.hasRequiredItems()
+				? heldItems.statusOf(target.getRequiredItems(), unlocks)
 				: TargetStatus.CARRIED;
 			int targetLayers = status == TargetStatus.CARRIED ? EITHER : status == TargetStatus.BANK ? BANKED : 0;
 			statuses.put(target.getPoint(), status);
@@ -105,7 +111,7 @@ public final class GoalStates
 			// items: the closest target is still where the player is going.
 			layers.replaceAll((point, targetLayers) -> EITHER);
 		}
-		return new GoalStates(targets, tiles, heldItems, statuses, layers);
+		return new GoalStates(targets, tiles, heldItems, unlocks, statuses, layers);
 	}
 
 	/** Whether reaching {@code tile} in the given bank layer finishes the route. */
@@ -163,6 +169,6 @@ public final class GoalStates
 		Target target = targets.get(reached);
 		TargetStatus status = statuses.get(reached);
 		return new Arrival(target, status, status == TargetStatus.UNKNOWN
-			? heldItems.missing(target.getRequiredItems()) : List.of());
+			? heldItems.missing(target.getRequiredItems(), unlocks) : List.of());
 	}
 }
