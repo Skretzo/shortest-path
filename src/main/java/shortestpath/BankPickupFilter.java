@@ -197,13 +197,21 @@ public class BankPickupFilter
 		}
 	}
 
-	@Subscribe
+	// Runs last so other plugins' searches are on the stack
+	@Subscribe(priority = -1)
 	public void onScriptPostFired(ScriptPostFired event)
 	{
 		if (event.getScriptId() == ScriptID.BANKMAIN_SEARCHING)
 		{
 			// Every bank layout asks whether the bank is searching; answering yes runs the
 			// bankSearchFilter callback for each item.
+			int[] intStack = client.getIntStack();
+			int searching = client.getIntStackSize() - 1;
+			// Another tab, such as Quest Helper's, or a typed search is already showing
+			if (open && intStack[searching] == 1)
+			{
+				closeTab();
+			}
 			if (open && client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
 			{
 				// A searching bank would close the potion store straight away
@@ -212,7 +220,7 @@ public class BankPickupFilter
 			filteredItemIds = wantedItemIds();
 			if (!filteredItemIds.isEmpty())
 			{
-				client.getIntStack()[client.getIntStackSize() - 1] = 1;
+				intStack[searching] = 1;
 			}
 		}
 		else if (event.getScriptId() == ScriptID.BANKMAIN_FINISHBUILDING)
@@ -230,12 +238,18 @@ public class BankPickupFilter
 	@Subscribe(priority = -1)
 	public void onScriptCallbackEvent(ScriptCallbackEvent event)
 	{
+		int[] intStack = client.getIntStack();
+		int intStackSize = client.getIntStackSize();
+		if (open && "getSearchingTagTab".equals(event.getEventName()) && intStack[intStackSize - 1] == 1)
+		{
+			// A tag tab is open, and shown over it these items would be saved into its layout
+			closeTab();
+			return;
+		}
 		if (filteredItemIds.isEmpty())
 		{
 			return;
 		}
-		int[] intStack = client.getIntStack();
-		int intStackSize = client.getIntStackSize();
 		if ("getSearchingTagTab".equals(event.getEventName()))
 		{
 			// Laid out like a tag tab rather than a typed search
