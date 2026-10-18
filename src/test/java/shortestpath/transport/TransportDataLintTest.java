@@ -326,7 +326,10 @@ public class TransportDataLintTest
 	 * {@code teleportation_items.tsv}: every numeric id referenced by an Items
 	 * cell belongs to exactly one family, every map member id exists in the
 	 * TSV, family names are non-empty and unique, and every member id carries
-	 * a non-empty display label.
+	 * a non-empty display label. The map is generated — after changing an
+	 * {@code Items} cell in {@code teleportation_items.tsv}, regenerate it
+	 * with {@code python3 scripts/generate_teleport_restrictions.py} and
+	 * commit the result.
 	 */
 	@Test
 	public void testTeleportRestrictionFamilyMap() throws IOException
@@ -412,12 +415,16 @@ public class TransportDataLintTest
 		Set<Integer> mapItemIds = idOwner.keySet();
 		Set<Integer> missingFromMap = new HashSet<>(tsvItemIds);
 		missingFromMap.removeAll(mapItemIds);
-		Assert.assertTrue("Items-cell ids missing from the family map: " + missingFromMap,
+		Assert.assertTrue("Items-cell ids missing from the family map: " + missingFromMap
+			+ " — regenerate it with `python3 scripts/generate_teleport_restrictions.py`"
+			+ " and commit teleport_restrictions.tsv",
 			missingFromMap.isEmpty());
 
 		Set<Integer> missingFromTsv = new HashSet<>(mapItemIds);
 		missingFromTsv.removeAll(tsvItemIds);
-		Assert.assertTrue("family map member ids not found in teleportation_items.tsv: " + missingFromTsv,
+		Assert.assertTrue("family map member ids not found in teleportation_items.tsv: " + missingFromTsv
+			+ " — regenerate teleport_restrictions.tsv with"
+			+ " `python3 scripts/generate_teleport_restrictions.py`",
 			missingFromTsv.isEmpty());
 
 		System.out.printf("Validated %d teleport restriction families covering %d item ids.\n",

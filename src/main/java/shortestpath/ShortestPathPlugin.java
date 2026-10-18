@@ -212,6 +212,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
 		eventBus.register(bankPickupFilter);
+		bankPickupFilter.startUp();
 
 		if (settings.lifecycle().drawDebugPanel())
 		{

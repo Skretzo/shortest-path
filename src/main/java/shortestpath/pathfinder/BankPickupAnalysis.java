@@ -1,8 +1,8 @@
 package shortestpath.pathfinder;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +62,8 @@ public class BankPickupAnalysis
 		TransportItems targetItems)
 	{
 		List<List<Map<Integer, Long>>> resultAlternatives = new ArrayList<>();
-		Set<Integer> resultIds = new HashSet<>();
+		// In route order, which Path Items shows them in
+		Set<Integer> resultIds = new LinkedHashSet<>();
 
 		if (bank == null || path == null || pathIndex < 0 || pathIndex >= path.size())
 		{
@@ -88,7 +89,7 @@ public class BankPickupAnalysis
 		// Each group is one edge's pickup alternatives, e.g. the raw maps behind
 		// "Air rune (3), Law rune or Varrock teleport".
 		List<List<Map<Integer, Long>>> groups = new ArrayList<>();
-		Set<Integer> itemIds = new HashSet<>();
+		Set<Integer> itemIds = new LinkedHashSet<>();
 		boolean usesFairyRing = false;
 
 		// Walk each edge in the remaining path in a single pass.

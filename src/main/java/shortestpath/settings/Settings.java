@@ -617,6 +617,7 @@ public class Settings
 		private final boolean showUnreachableText;
 		private final boolean highlightBankPickupItems;
 		private final boolean filterBankPickupItems;
+		private final boolean autoOpenBankPickupFilter;
 		private final boolean highlightSpellbookSpells;
 		private final boolean highlightInventoryItems;
 		private final boolean showTeleportPulse;
@@ -647,6 +648,7 @@ public class Settings
 			showUnreachableText = effective.showUnreachableText();
 			highlightBankPickupItems = effective.highlightBankPickupItems();
 			filterBankPickupItems = effective.filterBankPickupItems();
+			autoOpenBankPickupFilter = effective.autoOpenBankPickupFilter();
 			highlightSpellbookSpells = effective.highlightSpellbookSpells();
 			highlightInventoryItems = effective.highlightInventoryItems();
 			showTeleportPulse = effective.showTeleportPulse();

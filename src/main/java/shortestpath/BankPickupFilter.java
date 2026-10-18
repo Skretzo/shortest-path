@@ -1,11 +1,20 @@
 package shortestpath;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import javax.inject.Singleton;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
-import net.runelite.api.MenuAction;
+import net.runelite.api.Item;
+import net.runelite.api.ItemComposition;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.ParamID;
 import net.runelite.api.ScriptEvent;
 import net.runelite.api.ScriptID;
 import net.runelite.api.SoundEffectID;
@@ -18,19 +27,24 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarClientID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.widgets.ItemQuantityMode;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.SpriteManager;
+import net.runelite.client.game.SpriteOverride;
 import net.runelite.client.plugins.bank.BankSearch;
 import shortestpath.overlay.AbstractHighlightOverlay;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.Targets;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
@@ -41,6 +55,8 @@ import shortestpath.settings.Settings;
  * the bank highlight outlines. A button next to Quest Helper's opens it as a temporary tab, the
  * same way Quest Helper shows its own tab: the bank is put in its search state without the Bank
  * Tags plugin and nothing is saved. Viewing another tab, the potion store or searching closes it.
+ * If a tag tab like an Inventory Setups filter is open, the bank isn't filtered, since the tag tab
+ * would save the items into its layout. The items are drawn on top of it instead.
  */
 @Singleton
 public class BankPickupFilter
@@ -61,6 +77,15 @@ public class BankPickupFilter
 	private static final int BUTTON_WIDTH = 23;
 	private static final int BUTTON_HEIGHT = 25;
 	private static final int ICON_SIZE = 15;
+	private static final int ITEMS_PER_ROW = 8;
+	private static final int ITEM_WIDTH = 36;
+	private static final int ITEM_HEIGHT = 32;
+	private static final int ITEM_X_SPACING = 48;
+	private static final int ITEM_Y_SPACING = 36;
+	private static final int ITEM_START_X = 51;
+	// From bankmain_init
+	private static final int BANK_DRAG_DEAD_TIME = 5;
+	private static final int BANK_ITEM_SLOTS = 1410;
 
 	private final Client client;
 	private final ClientThread clientThread;
@@ -68,17 +93,41 @@ public class BankPickupFilter
 	private final PathScheduler scheduler;
 	private final PathAnnotator annotator;
 	private final BankSearch bankSearch;
+	private final SpriteManager spriteManager;
 
 	// The items the bank was last laid out with; empty while the bank is not filtered.
 	private Set<Integer> filteredItemIds = Set.of();
 	// Stays open across bank visits, like other tabs; never saved
 	private boolean open;
+	private boolean reopen;
+	// Auto-open waits for the bank's first layout
+	private boolean autoOpenPending;
+	private boolean closedThisVisit;
+	private boolean tagTabShowing;
+	private boolean searchShowing;
+	private boolean drawingOverTagTab;
+	private final List<Widget> drawnItems = new ArrayList<>();
+	// Kept across bank visits, so items keep their spots when withdrawn and deposited
+	private final List<Integer> routeItemIds = new ArrayList<>();
+	private Targets routeItemsFor;
+	private final Set<Integer> visitItemIds = new HashSet<>();
 	private Widget buttonBackground;
 	private Widget buttonIcon;
 
+	@Getter
+	@RequiredArgsConstructor
+	private enum Sprite implements SpriteOverride
+	{
+		// Any id the game doesn't use
+		ICON(-46301, "/shortestpath/panel_icon.png");
+
+		private final int spriteId;
+		private final String fileName;
+	}
+
 	@Inject
 	BankPickupFilter(Client client, ClientThread clientThread, Settings settings, PathScheduler scheduler,
-		PathAnnotator annotator, BankSearch bankSearch)
+		PathAnnotator annotator, BankSearch bankSearch, SpriteManager spriteManager)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
@@ -86,12 +135,20 @@ public class BankPickupFilter
 		this.scheduler = scheduler;
 		this.annotator = annotator;
 		this.bankSearch = bankSearch;
+		this.spriteManager = spriteManager;
+	}
+
+	/** Loads the sidebar icon for the button, since bank widgets can only show game sprites. */
+	public void startUp()
+	{
+		spriteManager.addSpriteOverrides(Sprite.values());
 	}
 
 	/** Restores the unfiltered bank, for when the plugin shuts down with the bank open. */
 	public void reset()
 	{
 		open = false;
+		reopen = false;
 		Widget background = buttonBackground;
 		Widget icon = buttonIcon;
 		if (background != null)
@@ -107,6 +164,8 @@ public class BankPickupFilter
 			filteredItemIds = Set.of();
 			clientThread.invokeLater(this::relayoutIfOpen);
 		}
+		clientThread.invokeLater(this::restoreDragging);
+		spriteManager.removeSpriteOverrides(Sprite.values());
 	}
 
 	@Subscribe
@@ -115,12 +174,15 @@ public class BankPickupFilter
 		if (event.getGroupId() == InterfaceID.BANKMAIN)
 		{
 			createButton();
-			if (open)
+			if (reopen)
 			{
 				// Reopen the tab once the bank has built, as Quest Helper does
-				boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
-				open = false;
-				clientThread.invokeLater(() -> openTab(wasInPotionStorage));
+				reopen = false;
+				clientThread.invokeLater(this::openTab);
+			}
+			else
+			{
+				autoOpenPending = true;
 			}
 		}
 		else if (event.getGroupId() == InterfaceID.SHARED_BANK)
@@ -135,6 +197,16 @@ public class BankPickupFilter
 		if (event.getGroupId() == InterfaceID.BANKMAIN)
 		{
 			filteredItemIds = Set.of();
+			// The bank builds once before it reports being open, and that build must not be filtered
+			reopen = open;
+			open = false;
+			autoOpenPending = false;
+			closedThisVisit = false;
+			tagTabShowing = false;
+			searchShowing = false;
+			drawingOverTagTab = false;
+			drawnItems.clear();
+			visitItemIds.clear();
 			buttonBackground = null;
 			buttonIcon = null;
 		}
@@ -152,11 +224,16 @@ public class BankPickupFilter
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		// The needed items change when a route finishes, the player withdraws them or the
-		// config is toggled; the bank only rebuilds itself on some of those, so catch the rest.
-		if (isBankOpen() && !wantedItemIds().equals(filteredItemIds))
+		if (isBankOpen())
 		{
-			bankSearch.layoutBank();
+			// The route can start needing bank items while it's open, such as after a deposit
+			autoOpen();
+			// The needed items change when a route finishes, the player withdraws them or the
+			// config is toggled; the bank only rebuilds itself on some of those, so catch the rest.
+			if (!wantedItemIds().equals(filteredItemIds))
+			{
+				bankSearch.layoutBank();
+			}
 		}
 		updateButton();
 	}
@@ -197,32 +274,48 @@ public class BankPickupFilter
 		}
 	}
 
-	@Subscribe
+	// Runs last so other plugins' searches are on the stack
+	@Subscribe(priority = -1)
 	public void onScriptPostFired(ScriptPostFired event)
 	{
 		if (event.getScriptId() == ScriptID.BANKMAIN_SEARCHING)
 		{
 			// Every bank layout asks whether the bank is searching; answering yes runs the
 			// bankSearchFilter callback for each item.
-			if (open && client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
+			int[] intStack = client.getIntStack();
+			int searching = client.getIntStackSize() - 1;
+			// Tag tabs don't set this, Quest Helper's tab and typed searches do
+			searchShowing = intStack[searching] == 1;
+			if (open && searchShowing)
+			{
+				closeTab();
+			}
+			if (open && isPotionStoreOpen())
 			{
 				// A searching bank would close the potion store straight away
 				closeTab();
 			}
 			filteredItemIds = wantedItemIds();
-			if (!filteredItemIds.isEmpty())
+			drawingOverTagTab = tagTabShowing && !filteredItemIds.isEmpty();
+			if (!filteredItemIds.isEmpty() && !drawingOverTagTab)
 			{
-				client.getIntStack()[client.getIntStackSize() - 1] = 1;
+				intStack[searching] = 1;
 			}
 		}
 		else if (event.getScriptId() == ScriptID.BANKMAIN_FINISHBUILDING)
 		{
-			Widget title = client.getWidget(InterfaceID.Bankmain.TITLE);
-			if (title != null && !filteredItemIds.isEmpty())
+			restoreDragging();
+			if (!filteredItemIds.isEmpty())
 			{
-				title.setText(TITLE);
+				// After the other bank plugins, so a tag tab's layout only sees its own items
+				clientThread.invokeAtTickEnd(this::drawItems);
 			}
 			updateButton();
+			if (autoOpenPending)
+			{
+				autoOpenPending = false;
+				clientThread.invokeLater(this::autoOpen);
+			}
 		}
 	}
 
@@ -230,12 +323,16 @@ public class BankPickupFilter
 	@Subscribe(priority = -1)
 	public void onScriptCallbackEvent(ScriptCallbackEvent event)
 	{
-		if (filteredItemIds.isEmpty())
+		int[] intStack = client.getIntStack();
+		int intStackSize = client.getIntStackSize();
+		if ("getSearchingTagTab".equals(event.getEventName()))
+		{
+			tagTabShowing = intStack[intStackSize - 1] == 1;
+		}
+		if (filteredItemIds.isEmpty() || drawingOverTagTab)
 		{
 			return;
 		}
-		int[] intStack = client.getIntStack();
-		int intStackSize = client.getIntStackSize();
 		if ("getSearchingTagTab".equals(event.getEventName()))
 		{
 			// Laid out like a tag tab rather than a typed search
@@ -253,10 +350,60 @@ public class BankPickupFilter
 		}
 	}
 
+	/**
+	 * The items the tab shows, in the route's order. Items withdrawn during this bank visit stay as
+	 * placeholders, and the list is empty once everything is grabbed.
+	 */
 	private Set<Integer> wantedItemIds()
 	{
 		// Group storage runs the bank's search scripts too; leave it unfiltered
-		return open && !isGroupStorageOpen() ? pathItemIds() : Set.of();
+		if (!open || isGroupStorageOpen())
+		{
+			return Set.of();
+		}
+		ActiveSearch search = scheduler.getActiveSearch();
+		Targets targets = search == null ? null : search.getTargets();
+		if (!Objects.equals(targets, routeItemsFor))
+		{
+			routeItemIds.clear();
+			visitItemIds.clear();
+			routeItemsFor = targets;
+		}
+		Set<Integer> pathItemIds = pathItemIds();
+		if (pathItemIds.isEmpty())
+		{
+			return Set.of();
+		}
+		addInRouteOrder(pathItemIds);
+		visitItemIds.addAll(pathItemIds);
+		Set<Integer> items = new LinkedHashSet<>();
+		for (int itemId : routeItemIds)
+		{
+			if (visitItemIds.contains(itemId))
+			{
+				items.add(itemId);
+			}
+		}
+		return items;
+	}
+
+	/** Adds the route's new items to the remembered order, each before the next one it already has. */
+	private void addInRouteOrder(Set<Integer> pathItemIds)
+	{
+		List<Integer> route = new ArrayList<>(pathItemIds);
+		int insertAt = routeItemIds.size();
+		for (int i = route.size() - 1; i >= 0; i--)
+		{
+			int index = routeItemIds.indexOf(route.get(i));
+			if (index >= 0)
+			{
+				insertAt = index;
+			}
+			else
+			{
+				routeItemIds.add(insertAt, route.get(i));
+			}
+		}
 	}
 
 	private Set<Integer> pathItemIds()
@@ -290,12 +437,171 @@ public class BankPickupFilter
 		return groupStorage != null && !groupStorage.isHidden();
 	}
 
+	private boolean isPotionStoreOpen()
+	{
+		return client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
+	}
+
 	private void relayoutIfOpen()
 	{
 		if (isBankOpen())
 		{
 			bankSearch.layoutBank();
 		}
+	}
+
+	/** Gives drawn tiles back the bank's own drag delay, since the bank's rebuild doesn't reset it. */
+	private void restoreDragging()
+	{
+		for (Widget item : drawnItems)
+		{
+			item.setDragDeadTime(BANK_DRAG_DEAD_TIME);
+		}
+		drawnItems.clear();
+	}
+
+	/**
+	 * Draws the tab once the bank is built: hides every item, then draws the tab's items in order,
+	 * with withdrawn ones as placeholders.
+	 */
+	private void drawItems()
+	{
+		ItemContainer bank = client.getItemContainer(InventoryID.BANK);
+		Widget itemContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
+		Widget[] children = itemContainer == null ? null : itemContainer.getDynamicChildren();
+		if (!open || filteredItemIds.isEmpty() || bank == null || children == null || itemContainer.isHidden())
+		{
+			return;
+		}
+		for (Widget child : children)
+		{
+			// Including a tag tab layout's empty drop targets, which block clicks
+			if (!child.isSelfHidden())
+			{
+				child.setHidden(true);
+			}
+		}
+		int position = 0;
+		int spareSlot = Math.min(BANK_ITEM_SLOTS, children.length) - 1;
+		for (int itemId : filteredItemIds)
+		{
+			int slot = bank.find(itemId);
+			Item item = slot < 0 || slot >= children.length ? null : bank.getItem(slot);
+			if (item != null && item.getQuantity() > 0)
+			{
+				// Its own slot's widget, so clicks withdraw from that slot
+				drawItem(children[slot], itemId, item.getQuantity(), position);
+				drawnItems.add(children[slot]);
+			}
+			else
+			{
+				// Withdrawn: a placeholder in a slot widget the bank isn't using
+				while (spareSlot >= 0 && bank.getItem(spareSlot) != null)
+				{
+					spareSlot--;
+				}
+				if (spareSlot < 0)
+				{
+					continue;
+				}
+				drawItem(children[spareSlot], itemId, 0, position);
+				drawnItems.add(children[spareSlot]);
+				spareSlot--;
+			}
+			position++;
+		}
+		int rows = (position + ITEMS_PER_ROW - 1) / ITEMS_PER_ROW;
+		itemContainer.setScrollHeight(Math.max(rows * ITEM_Y_SPACING, itemContainer.getHeight()));
+		clientThread.invokeLater(() -> client.runScript(ScriptID.UPDATE_SCROLLBAR, InterfaceID.Bankmain.SCROLLBAR,
+			InterfaceID.Bankmain.ITEMS, 0));
+		Widget title = client.getWidget(InterfaceID.Bankmain.TITLE);
+		if (title != null)
+		{
+			title.setText(TITLE);
+		}
+	}
+
+	/**
+	 * Draws one tile at a grid position: the item with the bank's withdraw options, or a faded
+	 * placeholder like the bank's own when the quantity is 0. Tiles can't be dragged, since that would
+	 * rearrange the tag tab's layout or the bank itself.
+	 */
+	private void drawItem(Widget widget, int itemId, int quantity, int position)
+	{
+		ItemComposition definition = client.getItemDefinition(itemId);
+		widget.setItemId(itemId);
+		widget.setItemQuantity(quantity);
+		widget.setName("<col=ff9040>" + definition.getName() + "</col>");
+		widget.clearActions();
+		if (quantity > 0)
+		{
+			setWithdrawActions(widget, definition);
+		}
+		else
+		{
+			widget.setItemQuantityMode(ItemQuantityMode.ALWAYS);
+			widget.setOpacity(120);
+		}
+		widget.setDragDeadTime(1000);
+		widget.setOnDragCompleteListener((JavaScriptCallback) event -> client.setDraggedOnWidget(null));
+		widget.setOriginalWidth(ITEM_WIDTH);
+		widget.setOriginalHeight(ITEM_HEIGHT);
+		widget.setOriginalX(position % ITEMS_PER_ROW * ITEM_X_SPACING + ITEM_START_X);
+		widget.setOriginalY(position / ITEMS_PER_ROW * ITEM_Y_SPACING);
+		widget.setHidden(false);
+		widget.revalidate();
+	}
+
+	/** The bank's own withdraw options, as in Bank Tags' layouts and ~bankmain_drawitem. */
+	private void setWithdrawActions(Widget widget, ItemComposition definition)
+	{
+		widget.setItemQuantityMode(ItemQuantityMode.STACKABLE);
+		int quantityType = client.getVarbitValue(VarbitID.BANK_QUANTITY_TYPE);
+		int requestedQuantity = client.getVarbitValue(VarbitID.BANK_REQUESTEDQUANTITY);
+		String quantity;
+		switch (quantityType)
+		{
+			case 1:
+				quantity = "5";
+				break;
+			case 2:
+				quantity = "10";
+				break;
+			case 3:
+				quantity = Integer.toString(Math.max(1, requestedQuantity));
+				break;
+			case 4:
+				quantity = "All";
+				break;
+			default:
+				quantity = "1";
+				break;
+		}
+		widget.setAction(0, "Withdraw-" + quantity);
+		if (quantityType != 0)
+		{
+			widget.setAction(1, "Withdraw-1");
+		}
+		widget.setAction(2, "Withdraw-5");
+		widget.setAction(3, "Withdraw-10");
+		if (requestedQuantity > 0)
+		{
+			widget.setAction(4, "Withdraw-" + requestedQuantity);
+		}
+		widget.setAction(5, "Withdraw-X");
+		widget.setAction(6, "Withdraw-All");
+		widget.setAction(7, "Withdraw-All-but-1");
+		if (client.getVarbitValue(VarbitID.BANK_BANKOPS_TOGGLE_ON) == 1
+			&& definition.getIntValue(ParamID.BANK_AUTOCHARGE) != -1)
+		{
+			widget.setAction(8, "Configure-Charges");
+		}
+		if (client.getVarbitValue(VarbitID.BANK_LEAVEPLACEHOLDERS) == 0)
+		{
+			widget.setAction(9, "Placeholder");
+		}
+		widget.setAction(10, "Examine");
+		widget.setOpacity(0);
 	}
 
 	private void createButton()
@@ -309,7 +615,7 @@ public class BankPickupFilter
 			BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_X, BUTTON_Y);
 		buttonBackground.setHasListener(true);
 		buttonBackground.setOnOpListener((JavaScriptCallback) this::onButtonClicked);
-		buttonIcon = createGraphic(parent, SpriteID.WorldmapIcon.PLANET, ICON_SIZE, ICON_SIZE,
+		buttonIcon = createGraphic(parent, Sprite.ICON.getSpriteId(), ICON_SIZE, ICON_SIZE,
 			BUTTON_X + (BUTTON_WIDTH - ICON_SIZE) / 2, BUTTON_Y + (BUTTON_HEIGHT - ICON_SIZE) / 2);
 		updateButton();
 	}
@@ -332,7 +638,6 @@ public class BankPickupFilter
 		{
 			return;
 		}
-		boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
 		client.setVarbit(VarbitID.BANK_CURRENTTAB, 0);
 		if (open)
 		{
@@ -341,21 +646,17 @@ public class BankPickupFilter
 		}
 		else
 		{
-			openTab(wasInPotionStorage);
+			openTab();
 		}
 		client.playSoundEffect(SoundEffectID.UI_BOOP);
 	}
 
-	private void openTab(boolean wasInPotionStorage)
+	private void openTab()
 	{
-		if (open || buttonBackground == null)
+		// The potion store would stay open behind the tab and break deposits
+		if (open || buttonBackground == null || isPotionStoreOpen())
 		{
 			return;
-		}
-		if (wasInPotionStorage)
-		{
-			// The potion store would stay open behind the tab and break deposits
-			client.menuAction(-1, InterfaceID.Bankmain.POTIONSTORE_BUTTON, MenuAction.CC_OP, 1, -1, POTION_STORE, "");
 		}
 		open = true;
 		// Clears any search and lays the bank out as the tab
@@ -370,10 +671,26 @@ public class BankPickupFilter
 		updateButton();
 	}
 
+	/**
+	 * Opens the tab by itself when the setting is on and the route needs bank items, unless Quest
+	 * Helper's tab or a search is showing, or the player closed it during this bank visit.
+	 */
+	private void autoOpen()
+	{
+		if (open || closedThisVisit || searchShowing || !settings.display().autoOpenBankPickupFilter()
+			|| isGroupStorageOpen() || pathItemIds().isEmpty())
+		{
+			return;
+		}
+		openTab();
+	}
+
+	/** Also keeps auto-open off until the next bank visit, since the player chose to close it. */
 	private void closeTab()
 	{
 		open = false;
 		filteredItemIds = Set.of();
+		closedThisVisit = true;
 		updateButton();
 	}
 
@@ -383,7 +700,7 @@ public class BankPickupFilter
 		{
 			return;
 		}
-		boolean shown = !isGroupStorageOpen() && !pathItemIds().isEmpty();
+		boolean shown = !isGroupStorageOpen() && !isPotionStoreOpen() && !pathItemIds().isEmpty();
 		boolean filtering = shown && open;
 		buttonBackground.setHidden(!shown);
 		buttonIcon.setHidden(!shown);
