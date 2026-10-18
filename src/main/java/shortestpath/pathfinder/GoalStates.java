@@ -79,12 +79,7 @@ public final class GoalStates
 		this.viable = anyViable;
 	}
 
-	/** Resolves {@code targets} against the map and the items {@code config} last collected. */
-	public static GoalStates resolve(PathfinderConfig config, int start, Targets targets)
-	{
-		return resolve(TargetGoals.resolve(config, start, targets.points()), targets, config.getHeldItems());
-	}
-
+	/** Puts {@code targets}, resolved to {@code tiles}, into the layers {@code heldItems} decide. */
 	static GoalStates resolve(TargetGoals tiles, Targets targets, HeldItems heldItems)
 	{
 		Map<Integer, TargetStatus> statuses = new HashMap<>();
