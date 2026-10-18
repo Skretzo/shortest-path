@@ -5519,18 +5519,18 @@
 									
 # The obsticals are randomly generated so it can be that you can pass through one of the passages but not the other, so we have to list them all out.									
 # Todo: The destionation of the passages is not 100% confirmed, but atleast they point into the the second ring of the abyss.									
-3039 4854 0	3039 4844 0	Go-through Passage 26250							
-3029 4850 0	3033 4843 0	Go-through Passage 26250							
-3021 4843 0	3039 4844 0	Go-through Passage 26250							
-3018 4834 0	3039 4844 0	Go-through Passage 26250							
-3018 4822 0	3039 4844 0	Go-through Passage 26250							
-3030 4812 0	3039 4844 0	Go-through Passage 26250							
-3042 4811 0	3039 4844 0	Go-through Passage 26250							
-3050 4813 0	3039 4844 0	Go-through Passage 26250							
-3058 4822 0	3039 4844 0	Go-through Passage 26250							
-3061 4831 0	3052 4831 0	Go-through Passage 26250							
-3059 4840 0	3039 4844 0	Go-through Passage 26250							
-3050 4850 0	3039 4844 0	Go-through Passage 26250							
+3039 4855 0	3039 4844 0	Go-through Passage 26250							
+3029 4851 0	3033 4843 0	Go-through Passage 26250							
+3020 4843 0	3039 4844 0	Go-through Passage 26250							
+3017 4834 0	3039 4844 0	Go-through Passage 26250							
+3017 4822 0	3039 4844 0	Go-through Passage 26250							
+3027 4812 0	3039 4844 0	Go-through Passage 26250							
+3042 4810 0	3039 4844 0	Go-through Passage 26250							
+3050 4812 0	3039 4844 0	Go-through Passage 26250							
+3059 4822 0	3039 4844 0	Go-through Passage 26250							
+3062 4831 0	3052 4831 0	Go-through Passage 26250							
+3060 4840 0	3039 4844 0	Go-through Passage 26250							
+3050 4851 0	3039 4844 0	Go-through Passage 26250							
 									
 3034 4793 0	3221 3219 0	Operate Appendage 27027						4	
 									
