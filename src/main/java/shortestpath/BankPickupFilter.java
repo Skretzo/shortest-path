@@ -2,8 +2,8 @@ package shortestpath;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -106,9 +106,11 @@ public class BankPickupFilter
 	private boolean drawingOverTagTab;
 	// Undraggable until the next layout
 	private final List<Widget> drawnItems = new ArrayList<>();
-	// Kept as placeholders once withdrawn
+	// Kept across bank visits, so items keep their spots when withdrawn and deposited
+	private final List<Integer> routeItemIds = new ArrayList<>();
+	private Targets routeItemsFor;
+	// Withdrawn ones stay as placeholders
 	private final Set<Integer> visitItemIds = new HashSet<>();
-	private Targets visitItemsFor;
 	private Widget buttonBackground;
 	private Widget buttonIcon;
 
@@ -353,10 +355,11 @@ public class BankPickupFilter
 		}
 		ActiveSearch search = scheduler.getActiveSearch();
 		Targets targets = search == null ? null : search.getTargets();
-		if (!Objects.equals(targets, visitItemsFor))
+		if (!Objects.equals(targets, routeItemsFor))
 		{
+			routeItemIds.clear();
 			visitItemIds.clear();
-			visitItemsFor = targets;
+			routeItemsFor = targets;
 		}
 		Set<Integer> pathItemIds = pathItemIds();
 		if (pathItemIds.isEmpty())
@@ -364,8 +367,36 @@ public class BankPickupFilter
 			// Everything is grabbed, so show the bank as normal
 			return Set.of();
 		}
+		addInRouteOrder(pathItemIds);
 		visitItemIds.addAll(pathItemIds);
-		return new HashSet<>(visitItemIds);
+		Set<Integer> items = new LinkedHashSet<>();
+		for (int itemId : routeItemIds)
+		{
+			if (visitItemIds.contains(itemId))
+			{
+				items.add(itemId);
+			}
+		}
+		return items;
+	}
+
+	// Each new item goes in before the next one the route already has
+	private void addInRouteOrder(Set<Integer> pathItemIds)
+	{
+		List<Integer> route = new ArrayList<>(pathItemIds);
+		int insertAt = routeItemIds.size();
+		for (int i = route.size() - 1; i >= 0; i--)
+		{
+			int index = routeItemIds.indexOf(route.get(i));
+			if (index >= 0)
+			{
+				insertAt = index;
+			}
+			else
+			{
+				routeItemIds.add(insertAt, route.get(i));
+			}
+		}
 	}
 
 	private Set<Integer> pathItemIds()
@@ -438,12 +469,9 @@ public class BankPickupFilter
 				child.setHidden(true);
 			}
 		}
-		// Sorted so items keep their spots
-		List<Integer> itemIds = new ArrayList<>(filteredItemIds);
-		itemIds.sort(Comparator.naturalOrder());
 		int position = 0;
 		int spareSlot = Math.min(BANK_ITEM_SLOTS, children.length) - 1;
-		for (int itemId : itemIds)
+		for (int itemId : filteredItemIds)
 		{
 			int slot = bank.find(itemId);
 			Item item = slot < 0 || slot >= children.length ? null : bank.getItem(slot);
