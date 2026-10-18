@@ -578,9 +578,9 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		keyName = "filterBankPickupItems",
-		name = "Filter Bank Pickup Items",
-		description = "When the bank is opened, show only the items that need to be picked up for the current path." +
-			"<br>Viewing a bank tab or searching shows the full bank again until the bank is reopened",
+		name = "Path Items bank filter",
+		description = "Add a Path Items button to the bank that shows only the items the current path needs." +
+			"<br>The button will only appear while the path needs items from the bank",
 		hidden = true
 	)
 	default boolean filterBankPickupItems()
