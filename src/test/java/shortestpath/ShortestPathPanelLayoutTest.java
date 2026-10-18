@@ -1652,7 +1652,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		CategoryPanel unlocks = panel.categories().get(3);
 		assertEquals("Unlocks", unlocks.categoryName());
-		assertEquals("four unlock toggles plus the respawn flag", 5,
+		assertEquals("six unlock toggles plus the respawn flag", 7,
 			unlocks.rows().size());
 		for (ShortestPathPanel.SearchRow row : unlocks.rows())
 		{
@@ -1734,15 +1734,15 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	@Test
-	public void unlocksTileCountsFiveKeys() throws Exception
+	public void unlocksTileCountsSevenKeys() throws Exception
 	{
 		newPanel();
-		assertEquals("0/5 on", statusLabelOf(tileNamed("Unlocks")).getText());
+		assertEquals("0/7 on", statusLabelOf(tileNamed("Unlocks")).getText());
 
 		config.setUnlockCanoeAxeValue(true);
 		settings.onConfigChanged(event("unlockCanoeAxe"));
 		flushEdt();
-		assertEquals("1/5 on", statusLabelOf(tileNamed("Unlocks")).getText());
+		assertEquals("1/7 on", statusLabelOf(tileNamed("Unlocks")).getText());
 	}
 
 	// ---- Display category -----------------------------------------------

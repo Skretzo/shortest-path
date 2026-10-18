@@ -248,6 +248,20 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean unlockSoulRift()
+	{
+		Object value = overrides.get(ConfigKey.UNLOCK_SOUL_RIFT.getKey());
+		return value instanceof Boolean ? (boolean) value : base.unlockSoulRift();
+	}
+
+	@Override
+	public boolean unlockBloodRift()
+	{
+		Object value = overrides.get(ConfigKey.UNLOCK_BLOOD_RIFT.getKey());
+		return value instanceof Boolean ? (boolean) value : base.unlockBloodRift();
+	}
+
+	@Override
 	public boolean includeBankPath()
 	{
 		Object value = overrides.get(ConfigKey.INCLUDE_BANK_PATH.getKey());
