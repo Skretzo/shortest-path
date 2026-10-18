@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import javax.inject.Singleton;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
@@ -36,6 +38,8 @@ import net.runelite.api.widgets.WidgetType;
 import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.SpriteManager;
+import net.runelite.client.game.SpriteOverride;
 import net.runelite.client.plugins.bank.BankSearch;
 import shortestpath.overlay.AbstractHighlightOverlay;
 import shortestpath.pathfinder.ActiveSearch;
@@ -87,6 +91,7 @@ public class BankPickupFilter
 	private final PathScheduler scheduler;
 	private final PathAnnotator annotator;
 	private final BankSearch bankSearch;
+	private final SpriteManager spriteManager;
 
 	// What the tab last showed; empty while it isn't showing
 	private Set<Integer> filteredItemIds = Set.of();
@@ -107,9 +112,20 @@ public class BankPickupFilter
 	private Widget buttonBackground;
 	private Widget buttonIcon;
 
+	@Getter
+	@RequiredArgsConstructor
+	private enum Sprite implements SpriteOverride
+	{
+		// The sidebar's icon, under an id the game doesn't use
+		ICON(-46301, "/shortestpath/panel_icon.png");
+
+		private final int spriteId;
+		private final String fileName;
+	}
+
 	@Inject
 	BankPickupFilter(Client client, ClientThread clientThread, Settings settings, PathScheduler scheduler,
-		PathAnnotator annotator, BankSearch bankSearch)
+		PathAnnotator annotator, BankSearch bankSearch, SpriteManager spriteManager)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
@@ -117,6 +133,12 @@ public class BankPickupFilter
 		this.scheduler = scheduler;
 		this.annotator = annotator;
 		this.bankSearch = bankSearch;
+		this.spriteManager = spriteManager;
+	}
+
+	public void startUp()
+	{
+		spriteManager.addSpriteOverrides(Sprite.values());
 	}
 
 	/** Restores the unfiltered bank, for when the plugin shuts down with the bank open. */
@@ -140,6 +162,7 @@ public class BankPickupFilter
 			clientThread.invokeLater(this::relayoutIfOpen);
 		}
 		clientThread.invokeLater(this::restoreDragging);
+		spriteManager.removeSpriteOverrides(Sprite.values());
 	}
 
 	@Subscribe
@@ -549,7 +572,7 @@ public class BankPickupFilter
 			BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_X, BUTTON_Y);
 		buttonBackground.setHasListener(true);
 		buttonBackground.setOnOpListener((JavaScriptCallback) this::onButtonClicked);
-		buttonIcon = createGraphic(parent, SpriteID.WorldmapIcon.PLANET, ICON_SIZE, ICON_SIZE,
+		buttonIcon = createGraphic(parent, Sprite.ICON.getSpriteId(), ICON_SIZE, ICON_SIZE,
 			BUTTON_X + (BUTTON_WIDTH - ICON_SIZE) / 2, BUTTON_Y + (BUTTON_HEIGHT - ICON_SIZE) / 2);
 		updateButton();
 	}
