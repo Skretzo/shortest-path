@@ -15,6 +15,7 @@ Validates TSV transport files for:
  10. Duration must be a positive integer
  11. Wilderness level must be a non-negative integer
  12. Consumable must be 'T' or 'F'
+ 13. UNLOCK_* Items tokens must name an Unlock enum member and be '=1'
 
 Usage:
   python3 check_tsv.py [directory]
@@ -75,6 +76,8 @@ _VAR_REQ = re.compile(r"^\d+[=><&@]\d+$")
 _COORD = re.compile(r"^\d+ \d+ \d+$")
 # Item requirement part after normalization: 'NAME=qty' where NAME is [A-Z0-9_]
 _ITEM_PART = re.compile(r"^[A-Z0-9_]+=\d+$")
+# Enum member declarations in Unlock.java ('NAME,' lines, block closed by ';')
+_UNLOCK_ENUM_MEMBER = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*[,;]")
 
 # Valid LeagueRegion enum values for the 'Region override' column.
 # Must match shortestpath.leagues.LeagueRegion exactly (case-sensitive).
@@ -95,6 +98,27 @@ LEAGUE_REGIONS = {
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DIR = os.path.join(SCRIPT_DIR, "..", "src", "main", "resources")
+UNLOCK_JAVA = os.path.join(
+    SCRIPT_DIR, "..", "src", "main", "java",
+    "shortestpath", "requirement", "model", "Unlock.java")
+
+
+def load_unlock_names():
+    """Return the Unlock enum member names from Unlock.java, or None if the
+    file cannot be read (fail-open — the '=1' grammar check still applies)."""
+    try:
+        names = set()
+        with open(UNLOCK_JAVA, "r", encoding="utf-8") as f:
+            for line in f:
+                m = _UNLOCK_ENUM_MEMBER.match(line)
+                if m:
+                    names.add(m.group(1))
+        return names
+    except OSError:
+        return None
+
+
+UNLOCK_NAMES = load_unlock_names()
 
 
 # ---------------------------------------------------------------------------
@@ -148,6 +172,20 @@ def validate_items(value):
                     f"invalid item requirement '{or_part}' in '{value}' "
                     f"(expected 'NAME=qty')"
                 )
+                continue
+            if or_part.startswith("UNLOCK_"):
+                # 'UNLOCK_<NAME>=1' is the only legal unlock token form. The
+                # '=1' check is grammar and always runs; the name check is
+                # skipped (fail-open) when Unlock.java could not be read.
+                unlock_name, _, unlock_qty = or_part[len("UNLOCK_"):].partition("=")
+                if unlock_qty != "1":
+                    errors.append(
+                        f"unlock token must be =1: '{or_part}' in '{value}'"
+                    )
+                if UNLOCK_NAMES is not None and unlock_name not in UNLOCK_NAMES:
+                    errors.append(
+                        f"unknown unlock token '{or_part}' in '{value}'"
+                    )
     return errors
 
 
@@ -341,6 +379,13 @@ def check_tsv(filepath):
 
 def main():
     resource_dir = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_DIR
+
+    if UNLOCK_NAMES is None:
+        print(
+            "note: Unlock.java not found; unlock-name check skipped "
+            "(=1 form still enforced)",
+            file=sys.stderr,
+        )
 
     tsv_files = sorted(
         f for f in glob.glob(os.path.join(resource_dir, "**", "*.tsv"), recursive=True)
