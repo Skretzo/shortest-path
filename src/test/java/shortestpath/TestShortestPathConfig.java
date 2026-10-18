@@ -27,6 +27,7 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	// portal set then derives from the legacy useTeleportationPortalsPoh flag.
 	private Set<PohNexusPortal> pohNexusPortals = null;
 	private boolean showBankPickupInfo = false;
+	private boolean showTransportInfo = true;
 
 	@SuppressWarnings("unused")
 	public void setCalculationCutoffValue(int calculationCutoff)
@@ -115,6 +116,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public void setShowBankPickupInfoValue(boolean showBankPickupInfo)
 	{
 		this.showBankPickupInfo = showBankPickupInfo;
+	}
+
+	@SuppressWarnings("unused")
+	public void setShowTransportInfoValue(boolean showTransportInfo)
+	{
+		this.showTransportInfo = showTransportInfo;
 	}
 
 	@Override
@@ -219,6 +226,12 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean showBankPickupInfo()
 	{
 		return showBankPickupInfo;
+	}
+
+	@Override
+	public boolean showTransportInfo()
+	{
+		return showTransportInfo;
 	}
 
 	@Override
