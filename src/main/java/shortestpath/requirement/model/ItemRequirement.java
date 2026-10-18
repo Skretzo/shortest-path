@@ -48,6 +48,13 @@ public class ItemRequirement
 			{
 				throw new IllegalArgumentException("An unlock branch carries no item ids");
 			}
+			if (unlock != null && quantity != 1)
+			{
+				// The 'UNLOCK_<NAME>=1' grammar admits no other quantity; an
+				// unlock satisfaction never reads quantity, so a non-1 value
+				// can only be a contract violation slipping past the parser.
+				throw new IllegalArgumentException("An unlock branch is always quantity 1");
+			}
 			this.itemIds = itemIds == null ? null : itemIds.clone();
 			this.staffIds = staffIds == null ? null : staffIds.clone();
 			this.offhandIds = offhandIds == null ? null : offhandIds.clone();
