@@ -46,6 +46,11 @@ public class GoalStatesTest
 		return Target.requiring(point, TargetsTest.items(ItemID.SPADE));
 	}
 
+	private static boolean needsBank(HeldItems held, Target... targets)
+	{
+		return GoalStates.needsBank(Targets.of(List.of(targets)), held);
+	}
+
 	private static GoalStates goals(HeldItems held, Target... targets)
 	{
 		Targets all = Targets.of(List.of(targets));
@@ -58,7 +63,7 @@ public class GoalStatesTest
 		GoalStates goals = goals(NOTHING, Target.at(WALKABLE));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.BANKED));
-		assertFalse(goals.needsBank());
+		assertFalse(needsBank(NOTHING, Target.at(WALKABLE)));
 		assertEquals(TargetStatus.CARRIED, goals.arrival(WALKABLE, BankVisitState.CARRIED).getStatus());
 	}
 
@@ -67,7 +72,7 @@ public class GoalStatesTest
 	{
 		GoalStates goals = goals(SPADE_CARRIED, spadeAt(WALKABLE));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
-		assertFalse(goals.needsBank());
+		assertFalse(needsBank(SPADE_CARRIED, spadeAt(WALKABLE)));
 	}
 
 	@Test
@@ -76,7 +81,7 @@ public class GoalStatesTest
 		GoalStates goals = goals(SPADE_BANKED, spadeAt(WALKABLE));
 		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.BANKED));
-		assertTrue(goals.needsBank());
+		assertTrue(needsBank(SPADE_BANKED, spadeAt(WALKABLE)));
 		assertNull("an unbanked path does not arrive", goals.arrival(WALKABLE, BankVisitState.CARRIED));
 		assertEquals(TargetStatus.BANK, goals.arrival(WALKABLE, BankVisitState.BANKED).getStatus());
 	}
@@ -97,7 +102,7 @@ public class GoalStatesTest
 		GoalStates goals = goals(NOTHING, spadeAt(WALKABLE), spadeAt(OTHER));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertTrue(goals.accepts(OTHER, BankVisitState.BANKED));
-		assertFalse(goals.needsBank());
+		assertFalse(needsBank(NOTHING, spadeAt(WALKABLE), spadeAt(OTHER)));
 		Arrival arrival = goals.arrival(WALKABLE, BankVisitState.CARRIED);
 		assertEquals(TargetStatus.UNKNOWN, arrival.getStatus());
 		assertEquals(TargetsTest.items(ItemID.SPADE).getRequirements(), arrival.getMissingItems());
@@ -123,7 +128,7 @@ public class GoalStatesTest
 	public void tileAcceptedInEitherLayerForOneTargetNeedsNoBank()
 	{
 		GoalStates goals = goals(SPADE_BANKED, spadeAt(WALKABLE), Target.at(OTHER));
-		assertTrue(goals.needsBank());
+		assertTrue(needsBank(SPADE_BANKED, spadeAt(WALKABLE), Target.at(OTHER)));
 		assertTrue(goals.accepts(OTHER, BankVisitState.CARRIED));
 		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 	}
