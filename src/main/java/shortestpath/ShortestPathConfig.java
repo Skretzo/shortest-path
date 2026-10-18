@@ -390,6 +390,33 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "unlockSoulRift",
+		name = "Soul Rift Redirect Unlocked",
+		description = "Enable after using a dark essence block or dark essence fragments on the soul rift<br>" +
+			"(a one-time, non-consuming unlock earned after crafting soul runes at the Kourend Soul Altar).<br>" +
+			"The plugin cannot currently detect this unlock automatically",
+		hidden = true
+	)
+	default boolean unlockSoulRift()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "unlockBloodRift",
+		name = "Blood Rift Kourend Redirect Unlocked",
+		description = "Enable after using a dark essence block or dark essence fragments on the blood rift<br>" +
+			"(a one-time, non-consuming unlock earned after crafting blood runes at the Kourend Blood Altar),<br>" +
+			"which permanently redirects the rift's Exit-through (Kourend) option to the Kourend altar.<br>" +
+			"The plugin cannot currently detect this unlock automatically",
+		hidden = true
+	)
+	default boolean unlockBloodRift()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "includeBankPath",
 		name = "Include Path To Bank",
 		description = "Whether to include the path to the closest bank<br>" +
