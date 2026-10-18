@@ -308,7 +308,9 @@ public class TransportItems
 	// Legacy getters for backwards compatibility. They emit one row per item
 	// alternative, in requirement order and then branch order; unlock
 	// alternatives carry no item data and contribute no row. A requirement
-	// without OR alternatives still gives one row. Use size() or
+	// without OR alternatives still gives one row. A branch carrying no ids
+	// of the relevant kind emits an empty row so consumers iterating
+	// alternatives never dereference a null. Use size() or
 	// getRequirements() to count AND groups.
 	private int branchCount()
 	{
@@ -346,7 +348,8 @@ public class TransportItems
 		{
 			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
-				staves[i++] = branch.getStaffIds();
+				int[] staffIds = branch.getStaffIds();
+				staves[i++] = staffIds == null ? new int[0] : staffIds;
 			}
 		}
 		return staves;
@@ -360,7 +363,8 @@ public class TransportItems
 		{
 			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
-				offhands[i++] = branch.getOffhandIds();
+				int[] offhandIds = branch.getOffhandIds();
+				offhands[i++] = offhandIds == null ? new int[0] : offhandIds;
 			}
 		}
 		return offhands;
