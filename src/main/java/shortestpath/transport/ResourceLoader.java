@@ -112,6 +112,16 @@ public final class ResourceLoader
 			newTransports.add(transport);
 		}
 
+		if (newTransports.isEmpty() && !records.isEmpty())
+		{
+			// A file that yields zero transports from a non-empty record list
+			// is a systematic failure (parser regression or wholesale data
+			// drift), not per-record noise — elevate above the per-record
+			// warn so it cannot degrade to a silently empty transport map.
+			log.error("Every one of {} {} transport record(s) was skipped as malformed; the file produced no transports",
+				records.size(), transportType);
+		}
+
 		/*
 		 * A transport with origin A and destination B is one-way and must
 		 * be duplicated as origin B and destination A to become two-way.
