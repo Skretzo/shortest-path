@@ -582,6 +582,18 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "autoOpenBankPickupFilter",
+		name = "Auto Open Path Items",
+		description = "Open the Path Items tab by itself when you open the bank for a new route that needs bank items." +
+			"<br>It won't open over another tab or the potion store",
+		hidden = true
+	)
+	default boolean autoOpenBankPickupFilter()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "highlightSpellbookSpells",
 		name = "Highlight Spellbook Spells",
 		description = "Highlight spells in the spellbook that need to be cast for the current path step",

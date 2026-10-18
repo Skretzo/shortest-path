@@ -374,6 +374,7 @@ public class ShortestPathPanel extends PluginPanel
 		bank.addRow(checkRow("showBankPickupInfo"));
 		bank.addRow(checkRow("highlightBankPickupItems"));
 		bank.addRow(checkRow("filterBankPickupItems"));
+		bank.addRow(checkRow("autoOpenBankPickupFilter"));
 	}
 
 	private void buildPohCategory()

@@ -31,6 +31,7 @@ import net.runelite.client.plugins.bank.BankSearch;
 import shortestpath.overlay.AbstractHighlightOverlay;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.Targets;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
@@ -41,6 +42,8 @@ import shortestpath.settings.Settings;
  * the bank highlight outlines. A button next to Quest Helper's opens it as a temporary tab, the
  * same way Quest Helper shows its own tab: the bank is put in its search state without the Bank
  * Tags plugin and nothing is saved. Viewing another tab, the potion store or searching closes it.
+ * With the auto-open setting on, it also opens by itself once per new route, unless another tab
+ * is already showing.
  */
 @Singleton
 public class BankPickupFilter
@@ -74,6 +77,12 @@ public class BankPickupFilter
 	private boolean open;
 	// Stays open across bank visits, like other tabs; never saved
 	private boolean reopen;
+	// Auto-open waits for the bank's first layout
+	private boolean autoOpenPending;
+	// Auto-open runs once per route
+	private Targets autoOpenedFor;
+	// A tag tab or another search was showing at the last layout
+	private boolean otherTabShowing;
 	private Widget buttonBackground;
 	private Widget buttonIcon;
 
@@ -124,6 +133,10 @@ public class BankPickupFilter
 				boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
 				clientThread.invokeLater(() -> openTab(wasInPotionStorage));
 			}
+			else
+			{
+				autoOpenPending = true;
+			}
 		}
 		else if (event.getGroupId() == InterfaceID.SHARED_BANK)
 		{
@@ -140,6 +153,8 @@ public class BankPickupFilter
 			// The bank builds once before it reports being open, so that build must not be filtered
 			reopen = open;
 			open = false;
+			autoOpenPending = false;
+			otherTabShowing = false;
 			buttonBackground = null;
 			buttonIcon = null;
 		}
@@ -157,6 +172,10 @@ public class BankPickupFilter
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		if (scheduler.getActiveSearch() == null)
+		{
+			autoOpenedFor = null;
+		}
 		// The needed items change when a route finishes, the player withdraws them or the
 		// config is toggled; the bank only rebuilds itself on some of those, so catch the rest.
 		if (isBankOpen() && !wantedItemIds().equals(filteredItemIds))
@@ -212,10 +231,14 @@ public class BankPickupFilter
 			// bankSearchFilter callback for each item.
 			int[] intStack = client.getIntStack();
 			int searching = client.getIntStackSize() - 1;
-			// Another tab, such as Quest Helper's, or a typed search is already showing
-			if (open && intStack[searching] == 1)
+			if (intStack[searching] == 1)
 			{
-				closeTab();
+				// Another tab, such as Quest Helper's, or a typed search is already showing
+				otherTabShowing = true;
+				if (open)
+				{
+					closeTab();
+				}
 			}
 			if (open && client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
 			{
@@ -236,6 +259,11 @@ public class BankPickupFilter
 				title.setText(TITLE);
 			}
 			updateButton();
+			if (autoOpenPending)
+			{
+				autoOpenPending = false;
+				clientThread.invokeLater(this::autoOpen);
+			}
 		}
 	}
 
@@ -245,11 +273,15 @@ public class BankPickupFilter
 	{
 		int[] intStack = client.getIntStack();
 		int intStackSize = client.getIntStackSize();
-		if (open && "getSearchingTagTab".equals(event.getEventName()) && intStack[intStackSize - 1] == 1)
+		if ("getSearchingTagTab".equals(event.getEventName()))
 		{
-			// A tag tab is open, and shown over it these items would be saved into its layout
-			closeTab();
-			return;
+			otherTabShowing = intStack[intStackSize - 1] == 1;
+			if (open && otherTabShowing)
+			{
+				// A tag tab is open, and shown over it these items would be saved into its layout
+				closeTab();
+				return;
+			}
 		}
 		if (filteredItemIds.isEmpty())
 		{
@@ -387,6 +419,19 @@ public class BankPickupFilter
 			searchButton.setSpriteId(SpriteID.Miscgraphics.EQUIPMENT_SLOT_TILE);
 		}
 		updateButton();
+	}
+
+	private void autoOpen()
+	{
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (open || otherTabShowing || search == null || !settings.display().autoOpenBankPickupFilter()
+			|| search.getTargets().equals(autoOpenedFor) || isGroupStorageOpen()
+			|| client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB || pathItemIds().isEmpty())
+		{
+			return;
+		}
+		autoOpenedFor = search.getTargets();
+		openTab(false);
 	}
 
 	private void closeTab()
