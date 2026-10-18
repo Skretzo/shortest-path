@@ -76,8 +76,13 @@ _VAR_REQ = re.compile(r"^\d+[=><&@]\d+$")
 _COORD = re.compile(r"^\d+ \d+ \d+$")
 # Item requirement part after normalization: 'NAME=qty' where NAME is [A-Z0-9_]
 _ITEM_PART = re.compile(r"^[A-Z0-9_]+=\d+$")
-# Enum member declarations in Unlock.java ('NAME,' lines, block closed by ';')
-_UNLOCK_ENUM_MEMBER = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*[,;]")
+# Enum member declarations in Unlock.java. Members are always the enum's
+# first declarations, so the member block ends at the first line starting
+# with ';'. A member line starts with UPPER_NAME (comment lines start with
+# '/' or '*' and are skipped); the line may carry several members
+# ('CANOE_AXE, DRAGONTOOTH;') or constructor args ('CANOE_AXE(1),').
+_UNLOCK_MEMBER_LINE = re.compile(r"^\s*[A-Z]")
+_UNLOCK_MEMBER_NAME = re.compile(r"([A-Z][A-Z0-9_]*)\s*(?:\([^)]*\))?\s*[,;]")
 
 # Valid LeagueRegion enum values for the 'Region override' column.
 # Must match shortestpath.leagues.LeagueRegion exactly (case-sensitive).
@@ -104,16 +109,22 @@ UNLOCK_JAVA = os.path.join(
 
 
 def load_unlock_names():
-    """Return the Unlock enum member names from Unlock.java, or None if the
-    file cannot be read (fail-open — the '=1' grammar check still applies)."""
+    """Return the Unlock enum member names from Unlock.java, or None on
+    failure (fail-open — the '=1' grammar check still applies). Failure
+    covers both an unreadable file and a readable scan that yields zero
+    members: a reformatted or misparsed Unlock.java must not produce an
+    authoritative empty name set that rejects every UNLOCK_* token."""
     try:
         names = set()
         with open(UNLOCK_JAVA, "r", encoding="utf-8") as f:
             for line in f:
-                m = _UNLOCK_ENUM_MEMBER.match(line)
-                if m:
-                    names.add(m.group(1))
-        return names
+                if line.lstrip().startswith(";"):
+                    break  # end of the member block
+                if not _UNLOCK_MEMBER_LINE.match(line):
+                    continue
+                code = line.split("//")[0]
+                names.update(_UNLOCK_MEMBER_NAME.findall(code))
+        return names if names else None
     except OSError:
         return None
 
