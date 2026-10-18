@@ -385,7 +385,7 @@ public class PathTileOverlay extends Overlay
 		// Click points without the path are floating marks, so they follow the same drawTiles
 		// gate and POH skip as the path tiles.
 		if (settings.display().drawTiles() && settings.display().drawClickPoints()
-			&& search.isDone() && !search.isShowingProvisionalPath())
+			&& search != null && search.isDone() && !search.isShowingProvisionalPath())
 		{
 			List<PathStep> path = search.getPath();
 			for (int index : search.getClickPoints())
