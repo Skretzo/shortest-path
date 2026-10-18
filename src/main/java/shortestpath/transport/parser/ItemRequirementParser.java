@@ -99,9 +99,9 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 
 			if (itemName.startsWith(UNLOCK_PREFIX))
 			{
-				if (quantity < 1)
+				if (quantity != 1)
 				{
-					throw new IllegalArgumentException("An unlock token needs a positive quantity: " + orPart);
+					throw new IllegalArgumentException("An unlock token must be =1: " + orPart);
 				}
 				Unlock unlock = Unlock.fromName(itemName);
 				if (unlock == null)
