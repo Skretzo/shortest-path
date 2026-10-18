@@ -26,7 +26,7 @@ import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TargetStatus;
-import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.settings.TeleportationItem;
 
 /**
@@ -473,7 +473,7 @@ public class PluginApiTargetRequirementsTest
 		{
 			ActiveSearch shown = api.path(START, NEAR);
 			api.send("path", new HashMap<>());
-			assertSame(shown, api.plugin.getActiveSearch());
+			assertSame(shown, api.activeSearch());
 		}
 	}
 
@@ -516,9 +516,9 @@ public class PluginApiTargetRequirementsTest
 			api.bank(ItemID.SPADE, 1);
 			ActiveSearch search = api.path(START, target(SOUL_WARS_BANK, ItemID.SPADE));
 			List<PathStep> path = search.getPath();
-			assertTrue(last(path).isBankVisited());
+			assertTrue(last(path).getBankVisitState() == BankVisitState.BANKED);
 			assertEquals(SOUL_WARS_BANK, WorldPointUtil.unpackWorldPoint(last(path).getPackedPosition()));
-			BankPickupResult pickup = api.plugin.getBankPickup(path, path.size() - 1);
+			BankPickupResult pickup = api.bankPickup(path, path.size() - 1, search);
 			assertNotNull(pickup);
 			assertEquals(List.of("1 Item " + ItemID.SPADE), pickup.phrases);
 		}
@@ -554,7 +554,7 @@ public class PluginApiTargetRequirementsTest
 			int lastUnbanked = -1;
 			for (int i = 0; i < path.size(); i++)
 			{
-				if (!path.get(i).isBankVisited())
+				if (path.get(i).getBankVisitState() != BankVisitState.BANKED)
 				{
 					lastUnbanked = i;
 				}
@@ -562,13 +562,13 @@ public class PluginApiTargetRequirementsTest
 			assertTrue("the route visits a bank", lastUnbanked >= 0 && lastUnbanked < path.size() - 1);
 
 			String pickup = "1 Item " + ItemID.SPADE;
-			BankPickupResult atBank = api.plugin.getBankPickup(path, lastUnbanked);
+			BankPickupResult atBank = api.bankPickup(path, lastUnbanked, search);
 			assertNotNull(atBank);
 			assertEquals(List.of(pickup), atBank.phrases);
 			assertEquals(Set.of(ItemID.SPADE), atBank.bankItemIds);
 
 			assertTrue("the target step itself lists no pickup",
-				api.plugin.getBankPickup(path, path.size() - 1).phrases.isEmpty());
+				api.bankPickup(path, path.size() - 1, search).phrases.isEmpty());
 		}
 	}
 
@@ -587,14 +587,14 @@ public class PluginApiTargetRequirementsTest
 			int lastUnbanked = -1;
 			for (int i = 0; i < path.size(); i++)
 			{
-				if (!path.get(i).isBankVisited())
+				if (path.get(i).getBankVisitState() != BankVisitState.BANKED)
 				{
 					lastUnbanked = i;
 				}
 			}
 			assertTrue("the route visits a bank", lastUnbanked >= 0 && lastUnbanked < path.size() - 1);
 
-			List<String> pickups = api.plugin.getBankPickup(path, lastUnbanked).phrases;
+			List<String> pickups = api.bankPickup(path, lastUnbanked, search).phrases;
 			assertTrue("the spade is listed: " + pickups,
 				pickups.contains("1 Item " + ItemID.SPADE));
 			assertTrue("the ring is listed: " + pickups,

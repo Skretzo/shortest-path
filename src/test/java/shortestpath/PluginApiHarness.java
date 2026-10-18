@@ -35,9 +35,11 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.pathfinder.TestPathfinderConfig;
+import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.settings.TeleportationItem;
 
 /**
@@ -386,6 +388,12 @@ final class PluginApiHarness implements AutoCloseable
 	ActiveSearch activeSearch()
 	{
 		return scheduler.getActiveSearch();
+	}
+
+	/** The bank-pickup plan for a path step, as the path engine computes it. */
+	BankPickupResult bankPickup(List<PathStep> path, int pathIndex, ActiveSearch search)
+	{
+		return pathfinderConfig.getBankPickup(path, pathIndex, search);
 	}
 
 	@Override
