@@ -49,6 +49,14 @@ The data lives in `src/main/resources/`:
   that moves you between tiles
 - `destinations/` — the named places you can path to
 - `collision-map.zip` — **generated**, don't edit it by hand
+- `transports/teleport_restrictions.tsv` — **generated** from
+  `transports/teleportation_items.tsv`. Adding or removing an item id in
+  an `Items` cell there means the map is stale — regenerate it and
+  commit the result:
+
+  ```bash
+  python3 scripts/generate_teleport_restrictions.py
+  ```
 
 Typical fix:
 
@@ -61,6 +69,12 @@ Typical fix:
    bash scripts/tsv-lint.sh          # every row has the right columns
    ./gradlew test                    # full pathfinder test suite
    ```
+
+   If you changed an `Items` cell in `teleportation_items.tsv`, also run
+   `python3 scripts/generate_teleport_restrictions.py` and commit the
+   regenerated `teleport_restrictions.tsv` — the test suite checks the
+   two stay in sync and fails with a pointer to the script if they
+   don't.
 
    In the tooling repo, `./gradlew test` also runs the dashboard
    scenario corpus, and `maintenance.py verify` adds the collision-map
@@ -145,6 +159,9 @@ this checklist:
    script). If it can't cite one, it must not write the value.
 4. Run `python3 scripts/check_tsv.py`, `bash scripts/tsv-lint.sh`, and
    `./gradlew test` before the PR. Tabs, not spaces — TSV means tabs.
+   Touching an `Items` cell in `teleportation_items.tsv` also means
+   running `python3 scripts/generate_teleport_restrictions.py` and
+   committing the regenerated file.
 5. Describe the expected in-game behavior in the PR description so a
    human can sanity-check it.
 
