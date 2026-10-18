@@ -139,7 +139,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.session = session == null ? new AStarRoutingSession() : session;
 		this.goals = GoalStates.resolve(config, start, targets);
 		long phaseStarted = System.nanoTime();
-		this.account = config.prepareAStarRoutingAccount(true, goals.needsBank());
+		this.account = config.prepareAStarRoutingAccount(true, GoalStates.needsBank(targets, config.getHeldItems()));
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, targets.points());
 		this.cutoffMillis = config.getCalculationCutoffMillis();
