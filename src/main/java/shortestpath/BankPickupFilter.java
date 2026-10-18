@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
-import net.runelite.api.MenuAction;
 import net.runelite.api.ScriptEvent;
 import net.runelite.api.ScriptID;
 import net.runelite.api.SoundEffectID;
@@ -130,8 +129,7 @@ public class BankPickupFilter
 			{
 				// Reopen the tab once the bank has built, as Quest Helper does
 				reopen = false;
-				boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
-				clientThread.invokeLater(() -> openTab(wasInPotionStorage));
+				clientThread.invokeLater(this::openTab);
 			}
 			else
 			{
@@ -240,7 +238,7 @@ public class BankPickupFilter
 					closeTab();
 				}
 			}
-			if (open && client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
+			if (open && isPotionStoreOpen())
 			{
 				// A searching bank would close the potion store straight away
 				closeTab();
@@ -341,6 +339,11 @@ public class BankPickupFilter
 		return groupStorage != null && !groupStorage.isHidden();
 	}
 
+	private boolean isPotionStoreOpen()
+	{
+		return client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
+	}
+
 	private void relayoutIfOpen()
 	{
 		if (isBankOpen())
@@ -383,7 +386,6 @@ public class BankPickupFilter
 		{
 			return;
 		}
-		boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
 		client.setVarbit(VarbitID.BANK_CURRENTTAB, 0);
 		if (open)
 		{
@@ -392,21 +394,17 @@ public class BankPickupFilter
 		}
 		else
 		{
-			openTab(wasInPotionStorage);
+			openTab();
 		}
 		client.playSoundEffect(SoundEffectID.UI_BOOP);
 	}
 
-	private void openTab(boolean wasInPotionStorage)
+	private void openTab()
 	{
-		if (open || buttonBackground == null)
+		// The potion store would stay open behind the tab and break deposits
+		if (open || buttonBackground == null || isPotionStoreOpen())
 		{
 			return;
-		}
-		if (wasInPotionStorage)
-		{
-			// The potion store would stay open behind the tab and break deposits
-			client.menuAction(-1, InterfaceID.Bankmain.POTIONSTORE_BUTTON, MenuAction.CC_OP, 1, -1, POTION_STORE, "");
 		}
 		open = true;
 		// Clears any search and lays the bank out as the tab
@@ -426,12 +424,12 @@ public class BankPickupFilter
 		ActiveSearch search = scheduler.getActiveSearch();
 		if (open || otherTabShowing || search == null || !settings.display().autoOpenBankPickupFilter()
 			|| search.getTargets().equals(autoOpenedFor) || isGroupStorageOpen()
-			|| client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB || pathItemIds().isEmpty())
+			|| isPotionStoreOpen() || pathItemIds().isEmpty())
 		{
 			return;
 		}
 		autoOpenedFor = search.getTargets();
-		openTab(false);
+		openTab();
 	}
 
 	private void closeTab()
@@ -447,7 +445,7 @@ public class BankPickupFilter
 		{
 			return;
 		}
-		boolean shown = !isGroupStorageOpen() && !pathItemIds().isEmpty();
+		boolean shown = !isGroupStorageOpen() && !isPotionStoreOpen() && !pathItemIds().isEmpty();
 		boolean filtering = shown && open;
 		buttonBackground.setHidden(!shown);
 		buttonIcon.setHidden(!shown);
