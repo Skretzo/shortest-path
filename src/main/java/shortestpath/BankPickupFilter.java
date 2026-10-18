@@ -55,8 +55,8 @@ import shortestpath.settings.Settings;
  * the bank highlight outlines. A button next to Quest Helper's opens it as a temporary tab, the
  * same way Quest Helper shows its own tab: the bank is put in its search state without the Bank
  * Tags plugin and nothing is saved. Viewing another tab, the potion store or searching closes it.
- * Over a tag tab, such as an Inventory Setups filter, the items are drawn over it instead, since
- * filtering would save them into the tag tab's layout.
+ * If a tag tab like an Inventory Setups filter is open, the bank isn't filtered, since the tag tab
+ * would save the items into its layout. The items are drawn on top of it instead.
  */
 @Singleton
 public class BankPickupFilter
@@ -138,6 +138,7 @@ public class BankPickupFilter
 		this.spriteManager = spriteManager;
 	}
 
+	/** Loads the sidebar icon for the button, since bank widgets can only show game sprites. */
 	public void startUp()
 	{
 		spriteManager.addSpriteOverrides(Sprite.values());
@@ -349,6 +350,10 @@ public class BankPickupFilter
 		}
 	}
 
+	/**
+	 * The items the tab shows, in the route's order. Items withdrawn during this bank visit stay as
+	 * placeholders, and the list is empty once everything is grabbed.
+	 */
 	private Set<Integer> wantedItemIds()
 	{
 		// Group storage runs the bank's search scripts too; leave it unfiltered
@@ -367,7 +372,6 @@ public class BankPickupFilter
 		Set<Integer> pathItemIds = pathItemIds();
 		if (pathItemIds.isEmpty())
 		{
-			// Everything is grabbed, so show the bank as normal
 			return Set.of();
 		}
 		addInRouteOrder(pathItemIds);
@@ -383,7 +387,7 @@ public class BankPickupFilter
 		return items;
 	}
 
-	// Each new item goes in before the next one the route already has
+	/** Adds the route's new items to the remembered order, each before the next one it already has. */
 	private void addInRouteOrder(Set<Integer> pathItemIds)
 	{
 		List<Integer> route = new ArrayList<>(pathItemIds);
@@ -446,6 +450,7 @@ public class BankPickupFilter
 		}
 	}
 
+	/** Gives drawn tiles back the bank's own drag delay, since the bank's rebuild doesn't reset it. */
 	private void restoreDragging()
 	{
 		for (Widget item : drawnItems)
@@ -455,6 +460,10 @@ public class BankPickupFilter
 		drawnItems.clear();
 	}
 
+	/**
+	 * Draws the tab once the bank is built: hides every item, then draws the tab's items in order,
+	 * with withdrawn ones as placeholders.
+	 */
 	private void drawItems()
 	{
 		ItemContainer bank = client.getItemContainer(InventoryID.BANK);
@@ -512,6 +521,11 @@ public class BankPickupFilter
 		}
 	}
 
+	/**
+	 * Draws one tile at a grid position: the item with the bank's withdraw options, or a faded
+	 * placeholder like the bank's own when the quantity is 0. Tiles can't be dragged, since that would
+	 * rearrange the tag tab's layout or the bank itself.
+	 */
 	private void drawItem(Widget widget, int itemId, int quantity, int position)
 	{
 		ItemComposition definition = client.getItemDefinition(itemId);
@@ -525,11 +539,9 @@ public class BankPickupFilter
 		}
 		else
 		{
-			// Like the bank's own placeholders
 			widget.setItemQuantityMode(ItemQuantityMode.ALWAYS);
 			widget.setOpacity(120);
 		}
-		// Dragging would rearrange the tag tab's layout or the bank itself
 		widget.setDragDeadTime(1000);
 		widget.setOnDragCompleteListener((JavaScriptCallback) event -> client.setDraggedOnWidget(null));
 		widget.setOriginalWidth(ITEM_WIDTH);
@@ -540,7 +552,7 @@ public class BankPickupFilter
 		widget.revalidate();
 	}
 
-	// As in Bank Tags' layouts and ~bankmain_drawitem
+	/** The bank's own withdraw options, as in Bank Tags' layouts and ~bankmain_drawitem. */
 	private void setWithdrawActions(Widget widget, ItemComposition definition)
 	{
 		widget.setItemQuantityMode(ItemQuantityMode.STACKABLE);
@@ -659,6 +671,10 @@ public class BankPickupFilter
 		updateButton();
 	}
 
+	/**
+	 * Opens the tab by itself when the setting is on and the route needs bank items, unless Quest
+	 * Helper's tab or a search is showing, or the player closed it during this bank visit.
+	 */
 	private void autoOpen()
 	{
 		if (open || closedThisVisit || searchShowing || !settings.display().autoOpenBankPickupFilter()
@@ -669,6 +685,7 @@ public class BankPickupFilter
 		openTab();
 	}
 
+	/** Also keeps auto-open off until the next bank visit, since the player chose to close it. */
 	private void closeTab()
 	{
 		open = false;
