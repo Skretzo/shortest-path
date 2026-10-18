@@ -71,8 +71,9 @@ public class BankPickupFilter
 
 	// The items the bank was last laid out with; empty while the bank is not filtered.
 	private Set<Integer> filteredItemIds = Set.of();
-	// Stays open across bank visits, like other tabs; never saved
 	private boolean open;
+	// Stays open across bank visits, like other tabs; never saved
+	private boolean reopen;
 	private Widget buttonBackground;
 	private Widget buttonIcon;
 
@@ -92,6 +93,7 @@ public class BankPickupFilter
 	public void reset()
 	{
 		open = false;
+		reopen = false;
 		Widget background = buttonBackground;
 		Widget icon = buttonIcon;
 		if (background != null)
@@ -115,11 +117,11 @@ public class BankPickupFilter
 		if (event.getGroupId() == InterfaceID.BANKMAIN)
 		{
 			createButton();
-			if (open)
+			if (reopen)
 			{
 				// Reopen the tab once the bank has built, as Quest Helper does
+				reopen = false;
 				boolean wasInPotionStorage = client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB;
-				open = false;
 				clientThread.invokeLater(() -> openTab(wasInPotionStorage));
 			}
 		}
@@ -135,6 +137,9 @@ public class BankPickupFilter
 		if (event.getGroupId() == InterfaceID.BANKMAIN)
 		{
 			filteredItemIds = Set.of();
+			// The bank builds once before it reports being open, so that build must not be filtered
+			reopen = open;
+			open = false;
 			buttonBackground = null;
 			buttonIcon = null;
 		}
