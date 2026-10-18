@@ -186,7 +186,14 @@ final class PluginMessageTargets
 			Map<Integer, Integer> alternatives = new LinkedHashMap<>();
 			for (ItemRequirement.Branch branch : group.getBranches())
 			{
-				for (int id : branch.getItemIds())
+				int[] ids = branch.getItemIds();
+				if (ids == null)
+				{
+					// An unlock alternative carries no item ids; the wire
+					// format cannot express it, so it contributes nothing.
+					continue;
+				}
+				for (int id : ids)
 				{
 					// A group may repeat an id at several quantities; the alternatives are
 					// OR-ed, so the smallest quantity is the most permissive reading.
@@ -210,7 +217,14 @@ final class PluginMessageTargets
 			List<Integer> groupIds = new ArrayList<>();
 			for (ItemRequirement.Branch branch : group.getBranches())
 			{
-				for (int id : branch.getItemIds())
+				int[] branchIds = branch.getItemIds();
+				if (branchIds == null)
+				{
+					// An unlock alternative carries no item ids; there is
+					// nothing item-wise to report missing.
+					continue;
+				}
+				for (int id : branchIds)
 				{
 					groupIds.add(id);
 				}
