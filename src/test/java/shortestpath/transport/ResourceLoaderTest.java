@@ -1335,10 +1335,10 @@ public class ResourceLoaderTest
 		Map<String, Set<Integer>> all = ResourceLoader.destinations();
 
 		Assert.assertEquals(Set.of("altar", "bank", "anvil", "apothecary"), all.keySet());
-		Assert.assertEquals(49, all.get("altar").size());
-		Assert.assertEquals(289, all.get("bank").size());
-		Assert.assertEquals(79, all.get("anvil").size());
-		Assert.assertEquals(1, all.get("apothecary").size());
+		assertFloor("altar destinations", 49, all.get("altar").size());
+		assertFloor("bank destinations", 289, all.get("bank").size());
+		assertFloor("anvil destinations", 79, all.get("anvil").size());
+		assertFloor("apothecary destinations", 1, all.get("apothecary").size());
 		Assert.assertTrue("Al Kharid bank tile",
 			all.get("bank").contains(WorldPointUtil.packWorldPoint(3269, 3164, 0)));
 	}
@@ -1401,7 +1401,7 @@ public class ResourceLoaderTest
 	{
 		Map<Integer, DestinationRequirements> reqs = ResourceLoader.bankRequirements();
 
-		Assert.assertEquals(289, reqs.size());
+		assertFloor("bank requirement tiles", 289, reqs.size());
 		DestinationRequirements cooksGuild = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0));
 		Assert.assertNotNull("Cooks' Guild bank tile carries a requirement", cooksGuild);
 		Assert.assertEquals(99, cooksGuild.getSkillLevels().get(Skill.COOKING));
@@ -1439,7 +1439,7 @@ public class ResourceLoaderTest
 	{
 		Map<Integer, LeagueRegion> regions = ResourceLoader.leagueRegions();
 
-		Assert.assertEquals(1441, regions.size());
+		assertFloor("league regions", 1441, regions.size());
 		Assert.assertEquals(LeagueRegion.VARLAMORE, regions.get(4137));
 		Assert.assertEquals(LeagueRegion.MISTHALIN, regions.get(7515));
 	}
@@ -1449,14 +1449,14 @@ public class ResourceLoaderTest
 	{
 		HashMap<Integer, Set<Transport>> all = ResourceLoader.transports();
 
-		Assert.assertEquals("committed origins", 6629, all.size());
+		assertFloor("committed origins", 6629, all.size());
 		int total = 0;
 		for (Set<Transport> set : all.values())
 		{
 			Assert.assertFalse("origin sets are never empty", set.isEmpty());
 			total += set.size();
 		}
-		Assert.assertEquals("committed transports (incl. permutation products)", 15176, total);
+		assertFloor("committed transports (incl. permutation products)", 15176, total);
 	}
 
 	// ------------------------------------------------------------------
@@ -1482,7 +1482,21 @@ public class ResourceLoaderTest
 			}
 		}
 
-		Assert.assertEquals("Committed collision map region count", 2773, entries);
+		assertFloor("committed collision map regions", 2773, entries);
 		Assert.assertEquals("Every entry is a packed region name", entries, packedNames);
+	}
+
+	/**
+	 * Committed-resource sizes are floors, not exact counts: adding rows
+	 * must never break the build — the tripwire fires only when the
+	 * bundled data shrinks, which a removal PR acknowledges by lowering
+	 * the floor in the same commit.
+	 */
+	private static void assertFloor(String label, int floor, int actual)
+	{
+		Assert.assertTrue(label + " dropped below the committed floor of " + floor
+			+ " (got " + actual + ") — only data removal trips this; if the "
+			+ "reduction is deliberate, lower the floor with the change",
+			actual >= floor);
 	}
 }
