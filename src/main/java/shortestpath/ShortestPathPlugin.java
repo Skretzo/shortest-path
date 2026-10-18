@@ -52,6 +52,7 @@ import shortestpath.overlay.PathMapOverlay;
 import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
+import shortestpath.overlay.ScrollBookHighlightOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
@@ -104,6 +105,8 @@ public class ShortestPathPlugin extends Plugin
 	private SpellbookHighlightOverlay spellbookHighlightOverlay;
 	@Inject
 	private InventoryHighlightOverlay inventoryHighlightOverlay;
+	@Inject
+	private ScrollBookHighlightOverlay scrollBookHighlightOverlay;
 	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
@@ -209,6 +212,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(bankItemHighlightOverlay);
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
+		overlayManager.add(scrollBookHighlightOverlay);
 
 		if (settings.lifecycle().drawDebugPanel())
 		{
@@ -244,6 +248,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(bankItemHighlightOverlay);
 		overlayManager.remove(spellbookHighlightOverlay);
 		overlayManager.remove(inventoryHighlightOverlay);
+		overlayManager.remove(scrollBookHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 
 		scheduler.shutdown();
