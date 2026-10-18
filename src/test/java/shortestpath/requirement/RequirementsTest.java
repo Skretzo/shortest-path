@@ -96,12 +96,12 @@ public class RequirementsTest
 
 	private static ItemRequirement.Branch branch(int... itemIds)
 	{
-		return new ItemRequirement.Branch(itemIds, null, null, 1);
+		return ItemRequirement.Branch.item(itemIds, null, null, 1);
 	}
 
 	private static ItemRequirement.Branch unlockBranch(Unlock unlock)
 	{
-		return new ItemRequirement.Branch(null, null, null, 1, unlock);
+		return ItemRequirement.Branch.unlock(unlock);
 	}
 
 	private static ItemRequirement item(int itemId)
@@ -1578,21 +1578,13 @@ public class RequirementsTest
 			requirements(capped, RequirementTestFixtures.policy(TeleportationItem.NONE)).check(fare));
 	}
 
-	@Test
-	public void aBranchWithoutItemIdsIsNeverSatisfiedByItems()
+	@Test(expected = IllegalArgumentException.class)
+	public void anItemBranchWithoutAnyIdsIsRejected()
 	{
-		// A non-unlock branch carrying no item ids contributes nothing —
-		// neither items nor unlocks can satisfy it, so the requirement fails.
-		Transport transport = transport(TransportType.BOAT)
-			.itemRequirements(items(new ItemRequirement(List.of(
-				new ItemRequirement.Branch(null, null, null, 1)))))
-			.build();
-		RequirementContext context = RequirementTestFixtures.context()
-			.eligibility(RequirementTestFixtures.eligibility(
-				TeleportationItem.NONE, Map.of(LAW_RUNE, 99)))
-			.build();
-		assertEquals(RejectionReason.ITEM_REQUIREMENT,
-			requirements(context, RequirementTestFixtures.policy(TeleportationItem.NONE)).check(transport));
+		// An alternative carrying no item, staff or offhand ids could never
+		// be satisfied — the type refuses to construct it, so no consumer
+		// can ever meet the zombie alternative this used to build.
+		ItemRequirement.Branch.item(null, null, null, 1);
 	}
 
 	// ------------------------------------------------------------------

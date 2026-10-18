@@ -197,17 +197,16 @@ public class TransportItems
 		boolean blocked = false;
 		for (ItemRequirement.Branch branch : req.getBranches())
 		{
-			Unlock unlock = branch.getUnlock();
-			if (unlock != null)
+			if (branch.isUnlock())
 			{
-				if (unlocks.contains(unlock))
+				if (branch.satisfiedByUnlocks(unlocks))
 				{
 					return true;
 				}
 				continue;
 			}
 
-			int[] itemIds = branch.getItemIds();
+			int[] itemIds = ((ItemRequirement.ItemBranch) branch).getItemIds();
 			if (itemIds == null)
 			{
 				continue;
@@ -230,11 +229,11 @@ public class TransportItems
 	}
 
 	/**
-	 * {@code true} when any OR branch has an owned offhand id at that branch's quantity.
+	 * {@code true} when any item branch has an owned offhand id at that branch's quantity.
 	 */
 	private static boolean hasOwnedOffhand(ItemRequirement req, Map<Integer, Integer> itemCounts)
 	{
-		for (ItemRequirement.Branch branch : req.getBranches())
+		for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 		{
 			if (hasOwnedSubstitute(branch.getOffhandIds(), itemCounts, branch.getQuantity(), true))
 			{
@@ -250,7 +249,7 @@ public class TransportItems
 		for (ItemRequirement req : leftover)
 		{
 			Set<Integer> ownedStaves = new HashSet<>();
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
 				ownedStaves.addAll(ownedIds(branch.getStaffIds(), itemCounts, branch.getQuantity(), true));
 			}
@@ -306,8 +305,9 @@ public class TransportItems
 		return requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0;
 	}
 
-	// Legacy getters for backwards compatibility. They emit one row per OR
-	// branch, in requirement order and then branch order; a requirement
+	// Legacy getters for backwards compatibility. They emit one row per item
+	// alternative, in requirement order and then branch order; unlock
+	// alternatives carry no item data and contribute no row. A requirement
 	// without OR alternatives still gives one row. Use size() or
 	// getRequirements() to count AND groups.
 	private int branchCount()
@@ -315,7 +315,7 @@ public class TransportItems
 		int n = 0;
 		for (ItemRequirement req : requirements)
 		{
-			n += req.getBranches().size();
+			n += req.getItemBranches().size();
 		}
 		return n;
 	}
@@ -326,10 +326,11 @@ public class TransportItems
 		int i = 0;
 		for (ItemRequirement req : requirements)
 		{
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
-				// Unlock-only branches carry no item ids; emit an empty array so
-				// consumers iterating alternatives never dereference a null.
+				// Substitute-only branches carry no item ids; emit an empty
+				// array so consumers iterating alternatives never
+				// dereference a null.
 				int[] itemIds = branch.getItemIds();
 				items[i++] = itemIds == null ? new int[0] : itemIds;
 			}
@@ -343,7 +344,7 @@ public class TransportItems
 		int i = 0;
 		for (ItemRequirement req : requirements)
 		{
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
 				staves[i++] = branch.getStaffIds();
 			}
@@ -357,7 +358,7 @@ public class TransportItems
 		int i = 0;
 		for (ItemRequirement req : requirements)
 		{
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
 				offhands[i++] = branch.getOffhandIds();
 			}
@@ -371,7 +372,7 @@ public class TransportItems
 		int i = 0;
 		for (ItemRequirement req : requirements)
 		{
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
 				quantities[i++] = branch.getQuantity();
 			}

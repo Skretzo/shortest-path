@@ -204,10 +204,12 @@ public class TransportItemsSatisfactionTest
 		ItemRequirement req = items.getRequirements().get(0);
 		Assert.assertEquals(2, req.getBranches().size());
 		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
-		ItemRequirement.Branch unlock = req.getBranches().get(1);
-		Assert.assertNull(unlock.getItemIds());
+		Assert.assertTrue(req.getBranches().get(0) instanceof ItemRequirement.ItemBranch);
+		Assert.assertTrue(req.getBranches().get(1) instanceof ItemRequirement.UnlockBranch);
+		ItemRequirement.UnlockBranch unlock = req.getUnlockBranches().get(0);
 		Assert.assertEquals(Unlock.CANOE_AXE, unlock.getUnlock());
-		Assert.assertTrue(unlock.isUnlockOnly());
+		Assert.assertTrue(unlock.isUnlock());
+		Assert.assertEquals(1, unlock.getQuantity());
 	}
 
 	@Test
@@ -233,55 +235,55 @@ public class TransportItemsSatisfactionTest
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void unlockBranchRejectsItemIds()
+	public void unlockBranchRejectsNullUnlock()
 	{
-		new ItemRequirement.Branch(new int[]{1}, null, null, 1, Unlock.XERICS_HONOUR);
+		ItemRequirement.Branch.unlock(null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void unlockBranchRejectsStaffIds()
+	public void itemBranchRejectsAllEmptyIds()
 	{
-		new ItemRequirement.Branch(null, new int[]{2}, null, 1, Unlock.XERICS_HONOUR);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void unlockBranchRejectsOffhandIds()
-	{
-		new ItemRequirement.Branch(null, null, new int[]{3}, 1, Unlock.XERICS_HONOUR);
+		ItemRequirement.Branch.item(null, null, null, 1);
 	}
 
 	@Test
-	public void unlockOnlyAndItemOnlyBranchesConstruct()
+	public void unlockAndItemBranchesConstructThroughFactories()
 	{
-		// The only legal unlock shape carries no item ids; an id-bearing
-		// branch with no unlock is the legacy item shape.
-		ItemRequirement.Branch unlockOnly = new ItemRequirement.Branch(null, null, null, 1, Unlock.XERICS_HONOUR);
-		Assert.assertTrue(unlockOnly.isUnlockOnly());
-		Assert.assertEquals(Unlock.XERICS_HONOUR, unlockOnly.getUnlock());
-		Assert.assertNull(unlockOnly.getItemIds());
+		// The kinds are separate types: an unlock branch carries only its
+		// unlock, an item branch only ids — the invalid mixes cannot be
+		// expressed, let alone built.
+		ItemRequirement.Branch unlockOnly = ItemRequirement.Branch.unlock(Unlock.XERICS_HONOUR);
+		Assert.assertTrue(unlockOnly instanceof ItemRequirement.UnlockBranch);
+		Assert.assertTrue(unlockOnly.isUnlock());
+		Assert.assertEquals(Unlock.XERICS_HONOUR, ((ItemRequirement.UnlockBranch) unlockOnly).getUnlock());
+		Assert.assertEquals(1, unlockOnly.getQuantity());
 
-		ItemRequirement.Branch itemOnly = new ItemRequirement.Branch(
-			new int[]{1}, new int[]{2}, new int[]{3}, 1, null);
-		Assert.assertFalse(itemOnly.isUnlockOnly());
-		Assert.assertNull(itemOnly.getUnlock());
+		ItemRequirement.Branch itemOnly = ItemRequirement.Branch.item(
+			new int[]{1}, new int[]{2}, new int[]{3}, 1);
+		Assert.assertTrue(itemOnly instanceof ItemRequirement.ItemBranch);
+		Assert.assertFalse(itemOnly.isUnlock());
+		Assert.assertFalse("item branches are never unlock-satisfied",
+			itemOnly.satisfiedByUnlocks(Set.of(Unlock.XERICS_HONOUR)));
 	}
 
 	@Test
-	public void isUnlockOnlyAgreesWithGetUnlockOnParsedBranches()
+	public void parserEmitsTheMatchingBranchKindPerAlternative()
 	{
-		// Every branch shape the parser can emit must satisfy
-		// isUnlockOnly() == (getUnlock() != null) — the construction
-		// invariant keeps the two predicates from ever diverging.
+		// Every alternative the parser emits has its kind in its type:
+		// UNLOCK_* terms become UnlockBranch, item terms ItemBranch, and the
+		// split views partition the declaration-ordered branch list.
 		for (String cell : new String[]{"AXE=1|UNLOCK_XERICS_HONOUR=1", "UNLOCK_CANOE_AXE=1"})
 		{
 			TransportItems items = new ItemRequirementParser().parse(cell);
 			Assert.assertNotNull(items);
 			for (ItemRequirement req : items.getRequirements())
 			{
+				Assert.assertEquals(req.getItemBranches().size() + req.getUnlockBranches().size(),
+					req.getBranches().size());
 				for (ItemRequirement.Branch branch : req.getBranches())
 				{
-					Assert.assertEquals("isUnlockOnly must agree with getUnlock on " + cell,
-						branch.getUnlock() != null, branch.isUnlockOnly());
+					Assert.assertEquals("isUnlock must agree with the branch type on " + cell,
+						branch instanceof ItemRequirement.UnlockBranch, branch.isUnlock());
 				}
 			}
 		}
@@ -370,10 +372,10 @@ public class TransportItemsSatisfactionTest
 		ItemRequirement req = items.getRequirements().get(0);
 		Assert.assertEquals(2, req.getBranches().size());
 		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
-		ItemRequirement.Branch unlock = req.getBranches().get(1);
-		Assert.assertNull(unlock.getItemIds());
+		Assert.assertTrue(req.getBranches().get(1) instanceof ItemRequirement.UnlockBranch);
+		ItemRequirement.UnlockBranch unlock = req.getUnlockBranches().get(0);
 		Assert.assertEquals(Unlock.BALLOON_LOG_BASKET, unlock.getUnlock());
-		Assert.assertTrue(unlock.isUnlockOnly());
+		Assert.assertTrue(unlock.isUnlock());
 	}
 
 	@Test
@@ -459,23 +461,14 @@ public class TransportItemsSatisfactionTest
 		new ItemRequirement(null);
 	}
 
-	@Test
-	public void idlessBranchIsNeverUnlockSatisfied()
+	@Test(expected = IllegalArgumentException.class)
+	public void idlessBranchIsUnconstructible()
 	{
-		// A branch carrying no ids and no unlock is the empty shape: it is not
-		// an unlock branch (unlock == null), so it never routes into the
-		// unlock path — it is simply unsatisfiable, whatever is declared or
-		// held. This asserts the shape, not a leak.
-		ItemRequirement.Branch empty = new ItemRequirement.Branch(null, null, null, 1, null);
-		Assert.assertFalse(empty.isUnlockOnly());
-		Assert.assertNull(empty.getUnlock());
-		Assert.assertNull(empty.getItemIds());
-
-		TransportItems items = new TransportItems(List.of(new ItemRequirement(List.of(empty))));
-		Assert.assertFalse("the empty branch is not a pure-unlock requirement",
-			items.getRequirements().get(0).isPureUnlock());
-		Assert.assertFalse("no declared unlock can satisfy the empty branch",
-			satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR, Unlock.CANOE_AXE), 13393, 99));
+		// A branch carrying no ids and no unlock could never be satisfied —
+		// neither items nor unlocks — so the type refuses the shape outright
+		// instead of letting it survive block purges while failing
+		// satisfaction.
+		ItemRequirement.Branch.item(null, null, null, 1);
 	}
 
 	@Test

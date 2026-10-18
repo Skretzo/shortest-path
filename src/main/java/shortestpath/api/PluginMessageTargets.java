@@ -164,7 +164,7 @@ final class PluginMessageTargets
 		{
 			throw new IllegalArgumentException("not an item id: " + id);
 		}
-		return new ItemRequirement.Branch(new int[] {(Integer) id}, NONE, NONE, quantity);
+		return ItemRequirement.Branch.item(new int[] {(Integer) id}, NONE, NONE, quantity);
 	}
 
 	/**
@@ -184,12 +184,12 @@ final class PluginMessageTargets
 		for (ItemRequirement group : target.getRequiredItems().getRequirements())
 		{
 			Map<Integer, Integer> alternatives = new LinkedHashMap<>();
-			for (ItemRequirement.Branch branch : group.getBranches())
+			for (ItemRequirement.ItemBranch branch : group.getItemBranches())
 			{
 				int[] ids = branch.getItemIds();
 				if (ids == null)
 				{
-					// An unlock alternative carries no item ids; the wire
+					// A substitute-only branch carries no item ids; the wire
 					// format cannot express it, so it contributes nothing.
 					continue;
 				}
@@ -215,12 +215,12 @@ final class PluginMessageTargets
 		for (ItemRequirement group : groups)
 		{
 			List<Integer> groupIds = new ArrayList<>();
-			for (ItemRequirement.Branch branch : group.getBranches())
+			for (ItemRequirement.ItemBranch branch : group.getItemBranches())
 			{
 				int[] branchIds = branch.getItemIds();
 				if (branchIds == null)
 				{
-					// An unlock alternative carries no item ids; there is
+					// A substitute-only branch carries no item ids; there is
 					// nothing item-wise to report missing.
 					continue;
 				}

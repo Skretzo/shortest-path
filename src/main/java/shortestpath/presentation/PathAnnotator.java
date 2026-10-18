@@ -153,13 +153,13 @@ public class PathAnnotator
 		for (ItemRequirement group : missing)
 		{
 			List<String> names = new ArrayList<>();
-			for (ItemRequirement.Branch branch : group.getBranches())
+			for (ItemRequirement.ItemBranch branch : group.getItemBranches())
 			{
 				int[] ids = branch.getItemIds();
 				if (ids == null)
 				{
-					// An unlock alternative carries no item ids; it names no
-					// missing item and must not be dereferenced.
+					// A substitute-only branch carries no item ids; it names
+					// no missing item and must not be dereferenced.
 					continue;
 				}
 				for (int id : ids)

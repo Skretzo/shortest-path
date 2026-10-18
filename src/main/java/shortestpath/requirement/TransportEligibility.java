@@ -395,7 +395,7 @@ public final class TransportEligibility
 			// Highlight every bank item that covers part of the shortfall: all item
 			// variants of each OR branch at that branch's quantity, plus any covering
 			// staff or offhand the bank holds.
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
 				addCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas, bankItemIds);
 			}
@@ -412,9 +412,9 @@ public final class TransportEligibility
 			// slot, then fall back to the branches in declaration order (pure item
 			// variant first within each branch). The displayed item id is the carried
 			// variant when topping up, else the chosen branch's canonical id.
-			ItemRequirement.Branch chosen = null;
+			ItemRequirement.ItemBranch chosen = null;
 			int foundId = -1;
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
 				foundId = findCarriedCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas);
 				if (foundId != -1)
@@ -425,7 +425,7 @@ public final class TransportEligibility
 			}
 			if (chosen == null)
 			{
-				for (ItemRequirement.Branch branch : req.getBranches())
+				for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 				{
 					foundId = findCovering(branch.getItemIds(), pickupQuantity(branch), carried, bankHas);
 					if (foundId != -1)
@@ -499,7 +499,7 @@ public final class TransportEligibility
 		for (ItemRequirement group : targetItems.getRequirements())
 		{
 			boolean carried = false;
-			for (ItemRequirement.Branch branch : group.getBranches())
+			for (ItemRequirement.ItemBranch branch : group.getItemBranches())
 			{
 				carried |= findCovering(branch.getItemIds(), branch.getQuantity(), carriedItems, Map.of()) != -1;
 			}
@@ -508,7 +508,7 @@ public final class TransportEligibility
 				continue;
 			}
 			boolean phrased = false;
-			for (ItemRequirement.Branch branch : group.getBranches())
+			for (ItemRequirement.ItemBranch branch : group.getItemBranches())
 			{
 				int foundId = findCovering(branch.getItemIds(), branch.getQuantity(), carriedItems, bankHas);
 				if (foundId == -1)
@@ -554,14 +554,13 @@ public final class TransportEligibility
 	{
 		for (ItemRequirement.Branch branch : req.getBranches())
 		{
-			if (branch.getUnlock() != null)
+			if (branch.satisfiedByUnlocks(unlocks))
 			{
-				if (unlocks.contains(branch.getUnlock()))
-				{
-					return true;
-				}
-				continue;
+				return true;
 			}
+		}
+		for (ItemRequirement.ItemBranch branch : req.getItemBranches())
+		{
 			if (findCovering(branch.getItemIds(), pickupQuantity(branch), Map.of(), playerHas) != -1)
 			{
 				return true;
@@ -641,10 +640,10 @@ public final class TransportEligibility
 	}
 
 	/**
-	 * Returns the quantity an OR branch asks for: the branch quantity when that is
+	 * Returns the quantity an item branch asks for: the branch quantity when that is
 	 * positive, otherwise 1.
 	 */
-	private static int pickupQuantity(ItemRequirement.Branch branch)
+	private static int pickupQuantity(ItemRequirement.ItemBranch branch)
 	{
 		return branch.getQuantity() > 0 ? branch.getQuantity() : 1;
 	}
@@ -676,7 +675,7 @@ public final class TransportEligibility
 			boolean pouchAlone = false;
 			boolean looseAlone = false;
 			boolean combined = false;
-			for (ItemRequirement.Branch branch : req.getBranches())
+			for (ItemRequirement.ItemBranch branch : req.getItemBranches())
 			{
 				int qty = pickupQuantity(branch);
 				pouchAlone = pouchAlone || findCovering(branch.getItemIds(), qty, playerHas, bankPouchRunes) != -1;

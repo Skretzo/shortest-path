@@ -711,7 +711,7 @@ public class PathfinderConfig
 		int max = 0;
 		for (ItemRequirement requirement : itemRequirements.getRequirements())
 		{
-			for (ItemRequirement.Branch branch : requirement.getBranches())
+			for (ItemRequirement.ItemBranch branch : requirement.getItemBranches())
 			{
 				max = Math.max(max, maxOverride(branch.getItemIds()));
 				max = Math.max(max, maxOverride(branch.getStaffIds()));

@@ -36,8 +36,8 @@ public class TransportEligibilityTest
 		rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.AIR_RUNE, 3), rune(ItemVariations.WATER_RUNE, 1));
 	private static final Transport THREE_AIR = teleport(rune(ItemVariations.AIR_RUNE, 3));
 	private static final Transport SHANTAY_GATE = teleport(new ItemRequirement(List.of(
-		new ItemRequirement.Branch(ItemVariations.SHANTAY_PASS.getIds(), null, null, 1),
-		new ItemRequirement.Branch(ItemVariations.COINS.getIds(), null, null, 5))));
+		ItemRequirement.Branch.item(ItemVariations.SHANTAY_PASS.getIds(), null, null, 1),
+		ItemRequirement.Branch.item(ItemVariations.COINS.getIds(), null, null, 5))));
 	// The ANDed gate shape: the Xeric's talisman AND the declared Honour unlock.
 	private static final TransportItems TALISMAN_AND_GATE =
 		new ItemRequirementParser().parse("13393=1&UNLOCK_XERICS_HONOUR=1");

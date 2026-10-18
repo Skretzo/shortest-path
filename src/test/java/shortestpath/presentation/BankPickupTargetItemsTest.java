@@ -62,7 +62,7 @@ public class BankPickupTargetItemsTest
 	private static ItemRequirement anyOf(Map<Integer, Integer> idsToQuantity)
 	{
 		List<ItemRequirement.Branch> branches = new java.util.ArrayList<>();
-		idsToQuantity.forEach((id, quantity) -> branches.add(new ItemRequirement.Branch(new int[] {id}, NONE, NONE, quantity)));
+		idsToQuantity.forEach((id, quantity) -> branches.add(ItemRequirement.Branch.item(new int[] {id}, NONE, NONE, quantity)));
 		return new ItemRequirement(branches);
 	}
 
