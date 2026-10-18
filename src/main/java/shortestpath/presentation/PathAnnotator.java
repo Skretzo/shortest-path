@@ -318,12 +318,17 @@ public class PathAnnotator
 	 *
 	 * @param destination  The destination point to check
 	 * @param path         The full path
-	 * @param currentIndex The current index in the path
+	 * @param currentIndex The current index in the path. The overlay passes
+	 *                     {@code pathIndex - 1} so the scan starts at the
+	 *                     current edge; {@code -1} therefore means "scan
+	 *                     from the first path edge", which is where a
+	 *                     first-edge exit (e.g. a global teleport out of
+	 *                     the house) is found.
 	 * @return The display info of the POH exit transport, or null if not applicable
 	 */
 	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
 	{
-		if (path == null || currentIndex < 0)
+		if (path == null || currentIndex < -1)
 		{
 			return null;
 		}
