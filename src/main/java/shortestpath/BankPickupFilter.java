@@ -51,10 +51,12 @@ import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 
 /**
- * Shows the bank items the current path needs as a temporary Path Items tab, opened from a button
- * next to Quest Helper's. Like Quest Helper's tab it works without the Bank Tags plugin and saves
- * nothing. Over a tag tab, such as an Inventory Setups filter, the items are drawn over it instead
- * of filtering the bank, since filtering would save them into the tag tab's layout.
+ * Filters the open bank down to the items the current path needs to pick up, the same items
+ * the bank highlight outlines. A button next to Quest Helper's opens it as a temporary tab, the
+ * same way Quest Helper shows its own tab: the bank is put in its search state without the Bank
+ * Tags plugin and nothing is saved. Viewing another tab, the potion store or searching closes it.
+ * Over a tag tab, such as an Inventory Setups filter, the items are drawn over it instead, since
+ * filtering would save them into the tag tab's layout.
  */
 @Singleton
 public class BankPickupFilter
@@ -93,23 +95,21 @@ public class BankPickupFilter
 	private final BankSearch bankSearch;
 	private final SpriteManager spriteManager;
 
-	// What the tab last showed; empty while it isn't showing
+	// The items the bank was last laid out with; empty while the bank is not filtered.
 	private Set<Integer> filteredItemIds = Set.of();
+	// Stays open across bank visits, like other tabs; never saved
 	private boolean open;
 	private boolean reopen;
-	// Waits for the bank's first layout
+	// Auto-open waits for the bank's first layout
 	private boolean autoOpenPending;
 	private boolean closedThisVisit;
 	private boolean tagTabShowing;
-	// Quest Helper's tab or a typed search
 	private boolean searchShowing;
 	private boolean drawingOverTagTab;
-	// Undraggable until the next layout
 	private final List<Widget> drawnItems = new ArrayList<>();
 	// Kept across bank visits, so items keep their spots when withdrawn and deposited
 	private final List<Integer> routeItemIds = new ArrayList<>();
 	private Targets routeItemsFor;
-	// Withdrawn ones stay as placeholders
 	private final Set<Integer> visitItemIds = new HashSet<>();
 	private Widget buttonBackground;
 	private Widget buttonIcon;
@@ -118,7 +118,7 @@ public class BankPickupFilter
 	@RequiredArgsConstructor
 	private enum Sprite implements SpriteOverride
 	{
-		// The sidebar's icon, under an id the game doesn't use
+		// Any id the game doesn't use
 		ICON(-46301, "/shortestpath/panel_icon.png");
 
 		private final int spriteId;
@@ -175,7 +175,7 @@ public class BankPickupFilter
 			createButton();
 			if (reopen)
 			{
-				// After the bank's first build, as Quest Helper does
+				// Reopen the tab once the bank has built, as Quest Helper does
 				reopen = false;
 				clientThread.invokeLater(this::openTab);
 			}
@@ -211,6 +211,7 @@ public class BankPickupFilter
 		}
 		else if (event.getGroupId() == InterfaceID.SHARED_BANK)
 		{
+			// Back in the bank, so show the tab again
 			clientThread.invokeLater(() ->
 			{
 				relayoutIfOpen();
@@ -226,7 +227,8 @@ public class BankPickupFilter
 		{
 			// The route can start needing bank items while it's open, such as after a deposit
 			autoOpen();
-			// The bank doesn't rebuild itself for every change to the needed items
+			// The needed items change when a route finishes, the player withdraws them or the
+			// config is toggled; the bank only rebuilds itself on some of those, so catch the rest.
 			if (!wantedItemIds().equals(filteredItemIds))
 			{
 				bankSearch.layoutBank();
@@ -244,7 +246,7 @@ public class BankPickupFilter
 			&& (option.startsWith(VIEW_TAB) || option.startsWith(VIEW_TAG_TAB) || option.equals(VIEW_ALL_ITEMS)
 			|| option.startsWith(POTION_STORE)))
 		{
-			// Before the click is handled, so its relayout shows the other view
+			// Runs before the click is handled, so the relayout that follows shows the other view.
 			closeTab();
 		}
 	}
@@ -265,7 +267,7 @@ public class BankPickupFilter
 		if (event.getScriptId() == ScriptID.BANKMAIN_SEARCH_TOGGLE && open)
 		{
 			closeTab();
-			// Opens the search box instead of closing the search the tab was shown with
+			// Open the search input rather than closing the search the tab was shown with
 			client.setVarcStrValue(VarClientID.MESLAYERINPUT, "");
 			client.setVarcIntValue(VarClientID.MESLAYERMODE, 0);
 		}
@@ -277,7 +279,8 @@ public class BankPickupFilter
 	{
 		if (event.getScriptId() == ScriptID.BANKMAIN_SEARCHING)
 		{
-			// Answering yes runs bankSearchFilter for every item
+			// Every bank layout asks whether the bank is searching; answering yes runs the
+			// bankSearchFilter callback for each item.
 			int[] intStack = client.getIntStack();
 			int searching = client.getIntStackSize() - 1;
 			// Tag tabs don't set this, Quest Helper's tab and typed searches do
@@ -315,7 +318,7 @@ public class BankPickupFilter
 		}
 	}
 
-	// Runs after the bank plugins' own search handlers so this filter has the final say
+	// Runs after the bank plugins' own search handlers so this filter has the final say.
 	@Subscribe(priority = -1)
 	public void onScriptCallbackEvent(ScriptCallbackEvent event)
 	{
@@ -644,8 +647,9 @@ public class BankPickupFilter
 			return;
 		}
 		open = true;
+		// Clears any search and lays the bank out as the tab
 		bankSearch.reset(true);
-		// Otherwise the search button's timer restores its searching look, as in bankmain_search_setbutton
+		// The search button's timer would otherwise restore its searching look, as in bankmain_search_setbutton
 		Widget searchButton = client.getWidget(InterfaceID.Bankmain.SEARCH);
 		if (searchButton != null)
 		{
@@ -686,6 +690,7 @@ public class BankPickupFilter
 		buttonBackground.setSpriteId(filtering
 			? SpriteID.Miscgraphics3.UNKNOWN_BUTTON_SQUARE_SMALL_SELECTED
 			: SpriteID.Miscgraphics3.UNKNOWN_BUTTON_SQUARE_SMALL);
+		// Just "Show all items" while open
 		buttonBackground.setName(filtering ? "" : BUTTON_NAME);
 		buttonBackground.setAction(0, filtering ? SHOW_ALL_ITEMS : VIEW_TAB);
 	}
