@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 
@@ -22,6 +23,8 @@ import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
+	private static final int POTION_STORE_TAB = 15;
+
 	private final ItemManager itemManager;
 	private final Settings settings;
 
@@ -61,6 +64,12 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		}
 
 		if (!annotator.isBankOpen())
+		{
+			return null;
+		}
+
+		// Potion storage covers the bank's item area, so the outlines would be drawn over its list
+		if (client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
 		{
 			return null;
 		}
