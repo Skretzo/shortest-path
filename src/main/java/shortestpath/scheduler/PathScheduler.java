@@ -618,6 +618,15 @@ public class PathScheduler
 	}
 
 	/**
+	 * Whether the running route takes a transport, before its bank visit, whose items the
+	 * player no longer carries. Client thread only.
+	 */
+	boolean carriedItemMissing(int location)
+	{
+		return pathfinder != null && pathfinderConfig.carriedItemMissing(pathfinder.getPath(), location);
+	}
+
+	/**
 	 * Runs {@code action} while holding the scheduler mutex, for shell callers that must pair
 	 * their own state writes with the search snapshot.
 	 */
