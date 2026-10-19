@@ -76,7 +76,8 @@ class ShortestPathHomePanel extends PluginPanel
 	 */
 	private static final String[] UNLOCK_KEYS = {
 		"unlockCanoeAxe", "unlockXericsHonour",
-		"unlockDragontoothPassage", "unlockMorUlRek", "respawnPrifddinas"};
+		"unlockDragontoothPassage", "unlockMorUlRek",
+		"unlockSoulRift", "unlockBloodRift", "respawnPrifddinas"};
 	/**
 	 * The display-side toggles the Display tile counts — shared by the
 	 * category builder, the refresh-listener registration and the status

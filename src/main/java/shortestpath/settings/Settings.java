@@ -741,6 +741,8 @@ public class Settings
 		private final boolean unlockXericsHonour;
 		private final boolean unlockDragontoothPassage;
 		private final boolean unlockMorUlRek;
+		private final boolean unlockSoulRift;
+		private final boolean unlockBloodRift;
 		private final boolean unlockBalloonLogBasket;
 
 		private UnlocksView(ShortestPathConfig config)
@@ -749,6 +751,8 @@ public class Settings
 			unlockXericsHonour = config.unlockXericsHonour();
 			unlockDragontoothPassage = config.unlockDragontoothPassage();
 			unlockMorUlRek = config.unlockMorUlRek();
+			unlockSoulRift = config.unlockSoulRift();
+			unlockBloodRift = config.unlockBloodRift();
 			unlockBalloonLogBasket = config.unlockBalloonLogBasket();
 		}
 	}

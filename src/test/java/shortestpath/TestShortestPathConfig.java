@@ -17,6 +17,8 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	private boolean unlockCanoeAxe = false;
 	private boolean unlockXericsHonour = false;
 	private boolean unlockDragontoothPassage = false;
+	private boolean unlockSoulRift = false;
+	private boolean unlockBloodRift = false;
 	private String blockedTeleportItems = "";
 	private boolean unlockBalloonLogBasket = false;
 	// Null means the key was never written: like the interface default, the
@@ -80,6 +82,18 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public void setUnlockDragontoothPassageValue(boolean unlockDragontoothPassage)
 	{
 		this.unlockDragontoothPassage = unlockDragontoothPassage;
+	}
+
+	@SuppressWarnings("unused")
+	public void setUnlockSoulRiftValue(boolean unlockSoulRift)
+	{
+		this.unlockSoulRift = unlockSoulRift;
+	}
+
+	@SuppressWarnings("unused")
+	public void setUnlockBloodRiftValue(boolean unlockBloodRift)
+	{
+		this.unlockBloodRift = unlockBloodRift;
 	}
 
 	@SuppressWarnings("unused")
@@ -164,6 +178,18 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	public boolean unlockDragontoothPassage()
 	{
 		return unlockDragontoothPassage;
+	}
+
+	@Override
+	public boolean unlockSoulRift()
+	{
+		return unlockSoulRift;
+	}
+
+	@Override
+	public boolean unlockBloodRift()
+	{
+		return unlockBloodRift;
 	}
 
 	@Override

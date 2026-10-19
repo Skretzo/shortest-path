@@ -492,6 +492,14 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.MOR_UL_REK);
 		}
+		if (effective.unlockSoulRift())
+		{
+			declaredUnlocks.add(Unlock.SOUL_RIFT);
+		}
+		if (effective.unlockBloodRift())
+		{
+			declaredUnlocks.add(Unlock.BLOOD_RIFT);
+		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// The basket unlock is per balloon route: the configured

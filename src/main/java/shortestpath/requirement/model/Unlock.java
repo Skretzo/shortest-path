@@ -45,6 +45,21 @@ public enum Unlock
 	 * selected routes, never globally.
 	 */
 	BALLOON_LOG_BASKET,
+
+	/**
+	 * Permanent free transport through the soul rift, granted by using a
+	 * dark essence block or dark essence fragments on the rift after
+	 * crafting soul runes at the Kourend Soul Altar (the essence is not
+	 * consumed).
+	 */
+	SOUL_RIFT,
+
+	/**
+	 * Permanent redirect of the blood rift's "Exit-through (Kourend)"
+	 * option to Kourend's Blood Altar, granted the same way as the soul
+	 * rift after crafting blood runes there.
+	 */
+	BLOOD_RIFT,
 	;
 
 	private static final String TOKEN_PREFIX = "UNLOCK_";

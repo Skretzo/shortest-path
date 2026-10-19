@@ -358,6 +358,8 @@ public class ShortestPathPanel extends PluginPanel
 		unlocks.addRow(checkRow("unlockXericsHonour"));
 		unlocks.addRow(checkRow("unlockDragontoothPassage"));
 		unlocks.addRow(checkRow("unlockMorUlRek"));
+		unlocks.addRow(checkRow("unlockSoulRift"));
+		unlocks.addRow(checkRow("unlockBloodRift"));
 		// The respawn flag is account state the client cannot read — it
 		// sits with the unlocks rather than the General routing policies.
 		unlocks.addRow(checkRow("respawnPrifddinas"));
