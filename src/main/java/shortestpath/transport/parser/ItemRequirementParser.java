@@ -88,6 +88,33 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 
 		for (String orPart : orParts)
 		{
+			if (orPart.startsWith(UNLOCK_PREFIX))
+			{
+				// Unlock tokens are only legal in the exact 'UNLOCK_<NAME>=1'
+				// form. Validate the token structurally — before the generic
+				// '=' split and Integer.parseInt — and fail loudly with
+				// IllegalArgumentException for every malformed shape
+				// (missing '=', extra '=', non-numeric or non-"1" quantity).
+				// Anything else would surface as NumberFormatException and be
+				// softened into dropping the whole Items cell by parse().
+				int eq = orPart.indexOf(DELIM_STATE);
+				if (eq < 0
+					|| eq != orPart.lastIndexOf(DELIM_STATE)
+					|| !"1".equals(orPart.substring(eq + 1)))
+				{
+					throw new IllegalArgumentException("An unlock token must be =1: " + orPart);
+				}
+				Unlock unlock = Unlock.fromName(orPart.substring(0, eq));
+				if (unlock == null)
+				{
+					// A typo'd unlock name must fail loudly rather than silently
+					// dropping the whole Items cell like an unknown item name.
+					throw new IllegalArgumentException("Unknown unlock token: " + orPart);
+				}
+				branches.add(new ItemRequirement.Branch(null, null, null, 1, unlock));
+				continue;
+			}
+
 			String[] itemAndQuantity = orPart.split(DELIM_STATE);
 			if (itemAndQuantity.length != 2)
 			{
@@ -96,23 +123,6 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 
 			String itemName = itemAndQuantity[0];
 			int quantity = Integer.parseInt(itemAndQuantity[1]);
-
-			if (itemName.startsWith(UNLOCK_PREFIX))
-			{
-				if (quantity < 1)
-				{
-					throw new IllegalArgumentException("An unlock token needs a positive quantity: " + orPart);
-				}
-				Unlock unlock = Unlock.fromName(itemName);
-				if (unlock == null)
-				{
-					// A typo'd unlock name must fail loudly rather than silently
-					// dropping the whole Items cell like an unknown item name.
-					throw new IllegalArgumentException("Unknown unlock token: " + orPart);
-				}
-				branches.add(new ItemRequirement.Branch(null, null, null, quantity, unlock));
-				continue;
-			}
 
 			ItemVariations variation = ItemVariations.fromName(itemName);
 			if (variation != null)

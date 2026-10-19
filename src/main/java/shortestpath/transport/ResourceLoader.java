@@ -96,8 +96,30 @@ public final class ResourceLoader
 		Set<Transport> newTransports = new LinkedHashSet<>();
 		for (TransportRecord record : records)
 		{
-			Transport transport = new Transport(record, transportType);
+			final Transport transport;
+			try
+			{
+				transport = new Transport(record, transportType);
+			}
+			catch (IllegalArgumentException e)
+			{
+				// One malformed record must not take down the whole file:
+				// skip it and keep loading its file-mates.
+				log.warn("Skipping malformed {} transport record ({} -> {}): {}",
+					transportType, record.getOrigin(), record.getDestination(), e.getMessage());
+				continue;
+			}
 			newTransports.add(transport);
+		}
+
+		if (newTransports.isEmpty() && !records.isEmpty())
+		{
+			// A file that yields zero transports from a non-empty record list
+			// is a systematic failure (parser regression or wholesale data
+			// drift), not per-record noise — elevate above the per-record
+			// warn so it cannot degrade to a silently empty transport map.
+			log.error("Every one of {} {} transport record(s) was skipped as malformed; the file produced no transports",
+				records.size(), transportType);
 		}
 
 		/*

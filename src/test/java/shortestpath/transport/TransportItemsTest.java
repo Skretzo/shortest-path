@@ -1,11 +1,14 @@
 package shortestpath.transport;
 
+import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.Unlock;
 
 public class TransportItemsTest
 {
@@ -59,5 +62,18 @@ public class TransportItemsTest
 		int[] quantitiesDifferent = new int[]{5, 11};
 		TransportItems d = new TransportItems(items2, staves2, offhands2, quantitiesDifferent);
 		assertNotEquals(a, d);
+	}
+
+	@Test
+	public void unlockBranchesEmitEmptyStaffAndOffhandRows()
+	{
+		// Unlock-only branches carry no staff or offhand ids; the legacy
+		// getters must emit empty rows — never null — like getItems() does.
+		TransportItems ti = new TransportItems(List.of(
+			new ItemRequirement(List.of(
+				new ItemRequirement.Branch(null, null, null, 1, Unlock.XERICS_HONOUR)))));
+
+		assertArrayEquals(new int[0], ti.getStaves()[0]);
+		assertArrayEquals(new int[0], ti.getOffhands()[0]);
 	}
 }
