@@ -266,12 +266,12 @@
 									
 # Falador									
 3054 3382 0	3065 9951 0	Climb-down Staircase 24249						1	
-3065 9951 0	3053 3382 0	Leave Old passageway 31892							
+3065 9951 0	3053 3382 0	Leave Old passageway 31892						1	
 3053 3382 0	3065 9951 0	Climb-down Staircase 24249						1	
-3065 9952 0	3053 3382 0	Leave Old passageway 31892							
-3014 9952 0	3038 3382 0	Leave Old passageway 31892							
+3065 9952 0	3053 3382 0	Leave Old passageway 31892						1	
+3014 9952 0	3038 3382 0	Leave Old passageway 31892						1	
 3038 3382 0	3014 9951 0	Climb-down Staircase 24248						1	
-3014 9951 0	3038 3382 0	Leave Old passageway 31892							
+3014 9951 0	3038 3382 0	Leave Old passageway 31892						1	
 3037 3382 0	3014 9951 0	Climb-down Staircase 24248						1	
 3038 3382 0	3039 3383 1	Climb-up Staircase 24248						1	
 3039 3383 1	3037 3382 0	Climb-down Staircase 24252						1	
@@ -463,13 +463,13 @@
 2560 3021 0	2523 3070 0	Enter Cave entrance 2805		SKAVID_MAP=0					
 									
 # Skavid Caves Island									
-2500 2988 0	2576 3029 0	Enter Cave entrance 2811							
+2500 2988 0	2576 3029 0	Enter Cave entrance 2811						2	
 2576 3029 0	2500 2988 0	Climb-down Ladder 2812						2	
-2499 2988 0	2576 3029 0	Enter Cave entrance 2811							
+2499 2988 0	2576 3029 0	Enter Cave entrance 2811						2	
 2575 3028 0	2500 2988 0	Climb-down Ladder 2812						2	
-2501 2989 0	2576 3029 0	Enter Cave entrance 2811							
+2501 2989 0	2576 3029 0	Enter Cave entrance 2811						2	
 2575 3030 0	2500 2988 0	Climb-down Ladder 2812						2	
-2498 2989 0	2576 3029 0	Enter Cave entrance 2811							
+2498 2989 0	2576 3029 0	Enter Cave entrance 2811						2	
 2574 3029 0	2500 2988 0	Climb-down Ladder 2812						2	
 									
 # Yanille									
@@ -986,10 +986,10 @@
 3122 3487 0	3122 3488 0	Open Door 102						1	
 									
 # Varrock									
-3212 3472 0	3212 3476 1	Climb-up Staircase 11807							
-3212 3476 1	3212 3472 0	Climb-down Staircase 11799							
-3213 3472 0	3213 3476 1	Climb-up Staircase 11807							
-3213 3476 1	3213 3472 0	Climb-down Staircase 11799							
+3212 3472 0	3212 3476 1	Climb-up Staircase 11807						1	
+3212 3476 1	3212 3472 0	Climb-down Staircase 11799						1	
+3213 3472 0	3213 3476 1	Climb-up Staircase 11807						1	
+3213 3476 1	3213 3472 0	Climb-down Staircase 11799						1	
 3203 3496 0	3204 3497 1	Climb-up Staircase 11790							
 3204 3497 1	3203 3496 0	Climb-down Staircase 11792							
 3204 3497 1	3204 3497 2	Climb-up Staircase 11792							
@@ -1009,9 +1009,9 @@
 3222 3471 2	3223 3472 3	Climb-up Staircase 11790							
 3221 3471 2	3223 3472 3	Climb-up Staircase 11790							
 3238 3490 0	3242 3490 1	Climb-up Staircase 11797							
-3242 3490 1	3238 3490 0	Climb-down Staircase 11799							
+3242 3490 1	3238 3490 0	Climb-down Staircase 11799						1	
 3238 3489 0	3242 3489 1	Climb-up Staircase 11797							
-3242 3489 1	3238 3489 0	Climb-down Staircase 11799							
+3242 3489 1	3238 3489 0	Climb-down Staircase 11799						1	
 3257 3487 0	3258 3486 1	Climb-up Staircase 11790							
 3258 3486 1	3257 3487 0	Climb-down Staircase 11792							
 3257 3488 0	3258 3486 1	Climb-up Staircase 11790							
@@ -1037,22 +1037,22 @@
 1761 4963 0	1631 4957 0	Walk-down Stairs 24428							
 1632 4957 0	1761 4964 0	Walk-up Stairs 24427							
 3266 3451 0	3266 3455 1	Climb-up Staircase 11798							
-3266 3455 1	3266 3451 0	Climb-down Staircase 11799							
+3266 3455 1	3266 3451 0	Climb-down Staircase 11799						1	
 3267 3451 0	3267 3455 1	Climb-up Staircase 11798							
-3267 3455 1	3267 3451 0	Climb-down Staircase 11799							
+3267 3455 1	3267 3451 0	Climb-down Staircase 11799						1	
 3254 3442 1	3254 3446 2	Climb-up Staircase 11797							
-3254 3446 2	3254 3442 1	Climb-down Staircase 11799							
+3254 3446 2	3254 3442 1	Climb-down Staircase 11799						1	
 3253 3442 1	3253 3446 2	Climb-up Staircase 11797							
-3253 3446 2	3253 3442 1	Climb-down Staircase 11799							
+3253 3446 2	3253 3442 1	Climb-down Staircase 11799						1	
 3257 3421 1	3256 3420 0	Climb-down Staircase 11793							
 3256 3420 0	3257 3421 1	Climb-up Staircase 11789							
 3255 3420 0	3257 3421 1	Climb-up Staircase 11789							
 3257 3422 1	3256 3420 0	Climb-down Staircase 11793							
 3234 3424 0	3234 3424 1	Climb-up Ladder 11794						2	
 3234 3424 1	3234 3424 0	Climb-down Ladder 11795						2	
-3230 3394 1	3226 3394 0	Climb-down Staircase 11799							
+3230 3394 1	3226 3394 0	Climb-down Staircase 11799						1	
 3226 3394 0	3230 3394 1	Climb-up Staircase 11796							
-3230 3393 1	3226 3393 0	Climb-down Staircase 11799							
+3230 3393 1	3226 3393 0	Climb-down Staircase 11799						1	
 3226 3393 0	3230 3393 1	Climb-up Staircase 11796							
 3231 9800 0	3231 3400 0	Climb-up Ladder 11804						2	
 3231 3400 0	3231 9800 0	Climb-down Ladder 11803						2	
@@ -1063,9 +1063,9 @@
 3232 9801 0	3232 3401 0	Climb-up Ladder 11804						2	
 3232 3401 0	3232 9801 0	Climb-down Ladder 11803						2	
 3230 3386 0	3230 3382 1	Climb-up Staircase 11797							
-3230 3382 1	3230 3386 0	Climb-down Staircase 11799							
+3230 3382 1	3230 3386 0	Climb-down Staircase 11799						1	
 3231 3386 0	3231 3382 1	Climb-up Staircase 11797							
-3231 3382 1	3231 3386 0	Climb-down Staircase 11799							
+3231 3382 1	3231 3386 0	Climb-down Staircase 11799						1	
 3222 3387 1	3222 3387 0	Climb-down Ladder 11802						2	
 3222 3387 0	3222 3387 1	Climb-up Ladder 11794						2	
 3186 3434 0	3190 9834 0	Climb-down Staircase 11800							
@@ -1075,9 +1075,9 @@
 3185 3447 0	3185 3447 1	Climb-up Ladder 11794						2	
 3185 3447 1	3185 3447 0	Climb-down Ladder 11795						2	
 3159 3436 0	3155 3436 1	Climb-up Staircase 11797							
-3155 3436 1	3159 3436 0	Climb-down Staircase 11799							
+3155 3436 1	3159 3436 0	Climb-down Staircase 11799						1	
 3159 3435 0	3155 3435 1	Climb-up Staircase 11797							
-3155 3435 1	3159 3435 0	Climb-down Staircase 11799							
+3155 3435 1	3159 3435 0	Climb-down Staircase 11799						1	
 3186 3414 0	3186 3414 1	Climb-up Ladder 11794						2	
 3186 3414 1	3186 3414 0	Climb-down Ladder 11795						2	
 3205 3396 0	3205 3396 1	Climb-up Ladder 11794						2	
@@ -1182,11 +1182,11 @@
 3304 3124 0	3013 3180 0	Talk-to Shantay 4642						4	Shantay Pass arrest
 3322 3138 0	3322 3138 1	Climb-up Ladder 21781						2	
 3322 3138 1	3322 3138 0	Climb-down Ladder 21782						2	
-3312 3184 0	3314 3185 1	Climb-up Staircase 16671							
-3314 3185 1	3313 3184 0	Climb-down Staircase 16673							
-3313 3184 0	3314 3185 1	Climb-up Staircase 16671							
-3314 3185 0	3314 3185 1	Climb-up Staircase 16671							
-3314 3186 0	3314 3185 1	Climb-up Staircase 16671							
+3312 3184 0	3314 3185 1	Climb-up Staircase 16671						1	
+3314 3185 1	3313 3184 0	Climb-down Staircase 16673						1	
+3313 3184 0	3314 3185 1	Climb-up Staircase 16671						1	
+3314 3185 0	3314 3185 1	Climb-up Staircase 16671						1	
+3314 3186 0	3314 3185 1	Climb-up Staircase 16671						1	
 3285 3165 0	3285 3165 1	Climb-up Ladder 16683						2	
 3285 3165 1	3285 3165 0	Climb-down Ladder 16679						2	
 3284 3166 0	3284 3166 1	Climb-up Ladder 16683						2	
@@ -1277,10 +1277,10 @@
 3012 3244 1	3012 3244 0	Climb-down Ladder 16679						2	
 3012 3244 0	3013 3245 1	Climb-up Ladder 60						2	
 3014 3244 1	3014 3244 0	Climb-down Ladder 16679						2	
-3025 3261 1	3024 3260 0	Climb-down Staircase 9584							
+3025 3261 1	3024 3260 0	Climb-down Staircase 9584						1	
 3024 3260 0	3025 3261 1	Climb-up Staircase 9582							
 3023 3260 0	3025 3261 1	Climb-up Staircase 9582							
-3026 3247 1	3025 3248 0	Climb-down Staircase 9584							
+3026 3247 1	3025 3248 0	Climb-down Staircase 9584						1	
 3025 3248 0	3026 3247 1	Climb-up Staircase 9582							
 3025 3249 0	3026 3247 1	Climb-up Staircase 9582							
 3018 3231 0	2962 9650 0	Climb-down Manhole 10321							
@@ -1294,12 +1294,12 @@
 3104 3161 0	3104 9576 0	Climb-down Ladder 2147						2	
 3103 9575 0	3105 3162 0	Climb-up Ladder 2148						2	
 3103 3162 0	3104 9576 0	Climb-down Ladder 2147						2	
-3105 3160 0	3104 3161 1	Climb-up Staircase 12536							
+3105 3160 0	3104 3161 1	Climb-up Staircase 12536						1	
 3104 3161 1	3104 3161 0	Climb-down Staircase 12537							
-3105 3159 0	3104 3161 1	Climb-up Staircase 12536							
+3105 3159 0	3104 3161 1	Climb-up Staircase 12536						1	
 3103 3161 1	3104 3161 0	Climb-down Staircase 12537							
 3104 3161 1	3104 3161 2	Climb-up Staircase 12537							
-3104 3161 2	3104 3161 1	Climb-down Staircase 12538							
+3104 3161 2	3104 3161 1	Climb-down Staircase 12538						1	
 									
 # Taverley Dungeon									
 2884 3398 0	2884 9798 0	Climb-down Ladder 16680						2	
@@ -1353,21 +1353,21 @@
 2916 3450 0	2916 3450 1	Climb-up Ladder 16683						2	
 2914 3441 0	2914 3441 1	Climb-up Ladder 17026						2	
 2914 3441 1	2914 3441 0	Climb-down Ladder 16685						2	
-2918 3439 0	2916 3438 0	Climb-over Stile 993							
-2916 3438 0	2919 3438 0	Climb-over Stile 993							
-2919 3438 0	2916 3438 0	Climb-over Stile 993							
-2917 3437 0	2919 3438 0	Climb-over Stile 993							
-2918 3437 0	2916 3438 0	Climb-over Stile 993							
-2917 3439 0	2919 3438 0	Climb-over Stile 993							
-2898 3427 0	2898 3427 1	Climb-up Staircase 16671							
-2898 3427 1	2897 3428 0	Climb-down Staircase 16673							
-2897 3428 0	2898 3427 1	Climb-up Staircase 16671							
-2897 3429 0	2898 3427 1	Climb-up Staircase 16671							
-2898 3430 0	2898 3427 1	Climb-up Staircase 16671							
-2899 3430 0	2898 3427 1	Climb-up Staircase 16671							
-2899 3427 0	2898 3427 1	Climb-up Staircase 16671							
-2900 3428 0	2898 3427 1	Climb-up Staircase 16671							
-2900 3429 0	2898 3427 1	Climb-up Staircase 16671							
+2918 3439 0	2916 3438 0	Climb-over Stile 993						6	
+2916 3438 0	2919 3438 0	Climb-over Stile 993						6	
+2919 3438 0	2916 3438 0	Climb-over Stile 993						6	
+2917 3437 0	2919 3438 0	Climb-over Stile 993						6	
+2918 3437 0	2916 3438 0	Climb-over Stile 993						6	
+2917 3439 0	2919 3438 0	Climb-over Stile 993						6	
+2898 3427 0	2898 3427 1	Climb-up Staircase 16671						1	
+2898 3427 1	2897 3428 0	Climb-down Staircase 16673						1	
+2897 3428 0	2898 3427 1	Climb-up Staircase 16671						1	
+2897 3429 0	2898 3427 1	Climb-up Staircase 16671						1	
+2898 3430 0	2898 3427 1	Climb-up Staircase 16671						1	
+2899 3430 0	2898 3427 1	Climb-up Staircase 16671						1	
+2899 3427 0	2898 3427 1	Climb-up Staircase 16671						1	
+2900 3428 0	2898 3427 1	Climb-up Staircase 16671						1	
+2900 3429 0	2898 3427 1	Climb-up Staircase 16671						1	
 2900 3473 0	2901 3473 0	Open Door 2861						1	
 2901 3473 0	2900 3473 0	Open Door 2861						1	
 2906 3468 0	2906 3472 1	Walk-up Staircase 24672							
@@ -1491,8 +1491,8 @@
 2518 9994 0	2510 3644 0	Climb Iron ladder 4384						2	
 2515 10005 0	2515 10008 0	Climb Iron ladder 4384						2	
 2515 10008 0	2515 10005 0	Climb Iron ladder 4383						2	
-2516 10002 0	2516 10003 0	Open Strange wall 4384							
-2513 10003 0	2513 10002 0	Open Strange wall 4384							
+2516 10002 0	2516 10003 0	Open Strange wall 4384						2	
+2513 10003 0	2513 10002 0	Open Strange wall 4384						2	
 									
 # Dwarf Cannon Quest area									
 2569 3441 0	2569 3441 1	Climb-up Ladder 16683						2	
@@ -1521,17 +1521,17 @@
 2554 3474 0	2555 3474 0	Open Gate 15605							
 									
 # Tourist Information Center									
-2518 3431 0	2518 3431 1	Climb-up Staircase 16671							
-2518 3431 1	2519 3430 0	Climb-down Staircase 16673							
-2519 3430 0	2518 3431 1	Climb-up Staircase 16671							
-2519 3429 0	2518 3431 1	Climb-up Staircase 16671							
-2518 3428 0	2518 3431 1	Climb-up Staircase 16671							
-2517 3428 0	2518 3431 1	Climb-up Staircase 16671							
-2517 3431 0	2518 3431 1	Climb-up Staircase 16671							
-2516 3430 0	2518 3431 1	Climb-up Staircase 16671							
-2516 3429 0	2518 3431 1	Climb-up Staircase 16671							
-2517 3426 1	2516 3423 0	Climb-down Staircase 16667							
-2516 3423 0	2517 3426 1	Climb-up Staircase 16668							
+2518 3431 0	2518 3431 1	Climb-up Staircase 16671						1	
+2518 3431 1	2519 3430 0	Climb-down Staircase 16673						1	
+2519 3430 0	2518 3431 1	Climb-up Staircase 16671						1	
+2519 3429 0	2518 3431 1	Climb-up Staircase 16671						1	
+2518 3428 0	2518 3431 1	Climb-up Staircase 16671						1	
+2517 3428 0	2518 3431 1	Climb-up Staircase 16671						1	
+2517 3431 0	2518 3431 1	Climb-up Staircase 16671						1	
+2516 3430 0	2518 3431 1	Climb-up Staircase 16671						1	
+2516 3429 0	2518 3431 1	Climb-up Staircase 16671						1	
+2517 3426 1	2516 3423 0	Climb-down Staircase 16667						1	
+2516 3423 0	2517 3426 1	Climb-up Staircase 16668						1	
 									
 # Waterfall Island and Dungeon (varplayer:65=8?GLARIALS_AMULET=1)									
 2512 3476 0	2527 3413 0	Swim River 10283					65>0		
@@ -1801,22 +1801,22 @@
 2423 3423 2	2423 3423 1	Climb-down Ladder 16679						2	
 2424 3422 1	2424 3422 2	Climb-up Ladder 16683						2	
 2424 3422 2	2424 3422 1	Climb-down Ladder 16679						2	
-2416 3444 0	2415 3446 1	Climb-up Staircase 16675							
-2415 3446 1	2416 3447 0	Climb-down Staircase 16677							
-2416 3447 0	2415 3446 1	Climb-up Staircase 16675							
-2417 3447 0	2415 3446 1	Climb-up Staircase 16675							
-2418 3446 0	2415 3446 1	Climb-up Staircase 16675							
-2418 3445 0	2415 3446 1	Climb-up Staircase 16675							
-2417 3444 0	2415 3446 1	Climb-up Staircase 16675							
-2415 3445 0	2415 3446 1	Climb-up Staircase 16675							
-2403 3450 0	2400 3450 1	Climb-up Staircase 16675							
-2400 3450 1	2401 3451 0	Climb-down Staircase 16677							
-2401 3451 0	2400 3450 1	Climb-up Staircase 16675							
-2402 3451 0	2400 3450 1	Climb-up Staircase 16675							
-2400 3450 0	2400 3450 1	Climb-up Staircase 16675							
-2403 3449 0	2400 3450 1	Climb-up Staircase 16675							
-2402 3448 0	2400 3450 1	Climb-up Staircase 16675							
-2401 3448 0	2400 3450 1	Climb-up Staircase 16675							
+2416 3444 0	2415 3446 1	Climb-up Staircase 16675						1	
+2415 3446 1	2416 3447 0	Climb-down Staircase 16677						1	
+2416 3447 0	2415 3446 1	Climb-up Staircase 16675						1	
+2417 3447 0	2415 3446 1	Climb-up Staircase 16675						1	
+2418 3446 0	2415 3446 1	Climb-up Staircase 16675						1	
+2418 3445 0	2415 3446 1	Climb-up Staircase 16675						1	
+2417 3444 0	2415 3446 1	Climb-up Staircase 16675						1	
+2415 3445 0	2415 3446 1	Climb-up Staircase 16675						1	
+2403 3450 0	2400 3450 1	Climb-up Staircase 16675						1	
+2400 3450 1	2401 3451 0	Climb-down Staircase 16677						1	
+2401 3451 0	2400 3450 1	Climb-up Staircase 16675						1	
+2402 3451 0	2400 3450 1	Climb-up Staircase 16675						1	
+2400 3450 0	2400 3450 1	Climb-up Staircase 16675						1	
+2403 3449 0	2400 3450 1	Climb-up Staircase 16675						1	
+2402 3448 0	2400 3450 1	Climb-up Staircase 16675						1	
+2401 3448 0	2400 3450 1	Climb-up Staircase 16675						1	
 2408 3436 0	2408 3436 1	Climb-up Ladder 16683						2	
 2408 3436 1	2408 3436 0	Climb-down Ladder 16679						2	
 2409 3435 0	2409 3435 1	Climb-up Ladder 16683						2	
@@ -1825,139 +1825,139 @@
 2408 3434 1	2408 3434 0	Climb-down Ladder 16679						2	
 2407 3435 0	2407 3435 1	Climb-up Ladder 16683						2	
 2407 3435 1	2407 3435 0	Climb-down Ladder 16679						2	
-2418 3416 1	2417 3417 0	Climb-down Staircase 16677							
-2417 3417 0	2418 3416 1	Climb-up Staircase 16675							
-2417 3418 0	2418 3416 1	Climb-up Staircase 16675							
-2418 3419 0	2418 3416 1	Climb-up Staircase 16675							
-2419 3419 0	2418 3416 1	Climb-up Staircase 16675							
-2418 3416 0	2418 3416 1	Climb-up Staircase 16675							
-2420 3417 0	2418 3416 1	Climb-up Staircase 16675							
-2420 3418 0	2418 3416 1	Climb-up Staircase 16675							
-2443 3415 0	2445 3416 1	Climb-up Staircase 16675							
-2445 3416 1	2446 3415 0	Climb-down Staircase 16677							
-2446 3415 0	2445 3416 1	Climb-up Staircase 16675							
-2446 3414 0	2445 3416 1	Climb-up Staircase 16675							
-2445 3413 0	2445 3416 1	Climb-up Staircase 16675							
-2444 3413 0	2445 3416 1	Climb-up Staircase 16675							
-2443 3414 0	2445 3416 1	Climb-up Staircase 16675							
-2445 3416 0	2445 3416 1	Climb-up Staircase 16675							
-2444 3416 0	2445 3416 1	Climb-up Staircase 16675							
-2445 3433 1	2444 3434 0	Climb-down Staircase 16677							
-2444 3434 0	2445 3433 1	Climb-up Staircase 16675							
-2444 3435 0	2445 3433 1	Climb-up Staircase 16675							
-2445 3436 0	2445 3433 1	Climb-up Staircase 16675							
-2446 3436 0	2445 3433 1	Climb-up Staircase 16675							
-2447 3435 0	2445 3433 1	Climb-up Staircase 16675							
-2447 3434 0	2445 3433 1	Climb-up Staircase 16675							
-2445 3433 0	2445 3433 1	Climb-up Staircase 16675							
-2446 3433 0	2445 3433 1	Climb-up Staircase 16675							
-2442 3405 0	2440 3403 1	Climb-up Staircase 16675							
-2440 3403 1	2439 3404 0	Climb-down Staircase 16677							
-2439 3404 0	2440 3403 1	Climb-up Staircase 16675							
-2439 3405 0	2440 3403 1	Climb-up Staircase 16675							
-2440 3406 0	2440 3403 1	Climb-up Staircase 16675							
-2441 3406 0	2440 3403 1	Climb-up Staircase 16675							
-2440 3403 0	2440 3403 1	Climb-up Staircase 16675							
-2442 3404 0	2440 3403 1	Climb-up Staircase 16675							
-2461 3415 0	2460 3417 1	Climb-up Staircase 16675							
-2460 3417 1	2461 3418 0	Climb-down Staircase 16677							
-2461 3418 0	2460 3417 1	Climb-up Staircase 16675							
-2462 3418 0	2460 3417 1	Climb-up Staircase 16675							
-2463 3417 0	2460 3417 1	Climb-up Staircase 16675							
-2463 3416 0	2460 3417 1	Climb-up Staircase 16675							
-2462 3415 0	2460 3417 1	Climb-up Staircase 16675							
-2460 3417 0	2460 3417 1	Climb-up Staircase 16675							
-2460 3416 0	2460 3417 1	Climb-up Staircase 16675							
-2457 3417 1	2456 3416 0	Climb-down Staircase 16677							
-2456 3416 0	2457 3417 1	Climb-up Staircase 16675							
-2455 3416 0	2457 3417 1	Climb-up Staircase 16675							
-2457 3418 0	2457 3417 1	Climb-up Staircase 16675							
-2457 3417 0	2457 3417 1	Climb-up Staircase 16675							
-2456 3419 0	2457 3417 1	Climb-up Staircase 16675							
-2455 3419 0	2457 3417 1	Climb-up Staircase 16675							
-2477 3400 0	2475 3399 1	Climb-up Staircase 16675							
-2475 3399 1	2474 3400 0	Climb-down Staircase 16677							
-2474 3400 0	2475 3399 1	Climb-up Staircase 16675							
-2474 3401 0	2475 3399 1	Climb-up Staircase 16675							
-2475 3402 0	2475 3399 1	Climb-up Staircase 16675							
-2475 3399 0	2475 3399 1	Climb-up Staircase 16675							
-2477 3401 0	2475 3399 1	Climb-up Staircase 16675							
-2476 3402 0	2475 3399 1	Climb-up Staircase 16675							
-2378 3490 0	2378 3489 1	Climb-up Staircase 16675							
-2378 3489 1	2377 3488 0	Climb-down Staircase 16677							
-2377 3488 0	2378 3489 1	Climb-up Staircase 16675							
-2378 3489 0	2378 3489 1	Climb-up Staircase 16675							
-2377 3491 0	2378 3489 1	Climb-up Staircase 16675							
-2376 3491 0	2378 3489 1	Climb-up Staircase 16675							
-2375 3490 0	2378 3489 1	Climb-up Staircase 16675							
-2375 3489 0	2378 3489 1	Climb-up Staircase 16675							
-2384 3505 0	2384 3505 1	Climb-up Staircase 16675							
-2384 3505 1	2383 3506 0	Climb-down Staircase 16677							
-2383 3506 0	2384 3505 1	Climb-up Staircase 16675							
-2383 3507 0	2384 3505 1	Climb-up Staircase 16675							
-2384 3508 0	2384 3505 1	Climb-up Staircase 16675							
-2385 3508 0	2384 3505 1	Climb-up Staircase 16675							
-2386 3507 0	2384 3505 1	Climb-up Staircase 16675							
-2386 3506 0	2384 3505 1	Climb-up Staircase 16675							
-2385 3505 0	2384 3505 1	Climb-up Staircase 16675							
-2388 3513 0	2388 3513 1	Climb-up Staircase 16675							
-2388 3513 1	2389 3514 0	Climb-down Staircase 16677							
-2389 3514 0	2388 3513 1	Climb-up Staircase 16675							
-2390 3514 0	2388 3513 1	Climb-up Staircase 16675							
-2391 3512 0	2388 3513 1	Climb-up Staircase 16675							
-2390 3511 0	2388 3513 1	Climb-up Staircase 16675							
-2389 3511 0	2388 3513 1	Climb-up Staircase 16675							
-2388 3512 0	2388 3513 1	Climb-up Staircase 16675							
-2397 3512 0	2397 3513 1	Climb-up Staircase 16675							
-2397 3513 1	2398 3514 0	Climb-down Staircase 16677							
-2398 3514 0	2397 3513 1	Climb-up Staircase 16675							
-2399 3514 0	2397 3513 1	Climb-up Staircase 16675							
-2397 3513 0	2397 3513 1	Climb-up Staircase 16675							
-2398 3511 0	2397 3513 1	Climb-up Staircase 16675							
-2399 3511 0	2397 3513 1	Climb-up Staircase 16675							
-2400 3512 0	2397 3513 1	Climb-up Staircase 16675							
-2414 3490 0	2412 3489 1	Climb-up Staircase 16675							
-2413 3490 0	2412 3489 1	Climb-up Staircase 16675							
-2412 3489 1	2413 3490 0	Climb-down Staircase 16677							
-2412 3489 0	2412 3489 1	Climb-up Staircase 16675							
-2412 3488 0	2412 3489 1	Climb-up Staircase 16675							
-2413 3487 0	2412 3489 1	Climb-up Staircase 16675							
-2414 3487 0	2412 3489 1	Climb-up Staircase 16675							
-2415 3489 0	2412 3489 1	Climb-up Staircase 16675							
-2415 3488 0	2412 3489 1	Climb-up Staircase 16675							
-2416 3491 0	2418 3492 1	Climb-up Staircase 16675							
-2418 3492 1	2419 3491 0	Climb-down Staircase 16677							
-2419 3491 0	2418 3492 1	Climb-up Staircase 16675							
-2419 3490 0	2418 3492 1	Climb-up Staircase 16675							
-2417 3492 0	2418 3492 1	Climb-up Staircase 16675							
-2417 3489 0	2418 3492 1	Climb-up Staircase 16675							
-2416 3490 0	2418 3492 1	Climb-up Staircase 16675							
-2422 3472 0	2421 3473 1	Climb-up Staircase 16675							
-2421 3473 1	2422 3472 0	Climb-down Staircase 16677							
-2422 3471 0	2421 3473 1	Climb-up Staircase 16675							
-2421 3470 0	2421 3473 1	Climb-up Staircase 16675							
-2421 3473 0	2421 3473 1	Climb-up Staircase 16675							
-2420 3473 0	2421 3473 1	Climb-up Staircase 16675							
-2419 3472 0	2421 3473 1	Climb-up Staircase 16675							
-2419 3471 0	2421 3473 1	Climb-up Staircase 16675							
-2420 3470 0	2421 3473 1	Climb-up Staircase 16675							
-2395 3473 0	2396 3476 1	Climb-up Staircase 16675							
-2396 3476 1	2397 3475 0	Climb-down Staircase 16677							
-2397 3475 0	2396 3476 1	Climb-up Staircase 16675							
-2397 3474 0	2396 3476 1	Climb-up Staircase 16675							
-2396 3473 0	2396 3476 1	Climb-up Staircase 16675							
-2396 3476 0	2396 3476 1	Climb-up Staircase 16675							
-2395 3476 0	2396 3476 1	Climb-up Staircase 16675							
-2394 3475 0	2396 3476 1	Climb-up Staircase 16675							
-2394 3474 0	2396 3476 1	Climb-up Staircase 16675							
-2396 3503 0	2396 3500 1	Climb-up Staircase 16675							
-2396 3500 1	2395 3501 0	Climb-down Staircase 16677							
-2395 3501 0	2396 3500 1	Climb-up Staircase 16675							
-2395 3502 0	2396 3500 1	Climb-up Staircase 16675							
-2397 3500 0	2396 3500 1	Climb-up Staircase 16675							
-2397 3503 0	2396 3500 1	Climb-up Staircase 16675							
-2398 3502 0	2396 3500 1	Climb-up Staircase 16675							
-2398 3501 0	2396 3500 1	Climb-up Staircase 16675							
+2418 3416 1	2417 3417 0	Climb-down Staircase 16677						1	
+2417 3417 0	2418 3416 1	Climb-up Staircase 16675						1	
+2417 3418 0	2418 3416 1	Climb-up Staircase 16675						1	
+2418 3419 0	2418 3416 1	Climb-up Staircase 16675						1	
+2419 3419 0	2418 3416 1	Climb-up Staircase 16675						1	
+2418 3416 0	2418 3416 1	Climb-up Staircase 16675						1	
+2420 3417 0	2418 3416 1	Climb-up Staircase 16675						1	
+2420 3418 0	2418 3416 1	Climb-up Staircase 16675						1	
+2443 3415 0	2445 3416 1	Climb-up Staircase 16675						1	
+2445 3416 1	2446 3415 0	Climb-down Staircase 16677						1	
+2446 3415 0	2445 3416 1	Climb-up Staircase 16675						1	
+2446 3414 0	2445 3416 1	Climb-up Staircase 16675						1	
+2445 3413 0	2445 3416 1	Climb-up Staircase 16675						1	
+2444 3413 0	2445 3416 1	Climb-up Staircase 16675						1	
+2443 3414 0	2445 3416 1	Climb-up Staircase 16675						1	
+2445 3416 0	2445 3416 1	Climb-up Staircase 16675						1	
+2444 3416 0	2445 3416 1	Climb-up Staircase 16675						1	
+2445 3433 1	2444 3434 0	Climb-down Staircase 16677						1	
+2444 3434 0	2445 3433 1	Climb-up Staircase 16675						1	
+2444 3435 0	2445 3433 1	Climb-up Staircase 16675						1	
+2445 3436 0	2445 3433 1	Climb-up Staircase 16675						1	
+2446 3436 0	2445 3433 1	Climb-up Staircase 16675						1	
+2447 3435 0	2445 3433 1	Climb-up Staircase 16675						1	
+2447 3434 0	2445 3433 1	Climb-up Staircase 16675						1	
+2445 3433 0	2445 3433 1	Climb-up Staircase 16675						1	
+2446 3433 0	2445 3433 1	Climb-up Staircase 16675						1	
+2442 3405 0	2440 3403 1	Climb-up Staircase 16675						1	
+2440 3403 1	2439 3404 0	Climb-down Staircase 16677						1	
+2439 3404 0	2440 3403 1	Climb-up Staircase 16675						1	
+2439 3405 0	2440 3403 1	Climb-up Staircase 16675						1	
+2440 3406 0	2440 3403 1	Climb-up Staircase 16675						1	
+2441 3406 0	2440 3403 1	Climb-up Staircase 16675						1	
+2440 3403 0	2440 3403 1	Climb-up Staircase 16675						1	
+2442 3404 0	2440 3403 1	Climb-up Staircase 16675						1	
+2461 3415 0	2460 3417 1	Climb-up Staircase 16675						1	
+2460 3417 1	2461 3418 0	Climb-down Staircase 16677						1	
+2461 3418 0	2460 3417 1	Climb-up Staircase 16675						1	
+2462 3418 0	2460 3417 1	Climb-up Staircase 16675						1	
+2463 3417 0	2460 3417 1	Climb-up Staircase 16675						1	
+2463 3416 0	2460 3417 1	Climb-up Staircase 16675						1	
+2462 3415 0	2460 3417 1	Climb-up Staircase 16675						1	
+2460 3417 0	2460 3417 1	Climb-up Staircase 16675						1	
+2460 3416 0	2460 3417 1	Climb-up Staircase 16675						1	
+2457 3417 1	2456 3416 0	Climb-down Staircase 16677						1	
+2456 3416 0	2457 3417 1	Climb-up Staircase 16675						1	
+2455 3416 0	2457 3417 1	Climb-up Staircase 16675						1	
+2457 3418 0	2457 3417 1	Climb-up Staircase 16675						1	
+2457 3417 0	2457 3417 1	Climb-up Staircase 16675						1	
+2456 3419 0	2457 3417 1	Climb-up Staircase 16675						1	
+2455 3419 0	2457 3417 1	Climb-up Staircase 16675						1	
+2477 3400 0	2475 3399 1	Climb-up Staircase 16675						1	
+2475 3399 1	2474 3400 0	Climb-down Staircase 16677						1	
+2474 3400 0	2475 3399 1	Climb-up Staircase 16675						1	
+2474 3401 0	2475 3399 1	Climb-up Staircase 16675						1	
+2475 3402 0	2475 3399 1	Climb-up Staircase 16675						1	
+2475 3399 0	2475 3399 1	Climb-up Staircase 16675						1	
+2477 3401 0	2475 3399 1	Climb-up Staircase 16675						1	
+2476 3402 0	2475 3399 1	Climb-up Staircase 16675						1	
+2378 3490 0	2378 3489 1	Climb-up Staircase 16675						1	
+2378 3489 1	2377 3488 0	Climb-down Staircase 16677						1	
+2377 3488 0	2378 3489 1	Climb-up Staircase 16675						1	
+2378 3489 0	2378 3489 1	Climb-up Staircase 16675						1	
+2377 3491 0	2378 3489 1	Climb-up Staircase 16675						1	
+2376 3491 0	2378 3489 1	Climb-up Staircase 16675						1	
+2375 3490 0	2378 3489 1	Climb-up Staircase 16675						1	
+2375 3489 0	2378 3489 1	Climb-up Staircase 16675						1	
+2384 3505 0	2384 3505 1	Climb-up Staircase 16675						1	
+2384 3505 1	2383 3506 0	Climb-down Staircase 16677						1	
+2383 3506 0	2384 3505 1	Climb-up Staircase 16675						1	
+2383 3507 0	2384 3505 1	Climb-up Staircase 16675						1	
+2384 3508 0	2384 3505 1	Climb-up Staircase 16675						1	
+2385 3508 0	2384 3505 1	Climb-up Staircase 16675						1	
+2386 3507 0	2384 3505 1	Climb-up Staircase 16675						1	
+2386 3506 0	2384 3505 1	Climb-up Staircase 16675						1	
+2385 3505 0	2384 3505 1	Climb-up Staircase 16675						1	
+2388 3513 0	2388 3513 1	Climb-up Staircase 16675						1	
+2388 3513 1	2389 3514 0	Climb-down Staircase 16677						1	
+2389 3514 0	2388 3513 1	Climb-up Staircase 16675						1	
+2390 3514 0	2388 3513 1	Climb-up Staircase 16675						1	
+2391 3512 0	2388 3513 1	Climb-up Staircase 16675						1	
+2390 3511 0	2388 3513 1	Climb-up Staircase 16675						1	
+2389 3511 0	2388 3513 1	Climb-up Staircase 16675						1	
+2388 3512 0	2388 3513 1	Climb-up Staircase 16675						1	
+2397 3512 0	2397 3513 1	Climb-up Staircase 16675						1	
+2397 3513 1	2398 3514 0	Climb-down Staircase 16677						1	
+2398 3514 0	2397 3513 1	Climb-up Staircase 16675						1	
+2399 3514 0	2397 3513 1	Climb-up Staircase 16675						1	
+2397 3513 0	2397 3513 1	Climb-up Staircase 16675						1	
+2398 3511 0	2397 3513 1	Climb-up Staircase 16675						1	
+2399 3511 0	2397 3513 1	Climb-up Staircase 16675						1	
+2400 3512 0	2397 3513 1	Climb-up Staircase 16675						1	
+2414 3490 0	2412 3489 1	Climb-up Staircase 16675						1	
+2413 3490 0	2412 3489 1	Climb-up Staircase 16675						1	
+2412 3489 1	2413 3490 0	Climb-down Staircase 16677						1	
+2412 3489 0	2412 3489 1	Climb-up Staircase 16675						1	
+2412 3488 0	2412 3489 1	Climb-up Staircase 16675						1	
+2413 3487 0	2412 3489 1	Climb-up Staircase 16675						1	
+2414 3487 0	2412 3489 1	Climb-up Staircase 16675						1	
+2415 3489 0	2412 3489 1	Climb-up Staircase 16675						1	
+2415 3488 0	2412 3489 1	Climb-up Staircase 16675						1	
+2416 3491 0	2418 3492 1	Climb-up Staircase 16675						1	
+2418 3492 1	2419 3491 0	Climb-down Staircase 16677						1	
+2419 3491 0	2418 3492 1	Climb-up Staircase 16675						1	
+2419 3490 0	2418 3492 1	Climb-up Staircase 16675						1	
+2417 3492 0	2418 3492 1	Climb-up Staircase 16675						1	
+2417 3489 0	2418 3492 1	Climb-up Staircase 16675						1	
+2416 3490 0	2418 3492 1	Climb-up Staircase 16675						1	
+2422 3472 0	2421 3473 1	Climb-up Staircase 16675						1	
+2421 3473 1	2422 3472 0	Climb-down Staircase 16677						1	
+2422 3471 0	2421 3473 1	Climb-up Staircase 16675						1	
+2421 3470 0	2421 3473 1	Climb-up Staircase 16675						1	
+2421 3473 0	2421 3473 1	Climb-up Staircase 16675						1	
+2420 3473 0	2421 3473 1	Climb-up Staircase 16675						1	
+2419 3472 0	2421 3473 1	Climb-up Staircase 16675						1	
+2419 3471 0	2421 3473 1	Climb-up Staircase 16675						1	
+2420 3470 0	2421 3473 1	Climb-up Staircase 16675						1	
+2395 3473 0	2396 3476 1	Climb-up Staircase 16675						1	
+2396 3476 1	2397 3475 0	Climb-down Staircase 16677						1	
+2397 3475 0	2396 3476 1	Climb-up Staircase 16675						1	
+2397 3474 0	2396 3476 1	Climb-up Staircase 16675						1	
+2396 3473 0	2396 3476 1	Climb-up Staircase 16675						1	
+2396 3476 0	2396 3476 1	Climb-up Staircase 16675						1	
+2395 3476 0	2396 3476 1	Climb-up Staircase 16675						1	
+2394 3475 0	2396 3476 1	Climb-up Staircase 16675						1	
+2394 3474 0	2396 3476 1	Climb-up Staircase 16675						1	
+2396 3503 0	2396 3500 1	Climb-up Staircase 16675						1	
+2396 3500 1	2395 3501 0	Climb-down Staircase 16677						1	
+2395 3501 0	2396 3500 1	Climb-up Staircase 16675						1	
+2395 3502 0	2396 3500 1	Climb-up Staircase 16675						1	
+2397 3500 0	2396 3500 1	Climb-up Staircase 16675						1	
+2397 3503 0	2396 3500 1	Climb-up Staircase 16675						1	
+2398 3502 0	2396 3500 1	Climb-up Staircase 16675						1	
+2398 3501 0	2396 3500 1	Climb-up Staircase 16675						1	
 2477 3463 0	2477 3463 1	Climb-up Ladder 16683						2	
 2477 3463 1	2477 3463 0	Climb-down Ladder 16679						2	
 2476 3464 0	2476 3464 1	Climb-up Ladder 16683						2	
@@ -1966,31 +1966,31 @@
 2475 3463 1	2475 3463 0	Climb-down Ladder 16679						2	
 2476 3462 0	2476 3462 1	Climb-up Ladder 16683						2	
 2476 3462 1	2476 3462 0	Climb-down Ladder 16679						2	
-2481 3409 0	2479 3407 1	Climb-up Staircase 16675							
-2479 3407 1	2478 3408 0	Climb-down Staircase 16677							
-2478 3408 0	2479 3407 1	Climb-up Staircase 16675							
-2478 3409 0	2479 3407 1	Climb-up Staircase 16675							
-2479 3410 0	2479 3407 1	Climb-up Staircase 16675							
-2480 3410 0	2479 3407 1	Climb-up Staircase 16675							
-2479 3407 0	2479 3407 1	Climb-up Staircase 16675							
-2480 3407 0	2479 3407 1	Climb-up Staircase 16675							
-2481 3408 0	2479 3407 1	Climb-up Staircase 16675							
-2487 3407 0	2489 3409 1	Climb-up Staircase 16675							
-2489 3409 1	2490 3408 0	Climb-down Staircase 16677							
-2490 3408 0	2489 3409 1	Climb-up Staircase 16675							
-2490 3407 0	2489 3409 1	Climb-up Staircase 16675							
-2489 3406 0	2489 3409 1	Climb-up Staircase 16675							
-2488 3406 0	2489 3409 1	Climb-up Staircase 16675							
-2488 3409 0	2489 3409 1	Climb-up Staircase 16675							
-2486 3401 0	2485 3401 1	Climb-up Staircase 16675							
-2485 3401 1	2484 3402 0	Climb-down Staircase 16677							
-2484 3402 0	2485 3401 1	Climb-up Staircase 16675							
-2484 3403 0	2485 3401 1	Climb-up Staircase 16675							
-2485 3404 0	2485 3401 1	Climb-up Staircase 16675							
-2485 3401 0	2485 3401 1	Climb-up Staircase 16675							
-2487 3402 0	2485 3401 1	Climb-up Staircase 16675							
-2487 3403 0	2485 3401 1	Climb-up Staircase 16675							
-2486 3404 0	2485 3401 1	Climb-up Staircase 16675							
+2481 3409 0	2479 3407 1	Climb-up Staircase 16675						1	
+2479 3407 1	2478 3408 0	Climb-down Staircase 16677						1	
+2478 3408 0	2479 3407 1	Climb-up Staircase 16675						1	
+2478 3409 0	2479 3407 1	Climb-up Staircase 16675						1	
+2479 3410 0	2479 3407 1	Climb-up Staircase 16675						1	
+2480 3410 0	2479 3407 1	Climb-up Staircase 16675						1	
+2479 3407 0	2479 3407 1	Climb-up Staircase 16675						1	
+2480 3407 0	2479 3407 1	Climb-up Staircase 16675						1	
+2481 3408 0	2479 3407 1	Climb-up Staircase 16675						1	
+2487 3407 0	2489 3409 1	Climb-up Staircase 16675						1	
+2489 3409 1	2490 3408 0	Climb-down Staircase 16677						1	
+2490 3408 0	2489 3409 1	Climb-up Staircase 16675						1	
+2490 3407 0	2489 3409 1	Climb-up Staircase 16675						1	
+2489 3406 0	2489 3409 1	Climb-up Staircase 16675						1	
+2488 3406 0	2489 3409 1	Climb-up Staircase 16675						1	
+2488 3409 0	2489 3409 1	Climb-up Staircase 16675						1	
+2486 3401 0	2485 3401 1	Climb-up Staircase 16675						1	
+2485 3401 1	2484 3402 0	Climb-down Staircase 16677						1	
+2484 3402 0	2485 3401 1	Climb-up Staircase 16675						1	
+2484 3403 0	2485 3401 1	Climb-up Staircase 16675						1	
+2485 3404 0	2485 3401 1	Climb-up Staircase 16675						1	
+2485 3401 0	2485 3401 1	Climb-up Staircase 16675						1	
+2487 3402 0	2485 3401 1	Climb-up Staircase 16675						1	
+2487 3403 0	2485 3401 1	Climb-up Staircase 16675						1	
+2486 3404 0	2485 3401 1	Climb-up Staircase 16675						1	
 2461 3385 0	2461 3382 0	Open Gate 190							
 2461 3382 0	2461 3385 0	Open Gate 190							
 2462 3385 0	2461 3382 0	Open Gate 190							
@@ -2163,8 +2163,8 @@
 3601 3216 1	3601 3214 0	Climb-down Ladder 17975						2	
 3601 3214 0	3601 3216 1	Climb-up Ladder 17974						2	
 3598 3215 0	3598 3220 0	Climb-into Trapdoor tunnel 18083						1	
-3598 3220 0	3598 3215 0	Climb-into Tunnel 18085							
-3597 3219 0	3598 3215 0	Climb-into Tunnel 18085							
+3598 3220 0	3598 3215 0	Climb-into Tunnel 18085						1	
+3597 3219 0	3598 3215 0	Climb-into Tunnel 18085						1	
 3594 3223 0	3595 3223 1	Climb-up Shelf 18086							
 3595 3223 1	3594 3223 0	Climb-down Shelf 18087							
 3596 3223 1	3597 3223 1	Crawl-under Wall 18088							
@@ -2630,7 +2630,7 @@
 2853 3552 1	2852 3552 1	Open Heavy door 15658						1	
 2834 3542 0	2907 9968 0	Climb-down Ladder 10042						2	
 2907 9968 0	2834 3542 0	Climb-up Ladder 9742						2	
-3061 4985 1	2906 3537 0	Enter Passageway 7258							
+3061 4985 1	2906 3537 0	Enter Passageway 7258						1	
 2906 3537 0	3061 4985 1	Enter Trapdoor 7257						1	
 2915 3538 0	2914 3542 1	Climb-up Staircase 15645						1	
 2914 3542 1	2914 3538 0	Climb-down Staircase 15648						1	
@@ -4154,7 +4154,7 @@
 3432 9897 0	3431 9897 0	Open Gate 3445							
 3360 9904 0	3440 9899 0	Climb-up Ladder 12764						2	
 3440 9899 0	3360 9904 0	Climb-down Trapdoor 12762						1	
-3440 9887 0	3423 3485 0	Pass-through Holy barrier 3443							
+3440 9887 0	3423 3485 0	Pass-through Holy barrier 3443						1	
 3423 3485 0	3440 9887 0	Climb-down Trapdoor 3433						1	
 3422 3484 0	3440 9887 0	Climb-down Trapdoor 3433						1	
 3408 3489 0	3409 3489 0	Open Large door 3489						1	
@@ -4662,10 +4662,10 @@
 2833 3629 0	2833 3627 0	Climb Rocks 3748							
 2822 3635 0	2820 3635 0	Climb Rocks 3748							
 2827 3646 0	2823 10050 0	Open Secret Door 3762						1	
-2823 10050 0	2827 3646 0	Open Exit 3761							
+2823 10050 0	2827 3646 0	Open Exit 3761						1	
 2828 3646 0	2823 10050 0	Open Secret Door 3762						1	
-2824 10050 0	2827 3646 0	Open Exit 3761							
-2825 10050 0	2827 3646 0	Open Exit 3761							
+2824 10050 0	2827 3646 0	Open Exit 3761						1	
+2825 10050 0	2827 3646 0	Open Exit 3761						1	
 2852 10105 0	2852 10109 1	Climb-up Stone Staircase 3788							
 2852 10109 1	2852 10105 0	Climb-down Stone Staircase 3789							
 2853 10105 0	2852 10109 1	Climb-up Stone Staircase 3788							
@@ -4947,9 +4947,9 @@
 									
 # Stalker Den									
 1296 3375 0	1296 9767 0	Enter Cave 56439				16632>9		4	
-1296 9767 0	1296 3375 0	Exit Cave 56440				16632>9			
+1296 9767 0	1296 3375 0	Exit Cave 56440				16632>9		4	
 1262 9758 0	1259 9758 0	Climb Rope 57276			Shadows of Custodia			3	
-1259 9758 0	1262 9758 0	Climb Rope 57276			Shadows of Custodia				
+1259 9758 0	1262 9758 0	Climb Rope 57276			Shadows of Custodia			3	
 1274 9770 0	1297 9780 0	Enter Cave 57273			Shadows of Custodia				
 1297 9780 0	1274 9770 0	Enter Cave 57274			Shadows of Custodia				
 									
