@@ -83,6 +83,8 @@ enum ConfigKey
 	SHOW_TRANSPORT_INFO("showTransportInfo", ShortestPathConfig::showTransportInfo, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	SHOW_BANK_PICKUP_INFO("showBankPickupInfo", ShortestPathConfig::showBankPickupInfo, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	HIGHLIGHT_BANK_PICKUP_ITEMS("highlightBankPickupItems", ShortestPathConfig::highlightBankPickupItems, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	FILTER_BANK_PICKUP_ITEMS("filterBankPickupItems", ShortestPathConfig::filterBankPickupItems, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	AUTO_OPEN_BANK_PICKUP_FILTER("autoOpenBankPickupFilter", ShortestPathConfig::autoOpenBankPickupFilter, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	HIGHLIGHT_SPELLBOOK_SPELLS("highlightSpellbookSpells", ShortestPathConfig::highlightSpellbookSpells, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	HIGHLIGHT_INVENTORY_ITEMS("highlightInventoryItems", ShortestPathConfig::highlightInventoryItems, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	USE_POH("usePoh", ShortestPathConfig::usePoh, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),

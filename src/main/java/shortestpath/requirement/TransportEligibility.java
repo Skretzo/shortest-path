@@ -3,8 +3,8 @@ package shortestpath.requirement;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.ItemContainer;
@@ -366,7 +366,7 @@ public final class TransportEligibility
 	public BankPickupPlan bankPickupPlan(Transport transport)
 	{
 		Map<Integer, Long> items = new LinkedHashMap<>();
-		Set<Integer> bankItemIds = new HashSet<>();
+		Set<Integer> bankItemIds = new LinkedHashSet<>();
 		if (transport.getItemRequirements() == null)
 		{
 			return new BankPickupPlan(items, bankItemIds);
@@ -473,7 +473,7 @@ public final class TransportEligibility
 		{
 			return null;
 		}
-		Set<Integer> bankItemIds = new HashSet<>();
+		Set<Integer> bankItemIds = new LinkedHashSet<>();
 		addCovering(staffIds, 1, Map.of(), bankHas, bankItemIds);
 		if (bankItemIds.isEmpty())
 		{
@@ -495,7 +495,7 @@ public final class TransportEligibility
 	public BankPickupPlan targetPickupPlan(TransportItems targetItems)
 	{
 		Map<Integer, Long> items = new LinkedHashMap<>();
-		Set<Integer> bankItemIds = new HashSet<>();
+		Set<Integer> bankItemIds = new LinkedHashSet<>();
 		for (ItemRequirement group : targetItems.getRequirements())
 		{
 			boolean carried = false;

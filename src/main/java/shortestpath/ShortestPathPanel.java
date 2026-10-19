@@ -369,10 +369,12 @@ public class ShortestPathPanel extends PluginPanel
 		categories.add(bank);
 		bank.addRow(checkRow("includeBankPath"));
 		bank.addRow(spinnerRow("costBankVisit"));
-		// The bank-pickup display pair belongs with the bank routing
-		// options — the hint and item highlight only act on bank visits.
+		// The bank-pickup display rows belong with the bank routing
+		// options — the hint, item highlight and filter only act on bank visits.
 		bank.addRow(checkRow("showBankPickupInfo"));
 		bank.addRow(checkRow("highlightBankPickupItems"));
+		bank.addRow(checkRow("filterBankPickupItems"));
+		bank.addRow(checkRow("autoOpenBankPickupFilter"));
 	}
 
 	private void buildPohCategory()

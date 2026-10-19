@@ -375,6 +375,20 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean filterBankPickupItems()
+	{
+		Object value = overrides.get(ConfigKey.FILTER_BANK_PICKUP_ITEMS.getKey());
+		return value instanceof Boolean ? (boolean) value : base.filterBankPickupItems();
+	}
+
+	@Override
+	public boolean autoOpenBankPickupFilter()
+	{
+		Object value = overrides.get(ConfigKey.AUTO_OPEN_BANK_PICKUP_FILTER.getKey());
+		return value instanceof Boolean ? (boolean) value : base.autoOpenBankPickupFilter();
+	}
+
+	@Override
 	public boolean highlightSpellbookSpells()
 	{
 		Object value = overrides.get(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS.getKey());

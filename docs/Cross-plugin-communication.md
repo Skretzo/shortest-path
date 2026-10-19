@@ -144,9 +144,9 @@ eventBus.post(new PluginMessage("shortestpath", "path", data));
 `config` overrides the user's settings until the next `clear`. Each `path` message with a non-empty
 `config` replaces the previous overrides. Valid keys:
 
-- `boolean`: `avoidWilderness`, `collisionAwareBlockedTargets`, `drawClickPoints`,
+- `boolean`: `autoOpenBankPickupFilter`, `avoidWilderness`, `collisionAwareBlockedTargets`, `drawClickPoints`,
   `drawCollisionMap`, `drawMap`, `drawMinimap`, `drawTiles`, `drawTransports`,
-  `highlightBankPickupItems`, `highlightInventoryItems`, `highlightSpellbookSpells`,
+  `filterBankPickupItems`, `highlightBankPickupItems`, `highlightInventoryItems`, `highlightSpellbookSpells`,
   `includeBankPath`, `postTransports`, `respawnPrifddinas`, `showBankPickupInfo`,
   `showTeleportPulse`, `showTransportInfo`, `showUnreachableText`,
   `unlockCanoeAxe`, `unlockDragontoothPassage`, `unlockMorUlRek`, `unlockXericsHonour`, `usePoh`,

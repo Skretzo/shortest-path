@@ -101,6 +101,8 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private BankItemHighlightOverlay bankItemHighlightOverlay;
 	@Inject
+	private BankPickupFilter bankPickupFilter;
+	@Inject
 	private SpellbookHighlightOverlay spellbookHighlightOverlay;
 	@Inject
 	private InventoryHighlightOverlay inventoryHighlightOverlay;
@@ -209,6 +211,8 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(bankItemHighlightOverlay);
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
+		eventBus.register(bankPickupFilter);
+		bankPickupFilter.startUp();
 
 		if (settings.lifecycle().drawDebugPanel())
 		{
@@ -245,6 +249,8 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(spellbookHighlightOverlay);
 		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
+		eventBus.unregister(bankPickupFilter);
+		bankPickupFilter.reset();
 
 		scheduler.shutdown();
 
