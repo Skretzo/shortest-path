@@ -191,10 +191,6 @@ public final class ReverseLabels
 			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started, true);
 	}
 
-	public TargetOverlay overlay()
-	{
-		return overlay;
-	}
 	public int label(int node, BankVisitState banked)
 	{
 		return labels[SiteGraph.stateId(node, banked)];

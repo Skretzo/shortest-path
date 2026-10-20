@@ -3,6 +3,7 @@ package shortestpath.requirement.model;
 import java.util.Arrays;
 import net.runelite.api.Skill;
 import shortestpath.requirement.RejectionReason;
+import lombok.AllArgsConstructor;
 
 /**
  * Immutable skill-level set in the extended-index layout: one slot per
@@ -13,6 +14,7 @@ import shortestpath.requirement.RejectionReason;
  * layout. The backing array is the TSV wire contract and never escapes
  * this type.
  */
+@AllArgsConstructor
 public final class SkillLevels
 {
 	/**
@@ -37,11 +39,6 @@ public final class SkillLevels
 	public static final SkillLevels NONE = new SkillLevels(new int[LENGTH]);
 
 	private final int[] levels;
-
-	private SkillLevels(int[] levels)
-	{
-		this.levels = levels;
-	}
 
 	/**
 	 * Wraps a raw extended-index array into an immutable set. The input is
