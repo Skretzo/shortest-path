@@ -4,8 +4,6 @@ import java.util.Map;
 
 import lombok.Getter;
 import lombok.AllArgsConstructor;
-import lombok.ToString;
-import lombok.EqualsAndHashCode;
 
 /**
  * Represents a variable-based requirement for a transport.
@@ -18,8 +16,6 @@ import lombok.EqualsAndHashCode;
  */
 @AllArgsConstructor
 @Getter
-@ToString
-@EqualsAndHashCode
 public class VarRequirement
 {
 
@@ -97,11 +93,36 @@ public class VarRequirement
 		return varType == VarType.VARPLAYER;
 	}
 
+	@Override
+	public int hashCode()
+	{
+		int result = varType.hashCode();
+		result = 31 * result + id;
+		result = 31 * result + value;
+		result = 31 * result + checkType.hashCode();
+		return result;
+	}
 
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+		VarRequirement that = (VarRequirement) o;
+		return id == that.id && value == that.value && varType == that.varType && checkType == that.checkType;
+	}
 
-
-
-
+	@Override
+	public String toString()
+	{
+		return varType + "[" + id + " " + checkType.getCode() + " " + value + "]";
+	}
 
 	/**
 	 * The type of variable this requirement checks.

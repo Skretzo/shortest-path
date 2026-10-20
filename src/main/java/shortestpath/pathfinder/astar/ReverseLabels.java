@@ -2,12 +2,14 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Reverse labels in the relaxed graph with a clique oracle and sparse production path. */
 @AllArgsConstructor
 public final class ReverseLabels
 {
-	private final TargetOverlay overlay;
+	@Getter @Accessors(fluent = true) private final TargetOverlay overlay;
 	private final int[] labels;
 	private final int[] generatorOrigins;
 	private final int[] generatorWeights;
@@ -17,9 +19,8 @@ public final class ReverseLabels
 	private final int sparseRelaxations;
 	private final int explicitRelaxations;
 	private final int attachmentRelaxations;
-	private final long elapsedNanos;
-	private final boolean sparse;
-
+	@Getter @Accessors(fluent = true) private final long elapsedNanos;
+	@Getter @Accessors(fluent = true) private final boolean sparse;
 
 
 	/** Production path; test fixtures without a sparse network fall back to the clique reference. */
@@ -188,10 +189,6 @@ public final class ReverseLabels
 			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started, true);
 	}
 
-	public TargetOverlay overlay()
-	{
-		return overlay;
-	}
 	public int label(int node, boolean banked)
 	{
 		return labels[SiteGraph.stateId(node, banked)];
@@ -224,10 +221,7 @@ public final class ReverseLabels
 	{
 		return pushes;
 	}
-	public boolean sparse()
-	{
-		return sparse;
-	}
+
 	public int sparseRelaxationCount()
 	{
 		return sparseRelaxations;
@@ -240,10 +234,7 @@ public final class ReverseLabels
 	{
 		return attachmentRelaxations;
 	}
-	public long elapsedNanos()
-	{
-		return elapsedNanos;
-	}
+
 	boolean hasProvenance()
 	{
 		return generatorOrigins != null;

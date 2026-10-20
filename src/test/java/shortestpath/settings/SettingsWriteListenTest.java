@@ -272,7 +272,7 @@ public class SettingsWriteListenTest
 	@Test
 	public void configuredSetPassesThroughRaw()
 	{
-		Set<PohNexusPortal> portals = EnumSet.of(PohNexusPortal.VARROCK);
+		Set<PohNexusPortal> portals = Set.of(PohNexusPortal.VARROCK);
 		TestShortestPathConfig config = new TestShortestPathConfig()
 		{
 			@Override
@@ -293,7 +293,7 @@ public class SettingsWriteListenTest
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
 		Settings settings = service(configManager, new TestShortestPathConfig());
-		Set<PohNexusPortal> portals = EnumSet.of(PohNexusPortal.VARROCK);
+		Set<PohNexusPortal> portals = Set.of(PohNexusPortal.VARROCK);
 
 		settings.write("pohNexusPortals", portals);
 

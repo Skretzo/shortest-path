@@ -3,6 +3,8 @@ package shortestpath.pathfinder.astar;
 import java.util.function.BooleanSupplier;
 import shortestpath.pathfinder.CollisionMap;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Target-lifetime preparation: the target overlay, its reverse labels and the heuristic built
@@ -13,10 +15,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public final class PreparedTarget
 {
-	private final TargetOverlay overlay;
-	private final PreparedHeuristic heuristic;
-	private final long reverseSearchNanos;
-	private final long heuristicPrepareNanos;
+	@Getter @Accessors(fluent = true) private final TargetOverlay overlay;
+	@Getter @Accessors(fluent = true) private final PreparedHeuristic heuristic;
+	@Getter @Accessors(fluent = true) private final long reverseSearchNanos;
+	@Getter @Accessors(fluent = true) private final long heuristicPrepareNanos;
 
 
 
@@ -65,27 +67,15 @@ public final class PreparedTarget
 			restrictions, progressed, goal);
 	}
 
-	public TargetOverlay overlay()
-	{
-		return overlay;
-	}
-	public PreparedHeuristic heuristic()
-	{
-		return heuristic;
-	}
+
+
 	/** The target tiles, in unsigned order. */
 	public int[] packedTargets()
 	{
 		return overlay.packedTargets();
 	}
 	/** Time the reverse relaxed search took when this target was prepared. */
-	public long reverseSearchNanos()
-	{
-		return reverseSearchNanos;
-	}
+
 	/** Time the heuristic seed/generator tables took when this target was prepared. */
-	public long heuristicPrepareNanos()
-	{
-		return heuristicPrepareNanos;
-	}
+
 }

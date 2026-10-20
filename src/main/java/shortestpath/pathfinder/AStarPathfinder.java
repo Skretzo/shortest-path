@@ -16,13 +16,14 @@ import shortestpath.pathfinder.astar.PreparedTarget;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.SearchRestrictions;
 import shortestpath.pathfinder.astar.SiteGraph;
+import lombok.Getter;
 
 /** ActiveSearch adapter for the A* core. */
 public final class AStarPathfinder implements ActiveSearch
 {
 	private final PathfinderStats stats = new PathfinderStats();
-	private final int start;
-	private final Targets targets;
+	@Getter private final int start;
+	@Getter private final Targets targets;
 	// The states the search terminates on: the targets plus each blocked target's fallback tiles,
 	// resolved the same way the legacy backend resolves them (issue #640), each in the bank layers
 	// where the player holds that target's items. {@code null} for a search that failed to start.
@@ -35,7 +36,7 @@ public final class AStarPathfinder implements ActiveSearch
 	private final SearchRestrictions restrictions;
 	private final long cutoffMillis;
 	private final double heuristicWeight;
-	private final long accountPrepareNanos;
+	@Getter private final long accountPrepareNanos;
 	private volatile long routingStaticNanos;
 	private volatile long graphPrepareNanos;
 	private final String failure;
@@ -207,15 +208,9 @@ public final class AStarPathfinder implements ActiveSearch
 		cancelled = true;
 	}
 
-	@Override
-	public int getStart()
-	{ return start;
-	}
 
-	@Override
-	public Targets getTargets()
-	{ return targets;
-	}
+
+
 
 	@Override
 	public List<PathStep> getPath()
@@ -263,9 +258,7 @@ public final class AStarPathfinder implements ActiveSearch
 		return stats.started && stats.ended ? aStarStats : null;
 	}
 
-	public long getAccountPrepareNanos()
-	{ return accountPrepareNanos;
-	}
+
 
 	public long getRoutingStaticNanos()
 	{ return routingStaticNanos;

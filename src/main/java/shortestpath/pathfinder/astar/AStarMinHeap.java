@@ -1,12 +1,14 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Primitive duplicate-entry min-heap ordered by (priority, cost, state). */
 public final class AStarMinHeap
 {
 	private int[] priorities, costs, states;
-	private int size;
+	@Getter @Accessors(fluent = true) private int size;
 	private int poppedPriority, poppedCost, poppedState;
 
 	public AStarMinHeap(int initialCapacity)
@@ -17,10 +19,7 @@ public final class AStarMinHeap
 		states = new int[capacity];
 	}
 
-	public int size()
-	{
-		return size;
-	}
+
 	public boolean isEmpty()
 	{
 		return size == 0;

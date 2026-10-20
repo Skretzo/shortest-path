@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import shortestpath.pathfinder.CollisionMap;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Immutable primitive-array representation of the A* backend's static routing data. */
 public final class RoutingStatic
@@ -14,7 +16,7 @@ public final class RoutingStatic
 	private final char[] northOffsets, southOffsets;
 	private final byte[] walkingMasks;
 	private final int[] siteTiles, siteComponentOffsets, siteComponentIds;
-	private final int routingComponentCount;
+	@Getter @Accessors(fluent = true) private final int routingComponentCount;
 	private final int[] componentSiteOffsets, componentSiteIds, reachableBankTiles;
 	private final BitSet reachableBankNodes, reachableBankSites;
 	private final int[] crossingFromSite, crossingToSite, crossingCosts;
@@ -200,10 +202,7 @@ public final class RoutingStatic
 	{
 		return siteTiles.length;
 	}
-	public int routingComponentCount()
-	{
-		return routingComponentCount;
-	}
+
 	public int reachableBankCount()
 	{
 		return reachableBankTiles.length;

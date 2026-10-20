@@ -1,6 +1,8 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Immutable two-layer account-specific site graph with reverse CSR edges. */
 public final class SiteGraph
@@ -16,8 +18,8 @@ public final class SiteGraph
 
 	private final RoutingStatic stat;
 	private final PreparedRoutingAccount account;
-	private final int nodeCount;
-	private final boolean hasBankedGlobalHub;
+	@Getter @Accessors(fluent = true) private final int nodeCount;
+	@Getter @Accessors(fluent = true) private final boolean hasBankedGlobalHub;
 	private final int[] reverseOffsets;
 	private final int[] reverseFromStates;
 	private final int[] reverseCosts;
@@ -101,18 +103,12 @@ public final class SiteGraph
 	{
 		return stat.siteCount();
 	}
-	public int nodeCount()
-	{
-		return nodeCount;
-	}
+
 	public int stateCount()
 	{
 		return nodeCount * 2;
 	}
-	public boolean hasBankedGlobalHub()
-	{
-		return hasBankedGlobalHub;
-	}
+
 	public int bankedGlobalHubNode()
 	{
 		return hasBankedGlobalHub ? stat.siteCount() : -1;

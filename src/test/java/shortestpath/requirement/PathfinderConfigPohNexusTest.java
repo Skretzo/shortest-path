@@ -14,7 +14,7 @@ public class PathfinderConfigPohNexusTest
 	@Test
 	public void testSimplePortalFiltering()
 	{
-		Set<PohNexusPortal> selected = EnumSet.of(PohNexusPortal.ANNAKARL);
+		Set<PohNexusPortal> selected = Set.of(PohNexusPortal.ANNAKARL);
 
 		assertTrue(PohService.isNexusPortalEnabled(selected, "Annakarl Portal"));
 		assertFalse(PohService.isNexusPortalEnabled(selected, "Ardougne Portal"));
@@ -23,12 +23,12 @@ public class PathfinderConfigPohNexusTest
 	@Test
 	public void testGroupedPortalFiltering()
 	{
-		Set<PohNexusPortal> selected = EnumSet.of(PohNexusPortal.CAMELOT);
+		Set<PohNexusPortal> selected = Set.of(PohNexusPortal.CAMELOT);
 
 		assertTrue(PohService.isNexusPortalEnabled(selected, "Camelot Portal"));
 		assertTrue(PohService.isNexusPortalEnabled(selected, "Seers' Village Portal"));
 
-		selected = EnumSet.noneOf(PohNexusPortal.class);
+		selected = Set.<PohNexusPortal>of();
 		assertFalse(PohService.isNexusPortalEnabled(selected, "Camelot Portal"));
 		assertFalse(PohService.isNexusPortalEnabled(selected, "Seers' Village Portal"));
 	}
@@ -36,13 +36,13 @@ public class PathfinderConfigPohNexusTest
 	@Test
 	public void testRespawnPortalFiltering()
 	{
-		Set<PohNexusPortal> selected = EnumSet.of(PohNexusPortal.RESPAWN);
+		Set<PohNexusPortal> selected = Set.of(PohNexusPortal.RESPAWN);
 		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
 		{
 			assertTrue(PohService.isNexusPortalEnabled(selected, displayInfo));
 		}
 
-		selected = EnumSet.noneOf(PohNexusPortal.class);
+		selected = Set.<PohNexusPortal>of();
 		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
 		{
 			assertFalse(PohService.isNexusPortalEnabled(selected, displayInfo));
@@ -53,6 +53,6 @@ public class PathfinderConfigPohNexusTest
 	public void testUnknownPortalRemainsEnabled()
 	{
 		assertTrue(PohService.isNexusPortalEnabled(
-			EnumSet.noneOf(PohNexusPortal.class), "Boat Portal"));
+			Set.<PohNexusPortal>of(), "Boat Portal"));
 	}
 }

@@ -21,12 +21,10 @@ import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.parser.VarRequirementParser;
 import shortestpath.transport.parser.WorldPointParser;
 import shortestpath.requirement.model.TransportItems;
-import lombok.ToString;
 
 /**
  * This class represents a travel point between two WorldPoints.
  */
-@ToString
 @Slf4j
 public class Transport
 {
@@ -309,7 +307,17 @@ public class Transport
 		}
 	}
 
-
+	@Override
+	public String toString()
+	{
+		return ("(" +
+			WorldPointUtil.unpackWorldX(origin) + ", " +
+			WorldPointUtil.unpackWorldY(origin) + ", " +
+			WorldPointUtil.unpackWorldPlane(origin) + ") to (" +
+			WorldPointUtil.unpackWorldX(destination) + ", " +
+			WorldPointUtil.unpackWorldY(destination) + ", " +
+			WorldPointUtil.unpackWorldPlane(destination) + ")");
+	}
 
 	/**
 	 * Whether the transport has one or more quest requirements

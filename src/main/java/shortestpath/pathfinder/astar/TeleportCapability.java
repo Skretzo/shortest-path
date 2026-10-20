@@ -2,6 +2,8 @@ package shortestpath.pathfinder.astar;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Which global teleports the A* backend lets the player cast from a tile, by the tile's
@@ -26,7 +28,7 @@ public enum TeleportCapability
 {
 	OVER_30(31), OVER_20(30), OVER_0(20), ALL(0);
 
-	private final int castLevel;
+	@Getter @Accessors(fluent = true) private final int castLevel;
 
 	TeleportCapability(int castLevel)
 	{
@@ -34,10 +36,7 @@ public enum TeleportCapability
 	}
 
 	/** The wilderness level legacy checks a global teleport against in this band. */
-	public int castLevel()
-	{
-		return castLevel;
-	}
+
 
 	/** Whether {@code transport} can be cast as a global teleport in this band. */
 	public boolean canCast(Transport transport)

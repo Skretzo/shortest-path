@@ -16,6 +16,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.poh.PohMountedItem;
+import java.util.HashSet;
 
 
 
@@ -46,8 +47,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "avoidWilderness",
 		name = "Avoid wilderness",
-		description = "Whether the wilderness should be avoided if possible<br>" +
-			"(otherwise, will e.g. use wilderness lever from Edgeville to Ardougne)",
+		description = "Avoid the wilderness where possible",
 		position = 41,
 		section = sectionSettings
 	)
@@ -59,8 +59,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useAgilityShortcuts",
 		name = "Use agility shortcuts",
-		description = "Whether to include agility shortcuts in the path.<br>" +
-			"You must also have the required agility level",
+		description = "Include agility shortcuts in the path.<br>",
 		position = 42,
 		section = sectionSettings
 	)
@@ -72,8 +71,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useGrappleShortcuts",
 		name = "Use grapple shortcuts",
-		description = "Whether to include crossbow grapple agility shortcuts in the path.<br>" +
-			"You must also have the required agility, ranged and strength levels",
+		description = "Include crossbow grapple agility shortcuts in the path.<br>",
 		position = 43,
 		section = sectionSettings
 	)
@@ -85,8 +83,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useBoats",
 		name = "Use boats",
-		description = "Whether to include small boats in the path<br>" +
-			"(e.g. the boat to Fishing Platform)",
+		description = "Include small boats in the path<br>",
 		position = 44,
 		section = sectionSettings
 	)
@@ -98,7 +95,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useCanoes",
 		name = "Use canoes",
-		description = "Whether to include canoes in the path",
+		description = "Include canoes in the path",
 		position = 45,
 		section = sectionSettings
 	)
@@ -110,7 +107,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useCharterShips",
 		name = "Use charter ships",
-		description = "Whether to include charter ships in the path",
+		description = "Include charter ships in the path",
 		position = 46,
 		section = sectionSettings
 	)
@@ -122,8 +119,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useShips",
 		name = "Use ships",
-		description = "Whether to include passenger ships in the path<br>" +
-			"(e.g. the customs ships to Karamja)",
+		description = "Include passenger ships in the path<br>",
 		position = 47,
 		section = sectionSettings
 	)
@@ -135,8 +131,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useFairyRings",
 		name = "Use fairy rings",
-		description = "Whether to include fairy rings in the path.<br>" +
-			"You must also have completed the required quests or miniquests",
+		description = "Include fairy rings in the path.<br>",
 		position = 48,
 		section = sectionSettings
 	)
@@ -148,7 +143,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useGnomeGliders",
 		name = "Use gnome gliders",
-		description = "Whether to include gnome gliders in the path",
+		description = "Include gnome gliders in the path",
 		position = 49,
 		section = sectionSettings
 	)
@@ -160,7 +155,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useHotAirBalloons",
 		name = "Use hot air balloons",
-		description = "Whether to include hot air balloons in the path",
+		description = "Include hot air balloons in the path",
 		position = 50,
 		section = sectionSettings
 	)
@@ -172,7 +167,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useMagicCarpets",
 		name = "Use magic carpets",
-		description = "Whether to include magic carpets in the path",
+		description = "Include magic carpets in the path",
 		position = 51,
 		section = sectionSettings
 	)
@@ -184,8 +179,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useMagicMushtrees",
 		name = "Use magic mushtrees",
-		description = "Whether to include Fossil Island Magic Mushtrees in the path<br>" +
-			"(e.g. the Mycelium transport network from Verdant Valley to Mushroom Meadow)",
+		description = "Include Fossil Island Magic Mushtrees in the path<br>",
 		position = 52,
 		section = sectionSettings
 	)
@@ -197,8 +191,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useMinecarts",
 		name = "Use minecarts",
-		description = "Whether to include minecarts in the path<br>" +
-			"(e.g. the Keldagrim and Lovakengj minecart networks)",
+		description = "Include minecarts in the path<br>",
 		position = 53,
 		section = sectionSettings
 	)
@@ -210,7 +203,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useQuetzals",
 		name = "Use quetzals",
-		description = "Whether to include quetzals in the path",
+		description = "Include quetzals in the path",
 		position = 54,
 		section = sectionSettings
 	)
@@ -222,7 +215,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useSpiritTrees",
 		name = "Use spirit trees",
-		description = "Whether to include spirit trees in the path",
+		description = "Include spirit trees in the path",
 		position = 55,
 		section = sectionSettings
 	)
@@ -234,7 +227,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useTeleportationItems",
 		name = "Use teleportation items",
-		description = "Whether to include teleportation items from the player's inventory and equipment.<br>" +
+		description = "Include teleportation items from player's inventory and equipment.<br>" +
 			"Options labelled (perm) only use permanent non-charge items.<br>" +
 			"The All options do not check skill, quest or item requirements.",
 		position = 56,
@@ -248,8 +241,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useTeleportationLevers",
 		name = "Use teleportation levers",
-		description = "Whether to include teleportation levers in the path<br>" +
-			"(e.g. the lever from Edgeville to Wilderness)",
+		description = "Include teleportation levers in the path<br>",
 		position = 57,
 		section = sectionSettings
 	)
@@ -261,8 +253,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useTeleportationPortals",
 		name = "Use teleportation portals",
-		description = "Whether to include teleportation portals in the path<br>" +
-			"(e.g. the portal from Ferox Enclave to Castle Wars)",
+		description = "Include teleportation portals in the path<br>",
 		position = 58,
 		section = sectionSettings
 	)
@@ -274,7 +265,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useTeleportationSpells",
 		name = "Use teleportation spells",
-		description = "Whether to include teleportation spells in the path",
+		description = "Include teleportation spells in the path",
 		position = 59,
 		section = sectionSettings
 	)
@@ -286,7 +277,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useTeleportationSpellsHome",
 		name = "Use Home Teleport spells",
-		description = "Whether to include Home Teleport spells in the path",
+		description = "Include Home Teleport spells in the path",
 		position = 60,
 		section = sectionSettings
 	)
@@ -298,8 +289,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useTeleportationMinigames",
 		name = "Use teleportation to minigames",
-		description = "Whether to include teleportation to minigames/activities/grouping in the path<br>" +
-			"(e.g. the Nightmare Zone minigame teleport). These teleports share a 20 minute cooldown.",
+		description = "Include teleportation to minigames/activities/grouping <br>",
 		position = 61,
 		section = sectionSettings
 	)
@@ -311,7 +301,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useWildernessObelisks",
 		name = "Use wilderness obelisks",
-		description = "Whether to include wilderness obelisks in the path",
+		description = "Include wilderness obelisks in the path",
 		position = 62,
 		section = sectionSettings
 	)
@@ -323,7 +313,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useSeasonalTransports",
 		name = "Use seasonal transports",
-		description = "Whether to include seasonal transports like League teleports in the path",
+		description = "Include seasonal transports like League teleports in the path",
 		position = 63,
 		section = sectionSettings
 	)
@@ -364,7 +354,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "unlockXericsHonour",
 		name = "Xeric's Honour unlocked",
-		description = "Enable if you have used an ancient tablet on your Xeric's talisman.<br>" +
+		description = "Enable if you have used an ancient tablet on Xeric's talisman.<br>" +
 			"The game does not expose the tablet unlock to the client,<br>" +
 			"so the plugin cannot detect it automatically.<br>" +
 			"Enabling this declares the unlock without verification",
@@ -395,7 +385,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "unlockMorUlRek",
 		name = "Mor Ul Rek inner city unlocked",
-		description = "Enable after showing a fire cape to a TzHaar-Ket guard to permanently unlock the inner city.<br>" +
+		description = "Enable after showing a fire cape to a TzHaar-Ket guard to permanently unlock inner city.<br>" +
 			"The plugin cannot currently detect this unlock automatically.<br>" +
 			"Once enabled, you do not need to carry a fire cape to use the hot vent doors",
 		position = 68,
@@ -409,7 +399,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "includeBankPath",
 		name = "Include path to bank",
-		description = "Whether to include the path to the closest bank<br>" +
+		description = "Include the path to the closest bank<br>" +
 			"when suggesting teleports from the bank",
 		position = 69,
 		section = sectionSettings
@@ -435,7 +425,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "cancelInstead",
 		name = "Cancel instead of recalculating",
-		description = "Whether the path should be cancelled rather than recalculated " +
+		description = "Whether path should be cancelled rather than recalculated " +
 			"when the recalculate distance limit is exceeded",
 		position = 71,
 		section = sectionSettings
@@ -452,7 +442,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "recalculateDistance",
 		name = "Recalculate distance",
-		description = "Distance from the path the player should be for it to be recalculated (-1 for never)",
+		description = "Distance from path player should be for it to be recalculated (-1 for never)",
 		position = 72,
 		section = sectionSettings
 	)
@@ -468,7 +458,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "finishDistance",
 		name = "Finish distance",
-		description = "Distance from the target tile at which the path should be ended (-1 for never)",
+		description = "Distance from target tile at which path should be ended (-1 for never)",
 		position = 73,
 		section = sectionSettings
 	)
@@ -483,7 +473,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "unreachableTargetDistanceThreshold",
 		name = "Unreachable target distance",
-		description = "Distance from the target at which a finished path is considered not to reach the target." +
+		description = "Distance from target at which a finished path is considered not to reach target." +
 			"<br>Useful for determining if a path is potentially invalid.",
 		position = 74,
 		section = sectionSettings
@@ -496,7 +486,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showUnreachableText",
 		name = "Show unreachable text",
-		description = "Whether to display text on the player tile when the destination cannot be reached",
+		description = "display text on player tile when destination cannot be reached",
 		position = 75,
 		section = sectionSettings
 	)
@@ -508,7 +498,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showTileCounter",
 		name = "Show tile counter",
-		description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
+		description = "display number of tiles travelled, number of tiles remaining or disable counting",
 		position = 76,
 		section = sectionSettings
 	)
@@ -556,7 +546,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "aStarHeuristicWeight",
 		name = "A* heuristic weight",
-		description = "Makes the A* backend search faster at the price of a suboptimal route.<br>" +
+		description = "Makes A* backend search faster at price of a suboptimal route.<br>" +
 			"The route costs at most this percentage of the optimal route's cost:<br>" +
 			"100 always finds the optimal route, 300 may find one up to 3x as costly.",
 		position = 81,
@@ -570,7 +560,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showTransportInfo",
 		name = "Show transport info",
-		description = "Whether to display transport destination hint info, e.g. which chat option and text to click",
+		description = "display transport destination hint info, e.g. which chat option and text to click",
 		position = 82,
 		section = sectionSettings
 	)
@@ -582,7 +572,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showBankPickupInfo",
 		name = "Show transport hint at pickup",
-		description = "When standing at a bank on the path, also show the transport hint for the next step requiring an item pickup",
+		description = "When standing at a bank on path, also show transport hint for next step requiring an item pickup",
 		position = 83,
 		section = sectionSettings
 	)
@@ -594,7 +584,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "highlightBankPickupItems",
 		name = "Highlight bank pickup items",
-		description = "Highlight items in the bank that need to be picked up for the current path",
+		description = "Highlight items in bank that need to be picked up for current path",
 		position = 136,
 		section = sectionSettings
 	)
@@ -606,7 +596,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "highlightSpellbookSpells",
 		name = "Highlight spellbook spells",
-		description = "Highlight spells in the spellbook that need to be cast for the current path step",
+		description = "Highlight spells in spellbook that need to be cast for current path step",
 		position = 137,
 		section = sectionSettings
 	)
@@ -618,7 +608,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "highlightInventoryItems",
 		name = "Highlight inventory items",
-		description = "Highlight items in the inventory and equipment that need to be used for the current path step",
+		description = "Highlight items in inventory and equipment that need to be used for current path step",
 		position = 138,
 		section = sectionSettings
 	)
@@ -630,7 +620,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "collisionAwareBlockedTargets",
 		name = "Collision-aware blocked targets",
-		description = "When the target tile cannot be stood on, limit the fallback goal tiles to tiles" +
+		description = "When target tile cannot be stood on, limit fallback goal tiles to tiles" +
 			"<br>connected to it through the collision map (the same side of walls), instead of every" +
 			"<br>walkable tile within the unreachable target distance",
 		position = 139,
@@ -644,7 +634,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "useSailingMoves",
 		name = "Sail on boats",
-		description = "While on a boat, find a path that sails the boat's 16 headings at its base speed<br>" +
+		description = "While on a boat, find a path that sails boat's 16 headings at its base speed<br>" +
 			"with its whole hull clear, and draw it in blue, instead of a walking path",
 		position = 140,
 		section = sectionSettings
@@ -678,7 +668,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "usePohFairyRing",
 		name = "POH fairy ring",
-		description = "Whether to include the POH fairy ring in the path.<br>" +
+		description = "Include the POH fairy ring in the path.<br>" +
 			"Enable this if you have built a fairy ring in your house (85 Construction or boosted)",
 		position = 143,
 		section = sectionPoh
@@ -691,7 +681,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "usePohSpiritTree",
 		name = "POH spirit tree",
-		description = "Whether to include the POH spirit tree in the path.<br>" +
+		description = "Include the POH spirit tree in the path.<br>" +
 			"Enable this if you have built a spirit tree in your house (75 Construction, 83 Farming or boosted)",
 		position = 144,
 		section = sectionPoh
@@ -722,8 +712,8 @@ public interface ShortestPathConfig extends Config
 	default Set<PohNexusPortal> pohNexusPortals()
 	{
 		return useTeleportationPortalsPoh()
-			? EnumSet.allOf(PohNexusPortal.class)
-			: EnumSet.noneOf(PohNexusPortal.class);
+			? new HashSet<>(PohNexusPortal.values())
+			: new HashSet<>();
 	}
 
 	@ConfigItem(
@@ -749,8 +739,8 @@ public interface ShortestPathConfig extends Config
 	default Set<PohMountedItem> pohMountedItems()
 	{
 		return usePohMountedItems()
-			? EnumSet.allOf(PohMountedItem.class)
-			: EnumSet.noneOf(PohMountedItem.class);
+			? new HashSet<>(PohMountedItem.values())
+			: new HashSet<>();
 	}
 
 	/**
@@ -771,7 +761,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "usePohObelisk",
 		name = "POH wilderness obelisk",
-		description = "Whether to include the POH wilderness obelisk in the path.<br>" +
+		description = "Include the POH wilderness obelisk in the path.<br>" +
 			"Enable this if you have built an obelisk in your house (80 Construction or boosted)",
 		position = 149,
 		section = sectionPoh
@@ -1197,7 +1187,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "costBankVisit",
 		name = "Bank visit threshold",
-		description = "How many extra tiles fetching a teleport item from your bank must save<br>" +
+		description = "How many extra tiles fetching a teleport item from bank must save<br>" +
 			"to be preferred over options already at hand (0 treats banking as free)",
 		position = 176,
 		section = sectionThresholds
@@ -1209,7 +1199,7 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Display",
-		description = "Options for displaying the path on the world map, minimap and scene tiles",
+		description = "Options for displaying path on world map, minimap and scene tiles",
 		position = 177
 	)
 	String sectionDisplay = "sectionDisplay";
@@ -1217,7 +1207,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawMap",
 		name = "Draw path on world map",
-		description = "Whether the path should be drawn on the world map",
+		description = "Whether path should be drawn on the world map",
 		position = 178,
 		section = sectionDisplay
 	)
@@ -1229,7 +1219,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawMinimap",
 		name = "Draw path on minimap",
-		description = "Whether the path should be drawn on the minimap",
+		description = "Whether path should be drawn on the minimap",
 		position = 179,
 		section = sectionDisplay
 	)
@@ -1241,7 +1231,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawTiles",
 		name = "Draw path on tiles",
-		description = "Whether the path should be drawn on the game tiles",
+		description = "Whether path should be drawn on the game tiles",
 		position = 180,
 		section = sectionDisplay
 	)
@@ -1253,7 +1243,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "pathStyle",
 		name = "Path style",
-		description = "Whether to display the path as tiles, a segmented line, or a line with direction arrows",
+		description = "display path as tiles, a segmented line, or a line with direction arrows",
 		position = 181,
 		section = sectionDisplay
 	)
@@ -1265,7 +1255,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showTeleportPulse",
 		name = "Teleport pulse",
-		description = "Animate a pulsing highlight on the tile when the next teleport on the path is due",
+		description = "Animate a pulsing highlight on tile when next teleport on path is due",
 		position = 182,
 		section = sectionDisplay
 	)
@@ -1285,7 +1275,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPath",
 		name = "Path",
-		description = "Colour of the path tiles on the world map, minimap and in the game scene",
+		description = "Colour of path tiles on world map, minimap and in game scene",
 		position = 184,
 		section = sectionColours
 	)
@@ -1298,7 +1288,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPathCalculating",
 		name = "Calculating",
-		description = "Colour of the path tiles while the pathfinding calculation is in progress," +
+		description = "Colour of path tiles while pathfinding calculation is in progress," +
 			"<br>and the colour of unused targets if there are more than a single target",
 		position = 185,
 		section = sectionColours
@@ -1312,7 +1302,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPathUnreachable",
 		name = "Unreachable",
-		description = "Colour of the path tiles when pathfinding has finished but the target is still too far away",
+		description = "Colour of path tiles when pathfinding has finished but target is still too far away",
 		position = 186,
 		section = sectionColours
 	)
@@ -1376,7 +1366,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourBankPickupHighlight",
 		name = "Bank pickup highlight",
-		description = "Colour used to highlight bank items that need to be picked up for the current path",
+		description = "Colour used to highlight bank items that need to be picked up for current path",
 		position = 200,
 		section = sectionColours
 	)
@@ -1415,7 +1405,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawTransports",
 		name = "Draw transports",
-		description = "Draw all transports on the map and game view.<br>White = available, Orange = unavailable (missing requirements)",
+		description = "Draw all transports on map and game view.<br>White = available, Orange = unavailable (missing requirements)",
 		position = 204,
 		section = sectionDebug
 	)
@@ -1427,7 +1417,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawCollisionMap",
 		name = "Draw collision map",
-		description = "Whether the collision map should be drawn",
+		description = "Whether collision map should be drawn",
 		position = 205,
 		section = sectionDebug
 	)
@@ -1463,7 +1453,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "postTransports",
 		name = "Post transports",
-		description = "Whether to post the transports used in the current path as a PluginMessage event",
+		description = "Whether to post transports used in current path as a PluginMessage event",
 		position = 209,
 		section = sectionDebug
 	)

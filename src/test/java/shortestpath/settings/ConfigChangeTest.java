@@ -28,8 +28,8 @@ import shortestpath.TestShortestPathConfig;
  */
 public class ConfigChangeTest
 {
-	private static final Set<Effect> ROUTE_ONLY = EnumSet.of(Effect.ROUTE_INVALIDATING);
-	private static final Set<Effect> DISPLAY = EnumSet.of(Effect.DISPLAY_ONLY);
+	private static final Set<Effect> ROUTE_ONLY = Set.of(Effect.ROUTE_INVALIDATING);
+	private static final Set<Effect> DISPLAY = Set.of(Effect.DISPLAY_ONLY);
 
 	private static ConfigChange change(String key)
 	{
@@ -165,13 +165,13 @@ public class ConfigChangeTest
 	public void pathfinderAlgorithmCarriesBothEffects()
 	{
 		assertEffects("pathfinderAlgorithm",
-			EnumSet.of(Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP));
+			Set.of(Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP));
 	}
 
 	@Test
 	public void drawDebugPanelIsOverlaySideEffectOnly()
 	{
-		assertEffects("drawDebugPanel", EnumSet.of(Effect.SIDE_EFFECT_DEBUG_OVERLAY));
+		assertEffects("drawDebugPanel", Set.of(Effect.SIDE_EFFECT_DEBUG_OVERLAY));
 	}
 
 	@Test

@@ -12,6 +12,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import java.util.HashSet;
 
 public class PathfinderConfigPohMountedItemTest
 {
@@ -24,7 +25,7 @@ public class PathfinderConfigPohMountedItemTest
 	@Test
 	public void emptySelectionDisablesEveryMountedItem()
 	{
-		Set<PohMountedItem> selected = EnumSet.noneOf(PohMountedItem.class);
+		Set<PohMountedItem> selected = Set.<PohMountedItem>of();
 		for (String objectInfo : OBJECTS.values())
 		{
 			assertFalse(PohService.isMountedItemEnabled(selected, objectInfo));
@@ -41,7 +42,7 @@ public class PathfinderConfigPohMountedItemTest
 	@Test
 	public void allMountedItemsReproduceTheEnabledBehaviour()
 	{
-		Set<PohMountedItem> selected = EnumSet.allOf(PohMountedItem.class);
+		Set<PohMountedItem> selected = new HashSet<>(PohMountedItem.values());
 		for (String objectInfo : OBJECTS.values())
 		{
 			assertTrue(PohService.isMountedItemEnabled(selected, objectInfo));
@@ -52,7 +53,7 @@ public class PathfinderConfigPohMountedItemTest
 	public void legacyBooleanSuppliesTheInitialMultiSelection()
 	{
 		assertTrue(new TestShortestPathConfig().pohMountedItems().containsAll(
-			EnumSet.allOf(PohMountedItem.class)));
+			new HashSet<>(PohMountedItem.values())));
 		TestShortestPathConfig legacyDisabled = new TestShortestPathConfig()
 		{
 			@Override
@@ -70,12 +71,12 @@ public class PathfinderConfigPohMountedItemTest
 		String carriedDisplayInfo = "Xeric's talisman: 1. Xeric's Lookout";
 		assertNull(PohMountedItem.fromObjectInfo(carriedDisplayInfo));
 		assertTrue(PohService.isMountedItemEnabled(
-			EnumSet.noneOf(PohMountedItem.class), carriedDisplayInfo));
+			Set.<PohMountedItem>of(), carriedDisplayInfo));
 	}
 
 	private static void assertSelection(PohMountedItem selectedItem)
 	{
-		Set<PohMountedItem> selected = EnumSet.of(selectedItem);
+		Set<PohMountedItem> selected = Set.of(selectedItem);
 		for (Map.Entry<PohMountedItem, String> entry : OBJECTS.entrySet())
 		{
 			assertSame(entry.getKey(), PohMountedItem.fromObjectInfo(entry.getValue()));

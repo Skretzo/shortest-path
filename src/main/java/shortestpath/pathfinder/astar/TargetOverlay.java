@@ -2,6 +2,8 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import shortestpath.pathfinder.CollisionMap;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Query-local target sites and their point-attachment walking edges.
@@ -12,10 +14,10 @@ import shortestpath.pathfinder.CollisionMap;
  */
 public final class TargetOverlay
 {
-	private final SiteGraph graph;
+	@Getter @Accessors(fluent = true) private final SiteGraph graph;
 	private final RoutingStatic stat;
-	private final PreparedRoutingAccount account;
-	private final long accountFingerprint;
+	@Getter @Accessors(fluent = true) private final PreparedRoutingAccount account;
+	@Getter @Accessors(fluent = true) private final long accountFingerprint;
 	private final CollisionMap collision;
 	private final int[] packed;
 	private final int[] nodes;
@@ -67,26 +69,17 @@ public final class TargetOverlay
 		syntheticTargets = Arrays.copyOf(synthetic, syntheticCount);
 	}
 
-	public SiteGraph graph()
-	{
-		return graph;
-	}
+
 	public RoutingStatic routingStatic()
 	{
 		return stat;
 	}
-	public PreparedRoutingAccount account()
-	{
-		return account;
-	}
+
 	CollisionMap collision()
 	{
 		return collision;
 	}
-	public long accountFingerprint()
-	{
-		return accountFingerprint;
-	}
+
 	public int queryNodeCount()
 	{
 		return graph.nodeCount() + syntheticTargets.length;

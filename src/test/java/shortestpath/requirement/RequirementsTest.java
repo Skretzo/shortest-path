@@ -29,6 +29,7 @@ import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
+import java.util.HashSet;
 
 /**
  * Adversarial suite over the ordered {@link Requirements} gate chain: every
@@ -407,7 +408,7 @@ public class RequirementsTest
 	public void pohNexusPortalFollowsTheEnabledPortalSet()
 	{
 		RequirementContext context = RequirementTestFixtures.context().build();
-		Set<PohNexusPortal> withoutFalador = EnumSet.allOf(PohNexusPortal.class);
+		Set<PohNexusPortal> withoutFalador = new HashSet<>(PohNexusPortal.values());
 		withoutFalador.remove(PohNexusPortal.FALADOR);
 		RoutingPolicy policy = RequirementTestFixtures.policy()
 			.enabledPohNexusPortals(withoutFalador)
@@ -904,7 +905,7 @@ public class RequirementsTest
 			.origin(POH).objectInfo("Edgeville Amulet of Glory 13523").build();
 		RequirementContext context = RequirementTestFixtures.context().build();
 
-		Set<PohMountedItem> withoutGlory = EnumSet.allOf(PohMountedItem.class);
+		Set<PohMountedItem> withoutGlory = new HashSet<>(PohMountedItem.values());
 		withoutGlory.remove(PohMountedItem.GLORY);
 		assertEquals(RejectionReason.JEWELLERY_BOX_TIER,
 			requirements(context, RequirementTestFixtures.policy()

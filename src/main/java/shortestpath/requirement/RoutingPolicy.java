@@ -7,6 +7,8 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.TransportType;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Immutable snapshot of the user routing settings the requirement gates read,
@@ -29,16 +31,16 @@ import shortestpath.transport.TransportType;
 public final class RoutingPolicy
 {
 	private final EnumSet<TransportType> enabledTypes;
-	private final TeleportationItem teleportationItemSetting;
-	private final boolean usePoh;
-	private final boolean usePohFairyRing;
-	private final boolean usePohSpiritTree;
-	private final boolean usePohObelisk;
-	private final Set<PohNexusPortal> enabledPohNexusPortals;
-	private final Set<PohMountedItem> enabledPohMountedItems;
-	private final JewelleryBoxTier pohJewelleryBoxTier;
-	private final int currencyThreshold;
-	private final boolean includeBankPath;
+	@Getter @Accessors(fluent = true) private final TeleportationItem teleportationItemSetting;
+	@Getter @Accessors(fluent = true) private final boolean usePoh;
+	@Getter @Accessors(fluent = true) private final boolean usePohFairyRing;
+	@Getter @Accessors(fluent = true) private final boolean usePohSpiritTree;
+	@Getter @Accessors(fluent = true) private final boolean usePohObelisk;
+	@Getter @Accessors(fluent = true) private final Set<PohNexusPortal> enabledPohNexusPortals;
+	@Getter @Accessors(fluent = true) private final Set<PohMountedItem> enabledPohMountedItems;
+	@Getter @Accessors(fluent = true) private final JewelleryBoxTier pohJewelleryBoxTier;
+	@Getter @Accessors(fluent = true) private final int currencyThreshold;
+	@Getter @Accessors(fluent = true) private final boolean includeBankPath;
 
 	public RoutingPolicy(
 		Set<TransportType> enabledTypes,
@@ -79,53 +81,23 @@ public final class RoutingPolicy
 		return enabledTypes.contains(type);
 	}
 
-	public TeleportationItem teleportationItemSetting()
-	{
-		return teleportationItemSetting;
-	}
 
-	public boolean usePoh()
-	{
-		return usePoh;
-	}
 
-	public boolean usePohFairyRing()
-	{
-		return usePohFairyRing;
-	}
 
-	public boolean usePohSpiritTree()
-	{
-		return usePohSpiritTree;
-	}
 
-	public boolean usePohObelisk()
-	{
-		return usePohObelisk;
-	}
 
-	public Set<PohNexusPortal> enabledPohNexusPortals()
-	{
-		return enabledPohNexusPortals;
-	}
 
-	public Set<PohMountedItem> enabledPohMountedItems()
-	{
-		return enabledPohMountedItems;
-	}
 
-	public JewelleryBoxTier pohJewelleryBoxTier()
-	{
-		return pohJewelleryBoxTier;
-	}
 
-	public int currencyThreshold()
-	{
-		return currencyThreshold;
-	}
 
-	public boolean includeBankPath()
-	{
-		return includeBankPath;
-	}
+
+
+
+
+
+
+
+
+
+
 }

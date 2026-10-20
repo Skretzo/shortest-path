@@ -8,6 +8,8 @@ import static net.runelite.api.Constants.REGION_SIZE;
 import net.runelite.api.Perspective;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * The hull of the player's boat, so that a sailing move is only taken if the whole boat fits along it, not just its
@@ -51,7 +53,7 @@ public final class BoatHull
 	// check reads and fills it too (ShortestPathPlugin asks covers() each tick for the live boat)
 	private final Map<Long, int[]> shapes = new ConcurrentHashMap<>();
 	// How far the hull reaches from the centre of the boat's tile, facing any heading, in tiles
-	private final double reach;
+	@Getter @Accessors(fluent = true) private final double reach;
 	// Tiles that block a boat, as one bit per tile and one long per row of each region and plane, filled in as the
 	// search reaches them
 	private final SplitFlagMap.RegionExtent extent;
@@ -112,10 +114,7 @@ public final class BoatHull
 	/**
 	 * How far the hull reaches from the centre of the boat's tile, facing any heading, in tiles.
 	 */
-	public double reach()
-	{
-		return reach;
-	}
+
 
 	/**
 	 * Whether the hull, on a tile facing {@code heading}, covers the tile (dx, dy) tiles from it: overlaps it by more

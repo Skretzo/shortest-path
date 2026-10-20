@@ -16,6 +16,7 @@ import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.TransportType;
+import java.util.HashSet;
 
 /**
  * Shared fixture builders for the requirement middleware tests: a
@@ -72,8 +73,8 @@ final class RequirementTestFixtures
 		private boolean usePohFairyRing = true;
 		private boolean usePohSpiritTree = true;
 		private boolean usePohObelisk = true;
-		private Set<PohNexusPortal> enabledPohNexusPortals = EnumSet.allOf(PohNexusPortal.class);
-		private Set<PohMountedItem> enabledPohMountedItems = EnumSet.allOf(PohMountedItem.class);
+		private Set<PohNexusPortal> enabledPohNexusPortals = new HashSet<>(PohNexusPortal.values());
+		private Set<PohMountedItem> enabledPohMountedItems = new HashSet<>(PohMountedItem.values());
 		private JewelleryBoxTier pohJewelleryBoxTier = JewelleryBoxTier.ORNATE;
 		private int currencyThreshold = Integer.MAX_VALUE;
 		private boolean includeBankPath = true;

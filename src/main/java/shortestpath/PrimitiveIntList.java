@@ -1,6 +1,8 @@
 package shortestpath;
 
 import java.util.Arrays;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * A minimal, growable list implementation for primitive {@code int} values.
@@ -22,7 +24,7 @@ public class PrimitiveIntList
 	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
 	private int[] elementData;
-	private int size;
+	@Getter @Accessors(fluent = true) private int size;
 
 	/**
 	 * Creates a new list with the specified initial capacity.
@@ -121,10 +123,7 @@ public class PrimitiveIntList
 	 *
 	 * @return current element count (always {@code >= 0}).
 	 */
-	public int size()
-	{
-		return size;
-	}
+
 
 	/**
 	 * Indicates whether the list currently holds zero elements.

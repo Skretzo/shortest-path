@@ -35,6 +35,13 @@ public final class EffectiveConfig implements ShortestPathConfig
 		this.overrides = overrides;
 	}
 
+	@SuppressWarnings("unchecked")
+	private <T> T override(ConfigKey key, T fallback)
+	{
+		Object value = overrides.get(key.getKey());
+		return value != null && (fallback == null || fallback.getClass().isInstance(value)) ? (T) value : fallback;
+	}
+
 	@Override
 	public PathfinderBackend pathfinderBackend()
 	{
@@ -44,106 +51,91 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean avoidWilderness()
 	{
-		Object value = overrides.get(ConfigKey.AVOID_WILDERNESS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.avoidWilderness();
+		return override(ConfigKey.AVOID_WILDERNESS, base.avoidWilderness());
 	}
 
 	@Override
 	public boolean useAgilityShortcuts()
 	{
-		Object value = overrides.get(ConfigKey.USE_AGILITY_SHORTCUTS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useAgilityShortcuts();
+		return override(ConfigKey.USE_AGILITY_SHORTCUTS, base.useAgilityShortcuts());
 	}
 
 	@Override
 	public boolean useGrappleShortcuts()
 	{
-		Object value = overrides.get(ConfigKey.USE_GRAPPLE_SHORTCUTS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useGrappleShortcuts();
+		return override(ConfigKey.USE_GRAPPLE_SHORTCUTS, base.useGrappleShortcuts());
 	}
 
 	@Override
 	public boolean useBoats()
 	{
-		Object value = overrides.get(ConfigKey.USE_BOATS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useBoats();
+		return override(ConfigKey.USE_BOATS, base.useBoats());
 	}
 
 	@Override
 	public boolean useCanoes()
 	{
-		Object value = overrides.get(ConfigKey.USE_CANOES.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useCanoes();
+		return override(ConfigKey.USE_CANOES, base.useCanoes());
 	}
 
 	@Override
 	public boolean useCharterShips()
 	{
-		Object value = overrides.get(ConfigKey.USE_CHARTER_SHIPS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useCharterShips();
+		return override(ConfigKey.USE_CHARTER_SHIPS, base.useCharterShips());
 	}
 
 	@Override
 	public boolean useShips()
 	{
-		Object value = overrides.get(ConfigKey.USE_SHIPS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useShips();
+		return override(ConfigKey.USE_SHIPS, base.useShips());
 	}
 
 	@Override
 	public boolean useFairyRings()
 	{
-		Object value = overrides.get(ConfigKey.USE_FAIRY_RINGS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useFairyRings();
+		return override(ConfigKey.USE_FAIRY_RINGS, base.useFairyRings());
 	}
 
 	@Override
 	public boolean useGnomeGliders()
 	{
-		Object value = overrides.get(ConfigKey.USE_GNOME_GLIDERS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useGnomeGliders();
+		return override(ConfigKey.USE_GNOME_GLIDERS, base.useGnomeGliders());
 	}
 
 	@Override
 	public boolean useHotAirBalloons()
 	{
-		Object value = overrides.get(ConfigKey.USE_HOT_AIR_BALLOONS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useHotAirBalloons();
+		return override(ConfigKey.USE_HOT_AIR_BALLOONS, base.useHotAirBalloons());
 	}
 
 	@Override
 	public boolean useMagicCarpets()
 	{
-		Object value = overrides.get(ConfigKey.USE_MAGIC_CARPETS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useMagicCarpets();
+		return override(ConfigKey.USE_MAGIC_CARPETS, base.useMagicCarpets());
 	}
 
 	@Override
 	public boolean useMagicMushtrees()
 	{
-		Object value = overrides.get(ConfigKey.USE_MAGIC_MUSHTREES.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useMagicMushtrees();
+		return override(ConfigKey.USE_MAGIC_MUSHTREES, base.useMagicMushtrees());
 	}
 
 	@Override
 	public boolean useMinecarts()
 	{
-		Object value = overrides.get(ConfigKey.USE_MINECARTS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useMinecarts();
+		return override(ConfigKey.USE_MINECARTS, base.useMinecarts());
 	}
 
 	@Override
 	public boolean useQuetzals()
 	{
-		Object value = overrides.get(ConfigKey.USE_QUETZALS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useQuetzals();
+		return override(ConfigKey.USE_QUETZALS, base.useQuetzals());
 	}
 
 	@Override
 	public boolean useSpiritTrees()
 	{
-		Object value = overrides.get(ConfigKey.USE_SPIRIT_TREES.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useSpiritTrees();
+		return override(ConfigKey.USE_SPIRIT_TREES, base.useSpiritTrees());
 	}
 
 	@Override
@@ -164,134 +156,115 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean useTeleportationLevers()
 	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_LEVERS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useTeleportationLevers();
+		return override(ConfigKey.USE_TELEPORTATION_LEVERS, base.useTeleportationLevers());
 	}
 
 	@Override
 	public boolean useTeleportationPortals()
 	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_PORTALS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useTeleportationPortals();
+		return override(ConfigKey.USE_TELEPORTATION_PORTALS, base.useTeleportationPortals());
 	}
 
 	@Override
 	public boolean useTeleportationSpells()
 	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_SPELLS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useTeleportationSpells();
+		return override(ConfigKey.USE_TELEPORTATION_SPELLS, base.useTeleportationSpells());
 	}
 
 	@Override
 	public boolean useTeleportationSpellsHome()
 	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_SPELLS_HOME.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useTeleportationSpellsHome();
+		return override(ConfigKey.USE_TELEPORTATION_SPELLS_HOME, base.useTeleportationSpellsHome());
 	}
 
 	@Override
 	public boolean useTeleportationMinigames()
 	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_MINIGAMES.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useTeleportationMinigames();
+		return override(ConfigKey.USE_TELEPORTATION_MINIGAMES, base.useTeleportationMinigames());
 	}
 
 	@Override
 	public boolean useWildernessObelisks()
 	{
-		Object value = overrides.get(ConfigKey.USE_WILDERNESS_OBELISKS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useWildernessObelisks();
+		return override(ConfigKey.USE_WILDERNESS_OBELISKS, base.useWildernessObelisks());
 	}
 
 	@Override
 	public boolean useSeasonalTransports()
 	{
-		Object value = overrides.get(ConfigKey.USE_SEASONAL_TRANSPORTS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useSeasonalTransports();
+		return override(ConfigKey.USE_SEASONAL_TRANSPORTS, base.useSeasonalTransports());
 	}
 
 	@Override
 	public boolean respawnPrifddinas()
 	{
-		Object value = overrides.get(ConfigKey.RESPAWN_PRIFDDINAS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.respawnPrifddinas();
+		return override(ConfigKey.RESPAWN_PRIFDDINAS, base.respawnPrifddinas());
 	}
 
 	@Override
 	public boolean unlockCanoeAxe()
 	{
-		Object value = overrides.get(ConfigKey.UNLOCK_CANOE_AXE.getKey());
-		return value instanceof Boolean ? (boolean) value : base.unlockCanoeAxe();
+		return override(ConfigKey.UNLOCK_CANOE_AXE, base.unlockCanoeAxe());
 	}
 
 	@Override
 	public boolean unlockXericsHonour()
 	{
-		Object value = overrides.get(ConfigKey.UNLOCK_XERICS_HONOUR.getKey());
-		return value instanceof Boolean ? (boolean) value : base.unlockXericsHonour();
+		return override(ConfigKey.UNLOCK_XERICS_HONOUR, base.unlockXericsHonour());
 	}
 
 	@Override
 	public boolean unlockDragontoothPassage()
 	{
-		Object value = overrides.get(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE.getKey());
-		return value instanceof Boolean ? (boolean) value : base.unlockDragontoothPassage();
+		return override(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE, base.unlockDragontoothPassage());
 	}
 
 	@Override
 	public boolean unlockMorUlRek()
 	{
-		Object value = overrides.get(ConfigKey.UNLOCK_MOR_UL_REK.getKey());
-		return value instanceof Boolean ? (boolean) value : base.unlockMorUlRek();
+		return override(ConfigKey.UNLOCK_MOR_UL_REK, base.unlockMorUlRek());
 	}
 
 	@Override
 	public boolean includeBankPath()
 	{
-		Object value = overrides.get(ConfigKey.INCLUDE_BANK_PATH.getKey());
-		return value instanceof Boolean ? (boolean) value : base.includeBankPath();
+		return override(ConfigKey.INCLUDE_BANK_PATH, base.includeBankPath());
 	}
 
 	@Override
 	public int currencyThreshold()
 	{
-		Object value = overrides.get(ConfigKey.CURRENCY_THRESHOLD.getKey());
-		return value instanceof Integer ? (int) value : base.currencyThreshold();
+		return override(ConfigKey.CURRENCY_THRESHOLD, base.currencyThreshold());
 	}
 
 	@Override
 	public boolean cancelInstead()
 	{
-		Object value = overrides.get(ConfigKey.CANCEL_INSTEAD.getKey());
-		return value instanceof Boolean ? (boolean) value : base.cancelInstead();
+		return override(ConfigKey.CANCEL_INSTEAD, base.cancelInstead());
 	}
 
 	@Override
 	public int recalculateDistance()
 	{
-		Object value = overrides.get(ConfigKey.RECALCULATE_DISTANCE.getKey());
-		return value instanceof Integer ? (int) value : base.recalculateDistance();
+		return override(ConfigKey.RECALCULATE_DISTANCE, base.recalculateDistance());
 	}
 
 	@Override
 	public int reachedDistance()
 	{
-		Object value = overrides.get(ConfigKey.FINISH_DISTANCE.getKey());
-		return value instanceof Integer ? (int) value : base.reachedDistance();
+		return override(ConfigKey.FINISH_DISTANCE, base.reachedDistance());
 	}
 
 	@Override
 	public int unreachableTargetDistance()
 	{
-		Object value = overrides.get(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD.getKey());
-		return value instanceof Integer ? (int) value : base.unreachableTargetDistance();
+		return override(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD, base.unreachableTargetDistance());
 	}
 
 	@Override
 	public boolean showUnreachableText()
 	{
-		Object value = overrides.get(ConfigKey.SHOW_UNREACHABLE_TEXT.getKey());
-		return value instanceof Boolean ? (boolean) value : base.showUnreachableText();
+		return override(ConfigKey.SHOW_UNREACHABLE_TEXT, base.showUnreachableText());
 	}
 
 	@Override
@@ -312,99 +285,85 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public int tileCounterStep()
 	{
-		Object value = overrides.get(ConfigKey.TILE_COUNTER_STEP.getKey());
-		return value instanceof Integer ? (int) value : base.tileCounterStep();
+		return override(ConfigKey.TILE_COUNTER_STEP, base.tileCounterStep());
 	}
 
 	@Override
 	public int calculationCutoff()
 	{
-		Object value = overrides.get(ConfigKey.CALCULATION_CUTOFF.getKey());
-		return value instanceof Integer ? (int) value : base.calculationCutoff();
+		return override(ConfigKey.CALCULATION_CUTOFF, base.calculationCutoff());
 	}
 
 	@Override
 	public int aStarHeuristicWeight()
 	{
-		Object value = overrides.get(ConfigKey.A_STAR_HEURISTIC_WEIGHT.getKey());
-		return value instanceof Integer ? (int) value : base.aStarHeuristicWeight();
+		return override(ConfigKey.A_STAR_HEURISTIC_WEIGHT, base.aStarHeuristicWeight());
 	}
 
 	@Override
 	public boolean collisionAwareBlockedTargets()
 	{
-		Object value = overrides.get(ConfigKey.COLLISION_AWARE_BLOCKED_TARGETS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.collisionAwareBlockedTargets();
+		return override(ConfigKey.COLLISION_AWARE_BLOCKED_TARGETS, base.collisionAwareBlockedTargets());
 	}
 
 	@Override
 	public boolean useSailingMoves()
 	{
-		Object value = overrides.get(ConfigKey.USE_SAILING_MOVES.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useSailingMoves();
+		return override(ConfigKey.USE_SAILING_MOVES, base.useSailingMoves());
 	}
 
 	@Override
 	public boolean showTransportInfo()
 	{
-		Object value = overrides.get(ConfigKey.SHOW_TRANSPORT_INFO.getKey());
-		return value instanceof Boolean ? (boolean) value : base.showTransportInfo();
+		return override(ConfigKey.SHOW_TRANSPORT_INFO, base.showTransportInfo());
 	}
 
 	@Override
 	public boolean showBankPickupInfo()
 	{
-		Object value = overrides.get(ConfigKey.SHOW_BANK_PICKUP_INFO.getKey());
-		return value instanceof Boolean ? (boolean) value : base.showBankPickupInfo();
+		return override(ConfigKey.SHOW_BANK_PICKUP_INFO, base.showBankPickupInfo());
 	}
 
 	@Override
 	public boolean highlightBankPickupItems()
 	{
-		Object value = overrides.get(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.highlightBankPickupItems();
+		return override(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS, base.highlightBankPickupItems());
 	}
 
 	@Override
 	public boolean highlightSpellbookSpells()
 	{
-		Object value = overrides.get(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.highlightSpellbookSpells();
+		return override(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS, base.highlightSpellbookSpells());
 	}
 
 	@Override
 	public boolean highlightInventoryItems()
 	{
-		Object value = overrides.get(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.highlightInventoryItems();
+		return override(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS, base.highlightInventoryItems());
 	}
 
 	@Override
 	public boolean usePoh()
 	{
-		Object value = overrides.get(ConfigKey.USE_POH.getKey());
-		return value instanceof Boolean ? (boolean) value : base.usePoh();
+		return override(ConfigKey.USE_POH, base.usePoh());
 	}
 
 	@Override
 	public boolean usePohFairyRing()
 	{
-		Object value = overrides.get(ConfigKey.USE_POH_FAIRY_RING.getKey());
-		return value instanceof Boolean ? (boolean) value : base.usePohFairyRing();
+		return override(ConfigKey.USE_POH_FAIRY_RING, base.usePohFairyRing());
 	}
 
 	@Override
 	public boolean usePohSpiritTree()
 	{
-		Object value = overrides.get(ConfigKey.USE_POH_SPIRIT_TREE.getKey());
-		return value instanceof Boolean ? (boolean) value : base.usePohSpiritTree();
+		return override(ConfigKey.USE_POH_SPIRIT_TREE, base.usePohSpiritTree());
 	}
 
 	@Override
 	public boolean useTeleportationPortalsPoh()
 	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_PORTALS_POH.getKey());
-		return value instanceof Boolean ? (boolean) value : base.useTeleportationPortalsPoh();
+		return override(ConfigKey.USE_TELEPORTATION_PORTALS_POH, base.useTeleportationPortalsPoh());
 	}
 
 	@Override
@@ -437,225 +396,193 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean usePohMountedItems()
 	{
-		Object value = overrides.get(ConfigKey.USE_POH_MOUNTED_ITEMS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.usePohMountedItems();
+		return override(ConfigKey.USE_POH_MOUNTED_ITEMS, base.usePohMountedItems());
 	}
 
 	@Override
 	public boolean usePohObelisk()
 	{
-		Object value = overrides.get(ConfigKey.USE_POH_OBELISK.getKey());
-		return value instanceof Boolean ? (boolean) value : base.usePohObelisk();
+		return override(ConfigKey.USE_POH_OBELISK, base.usePohObelisk());
 	}
 
 	@Override
 	public int costAgilityShortcuts()
 	{
-		Object value = overrides.get(ConfigKey.COST_AGILITY_SHORTCUTS.getKey());
-		return value instanceof Integer ? (int) value : base.costAgilityShortcuts();
+		return override(ConfigKey.COST_AGILITY_SHORTCUTS, base.costAgilityShortcuts());
 	}
 
 	@Override
 	public int costGrappleShortcuts()
 	{
-		Object value = overrides.get(ConfigKey.COST_GRAPPLE_SHORTCUTS.getKey());
-		return value instanceof Integer ? (int) value : base.costGrappleShortcuts();
+		return override(ConfigKey.COST_GRAPPLE_SHORTCUTS, base.costGrappleShortcuts());
 	}
 
 	@Override
 	public int costBoats()
 	{
-		Object value = overrides.get(ConfigKey.COST_BOATS.getKey());
-		return value instanceof Integer ? (int) value : base.costBoats();
+		return override(ConfigKey.COST_BOATS, base.costBoats());
 	}
 
 	@Override
 	public int costCanoes()
 	{
-		Object value = overrides.get(ConfigKey.COST_CANOES.getKey());
-		return value instanceof Integer ? (int) value : base.costCanoes();
+		return override(ConfigKey.COST_CANOES, base.costCanoes());
 	}
 
 	@Override
 	public int costCharterShips()
 	{
-		Object value = overrides.get(ConfigKey.COST_CHARTER_SHIPS.getKey());
-		return value instanceof Integer ? (int) value : base.costCharterShips();
+		return override(ConfigKey.COST_CHARTER_SHIPS, base.costCharterShips());
 	}
 
 	@Override
 	public int costShips()
 	{
-		Object value = overrides.get(ConfigKey.COST_SHIPS.getKey());
-		return value instanceof Integer ? (int) value : base.costShips();
+		return override(ConfigKey.COST_SHIPS, base.costShips());
 	}
 
 	@Override
 	public int costFairyRings()
 	{
-		Object value = overrides.get(ConfigKey.COST_FAIRY_RINGS.getKey());
-		return value instanceof Integer ? (int) value : base.costFairyRings();
+		return override(ConfigKey.COST_FAIRY_RINGS, base.costFairyRings());
 	}
 
 	@Override
 	public int costGnomeGliders()
 	{
-		Object value = overrides.get(ConfigKey.COST_GNOME_GLIDERS.getKey());
-		return value instanceof Integer ? (int) value : base.costGnomeGliders();
+		return override(ConfigKey.COST_GNOME_GLIDERS, base.costGnomeGliders());
 	}
 
 	@Override
 	public int costHotAirBalloons()
 	{
-		Object value = overrides.get(ConfigKey.COST_HOT_AIR_BALLOONS.getKey());
-		return value instanceof Integer ? (int) value : base.costHotAirBalloons();
+		return override(ConfigKey.COST_HOT_AIR_BALLOONS, base.costHotAirBalloons());
 	}
 
 	@Override
 	public int costMagicCarpets()
 	{
-		Object value = overrides.get(ConfigKey.COST_MAGIC_CARPETS.getKey());
-		return value instanceof Integer ? (int) value : base.costMagicCarpets();
+		return override(ConfigKey.COST_MAGIC_CARPETS, base.costMagicCarpets());
 	}
 
 	@Override
 	public int costMagicMushtrees()
 	{
-		Object value = overrides.get(ConfigKey.COST_MAGIC_MUSHTREES.getKey());
-		return value instanceof Integer ? (int) value : base.costMagicMushtrees();
+		return override(ConfigKey.COST_MAGIC_MUSHTREES, base.costMagicMushtrees());
 	}
 
 	@Override
 	public int costMinecarts()
 	{
-		Object value = overrides.get(ConfigKey.COST_MINECARTS.getKey());
-		return value instanceof Integer ? (int) value : base.costMinecarts();
+		return override(ConfigKey.COST_MINECARTS, base.costMinecarts());
 	}
 
 	@Override
 	public int costQuetzals()
 	{
-		Object value = overrides.get(ConfigKey.COST_QUETZALS.getKey());
-		return value instanceof Integer ? (int) value : base.costQuetzals();
+		return override(ConfigKey.COST_QUETZALS, base.costQuetzals());
 	}
 
 	@Override
 	public int costQuetzalWhistle()
 	{
-		Object value = overrides.get(ConfigKey.COST_QUETZAL_WHISTLE.getKey());
-		return value instanceof Integer ? (int) value : base.costQuetzalWhistle();
+		return override(ConfigKey.COST_QUETZAL_WHISTLE, base.costQuetzalWhistle());
 	}
 
 	@Override
 	public int costSpiritTrees()
 	{
-		Object value = overrides.get(ConfigKey.COST_SPIRIT_TREES.getKey());
-		return value instanceof Integer ? (int) value : base.costSpiritTrees();
+		return override(ConfigKey.COST_SPIRIT_TREES, base.costSpiritTrees());
 	}
 
 	@Override
 	public int costNonConsumableTeleportationItems()
 	{
-		Object value = overrides.get(ConfigKey.COST_NON_CONSUMABLE_TELEPORTATION_ITEMS.getKey());
-		return value instanceof Integer ? (int) value : base.costNonConsumableTeleportationItems();
+		return override(ConfigKey.COST_NON_CONSUMABLE_TELEPORTATION_ITEMS, base.costNonConsumableTeleportationItems());
 	}
 
 	@Override
 	public int costConsumableTeleportationItems()
 	{
-		Object value = overrides.get(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS.getKey());
-		return value instanceof Integer ? (int) value : base.costConsumableTeleportationItems();
+		return override(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS, base.costConsumableTeleportationItems());
 	}
 
 	@Override
 	public int costTeleportationBoxes()
 	{
-		Object value = overrides.get(ConfigKey.COST_TELEPORTATION_BOXES.getKey());
-		return value instanceof Integer ? (int) value : base.costTeleportationBoxes();
+		return override(ConfigKey.COST_TELEPORTATION_BOXES, base.costTeleportationBoxes());
 	}
 
 	@Override
 	public int costTeleportationLevers()
 	{
-		Object value = overrides.get(ConfigKey.COST_TELEPORTATION_LEVERS.getKey());
-		return value instanceof Integer ? (int) value : base.costTeleportationLevers();
+		return override(ConfigKey.COST_TELEPORTATION_LEVERS, base.costTeleportationLevers());
 	}
 
 	@Override
 	public int costTeleportationPortals()
 	{
-		Object value = overrides.get(ConfigKey.COST_TELEPORTATION_PORTALS.getKey());
-		return value instanceof Integer ? (int) value : base.costTeleportationPortals();
+		return override(ConfigKey.COST_TELEPORTATION_PORTALS, base.costTeleportationPortals());
 	}
 
 	@Override
 	public int costTeleportationSpells()
 	{
-		Object value = overrides.get(ConfigKey.COST_TELEPORTATION_SPELLS.getKey());
-		return value instanceof Integer ? (int) value : base.costTeleportationSpells();
+		return override(ConfigKey.COST_TELEPORTATION_SPELLS, base.costTeleportationSpells());
 	}
 
 	@Override
 	public int costTeleportationSpellsHome()
 	{
-		Object value = overrides.get(ConfigKey.COST_TELEPORTATION_SPELLS_HOME.getKey());
-		return value instanceof Integer ? (int) value : base.costTeleportationSpellsHome();
+		return override(ConfigKey.COST_TELEPORTATION_SPELLS_HOME, base.costTeleportationSpellsHome());
 	}
 
 	@Override
 	public int costTeleportationMinigames()
 	{
-		Object value = overrides.get(ConfigKey.COST_TELEPORTATION_MINIGAMES.getKey());
-		return value instanceof Integer ? (int) value : base.costTeleportationMinigames();
+		return override(ConfigKey.COST_TELEPORTATION_MINIGAMES, base.costTeleportationMinigames());
 	}
 
 	@Override
 	public int costWildernessObelisks()
 	{
-		Object value = overrides.get(ConfigKey.COST_WILDERNESS_OBELISKS.getKey());
-		return value instanceof Integer ? (int) value : base.costWildernessObelisks();
+		return override(ConfigKey.COST_WILDERNESS_OBELISKS, base.costWildernessObelisks());
 	}
 
 	@Override
 	public int costSeasonalTransports()
 	{
-		Object value = overrides.get(ConfigKey.COST_SEASONAL_TRANSPORTS.getKey());
-		return value instanceof Integer ? (int) value : base.costSeasonalTransports();
+		return override(ConfigKey.COST_SEASONAL_TRANSPORTS, base.costSeasonalTransports());
 	}
 
 	@Override
 	public int costBankVisit()
 	{
-		Object value = overrides.get(ConfigKey.COST_BANK_VISIT.getKey());
-		return value instanceof Integer ? (int) value : base.costBankVisit();
+		return override(ConfigKey.COST_BANK_VISIT, base.costBankVisit());
 	}
 
 	@Override
 	public boolean drawMap()
 	{
-		Object value = overrides.get(ConfigKey.DRAW_MAP.getKey());
-		return value instanceof Boolean ? (boolean) value : base.drawMap();
+		return override(ConfigKey.DRAW_MAP, base.drawMap());
 	}
 
 	@Override
 	public boolean drawMinimap()
 	{
-		Object value = overrides.get(ConfigKey.DRAW_MINIMAP.getKey());
-		return value instanceof Boolean ? (boolean) value : base.drawMinimap();
+		return override(ConfigKey.DRAW_MINIMAP, base.drawMinimap());
 	}
 
 	@Override
 	public boolean drawTiles()
 	{
-		Object value = overrides.get(ConfigKey.DRAW_TILES.getKey());
-		return value instanceof Boolean ? (boolean) value : base.drawTiles();
+		return override(ConfigKey.DRAW_TILES, base.drawTiles());
 	}
 
 	@Override
 	public boolean drawClickPoints()
 	{
-		Object value = overrides.get(ConfigKey.DRAW_CLICK_POINTS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.drawClickPoints();
+		return override(ConfigKey.DRAW_CLICK_POINTS, base.drawClickPoints());
 	}
 
 	@Override
@@ -676,64 +603,55 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean showTeleportPulse()
 	{
-		Object value = overrides.get(ConfigKey.SHOW_TELEPORT_PULSE.getKey());
-		return value instanceof Boolean ? (boolean) value : base.showTeleportPulse();
+		return override(ConfigKey.SHOW_TELEPORT_PULSE, base.showTeleportPulse());
 	}
 
 	@Override
 	public Color colourPath()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_PATH.getKey());
-		return value instanceof Color ? (Color) value : base.colourPath();
+		return override(ConfigKey.COLOUR_PATH, base.colourPath());
 	}
 
 	@Override
 	public Color colourPathCalculating()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_PATH_CALCULATING.getKey());
-		return value instanceof Color ? (Color) value : base.colourPathCalculating();
+		return override(ConfigKey.COLOUR_PATH_CALCULATING, base.colourPathCalculating());
 	}
 
 	@Override
 	public Color colourPathUnreachable()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_PATH_UNREACHABLE.getKey());
-		return value instanceof Color ? (Color) value : base.colourPathUnreachable();
+		return override(ConfigKey.COLOUR_PATH_UNREACHABLE, base.colourPathUnreachable());
 	}
 
 	@Override
 	public Color colourTransports()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_TRANSPORTS.getKey());
-		return value instanceof Color ? (Color) value : base.colourTransports();
+		return override(ConfigKey.COLOUR_TRANSPORTS, base.colourTransports());
 	}
 
 	@Override
 	public Color colourCollisionMap()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_COLLISION_MAP.getKey());
-		return value instanceof Color ? (Color) value : base.colourCollisionMap();
+		return override(ConfigKey.COLOUR_COLLISION_MAP, base.colourCollisionMap());
 	}
 
 	@Override
 	public Color colourText()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_TEXT.getKey());
-		return value instanceof Color ? (Color) value : base.colourText();
+		return override(ConfigKey.COLOUR_TEXT, base.colourText());
 	}
 
 	@Override
 	public Color colourTeleportPulse()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_TELEPORT_PULSE.getKey());
-		return value instanceof Color ? (Color) value : base.colourTeleportPulse();
+		return override(ConfigKey.COLOUR_TELEPORT_PULSE, base.colourTeleportPulse());
 	}
 
 	@Override
 	public Color colourBankPickupHighlight()
 	{
-		Object value = overrides.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT.getKey());
-		return value instanceof Color ? (Color) value : base.colourBankPickupHighlight();
+		return override(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT, base.colourBankPickupHighlight());
 	}
 
 	@Override
@@ -745,29 +663,25 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean drawTransports()
 	{
-		Object value = overrides.get(ConfigKey.DRAW_TRANSPORTS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.drawTransports();
+		return override(ConfigKey.DRAW_TRANSPORTS, base.drawTransports());
 	}
 
 	@Override
 	public boolean drawCollisionMap()
 	{
-		Object value = overrides.get(ConfigKey.DRAW_COLLISION_MAP.getKey());
-		return value instanceof Boolean ? (boolean) value : base.drawCollisionMap();
+		return override(ConfigKey.DRAW_COLLISION_MAP, base.drawCollisionMap());
 	}
 
 	@Override
 	public boolean drawDebugPanel()
 	{
-		Object value = overrides.get(ConfigKey.DRAW_DEBUG_PANEL.getKey());
-		return value instanceof Boolean ? (boolean) value : base.drawDebugPanel();
+		return override(ConfigKey.DRAW_DEBUG_PANEL, base.drawDebugPanel());
 	}
 
 	@Override
 	public boolean postTransports()
 	{
-		Object value = overrides.get(ConfigKey.POST_TRANSPORTS.getKey());
-		return value instanceof Boolean ? (boolean) value : base.postTransports();
+		return override(ConfigKey.POST_TRANSPORTS, base.postTransports());
 	}
 
 	@Override

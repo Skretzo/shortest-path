@@ -2,6 +2,8 @@ package shortestpath.pathfinder.astar;
 
 import java.util.List;
 import shortestpath.pathfinder.PathStep;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * A reconstructed A* route: its steps, plus what the search knew about each of them that the
@@ -16,7 +18,7 @@ public final class AStarRoute
 	/** The first hub arrival; the step is the destination of a teleport cast with capability {@code arrival - 1}. */
 	private static final byte FROM_HUB = 1;
 
-	private final List<PathStep> steps;
+	@Getter @Accessors(fluent = true) private final List<PathStep> steps;
 	private final byte[] arrivals;
 	private final int[] costs;
 
@@ -35,10 +37,7 @@ public final class AStarRoute
 		return new AStarRoute(steps, new byte[steps.size()], costs.clone());
 	}
 
-	public List<PathStep> steps()
-	{
-		return steps;
-	}
+
 
 	public int size()
 	{

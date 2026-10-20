@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 import net.runelite.api.Perspective;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * The moves the sailing search uses for one boat speed.
@@ -48,7 +50,7 @@ public final class SailingMoves
 	 */
 	public static final int LENGTH_UNITS_PER_TILE = 1000;
 
-	private final double speed;
+	@Getter @Accessors(fluent = true) private final double speed;
 	private final int[] dx;
 	private final int[] dy;
 	private final int[] ticks;
@@ -117,10 +119,7 @@ public final class SailingMoves
 		return (int) (Math.signum(local) * Math.round(Math.abs(local) / 32.0));
 	}
 
-	public double speed()
-	{
-		return speed;
-	}
+
 
 	public int size()
 	{

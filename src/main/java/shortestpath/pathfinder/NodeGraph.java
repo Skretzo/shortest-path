@@ -6,6 +6,8 @@ import java.util.List;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Structure-of-Arrays store for pathfinding nodes.
@@ -64,7 +66,7 @@ public class NodeGraph
 	private byte[] flags;
 	private byte[] abstractKind;
 	private Transport[] transports;
-	private int size;
+	@Getter @Accessors(fluent = true) private int size;
 
 	public NodeGraph(int initialCapacity)
 	{
@@ -78,10 +80,7 @@ public class NodeGraph
 		transports = new Transport[capacity];
 	}
 
-	public int size()
-	{
-		return size;
-	}
+
 
 	private void ensureCapacity()
 	{

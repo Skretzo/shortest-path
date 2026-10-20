@@ -36,6 +36,7 @@ import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import shortestpath.transport.parser.VarRequirementParser;
+import java.util.HashSet;
 
 /**
  * The capture-seam contract: {@link RequirementContext#capture} reads the
@@ -233,8 +234,8 @@ public class PlayerStateSourceTest
 	public void aBuiltPolicyIsUnmovedByMutatingTheSourceSets()
 	{
 		Set<TransportType> enabledTypes = EnumSet.allOf(TransportType.class);
-		Set<PohNexusPortal> portals = EnumSet.allOf(PohNexusPortal.class);
-		Set<PohMountedItem> mounted = EnumSet.allOf(PohMountedItem.class);
+		Set<PohNexusPortal> portals = new HashSet<>(PohNexusPortal.values());
+		Set<PohMountedItem> mounted = new HashSet<>(PohMountedItem.values());
 		RoutingPolicy policy = new RoutingPolicy(enabledTypes, MODE, true, true, true, true,
 			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true);
 

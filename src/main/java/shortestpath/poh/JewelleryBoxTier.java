@@ -2,9 +2,7 @@ package shortestpath.poh;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 
-@ToString
 @Getter
 @RequiredArgsConstructor
 public enum JewelleryBoxTier
@@ -29,5 +27,9 @@ public enum JewelleryBoxTier
 		return null;
 	}
 
-
+	@Override
+	public String toString()
+	{
+		return type;
+	}
 }

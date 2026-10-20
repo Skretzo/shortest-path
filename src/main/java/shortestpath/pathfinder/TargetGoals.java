@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.WorldPointUtil;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Resolves the requested targets into the tiles a search should terminate on.
@@ -32,7 +34,7 @@ public final class TargetGoals
 	// target must stay cheap since it runs per request on the client thread.
 	private static final int MAX_GOAL_EXPANSION_RADIUS = 64;
 
-	private final Set<Integer> goals;
+	@Getter @Accessors(fluent = true) private final Set<Integer> goals;
 	private final boolean viable;
 	private final Map<Integer, Set<Integer>> fallbacks;
 	private final Set<Integer> viableTargets;
@@ -50,10 +52,7 @@ public final class TargetGoals
 	 * The termination set: the requested targets plus, for each blocked target,
 	 * the fallback tiles it resolved to.
 	 */
-	public Set<Integer> goals()
-	{
-		return goals;
-	}
+
 
 	/**
 	 * Whether any requested target could possibly terminate a search: non-blocked,

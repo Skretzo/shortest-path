@@ -4,6 +4,8 @@ import java.util.Arrays;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Query-lifetime raw seeds and provenance-reduced exact seed scans. */
 @AllArgsConstructor
@@ -11,13 +13,13 @@ public final class PreparedHeuristic
 {
 	private static final int[] EMPTY = new int[0];
 
-	private final TargetOverlay overlay;
+	@Getter @Accessors(fluent = true) private final TargetOverlay overlay;
 	private final ReverseLabels reverse;
 	private final int[][] seedTiles;
 	private final int[][] seedLabels;
 	private final int[][] generatorTiles;
 	private final int[][] generatorLabels;
-	private final long preparationNanos;
+	@Getter @Accessors(fluent = true) private final long preparationNanos;
 
 
 
@@ -58,10 +60,7 @@ public final class PreparedHeuristic
 			System.nanoTime() - started);
 	}
 
-	public TargetOverlay overlay()
-	{
-		return overlay;
-	}
+
 	public ReverseLabels reverseLabels()
 	{
 		return reverse;
@@ -103,10 +102,7 @@ public final class PreparedHeuristic
 		int raw = rawSeedCount();
 		return raw == 0 ? 0 : (double) generatorCount() / raw;
 	}
-	public long preparationNanos()
-	{
-		return preparationNanos;
-	}
+
 
 	public int estimate(int packed, boolean banked)
 	{

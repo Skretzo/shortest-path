@@ -5,7 +5,6 @@ import java.util.List;
 
 import lombok.Getter;
 import shortestpath.Util;
-import lombok.EqualsAndHashCode;
 
 /**
  * Represents an item requirement with its variations and quantity.
@@ -16,7 +15,6 @@ import lombok.EqualsAndHashCode;
  * pass or by 5 coins.
  */
 @Getter
-@EqualsAndHashCode
 public class ItemRequirement
 {
 	/**
@@ -215,7 +213,24 @@ public class ItemRequirement
 		return true;
 	}
 
+	@Override
+	public int hashCode()
+	{
+		return branches.hashCode();
+	}
 
-
-
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+		ItemRequirement that = (ItemRequirement) o;
+		return branches.equals(that.branches);
+	}
 }

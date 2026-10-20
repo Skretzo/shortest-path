@@ -24,6 +24,9 @@ import shortestpath.settings.Effect;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The single public boundary for POH (Player Owned House) domain behavior:
@@ -203,34 +206,31 @@ public class PohService
 	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z]|F(?:[1-9]|1[0-2]))\\s*:\\s*(.+)$");
 	private static final Pattern PARENTHETICAL = Pattern.compile("\\(([^()]*)\\)");
 	private static final String SERIAL_VERSION = "2";
-	private static final Map<String, String> NAME_ALIASES;
-
-	static
+	private static Map<String, String> nameAliases()
 	{
 		Map<String, String> aliases = new HashMap<>();
-		aliases.put("east ardougne", "ardougne");
-		aliases.put("kourend castle", "kourend");
-		aliases.put("great kourend", "kourend");
-		aliases.put("ourania cave", "ourania");
-		aliases.put("forgotten cemetery", "cemetery");
-		aliases.put("mooring point", "boat");
-		aliases.put("teleport to boat", "boat");
-		aliases.put("frozen waste plateau", "ghorrock");
-		aliases.put("demonic ruins", "annakarl");
-		aliases.put("graveyard of shadows", "carrallanger");
-		aliases.put("canifis", "kharyrll");
-		aliases.put("exam centre", "senntisten");
-		aliases.put("exam center", "senntisten");
-		aliases.put("digsite", "senntisten");
-		aliases.put("edgeville dungeon", "paddewwa");
-		aliases.put("ice mountain", "lassar");
-		aliases.put("crazy archaeologist", "dareeyak");
-		aliases.put("ruins west", "dareeyak");
-		aliases.put("ape atoll", "marim");
-		// The teleport menu truncates "Fenkenstrain's Castle" to "Fenken' Castle".
-		aliases.put("fenken castle", "fenkenstrain s castle");
-		NAME_ALIASES = Map.copyOf(aliases);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+			PohService.class.getResourceAsStream("/poh-name-aliases.tsv"), StandardCharsets.UTF_8)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				if (line.isEmpty() || line.startsWith("#"))
+				{
+					continue;
+				}
+				String[] c = line.split("\t", -1);
+				aliases.put(c[0], c[1]);
+			}
+		}
+		catch (Exception e)
+		{
+			throw new IllegalStateException("failed to load poh-name-aliases.tsv", e);
+		}
+		return Map.copyOf(aliases);
 	}
+
+	private static final Map<String, String> NAME_ALIASES = nameAliases();
 	static final String CONFIG_KEY = "portalNexusKeybinds";
 
 	private final ConfigManager configManager;

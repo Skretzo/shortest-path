@@ -13,6 +13,8 @@ import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Immutable snapshot of everything transport item-requirement evaluation needs, captured
@@ -62,7 +64,7 @@ public final class TransportEligibility
 	private final TeleportationItem teleportationItemSetting;
 	private final int currencyThreshold;
 	private final Set<Unlock> unlocks;
-	private final HeldItems heldItems;
+	@Getter @Accessors(fluent = true) private final HeldItems heldItems;
 
 	public TransportEligibility(
 		Map<Integer, Integer> carriedItems,
@@ -117,10 +119,7 @@ public final class TransportEligibility
 	 * it to decide each target's {@code TargetStatus}; it is derived from the same pools
 	 * the eligibility verdicts use, so both can never observe different item state.
 	 */
-	public HeldItems heldItems()
-	{
-		return heldItems;
-	}
+
 
 	/**
 	 * Whether the transport's item requirements are met by the carried pool

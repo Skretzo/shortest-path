@@ -7,6 +7,8 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Immutable account/config snapshot used by the A* graph. */
 public final class PreparedRoutingAccount
@@ -15,15 +17,15 @@ public final class PreparedRoutingAccount
 	private static final long FNV_PRIME = 0x100000001b3L;
 	private static final TeleportCapability[] CAPABILITIES = TeleportCapability.values();
 
-	private final boolean allowTransports;
-	private final boolean bankPathEnabled;
+	@Getter @Accessors(fluent = true) private final boolean allowTransports;
+	@Getter @Accessors(fluent = true) private final boolean bankPathEnabled;
 	/** Bank tiles this account may use, in unsigned order: a subset of the static bank tiles. */
 	private final int[] accessibleBankTiles;
-	private final int bankVisitCost;
+	@Getter @Accessors(fluent = true) private final int bankVisitCost;
 	private final View[] local = new View[2];
 	/** The global teleports castable with each {@link TeleportCapability}, by ordinal, in each bank layer. */
 	private final View[][] global;
-	private final long fingerprint;
+	@Getter @Accessors(fluent = true) private final long fingerprint;
 
 	private PreparedRoutingAccount(boolean allowTransports, boolean bankPathEnabled, int[] accessibleBankTiles,
 		int bankVisitCost, View[] local, View[][] global)
@@ -81,14 +83,8 @@ public final class PreparedRoutingAccount
 		return Arrays.copyOf(result, unique);
 	}
 
-	public boolean allowTransports()
-	{
-		return allowTransports;
-	}
-	public boolean bankPathEnabled()
-	{
-		return bankPathEnabled;
-	}
+
+
 	/**
 	 * Whether this account may bank at {@code packedTile}. Only meaningful for a tile the static
 	 * data marks as a bank; the forward search asks only there, so the binary search stays rare.
@@ -107,10 +103,7 @@ public final class PreparedRoutingAccount
 		return false;
 	}
 	/** The cost of switching into the banked layer at an accessible bank. */
-	public int bankVisitCost()
-	{
-		return bankVisitCost;
-	}
+
 	public int accessibleBankCount()
 	{
 		return accessibleBankTiles.length;
@@ -119,10 +112,7 @@ public final class PreparedRoutingAccount
 	{
 		return accessibleBankTiles[index];
 	}
-	public long fingerprint()
-	{
-		return fingerprint;
-	}
+
 	public String fingerprintHex()
 	{
 		return String.format("%016x", fingerprint);

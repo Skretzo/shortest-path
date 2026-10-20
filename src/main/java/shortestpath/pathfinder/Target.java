@@ -4,16 +4,12 @@ import java.util.List;
 import shortestpath.WorldPointUtil;
 import shortestpath.requirement.model.TransportItems;
 import lombok.Getter;
-import lombok.ToString;
-import lombok.EqualsAndHashCode;
 
 /**
  * A tile a search may end on, with the items the player must hold when they arrive there: a spade
  * for a dig spot, an emote clue's outfit. A target the player picks has no required items; other
  * plugins can add them. Immutable.
  */
-@ToString
-@EqualsAndHashCode
 public final class Target
 {
 	/** The required items of a target that needs none. */
@@ -55,7 +51,16 @@ public final class Target
 		return requiredItems.size() > 0;
 	}
 
-
+	@Override
+	public boolean equals(Object o)
+	{
+		if (!(o instanceof Target))
+		{
+			return false;
+		}
+		Target that = (Target) o;
+		return point == that.point && requiredItems.equals(that.requiredItems);
+	}
 
 	@Override
 	public int hashCode()
@@ -63,5 +68,10 @@ public final class Target
 		return 31 * point + requiredItems.hashCode();
 	}
 
-
+	@Override
+	public String toString()
+	{
+		return WorldPointUtil.unpackWorldPoint(point) + (hasRequiredItems() ? " requiring " + requiredItems.size()
+			+ " item group(s)" : "");
+	}
 }

@@ -19,6 +19,8 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.Settings;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Tests for TransportTypeConfig.
@@ -146,11 +148,11 @@ public class TransportTypeConfigTest
 	public void testPohPortalMasterToggle()
 	{
 		setupDefaultMocks();
-		when(config.pohNexusPortals()).thenReturn(EnumSet.noneOf(PohNexusPortal.class));
+		when(config.pohNexusPortals()).thenReturn(Set.<PohNexusPortal>of());
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 		assertFalse(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
 
-		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.ARDOUGNE));
+		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.ARDOUGNE));
 		typeConfig.refresh();
 		assertTrue(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
 	}
@@ -612,7 +614,7 @@ public class TransportTypeConfigTest
 		when(config.useTeleportationLevers()).thenReturn(true);
 		when(config.useTeleportationMinigames()).thenReturn(true);
 		when(config.useTeleportationPortals()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(EnumSet.allOf(PohNexusPortal.class));
+		when(config.pohNexusPortals()).thenReturn(new HashSet<>(PohNexusPortal.values()));
 		when(config.useTeleportationSpells()).thenReturn(true);
 		when(config.useWildernessObelisks()).thenReturn(true);
 		when(config.useTeleportationSpellsHome()).thenReturn(true);

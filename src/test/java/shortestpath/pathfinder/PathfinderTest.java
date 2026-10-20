@@ -419,7 +419,7 @@ public class PathfinderTest
 		when(config.usePoh()).thenReturn(true);
 		when(config.pohNexusPortals()).thenReturn(Set.of());
 		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
-		when(config.pohMountedItems()).thenReturn(EnumSet.of(PohMountedItem.XERICS_TALISMAN));
+		when(config.pohMountedItems()).thenReturn(Set.of(PohMountedItem.XERICS_TALISMAN));
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
@@ -2099,7 +2099,7 @@ public class PathfinderTest
 		when(config.usePoh()).thenReturn(true);
 		when(config.pohNexusPortals()).thenReturn(Set.of());
 		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
-		when(config.pohMountedItems()).thenReturn(EnumSet.of(
+		when(config.pohMountedItems()).thenReturn(Set.of(
 			PohMountedItem.GLORY, PohMountedItem.DIGSITE_PENDANT));
 		setupInventory(new Item(8013, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
@@ -2109,7 +2109,7 @@ public class PathfinderTest
 		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Teleport to House tablet"));
 		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_BOX, "Edgeville"));
 
-		when(config.pohMountedItems()).thenReturn(EnumSet.of(PohMountedItem.DIGSITE_PENDANT));
+		when(config.pohMountedItems()).thenReturn(Set.of(PohMountedItem.DIGSITE_PENDANT));
 		pathfinderConfig.refresh();
 		Pathfinder withoutGlory = runScenario(WorldPointUtil.packWorldPoint(3200, 3200, 0), grandExchange);
 		assertTrue(withoutGlory.getResult().isReached());
@@ -2129,7 +2129,7 @@ public class PathfinderTest
 	public void testEnqueuedTeleportDoesNotClaimDestination()
 	{
 		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.LUMBRIDGE));
+		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.LUMBRIDGE));
 		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
 		when(config.pohMountedItems()).thenReturn(Set.of());
 		// The expensive competing teleport must exist or the bug cannot reproduce.
@@ -2161,7 +2161,7 @@ public class PathfinderTest
 	public void testBankedEnqueuedTeleportDoesNotClaimDestination()
 	{
 		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.LUMBRIDGE));
+		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.LUMBRIDGE));
 		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
 		when(config.pohMountedItems()).thenReturn(Set.of());
 		when(config.useTeleportationSpellsHome()).thenReturn(true);
@@ -2469,7 +2469,7 @@ public class PathfinderTest
 		int pohOrigin = WorldPointUtil.packWorldPoint(1858, 7051, 0);
 
 		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(EnumSet.of(PohNexusPortal.RESPAWN));
+		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.RESPAWN));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		PrimitiveIntHashMap<Transport[]> transports = pathfinderConfig.getTransports();

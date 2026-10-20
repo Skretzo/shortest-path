@@ -7,6 +7,8 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Separator cut edges for the A* backend, stored as {@code routing-cuts.bin}.
@@ -36,8 +38,8 @@ public final class RoutingCuts
 	private static final long FNV_OFFSET = 0xcbf29ce484222325L;
 	private static final long FNV_PRIME = 0x100000001b3L;
 
-	private final long collisionFingerprint;
-	private final Parameters parameters;
+	@Getter @Accessors(fluent = true) private final long collisionFingerprint;
+	@Getter @Accessors(fluent = true) private final Parameters parameters;
 	private final int[] pairs;
 
 	/** The KaHIP partitioning parameters the cuts were generated with. */
@@ -107,15 +109,9 @@ public final class RoutingCuts
 		this.pairs = pairs;
 	}
 
-	public long collisionFingerprint()
-	{
-		return collisionFingerprint;
-	}
 
-	public Parameters parameters()
-	{
-		return parameters;
-	}
+
+
 
 	public int cutCount()
 	{

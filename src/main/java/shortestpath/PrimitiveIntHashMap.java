@@ -2,6 +2,8 @@ package shortestpath;
 
 import java.util.Arrays;
 import java.util.Collection;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * A lightweight hash map keyed by primitive {@code int} values using an open-addressed table with
@@ -35,7 +37,7 @@ public class PrimitiveIntHashMap<V>
 	private final float loadFactor;
 	private int[] keys;
 	private Object[] values;
-	private int size;
+	@Getter @Accessors(fluent = true) private int size;
 	private int capacity;
 	private int maxSize;
 	private int mask;
@@ -91,10 +93,7 @@ public class PrimitiveIntHashMap<V>
 	 *
 	 * @return current entry count (always {@code >= 0}).
 	 */
-	public int size()
-	{
-		return size;
-	}
+
 
 	/**
 	 * Returns all keys present in the map as a freshly allocated {@code int[]}.

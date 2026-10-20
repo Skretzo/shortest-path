@@ -16,6 +16,7 @@ import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.Effect;
 import shortestpath.settings.TeleportationItem;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * Owns the plugin's player item state observed from game events — the live
@@ -38,7 +39,7 @@ public class ItemStateService
 	// Bumped by every admitted item-state change; readers that project this
 	// state (e.g. the bank-pickup projection) key their caches on it instead
 	// of this service observing their invalidation needs.
-	private int itemStateRevision;
+	@Getter @Accessors(fluent = true) private int itemStateRevision;
 
 	@Inject
 	public ItemStateService()
@@ -127,10 +128,7 @@ public class ItemStateService
 	 * by {@link #noteBankContainer}, and by {@link #reset}. Readers that cache
 	 * a projection over this state must recompute when it moves.
 	 */
-	public int itemStateRevision()
-	{
-		return itemStateRevision;
-	}
+
 
 	/**
 	 * Clears the session-scoped state — the live bank reference. The service

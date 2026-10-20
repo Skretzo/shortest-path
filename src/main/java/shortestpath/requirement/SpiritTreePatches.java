@@ -1,10 +1,12 @@
 package shortestpath.requirement;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import net.runelite.api.gameval.VarbitID;
 
 /**
  * Static metadata for the five plantable spirit tree patches (Port Sarim,
@@ -27,11 +29,25 @@ public final class SpiritTreePatches
 	static
 	{
 		Map<String, int[]> patches = new LinkedHashMap<>();
-		patches.put("Port Sarim", new int[]{12082, VarbitID.FARMING_TRANSMIT_A, 3058, 3256, 3062, 3260});
-		patches.put("Etceteria", new int[]{10300, VarbitID.FARMING_TRANSMIT_B, 2611, 3855, 2615, 3860});
-		patches.put("Brimhaven", new int[]{11058, VarbitID.FARMING_TRANSMIT_B, 2800, 3201, 2804, 3205});
-		patches.put("Hosidius", new int[]{6711, VarbitID.FARMING_TRANSMIT_F, 1691, 3540, 1695, 3544});
-		patches.put("Farming Guild", new int[]{4922, VarbitID.FARMING_TRANSMIT_A, 1251, 3748, 1255, 3752});
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+			SpiritTreePatches.class.getResourceAsStream("/spirit-tree-patches.tsv"), StandardCharsets.UTF_8)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				if (line.isEmpty() || line.startsWith("#"))
+				{
+					continue;
+				}
+				String[] c = line.split("\t", -1);
+				patches.put(c[0], new int[]{Integer.parseInt(c[1]), Integer.parseInt(c[2]),
+					Integer.parseInt(c[3]), Integer.parseInt(c[4]), Integer.parseInt(c[5]), Integer.parseInt(c[6])});
+			}
+		}
+		catch (Exception e)
+		{
+			throw new IllegalStateException("failed to load spirit-tree-patches.tsv", e);
+		}
 		PATCHES = Collections.unmodifiableMap(patches);
 
 		Map<Integer, String> byRegion = new LinkedHashMap<>();

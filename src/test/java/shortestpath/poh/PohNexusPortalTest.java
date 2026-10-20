@@ -7,6 +7,8 @@ import shortestpath.TestShortestPathConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import java.util.Set;
+import java.util.HashSet;
 
 public class PohNexusPortalTest
 {
@@ -60,7 +62,7 @@ public class PohNexusPortalTest
 	@Test
 	public void testLegacyConfigSuppliesTheInitialPortalSelection()
 	{
-		assertEquals(EnumSet.noneOf(PohNexusPortal.class), new TestShortestPathConfig().pohNexusPortals());
+		assertEquals(Set.<PohNexusPortal>of(), new TestShortestPathConfig().pohNexusPortals());
 		TestShortestPathConfig legacyEnabled = new TestShortestPathConfig()
 		{
 			@Override
@@ -69,6 +71,6 @@ public class PohNexusPortalTest
 				return true;
 			}
 		};
-		assertEquals(EnumSet.allOf(PohNexusPortal.class), legacyEnabled.pohNexusPortals());
+		assertEquals(new HashSet<>(PohNexusPortal.values()), legacyEnabled.pohNexusPortals());
 	}
 }

@@ -74,7 +74,7 @@ public class Settings
 	 * config manager); reads here go through the injected config proxy.
 	 */
 	private final ConfigManager configManager;
-	private final ShortestPathConfig configured;
+	@Getter @Accessors(fluent = true) private final ShortestPathConfig configured;
 
 	/**
 	 * The one publication slot. Overridden values, the effective decorator, and
@@ -132,10 +132,7 @@ public class Settings
 	/**
 	 * The raw config proxy — configured values with no overrides applied.
 	 */
-	public ShortestPathConfig configured()
-	{
-		return configured;
-	}
+
 
 	/**
 	 * The override-applying decorator over {@link #configured()}: coercible keys
