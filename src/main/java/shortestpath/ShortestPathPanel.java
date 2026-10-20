@@ -63,7 +63,7 @@ import shortestpath.transport.BalloonRoute;
  * same {@code ConfigChanged} path as a settings-panel edit.
  *
  * <p>Navigation is a tile drill-down: a pinned search strip sits NORTH of a
- * {@link MultiplexingPluginPanel} card-stack whose root is the six-tile
+ * {@link MultiplexingPluginPanel} card-stack whose root is the seven-tile
  * {@link ShortestPathHomePanel}; each tile pushes its {@link CategoryPanel}
  * sub-panel and the sub-panel's back arrow pops home. Searching pushes the
  * home surface, which renders results grouped by category and deep-links
@@ -196,6 +196,7 @@ public class ShortestPathPanel extends PluginPanel
 		buildUnlocksCategory();
 		buildBankCategory();
 		buildPohCategory();
+		buildHighlightsCategory();
 
 		home = new ShortestPathHomePanel(this);
 		muxer = new MultiplexingPluginPanel(home);
@@ -377,6 +378,21 @@ public class ShortestPathPanel extends PluginPanel
 		for (SearchRow row : pohSubRows)
 		{
 			applyRowDisabledState(row.component, enabled);
+		}
+	}
+
+	/**
+	 * The display-side toggles: transport/pickup hint text plus the three
+	 * overlay highlights. They share a category of plain check rows — no
+	 * master/dim contract, since each toggle stands alone.
+	 */
+	private void buildHighlightsCategory()
+	{
+		CategoryPanel highlights = new CategoryPanel(this, "Highlights", "");
+		categories.add(highlights);
+		for (String key : ShortestPathHomePanel.HIGHLIGHT_KEYS)
+		{
+			highlights.addRow(checkRow(key));
 		}
 	}
 
