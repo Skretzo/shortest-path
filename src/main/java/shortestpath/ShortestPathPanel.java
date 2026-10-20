@@ -2,8 +2,6 @@ package shortestpath;
 
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
@@ -15,9 +13,10 @@ import javax.swing.event.*;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.game.ItemManager;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.game.*;
+import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.*;
-import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.components.*;
 import net.runelite.client.util.*;
 import lombok.*;
@@ -91,7 +90,13 @@ public class ShortestPathPanel extends PluginPanel
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ItemManager itemManager;
+	private final SpriteManager spriteManager;
 	private final ItemStateService itemState;
+	// The home footer's gear posts an overlay-config menu click on the
+	// shared bus; the event's overlay must resolve back to this plugin so
+	// the config surface knows which settings page to open.
+	final EventBus eventBus;
+	final Plugin plugin;
 
 	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final IconTextField searchBar;
 	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final MultiplexingPluginPanel muxer;
@@ -121,7 +126,9 @@ public class ShortestPathPanel extends PluginPanel
 	@Getter(AccessLevel.PACKAGE) private String currentQuery = "";
 
 	ShortestPathPanel(Settings settings, Client client,
-		ClientThread clientThread, ItemManager itemManager, ItemStateService itemState)
+		ClientThread clientThread, ItemManager itemManager,
+		SpriteManager spriteManager, ItemStateService itemState,
+		EventBus eventBus, Plugin plugin)
 	{
 		super(false);
 
@@ -129,7 +136,10 @@ public class ShortestPathPanel extends PluginPanel
 		this.client = client;
 		this.clientThread = clientThread;
 		this.itemManager = itemManager;
+		this.spriteManager = spriteManager;
 		this.itemState = itemState;
+		this.eventBus = eventBus;
+		this.plugin = plugin;
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -175,7 +185,7 @@ public class ShortestPathPanel extends PluginPanel
 		buildUnlocksCategory();
 		buildBankCategory();
 		buildPohCategory();
-		buildHighlightsCategory();
+		buildDisplayCategory();
 
 		home = new ShortestPathHomePanel(this);
 		muxer = new MultiplexingPluginPanel(home);
@@ -197,15 +207,21 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		CategoryPanel general = new CategoryPanel(this, "General", "routing");
 		categories.add(general);
+		// Routing policies first, then the path-lifecycle controls, then
+		// the backend selectors.
 		general.addRow(checkRow("avoidWilderness"));
-		general.addRow(spinnerRow("currencyThreshold"));
-		general.addRow(checkRow("respawnPrifddinas"));
-		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
 		general.addRow(checkRow("collisionAwareBlockedTargets"));
 		// Sailing moves is a routing policy with no threshold family —
 		// a plain check row beside the other transport-adjacent policies
 		// rather than a Transports card.
 		general.addRow(checkRow("useSailingMoves"));
+		general.addRow(spinnerRow("currencyThreshold"));
+		general.addRow(checkRow("cancelInstead"));
+		general.addRow(spinnerRow("recalculateDistance"));
+		general.addRow(spinnerRow("finishDistance"));
+		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
+		general.addRow(checkRow("showUnreachableText"));
+		general.addRow(spinnerRow("calculationCutoff"));
 		// The teleport-items mode is a routing policy, so its combo lives
 		// with the other General rows; its Transports card is masterless.
 		general.addRow(comboRow("useTeleportationItems"));
@@ -274,7 +290,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		addFamilyCard(transports, "useTeleportationLevers", ItemID.POH_LEVER_OAK,
 			familyThresholdRows("useTeleportationLevers"));
-		addFamilyCard(transports, "useTeleportationPortals", ItemID.POH_DUMMY_PORTALNEXUS,
+		addFamilyCard(transports, "useTeleportationPortals", ItemID.DT2_ANIMA_PORTAL,
 			familyThresholdRows("useTeleportationPortals"));
 		addFamilyCard(transports, "useTeleportationSpells", ItemID.LAWRUNE,
 			familyThresholdRows("useTeleportationSpells"));
@@ -319,6 +335,9 @@ public class ShortestPathPanel extends PluginPanel
 		unlocks.addRow(checkRow("unlockXericsHonour"));
 		unlocks.addRow(checkRow("unlockDragontoothPassage"));
 		unlocks.addRow(checkRow("unlockMorUlRek"));
+		// The respawn flag is account state the client cannot read — it
+		// sits with the unlocks rather than the General routing policies.
+		unlocks.addRow(checkRow("respawnPrifddinas"));
 	}
 
 	private void buildBankCategory()
@@ -327,6 +346,10 @@ public class ShortestPathPanel extends PluginPanel
 		categories.add(bank);
 		bank.addRow(checkRow("includeBankPath"));
 		bank.addRow(spinnerRow("costBankVisit"));
+		// The bank-pickup display pair belongs with the bank routing
+		// options — the hint and item highlight only act on bank visits.
+		bank.addRow(checkRow("showBankPickupInfo"));
+		bank.addRow(checkRow("highlightBankPickupItems"));
 	}
 
 	private void buildPohCategory()
@@ -365,14 +388,18 @@ public class ShortestPathPanel extends PluginPanel
 	 * overlay highlights. They share a category of plain check rows — no
 	 * master/dim contract, since each toggle stands alone.
 	 */
-	private void buildHighlightsCategory()
+	private void buildDisplayCategory()
 	{
-		CategoryPanel highlights = new CategoryPanel(this, "Highlights", "");
-		categories.add(highlights);
-		for (String key : ShortestPathHomePanel.HIGHLIGHT_KEYS)
+		CategoryPanel display = new CategoryPanel(this, "Display", "");
+		categories.add(display);
+		for (String key : ShortestPathHomePanel.DISPLAY_KEYS)
 		{
-			highlights.addRow(checkRow(key));
+			display.addRow(checkRow(key));
 		}
+		// The tile counter moved over from the stock settings surface —
+		// a mode combo and its step spinner, not plain toggles.
+		display.addRow(comboRow("showTileCounter"));
+		display.addRow(spinnerRow("tileCounterStep"));
 	}
 
 	private void applyPohEnabled(boolean enabled)
@@ -493,7 +520,10 @@ public class ShortestPathPanel extends PluginPanel
 
 		Object value = settings.configuredValue(keyName);
 		int current = value instanceof Number ? ((Number) value).intValue() : 0;
-		int min = item == null || item.min() == null ? 0 : Math.max(0, item.min());
+		// The declared range is honoured verbatim: keys like
+		// recalculateDistance/finishDistance take a negative min whose
+		// -1 sentinel means "never", so no floor is applied.
+		int min = item == null || item.min() == null ? 0 : item.min();
 		Integer max = item == null || item.max() == null || item.max() == Integer.MAX_VALUE ? null : item.max();
 		// A persisted value can land outside the model's bounds (hand-edited
 		// settings, or keys without a @Range bound the stock panel leaves
@@ -691,7 +721,7 @@ public class ShortestPathPanel extends PluginPanel
 	private List<SearchRow> balloonRouteRows()
 	{
 		String keyName = "balloonLogBasketRoutes";
-		ConfigItem item = settings.configItem(keyName);
+		ConfigItems.Meta item = settings.item(keyName);
 		String description = item == null ? "" : item.description();
 
 		List<SearchRow> rows = new ArrayList<>();
@@ -795,7 +825,7 @@ public class ShortestPathPanel extends PluginPanel
 	@SuppressWarnings("unchecked")
 	<E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
 	{
-		Set<E> set = new LinkedHashSet<>();
+		Set<E> set = EnumSet.noneOf(type);
 		Set<?> value = settings.configuredSet(keyName);
 		if (value != null)
 		{
@@ -831,6 +861,21 @@ public class ShortestPathPanel extends PluginPanel
 		AsyncBufferedImage image = itemManager.getImage(itemId);
 		image.onLoaded(() -> SwingUtilities.invokeLater(() ->
 			label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
+	}
+
+	/**
+	 * The client-sprite counterpart to {@link #loadItemIcon}: some tiles
+	 * carry cache sprites rather than item imagery (the Display tile uses
+	 * the Settings&gt;Display monitor glyph). {@code getSpriteAsync} runs
+	 * through {@link ClientThread}, which re-queues the request until the
+	 * sprite cache is loaded — the icon lands whenever the client reaches
+	 * the login screen.
+	 */
+	void loadSpriteIcon(int spriteId, JLabel label, int size)
+	{
+		spriteManager.getSpriteAsync(spriteId, 0, image ->
+			SwingUtilities.invokeLater(() ->
+				label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
 	}
 
 	// ---- Navigation ---------------------------------------------------------
