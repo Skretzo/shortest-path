@@ -84,6 +84,11 @@ public final class ItemVariations
 		return BY_NAME.get(name);
 	}
 
+	public static java.util.Collection<ItemVariations> values()
+	{
+		return java.util.Collections.unmodifiableCollection(BY_NAME.values());
+	}
+
 	public static final ItemVariations AIR_RUNE = fromName("AIR_RUNE");
 	public static final ItemVariations ARDOUGNE_CLOAK = fromName("ARDOUGNE_CLOAK");
 	public static final ItemVariations ASTRAL_RUNE = fromName("ASTRAL_RUNE");
