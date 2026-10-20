@@ -2,15 +2,21 @@ package shortestpath;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -23,13 +29,20 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.border.SoftBevelBorder;
+import net.runelite.api.MenuAction;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.SpriteID;
+import net.runelite.client.events.OverlayMenuClicked;
+import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
+import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.LinkBrowser;
 import shortestpath.settings.TeleportationItem;
 
 /**
@@ -73,8 +86,26 @@ class ShortestPathHomePanel extends PluginPanel
 		"showTransportInfo", "showBankPickupInfo", "highlightBankPickupItems",
 		"highlightSpellbookSpells", "highlightInventoryItems"};
 
+	private static final int FOOTER_BUTTON_EDGE = 22;
+	private static final int FOOTER_ICON_SIZE = 18;
+	private static final String GITHUB_URL = "https://github.com/Skretzo/shortest-path";
+	private static final String DISCORD_URL = "https://discord.gg/uX47xg8u3M";
+
+	private static final ImageIcon GITHUB_ICON = footerIcon("github_icon.png");
+	private static final ImageIcon DISCORD_ICON = footerIcon("discord_icon.png");
+	private static final ImageIcon CONFIG_ICON = footerIcon("config_icon.png");
+
 	private final ShortestPathPanel panel;
 	private final FixedWidthPanel content;
+	/**
+	 * Bound to the plugin solely so the gear button's posted
+	 * overlay-config click carries a resolvable plugin reference — the
+	 * classic settings surface picks the page to open off
+	 * {@code overlay.getPlugin()}. Never registered with the
+	 * OverlayManager; it renders nothing and builds no menus.
+	 */
+	private final Overlay configOverlay;
+	private final JComponent linkRow;
 
 	private final List<JComponent> tiles = new ArrayList<>();
 	private final List<JLabel> statusLabels = new ArrayList<>();
@@ -106,6 +137,9 @@ class ShortestPathHomePanel extends PluginPanel
 		{
 			tiles.add(makeTile(category));
 		}
+
+		configOverlay = new ConfigHandleOverlay(panel.plugin);
+		linkRow = buildLinkRow();
 
 		showTiles();
 		refresh();
@@ -157,6 +191,10 @@ class ShortestPathHomePanel extends PluginPanel
 		settingsNote.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		settingsNote.setFont(FontManager.getRunescapeSmallFont());
 		content.add(settingsNote);
+
+		// Below a thin divider, the footer link row: GitHub/Discord open
+		// the project links, the gear opens the classic settings page.
+		content.add(linkRow);
 
 		content.revalidate();
 		content.repaint();
@@ -232,6 +270,87 @@ class ShortestPathHomePanel extends PluginPanel
 
 		content.revalidate();
 		content.repaint();
+	}
+
+	/**
+	 * The footer link row: a thin divider under the notes, then three
+	 * small square chromeless buttons. GitHub and Discord open their
+	 * links through the system browser; the gear opens the plugin's
+	 * classic settings page by posting the same overlay-config menu
+	 * click a real overlay right-click would send.
+	 */
+	private JComponent buildLinkRow()
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+		row.setOpaque(false);
+		row.setBorder(new CompoundBorder(
+			new MatteBorder(1, 0, 0, 0, ColorScheme.MEDIUM_GRAY_COLOR),
+			new EmptyBorder(6, 0, 0, 0)));
+		row.add(linkButton(GITHUB_ICON, "GitHub", GITHUB_URL));
+		row.add(linkButton(DISCORD_ICON, "Discord", DISCORD_URL));
+		row.add(configButton());
+		return row;
+	}
+
+	private static JButton linkButton(ImageIcon icon, String tooltip, String url)
+	{
+		JButton button = footerButton(icon, tooltip);
+		// The URL doubles as the action command so headless checks can
+		// read the target without firing a real browser open.
+		button.setActionCommand(url);
+		button.addActionListener(e -> LinkBrowser.browse(url));
+		return button;
+	}
+
+	private JButton configButton()
+	{
+		JButton button = footerButton(CONFIG_ICON, "Plugin Settings");
+		button.addActionListener(e -> panel.eventBus.post(new OverlayMenuClicked(
+			new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, null, null),
+			configOverlay)));
+		return button;
+	}
+
+	private static JButton footerButton(ImageIcon icon, String tooltip)
+	{
+		JButton button = new JButton(icon);
+		button.setToolTipText(tooltip);
+		button.setPreferredSize(new Dimension(FOOTER_BUTTON_EDGE, FOOTER_BUTTON_EDGE));
+		button.setMargin(new Insets(0, 0, 0, 0));
+		button.setContentAreaFilled(false);
+		button.setBorderPainted(false);
+		button.setFocusPainted(false);
+		button.setOpaque(false);
+		button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		return button;
+	}
+
+	private static ImageIcon footerIcon(String file)
+	{
+		BufferedImage image = ImageUtil.loadImageResource(
+			ShortestPathHomePanel.class, "/shortestpath/" + file);
+		return new ImageIcon(
+			ImageUtil.resizeImage(image, FOOTER_ICON_SIZE, FOOTER_ICON_SIZE));
+	}
+
+	/**
+	 * A render-nothing {@link Overlay} — {@link Overlay} is abstract, so
+	 * the config-open trick needs a concrete subclass to carry the
+	 * plugin reference the posted menu click resolves through. It is
+	 * never registered with the OverlayManager.
+	 */
+	private static final class ConfigHandleOverlay extends Overlay
+	{
+		ConfigHandleOverlay(Plugin plugin)
+		{
+			super(plugin);
+		}
+
+		@Override
+		public Dimension render(Graphics2D graphics)
+		{
+			return null;
+		}
 	}
 
 	private JComponent resultRow(CategoryPanel category, ShortestPathPanel.SearchRow row, String display)
