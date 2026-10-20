@@ -42,7 +42,7 @@ public class PathfinderConfigPohMountedItemTest
 	@Test
 	public void allMountedItemsReproduceTheEnabledBehaviour()
 	{
-		Set<PohMountedItem> selected = new HashSet<>(PohMountedItem.values());
+		Set<PohMountedItem> selected = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 		for (String objectInfo : OBJECTS.values())
 		{
 			assertTrue(PohService.isMountedItemEnabled(selected, objectInfo));
@@ -53,7 +53,7 @@ public class PathfinderConfigPohMountedItemTest
 	public void legacyBooleanSuppliesTheInitialMultiSelection()
 	{
 		assertTrue(new TestShortestPathConfig().pohMountedItems().containsAll(
-			new HashSet<>(PohMountedItem.values())));
+			new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()))));
 		TestShortestPathConfig legacyDisabled = new TestShortestPathConfig()
 		{
 			@Override

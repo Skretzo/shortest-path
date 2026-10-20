@@ -124,7 +124,7 @@ public class PohServiceTest
 		Transport basic = transport(TransportType.TELEPORTATION_BOX, "Edgeville", "Basic Jewellery Box 37492", 0);
 		Transport fancy = transport(TransportType.TELEPORTATION_BOX, "Pollnivneach", "Fancy Jewellery Box 37501", 0);
 		Transport ornate = transport(TransportType.TELEPORTATION_BOX, "Mount Quidamortem", "Ornate Jewellery Box 37520", 0);
-		Set<PohMountedItem> allItems = new HashSet<>(PohMountedItem.values());
+		Set<PohMountedItem> allItems = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 
 		assertFalse(PohService.jewelleryBoxSatisfied(JewelleryBoxTier.NONE, allItems, basic));
 		assertFalse(PohService.jewelleryBoxSatisfied(JewelleryBoxTier.NONE, allItems, fancy));
@@ -147,7 +147,7 @@ public class PohServiceTest
 	public void testJewelleryBoxMountedItems()
 	{
 		Set<PohMountedItem> enabled = Set.of(PohMountedItem.GLORY);
-		Set<PohMountedItem> allItems = new HashSet<>(PohMountedItem.values());
+		Set<PohMountedItem> allItems = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 
 		Transport glory = transport(TransportType.TELEPORTATION_BOX, "Edgeville", "Amulet of Glory 29192", 0);
 		assertTrue(PohService.jewelleryBoxSatisfied(JewelleryBoxTier.BASIC, enabled, glory));
@@ -169,7 +169,7 @@ public class PohServiceTest
 	@Test
 	public void testJewelleryBoxEdgeCases()
 	{
-		Set<PohMountedItem> allItems = new HashSet<>(PohMountedItem.values());
+		Set<PohMountedItem> allItems = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 
 		assertFalse(PohService.jewelleryBoxSatisfied(JewelleryBoxTier.ORNATE, allItems,
 			transport(TransportType.TELEPORTATION_BOX, "nowhere", null, 0)));

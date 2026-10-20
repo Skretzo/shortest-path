@@ -1,6 +1,7 @@
 package shortestpath.transport;
 
 import shortestpath.WorldPointUtil;
+import lombok.Getter;
 
 /**
  * The six hot-air-balloon destination routes — one constant per destination
@@ -21,10 +22,10 @@ public enum BalloonRoute
 	GRAND_TREE("Grand Tree", 2478, 3456, 0, 1513, "magic logs"),
 	;
 
-	private final String label;
-	private final int packedDestination;
-	private final int logItemId;
-	private final String logLabel;
+	@Getter private final String label;
+	@Getter private final int packedDestination;
+	@Getter private final int logItemId;
+	@Getter private final String logLabel;
 
 	BalloonRoute(String label, int x, int y, int plane, int logItemId, String logLabel)
 	{
@@ -38,34 +39,22 @@ public enum BalloonRoute
 	 * The destination tile this route lands on, packed the same way the TSV
 	 * row's Destination column is.
 	 */
-	public int getPackedDestination()
-	{
-		return packedDestination;
-	}
+
 
 	/**
 	 * The destination name as the TSV row's Display info cell writes it.
 	 */
-	public String getLabel()
-	{
-		return label;
-	}
+
 
 	/**
 	 * The item id of the log this route's basket consumes.
 	 */
-	public int getLogItemId()
-	{
-		return logItemId;
-	}
+
 
 	/**
 	 * The lowercase display name of that log ("oak logs").
 	 */
-	public String getLogLabel()
-	{
-		return logLabel;
-	}
+
 
 	/**
 	 * The per-route checkbox text, e.g. {@code "Grand Tree (magic logs)"}.

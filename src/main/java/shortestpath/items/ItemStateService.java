@@ -9,6 +9,8 @@ import java.util.TreeMap;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
