@@ -90,7 +90,7 @@ import shortestpath.transport.BalloonRoute;
  */
 public class ShortestPathPanelLayoutTest
 {
-	private TestShortestPathConfig config;
+	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private Settings settings;
 	private ShortestPathPanel panel;
 	private Plugin plugin;
@@ -743,9 +743,9 @@ public class ShortestPathPanelLayoutTest
 	{
 		newPanel();
 		CategoryPanel general = panel.categories().get(0);
-		// The harness has no config descriptors, so the row names its key.
+		// Hidden rows take their display name from the bundled key metadata.
 		assertNotNull("sailing renders as a General check row",
-			labelContaining(contentOf(general), "useSailingMoves"));
+			labelContaining(contentOf(general), "Sail On Boats"));
 
 		assertNull("no sailing family card remains",
 			transportCardByKey("useSailingMoves"));
@@ -814,26 +814,26 @@ public class ShortestPathPanelLayoutTest
 		{
 			displays.add(row.display);
 		}
-		// The harness has no config descriptors, so rows name their key.
+		// Hidden rows take their display name from the bundled key metadata.
 		assertEquals("General rows in grouped order",
 			Arrays.asList(
-				"avoidWilderness", "collisionAwareBlockedTargets",
-				"useSailingMoves", "currencyThreshold",
-				"cancelInstead", "recalculateDistance", "finishDistance",
-				"unreachableTargetDistanceThreshold", "showUnreachableText",
-				"calculationCutoff",
-				"useTeleportationItems", "pathfinderAlgorithm",
-				"aStarHeuristicWeight"),
+				"Avoid Wilderness", "Collision-Aware Blocked Targets",
+				"Sail On Boats", "Currency Threshold",
+				"Cancel Instead Of Recalculating", "Recalculate Distance", "Finish Distance",
+				"Unreachable Target Distance", "Show Unreachable Text",
+				"Calculation Cutoff",
+				"Use Teleportation Items", "Pathfinder Algorithm",
+				"A* Heuristic Weight"),
 			displays);
 
 		assertNotNull("cancelInstead renders a check row",
-			masterBox(rowByDisplay(general, "cancelInstead").component));
+			masterBox(rowByDisplay(general, "Cancel Instead Of Recalculating").component));
 		assertNotNull("showUnreachableText renders a check row",
-			masterBox(rowByDisplay(general, "showUnreachableText").component));
+			masterBox(rowByDisplay(general, "Show Unreachable Text").component));
 		assertNotNull("recalculateDistance renders a spinner row",
-			spinnerIn(rowByDisplay(general, "recalculateDistance").component));
+			spinnerIn(rowByDisplay(general, "Recalculate Distance").component));
 		assertNotNull("finishDistance renders a spinner row",
-			spinnerIn(rowByDisplay(general, "finishDistance").component));
+			spinnerIn(rowByDisplay(general, "Finish Distance").component));
 	}
 
 	@Test
@@ -881,7 +881,7 @@ public class ShortestPathPanelLayoutTest
 		flushEdt();
 
 		JLabel rowLabel = labelContaining(
-			contentOf(panel.categories().get(0)), "avoidWilderness");
+			contentOf(panel.categories().get(0)), "Avoid Wilderness");
 		assertNotNull("General check row label", rowLabel);
 		assertTrue("row labels are html-wrapped",
 			rowLabel.getText().startsWith("<html>"));
@@ -1768,21 +1768,21 @@ public class ShortestPathPanelLayoutTest
 		assertEquals("three check rows plus the tile-counter pair", 5,
 			display.rows().size());
 
-		String[] keys = {"showTransportInfo", "highlightSpellbookSpells",
-			"highlightInventoryItems"};
+		String[] keys = {"Show Transport Info", "Highlight Spellbook Spells",
+			"Highlight Inventory Items"};
 		for (int i = 0; i < keys.length; i++)
 		{
 			ShortestPathPanel.SearchRow row = display.rows().get(i);
-			// The harness has no config descriptors, so rows name their key.
+			// Hidden rows take their display name from the bundled key metadata.
 			assertEquals(keys[i] + " row in build order", keys[i], row.display);
 			assertNotNull(keys[i] + " row carries a checkbox",
 				masterBox(row.component));
 		}
-		assertEquals("showTileCounter row in build order", "showTileCounter",
+		assertEquals("showTileCounter row in build order", "Show Tile Counter",
 			display.rows().get(3).display);
 		assertFalse("showTileCounter renders a combo",
 			combosIn(display.rows().get(3).component).isEmpty());
-		assertEquals("tileCounterStep row in build order", "tileCounterStep",
+		assertEquals("tileCounterStep row in build order", "Tile Counter Step",
 			display.rows().get(4).display);
 		assertNotNull("tileCounterStep renders a spinner",
 			spinnerIn(display.rows().get(4).component));
@@ -1814,7 +1814,7 @@ public class ShortestPathPanelLayoutTest
 		assertEquals("a category-name query lists every display row",
 			5, panel.matchingRows(display, "display").size());
 		assertEquals("a key-label query narrows to the matching rows",
-			2, panel.matchingRows(display, "tilecounter").size());
+			2, panel.matchingRows(display, "tile counter").size());
 	}
 
 	// ---- Combo styling + tile-name fit ------------------------------------
@@ -2367,9 +2367,9 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 
 		// The reference: a sibling checkRow label in the same category
-		// (the harness has no config descriptors, so rows name keys).
+		// (hidden rows take their display name from the bundled key metadata).
 		JLabel reference = labelContaining(
-			contentOf(pohCategory()), "usePohFairyRing");
+			contentOf(pohCategory()), "POH Fairy Ring");
 		assertNotNull("a sibling check row label", reference);
 
 		ShortestPathPanel.SearchRow caption = pohRowByDisplay("Portal Nexus");

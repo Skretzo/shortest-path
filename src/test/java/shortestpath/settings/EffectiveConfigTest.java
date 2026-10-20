@@ -142,6 +142,15 @@ public class EffectiveConfigTest
 	}
 
 	@Test
+	public void blockedTeleportItemsKeyIsInert()
+	{
+		// The refresh path parses the configured CSV directly; a payload
+		// value must never masquerade as applied through the decorator.
+		EffectiveConfig effective = effectiveWith(Map.of("blockedTeleportItems", "13103"));
+		assertEquals(base().blockedTeleportItems(), effective.str(ConfigKey.BLOCKED_TELEPORT_ITEMS));
+	}
+
+	@Test
 	public void setKeysAreInert()
 	{
 		// Even correctly-typed Set payloads never reach the getters.
@@ -152,10 +161,6 @@ public class EffectiveConfigTest
 		assertEquals(base().pohMountedItems(), effective.set(ConfigKey.POH_MOUNTED_ITEMS));
 	}
 
-
-
-
-
 	@Test
 	public void balloonFlagOverrideReachesTheUnwrittenRouteSet()
 	{
@@ -164,7 +169,7 @@ public class EffectiveConfigTest
 		// derived set too, or the snapshot advertises the unlock while
 		// routing unlocks nothing.
 		EffectiveConfig effective = effectiveWith(Map.of("unlockBalloonLogBasket", true));
-		assertTrue(effective.unlockBalloonLogBasket());
+		assertTrue(effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET));
 		assertEquals(EnumSet.allOf(BalloonRoute.class), effective.balloonLogBasketRoutes());
 	}
 
@@ -264,12 +269,6 @@ public class EffectiveConfigTest
 		// interface default body and ignore the base config entirely.
 		for (Method method : ShortestPathConfig.class.getDeclaredMethods())
 		{
-			// Hidden items carry interface defaults on this tree; the keyed
-			// registry covers them, so EffectiveConfig has nothing to declare.
-			if (method.isDefault())
-			{
-				continue;
-			}
 			Method declared = EffectiveConfig.class.getDeclaredMethod(method.getName(), method.getParameterTypes());
 			assertEquals("not overridden by EffectiveConfig: " + method.getName(),
 				EffectiveConfig.class, declared.getDeclaringClass());

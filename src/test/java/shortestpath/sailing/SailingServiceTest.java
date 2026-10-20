@@ -378,8 +378,7 @@ public class SailingServiceTest
 		when(boat.getConfig()).thenReturn(bounds);
 		when(boat.getTargetOrientation()).thenReturn(7);
 
-		when(boat.getTargetLocation()).thenReturn(
-			new LocalPoint(10 * 128 + 80, 20 * 128 + 40, BOAT_WORLDVIEW));
+		when(boat.getTargetLocation()).thenReturn(new LocalPoint(10 * 128 + 80, 20 * 128 + 40, BOAT_WORLDVIEW));
 
 		WorldView boatSceneView = mock(WorldView.class);
 		when(client.getWorldView(BOAT_WORLDVIEW)).thenReturn(boatSceneView);
@@ -393,8 +392,7 @@ public class SailingServiceTest
 		service.refresh(source());
 
 		// The boat slides a tile: point and pivots move, nothing material does.
-		when(boat.getTargetLocation()).thenReturn(
-			new LocalPoint(11 * 128 + 80, 20 * 128 + 40, BOAT_WORLDVIEW));
+		when(boat.getTargetLocation()).thenReturn(new LocalPoint(11 * 128 + 80, 20 * 128 + 40, BOAT_WORLDVIEW));
 		service.onVarbitChanged(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED);
 
 		verify(coordinator, never()).sailingChanged(any());
