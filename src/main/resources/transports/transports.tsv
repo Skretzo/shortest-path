@@ -2130,9 +2130,6 @@
 3588 3173 0	3590 3173 1	Climb-up Floor 18124							
 3589 3174 1	3588 3173 0	Climb-down Floor 18122							
 3589 3174 0	3590 3173 1	Climb-up Floor 18124							
-3589 3173 1	3588 3173 0	Climb-down Floor 18122							
-3588 3173 1	3588 3173 0	Climb-down Floor 18122							
-3589 3173 0	3590 3173 1	Climb-up Floor 18124							
 3588 3211 0	3588 3209 1	Climb-up Ladder 18000						2	
 3588 3209 1	3588 3211 0	Climb-down Ladder 17999						2	
 3589 3214 0	3589 3215 0	Open Barricade 18054							
@@ -4911,9 +4908,20 @@
 2118 3895 0	2118 3893 1	Climb Ladder 16960						2	
 									
 # Zanaris									
+2469 4438 0	2470 4438 0	Open Magic door 12045		1601=1				1	
+2470 4438 0	2469 4438 0	Open Magic door 12045						1	
+2469 4437 0	2470 4437 0	Open Magic door 12047		1601=1				1	
+2470 4437 0	2469 4437 0	Open Magic door 12047						1	
+2466 4434 0	2466 4433 0	Open Magic door 12045		1601=1				1	
+2466 4433 0	2466 4434 0	Open Magic door 12045						1	
+2465 4434 0	2465 4433 0	Open Magic door 12047		1601=1				1	
+2465 4433 0	2465 4434 0	Open Magic door 12047						1	
 2452 4473 0	3201 3169 0	Use Fairy ring 12094						6	
 3202 3169 0	2452 4473 0	Open Door 2406						6	
-2486 4471 0	3260 3171 0	Use Fairy ring 12003						6	
+2486 4472 0	3260 3171 0	Use Fairy ring 12003						6	
+2487 4471 0	3260 3171 0	Use Fairy ring 12003						6	
+2486 4470 0	3260 3171 0	Use Fairy ring 12003						6	
+2485 4471 0	3260 3171 0	Use Fairy ring 12003						6	
 									
 # Fortis Colosseum									
 1795 3106 0	1799 9506 0	Enter Colosseum entrance 50749							
@@ -5085,7 +5093,6 @@
 # Catacombs of Kourend									
 1469 3653 0	1650 9987 0	Enter Hole 28915				5088=1		2	
 1470 3652 0	1650 9987 0	Enter Hole 28915				5088=1		2	
-1470 3654 0	1650 9987 0	Enter Hole 28915				5088=1		2	
 1471 3653 0	1650 9987 0	Enter Hole 28915				5088=1		2	
 1562 3791 0	1617 10101 0	Enter Hole 28915				5088=1		2	
 1563 3790 0	1617 10101 0	Enter Hole 28915				5088=1		2	
@@ -5266,8 +5273,13 @@
 2511 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2	
 2512 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2	
 1768 5366 1	1772 5366 0	Climb-down Stairs 25338							
-1742 5352 0	2531 3446 0	Ride Aged log 25216						2	
-1761 5362 0	2531 3446 0	Ride Aged log 25216						2	
+1778 5346 0	1778 5343 1	Climb-up Stairs 25339						2	
+1741 5352 0	2531 3446 0	Ride Aged log 25216						2	
+1741 5353 0	2531 3446 0	Ride Aged log 25216						2	
+1741 5354 0	2531 3446 0	Ride Aged log 25216						2	
+1761 5361 0	2531 3446 0	Ride Aged log 25216						2	
+1762 5361 0	2531 3446 0	Ride Aged log 25216						2	
+1763 5361 0	2531 3446 0	Ride Aged log 25216						2	
 									
 # Hunter Guild									
 1559 3046 0	1556 3046 2	Climb-up Rope 51647						2	
@@ -5280,11 +5292,11 @@
 1553 3033 1	1553 3033 0	Climb-down Ladder 52620						2	
 1556 3034 1	1556 3034 2	Climb-up Ladder 52614						2	
 1556 3034 2	1556 3034 1	Climb-down Ladder 52620						2	
-1533 3051 0	1533 9446 0	Enter Cave 51761						2	
-1533 3050 0	1533 9446 0	Enter Cave 51761						2	
-1533 9447 0	1533 3051 0	Exit Cave 51760						2	
-1533 9446 0	1533 3051 0	Exit Cave 51760						2	
-1533 9445 0	1533 3051 0	Exit Cave 51760						2	
+1533 3051 0	1538 9446 0	Enter Cave 51761						2	
+1533 3050 0	1538 9446 0	Enter Cave 51761						2	
+1538 9447 0	1533 3051 0	Exit Cave 51760						2	
+1538 9446 0	1533 3051 0	Exit Cave 51760						2	
+1538 9445 0	1533 3051 0	Exit Cave 51760						2	
 									
 # Farming Guild (Kebos Lowlands)									
 # Main entrance gate - 45 Farming required. Coords inferred from skills necklace teleport endpoints (outside: 1248,3719 / inside: 1248,3725).									
@@ -5516,18 +5528,18 @@
 									
 # The obsticals are randomly generated so it can be that you can pass through one of the passages but not the other, so we have to list them all out.									
 # Todo: The destionation of the passages is not 100% confirmed, but atleast they point into the the second ring of the abyss.									
-3039 4854 0	3039 4844 0	Go-through Passage 26250							
-3029 4850 0	3033 4843 0	Go-through Passage 26250							
-3021 4843 0	3039 4844 0	Go-through Passage 26250							
-3018 4834 0	3039 4844 0	Go-through Passage 26250							
-3018 4822 0	3039 4844 0	Go-through Passage 26250							
-3030 4812 0	3039 4844 0	Go-through Passage 26250							
-3042 4811 0	3039 4844 0	Go-through Passage 26250							
-3050 4813 0	3039 4844 0	Go-through Passage 26250							
-3058 4822 0	3039 4844 0	Go-through Passage 26250							
-3061 4831 0	3052 4831 0	Go-through Passage 26250							
-3059 4840 0	3039 4844 0	Go-through Passage 26250							
-3050 4850 0	3039 4844 0	Go-through Passage 26250							
+3039 4855 0	3039 4844 0	Go-through Passage 26250							
+3029 4851 0	3033 4843 0	Go-through Passage 26250							
+3020 4843 0	3039 4844 0	Go-through Passage 26250							
+3017 4834 0	3039 4844 0	Go-through Passage 26250							
+3017 4822 0	3039 4844 0	Go-through Passage 26250							
+3027 4812 0	3039 4844 0	Go-through Passage 26250							
+3042 4810 0	3039 4844 0	Go-through Passage 26250							
+3050 4812 0	3039 4844 0	Go-through Passage 26250							
+3059 4822 0	3039 4844 0	Go-through Passage 26250							
+3062 4831 0	3052 4831 0	Go-through Passage 26250							
+3060 4840 0	3039 4844 0	Go-through Passage 26250							
+3050 4851 0	3039 4844 0	Go-through Passage 26250							
 									
 3034 4793 0	3221 3219 0	Operate Appendage 27027						4	
 									
@@ -5588,8 +5600,12 @@
 # todo: verify if the destination is correct									
 # todo: can also access Kourend's Blood Altar by using dark essence block/fragments on rift after crafting blood runes on it									
 3027 4834 0	3229 4834 0	Exit-through Blood rift 25382			Sins of the Father				
-3240 4832 0	3559 9779 0	Use Portal 43478						1	
-3224 4832 0	3559 9779 0	Use Portal 43478						1	
+3240 4833 0	3559 9779 0	Use Portal 43478						1	
+3240 4831 0	3559 9779 0	Use Portal 43478						1	
+3239 4832 0	3559 9779 0	Use Portal 43478						1	
+3224 4833 0	3559 9779 0	Use Portal 43478						1	
+3225 4832 0	3559 9779 0	Use Portal 43478						1	
+3224 4831 0	3559 9779 0	Use Portal 43478						1	
 									
 # Cosmic Altar									
 3028 4837 0	2142 4836 0	Exit-through Cosmic rift 25382			Lost City				
@@ -5828,7 +5844,10 @@
 									
 # Ape Atoll Dungeon									
 2763 9103 0	2763 2703 0	Climb-up Bamboo Ladder 4781						2	
-2763 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
+2763 2704 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
+2764 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
+2763 2702 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
+2762 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
 									
 # Varrock Palace trellis									
 3228 3470 0	3228 3472 0	Climb Trellis 2149			Garden of Tranquillity			2	
