@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.*;
-import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.*;
 import net.runelite.client.ui.*;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 import shortestpath.settings.TeleportationItem;
@@ -243,7 +243,9 @@ class ShortestPathHomePanel extends PluginPanel
 	/**
 	 * The item sprite a category's tile carries — every tile icon routes
 	 * through {@link ShortestPathPanel#loadItemIcon} so the home grid shows
-	 * the same item imagery the transport cards do.
+	 * the same item imagery the transport cards do. The Display tile is
+	 * the one exception: its glyph is a client sprite, handled in
+	 * {@link #makeTile}.
 	 */
 	private static int iconFor(String categoryName)
 	{
@@ -261,8 +263,6 @@ class ShortestPathHomePanel extends PluginPanel
 				return ItemID.COINS;
 			case "Player-Owned House":
 				return ItemID.POH_TABLET_TELEPORTTOHOUSE;
-			case "Display":
-				return ItemID.SOTE_ORB_OF_LIGHT;
 			default:
 				return ItemID.TRAIL_SEXTANT;
 		}
@@ -270,9 +270,19 @@ class ShortestPathHomePanel extends PluginPanel
 
 	private JComponent makeTile(CategoryPanel category)
 	{
-		Tile tile = new Tile(category.categoryName(),
-			() -> panel.drillInto(category));
-		panel.loadItemIcon(iconFor(category.categoryName()), tile.iconLabel, TILE_ICON_SIZE);
+		String name = category.categoryName();
+		Tile tile = new Tile(name, () -> panel.drillInto(category));
+		if ("Display".equals(name))
+		{
+			// The Display tile wears the in-game Settings>Display monitor
+			// glyph — a cache sprite, not an item icon.
+			panel.loadSpriteIcon(SpriteID.OptionsIcons.DISPLAY,
+				tile.iconLabel, TILE_ICON_SIZE);
+		}
+		else
+		{
+			panel.loadItemIcon(iconFor(name), tile.iconLabel, TILE_ICON_SIZE);
+		}
 		statusLabels.add(tile.statusLabel);
 		return tile;
 	}
