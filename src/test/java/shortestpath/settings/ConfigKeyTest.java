@@ -270,10 +270,10 @@ public class ConfigKeyTest
 
 		ConfigKey row = ConfigKey.forKey("costQuetzalWhistle");
 		assertNotNull("the override key must have its own row", row);
-		assertEquals("the row reads the shared quetzal transport cost",
-			11, row.getGetter().apply(config));
+		assertEquals("the threshold base pairs with the shared quetzal cost",
+			ConfigKey.COST_QUETZALS, row.baseRow());
 		assertEquals("the configured-value read returns the stored whistle value",
-			22, row.getConfiguredGetter().apply(config));
+			22, Settings.wrap(config).configuredValue("costQuetzalWhistle"));
 	}
 
 	/**

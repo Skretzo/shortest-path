@@ -284,7 +284,53 @@ public class Settings
 		{
 			throw new IllegalArgumentException("unknown config key: " + key);
 		}
-		return row.getConfiguredGetter().apply(configured);
+		return row.isKeyed() ? keyedBase(row) : row.getConfiguredGetter().apply(configured);
+	}
+
+	/**
+	 * The base (configured-level) value for a hidden key: the stored value
+	 * parsed through {@link ConfigManager}, or — on the {@link #wrap} seam —
+	 * the {@link KeyedValues} the stub config supplies, falling back to the
+	 * key's declared default when nothing is set.
+	 */
+	Object keyedBase(ConfigKey row)
+	{
+		Object value = null;
+		if (configManager != null)
+		{
+			value = configManager.getConfiguration(CONFIG_GROUP, row.getKey(),
+				row.getType() == Set.class ? row.getSetType() : row.getType());
+		}
+		// On harness seams the configured object supplies values the manager
+		// does not have (an unwritten key reads as null through a mock).
+		if (value == null && configured instanceof KeyedValues)
+		{
+			value = ((KeyedValues) configured).value(row.getKey());
+		}
+		return value != null ? value : row.resolveDefault(this::keyedBase);
+	}
+
+	/**
+	 * The display metadata for {@code key} — name, description and range
+	 * bounds — resolved from the bundled {@code config-items.tsv} for hidden
+	 * keys and the config descriptor for visible ones. {@code null} when the
+	 * key carries no metadata.
+	 */
+	public ConfigItems.Meta item(String key)
+	{
+		ConfigItems.Meta meta = ConfigItems.of(key);
+		if (meta != null)
+		{
+			return meta;
+		}
+		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
+		if (descriptor == null)
+		{
+			return null;
+		}
+		Range range = descriptor.getRange();
+		return new ConfigItems.Meta(key, descriptor.getItem().name(), descriptor.getItem().description(),
+			range == null ? null : range.min(), range == null ? null : range.max());
 	}
 
 	/** Typed convenience wrapper over {@link #configuredValue}. */
@@ -302,27 +348,6 @@ public class Settings
 	{
 		Object value = configuredValue(key);
 		return value instanceof Set ? (Set<?>) value : null;
-	}
-
-	/**
-	 * The {@link ConfigItem} declaration for {@code key} — the display name
-	 * and description controls render. {@code null} for keys with no
-	 * {@code @ConfigItem}.
-	 */
-	public ConfigItem configItem(String key)
-	{
-		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
-		return descriptor == null ? null : descriptor.getItem();
-	}
-
-	/**
-	 * The {@link Range} declared for {@code key}, or {@code null} when the
-	 * item bounds itself another way.
-	 */
-	public Range rangeOf(String key)
-	{
-		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
-		return descriptor == null ? null : descriptor.getRange();
 	}
 
 	private void fireListeners(String key)
@@ -672,11 +697,11 @@ public class Settings
 
 		private UnlocksView(EffectiveConfig effective)
 		{
-			unlockCanoeAxe = config.unlockCanoeAxe();
-			unlockXericsHonour = config.unlockXericsHonour();
-			unlockDragontoothPassage = config.unlockDragontoothPassage();
-			unlockMorUlRek = config.unlockMorUlRek();
-			unlockBalloonLogBasket = config.unlockBalloonLogBasket();
+			unlockCanoeAxe = effective.bool(ConfigKey.UNLOCK_CANOE_AXE);
+			unlockXericsHonour = effective.bool(ConfigKey.UNLOCK_XERICS_HONOUR);
+			unlockDragontoothPassage = effective.bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
+			unlockMorUlRek = effective.bool(ConfigKey.UNLOCK_MOR_UL_REK);
+			unlockBalloonLogBasket = effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET);
 		}
 	}
 
