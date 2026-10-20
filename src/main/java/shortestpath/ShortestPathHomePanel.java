@@ -32,12 +32,13 @@ import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 import shortestpath.settings.TeleportationItem;
 
 /**
- * The sidebar's home view: a 2x3 grid of category tiles — one per
+ * The sidebar's home view: a two-column grid of category tiles — one per
  * {@link CategoryPanel} in the order General, Transports, Teleport
- * Restrictions, Unlocks, Bank, Player-Owned House — each a square raised
- * button carrying a centered item icon, the bold category name and a live
- * status line (e.g. {@code "19/22 on"}, {@code "3 blocked"}). Clicking a
- * tile drills into its sub-panel through the owning panel's muxer.
+ * Restrictions, Unlocks, Bank, Player-Owned House, Highlights — each a
+ * square raised button carrying a centered item icon, the bold category
+ * name and a live status line (e.g. {@code "19/22 on"}, {@code "3 blocked"}).
+ * Clicking a tile drills into its sub-panel through the owning panel's
+ * muxer.
  *
  * <p>The same {@link FixedWidthPanel} scroll wrap the category panels use
  * keeps the home view at viewport width with the same 8px content inset.</p>
@@ -62,6 +63,14 @@ class ShortestPathHomePanel extends PluginPanel
 	private static final String[] UNLOCK_KEYS = {
 		"unlockCanoeAxe", "unlockXericsHonour",
 		"unlockDragontoothPassage", "unlockMorUlRek"};
+	/**
+	 * The display-side toggles the Highlights tile counts — shared by the
+	 * category builder, the refresh-listener registration and the status
+	 * computation so the tile can never read "n/4" over five rows.
+	 */
+	static final String[] HIGHLIGHT_KEYS = {
+		"showTransportInfo", "showBankPickupInfo", "highlightBankPickupItems",
+		"highlightSpellbookSpells", "highlightInventoryItems"};
 
 	private final ShortestPathPanel panel;
 	private final FixedWidthPanel content;
@@ -120,7 +129,9 @@ class ShortestPathHomePanel extends PluginPanel
 	private void showTiles()
 	{
 		content.removeAll();
-		JPanel grid = new JPanel(new DynamicGridLayout(3, 2, GRID_HGAP, GRID_VGAP));
+		// Two fixed columns, rows derived from the tile count — an odd
+		// count just leaves the last cell empty.
+		JPanel grid = new JPanel(new DynamicGridLayout(0, 2, GRID_HGAP, GRID_VGAP));
 		grid.setOpaque(false);
 		for (JComponent tile : tiles)
 		{
@@ -268,6 +279,8 @@ class ShortestPathHomePanel extends PluginPanel
 				return ItemID.COINS;
 			case "Player-Owned House":
 				return ItemID.POH_TABLET_TELEPORTTOHOUSE;
+			case "Highlights":
+				return ItemID.SOTE_ORB_OF_LIGHT;
 			default:
 				return ItemID.TRAIL_SEXTANT;
 		}
@@ -297,6 +310,10 @@ class ShortestPathHomePanel extends PluginPanel
 			panel.registerConfigListener(card.getKeyName(), this::refresh);
 		}
 		for (String key : UNLOCK_KEYS)
+		{
+			panel.registerConfigListener(key, this::refresh);
+		}
+		for (String key : HIGHLIGHT_KEYS)
 		{
 			panel.registerConfigListener(key, this::refresh);
 		}
@@ -359,6 +376,16 @@ class ShortestPathHomePanel extends PluginPanel
 				return panel.settings.configuredBool("includeBankPath") ? "On" : "Off";
 			case "Player-Owned House":
 				return panel.settings.configuredBool("usePoh") ? "On" : "Off";
+			case "Highlights":
+				int lit = 0;
+				for (String key : HIGHLIGHT_KEYS)
+				{
+					if (panel.settings.configuredBool(key))
+					{
+						lit++;
+					}
+				}
+				return lit + "/" + HIGHLIGHT_KEYS.length + " on";
 			default:
 				return "";
 		}
