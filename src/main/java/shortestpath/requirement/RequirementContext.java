@@ -50,7 +50,7 @@ public final class RequirementContext
 {
 	@Getter
 	private final long evaluationTimeMinutes;
-	private final SkillLevels boostedSkillLevelsAndMore;
+	@Getter private final SkillLevels boostedSkillLevelsAndMore;
 	@Getter
 	private final int currentMaxQuestPoints;
 	@Getter
@@ -236,10 +236,5 @@ public final class RequirementContext
 		return new RequirementContext(0L, boostedSkillLevelsAndMore, 0, questStates,
 			varbitValues, varPlayerValues, eligibility, Set.of(), false, false,
 			new LeagueModeState(), null);
-	}
-
-	public SkillLevels getBoostedSkillLevelsAndMore()
-	{
-		return boostedSkillLevelsAndMore;
 	}
 }
