@@ -234,8 +234,8 @@ public class PlayerStateSourceTest
 	public void aBuiltPolicyIsUnmovedByMutatingTheSourceSets()
 	{
 		Set<TransportType> enabledTypes = EnumSet.allOf(TransportType.class);
-		Set<PohNexusPortal> portals = new HashSet<>(PohNexusPortal.values());
-		Set<PohMountedItem> mounted = new HashSet<>(PohMountedItem.values());
+		Set<PohNexusPortal> portals = new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values()));
+		Set<PohMountedItem> mounted = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 		RoutingPolicy policy = new RoutingPolicy(enabledTypes, MODE, true, true, true, true,
 			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true,
 			Set.of(), Map.of());

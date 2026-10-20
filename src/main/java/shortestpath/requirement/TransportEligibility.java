@@ -83,7 +83,7 @@ public final class TransportEligibility
 	 * eligible balloon transport instead of allocating per call.
 	 */
 	private final Set<Unlock> unlocksWithBalloonBasket;
-	private final HeldItems heldItems;
+	@Getter @Accessors(fluent = true) private final HeldItems heldItems;
 
 	public TransportEligibility(
 		Map<Integer, Integer> carriedItems,

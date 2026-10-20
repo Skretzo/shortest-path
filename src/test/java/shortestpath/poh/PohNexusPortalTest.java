@@ -71,6 +71,6 @@ public class PohNexusPortalTest
 				return "useTeleportationPortalsPoh".equals(keyName) ? true : super.value(keyName);
 			}
 		};
-		assertEquals(new HashSet<>(PohNexusPortal.values()), legacyEnabled.pohNexusPortals());
+		assertEquals(new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values())), legacyEnabled.pohNexusPortals());
 	}
 }
