@@ -11,7 +11,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -335,8 +336,8 @@ public class ShortestPathPanel extends PluginPanel
 		pohSubRows.add(checkRow("usePohSpiritTree"));
 		pohSubRows.add(checkRow("usePohObelisk"));
 		pohSubRows.add(comboRow("pohJewelleryBoxTier"));
-		pohSubRows.addAll(setSubListRows("pohNexusPortals", PohNexusPortal.class));
-		pohSubRows.addAll(setSubListRows("pohMountedItems", PohMountedItem.class));
+		pohSubRows.addAll(setSubListRows("pohNexusPortals", PohNexusPortal.values()));
+		pohSubRows.addAll(setSubListRows("pohMountedItems", PohMountedItem.values()));
 		for (SearchRow row : pohSubRows)
 		{
 			poh.addRow(row);
@@ -597,7 +598,7 @@ public class ShortestPathPanel extends PluginPanel
 	 * indented checkbox row per enum constant; toggling a box writes the
 	 * mutated set back through the shared config path.
 	 */
-	private <E extends Enum<E>> List<SearchRow> setSubListRows(String keyName, Class<E> type)
+	private <E> List<SearchRow> setSubListRows(String keyName, Collection<E> values)
 	{
 		ConfigItem item = settings.configItem(keyName);
 		String name = configName(keyName);
@@ -617,10 +618,10 @@ public class ShortestPathPanel extends PluginPanel
 		groupRow.add(groupLabel, BorderLayout.CENTER);
 		rows.add(new SearchRow(groupRow, name, searchable(name)));
 
-		for (E constant : type.getEnumConstants())
+		for (E constant : values)
 		{
 			JCheckBox checkBox = new JCheckBox(constant.toString());
-			checkBox.setSelected(currentSet(keyName, type).contains(constant));
+			checkBox.setSelected(currentSet(keyName).contains(constant));
 			checkBox.setToolTipText(html(description));
 			checkBox.addActionListener(e ->
 			{
@@ -628,8 +629,7 @@ public class ShortestPathPanel extends PluginPanel
 				{
 					return;
 				}
-				EnumSet<E> updated = EnumSet.noneOf(type);
-				updated.addAll(currentSet(keyName, type));
+				Set<E> updated = new LinkedHashSet<>(currentSet(keyName));
 				if (checkBox.isSelected())
 				{
 					updated.add(constant);
@@ -645,7 +645,7 @@ public class ShortestPathPanel extends PluginPanel
 				syncing[0] = true;
 				try
 				{
-					checkBox.setSelected(currentSet(keyName, type).contains(constant));
+					checkBox.setSelected(currentSet(keyName).contains(constant));
 				}
 				finally
 				{
@@ -695,9 +695,9 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	@SuppressWarnings("unchecked")
-	private <E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
+	private <E> Set<E> currentSet(String keyName)
 	{
-		Set<E> set = EnumSet.noneOf(type);
+		Set<E> set = new LinkedHashSet<>();
 		Set<?> value = settings.configuredSet(keyName);
 		if (value != null)
 		{
