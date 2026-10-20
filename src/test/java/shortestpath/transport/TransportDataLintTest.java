@@ -234,8 +234,8 @@ public class TransportDataLintTest
 	}
 
 	/**
-	 * A concrete origin must be walkable, interactable from an open cardinal neighbour, or reached
-	 * by another transport. Global teleports have no concrete origin and are excluded.
+	 * A concrete origin must be walkable or be the exact destination of another transport.
+	 * Global teleports have no concrete origin and are excluded.
 	 */
 	@Test
 	public void testEveryTransportOriginCanBeApproached()
@@ -270,26 +270,27 @@ public class TransportDataLintTest
 			inaccessible.size(), String.join(System.lineSeparator(), inaccessible)), inaccessible.isEmpty());
 	}
 
+	@Test
+	public void blockedOriginRequiresAnExactArrival()
+	{
+		CollisionMap map = org.mockito.Mockito.mock(CollisionMap.class);
+		org.mockito.Mockito.when(map.isBlocked(2791, 2937, 0)).thenReturn(true);
+		int origin = WorldPointUtil.packWorldPoint(2791, 2937, 0);
+		Set<Integer> arrivals = new HashSet<>();
+		Assert.assertFalse(canApproach(map, arrivals, origin));
+		arrivals.add(WorldPointUtil.packWorldPoint(2790, 2937, 0));
+		Assert.assertFalse(canApproach(map, arrivals, origin));
+		arrivals.add(origin);
+		Assert.assertTrue(canApproach(map, arrivals, origin));
+		Assert.assertTrue(canApproach(map, arrivals, WorldPointUtil.packWorldPoint(2792, 2937, 0)));
+	}
+
 	private static boolean canApproach(CollisionMap map, Set<Integer> arrivals, int origin)
 	{
 		int x = WorldPointUtil.unpackWorldX(origin);
 		int y = WorldPointUtil.unpackWorldY(origin);
 		int z = WorldPointUtil.unpackWorldPlane(origin);
-		// shortcut: assumes incoming transports are reachable; trace chains if isolated cycles appear.
-		if (!map.isBlocked(x, y, z) || arrivals.contains(origin))
-		{
-			return true;
-		}
-		int[][] cardinals = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
-		for (int[] d : cardinals)
-		{
-			if (!map.isBlocked(x + d[0], y + d[1], z)
-				|| arrivals.contains(WorldPointUtil.packWorldPoint(x + d[0], y + d[1], z)))
-			{
-				return true;
-			}
-		}
-		return false;
+		return !map.isBlocked(x, y, z) || arrivals.contains(origin);
 	}
 
 	private static boolean canEscape(CollisionMap map, Map<Integer, Set<Transport>> transports, int destination)

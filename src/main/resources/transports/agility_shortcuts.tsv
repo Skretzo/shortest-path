@@ -317,9 +317,9 @@
 3045 3364 3	3041 3364 3	Jump Gap 14904	50 Agility				3	
 3035 3362 3	3028 3354 3	Cross Tightrope 14905	50 Agility				11	
 3027 3353 3	3020 3353 3	Cross Tightrope 14911	50 Agility				5	
-3016 3352 3	3016 3349 3	Jump Gap 14919	50 Agility				4	
-3017 3352 3	3017 3349 3	Jump Gap 14919	50 Agility				4	
-3018 3352 3	3018 3349 3	Jump Gap 14919	50 Agility				4	
+3016 3353 3	3016 3349 3	Jump Gap 14919	50 Agility				4	
+3017 3353 3	3017 3349 3	Jump Gap 14919	50 Agility				4	
+3018 3353 3	3018 3349 3	Jump Gap 14919	50 Agility				4	
 3017 3345 3	3014 3345 3	Jump Ledge 14920	50 Agility				5	
 3017 3346 3	3014 3346 3	Jump Ledge 14920	50 Agility				5	
 3011 3344 3	3011 3342 3	Jump Ledge 14921	50 Agility				3	
@@ -339,8 +339,8 @@
 3024 3335 3	3029 3335 0	Jump Edge 14925	50 Agility				6	
 3023 3335 3	3029 3335 0	Jump Edge 14925	50 Agility				6	
 3022 3335 3	3029 3335 0	Jump Edge 14925	50 Agility				6	
-3180 2432 0	3180 2434 0	Climb Rocks 57928	50 Agility					
-3180 2434 0	3180 2432 0	Climb Rocks 57927	50 Agility					
+3180 2431 0	3180 2435 0	Climb Rocks 57928	50 Agility					
+3180 2435 0	3180 2431 0	Climb Rocks 57927	50 Agility					
 3149 9906 0	3155 9906 0	Squeeze-through Obstacle pipe 16511	51 Agility					
 3155 9906 0	3149 9906 0	Squeeze-through Obstacle pipe 16511	51 Agility					
 3150 9907 0	3155 9906 0	Squeeze-through Obstacle pipe 16511	51 Agility					
@@ -524,7 +524,6 @@
 3424 3476 0	3427 3477 0	Climb Rocks 16998	65 Agility					
 3427 3477 0	3424 3476 0	Climb Rocks 16999	65 Agility					
 3424 3476 0	3423 3476 0	Squeeze-through Ornate railing 16552	65 Agility					
-3426 3478 0	3424 3476 0	Climb Rocks 16999	65 Agility					
 3425 3483 0	3425 3484 0	Squeeze-through Ornate railing 17000	65 Agility					
 3425 3484 0	3425 3483 0	Squeeze-through Ornate railing 17000	65 Agility					
 3212 3138 0	3214 3130 0	Jump-to Stepping stone 16513	66 Agility				3	
@@ -606,7 +605,7 @@
 2838 3693 0	2844 3693 0	Climb Rocks 16464	73 Agility					
 2844 3693 0	2838 3693 0	Climb Rocks 16464	73 Agility					
 2843 3692 0	2838 3693 0	Climb Rocks 16464	73 Agility					
-1438 10098 2	1438 10098 1	Hang-over Platform edge 56371	73 Agility					
+1438 10097 2	1438 10098 1	Hang-over Platform edge 56371	73 Agility					
 1448 10097 1	1453 10097 1	Jump Gap 56372	73 Agility				1	
 1453 10097 1	1456 10097 1	Jump Gap 56372	73 Agility					
 3765 3883 1	3765 3898 0	Teeth-grip Zip line 17030	74 Agility				10	

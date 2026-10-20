@@ -1383,7 +1383,7 @@ public class PathfinderTest
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch -> McGrubor's Wood with banked staff and bracelet",
-			49,
+			47,
 			WorldPointUtil.packWorldPoint(3180, 2419, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0),
 			TeleportationItem.INVENTORY_AND_BANK,
@@ -1404,7 +1404,7 @@ public class PathfinderTest
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch tile reuse -> McGrubor's Wood with banked Dramen staff",
-			70,
+			66,
 			WorldPointUtil.packWorldPoint(3181, 2437, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0),
 			TeleportationItem.INVENTORY_AND_BANK,
@@ -1425,7 +1425,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		assertScenarioPathLength(
 			"Great Conch -> McGrubor's Wood with inventory Dramen staff",
-			48,
+			46,
 			WorldPointUtil.packWorldPoint(3180, 2419, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0));
 	}
