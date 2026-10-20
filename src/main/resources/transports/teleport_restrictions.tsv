@@ -24,12 +24,29 @@ Burning amulet	21166	21166,21169,21171,21173,21175	21166=Burning amulet,21169=Bu
 Teleport to house	8013	8013	8013=Teleport to House tablet (Outside)
 Teleport tablets	8007	8007,8008,8009,8010,8011,8012,11741,11742,11743,11744,11745,11746,11747,12775,12776,12777,12778,12779,12780,12781,12782,19613,19615,19617,19619,19621,19623,19625,19627,19629,19631,19651,21541,22949,23771,24251,24949,24951,24953,24955,24957,24959,24961,24963,30149	8007=Varrock tablet,8008=Lumbridge tablet,8009=Falador tablet,8010=Camelot tablet,8011=Ardougne tablet,8012=Watchtower tablet,11741=Rimmington tablet,11742=Taverley tablet,11743=Pollnivneach tablet,11744=Rellekka tablet,11745=Brimhaven tablet,11746=Yanille tablet,11747=Trollheim tablet,12775=Annakarl tablet,12776=Carrallanger tablet,12777=Dareeyak tablet,12778=Ghorrock tablet,12779=Kharyrll tablet,12780=Lassar tablet,12781=Paddewwa tablet,12782=Senntisten tablet,19613=Arceuus Library tablet,19615=Draynor Manor tablet,19617=Mind Altar tablet,19619=Salve Graveyard tablet,19621=Fenkenstrain's Castle tablet,19623=West Ardougne tablet,19625=Harmony Island tablet,19627=Cemetery tablet,19629=Barrows tablet,19631=Ape Atoll tablet,19651=Hosidius tablet,21541=Volcanic Mine tablet,22949=Battlefront tablet,23771=Prifddinas tablet,24251=Wilderness Crabs tablet,24949=Moonclan tablet,24951=Ourania tablet,24953=Waterbirth tablet,24955=Barbarian tablet,24957=Khazard tablet,24959=Fishing guild tablet,24961=Catherby tablet,24963=Ice plateau tablet,30149=Aldarin tablet
 Teleport scrolls	12402	12402,12403,12404,12405,12406,12407,12408,12409,12410,12411,12642,12938,13249,21389,21802,23387	12402=Nardah teleport,12403=Digsite teleport,12404=Feldip hills teleport,12405=Lunar isle teleport,12406=Mort'ton teleport,12407=Pest control teleport,12408=Piscatoris teleport,12409=Tai bwo wannai teleport,12410=Iorwerth camp teleport,12411=Mos le'harmless teleport,12642=Lumberyard teleport,12938=Zul-andra teleport,13249=Key master teleport,21389=Master scroll book,21802=Revenant cave teleport,23387=Watson teleport
-Capes	9780	9780,9781	9780=Crafting cape,9781=Crafting cape
-The Construction cape's home teleports	9750	9750,9751,9789,9790,9798,9799,9810,9811,9948,9949	9750=Strength cape,9751=Strength cape,9789=Construction cape,9790=Construction cape,9798=Fishing cape,9799=Fishing cape,9810=Farming cape,9811=Farming cape,9948=Hunter cape,9949=Hunter cape
-Max capes	9813	9813,13068,13069,13221,13222,13280,13342,19476	9813=Quest point cape,13068=Quest point cape,13069=Achievement diary cape,13221=Music cape,13222=Music cape,13280=Max cape,13342=Max cape,19476=Achievement diary cape
-Quest items	4251	4251,4252,6099,6100,6101,6102,9469,13102,19564,23946	4251=Ectophial,4252=Ectophial,6099=Teleport crystal,6100=Teleport crystal,6101=Teleport crystal,6102=Teleport crystal,9469=Grand seed pod,13102=Teleport crystal,19564=Royal seed pod,23946=Eternal teleport crystal
-Enchanted lyre	3691	3691,6125,6126,6127,6707,13079,21760,21913,22114,22400,23458,24855,25818	3691=Enchanted lyre,6125=Enchanted lyre,6126=Enchanted lyre,6127=Enchanted lyre,6707=Camulet,13079=Enchanted lyre,21760=Kharedst's memoirs,21913=Mythical cape,22114=Mythical cape,22400=Drakan's medallion,23458=Enchanted lyre (i),24855=Mythical cape,25818=Book of the dead
-Stony basalt	22599	22599,22601	22599=Icy basalt,22601=Stony basalt
+Crafting cape	9780	9780,9781	9780=Crafting cape,9781=Crafting cape
+Construction cape	9789	9789,9790	9789=Construction cape,9790=Construction cape
+Fishing cape	9798	9798,9799	9798=Fishing cape,9799=Fishing cape
+Farming cape	9810	9810,9811	9810=Farming cape,9811=Farming cape
+Hunter cape	9948	9948,9949	9948=Hunter cape,9949=Hunter cape
+Strength cape	9750	9750,9751	9750=Strength cape,9751=Strength cape
+Max cape	13280	13280,13342	13280=Max cape,13342=Max cape
+Quest point cape	9813	9813,13068	9813=Quest point cape,13068=Quest point cape
+Music cape	13221	13221,13222	13221=Music cape,13222=Music cape
+Diary cape	13069	13069,19476	13069=Achievement diary cape,19476=Achievement diary cape
+Ectophial	4251	4251,4252	4251=Ectophial,4252=Ectophial
+Teleport crystal	6099	6099,6100,6101,6102,13102	6099=Teleport crystal,6100=Teleport crystal,6101=Teleport crystal,6102=Teleport crystal,13102=Teleport crystal
+Eternal teleport crystal	23946	23946	23946=Eternal teleport crystal
+Royal seed pod	19564	19564	19564=Royal seed pod
+Grand seed pod	9469	9469	9469=Grand seed pod
+Enchanted lyre	3691	3691,6125,6126,6127,13079,23458	3691=Enchanted lyre,6125=Enchanted lyre,6126=Enchanted lyre,6127=Enchanted lyre,13079=Enchanted lyre,23458=Enchanted lyre (i)
+Camulet	6707	6707	6707=Camulet
+Kharedst's memoirs	21760	21760	21760=Kharedst's memoirs
+Book of the dead	25818	25818	25818=Book of the dead
+Drakan's medallion	22400	22400	22400=Drakan's medallion
+Mythical cape	21913	21913,22114,24855	21913=Mythical cape,22114=Mythical cape,24855=Mythical cape
+Stony basalt	22601	22601	22601=Stony basalt
+Icy basalt	22599	22599	22599=Icy basalt
 Pharaoh's sceptre	26948	26948	26948=Pharaoh's sceptre
 Skull sceptre	9013	9013,21276	9013=Skull sceptre,21276=Skull sceptre
 Xeric's talisman	13393	13393	13393=Xeric's talisman
@@ -40,7 +57,7 @@ Hallowed crystal shard	24709	24709	24709=Hallowed crystal shard
 Ring of shadows	28327	28327	28327=Ring of shadows
 Pendant of ates	29893	29893	29893=Pendant of ates
 Giantsoul amulet	30638	30638	30638=Giantsoul amulet
-Sailors' amulet (Charged)	32399	32399	32399=Sailors' amulet
+Sailors' amulet	32399	32399	32399=Sailors' amulet
 Cowbell amulet	33104	33104	33104=Cowbell amulet
 Teleport spheres	10972	10972,11060,26577	10972=Dorgesh-kaan sphere,11060=Goblin village sphere,26577=Plain of Mud sphere
 Trinket of fairies - Spirit Trees	28564	28564	28564=Trinket of fairies

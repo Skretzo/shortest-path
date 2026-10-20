@@ -34,7 +34,7 @@ the memberLabels fallback, which is the family name) passes through
 clean_family_name(): 'PS:'/'PS -' postscripts, prose ' - '/'. '/' , ' tails,
 and note-style trailing parentheticals are dropped, while qualifiers that
 keep names distinct ('Slayer ring (1-8)', 'Trinket of fairies - Spirit
-Trees', "Sailors' amulet (Charged)") survive.
+Trees', 'Ring of dueling (1-8)') survive.
 
 The output is deterministic: families in file order, member ids sorted,
 memberLabels as 'id=label' pairs sorted by id.
