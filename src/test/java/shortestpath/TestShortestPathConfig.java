@@ -95,7 +95,6 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		this.unlockBalloonLogBasket = unlockBalloonLogBasket;
 	}
 
-	@Override
 	public TeleportationItem useTeleportationItems()
 	{
 		return (TeleportationItem) def("useTeleportationItems");
@@ -148,19 +147,11 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		return (Set<PohNexusPortal>) def("pohNexusPortals");
 	}
 
-	@Override
-	public String blockedTeleportItems()
-	{
-		return blockedTeleportItems;
-	}
-
-	@Override
 	public boolean unlockBalloonLogBasket()
 	{
 		return unlockBalloonLogBasket;
 	}
 
-	@Override
 	public int calculationCutoff()
 	{
 		return ((Number) def("calculationCutoff")).intValue();
@@ -469,4 +460,89 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 	{
 		return Boolean.TRUE.equals(def("useWildernessObelisks"));
 	}
+	private final java.util.Map<String, Object> extras = new java.util.HashMap<>();
+
+	public void set(String keyName, Object v)
+	{
+		extras.put(keyName, v);
+	}
+
+	public void disableTransportToggles()
+	{
+		for (String key : new String[]{
+			"avoidWilderness", "includeBankPath", "respawnPrifddinas",
+			"useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes",
+			"useCharterShips", "useShips", "useFairyRings", "useGnomeGliders",
+			"useHotAirBalloons", "useMagicCarpets", "useMagicMushtrees",
+			"useMinecarts", "useQuetzals", "useSpiritTrees",
+			"useTeleportationLevers", "useTeleportationPortals",
+			"useTeleportationSpells", "useTeleportationSpellsHome",
+			"useTeleportationMinigames", "useWildernessObelisks",
+			"useSeasonalTransports", "useSailingMoves",
+			"usePoh", "usePohFairyRing", "usePohSpiritTree",
+			"useTeleportationPortalsPoh", "usePohMountedItems", "usePohObelisk",
+			"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage",
+			"unlockMorUlRek"})
+		{
+			set(key, false);
+		}
+		// Numeric keys whose mock default was 0 rather than the declared
+		// default — reached-expansion and the whistle differential priced
+		// routes differently under the old suite.
+		set("unreachableTargetDistanceThreshold", 0);
+		set("costQuetzalWhistle", 0);
+	}
+
+	public Object value(String keyName)
+	{
+		if (extras.containsKey(keyName))
+			return extras.get(keyName);
+		switch (keyName)
+		{
+			case "calculationCutoff":
+				return calculationCutoff;
+			case "unreachableTargetDistanceThreshold":
+				return unreachableTargetDistance;
+			case "collisionAwareBlockedTargets":
+				return collisionAwareBlockedTargets;
+			case "useTeleportationItems":
+				return useTeleportationItems;
+			case "includeBankPath":
+				return includeBankPath;
+			case "costBankVisit":
+				return costBankVisit;
+			case "unlockCanoeAxe":
+				return unlockCanoeAxe;
+			case "unlockXericsHonour":
+				return unlockXericsHonour;
+			case "unlockDragontoothPassage":
+				return unlockDragontoothPassage;
+			case "blockedTeleportItems":
+				return blockedTeleportItems;
+			case "unlockBalloonLogBasket":
+				return unlockBalloonLogBasket;
+			default:
+				return null;
+		}
+	}
+
+	private Object def(String keyName)
+	{
+		// Mirrors Settings.keyedBase: the declared default runs on the same
+		// resolver, so flag-derived defaults see the flag's own default.
+		Object value = value(keyName);
+		return value != null ? value
+			: ConfigKey.forKey(keyName).resolveDefault(row -> def(row.getKey()));
+	}
+
+	public void setBuiltTeleportationBoxes(String content)
+	{
+		set("builtTeleportationBoxes", content);
+	}
+
+	public void setBuiltTeleportationPortalsPoh(String content)
+	{
+		set("builtTeleportationPortalsPoh", content);
+	}
+
 }

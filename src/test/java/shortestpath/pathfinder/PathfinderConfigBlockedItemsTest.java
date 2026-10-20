@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
@@ -98,8 +99,7 @@ public class PathfinderConfigBlockedItemsTest
 
 	@Mock
 	private Client client;
-	@Mock
-	private ShortestPathConfig config;
+		private TestShortestPathConfig config = new TestShortestPathConfig();
 	@Mock
 	private ItemContainer inventory;
 
@@ -178,7 +178,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void survivingUnlockTermDoesNotRescueBlockedAndTerm()
 	{
-		when(config.unlockXericsHonour()).thenReturn(true);
+		config.set("unlockXericsHonour", true);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13393", ITEM_AND_UNLOCK);
 
 		// The UNLOCK_XERICS_HONOUR requirement survives blocking, but the
@@ -210,7 +210,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void pureUnlockRequirementCannotBeBlocked()
 	{
-		when(config.unlockXericsHonour()).thenReturn(true);
+		config.set("unlockXericsHonour", true);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13393,13121", PURE_UNLOCK);
 
 		assertTrue(usable(cfg, PURE_UNLOCK, BankVisitState.CARRIED));
@@ -266,7 +266,7 @@ public class PathfinderConfigBlockedItemsTest
 	{
 		// The same blocked id gates the teleport item but must never consult a
 		// boat's item requirement.
-		when(config.useBoats()).thenReturn(true);
+		config.set("useBoats", true);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13103",
 			items(KARAMJA_GLOVES_4), BOAT_ON_GLOVES, KARAMJA_GLOVES);
 
@@ -286,7 +286,7 @@ public class PathfinderConfigBlockedItemsTest
 	public void seasonalTransportsHonourTheBlockList()
 	{
 		when(client.getWorldType()).thenReturn(EnumSet.of(WorldType.SEASONAL));
-		when(config.useSeasonalTransports()).thenReturn(true);
+		config.set("useSeasonalTransports", true);
 
 		PathfinderConfig unblocked = refreshConfig(TeleportationItem.ALL, "", SEASONAL);
 		assertTrue("seasonal transport must be usable before blocking",
@@ -299,7 +299,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void quetzalWhistlesHonourTheBlockList()
 	{
-		when(config.useQuetzals()).thenReturn(true);
+		config.set("useQuetzals", true);
 
 		PathfinderConfig unblocked = refreshConfig(TeleportationItem.ALL, "", WHISTLE);
 		assertTrue(usable(unblocked, WHISTLE, BankVisitState.CARRIED));
@@ -322,7 +322,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void thresholdOverrideReplacesWholeTypeCost()
 	{
-		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		config.set("costNonConsumableTeleportationItems", 10);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:40", ARDY_CLOAK);
 
 		// id:N is a threshold record, not a block record — the transport must
@@ -334,7 +334,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void zeroThresholdFallsBackToTypeCost()
 	{
-		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		config.set("costNonConsumableTeleportationItems", 10);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:0", ARDY_CLOAK);
 
 		assertEquals(10, cfg.getAdditionalTransportCost(ARDY_CLOAK));
@@ -343,7 +343,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void maxThresholdWinsAcrossMatchingMemberIds()
 	{
-		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		config.set("costNonConsumableTeleportationItems", 10);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:30,13122:50", ARDY_CLOAK);
 
 		assertEquals(50, cfg.getAdditionalTransportCost(ARDY_CLOAK));
@@ -352,7 +352,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void nonMatchingThresholdLeavesTypeCost()
 	{
-		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		config.set("costNonConsumableTeleportationItems", 10);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "99999:40", ARDY_CLOAK);
 
 		assertEquals(10, cfg.getAdditionalTransportCost(ARDY_CLOAK));
@@ -361,7 +361,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void thresholdOverrideIsWholeCostForConsumables()
 	{
-		when(config.costConsumableTeleportationItems()).thenReturn(7);
+		config.set("costConsumableTeleportationItems", 7);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:40", CONSUMABLE_TELE);
 
 		// The pinned tiles-saved is the whole additional cost — it replaces
@@ -372,8 +372,8 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void consumableWhistleThresholdReplacesStackedCost()
 	{
-		when(config.costQuetzals()).thenReturn(5);
-		when(config.costConsumableTeleportationItems()).thenReturn(7);
+		config.set("costQuetzals", 5);
+		config.set("costConsumableTeleportationItems", 7);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "29271:40", WHISTLE);
 
 		// Without the override this whistle costs 5 + 7 = 12; the pinned
@@ -384,8 +384,8 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void whistleWithoutOverrideKeepsStackedCost()
 	{
-		when(config.costQuetzals()).thenReturn(5);
-		when(config.costConsumableTeleportationItems()).thenReturn(7);
+		config.set("costQuetzals", 5);
+		config.set("costConsumableTeleportationItems", 7);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "", WHISTLE);
 
 		assertEquals(12, cfg.getAdditionalTransportCost(WHISTLE));
@@ -394,7 +394,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void seasonalThresholdOverrideApplies()
 	{
-		when(config.costSeasonalTransports()).thenReturn(4);
+		config.set("costSeasonalTransports", 4);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "30361:25", SEASONAL);
 
 		assertEquals(25, cfg.getAdditionalTransportCost(SEASONAL));
@@ -403,7 +403,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void staffAndOffhandMemberIdsCarryThresholds()
 	{
-		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		config.set("costNonConsumableTeleportationItems", 10);
 		// A threshold pinned on a staff substitute id applies too — substitutes
 		// are member ids of the transport's item requirement.
 		int staffId = ItemVariations.staves(ItemVariations.FIRE_RUNE)[0];
@@ -415,7 +415,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void thresholdOverrideDoesNotReachNonTeleportTypes()
 	{
-		when(config.costBoats()).thenReturn(3);
+		config.set("costBoats", 3);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, "13121:40", BOAT_ON_CLOAK);
 
 		assertEquals(3, cfg.getAdditionalTransportCost(BOAT_ON_CLOAK));
@@ -424,7 +424,7 @@ public class PathfinderConfigBlockedItemsTest
 	@Test
 	public void malformedThresholdRecordsAreSkipped()
 	{
-		when(config.costNonConsumableTeleportationItems()).thenReturn(10);
+		config.set("costNonConsumableTeleportationItems", 10);
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL,
 			"13121:abc,13122:50", ARDY_CLOAK);
 
@@ -509,13 +509,13 @@ public class PathfinderConfigBlockedItemsTest
 	private PathfinderConfig refreshConfig(TeleportationItem mode, String blockedCsv,
 		Item[] inventoryItems, Transport... transports)
 	{
-		when(config.calculationCutoff()).thenReturn(30);
-		when(config.currencyThreshold()).thenReturn(10_000_000);
-		when(config.pohNexusPortals()).thenReturn(Collections.emptySet());
-		when(config.useTeleportationItems()).thenReturn(mode);
+		config.set("calculationCutoff", 30);
+		config.set("currencyThreshold", 10_000_000);
+		config.set("pohNexusPortals", Collections.emptySet());
+		config.set("useTeleportationItems", mode);
 		// Lenient so the stub is valid both before and after refresh() reads
 		// the key — strict-stub reporting must not mask a behavioural failure.
-		lenient().when(config.blockedTeleportItems()).thenReturn(blockedCsv);
+		config.set("blockedTeleportItems", blockedCsv);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());

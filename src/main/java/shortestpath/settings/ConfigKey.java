@@ -49,88 +49,88 @@ import shortestpath.TileCounter;
 @Getter
 public enum ConfigKey
 {
-	PATHFINDER_ALGORITHM("pathfinderAlgorithm", ShortestPathConfig::pathfinderBackend, Coercion.NONE, Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP),
-	AVOID_WILDERNESS("avoidWilderness", ShortestPathConfig::avoidWilderness, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_AGILITY_SHORTCUTS("useAgilityShortcuts", ShortestPathConfig::useAgilityShortcuts, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_GRAPPLE_SHORTCUTS("useGrappleShortcuts", ShortestPathConfig::useGrappleShortcuts, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_BOATS("useBoats", ShortestPathConfig::useBoats, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_CANOES("useCanoes", ShortestPathConfig::useCanoes, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_CHARTER_SHIPS("useCharterShips", ShortestPathConfig::useCharterShips, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_SHIPS("useShips", ShortestPathConfig::useShips, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_FAIRY_RINGS("useFairyRings", ShortestPathConfig::useFairyRings, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_GNOME_GLIDERS("useGnomeGliders", ShortestPathConfig::useGnomeGliders, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_HOT_AIR_BALLOONS("useHotAirBalloons", ShortestPathConfig::useHotAirBalloons, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_MAGIC_CARPETS("useMagicCarpets", ShortestPathConfig::useMagicCarpets, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_MAGIC_MUSHTREES("useMagicMushtrees", ShortestPathConfig::useMagicMushtrees, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_MINECARTS("useMinecarts", ShortestPathConfig::useMinecarts, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_QUETZALS("useQuetzals", ShortestPathConfig::useQuetzals, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_SPIRIT_TREES("useSpiritTrees", ShortestPathConfig::useSpiritTrees, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_TELEPORTATION_ITEMS("useTeleportationItems", ShortestPathConfig::useTeleportationItems, Coercion.TELEPORTATION_ITEM, Effect.ROUTE_INVALIDATING),
-	USE_TELEPORTATION_LEVERS("useTeleportationLevers", ShortestPathConfig::useTeleportationLevers, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_TELEPORTATION_PORTALS("useTeleportationPortals", ShortestPathConfig::useTeleportationPortals, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_TELEPORTATION_SPELLS("useTeleportationSpells", ShortestPathConfig::useTeleportationSpells, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_TELEPORTATION_SPELLS_HOME("useTeleportationSpellsHome", ShortestPathConfig::useTeleportationSpellsHome, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_TELEPORTATION_MINIGAMES("useTeleportationMinigames", ShortestPathConfig::useTeleportationMinigames, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_WILDERNESS_OBELISKS("useWildernessObelisks", ShortestPathConfig::useWildernessObelisks, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_SEASONAL_TRANSPORTS("useSeasonalTransports", ShortestPathConfig::useSeasonalTransports, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	RESPAWN_PRIFDDINAS("respawnPrifddinas", ShortestPathConfig::respawnPrifddinas, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	UNLOCK_CANOE_AXE("unlockCanoeAxe", ShortestPathConfig::unlockCanoeAxe, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	UNLOCK_XERICS_HONOUR("unlockXericsHonour", ShortestPathConfig::unlockXericsHonour, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	UNLOCK_DRAGONTOOTH_PASSAGE("unlockDragontoothPassage", ShortestPathConfig::unlockDragontoothPassage, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	UNLOCK_MOR_UL_REK("unlockMorUlRek", ShortestPathConfig::unlockMorUlRek, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	INCLUDE_BANK_PATH("includeBankPath", ShortestPathConfig::includeBankPath, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	CURRENCY_THRESHOLD("currencyThreshold", ShortestPathConfig::currencyThreshold, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	CANCEL_INSTEAD("cancelInstead", ShortestPathConfig::cancelInstead, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	RECALCULATE_DISTANCE("recalculateDistance", ShortestPathConfig::recalculateDistance, Coercion.INT, Effect.DISPLAY_ONLY),
-	FINISH_DISTANCE("finishDistance", ShortestPathConfig::reachedDistance, Coercion.INT, Effect.DISPLAY_ONLY), // keyName differs from method name
-	UNREACHABLE_TARGET_DISTANCE_THRESHOLD("unreachableTargetDistanceThreshold", ShortestPathConfig::unreachableTargetDistance, Coercion.INT, Effect.ROUTE_INVALIDATING), // keyName differs from method name
-	SHOW_UNREACHABLE_TEXT("showUnreachableText", ShortestPathConfig::showUnreachableText, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	SHOW_TILE_COUNTER("showTileCounter", ShortestPathConfig::showTileCounter, Coercion.TILE_COUNTER, Effect.DISPLAY_ONLY),
-	TILE_COUNTER_STEP("tileCounterStep", ShortestPathConfig::tileCounterStep, Coercion.INT, Effect.DISPLAY_ONLY),
-	CALCULATION_CUTOFF("calculationCutoff", ShortestPathConfig::calculationCutoff, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	A_STAR_HEURISTIC_WEIGHT("aStarHeuristicWeight", ShortestPathConfig::aStarHeuristicWeight, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COLLISION_AWARE_BLOCKED_TARGETS("collisionAwareBlockedTargets", ShortestPathConfig::collisionAwareBlockedTargets, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_SAILING_MOVES("useSailingMoves", ShortestPathConfig::useSailingMoves, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	SHOW_TRANSPORT_INFO("showTransportInfo", ShortestPathConfig::showTransportInfo, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	SHOW_BANK_PICKUP_INFO("showBankPickupInfo", ShortestPathConfig::showBankPickupInfo, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	HIGHLIGHT_BANK_PICKUP_ITEMS("highlightBankPickupItems", ShortestPathConfig::highlightBankPickupItems, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	HIGHLIGHT_SPELLBOOK_SPELLS("highlightSpellbookSpells", ShortestPathConfig::highlightSpellbookSpells, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	HIGHLIGHT_INVENTORY_ITEMS("highlightInventoryItems", ShortestPathConfig::highlightInventoryItems, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	USE_POH("usePoh", ShortestPathConfig::usePoh, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_POH_FAIRY_RING("usePohFairyRing", ShortestPathConfig::usePohFairyRing, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_POH_SPIRIT_TREE("usePohSpiritTree", ShortestPathConfig::usePohSpiritTree, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_TELEPORTATION_PORTALS_POH("useTeleportationPortalsPoh", ShortestPathConfig::useTeleportationPortalsPoh, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	POH_NEXUS_PORTALS("pohNexusPortals", ShortestPathConfig::pohNexusPortals, Coercion.NONE, Effect.ROUTE_INVALIDATING),
-	POH_JEWELLERY_BOX_TIER("pohJewelleryBoxTier", ShortestPathConfig::pohJewelleryBoxTier, Coercion.JEWELLERY_BOX_TIER, Effect.ROUTE_INVALIDATING),
-	POH_MOUNTED_ITEMS("pohMountedItems", ShortestPathConfig::pohMountedItems, Coercion.NONE, Effect.ROUTE_INVALIDATING),
-	USE_POH_MOUNTED_ITEMS("usePohMountedItems", ShortestPathConfig::usePohMountedItems, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	USE_POH_OBELISK("usePohObelisk", ShortestPathConfig::usePohObelisk, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	COST_AGILITY_SHORTCUTS("costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_GRAPPLE_SHORTCUTS("costGrappleShortcuts", ShortestPathConfig::costGrappleShortcuts, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_BOATS("costBoats", ShortestPathConfig::costBoats, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_CANOES("costCanoes", ShortestPathConfig::costCanoes, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_CHARTER_SHIPS("costCharterShips", ShortestPathConfig::costCharterShips, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_SHIPS("costShips", ShortestPathConfig::costShips, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_FAIRY_RINGS("costFairyRings", ShortestPathConfig::costFairyRings, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_GNOME_GLIDERS("costGnomeGliders", ShortestPathConfig::costGnomeGliders, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_HOT_AIR_BALLOONS("costHotAirBalloons", ShortestPathConfig::costHotAirBalloons, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_MAGIC_CARPETS("costMagicCarpets", ShortestPathConfig::costMagicCarpets, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_MAGIC_MUSHTREES("costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_MINECARTS("costMinecarts", ShortestPathConfig::costMinecarts, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_QUETZALS("costQuetzals", ShortestPathConfig::costQuetzals, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_QUETZAL_WHISTLE("costQuetzalWhistle", ShortestPathConfig::costQuetzals, ShortestPathConfig::costQuetzalWhistle, Coercion.INT, Effect.ROUTE_INVALIDATING), // override key pairs with costQuetzals(); the stored value reads through configuredGetter
-	COST_SPIRIT_TREES("costSpiritTrees", ShortestPathConfig::costSpiritTrees, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_NON_CONSUMABLE_TELEPORTATION_ITEMS("costNonConsumableTeleportationItems", ShortestPathConfig::costNonConsumableTeleportationItems, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_CONSUMABLE_TELEPORTATION_ITEMS("costConsumableTeleportationItems", ShortestPathConfig::costConsumableTeleportationItems, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_TELEPORTATION_BOXES("costTeleportationBoxes", ShortestPathConfig::costTeleportationBoxes, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_TELEPORTATION_LEVERS("costTeleportationLevers", ShortestPathConfig::costTeleportationLevers, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_TELEPORTATION_PORTALS("costTeleportationPortals", ShortestPathConfig::costTeleportationPortals, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_TELEPORTATION_SPELLS("costTeleportationSpells", ShortestPathConfig::costTeleportationSpells, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_TELEPORTATION_SPELLS_HOME("costTeleportationSpellsHome", ShortestPathConfig::costTeleportationSpellsHome, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_TELEPORTATION_MINIGAMES("costTeleportationMinigames", ShortestPathConfig::costTeleportationMinigames, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_WILDERNESS_OBELISKS("costWildernessObelisks", ShortestPathConfig::costWildernessObelisks, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_SEASONAL_TRANSPORTS("costSeasonalTransports", ShortestPathConfig::costSeasonalTransports, Coercion.INT, Effect.ROUTE_INVALIDATING),
-	COST_BANK_VISIT("costBankVisit", ShortestPathConfig::costBankVisit, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	PATHFINDER_ALGORITHM("pathfinderAlgorithm", PathfinderBackend.class, PathfinderBackend.LEGACY, Coercion.NONE, Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP),
+	AVOID_WILDERNESS("avoidWilderness", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_AGILITY_SHORTCUTS("useAgilityShortcuts", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_GRAPPLE_SHORTCUTS("useGrappleShortcuts", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_BOATS("useBoats", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_CANOES("useCanoes", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_CHARTER_SHIPS("useCharterShips", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_SHIPS("useShips", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_FAIRY_RINGS("useFairyRings", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_GNOME_GLIDERS("useGnomeGliders", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_HOT_AIR_BALLOONS("useHotAirBalloons", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_MAGIC_CARPETS("useMagicCarpets", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_MAGIC_MUSHTREES("useMagicMushtrees", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_MINECARTS("useMinecarts", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_QUETZALS("useQuetzals", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_SPIRIT_TREES("useSpiritTrees", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_TELEPORTATION_ITEMS("useTeleportationItems", TeleportationItem.class, TeleportationItem.INVENTORY_NON_CONSUMABLE, Coercion.TELEPORTATION_ITEM, Effect.ROUTE_INVALIDATING),
+	USE_TELEPORTATION_LEVERS("useTeleportationLevers", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_TELEPORTATION_PORTALS("useTeleportationPortals", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_TELEPORTATION_SPELLS("useTeleportationSpells", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_TELEPORTATION_SPELLS_HOME("useTeleportationSpellsHome", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_TELEPORTATION_MINIGAMES("useTeleportationMinigames", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_WILDERNESS_OBELISKS("useWildernessObelisks", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_SEASONAL_TRANSPORTS("useSeasonalTransports", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	RESPAWN_PRIFDDINAS("respawnPrifddinas", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	UNLOCK_CANOE_AXE("unlockCanoeAxe", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	UNLOCK_XERICS_HONOUR("unlockXericsHonour", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	UNLOCK_DRAGONTOOTH_PASSAGE("unlockDragontoothPassage", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	UNLOCK_MOR_UL_REK("unlockMorUlRek", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	INCLUDE_BANK_PATH("includeBankPath", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	CURRENCY_THRESHOLD("currencyThreshold", int.class, 100000, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	CANCEL_INSTEAD("cancelInstead", boolean.class, false, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	RECALCULATE_DISTANCE("recalculateDistance", int.class, 10, Coercion.INT, Effect.DISPLAY_ONLY),
+	FINISH_DISTANCE("finishDistance", int.class, 5, Coercion.INT, Effect.DISPLAY_ONLY),
+	UNREACHABLE_TARGET_DISTANCE_THRESHOLD("unreachableTargetDistanceThreshold", int.class, 2, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	SHOW_UNREACHABLE_TEXT("showUnreachableText", boolean.class, true, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	SHOW_TILE_COUNTER("showTileCounter", TileCounter.class, TileCounter.DISABLED, Coercion.TILE_COUNTER, Effect.DISPLAY_ONLY),
+	TILE_COUNTER_STEP("tileCounterStep", int.class, 1, Coercion.INT, Effect.DISPLAY_ONLY),
+	CALCULATION_CUTOFF("calculationCutoff", int.class, 5, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	A_STAR_HEURISTIC_WEIGHT("aStarHeuristicWeight", int.class, 100, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COLLISION_AWARE_BLOCKED_TARGETS("collisionAwareBlockedTargets", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_SAILING_MOVES("useSailingMoves", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	SHOW_TRANSPORT_INFO("showTransportInfo", boolean.class, true, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	SHOW_BANK_PICKUP_INFO("showBankPickupInfo", boolean.class, false, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	HIGHLIGHT_BANK_PICKUP_ITEMS("highlightBankPickupItems", boolean.class, true, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	HIGHLIGHT_SPELLBOOK_SPELLS("highlightSpellbookSpells", boolean.class, true, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	HIGHLIGHT_INVENTORY_ITEMS("highlightInventoryItems", boolean.class, true, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
+	USE_POH("usePoh", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_POH_FAIRY_RING("usePohFairyRing", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_POH_SPIRIT_TREE("usePohSpiritTree", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_TELEPORTATION_PORTALS_POH("useTeleportationPortalsPoh", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	POH_NEXUS_PORTALS("pohNexusPortals", Set.class, PohNexusPortal.class, b -> Boolean.TRUE.equals(b.apply(forKey("useTeleportationPortalsPoh"))) ? Set.copyOf(PohNexusPortal.values()) : Set.of(), Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	POH_JEWELLERY_BOX_TIER("pohJewelleryBoxTier", JewelleryBoxTier.class, JewelleryBoxTier.ORNATE, Coercion.JEWELLERY_BOX_TIER, Effect.ROUTE_INVALIDATING),
+	POH_MOUNTED_ITEMS("pohMountedItems", Set.class, PohMountedItem.class, b -> Boolean.TRUE.equals(b.apply(forKey("usePohMountedItems"))) ? Set.copyOf(PohMountedItem.values()) : Set.of(), Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	USE_POH_MOUNTED_ITEMS("usePohMountedItems", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	USE_POH_OBELISK("usePohObelisk", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	COST_AGILITY_SHORTCUTS("costAgilityShortcuts", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_GRAPPLE_SHORTCUTS("costGrappleShortcuts", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_BOATS("costBoats", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_CANOES("costCanoes", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_CHARTER_SHIPS("costCharterShips", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_SHIPS("costShips", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_FAIRY_RINGS("costFairyRings", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_GNOME_GLIDERS("costGnomeGliders", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_HOT_AIR_BALLOONS("costHotAirBalloons", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_MAGIC_CARPETS("costMagicCarpets", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_MAGIC_MUSHTREES("costMagicMushtrees", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_MINECARTS("costMinecarts", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_QUETZALS("costQuetzals", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_QUETZAL_WHISTLE("costQuetzalWhistle", int.class, COST_QUETZALS, 15, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_SPIRIT_TREES("costSpiritTrees", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_NON_CONSUMABLE_TELEPORTATION_ITEMS("costNonConsumableTeleportationItems", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_CONSUMABLE_TELEPORTATION_ITEMS("costConsumableTeleportationItems", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_TELEPORTATION_BOXES("costTeleportationBoxes", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_TELEPORTATION_LEVERS("costTeleportationLevers", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_TELEPORTATION_PORTALS("costTeleportationPortals", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_TELEPORTATION_SPELLS("costTeleportationSpells", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_TELEPORTATION_SPELLS_HOME("costTeleportationSpellsHome", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_TELEPORTATION_MINIGAMES("costTeleportationMinigames", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_WILDERNESS_OBELISKS("costWildernessObelisks", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_SEASONAL_TRANSPORTS("costSeasonalTransports", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
+	COST_BANK_VISIT("costBankVisit", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
 	DRAW_MAP("drawMap", ShortestPathConfig::drawMap, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	DRAW_MINIMAP("drawMinimap", ShortestPathConfig::drawMinimap, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	DRAW_TILES("drawTiles", ShortestPathConfig::drawTiles, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
@@ -150,11 +150,11 @@ public enum ConfigKey
 	DRAW_COLLISION_MAP("drawCollisionMap", ShortestPathConfig::drawCollisionMap, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	DRAW_DEBUG_PANEL("drawDebugPanel", ShortestPathConfig::drawDebugPanel, Coercion.BOOLEAN, Effect.SIDE_EFFECT_DEBUG_OVERLAY),
 	POST_TRANSPORTS("postTransports", ShortestPathConfig::postTransports, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
-	UNREACHABLE_TEXT("unreachableText", ShortestPathConfig::unreachableText, Coercion.NONE, Effect.DISPLAY_ONLY),
-	BUILT_TELEPORTATION_BOXES("builtTeleportationBoxes", ShortestPathConfig::builtTeleportationBoxes, Coercion.NONE, Effect.DISPLAY_ONLY),
-	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", ShortestPathConfig::builtTeleportationPortalsPoh, Coercion.NONE, Effect.DISPLAY_ONLY),
-	BLOCKED_TELEPORT_ITEMS("blockedTeleportItems", ShortestPathConfig::blockedTeleportItems, Coercion.NONE, Effect.ROUTE_INVALIDATING),
-	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", ShortestPathConfig::unlockBalloonLogBasket, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
+	UNREACHABLE_TEXT("unreachableText", String.class, "Destination could not be reached", Coercion.NONE, Effect.DISPLAY_ONLY),
+	BUILT_TELEPORTATION_BOXES("builtTeleportationBoxes", String.class, "", Coercion.NONE, Effect.DISPLAY_ONLY),
+	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", String.class, "", Coercion.NONE, Effect.DISPLAY_ONLY),
+	BLOCKED_TELEPORT_ITEMS("blockedTeleportItems", String.class, "", Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING);
 	;
 
 	private static final Map<String, ConfigKey> BY_KEY;
@@ -193,8 +193,8 @@ public enum ConfigKey
 	/** Element class of a {@code Set}-typed hidden key. */
 	private final Class<?> element;
 	/**
-	 * The config getter whose base value this key's payload value pairs with.
-	 * Declared as a method reference so reads need no reflection.
+	 * The unwritten default: a literal, or a
+	 * {@code Function<baseResolver, Object>} for flag-derived set defaults.
 	 */
 	private final Object def;
 	/**
@@ -205,13 +205,7 @@ public enum ConfigKey
 	private final ConfigKey baseKey;
 	/** The config getter a visible key's value pairs with (hidden: null). */
 	private final Function<ShortestPathConfig, Object> getter;
-	/**
-	 * The config getter whose stored value this key names — the read keyed
-	 * configured-value lookups invoke. Almost always identical to
-	 * {@link #getter}; it diverges only where the override pairing
-	 * deliberately shares a base getter (e.g. {@code costQuetzalWhistle}
-	 * pairs its payload with {@code costQuetzals} but stores its own value).
-	 */
+	/** The config getter a visible key's stored read invokes (hidden: null). */
 	private final Function<ShortestPathConfig, Object> configuredGetter;
 	private final Coercion coercion;
 	/** The effects a change to this key triggers for the shell. */
@@ -243,14 +237,13 @@ public enum ConfigKey
 	private ConfigKey(String key, Class<?> type, Class<?> element, Object def,
 		ConfigKey baseKey, Coercion coercion, Effect... effects)
 	{
-		this(key, getter, getter, coercion, effects);
-	}
-
-	ConfigKey(String key, Function<ShortestPathConfig, Object> getter, Function<ShortestPathConfig, Object> configuredGetter, Coercion coercion, Effect... effects)
-	{
 		this.key = key;
-		this.getter = getter;
-		this.configuredGetter = configuredGetter;
+		this.type = type;
+		this.element = element;
+		this.def = def;
+		this.baseKey = baseKey;
+		this.getter = null;
+		this.configuredGetter = null;
 		this.coercion = coercion;
 		this.effects = Set.of(effects);
 	}

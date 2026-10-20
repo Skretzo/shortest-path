@@ -441,12 +441,12 @@ public class PathfinderConfig
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
 		// POH-specific settings
-		usePohFairyRing = effective.usePohFairyRing();
-		usePohSpiritTree = effective.usePohSpiritTree();
-		usePohObelisk = effective.usePohObelisk();
-		Set<PohNexusPortal> pohNexusPortals = config.pohNexusPortals();
+		usePohFairyRing = effective.bool(ConfigKey.USE_POH_FAIRY_RING);
+		usePohSpiritTree = effective.bool(ConfigKey.USE_POH_SPIRIT_TREE);
+		usePohObelisk = effective.bool(ConfigKey.USE_POH_OBELISK);
+		Set<PohNexusPortal> pohNexusPortals = (Set<PohNexusPortal>) settings.configuredValue("pohNexusPortals");
 		enabledPohNexusPortals = pohNexusPortals == null ? Set.of() : Set.copyOf(pohNexusPortals);
-		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
+		Set<PohMountedItem> pohMountedItems = (Set<PohMountedItem>) settings.configuredValue("pohMountedItems");
 		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
 		pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
 
@@ -483,7 +483,7 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.MOR_UL_REK);
 		}
-		if (effective.unlockBalloonLogBasket())
+		if (effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET))
 		{
 			declaredUnlocks.add(Unlock.BALLOON_LOG_BASKET);
 		}
@@ -494,7 +494,7 @@ public class PathfinderConfig
 		// price transports that reference the id.
 		Set<Integer> blockedItems = new HashSet<>();
 		Map<Integer, Integer> thresholdOverrides = new HashMap<>();
-		TeleportRestriction.parseBlocked(config.blockedTeleportItems(), blockedItems, thresholdOverrides);
+		TeleportRestriction.parseBlocked((String) settings.configuredValue("blockedTeleportItems"), blockedItems, thresholdOverrides);
 		blockedItemIds = Set.copyOf(blockedItems);
 		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
 
