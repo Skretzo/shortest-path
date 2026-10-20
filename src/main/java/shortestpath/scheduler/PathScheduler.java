@@ -23,6 +23,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
+import shortestpath.settings.Settings;
 import shortestpath.ShortestPathConfig;
 import shortestpath.settings.Settings;
 import shortestpath.WorldPointUtil;
