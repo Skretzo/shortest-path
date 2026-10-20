@@ -596,28 +596,28 @@ public class TransportTypeConfigTest
 		config.set("useTeleportationItems", TeleportationItem.ALL);
 
 		// Enable methods (return true by default)
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useGrappleShortcuts()).thenReturn(true);
-		when(config.useBoats()).thenReturn(true);
-		when(config.useCanoes()).thenReturn(true);
-		when(config.useCharterShips()).thenReturn(true);
-		when(config.useShips()).thenReturn(true);
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useGnomeGliders()).thenReturn(true);
-		when(config.useHotAirBalloons()).thenReturn(true);
-		when(config.useMagicCarpets()).thenReturn(true);
-		when(config.useMagicMushtrees()).thenReturn(true);
-		when(config.useMinecarts()).thenReturn(true);
-		when(config.useQuetzals()).thenReturn(true);
-		when(config.useSeasonalTransports()).thenReturn(true);
-		when(config.useSpiritTrees()).thenReturn(true);
-		when(config.useTeleportationLevers()).thenReturn(true);
-		when(config.useTeleportationMinigames()).thenReturn(true);
-		when(config.useTeleportationPortals()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values())));
-		when(config.useTeleportationSpells()).thenReturn(true);
-		when(config.useWildernessObelisks()).thenReturn(true);
-		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
+		config.set("useGrappleShortcuts", true);
+		config.set("useBoats", true);
+		config.set("useCanoes", true);
+		config.set("useCharterShips", true);
+		config.set("useShips", true);
+		config.set("useFairyRings", true);
+		config.set("useGnomeGliders", true);
+		config.set("useHotAirBalloons", true);
+		config.set("useMagicCarpets", true);
+		config.set("useMagicMushtrees", true);
+		config.set("useMinecarts", true);
+		config.set("useQuetzals", true);
+		config.set("useSeasonalTransports", true);
+		config.set("useSpiritTrees", true);
+		config.set("useTeleportationLevers", true);
+		config.set("useTeleportationMinigames", true);
+		config.set("useTeleportationPortals", true);
+		config.set("pohNexusPortals", new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values())));
+		config.set("useTeleportationSpells", true);
+		config.set("useWildernessObelisks", true);
+		config.set("useTeleportationSpellsHome", true);
 
 		// Cost methods (return 0 by default)
 		config.set("costAgilityShortcuts", 0);
