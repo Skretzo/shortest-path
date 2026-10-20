@@ -213,8 +213,8 @@ public enum ConfigKey
 	/** Element class of a {@code Set}-typed hidden key. */
 	private final Class<?> element;
 	/**
-	 * The config getter whose base value this key's payload value pairs with.
-	 * Declared as a method reference so reads need no reflection.
+	 * The unwritten default: a literal, or a
+	 * {@code Function<baseResolver, Object>} for flag-derived set defaults.
 	 */
 	private final Object def;
 	/**
@@ -228,13 +228,7 @@ public enum ConfigKey
 	private final String baseKey;
 	/** The config getter a visible key's value pairs with (hidden: null). */
 	private final Function<ShortestPathConfig, Object> getter;
-	/**
-	 * The config getter whose stored value this key names — the read keyed
-	 * configured-value lookups invoke. Almost always identical to
-	 * {@link #getter}; it diverges only where the override pairing
-	 * deliberately shares a base getter (e.g. {@code costQuetzalWhistle}
-	 * pairs its payload with {@code costQuetzals} but stores its own value).
-	 */
+	/** The config getter a visible key's stored read invokes (hidden: null). */
 	private final Function<ShortestPathConfig, Object> configuredGetter;
 	private final Coercion coercion;
 	/** The effects a change to this key triggers for the shell. */

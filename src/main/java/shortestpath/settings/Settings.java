@@ -354,27 +354,6 @@ public class Settings
 		return value instanceof Set ? (Set<?>) value : null;
 	}
 
-	/**
-	 * The {@link ConfigItem} declaration for {@code key} — the display name
-	 * and description controls render. {@code null} for keys with no
-	 * {@code @ConfigItem}.
-	 */
-	public ConfigItem configItem(String key)
-	{
-		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
-		return descriptor == null ? null : descriptor.getItem();
-	}
-
-	/**
-	 * The {@link Range} declared for {@code key}, or {@code null} when the
-	 * item bounds itself another way.
-	 */
-	public Range rangeOf(String key)
-	{
-		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
-		return descriptor == null ? null : descriptor.getRange();
-	}
-
 	private void fireListeners(String key)
 	{
 		List<Runnable> keyed = listeners.get(key);
@@ -699,11 +678,11 @@ public class Settings
 
 		private UnlocksView(EffectiveConfig effective)
 		{
-			unlockCanoeAxe = config.unlockCanoeAxe();
-			unlockXericsHonour = config.unlockXericsHonour();
-			unlockDragontoothPassage = config.unlockDragontoothPassage();
-			unlockMorUlRek = config.unlockMorUlRek();
-			unlockBalloonLogBasket = config.unlockBalloonLogBasket();
+			unlockCanoeAxe = effective.bool(ConfigKey.UNLOCK_CANOE_AXE);
+			unlockXericsHonour = effective.bool(ConfigKey.UNLOCK_XERICS_HONOUR);
+			unlockDragontoothPassage = effective.bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
+			unlockMorUlRek = effective.bool(ConfigKey.UNLOCK_MOR_UL_REK);
+			unlockBalloonLogBasket = effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET);
 		}
 	}
 
