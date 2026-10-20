@@ -345,7 +345,7 @@ public class RefreshCoordinatorTest
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(3200, 3201, 0);
 		runningSearch(50, Targets.at(Set.of(target)));
-		config.set("reachedDistance", 10);
+		config.set("finishDistance", 10);
 
 		coordinator.offRouteTick(20, location, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -390,7 +390,7 @@ public class RefreshCoordinatorTest
 		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
 		when(sailingSearch.isSailing()).thenReturn(true);
-		config.set("reachedDistance", 10);
+		config.set("finishDistance", 10);
 		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(target);
 
 		coordinator.offRouteTick(20, location, boat, 8);
@@ -414,7 +414,7 @@ public class RefreshCoordinatorTest
 		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
 		when(sailingSearch.isSailing()).thenReturn(true);
-		config.set("reachedDistance", 10);
+		config.set("finishDistance", 10);
 		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(WorldPointUtil.UNDEFINED);
 
 		coordinator.offRouteTick(20, location, boat, 8);

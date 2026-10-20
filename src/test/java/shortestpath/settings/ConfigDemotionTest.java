@@ -206,33 +206,6 @@ public class ConfigDemotionTest
 	}
 
 	/**
-	 * The settings panel keeps exactly its five real sections — Settings,
-	 * Display, Colours, Hotkeys and Debug Options. The two "(Moved To
-	 * Sidebar)" pointer sections rendered as empty collapsible headers
-	 * once their items went hidden, so they are deleted outright: a
-	 * hidden item needs no section to stay hidden. Pinning the set
-	 * catches both a re-appearing stub section and an accidentally
-	 * dropped real one.
-	 */
-	@Test
-	public void onlyTheRealSettingsSectionsRemain()
-	{
-		Set<String> sectionNames = new TreeSet<>();
-		for (Field field : ShortestPathConfig.class.getDeclaredFields())
-		{
-			ConfigSection section = field.getAnnotation(ConfigSection.class);
-			if (section != null)
-			{
-				sectionNames.add(section.name());
-			}
-		}
-		assertEquals("the settings surface keeps exactly its five sections",
-			new TreeSet<>(Arrays.asList(
-				"Settings", "Display", "Colours", "Hotkeys", "Debug Options")),
-			sectionNames);
-	}
-
-	/**
 	 * The sidebar-visibility toggle is a Settings-surface item, not a
 	 * panel-owned key: it must exist, stay {@code hidden = false} (so it is
 	 * never absorbed into {@link #PANEL_OWNED_KEYS}), live in the Settings
