@@ -3,6 +3,7 @@ package shortestpath.leagues;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import lombok.Getter;
 
 /**
  * Immutable view of the league facts a {@link LeagueModeState} held at one
@@ -25,8 +26,8 @@ public final class LeagueModeSnapshot
 	 */
 	public static final LeagueModeSnapshot NON_SEASONAL = new LeagueModeSnapshot(false, false, Set.of());
 
-	private final boolean seasonal;
-	private final boolean deadman;
+	@Getter private final boolean seasonal;
+	@Getter private final boolean deadman;
 	private final Set<LeagueRegion> unlockedRegions;
 
 	public LeagueModeSnapshot(boolean seasonal, boolean deadman, Set<LeagueRegion> unlockedRegions)
@@ -38,15 +39,9 @@ public final class LeagueModeSnapshot
 			: Collections.unmodifiableSet(EnumSet.copyOf(unlockedRegions));
 	}
 
-	public boolean isSeasonal()
-	{
-		return seasonal;
-	}
 
-	public boolean isDeadman()
-	{
-		return deadman;
-	}
+
+
 
 	/**
 	 * Whether the supplied region is currently traversable. Outside of

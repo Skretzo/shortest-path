@@ -15,6 +15,7 @@ import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.Effect;
 import shortestpath.settings.TeleportationItem;
+import lombok.Getter;
 
 /**
  * Owns the plugin's player item state observed from game events — the live
@@ -32,7 +33,7 @@ public class ItemStateService
 	 * LIVE reference to the last-opened bank container — never copied or
 	 * snapshotted, so it reads empty once the bank closes.
 	 */
-	private ItemContainer bank;
+	@Getter private ItemContainer bank;
 
 	// Bumped by every admitted item-state change; readers that project this
 	// state (e.g. the bank-pickup projection) key their caches on it instead
@@ -106,10 +107,7 @@ public class ItemStateService
 		return false;
 	}
 
-	public ItemContainer getBank()
-	{
-		return bank;
-	}
+
 
 	/**
 	 * Harness/test seeding seam; production writes arrive through

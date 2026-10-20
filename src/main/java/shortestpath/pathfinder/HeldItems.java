@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
+import lombok.Getter;
 
 /**
  * The items the player holds, as item id to quantity: what they carry (inventory, worn items and
@@ -18,7 +19,7 @@ public final class HeldItems
 
 	private final Map<Integer, Integer> carried;
 	private final Map<Integer, Integer> carriedAndBanked;
-	private final boolean bankSeen;
+	@Getter private final boolean bankSeen;
 
 	public HeldItems(Map<Integer, Integer> carried, Map<Integer, Integer> carriedAndBanked, boolean bankSeen)
 	{
@@ -40,10 +41,7 @@ public final class HeldItems
 	}
 
 	/** Whether the bank has been opened this session, so its contents are known. */
-	public boolean isBankSeen()
-	{
-		return bankSeen;
-	}
+
 
 	/** Whether {@code required} is carried, covered once the bank is added, or neither. */
 	public TargetStatus statusOf(TransportItems required)

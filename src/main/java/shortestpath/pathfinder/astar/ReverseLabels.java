@@ -1,8 +1,10 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
+import lombok.AllArgsConstructor;
 
 /** Reverse labels in the relaxed graph with a clique oracle and sparse production path. */
+@AllArgsConstructor
 public final class ReverseLabels
 {
 	private final TargetOverlay overlay;
@@ -18,23 +20,7 @@ public final class ReverseLabels
 	private final long elapsedNanos;
 	private final boolean sparse;
 
-	private ReverseLabels(TargetOverlay overlay, int[] labels, int[] generatorOrigins, int[] generatorWeights,
-		int settled, int stale, int pushes, int sparseRelaxations, int explicitRelaxations,
-		int attachmentRelaxations, long elapsedNanos, boolean sparse)
-	{
-		this.overlay = overlay;
-		this.labels = labels;
-		this.generatorOrigins = generatorOrigins;
-		this.generatorWeights = generatorWeights;
-		this.settled = settled;
-		this.stale = stale;
-		this.pushes = pushes;
-		this.sparseRelaxations = sparseRelaxations;
-		this.explicitRelaxations = explicitRelaxations;
-		this.attachmentRelaxations = attachmentRelaxations;
-		this.elapsedNanos = elapsedNanos;
-		this.sparse = sparse;
-	}
+
 
 	/** Production path; test fixtures without a sparse network fall back to the clique reference. */
 	public static ReverseLabels compute(TargetOverlay overlay)

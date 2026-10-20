@@ -16,6 +16,7 @@ import net.runelite.api.WidgetNode;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.widgets.WidgetModalMode;
 import shortestpath.items.OwnedItems;
+import lombok.AllArgsConstructor;
 
 /**
  * The {@link Client}-backed {@link PlayerStateSource} and the only client
@@ -27,14 +28,12 @@ import shortestpath.items.OwnedItems;
  * same comparison without the throw, for the eligibility envelope's
  * stale-snapshot contract.
  */
+@AllArgsConstructor
 public final class ClientPlayerStateSource implements PlayerStateSource
 {
 	private final Client client;
 
-	public ClientPlayerStateSource(Client client)
-	{
-		this.client = client;
-	}
+
 
 	@Override
 	public GameState gameState()

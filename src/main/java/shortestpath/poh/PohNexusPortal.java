@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 
 public enum PohNexusPortal
 {
@@ -60,7 +61,7 @@ public enum PohNexusPortal
 
 	private static final Map<String, PohNexusPortal> BY_DISPLAY_INFO;
 	private final String label;
-	private final List<String> displayInfos;
+	@Getter private final List<String> displayInfos;
 
 	static
 	{
@@ -84,10 +85,7 @@ public enum PohNexusPortal
 		this.displayInfos = List.of(displayInfos);
 	}
 
-	public List<String> getDisplayInfos()
-	{
-		return displayInfos;
-	}
+
 
 	public static PohNexusPortal fromDisplayInfo(String displayInfo)
 	{

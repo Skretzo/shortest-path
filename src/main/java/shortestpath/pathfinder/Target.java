@@ -3,19 +3,24 @@ package shortestpath.pathfinder;
 import java.util.List;
 import shortestpath.WorldPointUtil;
 import shortestpath.requirement.model.TransportItems;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 /**
  * A tile a search may end on, with the items the player must hold when they arrive there: a spade
  * for a dig spot, an emote clue's outfit. A target the player picks has no required items; other
  * plugins can add them. Immutable.
  */
+@ToString
+@EqualsAndHashCode
 public final class Target
 {
 	/** The required items of a target that needs none. */
 	public static final TransportItems NO_ITEMS = new TransportItems(List.of());
 
-	private final int point;
-	private final TransportItems requiredItems;
+	@Getter private final int point;
+	@Getter private final TransportItems requiredItems;
 
 	private Target(int point, TransportItems requiredItems)
 	{
@@ -40,32 +45,17 @@ public final class Target
 	}
 
 	/** The packed tile. */
-	public int getPoint()
-	{
-		return point;
-	}
+
 
 	/** Every item group the player must hold on arrival; {@link #NO_ITEMS} when none. */
-	public TransportItems getRequiredItems()
-	{
-		return requiredItems;
-	}
+
 
 	public boolean hasRequiredItems()
 	{
 		return requiredItems.size() > 0;
 	}
 
-	@Override
-	public boolean equals(Object o)
-	{
-		if (!(o instanceof Target))
-		{
-			return false;
-		}
-		Target that = (Target) o;
-		return point == that.point && requiredItems.equals(that.requiredItems);
-	}
+
 
 	@Override
 	public int hashCode()
@@ -73,10 +63,5 @@ public final class Target
 		return 31 * point + requiredItems.hashCode();
 	}
 
-	@Override
-	public String toString()
-	{
-		return WorldPointUtil.unpackWorldPoint(point) + (hasRequiredItems() ? " requiring " + requiredItems.size()
-			+ " item group(s)" : "");
-	}
+
 }

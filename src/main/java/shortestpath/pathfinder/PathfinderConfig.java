@@ -117,17 +117,14 @@ public class PathfinderConfig
 	// The plugin wires the injected singleton in production; harnesses and
 	// tests keep the default detached instance, whose refresh arm merges a
 	// live in-region sample into the published set without persistence.
-	private SpiritTreeService spiritTrees = SpiritTreeService.forTesting();
+	@Getter private SpiritTreeService spiritTrees = SpiritTreeService.forTesting();
 
 	public void setSpiritTreeService(SpiritTreeService spiritTrees)
 	{
 		this.spiritTrees = spiritTrees;
 	}
 
-	public SpiritTreeService getSpiritTrees()
-	{
-		return spiritTrees;
-	}
+
 
 	/**
 	 * The item-state seam: owns the live open-bank container that feeds the

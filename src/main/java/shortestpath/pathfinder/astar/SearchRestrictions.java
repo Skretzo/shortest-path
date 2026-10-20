@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.util.function.IntPredicate;
 import shortestpath.pathfinder.WildernessChecker;
+import lombok.AllArgsConstructor;
 
 /**
  * Per-search positional restrictions applied on top of the prepared graph, mirroring the gates
@@ -14,6 +15,7 @@ import shortestpath.pathfinder.WildernessChecker;
  * stays admissible. Sessions may therefore reuse prepared accounts, targets and heuristics
  * across searches regardless of these settings.
  */
+@AllArgsConstructor
 public final class SearchRestrictions
 {
 	private static final SearchRestrictions NONE = new SearchRestrictions(false, null);
@@ -23,11 +25,7 @@ public final class SearchRestrictions
 	/** Whether a tile lies in the league's always-blocked region, or {@code null} when the gate is off. */
 	private final IntPredicate blockedRegion;
 
-	private SearchRestrictions(boolean avoidWilderness, IntPredicate blockedRegion)
-	{
-		this.avoidWilderness = avoidWilderness;
-		this.blockedRegion = blockedRegion;
-	}
+
 
 	/** No gates: every edge the graph offers may be relaxed. */
 	public static SearchRestrictions none()

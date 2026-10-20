@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.requirement.model.VarCheckType;
 import shortestpath.requirement.model.VarRequirement;
+import lombok.AllArgsConstructor;
 
 /**
  * Parses variable requirement strings into VarRequirement objects.
@@ -22,6 +23,7 @@ import shortestpath.requirement.model.VarRequirement;
  * Example: {@code 1234=1;5678>10}
  * </p>
  */
+@AllArgsConstructor
 @Slf4j
 public class VarRequirementParser implements FieldParser<Set<VarRequirement>>
 {
@@ -32,10 +34,7 @@ public class VarRequirementParser implements FieldParser<Set<VarRequirement>>
 	/**
 	 * Creates a parser for the specified variable type.
 	 */
-	public VarRequirementParser(VarRequirement.VarType varType)
-	{
-		this.varType = varType;
-	}
+
 
 	/**
 	 * Creates a parser for varbit requirements.

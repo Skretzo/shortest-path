@@ -10,12 +10,16 @@ import java.util.Set;
 
 import lombok.Getter;
 import net.runelite.api.gameval.ItemID;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 /**
  * Represents all item requirements for a transport.
  * All requirements must be satisfied.
  */
 @Getter
+@ToString
+@EqualsAndHashCode
 public class TransportItems
 {
 	/**
@@ -340,45 +344,9 @@ public class TransportItems
 		return "[" + text + "]";
 	}
 
-	@Override
-	public int hashCode()
-	{
-		return requirements.hashCode();
-	}
 
-	@Override
-	public boolean equals(Object o)
-	{
-		if (this == o)
-		{
-			return true;
-		}
-		if (o == null || getClass() != o.getClass())
-		{
-			return false;
-		}
-		TransportItems that = (TransportItems) o;
-		if (requirements.size() != that.requirements.size())
-		{
-			return false;
-		}
-		for (int i = 0; i < requirements.size(); i++)
-		{
-			if (!requirements.get(i).equals(that.requirements.get(i)))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
 
-	@Override
-	public String toString()
-	{
-		return "[" +
-			toString(getItems()) + ", " +
-			toString(getStaves()) + ", " +
-			toString(getOffhands()) + ", " +
-			Arrays.toString(getQuantities()) + "]";
-	}
+
+
+
 }

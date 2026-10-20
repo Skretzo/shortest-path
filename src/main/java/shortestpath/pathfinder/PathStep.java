@@ -2,7 +2,9 @@ package shortestpath.pathfinder;
 
 import lombok.Getter;
 import shortestpath.transport.Transport;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor
 @Getter
 public final class PathStep
 {
@@ -22,10 +24,5 @@ public final class PathStep
 		this(packedPosition, bankVisited, null);
 	}
 
-	public PathStep(int packedPosition, boolean bankVisited, Transport transport)
-	{
-		this.packedPosition = packedPosition;
-		this.bankVisited = bankVisited;
-		this.transport = transport;
-	}
+
 }

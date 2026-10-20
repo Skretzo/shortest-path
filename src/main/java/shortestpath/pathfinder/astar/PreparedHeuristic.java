@@ -3,8 +3,10 @@ package shortestpath.pathfinder.astar;
 import java.util.Arrays;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
+import lombok.AllArgsConstructor;
 
 /** Query-lifetime raw seeds and provenance-reduced exact seed scans. */
+@AllArgsConstructor
 public final class PreparedHeuristic
 {
 	private static final int[] EMPTY = new int[0];
@@ -17,17 +19,7 @@ public final class PreparedHeuristic
 	private final int[][] generatorLabels;
 	private final long preparationNanos;
 
-	private PreparedHeuristic(TargetOverlay overlay, ReverseLabels reverse, int[][] seedTiles, int[][] seedLabels,
-		int[][] generatorTiles, int[][] generatorLabels, long preparationNanos)
-	{
-		this.overlay = overlay;
-		this.reverse = reverse;
-		this.seedTiles = seedTiles;
-		this.seedLabels = seedLabels;
-		this.generatorTiles = generatorTiles;
-		this.generatorLabels = generatorLabels;
-		this.preparationNanos = preparationNanos;
-	}
+
 
 	public static PreparedHeuristic prepare(TargetOverlay overlay, ReverseLabels reverse)
 	{

@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import shortestpath.WorldPointUtil;
+import lombok.AllArgsConstructor;
 
 /**
  * Lower bounds on the walking cost from a target's attachment sites to the target, from a bounded
@@ -15,6 +16,7 @@ import shortestpath.WorldPointUtil;
  * of the search's frontier when it stopped (no closer tile was left unvisited), and every bound
  * is at least the Chebyshev distance the overlay used before.
  */
+@AllArgsConstructor
 final class TargetWalkDistances
 {
 	/** Tiles the search may visit per target; larger components get frontier bounds beyond it. */
@@ -29,13 +31,7 @@ final class TargetWalkDistances
 	private final NodeDistances distances;
 	private final int frontier;
 
-	private TargetWalkDistances(RoutingStatic stat, int[] components, NodeDistances distances, int frontier)
-	{
-		this.stat = stat;
-		this.components = components;
-		this.distances = distances;
-		this.frontier = frontier;
-	}
+
 
 	/** Null when the target is not a static search tile (its attachments keep Chebyshev costs). */
 	static TargetWalkDistances search(RoutingStatic stat, int target, int[] components)

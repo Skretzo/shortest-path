@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.util.function.BooleanSupplier;
 import shortestpath.pathfinder.CollisionMap;
+import lombok.AllArgsConstructor;
 
 /**
  * Target-lifetime preparation: the target overlay, its reverse labels and the heuristic built
@@ -9,6 +10,7 @@ import shortestpath.pathfinder.CollisionMap;
  * forward searches for the same account snapshot. With several target tiles, a search ends at
  * whichever target is cheapest to reach.
  */
+@AllArgsConstructor
 public final class PreparedTarget
 {
 	private final TargetOverlay overlay;
@@ -16,14 +18,7 @@ public final class PreparedTarget
 	private final long reverseSearchNanos;
 	private final long heuristicPrepareNanos;
 
-	private PreparedTarget(TargetOverlay overlay, PreparedHeuristic heuristic, long reverseSearchNanos,
-		long heuristicPrepareNanos)
-	{
-		this.overlay = overlay;
-		this.heuristic = heuristic;
-		this.reverseSearchNanos = reverseSearchNanos;
-		this.heuristicPrepareNanos = heuristicPrepareNanos;
-	}
+
 
 	public static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, int packed)
 	{

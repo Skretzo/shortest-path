@@ -3,6 +3,7 @@ package shortestpath.pathfinder.sailing;
 import java.util.Arrays;
 
 import net.runelite.api.Perspective;
+import lombok.AllArgsConstructor;
 
 /**
  * The moves the sailing search uses for one boat speed.
@@ -18,6 +19,7 @@ import net.runelite.api.Perspective;
  * The search uses the boat's base speed for the whole route, since speed boosts are random and
  * temporary; {@link #ESTIMATE} is the fallback when the base speed can't be read.
  */
+@AllArgsConstructor
 public final class SailingMoves
 {
 	private static final String[] HEADING_NAMES = {
@@ -54,16 +56,7 @@ public final class SailingMoves
 	private final int[] headings;
 	private final String[] names;
 
-	private SailingMoves(double speed, int[] dx, int[] dy, int[] ticks, int[] lengths, int[] headings, String[] names)
-	{
-		this.speed = speed;
-		this.dx = dx;
-		this.dy = dy;
-		this.ticks = ticks;
-		this.lengths = lengths;
-		this.headings = headings;
-		this.names = names;
-	}
+
 
 	/**
 	 * @param tilesPerTick boat speed, e.g. 1.5 or 2.0; an out-of-range value (including NaN) gives the estimate

@@ -3,6 +3,9 @@ package shortestpath.requirement.model;
 import java.util.Map;
 
 import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 /**
  * Represents a variable-based requirement for a transport.
@@ -13,7 +16,10 @@ import lombok.Getter;
  * classes which had identical logic.
  * </p>
  */
+@AllArgsConstructor
 @Getter
+@ToString
+@EqualsAndHashCode
 public class VarRequirement
 {
 
@@ -22,13 +28,7 @@ public class VarRequirement
 	private final int value;
 	private final VarCheckType checkType;
 
-	public VarRequirement(VarType varType, int id, int value, VarCheckType checkType)
-	{
-		this.varType = varType;
-		this.id = id;
-		this.value = value;
-		this.checkType = checkType;
-	}
+
 
 	/**
 	 * Creates a varbit requirement.
@@ -97,36 +97,11 @@ public class VarRequirement
 		return varType == VarType.VARPLAYER;
 	}
 
-	@Override
-	public int hashCode()
-	{
-		int result = varType.hashCode();
-		result = 31 * result + id;
-		result = 31 * result + value;
-		result = 31 * result + checkType.hashCode();
-		return result;
-	}
 
-	@Override
-	public boolean equals(Object o)
-	{
-		if (this == o)
-		{
-			return true;
-		}
-		if (o == null || getClass() != o.getClass())
-		{
-			return false;
-		}
-		VarRequirement that = (VarRequirement) o;
-		return id == that.id && value == that.value && varType == that.varType && checkType == that.checkType;
-	}
 
-	@Override
-	public String toString()
-	{
-		return varType + "[" + id + " " + checkType.getCode() + " " + value + "]";
-	}
+
+
+
 
 	/**
 	 * The type of variable this requirement checks.

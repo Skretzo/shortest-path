@@ -2,7 +2,9 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import lombok.Getter;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor
 @Getter
 public class PathfinderResult
 {
@@ -84,31 +86,5 @@ public class PathfinderResult
 			elapsedNanos, terminationReason, message, null);
 	}
 
-	public PathfinderResult(
-		int start,
-		int target,
-		boolean reached,
-		List<PathStep> pathSteps,
-		int closestReachedPoint,
-		int pathCost,
-		int nodesChecked,
-		int transportsChecked,
-		long elapsedNanos,
-		PathTerminationReason terminationReason,
-		String message,
-		Arrival arrival)
-	{
-		this.start = start;
-		this.target = target;
-		this.reached = reached;
-		this.pathSteps = pathSteps;
-		this.closestReachedPoint = closestReachedPoint;
-		this.pathCost = pathCost;
-		this.nodesChecked = nodesChecked;
-		this.transportsChecked = transportsChecked;
-		this.elapsedNanos = elapsedNanos;
-		this.terminationReason = terminationReason;
-		this.message = message;
-		this.arrival = arrival;
-	}
+
 }

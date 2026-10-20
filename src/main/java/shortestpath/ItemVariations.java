@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
 /**
  * Item-name to item-id variation table, loaded from a bundled resource.
@@ -62,7 +63,7 @@ public final class ItemVariations
 	}
 
 	private final String name;
-	private final int[] ids;
+	@Getter private final int[] ids;
 
 	private ItemVariations(String name, int[] ids)
 	{
@@ -75,10 +76,7 @@ public final class ItemVariations
 		return name;
 	}
 
-	public int[] getIds()
-	{
-		return ids;
-	}
+
 
 	public static int[] staves(ItemVariations itemVariation)
 	{
