@@ -34,17 +34,17 @@ import lombok.experimental.Accessors;
 public final class RoutingPolicy
 {
 	private final EnumSet<TransportType> enabledTypes;
-	private final TeleportationItem teleportationItemSetting;
-	private final boolean usePoh;
-	private final boolean usePohFairyRing;
-	private final boolean usePohSpiritTree;
-	private final boolean usePohObelisk;
-	private final Set<PohNexusPortal> enabledPohNexusPortals;
-	private final Set<PohMountedItem> enabledPohMountedItems;
-	private final JewelleryBoxTier pohJewelleryBoxTier;
-	private final int currencyThreshold;
-	private final boolean includeBankPath;
-	private final Set<Integer> blockedItemIds;
+	@Getter @Accessors(fluent = true) private final TeleportationItem teleportationItemSetting;
+	@Getter @Accessors(fluent = true) private final boolean usePoh;
+	@Getter @Accessors(fluent = true) private final boolean usePohFairyRing;
+	@Getter @Accessors(fluent = true) private final boolean usePohSpiritTree;
+	@Getter @Accessors(fluent = true) private final boolean usePohObelisk;
+	@Getter @Accessors(fluent = true) private final Set<PohNexusPortal> enabledPohNexusPortals;
+	@Getter @Accessors(fluent = true) private final Set<PohMountedItem> enabledPohMountedItems;
+	@Getter @Accessors(fluent = true) private final JewelleryBoxTier pohJewelleryBoxTier;
+	@Getter @Accessors(fluent = true) private final int currencyThreshold;
+	@Getter @Accessors(fluent = true) private final boolean includeBankPath;
+	@Getter @Accessors(fluent = true) private final Set<Integer> blockedItemIds;
 	private final Map<Integer, Integer> itemThresholdOverrides;
 
 	public RoutingPolicy(
@@ -99,20 +99,14 @@ public final class RoutingPolicy
 
 
 
-	public boolean includeBankPath()
-	{
-		return includeBankPath;
-	}
+
 
 	/**
 	 * Item ids the player excluded from routing via the hidden
 	 * {@code blockedTeleportItems} CSV — a candidate-set filter, not a fact
 	 * about what the player owns, so it lives on the policy side.
 	 */
-	public Set<Integer> blockedItemIds()
-	{
-		return blockedItemIds;
-	}
+
 
 	/**
 	 * Per-item tiles-saved threshold overrides parsed from the {@code id:N}
