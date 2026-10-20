@@ -448,45 +448,6 @@ public class PathfinderConfig
 		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
-		// The basket unlock is per balloon route: the configured
-		// balloonLogBasketRoutes set becomes the packed destinations the
-		// eligibility snapshot grants Unlock.BALLOON_LOG_BASKET to — never a
-		// global declared unlock. An unwritten key reads the legacy
-		// unlockBalloonLogBasket flag's default (all six or none).
-		Set<BalloonRoute> basketRoutes = effective.balloonLogBasketRoutes();
-		Set<Integer> basketDests = new HashSet<>();
-		if (basketRoutes != null)
-		{
-			for (BalloonRoute route : basketRoutes)
-			{
-				basketDests.add(route.getPackedDestination());
-			}
-		}
-		balloonLogBasketDestinations = Set.copyOf(basketDests);
-
-		// Player-declared per-item restrictions: a bare id blocks the item from
-		// routing entirely, while id:N pins the tiles-saved threshold used to
-		// price transports that reference the id. A rep@dest record blocks the
-		// option of the family that representative id heads — the engine-facing
-		// set holds the option's whole label-group destination set, expanded
-		// here so a blocked option suppresses every tile variant it covers.
-		// The map is frozen deep so the refresh snapshot can never observe a
-		// later config edit through a shared inner set.
-		Set<Integer> blockedItems = new HashSet<>();
-		Map<Integer, Integer> thresholdOverrides = new HashMap<>();
-		Map<Integer, Set<Integer>> optionBlocks = new HashMap<>();
-		TeleportRestriction.parseBlocked((String) settings.configuredValue("blockedTeleportItems"), blockedItems,
-			thresholdOverrides, optionBlocks);
-		blockedItemIds = Set.copyOf(blockedItems);
-		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
-		Map<Integer, Set<Integer>> frozenOptionBlocks = new HashMap<>();
-		for (Map.Entry<Integer, Set<Integer>> entry
-			: TeleportRestriction.expandOptionDests(optionBlocks).entrySet())
-		{
-			frozenOptionBlocks.put(entry.getKey(), Set.copyOf(entry.getValue()));
-		}
-		blockedOptionDests = Map.copyOf(frozenOptionBlocks);
-
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = effective.num(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS);
 		bankVisitCost = effective.num(ConfigKey.COST_BANK_VISIT);
@@ -498,8 +459,8 @@ public class PathfinderConfig
 		sailingSpeed = SailingMoves.ESTIMATED_SPEED;
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
-			SailingState sailingState = sailing.getState();
-			sailingMoves = sailingState.isAboard() && effective.bool(ConfigKey.USE_SAILING_MOVES);
+			isOnSailingBoat = playerStateSource.varbit(VarbitID.SAILING_BOARDED_BOAT) != 0;
+			sailingMoves = isOnSailingBoat && effective.bool(ConfigKey.USE_SAILING_MOVES);
 			// The game stores the base speed in 1/128ths of a tile per tick; a read above any real
 			// boat's speed is a stale or mis-scaled varbit rather than a fast boat — the moves it
 			// would build are so long nothing can sail them — so estimate instead

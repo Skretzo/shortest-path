@@ -154,14 +154,6 @@ public class EffectiveConfigTest
 		assertEquals(base().unreachableText(), effective.str(ConfigKey.UNREACHABLE_TEXT));
 	}
 
-	@Test
-	public void blockedTeleportItemsKeyIsInert()
-	{
-		// The refresh path parses the configured CSV directly; a payload
-		// value must never masquerade as applied through the decorator.
-		EffectiveConfig effective = effectiveWith(Map.of("blockedTeleportItems", "13103"));
-		assertEquals(base().blockedTeleportItems(), effective.str(ConfigKey.BLOCKED_TELEPORT_ITEMS));
-	}
 
 	@Test
 	public void setKeysAreInert()
@@ -174,51 +166,9 @@ public class EffectiveConfigTest
 		assertEquals(base().pohMountedItems(), effective.set(ConfigKey.POH_MOUNTED_ITEMS));
 	}
 
-	@Test
-	public void balloonFlagOverrideReachesTheUnwrittenRouteSet()
-	{
-		// The route set is payload-inert, but its unwritten default derives
-		// from the legacy flag — an override on the flag must move the
-		// derived set too, or the snapshot advertises the unlock while
-		// routing unlocks nothing.
-		EffectiveConfig effective = effectiveWith(Map.of("unlockBalloonLogBasket", true));
-		assertTrue(effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET));
-		assertEquals(EnumSet.allOf(BalloonRoute.class), effective.balloonLogBasketRoutes());
-	}
 
-	@Test
-	public void balloonFlagOffOverrideClearsTheFlagDerivedRouteSet()
-	{
-		TestShortestPathConfig stub = new TestShortestPathConfig();
-		stub.setUnlockBalloonLogBasketValue(true);
-		Settings settings = Settings.wrap(stub);
-		settings.applyOverrides(Map.of("unlockBalloonLogBasket", false));
-		assertEquals(EnumSet.noneOf(BalloonRoute.class),
-			settings.effective().balloonLogBasketRoutes());
-	}
 
-	@Test
-	public void writtenBalloonRouteSetWinsOverFlagOverride()
-	{
-		// The first written set takes over: an explicit partial selection
-		// is not re-derived from the flag.
-		TestShortestPathConfig stub = new TestShortestPathConfig();
-		stub.setBalloonLogBasketRoutesValue(EnumSet.of(BalloonRoute.GRAND_TREE));
-		Settings settings = Settings.wrap(stub);
-		settings.applyOverrides(Map.of("unlockBalloonLogBasket", true));
-		assertEquals(EnumSet.of(BalloonRoute.GRAND_TREE),
-			settings.effective().balloonLogBasketRoutes());
-	}
 
-	@Test
-	public void balloonRouteSetPayloadStaysInert()
-	{
-		// The set key itself keeps its NONE coercion — a payload carrying
-		// a set value never reaches the getter.
-		EffectiveConfig effective = effectiveWith(Map.of(
-			"balloonLogBasketRoutes", Set.of(BalloonRoute.GRAND_TREE)));
-		assertEquals(base().balloonLogBasketRoutes(), effective.balloonLogBasketRoutes());
-	}
 
 	@Test
 	public void backendKeyIsInert()

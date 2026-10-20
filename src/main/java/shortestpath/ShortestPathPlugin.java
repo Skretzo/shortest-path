@@ -541,7 +541,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private void prepareAStarBackend()
 	{
-		if (pathfinderConfig == null || config.pathfinderBackend() != PathfinderBackend.ASTAR)
+		if (pathfinderConfig == null || settings.lifecycle().pathfinderBackend() != PathfinderBackend.ASTAR)
 		{
 			return;
 		}
@@ -580,14 +580,14 @@ public class ShortestPathPlugin extends Plugin
 		boolean sameLocation = lastLocation == location;
 		lastLocation = location;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			config.recalculateDistance() < 0 || sameLocation)
+			settings.lifecycle().recalculateDistance() < 0 || sameLocation)
 		{
 			return true;
 		}
 
 		for (PathStep pathStep : path)
 		{
-			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < config.recalculateDistance())
+			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < settings.lifecycle().recalculateDistance())
 			{
 				return true;
 			}
@@ -599,7 +599,7 @@ public class ShortestPathPlugin extends Plugin
 			for (int i = 1; i < path.size(); i++)
 			{
 				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
-					< config.recalculateDistance())
+					< settings.lifecycle().recalculateDistance())
 				{
 					return true;
 				}
@@ -1203,7 +1203,7 @@ public class ShortestPathPlugin extends Plugin
 		// player's tile, and not the search's verdict: that says a route was found, not that it sailed
 		// there. The reached-distance check below still runs for goal-tile arrivals and disembarking.
 		ActiveSearch search = pathfinder;
-		if (search instanceof SailingPathfinder && config.reachedDistance() >= 0)
+		if (search instanceof SailingPathfinder && settings.lifecycle().reachedDistance() >= 0)
 		{
 			LocalPoint boatPoint = WorldPointUtil.boatLocation(client, localPlayer);
 			WorldEntity boatEntity = WorldPointUtil.boat(client, localPlayer);
@@ -1219,7 +1219,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 		for (int target : pathfinder.getTargets().points())
 		{
-			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
+			if (WorldPointUtil.distanceBetween(currentLocation, target) < settings.lifecycle().reachedDistance())
 			{
 				setTarget(WorldPointUtil.UNDEFINED);
 				return;
@@ -1228,7 +1228,7 @@ public class ShortestPathPlugin extends Plugin
 
 		if (!startPointSet && !isNearPath(currentLocation))
 		{
-			if (config.cancelInstead())
+			if (settings.lifecycle().cancelInstead())
 			{
 				setTarget(WorldPointUtil.UNDEFINED);
 				return;

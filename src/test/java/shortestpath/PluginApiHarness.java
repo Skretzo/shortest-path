@@ -140,22 +140,8 @@ final class PluginApiHarness implements AutoCloseable
 		set("client", client);
 		set("clientThread", clientThread);
 		set("config", settings);
-		set("settings", settingsService);
-		shortestpath.poh.PohService pohService = shortestpath.poh.PohService.forTesting();
-		set("pohService", pohService);
-		set("pathfinderConfig", pathfinderConfig);
-		// The harness builds the plugin without DI, so the scheduler, the refresh
-		// coordinator and the attach-time bindings are seeded the same way the
-		// shell's startUp wires them. The world map point manager moved into the
-		// scheduler with the marker machinery, and the item-state service declares
-		// its change facts straight to the coordinator.
-		scheduler = new shortestpath.scheduler.PathScheduler(client, clientThread, settingsService,
-			mock(WorldMapPointManager.class), new shortestpath.scheduler.DebugState());
-		shortestpath.scheduler.RefreshCoordinator coordinator =
-			new shortestpath.scheduler.RefreshCoordinator(scheduler, settingsService);
-		itemState = shortestpath.items.ItemStateService.forTesting(coordinator);
-		shortestpath.sailing.SailingService sailing =
-			shortestpath.sailing.SailingService.forTesting(client, coordinator);
+		set("settings", shortestpath.settings.Settings.wrap(settings));
+		itemState = shortestpath.items.ItemStateService.forTesting();
 		pathfinderConfig.setItemStateService(itemState);
 		set("itemState", itemState);
 		set("pohService", shortestpath.poh.PohService.forTesting());

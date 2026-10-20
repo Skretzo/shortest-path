@@ -14,7 +14,6 @@ import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.TileCounter;
-import shortestpath.transport.BalloonRoute;
 
 /**
  * Registry of every config key: one row per persisted key name, recording
@@ -102,9 +101,9 @@ public enum ConfigKey
 	USE_POH_FAIRY_RING("usePohFairyRing", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_POH_SPIRIT_TREE("usePohSpiritTree", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_TELEPORTATION_PORTALS_POH("useTeleportationPortalsPoh", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	POH_NEXUS_PORTALS("pohNexusPortals", Set.class, PohNexusPortal.class, b -> Boolean.TRUE.equals(b.apply(forKey("useTeleportationPortalsPoh"))) ? EnumSet.allOf(PohNexusPortal.class) : EnumSet.noneOf(PohNexusPortal.class), Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	POH_NEXUS_PORTALS("pohNexusPortals", Set.class, PohNexusPortal.class, b -> Boolean.TRUE.equals(b.apply(forKey("useTeleportationPortalsPoh"))) ? Set.copyOf(PohNexusPortal.values()) : Set.of(), Coercion.NONE, Effect.ROUTE_INVALIDATING),
 	POH_JEWELLERY_BOX_TIER("pohJewelleryBoxTier", JewelleryBoxTier.class, JewelleryBoxTier.ORNATE, Coercion.JEWELLERY_BOX_TIER, Effect.ROUTE_INVALIDATING),
-	POH_MOUNTED_ITEMS("pohMountedItems", Set.class, PohMountedItem.class, b -> Boolean.TRUE.equals(b.apply(forKey("usePohMountedItems"))) ? EnumSet.allOf(PohMountedItem.class) : EnumSet.noneOf(PohMountedItem.class), Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	POH_MOUNTED_ITEMS("pohMountedItems", Set.class, PohMountedItem.class, b -> Boolean.TRUE.equals(b.apply(forKey("usePohMountedItems"))) ? Set.copyOf(PohMountedItem.values()) : Set.of(), Coercion.NONE, Effect.ROUTE_INVALIDATING),
 	USE_POH_MOUNTED_ITEMS("usePohMountedItems", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_POH_OBELISK("usePohObelisk", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	COST_AGILITY_SHORTCUTS("costAgilityShortcuts", int.class, 0, Coercion.INT, Effect.ROUTE_INVALIDATING),
@@ -154,10 +153,7 @@ public enum ConfigKey
 	POST_TRANSPORTS("postTransports", ShortestPathConfig::postTransports, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	UNREACHABLE_TEXT("unreachableText", String.class, "Destination could not be reached", Coercion.NONE, Effect.DISPLAY_ONLY),
 	BUILT_TELEPORTATION_BOXES("builtTeleportationBoxes", String.class, "", Coercion.NONE, Effect.DISPLAY_ONLY),
-	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", String.class, "", Coercion.NONE, Effect.DISPLAY_ONLY),
-	BLOCKED_TELEPORT_ITEMS("blockedTeleportItems", String.class, "", Coercion.NONE, Effect.ROUTE_INVALIDATING),
-	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
-	BALLOON_LOG_BASKET_ROUTES("balloonLogBasketRoutes", Set.class, BalloonRoute.class, b -> Boolean.TRUE.equals(b.apply(forKey("unlockBalloonLogBasket"))) ? EnumSet.allOf(BalloonRoute.class) : EnumSet.noneOf(BalloonRoute.class), Coercion.NONE, Effect.ROUTE_INVALIDATING);
+	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", String.class, "", Coercion.NONE, Effect.DISPLAY_ONLY);
 	;
 
 	private static final Map<String, ConfigKey> BY_KEY;
@@ -194,7 +190,7 @@ public enum ConfigKey
 	/** Persisted type of a hidden key; {@code null} on proxy-backed rows. */
 	private final Class<?> type;
 	/** Element class of a {@code Set}-typed hidden key. */
-	private final Class<? extends Enum> element;
+	private final Class<?> element;
 	/**
 	 * The unwritten default: a literal, or a
 	 * {@code Function<baseResolver, Object>} for flag-derived set defaults.
@@ -226,18 +222,18 @@ public enum ConfigKey
 		this(key, type, null, def, baseKey, coercion, effects);
 	}
 
-	ConfigKey(String key, Class<?> type, Class<? extends Enum> element, Object def, Coercion coercion, Effect... effects)
+	ConfigKey(String key, Class<?> type, Class<?> element, Object def, Coercion coercion, Effect... effects)
 	{
 		this(key, type, element, def, null, coercion, effects);
 	}
 
-	ConfigKey(String key, Class<?> type, Class<? extends Enum> element,
+	ConfigKey(String key, Class<?> type, Class<?> element,
 		Function<Function<ConfigKey, Object>, Object> def, Coercion coercion, Effect... effects)
 	{
 		this(key, type, element, def, null, coercion, effects);
 	}
 
-	private ConfigKey(String key, Class<?> type, Class<? extends Enum> element, Object def,
+	private ConfigKey(String key, Class<?> type, Class<?> element, Object def,
 		ConfigKey baseKey, Coercion coercion, Effect... effects)
 	{
 		this.key = key;
@@ -267,6 +263,7 @@ public enum ConfigKey
 		this.def = null;
 		this.baseKey = null;
 		this.getter = getter;
+		this.configuredGetter = configuredGetter;
 		this.coercion = coercion;
 		this.effects = Set.of(effects);
 	}
@@ -296,47 +293,14 @@ public enum ConfigKey
 			: def;
 	}
 
+
 	/**
-	 * Parses the persisted form of a {@code Set}-typed hidden key —
-	 * {@code ["A","B"]} as {@code ConfigManager}'s gson write produces —
-	 * into an {@code EnumSet}. {@code null} on unset or corrupt content,
-	 * mirroring the proxy's fall-to-default behaviour.
+	 * {@code Set<element>} as a {@link java.lang.reflect.Type} for the raw
+	 * config read — the element class is not required to be an enum.
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static Set<?> parseSet(String stored, Class<? extends Enum> element)
+	public java.lang.reflect.Type getSetType()
 	{
-		if (stored == null || stored.isEmpty())
-		{
-			return null;
-		}
-		String inner = stored.trim();
-		if (!inner.startsWith("[") || !inner.endsWith("]"))
-		{
-			return null;
-		}
-		inner = inner.substring(1, inner.length() - 1).trim();
-		EnumSet out = EnumSet.noneOf(element);
-		if (inner.isEmpty())
-		{
-			return out;
-		}
-		try
-		{
-			for (String token : inner.split(","))
-			{
-				token = token.trim();
-				if (token.length() < 2 || token.charAt(0) != '"' || token.charAt(token.length() - 1) != '"')
-				{
-					return null;
-				}
-				out.add(Enum.valueOf(element, token.substring(1, token.length() - 1)));
-			}
-		}
-		catch (RuntimeException e)
-		{
-			return null;
-		}
-		return out;
+		return com.google.gson.reflect.TypeToken.getParameterized(Set.class, element).getType();
 	}
 
 	/** Whether a change to this key restarts pathfinding. */

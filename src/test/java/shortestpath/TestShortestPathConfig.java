@@ -28,8 +28,6 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 	private Boolean unlockXericsHonour = false;
 	private Boolean unlockDragontoothPassage = false;
 	private String blockedTeleportItems = "";
-	private Boolean unlockBalloonLogBasket = false;
-	private Set<BalloonRoute> balloonLogBasketRoutes = null;
 	private Boolean usePoh = false;
 	private Set<PohNexusPortal> pohNexusPortals = null;
 	private Boolean showBankPickupInfo = false;
@@ -95,17 +93,7 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		this.blockedTeleportItems = blockedTeleportItems;
 	}
 
-	@SuppressWarnings("unused")
-	public void setUnlockBalloonLogBasketValue(boolean unlockBalloonLogBasket)
-	{
-		this.unlockBalloonLogBasket = unlockBalloonLogBasket;
-	}
 
-	@SuppressWarnings("unused")
-	public void setBalloonLogBasketRoutesValue(Set<BalloonRoute> balloonLogBasketRoutes)
-	{
-		this.balloonLogBasketRoutes = balloonLogBasketRoutes;
-	}
 
 	@SuppressWarnings("unused")
 	public void setUsePohValue(boolean usePoh)
@@ -163,7 +151,7 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 			"usePoh", "usePohFairyRing", "usePohSpiritTree",
 			"useTeleportationPortalsPoh", "usePohMountedItems", "usePohObelisk",
 			"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage",
-			"unlockMorUlRek", "unlockBalloonLogBasket"})
+			"unlockMorUlRek"})
 		{
 			set(key, false);
 		}
@@ -202,10 +190,6 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 				return unlockDragontoothPassage;
 			case "blockedTeleportItems":
 				return blockedTeleportItems;
-			case "unlockBalloonLogBasket":
-				return unlockBalloonLogBasket;
-			case "balloonLogBasketRoutes":
-				return balloonLogBasketRoutes;
 			case "usePoh":
 				return usePoh;
 			case "pohNexusPortals":
@@ -272,15 +256,7 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		return (String) def("blockedTeleportItems");
 	}
 
-	public boolean unlockBalloonLogBasket()
-	{
-		return Boolean.TRUE.equals(def("unlockBalloonLogBasket"));
-	}
 
-	public Set<BalloonRoute> balloonLogBasketRoutes()
-	{
-		return (Set<BalloonRoute>) def("balloonLogBasketRoutes");
-	}
 
 	public boolean usePoh()
 	{

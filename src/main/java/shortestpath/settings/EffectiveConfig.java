@@ -1,6 +1,7 @@
 package shortestpath.settings;
 
 import java.awt.Color;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -143,32 +144,6 @@ public final class EffectiveConfig implements ShortestPathConfig
 			}
 		}
 		return (JewelleryBoxTier) baseOf(ConfigKey.POH_JEWELLERY_BOX_TIER);
-	}
-
-	/**
-	 * {@code balloonLogBasketRoutes} — the unwritten-key default derives
-	 * from the legacy {@code unlockBalloonLogBasket} flag: re-derive it
-	 * through the override-aware flag so a payload on that flag still
-	 * produces "all routes" (or none) instead of advertising the unlock
-	 * while routing sees the base flag's value. A written set equal to the
-	 * flag-derived default is indistinguishable from unwritten here, and
-	 * re-deriving it loses nothing: its value carried no more than the flag
-	 * itself did. Any other written set wins outright.
-	 */
-	@SuppressWarnings("unchecked")
-	public Set<BalloonRoute> balloonLogBasketRoutes()
-	{
-		Set<BalloonRoute> routes = (Set<BalloonRoute>) baseOf(ConfigKey.BALLOON_LOG_BASKET_ROUTES);
-		Set<BalloonRoute> flagDerived = Boolean.TRUE.equals(baseOf(ConfigKey.UNLOCK_BALLOON_LOG_BASKET))
-			? EnumSet.allOf(BalloonRoute.class)
-			: EnumSet.noneOf(BalloonRoute.class);
-		if (routes == null || routes.equals(flagDerived))
-		{
-			return bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET)
-				? EnumSet.allOf(BalloonRoute.class)
-				: EnumSet.noneOf(BalloonRoute.class);
-		}
-		return routes;
 	}
 
 	@Override

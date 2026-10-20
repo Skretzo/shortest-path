@@ -1,5 +1,7 @@
 package shortestpath.settings;
 
+import com.google.gson.reflect.TypeToken;
+
 import java.awt.Color;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -18,7 +20,11 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.config.ConfigDescriptor;
+import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigItemDescriptor;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Range;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.ShortestPathConfig;
@@ -111,6 +117,10 @@ public class Settings
 	{
 		this.configManager = configManager;
 		this.configured = configured;
+		ConfigDescriptor descriptor = configManager == null
+			? null
+			: configManager.getConfigDescriptor(configured);
+		this.itemDescriptors = descriptor == null ? Map.of() : indexItems(descriptor);
 		republish();
 	}
 
@@ -127,6 +137,26 @@ public class Settings
 	public static Settings wrap(ShortestPathConfig config)
 	{
 		return new Settings(config);
+	}
+
+	/**
+	 * keyName → config-item descriptor, resolved through the config manager's
+	 * descriptor surface ({@link ConfigManager#getConfigDescriptor}) so the
+	 * {@link ConfigItem}/{@link Range} metadata controls use comes from
+	 * RuneLite's own resolution, not plugin-side reflection. Empty on the
+	 * wrap seam, where no manager exists — {@link #configItem} and
+	 * {@link #rangeOf} then return {@code null}.
+	 */
+	private final Map<String, ConfigItemDescriptor> itemDescriptors;
+
+	private static Map<String, ConfigItemDescriptor> indexItems(ConfigDescriptor descriptor)
+	{
+		Map<String, ConfigItemDescriptor> items = new HashMap<>();
+		for (ConfigItemDescriptor item : descriptor.getItems())
+		{
+			items.putIfAbsent(item.key(), item);
+		}
+		return items;
 	}
 
 	/**
@@ -316,10 +346,8 @@ public class Settings
 		Object value = null;
 		if (configManager != null)
 		{
-			value = row.getType() == Set.class
-				? ConfigKey.parseSet(
-					configManager.getConfiguration(CONFIG_GROUP, row.getKey()), row.getElement())
-				: configManager.getConfiguration(CONFIG_GROUP, row.getKey(), row.getType());
+			value = configManager.getConfiguration(CONFIG_GROUP, row.getKey(),
+				row.getType() == Set.class ? row.getSetType() : row.getType());
 		}
 		// On harness seams the configured object supplies values the manager
 		// does not have (an unwritten key reads as null through a mock).
@@ -731,7 +759,6 @@ public class Settings
 			unlockXericsHonour = effective.bool(ConfigKey.UNLOCK_XERICS_HONOUR);
 			unlockDragontoothPassage = effective.bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
 			unlockMorUlRek = effective.bool(ConfigKey.UNLOCK_MOR_UL_REK);
-			unlockBalloonLogBasket = effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET);
 		}
 	}
 

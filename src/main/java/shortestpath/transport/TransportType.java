@@ -2,7 +2,6 @@ package shortestpath.transport;
 
 import lombok.Getter;
 import net.runelite.api.Skill;
-import shortestpath.requirement.model.SkillLevels;
 
 @Getter
 public enum TransportType
