@@ -153,9 +153,16 @@ public class PathAnnotator
 		for (ItemRequirement group : missing)
 		{
 			List<String> names = new ArrayList<>();
-			for (ItemRequirement.Branch branch : group.getBranches())
+			for (ItemRequirement.ItemBranch branch : group.getItemBranches())
 			{
-				for (int id : branch.getItemIds())
+				int[] ids = branch.getItemIds();
+				if (ids == null)
+				{
+					// A substitute-only branch carries no item ids; it names
+					// no missing item and must not be dereferenced.
+					continue;
+				}
+				for (int id : ids)
 				{
 					// Requirement ids come from other plugins' messages; an invalid or renamed
 					// id may resolve to no name rather than crash every rendered frame.
@@ -164,7 +171,15 @@ public class PathAnnotator
 					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
 				}
 			}
-			groups.add(String.join(" or ", names));
+			if (!names.isEmpty())
+			{
+				groups.add(String.join(" or ", names));
+			}
+		}
+		if (groups.isEmpty())
+		{
+			// Every missing group was unlock-only: no items to name.
+			return "";
 		}
 		return "Not found in inventory or bank: " + String.join(", ", groups)
 			+ (pathfinderConfig.getHeldItems().isBankSeen() ? "" : " (bank not checked)");

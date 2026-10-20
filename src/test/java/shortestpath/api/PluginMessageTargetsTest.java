@@ -39,7 +39,7 @@ public class PluginMessageTargetsTest
 		for (ItemRequirement group : items.getRequirements())
 		{
 			Map<Integer, Integer> alternatives = new LinkedHashMap<>();
-			for (ItemRequirement.Branch branch : group.getBranches())
+			for (ItemRequirement.ItemBranch branch : group.getItemBranches())
 			{
 				assertEquals("one exact id per alternative, no variations", 1, branch.getItemIds().length);
 				alternatives.put(branch.getItemIds()[0], branch.getQuantity());

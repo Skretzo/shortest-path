@@ -61,6 +61,7 @@ public class RequirementsTest
 	private static final int LAW_RUNE = ItemID.LAWRUNE;
 	private static final int AIR_RUNE = ItemID.AIRRUNE;
 	private static final int DEADMAN_ONLY = ItemID.MAGIC_ROCK_OF_FAIRIES;
+	private static final int XERIC_TALISMAN = ItemID.XERIC_TALISMAN;
 
 	private static int pack(int x, int y, int plane)
 	{
@@ -95,12 +96,12 @@ public class RequirementsTest
 
 	private static ItemRequirement.Branch branch(int... itemIds)
 	{
-		return new ItemRequirement.Branch(itemIds, null, null, 1);
+		return ItemRequirement.Branch.item(itemIds, null, null, 1);
 	}
 
 	private static ItemRequirement.Branch unlockBranch(Unlock unlock)
 	{
-		return new ItemRequirement.Branch(null, null, null, 1, unlock);
+		return ItemRequirement.Branch.unlock(unlock);
 	}
 
 	private static ItemRequirement item(int itemId)
@@ -838,6 +839,152 @@ public class RequirementsTest
 				.check(axeOrUnlock));
 	}
 
+	@Test
+	public void unlockGatedItemTeleportIsRejectedInEveryItemMode()
+	{
+		// 13393=1&UNLOCK_XERICS_HONOUR=1 with the unlock undeclared: NONE
+		// rejects at the mode seat; every other mode — deferring or
+		// item-bypassing — still reaches the unlock gate and is rejected
+		// there. A mode whose gate order drifts would change one cell.
+		Transport unlockGated = transport(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(items(item(XERIC_TALISMAN),
+				new ItemRequirement(List.of(unlockBranch(Unlock.XERICS_HONOUR)))))
+			.build();
+
+		Map<TeleportationItem, RejectionReason> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, RejectionReason.TELEPORT_MODE);
+		expected.put(TeleportationItem.INVENTORY, RejectionReason.UNLOCK_GATE);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, RejectionReason.UNLOCK_GATE);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, RejectionReason.UNLOCK_GATE);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, RejectionReason.UNLOCK_GATE);
+		expected.put(TeleportationItem.UNLOCKED, RejectionReason.UNLOCK_GATE);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, RejectionReason.UNLOCK_GATE);
+		expected.put(TeleportationItem.ALL, RejectionReason.UNLOCK_GATE);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, RejectionReason.UNLOCK_GATE);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (Map.Entry<TeleportationItem, RejectionReason> entry : expected.entrySet())
+		{
+			TeleportationItem mode = entry.getKey();
+			RequirementContext context = RequirementTestFixtures.context()
+				.eligibility(new TransportEligibility(
+					Map.of(XERIC_TALISMAN, 1), Map.of(XERIC_TALISMAN, 1), Map.of(), -1, Map.of(),
+					false, mode, Integer.MAX_VALUE, Set.of(), false))
+				.build();
+			assertEquals(mode + " without the declared unlock",
+				entry.getValue(),
+				requirements(context, RequirementTestFixtures.policy(mode)).check(unlockGated));
+		}
+	}
+
+	@Test
+	public void unlockGatedItemTeleportPassesEveryModeButNoneOnceDeclared()
+	{
+		// Same transport with the Honour declared and the talisman carried:
+		// only the NONE mode seat still rejects; every other mode offers it.
+		Transport unlockGated = transport(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(items(item(XERIC_TALISMAN),
+				new ItemRequirement(List.of(unlockBranch(Unlock.XERICS_HONOUR)))))
+			.build();
+
+		Map<TeleportationItem, RejectionReason> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, RejectionReason.TELEPORT_MODE);
+		expected.put(TeleportationItem.INVENTORY, RejectionReason.NONE);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, RejectionReason.NONE);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, RejectionReason.NONE);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, RejectionReason.NONE);
+		expected.put(TeleportationItem.UNLOCKED, RejectionReason.NONE);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, RejectionReason.NONE);
+		expected.put(TeleportationItem.ALL, RejectionReason.NONE);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, RejectionReason.NONE);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (Map.Entry<TeleportationItem, RejectionReason> entry : expected.entrySet())
+		{
+			TeleportationItem mode = entry.getKey();
+			RequirementContext context = RequirementTestFixtures.context()
+				.eligibility(new TransportEligibility(
+					Map.of(XERIC_TALISMAN, 1), Map.of(XERIC_TALISMAN, 1), Map.of(), -1, Map.of(),
+					false, mode, Integer.MAX_VALUE, Set.of(Unlock.XERICS_HONOUR), false))
+				.unlocks(Set.of(Unlock.XERICS_HONOUR))
+				.build();
+			assertEquals(mode + " with the declared unlock and the talisman",
+				entry.getValue(),
+				requirements(context, RequirementTestFixtures.policy(mode)).check(unlockGated));
+		}
+	}
+
+	@Test
+	public void theDeclaredUnlockNeverConjuresTheGatedItem()
+	{
+		// The ANDed gate is conjunctive: the declared Honour opens the unlock
+		// term, but a player without the talisman is still rejected by item
+		// evaluation in the deferring modes. The bypass modes never look at
+		// items, so they pass once the gate is declared.
+		Transport unlockGated = transport(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(items(item(XERIC_TALISMAN),
+				new ItemRequirement(List.of(unlockBranch(Unlock.XERICS_HONOUR)))))
+			.build();
+
+		Map<TeleportationItem, RejectionReason> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, RejectionReason.TELEPORT_MODE);
+		expected.put(TeleportationItem.INVENTORY, RejectionReason.ITEM_REQUIREMENT);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, RejectionReason.ITEM_REQUIREMENT);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, RejectionReason.ITEM_REQUIREMENT);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, RejectionReason.ITEM_REQUIREMENT);
+		expected.put(TeleportationItem.UNLOCKED, RejectionReason.NONE);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, RejectionReason.NONE);
+		expected.put(TeleportationItem.ALL, RejectionReason.NONE);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, RejectionReason.NONE);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (Map.Entry<TeleportationItem, RejectionReason> entry : expected.entrySet())
+		{
+			TeleportationItem mode = entry.getKey();
+			RequirementContext context = RequirementTestFixtures.context()
+				.eligibility(new TransportEligibility(
+					Map.of(), Map.of(), Map.of(), -1, Map.of(),
+					false, mode, Integer.MAX_VALUE, Set.of(Unlock.XERICS_HONOUR), false))
+				.unlocks(Set.of(Unlock.XERICS_HONOUR))
+				.build();
+			assertEquals(mode + " with the declared unlock but no talisman",
+				entry.getValue(),
+				requirements(context, RequirementTestFixtures.policy(mode)).check(unlockGated));
+		}
+	}
+
+	@Test
+	public void eitherAlternativeSatisfiesAnUnlockOrGroup()
+	{
+		// A pure-unlock requirement with alternatives is an OR gate at the
+		// admissibility layer too: any declared alternative passes it.
+		Transport gated = transport(TransportType.TRANSPORT)
+			.itemRequirements(items(new ItemRequirement(List.of(
+				unlockBranch(Unlock.XERICS_HONOUR), unlockBranch(Unlock.CANOE_AXE)))))
+			.build();
+
+		Requirements without = requirements(
+			RequirementTestFixtures.context().build(),
+			RequirementTestFixtures.policy(TeleportationItem.INVENTORY));
+		assertEquals(RejectionReason.UNLOCK_GATE, without.check(gated));
+
+		for (Unlock declared : new Unlock[]{Unlock.XERICS_HONOUR, Unlock.CANOE_AXE})
+		{
+			RequirementContext context = RequirementTestFixtures.context()
+				.eligibility(new TransportEligibility(Map.of(), Map.of(), Map.of(), -1, Map.of(),
+					false, TeleportationItem.INVENTORY, Integer.MAX_VALUE, Set.of(declared), false))
+				.unlocks(Set.of(declared))
+				.build();
+			assertEquals(declared + " declared satisfies the unlock OR group",
+				RejectionReason.NONE,
+				requirements(context, RequirementTestFixtures.policy(TeleportationItem.INVENTORY))
+					.check(gated));
+		}
+	}
+
 	// ------------------------------------------------------------------
 	// Gate 9: jewellery box tier and mounted items on teleportation boxes.
 	// ------------------------------------------------------------------
@@ -1431,21 +1578,13 @@ public class RequirementsTest
 			requirements(capped, RequirementTestFixtures.policy(TeleportationItem.NONE)).check(fare));
 	}
 
-	@Test
-	public void aBranchWithoutItemIdsIsNeverSatisfiedByItems()
+	@Test(expected = IllegalArgumentException.class)
+	public void anItemBranchWithoutAnyIdsIsRejected()
 	{
-		// A non-unlock branch carrying no item ids contributes nothing —
-		// neither items nor unlocks can satisfy it, so the requirement fails.
-		Transport transport = transport(TransportType.BOAT)
-			.itemRequirements(items(new ItemRequirement(List.of(
-				new ItemRequirement.Branch(null, null, null, 1)))))
-			.build();
-		RequirementContext context = RequirementTestFixtures.context()
-			.eligibility(RequirementTestFixtures.eligibility(
-				TeleportationItem.NONE, Map.of(LAW_RUNE, 99)))
-			.build();
-		assertEquals(RejectionReason.ITEM_REQUIREMENT,
-			requirements(context, RequirementTestFixtures.policy(TeleportationItem.NONE)).check(transport));
+		// An alternative carrying no item, staff or offhand ids could never
+		// be satisfied — the type refuses to construct it, so no consumer
+		// can ever meet the zombie alternative this used to build.
+		ItemRequirement.Branch.item(null, null, null, 1);
 	}
 
 	// ------------------------------------------------------------------

@@ -410,7 +410,7 @@ public final class Requirements
 				continue;
 			}
 			boolean declared = false;
-			for (ItemRequirement.Branch branch : requirement.getBranches())
+			for (ItemRequirement.UnlockBranch branch : requirement.getUnlockBranches())
 			{
 				if (unlocks.contains(branch.getUnlock()))
 				{

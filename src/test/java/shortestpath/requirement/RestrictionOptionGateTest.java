@@ -222,7 +222,7 @@ public class RestrictionOptionGateTest
 	public void staffAndOffhandSubstitutesAreNotOptionBlocked()
 	{
 		ItemRequirement staffOnly = new ItemRequirement(List.of(
-			new ItemRequirement.Branch(null, new int[]{CLOAK_REP}, null, 1)));
+			ItemRequirement.Branch.item(null, new int[]{CLOAK_REP}, null, 1)));
 		Transport transport = new Transport.TransportBuilder()
 			.type(TransportType.TELEPORTATION_ITEM)
 			.destination(FARM)

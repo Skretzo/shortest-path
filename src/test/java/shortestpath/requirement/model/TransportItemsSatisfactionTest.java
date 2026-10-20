@@ -2,6 +2,7 @@ package shortestpath.requirement.model;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -203,10 +204,12 @@ public class TransportItemsSatisfactionTest
 		ItemRequirement req = items.getRequirements().get(0);
 		Assert.assertEquals(2, req.getBranches().size());
 		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
-		ItemRequirement.Branch unlock = req.getBranches().get(1);
-		Assert.assertNull(unlock.getItemIds());
+		Assert.assertTrue(req.getBranches().get(0) instanceof ItemRequirement.ItemBranch);
+		Assert.assertTrue(req.getBranches().get(1) instanceof ItemRequirement.UnlockBranch);
+		ItemRequirement.UnlockBranch unlock = req.getUnlockBranches().get(0);
 		Assert.assertEquals(Unlock.CANOE_AXE, unlock.getUnlock());
-		Assert.assertTrue(unlock.isUnlockOnly());
+		Assert.assertTrue(unlock.isUnlock());
+		Assert.assertEquals(1, unlock.getQuantity());
 	}
 
 	@Test
@@ -229,6 +232,61 @@ public class TransportItemsSatisfactionTest
 	public void zeroQuantityUnlockIsMalformed()
 	{
 		new ItemRequirementParser().parse("UNLOCK_CANOE_AXE=0");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unlockBranchRejectsNullUnlock()
+	{
+		ItemRequirement.Branch.unlock(null);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void itemBranchRejectsAllEmptyIds()
+	{
+		ItemRequirement.Branch.item(null, null, null, 1);
+	}
+
+	@Test
+	public void unlockAndItemBranchesConstructThroughFactories()
+	{
+		// The kinds are separate types: an unlock branch carries only its
+		// unlock, an item branch only ids — the invalid mixes cannot be
+		// expressed, let alone built.
+		ItemRequirement.Branch unlockOnly = ItemRequirement.Branch.unlock(Unlock.XERICS_HONOUR);
+		Assert.assertTrue(unlockOnly instanceof ItemRequirement.UnlockBranch);
+		Assert.assertTrue(unlockOnly.isUnlock());
+		Assert.assertEquals(Unlock.XERICS_HONOUR, ((ItemRequirement.UnlockBranch) unlockOnly).getUnlock());
+		Assert.assertEquals(1, unlockOnly.getQuantity());
+
+		ItemRequirement.Branch itemOnly = ItemRequirement.Branch.item(
+			new int[]{1}, new int[]{2}, new int[]{3}, 1);
+		Assert.assertTrue(itemOnly instanceof ItemRequirement.ItemBranch);
+		Assert.assertFalse(itemOnly.isUnlock());
+		Assert.assertFalse("item branches are never unlock-satisfied",
+			itemOnly.satisfiedByUnlocks(Set.of(Unlock.XERICS_HONOUR)));
+	}
+
+	@Test
+	public void parserEmitsTheMatchingBranchKindPerAlternative()
+	{
+		// Every alternative the parser emits has its kind in its type:
+		// UNLOCK_* terms become UnlockBranch, item terms ItemBranch, and the
+		// split views partition the declaration-ordered branch list.
+		for (String cell : new String[]{"AXE=1|UNLOCK_XERICS_HONOUR=1", "UNLOCK_CANOE_AXE=1"})
+		{
+			TransportItems items = new ItemRequirementParser().parse(cell);
+			Assert.assertNotNull(items);
+			for (ItemRequirement req : items.getRequirements())
+			{
+				Assert.assertEquals(req.getItemBranches().size() + req.getUnlockBranches().size(),
+					req.getBranches().size());
+				for (ItemRequirement.Branch branch : req.getBranches())
+				{
+					Assert.assertEquals("isUnlock must agree with the branch type on " + cell,
+						branch instanceof ItemRequirement.UnlockBranch, branch.isUnlock());
+				}
+			}
+		}
 	}
 
 	@Test
@@ -314,10 +372,10 @@ public class TransportItemsSatisfactionTest
 		ItemRequirement req = items.getRequirements().get(0);
 		Assert.assertEquals(2, req.getBranches().size());
 		Assert.assertFalse("A mixed item/unlock requirement is relief, not a gate", req.isPureUnlock());
-		ItemRequirement.Branch unlock = req.getBranches().get(1);
-		Assert.assertNull(unlock.getItemIds());
+		Assert.assertTrue(req.getBranches().get(1) instanceof ItemRequirement.UnlockBranch);
+		ItemRequirement.UnlockBranch unlock = req.getUnlockBranches().get(0);
 		Assert.assertEquals(Unlock.BALLOON_LOG_BASKET, unlock.getUnlock());
-		Assert.assertTrue(unlock.isUnlockOnly());
+		Assert.assertTrue(unlock.isUnlock());
 	}
 
 	@Test
@@ -389,6 +447,56 @@ public class TransportItemsSatisfactionTest
 		Set<Integer> allRunes =
 			Arrays.stream(ItemVariations.FIRE_RUNE.getIds()).boxed().collect(Collectors.toSet());
 		Assert.assertTrue(items.survivesBlockedItems(allRunes));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void emptyBranchListIsRejected()
+	{
+		new ItemRequirement(List.of());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void nullBranchListIsRejected()
+	{
+		new ItemRequirement(null);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void idlessBranchIsUnconstructible()
+	{
+		// A branch carrying no ids and no unlock could never be satisfied —
+		// neither items nor unlocks — so the type refuses the shape outright
+		// instead of letting it survive block purges while failing
+		// satisfaction.
+		ItemRequirement.Branch.item(null, null, null, 1);
+	}
+
+	@Test
+	public void honourOrBranchRelievesAndUndeclaredDoesNot()
+	{
+		// The OR group is satisfied by items OR by the declared unlock; an
+		// undeclared honour — or a different declared unlock — never relieves
+		// the axe term.
+		TransportItems items = new ItemRequirementParser().parse("AXE=1|UNLOCK_XERICS_HONOUR=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(), ItemID.BRONZE_AXE, 1));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of(Unlock.DRAGONTOOTH)));
+	}
+
+	@Test
+	public void eitherUnlockAlternativeSatisfiesAPureUnlockOrGroup()
+	{
+		// A pure-unlock requirement with alternatives is an OR gate: any one
+		// of its declared unlocks satisfies it.
+		TransportItems items =
+			new ItemRequirementParser().parse("UNLOCK_XERICS_HONOUR=1|UNLOCK_CANOE_AXE=1");
+		Assert.assertNotNull(items);
+		Assert.assertTrue(items.getRequirements().get(0).isPureUnlock());
+		Assert.assertFalse(satisfiedWithUnlocks(items, Set.of()));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.XERICS_HONOUR)));
+		Assert.assertTrue(satisfiedWithUnlocks(items, Set.of(Unlock.CANOE_AXE)));
 	}
 
 	private static boolean satisfied(TransportItems items, int... idAndQuantity)

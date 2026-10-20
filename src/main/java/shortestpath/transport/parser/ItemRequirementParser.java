@@ -99,9 +99,12 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 
 			if (itemName.startsWith(UNLOCK_PREFIX))
 			{
-				if (quantity < 1)
+				if (quantity != 1)
 				{
-					throw new IllegalArgumentException("An unlock token needs a positive quantity: " + orPart);
+					// The 'UNLOCK_<NAME>=1' grammar admits no other quantity;
+					// an unlock satisfaction never reads one, so a non-1
+					// value can only be malformed data.
+					throw new IllegalArgumentException("An unlock token must be =1: " + orPart);
 				}
 				Unlock unlock = Unlock.fromName(itemName);
 				if (unlock == null)
@@ -110,14 +113,14 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 					// dropping the whole Items cell like an unknown item name.
 					throw new IllegalArgumentException("Unknown unlock token: " + orPart);
 				}
-				branches.add(new ItemRequirement.Branch(null, null, null, quantity, unlock));
+				branches.add(ItemRequirement.Branch.unlock(unlock));
 				continue;
 			}
 
 			ItemVariations variation = ItemVariations.fromName(itemName);
 			if (variation != null)
 			{
-				branches.add(new ItemRequirement.Branch(
+				branches.add(ItemRequirement.Branch.item(
 					copyOrNull(variation.getIds()),
 					copyOrNull(ItemVariations.staves(variation)),
 					copyOrNull(ItemVariations.offhands(variation)),
@@ -126,7 +129,7 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 			else
 			{
 				// Try parsing as raw item ID
-				branches.add(new ItemRequirement.Branch(
+				branches.add(ItemRequirement.Branch.item(
 					new int[]{Integer.parseInt(itemName)}, null, null, quantity));
 			}
 		}
