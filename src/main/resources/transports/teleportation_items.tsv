@@ -557,3 +557,6 @@
 2848 3930 0			28564=1	Making Friends with My Arm	4	Trinket of fairies: Tool Lep - Weiss	F	30		
 2863 3432 0			28564=1		4	Trinket of fairies: Tool Lep - White Wolf Mountain	F	30		
 2573 3108 0			28564=1		4	Trinket of fairies: Tool Lep - Yanille	F	30		
+# Ghommal's hilt (1 has 3, 2 has 5, 3+ unlimited daily teleports to Trollheim; 4 has 3, 5 has 5, 6 unlimited daily teleports to Mor Ul Rek - needs the fire-cape unlock)										
+2900 3748 0			25926=1||25928=1||25930=1||25932=1||25934=1||25936=1||27550=1||27551=1||27552=1||27553=1		4	Ghommal's hilt: Trollheim	F	20		
+2544 5139 0			25932=1||25934=1||25936=1||27550=1||27551=1||27552=1||27553=1&UNLOCK_MOR_UL_REK=1		4	Ghommal's hilt: Mor Ul Rek	F	20		
