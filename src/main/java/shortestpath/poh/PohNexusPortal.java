@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
-
+import lombok.ToString;
+@ToString
 public enum PohNexusPortal
 {
 	APE_ATOLL_DUNGEON("Ape Atoll Dungeon", "Ape Atoll Dungeon Portal"),
@@ -92,9 +93,5 @@ public enum PohNexusPortal
 		return BY_DISPLAY_INFO.get(displayInfo);
 	}
 
-	@Override
-	public String toString()
-	{
-		return label;
-	}
+
 }

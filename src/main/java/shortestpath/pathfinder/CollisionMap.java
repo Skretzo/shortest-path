@@ -3,7 +3,8 @@ package shortestpath.pathfinder;
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;
-
+import lombok.RequiredArgsConstructor;
+@RequiredArgsConstructor
 public class CollisionMap
 {
 	// Enum.values() makes copies every time which hurts performance in the hotpath
@@ -15,10 +16,7 @@ public class CollisionMap
 	private final PrimitiveIntList neighbors = new PrimitiveIntList(16);
 	private final boolean[] traversable = new boolean[8];
 
-	public CollisionMap(SplitFlagMap collisionData)
-	{
-		this.collisionData = collisionData;
-	}
+
 
 	/**
 	 * The region grid bounds to scan when enumerating every collision tile (e.g.

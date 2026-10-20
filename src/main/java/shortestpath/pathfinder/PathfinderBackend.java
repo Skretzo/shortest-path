@@ -1,4 +1,5 @@
 package shortestpath.pathfinder;
+import lombok.ToString;
 
 /**
  * Which engine computes a route.
@@ -11,6 +12,7 @@ package shortestpath.pathfinder;
  * reproduced, so such chains can price differently. Both affect the route's cost, not
  * whether it is valid.
  */
+@ToString
 public enum PathfinderBackend
 {
 	LEGACY("Legacy"),
@@ -23,9 +25,5 @@ public enum PathfinderBackend
 		this.displayName = displayName;
 	}
 
-	@Override
-	public String toString()
-	{
-		return displayName;
-	}
+
 }

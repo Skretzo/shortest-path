@@ -2,7 +2,9 @@ package shortestpath.settings;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
+@ToString
 @Getter
 @RequiredArgsConstructor
 public enum TeleportationItem
@@ -32,9 +34,5 @@ public enum TeleportationItem
 		return null;
 	}
 
-	@Override
-	public String toString()
-	{
-		return type;
-	}
+
 }

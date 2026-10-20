@@ -1,5 +1,8 @@
 package shortestpath.poh;
 
+import lombok.ToString;
+
+@ToString
 public enum PohMountedItem
 {
 	GLORY("Glory", "Amulet of Glory"),
@@ -32,9 +35,5 @@ public enum PohMountedItem
 		return null;
 	}
 
-	@Override
-	public String toString()
-	{
-		return label;
-	}
+
 }
