@@ -23,11 +23,4 @@ public final class PathStep
 	{
 		this(packedPosition, bankVisitState, null);
 	}
-
-	public PathStep(int packedPosition, BankVisitState bankVisitState, Transport transport)
-	{
-		this.packedPosition = packedPosition;
-		this.bankVisitState = bankVisitState;
-		this.transport = transport;
-	}
 }

@@ -2,6 +2,8 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import shortestpath.pathfinder.BankVisitState;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Immutable two-layer account-specific site graph with reverse CSR edges. */
 public final class SiteGraph

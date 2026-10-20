@@ -2,6 +2,9 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import shortestpath.pathfinder.BankVisitState;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /** Reverse labels in the relaxed graph with a clique oracle and sparse production path. */
 @AllArgsConstructor
@@ -187,10 +190,6 @@ public final class ReverseLabels
 			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started, true);
 	}
 
-	public TargetOverlay overlay()
-	{
-		return overlay;
-	}
 	public int label(int node, BankVisitState banked)
 	{
 		return labels[SiteGraph.stateId(node, banked)];
