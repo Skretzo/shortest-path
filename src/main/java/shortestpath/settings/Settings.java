@@ -291,7 +291,7 @@ public class Settings
 	}
 
 	/**
-	 * The configured value for {@code key} — the base proxy read, never the
+	 * The configured value for {@code key} — the base read, never the
 	 * override-adjusted effective value, so the UI always displays what is
 	 * stored. Unknown keys fail loudly.
 	 */
@@ -302,7 +302,53 @@ public class Settings
 		{
 			throw new IllegalArgumentException("unknown config key: " + key);
 		}
-		return row.getGetter().apply(configured);
+		return row.isKeyed() ? keyedBase(row) : row.getConfiguredGetter().apply(configured);
+	}
+
+	/**
+	 * The base (configured-level) value for a hidden key: the stored value
+	 * parsed through {@link ConfigManager}, or — on the {@link #wrap} seam —
+	 * the {@link KeyedValues} the stub config supplies, falling back to the
+	 * key's declared default when nothing is set.
+	 */
+	Object keyedBase(ConfigKey row)
+	{
+		Object value = null;
+		if (configManager != null)
+		{
+			value = row.getType() == Set.class
+				? ConfigKey.parseSet(
+					configManager.getConfiguration(CONFIG_GROUP, row.getKey()), row.getElement())
+				: configManager.getConfiguration(CONFIG_GROUP, row.getKey(), row.getType());
+		}
+		else if (configured instanceof KeyedValues)
+		{
+			value = ((KeyedValues) configured).value(row.getKey());
+		}
+		return value != null ? value : row.resolveDefault(this::keyedBase);
+	}
+
+	/**
+	 * The display metadata for {@code key} — name, description and range
+	 * bounds — resolved from the bundled {@code config-items.tsv} for hidden
+	 * keys and the config descriptor for visible ones. {@code null} when the
+	 * key carries no metadata.
+	 */
+	public ConfigItems.Meta item(String key)
+	{
+		ConfigItems.Meta meta = ConfigItems.of(key);
+		if (meta != null)
+		{
+			return meta;
+		}
+		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
+		if (descriptor == null)
+		{
+			return null;
+		}
+		Range range = descriptor.getRange();
+		return new ConfigItems.Meta(key, descriptor.getItem().name(), descriptor.getItem().description(),
+			range == null ? null : range.min(), range == null ? null : range.max());
 	}
 
 	/** Typed convenience wrapper over {@link #configuredValue}. */
@@ -480,15 +526,15 @@ public class Settings
 
 	private synchronized void publish(Map<String, Object> overrides)
 	{
-		EffectiveConfig effective = new EffectiveConfig(configured, overrides);
+		EffectiveConfig effective = new EffectiveConfig(configured, overrides, this::keyedBase);
 		published = new Published(
 			overrides,
 			effective,
-			new DisplayView(effective, configured),
-			new PohView(effective, configured),
+			new DisplayView(effective, configured, this::keyedBase),
+			new PohView(effective, configured, this::keyedBase),
 			new BankView(effective),
 			new UnlocksView(effective),
-			new LifecycleView(effective, configured));
+			new LifecycleView(effective, configured, this::keyedBase));
 	}
 
 	private static final class Published
@@ -565,7 +611,8 @@ public class Settings
 		private final TileCounter showTileCounter;
 		private final TileStyle pathStyle;
 
-		private DisplayView(ShortestPathConfig effective, ShortestPathConfig configured)
+		private DisplayView(EffectiveConfig effective, ShortestPathConfig configured,
+			Function<ConfigKey, Object> base)
 		{
 			drawCollisionMap = effective.drawCollisionMap();
 			drawMap = effective.drawMap();
@@ -573,12 +620,12 @@ public class Settings
 			drawTiles = effective.drawTiles();
 			drawTransports = effective.drawTransports();
 			drawClickPoints = effective.drawClickPoints();
-			showTransportInfo = effective.showTransportInfo();
-			showBankPickupInfo = effective.showBankPickupInfo();
-			showUnreachableText = effective.showUnreachableText();
-			highlightBankPickupItems = effective.highlightBankPickupItems();
-			highlightSpellbookSpells = effective.highlightSpellbookSpells();
-			highlightInventoryItems = effective.highlightInventoryItems();
+			showTransportInfo = effective.bool(ConfigKey.SHOW_TRANSPORT_INFO);
+			showBankPickupInfo = effective.bool(ConfigKey.SHOW_BANK_PICKUP_INFO);
+			showUnreachableText = effective.bool(ConfigKey.SHOW_UNREACHABLE_TEXT);
+			highlightBankPickupItems = effective.bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS);
+			highlightSpellbookSpells = effective.bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS);
+			highlightInventoryItems = effective.bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS);
 			showTeleportPulse = effective.showTeleportPulse();
 			colourCollisionMap = effective.colourCollisionMap();
 			colourPath = effective.colourPath();
@@ -588,10 +635,10 @@ public class Settings
 			colourTransports = effective.colourTransports();
 			colourBankPickupHighlight = effective.colourBankPickupHighlight();
 			colourTeleportPulse = effective.colourTeleportPulse();
-			tileCounterStep = effective.tileCounterStep();
-			unreachableTargetDistance = effective.unreachableTargetDistance();
+			tileCounterStep = effective.num(ConfigKey.TILE_COUNTER_STEP);
+			unreachableTargetDistance = effective.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
 			// Payloads never coerced this key — it stays a raw read.
-			unreachableText = configured.unreachableText();
+			unreachableText = (String) base.apply(ConfigKey.UNREACHABLE_TEXT);
 			showTileCounter = effective.showTileCounter();
 			pathStyle = effective.pathStyle();
 		}
@@ -620,19 +667,21 @@ public class Settings
 		private final Set<PohNexusPortal> pohNexusPortals;
 		private final Set<PohMountedItem> pohMountedItems;
 
-		private PohView(ShortestPathConfig effective, ShortestPathConfig configured)
+		@SuppressWarnings("unchecked")
+		private PohView(EffectiveConfig effective, ShortestPathConfig configured,
+			Function<ConfigKey, Object> base)
 		{
-			usePoh = effective.usePoh();
-			usePohFairyRing = effective.usePohFairyRing();
-			usePohSpiritTree = effective.usePohSpiritTree();
-			useTeleportationPortalsPoh = effective.useTeleportationPortalsPoh();
-			usePohMountedItems = effective.usePohMountedItems();
-			usePohObelisk = effective.usePohObelisk();
+			usePoh = effective.bool(ConfigKey.USE_POH);
+			usePohFairyRing = effective.bool(ConfigKey.USE_POH_FAIRY_RING);
+			usePohSpiritTree = effective.bool(ConfigKey.USE_POH_SPIRIT_TREE);
+			useTeleportationPortalsPoh = effective.bool(ConfigKey.USE_TELEPORTATION_PORTALS_POH);
+			usePohMountedItems = effective.bool(ConfigKey.USE_POH_MOUNTED_ITEMS);
+			usePohObelisk = effective.bool(ConfigKey.USE_POH_OBELISK);
 			pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
 			// Set-typed keys are bypass reads — payloads never coerce them.
-			Set<PohNexusPortal> portals = configured.pohNexusPortals();
+			Set<PohNexusPortal> portals = (Set<PohNexusPortal>) base.apply(ConfigKey.POH_NEXUS_PORTALS);
 			pohNexusPortals = portals == null ? Set.of() : Set.copyOf(portals);
-			Set<PohMountedItem> mounted = configured.pohMountedItems();
+			Set<PohMountedItem> mounted = (Set<PohMountedItem>) base.apply(ConfigKey.POH_MOUNTED_ITEMS);
 			pohMountedItems = mounted == null ? Set.of() : Set.copyOf(mounted);
 		}
 	}
@@ -652,11 +701,11 @@ public class Settings
 		private final int currencyThreshold;
 		private final int costBankVisit;
 
-		private BankView(ShortestPathConfig config)
+		private BankView(EffectiveConfig effective)
 		{
-			includeBankPath = config.includeBankPath();
-			currencyThreshold = config.currencyThreshold();
-			costBankVisit = config.costBankVisit();
+			includeBankPath = effective.bool(ConfigKey.INCLUDE_BANK_PATH);
+			currencyThreshold = effective.num(ConfigKey.CURRENCY_THRESHOLD);
+			costBankVisit = effective.num(ConfigKey.COST_BANK_VISIT);
 		}
 	}
 
@@ -674,12 +723,13 @@ public class Settings
 		private final boolean unlockDragontoothPassage;
 		private final boolean unlockMorUlRek;
 
-		private UnlocksView(ShortestPathConfig config)
+		private UnlocksView(EffectiveConfig effective)
 		{
-			unlockCanoeAxe = config.unlockCanoeAxe();
-			unlockXericsHonour = config.unlockXericsHonour();
-			unlockDragontoothPassage = config.unlockDragontoothPassage();
-			unlockMorUlRek = config.unlockMorUlRek();
+			unlockCanoeAxe = effective.bool(ConfigKey.UNLOCK_CANOE_AXE);
+			unlockXericsHonour = effective.bool(ConfigKey.UNLOCK_XERICS_HONOUR);
+			unlockDragontoothPassage = effective.bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
+			unlockMorUlRek = effective.bool(ConfigKey.UNLOCK_MOR_UL_REK);
+			unlockBalloonLogBasket = effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET);
 		}
 	}
 
@@ -705,15 +755,22 @@ public class Settings
 		private final boolean drawDebugPanel;
 		private final boolean postTransports;
 
-		private LifecycleView(ShortestPathConfig effective, ShortestPathConfig configured)
+		private LifecycleView(EffectiveConfig effective, ShortestPathConfig configured,
+			Function<ConfigKey, Object> base)
 		{
-			pathfinderBackend = configured.pathfinderBackend();
-			calculationCutoff = configured.calculationCutoff();
-			recalculateDistance = configured.recalculateDistance();
-			reachedDistance = configured.reachedDistance();
-			cancelInstead = configured.cancelInstead();
+			pathfinderBackend = (PathfinderBackend) base.apply(ConfigKey.PATHFINDER_ALGORITHM);
+			calculationCutoff = num(base, ConfigKey.CALCULATION_CUTOFF);
+			recalculateDistance = num(base, ConfigKey.RECALCULATE_DISTANCE);
+			reachedDistance = num(base, ConfigKey.FINISH_DISTANCE);
+			cancelInstead = Boolean.TRUE.equals(base.apply(ConfigKey.CANCEL_INSTEAD));
 			drawDebugPanel = configured.drawDebugPanel();
 			postTransports = effective.postTransports();
+		}
+
+		private static int num(Function<ConfigKey, Object> base, ConfigKey key)
+		{
+			Object value = base.apply(key);
+			return value instanceof Number ? ((Number) value).intValue() : 0;
 		}
 	}
 }

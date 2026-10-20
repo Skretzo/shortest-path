@@ -70,10 +70,10 @@ public class RoutingSnapshotTest
 		settings.applyOverrides(Map.of("avoidWilderness", false, "currencyThreshold", 50));
 
 		assertTrue("the held decorator still reads the pre-apply map",
-			held.avoidWilderness());
+			held.bool(ConfigKey.AVOID_WILDERNESS));
 		assertFalse("the published decorator reads the new map",
-			settings.effective().avoidWilderness());
-		assertEquals(50, settings.effective().currencyThreshold());
+			settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
+		assertEquals(50, settings.effective().num(ConfigKey.CURRENCY_THRESHOLD));
 		assertNotSame(held, settings.effective());
 	}
 

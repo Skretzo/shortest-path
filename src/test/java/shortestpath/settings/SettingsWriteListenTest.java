@@ -251,7 +251,7 @@ public class SettingsWriteListenTest
 
 		settings.applyOverrides(Map.of("avoidWilderness", false));
 		assertFalse("effective read sees the override",
-			settings.effective().avoidWilderness());
+			settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 
 		assertEquals("keyed read returns the configured value",
 			true, settings.configuredValue("avoidWilderness"));

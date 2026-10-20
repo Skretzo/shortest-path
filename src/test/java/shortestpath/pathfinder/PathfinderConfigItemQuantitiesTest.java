@@ -19,6 +19,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 
 import static org.junit.Assert.assertEquals;
@@ -41,7 +42,7 @@ public class PathfinderConfigItemQuantitiesTest
 	@Mock
 	private Client client;
 	@Mock
-	private ShortestPathConfig config;
+	private TestShortestPathConfig config;
 	@Mock
 	private ItemContainer inventory;
 	@Mock
@@ -141,11 +142,11 @@ public class PathfinderConfigItemQuantitiesTest
 	private void refresh(boolean includeBankPath, TeleportationItem useTeleportationItems)
 	{
 		pathfinderConfig = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
-		when(config.calculationCutoff()).thenReturn(30);
-		when(config.currencyThreshold()).thenReturn(10000000);
-		when(config.useTeleportationSpells()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
-		when(config.includeBankPath()).thenReturn(includeBankPath);
+		config.set("calculationCutoff", 30);
+		config.set("currencyThreshold", 10000000);
+		config.set("useTeleportationSpells", true);
+		config.set("useTeleportationItems", useTeleportationItems);
+		config.set("includeBankPath", includeBankPath);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());

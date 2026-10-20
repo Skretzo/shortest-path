@@ -23,6 +23,7 @@ import net.runelite.api.gameval.ItemID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
@@ -176,7 +177,7 @@ public class AStarBankAccessParityTest
 	private static PathfinderConfig config(int farmingLevel, int bankVisitCost)
 	{
 		Client client = mock(Client.class);
-		ShortestPathConfig settings = mock(ShortestPathConfig.class);
+		TestShortestPathConfig settings = new TestShortestPathConfig();
 		ItemContainer empty = mock(ItemContainer.class);
 		ItemContainer bank = mock(ItemContainer.class);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
@@ -188,10 +189,10 @@ public class AStarBankAccessParityTest
 		doReturn(empty).when(client).getItemContainer(InventoryID.INV);
 		doReturn(empty).when(client).getItemContainer(InventoryID.WORN);
 		doReturn(new Item[] {new Item(ItemID.CAMULET, 1)}).when(bank).getItems();
-		when(settings.calculationCutoff()).thenReturn(500);
-		when(settings.currencyThreshold()).thenReturn(10000000);
-		when(settings.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
-		when(settings.costBankVisit()).thenReturn(bankVisitCost);
+		settings.set("calculationCutoff", 500);
+		settings.set("currencyThreshold", 10000000);
+		settings.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
+		settings.set("costBankVisit", bankVisitCost);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
 		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting();

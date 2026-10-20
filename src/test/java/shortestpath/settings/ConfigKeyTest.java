@@ -132,13 +132,19 @@ public class ConfigKeyTest
 
 	private static void assertCoercionMatchesGetter(ConfigKey row)
 	{
-		Method getter = readMethod(row.getKey());
-		assertNotNull("registry key " + row.getKey() + " has no read method", getter);
 		Class<?> expected = coercionType(row.getCoercion());
 		if (expected == null)
 		{
-			return; // NONE rows are inert — any return type is acceptable
+			return; // NONE rows are inert — any stored type is acceptable
 		}
+		if (row.isKeyed())
+		{
+			assertEquals("coercion of " + row.getKey() + " matches its stored type",
+				expected, row.getType());
+			return;
+		}
+		Method getter = readMethod(row.getKey());
+		assertNotNull("registry key " + row.getKey() + " has no read method", getter);
 		assertEquals("coercion of " + row.getKey() + " matches " + getter.getName()
 			+ "'s return type", expected, getter.getReturnType());
 	}
@@ -161,6 +167,13 @@ public class ConfigKeyTest
 		Set<String> dead = new TreeSet<>(rowKeys);
 		dead.removeAll(keyNames);
 		dead.removeAll(EXEMPTIONS);
+		for (ConfigKey row : ConfigKey.values())
+		{
+			if (row.isKeyed())
+			{
+				dead.remove(row.getKey());
+			}
+		}
 		assertTrue("registry rows naming no config key: " + dead, dead.isEmpty());
 	}
 
@@ -205,26 +218,26 @@ public class ConfigKeyTest
 	 * value per getter makes equivalence meaningful.
 	 */
 	@Test
-	public void transportTypeRowsPairWithTheSameGetters()
+	public void transportTypeKeysResolveToKeyedRows()
 	{
-		ShortestPathConfig distinct = distinctValueConfig();
+		Settings settings = Settings.wrap(new TestShortestPathConfig());
 		for (TransportType type : TransportType.values())
 		{
-			if (type.getEnabledKey() != null && type.getEnabledGetter() != null)
+			if (type.getEnabledKey() != null)
 			{
 				ConfigKey row = ConfigKey.forKey(type.getEnabledKey());
 				assertNotNull(row);
-				assertEquals(type + " enabledKey " + type.getEnabledKey()
-					+ " pairs with the transport table's enabled getter",
-					type.getEnabledGetter().apply(distinct), row.getGetter().apply(distinct));
+				assertTrue(type + " enabledKey " + type.getEnabledKey()
+					+ " must resolve to a keyed boolean row",
+					row.isKeyed() && settings.configuredValue(type.getEnabledKey()) != null);
 			}
-			if (type.getCostKey() != null && type.getCostGetter() != null)
+			if (type.getCostKey() != null)
 			{
 				ConfigKey row = ConfigKey.forKey(type.getCostKey());
 				assertNotNull(row);
-				assertEquals(type + " costKey " + type.getCostKey()
-					+ " pairs with the transport table's cost getter",
-					type.getCostGetter().apply(distinct), row.getGetter().apply(distinct));
+				assertTrue(type + " costKey " + type.getCostKey()
+					+ " must resolve to a keyed int row",
+					row.isKeyed() && settings.configuredValue(row.baseRow().getKey()) != null);
 			}
 		}
 	}
@@ -241,22 +254,26 @@ public class ConfigKeyTest
 		TestShortestPathConfig config = new TestShortestPathConfig()
 		{
 			@Override
-			public int costQuetzals()
+			public Object value(String keyName)
 			{
-				return 11;
-			}
-
-			@Override
-			public int costQuetzalWhistle()
-			{
-				return 22;
+				if ("costQuetzals".equals(keyName))
+				{
+					return 11;
+				}
+				if ("costQuetzalWhistle".equals(keyName))
+				{
+					return 22;
+				}
+				return super.value(keyName);
 			}
 		};
 
 		ConfigKey row = ConfigKey.forKey("costQuetzalWhistle");
 		assertNotNull("the override key must have its own row", row);
-		assertEquals("the row reads the shared quetzal transport cost",
-			11, row.getGetter().apply(config));
+		assertEquals("the threshold base pairs with the shared quetzal cost",
+			ConfigKey.COST_QUETZALS, row.baseRow());
+		assertEquals("the configured-value read returns the stored whistle value",
+			22, Settings.wrap(config).configuredValue("costQuetzalWhistle"));
 	}
 
 	/**
@@ -267,8 +284,14 @@ public class ConfigKeyTest
 	public void registryGettersResolveToReadMethods()
 	{
 		TestShortestPathConfig config = new TestShortestPathConfig();
+		Settings settings = Settings.wrap(config);
 		for (ConfigKey row : ConfigKey.values())
 		{
+			if (row.isKeyed())
+			{
+				settings.configuredValue(row.getKey());
+				continue;
+			}
 			Method read = readMethod(row.getKey());
 			assertNotNull(row.getKey() + " resolves to a read method", read);
 			assertEquals(row.getKey() + " read method takes no arguments",
@@ -290,12 +313,11 @@ public class ConfigKeyTest
 		for (String keyName : new String[]{
 			"builtTeleportationBoxes", "builtTeleportationPortalsPoh"})
 		{
-			Method read = readMethod(keyName);
-			assertNotNull(keyName + " must resolve to a read method", read);
-			assertEquals(keyName, read.getName());
-			assertEquals(keyName + " reads a String",
-				String.class, read.getReturnType());
-			assertEquals("keyed read returns the getter's value",
+			ConfigKey row = ConfigKey.forKey(keyName);
+			assertNotNull(keyName + " must resolve to a registry row", row);
+			assertTrue(keyName + " is a keyed String row",
+				row.isKeyed() && row.getType() == String.class);
+			assertEquals("keyed read returns the stored value",
 				"", Settings.wrap(new TestShortestPathConfig()).configuredValue(keyName));
 		}
 	}
@@ -311,23 +333,25 @@ public class ConfigKeyTest
 		TestShortestPathConfig config = new TestShortestPathConfig()
 		{
 			@Override
-			public boolean avoidWilderness()
+			public Object value(String keyName)
 			{
-				return false;
-			}
-
-			@Override
-			public boolean highlightBankPickupItems()
-			{
-				return true;
+				if ("avoidWilderness".equals(keyName))
+				{
+					return false;
+				}
+				if ("highlightBankPickupItems".equals(keyName))
+				{
+					return true;
+				}
+				return super.value(keyName);
 			}
 		};
 		Settings settings = Settings.wrap(config);
 
 		assertEquals(false, settings.configuredValue("avoidWilderness"));
 		assertEquals(true, settings.configuredValue("highlightBankPickupItems"));
-		assertSame(boolean.class, readMethod("avoidWilderness").getReturnType());
-		assertSame(boolean.class, readMethod("highlightBankPickupItems").getReturnType());
+		assertSame(boolean.class, ConfigKey.forKey("avoidWilderness").getType());
+		assertSame(boolean.class, ConfigKey.forKey("highlightBankPickupItems").getType());
 	}
 
 	/**

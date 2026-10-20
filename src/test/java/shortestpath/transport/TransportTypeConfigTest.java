@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
+import shortestpath.settings.ConfigKey;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.Settings;
@@ -32,8 +34,7 @@ import java.util.HashSet;
 public class TransportTypeConfigTest
 {
 
-	@Mock
-	ShortestPathConfig config;
+	TestShortestPathConfig config = new TestShortestPathConfig();
 
 	/**
 	 * Verifies that every enabledGetter defined in TransportType returns a boolean
@@ -48,15 +49,14 @@ public class TransportTypeConfigTest
 
 		for (TransportType type : TransportType.values())
 		{
-			Function<ShortestPathConfig, Boolean> getter = type.getEnabledGetter();
-			if (getter == null)
+			if (!type.hasEnabledKey())
 			{
-				continue; // No enabled getter for this type, skip
+				continue; // No enabled key for this type, skip
 			}
 
 			try
 			{
-				Boolean result = getter.apply(config);
+				Boolean result = Settings.wrap(config).configuredBool(type.getEnabledKey());
 				assertNotNull("enabledGetter for " + type.name() + " should not return null", result);
 			}
 			catch (Exception e)
@@ -84,15 +84,15 @@ public class TransportTypeConfigTest
 
 		for (TransportType type : TransportType.values())
 		{
-			Function<ShortestPathConfig, Integer> getter = type.getCostGetter();
-			if (getter == null)
+			if (!type.hasCostKey())
 			{
-				continue; // No cost getter for this type, skip
+				continue; // No cost key for this type, skip
 			}
 
 			try
 			{
-				Integer result = getter.apply(config);
+				Integer result = (Integer) Settings.wrap(config)
+					.configuredValue(ConfigKey.forKey(type.getCostKey()).baseRow().getKey());
 				assertNotNull("costGetter for " + type.name() + " should not return null", result);
 			}
 			catch (Exception e)
@@ -130,9 +130,9 @@ public class TransportTypeConfigTest
 	{
 		// Setup default mocks first, then override specific values
 		setupDefaultMocks();
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useGrappleShortcuts()).thenReturn(false);
-		when(config.useBoats()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
+		config.set("useGrappleShortcuts", false);
+		config.set("useBoats", true);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
@@ -148,11 +148,11 @@ public class TransportTypeConfigTest
 	public void testPohPortalMasterToggle()
 	{
 		setupDefaultMocks();
-		when(config.pohNexusPortals()).thenReturn(Set.<PohNexusPortal>of());
+		config.set("pohNexusPortals", Set.<PohNexusPortal>of());
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 		assertFalse(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
 
-		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.ARDOUGNE));
+		config.set("pohNexusPortals", Set.of(PohNexusPortal.ARDOUGNE));
 		typeConfig.refresh();
 		assertTrue(typeConfig.isEnabled(TransportType.TELEPORTATION_PORTAL_POH));
 	}
@@ -168,7 +168,7 @@ public class TransportTypeConfigTest
 	{
 		setupDefaultMocks();
 		// When TeleportationItem is not NONE, teleport item types should be enabled
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
+		config.set("useTeleportationItems", TeleportationItem.ALL);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
@@ -193,7 +193,7 @@ public class TransportTypeConfigTest
 	public void testTeleportationItemTypesDisabledWhenNone()
 	{
 		setupDefaultMocks();
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		config.set("useTeleportationItems", TeleportationItem.NONE);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
@@ -217,17 +217,17 @@ public class TransportTypeConfigTest
 		setupDefaultMocks();
 
 		// Test with ALL
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
+		config.set("useTeleportationItems", TeleportationItem.ALL);
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 		assertEquals(TeleportationItem.ALL, typeConfig.getTeleportationItemSetting());
 
 		// Test with INVENTORY
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY);
 		typeConfig.refresh();
 		assertEquals(TeleportationItem.INVENTORY, typeConfig.getTeleportationItemSetting());
 
 		// Test with NONE
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		config.set("useTeleportationItems", TeleportationItem.NONE);
 		typeConfig.refresh();
 		assertEquals(TeleportationItem.NONE, typeConfig.getTeleportationItemSetting());
 	}
@@ -242,7 +242,7 @@ public class TransportTypeConfigTest
 
 		for (TeleportationItem item : TeleportationItem.values())
 		{
-			when(config.useTeleportationItems()).thenReturn(item);
+			config.set("useTeleportationItems", item);
 			TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
 			boolean expectedEnabled = (item != TeleportationItem.NONE);
@@ -261,9 +261,9 @@ public class TransportTypeConfigTest
 	{
 		// Setup default mocks first, then override specific values
 		setupDefaultMocks();
-		when(config.costAgilityShortcuts()).thenReturn(100);
-		when(config.costBoats()).thenReturn(50);
-		when(config.costFairyRings()).thenReturn(0);
+		config.set("costAgilityShortcuts", 100);
+		config.set("costBoats", 50);
+		config.set("costFairyRings", 0);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
@@ -296,7 +296,7 @@ public class TransportTypeConfigTest
 	public void testPohNexusPortalsUseTeleportationPortalThreshold()
 	{
 		setupDefaultMocks();
-		when(config.costTeleportationPortals()).thenReturn(25);
+		config.set("costTeleportationPortals", 25);
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
 		assertEquals(25, typeConfig.getCost(TransportType.TELEPORTATION_PORTAL));
@@ -309,7 +309,7 @@ public class TransportTypeConfigTest
 	@Test
 	public void testDisableUnless()
 	{
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("useFairyRings", true);
 		setupDefaultMocks();
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
@@ -336,7 +336,7 @@ public class TransportTypeConfigTest
 	@Test
 	public void testSetEnabled()
 	{
-		when(config.useBoats()).thenReturn(true);
+		config.set("useBoats", true);
 		setupDefaultMocks();
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
@@ -360,13 +360,13 @@ public class TransportTypeConfigTest
 	{
 		// Setup default mocks first, then override specific value
 		setupDefaultMocks();
-		when(config.useCanoes()).thenReturn(false);
+		config.set("useCanoes", false);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 		assertFalse(typeConfig.isEnabled(TransportType.CANOE));
 
 		// Change mock and refresh
-		when(config.useCanoes()).thenReturn(true);
+		config.set("useCanoes", true);
 		typeConfig.refresh();
 
 		assertTrue("CANOE should be enabled after refresh with new config value",
@@ -387,16 +387,16 @@ public class TransportTypeConfigTest
 		for (TransportType type : TransportType.values())
 		{
 			// Verify enabledGetter works if present
-			if (type.hasEnabledGetter())
+			if (type.hasEnabledKey())
 			{
-				Boolean enabled = type.getEnabledGetter().apply(config);
+				Boolean enabled = Settings.wrap(config).configuredBool(type.getEnabledKey());
 				assertNotNull("enabledGetter for " + type.name() + " should return a value", enabled);
 			}
 
 			// Verify costGetter works if present
-			if (type.hasCostGetter())
+			if (type.hasCostKey())
 			{
-				Integer cost = type.getCostGetter().apply(config);
+				Integer cost = (Integer) Settings.wrap(config).configuredValue(ConfigKey.forKey(type.getCostKey()).baseRow().getKey());
 				assertNotNull("costGetter for " + type.name() + " should return a value", cost);
 			}
 		}
@@ -416,11 +416,11 @@ public class TransportTypeConfigTest
 		for (TransportType type : TransportType.values())
 		{
 			// Test enabledGetter invocation
-			if (type.hasEnabledGetter())
+			if (type.hasEnabledKey())
 			{
 				try
 				{
-					type.getEnabledGetter().apply(config);
+					Settings.wrap(config).configuredBool(type.getEnabledKey());
 				}
 				catch (Exception e)
 				{
@@ -430,11 +430,11 @@ public class TransportTypeConfigTest
 			}
 
 			// Test costGetter invocation
-			if (type.hasCostGetter())
+			if (type.hasCostKey())
 			{
 				try
 				{
-					type.getCostGetter().apply(config);
+					Settings.wrap(config).configuredValue(ConfigKey.forKey(type.getCostKey()).baseRow().getKey());
 				}
 				catch (Exception e)
 				{
@@ -464,7 +464,7 @@ public class TransportTypeConfigTest
 			{
 				// Types with resources should typically have a cost getter
 				// (except for special cases like TRANSPORT which is the base type)
-				if (!type.hasCostGetter() && type != TransportType.TRANSPORT)
+				if (!type.hasCostKey() && type != TransportType.TRANSPORT)
 				{
 					// This is just informational, not necessarily an error
 					System.out.println("Note: " + type.name() + " has resourcePath but no costGetter");
@@ -576,7 +576,7 @@ public class TransportTypeConfigTest
 	public void testTeleportationItemOverrideReachesTheSetting()
 	{
 		setupDefaultMocks();
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		config.set("useTeleportationItems", TeleportationItem.NONE);
 		Settings settings = Settings.wrap(config);
 		settings.applyOverrides(Map.of("useTeleportationItems", "Inventory and Bank"));
 
@@ -593,55 +593,55 @@ public class TransportTypeConfigTest
 	private void setupDefaultMocks()
 	{
 		// TeleportationItem setting (default to ALL for most tests)
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
+		config.set("useTeleportationItems", TeleportationItem.ALL);
 
 		// Enable methods (return true by default)
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useGrappleShortcuts()).thenReturn(true);
-		when(config.useBoats()).thenReturn(true);
-		when(config.useCanoes()).thenReturn(true);
-		when(config.useCharterShips()).thenReturn(true);
-		when(config.useShips()).thenReturn(true);
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useGnomeGliders()).thenReturn(true);
-		when(config.useHotAirBalloons()).thenReturn(true);
-		when(config.useMagicCarpets()).thenReturn(true);
-		when(config.useMagicMushtrees()).thenReturn(true);
-		when(config.useMinecarts()).thenReturn(true);
-		when(config.useQuetzals()).thenReturn(true);
-		when(config.useSeasonalTransports()).thenReturn(true);
-		when(config.useSpiritTrees()).thenReturn(true);
-		when(config.useTeleportationLevers()).thenReturn(true);
-		when(config.useTeleportationMinigames()).thenReturn(true);
-		when(config.useTeleportationPortals()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(new HashSet<>(PohNexusPortal.values()));
-		when(config.useTeleportationSpells()).thenReturn(true);
-		when(config.useWildernessObelisks()).thenReturn(true);
-		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
+		config.set("useGrappleShortcuts", true);
+		config.set("useBoats", true);
+		config.set("useCanoes", true);
+		config.set("useCharterShips", true);
+		config.set("useShips", true);
+		config.set("useFairyRings", true);
+		config.set("useGnomeGliders", true);
+		config.set("useHotAirBalloons", true);
+		config.set("useMagicCarpets", true);
+		config.set("useMagicMushtrees", true);
+		config.set("useMinecarts", true);
+		config.set("useQuetzals", true);
+		config.set("useSeasonalTransports", true);
+		config.set("useSpiritTrees", true);
+		config.set("useTeleportationLevers", true);
+		config.set("useTeleportationMinigames", true);
+		config.set("useTeleportationPortals", true);
+		config.set("pohNexusPortals", new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values())));
+		config.set("useTeleportationSpells", true);
+		config.set("useWildernessObelisks", true);
+		config.set("useTeleportationSpellsHome", true);
 
 		// Cost methods (return 0 by default)
-		when(config.costAgilityShortcuts()).thenReturn(0);
-		when(config.costGrappleShortcuts()).thenReturn(0);
-		when(config.costBoats()).thenReturn(0);
-		when(config.costCanoes()).thenReturn(0);
-		when(config.costCharterShips()).thenReturn(0);
-		when(config.costShips()).thenReturn(0);
-		when(config.costFairyRings()).thenReturn(0);
-		when(config.costGnomeGliders()).thenReturn(0);
-		when(config.costHotAirBalloons()).thenReturn(0);
-		when(config.costMagicCarpets()).thenReturn(0);
-		when(config.costMagicMushtrees()).thenReturn(0);
-		when(config.costMinecarts()).thenReturn(0);
-		when(config.costQuetzals()).thenReturn(0);
-		when(config.costSeasonalTransports()).thenReturn(0);
-		when(config.costSpiritTrees()).thenReturn(0);
-		when(config.costNonConsumableTeleportationItems()).thenReturn(0);
-		when(config.costTeleportationBoxes()).thenReturn(0);
-		when(config.costTeleportationLevers()).thenReturn(0);
-		when(config.costTeleportationMinigames()).thenReturn(0);
-		when(config.costTeleportationPortals()).thenReturn(0);
-		when(config.costTeleportationSpells()).thenReturn(0);
-		when(config.costWildernessObelisks()).thenReturn(0);
-		when(config.costTeleportationSpellsHome()).thenReturn(0);
+		config.set("costAgilityShortcuts", 0);
+		config.set("costGrappleShortcuts", 0);
+		config.set("costBoats", 0);
+		config.set("costCanoes", 0);
+		config.set("costCharterShips", 0);
+		config.set("costShips", 0);
+		config.set("costFairyRings", 0);
+		config.set("costGnomeGliders", 0);
+		config.set("costHotAirBalloons", 0);
+		config.set("costMagicCarpets", 0);
+		config.set("costMagicMushtrees", 0);
+		config.set("costMinecarts", 0);
+		config.set("costQuetzals", 0);
+		config.set("costSeasonalTransports", 0);
+		config.set("costSpiritTrees", 0);
+		config.set("costNonConsumableTeleportationItems", 0);
+		config.set("costTeleportationBoxes", 0);
+		config.set("costTeleportationLevers", 0);
+		config.set("costTeleportationMinigames", 0);
+		config.set("costTeleportationPortals", 0);
+		config.set("costTeleportationSpells", 0);
+		config.set("costWildernessObelisks", 0);
+		config.set("costTeleportationSpellsHome", 0);
 	}
 }

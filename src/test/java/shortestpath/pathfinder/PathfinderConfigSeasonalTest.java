@@ -8,6 +8,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
@@ -27,7 +28,7 @@ public class PathfinderConfigSeasonalTest
 	@Mock
 	private Client client;
 	@Mock
-	private ShortestPathConfig config;
+	private TestShortestPathConfig config;
 
 	private PathfinderConfig pathfinderConfig;
 

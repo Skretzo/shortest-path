@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.Settings;
 
@@ -28,7 +29,7 @@ public class PathfinderConfigOverrideTest
 	@Mock
 	private Client client;
 	@Mock
-	private ShortestPathConfig config;
+	private TestShortestPathConfig config;
 
 	private Settings settings;
 	private PathfinderConfig pathfinderConfig;
@@ -63,8 +64,8 @@ public class PathfinderConfigOverrideTest
 	@Test
 	public void overridePayloadIsIgnoredByRawReads()
 	{
-		when(config.calculationCutoff()).thenReturn(5);
-		when(config.pathfinderBackend()).thenReturn(PathfinderBackend.ASTAR);
+		config.set("calculationCutoff", 5);
+		config.set("pathfinderAlgorithm", PathfinderBackend.ASTAR);
 		settings.applyOverrides(Map.of(
 			"calculationCutoff", 99,
 			"pathfinderAlgorithm", "Legacy"));
@@ -80,7 +81,7 @@ public class PathfinderConfigOverrideTest
 	{
 		settings.applyOverrides(Map.of("unreachableTargetDistanceThreshold", 250));
 		settings.clearOverrides();
-		when(config.unreachableTargetDistance()).thenReturn(42);
+		config.set("unreachableTargetDistanceThreshold", 42);
 
 		pathfinderConfig.refresh();
 

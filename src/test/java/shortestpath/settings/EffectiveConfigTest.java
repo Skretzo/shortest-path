@@ -31,7 +31,7 @@ import shortestpath.poh.PohNexusPortal;
  */
 public class EffectiveConfigTest
 {
-	private static ShortestPathConfig base()
+	private static TestShortestPathConfig base()
 	{
 		return new TestShortestPathConfig();
 	}
@@ -48,21 +48,21 @@ public class EffectiveConfigTest
 	{
 		// The stub's default is true; a false payload value proves the override took effect.
 		EffectiveConfig effective = effectiveWith(Map.of("avoidWilderness", false));
-		assertFalse(effective.avoidWilderness());
+		assertFalse(effective.bool(ConfigKey.AVOID_WILDERNESS));
 	}
 
 	@Test
 	public void booleanOverrideWrongTypeIsInert()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("avoidWilderness", "yes"));
-		assertEquals(base().avoidWilderness(), effective.avoidWilderness());
+		assertEquals(base().avoidWilderness(), effective.bool(ConfigKey.AVOID_WILDERNESS));
 	}
 
 	@Test
 	public void intOverrideApplies()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("currencyThreshold", 50));
-		assertEquals(50, effective.currencyThreshold());
+		assertEquals(50, effective.num(ConfigKey.CURRENCY_THRESHOLD));
 	}
 
 	@Test
@@ -70,7 +70,7 @@ public class EffectiveConfigTest
 	{
 		// String "50" is not an Integer — the configured value stands.
 		EffectiveConfig effective = effectiveWith(Map.of("currencyThreshold", "50"));
-		assertEquals(base().currencyThreshold(), effective.currencyThreshold());
+		assertEquals(base().currencyThreshold(), effective.num(ConfigKey.CURRENCY_THRESHOLD));
 	}
 
 	@Test
@@ -151,7 +151,16 @@ public class EffectiveConfigTest
 	public void stringKeyIsInert()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("unreachableText", "custom unreachable text"));
-		assertEquals(base().unreachableText(), effective.unreachableText());
+		assertEquals(base().unreachableText(), effective.str(ConfigKey.UNREACHABLE_TEXT));
+	}
+
+	@Test
+	public void blockedTeleportItemsKeyIsInert()
+	{
+		// The refresh path parses the configured CSV directly; a payload
+		// value must never masquerade as applied through the decorator.
+		EffectiveConfig effective = effectiveWith(Map.of("blockedTeleportItems", "13103"));
+		assertEquals(base().blockedTeleportItems(), effective.str(ConfigKey.BLOCKED_TELEPORT_ITEMS));
 	}
 
 	@Test
@@ -161,15 +170,61 @@ public class EffectiveConfigTest
 		EffectiveConfig effective = effectiveWith(Map.of(
 			"pohNexusPortals", Set.of(PohNexusPortal.FALADOR),
 			"pohMountedItems", Set.of(PohMountedItem.GLORY)));
-		assertEquals(base().pohNexusPortals(), effective.pohNexusPortals());
-		assertEquals(base().pohMountedItems(), effective.pohMountedItems());
+		assertEquals(base().pohNexusPortals(), effective.set(ConfigKey.POH_NEXUS_PORTALS));
+		assertEquals(base().pohMountedItems(), effective.set(ConfigKey.POH_MOUNTED_ITEMS));
+	}
+
+	@Test
+	public void balloonFlagOverrideReachesTheUnwrittenRouteSet()
+	{
+		// The route set is payload-inert, but its unwritten default derives
+		// from the legacy flag — an override on the flag must move the
+		// derived set too, or the snapshot advertises the unlock while
+		// routing unlocks nothing.
+		EffectiveConfig effective = effectiveWith(Map.of("unlockBalloonLogBasket", true));
+		assertTrue(effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET));
+		assertEquals(EnumSet.allOf(BalloonRoute.class), effective.balloonLogBasketRoutes());
+	}
+
+	@Test
+	public void balloonFlagOffOverrideClearsTheFlagDerivedRouteSet()
+	{
+		TestShortestPathConfig stub = new TestShortestPathConfig();
+		stub.setUnlockBalloonLogBasketValue(true);
+		Settings settings = Settings.wrap(stub);
+		settings.applyOverrides(Map.of("unlockBalloonLogBasket", false));
+		assertEquals(EnumSet.noneOf(BalloonRoute.class),
+			settings.effective().balloonLogBasketRoutes());
+	}
+
+	@Test
+	public void writtenBalloonRouteSetWinsOverFlagOverride()
+	{
+		// The first written set takes over: an explicit partial selection
+		// is not re-derived from the flag.
+		TestShortestPathConfig stub = new TestShortestPathConfig();
+		stub.setBalloonLogBasketRoutesValue(EnumSet.of(BalloonRoute.GRAND_TREE));
+		Settings settings = Settings.wrap(stub);
+		settings.applyOverrides(Map.of("unlockBalloonLogBasket", true));
+		assertEquals(EnumSet.of(BalloonRoute.GRAND_TREE),
+			settings.effective().balloonLogBasketRoutes());
+	}
+
+	@Test
+	public void balloonRouteSetPayloadStaysInert()
+	{
+		// The set key itself keeps its NONE coercion — a payload carrying
+		// a set value never reaches the getter.
+		EffectiveConfig effective = effectiveWith(Map.of(
+			"balloonLogBasketRoutes", Set.of(BalloonRoute.GRAND_TREE)));
+		assertEquals(base().balloonLogBasketRoutes(), effective.balloonLogBasketRoutes());
 	}
 
 	@Test
 	public void backendKeyIsInert()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("pathfinderAlgorithm", PathfinderBackend.ASTAR));
-		assertEquals(PathfinderBackend.LEGACY, effective.pathfinderBackend());
+		assertEquals(PathfinderBackend.LEGACY, effective.val(ConfigKey.PATHFINDER_ALGORITHM));
 	}
 
 	@Test
@@ -184,8 +239,8 @@ public class EffectiveConfigTest
 	{
 		Settings settings = Settings.wrap(base());
 		settings.applyOverrides(Map.of("notARealKey", 42));
-		assertEquals(base().avoidWilderness(), settings.effective().avoidWilderness());
-		assertEquals(base().currencyThreshold(), settings.effective().currencyThreshold());
+		assertEquals(base().avoidWilderness(), settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
+		assertEquals(base().currencyThreshold(), settings.effective().num(ConfigKey.CURRENCY_THRESHOLD));
 		assertEquals(42, settings.rawOverrides().get("notARealKey"));
 	}
 
@@ -195,7 +250,7 @@ public class EffectiveConfigTest
 		Settings settings = Settings.wrap(base());
 		settings.applyOverrides(Map.of("avoidWilderness", false));
 		settings.applyOverrides(Map.of());
-		assertFalse(settings.effective().avoidWilderness());
+		assertFalse(settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 	}
 
 	@Test
@@ -204,7 +259,7 @@ public class EffectiveConfigTest
 		Settings settings = Settings.wrap(base());
 		settings.applyOverrides(Map.of("avoidWilderness", false));
 		settings.clearOverrides();
-		assertTrue(settings.effective().avoidWilderness());
+		assertTrue(settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 		assertTrue(settings.rawOverrides().isEmpty());
 	}
 
@@ -213,7 +268,7 @@ public class EffectiveConfigTest
 	{
 		// The quetzal-whistle override key pairs with the shared costQuetzals
 		// base getter — the caller supplies the key, not the decorator.
-		ShortestPathConfig base = base();
+		TestShortestPathConfig base = base();
 		Settings settings = Settings.wrap(base);
 		settings.applyOverrides(Map.of("costQuetzalWhistle", 7));
 		assertEquals(7, settings.coerceInt("costQuetzalWhistle", base.costQuetzals()));
@@ -240,10 +295,10 @@ public class EffectiveConfigTest
 		Settings wrapped = Settings.wrap(stub);
 		assertSame(stub, wrapped.configured());
 		assertTrue(wrapped.rawOverrides().isEmpty());
-		assertEquals(stub.avoidWilderness(), wrapped.effective().avoidWilderness());
-		assertEquals(stub.currencyThreshold(), wrapped.effective().currencyThreshold());
+		assertEquals(stub.avoidWilderness(), wrapped.effective().bool(ConfigKey.AVOID_WILDERNESS));
+		assertEquals(stub.currencyThreshold(), wrapped.effective().num(ConfigKey.CURRENCY_THRESHOLD));
 		assertEquals(stub.useTeleportationItems(), wrapped.effective().useTeleportationItems());
-		assertEquals(stub.unreachableText(), wrapped.effective().unreachableText());
+		assertEquals(stub.unreachableText(), wrapped.effective().str(ConfigKey.UNREACHABLE_TEXT));
 		assertEquals(stub.colourText(), wrapped.effective().colourText());
 		assertEquals(stub.drawTiles(), wrapped.display().drawTiles());
 	}

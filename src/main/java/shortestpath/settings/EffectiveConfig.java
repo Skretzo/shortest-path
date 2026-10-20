@@ -3,6 +3,7 @@ package shortestpath.settings;
 import java.awt.Color;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import net.runelite.client.config.Keybind;
 import shortestpath.pathfinder.PathfinderBackend;
@@ -14,25 +15,32 @@ import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 
 /**
- * Hand-written decorator over a base {@link ShortestPathConfig} that applies
- * the runtime override map. Every interface method is implemented explicitly:
- * methods whose return type has a coercion discipline consult the override map
- * under their own {@code @ConfigItem.keyName} (resolved through the
- * {@link ConfigKey} registry, never derived from the method name) and fall
- * back to the base value when the payload value is absent, the wrong type,
- * or — for the string-parsed enums — a string {@code fromType} does not
- * recognise. Methods of every other type delegate to the base unchanged;
- * payload values for those keys are inert by design.
+ * Decorator over a base {@link ShortestPathConfig} that applies the runtime
+ * override map. Visible {@code @ConfigItem} methods are implemented
+ * explicitly: methods whose return type has a coercion discipline consult
+ * the override map under their own key and fall back to the base value when
+ * the payload value is absent, the wrong type, or — for the string-parsed
+ * enums — a string {@code fromType} does not recognise.
+ *
+ * <p>Hidden keys (raw {@code ConfigManager} keys, no interface method) read
+ * through the typed {@link #val}/{@link #bool}/{@link #num}/{@link #str}/
+ * {@link #set} helpers: the base value comes from the injected
+ * {@code hiddenBase} resolver, and keys with a coercion discipline consult
+ * the override map the same way. Keys marked {@link ConfigKey.Coercion#NONE}
+ * are inert — payload values never reach them.
  */
 public final class EffectiveConfig implements ShortestPathConfig
 {
 	private final ShortestPathConfig base;
 	private final Map<String, Object> overrides;
+	private final Function<ConfigKey, Object> hiddenBase;
 
-	EffectiveConfig(ShortestPathConfig base, Map<String, Object> overrides)
+	EffectiveConfig(ShortestPathConfig base, Map<String, Object> overrides,
+		Function<ConfigKey, Object> hiddenBase)
 	{
 		this.base = base;
 		this.overrides = overrides;
+		this.hiddenBase = hiddenBase;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -42,103 +50,57 @@ public final class EffectiveConfig implements ShortestPathConfig
 		return value != null && (fallback == null || fallback.getClass().isInstance(value)) ? (T) value : fallback;
 	}
 
-	@Override
-	public PathfinderBackend pathfinderBackend()
+	/**
+	 * The base (configured-level) value for a key: the proxy getter for
+	 * visible keys, the keyed read for hidden keys.
+	 */
+	private Object baseOf(ConfigKey key)
 	{
-		return base.pathfinderBackend();
+		return key.isKeyed() ? hiddenBase.apply(key) : key.getConfiguredGetter().apply(base);
 	}
 
-	@Override
-	public boolean avoidWilderness()
+	/**
+	 * The effective value for a key: the payload-coerced value for keys with
+	 * a coercion discipline, the base value for inert (NONE) keys.
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T val(ConfigKey key)
 	{
-		return override(ConfigKey.AVOID_WILDERNESS, base.avoidWilderness());
+		T fallback = (T) baseOf(key);
+		return key.getCoercion() == ConfigKey.Coercion.NONE ? fallback : override(key, fallback);
 	}
 
-	@Override
-	public boolean useAgilityShortcuts()
+	/** Effective value of a {@code boolean} key. */
+	public boolean bool(ConfigKey key)
 	{
-		return override(ConfigKey.USE_AGILITY_SHORTCUTS, base.useAgilityShortcuts());
+		return Boolean.TRUE.equals(val(key));
 	}
 
-	@Override
-	public boolean useGrappleShortcuts()
+	/** Effective value of an {@code int} key. */
+	public int num(ConfigKey key)
 	{
-		return override(ConfigKey.USE_GRAPPLE_SHORTCUTS, base.useGrappleShortcuts());
+		Object value = val(key);
+		return value instanceof Number ? ((Number) value).intValue() : 0;
 	}
 
-	@Override
-	public boolean useBoats()
+	/** Effective value of a {@code String} key. */
+	public String str(ConfigKey key)
 	{
-		return override(ConfigKey.USE_BOATS, base.useBoats());
+		Object value = val(key);
+		return value instanceof String ? (String) value : null;
 	}
 
-	@Override
-	public boolean useCanoes()
+	/** Effective value of a {@code Set}-typed key. */
+	@SuppressWarnings("unchecked")
+	public <E> Set<E> set(ConfigKey key)
 	{
-		return override(ConfigKey.USE_CANOES, base.useCanoes());
+		return (Set<E>) val(key);
 	}
 
-	@Override
-	public boolean useCharterShips()
-	{
-		return override(ConfigKey.USE_CHARTER_SHIPS, base.useCharterShips());
-	}
-
-	@Override
-	public boolean useShips()
-	{
-		return override(ConfigKey.USE_SHIPS, base.useShips());
-	}
-
-	@Override
-	public boolean useFairyRings()
-	{
-		return override(ConfigKey.USE_FAIRY_RINGS, base.useFairyRings());
-	}
-
-	@Override
-	public boolean useGnomeGliders()
-	{
-		return override(ConfigKey.USE_GNOME_GLIDERS, base.useGnomeGliders());
-	}
-
-	@Override
-	public boolean useHotAirBalloons()
-	{
-		return override(ConfigKey.USE_HOT_AIR_BALLOONS, base.useHotAirBalloons());
-	}
-
-	@Override
-	public boolean useMagicCarpets()
-	{
-		return override(ConfigKey.USE_MAGIC_CARPETS, base.useMagicCarpets());
-	}
-
-	@Override
-	public boolean useMagicMushtrees()
-	{
-		return override(ConfigKey.USE_MAGIC_MUSHTREES, base.useMagicMushtrees());
-	}
-
-	@Override
-	public boolean useMinecarts()
-	{
-		return override(ConfigKey.USE_MINECARTS, base.useMinecarts());
-	}
-
-	@Override
-	public boolean useQuetzals()
-	{
-		return override(ConfigKey.USE_QUETZALS, base.useQuetzals());
-	}
-
-	@Override
-	public boolean useSpiritTrees()
-	{
-		return override(ConfigKey.USE_SPIRIT_TREES, base.useSpiritTrees());
-	}
-
-	@Override
+	/**
+	 * {@code useTeleportationItems} — its payload coercion is a string
+	 * {@code fromType} parse rather than a type check.
+	 */
 	public TeleportationItem useTeleportationItems()
 	{
 		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_ITEMS.getKey());
@@ -150,124 +112,10 @@ public final class EffectiveConfig implements ShortestPathConfig
 				return parsed;
 			}
 		}
-		return base.useTeleportationItems();
+		return (TeleportationItem) baseOf(ConfigKey.USE_TELEPORTATION_ITEMS);
 	}
 
-	@Override
-	public boolean useTeleportationLevers()
-	{
-		return override(ConfigKey.USE_TELEPORTATION_LEVERS, base.useTeleportationLevers());
-	}
-
-	@Override
-	public boolean useTeleportationPortals()
-	{
-		return override(ConfigKey.USE_TELEPORTATION_PORTALS, base.useTeleportationPortals());
-	}
-
-	@Override
-	public boolean useTeleportationSpells()
-	{
-		return override(ConfigKey.USE_TELEPORTATION_SPELLS, base.useTeleportationSpells());
-	}
-
-	@Override
-	public boolean useTeleportationSpellsHome()
-	{
-		return override(ConfigKey.USE_TELEPORTATION_SPELLS_HOME, base.useTeleportationSpellsHome());
-	}
-
-	@Override
-	public boolean useTeleportationMinigames()
-	{
-		return override(ConfigKey.USE_TELEPORTATION_MINIGAMES, base.useTeleportationMinigames());
-	}
-
-	@Override
-	public boolean useWildernessObelisks()
-	{
-		return override(ConfigKey.USE_WILDERNESS_OBELISKS, base.useWildernessObelisks());
-	}
-
-	@Override
-	public boolean useSeasonalTransports()
-	{
-		return override(ConfigKey.USE_SEASONAL_TRANSPORTS, base.useSeasonalTransports());
-	}
-
-	@Override
-	public boolean respawnPrifddinas()
-	{
-		return override(ConfigKey.RESPAWN_PRIFDDINAS, base.respawnPrifddinas());
-	}
-
-	@Override
-	public boolean unlockCanoeAxe()
-	{
-		return override(ConfigKey.UNLOCK_CANOE_AXE, base.unlockCanoeAxe());
-	}
-
-	@Override
-	public boolean unlockXericsHonour()
-	{
-		return override(ConfigKey.UNLOCK_XERICS_HONOUR, base.unlockXericsHonour());
-	}
-
-	@Override
-	public boolean unlockDragontoothPassage()
-	{
-		return override(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE, base.unlockDragontoothPassage());
-	}
-
-	@Override
-	public boolean unlockMorUlRek()
-	{
-		return override(ConfigKey.UNLOCK_MOR_UL_REK, base.unlockMorUlRek());
-	}
-
-	@Override
-	public boolean includeBankPath()
-	{
-		return override(ConfigKey.INCLUDE_BANK_PATH, base.includeBankPath());
-	}
-
-	@Override
-	public int currencyThreshold()
-	{
-		return override(ConfigKey.CURRENCY_THRESHOLD, base.currencyThreshold());
-	}
-
-	@Override
-	public boolean cancelInstead()
-	{
-		return override(ConfigKey.CANCEL_INSTEAD, base.cancelInstead());
-	}
-
-	@Override
-	public int recalculateDistance()
-	{
-		return override(ConfigKey.RECALCULATE_DISTANCE, base.recalculateDistance());
-	}
-
-	@Override
-	public int reachedDistance()
-	{
-		return override(ConfigKey.FINISH_DISTANCE, base.reachedDistance());
-	}
-
-	@Override
-	public int unreachableTargetDistance()
-	{
-		return override(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD, base.unreachableTargetDistance());
-	}
-
-	@Override
-	public boolean showUnreachableText()
-	{
-		return override(ConfigKey.SHOW_UNREACHABLE_TEXT, base.showUnreachableText());
-	}
-
-	@Override
+	/** {@code showTileCounter} — string-parsed enum coercion. */
 	public TileCounter showTileCounter()
 	{
 		Object value = overrides.get(ConfigKey.SHOW_TILE_COUNTER.getKey());
@@ -279,100 +127,10 @@ public final class EffectiveConfig implements ShortestPathConfig
 				return parsed;
 			}
 		}
-		return base.showTileCounter();
+		return (TileCounter) baseOf(ConfigKey.SHOW_TILE_COUNTER);
 	}
 
-	@Override
-	public int tileCounterStep()
-	{
-		return override(ConfigKey.TILE_COUNTER_STEP, base.tileCounterStep());
-	}
-
-	@Override
-	public int calculationCutoff()
-	{
-		return override(ConfigKey.CALCULATION_CUTOFF, base.calculationCutoff());
-	}
-
-	@Override
-	public int aStarHeuristicWeight()
-	{
-		return override(ConfigKey.A_STAR_HEURISTIC_WEIGHT, base.aStarHeuristicWeight());
-	}
-
-	@Override
-	public boolean collisionAwareBlockedTargets()
-	{
-		return override(ConfigKey.COLLISION_AWARE_BLOCKED_TARGETS, base.collisionAwareBlockedTargets());
-	}
-
-	@Override
-	public boolean useSailingMoves()
-	{
-		return override(ConfigKey.USE_SAILING_MOVES, base.useSailingMoves());
-	}
-
-	@Override
-	public boolean showTransportInfo()
-	{
-		return override(ConfigKey.SHOW_TRANSPORT_INFO, base.showTransportInfo());
-	}
-
-	@Override
-	public boolean showBankPickupInfo()
-	{
-		return override(ConfigKey.SHOW_BANK_PICKUP_INFO, base.showBankPickupInfo());
-	}
-
-	@Override
-	public boolean highlightBankPickupItems()
-	{
-		return override(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS, base.highlightBankPickupItems());
-	}
-
-	@Override
-	public boolean highlightSpellbookSpells()
-	{
-		return override(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS, base.highlightSpellbookSpells());
-	}
-
-	@Override
-	public boolean highlightInventoryItems()
-	{
-		return override(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS, base.highlightInventoryItems());
-	}
-
-	@Override
-	public boolean usePoh()
-	{
-		return override(ConfigKey.USE_POH, base.usePoh());
-	}
-
-	@Override
-	public boolean usePohFairyRing()
-	{
-		return override(ConfigKey.USE_POH_FAIRY_RING, base.usePohFairyRing());
-	}
-
-	@Override
-	public boolean usePohSpiritTree()
-	{
-		return override(ConfigKey.USE_POH_SPIRIT_TREE, base.usePohSpiritTree());
-	}
-
-	@Override
-	public boolean useTeleportationPortalsPoh()
-	{
-		return override(ConfigKey.USE_TELEPORTATION_PORTALS_POH, base.useTeleportationPortalsPoh());
-	}
-
-	@Override
-	public Set<PohNexusPortal> pohNexusPortals()
-	{
-		return base.pohNexusPortals();
-	}
-
-	@Override
+	/** {@code pohJewelleryBoxTier} — string-parsed enum coercion. */
 	public JewelleryBoxTier pohJewelleryBoxTier()
 	{
 		Object value = overrides.get(ConfigKey.POH_JEWELLERY_BOX_TIER.getKey());
@@ -384,181 +142,40 @@ public final class EffectiveConfig implements ShortestPathConfig
 				return parsed;
 			}
 		}
-		return base.pohJewelleryBoxTier();
+		return (JewelleryBoxTier) baseOf(ConfigKey.POH_JEWELLERY_BOX_TIER);
+	}
+
+	/**
+	 * {@code balloonLogBasketRoutes} — the unwritten-key default derives
+	 * from the legacy {@code unlockBalloonLogBasket} flag: re-derive it
+	 * through the override-aware flag so a payload on that flag still
+	 * produces "all routes" (or none) instead of advertising the unlock
+	 * while routing sees the base flag's value. A written set equal to the
+	 * flag-derived default is indistinguishable from unwritten here, and
+	 * re-deriving it loses nothing: its value carried no more than the flag
+	 * itself did. Any other written set wins outright.
+	 */
+	@SuppressWarnings("unchecked")
+	public Set<BalloonRoute> balloonLogBasketRoutes()
+	{
+		Set<BalloonRoute> routes = (Set<BalloonRoute>) baseOf(ConfigKey.BALLOON_LOG_BASKET_ROUTES);
+		Set<BalloonRoute> flagDerived = Boolean.TRUE.equals(baseOf(ConfigKey.UNLOCK_BALLOON_LOG_BASKET))
+			? EnumSet.allOf(BalloonRoute.class)
+			: EnumSet.noneOf(BalloonRoute.class);
+		if (routes == null || routes.equals(flagDerived))
+		{
+			return bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET)
+				? EnumSet.allOf(BalloonRoute.class)
+				: EnumSet.noneOf(BalloonRoute.class);
+		}
+		return routes;
 	}
 
 	@Override
-	public Set<PohMountedItem> pohMountedItems()
+	public boolean showSidebarPanel()
 	{
-		return base.pohMountedItems();
-	}
-
-	@Override
-	public boolean usePohMountedItems()
-	{
-		return override(ConfigKey.USE_POH_MOUNTED_ITEMS, base.usePohMountedItems());
-	}
-
-	@Override
-	public boolean usePohObelisk()
-	{
-		return override(ConfigKey.USE_POH_OBELISK, base.usePohObelisk());
-	}
-
-	@Override
-	public int costAgilityShortcuts()
-	{
-		return override(ConfigKey.COST_AGILITY_SHORTCUTS, base.costAgilityShortcuts());
-	}
-
-	@Override
-	public int costGrappleShortcuts()
-	{
-		return override(ConfigKey.COST_GRAPPLE_SHORTCUTS, base.costGrappleShortcuts());
-	}
-
-	@Override
-	public int costBoats()
-	{
-		return override(ConfigKey.COST_BOATS, base.costBoats());
-	}
-
-	@Override
-	public int costCanoes()
-	{
-		return override(ConfigKey.COST_CANOES, base.costCanoes());
-	}
-
-	@Override
-	public int costCharterShips()
-	{
-		return override(ConfigKey.COST_CHARTER_SHIPS, base.costCharterShips());
-	}
-
-	@Override
-	public int costShips()
-	{
-		return override(ConfigKey.COST_SHIPS, base.costShips());
-	}
-
-	@Override
-	public int costFairyRings()
-	{
-		return override(ConfigKey.COST_FAIRY_RINGS, base.costFairyRings());
-	}
-
-	@Override
-	public int costGnomeGliders()
-	{
-		return override(ConfigKey.COST_GNOME_GLIDERS, base.costGnomeGliders());
-	}
-
-	@Override
-	public int costHotAirBalloons()
-	{
-		return override(ConfigKey.COST_HOT_AIR_BALLOONS, base.costHotAirBalloons());
-	}
-
-	@Override
-	public int costMagicCarpets()
-	{
-		return override(ConfigKey.COST_MAGIC_CARPETS, base.costMagicCarpets());
-	}
-
-	@Override
-	public int costMagicMushtrees()
-	{
-		return override(ConfigKey.COST_MAGIC_MUSHTREES, base.costMagicMushtrees());
-	}
-
-	@Override
-	public int costMinecarts()
-	{
-		return override(ConfigKey.COST_MINECARTS, base.costMinecarts());
-	}
-
-	@Override
-	public int costQuetzals()
-	{
-		return override(ConfigKey.COST_QUETZALS, base.costQuetzals());
-	}
-
-	@Override
-	public int costQuetzalWhistle()
-	{
-		return override(ConfigKey.COST_QUETZAL_WHISTLE, base.costQuetzalWhistle());
-	}
-
-	@Override
-	public int costSpiritTrees()
-	{
-		return override(ConfigKey.COST_SPIRIT_TREES, base.costSpiritTrees());
-	}
-
-	@Override
-	public int costNonConsumableTeleportationItems()
-	{
-		return override(ConfigKey.COST_NON_CONSUMABLE_TELEPORTATION_ITEMS, base.costNonConsumableTeleportationItems());
-	}
-
-	@Override
-	public int costConsumableTeleportationItems()
-	{
-		return override(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS, base.costConsumableTeleportationItems());
-	}
-
-	@Override
-	public int costTeleportationBoxes()
-	{
-		return override(ConfigKey.COST_TELEPORTATION_BOXES, base.costTeleportationBoxes());
-	}
-
-	@Override
-	public int costTeleportationLevers()
-	{
-		return override(ConfigKey.COST_TELEPORTATION_LEVERS, base.costTeleportationLevers());
-	}
-
-	@Override
-	public int costTeleportationPortals()
-	{
-		return override(ConfigKey.COST_TELEPORTATION_PORTALS, base.costTeleportationPortals());
-	}
-
-	@Override
-	public int costTeleportationSpells()
-	{
-		return override(ConfigKey.COST_TELEPORTATION_SPELLS, base.costTeleportationSpells());
-	}
-
-	@Override
-	public int costTeleportationSpellsHome()
-	{
-		return override(ConfigKey.COST_TELEPORTATION_SPELLS_HOME, base.costTeleportationSpellsHome());
-	}
-
-	@Override
-	public int costTeleportationMinigames()
-	{
-		return override(ConfigKey.COST_TELEPORTATION_MINIGAMES, base.costTeleportationMinigames());
-	}
-
-	@Override
-	public int costWildernessObelisks()
-	{
-		return override(ConfigKey.COST_WILDERNESS_OBELISKS, base.costWildernessObelisks());
-	}
-
-	@Override
-	public int costSeasonalTransports()
-	{
-		return override(ConfigKey.COST_SEASONAL_TRANSPORTS, base.costSeasonalTransports());
-	}
-
-	@Override
-	public int costBankVisit()
-	{
-		return override(ConfigKey.COST_BANK_VISIT, base.costBankVisit());
+		Object value = overrides.get(ConfigKey.SHOW_SIDEBAR_PANEL.getKey());
+		return value instanceof Boolean ? (boolean) value : base.showSidebarPanel();
 	}
 
 	@Override
@@ -683,35 +300,4 @@ public final class EffectiveConfig implements ShortestPathConfig
 	{
 		return override(ConfigKey.POST_TRANSPORTS, base.postTransports());
 	}
-
-	@Override
-	public String unreachableText()
-	{
-		return base.unreachableText();
-	}
-
-	@Override
-	public String builtTeleportationBoxes()
-	{
-		return base.builtTeleportationBoxes();
-	}
-
-	@Override
-	public void setBuiltTeleportationBoxes(String content)
-	{
-		base.setBuiltTeleportationBoxes(content);
-	}
-
-	@Override
-	public String builtTeleportationPortalsPoh()
-	{
-		return base.builtTeleportationPortalsPoh();
-	}
-
-	@Override
-	public void setBuiltTeleportationPortalsPoh(String content)
-	{
-		base.setBuiltTeleportationPortalsPoh(content);
-	}
-
 }

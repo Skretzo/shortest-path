@@ -7,6 +7,7 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathConfig;
+import shortestpath.settings.ConfigKey;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.Settings;
@@ -47,7 +48,6 @@ public class TransportTypeConfig
 {
 	private final Map<TransportType, Boolean> enabledStates = new EnumMap<>(TransportType.class);
 	private final Map<TransportType, Integer> costThresholds = new EnumMap<>(TransportType.class);
-	private final ShortestPathConfig config;
 	private final Settings settings;
 	@Getter
 	private TeleportationItem teleportationItemSetting;
@@ -59,7 +59,6 @@ public class TransportTypeConfig
 
 	public TransportTypeConfig(ShortestPathConfig config, Settings settings)
 	{
-		this.config = config;
 		this.settings = settings;
 		refresh();
 	}
@@ -77,7 +76,7 @@ public class TransportTypeConfig
 
 		// Cache the teleportation item setting
 		teleportationItemSetting = settings.coerceTeleportationItem("useTeleportationItems",
-			config.useTeleportationItems(), overrides);
+			(TeleportationItem) settings.configuredValue("useTeleportationItems"), overrides);
 
 		for (TransportType type : TransportType.values())
 		{
@@ -108,18 +107,18 @@ public class TransportTypeConfig
 		}
 		if (type == TransportType.TELEPORTATION_PORTAL_POH)
 		{
-			Set<PohNexusPortal> portals = config.pohNexusPortals();
+			Set<?> portals = settings.configuredSet("pohNexusPortals");
 			return portals != null && !portals.isEmpty();
 		}
 
-		// No enabled getter means always enabled (controlled elsewhere or not
+		// No enabled key means always enabled (controlled elsewhere or not
 		// configurable)
-		if (!type.hasEnabledGetter())
+		if (!type.hasEnabledKey())
 		{
 			return true;
 		}
 
-		boolean configValue = type.getEnabledGetter().apply(config);
+		boolean configValue = settings.configuredBool(type.getEnabledKey());
 		return settings.coerceBoolean(type.getEnabledKey(), configValue, overrides);
 	}
 
@@ -129,13 +128,14 @@ public class TransportTypeConfig
 	 */
 	private int getCostThreshold(TransportType type, Map<String, Object> overrides)
 	{
-		// No cost getter means no additional cost
-		if (!type.hasCostGetter())
+		// No cost key means no additional cost
+		if (!type.hasCostKey())
 		{
 			return 0;
 		}
 
-		int configValue = type.getCostGetter().apply(config);
+		ConfigKey costRow = ConfigKey.forKey(type.getCostKey());
+		int configValue = ((Number) settings.configuredValue(costRow.baseRow().getKey())).intValue();
 		return settings.coerceInt(type.getCostKey(), configValue, overrides);
 	}
 

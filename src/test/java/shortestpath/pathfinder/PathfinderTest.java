@@ -43,6 +43,7 @@ import shortestpath.ItemVariations;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.items.ItemStateService;
 import shortestpath.poh.PohService;
 import shortestpath.settings.TeleportationItem;
@@ -71,17 +72,16 @@ public class PathfinderTest
 	ItemContainer equipment;
 	@Mock
 	ItemContainer bank;
-	@Mock
-	ShortestPathConfig config;
+	private TestShortestPathConfig config;
 	private PathfinderConfig pathfinderConfig;
 	private final ItemStateService itemState = ItemStateService.forTesting();
 
 	@Before
 	public void before()
 	{
-		when(config.calculationCutoff()).thenReturn(30);
-		when(config.currencyThreshold()).thenReturn(10000000);
-		when(config.collisionAwareBlockedTargets()).thenReturn(true);
+		config.set("calculationCutoff", 30);
+		config.set("currencyThreshold", 10000000);
+		config.set("collisionAwareBlockedTargets", true);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 	}
@@ -91,13 +91,13 @@ public class PathfinderTest
 	{
 		setupInventory();
 		setupConfigWithBank(new Item(6306, 100));
-		when(config.unreachableTargetDistance()).thenReturn(0);
+		config.set("unreachableTargetDistanceThreshold", 0);
 		for (int diary : new int[]{0, 1})
 		{
 			when(client.getVarbitValue(VarbitID.KARAMJA_DIARY_ELITE_COMPLETE)).thenReturn(diary);
 			for (int threshold : new int[]{0, 100})
 			{
-				when(config.currencyThreshold()).thenReturn(threshold);
+				config.set("currencyThreshold", threshold);
 				for (int sticks : new int[]{0, 99, 100})
 				{
 					setupInventory(new Item(6306, sticks));
@@ -129,7 +129,7 @@ public class PathfinderTest
 	@Test
 	public void testAgilityShortcuts()
 	{
-		when(config.useAgilityShortcuts()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
 		setupInventory(
 			new Item(ItemID.ROPE, 1),
 			new Item(ItemID.DEATH_CLIMBINGBOOTS, 1));
@@ -139,7 +139,7 @@ public class PathfinderTest
 	@Test
 	public void testGrappleShortcuts()
 	{
-		when(config.useGrappleShortcuts()).thenReturn(true);
+		config.set("useGrappleShortcuts", true);
 		setupInventory(
 			new Item(ItemID.XBOWS_CROSSBOW_ADAMANTITE, 1),
 			new Item(ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE, 1));
@@ -152,9 +152,9 @@ public class PathfinderTest
 		// The crossbow is already on hand, but the mith grapple is only in the bank.
 		// This should expose any branch leakage where one explored bank path makes the
 		// grapple shortcut appear usable on a different branch that never banked.
-		when(config.useGrappleShortcuts()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.useAgilityShortcuts()).thenReturn(true);
+		config.set("useGrappleShortcuts", true);
+		config.set("includeBankPath", true);
+		config.set("useAgilityShortcuts", true);
 		setupInventory(new Item(ItemID.XBOWS_CROSSBOW_ADAMANTITE, 1));
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE, 1));
@@ -174,7 +174,7 @@ public class PathfinderTest
 	@Test
 	public void testBoats()
 	{
-		when(config.useBoats()).thenReturn(true);
+		config.set("useBoats", true);
 		setupInventory(
 			new Item(ItemID.COINS, 10000),
 			new Item(ItemID.ECTOTOKEN, 25));
@@ -184,7 +184,7 @@ public class PathfinderTest
 	@Test
 	public void testMeiyerditchBoatCanBeBoardedFromRock()
 	{
-		when(config.useBoats()).thenReturn(true);
+		config.set("useBoats", true);
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, Map.of(7255, 88));
 		int rock = WorldPointUtil.packWorldPoint(3605, 3163, 1);
@@ -205,7 +205,7 @@ public class PathfinderTest
 	@Test
 	public void testCanoes()
 	{
-		when(config.useCanoes()).thenReturn(true);
+		config.set("useCanoes", true);
 		setupInventory(new Item(ItemID.BRONZE_AXE, 1));
 		testTransportLength(2, TransportType.CANOE);
 	}
@@ -214,8 +214,8 @@ public class PathfinderTest
 	public void testCanoesWithStoredAxeUnlock()
 	{
 		// An axe stored at a canoe station relieves the carried-axe requirement.
-		when(config.useCanoes()).thenReturn(true);
-		when(config.unlockCanoeAxe()).thenReturn(true);
+		config.set("useCanoes", true);
+		config.set("unlockCanoeAxe", true);
 		setupInventory();
 		testTransportLength(2, TransportType.CANOE);
 	}
@@ -223,7 +223,7 @@ public class PathfinderTest
 	@Test
 	public void testCanoesNotUsedWithoutAxeOrDeclaredUnlock()
 	{
-		when(config.useCanoes()).thenReturn(true);
+		config.set("useCanoes", true);
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		for (Transport transport : activeTransportList())
@@ -238,8 +238,8 @@ public class PathfinderTest
 	{
 		// The permanent free passage relieves the ecto-token toll on the
 		// Port Phasmatys -> Dragontooth Island boat.
-		when(config.useBoats()).thenReturn(true);
-		when(config.unlockDragontoothPassage()).thenReturn(true);
+		config.set("useBoats", true);
+		config.set("unlockDragontoothPassage", true);
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
@@ -252,7 +252,7 @@ public class PathfinderTest
 	@Test
 	public void testDragontoothBoatNotUsedWithoutTokensOrDeclaredUnlock()
 	{
-		when(config.useBoats()).thenReturn(true);
+		config.set("useBoats", true);
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
@@ -266,7 +266,7 @@ public class PathfinderTest
 	public void testDragontoothBoatStillUsableWithEctoTokens()
 	{
 		// The item branch still covers the crossing: the unlock relief is additive, not exclusive.
-		when(config.useBoats()).thenReturn(true);
+		config.set("useBoats", true);
 		setupInventory(new Item(ItemID.ECTOTOKEN, 25));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
@@ -283,11 +283,11 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		assertMorUlRekDoorAvailability(false);
 
-		when(config.unlockMorUlRek()).thenReturn(true);
+		config.set("unlockMorUlRek", true);
 		pathfinderConfig.refresh();
 		assertMorUlRekDoorAvailability(true);
 
-		when(config.unlockMorUlRek()).thenReturn(false);
+		config.set("unlockMorUlRek", false);
 		pathfinderConfig.refresh();
 		assertMorUlRekDoorAvailability(false);
 	}
@@ -383,7 +383,7 @@ public class PathfinderTest
 	@Test
 	public void xericsHonourIsUsableWhenTheUnlockIsDeclared()
 	{
-		when(config.unlockXericsHonour()).thenReturn(true);
+		config.set("unlockXericsHonour", true);
 		setupInventory(new Item(ItemID.XERIC_TALISMAN, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertTrue(hasUsableTeleport(XERICS_HONOUR));
@@ -393,7 +393,7 @@ public class PathfinderTest
 	public void xericsHonourStillNeedsTheTalismanWhenUnlocked()
 	{
 		// The unlock opens the destination; it does not conjure the talisman.
-		when(config.unlockXericsHonour()).thenReturn(true);
+		config.set("unlockXericsHonour", true);
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertFalse(hasUsableTeleport(XERICS_HONOUR));
@@ -404,7 +404,7 @@ public class PathfinderTest
 	{
 		// ALL presumes every item including the talisman, so the declared unlock
 		// is the only remaining gate.
-		when(config.unlockXericsHonour()).thenReturn(true);
+		config.set("unlockXericsHonour", true);
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
 		assertTrue(hasUsableTeleport(XERICS_HONOUR));
@@ -416,10 +416,10 @@ public class PathfinderTest
 		// The POH Honour mounted-talisman row has no Items column to carry the
 		// unlock term, so the gate is checked in code — regardless of the
 		// jewellery-box tier, which only covers actual jewellery boxes.
-		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(Set.of());
-		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
-		when(config.pohMountedItems()).thenReturn(Set.of(PohMountedItem.XERICS_TALISMAN));
+		config.set("usePoh", true);
+		config.set("pohNexusPortals", Set.of());
+		config.set("pohJewelleryBoxTier", JewelleryBoxTier.NONE);
+		config.set("pohMountedItems", Set.of(PohMountedItem.XERICS_TALISMAN));
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
@@ -428,7 +428,7 @@ public class PathfinderTest
 		assertTrue("ungated POH Xeric's destinations stay usable",
 			hasActiveTeleportationBox("Lookout"));
 
-		when(config.unlockXericsHonour()).thenReturn(true);
+		config.set("unlockXericsHonour", true);
 		pathfinderConfig.refresh();
 		assertTrue("POH Honour box usable once the unlock is declared",
 			hasActiveTeleportationBox("Honour"));
@@ -451,7 +451,7 @@ public class PathfinderTest
 	@Test
 	public void testCharterShips()
 	{
-		when(config.useCharterShips()).thenReturn(true);
+		config.set("useCharterShips", true);
 		setupInventory(new Item(ItemID.COINS, 100000));
 		testTransportLength(2, TransportType.CHARTER_SHIP);
 	}
@@ -464,8 +464,8 @@ public class PathfinderTest
 		int catherbyCharter = WorldPointUtil.packWorldPoint(2792, 3414, 0);
 		int musaPointCharter = WorldPointUtil.packWorldPoint(2954, 3158, 0);
 
-		when(config.useCharterShips()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useCharterShips", true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.COINS, 10000));
@@ -483,8 +483,8 @@ public class PathfinderTest
 		// Start near Catherby bank rather than on the dock itself. One search branch can touch
 		// the bank, while another heads straight to the charter ship. Banked coins must not leak
 		// from the bank branch into the non-bank charter branch.
-		when(config.useCharterShips()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useCharterShips", true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.COINS, 10000));
@@ -552,7 +552,7 @@ public class PathfinderTest
 	{
 		// With includeBankPath explicitly on, INVENTORY_AND_BANK already banked for
 		// the camulet — the imply is a logical OR and must not change that path.
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK, new Item(ItemID.CAMULET, 1));
@@ -589,7 +589,7 @@ public class PathfinderTest
 	@Test
 	public void testShips()
 	{
-		when(config.useShips()).thenReturn(true);
+		config.set("useShips", true);
 		setupInventory(new Item(ItemID.COINS, 10000));
 		testTransportLength(2, TransportType.SHIP);
 	}
@@ -597,9 +597,9 @@ public class PathfinderTest
 	@Test
 	public void testFairyRings()
 	{
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.usePoh()).thenReturn(true);
-		when(config.usePohFairyRing()).thenReturn(true);
+		config.set("useFairyRings", true);
+		config.set("usePoh", true);
+		config.set("usePohFairyRing", true);
 		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
@@ -610,9 +610,9 @@ public class PathfinderTest
 	@Test
 	public void testLunarStaffFairyRings()
 	{
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.usePoh()).thenReturn(true);
-		when(config.usePohFairyRing()).thenReturn(true);
+		config.set("useFairyRings", true);
+		config.set("usePoh", true);
+		config.set("usePohFairyRing", true);
 		setupInventory(new Item(ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
@@ -623,7 +623,7 @@ public class PathfinderTest
 	@Test
 	public void testFairyRingsNotUsedWithoutDramenStaff()
 	{
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("useFairyRings", true);
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
@@ -641,7 +641,7 @@ public class PathfinderTest
 	@Test
 	public void testFairyRingsNotUsedWithoutQuestProgressOrEliteDiary()
 	{
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("useFairyRings", true);
 		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(0);
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
@@ -657,7 +657,7 @@ public class PathfinderTest
 	@Test
 	public void testFairyRingsUsedWithLumbridgeDiaryCompleteWithoutDramenStaff()
 	{
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("useFairyRings", true);
 		// No Dramen staff in inventory or equipment
 		setupInventory();
 		// Satisfy Fairy2 quest varbit and Lumbridge elite diary complete
@@ -670,7 +670,7 @@ public class PathfinderTest
 	@Test
 	public void testFairyRingsUsedWithDramenStaffWornInHand()
 	{
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("useFairyRings", true);
 		setupInventory();
 		setupEquipment(new Item(ItemID.DRAMEN_STAFF, 1));
 
@@ -685,7 +685,7 @@ public class PathfinderTest
 		// Issue #640: a blocked target tile can never be walked into. The goal set is
 		// expanded to the walkable tiles within the unreachable distance so the search
 		// terminates on a nearby tile instead of exhausting the whole map.
-		when(config.unreachableTargetDistance()).thenReturn(2);
+		config.set("unreachableTargetDistanceThreshold", 2);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
@@ -713,7 +713,7 @@ public class PathfinderTest
 		// Issue #640: a blocked target that no transport lands on and that has no
 		// walkable tile within the unreachable distance can never be reached, so the
 		// search is skipped entirely instead of exhausting the map.
-		when(config.unreachableTargetDistance()).thenReturn(2);
+		config.set("unreachableTargetDistanceThreshold", 2);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
@@ -737,7 +737,7 @@ public class PathfinderTest
 	{
 		// A hopeless blocked target in a multi-target set must not prevent the
 		// remaining viable targets from being reached.
-		when(config.unreachableTargetDistance()).thenReturn(2);
+		config.set("unreachableTargetDistanceThreshold", 2);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		int start = WorldPointUtil.packWorldPoint(3222, 3218, 0);
@@ -756,10 +756,10 @@ public class PathfinderTest
 	{
 		// Fairy ring tiles are blocked for walking but a ring lands the player on
 		// them, so they must stay reachable and must not be short-circuited.
-		when(config.unreachableTargetDistance()).thenReturn(2);
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.usePoh()).thenReturn(true);
-		when(config.usePohFairyRing()).thenReturn(true);
+		config.set("unreachableTargetDistanceThreshold", 2);
+		config.set("useFairyRings", true);
+		config.set("usePoh", true);
+		config.set("usePohFairyRing", true);
 		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
@@ -811,7 +811,7 @@ public class PathfinderTest
 		// Varrock: the square radius also covers walkable tiles on the other side
 		// of that wall, which must not become goals in this mode.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -851,7 +851,7 @@ public class PathfinderTest
 		// invisible one-tile path. Same fixture as the wall tests, but the start
 		// is moved onto a connected fallback tile within the radius.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -890,8 +890,8 @@ public class PathfinderTest
 		// not walk-connected to the target, so off mode terminates there while on
 		// mode would have to expand further.
 		final int radius = 6;
-		when(config.collisionAwareBlockedTargets()).thenReturn(false);
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("collisionAwareBlockedTargets", false);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -929,7 +929,7 @@ public class PathfinderTest
 		// so the path must terminate on one -- even though tiles closer to the
 		// start would also satisfy a whole-radius goal set.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -969,7 +969,7 @@ public class PathfinderTest
 		// far side of that wall: the collision map marks the edge as a
 		// structural boundary, so only the interior side may serve as goals.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -989,7 +989,7 @@ public class PathfinderTest
 		// in a wall column. The tiles west of them are the street side of the
 		// wall and must not become goals; the corridor side lies east.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -1014,7 +1014,7 @@ public class PathfinderTest
 		// must look past ring 1 and terminate inside the room instead of in
 		// the street.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -1034,7 +1034,7 @@ public class PathfinderTest
 		// shares an open edge and must stay a goal so the route ends on the
 		// nearest usable tile instead of taking a detour.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -1057,7 +1057,7 @@ public class PathfinderTest
 		// face -- instead of expanding to the pocket behind the wall's west
 		// end, which the route cannot interact from.
 		final int radius = 6;
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -1080,8 +1080,8 @@ public class PathfinderTest
 		// three walkable ring-1 tiles around the blast-mine wall only the
 		// cardinally adjacent face may become a goal.
 		final int radius = 6;
-		when(config.collisionAwareBlockedTargets()).thenReturn(false);
-		when(config.unreachableTargetDistance()).thenReturn(radius);
+		config.set("collisionAwareBlockedTargets", false);
+		config.set("unreachableTargetDistanceThreshold", radius);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		setupInventory();
 		final CollisionMap map = pathfinderConfig.getMap();
@@ -1099,9 +1099,9 @@ public class PathfinderTest
 	{
 		// Test scenario: Both Dramen staff AND Ardougne cloak are in the bank
 		// After visiting a bank, both fairy rings AND teleport items should be available
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
+		config.set("useFairyRings", true);
+		config.set("includeBankPath", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
 		setupInventory();
 		setupEquipment();
 
@@ -1138,9 +1138,9 @@ public class PathfinderTest
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2324, 3619, 0);
 
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
-		when(config.costConsumableTeleportationItems()).thenReturn(50);
+		config.set("useFairyRings", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
+		config.set("costConsumableTeleportationItems", 50);
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
 		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
@@ -1160,11 +1160,11 @@ public class PathfinderTest
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2324, 3619, 0);
 
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
-		when(config.costConsumableTeleportationItems()).thenReturn(50);
+		config.set("useFairyRings", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
+		config.set("costConsumableTeleportationItems", 50);
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(
@@ -1192,10 +1192,10 @@ public class PathfinderTest
 		int djpFairyRing = WorldPointUtil.packWorldPoint(2658, 3230, 0); // Near Kandarin Monastery
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0); // AKQ destination
 
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.costConsumableTeleportationItems()).thenReturn(50);
+		config.set("useFairyRings", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
+		config.set("includeBankPath", true);
+		config.set("costConsumableTeleportationItems", 50);
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		setupInventory();
 		setupEquipment();
@@ -1236,10 +1236,10 @@ public class PathfinderTest
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3083, 0);
 		int akqFairyRing = WorldPointUtil.packWorldPoint(2319, 3619, 0);
 
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.costConsumableTeleportationItems()).thenReturn(50);
+		config.set("useFairyRings", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
+		config.set("includeBankPath", true);
+		config.set("costConsumableTeleportationItems", 50);
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
 
@@ -1271,9 +1271,9 @@ public class PathfinderTest
 	public void testFairyRingNotUsedAfterTeleportWithoutBankVisit()
 	{
 		// Enable fairy rings and teleport items
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useFairyRings", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
+		config.set("includeBankPath", true);
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0); // No diary
 
@@ -1310,9 +1310,9 @@ public class PathfinderTest
 		int castleWars = WorldPointUtil.packWorldPoint(2442, 3096, 0);
 		int grandExchangeBank = WorldPointUtil.packWorldPoint(3162, 3489, 0);
 
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useFairyRings", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY_AND_BANK);
+		config.set("includeBankPath", true);
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
 
@@ -1338,8 +1338,8 @@ public class PathfinderTest
 	public void testFairyRingRequiresBankVisitWhenStaffInBank()
 	{
 		// Enable fairy rings
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useFairyRings", true);
+		config.set("includeBankPath", true);
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0); // No diary
 
@@ -1374,9 +1374,9 @@ public class PathfinderTest
 	{
 		// Baseline bank-enabled Great Conch route: fairy rings and a combat bracelet are only
 		// available from the bank, so the chosen path should reflect those post-bank unlocks.
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("includeBankPath", true);
+		config.set("useAgilityShortcuts", true);
+		config.set("useFairyRings", true);
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
@@ -1395,9 +1395,9 @@ public class PathfinderTest
 	{
 		// Target the tile-reuse case directly: the path re-enters the same corridor after banking,
 		// and only the post-bank revisit has access to the banked Dramen staff route options.
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("includeBankPath", true);
+		config.set("useAgilityShortcuts", true);
+		config.set("useFairyRings", true);
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
@@ -1416,8 +1416,8 @@ public class PathfinderTest
 	{
 		// Non-bank baseline for the same route family. The Dramen staff starts in inventory, so
 		// the path can use fairy rings immediately without any bank visit or post-bank unlock.
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
+		config.set("useFairyRings", true);
 		setupInventory(new Item(ItemID.DRAMEN_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
 
@@ -1435,8 +1435,8 @@ public class PathfinderTest
 		// Start near a bank branch and a fairy-ring branch. The Dramen staff is only in the bank,
 		// so a branch that has not banked must not gain fairy-ring access just because another
 		// explored branch touched a bank.
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.useFairyRings()).thenReturn(true);
+		config.set("includeBankPath", true);
+		config.set("useFairyRings", true);
 		setupInventory();
 		setupEquipment();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
@@ -1455,7 +1455,7 @@ public class PathfinderTest
 	{
 		// A teleport item that exists only in the bank should become usable after the route banks.
 		// This checks the positive side of the bank-state transition for teleport items.
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -1479,9 +1479,9 @@ public class PathfinderTest
 		// GE -> Rogues' Den: a ready minigame teleport is the shorter route, but with a
 		// free bank transition the pathfinder detours to a bank for a games necklace.
 		// A nonzero bank visit cost must make the direct teleport win again.
-		when(config.useTeleportationMinigames()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.costBankVisit()).thenReturn(20);
+		config.set("useTeleportationMinigames", true);
+		config.set("includeBankPath", true);
+		config.set("costBankVisit", 20);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -1505,9 +1505,9 @@ public class PathfinderTest
 	{
 		// costBankVisit = 0 must preserve the legacy free bank transition: the banked
 		// games necklace detour still wins over the ready minigame teleport.
-		when(config.useTeleportationMinigames()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.costBankVisit()).thenReturn(0);
+		config.set("useTeleportationMinigames", true);
+		config.set("includeBankPath", true);
+		config.set("costBankVisit", 0);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -1549,9 +1549,9 @@ public class PathfinderTest
 	{
 		// When the minigame teleport is unavailable (e.g. on cooldown) the route must
 		// still bank to fetch the games necklace even when banking carries a cost.
-		when(config.useTeleportationMinigames()).thenReturn(false);
-		when(config.includeBankPath()).thenReturn(true);
-		when(config.costBankVisit()).thenReturn(20);
+		config.set("useTeleportationMinigames", false);
+		config.set("includeBankPath", true);
+		config.set("costBankVisit", 20);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -1584,8 +1584,8 @@ public class PathfinderTest
 		when(client.getVarbitValue(10662)).thenReturn(21);
 		when(client.getVarbitValue(10663)).thenReturn(2);
 		when(client.getVarbitValue(10664)).thenReturn(4);
-		when(config.useSeasonalTransports()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useSeasonalTransports", true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -1618,8 +1618,8 @@ public class PathfinderTest
 	{
 		// Same setup as the briefcase test but on a normal world: the enabled
 		// toggle must not leak seasonal transports into non-seasonal worlds.
-		when(config.useSeasonalTransports()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useSeasonalTransports", true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -1639,8 +1639,8 @@ public class PathfinderTest
 	{
 		// Deadman worlds are permanent-mode worlds, not seasonal worlds.
 		when(client.getWorldType()).thenReturn(EnumSet.of(WorldType.DEADMAN));
-		when(config.useSeasonalTransports()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("useSeasonalTransports", true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(TeleportationItem.INVENTORY_AND_BANK,
@@ -1658,14 +1658,14 @@ public class PathfinderTest
 	@Test
 	public void testGnomeGliders()
 	{
-		when(config.useGnomeGliders()).thenReturn(true);
+		config.set("useGnomeGliders", true);
 		testTransportLength(2, TransportType.GNOME_GLIDER);
 	}
 
 	@Test
 	public void testHotAirBalloons()
 	{
-		when(config.useHotAirBalloons()).thenReturn(true);
+		config.set("useHotAirBalloons", true);
 		setupInventory(
 			new Item(ItemID.LOGS, 2),
 			new Item(ItemID.OAK_LOGS, 1),
@@ -1678,7 +1678,7 @@ public class PathfinderTest
 	@Test
 	public void testMagicCarpets()
 	{
-		when(config.useMagicCarpets()).thenReturn(true);
+		config.set("useMagicCarpets", true);
 		setupInventory(
 			new Item(ItemID.COINS, 200));
 		testTransportLength(2, TransportType.MAGIC_CARPET);
@@ -1687,14 +1687,14 @@ public class PathfinderTest
 	@Test
 	public void testMagicMushtrees()
 	{
-		when(config.useMagicMushtrees()).thenReturn(true);
+		config.set("useMagicMushtrees", true);
 		testTransportLength(2, TransportType.MAGIC_MUSHTREE);
 	}
 
 	@Test
 	public void testMinecarts()
 	{
-		when(config.useMinecarts()).thenReturn(true);
+		config.set("useMinecarts", true);
 		setupInventory(new Item(ItemID.COINS, 1000));
 		testTransportLength(2, TransportType.MINECART);
 	}
@@ -1704,7 +1704,7 @@ public class PathfinderTest
 	{
 		// Before The Forsaken Tower quest completion (varbit 7796 < 11),
 		// Lovakengj minecart rides cost 20 coins
-		when(config.useMinecarts()).thenReturn(true);
+		config.set("useMinecarts", true);
 		setupInventory(new Item(ItemID.COINS, 20));
 		when(client.getVarbitValue(7796)).thenReturn(0);
 		Map<Integer, Integer> varbits = new HashMap<>();
@@ -1737,7 +1737,7 @@ public class PathfinderTest
 	{
 		// After The Forsaken Tower quest completion (varbit 7796 = 11),
 		// rides are free (no coins required)
-		when(config.useMinecarts()).thenReturn(true);
+		config.set("useMinecarts", true);
 		setupInventory();
 		Map<Integer, Integer> varbits = new HashMap<>();
 		varbits.put(7796, 11);
@@ -1751,7 +1751,7 @@ public class PathfinderTest
 	{
 		// Before The Forsaken Tower completion (varbit 7796 < 11), reverse minecart travel
 		// should still require payment and therefore not be a direct 2-step transport with 0 coins.
-		when(config.useMinecarts()).thenReturn(true);
+		config.set("useMinecarts", true);
 		setupInventory();
 		Map<Integer, Integer> varbits = new HashMap<>();
 		varbits.put(7796, 0);
@@ -1766,7 +1766,7 @@ public class PathfinderTest
 	@Test
 	public void testQuetzals()
 	{
-		when(config.useQuetzals()).thenReturn(true);
+		config.set("useQuetzals", true);
 		testTransportLength(2, TransportType.QUETZAL);
 	}
 
@@ -1800,13 +1800,13 @@ public class PathfinderTest
 	@Test
 	public void testQuetzalPlatformPreferredOverWhistle()
 	{
-		when(config.useQuetzals()).thenReturn(true);
+		config.set("useQuetzals", true);
 
 		// Setup whistle in inventory
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
 
 		// With whistle cost threshold, platform should be preferred
-		when(config.costQuetzalWhistle()).thenReturn(10);
+		config.set("costQuetzalWhistle", 10);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		// From Aldarin platform (1389, 2901) to Hunter Guild platform (1585, 3053)
@@ -1825,13 +1825,13 @@ public class PathfinderTest
 	@Test
 	public void testWhistleNotUsedWhenNearPlatform()
 	{
-		when(config.useQuetzals()).thenReturn(true);
+		config.set("useQuetzals", true);
 
 		// Setup whistle in inventory
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
 
 		// Even with zero additional whistle cost
-		when(config.costQuetzalWhistle()).thenReturn(0);
+		config.set("costQuetzalWhistle", 0);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		// Start 1 tile from Aldarin platform (1389, 2901), going to Hunter Guild (1585, 3053)
@@ -1847,7 +1847,7 @@ public class PathfinderTest
 		assertEquals("Whistle should be used when it's cheaper and has no extra cost", 2, pathLength);
 
 		// Now with a higher whistle cost, platform should win
-		when(config.costQuetzalWhistle()).thenReturn(10);
+		config.set("costQuetzalWhistle", 10);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
@@ -1863,7 +1863,7 @@ public class PathfinderTest
 	@Test
 	public void testQuetzalDisabledDisablesWhistle()
 	{
-		when(config.useQuetzals()).thenReturn(false);
+		config.set("useQuetzals", false);
 
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
@@ -1884,7 +1884,7 @@ public class PathfinderTest
 	@Test
 	public void testPlatformUsedWhenWhistleNotInInventory()
 	{
-		when(config.useQuetzals()).thenReturn(true);
+		config.set("useQuetzals", true);
 
 		// No whistle in inventory
 		setupInventory(); // empty inventory
@@ -1908,21 +1908,21 @@ public class PathfinderTest
 	@Test
 	public void testQuetzalWhistleCostBoundary()
 	{
-		when(config.useQuetzals()).thenReturn(true);
+		config.set("useQuetzals", true);
 
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
 		int nearAldarinPlatform = WorldPointUtil.packWorldPoint(1390, 2901, 0); // 1 tile away
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
 		// Differential=4: whistle compareCost=8 > platform=7, platform should win
-		when(config.costQuetzalWhistle()).thenReturn(4);
+		config.set("costQuetzalWhistle", 4);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		int pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
 		assertEquals("Platform should win when whistle differential makes it more expensive", 3, pathLength);
 
 		// Differential=2: whistle compareCost=6 < platform=7, whistle should win
-		when(config.costQuetzalWhistle()).thenReturn(2);
+		config.set("costQuetzalWhistle", 2);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
@@ -1937,11 +1937,11 @@ public class PathfinderTest
 	@Test
 	public void testWhistleUsedFromFarAway()
 	{
-		when(config.useQuetzals()).thenReturn(true);
+		config.set("useQuetzals", true);
 
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
 		// Zero differential so the whistle is clearly the cheapest option
-		when(config.costQuetzalWhistle()).thenReturn(0);
+		config.set("costQuetzalWhistle", 0);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		// From Falador center (2965, 3380) to Hunter Guild platform (1585, 3053)
@@ -1968,9 +1968,9 @@ public class PathfinderTest
 	@Test
 	public void testConsumableCostPenaltyAppliedToQuetzalWhistle()
 	{
-		when(config.useQuetzals()).thenReturn(true);
-		when(config.costConsumableTeleportationItems()).thenReturn(5);
-		when(config.costQuetzalWhistle()).thenReturn(0);
+		config.set("useQuetzals", true);
+		config.set("costConsumableTeleportationItems", 5);
+		config.set("costQuetzalWhistle", 0);
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
@@ -1986,7 +1986,7 @@ public class PathfinderTest
 	@Test
 	public void testSpiritTrees()
 	{
-		when(config.useSpiritTrees()).thenReturn(true);
+		config.set("useSpiritTrees", true);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(20);
 		testTransportLength(2, TransportType.SPIRIT_TREE);
 	}
@@ -1994,15 +1994,15 @@ public class PathfinderTest
 	@Test
 	public void testTeleportationLevers()
 	{
-		when(config.useTeleportationLevers()).thenReturn(true);
+		config.set("useTeleportationLevers", true);
 		testTransportLength(2, TransportType.TELEPORTATION_LEVER);
 	}
 
 	@Test
 	public void testTeleportationMinigames()
 	{
-		when(config.useTeleportationMinigames()).thenReturn(true);
-		when(config.useTeleportationSpells()).thenReturn(false);
+		config.set("useTeleportationMinigames", true);
+		config.set("useTeleportationSpells", false);
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
 		when(client.getVarpValue(any(Integer.class))).thenReturn(0);
 		testTransportLength(2,
@@ -2077,16 +2077,16 @@ public class PathfinderTest
 	@Test
 	public void testTeleportationPortals()
 	{
-		when(config.useTeleportationPortals()).thenReturn(true);
+		config.set("useTeleportationPortals", true);
 		testTransportLength(2, TransportType.TELEPORTATION_PORTAL);
 	}
 
 	@Test
 	public void testWildernessObelisks()
 	{
-		when(config.useWildernessObelisks()).thenReturn(true);
-		when(config.usePoh()).thenReturn(true);
-		when(config.usePohObelisk()).thenReturn(true);
+		config.set("useWildernessObelisks", true);
+		config.set("usePoh", true);
+		config.set("usePohObelisk", true);
 		testTransportLength(2, TransportType.WILDERNESS_OBELISK);
 	}
 
@@ -2096,10 +2096,10 @@ public class PathfinderTest
 		// From Lumbridge to the Grand Exchange, a house tablet makes the POH exits viable:
 		// Edgeville is the closest Glory exit; after Glory is disabled, Digsite is the best remaining exit.
 		int grandExchange = WorldPointUtil.packWorldPoint(3164, 3487, 0);
-		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(Set.of());
-		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
-		when(config.pohMountedItems()).thenReturn(Set.of(
+		config.set("usePoh", true);
+		config.set("pohNexusPortals", Set.of());
+		config.set("pohJewelleryBoxTier", JewelleryBoxTier.NONE);
+		config.set("pohMountedItems", Set.of(
 			PohMountedItem.GLORY, PohMountedItem.DIGSITE_PENDANT));
 		setupInventory(new Item(8013, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
@@ -2109,7 +2109,7 @@ public class PathfinderTest
 		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Teleport to House tablet"));
 		assertTrue(usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_BOX, "Edgeville"));
 
-		when(config.pohMountedItems()).thenReturn(Set.of(PohMountedItem.DIGSITE_PENDANT));
+		config.set("pohMountedItems", Set.of(PohMountedItem.DIGSITE_PENDANT));
 		pathfinderConfig.refresh();
 		Pathfinder withoutGlory = runScenario(WorldPointUtil.packWorldPoint(3200, 3200, 0), grandExchange);
 		assertTrue(withoutGlory.getResult().isReached());
@@ -2128,12 +2128,12 @@ public class PathfinderTest
 	@Test
 	public void testEnqueuedTeleportDoesNotClaimDestination()
 	{
-		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.LUMBRIDGE));
-		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
-		when(config.pohMountedItems()).thenReturn(Set.of());
+		config.set("usePoh", true);
+		config.set("pohNexusPortals", Set.of(PohNexusPortal.LUMBRIDGE));
+		config.set("pohJewelleryBoxTier", JewelleryBoxTier.NONE);
+		config.set("pohMountedItems", Set.of());
 		// The expensive competing teleport must exist or the bug cannot reproduce.
-		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		config.set("useTeleportationSpellsHome", true);
 		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
@@ -2160,12 +2160,12 @@ public class PathfinderTest
 	@Test
 	public void testBankedEnqueuedTeleportDoesNotClaimDestination()
 	{
-		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.LUMBRIDGE));
-		when(config.pohJewelleryBoxTier()).thenReturn(JewelleryBoxTier.NONE);
-		when(config.pohMountedItems()).thenReturn(Set.of());
-		when(config.useTeleportationSpellsHome()).thenReturn(true);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("usePoh", true);
+		config.set("pohNexusPortals", Set.of(PohNexusPortal.LUMBRIDGE));
+		config.set("pohJewelleryBoxTier", JewelleryBoxTier.NONE);
+		config.set("pohMountedItems", Set.of());
+		config.set("useTeleportationSpellsHome", true);
+		config.set("includeBankPath", true);
 		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		// Attach an empty bank after setupConfig; setupConfigWithBank would force usePoh off.
@@ -2220,8 +2220,8 @@ public class PathfinderTest
 	@Test
 	public void testAgilityShortcutAndTeleportItem()
 	{
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
+		config.set("useAgilityShortcuts", true);
+		config.set("useTeleportationItems", TeleportationItem.ALL);
 		// Draynor Manor to Champions Guild via several stepping stones, but
 		// enabling Combat bracelet teleport should not prioritize over stepping stones
 		// 5 tiles is using the stepping stones
@@ -2247,7 +2247,7 @@ public class PathfinderTest
 	public void testVarrockTeleport()
 	{
 		// Test that Varrock Teleport is used when it's cheaper than walking
-		when(config.useTeleportationSpells()).thenReturn(true);
+		config.set("useTeleportationSpells", true);
 
 		// Test 1: Without magic level (can't cast spell) - should walk
 		setupConfig(QuestState.FINISHED, 1, TeleportationItem.NONE);
@@ -2288,7 +2288,7 @@ public class PathfinderTest
 	public void testQuestCapeInBankRequiresCompletedQuests()
 	{
 		setupQuestPointDatabase(343);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
@@ -2306,7 +2306,7 @@ public class PathfinderTest
 	@Test
 	public void testFaladorTeleportWithMistStaff()
 	{
-		when(config.useTeleportationSpells()).thenReturn(true);
+		config.set("useTeleportationSpells", true);
 		setupInventory(
 			new Item(ItemID.MIST_BATTLESTAFF, 1),
 			new Item(ItemID.LAWRUNE, 1));
@@ -2320,8 +2320,8 @@ public class PathfinderTest
 	@Test
 	public void testHouseTeleportWithDustStaff()
 	{
-		when(config.useTeleportationSpells()).thenReturn(true);
-		when(config.useTeleportationSpellsHome()).thenReturn(true);
+		config.set("useTeleportationSpells", true);
+		config.set("useTeleportationSpellsHome", true);
 		setupInventory(
 			new Item(ItemID.DUST_BATTLESTAFF, 1),
 			new Item(ItemID.LAWRUNE, 1));
@@ -2338,7 +2338,7 @@ public class PathfinderTest
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
 		int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
 
-		when(config.useAgilityShortcuts()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
 		setupInventory();
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
@@ -2360,7 +2360,7 @@ public class PathfinderTest
 		int deepWilderness = WorldPointUtil.packWorldPoint(3340, 3828, 0);
 		int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
 
-		when(config.useAgilityShortcuts()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
 
 		setupInventory(new Item(ItemID.AMULET_OF_GLORY_6, 1));
 		setupEquipment();
@@ -2381,13 +2381,13 @@ public class PathfinderTest
 		Map<Integer, Integer> varbits = new HashMap<>();
 		varbits.put(VarbitID.VARROCK_DIARY_MEDIUM_COMPLETE, 1); // Grand Exchange teleport unlocked
 
-		when(config.useAgilityShortcuts()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
 		setupInventory(
 			new Item(ItemID.LAWRUNE, 1),
 			new Item(ItemID.AIRRUNE, 3),
 			new Item(ItemID.FIRERUNE, 1));
 		setupEquipment();
-		when(config.useTeleportationSpells()).thenReturn(true);
+		config.set("useTeleportationSpells", true);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
 		Pathfinder withVarrockTeleport = runScenario(deepWilderness, grandExchange);
 
@@ -2405,8 +2405,8 @@ public class PathfinderTest
 		Map<Integer, Integer> varbits = new HashMap<>();
 		varbits.put(VarbitID.VARROCK_DIARY_MEDIUM_COMPLETE, 1); // Grand Exchange teleport unlocked
 
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useTeleportationSpells()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
+		config.set("useTeleportationSpells", true);
 		setupInventory(
 			new Item(ItemID.AMULET_OF_GLORY_6, 1),
 			new Item(ItemID.LAWRUNE, 1),
@@ -2433,7 +2433,7 @@ public class PathfinderTest
 		varbits.put(4070, 3); // Arceuus spellbook
 
 		setupInventory(new Item(ItemID.LAWRUNE, 1), new Item(ItemID.SOULRUNE, 1));
-		when(config.useTeleportationSpells()).thenReturn(true);
+		config.set("useTeleportationSpells", true);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
 
 		assertTrue("Lumbridge Respawn Teleport should be usable when no spawn varbit is set",
@@ -2450,9 +2450,9 @@ public class PathfinderTest
 		Map<Integer, Integer> varbits = new HashMap<>();
 		varbits.put(4070, 3); // Arceuus spellbook
 
-		when(config.respawnPrifddinas()).thenReturn(true);
+		config.set("respawnPrifddinas", true);
 		setupInventory(new Item(ItemID.LAWRUNE, 1), new Item(ItemID.SOULRUNE, 1));
-		when(config.useTeleportationSpells()).thenReturn(true);
+		config.set("useTeleportationSpells", true);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
 
 		assertTrue("Prifddinas Respawn Teleport should be usable with the config option set",
@@ -2468,8 +2468,8 @@ public class PathfinderTest
 		int lumbridgeRespawn = WorldPointUtil.packWorldPoint(3221, 3218, 0);
 		int pohOrigin = WorldPointUtil.packWorldPoint(1858, 7051, 0);
 
-		when(config.usePoh()).thenReturn(true);
-		when(config.pohNexusPortals()).thenReturn(Set.of(PohNexusPortal.RESPAWN));
+		config.set("usePoh", true);
+		config.set("pohNexusPortals", Set.of(PohNexusPortal.RESPAWN));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		PrimitiveIntHashMap<Transport[]> transports = pathfinderConfig.getTransports();
@@ -2488,7 +2488,7 @@ public class PathfinderTest
 		int shore = WorldPointUtil.packWorldPoint(3810, 3048, 0);
 		int island = WorldPointUtil.packWorldPoint(3811, 3056, 0);
 
-		when(config.useAgilityShortcuts()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		PrimitiveIntHashMap<Transport[]> transports = pathfinderConfig.getTransports();
@@ -2544,7 +2544,7 @@ public class PathfinderTest
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
 
-		when(config.avoidWilderness()).thenReturn(true);
+		config.set("avoidWilderness", true);
 		setupInventory(new Item(ItemID.BURNING_AMULET_5, 1));
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
@@ -2568,8 +2568,8 @@ public class PathfinderTest
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
 
-		when(config.avoidWilderness()).thenReturn(false);
-		when(config.useTeleportationLevers()).thenReturn(true);
+		config.set("avoidWilderness", false);
+		config.set("useTeleportationLevers", true);
 		setupInventory();
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
@@ -2591,7 +2591,7 @@ public class PathfinderTest
 		int origin = WorldPointUtil.packWorldPoint(2485, 3080, 0);
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
 
-		when(config.avoidWilderness()).thenReturn(false);
+		config.set("avoidWilderness", false);
 		setupInventory(new Item(ItemID.BURNING_AMULET_5, 1));
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
@@ -2654,7 +2654,7 @@ public class PathfinderTest
 	{
 		// Shortest path for impossible charter ships has length 3 and goes
 		// via an intermediate charter ship and not directly with length 2
-		when(config.useCharterShips()).thenReturn(true);
+		config.set("useCharterShips", true);
 		setupInventory(new Item(ItemID.COINS, 1000000));
 
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
@@ -2712,7 +2712,7 @@ public class PathfinderTest
 	@Test
 	public void testLumbridgeDesertSteppingStoneCannotCrossOcean()
 	{
-		when(config.useAgilityShortcuts()).thenReturn(true);
+		config.set("useAgilityShortcuts", true);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		Pathfinder pathfinder = runPathfinder(
@@ -2795,7 +2795,7 @@ public class PathfinderTest
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
-		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
+		config.set("useTeleportationItems", useTeleportationItems);
 
 		pathfinderConfig.refresh();
 	}
@@ -2810,10 +2810,10 @@ public class PathfinderTest
 		when(client.getVarbitValue(any(Integer.class))).thenReturn(0);
 		when(client.getVarpValue(any(Integer.class))).thenReturn(0);
 		when(client.getVarpValue(888)).thenReturn(storedTimestamp);
-		when(config.calculationCutoff()).thenReturn(500);
-		when(config.useTeleportationMinigames()).thenReturn(true);
-		when(config.useTeleportationSpells()).thenReturn(false);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		config.set("calculationCutoff", 500);
+		config.set("useTeleportationMinigames", true);
+		config.set("useTeleportationSpells", false);
+		config.set("useTeleportationItems", TeleportationItem.NONE);
 
 		pathfinderConfig.refresh();
 	}
@@ -2835,7 +2835,7 @@ public class PathfinderTest
 
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(skillLevel);
-		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
+		config.set("useTeleportationItems", useTeleportationItems);
 		for (Map.Entry<Integer, Integer> entry : varbitValues.entrySet())
 		{
 			when(client.getVarbitValue(entry.getKey())).thenReturn(entry.getValue());
@@ -3172,8 +3172,8 @@ public class PathfinderTest
 		pathfinderConfig = new TestPathfinderConfig(client, config, questState, true, true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-		when(config.useTeleportationItems()).thenReturn(useTeleportationItems);
-		when(config.usePoh()).thenReturn(false);
+		config.set("useTeleportationItems", useTeleportationItems);
+		config.set("usePoh", false);
 		doReturn(bankItems).when(bank).getItems();
 		pathfinderConfig.setItemStateService(itemState);
 		itemState.noteBankContainer(bank);
@@ -3327,8 +3327,8 @@ public class PathfinderTest
 	@Test
 	public void auburnvaleToFeroxBanksAtAuburnvaleWhenColosseumGloryNotMet()
 	{
-		when(config.calculationCutoff()).thenReturn(500);
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("calculationCutoff", 500);
+		config.set("includeBankPath", true);
 		// Bank chest at Fortis Colosseum requires COLOSSEUM_GLORY &gt; 1999
 		when(client.getVarpValue(eq(VarPlayerID.COLOSSEUM_GLORY))).thenReturn(0);
 		setupConfigWithBank(new Item(ItemID.RING_OF_DUELING_8, 1));

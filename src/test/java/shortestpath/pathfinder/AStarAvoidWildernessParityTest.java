@@ -22,6 +22,7 @@ import net.runelite.api.gameval.InventoryID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
@@ -172,7 +173,7 @@ public class AStarAvoidWildernessParityTest
 	private static PathfinderConfig config(boolean avoidWilderness, boolean teleports)
 	{
 		Client client = mock(Client.class);
-		ShortestPathConfig settings = mock(ShortestPathConfig.class);
+		TestShortestPathConfig settings = new TestShortestPathConfig();
 		ItemContainer empty = mock(ItemContainer.class);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
@@ -181,12 +182,12 @@ public class AStarAvoidWildernessParityTest
 		doReturn(new Item[0]).when(empty).getItems();
 		doReturn(empty).when(client).getItemContainer(InventoryID.INV);
 		doReturn(empty).when(client).getItemContainer(InventoryID.WORN);
-		when(settings.calculationCutoff()).thenReturn(500);
-		when(settings.currencyThreshold()).thenReturn(10000000);
-		when(settings.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
-		when(settings.avoidWilderness()).thenReturn(avoidWilderness);
-		when(settings.useWildernessObelisks()).thenReturn(teleports);
-		when(settings.useTeleportationMinigames()).thenReturn(teleports);
+		settings.set("calculationCutoff", 500);
+		settings.set("currencyThreshold", 10000000);
+		settings.set("useTeleportationItems", TeleportationItem.NONE);
+		settings.set("avoidWilderness", avoidWilderness);
+		settings.set("useWildernessObelisks", teleports);
+		settings.set("useTeleportationMinigames", teleports);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
 		config.refresh();

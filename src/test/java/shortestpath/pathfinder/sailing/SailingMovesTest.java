@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
@@ -37,16 +38,15 @@ public class SailingMovesTest
 
 	@Mock
 	Client client;
-	@Mock
-	ShortestPathConfig config;
+	private TestShortestPathConfig config;
 	private PathfinderConfig pathfinderConfig;
 
 	@Before
 	public void before()
 	{
-		when(config.calculationCutoff()).thenReturn(30);
-		when(config.currencyThreshold()).thenReturn(10000000);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		config.set("calculationCutoff", 30);
+		config.set("currencyThreshold", 10000000);
+		config.set("useTeleportationItems", TeleportationItem.NONE);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
@@ -227,7 +227,7 @@ public class SailingMovesTest
 		// The Bank Boat at (2280, 2544) is a bank out at sea. With paths through a bank turned on, a walking search
 		// passing it would consider visiting it; a sailing search only sails, since bank visits and transports cost
 		// ticks rather than the distance sailed
-		when(config.includeBankPath()).thenReturn(true);
+		config.set("includeBankPath", true);
 		pathfinderConfig.refresh();
 		assertTrue(pathfinderConfig.bankAccessible(WorldPointUtil.packWorldPoint(2280, 2544, 0)));
 

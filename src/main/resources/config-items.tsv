@@ -1,0 +1,88 @@
+pathfinderAlgorithm	Pathfinder Algorithm	Algorithm used for pathfinding		
+avoidWilderness	Avoid Wilderness	Whether the wilderness should be avoided if possible<br>(otherwise, will e.g. use wilderness lever from Edgeville to Ardougne)		
+useAgilityShortcuts	Use Agility Shortcuts	Whether to include agility shortcuts in the path.<br>You must also have the required agility level		
+useGrappleShortcuts	Use Grapple Shortcuts	Whether to include crossbow grapple agility shortcuts in the path.<br>You must also have the required agility, ranged and strength levels		
+useBoats	Use Boats	Whether to include small boats in the path<br>(e.g. the boat to Fishing Platform)		
+useCanoes	Use Canoes	Whether to include canoes in the path		
+useCharterShips	Use Charter Ships	Whether to include charter ships in the path		
+useShips	Use Ships	Whether to include passenger ships in the path<br>(e.g. the customs ships to Karamja)		
+useFairyRings	Use Fairy Rings	Whether to include fairy rings in the path.<br>You must also have completed the required quests or miniquests		
+useGnomeGliders	Use Gnome Gliders	Whether to include gnome gliders in the path		
+useHotAirBalloons	Use Hot Air Balloons	Whether to include hot air balloons in the path		
+useMagicCarpets	Use Magic Carpets	Whether to include magic carpets in the path		
+useMagicMushtrees	Use Magic Mushtrees	Whether to include Fossil Island Magic Mushtrees in the path<br>(e.g. the Mycelium transport network from Verdant Valley to Mushroom Meadow)		
+useMinecarts	Use Minecarts	Whether to include minecarts in the path<br>(e.g. the Keldagrim and Lovakengj minecart networks)		
+useQuetzals	Use Quetzals	Whether to include quetzals in the path		
+useSpiritTrees	Use Spirit Trees	Whether to include spirit trees in the path		
+useTeleportationItems	Use Teleportation Items	Whether to include teleportation items from the player's inventory and equipment.<br>Options labelled (perm) only use permanent non-charge items.<br>The All options do not check skill, quest or item requirements.		
+useTeleportationLevers	Use Teleportation Levers	Whether to include teleportation levers in the path<br>(e.g. the lever from Edgeville to Wilderness)		
+useTeleportationPortals	Use Teleportation Portals	Whether to include teleportation portals in the path<br>(e.g. the portal from Ferox Enclave to Castle Wars)		
+useTeleportationSpells	Use Teleportation Spells	Whether to include teleportation spells in the path		
+useTeleportationSpellsHome	Use Home Teleport Spells	Whether to include Home Teleport spells in the path		
+useTeleportationMinigames	Use Teleportation To Minigames	Whether to include teleportation to minigames/activities/grouping in the path<br>(e.g. the Nightmare Zone minigame teleport). These teleports share a 20 minute cooldown.		
+useWildernessObelisks	Use Wilderness Obelisks	Whether to include wilderness obelisks in the path		
+useSeasonalTransports	Use Seasonal Transports	Whether to include seasonal transports like League teleports in the path		
+respawnPrifddinas	Prifddinas Respawn Point	Enable if your respawn point is Prifddinas.<br>The game does not expose the Prifddinas respawn to the client,<br>so the plugin cannot detect it automatically		
+unlockCanoeAxe	Axe Stored At A Canoe Station	Enable if you have stored an axe at a canoe station.<br>The game does not expose the stored axe to the client,<br>so the plugin cannot detect it automatically.<br>Enabling this declares the unlock without verification		
+unlockXericsHonour	Xeric's Honour Unlocked	Enable if you have used an ancient tablet on your Xeric's talisman.<br>The game does not expose the tablet unlock to the client,<br>so the plugin cannot detect it automatically.<br>Enabling this declares the unlock without verification		
+unlockDragontoothPassage	Dragontooth Island Free Passage	Enable if you have permanently unlocked free boat passage to Dragontooth Island<br>(the one-time Ghosts Ahoy reward paid to the ghost captain).<br>The game does not expose the unlock to the client,<br>so the plugin cannot detect it automatically.<br>Enabling this declares the unlock without verification		
+unlockMorUlRek	Mor Ul Rek Inner City Unlocked	Enable after showing a fire cape to a TzHaar-Ket guard to permanently unlock the inner city.<br>The plugin cannot currently detect this unlock automatically.<br>Once enabled, you do not need to carry a fire cape to use the hot vent doors		
+includeBankPath	Include Path To Bank	Whether to include the path to the closest bank<br>when suggesting teleports from the bank		
+currencyThreshold	Currency Threshold	The maximum amount of currency to use on a single transportation method.<br>The currencies affected by the threshold are coins, trading sticks, ecto-tokens and warrior guild tokens.		
+cancelInstead	Cancel Instead Of Recalculating	Whether the path should be cancelled rather than recalculated when the recalculate distance limit is exceeded		
+recalculateDistance	Recalculate Distance	Distance from the path the player should be for it to be recalculated (-1 for never)		
+finishDistance	Finish Distance	Distance from the target tile at which the path should be ended (-1 for never)		
+unreachableTargetDistanceThreshold	Unreachable Target Distance	Distance from the target at which a finished path is considered not to reach the target.<br>Useful for determining if a path is potentially invalid.		
+showUnreachableText	Show Unreachable Text	Whether to display text on the player tile when the destination cannot be reached		
+showTileCounter	Show Tile Counter	Whether to display the number of tiles travelled, number of tiles remaining or disable counting		
+tileCounterStep	Tile Counter Step	The number of tiles between the displayed tile counter numbers		
+calculationCutoff	Calculation Cutoff	The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>made towards the path target before the calculation will be stopped		
+aStarHeuristicWeight	A* Heuristic Weight	Makes the A* backend search faster at the price of a suboptimal route.<br>The route costs at most this percentage of the optimal route's cost:<br>100 always finds the optimal route, 300 may find one up to 3x as costly.		
+showTransportInfo	Show Transport Info	Whether to display transport destination hint info, e.g. which chat option and text to click		
+showBankPickupInfo	Show Transport Hint At Pickup	When standing at a bank on the path, also show the transport hint for the next step requiring an item pickup		
+highlightBankPickupItems	Highlight Bank Pickup Items	Highlight items in the bank that need to be picked up for the current path		
+highlightSpellbookSpells	Highlight Spellbook Spells	Highlight spells in the spellbook that need to be cast for the current path step		
+highlightInventoryItems	Highlight Inventory Items	Highlight items in the inventory and equipment that need to be used for the current path step		
+collisionAwareBlockedTargets	Collision-Aware Blocked Targets	When the target tile cannot be stood on, limit the fallback goal tiles to tiles<br>connected to it through the collision map (the same side of walls), instead of every<br>walkable tile within the unreachable target distance		
+useSailingMoves	Sail On Boats	While on a boat, find a path that sails the boat's 16 headings at its base speed<br>with its whole hull clear, and draw it in blue, instead of a walking path		
+usePoh	Enable POH Teleports	Master toggle for all Player-Owned House (POH) teleports.<br>When disabled, all POH transports are excluded regardless of individual settings below.		
+usePohFairyRing	POH Fairy Ring	Whether to include the POH fairy ring in the path.<br>Enable this if you have built a fairy ring in your house (85 Construction or boosted)		
+usePohSpiritTree	POH Spirit Tree	Whether to include the POH spirit tree in the path.<br>Enable this if you have built a spirit tree in your house (75 Construction, 83 Farming or boosted)		
+useTeleportationPortalsPoh				
+pohNexusPortals	POH Portal Nexus Teleports	Select the teleports available from your POH Portal Nexus		
+pohJewelleryBoxTier	POH Jewellery Box Tier	The tier of jewellery box built in your POH<br>(Basic: 1-9, Fancy: A-J, Ornate: K-R). Set to None to disable jewellery box.		
+pohMountedItems	POH Mounted Items	Select the mounted POH items available in your house		
+usePohMountedItems				
+usePohObelisk	POH Wilderness Obelisk	Whether to include the POH wilderness obelisk in the path.<br>Enable this if you have built an obelisk in your house (80 Construction or boosted)		
+costAgilityShortcuts	Agility Shortcut Threshold	How many extra tiles an agility shortcut must save<br>to be preferred over walking or other transports		
+costGrappleShortcuts	Grapple Shortcut Threshold	How many extra tiles a grapple shortcut must save<br>to be preferred over walking or other transports		
+costBoats	Boat Threshold	How many extra tiles a small boat must save<br>to be preferred over walking or other transports		
+costCanoes	Canoe Threshold	How many extra tiles a canoe must save<br>to be preferred over walking or other transports		
+costCharterShips	Charter Ship Threshold	How many extra tiles a charter ship must save<br>to be preferred over walking or other transports		
+costShips	Ship Threshold	How many extra tiles a passenger ship must save<br>to be preferred over walking or other transports		
+costFairyRings	Fairy Ring Threshold	How many extra tiles a fairy ring must save<br>to be preferred over walking or other transports		
+costGnomeGliders	Gnome Glider Threshold	How many extra tiles a gnome glider must save<br>to be preferred over walking or other transports		
+costHotAirBalloons	Hot Air Balloon Threshold	How many extra tiles a hot air balloon must save<br>to be preferred over walking or other transports		
+costMagicCarpets	Magic Carpets Threshold	How many extra tiles a magic carpet must save<br>to be preferred over walking or other transports		
+costMagicMushtrees	Magic Mushtrees Threshold	How many extra tiles a magic mushtree must save<br>to be preferred over walking or other transports		
+costMinecarts	Minecart Threshold	How many extra tiles a minecart must save<br>to be preferred over walking or other transports		
+costQuetzals	Quetzal Threshold	How many extra tiles a quetzal must save<br>to be preferred over walking or other transports		
+costQuetzalWhistle	Quetzal Whistle Threshold	How many extra tiles a quetzal whistle teleport must save<br>to be preferred over using a landing site		
+costSpiritTrees	Spirit Tree Threshold	How many extra tiles a spirit tree must save<br>to be preferred over walking or other transports		
+costNonConsumableTeleportationItems	Teleportation Item (Non-Consumable) Threshold	How many extra tiles a non-consumable (permanent) teleportation item<br>must save to be preferred over walking or other transports		
+costConsumableTeleportationItems	Teleportation Item (Consumable) Threshold	How many extra tiles a consumable (non-permanent) teleportation item<br>must save to be preferred over walking or other transports		
+costTeleportationBoxes	Teleportation Box Threshold	How many extra tiles a teleportation box must save<br>to be preferred over walking or other transports		
+costTeleportationLevers	Teleportation Lever Threshold	How many extra tiles a teleportation lever must save<br>to be preferred over walking or other transports		
+costTeleportationPortals	Teleportation Portal Threshold	How many extra tiles a teleportation portal (including POH<br>nexus portals) must save to be preferred over walking or<br>other transports		
+costTeleportationSpells	Teleportation Spell Threshold	How many extra tiles a teleportation spell must save<br>to be preferred over walking or other transports		
+costTeleportationSpellsHome	Home Teleport Spell Threshold	How many extra tiles a Home Teleport spell must save<br>to be preferred over walking or other transports		
+costTeleportationMinigames	Teleportation To Minigame Threshold	How many extra tiles a minigame teleport must save<br>to be preferred over walking or other transports		
+costWildernessObelisks	Wilderness Obelisk Threshold	How many extra tiles a wilderness obelisk must save<br>to be preferred over walking or other transports		
+costSeasonalTransports	Seasonal Transport Threshold	How many extra tiles a seasonal transport must save<br>to be preferred over walking or other transports		
+costBankVisit	Bank Visit Threshold	How many extra tiles fetching a teleport item from your bank must save<br>to be preferred over options already at hand (0 treats banking as free)		
+unreachableText		Text shown on the player tile when the destination cannot be reached		
+builtTeleportationBoxes		ID=X Y Z;ID=X Y Z;ID=X Y Z		
+builtTeleportationPortalsPoh		ID=X Y Z;ID=X Y Z;ID=X Y Z		
+blockedTeleportItems	Blocked Teleport Items	Internal: comma-separated restricted teleport item ids and per-item threshold overrides (id or id:tiles). Managed by the Shortest Path sidebar.		
+unlockBalloonLogBasket	Balloon Log Basket Stocked	Enable if you have stored logs in the balloon transport baskets.<br>The game does not expose the stored logs to the client,<br>so the plugin cannot detect them automatically.<br>Enabling this declares the unlock without verification		
+balloonLogBasketRoutes	Balloon Log Basket Routes	The balloon routes whose destination basket is stocked with logs.<br>The game does not expose the stored logs to the client,<br>so the plugin cannot detect them automatically.<br>Managed by the Shortest Path sidebar; defaults to every route<br>when the legacy basket toggle is set, and to none otherwise		

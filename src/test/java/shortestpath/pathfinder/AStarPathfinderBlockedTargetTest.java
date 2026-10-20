@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.Destination;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.RoutingCuts;
 import shortestpath.settings.TeleportationItem;
@@ -45,8 +46,7 @@ public class AStarPathfinderBlockedTargetTest
 
 	@Mock
 	Client client;
-	@Mock
-	ShortestPathConfig config;
+	private TestShortestPathConfig config;
 	private PathfinderConfig pathfinderConfig;
 
 	@BeforeClass
@@ -62,17 +62,17 @@ public class AStarPathfinderBlockedTargetTest
 	@Before
 	public void before()
 	{
-		when(config.calculationCutoff()).thenReturn(30);
-		when(config.collisionAwareBlockedTargets()).thenReturn(true);
+		config.set("calculationCutoff", 30);
+		config.set("collisionAwareBlockedTargets", true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		config.set("useTeleportationItems", TeleportationItem.NONE);
 	}
 
 	private void setup(int unreachableDistance)
 	{
-		when(config.unreachableTargetDistance()).thenReturn(unreachableDistance);
+		config.set("unreachableTargetDistanceThreshold", unreachableDistance);
 		pathfinderConfig = new TestPathfinderConfig(client, config, net.runelite.api.QuestState.FINISHED, true, true);
 		pathfinderConfig.refresh();
 	}
@@ -236,7 +236,7 @@ public class AStarPathfinderBlockedTargetTest
 		// the goal set: the Port Sarim jetty target's ring 1 holds only tiles on
 		// the far side, which legacy mode accepts and aware mode rejects.
 		final int radius = 6;
-		when(config.collisionAwareBlockedTargets()).thenReturn(false);
+		config.set("collisionAwareBlockedTargets", false);
 		setup(radius);
 		CollisionMap map = pathfinderConfig.getMap();
 		int start = WorldPointUtil.packWorldPoint(3200, 3330, 0);

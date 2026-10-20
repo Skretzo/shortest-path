@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
@@ -46,17 +47,16 @@ public class BoatHullTest
 
 	@Mock
 	Client client;
-	@Mock
-	ShortestPathConfig config;
+	private TestShortestPathConfig config;
 	private PathfinderConfig pathfinderConfig;
 	private CollisionMap map;
 
 	@Before
 	public void before()
 	{
-		when(config.calculationCutoff()).thenReturn(30);
-		when(config.currencyThreshold()).thenReturn(10000000);
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		config.set("calculationCutoff", 30);
+		config.set("currencyThreshold", 10000000);
+		config.set("useTeleportationItems", TeleportationItem.NONE);
 		when(client.getDBTableRows(DBTableID.Quest.ID)).thenReturn(List.of());
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
@@ -181,7 +181,7 @@ public class BoatHullTest
 		// A target on the shipwreck is blocked, and with the unreachable distance at 0 it resolves to
 		// no goal tiles: a walking search is skipped outright, but a sailing search still runs — its
 		// hull covering the target doesn't need a walkable goal tile
-		when(config.unreachableTargetDistance()).thenReturn(0);
+		config.set("unreachableTargetDistanceThreshold", 0);
 		pathfinderConfig.refresh();
 		int start = WorldPointUtil.packWorldPoint(2705, 3044, 0);
 		int target = WorldPointUtil.packWorldPoint(2705, 3050, 0);

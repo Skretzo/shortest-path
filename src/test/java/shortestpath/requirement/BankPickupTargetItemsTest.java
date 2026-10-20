@@ -151,8 +151,7 @@ public class BankPickupTargetItemsTest
 		PathfinderConfig config = mock(PathfinderConfig.class);
 		when(config.getTransportAvailability(anyBoolean())).thenReturn(TransportAvailabilityFixture.of());
 		when(config.getUnlocks()).thenReturn(Set.of());
-		when(config.getEligibility()).thenReturn(
-			TransportEligibility.forPlayerAndBank(Map.of(), Map.of(ItemID.SPADE, 1), -1, Map.of()));
+		when(config.getEligibility()).thenReturn(TransportEligibility.forPlayerAndBank(Map.of(), Map.of(ItemID.SPADE, 1), -1, Map.of()));
 		TransportItems spade = needs(anyOf(Map.of(ItemID.SPADE, 1)));
 		List<PathStep> path = List.of(new PathStep(BANK_TILE, false), new PathStep(BANK_TILE, true),
 			new PathStep(NEXT_TILE, true), new PathStep(TARGET, true));

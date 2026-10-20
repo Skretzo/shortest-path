@@ -25,6 +25,7 @@ import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.spirittree.SpiritTreeService;
+import shortestpath.settings.ConfigKey;
 import shortestpath.settings.EffectiveConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
@@ -388,51 +389,52 @@ public class PathfinderConfig
 		// read below draws from this snapshot, so a republish landing
 		// mid-refresh cannot mix fields from two publications.
 		EffectiveConfig effective = settings.effective();
-		pathfinderBackend = config.pathfinderBackend();
+		pathfinderBackend = (PathfinderBackend) settings.configuredValue("pathfinderAlgorithm");
 		long evaluationTimeMinutes = currentTimeMinutes();
-		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
-		unreachableTargetDistance = effective.unreachableTargetDistance();
-		collisionAwareBlockedTargets = effective.collisionAwareBlockedTargets();
+		calculationCutoffMillis = (long) ((Number) settings.configuredValue("calculationCutoff")).intValue() * Constants.GAME_TICK_LENGTH;
+		unreachableTargetDistance = effective.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
+		collisionAwareBlockedTargets = effective.bool(ConfigKey.COLLISION_AWARE_BLOCKED_TARGETS);
 		// @Range only bounds the config panel, so also clamp overrides to the same 100-300% range.
 		aStarHeuristicWeight = Math.max(100, Math.min(300,
-			effective.aStarHeuristicWeight())) / 100.0;
-		avoidWilderness = effective.avoidWilderness();
-		usePoh = effective.usePoh();
+			effective.num(ConfigKey.A_STAR_HEURISTIC_WEIGHT))) / 100.0;
+		avoidWilderness = effective.bool(ConfigKey.AVOID_WILDERNESS);
+		usePoh = effective.bool(ConfigKey.USE_POH);
 		leagueModeState.refresh(playerStateSource);
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
 		// POH-specific settings
-		usePohFairyRing = effective.usePohFairyRing();
-		usePohSpiritTree = effective.usePohSpiritTree();
-		usePohObelisk = effective.usePohObelisk();
-		enabledPohNexusPortals = Set.copyOf(config.pohNexusPortals());
-		Set<PohMountedItem> pohMountedItems = config.pohMountedItems();
+		usePohFairyRing = effective.bool(ConfigKey.USE_POH_FAIRY_RING);
+		usePohSpiritTree = effective.bool(ConfigKey.USE_POH_SPIRIT_TREE);
+		usePohObelisk = effective.bool(ConfigKey.USE_POH_OBELISK);
+		Set<PohNexusPortal> pohNexusPortals = (Set<PohNexusPortal>) settings.configuredValue("pohNexusPortals");
+		enabledPohNexusPortals = pohNexusPortals == null ? Set.of() : Set.copyOf(pohNexusPortals);
+		Set<PohMountedItem> pohMountedItems = (Set<PohMountedItem>) settings.configuredValue("pohMountedItems");
 		enabledPohMountedItems = pohMountedItems == null ? Set.of() : Set.copyOf(pohMountedItems);
 		pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
-		currencyThreshold = effective.currencyThreshold();
+		currencyThreshold = effective.num(ConfigKey.CURRENCY_THRESHOLD);
 		// Banked teleport items are only usable from the bankVisited path state, so a
 		// mode that collects bank contents must also enable bank-path traversal —
 		// otherwise the banked items are gathered but can never be offered.
 		TeleportationItem teleportationItemSetting = transportTypeConfig.getTeleportationItemSetting();
-		includeBankPath = effective.includeBankPath()
+		includeBankPath = effective.bool(ConfigKey.INCLUDE_BANK_PATH)
 			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
 			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
-		respawnPrifddinas = effective.respawnPrifddinas();
+		respawnPrifddinas = effective.bool(ConfigKey.RESPAWN_PRIFDDINAS);
 
 		// Unlocks come from detected account state or config declarations.
 		Set<Unlock> declaredUnlocks = EnumSet.noneOf(Unlock.class);
-		if (effective.unlockCanoeAxe())
+		if (effective.bool(ConfigKey.UNLOCK_CANOE_AXE))
 		{
 			declaredUnlocks.add(Unlock.CANOE_AXE);
 		}
-		if (effective.unlockXericsHonour())
+		if (effective.bool(ConfigKey.UNLOCK_XERICS_HONOUR))
 		{
 			declaredUnlocks.add(Unlock.XERICS_HONOUR);
 		}
-		if (effective.unlockDragontoothPassage())
+		if (effective.bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE))
 		{
 			declaredUnlocks.add(Unlock.DRAGONTOOTH);
 		}
@@ -440,15 +442,54 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.KARAMJA_ELITE);
 		}
-		if (effective.unlockMorUlRek())
+		if (effective.bool(ConfigKey.UNLOCK_MOR_UL_REK))
 		{
 			declaredUnlocks.add(Unlock.MOR_UL_REK);
 		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
+		// The basket unlock is per balloon route: the configured
+		// balloonLogBasketRoutes set becomes the packed destinations the
+		// eligibility snapshot grants Unlock.BALLOON_LOG_BASKET to — never a
+		// global declared unlock. An unwritten key reads the legacy
+		// unlockBalloonLogBasket flag's default (all six or none).
+		Set<BalloonRoute> basketRoutes = effective.balloonLogBasketRoutes();
+		Set<Integer> basketDests = new HashSet<>();
+		if (basketRoutes != null)
+		{
+			for (BalloonRoute route : basketRoutes)
+			{
+				basketDests.add(route.getPackedDestination());
+			}
+		}
+		balloonLogBasketDestinations = Set.copyOf(basketDests);
+
+		// Player-declared per-item restrictions: a bare id blocks the item from
+		// routing entirely, while id:N pins the tiles-saved threshold used to
+		// price transports that reference the id. A rep@dest record blocks the
+		// option of the family that representative id heads — the engine-facing
+		// set holds the option's whole label-group destination set, expanded
+		// here so a blocked option suppresses every tile variant it covers.
+		// The map is frozen deep so the refresh snapshot can never observe a
+		// later config edit through a shared inner set.
+		Set<Integer> blockedItems = new HashSet<>();
+		Map<Integer, Integer> thresholdOverrides = new HashMap<>();
+		Map<Integer, Set<Integer>> optionBlocks = new HashMap<>();
+		TeleportRestriction.parseBlocked((String) settings.configuredValue("blockedTeleportItems"), blockedItems,
+			thresholdOverrides, optionBlocks);
+		blockedItemIds = Set.copyOf(blockedItems);
+		itemThresholdOverrides = Map.copyOf(thresholdOverrides);
+		Map<Integer, Set<Integer>> frozenOptionBlocks = new HashMap<>();
+		for (Map.Entry<Integer, Set<Integer>> entry
+			: TeleportRestriction.expandOptionDests(optionBlocks).entrySet())
+		{
+			frozenOptionBlocks.put(entry.getKey(), Set.copyOf(entry.getValue()));
+		}
+		blockedOptionDests = Map.copyOf(frozenOptionBlocks);
+
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
-		costConsumableTeleportationItems = effective.costConsumableTeleportationItems();
-		bankVisitCost = effective.costBankVisit();
+		costConsumableTeleportationItems = effective.num(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS);
+		bankVisitCost = effective.num(ConfigKey.COST_BANK_VISIT);
 
 		// Reset sailing state every refresh: a stale varbit read (e.g. after logging out aboard a
 		// boat) must not keep the search sailing when there is no boat
@@ -457,8 +498,8 @@ public class PathfinderConfig
 		sailingSpeed = SailingMoves.ESTIMATED_SPEED;
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
-			isOnSailingBoat = playerStateSource.varbit(VarbitID.SAILING_BOARDED_BOAT) != 0;
-			sailingMoves = isOnSailingBoat && effective.useSailingMoves();
+			SailingState sailingState = sailing.getState();
+			sailingMoves = sailingState.isAboard() && effective.bool(ConfigKey.USE_SAILING_MOVES);
 			// The game stores the base speed in 1/128ths of a tile per tick; a read above any real
 			// boat's speed is a stale or mis-scaled varbit rather than a fast boat — the moves it
 			// would build are so long nothing can sail them — so estimate instead
@@ -581,9 +622,9 @@ public class PathfinderConfig
 	 */
 	public int getDifferentialCost(Transport transport)
 	{
-		if (transport.getType().differentialCostFunction() != null)
+		if (transport.getType().differentialCostKey() != null)
 		{
-			return transport.getType().differentialCostFunction().apply(config);
+			return (Integer) settings.configuredValue(transport.getType().differentialCostKey());
 		}
 		return 0;
 	}

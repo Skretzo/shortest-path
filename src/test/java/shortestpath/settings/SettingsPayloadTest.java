@@ -34,7 +34,7 @@ public class SettingsPayloadTest
 		assertFalse("held view snapshot keeps the old value", before.includeBankPath());
 		assertTrue(settings.bank().includeBankPath());
 		assertEquals(9, settings.bank().costBankVisit());
-		assertTrue(settings.effective().includeBankPath());
+		assertTrue(settings.effective().bool(ConfigKey.INCLUDE_BANK_PATH));
 		assertNotSame(before, settings.bank());
 	}
 
@@ -58,7 +58,7 @@ public class SettingsPayloadTest
 
 		assertTrue(settings.rawOverrides().isEmpty());
 		assertFalse(settings.bank().includeBankPath());
-		assertEquals(stub.avoidWilderness(), settings.effective().avoidWilderness());
+		assertEquals(stub.avoidWilderness(), settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class SettingsPayloadTest
 		payload.put("includeBankPath", true);
 
 		assertFalse("post-apply mutations of the caller map must not leak in",
-			settings.effective().includeBankPath());
+			settings.effective().bool(ConfigKey.INCLUDE_BANK_PATH));
 		assertFalse(settings.rawOverrides().containsKey("includeBankPath"));
 	}
 
@@ -110,7 +110,7 @@ public class SettingsPayloadTest
 		settings.applyOverrides(null);
 
 		assertSame("empty payloads must not republish", before, settings.display());
-		assertFalse(settings.effective().avoidWilderness());
+		assertFalse(settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 		assertEquals(Map.of("avoidWilderness", false), settings.rawOverrides());
 	}
 
@@ -121,9 +121,9 @@ public class SettingsPayloadTest
 		Settings settings = Settings.wrap(stub);
 		settings.applyOverrides(Map.of("notARealKey", true));
 
-		assertEquals(stub.avoidWilderness(), settings.effective().avoidWilderness());
-		assertEquals(stub.includeBankPath(), settings.effective().includeBankPath());
-		assertEquals(stub.currencyThreshold(), settings.effective().currencyThreshold());
+		assertEquals(stub.avoidWilderness(), settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
+		assertEquals(stub.includeBankPath(), settings.effective().bool(ConfigKey.INCLUDE_BANK_PATH));
+		assertEquals(stub.currencyThreshold(), settings.effective().num(ConfigKey.CURRENCY_THRESHOLD));
 		assertEquals(stub.useTeleportationItems(), settings.effective().useTeleportationItems());
 	}
 }
