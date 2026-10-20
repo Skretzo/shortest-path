@@ -140,6 +140,40 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		extras.put(keyName, v);
 	}
 
+
+	/**
+	 * Baseline-seed every opt-in routing flag to {@code false} — the state
+	 * the old {@code @Mock} config presented (unstubbed booleans read
+	 * {@code false}). Scenario tests that assume transports are off unless
+	 * explicitly enabled call this before their own {@code set}s. Display
+	 * and lifecycle flags are untouched so their declared defaults stay.
+	 */
+	public void disableTransportToggles()
+	{
+		for (String key : new String[]{
+			"avoidWilderness", "includeBankPath", "respawnPrifddinas",
+			"useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes",
+			"useCharterShips", "useShips", "useFairyRings", "useGnomeGliders",
+			"useHotAirBalloons", "useMagicCarpets", "useMagicMushtrees",
+			"useMinecarts", "useQuetzals", "useSpiritTrees",
+			"useTeleportationLevers", "useTeleportationPortals",
+			"useTeleportationSpells", "useTeleportationSpellsHome",
+			"useTeleportationMinigames", "useWildernessObelisks",
+			"useSeasonalTransports", "useSailingMoves",
+			"usePoh", "usePohFairyRing", "usePohSpiritTree",
+			"useTeleportationPortalsPoh", "usePohMountedItems", "usePohObelisk",
+			"unlockCanoeAxe", "unlockXericsHonour", "unlockDragontoothPassage",
+			"unlockMorUlRek", "unlockBalloonLogBasket"})
+		{
+			set(key, false);
+		}
+		// Numeric keys whose mock default was 0 rather than the declared
+		// default — reached-expansion and the whistle differential priced
+		// routes differently under the old suite.
+		set("unreachableTargetDistanceThreshold", 0);
+		set("costQuetzalWhistle", 0);
+	}
+
 	public Object value(String keyName)
 	{
 		if (extras.containsKey(keyName))
@@ -191,8 +225,11 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 	 */
 	private Object def(String keyName)
 	{
+		// Mirrors Settings.keyedBase: the declared default runs on the same
+		// resolver, so flag-derived defaults see the flag's own default.
 		Object value = value(keyName);
-		return value != null ? value : ConfigKey.forKey(keyName).resolveDefault(row -> value(row.getKey()));
+		return value != null ? value
+			: ConfigKey.forKey(keyName).resolveDefault(row -> def(row.getKey()));
 	}
 
 	public TeleportationItem useTeleportationItems()

@@ -77,33 +77,23 @@ final class PluginApiHarness implements AutoCloseable
 		int calculationCutoff = 50;
 
 		@Override
-		public PathfinderBackend pathfinderBackend()
+		public Object value(String keyName)
 		{
-			return selectedBackend;
-		}
-
-		@Override
-		public boolean includeBankPath()
-		{
-			return includeBankPath;
-		}
-
-		@Override
-		public int costBankVisit()
-		{
-			return costBankVisit;
-		}
-
-		@Override
-		public TeleportationItem useTeleportationItems()
-		{
-			return teleportationItems;
-		}
-
-		@Override
-		public int calculationCutoff()
-		{
-			return calculationCutoff;
+			switch (keyName)
+			{
+				case "pathfinderAlgorithm":
+					return selectedBackend;
+				case "includeBankPath":
+					return includeBankPath;
+				case "costBankVisit":
+					return costBankVisit;
+				case "useTeleportationItems":
+					return teleportationItems;
+				case "calculationCutoff":
+					return calculationCutoff;
+				default:
+					return super.value(keyName);
+			}
 		}
 	}
 

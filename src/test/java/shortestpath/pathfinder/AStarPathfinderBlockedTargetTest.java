@@ -46,7 +46,7 @@ public class AStarPathfinderBlockedTargetTest
 
 	@Mock
 	Client client;
-	private TestShortestPathConfig config;
+	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private PathfinderConfig pathfinderConfig;
 
 	@BeforeClass

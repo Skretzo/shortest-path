@@ -38,7 +38,7 @@ public class SailingMovesTest
 
 	@Mock
 	Client client;
-	private TestShortestPathConfig config;
+	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private PathfinderConfig pathfinderConfig;
 
 	@Before

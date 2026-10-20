@@ -41,8 +41,7 @@ public class PathfinderConfigItemQuantitiesTest
 
 	@Mock
 	private Client client;
-	@Mock
-	private TestShortestPathConfig config;
+		private TestShortestPathConfig config = new TestShortestPathConfig();
 	@Mock
 	private ItemContainer inventory;
 	@Mock

@@ -47,7 +47,7 @@ public class BoatHullTest
 
 	@Mock
 	Client client;
-	private TestShortestPathConfig config;
+	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private PathfinderConfig pathfinderConfig;
 	private CollisionMap map;
 

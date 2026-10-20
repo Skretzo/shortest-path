@@ -152,9 +152,9 @@ public class GoalStatesTest
 		boolean avoidWilderness = true;
 
 		@Override
-		public boolean avoidWilderness()
+		public Object value(String keyName)
 		{
-			return avoidWilderness;
+			return "avoidWilderness".equals(keyName) ? avoidWilderness : super.value(keyName);
 		}
 	}
 }

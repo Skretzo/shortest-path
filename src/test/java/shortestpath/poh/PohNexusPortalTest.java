@@ -66,9 +66,9 @@ public class PohNexusPortalTest
 		TestShortestPathConfig legacyEnabled = new TestShortestPathConfig()
 		{
 			@Override
-			public boolean useTeleportationPortalsPoh()
+			public Object value(String keyName)
 			{
-				return true;
+				return "useTeleportationPortalsPoh".equals(keyName) ? true : super.value(keyName);
 			}
 		};
 		assertEquals(new HashSet<>(PohNexusPortal.values()), legacyEnabled.pohNexusPortals());

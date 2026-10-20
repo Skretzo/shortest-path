@@ -27,8 +27,7 @@ public class PathfinderConfigSeasonalTest
 
 	@Mock
 	private Client client;
-	@Mock
-	private TestShortestPathConfig config;
+		private TestShortestPathConfig config = new TestShortestPathConfig();
 
 	private PathfinderConfig pathfinderConfig;
 

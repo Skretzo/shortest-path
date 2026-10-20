@@ -64,6 +64,8 @@ public class RoutingKeyParityTest
 		Paths.get("src/main/java/shortestpath/transport/TransportTypeConfig.java");
 	private static final Path SHORTEST_PATH_CONFIG =
 		Paths.get("src/main/java/shortestpath/ShortestPathConfig.java");
+	private static final Path CONFIG_KEY =
+		Paths.get("src/main/java/shortestpath/settings/ConfigKey.java");
 
 	/** Identifier call sites — {@code name(} — inside a method body. */
 	private static final Pattern CALL = Pattern.compile("([A-Za-z_$][\\w$]*)\\s*\\(");
@@ -85,6 +87,22 @@ public class RoutingKeyParityTest
 	/** {@code settings.coerce<Kind>("<key>", ...)} override-aware reads. */
 	private static final Pattern COERCE_READ =
 		Pattern.compile("coerce\\w+\\s*\\(\\s*\"([^\"]+)\"");
+	/** {@code settings.configuredValue/Bool/Set("<key>")} raw keyed reads. */
+	private static final Pattern KEYED_READ =
+		Pattern.compile("configured(?:Value|Bool|Set)\\s*\\(\\s*\"([^\"]+)\"");
+	/**
+	 * {@code effective.bool/num/str/val/set(ConfigKey.X)} — the typed helper
+	 * reads refresh uses for hidden keys.
+	 */
+	private static final Pattern EFFECTIVE_KEYED =
+		Pattern.compile("(?:^|[^\\w$])effective\\s*(?:\\(\\s*\\))?\\s*\\.\\s*(?:bool|num|str|val|set)\\s*\\(\\s*ConfigKey\\.([A-Z_]+)");
+	/**
+	 * {@code ConfigKey.forKey("<key>")} references inside {@code ConfigKey}
+	 * default lambdas — the flagged/derived reads a keyed value performs
+	 * when its own row resolves.
+	 */
+	private static final Pattern FORKEY_READ =
+		Pattern.compile("forKey\\s*\\(\\s*\"([^\"]+)\"");
 	/** Keywords whose {@code name(} is never a method declaration. */
 	private static final Set<String> CONTROL_TOKENS = Set.of(
 		"if", "for", "while", "switch", "catch", "try", "do", "else",
@@ -149,6 +167,16 @@ public class RoutingKeyParityTest
 				{
 					keys.add(coerce.group(1));
 				}
+				Matcher keyed = KEYED_READ.matcher(body);
+				while (keyed.find())
+				{
+					keys.add(keyed.group(1));
+				}
+				Matcher effKeyed = EFFECTIVE_KEYED.matcher(body);
+				while (effKeyed.find())
+				{
+					keys.add(ConfigKey.valueOf(effKeyed.group(1)).getKey());
+				}
 				enabledDriven |= body.contains("getEnabledKey()")
 					|| body.contains("getEnabledGetter()");
 				costDriven |= body.contains("getCostKey()")
@@ -177,6 +205,14 @@ public class RoutingKeyParityTest
 				continue;
 			}
 			String key = methodToKey.get(method);
+			if (key == null)
+			{
+				// Hidden keys have no method on the interface — a named
+				// effective read (balloonLogBasketRoutes etc.) resolves
+				// straight to the key of the same name.
+				ConfigKey row = ConfigKey.forKey(method);
+				key = row == null ? null : row.getKey();
+			}
 			if (key != null)
 			{
 				keys.add(key);
@@ -214,8 +250,18 @@ public class RoutingKeyParityTest
 				if (type.getCostKey() != null)
 				{
 					keys.add(type.getCostKey());
+					// The threshold base may pair with a shared row
+					// (costQuetzalWhistle reads costQuetzals).
+					keys.add(ConfigKey.forKey(type.getCostKey()).baseRow().getKey());
 				}
 			}
+		}
+		// Keys a default lambda resolves transitively (the flag reads inside
+		// the flag-derived set defaults).
+		Matcher derived = FORKEY_READ.matcher(readSource(CONFIG_KEY));
+		while (derived.find())
+		{
+			keys.add(derived.group(1));
 		}
 		return keys;
 	}

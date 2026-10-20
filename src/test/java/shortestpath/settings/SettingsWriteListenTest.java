@@ -276,9 +276,9 @@ public class SettingsWriteListenTest
 		TestShortestPathConfig config = new TestShortestPathConfig()
 		{
 			@Override
-			public Set<PohNexusPortal> pohNexusPortals()
+			public Object value(String keyName)
 			{
-				return portals;
+				return "pohNexusPortals".equals(keyName) ? portals : super.value(keyName);
 			}
 		};
 		Settings settings = Settings.wrap(config);

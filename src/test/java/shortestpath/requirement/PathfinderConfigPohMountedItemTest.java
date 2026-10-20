@@ -57,9 +57,9 @@ public class PathfinderConfigPohMountedItemTest
 		TestShortestPathConfig legacyDisabled = new TestShortestPathConfig()
 		{
 			@Override
-			public boolean usePohMountedItems()
+			public Object value(String keyName)
 			{
-				return false;
+				return "usePohMountedItems".equals(keyName) ? false : super.value(keyName);
 			}
 		};
 		assertTrue(legacyDisabled.pohMountedItems().isEmpty());

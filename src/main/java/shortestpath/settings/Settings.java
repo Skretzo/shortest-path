@@ -321,7 +321,9 @@ public class Settings
 					configManager.getConfiguration(CONFIG_GROUP, row.getKey()), row.getElement())
 				: configManager.getConfiguration(CONFIG_GROUP, row.getKey(), row.getType());
 		}
-		else if (configured instanceof KeyedValues)
+		// On harness seams the configured object supplies values the manager
+		// does not have (an unwritten key reads as null through a mock).
+		if (value == null && configured instanceof KeyedValues)
 		{
 			value = ((KeyedValues) configured).value(row.getKey());
 		}

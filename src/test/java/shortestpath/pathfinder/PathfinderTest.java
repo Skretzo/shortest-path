@@ -72,13 +72,15 @@ public class PathfinderTest
 	ItemContainer equipment;
 	@Mock
 	ItemContainer bank;
-	private TestShortestPathConfig config;
+	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private PathfinderConfig pathfinderConfig;
 	private final ItemStateService itemState = ItemStateService.forTesting();
 
 	@Before
 	public void before()
 	{
+		// Mock-parity baseline: transports are opt-in unless a test sets them.
+		config.disableTransportToggles();
 		config.set("calculationCutoff", 30);
 		config.set("currencyThreshold", 10000000);
 		config.set("collisionAwareBlockedTargets", true);

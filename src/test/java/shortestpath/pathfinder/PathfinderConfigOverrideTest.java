@@ -28,8 +28,7 @@ public class PathfinderConfigOverrideTest
 {
 	@Mock
 	private Client client;
-	@Mock
-	private TestShortestPathConfig config;
+		private TestShortestPathConfig config = new TestShortestPathConfig();
 
 	private Settings settings;
 	private PathfinderConfig pathfinderConfig;
