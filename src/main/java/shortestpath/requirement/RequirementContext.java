@@ -50,7 +50,7 @@ public final class RequirementContext
 {
 	@Getter
 	private final long evaluationTimeMinutes;
-	private final SkillLevels boostedSkillLevelsAndMore;
+	@Getter private final SkillLevels boostedSkillLevelsAndMore;
 	@Getter
 	private final int currentMaxQuestPoints;
 	@Getter
@@ -219,11 +219,4 @@ public final class RequirementContext
 			{
 			}
 		}
-	}
-
-
-	public SkillLevels getBoostedSkillLevelsAndMore()
-	{
-		return boostedSkillLevelsAndMore;
-	}
 }
