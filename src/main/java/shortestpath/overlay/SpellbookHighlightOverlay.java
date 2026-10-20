@@ -2,6 +2,9 @@ package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.BasicStroke;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -28,55 +31,25 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 
 	static
 	{
-		// Standard spellbook
-		SPELL_WIDGET_IDS.put("Lumbridge Home Teleport", InterfaceID.MagicSpellbook.TELEPORT_HOME_STANDARD);
-		SPELL_WIDGET_IDS.put("Varrock Teleport", InterfaceID.MagicSpellbook.VARROCK_TELEPORT);
-		SPELL_WIDGET_IDS.put("Varrock Teleport: GE", InterfaceID.MagicSpellbook.VARROCK_TELEPORT);
-		SPELL_WIDGET_IDS.put("Lumbridge Teleport", InterfaceID.MagicSpellbook.LUMBRIDGE_TELEPORT);
-		SPELL_WIDGET_IDS.put("Falador Teleport", InterfaceID.MagicSpellbook.FALADOR_TELEPORT);
-		SPELL_WIDGET_IDS.put("Teleport to House", InterfaceID.MagicSpellbook.TELEPORT_TO_YOUR_HOUSE);
-		SPELL_WIDGET_IDS.put("Teleport to House (Outside)", InterfaceID.MagicSpellbook.TELEPORT_TO_YOUR_HOUSE);
-		SPELL_WIDGET_IDS.put("Camelot Teleport", InterfaceID.MagicSpellbook.CAMELOT_TELEPORT);
-		SPELL_WIDGET_IDS.put("Camelot Teleport: Seers'", InterfaceID.MagicSpellbook.CAMELOT_TELEPORT);
-		SPELL_WIDGET_IDS.put("Kourend Castle Teleport", InterfaceID.MagicSpellbook.KOUREND_TELEPORT);
-		SPELL_WIDGET_IDS.put("Ardougne Teleport", InterfaceID.MagicSpellbook.ARDOUGNE_TELEPORT);
-		SPELL_WIDGET_IDS.put("Civitas illa Fortis Teleport", InterfaceID.MagicSpellbook.FORTIS_TELEPORT);
-		SPELL_WIDGET_IDS.put("Watchtower Teleport", InterfaceID.MagicSpellbook.WATCHTOWER_TELEPORT);
-		SPELL_WIDGET_IDS.put("Watchtower Teleport: Yanille", InterfaceID.MagicSpellbook.WATCHTOWER_TELEPORT);
-		SPELL_WIDGET_IDS.put("Trollheim Teleport", InterfaceID.MagicSpellbook.TROLLHEIM_TELEPORT);
-		SPELL_WIDGET_IDS.put("Ape Atoll Teleport", InterfaceID.MagicSpellbook.APE_TELEPORT);
-		// Ancient (Zaros) spellbook
-		SPELL_WIDGET_IDS.put("Edgeville Home Teleport", InterfaceID.MagicSpellbook.TELEPORT_HOME_ZAROS);
-		SPELL_WIDGET_IDS.put("Paddewwa Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT1);
-		SPELL_WIDGET_IDS.put("Senntisten Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT2);
-		SPELL_WIDGET_IDS.put("Kharyrll Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT3);
-		SPELL_WIDGET_IDS.put("Lassar Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT4);
-		SPELL_WIDGET_IDS.put("Dareeyak Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT5);
-		SPELL_WIDGET_IDS.put("Carrallanger Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT6);
-		SPELL_WIDGET_IDS.put("Annakarl Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT7);
-		SPELL_WIDGET_IDS.put("Ghorrock Teleport", InterfaceID.MagicSpellbook.ZAROSTELEPORT8);
-		// Lunar spellbook
-		SPELL_WIDGET_IDS.put("Lunar Home Teleport", InterfaceID.MagicSpellbook.TELEPORT_HOME_LUNAR);
-		SPELL_WIDGET_IDS.put("Moonclan Teleport", InterfaceID.MagicSpellbook.TELE_MOONCLAN);
-		SPELL_WIDGET_IDS.put("Waterbirth Teleport", InterfaceID.MagicSpellbook.TELE_WATERBIRTH);
-		SPELL_WIDGET_IDS.put("Barbarian Teleport", InterfaceID.MagicSpellbook.TELE_BARB_OUT);
-		SPELL_WIDGET_IDS.put("Khazard Teleport", InterfaceID.MagicSpellbook.TELE_KHAZARD);
-		SPELL_WIDGET_IDS.put("Fishing Guild Teleport", InterfaceID.MagicSpellbook.TELE_FISH);
-		SPELL_WIDGET_IDS.put("Catherby Teleport", InterfaceID.MagicSpellbook.TELE_CATHER);
-		SPELL_WIDGET_IDS.put("Ice Plateau Teleport", InterfaceID.MagicSpellbook.TELE_GHORROCK);
-		SPELL_WIDGET_IDS.put("Ourania Teleport", InterfaceID.MagicSpellbook.OURANIA_TELEPORT);
-		// Arceuus spellbook
-		SPELL_WIDGET_IDS.put("Arceuus Home Teleport", InterfaceID.MagicSpellbook.TELEPORT_HOME_ARCEUUS);
-		SPELL_WIDGET_IDS.put("Arceuus Library Teleport", InterfaceID.MagicSpellbook.TELEPORT_ARCEUUS_LIBRARY);
-		SPELL_WIDGET_IDS.put("Draynor Manor Teleport", InterfaceID.MagicSpellbook.TELEPORT_DRAYNOR_MANOR);
-		SPELL_WIDGET_IDS.put("Mind Altar Teleport", InterfaceID.MagicSpellbook.TELEPORT_MIND_ALTAR);
-		SPELL_WIDGET_IDS.put("Salve Graveyard Teleport", InterfaceID.MagicSpellbook.TELEPORT_SALVE_GRAVEYARD);
-		SPELL_WIDGET_IDS.put("Fenkenstrain's Castle Teleport", InterfaceID.MagicSpellbook.TELEPORT_FENKENSTRAIN_CASTLE);
-		SPELL_WIDGET_IDS.put("West Ardougne Teleport", InterfaceID.MagicSpellbook.TELEPORT_WEST_ARDOUGNE);
-		SPELL_WIDGET_IDS.put("Harmony Island Teleport", InterfaceID.MagicSpellbook.TELEPORT_HARMONY_ISLAND);
-		SPELL_WIDGET_IDS.put("Cemetery Teleport", InterfaceID.MagicSpellbook.TELEPORT_CEMETERY);
-		SPELL_WIDGET_IDS.put("Barrows Teleport", InterfaceID.MagicSpellbook.TELEPORT_BARROWS);
-		SPELL_WIDGET_IDS.put("Battlefront Teleport", InterfaceID.MagicSpellbook.TELEPORT_BATTLEFRONT);
+		// spell display name -> InterfaceID.MagicSpellbook widget id
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+			SpellbookHighlightOverlay.class.getResourceAsStream("/spell-widget-ids.tsv"), StandardCharsets.UTF_8)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				if (line.isEmpty() || line.startsWith("#"))
+				{
+					continue;
+				}
+				String[] c = line.split("\t", -1);
+				SPELL_WIDGET_IDS.put(c[0], Integer.valueOf(c[1]));
+			}
+		}
+		catch (Exception e)
+		{
+			throw new IllegalStateException("failed to load spell-widget-ids.tsv", e);
+		}
 	}
 
 	@Inject
