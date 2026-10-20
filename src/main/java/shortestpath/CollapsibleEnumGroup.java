@@ -18,6 +18,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.SwingUtil;
+import lombok.Getter;
 
 /**
  * One collapsible bucket inside a {@code Set<Enum>} config sub-list: a
@@ -42,7 +43,7 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 	private final List<JCheckBox> boxes = new ArrayList<>();
 
 	private final JPanel header;
-	private final JLabel nameLabel;
+	@Getter private final JLabel nameLabel;
 	private final JLabel countLabel;
 	private final JButton expander;
 	private final JPanel detail;
@@ -122,12 +123,6 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		panel.registerConfigListener(keyName, this::syncFromConfig);
 		updateCount();
 		installExpandListener();
-	}
-
-	@Override
-	public JLabel getNameLabel()
-	{
-		return nameLabel;
 	}
 
 	JLabel getCountLabel()

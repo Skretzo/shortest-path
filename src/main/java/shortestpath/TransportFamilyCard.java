@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.*;
 import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.util.SwingUtil;
+import lombok.Getter;
 
 /**
  * One transport-family card in the sidebar panel: a 16px icon slot, the family
@@ -30,7 +31,7 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	private final DimmableJPanel header;
 	private final JPanel nameArea;
 	private final JLabel iconLabel;
-	private final JLabel nameLabel;
+	@Getter private final JLabel nameLabel;
 	private final JPanel headerControls;
 	private final JComponent masterControl;
 	private final JPanel detail;
@@ -106,12 +107,6 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	String getKeyName()
 	{
 		return keyName;
-	}
-
-	@Override
-	public JLabel getNameLabel()
-	{
-		return nameLabel;
 	}
 
 	JComponent getMasterControl()

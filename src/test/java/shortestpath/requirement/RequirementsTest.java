@@ -410,7 +410,7 @@ public class RequirementsTest
 	public void pohNexusPortalFollowsTheEnabledPortalSet()
 	{
 		RequirementContext context = RequirementTestFixtures.context().build();
-		Set<PohNexusPortal> withoutFalador = new HashSet<>(PohNexusPortal.values());
+		Set<PohNexusPortal> withoutFalador = new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values()));
 		withoutFalador.remove(PohNexusPortal.FALADOR);
 		RoutingPolicy policy = RequirementTestFixtures.policy()
 			.enabledPohNexusPortals(withoutFalador)
@@ -907,7 +907,7 @@ public class RequirementsTest
 			.origin(POH).objectInfo("Edgeville Amulet of Glory 13523").build();
 		RequirementContext context = RequirementTestFixtures.context().build();
 
-		Set<PohMountedItem> withoutGlory = new HashSet<>(PohMountedItem.values());
+		Set<PohMountedItem> withoutGlory = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 		withoutGlory.remove(PohMountedItem.GLORY);
 		assertEquals(RejectionReason.JEWELLERY_BOX_TIER,
 			requirements(context, RequirementTestFixtures.policy()

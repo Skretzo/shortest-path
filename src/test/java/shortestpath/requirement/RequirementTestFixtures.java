@@ -74,8 +74,8 @@ final class RequirementTestFixtures
 		private boolean usePohFairyRing = true;
 		private boolean usePohSpiritTree = true;
 		private boolean usePohObelisk = true;
-		private Set<PohNexusPortal> enabledPohNexusPortals = new HashSet<>(PohNexusPortal.values());
-		private Set<PohMountedItem> enabledPohMountedItems = new HashSet<>(PohMountedItem.values());
+		private Set<PohNexusPortal> enabledPohNexusPortals = new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values()));
+		private Set<PohMountedItem> enabledPohMountedItems = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 		private JewelleryBoxTier pohJewelleryBoxTier = JewelleryBoxTier.ORNATE;
 		private int currencyThreshold = Integer.MAX_VALUE;
 		private boolean includeBankPath = true;
