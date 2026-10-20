@@ -33,6 +33,7 @@ import net.runelite.client.events.PluginMessage;
 import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
@@ -137,6 +138,8 @@ public class ShortestPathPlugin extends Plugin
 	private ClientToolbar clientToolbar;
 	@Inject
 	private ItemManager itemManager;
+	@Inject
+	private SpriteManager spriteManager;
 	private ShortestPathPanel panel;
 	private NavigationButton navButton;
 	private PathfinderConfig pathfinderConfig;
@@ -216,7 +219,8 @@ public class ShortestPathPlugin extends Plugin
 		itemState.loadFromProfile();
 		scheduler.prepareBackend();
 
-		panel = new ShortestPathPanel(settings, client, clientThread, itemManager, itemState);
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
+			spriteManager, itemState);
 		navButton = NavigationButton.builder()
 			.tooltip("Shortest Path")
 			.icon(ImageUtil.loadImageResource(ShortestPathPlugin.class, "/shortestpath/panel_icon.png"))

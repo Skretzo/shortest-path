@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -56,6 +57,7 @@ import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -153,7 +155,17 @@ public class ShortestPathPanelLayoutTest
 			iconRequests.add((Integer) i.getArgument(0));
 			return new AsyncBufferedImage(clientThread, 16, 16, BufferedImage.TYPE_INT_ARGB);
 		});
-		panel = new ShortestPathPanel(settings, client, clientThread, itemManager, itemState);
+		// Client-sprite requests record their archive id; the async
+		// delivery itself stays unstubbed so labels simply keep no icon —
+		// the pin is that the request was made, not that it resolved.
+		SpriteManager spriteManager = mock(SpriteManager.class);
+		doAnswer(i ->
+		{
+			spriteRequests.add((Integer) i.getArgument(0));
+			return null;
+		}).when(spriteManager).getSpriteAsync(anyInt(), anyInt(), any(Consumer.class));
+		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
+			spriteManager, itemState);
 		panel.onActivate();
 		return panel;
 	}
