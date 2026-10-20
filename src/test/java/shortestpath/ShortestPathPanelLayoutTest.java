@@ -24,6 +24,7 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -611,6 +613,81 @@ public class ShortestPathPanelLayoutTest
 			22, panel.transportCards().size());
 		assertTrue("the tile status counts the 22 masters",
 			statusLabelOf(tileNamed("Transports")).getText().endsWith("/22 on"));
+	}
+
+	private static ShortestPathPanel.SearchRow rowByDisplay(
+		CategoryPanel category, String display)
+	{
+		for (ShortestPathPanel.SearchRow row : category.rows())
+		{
+			if (display.equals(row.display))
+			{
+				return row;
+			}
+		}
+		return null;
+	}
+
+	private static JSpinner spinnerIn(Container root)
+	{
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JSpinner)
+			{
+				return (JSpinner) child;
+			}
+			if (child instanceof Container)
+			{
+				JSpinner found = spinnerIn((Container) child);
+				if (found != null)
+				{
+					return found;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * General reads in three groups: routing toggles and the currency
+	 * threshold first, then the path-lifecycle controls moved in from the
+	 * settings panel — cancel/recalculate/finish distances plus the
+	 * unreachable pair — then the respawn flag, and finally the backend
+	 * selectors (teleport-item mode, algorithm, A* weight). The lifecycle
+	 * keys render per their config type: the two booleans as check rows,
+	 * the two {@code @Range} ints as spinners.
+	 */
+	@Test
+	public void generalGroupsRoutingLifecycleAndBackendRows()
+	{
+		newPanel();
+		CategoryPanel general = panel.categories().get(0);
+
+		List<String> displays = new ArrayList<>();
+		for (ShortestPathPanel.SearchRow row : general.rows())
+		{
+			displays.add(row.display);
+		}
+		// The harness has no config descriptors, so rows name their key.
+		assertEquals("General rows in grouped order",
+			Arrays.asList(
+				"avoidWilderness", "collisionAwareBlockedTargets",
+				"useSailingMoves", "currencyThreshold",
+				"cancelInstead", "recalculateDistance", "finishDistance",
+				"unreachableTargetDistanceThreshold", "showUnreachableText",
+				"respawnPrifddinas",
+				"useTeleportationItems", "pathfinderAlgorithm",
+				"aStarHeuristicWeight"),
+			displays);
+
+		assertNotNull("cancelInstead renders a check row",
+			masterBox(rowByDisplay(general, "cancelInstead").component));
+		assertNotNull("showUnreachableText renders a check row",
+			masterBox(rowByDisplay(general, "showUnreachableText").component));
+		assertNotNull("recalculateDistance renders a spinner row",
+			spinnerIn(rowByDisplay(general, "recalculateDistance").component));
+		assertNotNull("finishDistance renders a spinner row",
+			spinnerIn(rowByDisplay(general, "finishDistance").component));
 	}
 
 	@Test
