@@ -1,8 +1,11 @@
 package shortestpath.settings;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +16,9 @@ import java.util.TreeSet;
 import org.junit.Test;
 
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 import shortestpath.ShortestPathConfig;
+import shortestpath.TestShortestPathConfig;
 
 /**
  * Demotion-boundary gate for the settings split: the sidebar panel owns every
@@ -35,7 +40,7 @@ public class ConfigDemotionTest
 	/**
 	 * The exact set of {@code @ConfigItem} keyNames allowed to carry
 	 * {@code hidden = true} — the panel-owned route options plus the internal
-	 * state keys. 75 names; the write-pair keys
+	 * state keys. 87 names; the write-pair keys
 	 * ({@code builtTeleportationBoxes}/{@code builtTeleportationPortalsPoh})
 	 * appear once even though each is declared on both a getter and a
 	 * {@code void set*} method.
@@ -46,6 +51,8 @@ public class ConfigDemotionTest
 		"blockedTeleportItems",
 		"builtTeleportationBoxes",
 		"builtTeleportationPortalsPoh",
+		"calculationCutoff",
+		"cancelInstead",
 		"collisionAwareBlockedTargets",
 		"costAgilityShortcuts",
 		"costBankVisit",
@@ -74,12 +81,22 @@ public class ConfigDemotionTest
 		"costTeleportationSpellsHome",
 		"costWildernessObelisks",
 		"currencyThreshold",
+		"finishDistance",
+		"highlightBankPickupItems",
+		"highlightInventoryItems",
+		"highlightSpellbookSpells",
 		"includeBankPath",
 		"pathfinderAlgorithm",
 		"pohJewelleryBoxTier",
 		"pohMountedItems",
 		"pohNexusPortals",
+		"recalculateDistance",
 		"respawnPrifddinas",
+		"showBankPickupInfo",
+		"showTileCounter",
+		"showTransportInfo",
+		"showUnreachableText",
+		"tileCounterStep",
 		"unlockBalloonLogBasket",
 		"unlockCanoeAxe",
 		"unlockDragontoothPassage",
@@ -127,9 +144,12 @@ public class ConfigDemotionTest
 	@Test
 	public void exactlyThePanelOwnedKeysAreHidden()
 	{
-		assertEquals("the pinned boundary is 75 keyNames", 75, PANEL_OWNED_KEYS.size());
+		assertEquals("the pinned boundary is 87 keyNames", 87, PANEL_OWNED_KEYS.size());
 
-		Set<String> hidden = new TreeSet<>();
+		// The hidden-key surface lives in the keyed registry, not on the
+		// interface: no @ConfigItem may carry hidden=true any more, and every
+		// panel-owned key resolves to a keyed registry row with metadata.
+		Set<String> annotatedKeys = new TreeSet<>();
 		List<String> boundaryViolations = new ArrayList<>();
 		for (Method method : ShortestPathConfig.class.getMethods())
 		{
@@ -138,30 +158,50 @@ public class ConfigDemotionTest
 			{
 				continue;
 			}
+			annotatedKeys.add(item.keyName());
 			if (item.hidden())
 			{
-				hidden.add(item.keyName());
-			}
-			if (item.hidden() != PANEL_OWNED_KEYS.contains(item.keyName()))
-			{
-				boundaryViolations.add(method.getName() + " (keyName=" + item.keyName()
-					+ ", hidden=" + item.hidden() + ")");
+				boundaryViolations.add(method.getName() + " (keyName=" + item.keyName() + ")");
 			}
 		}
+		assertTrue("@ConfigItems still carrying hidden=true: " + boundaryViolations,
+			boundaryViolations.isEmpty());
 
-		assertTrue("methods whose hidden flag sits on the wrong side of the "
-			+ "demotion boundary: " + boundaryViolations, boundaryViolations.isEmpty());
-
-		Set<String> lostHidden = new TreeSet<>(PANEL_OWNED_KEYS);
-		lostHidden.removeAll(hidden);
-		assertTrue("panel-owned keys that lost hidden=true: " + lostHidden, lostHidden.isEmpty());
-
-		Set<String> wronglyHidden = new TreeSet<>(hidden);
-		wronglyHidden.removeAll(PANEL_OWNED_KEYS);
-		assertTrue("settings-surface keys that wrongly gained hidden=true: " + wronglyHidden,
-			wronglyHidden.isEmpty());
-
-		assertEquals("hidden keyName set is exactly the panel-owned set",
-			PANEL_OWNED_KEYS, hidden);
+		Set<String> missing = new TreeSet<>(PANEL_OWNED_KEYS);
+		missing.removeIf(key -> {
+			ConfigKey row = ConfigKey.forKey(key);
+			return row != null && row.isKeyed() && !annotatedKeys.contains(key)
+				&& ConfigItems.of(key) != null;
+		});
+		assertTrue("panel-owned keys missing a keyed row or metadata: " + missing,
+			missing.isEmpty());
 	}
+
+	/**
+	 * The settings panel keeps exactly its five real sections — Settings,
+	 * Display, Colours, Hotkeys and Debug Options. The two "(Moved To
+	 * Sidebar)" pointer sections rendered as empty collapsible headers
+	 * once their items went hidden, so they are deleted outright: a
+	 * hidden item needs no section to stay hidden. Pinning the set
+	 * catches both a re-appearing stub section and an accidentally
+	 * dropped real one.
+	 */
+	@Test
+	public void onlyTheRealSettingsSectionsRemain()
+	{
+		Set<String> sectionNames = new TreeSet<>();
+		for (Field field : ShortestPathConfig.class.getDeclaredFields())
+		{
+			ConfigSection section = field.getAnnotation(ConfigSection.class);
+			if (section != null)
+			{
+				sectionNames.add(section.name());
+			}
+		}
+		assertEquals("the settings surface keeps exactly its five sections",
+			new TreeSet<>(Arrays.asList(
+				"Settings", "Display", "Colours", "Hotkeys", "Debug Options")),
+			sectionNames);
+	}
+
 }

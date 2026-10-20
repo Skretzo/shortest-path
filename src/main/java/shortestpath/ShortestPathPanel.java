@@ -32,8 +32,6 @@ import javax.swing.event.DocumentListener;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.Range;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
@@ -46,6 +44,7 @@ import net.runelite.client.ui.components.TitleCaseListCellRenderer;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 import shortestpath.items.ItemStateService;
+import shortestpath.settings.ConfigItems;
 import shortestpath.settings.Settings;
 import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.PohMountedItem;
@@ -368,7 +367,7 @@ public class ShortestPathPanel extends PluginPanel
 	private TransportFamilyCard addFamilyCard(CategoryPanel category, String useKey, Integer iconItemId,
 		SearchRow... detailRows)
 	{
-		ConfigItem item = settings.configItem(useKey);
+		ConfigItems.Meta item = settings.item(useKey);
 		String name = item == null ? useKey : item.name();
 		String title = name.startsWith("Use ") ? name.substring("Use ".length()) : name;
 		String description = item == null ? "" : item.description();
@@ -395,7 +394,7 @@ public class ShortestPathPanel extends PluginPanel
 	private SearchRow[] familyThresholdRows(String useKey)
 	{
 		String costKey = "cost" + useKey.substring("use".length());
-		return settings.configItem(costKey) != null ? new SearchRow[]{spinnerRow(costKey)} : new SearchRow[0];
+		return settings.item(costKey) != null ? new SearchRow[]{spinnerRow(costKey)} : new SearchRow[0];
 	}
 
 	private SearchRow restrictionsPointer()
@@ -426,7 +425,7 @@ public class ShortestPathPanel extends PluginPanel
 
 	private SearchRow checkRow(String keyName, Runnable onChange)
 	{
-		ConfigItem item = settings.configItem(keyName);
+		ConfigItems.Meta item = settings.item(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
@@ -472,15 +471,14 @@ public class ShortestPathPanel extends PluginPanel
 
 	private SearchRow spinnerRow(String keyName)
 	{
-		ConfigItem item = settings.configItem(keyName);
+		ConfigItems.Meta item = settings.item(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
 		Object value = settings.configuredValue(keyName);
 		int current = value instanceof Number ? ((Number) value).intValue() : 0;
-		Range range = settings.rangeOf(keyName);
-		int min = range == null ? 0 : Math.max(0, range.min());
-		Integer max = range == null || range.max() == Integer.MAX_VALUE ? null : range.max();
+		int min = item == null || item.min() == null ? 0 : Math.max(0, item.min());
+		Integer max = item == null || item.max() == null || item.max() == Integer.MAX_VALUE ? null : item.max();
 		// A persisted value can land outside the model's bounds (hand-edited
 		// settings, or keys without a @Range bound the stock panel leaves
 		// unclamped) — SpinnerNumberModel throws on that, so clamp to the
@@ -536,7 +534,7 @@ public class ShortestPathPanel extends PluginPanel
 
 	private SearchRow comboRow(String keyName)
 	{
-		ConfigItem item = settings.configItem(keyName);
+		ConfigItems.Meta item = settings.item(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
@@ -600,7 +598,7 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	private <E> List<SearchRow> setSubListRows(String keyName, Collection<E> values)
 	{
-		ConfigItem item = settings.configItem(keyName);
+		ConfigItems.Meta item = settings.item(keyName);
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
@@ -690,7 +688,7 @@ public class ShortestPathPanel extends PluginPanel
 
 	private String configName(String keyName)
 	{
-		ConfigItem item = settings.configItem(keyName);
+		ConfigItems.Meta item = settings.item(keyName);
 		return item == null ? keyName : item.name();
 	}
 
