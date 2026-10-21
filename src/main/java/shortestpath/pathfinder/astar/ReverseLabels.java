@@ -45,6 +45,7 @@ public final class ReverseLabels
 		{
 			for (BankVisitState banked : BankVisitState.values())
 			{
+				if (!overlay.isTerminal(target, banked)) continue;
 				int seed = overlay.targetState(target, banked);
 				labels[seed] = 0;
 				queue.push(0, 0, seed);
@@ -83,7 +84,8 @@ public final class ReverseLabels
 							pushes++;
 					}
 				}
-				// Targets are seeded at zero, so walking from a site into a target never improves it.
+				// Synthetic targets only emit reverse attachments; non-terminal tile estimates
+				// also consult the component's finite site labels in PreparedHeuristic.
 			}
 			else
 			{
@@ -121,6 +123,7 @@ public final class ReverseLabels
 		{
 			for (BankVisitState banked : BankVisitState.values())
 			{
+				if (!overlay.isTerminal(target, banked)) continue;
 				int seed = overlay.targetState(target, banked);
 				doubled[seed] = 0;
 				origins[seed] = seed;
@@ -165,8 +168,8 @@ public final class ReverseLabels
 						pushes++;
 				}
 			}
-			// Targets are seeded at zero, so walking from a site into a target never improves it;
-			// only a synthetic target's own attachment edges need relaxing.
+			// Synthetic targets only emit reverse attachments; PreparedHeuristic also estimates
+			// non-terminal layers from their component's finite site labels.
 			int target = vertex < routingNodes ? overlay.syntheticTarget(vertex) : -1;
 			for (int i = 0; target >= 0 && i < overlay.attachmentCount(target); i++)
 			{

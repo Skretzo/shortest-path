@@ -38,8 +38,11 @@ bucket empty, so it is pruned without being expanded.
 | Lookup | search | `AStarForwardSearch.effectiveHeuristic` | `h` for each pushed state |
 
 `AStarRoutingSession` caches the graph by account fingerprint, and
-`PreparedTarget` holds the overlay, labels and heuristic, so an unchanged
-account and target are reused across searches. Nothing before the lookup
+`PreparedTarget` holds the overlay, labels and heuristic. Its cache identity includes each
+unsigned target coordinate and its accepted bank-layer mask, so changing held target items
+can select different preparation without invalidating an otherwise unchanged account graph.
+Input order and duplicates do not matter; duplicate coordinates union their layer masks.
+Nothing before the lookup
 depends on the start tile.
 
 ## 1. Static sites (`RoutingStatic`)
@@ -120,14 +123,20 @@ target, every reverse label inherits that shortfall, and the forward search
 floods everything within it. On the full benchmark corpus the walk costs about
 0.3 ms per target (p50) and at most about 5 ms.
 
-Several targets are allowed (multi-target "find closest"). Every target is
-seeded at 0, so the labels measure the distance to the nearest target.
+Several targets are allowed (multi-target "find closest"). `GoalStates` supplies each
+resolved tile's accepted layers: carried = 1, banked = 2, either = 3. This includes snapped
+fallbacks, shared associations and the existing unknown-item fallback. Overlays own a copy
+of these masks; APIs without masks retain the either-layer default.
 
 ## 4. Reverse search (`ReverseLabels`)
 
-Dijkstra runs from every target state, in both layers at cost 0, over the
+Dijkstra seeds only accepted target states at cost 0, over the
 reverse explicit edges plus same-component walking. There are two
 implementations, and their labels must be equal:
+
+A bank-only target is not a carried-layer terminal seed. Carried sites can still get finite
+labels through the directed bank transition into the banked layer. Without an accessible
+bank path, those labels remain `INF`, allowing the forward search to reject the start.
 
 - **`computeClique`** is the reference oracle. On settling a site it relaxes
   every other site in each of its components at Chebyshev cost. This is
@@ -252,9 +261,9 @@ twin of a bank-dominated state.
   `effectiveHeuristic` returns 0 (counted as `restrictedHeuristicZeroes`)
   rather than pruning the state. This is conservative: it never loses a route,
   but it can expand states that a stricter rule would prune.
-- **Target attachments:** the reverse search relaxes only a synthetic target's
-  own attachment edges, never site → target edges. Targets are seeded at 0, so
-  those edges could never improve a label.
+- **Target attachments:** the reverse search relaxes only a synthetic target's own
+  attachment edges. Non-terminal synthetic target layers are also estimated from their
+  component's finite site labels by `PreparedHeuristic`, including valid bank detours.
 - **Generator lists:** `GeneratorList` de-duplicates with a linear scan and
   sorts with an insertion sort, so building a bucket is quadratic in its size.
   This is worth checking if heuristic preparation shows up in profiles.

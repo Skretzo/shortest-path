@@ -68,6 +68,7 @@ public class GoalStatesTest
 		GoalStates goals = goals(NOTHING, Target.at(WALKABLE));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.BANKED));
+		assertEquals(3, goals.acceptedLayers(WALKABLE));
 		assertFalse(needsBank(NOTHING, Target.at(WALKABLE)));
 		assertEquals(TargetStatus.CARRIED, goals.arrival(WALKABLE, BankVisitState.CARRIED).getStatus());
 	}
@@ -76,6 +77,7 @@ public class GoalStatesTest
 	public void carriedItemsFinishInEitherLayer()
 	{
 		GoalStates goals = goals(SPADE_CARRIED, spadeAt(WALKABLE));
+		assertEquals(3, goals.acceptedLayers(WALKABLE));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertFalse(needsBank(SPADE_CARRIED, spadeAt(WALKABLE)));
 	}
@@ -84,6 +86,7 @@ public class GoalStatesTest
 	public void bankedItemsOnlyFinishAfterABankVisit()
 	{
 		GoalStates goals = goals(SPADE_BANKED, spadeAt(WALKABLE));
+		assertEquals(2, goals.acceptedLayers(WALKABLE));
 		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.BANKED));
 		assertTrue(needsBank(SPADE_BANKED, spadeAt(WALKABLE)));
@@ -95,6 +98,7 @@ public class GoalStatesTest
 	public void unknownTargetIsDroppedWhileAnotherCanBeCompleted()
 	{
 		GoalStates goals = goals(NOTHING, spadeAt(WALKABLE), Target.at(OTHER));
+		assertEquals(0, goals.acceptedLayers(WALKABLE));
 		assertFalse(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertFalse(goals.accepts(WALKABLE, BankVisitState.BANKED));
 		assertTrue(goals.accepts(OTHER, BankVisitState.CARRIED));
@@ -105,6 +109,8 @@ public class GoalStatesTest
 	public void unknownTargetsFinishAnywhereWhenNothingCanBeCompleted()
 	{
 		GoalStates goals = goals(NOTHING, spadeAt(WALKABLE), spadeAt(OTHER));
+		assertEquals(3, goals.acceptedLayers(WALKABLE));
+		assertEquals(3, goals.acceptedLayers(OTHER));
 		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
 		assertTrue(goals.accepts(OTHER, BankVisitState.BANKED));
 		assertFalse(needsBank(NOTHING, spadeAt(WALKABLE), spadeAt(OTHER)));
@@ -121,12 +127,36 @@ public class GoalStatesTest
 		assertFalse("the blocked target has walkable tiles beside it", fallbacks.isEmpty());
 		for (int fallback : fallbacks)
 		{
+			assertEquals(2, goals.acceptedLayers(fallback));
 			assertFalse(goals.accepts(fallback, BankVisitState.CARRIED));
 			assertTrue(goals.accepts(fallback, BankVisitState.BANKED));
 			Arrival arrival = goals.arrival(fallback, BankVisitState.BANKED);
 			assertEquals("a fallback tile arrives at its target", BLOCKED, arrival.getTarget().getPoint());
 			assertEquals(TargetStatus.BANK, arrival.getStatus());
 		}
+	}
+
+	@Test
+	public void sharedFallbackUnionsItsTargetsAcceptedLayers()
+	{
+		Targets targets = Targets.of(List.of(spadeAt(BLOCKED), Target.at(OTHER)));
+		GoalRule rule = new GoalRule()
+		{
+			@Override public boolean endsOnItself(int target)
+			{
+				return false;
+			}
+			@Override public Set<Integer> fallbackTiles(int target)
+			{
+				return Set.of(WALKABLE);
+			}
+		};
+		GoalStates goals = GoalStates.resolve(TargetGoals.resolve(targets.points(), tile -> false, rule),
+			targets, SPADE_BANKED);
+		assertEquals(3, goals.acceptedLayers(WALKABLE));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.CARRIED));
+		assertTrue(goals.accepts(WALKABLE, BankVisitState.BANKED));
+		assertEquals(2, goals.acceptedLayers(BLOCKED));
 	}
 
 	@Test

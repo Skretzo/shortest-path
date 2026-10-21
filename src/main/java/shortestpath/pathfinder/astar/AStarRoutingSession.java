@@ -1,6 +1,5 @@
 package shortestpath.pathfinder.astar;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -77,18 +76,29 @@ public final class AStarRoutingSession
 	 */
 	public synchronized Lookup<PreparedTarget> target(SiteGraph graph, CollisionMap collision, int[] packedTargets)
 	{
-		if (graph == null || collision == null || packedTargets == null) throw new NullPointerException();
+		return target(graph, collision, new TargetKey(packedTargets, null));
+	}
+
+	/** Target identity includes the terminal layers; duplicate coordinates union their masks. */
+	public synchronized Lookup<PreparedTarget> target(SiteGraph graph, CollisionMap collision, int[] packedTargets,
+		int[] terminalLayers)
+	{
+		return target(graph, collision, new TargetKey(packedTargets, java.util.Objects.requireNonNull(terminalLayers)));
+	}
+
+	private Lookup<PreparedTarget> target(SiteGraph graph, CollisionMap collision, TargetKey key)
+	{
+		if (graph == null || collision == null) throw new NullPointerException();
 		if (graph != this.graph)
-			return new Lookup<>(PreparedTarget.prepare(graph, collision, packedTargets), false);
+			return new Lookup<>(PreparedTarget.prepare(graph, collision, key.states), false);
 		if (collision != targetCollision)
 		{
 			targets.clear();
 			targetCollision = collision;
 		}
-		TargetKey key = new TargetKey(packedTargets);
 		PreparedTarget cached = targets.get(key);
 		if (cached != null) return new Lookup<>(cached, true);
-		PreparedTarget prepared = PreparedTarget.prepare(graph, collision, packedTargets);
+		PreparedTarget prepared = PreparedTarget.prepare(graph, collision, key.states);
 		targets.put(key, prepared);
 		for (Iterator<Map.Entry<TargetKey, PreparedTarget>> eldest = targets.entrySet().iterator();
 			targets.size() > targetCapacity; )
@@ -118,22 +128,16 @@ public final class AStarRoutingSession
 		return targets.size();
 	}
 
-	/** A target set in canonical (sorted, duplicate-free) form. */
+	/** Unsigned tile coordinates and their two terminal-layer bits, sorted and duplicate-free. */
 	@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 	private static final class TargetKey
 	{
 		@EqualsAndHashCode.Include
-		private final int[] tiles;
+		private final long[] states;
 
-		TargetKey(int[] packedTargets)
+		TargetKey(int[] packedTargets, int[] terminalLayers)
 		{
-			int[] sorted = packedTargets.clone();
-			Arrays.sort(sorted);
-			int count = 0;
-			for (int i = 0; i < sorted.length; i++)
-				if (count == 0 || sorted[count - 1] != sorted[i])
-					sorted[count++] = sorted[i];
-			tiles = Arrays.copyOf(sorted, count);
+			states = TargetOverlay.canonicalTargets(packedTargets, terminalLayers);
 		}
 	}
 
