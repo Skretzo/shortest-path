@@ -420,7 +420,11 @@ public final class AStarPathfinder implements ActiveSearch
 			AtomicBoolean timedOut = new AtomicBoolean();
 			// A zero cutoff means no cutoff for the A* backend.
 			SearchDeadline deadline = cutoffMillis > 0 ? new SearchDeadline(cutoffMillis) : null;
-			int[] packedTargets = goals.tiles().stream().mapToInt(Integer::intValue).toArray();
+			// Blocked targets attach to neighbouring components in the relaxed graph, but only
+			// transport landings can actually end a route on them. Keep their snapped goals instead.
+			int[] packedTargets = goals.tiles().stream()
+				.filter(tile -> !TargetGoals.isBlocked(collision, tile) || transportDestination.test(tile))
+				.mapToInt(Integer::intValue).toArray();
 			AStarForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
 			int partialCost = PathfinderResult.NO_PATH_COST;

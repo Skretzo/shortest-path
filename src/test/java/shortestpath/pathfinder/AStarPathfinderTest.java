@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
 import shortestpath.pathfinder.astar.AStarForwardSearch;
 import shortestpath.pathfinder.astar.PreparedHeuristic;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
@@ -21,6 +22,59 @@ import shortestpath.transport.TransportType;
 
 public class AStarPathfinderTest
 {
+	@Test
+	public void blockedTargetDoesNotKeepAnUnreachableSnappedGoalHeuristicFinite() throws Exception
+	{
+		AStarPathfinder search = blockedTargetSearch();
+		search.run();
+
+		assertEquals(PathTerminationReason.SEARCH_EXHAUSTED, search.getResult().getTerminationReason());
+		assertEquals("the disconnected snapped goal must be rejected before expanding tiles",
+			0, search.getResult().getNodesChecked());
+	}
+
+	@Test
+	public void blockedTransportLandingRemainsAHeuristicSeed() throws Exception
+	{
+		CollisionMap collision = mock(CollisionMap.class);
+		when(collision.isBlocked(anyInt(), anyInt(), anyInt())).thenReturn(true);
+		when(collision.ordinaryWalkingNeighbors(anyInt())).thenReturn(new int[0]);
+		PathfinderConfig config = mock(PathfinderConfig.class);
+		when(config.getMap()).thenReturn(collision);
+		when(config.isTransportDestination(RoutingStaticTestFixture.D)).thenReturn(true);
+		when(config.prepareAStarRoutingAccount(true, false))
+			.thenReturn(account(global(RoutingStaticTestFixture.D, 2), new Transport[0], false));
+		AStarPathfinder search = new AStarPathfinder(config, RoutingStaticTestFixture.create(), null,
+			RoutingStaticTestFixture.A, java.util.Set.of(RoutingStaticTestFixture.D), null, 1);
+		search.run();
+
+		assertTrue(search.getResult().getMessage(), search.getResult().isReached());
+		assertEquals(RoutingStaticTestFixture.D,
+			search.getPath().get(search.getPath().size() - 1).getPackedPosition());
+	}
+
+	private static AStarPathfinder blockedTargetSearch() throws Exception
+	{
+		int start = RoutingStaticTestFixture.T3_SEARCH_0;
+		int snapped = RoutingStaticTestFixture.T3_SEARCH_1;
+		int blocked = RoutingStaticTestFixture.T3_TARGET;
+		CollisionMap collision = mock(CollisionMap.class);
+		when(collision.isBlocked(anyInt(), anyInt(), anyInt())).thenReturn(true);
+		when(collision.isBlocked(1001, 1000, 0)).thenReturn(false);
+		when(collision.isBlocked(1001, 1002, 0)).thenReturn(false);
+		when(collision.ordinaryWalkingNeighbors(anyInt())).thenReturn(new int[0]);
+		// The blocked tile attaches to both components, but neither can walk into it.
+		when(collision.ordinaryWalkingNeighbors(blocked)).thenReturn(new int[] {start, snapped});
+		PathfinderConfig config = mock(PathfinderConfig.class);
+		when(config.getMap()).thenReturn(collision);
+		when(config.isCollisionAwareBlockedTargets()).thenReturn(true);
+		when(config.getUnreachableTargetDistance()).thenReturn(1);
+		when(config.prepareAStarRoutingAccount(true, false))
+			.thenReturn(account());
+		return new AStarPathfinder(config, RoutingStaticTestFixture.createT3(), null, start,
+			java.util.Set.of(blocked), null, 1);
+	}
+
 	@Test
 	public void sourceGlobalReconstructsAnExactTransportPath()
 		throws Exception
