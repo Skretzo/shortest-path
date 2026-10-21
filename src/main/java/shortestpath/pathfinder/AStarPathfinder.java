@@ -421,7 +421,11 @@ public final class AStarPathfinder implements ActiveSearch
 			// The cutoff counts time without progress — and a zero cutoff expires at the
 			// first clock read, exactly like the legacy backend's unconditional deadline.
 			SearchDeadline deadline = new SearchDeadline(cutoffMillis);
-			int[] packedTargets = goals.tiles().stream().mapToInt(Integer::intValue).toArray();
+			// Blocked targets attach to neighbouring components in the relaxed graph, but only
+			// transport landings can actually end a route on them. Keep their snapped goals instead.
+			int[] packedTargets = goals.tiles().stream()
+				.filter(tile -> !TargetGoals.isBlocked(collision, tile) || transportDestination.test(tile))
+				.mapToInt(Integer::intValue).toArray();
 			AStarForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
 			int partialCost = PathfinderResult.NO_PATH_COST;
