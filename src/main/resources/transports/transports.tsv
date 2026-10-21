@@ -151,8 +151,8 @@
 3220 9532 2	3226 9542 0	Enter Tunnel 6658						2	
 									
 # Tears of Guthix									
-3227 9526 2	3224 9504 2	Attract Light creature 5435		4702=1		451>0			1: travel across the chasm
-3227 9526 2	4075 4601 0	Attract Light creature 5435		4702=1		451>0;9653>709		20	2: travel into the chasm
+3227 9526 2	3224 9504 2	Attract Light creature 5435		4702=1		451>0			1: Travel across the chasm.
+3227 9526 2	4075 4601 0	Attract Light creature 5435		4702=1		451>0;9653>709		20	2: Travel into the chasm.
 4075 4601 0	3228 9526 2	Attract Light creature 5435		4702=1		451>0;9653>709		20	Return to the Chasm of Tears
 3239 9525 2	3241 9525 2	Climb Rocks 6673						4	
 3241 9525 2	3239 9525 2	Climb Rocks 6673						4	
