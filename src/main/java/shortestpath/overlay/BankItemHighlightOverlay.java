@@ -70,7 +70,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		int pathIndex = getPlayerPathIndex(path);
+		int pathIndex = getBankStepIndex(path, bankLocations);
 		if (pathIndex < 0)
 		{
 			return null;
