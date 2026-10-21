@@ -70,6 +70,15 @@ public final class SparseWalkingNetworkBuilder
 	 */
 	public static Result build(int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds)
 	{
+		return build(siteTiles, siteComponentOffsets, siteComponentIds, null);
+	}
+
+	/**
+	 * As {@link #build(int[], int[], int[])}, but each {@link ExactWalks#isExact exact} component's
+	 * sites are joined by its exact walking edges instead of a tree.
+	 */
+	static Result build(int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds, ExactWalks exactWalks)
+	{
 		int originalCount = siteTiles.length;
 		int maxComponentId = -1;
 		for (int cid : siteComponentIds)
@@ -113,6 +122,14 @@ public final class SparseWalkingNetworkBuilder
 			int size = end - start;
 			if (size == 0)
 			{
+				continue;
+			}
+			if (exactWalks != null && exactWalks.isExact(cid))
+			{
+				// Exact walking edges instead of a tree, doubled like every other weight.
+				int[] triples = exactWalks.edges(cid);
+				for (int i = 0; i < triples.length; i += 3)
+					edges.add(triples[i], triples[i + 1], CostArithmetic.twice(triples[i + 2]));
 				continue;
 			}
 			Point[] points = new Point[size];
