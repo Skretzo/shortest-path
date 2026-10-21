@@ -12,6 +12,8 @@ import javax.inject.Singleton;
 
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
+import net.runelite.api.Quest;
+import net.runelite.api.QuestState;
 import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
@@ -67,6 +69,9 @@ public class PathAnnotator
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
+	// The locked-transports label of lockedSearch, built on the client thread when first drawn.
+	private ActiveSearch lockedSearch;
+	private String lockedText;
 
 	@Inject
 	public PathAnnotator(Client client, PohService pohService, ItemStateService itemState)
@@ -146,6 +151,64 @@ public class PathAnnotator
 		return missingItemsText == null || missingItemsText.isEmpty() ? null : missingItemsText;
 	}
 
+	/**
+	 * The label naming the transports an unreachable route walked up to but couldn't take, with
+	 * the quests or items they need, or {@code null} when there are none. Built once per search,
+	 * on the client thread.
+	 */
+	public String getLockedTransportsText(ActiveSearch search)
+	{
+		if (search != lockedSearch)
+		{
+			lockedSearch = search;
+			lockedText = null;
+		}
+		if (lockedText == null && search != null && search.isDone())
+		{
+			List<String> locks = new ArrayList<>();
+			for (Transport transport : search.getNearestLockedTransports())
+			{
+				locks.add(lockedLabel(transport));
+			}
+			lockedText = locks.isEmpty() ? "" : "Locked on the way: " + String.join(", ", locks);
+		}
+		return lockedText == null || lockedText.isEmpty() ? null : lockedText;
+	}
+
+	/** "Quetzal Aldarin (Twilight's Promise)", "Ship Aldarin (Coins)", "Open Gate (Shantay pass)" */
+	private String lockedLabel(Transport transport)
+	{
+		String type = transport.getType().name().replace('_', ' ').toLowerCase();
+		String name = transport.getDisplayInfo() != null
+			? Character.toUpperCase(type.charAt(0)) + type.substring(1) + " " + transport.getDisplayInfo()
+			: transport.getObjectInfo() != null ? transport.getObjectInfo().replaceAll(" \\d+$", "") : type;
+		List<String> needs = new ArrayList<>();
+		for (Quest quest : transport.getQuests())
+		{
+			if (pathfinderConfig == null || pathfinderConfig.getQuestState(quest) != QuestState.FINISHED)
+			{
+				needs.add(quest.getName());
+			}
+		}
+		if (needs.isEmpty() && transport.getItemRequirements() != null)
+		{
+			for (ItemRequirement group : transport.getItemRequirements().getRequirements())
+			{
+				needs.add(itemName(group.getBranches().get(0).getItemIds()[0]));
+			}
+		}
+		return needs.isEmpty() ? name : name + " (" + String.join(", ", needs) + ")";
+	}
+
+	private String itemName(int id)
+	{
+		// Requirement ids come from other plugins' messages; an invalid or renamed
+		// id may resolve to no name rather than crash every rendered frame.
+		ItemComposition def = client == null ? null : client.getItemDefinition(id);
+		String name = def == null ? null : def.getName();
+		return name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name;
+	}
+
 	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
 	private String missingItemsLabel(List<ItemRequirement> missing)
 	{
@@ -157,11 +220,7 @@ public class PathAnnotator
 			{
 				for (int id : branch.getItemIds())
 				{
-					// Requirement ids come from other plugins' messages; an invalid or renamed
-					// id may resolve to no name rather than crash every rendered frame.
-					ItemComposition def = client.getItemDefinition(id);
-					String name = def == null ? null : def.getName();
-					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
+					names.add(itemName(id));
 				}
 			}
 			groups.add(String.join(" or ", names));

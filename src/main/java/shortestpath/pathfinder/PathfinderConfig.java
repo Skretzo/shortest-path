@@ -370,6 +370,16 @@ public class PathfinderConfig
 			.getDisplayTransports();
 	}
 
+	/**
+	 * Whether an unusable transport is locked by the player's skills, quests, vars or items, so
+	 * getting those would open it — not turned off in settings.
+	 */
+	public boolean isLockedByPlayerState(Transport transport)
+	{
+		Requirements current = requirements;
+		return current != null && current.lockedByPlayerState(transport);
+	}
+
 	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(BankVisitState bankVisitState)
 	{
 		return getTransportAvailability(bankVisitState).getTransportsPacked();

@@ -1,6 +1,7 @@
 package shortestpath.requirement;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -88,6 +89,20 @@ public final class Requirements
 	{
 		return check(transport) == RejectionReason.NONE;
 	}
+
+	/**
+	 * Whether what keeps the transport from running is the player's own state — a skill, quest,
+	 * var or item they don't have yet — rather than a setting, the world type or a league region.
+	 * A transport passing every gate here is gated by its items in {@link TransportEligibility}.
+	 */
+	public boolean lockedByPlayerState(Transport transport)
+	{
+		return PLAYER_STATE.contains(check(transport));
+	}
+
+	private static final Set<RejectionReason> PLAYER_STATE = EnumSet.of(RejectionReason.NONE,
+		RejectionReason.SKILL_LEVEL, RejectionReason.QUEST, RejectionReason.VARBIT, RejectionReason.VARPLAYER,
+		RejectionReason.ITEM_REQUIREMENT);
 
 	/**
 	 * Whether the bank-destination requirement set is satisfied by this

@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import java.util.Map;
+import shortestpath.transport.Transport;
 
 /**
  * The plugin-facing handle for an active route search.
@@ -58,6 +59,15 @@ public interface ActiveSearch extends Runnable
 	default Map<String, String> debugStats()
 	{
 		return Map.of();
+	}
+
+	/**
+	 * For a finished search that reached no target, the transports it walked up to but couldn't
+	 * take, nearest the target first; empty for backends that do not record them.
+	 */
+	default List<Transport> getNearestLockedTransports()
+	{
+		return List.of();
 	}
 
 	PathfinderResult getResult();
