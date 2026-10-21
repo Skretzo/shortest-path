@@ -6192,3 +6192,7 @@
 # The Great Conch, Gryphon Slayer Cave (south-eastern cave)									
 3234 2418 0	3237 8882 0	Enter Cave entrance 57915						2	
 3237 8882 0	3234 2418 0	Exit Cave exit 57916						2	
+									
+# The Great Conch, Gryphon cave (north-western cave)									
+3122 2490 0	3125 8880 0	Enter Cave entrance 57908						2	
+3125 8880 0	3122 2490 0	Exit Cave exit 57909						2	
