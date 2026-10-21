@@ -123,7 +123,7 @@ public class RefreshCoordinator
 	/**
 	 * Tracks open item panels, so that closing them can re-plan the route.
 	 */
-	public void widgetOpened(int groupId)
+	public void widgetLoaded(int groupId)
 	{
 		if (ITEM_PANELS.contains(groupId))
 		{
