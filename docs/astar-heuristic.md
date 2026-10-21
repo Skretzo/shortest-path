@@ -30,7 +30,7 @@ bucket empty, so it is pruned without being expanded.
 
 | Stage | Lifetime | Class | Produces |
 |---|---|---|---|
-| Sites, components, sparse network | plugin session | `RoutingStaticBuilder` → `RoutingStatic` | sites, attachments, `SparseWalkingNetworkBuilder` CSR |
+| Sites, components, sparse network | plugin session | `RoutingStaticBuilder` → `RoutingStatic` | sites, attachments, `ExactWalks`, `SparseWalkingNetworkBuilder` CSR |
 | Relaxed account graph | account fingerprint | `SiteGraph` | two-layer reverse CSR of explicit edges |
 | Target overlay | target set | `TargetOverlay` | target nodes and attachment edges |
 | Reverse search | target set | `ReverseLabels` | `label(node, banked)` and generator provenance |
@@ -139,7 +139,8 @@ labels through the directed bank transition into the banked layer. Without an ac
 bank path, those labels remain `INF`, allowing the forward search to reject the start.
 
 - **`computeClique`** is the reference oracle. On settling a site it relaxes
-  every other site in each of its components at Chebyshev cost. This is
+  every other site in each of its components at Chebyshev cost, or at the
+  exact walking distance in a component with exact walks (below). This is
   quadratic in component size.
 - **`computeSparse`** is the production path (`compute` uses it whenever a
   sparse network exists). It walks the static sparse network instead.
@@ -165,6 +166,40 @@ Steiner vertices get reverse states in both layers too. Explicit edge and
 target attachment costs are doubled on entry (`CostArithmetic.twice`), and each
 label is halved once at the end (`CostArithmetic.halve`). Halving is exact for
 sites, because their doubled distances are always even.
+
+### Exact walks in small components (`ExactWalks`)
+
+Chebyshev distance badly undercuts walks in winding components. The Ice
+Queen's Lair tunnel ends are 30 tiles apart but about 185 on foot. The
+shortfall reaches every reverse label behind the component, and the forward
+search floods everything within it, often far away through transports.
+
+So every component with 2 to 256 sites (`ExactWalks.MAX_SITES`) joins its sites
+by exact walks instead of a tree:
+
+- When the static data is built, one forward breadth-first walk runs from each
+  site over the component's own tiles, stopping once it has reached every
+  site. A site that is not a search tile (a blocked transport origin) is walked
+  from and to through its neighbours in the component.
+- A pair's weight is the shorter of its two walks, but at least its Chebyshev
+  distance, and is left out (`INF`) when neither can walk to the other inside
+  the component.
+- An edge is dropped when a path through a third site of the component is no
+  longer. Weights are positive, so the remaining edges keep every pair
+  distance, and `computeClique` checks them against the full table.
+
+This is a lower bound for the same reason as the target walk above: a walk
+leaves a component only across a cut, whose endpoints are sites. Larger
+components (the Wilderness, open surface areas) keep their trees. Their pair
+counts grow quadratically, and they wind less. A search that avoids the
+Wilderness only removes edges, so walks that cross it still bound it.
+
+On the real map, 944 components qualify and keep 43,219 edges (about 0.5 MB).
+The walks take about 1.2 s once, at plugin load. On the full benchmark corpus,
+p99 fell from 132 to 41 ms and p50 from 24 to 16 ms, with identical route costs.
+p50 fell because the reverse search has fewer Steiner vertices to settle. Tiles
+still estimate from Chebyshev distance to the sites of their component: the
+exact labels already stop the floods outside it.
 
 ### Generator provenance
 
