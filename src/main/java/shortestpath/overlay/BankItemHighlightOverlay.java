@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Set;
@@ -23,6 +22,7 @@ import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
+	// The BANK_CURRENTTAB value while potion storage is open, RuneLite's PotionStorage.BANKTAB_POTIONSTORE
 	private static final int POTION_STORE_TAB = 15;
 
 	private final ItemManager itemManager;
@@ -99,9 +99,8 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		}
 
 		Color highlight = settings.display().colourBankPickupHighlight();
-		// Items scrolled out of view keep their positions above or below the bank, so only the
-		// visible part of the item area is drawn on.
-		Shape clip = graphics.getClip();
+		// Items scrolled out of view keep their positions above or below the visible item area,
+		// so only that area is drawn on. RuneLite resets the clip after each overlay.
 		graphics.clip(bankContainer.getBounds());
 		for (Widget item : items)
 		{
@@ -118,7 +117,6 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 				}
 			}
 		}
-		graphics.setClip(clip);
 
 		return null;
 	}
