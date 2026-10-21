@@ -58,6 +58,8 @@ import shortestpath.sailing.SailingState;
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
 {
+	private static final List<DestinationRequirements> NO_BANK_REQUIREMENTS = List.of(DestinationRequirements.EMPTY);
+
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
 	/**
@@ -594,7 +596,7 @@ public class PathfinderConfig
 		Set<Integer> acc = new HashSet<>(bankLocs.size());
 		for (Integer p : bankLocs)
 		{
-			for (DestinationRequirements req : bankRequirements.getOrDefault(p, List.of(DestinationRequirements.EMPTY)))
+			for (DestinationRequirements req : bankRequirements.getOrDefault(p, NO_BANK_REQUIREMENTS))
 			{
 				if (requirements.satisfied(req))
 				{
