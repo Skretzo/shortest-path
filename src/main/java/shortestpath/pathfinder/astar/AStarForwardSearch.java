@@ -47,7 +47,7 @@ public final class AStarForwardSearch
 		Runnable progressed)
 	{
 		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions, progressed,
-			(tile, banked) -> target.isTarget(tile));
+			target::accepts);
 	}
 
 	/**
@@ -694,7 +694,8 @@ public final class AStarForwardSearch
 		private final int heuristicCacheHits;
 		private final String initialCapability;
 		private final boolean normalHeuristicEnabledAtStart;
-		@Getter(AccessLevel.NONE) private final int heuristicUnreachable, finalBestBankCost;
+		private final int heuristicUnreachable;
+		@Getter(AccessLevel.NONE) private final int finalBestBankCost;
 		private Counters(int statesPopped, int staleEntries, int pqPushes, int uniqueStatesReached, int walkingRelaxations,
 			int transportRelaxations, int heuristicEvaluations, int heuristicUnreachable, int bestBankUpdates,
 			int bankDominated, int bankGlobalSuppressed, int rekeys, int finalBestBankCost, int maxQueueSize,

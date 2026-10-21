@@ -129,6 +129,12 @@ public final class GoalStates
 		return eitherLayerTiles.contains(tile) || banked == BankVisitState.BANKED && bankedOnlyTiles.contains(tile);
 	}
 
+	/** Effective terminal layers after resolving target associations: 1 carried, 2 banked, 3 either. */
+	public int acceptedLayers(int tile)
+	{
+		return eitherLayerTiles.contains(tile) ? EITHER : bankedOnlyTiles.contains(tile) ? BANKED : 0;
+	}
+
 	/** Whether a path in the given bank layer may finish at or near the target at {@code point}. */
 	public boolean acceptsTarget(int point, BankVisitState banked)
 	{
