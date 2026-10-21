@@ -1,6 +1,8 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import shortestpath.pathfinder.BankVisitState;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +32,11 @@ public final class ReverseLabels
 		return usableSparse(overlay) ? computeSparse(overlay) : computeClique(overlay);
 	}
 
-	/** Transparent component-clique correctness oracle. */
+	/**
+	 * Transparent component-clique correctness oracle: every pair of a component's sites walks at
+	 * Chebyshev distance, or at the full {@link ExactWalks#pairDistances} table's distance in a
+	 * component the network joins by exact walks.
+	 */
 	static ReverseLabels computeClique(TargetOverlay overlay)
 	{
 		long started = System.nanoTime();
@@ -40,6 +46,8 @@ public final class ReverseLabels
 		int[] labels = new int[overlay.queryNodeCount() * 2];
 		Arrays.fill(labels, CostArithmetic.INF);
 		AStarMinHeap queue = new AStarMinHeap(Math.max(16, labels.length));
+		ExactWalks exactWalks = stat.exactWalks();
+		Map<Integer, int[][]> pairTables = new HashMap<>();
 		int pushes = 0;
 		for (int target = 0; target < overlay.targetCount(); target++)
 		{
@@ -77,10 +85,18 @@ public final class ReverseLabels
 			{
 				for (int component : stat.siteComponents(node))
 				{
-					for (int other : stat.componentSites(component))
+					int[] sites = stat.componentSites(component);
+					boolean exact = exactWalks != null && exactWalks.isExact(component);
+					int[][] pairs = exact ? pairTables.computeIfAbsent(component,
+						c -> ExactWalks.pairDistances(stat, c)) : null;
+					int self = exact ? Arrays.binarySearch(sites, node) : -1;
+					for (int i = 0; i < sites.length; i++)
 					{
+						int other = sites[i];
+						// Relaxing `other` from this site is the walk other -> node.
+						int walk = exact ? pairs[i][self] : distance(stat.siteTile(node), stat.siteTile(other));
 						if (other != node && relax(labels, queue, SiteGraph.stateId(other, banked),
-							CostArithmetic.add(cost, distance(stat.siteTile(node), stat.siteTile(other)))))
+							CostArithmetic.add(cost, walk)))
 							pushes++;
 					}
 				}
