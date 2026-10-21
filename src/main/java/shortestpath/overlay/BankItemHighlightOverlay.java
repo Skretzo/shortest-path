@@ -17,6 +17,7 @@ import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
+	// The BANK_CURRENTTAB value while potion storage is open, RuneLite's PotionStorage.BANKTAB_POTIONSTORE
 	private static final int POTION_STORE_TAB = 15;
 
 	private final ItemManager itemManager;
@@ -84,13 +85,11 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		// drawHighlights, so the widget is non-null here (the gate returns
 		// false on a null/hidden container).
 		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
-		// Items scrolled out of view keep their positions above or below the bank, so only the
-		// visible part of the item area is drawn on.
-		Shape clip = graphics.getClip();
+		// Items scrolled out of view keep their positions above or below the visible item area,
+		// so only that area is drawn on. RuneLite resets the clip after each overlay.
 		graphics.clip(bankContainer.getBounds());
 		drawItemOutlines(graphics, itemManager, bankContainer.getChildren(), pickup.bankItemIds,
 			highlight);
-		graphics.setClip(clip);
 
 		return null;
 	}
