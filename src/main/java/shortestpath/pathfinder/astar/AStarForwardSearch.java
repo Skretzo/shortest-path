@@ -76,7 +76,7 @@ public final class AStarForwardSearch
 		Runnable progressed)
 	{
 		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions, progressed,
-			(tile, banked) -> target.isTarget(tile));
+			target::accepts);
 	}
 
 	/**

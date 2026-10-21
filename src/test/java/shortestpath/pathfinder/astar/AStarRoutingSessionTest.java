@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertThrows;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +25,60 @@ public class AStarRoutingSessionTest
 	private static final int BANK = RoutingStaticTestFixture.BANK;
 	private static final int C = RoutingStaticTestFixture.C;
 	private static final int D = RoutingStaticTestFixture.D;
+
+	@Test
+	public void targetLayerTransitionsReuseOnlyMatchingMasks() throws Exception
+	{
+		AStarRoutingSession session = new AStarRoutingSession();
+		SiteGraph graph = session.graph(RoutingStaticTestFixture.create(), account(global(D, 2))).value();
+		CollisionMap collision = emptyCollision();
+		PreparedTarget either = session.target(graph, collision, new int[] {D}, new int[] {3}).value();
+		assertTrue(session.target(graph, collision, D).reused());
+		AStarRoutingSession.Lookup<PreparedTarget> banked = session.target(graph, collision, new int[] {D}, new int[] {2});
+		assertFalse(banked.reused());
+		assertNotSame(either, banked.value());
+		assertTrue(session.target(graph, collision, new int[] {D}, new int[] {2}).reused());
+		assertSame(either, session.target(graph, collision, new int[] {D}, new int[] {3}).value());
+		assertEquals(2, session.cachedTargetCount());
+	}
+
+	@Test
+	public void targetLayersAreOrderIndependentUnionDuplicatesAndCopyInputs() throws Exception
+	{
+		AStarRoutingSession session = new AStarRoutingSession();
+		SiteGraph graph = session.graph(RoutingStaticTestFixture.create(), account(global(D, 2))).value();
+		CollisionMap collision = emptyCollision();
+		int[] tiles = {D, C, D}, masks = {1, 2, 2};
+		PreparedTarget first = session.target(graph, collision, tiles, masks).value();
+		tiles[0] = A;
+		masks[0] = 2;
+		AStarRoutingSession.Lookup<PreparedTarget> reordered = session.target(graph, collision,
+			new int[] {C, D}, new int[] {2, 3});
+		assertTrue(reordered.reused());
+		assertSame(first, reordered.value());
+		assertEquals(2, first.overlay().targetLayers(0));
+		assertEquals(3, first.overlay().targetLayers(1));
+		assertFalse(session.target(graph, collision, new int[] {C, D}, new int[] {3, 2}).reused());
+	}
+
+	@Test
+	public void layerInputsAreValidatedAndCanonicalTilesAreUnsigned() throws Exception
+	{
+		SiteGraph graph = new SiteGraph(RoutingStaticTestFixture.create(), account(global(D, 2)));
+		CollisionMap collision = emptyCollision();
+		for (int invalid : new int[] {-1, 0, 4})
+			assertThrows(IllegalArgumentException.class,
+				() -> new TargetOverlay(graph, collision, new int[] {D}, new int[] {invalid}));
+		assertThrows(IllegalArgumentException.class,
+			() -> new TargetOverlay(graph, collision, new int[] {D}, new int[0]));
+		assertThrows(NullPointerException.class,
+			() -> new TargetOverlay(graph, collision, new int[] {D}, null));
+		int upper = shortestpath.WorldPointUtil.packWorldPoint(1000, 1000, 3);
+		TargetOverlay overlay = new TargetOverlay(graph, collision, new int[] {upper, C}, new int[] {2, 3});
+		assertArrayEquals(new int[] {C, upper}, overlay.packedTargets());
+		assertEquals(3, overlay.targetLayers(0));
+		assertEquals(2, overlay.targetLayers(1));
+	}
 
 	@Test
 	public void graphIsReusedForAnEqualFingerprintFromAFreshCompile() throws Exception

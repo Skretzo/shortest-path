@@ -29,7 +29,21 @@ public final class PreparedTarget
 
 	public static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, int[] packedTargets)
 	{
-		TargetOverlay overlay = new TargetOverlay(graph, collision, packedTargets);
+		return prepare(new TargetOverlay(graph, collision, packedTargets));
+	}
+
+	public static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, int[] packedTargets, int[] terminalLayers)
+	{
+		return prepare(new TargetOverlay(graph, collision, packedTargets, terminalLayers));
+	}
+
+	static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, long[] targets)
+	{
+		return prepare(new TargetOverlay(graph, collision, targets));
+	}
+
+	private static PreparedTarget prepare(TargetOverlay overlay)
+	{
 		long phaseStarted = System.nanoTime();
 		ReverseLabels reverse = ReverseLabels.compute(overlay);
 		long reverseSearchNanos = System.nanoTime() - phaseStarted;

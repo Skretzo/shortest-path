@@ -60,6 +60,31 @@ public class SparseManhattanTest
 	}
 
 	@Test
+	public void asymmetricTerminalLayersPreserveSteinerLabelsAndGeneratorProvenance() throws Exception
+	{
+		RoutingStatic stat = syntheticSparse();
+		for (int[] masks : new int[][] {{2}, {2, 3}, {1, 2}})
+		{
+			int[] tiles = masks.length == 1 ? new int[] {TARGET} : new int[] {TARGET, C};
+			TargetOverlay overlay = new TargetOverlay(new SiteGraph(stat, emptyAccount()),
+				attachments(A, OTHER_PLANE), tiles, masks);
+			ReverseLabels sparse = ReverseLabels.computeSparse(overlay);
+			assertArrayEquals(ReverseLabels.computeClique(overlay).labels(), sparse.labels());
+			assertTrue(sparse.sparseRelaxationCount() > 0);
+			PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, sparse);
+			for (int packed : new int[] {A, B, C, TARGET, OTHER_PLANE})
+			{
+				for (BankVisitState layer : BankVisitState.values())
+				{
+					for (int[] components : new int[][] {{0}, {1}, {0, 1}})
+						assertEquals(heuristic.estimateRaw(packed, layer, components),
+							heuristic.estimate(packed, layer, components));
+				}
+			}
+		}
+	}
+
+	@Test
 	public void emptyComponentsStayUnreachableBeforeAndAfterBanking() throws Exception
 	{
 		TargetOverlay target = new TargetOverlay(new SiteGraph(syntheticSparse(), emptyAccount()),
@@ -78,11 +103,14 @@ public class SparseManhattanTest
 
 	private static RoutingStatic syntheticSparse() throws Exception
 	{
+		int[] sites = {A, B, C, OTHER_PLANE};
+		int[] offsets = {0, 1, 2, 3, 4}, components = {0, 0, 0, 1};
+		SparseWalkingNetworkBuilder.Result network = SparseWalkingNetworkBuilder.build(sites, offsets, components);
 		return RoutingStatic.takeOwnership(new int[] {A, OTHER_PLANE}, RoutingStaticTestFixture.components(0, 1), new byte[] {0, 0},
-			new char[2], new char[2], new int[] {A, B, C, OTHER_PLANE},
-			new int[] {0, 1, 2, 3, 4}, new int[] {0, 0, 0, 1}, 2, new int[] {0, 3, 4},
-			new int[] {0, 1, 2, 3}, new int[0], new int[0], new int[0], new int[0], 4, 5, 1, 3, 6,
-			new int[] {0, 1, 2, 3, 3, 6}, new int[] {4, 4, 4, 0, 1, 2}, new int[] {6, 0, 8, 6, 0, 8});
+			new char[2], new char[2], sites, offsets, components, 2, new int[] {0, 3, 4},
+			new int[] {0, 1, 2, 3}, new int[0], new int[0], new int[0], new int[0], network.originalCount,
+			network.vertexCount, network.steinerCount, network.undirectedEdgeCount, network.adjacencyCount(),
+			network.offsets, network.destinations, network.weights);
 	}
 
 	private static CollisionMap attachments(int... sites)

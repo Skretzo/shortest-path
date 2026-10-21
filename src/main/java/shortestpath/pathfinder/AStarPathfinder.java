@@ -425,6 +425,7 @@ public final class AStarPathfinder implements ActiveSearch
 			int[] packedTargets = goals.tiles().stream()
 				.filter(tile -> !TargetGoals.isBlocked(collision, tile) || transportDestination.test(tile))
 				.mapToInt(Integer::intValue).toArray();
+			int[] targetLayers = java.util.Arrays.stream(packedTargets).map(goals::acceptedLayers).toArray();
 			AStarForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
 			int partialCost = PathfinderResult.NO_PATH_COST;
@@ -437,7 +438,7 @@ public final class AStarPathfinder implements ActiveSearch
 				// One search towards every target at once; it ends at the cheapest one to reach.
 				phaseStarted = System.nanoTime();
 				AStarRoutingSession.Lookup<PreparedTarget> prepared = session.target(graph.value(), collision,
-					packedTargets);
+					packedTargets, targetLayers);
 				targetReused = prepared.reused();
 				if (targetReused)
 				{

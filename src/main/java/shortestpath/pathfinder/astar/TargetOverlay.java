@@ -21,6 +21,7 @@ public final class TargetOverlay
 	@Getter @Accessors(fluent = true) private final long accountFingerprint;
 	private final CollisionMap collision;
 	private final int[] packed;
+	private final byte[] terminalLayers;
 	private final int[] nodes;
 	private final int[][] components;
 	private final int[][] attachmentSites;
@@ -34,14 +35,31 @@ public final class TargetOverlay
 
 	public TargetOverlay(SiteGraph graph, CollisionMap collision, int[] packedTargets)
 	{
-		if (graph == null || collision == null || packedTargets == null)
+		this(graph, collision, canonicalTargets(packedTargets, null));
+	}
+
+	/** Masks use 1 for carried and 2 for banked; duplicate tiles union their layers. */
+	public TargetOverlay(SiteGraph graph, CollisionMap collision, int[] packedTargets, int[] terminalLayers)
+	{
+		this(graph, collision, canonicalTargets(packedTargets, java.util.Objects.requireNonNull(terminalLayers)));
+	}
+
+	TargetOverlay(SiteGraph graph, CollisionMap collision, long[] targets)
+	{
+		if (graph == null || collision == null)
 			throw new NullPointerException();
 		this.graph = graph;
 		this.stat = graph.routingStatic();
 		this.account = graph.preparedAccount();
 		this.accountFingerprint = account.fingerprint();
 		this.collision = collision;
-		this.packed = sortedUnique(packedTargets);
+		this.packed = new int[targets.length];
+		this.terminalLayers = new byte[targets.length];
+		for (int i = 0; i < targets.length; i++)
+		{
+			packed[i] = (int) (targets[i] >>> 2);
+			this.terminalLayers[i] = (byte) (targets[i] & 3);
+		}
 		if (packed.length == 0)
 			throw new IllegalArgumentException("target overlay needs at least one target");
 		int count = packed.length;
@@ -116,6 +134,19 @@ public final class TargetOverlay
 	public boolean isTarget(int tile)
 	{
 		return targetIndex(tile) >= 0;
+	}
+	public int targetLayers(int target)
+	{
+		return terminalLayers[target];
+	}
+	boolean isTerminal(int target, BankVisitState banked)
+	{
+		return (terminalLayers[target] & (banked == BankVisitState.BANKED ? 2 : 1)) != 0;
+	}
+	public boolean accepts(int tile, BankVisitState banked)
+	{
+		int target = targetIndex(tile);
+		return target >= 0 && isTerminal(target, banked);
 	}
 	public int targetNode(int target)
 	{
@@ -272,18 +303,26 @@ public final class TargetOverlay
 		throw new IllegalStateException("target attachment missing shared routing component");
 	}
 
-	private static int[] sortedUnique(int[] values)
+	/** Encodes each unsigned tile followed by its two layer bits; null layers means either. */
+	static long[] canonicalTargets(int[] values, int[] layers)
 	{
-		int[] sorted = values.clone();
-		for (int i = 0; i < sorted.length; i++)
-			sorted[i] ^= Integer.MIN_VALUE;
+		if (values == null) throw new NullPointerException("targets");
+		if (layers != null && values.length != layers.length)
+			throw new IllegalArgumentException("one layer mask is required per target");
+		long[] sorted = new long[values.length];
+		for (int i = 0; i < values.length; i++)
+		{
+			int mask = layers == null ? 3 : layers[i];
+			if (mask < 1 || mask > 3) throw new IllegalArgumentException("target layers must be 1, 2 or 3");
+			sorted[i] = Integer.toUnsignedLong(values[i]) << 2 | mask;
+		}
 		Arrays.sort(sorted);
 		int count = 0;
 		for (int i = 0; i < sorted.length; i++)
-			if (count == 0 || sorted[count - 1] != sorted[i])
+			if (count == 0 || (sorted[count - 1] >>> 2) != (sorted[i] >>> 2))
 				sorted[count++] = sorted[i];
-		for (int i = 0; i < count; i++)
-			sorted[i] ^= Integer.MIN_VALUE;
+			else
+				sorted[count - 1] |= sorted[i] & 3;
 		return Arrays.copyOf(sorted, count);
 	}
 
