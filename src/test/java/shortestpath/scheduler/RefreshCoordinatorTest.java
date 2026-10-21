@@ -478,7 +478,7 @@ public class RefreshCoordinatorTest
 		standingOnTheRoute();
 		when(scheduler.carriedItemMissing(AT_BANK)).thenReturn(true);
 
-		coordinator.widgetOpened(InterfaceID.BANKMAIN);
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
 		coordinator.itemsChanged(inventoryChanged());
 		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -491,7 +491,7 @@ public class RefreshCoordinatorTest
 		standingOnTheRoute();
 		when(scheduler.carriedItemMissing(AT_BANK)).thenReturn(false);
 
-		coordinator.widgetOpened(InterfaceID.BANKMAIN);
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
 		coordinator.itemsChanged(inventoryChanged());
 		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -504,7 +504,7 @@ public class RefreshCoordinatorTest
 	{
 		standingOnTheRoute();
 
-		coordinator.widgetOpened(InterfaceID.SHOPMAIN);
+		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
 		coordinator.itemsChanged(inventoryChanged());
 		coordinator.widgetClosed(InterfaceID.SHOPMAIN);
 		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
@@ -520,7 +520,7 @@ public class RefreshCoordinatorTest
 	{
 		standingOnTheRoute();
 
-		coordinator.widgetOpened(InterfaceID.BANKMAIN);
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
 		coordinator.widgetClosed(InterfaceID.BANKMAIN);
 		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 
@@ -546,7 +546,7 @@ public class RefreshCoordinatorTest
 		standingOnTheRoute();
 		when(scheduler.isStartPointSet()).thenReturn(true);
 
-		coordinator.widgetOpened(InterfaceID.BANKMAIN);
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
 		coordinator.itemsChanged(inventoryChanged());
 		coordinator.widgetClosed(InterfaceID.BANKMAIN);
 		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
@@ -559,7 +559,7 @@ public class RefreshCoordinatorTest
 	{
 		standingOnTheRoute();
 
-		coordinator.widgetOpened(InterfaceID.BANKMAIN);
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
 		coordinator.gameStateChanged(GameState.LOGIN_SCREEN, 10);
 		coordinator.itemsChanged(inventoryChanged());
 		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
