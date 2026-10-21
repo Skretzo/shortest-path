@@ -170,6 +170,10 @@
 4063 4550 2	4061 4466 0	Climb-through Opening 53622				9653>759;10820=0			
 4061 4466 0	4063 4550 2	Crawl-through Hole 53637				9653>759			
 									
+# The Fractured Archive entrance									
+4053 4568 0	4127 5508 0	Crawl-through Opening 62542			While Guthix Sleeps			2	
+4127 5508 0	4053 4568 0	Enter Opening 63009			While Guthix Sleeps				
+									
 # Farm between Lumbridge and Draynor									
 3197 3278 0	3197 3275 0	Climb-over Stile 12982						6	
 3197 3275 0	3197 3278 0	Climb-over Stile 12982						6	
