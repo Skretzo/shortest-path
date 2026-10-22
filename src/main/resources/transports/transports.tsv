@@ -5868,6 +5868,15 @@
 # Prifddinas									
 2157 3330 0	2157 3333 1	Cross Gangplank 34948						3	
 2157 3333 1	2157 3330 0	Cross Gangplank 34949						3	
+## Trahaearn Mine									
+3271 6051 0	3302 12454 0	Enter Cave entrance 36556							
+3302 12454 0	3271 6051 0	Exit Steps 36215							
+## Zalcano entrance									
+3282 6057 0	3033 6068 0	Channel Teleport Platform 36198							
+3033 6068 0	3283 6058 0	Channel Teleport Platform 36197							
+## Iorwerth Dungeon entrance									
+3225 6046 0	3225 12445 0	Enter Cave 36690							
+3225 12445 0	3225 6046 0	Exit Steps 36691							
 									
 # Port Tyras									
 2142 3122 0	2142 3125 1	Cross Gangplank 17408						3	
