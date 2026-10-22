@@ -1,6 +1,7 @@
 package shortestpath.overlay;
 
 import java.util.List;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -43,6 +44,44 @@ abstract class AbstractHighlightOverlay extends Overlay
 		}
 		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
 		return playerPathIndex(path, playerLocation, settings.lifecycle().recalculateDistance());
+	}
+
+	protected int getBankStepIndex(List<PathStep> path, Set<Integer> bankLocations)
+	{
+		if (client.getLocalPlayer() == null)
+		{
+			return -1;
+		}
+		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
+		return bankStepIndex(path, playerLocation, bankLocations, settings.lifecycle().recalculateDistance());
+	}
+
+	/**
+	 * The index of the route's bank step closest to the player, or -1 when none is within the
+	 * distance {@link #playerPathIndex} allows. The bank can be opened from more than one tile,
+	 * so the player isn't always standing on the route's bank step.
+	 */
+	static int bankStepIndex(List<PathStep> path, int playerLocation, Set<Integer> bankLocations,
+		int recalculateDistance)
+	{
+		int maxDistance = recalculateDistance < 0 ? -1 : recalculateDistance + REPLANNING_MARGIN_TILES;
+		int bestIndex = -1;
+		int bestDistance = Integer.MAX_VALUE;
+		for (int i = 0; i < path.size(); i++)
+		{
+			int position = path.get(i).getPackedPosition();
+			int distance = WorldPointUtil.distanceBetween(playerLocation, position);
+			if (distance == Integer.MAX_VALUE || (maxDistance >= 0 && distance >= maxDistance))
+			{
+				continue;
+			}
+			if (distance < bestDistance && bankLocations.contains(position))
+			{
+				bestDistance = distance;
+				bestIndex = i;
+			}
+		}
+		return bestIndex;
 	}
 
 	static int playerPathIndex(List<PathStep> path, int playerLocation, int recalculateDistance)
