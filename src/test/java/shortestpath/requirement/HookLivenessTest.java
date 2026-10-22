@@ -47,7 +47,7 @@ public class HookLivenessTest
 	}
 
 	private static RequirementContext capture(MapPlayerStateSource source, TestRequirementHooks hooks,
-		List<Transport> transports, Map<Integer, DestinationRequirements> bankRequirements)
+		List<Transport> transports, Map<Integer, List<DestinationRequirements>> bankRequirements)
 	{
 		return RequirementContext.capture(source, hooks, RequirementTestFixtures.policy(MODE), 0L,
 			transports, bankRequirements, null, Set.of(), false, new LeagueModeState(), null);
@@ -95,13 +95,13 @@ public class HookLivenessTest
 		TestRequirementHooks finished = new TestRequirementHooks()
 			.questState(QuestState.FINISHED);
 		RequirementContext done = capture(new MapPlayerStateSource(), finished,
-			List.of(), Map.of(BANK_TILE, gated));
+			List.of(), Map.of(BANK_TILE, List.of(gated)));
 		assertTrue(chain(done, finished).satisfied(gated));
 
 		TestRequirementHooks unfinished = new TestRequirementHooks()
 			.questState(QuestState.NOT_STARTED);
 		RequirementContext notDone = capture(new MapPlayerStateSource(), unfinished,
-			List.of(), Map.of(BANK_TILE, gated));
+			List.of(), Map.of(BANK_TILE, List.of(gated)));
 		assertFalse(chain(notDone, unfinished).satisfied(gated));
 		assertEquals(RejectionReason.QUEST, chain(notDone, unfinished).check(gated));
 	}

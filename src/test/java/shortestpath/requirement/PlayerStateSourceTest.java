@@ -95,7 +95,7 @@ public class PlayerStateSourceTest
 
 		RequirementContext context = RequirementContext.capture(source, hooks,
 			RequirementTestFixtures.policy(MODE), 0L,
-			List.of(gated), Map.of(BANK_TILE, bankGated), null,
+			List.of(gated), Map.of(BANK_TILE, List.of(bankGated)), null,
 			Set.of(), false, new LeagueModeState(), null);
 
 		// Round-trip: the declared varbit, varplayer and quests landed in the

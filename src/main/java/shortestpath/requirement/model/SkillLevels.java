@@ -126,28 +126,6 @@ public final class SkillLevels
 	}
 
 	/**
-	 * Elementwise maximum of two requirement sets; the empty arm hands back
-	 * the other side without allocating.
-	 */
-	public static SkillLevels merge(SkillLevels a, SkillLevels b)
-	{
-		if (a == null || a.isEmpty())
-		{
-			return b != null ? b : NONE;
-		}
-		if (b == null || b.isEmpty())
-		{
-			return a;
-		}
-		int[] merged = new int[LENGTH];
-		for (int i = 0; i < LENGTH; i++)
-		{
-			merged[i] = Math.max(a.levels[i], b.levels[i]);
-		}
-		return new SkillLevels(merged);
-	}
-
-	/**
 	 * The level a {@code Max} requirement resolves to at the given index:
 	 * 99 for the skill ordinals, the all-99 total, 126 for combat, the
 	 * refresh-state quest-point cap for the quest slot, and the sentinel
