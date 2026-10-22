@@ -625,7 +625,7 @@
 2874 3133 0	2874 3127 0	Swim-to Strong Tree 17074	78 Agility					
 2874 3136 0	2874 3142 0	Swim-to Shore 62420	78 Agility					
 2874 3142 0	2874 3136 0	Swim-to Shore 62420	78 Agility					
-# shortcut: Iorwerth northern gap endpoints inferred from cache and collision; verify tiles and timing in game.								Pending verification
+## Iorwerth Dungeon northern gap: 78 Agility								
 3216 12441 0	3222 12441 0	Pass Tight Gap 36693	78 Agility					
 3222 12441 0	3216 12441 0	Pass Tight Gap 36692	78 Agility					
 2871 3008 0	2871 3003 0	Climb Rocks 53238	79 Agility				5	
@@ -655,7 +655,7 @@
 3339 2981 0	3348 2981 0	Climb-down Slope 62415	83 Agility					
 2832 3247 0	2832 3252 0	Climb Rocks 53234	84 Agility				6	
 2832 3252 0	2832 3247 0	Climb Rocks 53236	84 Agility				6	
-# shortcut: Iorwerth southern gap endpoints inferred from cache and collision; verify tiles and timing in game.								Pending verification
+## Iorwerth Dungeon southern gap: 84 Agility								
 3232 12420 0	3242 12420 0	Pass Tight Gap 36695	84 Agility					
 3242 12420 0	3232 12420 0	Pass Tight Gap 36694	84 Agility					
 2338 3253 0	2332 3252 0	Climb Rocks 16515	85 Agility				6	
