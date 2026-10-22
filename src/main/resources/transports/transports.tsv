@@ -5881,6 +5881,20 @@
 ## Iorwerth Dungeon entrance									
 3225 6046 0	3225 12445 0	Enter Cave 36690							
 3225 12445 0	3225 6046 0	Exit Steps 36691							
+## Central Crystal Staircase: ground floor and upper floor									
+3263 6078 0	3268 6082 2	Climb up Crystal Staircase 36387							
+3264 6078 0	3268 6082 2	Climb up Crystal Staircase 36387							
+3268 6082 2	3263 6078 0	Climb down Crystal Staircase 36390							
+## Prifddinas Library teleport platform: central tower and library									
+3256 6082 2	3232 12537 0	Travel Teleport Platform 36614							
+3256 6083 2	3232 12537 0	Travel Teleport Platform 36614							
+3254 6081 2	3232 12537 0	Travel Teleport Platform 36614							
+3255 6081 2	3232 12537 0	Travel Teleport Platform 36614							
+3254 6084 2	3232 12537 0	Travel Teleport Platform 36614							
+3255 6084 2	3232 12537 0	Travel Teleport Platform 36614							
+3231 12537 0	3256 6082 2	Travel Teleport Platform 36615							
+3232 12537 0	3256 6082 2	Travel Teleport Platform 36615							
+3233 12537 0	3256 6082 2	Travel Teleport Platform 36615							
 									
 # Port Tyras									
 2142 3122 0	2142 3125 1	Cross Gangplank 17408						3	
