@@ -156,6 +156,7 @@ public enum ConfigKey
 	BUILT_TELEPORTATION_BOXES("builtTeleportationBoxes", String.class, "", Coercion.NONE, Effect.DISPLAY_ONLY),
 	BUILT_TELEPORTATION_PORTALS_POH("builtTeleportationPortalsPoh", String.class, "", Coercion.NONE, Effect.DISPLAY_ONLY),
 	BLOCKED_TELEPORT_ITEMS("blockedTeleportItems", String.class, "", Coercion.NONE, Effect.ROUTE_INVALIDATING),
+	RESTRICTIONS_OWNED_ONLY("restrictionsOwnedOnly", boolean.class, false, Coercion.BOOLEAN, Effect.DISPLAY_ONLY),
 	UNLOCK_BALLOON_LOG_BASKET("unlockBalloonLogBasket", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	BALLOON_LOG_BASKET_ROUTES("balloonLogBasketRoutes", Set.class, BalloonRoute.class, b -> Boolean.TRUE.equals(b.apply(forKey("unlockBalloonLogBasket"))) ? EnumSet.allOf(BalloonRoute.class) : EnumSet.noneOf(BalloonRoute.class), Coercion.NONE, Effect.ROUTE_INVALIDATING);
 	;
