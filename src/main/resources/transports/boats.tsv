@@ -191,3 +191,15 @@
 # Buccaneer's Haven Boat								
 2203 3803 0	2086 3689 0	Travel Rowboat 58643				18371=1	5	
 2086 3689 0	2203 3803 0	Travel Rowboat 58642				18371=1	5	
+								
+# The Great Conch rowboats (TT/18321 > 3: quest accepted; duration 6 estimated in #813)								
+3197 2531 0	3191 2370 0	Travel Rowboat 57950				18321>3	6	1: The Summer Shore.
+3197 2531 0	3264 2463 0	Travel Rowboat 57950				18321>3	6	2: Eastern Coast.
+3264 2463 0	3191 2370 0	Travel Rowboat 57951				18321>3	6	1: The Summer Shore.
+3264 2463 0	3197 2531 0	Travel Rowboat 57951				18321>3	6	2: Northern Coast.
+3265 2463 0	3191 2370 0	Travel Rowboat 57951				18321>3	6	1: The Summer Shore.
+3265 2463 0	3197 2531 0	Travel Rowboat 57951				18321>3	6	2: Northern Coast.
+3191 2370 0	3197 2531 0	Travel Rowboat 57952				18321>3	6	1: Northern Coast.
+3191 2370 0	3264 2463 0	Travel Rowboat 57952				18321>3	6	2: Eastern Coast.
+3192 2370 0	3197 2531 0	Travel Rowboat 57952				18321>3	6	1: Northern Coast.
+3192 2370 0	3264 2463 0	Travel Rowboat 57952				18321>3	6	2: Eastern Coast.
