@@ -12,7 +12,6 @@ import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
 import shortestpath.items.OwnedItems;
-import java.util.Set;
 
 /**
  * Map-backed {@link PlayerStateSource} for client-free requirement tests.
