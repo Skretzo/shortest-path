@@ -271,7 +271,8 @@ twin of a bank-dominated state.
   per search by `globalBounds`. This restores admissibility, because the
   relaxed graph assumes globals are usable sooner than the restricted state
   allows. The cap ignores the walk to a band where globals can be cast, so it is
-  loose for states deep in the Wilderness.
+  loose for states deep in the Wilderness. When the capped value is `INF`, no route
+  reaches a target from the state, casting or not, and it is pruned.
 - **Weight:** the priority is `g + round(weight · h)`. A weight of 1 is exact,
   and anything greater is an explicitly inexact mode.
 
@@ -279,8 +280,7 @@ twin of a bank-dominated state.
 
 1. The relaxed graph must contain every real edge, or a cheaper equivalent.
    Never drop an attachment or a transport.
-2. `INF` means prune. Never turn a missing value into 0, except in the
-   restricted fallback described under implementation notes.
+2. `INF` means prune. Never turn a missing value into 0.
 3. Clique and sparse labels must be equal, and the
    generator scan must equal the raw scan (`PreparedHeuristic.estimateRaw`).
    `SparseManhattanTest` and `MultiTargetTest` check both.
@@ -292,10 +292,6 @@ twin of a bank-dominated state.
 
 ## Implementation notes
 
-- **Restricted INF:** when the capped value is still `INF`,
-  `effectiveHeuristic` returns 0 (counted as `restrictedHeuristicZeroes`)
-  rather than pruning the state. This is conservative: it never loses a route,
-  but it can expand states that a stricter rule would prune.
 - **Target attachments:** the reverse search relaxes only a synthetic target's own
   attachment edges. Non-terminal synthetic target layers are also estimated from their
   component's finite site labels by `PreparedHeuristic`, including valid bank detours.
