@@ -36,6 +36,7 @@ public final class AStarPathfinder implements ActiveSearch
 	private final AStarRoutingSession session;
 	private final PreparedRoutingAccount account;
 	private final SearchRestrictions restrictions;
+	private final UnlockSuggestions unlocks;
 	private final long cutoffMillis;
 	private final double heuristicWeight;
 	@Getter private final long accountPrepareNanos;
@@ -54,6 +55,8 @@ public final class AStarPathfinder implements ActiveSearch
 	private volatile long walkCanonicalizeNanos;
 	private volatile List<AStarWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
 	private volatile long walkRewriteNanos;
+	private volatile long unlockSearchNanos;
+	private volatile List<UnlockSuggestions.Suggestion> unlockSuggestions = List.of();
 	private volatile List<Integer> clickPoints = List.of();
 	private volatile List<Integer> keptStepIndices = List.of();
 	private volatile boolean graphReused;
@@ -142,6 +145,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.account = config.prepareAStarRoutingAccount(true, goals.needsBank());
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, targets.points());
+		this.unlocks = config.unlockSuggestions(goals.needsBank());
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
@@ -189,6 +193,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.session = null;
 		this.account = null;
 		this.restrictions = SearchRestrictions.none();
+		this.unlocks = null;
 		this.goals = null;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
@@ -313,6 +318,17 @@ public final class AStarPathfinder implements ActiveSearch
 	{ return walkDiagnostics;
 	}
 
+	/** Empty until found, after the result is published, and for a cancelled search. */
+	@Override
+	public List<UnlockSuggestions.Suggestion> getUnlockSuggestions()
+	{ return cancelled ? List.of() : unlockSuggestions;
+	}
+
+	/** Time spent finding what to unlock after the search found the target unreachable. */
+	public long getUnlockSearchNanos()
+	{ return unlockSearchNanos;
+	}
+
 	/** Time spent rewriting the canonical walking legs into the game's own walking paths. */
 	public long getWalkRewriteNanos()
 	{ return walkRewriteNanos;
@@ -362,6 +378,11 @@ public final class AStarPathfinder implements ActiveSearch
 		entries.put("Graph prep", isGraphReused() ? "reused"
 			: PathfinderStats.millis(getGraphPrepareNanos()));
 		entries.put("Account prep", PathfinderStats.millis(getAccountPrepareNanos()));
+		if (getUnlockSearchNanos() > 0)
+		{
+			entries.put("Unlock search", PathfinderStats.millis(getUnlockSearchNanos())
+				+ ", " + getUnlockSuggestions().size() + " found");
+		}
 		if (getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
 		{
 			entries.put("Static data", PathfinderStats.millis(getRoutingStaticNanos()));
@@ -378,6 +399,8 @@ public final class AStarPathfinder implements ActiveSearch
 	{
 		stats.start();
 		long started = System.nanoTime();
+		// Set when the search finds its target unreachable and there may be something to unlock.
+		RoutingStatic unreachableIn = null;
 		try
 		{
 			if (failure != null)
@@ -484,9 +507,12 @@ public final class AStarPathfinder implements ActiveSearch
 					stats.transportsChecked, System.nanoTime() - started, PathTerminationReason.TARGET_REACHED, null,
 					arrival(path));
 			else
+			{
 				result = new PathfinderResult(start, firstTarget(), false, path, last(path), PathfinderResult.NO_PATH_COST,
 					stats.nodesChecked, stats.transportsChecked, System.nanoTime() - started,
 					PathTerminationReason.SEARCH_EXHAUSTED);
+				if (unlocks != null && goals.hasViableGoal()) unreachableIn = staticData;
+			}
 		}
 		// Errors too: the static build allocates the large search arrays, where OOM is the most
 		// plausible fatal failure; an uncaught Error would leave result null and display as
@@ -505,6 +531,15 @@ public final class AStarPathfinder implements ActiveSearch
 			done = !cancelled;
 			stats.end();
 			if (completionCallback != null) completionCallback.run();
+		}
+		// The unreachable result is already out; what to unlock follows on this thread, unless a
+		// newer search cancels this one first.
+		if (unreachableIn != null && !cancelled)
+		{
+			long phaseStarted = System.nanoTime();
+			unlockSuggestions = unlocks.find(unreachableIn, collision, account, start, goals, restrictions,
+				heuristicWeight, () -> cancelled);
+			unlockSearchNanos = System.nanoTime() - phaseStarted;
 		}
 	}
 

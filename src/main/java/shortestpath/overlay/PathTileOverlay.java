@@ -401,10 +401,9 @@ public class PathTileOverlay extends Overlay
 			if (renderState.isPathUnreachable() && settings.display().showUnreachableText())
 			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
-				String locked = annotator.getLockedTransportsText(search);
-				if (locked != null)
+				for (String line : annotator.getUnlockSuggestionLines(search))
 				{
-					playerTileLabelOffset += drawLabelOnPlayerTile(graphics, locked, playerTileLabelOffset);
+					playerTileLabelOffset += drawLabelOnPlayerTile(graphics, line, playerTileLabelOffset);
 				}
 			}
 			String missingItems = annotator.getMissingTargetItemsText(search);

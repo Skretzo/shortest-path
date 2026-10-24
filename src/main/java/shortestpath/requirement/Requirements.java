@@ -1,7 +1,9 @@
 package shortestpath.requirement;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -91,18 +93,93 @@ public final class Requirements
 	}
 
 	/**
-	 * Whether what keeps the transport from running is the player's own state — a skill, quest,
-	 * var or item they don't have yet — rather than a setting, the world type or a league region.
-	 * A transport passing every gate here is gated by its items in {@link TransportEligibility}.
+	 * Whether nothing but the player's own progress could stand between them and the transport:
+	 * every gate a setting, the world type or a league region decides passes.
 	 */
-	public boolean lockedByPlayerState(Transport transport)
+	public boolean obtainable(Transport transport)
 	{
-		return PLAYER_STATE.contains(check(transport));
+		return sailing(transport) == RejectionReason.NONE && pohDisabled(transport) == RejectionReason.NONE
+			&& leagueRegion(transport) == RejectionReason.NONE && typeDisabled(transport) == RejectionReason.NONE
+			&& pohVariant(transport) == RejectionReason.NONE && teleportationItem(transport) == RejectionReason.NONE
+			&& jewelleryBoxTier(transport) == RejectionReason.NONE;
 	}
 
-	private static final Set<RejectionReason> PLAYER_STATE = EnumSet.of(RejectionReason.NONE,
-		RejectionReason.SKILL_LEVEL, RejectionReason.QUEST, RejectionReason.VARBIT, RejectionReason.VARPLAYER,
-		RejectionReason.ITEM_REQUIREMENT);
+	/**
+	 * The capabilities that would each open the locked transport on their own: the quests it needs
+	 * the player hasn't finished, the skill levels they lack, or one set of items per alternative
+	 * they could carry. Empty when the transport is usable, when it is closed by a setting or by
+	 * something not modelled as a capability (vars, declared unlocks, respawn, planted spirit trees),
+	 * or when it needs more than one kind of capability.
+	 */
+	public List<Capability> capabilities(Transport transport)
+	{
+		if (!obtainable(transport) || respawn(transport) != RejectionReason.NONE
+			|| unlockGate(transport) != RejectionReason.NONE || varbit(transport) != RejectionReason.NONE
+			|| varplayer(transport) != RejectionReason.NONE || plantedSpiritTree(transport) != RejectionReason.NONE)
+		{
+			return List.of();
+		}
+		boolean skills = skillLevel(transport) != RejectionReason.NONE;
+		boolean quests = quest(transport) != RejectionReason.NONE;
+		boolean items = itemRequirement(transport) != RejectionReason.NONE;
+		if ((skills ? 1 : 0) + (quests ? 1 : 0) + (items ? 1 : 0) != 1)
+		{
+			return List.of();
+		}
+		if (quests)
+		{
+			Set<Quest> missing = new HashSet<>();
+			for (Quest quest : transport.getQuests())
+			{
+				if (!completedQuests(List.of(quest)))
+				{
+					missing.add(quest);
+				}
+			}
+			return List.of(Capability.quests(missing));
+		}
+		if (skills)
+		{
+			boolean skipTotalLevel = context.getLeagueModeSnapshot().isSeasonal();
+			int[] levels = new int[SkillLevels.LENGTH];
+			int levelsMissing = 0;
+			for (int i = 0; i < levels.length; i++)
+			{
+				int required = transport.getSkillLevels().get(i);
+				if (required == SkillLevels.MAX_LEVEL)
+				{
+					required = SkillLevels.maximumLevel(i, context.getCurrentMaxQuestPoints());
+				}
+				if ((!skipTotalLevel || i != SkillLevels.TOTAL_LEVEL_INDEX) && boostedSkillLevelsAndMore.get(i) < required)
+				{
+					levels[i] = required;
+					levelsMissing += required - boostedSkillLevelsAndMore.get(i);
+				}
+			}
+			return List.of(Capability.skills(SkillLevels.of(levels), levelsMissing));
+		}
+		TransportEligibility eligibility = context.getEligibility();
+		List<Capability> alternatives = new ArrayList<>();
+		for (Map<Integer, Integer> carry : eligibility.missingItems(transport))
+		{
+			boolean owned = carry.entrySet().stream().allMatch(item ->
+				eligibility.heldItems().carriedAndBanked().getOrDefault(item.getKey(), 0) >= item.getValue());
+			alternatives.add(Capability.items(carry, owned));
+		}
+		return alternatives;
+	}
+
+	/** These requirements as they would be had the player got {@code capability}. */
+	public Requirements granting(Capability capability)
+	{
+		return new Requirements(context.granting(capability), policy, hooks);
+	}
+
+	/** The item snapshot these requirements were built over. */
+	public TransportEligibility eligibility()
+	{
+		return context.getEligibility();
+	}
 
 	/**
 	 * Whether the bank-destination requirement set is satisfied by this

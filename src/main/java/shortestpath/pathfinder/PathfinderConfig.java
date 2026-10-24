@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import lombok.Getter;
 import net.runelite.api.Client;
@@ -368,16 +369,6 @@ public class PathfinderConfig
 	{
 		return getTransportAvailability(includeBankPath ? BankVisitState.BANKED : BankVisitState.CARRIED)
 			.getDisplayTransports();
-	}
-
-	/**
-	 * Whether an unusable transport is locked by the player's skills, quests, vars or items, so
-	 * getting those would open it — not turned off in settings.
-	 */
-	public boolean isLockedByPlayerState(Transport transport)
-	{
-		Requirements current = requirements;
-		return current != null && current.lockedByPlayerState(transport);
 	}
 
 	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(BankVisitState bankVisitState)
@@ -808,9 +799,16 @@ public class PathfinderConfig
 		varbitValues = context.getVarbitValues();
 		varPlayerValues = context.getVarPlayerValues();
 		requirements = new Requirements(context, policy, requirementHooks);
-		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
-		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
-		for (Transport transport : allTransports)
+		transportAvailabilities = availabilities(allTransports, requirements);
+	}
+
+	/** The transports usable under {@code requirements} without and with a bank visit. */
+	private static TransportAvailabilities availabilities(Transport[] transports, Requirements requirements)
+	{
+		TransportEligibility eligibility = requirements.eligibility();
+		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(transports.length);
+		TransportAvailability.Builder withBank = new TransportAvailability.Builder(transports.length);
+		for (Transport transport : transports)
 		{
 			if (!requirements.usable(transport))
 			{
@@ -831,7 +829,42 @@ public class PathfinderConfig
 
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
-		transportAvailabilities = new TransportAvailabilities(withoutBank.build(), withBank.build());
+		return new TransportAvailabilities(withoutBank.build(), withBank.build());
+	}
+
+	/**
+	 * What a search of this refresh that can't reach its target may suggest unlocking. It captures
+	 * this refresh's requirements, so it may run on the pathfinding thread; {@code null} before the
+	 * first refresh. {@code targetsNeedBank} as for {@link #prepareAStarRoutingAccount(boolean, boolean)}.
+	 */
+	public UnlockSuggestions unlockSuggestions(boolean targetsNeedBank)
+	{
+		Requirements current = requirements;
+		if (current == null)
+		{
+			return null;
+		}
+		Transport[] transports = allTransports;
+		boolean bankPath = includeBankPath || targetsNeedBank;
+		Set<Integer> banks = accessibleBankTiles;
+		int visitCost = bankVisitCost;
+		Function<TransportAvailabilities, PreparedRoutingAccount> compile = availabilities -> PreparedRoutingAccount.compile(
+			availabilities.withoutBank, availabilities.withBank, bankPath, banks, visitCost, true,
+			this::getAdditionalTransportCost);
+		return new UnlockSuggestions(current, granted -> compile.apply(availabilities(transports, granted)), () ->
+		{
+			TransportAvailability.Builder obtainable = new TransportAvailability.Builder(transports.length);
+			for (Transport transport : transports)
+			{
+				if (current.obtainable(transport))
+				{
+					obtainable.add(transport);
+				}
+			}
+			obtainable.remapPohTransports();
+			TransportAvailability built = obtainable.build();
+			return compile.apply(new TransportAvailabilities(built, built));
+		});
 	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)

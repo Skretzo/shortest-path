@@ -1,24 +1,15 @@
 package shortestpath.pathfinder;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import lombok.Getter;
-import shortestpath.PrimitiveIntHashMap;
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
-import shortestpath.transport.Transport;
 
 public class Pathfinder implements ActiveSearch
 {
-	private static final int MAX_LOCKED_TRANSPORTS = 3;
-
 	private final PathfinderStats stats;
 	@Getter
 	private final int start;
@@ -61,8 +52,6 @@ public class Pathfinder implements ActiveSearch
 	private volatile int closestReachedPoint = WorldPointUtil.UNDEFINED;
 	private volatile int finalPathCost = PathfinderResult.NO_PATH_COST;
 	private volatile Arrival arrival;
-	@Getter
-	private volatile List<Transport> nearestLockedTransports = List.of();
 	private int bestRemainingDistance = Integer.MAX_VALUE;
 	private int bestTravelledDistance = Integer.MAX_VALUE;
 	private int bestX = Integer.MAX_VALUE;
@@ -320,53 +309,6 @@ public class Pathfinder implements ActiveSearch
 	}
 
 	/**
-	 * The transports the search walked up to but couldn't take, nearest the target by where they
-	 * land, one per destination name: the locks keeping the target out of reach (e.g. the boat to
-	 * Aldarin without its fare). Only those landing nearer than any tile the search reached.
-	 */
-	private List<Transport> findNearestLockedTransports()
-	{
-		Map<Transport, Integer> distances = new HashMap<>();
-		PrimitiveIntHashMap<Transport[]> all = config.getAllDisplayTransports();
-		for (int origin : all.keys())
-		{
-			if (origin == Transport.UNDEFINED_ORIGIN)
-			{
-				continue;
-			}
-			for (BankVisitState bank : BankVisitState.values())
-			{
-				if (!visited.get(origin, bank))
-				{
-					continue;
-				}
-				List<Transport> usable = Arrays.asList(config.getTransportsPacked(bank).getOrDefault(origin, new Transport[0]));
-				for (Transport transport : all.get(origin))
-				{
-					int distance = Integer.MAX_VALUE;
-					for (int target : targets.points())
-					{
-						distance = Math.min(distance, WorldPointUtil.distanceBetween(target, transport.getDestination(),
-							WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC));
-					}
-					if (distance < bestRemainingDistance && !usable.contains(transport)
-						&& config.isLockedByPlayerState(transport))
-					{
-						distances.merge(transport, distance, Math::min);
-					}
-				}
-			}
-		}
-		Set<String> names = new HashSet<>();
-		return distances.entrySet().stream()
-			.sorted(Map.Entry.comparingByValue())
-			.map(Map.Entry::getKey)
-			.filter(t -> names.add(t.getType() + " " + (t.getDisplayInfo() != null ? t.getDisplayInfo() : t.getObjectInfo())))
-			.limit(MAX_LOCKED_TRANSPORTS)
-			.collect(Collectors.toList());
-	}
-
-	/**
 	 * Update wilderness level based on the current node position.
 	 */
 	private void updateWildernessLevel(int packedPosition)
@@ -503,11 +445,6 @@ public class Pathfinder implements ActiveSearch
 		// Materialise the final path and closest reached tile on the worker thread, publish them,
 		// then release the large node graph. Once done is set the render thread serves finalPath
 		// and never touches the released graph, so this is race-free with progressive rendering.
-		if (reachedTarget == WorldPointUtil.UNDEFINED && !cancelled)
-		{
-			nearestLockedTransports = findNearestLockedTransports();
-		}
-
 		int lastNode = bestLastNode;
 		if (lastNode != NodeGraph.NO_NODE)
 		{

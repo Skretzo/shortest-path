@@ -2,7 +2,6 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import java.util.Map;
-import shortestpath.transport.Transport;
 
 /**
  * The plugin-facing handle for an active route search.
@@ -62,10 +61,11 @@ public interface ActiveSearch extends Runnable
 	}
 
 	/**
-	 * For a finished search that reached no target, the transports it walked up to but couldn't
-	 * take, nearest the target first; empty for backends that do not record them.
+	 * For a finished search that found its target unreachable, what the player could unlock to
+	 * reach it, cheapest first. They may arrive after {@link #isDone()}, as a new list; empty until
+	 * then, once cancelled, and for backends that do not look.
 	 */
-	default List<Transport> getNearestLockedTransports()
+	default List<UnlockSuggestions.Suggestion> getUnlockSuggestions()
 	{
 		return List.of();
 	}
