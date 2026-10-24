@@ -1,10 +1,8 @@
 package shortestpath.transport;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -12,10 +10,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
-import shortestpath.ShortestPathConfig;
 import shortestpath.settings.ConfigKey;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.poh.PohNexusPortal;

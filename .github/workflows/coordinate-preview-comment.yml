@@ -54,7 +54,7 @@ jobs:
 
       - name: Render coordinate previews
         if: env.SKIP_COMMENT != 'true'
-        uses: collisionlab/osrs-coord-preview-action@v1.5.0
+        uses: collisionlab/osrs-coord-preview-action@v1.5.1
         with:
           coordinates-file: build/changed-coordinates.json
           comment: "true"

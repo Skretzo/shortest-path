@@ -1,6 +1,5 @@
 package shortestpath.requirement;
 
-import java.util.EnumSet;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.poh.PohNexusPortal;

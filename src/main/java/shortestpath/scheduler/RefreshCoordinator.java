@@ -11,7 +11,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
 import shortestpath.settings.Settings;
-import shortestpath.ShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;
 import shortestpath.pathfinder.ActiveSearch;

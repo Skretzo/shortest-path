@@ -169,7 +169,8 @@ public class ConfigDemotionTest
 			boundaryViolations.isEmpty());
 
 		Set<String> missing = new TreeSet<>(PANEL_OWNED_KEYS);
-		missing.removeIf(key -> {
+		missing.removeIf(key ->
+		{
 			ConfigKey row = ConfigKey.forKey(key);
 			return row != null && row.isKeyed() && !annotatedKeys.contains(key)
 				&& ConfigItems.of(key) != null;
