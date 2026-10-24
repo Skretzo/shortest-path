@@ -28,6 +28,12 @@ import org.junit.Assert;
  *
  * <pre>TRANSCRIPT_REGEN=1 ./gradlew -p shortest-path test --tests '*OverlayTranscriptTest*'</pre>
  *
+ * Only the values {@code 1} and {@code true} opt in — a stray
+ * {@code TRANSCRIPT_REGEN} set to anything else is ignored with a stderr
+ * note, and the suite compares normally. When regen is active a banner and
+ * every rewritten file go to stderr so the run cannot read as an ordinary
+ * green pass: nothing is compared while regenerating.
+ *
  * Regen is for deliberate draw changes only — the goldens are the
  * consolidation oracle, so a regen that masks accidental drift voids it.
  * The write goes to the source tree (the Gradle test working directory is the
@@ -36,17 +42,43 @@ import org.junit.Assert;
 final class TranscriptGolden
 {
 	private static final String RESOURCE_DIR = "overlay-transcripts";
+	private static final boolean REGEN = regenRequested();
+	private static boolean regenAnnounced;
 
 	private TranscriptGolden()
 	{
 	}
 
+	private static boolean regenRequested()
+	{
+		String value = System.getenv("TRANSCRIPT_REGEN");
+		if (value == null)
+		{
+			return false;
+		}
+		if ("1".equals(value) || "true".equalsIgnoreCase(value))
+		{
+			return true;
+		}
+		// A set-but-unrecognized value must not vacuate the oracle.
+		System.err.println("TRANSCRIPT_REGEN=" + value + " ignored — regeneration"
+			+ " requires TRANSCRIPT_REGEN=1; comparing against goldens normally");
+		return false;
+	}
+
 	static void compareOrRegen(String scenario, List<String> transcript)
 	{
 		String body = String.join("\n", transcript) + "\n";
-		if (System.getenv("TRANSCRIPT_REGEN") != null)
+		if (REGEN)
 		{
+			if (!regenAnnounced)
+			{
+				regenAnnounced = true;
+				System.err.println("TRANSCRIPT_REGEN active — rewriting goldens,"
+					+ " nothing is being compared");
+			}
 			regen(scenario, body);
+			System.err.println("  rewrote " + scenario + ".txt");
 			return;
 		}
 		String expected = read(scenario);
