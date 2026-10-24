@@ -40,18 +40,18 @@ public class RecordingGraphics2DTest
 		g.dispose();
 
 		assertEquals(6, transcript.size());
-		assertTrue(transcript.get(0).startsWith("setColor rgba(255,0,0,255)"));
+		assertTrue(transcript.get(0).startsWith("setColor rgb(255,0,0) a=255"));
 		assertTrue(transcript.get(1).startsWith("setStroke BasicStroke(w=4.0)"));
 		assertTrue(transcript.get(2).startsWith("setClip 2,3 20x20"));
 		// Inherited state is captured at call time: the draw carries the
 		// colour/stroke/clip the callee saw.
 		String line = transcript.get(3);
 		assertTrue(line.startsWith("drawLine 1,2->3,4"));
-		assertTrue(line.contains("color=rgba(255,0,0,255)"));
+		assertTrue(line.contains("color=rgb(255,0,0) a=255"));
 		assertTrue(line.contains("stroke=BasicStroke(w=4.0)"));
 		assertTrue(line.contains("clip=Rect("));
 		assertTrue(transcript.get(4).startsWith("drawString \"hi\" @5,6"));
-		assertEquals("dispose | color=rgba(255,0,0,255) stroke=BasicStroke(w=4.0) clip=Rect(2.0,3.0 20.0x20.0)",
+		assertEquals("dispose | color=rgb(255,0,0) a=255 stroke=BasicStroke(w=4.0) clip=Rect(2.0,3.0 20.0x20.0)",
 			transcript.get(5));
 	}
 
@@ -86,13 +86,12 @@ public class RecordingGraphics2DTest
 	@Test
 	public void shapeStringificationRoundsToOneDecimal()
 	{
-		// The mask point for wall-clock-phased args: sub-tenth jitter must not
-		// reach the transcript.
+		// The mask point for wall-clock-phased args: segment signature stays exact.
 		Path2D path = new Path2D.Double();
 		path.moveTo(1.234, 5.678);
 		path.lineTo(9.999, 0.001);
 		path.closePath();
-		assertEquals("Path2D(M1.2,5.7 L10.0,0.0 Z)", RecordingGraphics2D.shape(path));
+		assertEquals("Path2D(M L Z)", RecordingGraphics2D.shape(path));
 	}
 
 	@Test

@@ -1,0 +1,25 @@
+setColor rgb(200,40,240) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+draw Line2D(382.0,251.0->382.0,251.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(382.0,251.0->382.0,251.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(382.0,251.0->382.0,251.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(382.0,251.0->382.0,251.0) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=255 | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+fillOval 376,245 12x12 | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+create | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+transform AffineTransform[[-0.0, 1.0, 382.0], [-1.0, 0.0, 251.0]] | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+fill Path2D(M L L Z) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+dispose | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(0,0,255) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=4.0) clip=null
+fill Polygon(1687,251 1771,251 1639,251 1562,251) | color=rgb(0,0,255) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(0,0,255) a=* stroke=BasicStroke(w=4.0) clip=null
+drawString "Destination could not be reached" @287,237 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=4.0) clip=null
+drawString "Destination could not be reached" @286,236 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=4.0) clip=null

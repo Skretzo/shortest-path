@@ -1,0 +1,42 @@
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(329,251 435,251 429,251 335,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @342,237 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @341,236 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @298,220 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @297,219 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(435,251 542,251 523,251 429,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @442,203 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @441,202 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @398,186 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @397,185 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(542,251 648,251 617,251 523,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @542,169 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @541,168 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @498,152 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @497,151 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1603,251 1687,251 1562,251 1486,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @1542,135 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @1541,134 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @1498,118 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @1497,117 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1687,251 1771,251 1639,251 1562,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null

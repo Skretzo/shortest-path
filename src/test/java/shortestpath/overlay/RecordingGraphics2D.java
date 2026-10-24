@@ -87,13 +87,22 @@ final class RecordingGraphics2D extends Graphics2D
 		transcript.add(call + " |" + state());
 	}
 
+	/**
+	 * Alpha is bucketed ({@code a=0} / {@code a=255} / {@code a=*}) rather than
+	 * rendered verbatim: the teleport pulse's alpha is wall-clock phased
+	 * ({@code System.currentTimeMillis()} drives the ring fade), so any exact
+	 * value — or finer bucket — would flake run to run. RGB channels stay
+	 * exact; a deliberate alpha change still surfaces (off, opaque, faded).
+	 */
 	private static String colour(Color c)
 	{
 		if (c == null)
 		{
 			return "null";
 		}
-		return String.format(Locale.ROOT, "rgba(%d,%d,%d,%d)", c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
+		int a = c.getAlpha();
+		return String.format(Locale.ROOT, "rgb(%d,%d,%d) a=%s",
+			c.getRed(), c.getGreen(), c.getBlue(), a == 0 ? "0" : a == 255 ? "255" : "*");
 	}
 
 	private static String stroke(Stroke s)
@@ -156,27 +165,29 @@ final class RecordingGraphics2D extends Graphics2D
 		}
 		if (s instanceof Path2D)
 		{
+			// Segment-kind signature only, no coordinates: Path2D is what the
+			// wall-clock-phased draws use (teleport-pulse rings scale their
+			// vertices by a millisecond-derived phase — coordinates can never
+			// be pinned), and the signature still pins structure (an arrowhead
+			// is M L L Z, a pulse ring M L L L Z).
 			PathIterator it = s.getPathIterator(null);
 			List<String> segments = new ArrayList<>();
 			double[] coords = new double[6];
 			while (!it.isDone())
 			{
-				int type = it.currentSegment(coords);
-				switch (type)
+				switch (it.currentSegment(coords))
 				{
 					case PathIterator.SEG_MOVETO:
-						segments.add(String.format(Locale.ROOT, "M%.1f,%.1f", coords[0], coords[1]));
+						segments.add("M");
 						break;
 					case PathIterator.SEG_LINETO:
-						segments.add(String.format(Locale.ROOT, "L%.1f,%.1f", coords[0], coords[1]));
+						segments.add("L");
 						break;
 					case PathIterator.SEG_QUADTO:
-						segments.add(String.format(Locale.ROOT, "Q%.1f,%.1f %.1f,%.1f",
-							coords[0], coords[1], coords[2], coords[3]));
+						segments.add("Q");
 						break;
 					case PathIterator.SEG_CUBICTO:
-						segments.add(String.format(Locale.ROOT, "C%.1f,%.1f %.1f,%.1f %.1f,%.1f",
-							coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]));
+						segments.add("C");
 						break;
 					case PathIterator.SEG_CLOSE:
 						segments.add("Z");
