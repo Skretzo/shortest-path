@@ -8,10 +8,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Item;
@@ -33,6 +35,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.settings.TeleportationItem;
+import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
 /** What an A* search that can't reach its target suggests unlocking, on the real world data. */
@@ -159,6 +162,23 @@ public class UnlockSuggestionsTest
 		assertFalse(later.getUnlockSuggestions().isEmpty());
 		later.cancel();
 		assertTrue(later.getUnlockSuggestions().isEmpty());
+	}
+
+	@Test
+	public void anotherWayToOpenTheSameTransportIsNotSuggestedAgain()
+	{
+		// With teleport items on, any of the quetzal whistles takes the player to Aldarin: one is enough.
+		config.disableTransportToggles();
+		config.set("useShips", true);
+		config.set("useQuetzals", true);
+		config.set("useTeleportationItems", TeleportationItem.INVENTORY);
+		setup(99);
+
+		List<Transport> opened = search(SUNSET_COAST, ALDARIN).getUnlockSuggestions().stream()
+			.map(UnlockSuggestions.Suggestion::getTransport).collect(Collectors.toList());
+
+		assertTrue(opened.stream().anyMatch(transport -> transport.getType() == TransportType.QUETZAL_WHISTLE));
+		assertEquals(opened.toString(), new HashSet<>(opened).size(), opened.size());
 	}
 
 	@Test
