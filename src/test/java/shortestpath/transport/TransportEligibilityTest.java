@@ -1,5 +1,6 @@
 package shortestpath.transport;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -393,6 +394,148 @@ public class TransportEligibilityTest
 		assertTrue(eligibility.bankPickupPlan(free).bankItemIds.isEmpty());
 	}
 
+	// ------------------------------------------------------------------
+	// Usable-side teleportation-item mode matrix — the twin of the
+	// check-side matrix: every mode x consumable cell asserts the
+	// usable(CARRIED) verdict on a carried-satisfying pool.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void everyTeleportationItemModeIsUsableOnACarriedConsumable()
+	{
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		Transport consumable = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+
+		Map<TeleportationItem, Boolean> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, false);
+		expected.put(TeleportationItem.INVENTORY, true);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, true);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.UNLOCKED, true);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.ALL, true);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, false);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (Map.Entry<TeleportationItem, Boolean> entry : expected.entrySet())
+		{
+			TeleportationItem mode = entry.getKey();
+			assertEquals(mode + " usable(carried) on a carried consumable",
+				entry.getValue(),
+				eligibility(mode, false, Integer.MAX_VALUE).usable(consumable, BankVisitState.CARRIED));
+		}
+	}
+
+	@Test
+	public void everyTeleportationItemModeIsUsableOnACarriedNonConsumable()
+	{
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		Transport nonConsumable = teleportItem(FALADOR_TELEPORT.getItemRequirements(), false);
+
+		Map<TeleportationItem, Boolean> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, false);
+		expected.put(TeleportationItem.INVENTORY, true);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, true);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.UNLOCKED, true);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.ALL, true);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, true);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (Map.Entry<TeleportationItem, Boolean> entry : expected.entrySet())
+		{
+			TeleportationItem mode = entry.getKey();
+			assertEquals(mode + " usable(carried) on a carried non-consumable",
+				entry.getValue(),
+				eligibility(mode, false, Integer.MAX_VALUE).usable(nonConsumable, BankVisitState.CARRIED));
+		}
+	}
+
+	// ------------------------------------------------------------------
+	// Named divergent-branch cases — the cells that distinguish a bypass
+	// verdict from a deferral that happens to pass.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void unlockedModeBypassesItemPoolsEntirely()
+	{
+		// UNLOCKED returns true on both pools even when they are empty —
+		// items are never evaluated. A deferred verdict would read false on
+		// these pools, so this is the bypass/deferral boundary.
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+		TransportEligibility eligibility = eligibility(TeleportationItem.UNLOCKED, false, Integer.MAX_VALUE);
+
+		assertTrue(eligibility.usable(teleport, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(teleport, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void nonConsumableModesSplitBypassFromDeferral()
+	{
+		// On a non-consumable with EMPTY pools the table splits: ALL/UNLOCKED
+		// non-consumable bypass the pools (true), while INVENTORY
+		// non-consumable modes defer to them and fail. A mode merged into the
+		// wrong arm is caught here and nowhere else.
+		Transport nonConsumable = teleportItem(FALADOR_TELEPORT.getItemRequirements(), false);
+
+		assertTrue(eligibility(TeleportationItem.ALL_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+		assertTrue(eligibility(TeleportationItem.UNLOCKED_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+		assertFalse(eligibility(TeleportationItem.INVENTORY_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+		assertFalse(eligibility(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+	}
+
+	@Test
+	public void inventoryAndBankReadsTheBankedPool()
+	{
+		// The item sits only in the bank: carried fails, banked passes.
+		bankHas.put(ItemID.LAWRUNE, 1);
+		bankHas.put(ItemID.AIRRUNE, 3);
+		bankHas.put(ItemID.WATERRUNE, 1);
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+		TransportEligibility eligibility = eligibility(TeleportationItem.INVENTORY_AND_BANK, false, Integer.MAX_VALUE);
+
+		assertFalse(eligibility.usable(teleport, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(teleport, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void noneModeRejectsOnBothPools()
+	{
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+
+		assertFalse(eligibility.usable(teleport, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(teleport, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void nonItemTeleportTypesAreNotModeRejected()
+	{
+		// A non-teleport-item type under NONE mode still reads the pools —
+		// the mode dispatch never reaches it.
+		playerHas.put(ItemID.SHANTAY_PASS, 1);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+
+		assertTrue(eligibility.usable(SHANTAY_GATE, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
+	}
+
 	private TransportEligibility eligibility(int bankPouchId)
 	{
 		return TransportEligibility.forPlayerAndBank(playerHas, bankHas, bankPouchId, bankPouchRunes);
@@ -431,8 +574,14 @@ public class TransportEligibilityTest
 
 	private static Transport teleportItem(TransportItems requirements)
 	{
+		return teleportItem(requirements, false);
+	}
+
+	private static Transport teleportItem(TransportItems requirements, boolean consumable)
+	{
 		return new Transport.TransportBuilder()
 			.type(TransportType.TELEPORTATION_ITEM)
+			.isConsumable(consumable)
 			.itemRequirements(requirements)
 			.build();
 	}

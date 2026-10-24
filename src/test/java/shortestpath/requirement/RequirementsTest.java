@@ -1494,4 +1494,99 @@ public class RequirementsTest
 		assertEquals(RejectionReason.NONE, requirements.check(plain));
 		assertEquals(RejectionReason.QUEST, requirements.check(gated));
 	}
+
+	// ------------------------------------------------------------------
+	// Adapter boundaries — the ordering and defer/bypass semantics that a
+	// shared mode-verdict policy must reproduce verbatim.
+	// ------------------------------------------------------------------
+
+	/**
+	 * The widest {@link RoutingPolicy} form — the fixture builder carries no
+	 * {@code blockedItemIds} setter, so the blocked-item cases construct it
+	 * directly with an empty {@code blockedOptionDests} map.
+	 */
+	private static RoutingPolicy policyWithBlockedItems(TeleportationItem mode, Set<Integer> blockedItemIds)
+	{
+		return new RoutingPolicy(
+			EnumSet.allOf(TransportType.class), mode,
+			true, true, true, true,
+			new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values())),
+			new HashSet<>(java.util.Arrays.asList(PohMountedItem.values())),
+			JewelleryBoxTier.ORNATE, Integer.MAX_VALUE, true,
+			blockedItemIds, Map.of());
+	}
+
+	@Test
+	public void blockedItemRunsBeforeTheModeDispatch()
+	{
+		// A blocked item collides with the transport's only alternative:
+		// under NONE the verdict is BLOCKED_ITEM, not TELEPORT_MODE — the
+		// restriction gate seats ahead of the mode dispatch. Under ALL the
+		// bypass still cannot skip it.
+		Transport blocked = transport(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(items(item(LAW_RUNE)))
+			.build();
+
+		assertEquals(RejectionReason.BLOCKED_ITEM,
+			requirements(RequirementTestFixtures.context()
+					.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.NONE, Map.of(LAW_RUNE, 1)))
+					.build(),
+				policyWithBlockedItems(TeleportationItem.NONE, Set.of(LAW_RUNE))).check(blocked));
+		assertEquals(RejectionReason.BLOCKED_ITEM,
+			requirements(RequirementTestFixtures.context()
+					.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.ALL, Map.of(LAW_RUNE, 1)))
+					.build(),
+				policyWithBlockedItems(TeleportationItem.ALL, Set.of(LAW_RUNE))).check(blocked));
+	}
+
+	@Test
+	public void gate15DistinguishesBypassFromDeferral()
+	{
+		// The bypass modes pass gate 15 on empty pools; INVENTORY defers and
+		// fails; NONE never reaches the item gate at all.
+		Transport teleport = transport(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(items(item(LAW_RUNE)))
+			.build();
+
+		for (TeleportationItem mode : new TeleportationItem[]{
+			TeleportationItem.ALL, TeleportationItem.UNLOCKED})
+		{
+			RequirementContext empty = RequirementTestFixtures.context()
+				.eligibility(RequirementTestFixtures.eligibility(mode, Map.of()))
+				.build();
+			assertEquals(mode + " bypasses empty pools",
+				RejectionReason.NONE,
+				requirements(empty, RequirementTestFixtures.policy(mode)).check(teleport));
+		}
+
+		RequirementContext empty = RequirementTestFixtures.context()
+			.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.INVENTORY, Map.of()))
+			.build();
+		assertEquals("INVENTORY defers to the pools",
+			RejectionReason.ITEM_REQUIREMENT,
+			requirements(empty, RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(teleport));
+
+		RequirementContext carried = RequirementTestFixtures.context()
+			.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.NONE, Map.of(LAW_RUNE, 1)))
+			.build();
+		assertEquals("NONE rejects at the mode seat regardless of items",
+			RejectionReason.TELEPORT_MODE,
+			requirements(carried, RequirementTestFixtures.policy(TeleportationItem.NONE)).check(teleport));
+	}
+
+	@Test
+	public void seasonalWorldRejectsRegardlessOfMode()
+	{
+		// The seasonal check sits ahead of the mode dispatch, so deferring
+		// and non-consumable modes report SEASONAL_WORLD on a normal world
+		// just as NONE and ALL already do.
+		RequirementContext normal = RequirementTestFixtures.context().build();
+		Transport seasonalTransport = transport(TransportType.SEASONAL_TRANSPORTS).build();
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			assertEquals(mode + " must not reach the mode dispatch",
+				RejectionReason.SEASONAL_WORLD,
+				requirements(normal, RequirementTestFixtures.policy(mode)).check(seasonalTransport));
+		}
+	}
 }
