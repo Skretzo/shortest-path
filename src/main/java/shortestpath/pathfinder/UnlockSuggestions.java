@@ -166,7 +166,10 @@ public final class UnlockSuggestions
 				outOfTime = true;
 				break;
 			}
-			if (suggestions.stream().anyMatch(suggestion -> capability.covers(suggestion.getCapability())))
+			// Skip one a cheaper suggestion already covers, or that only opens what one already opens
+			// (another variation of the same item, say).
+			if (suggestions.stream().anyMatch(suggestion -> capability.covers(suggestion.getCapability())
+				|| frontier.get(suggestion.getCapability()).containsAll(frontier.get(capability))))
 			{
 				continue;
 			}
