@@ -15,9 +15,11 @@ import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.Capability;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.transport.*;
+import shortestpath.requirement.model.SkillLevels;
 
 /**
  * The presentation leaf: owns the shared edge-annotation and display
@@ -79,9 +81,11 @@ public class PathAnnotator
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
-	// The locked-transports label of lockedSearch, built on the client thread when first drawn.
-	private ActiveSearch lockedSearch;
-	private String lockedText;
+	// The lines for unlockSource, the suggestions unlockSearch last published, built on the client
+	// thread when first drawn.
+	private ActiveSearch unlockSearch;
+	private List<UnlockSuggestions.Suggestion> unlockSource;
+	private List<String> unlockLines = List.of();
 
 	PathAnnotator(PohService pohService, ItemStateService itemState)
 	{
@@ -120,59 +124,64 @@ public class PathAnnotator
 	}
 
 	/**
-	 * The label naming the transports an unreachable route walked up to but couldn't take, with
-	 * the quests or items they need, or {@code null} when there are none. Built once per search,
-	 * on the client thread.
+	 * One line per unlock that would let an unreachable route reach its target, such as
+	 * "Carry 20 Coins to use: Ship Aldarin"; empty when there are none. The suggestions arrive after
+	 * the search is done, so the lines are rebuilt, on the client thread, whenever the search
+	 * publishes a new list.
 	 */
-	public String getLockedTransportsText(ActiveSearch search)
+	public List<String> getUnlockSuggestionLines(ActiveSearch search)
 	{
-		if (search != lockedSearch)
+		List<UnlockSuggestions.Suggestion> suggestions = search == null ? List.of() : search.getUnlockSuggestions();
+		if (search != unlockSearch || suggestions != unlockSource)
 		{
-			lockedSearch = search;
-			lockedText = null;
-		}
-		if (lockedText == null && search != null && search.isDone())
-		{
-			List<String> locks = new ArrayList<>();
-			for (Transport transport : search.getNearestLockedTransports())
+			unlockSearch = search;
+			unlockSource = suggestions;
+			List<String> lines = new ArrayList<>();
+			for (UnlockSuggestions.Suggestion suggestion : suggestions)
 			{
-				locks.add(lockedLabel(transport));
+				lines.add(capabilityLabel(suggestion.getCapability()) + " to use: " + transportLabel(suggestion.getTransport()));
 			}
-			lockedText = locks.isEmpty() ? "" : "Locked on the way: " + String.join(", ", locks);
+			unlockLines = lines;
 		}
-		return lockedText == null || lockedText.isEmpty() ? null : lockedText;
+		return unlockLines;
 	}
 
-	/** "Quetzal Aldarin (Twilight's Promise)", "Ship Aldarin (Coins)", "Open Gate (Shantay pass)" */
-	private String lockedLabel(Transport transport)
+	/** "Complete Twilight's Promise", "Reach 60 Agility", "Carry 20 Coins" */
+	private String capabilityLabel(Capability capability)
+	{
+		List<String> parts = new ArrayList<>();
+		capability.getQuests().forEach(quest -> parts.add(quest.getName()));
+		for (int i = 0; i < SkillLevels.LENGTH; i++)
+		{
+			int level = capability.getSkillLevels().get(i);
+			if (level > 0)
+			{
+				parts.add(i == SkillLevels.TOTAL_LEVEL_INDEX ? "total level " + level
+					: i == SkillLevels.COMBAT_LEVEL_INDEX ? "combat level " + level
+					: i == SkillLevels.QUEST_POINTS_INDEX ? level + " quest points"
+					: level + " " + Skill.values()[i].getName());
+			}
+		}
+		capability.getItems().forEach((id, quantity) -> parts.add(quantity > 1 ? quantity + " " + itemName(id) : itemName(id)));
+		Collections.sort(parts);
+		String verb = !capability.getQuests().isEmpty() ? "Complete " : capability.getItems().isEmpty() ? "Reach " : "Carry ";
+		return verb + String.join(", ", parts);
+	}
+
+	/** "Ship Aldarin", "Quetzal Aldarin", "Open Gate" */
+	private static String transportLabel(Transport transport)
 	{
 		String type = transport.getType().name().replace('_', ' ').toLowerCase();
-		String name = transport.getDisplayInfo() != null
-			? Character.toUpperCase(type.charAt(0)) + type.substring(1) + " " + transport.getDisplayInfo()
+		type = Character.toUpperCase(type.charAt(0)) + type.substring(1);
+		return transport.getDisplayInfo() != null ? type + " " + transport.getDisplayInfo()
 			: transport.getObjectInfo() != null ? transport.getObjectInfo().replaceAll(" \\d+$", "") : type;
-		List<String> needs = new ArrayList<>();
-		for (Quest quest : transport.getQuests())
-		{
-			if (pathfinderConfig == null || pathfinderConfig.getQuestState(quest) != QuestState.FINISHED)
-			{
-				needs.add(quest.getName());
-			}
-		}
-		if (needs.isEmpty() && transport.getItemRequirements() != null)
-		{
-			for (ItemRequirement group : transport.getItemRequirements().getRequirements())
-			{
-				needs.add(itemName(group.getBranches().get(0).getItemIds()[0]));
-			}
-		}
-		return needs.isEmpty() ? name : name + " (" + String.join(", ", needs) + ")";
 	}
 
 	private String itemName(int id)
 	{
 		// Requirement ids come from other plugins' messages; an invalid or renamed
 		// id may resolve to no name rather than crash every rendered frame.
-		ItemComposition def = client == null ? null : client.getItemDefinition(id);
+		ItemComposition def = client.getItemDefinition(id);
 		String name = def == null ? null : def.getName();
 		return name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name;
 	}
