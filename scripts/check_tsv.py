@@ -56,6 +56,11 @@ KNOWN_COLUMNS = {
 # transport TSV — its familyName/displayItemId/memberItemIds/memberLabels
 # columns are not transport columns.
 SKIP_FILES = {
+    "config-items.tsv",
+    "item-variations.tsv",
+    "poh-name-aliases.tsv",
+    "spell-widget-ids.tsv",
+    "spirit-tree-patches.tsv",
     "teleport_restrictions.tsv",
 }
 
