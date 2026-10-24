@@ -78,6 +78,8 @@ public class WidgetGeometry
 	private BufferedImage minimapSpriteFixed;
 	private BufferedImage minimapSpriteResizeable;
 	private Rectangle minimapRectangle = new Rectangle();
+	private int openMapCycle = -1;
+	private List<int[]> openMapAreas = List.of();
 
 	private WidgetGeometry()
 	{
@@ -152,25 +154,58 @@ public class WidgetGeometry
 		return WorldPointUtil.UNDEFINED;
 	}
 
-	// The real tile drawn at a spot of the open world map, which the map list
-	// button names in one of its texts
+	// The drawn areas of the open world map, which the map list button names in
+	// one of its texts; read once per client cycle as the overlays ask per tile
+	private List<int[]> openMapAreas()
+	{
+		if (client != null && openMapCycle != client.getGameCycle())
+		{
+			openMapCycle = client.getGameCycle();
+			openMapAreas = List.of();
+			Widget mapList = client.getWidget(InterfaceID.Worldmap.MAPLIST_DISPLAY);
+			Widget[] texts = mapList == null ? null : mapList.getDynamicChildren();
+			for (Widget text : texts == null ? new Widget[0] : texts)
+			{
+				openMapAreas = MAP_AREAS.getOrDefault(text == null ? null : text.getText(), openMapAreas);
+			}
+		}
+		return openMapAreas;
+	}
+
+	// The real tile drawn at a spot of the open world map
 	private int realMapPoint(int mapPoint)
 	{
 		int x = WorldPointUtil.unpackWorldX(mapPoint);
 		int y = WorldPointUtil.unpackWorldY(mapPoint);
-		Widget mapList = client.getWidget(InterfaceID.Worldmap.MAPLIST_DISPLAY);
-		Widget[] texts = mapList == null ? null : mapList.getDynamicChildren();
-		for (Widget text : texts == null ? new Widget[0] : texts)
+		for (int[] a : openMapAreas())
 		{
-			for (int[] a : MAP_AREAS.getOrDefault(text == null ? null : text.getText(), List.of()))
+			if (x >= a[0] && y >= a[1] && x < a[0] + a[2] && y < a[1] + a[3])
 			{
-				if (x >= a[0] && y >= a[1] && x < a[0] + a[2] && y < a[1] + a[3])
-				{
-					return WorldPointUtil.packWorldPoint(x + a[4], y + a[5], a[6]);
-				}
+				return WorldPointUtil.packWorldPoint(x + a[4], y + a[5], a[6]);
 			}
 		}
 		return mapPoint;
+	}
+
+	/**
+	 * Where the open world map draws a real tile, for drawing on the map: the
+	 * area holding the tile on the highest drawn plane up to the tile's own.
+	 */
+	public int drawnMapPoint(int point)
+	{
+		int x = WorldPointUtil.unpackWorldX(point);
+		int y = WorldPointUtil.unpackWorldY(point);
+		int plane = WorldPointUtil.unpackWorldPlane(point);
+		int[] area = null;
+		for (int[] a : openMapAreas())
+		{
+			if (a[6] <= plane && (area == null || a[6] > area[6]) && x >= a[0] + a[4] && y >= a[1] + a[5]
+				&& x < a[0] + a[4] + a[2] && y < a[1] + a[5] + a[3])
+			{
+				area = a;
+			}
+		}
+		return area == null ? point : WorldPointUtil.packWorldPoint(x - area[4], y - area[5], plane);
 	}
 
 	public int calculateMapPoint(int pointX, int pointY)

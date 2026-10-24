@@ -158,10 +158,11 @@ public class WidgetGeometryTest
 	}
 
 	@Test
-	public void worldMapClickFindsTheRealTileOfAMovedArea()
+	public void worldMapConvertsMovedAreasBothWays()
 	{
 		// Kourend Underground draws the Chasm of Fire's middle plane 128 tiles
-		// west and 96 tiles south of its real tiles (world-map-areas.tsv)
+		// west and 96 tiles south of its real tiles, the lowest plane 128 west
+		// and 192 south (world-map-areas.tsv)
 		Widget map = mock(Widget.class);
 		Widget mapList = mock(Widget.class);
 		Widget mapName = mock(Widget.class);
@@ -177,7 +178,12 @@ public class WidgetGeometryTest
 		when(client.getWidget(InterfaceID.Worldmap.MAPLIST_DISPLAY)).thenReturn(mapList);
 		when(mapList.getDynamicChildren()).thenReturn(new Widget[]{mapName});
 		when(mapName.getText()).thenReturn("Kourend Underground");
+		when(client.getGameCycle()).thenReturn(1);
 		assertEquals(WorldPointUtil.packWorldPoint(1438, 10093, 1), geometry.getSelectedWorldPoint());
+		assertEquals(WorldPointUtil.packWorldPoint(1310, 9997, 1),
+			geometry.drawnMapPoint(WorldPointUtil.packWorldPoint(1438, 10093, 1)));
+		assertEquals(WorldPointUtil.packWorldPoint(1329, 9883, 0),
+			geometry.drawnMapPoint(WorldPointUtil.packWorldPoint(1457, 10075, 0)));
 	}
 
 	@Test
