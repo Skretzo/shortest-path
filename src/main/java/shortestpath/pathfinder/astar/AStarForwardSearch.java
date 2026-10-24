@@ -76,7 +76,7 @@ public final class AStarForwardSearch
 		Runnable progressed)
 	{
 		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions, progressed,
-			(tile, banked) -> target.isTarget(tile));
+			target::accepts);
 	}
 
 	/**
@@ -588,11 +588,10 @@ public final class AStarForwardSearch
 		{
 			counters.restrictedHeuristicStates++;
 			int restricted = Math.min(resolved, globalBounds[banked == BankVisitState.BANKED ? 1 : 0]);
-			if (restricted == CostArithmetic.INF)
-			{
-				counters.restrictedHeuristicZeroes++;
-				return 0;
-			}
+			// Both infinite: no route from here reaches a target without a global teleport of this
+			// layer (h), nor with one (every cast lands where h is infinite), so the state is pruned
+			// like any other.
+			if (restricted == CostArithmetic.INF) counters.restrictedHeuristicZeroes++;
 			return restricted;
 		}
 		counters.normalHeuristicStates++;
@@ -869,6 +868,7 @@ public final class AStarForwardSearch
 		public int normalHeuristicStates()
 	{ return normalHeuristicStates;
 	}
+		/** Restricted states with no route to a target, with or without a global teleport: pruned. */
 		public int restrictedHeuristicZeroes()
 	{ return restrictedHeuristicZeroes;
 	}

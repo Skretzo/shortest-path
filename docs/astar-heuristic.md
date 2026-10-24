@@ -30,7 +30,7 @@ bucket empty, so it is pruned without being expanded.
 
 | Stage | Lifetime | Class | Produces |
 |---|---|---|---|
-| Sites, components, sparse network | plugin session | `RoutingStaticBuilder` → `RoutingStatic` | sites, attachments, `SparseWalkingNetworkBuilder` CSR |
+| Sites, components, sparse network | plugin session | `RoutingStaticBuilder` → `RoutingStatic` | sites, attachments, `ExactWalks`, `SparseWalkingNetworkBuilder` CSR |
 | Relaxed account graph | account fingerprint | `SiteGraph` | two-layer reverse CSR of explicit edges |
 | Target overlay | target set | `TargetOverlay` | target nodes and attachment edges |
 | Reverse search | target set | `ReverseLabels` | `label(node, banked)` and generator provenance |
@@ -38,8 +38,11 @@ bucket empty, so it is pruned without being expanded.
 | Lookup | search | `AStarForwardSearch.effectiveHeuristic` | `h` for each pushed state |
 
 `AStarRoutingSession` caches the graph by account fingerprint, and
-`PreparedTarget` holds the overlay, labels and heuristic, so an unchanged
-account and target are reused across searches. Nothing before the lookup
+`PreparedTarget` holds the overlay, labels and heuristic. Its cache identity includes each
+unsigned target coordinate and its accepted bank-layer mask, so changing held target items
+can select different preparation without invalidating an otherwise unchanged account graph.
+Input order and duplicates do not matter; duplicate coordinates union their layer masks.
+Nothing before the lookup
 depends on the start tile.
 
 ## 1. Static sites (`RoutingStatic`)
@@ -120,17 +123,24 @@ target, every reverse label inherits that shortfall, and the forward search
 floods everything within it. On the full benchmark corpus the walk costs about
 0.3 ms per target (p50) and at most about 5 ms.
 
-Several targets are allowed (multi-target "find closest"). Every target is
-seeded at 0, so the labels measure the distance to the nearest target.
+Several targets are allowed (multi-target "find closest"). `GoalStates` supplies each
+resolved tile's accepted layers: carried = 1, banked = 2, either = 3. This includes snapped
+fallbacks, shared associations and the existing unknown-item fallback. Overlays own a copy
+of these masks; APIs without masks retain the either-layer default.
 
 ## 4. Reverse search (`ReverseLabels`)
 
-Dijkstra runs from every target state, in both layers at cost 0, over the
+Dijkstra seeds only accepted target states at cost 0, over the
 reverse explicit edges plus same-component walking. There are two
 implementations, and their labels must be equal:
 
+A bank-only target is not a carried-layer terminal seed. Carried sites can still get finite
+labels through the directed bank transition into the banked layer. Without an accessible
+bank path, those labels remain `INF`, allowing the forward search to reject the start.
+
 - **`computeClique`** is the reference oracle. On settling a site it relaxes
-  every other site in each of its components at Chebyshev cost. This is
+  every other site in each of its components at Chebyshev cost, or at the
+  exact walking distance in a component with exact walks (below). This is
   quadratic in component size.
 - **`computeSparse`** is the production path (`compute` uses it whenever a
   sparse network exists). It walks the static sparse network instead.
@@ -156,6 +166,40 @@ Steiner vertices get reverse states in both layers too. Explicit edge and
 target attachment costs are doubled on entry (`CostArithmetic.twice`), and each
 label is halved once at the end (`CostArithmetic.halve`). Halving is exact for
 sites, because their doubled distances are always even.
+
+### Exact walks in small components (`ExactWalks`)
+
+Chebyshev distance badly undercuts walks in winding components. The Ice
+Queen's Lair tunnel ends are 30 tiles apart but about 185 on foot. The
+shortfall reaches every reverse label behind the component, and the forward
+search floods everything within it, often far away through transports.
+
+So every component with 2 to 256 sites (`ExactWalks.MAX_SITES`) joins its sites
+by exact walks instead of a tree:
+
+- When the static data is built, one forward breadth-first walk runs from each
+  site over the component's own tiles, stopping once it has reached every
+  site. A site that is not a search tile (a blocked transport origin) is walked
+  from and to through its neighbours in the component.
+- A pair's weight is the shorter of its two walks, but at least its Chebyshev
+  distance, and is left out (`INF`) when neither can walk to the other inside
+  the component.
+- An edge is dropped when a path through a third site of the component is no
+  longer. Weights are positive, so the remaining edges keep every pair
+  distance, and `computeClique` checks them against the full table.
+
+This is a lower bound for the same reason as the target walk above: a walk
+leaves a component only across a cut, whose endpoints are sites. Larger
+components (the Wilderness, open surface areas) keep their trees. Their pair
+counts grow quadratically, and they wind less. A search that avoids the
+Wilderness only removes edges, so walks that cross it still bound it.
+
+On the real map, 944 components qualify and keep 43,219 edges (about 0.5 MB).
+The walks take about 1.2 s once, at plugin load. On the full benchmark corpus,
+p99 fell from 132 to 41 ms and p50 from 24 to 16 ms, with identical route costs.
+p50 fell because the reverse search has fewer Steiner vertices to settle. Tiles
+still estimate from Chebyshev distance to the sites of their component: the
+exact labels already stop the floods outside it.
 
 ### Generator provenance
 
@@ -227,7 +271,8 @@ twin of a bank-dominated state.
   per search by `globalBounds`. This restores admissibility, because the
   relaxed graph assumes globals are usable sooner than the restricted state
   allows. The cap ignores the walk to a band where globals can be cast, so it is
-  loose for states deep in the Wilderness.
+  loose for states deep in the Wilderness. When the capped value is `INF`, no route
+  reaches a target from the state, casting or not, and it is pruned.
 - **Weight:** the priority is `g + round(weight · h)`. A weight of 1 is exact,
   and anything greater is an explicitly inexact mode.
 
@@ -235,8 +280,7 @@ twin of a bank-dominated state.
 
 1. The relaxed graph must contain every real edge, or a cheaper equivalent.
    Never drop an attachment or a transport.
-2. `INF` means prune. Never turn a missing value into 0, except in the
-   restricted fallback described under implementation notes.
+2. `INF` means prune. Never turn a missing value into 0.
 3. Clique and sparse labels must be equal, and the
    generator scan must equal the raw scan (`PreparedHeuristic.estimateRaw`).
    `SparseManhattanTest` and `MultiTargetTest` check both.
@@ -248,13 +292,9 @@ twin of a bank-dominated state.
 
 ## Implementation notes
 
-- **Restricted INF:** when the capped value is still `INF`,
-  `effectiveHeuristic` returns 0 (counted as `restrictedHeuristicZeroes`)
-  rather than pruning the state. This is conservative: it never loses a route,
-  but it can expand states that a stricter rule would prune.
-- **Target attachments:** the reverse search relaxes only a synthetic target's
-  own attachment edges, never site → target edges. Targets are seeded at 0, so
-  those edges could never improve a label.
+- **Target attachments:** the reverse search relaxes only a synthetic target's own
+  attachment edges. Non-terminal synthetic target layers are also estimated from their
+  component's finite site labels by `PreparedHeuristic`, including valid bank detours.
 - **Generator lists:** `GeneratorList` de-duplicates with a linear scan and
   sorts with an insertion sort, so building a bucket is quadratic in its size.
   This is worth checking if heuristic preparation shows up in profiles.
