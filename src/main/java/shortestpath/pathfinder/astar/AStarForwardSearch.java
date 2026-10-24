@@ -539,11 +539,10 @@ public final class AStarForwardSearch
 			{
 				counters.restrictedHeuristicStates++;
 				int restricted = Math.min(resolved, globalBounds[banked == BankVisitState.BANKED ? 1 : 0]);
-				if (restricted == CostArithmetic.INF)
-				{
-					counters.restrictedHeuristicZeroes++;
-					return 0;
-				}
+				// Both infinite: no route from here reaches a target without a global teleport of this
+				// layer (h), nor with one (every cast lands where h is infinite), so the state is pruned
+				// like any other.
+				if (restricted == CostArithmetic.INF) counters.restrictedHeuristicZeroes++;
 				return restricted;
 			}
 			counters.normalHeuristicStates++;
@@ -689,7 +688,9 @@ public final class AStarForwardSearch
 			heuristicEvaluations, bestBankUpdates, bankDominated, bankGlobalSuppressed, rekeys,
 			maxQueueSize, walkingPqPushes, localTransportPqPushes, globalPqPushes,
 			bankingPqPushes, transportCandidates, successfulTransportRelaxations, restrictedHeuristicStates,
-			normalHeuristicStates, restrictedHeuristicZeroes;
+			normalHeuristicStates;
+		/** Restricted states with no route to a target, with or without a global teleport: pruned. */
+		private final int restrictedHeuristicZeroes;
 		/** Heuristic lookups answered from the per-search cache rather than computed. */
 		private final int heuristicCacheHits;
 		private final String initialCapability;
