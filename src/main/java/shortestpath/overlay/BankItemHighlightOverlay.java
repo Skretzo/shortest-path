@@ -82,6 +82,10 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
+		// bankContainer was populated by extraGatesPass() earlier in this same
+		// render pass — the template always calls extraGatesPass before
+		// drawHighlights, so the widget is non-null here (the gate returns
+		// false on a null/hidden container).
 		Widget[] items = bankContainer.getChildren();
 		if (items == null)
 		{
