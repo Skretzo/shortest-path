@@ -448,7 +448,7 @@ public class RefreshCoordinatorTest
 	}
 
 	// ---------------------------------------------------------------
-	// Item panels: deposits and closes re-plan from the player's tile
+	// Item panels: item changes while one is open re-plan from the player's tile
 	// ---------------------------------------------------------------
 
 	private static final int TARGET = WorldPointUtil.packWorldPoint(3200, 3200, 0);
@@ -465,57 +465,58 @@ public class RefreshCoordinatorTest
 		return TestItemChange.of(ItemChange.containerKey(InventoryID.INV), Set.of(Effect.ELIGIBILITY_STALE));
 	}
 
-	@Test
-	public void depositingAnItemTheRouteNeedsReplansFromTheBank()
+	private void tick(int tick)
 	{
-		standingOnTheRoute();
-		when(scheduler.carriedItemMissing(AT_BANK)).thenReturn(true);
-
-		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
-		coordinator.itemsChanged(inventoryChanged());
-		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
-
-		verify(scheduler).restart("carried item missing", AT_BANK, Targets.at(Set.of(TARGET)));
+		coordinator.offRouteTick(tick, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
 	}
 
 	@Test
-	public void depositingSomethingElseKeepsTheRoute()
+	public void depositingReplansOnceOnTheNextTick()
 	{
 		standingOnTheRoute();
-		when(scheduler.carriedItemMissing(AT_BANK)).thenReturn(false);
 
-		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		coordinator.widgetLoaded(InterfaceID.BANK_DEPOSITBOX);
 		coordinator.itemsChanged(inventoryChanged());
-		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+		coordinator.itemsChanged(inventoryChanged());
+		tick(20);
+		tick(21);
 
-		verify(scheduler).carriedItemMissing(AT_BANK);
-		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+		verify(scheduler).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
 	}
 
 	@Test
-	public void closingAPanelAfterAnItemChangeReplansOnce()
+	public void openingTheBankReplans()
+	{
+		// The bank's contents are only known once it opens
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		tick(20);
+
+		verify(scheduler).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void buyingThenClosingTheShopInOneTickStillReplans()
 	{
 		standingOnTheRoute();
 
 		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
 		coordinator.itemsChanged(inventoryChanged());
 		coordinator.widgetClosed(InterfaceID.SHOPMAIN);
-		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
-		coordinator.offRouteTick(21, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+		tick(20);
 
-		verify(scheduler).restart("item panel closed", AT_BANK, Targets.at(Set.of(TARGET)));
-		// A shop isn't somewhere items get deposited, so only its close re-plans
-		verify(scheduler, never()).carriedItemMissing(anyInt());
+		verify(scheduler).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
 	}
 
 	@Test
-	public void closingAPanelWithoutItemChangesDoesNothing()
+	public void browsingAShopWithoutBuyingDoesNothing()
 	{
 		standingOnTheRoute();
 
-		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
-		coordinator.widgetClosed(InterfaceID.BANKMAIN);
-		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
+		coordinator.widgetClosed(InterfaceID.SHOPMAIN);
+		tick(20);
 
 		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
 	}
@@ -527,9 +528,8 @@ public class RefreshCoordinatorTest
 		standingOnTheRoute();
 
 		coordinator.itemsChanged(inventoryChanged());
-		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+		tick(20);
 
-		verify(scheduler, never()).carriedItemMissing(anyInt());
 		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
 	}
 
@@ -539,12 +539,11 @@ public class RefreshCoordinatorTest
 		standingOnTheRoute();
 		when(scheduler.isStartPointSet()).thenReturn(true);
 
-		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
 		coordinator.itemsChanged(inventoryChanged());
-		coordinator.widgetClosed(InterfaceID.BANKMAIN);
-		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+		tick(20);
 
-		verify(scheduler).restart("item panel closed", 50, Targets.at(Set.of(TARGET)));
+		verify(scheduler).restart("items changed", 50, Targets.at(Set.of(TARGET)));
 	}
 
 	@Test
@@ -555,9 +554,8 @@ public class RefreshCoordinatorTest
 		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
 		coordinator.gameStateChanged(GameState.LOGIN_SCREEN, 10);
 		coordinator.itemsChanged(inventoryChanged());
-		coordinator.offRouteTick(20, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+		tick(20);
 
-		verify(scheduler, never()).carriedItemMissing(anyInt());
 		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
 	}
 }

@@ -358,7 +358,6 @@ public class PathfinderTest
 
 	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";
 	private static final String XERICS_LOOKOUT = "Xeric's talisman: 1. Xeric's Lookout";
-	private static final String VARROCK_TABLET = "Varrock tablet";
 
 	@Test
 	public void xericsHonourIsGatedBehindTheDeclaredUnlockInEveryItemMode()
@@ -389,29 +388,6 @@ public class PathfinderTest
 		setupInventory(new Item(ItemID.XERIC_TALISMAN, 1));
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertTrue(hasUsableTeleport(XERICS_HONOUR));
-	}
-
-	@Test
-	public void carriedItemMissingOnceAPlannedTeleportItemIsGone()
-	{
-		// A route planned around a Varrock tablet in the inventory, then the tablet gets deposited
-		int start = WorldPointUtil.packWorldPoint(3185, 3436, 0);
-		setupInventory(new Item(ItemID.POH_TABLET_VARROCKTELEPORT, 1));
-		setupEquipment();
-		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
-		Transport tablet = usableTeleport(VARROCK_TABLET);
-		List<PathStep> path = List.of(new PathStep(start, BankVisitState.CARRIED),
-			new PathStep(tablet.getDestination(), BankVisitState.CARRIED, tablet));
-		assertFalse(pathfinderConfig.carriedItemMissing(path, start));
-
-		setupInventory();
-		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
-		assertTrue(pathfinderConfig.carriedItemMissing(path, start));
-
-		// After a bank visit the tablet comes from the bank, so it isn't expected to be carried
-		List<PathStep> banked = List.of(new PathStep(start, BankVisitState.BANKED),
-			new PathStep(tablet.getDestination(), BankVisitState.BANKED, tablet));
-		assertFalse(pathfinderConfig.carriedItemMissing(banked, start));
 	}
 
 	@Test
@@ -3318,18 +3294,6 @@ public class PathfinderTest
 			}
 		}
 		return false;
-	}
-
-	private Transport usableTeleport(String displayInfo)
-	{
-		for (Transport transport : pathfinderConfig.getUsableTeleports(BankVisitState.CARRIED))
-		{
-			if (displayInfo.equals(transport.getDisplayInfo()))
-			{
-				return transport;
-			}
-		}
-		throw new AssertionError("No usable teleport: " + displayInfo);
 	}
 
 	private boolean hasUsableTeleport(String displayInfo)

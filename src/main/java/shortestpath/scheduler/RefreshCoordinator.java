@@ -1,6 +1,5 @@
 package shortestpath.scheduler;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -56,19 +55,11 @@ public class RefreshCoordinator
 		"dialogLine", "nexus dialog line");
 
 	/**
-	 * Closing one of these after the inventory or worn gear changed re-plans the route, since it
-	 * may rely on items that were put away or could use ones taken out.
+	 * While one of these is open, an inventory or worn gear change re-plans the route on the next
+	 * tick, since the route may rely on items that were put away or could use ones taken out.
 	 */
 	private static final Set<Integer> ITEM_PANELS = Set.of(InterfaceID.BANKMAIN, InterfaceID.BANK_DEPOSITBOX,
 		InterfaceID.SHARED_BANK, InterfaceID.SHOPMAIN, InterfaceID.GE_OFFERS, InterfaceID.GE_COLLECT);
-
-	/**
-	 * While one of these is open, losing an item the route still needs re-plans right away rather
-	 * than on close, so the bank can show it to withdraw. Elsewhere this would fire mid-teleport
-	 * whenever the last of a teleport item gets used up.
-	 */
-	private static final Set<Integer> DEPOSIT_PANELS = Set.of(InterfaceID.BANKMAIN, InterfaceID.BANK_DEPOSITBOX,
-		InterfaceID.SHARED_BANK);
 
 	private static final Set<String> CARRIED_CHANGES = Set.of(
 		ItemChange.containerKey(InventoryID.INV), ItemChange.containerKey(InventoryID.WORN));
@@ -77,11 +68,9 @@ public class RefreshCoordinator
 	private final Settings settings;
 
 	private final Set<Integer> openItemPanels = new HashSet<>();
-	private boolean carriedChangedInPanel = false;
 	// Item re-plans wait for the next tick, which knows where the player stands and folds the
 	// changes of one tick into a single restart
-	private boolean panelReplanPending = false;
-	private boolean carriedCheckPending = false;
+	private boolean itemReplanPending = false;
 
 	// The login transition memory for gameStateChanged's three-state gate.
 	private GameState lastGameState = null;
@@ -114,33 +103,26 @@ public class RefreshCoordinator
 		if (!openItemPanels.isEmpty() && CARRIED_CHANGES.contains(change.getKey())
 			&& scheduler.getActiveSearch() != null)
 		{
-			carriedChangedInPanel = true;
-			carriedCheckPending |= !Collections.disjoint(openItemPanels, DEPOSIT_PANELS);
+			itemReplanPending = true;
 		}
 	}
 
 	/**
-	 * Tracks open item panels, so that closing them can re-plan the route.
+	 * Tracks open item panels. Opening the bank also re-plans the route, since that's when its
+	 * contents become known.
 	 */
 	public void widgetLoaded(int groupId)
 	{
 		if (ITEM_PANELS.contains(groupId))
 		{
 			openItemPanels.add(groupId);
+			itemReplanPending |= groupId == InterfaceID.BANKMAIN && scheduler.getActiveSearch() != null;
 		}
 	}
 
-	/**
-	 * Closing the last open item panel after the inventory or worn gear changed re-plans the
-	 * route on the next tick.
-	 */
 	public void widgetClosed(int groupId)
 	{
-		if (openItemPanels.remove(groupId) && openItemPanels.isEmpty())
-		{
-			panelReplanPending |= carriedChangedInPanel;
-			carriedChangedInPanel = false;
-		}
+		openItemPanels.remove(groupId);
 	}
 
 	/**
@@ -272,9 +254,7 @@ public class RefreshCoordinator
 			|| GameState.CONNECTION_LOST.equals(state))
 		{
 			openItemPanels.clear();
-			carriedChangedInPanel = false;
-			panelReplanPending = false;
-			carriedCheckPending = false;
+			itemReplanPending = false;
 		}
 
 		GameState previousGameState = lastGameState;
@@ -312,16 +292,13 @@ public class RefreshCoordinator
 	 */
 	public void offRouteTick(int tick, int currentLocation, int boatLocation, int boatHeading)
 	{
+		boolean itemReplan = itemReplanPending;
+		itemReplanPending = false;
 		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (pathfinder == null)
 		{
 			return;
 		}
-
-		String itemReplan = panelReplanPending ? "item panel closed"
-			: carriedCheckPending && scheduler.carriedItemMissing(currentLocation) ? "carried item missing" : null;
-		panelReplanPending = false;
-		carriedCheckPending = false;
 
 		// A sailing path arrives once the boat's hull covers a target, which can leave the boat's own
 		// tile farther than the reached distance on long hulls — check the live boat rather than the
@@ -344,12 +321,12 @@ public class RefreshCoordinator
 			}
 		}
 
-		if (itemReplan != null)
+		if (itemReplan)
 		{
 			// From where the player stands, like an off-route restart: they walked to the panel
 			// after the route was planned
 			int start = scheduler.isStartPointSet() ? pathfinder.getStart() : currentLocation;
-			scheduler.restart(itemReplan, start, pathfinder.getTargets());
+			scheduler.restart("items changed", start, pathfinder.getTargets());
 			return;
 		}
 

@@ -1025,37 +1025,4 @@ public class PathfinderConfig
 		eligibilityStale = true;
 	}
 
-	/**
-	 * Whether the path, from the player's step on, takes a transport before its bank visit whose
-	 * items the player no longer carries, like a house tab deposited after the route was planned
-	 * around it. Reads the eligibility snapshot, so client thread only.
-	 */
-	public boolean carriedItemMissing(List<PathStep> path, int playerLocation)
-	{
-		TransportEligibility eligibility = getEligibility();
-		if (path == null || eligibility == null)
-		{
-			return false;
-		}
-		int from = 0;
-		for (int i = 0; i < path.size(); i++)
-		{
-			if (path.get(i).getPackedPosition() == playerLocation)
-			{
-				from = i;
-				break;
-			}
-		}
-		for (int i = from; i < path.size(); i++)
-		{
-			PathStep step = path.get(i);
-			if (step.getTransport() != null && step.getBankVisitState() == BankVisitState.CARRIED
-				&& !eligibility.usable(step.getTransport(), BankVisitState.CARRIED))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
 }
