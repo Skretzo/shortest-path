@@ -62,6 +62,35 @@ public final class UnlockSuggestions
 		}
 	}
 
+	/** What one look found, and how much it weighed up. */
+	@Getter
+	public static final class Found
+	{
+		static final Found NONE = new Found(List.of(), 0, 0, false, false);
+
+		private final List<Suggestion> suggestions;
+		/** The capabilities that might open the way. */
+		private final int candidates;
+		/** How many of them were checked by rerunning the search. */
+		private final int reruns;
+		/** Whether it stopped for the time budget before trying them all. */
+		private final boolean outOfTime;
+		/**
+		 * Whether the component graph already joined the player to the target, so whatever blocks
+		 * the route isn't a lock it can see and nothing was tried.
+		 */
+		private final boolean alreadyConnected;
+
+		Found(List<Suggestion> suggestions, int candidates, int reruns, boolean outOfTime, boolean alreadyConnected)
+		{
+			this.suggestions = List.copyOf(suggestions);
+			this.candidates = candidates;
+			this.reruns = reruns;
+			this.outOfTime = outOfTime;
+			this.alreadyConnected = alreadyConnected;
+		}
+	}
+
 	private final Requirements requirements;
 	private final Function<Requirements, PreparedRoutingAccount> accountWith;
 	private final Supplier<PreparedRoutingAccount> obtainable;
@@ -78,7 +107,7 @@ public final class UnlockSuggestions
 		this.obtainable = obtainable;
 	}
 
-	List<Suggestion> find(RoutingStatic stat, CollisionMap collision, PreparedRoutingAccount account, int start,
+	Found find(RoutingStatic stat, CollisionMap collision, PreparedRoutingAccount account, int start,
 		GoalStates goals, SearchRestrictions restrictions, double heuristicWeight, BooleanSupplier cancelled)
 	{
 		long deadline = System.nanoTime() + BUDGET_NANOS - WIND_DOWN_NANOS;
@@ -91,8 +120,7 @@ public final class UnlockSuggestions
 		boolean[] reached = graph.reach(startComponents, usable, false);
 		if (graph.any(reached, targetComponents))
 		{
-			// The graph already connects them, so what keeps the route out isn't a lock it can see.
-			return List.of();
+			return new Found(List.of(), 0, 0, false, true);
 		}
 		boolean[] leadsToTarget = graph.reach(targetComponents, null, true);
 
@@ -125,11 +153,17 @@ public final class UnlockSuggestions
 		List<Capability> ranked = new ArrayList<>(frontier.keySet());
 		Collections.sort(ranked);
 		List<Suggestion> suggestions = new ArrayList<>();
+		int reruns = 0;
+		boolean outOfTime = false;
 		for (Capability capability : ranked)
 		{
-			if (suggestions.size() == MAX_SUGGESTIONS || stop.getAsBoolean()
-				|| System.nanoTime() > deadline - RERUN_RESERVE_NANOS)
+			if (suggestions.size() == MAX_SUGGESTIONS || cancelled.getAsBoolean())
 			{
+				break;
+			}
+			if (System.nanoTime() > deadline - RERUN_RESERVE_NANOS)
+			{
+				outOfTime = true;
 				break;
 			}
 			if (suggestions.stream().anyMatch(suggestion -> capability.covers(suggestion.getCapability())))
@@ -149,16 +183,23 @@ public final class UnlockSuggestions
 			SiteGraph granted = SiteGraph.compile(stat, accountWith.apply(requirements.granting(capability)));
 			if (stop.getAsBoolean())
 			{
+				outOfTime = !cancelled.getAsBoolean();
 				break;
 			}
+			reruns++;
 			AStarForwardSearch.Result route = PreparedTarget.prepare(granted, collision, targets)
 				.search(start, stop, heuristicWeight, restrictions, AStarForwardSearch.NO_PROGRESS, goals::accepts);
+			if (route.cancelled())
+			{
+				outOfTime = !cancelled.getAsBoolean();
+				break;
+			}
 			if (route.reached())
 			{
 				suggestions.add(new Suggestion(capability, onRoute(frontier.get(capability), route.path())));
 			}
 		}
-		return List.copyOf(suggestions);
+		return new Found(suggestions, ranked.size(), reruns, outOfTime, false);
 	}
 
 	/** The transport the route lands from, else the first one. */
