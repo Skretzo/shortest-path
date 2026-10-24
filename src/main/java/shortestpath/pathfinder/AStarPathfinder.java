@@ -55,8 +55,10 @@ public final class AStarPathfinder implements ActiveSearch
 	private volatile long walkCanonicalizeNanos;
 	private volatile List<AStarWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
 	private volatile long walkRewriteNanos;
+	// The static data of a search that found its target unreachable, until findUnlockSuggestions runs.
+	private volatile RoutingStatic unreachableIn;
 	private volatile long unlockSearchNanos;
-	private volatile List<UnlockSuggestions.Suggestion> unlockSuggestions = List.of();
+	private volatile UnlockSuggestions.Found unlockSearch = UnlockSuggestions.Found.NONE;
 	private volatile List<Integer> clickPoints = List.of();
 	private volatile List<Integer> keptStepIndices = List.of();
 	private volatile boolean graphReused;
@@ -318,10 +320,32 @@ public final class AStarPathfinder implements ActiveSearch
 	{ return walkDiagnostics;
 	}
 
-	/** Empty until found, after the result is published, and for a cancelled search. */
+	/** Empty until {@link #findUnlockSuggestions()} finds them, and for a cancelled search. */
 	@Override
 	public List<UnlockSuggestions.Suggestion> getUnlockSuggestions()
-	{ return cancelled ? List.of() : unlockSuggestions;
+	{ return cancelled ? List.of() : unlockSearch.getSuggestions();
+	}
+
+	/** How the last {@link #findUnlockSuggestions()} went: what it found and what it tried. */
+	public UnlockSuggestions.Found getUnlockSearch()
+	{ return unlockSearch;
+	}
+
+	/**
+	 * Once {@link #run()} has found the target unreachable, finds what the player could unlock to
+	 * reach it, within a game tick; otherwise, or once cancelled, does nothing. Kept out of the search
+	 * so the search's own time stays its own.
+	 */
+	@Override
+	public void findUnlockSuggestions()
+	{
+		RoutingStatic staticData = unreachableIn;
+		unreachableIn = null;
+		if (staticData == null || cancelled) return;
+		long started = System.nanoTime();
+		unlockSearch = unlocks.find(staticData, collision, account, start, goals, restrictions, heuristicWeight,
+			() -> cancelled);
+		unlockSearchNanos = System.nanoTime() - started;
 	}
 
 	/** Time spent finding what to unlock after the search found the target unreachable. */
@@ -380,8 +404,10 @@ public final class AStarPathfinder implements ActiveSearch
 		entries.put("Account prep", PathfinderStats.millis(getAccountPrepareNanos()));
 		if (getUnlockSearchNanos() > 0)
 		{
-			entries.put("Unlock search", PathfinderStats.millis(getUnlockSearchNanos())
-				+ ", " + getUnlockSuggestions().size() + " found");
+			UnlockSuggestions.Found found = getUnlockSearch();
+			entries.put("Unlock search", PathfinderStats.millis(getUnlockSearchNanos()) + ", "
+				+ found.getSuggestions().size() + " of " + found.getCandidates() + " (" + found.getReruns() + " reruns)"
+				+ (found.isOutOfTime() ? ", out of time" : "") + (found.isAlreadyConnected() ? ", already connected" : ""));
 		}
 		if (getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
 		{
@@ -399,8 +425,6 @@ public final class AStarPathfinder implements ActiveSearch
 	{
 		stats.start();
 		long started = System.nanoTime();
-		// Set when the search finds its target unreachable and there may be something to unlock.
-		RoutingStatic unreachableIn = null;
 		try
 		{
 			if (failure != null)
@@ -531,15 +555,6 @@ public final class AStarPathfinder implements ActiveSearch
 			done = !cancelled;
 			stats.end();
 			if (completionCallback != null) completionCallback.run();
-		}
-		// The unreachable result is already out; what to unlock follows on this thread, unless a
-		// newer search cancels this one first.
-		if (unreachableIn != null && !cancelled)
-		{
-			long phaseStarted = System.nanoTime();
-			unlockSuggestions = unlocks.find(unreachableIn, collision, account, start, goals, restrictions,
-				heuristicWeight, () -> cancelled);
-			unlockSearchNanos = System.nanoTime() - phaseStarted;
 		}
 	}
 

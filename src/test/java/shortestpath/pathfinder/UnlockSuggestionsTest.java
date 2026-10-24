@@ -83,6 +83,7 @@ public class UnlockSuggestionsTest
 	{
 		AStarPathfinder search = new AStarPathfinder(pathfinderConfig, routingStatic, start, Set.of(target), null);
 		search.run();
+		search.findUnlockSuggestions();
 		return search;
 	}
 
@@ -126,8 +127,9 @@ public class UnlockSuggestionsTest
 	}
 
 	@Test
-	public void theUnreachableResultIsPublishedBeforeTheSuggestions()
+	public void theSearchPublishesItsResultWithoutLookingForUnlocks()
 	{
+		// So the unreachable text shows at once, and the search's own time is only the search.
 		boolean[] doneWithoutSuggestions = new boolean[1];
 		AStarPathfinder search = aldarinSearch(done -> doneWithoutSuggestions[0] = done.isDone()
 			&& !done.getResult().isReached() && done.getUnlockSuggestions().isEmpty());
@@ -135,6 +137,8 @@ public class UnlockSuggestionsTest
 		search.run();
 
 		assertTrue("unreachable is out before the suggestions", doneWithoutSuggestions[0]);
+		assertEquals("run() didn't look", 0, search.getUnlockSearchNanos());
+		search.findUnlockSuggestions();
 		assertFalse(search.getUnlockSuggestions().isEmpty());
 	}
 
@@ -144,12 +148,14 @@ public class UnlockSuggestionsTest
 		// Cancelled as soon as its result is out, as when a new search replaces it: it doesn't look.
 		AStarPathfinder replaced = aldarinSearch(AStarPathfinder::cancel);
 		replaced.run();
+		replaced.findUnlockSuggestions();
 		assertTrue(replaced.getUnlockSuggestions().isEmpty());
 		assertEquals(0, replaced.getUnlockSearchNanos());
 
 		// Cancelled after they're found: they're dropped.
 		AStarPathfinder later = aldarinSearch(done -> assertTrue(done.isDone()));
 		later.run();
+		later.findUnlockSuggestions();
 		assertFalse(later.getUnlockSuggestions().isEmpty());
 		later.cancel();
 		assertTrue(later.getUnlockSuggestions().isEmpty());

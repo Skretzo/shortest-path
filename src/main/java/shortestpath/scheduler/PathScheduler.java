@@ -209,6 +209,8 @@ public class PathScheduler
 					try
 					{
 						search.run();
+						// After the result is published, so the unreachable text doesn't wait for it.
+						search.findUnlockSuggestions();
 					}
 					catch (RuntimeException error)
 					{
