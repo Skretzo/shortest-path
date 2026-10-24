@@ -1,0 +1,4 @@
+plain-transport/none-mode | check=NONE | carried=true | banked=true
+seasonal/nonconsumable-bypass-on-normal-world | check=SEASONAL_WORLD | carried=true | banked=true
+quetzal-whistle/nonconsumable-bypass | check=NONE | carried=true | banked=true
+spirit-tree/none-mode | check=NONE | carried=true | banked=true

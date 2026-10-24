@@ -1,0 +1,2 @@
+quest/finished | check=NONE | carried=true | banked=true
+quest/not-started | check=QUEST | carried=true | banked=true
