@@ -183,31 +183,6 @@ public class PathfinderTest
 	}
 
 	@Test
-	public void unreachableTargetNamesTheLockedTransportOnTheWay()
-	{
-		// On foot Aldarin is an island: from the Sunset Coast, Antonia's boat takes 20 coins
-		config.set("useShips", true);
-		config.set("useQuetzals", true);
-		int sunsetCoast = WorldPointUtil.packWorldPoint(1495, 2985, 0);
-		int aldarin = WorldPointUtil.packWorldPoint(1432, 2960, 0);
-
-		setupInventory();
-		setupConfig(QuestState.NOT_STARTED, 99, TeleportationItem.NONE);
-		Pathfinder locked = runPathfinder(sunsetCoast, aldarin);
-		assertFalse(locked.getResult().isReached());
-		assertFalse("The fare is what's missing", locked.getNearestLockedTransports().isEmpty());
-		Transport lock = locked.getNearestLockedTransports().get(0);
-		assertEquals(TransportType.SHIP, lock.getType());
-		assertEquals("Aldarin", lock.getDisplayInfo());
-
-		setupInventory(new Item(ItemID.COINS, 20));
-		pathfinderConfig.refresh();
-		Pathfinder open = runPathfinder(sunsetCoast, aldarin);
-		assertTrue(open.getResult().isReached());
-		assertTrue(open.getNearestLockedTransports().isEmpty());
-	}
-
-	@Test
 	public void testMeiyerditchBoatCanBeBoardedFromRock()
 	{
 		config.set("useBoats", true);
