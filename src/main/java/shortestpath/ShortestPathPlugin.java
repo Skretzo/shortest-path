@@ -150,6 +150,7 @@ public class ShortestPathPlugin extends Plugin
 		pathfinderConfig.setItemStateService(itemState);
 		pathfinderConfig.setSailingService(sailing);
 		scheduler.attach(pathfinderConfig, sailing, apiHandler);
+		scheduler.setMapPosition(geometry::drawnMapPoint);
 		annotator.attach(pathfinderConfig);
 		// The statics build reads only classpath resources, so it is safe to
 		// warm on enable too — relying on the login transition alone left a
