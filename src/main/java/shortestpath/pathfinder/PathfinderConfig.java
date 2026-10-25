@@ -18,6 +18,13 @@ import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.requirement.*;
 import shortestpath.transport.*;
 import shortestpath.sailing.*;
+import shortestpath.poh.PohService;
+import shortestpath.settings.Settings;
+import shortestpath.poh.PohNexusPortal;
+import shortestpath.poh.PohMountedItem;
+import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.VarRequirement;
+import shortestpath.requirement.model.Unlock;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
@@ -821,6 +828,25 @@ public class PathfinderConfig
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
 		return new TransportAvailabilities(withoutBank.build(), withBank.build());
+	}
+
+	/**
+	 * Every capability that would open some transport this refresh locks: the most a search of
+	 * this refresh could suggest. For checking the suggestions; {@code null} before the first refresh.
+	 */
+	public Set<Capability> everyCapability()
+	{
+		Requirements current = requirements;
+		if (current == null)
+		{
+			return null;
+		}
+		Set<Capability> capabilities = new LinkedHashSet<>();
+		for (Transport transport : allTransports)
+		{
+			capabilities.addAll(current.capabilities(transport));
+		}
+		return capabilities;
 	}
 
 	/**
