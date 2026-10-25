@@ -176,7 +176,7 @@ public final class PreparedRoutingAccount
 	/** The global teleports castable with {@code capability}. */
 	public int globalCount(TeleportCapability capability, boolean banked)
 	{
-		return globalView(capability, banked).count;
+		return globalView(capability, banked).destinations.length;
 	}
 	public int globalDestination(TeleportCapability capability, boolean banked, int index)
 	{
