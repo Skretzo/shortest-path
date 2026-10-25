@@ -84,16 +84,6 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 
 		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
-		boolean lumbridgeEliteDone = client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;
-		// The dramen staff requirement lives outside the transport's item requirements,
-		// and the staff can be equipped ahead of time — so highlight it whenever the
-		// remaining path uses a fairy ring, not only while standing on the ring edge.
-		// The Lumbridge Elite diary removes the requirement entirely.
-		boolean ringAhead = fairyRingAhead(path, pathIndex);
-		if (!lumbridgeEliteDone && ringAhead)
-		{
-			addItemIds(itemsToHighlight, ItemVariations.fromName("DRAMEN_STAFF").getIds());
-		}
 
 		for (Transport transport : transports)
 		{
