@@ -3,6 +3,8 @@ package shortestpath.pathfinder.astar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
@@ -95,8 +97,9 @@ public final class AStarWalkCanonicalizer
 	/** A leg that kept the search's walk, and why. */
 	public static final class Diagnostic
 	{
-		private final int startIndex, ticks, foundTicks;
-		private final Outcome outcome;
+		@Getter @Accessors(fluent = true) private final int startIndex, ticks;
+		private final int foundTicks;
+		@Getter @Accessors(fluent = true) private final Outcome outcome;
 		private final String goal;
 
 		Diagnostic(int startIndex, int ticks, Outcome outcome, int foundTicks, String goal)
@@ -106,21 +109,6 @@ public final class AStarWalkCanonicalizer
 			this.outcome = outcome;
 			this.foundTicks = foundTicks;
 			this.goal = goal;
-		}
-
-		public int startIndex()
-		{
-			return startIndex;
-		}
-
-		public int ticks()
-		{
-			return ticks;
-		}
-
-		public Outcome outcome()
-		{
-			return outcome;
 		}
 
 		@Override
@@ -134,21 +122,17 @@ public final class AStarWalkCanonicalizer
 	/** A route with canonical walking legs. */
 	public static final class Result
 	{
-		private final List<PathStep> path;
+		@Getter @Accessors(fluent = true) private final List<PathStep> path;
 		// Each leg's first and last step index in path, two entries per leg.
 		private final int[] legBounds;
-		private final List<Diagnostic> diagnostics;
+		/** Legs that kept the search's walk; empty when every leg was canonicalised. */
+		@Getter @Accessors(fluent = true) private final List<Diagnostic> diagnostics;
 
 		Result(List<PathStep> path, int[] legBounds, List<Diagnostic> diagnostics)
 		{
 			this.path = path;
 			this.legBounds = legBounds;
 			this.diagnostics = diagnostics;
-		}
-
-		public List<PathStep> path()
-		{
-			return path;
 		}
 
 		/** Walking legs of at least one tick in the route. */
@@ -167,12 +151,6 @@ public final class AStarWalkCanonicalizer
 		public int legEnd(int leg)
 		{
 			return legBounds[2 * leg + 1];
-		}
-
-		/** Legs that kept the search's walk; empty when every leg was canonicalised. */
-		public List<Diagnostic> diagnostics()
-		{
-			return diagnostics;
 		}
 	}
 
