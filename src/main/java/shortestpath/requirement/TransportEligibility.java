@@ -26,8 +26,8 @@ import lombok.experimental.Accessors;
  * setting, the fairy-ring staff rule and the currency threshold.</li>
  * <li>{@link #satisfiedByPlayer} — the carried-pool-only check the overlays use, with no
  * currency threshold (the player already owns the items, so none would be spent).</li>
- * <li>{@link #bankPickupPlan} and {@link #fairyStaffPickup} — the items the bank must
- * supply for one transport, plus the bank item ids to highlight.</li>
+ * <li>{@link #bankPickupPlan} and {@link #targetPickupPlan} — the items the bank must
+ * supply for one transport or target, plus the bank item ids to highlight.</li>
  * </ul>
  *
  * <p>The pools are fixed at construction: {@code carriedItems} is inventory + worn +
