@@ -185,11 +185,9 @@ public final class Requirements
 	{
 		if (!policy.usePoh())
 		{
-			int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-			if (PohService.isInsidePoh(originX, originY) || PohService.isInsidePoh(destX, destY))
+			int[] endpoints = unpackEndpoints(transport);
+			if (PohService.isInsidePoh(endpoints[0], endpoints[1])
+				|| PohService.isInsidePoh(endpoints[2], endpoints[3]))
 			{
 				return RejectionReason.POH_DISABLED;
 			}
@@ -251,12 +249,10 @@ public final class Requirements
 	// Handle POH variants for types that have them
 	private RejectionReason pohVariant(Transport transport)
 	{
-		int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+		int[] endpoints = unpackEndpoints(transport);
 
-		if (!PohService.isInsidePoh(originX, originY) && !PohService.isInsidePoh(destX, destY))
+		if (!PohService.isInsidePoh(endpoints[0], endpoints[1])
+			&& !PohService.isInsidePoh(endpoints[2], endpoints[3]))
 		{
 			return RejectionReason.NONE; // Not a POH transport
 		}
@@ -537,20 +533,16 @@ public final class Requirements
 
 	private boolean checkPlantedSpiritTrees(Transport transport)
 	{
-		int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+		int[] endpoints = unpackEndpoints(transport);
 
 		// Check planted spirit tree origins (travel FROM a planted tree)
-		if (isUnavailablePlantedSpiritTree(originX, originY))
+		if (isUnavailablePlantedSpiritTree(endpoints[0], endpoints[1]))
 		{
 			return false;
 		}
 
 		// Check planted spirit tree destinations (travel TO a planted tree)
-		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-
-		return !isUnavailablePlantedSpiritTree(destX, destY);
+		return !isUnavailablePlantedSpiritTree(endpoints[2], endpoints[3]);
 	}
 
 	/**
@@ -617,5 +609,19 @@ public final class Requirements
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * The four unpacked endpoint coordinates every spatial gate reads:
+	 * {@code {originX, originY, destX, destY}} in that order.
+	 */
+	private static int[] unpackEndpoints(Transport transport)
+	{
+		return new int[]{
+			WorldPointUtil.unpackWorldX(transport.getOrigin()),
+			WorldPointUtil.unpackWorldY(transport.getOrigin()),
+			WorldPointUtil.unpackWorldX(transport.getDestination()),
+			WorldPointUtil.unpackWorldY(transport.getDestination())
+		};
 	}
 }
