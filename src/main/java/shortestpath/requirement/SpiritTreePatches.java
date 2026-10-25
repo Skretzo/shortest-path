@@ -102,14 +102,4 @@ public final class SpiritTreePatches
 		}
 		return null;
 	}
-
-	/**
-	 * Inclusive tile bounds {x1, y1, x2, y2} for a patch, or null. Public for
-	 * tests that tie the bounds to the patch's region.
-	 */
-	public static int[] boundsForPatch(String patchName)
-	{
-		int[] entry = PATCHES.get(patchName);
-		return entry == null ? null : new int[]{entry[2], entry[3], entry[4], entry[5]};
-	}
 }
