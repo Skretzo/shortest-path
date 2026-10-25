@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import shortestpath.pathfinder.CollisionMap;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -18,7 +19,7 @@ public final class TargetOverlay
 	private final RoutingStatic stat;
 	@Getter @Accessors(fluent = true) private final PreparedRoutingAccount account;
 	@Getter @Accessors(fluent = true) private final long accountFingerprint;
-	private final CollisionMap collision;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final CollisionMap collision;
 	private final int[] packed;
 	private final int[] nodes;
 	private final int[][] components;
@@ -73,11 +74,6 @@ public final class TargetOverlay
 	public RoutingStatic routingStatic()
 	{
 		return stat;
-	}
-
-	CollisionMap collision()
-	{
-		return collision;
 	}
 
 	public int queryNodeCount()
