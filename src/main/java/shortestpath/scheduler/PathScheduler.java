@@ -16,6 +16,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -50,6 +51,7 @@ import shortestpath.sailing.SailingState;
  */
 @Slf4j
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PathScheduler
 {
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(PathScheduler.class, "/marker.png");
@@ -87,17 +89,6 @@ public class PathScheduler
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
 	private volatile int sailingPivotX;
 	private volatile int sailingPivotY;
-
-	@Inject
-	public PathScheduler(Client client, ClientThread clientThread, Settings settings,
-		WorldMapPointManager worldMapPointManager, DebugState debugState)
-	{
-		this.client = client;
-		this.clientThread = clientThread;
-		this.settings = settings;
-		this.worldMapPointManager = worldMapPointManager;
-		this.debugState = debugState;
-	}
 
 	/**
 	 * Binds the shell-owned pieces the scheduler needs: the pathfinder config the shell builds in
