@@ -56,7 +56,7 @@ import shortestpath.sailing.SailingState;
 public class PathScheduler
 {
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(PathScheduler.class, "/marker.png");
-	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
+	private final List<Integer> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
 
 	private final Client client;
@@ -473,7 +473,7 @@ public class PathScheduler
 		{
 			return;
 		}
-		pendingTasks.add(new PendingTask(tick, pathfinderConfig::refresh));
+		pendingTasks.add(tick);
 	}
 
 	/**
@@ -483,9 +483,10 @@ public class PathScheduler
 	{
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
-			if (pendingTasks.get(i).check(tick))
+			if (tick >= pendingTasks.get(i))
 			{
-				pendingTasks.remove(i--).run();
+				pendingTasks.remove(i--);
+				pathfinderConfig.refresh();
 			}
 		}
 	}
@@ -609,5 +610,18 @@ public class PathScheduler
 		{
 			return action.get();
 		}
+	}
+
+	/**
+	 * {@link #withSchedulerLock(Supplier)} for bodies that have nothing to return; the same
+	 * monitor guards both overloads.
+	 */
+	public void withSchedulerLock(Runnable action)
+	{
+		withSchedulerLock(() ->
+		{
+			action.run();
+			return null;
+		});
 	}
 }
