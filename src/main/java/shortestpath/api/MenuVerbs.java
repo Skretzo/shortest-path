@@ -57,15 +57,9 @@ public class MenuVerbs
 		if (client.isKeyPressed(KeyCode.KC_SHIFT)
 			&& event.getType() == MenuAction.WALK.getId())
 		{
-			addMenuEntry(event, SET, TARGET, 1);
-			ActiveSearch pathfinder = scheduler.getActiveSearch();
+			ActiveSearch pathfinder = addSetTargetEntries(event, 1);
 			if (pathfinder != null)
 			{
-				if (!pathfinder.getTargets().isEmpty())
-				{
-					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
-				}
 				for (int target : pathfinder.getTargets().points())
 				{
 					if (target != WorldPointUtil.UNDEFINED)
@@ -98,15 +92,9 @@ public class MenuVerbs
 				client.getMouseCanvasPosition().getX(),
 				client.getMouseCanvasPosition().getY()))
 			{
-				addMenuEntry(event, SET, TARGET, 0);
-				ActiveSearch pathfinder = scheduler.getActiveSearch();
+				ActiveSearch pathfinder = addSetTargetEntries(event, 0);
 				if (pathfinder != null)
 				{
-					if (!pathfinder.getTargets().isEmpty())
-					{
-						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
-					}
 					for (int target : pathfinder.getTargets().points())
 					{
 						if (target != WorldPointUtil.UNDEFINED)
@@ -173,6 +161,25 @@ public class MenuVerbs
 		{
 			scheduler.setTargets(annotator.getDestinations(simplify(entry.getTarget())), true);
 		}
+	}
+
+	/**
+	 * Offers the two Set-target entries every verb surface shares and hands
+	 * back the active search (or null) so the caller can emit its own
+	 * Start/Clear verbs — the CLEAR/PATH emission conditions differ per
+	 * surface and deliberately stay per-arm (selected-tile-on-path on
+	 * shift-right-click, per-defined-target on the world map).
+	 */
+	private ActiveSearch addSetTargetEntries(MenuEntryAdded event, int position)
+	{
+		addMenuEntry(event, SET, TARGET, position);
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
+		if (pathfinder != null && !pathfinder.getTargets().isEmpty())
+		{
+			addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
+				(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), position);
+		}
+		return pathfinder;
 	}
 
 	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
