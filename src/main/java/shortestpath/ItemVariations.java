@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -15,6 +17,7 @@ import lombok.experimental.Accessors;
  * name covers, the staff alternatives for rune names, and the offhand (tome)
  * alternatives. Columns after the first two may be empty.
  */
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ItemVariations
 {
 	private static final Map<String, ItemVariations> BY_NAME = new HashMap<>();
@@ -65,12 +68,6 @@ public final class ItemVariations
 
 	@Getter @Accessors(fluent = true) private final String name;
 	@Getter private final int[] ids;
-
-	private ItemVariations(String name, int[] ids)
-	{
-		this.name = name;
-		this.ids = ids;
-	}
 
 	public static int[] staves(ItemVariations itemVariation)
 	{
