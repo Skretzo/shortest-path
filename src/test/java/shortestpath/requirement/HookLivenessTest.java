@@ -37,15 +37,6 @@ public class HookLivenessTest
 	private static final TeleportationItem MODE = TeleportationItem.INVENTORY;
 	private static final int BANK_TILE = WorldPointUtil.packWorldPoint(1804, 9501, 0);
 
-	private static Transport transport()
-	{
-		return new Transport.TransportBuilder()
-			.type(TransportType.TRANSPORT)
-			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
-			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
-			.build();
-	}
-
 	private static RequirementContext capture(MapPlayerStateSource source, TestRequirementHooks hooks,
 		List<Transport> transports, Map<Integer, DestinationRequirements> bankRequirements)
 	{
