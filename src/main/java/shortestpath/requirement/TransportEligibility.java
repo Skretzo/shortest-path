@@ -51,7 +51,7 @@ public final class TransportEligibility
 	 */
 	private static final TransportItems DRAMEN_STAFF = new TransportItems(
 		new int[][]{null},
-		new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
+		new int[][]{ItemVariations.fromName("DRAMEN_STAFF").getIds()},
 		new int[][]{null},
 		new int[]{1});
 
