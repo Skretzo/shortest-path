@@ -90,7 +90,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 		boolean ringAhead = fairyRingAhead(path, pathIndex);
 		if (!lumbridgeEliteDone && ringAhead)
 		{
-			addItemIds(itemsToHighlight, ItemVariations.DRAMEN_STAFF.getIds());
+			addItemIds(itemsToHighlight, ItemVariations.fromName("DRAMEN_STAFF").getIds());
 		}
 
 		for (Transport transport : transports)
