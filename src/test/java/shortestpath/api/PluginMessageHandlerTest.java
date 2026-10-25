@@ -81,8 +81,15 @@ public class PluginMessageHandlerTest
 			return null;
 		}).when(clientThread).invokeLater(any(Runnable.class));
 		// Execute the locked body inline — the assertion is on what the body did.
-		when(scheduler.withSchedulerLock(any())).thenAnswer(invocation ->
+		// Both overloads are stubbed explicitly: a bare any() cannot bind once
+		// the scheduler carries both a Supplier and a Runnable withSchedulerLock.
+		when(scheduler.withSchedulerLock(any(Supplier.class))).thenAnswer(invocation ->
 			((Supplier<?>) invocation.getArgument(0)).get());
+		doAnswer(invocation ->
+		{
+			((Runnable) invocation.getArgument(0)).run();
+			return null;
+		}).when(scheduler).withSchedulerLock(any(Runnable.class));
 	}
 
 	private static int packed(int x, int y)
@@ -189,7 +196,7 @@ public class PluginMessageHandlerTest
 		handler.onPluginMessage(new PluginMessage(Settings.CONFIG_GROUP, "clear", Map.of()));
 
 		assertTrue(settings.rawOverrides().isEmpty());
-		verify(scheduler).withSchedulerLock(any());
+		verify(scheduler).withSchedulerLock(any(Supplier.class));
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 	}
 
