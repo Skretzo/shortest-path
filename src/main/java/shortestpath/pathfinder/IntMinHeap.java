@@ -1,6 +1,9 @@
 package shortestpath.pathfinder;
 
 import java.util.Arrays;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * A binary min-heap of primitive {@code int} node ids ordered by {@link NodeGraph#compareCost}.
@@ -15,17 +18,12 @@ public class IntMinHeap
 {
 	private final NodeGraph graph;
 	private int[] heap;
-	private int size;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private int size;
 
 	public IntMinHeap(NodeGraph graph, int initialCapacity)
 	{
 		this.graph = graph;
 		this.heap = new int[Math.max(1, initialCapacity)];
-	}
-
-	int size()
-	{
-		return size;
 	}
 
 	public boolean isEmpty()
