@@ -127,7 +127,7 @@ public interface ShortestPathConfig extends Config
 	
 	@ConfigSection(
 		name = "Display",
-		description = "Options for displaying path on world map, minimap and scene tiles",
+		description = "Path display on world map, minimap and scene tiles",
 		position = 177
 	)
 	String sectionDisplay = "sectionDisplay";
