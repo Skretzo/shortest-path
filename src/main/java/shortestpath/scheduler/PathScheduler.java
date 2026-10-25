@@ -16,6 +16,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -88,8 +89,8 @@ public class PathScheduler
 	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
 	private boolean startPointSet = false;
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
-	private volatile int sailingPivotX;
-	private volatile int sailingPivotY;
+	@Getter private volatile int sailingPivotX;
+	@Getter private volatile int sailingPivotY;
 
 	/**
 	 * Binds the shell-owned pieces the scheduler needs: the pathfinder config the shell builds in
@@ -592,16 +593,6 @@ public class PathScheduler
 	public ActiveSearch getActiveSearch()
 	{
 		return pathfinder;
-	}
-
-	public int getSailingPivotX()
-	{
-		return sailingPivotX;
-	}
-
-	public int getSailingPivotY()
-	{
-		return sailingPivotY;
 	}
 
 	boolean isStartPointSet()
