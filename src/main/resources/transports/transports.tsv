@@ -550,6 +550,10 @@
 2595 3210 0	2597 3208 1	Climb-up Staircase 16671						1	
 2596 3210 0	2597 3208 1	Climb-up Staircase 16671						1	
 									
+# Witchaven Dungeon									
+2698 3283 0	2696 9684 0	Climb-down Old ruin entrance 18270							
+2696 9683 0	2697 3283 0	Climb-up Exit 18354							
+									
 # Ardougne Sewers									
 2587 3237 0	2570 9682 0	Enter Cave entrance 2852							
 2570 9682 0	2587 3237 0	Climb-up Stairs 2853							
