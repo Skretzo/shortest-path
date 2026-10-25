@@ -49,6 +49,27 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	/**
+	 * The effective value for a string-parsed enum key: the payload string
+	 * coerced through {@code fromType} when it produces a non-null value,
+	 * {@code base} otherwise (absent key, non-String payload, unrecognised
+	 * string). Mirrors the {@code Settings.coerceStringEnum} coercion
+	 * discipline.
+	 */
+	private <T> T enumOverride(ConfigKey key, Function<String, T> fromType, T base)
+	{
+		Object value = overrides.get(key.getKey());
+		if (value instanceof String)
+		{
+			T parsed = fromType.apply((String) value);
+			if (parsed != null)
+			{
+				return parsed;
+			}
+		}
+		return base;
+	}
+
+	/**
 	 * The base (configured-level) value for a key: the proxy getter for
 	 * visible keys, the keyed read for hidden keys.
 	 */
@@ -91,31 +112,15 @@ public final class EffectiveConfig implements ShortestPathConfig
 	/** {@code showTileCounter} — string-parsed enum coercion. */
 	public TileCounter showTileCounter()
 	{
-		Object value = overrides.get(ConfigKey.SHOW_TILE_COUNTER.getKey());
-		if (value instanceof String)
-		{
-			TileCounter parsed = TileCounter.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return (TileCounter) baseOf(ConfigKey.SHOW_TILE_COUNTER);
+		return enumOverride(ConfigKey.SHOW_TILE_COUNTER, TileCounter::fromType,
+			(TileCounter) baseOf(ConfigKey.SHOW_TILE_COUNTER));
 	}
 
 	/** {@code pohJewelleryBoxTier} — string-parsed enum coercion. */
 	public JewelleryBoxTier pohJewelleryBoxTier()
 	{
-		Object value = overrides.get(ConfigKey.POH_JEWELLERY_BOX_TIER.getKey());
-		if (value instanceof String)
-		{
-			JewelleryBoxTier parsed = JewelleryBoxTier.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return (JewelleryBoxTier) baseOf(ConfigKey.POH_JEWELLERY_BOX_TIER);
+		return enumOverride(ConfigKey.POH_JEWELLERY_BOX_TIER, JewelleryBoxTier::fromType,
+			(JewelleryBoxTier) baseOf(ConfigKey.POH_JEWELLERY_BOX_TIER));
 	}
 
 	@Override
@@ -152,16 +157,7 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public TileStyle pathStyle()
 	{
-		Object value = overrides.get(ConfigKey.PATH_STYLE.getKey());
-		if (value instanceof String)
-		{
-			TileStyle parsed = TileStyle.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return base.pathStyle();
+		return enumOverride(ConfigKey.PATH_STYLE, TileStyle::fromType, base.pathStyle());
 	}
 
 	@Override
