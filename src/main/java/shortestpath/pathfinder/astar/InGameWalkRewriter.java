@@ -3,6 +3,8 @@ package shortestpath.pathfinder.astar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
@@ -86,39 +88,24 @@ public final class InGameWalkRewriter
 	/** A rewritten route and the indices of its steps the player clicks to walk it. */
 	public static final class Result
 	{
-		private final List<PathStep> path;
-		private final List<Integer> clickPoints;
-		private final List<Integer> keptStepIndices;
+		/** The route, as long as the canonical one and with the same steps outside its walking legs. */
+		@Getter @Accessors(fluent = true) private final List<PathStep> path;
+		/**
+		 * Ascending indices into {@link #path()} of the tiles to click, one per click. Every
+		 * index is a real click: the game's own walking path lands on that tile.
+		 */
+		@Getter @Accessors(fluent = true) private final List<Integer> clickPoints;
+		/**
+		 * Ascending indices into {@link #path()} of the steps that kept the canonical step
+		 * because no in-game click realises them; they are not clicks.
+		 */
+		@Getter @Accessors(fluent = true) private final List<Integer> keptStepIndices;
 
 		Result(List<PathStep> path, List<Integer> clickPoints, List<Integer> keptStepIndices)
 		{
 			this.path = path;
 			this.clickPoints = clickPoints;
 			this.keptStepIndices = keptStepIndices;
-		}
-
-		/** The route, as long as the canonical one and with the same steps outside its walking legs. */
-		public List<PathStep> path()
-		{
-			return path;
-		}
-
-		/**
-		 * Ascending indices into {@link #path()} of the tiles to click, one per click. Every
-		 * index is a real click: the game's own walking path lands on that tile.
-		 */
-		public List<Integer> clickPoints()
-		{
-			return clickPoints;
-		}
-
-		/**
-		 * Ascending indices into {@link #path()} of the steps that kept the canonical step
-		 * because no in-game click realises them; they are not clicks.
-		 */
-		public List<Integer> keptStepIndices()
-		{
-			return keptStepIndices;
 		}
 
 		/** Walking steps that kept the canonical step because no in-game click realises them. */
