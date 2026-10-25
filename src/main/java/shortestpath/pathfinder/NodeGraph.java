@@ -172,7 +172,7 @@ public class NodeGraph
 	 * bank visit cost, so the penalty is charged once on the decision to bank rather than on
 	 * the edges leaving the bank tile.
 	 * <p>
-	 * The node is flagged as a transport even though no real transport exists: {@link
+	 * The node is flagged as a transport even though no real transport exists: {@code
 	 * Pathfinder#addNeighbors} routes transport-flagged nodes to the cost-ordered pending
 	 * heap instead of the FIFO tile boundary queue, which is only correct for unit-cost
 	 * walking edges. A costed transition must go through the heap or nodes would no longer
