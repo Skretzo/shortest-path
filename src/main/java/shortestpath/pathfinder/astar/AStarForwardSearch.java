@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
@@ -683,9 +686,9 @@ public final class AStarForwardSearch
 
 	public static final class Result
 	{
-		private final boolean reached, cancelled;
-		private final int cost, terminalState, closestCost;
-		private final Counters counters;
+		@Getter @Accessors(fluent = true) private final boolean reached, cancelled;
+		@Getter @Accessors(fluent = true) private final int cost, terminalState, closestCost;
+		@Getter @Accessors(fluent = true) private final Counters counters;
 		private final AStarRoute path, closestPath;
 		private Result(boolean reached, boolean cancelled, int cost, int terminalState, Counters counters, AStarRoute path,
 			AStarRoute closestPath, int closestCost)
@@ -705,21 +708,6 @@ public final class AStarForwardSearch
 		static Result cancelled(Counters counters, AStarRoute path, AStarRoute closestPath, int closestCost)
 	{ return new Result(false, true, CostArithmetic.INF, -1, counters, path, closestPath, closestCost);
 	}
-		public boolean reached()
-	{ return reached;
-	}
-		public boolean cancelled()
-	{ return cancelled;
-	}
-		public int cost()
-	{ return cost;
-	}
-		public int terminalState()
-	{ return terminalState;
-	}
-		public Counters counters()
-	{ return counters;
-	}
 		public List<PathStep> path()
 	{ return path.steps();
 	}
@@ -735,21 +723,21 @@ public final class AStarForwardSearch
 		public AStarRoute closestRoute()
 	{ return closestPath;
 	}
-		/** Cost of {@link #closestPath()}. */
-		public int closestCost()
-	{ return closestCost;
-	}
 	}
 
+	@Getter @Accessors(fluent = true)
 	public static final class Counters
 	{
 		private final int statesPopped, staleEntries, pqPushes, uniqueStatesReached, walkingRelaxations, transportRelaxations,
-			heuristicEvaluations, heuristicUnreachable, bestBankUpdates, bankDominated, bankGlobalSuppressed, rekeys,
-			finalBestBankCost, maxQueueSize, walkingPqPushes, localTransportPqPushes, globalPqPushes,
+			heuristicEvaluations, bestBankUpdates, bankDominated, bankGlobalSuppressed, rekeys,
+			maxQueueSize, walkingPqPushes, localTransportPqPushes, globalPqPushes,
 			bankingPqPushes, transportCandidates, successfulTransportRelaxations, restrictedHeuristicStates,
-			normalHeuristicStates, restrictedHeuristicZeroes, heuristicCacheHits;
+			normalHeuristicStates, restrictedHeuristicZeroes;
+		/** Heuristic lookups answered from the per-search cache rather than computed. */
+		private final int heuristicCacheHits;
 		private final String initialCapability;
 		private final boolean normalHeuristicEnabledAtStart;
+		@Getter(AccessLevel.NONE) private final int heuristicUnreachable, finalBestBankCost;
 		private Counters(int statesPopped, int staleEntries, int pqPushes, int uniqueStatesReached, int walkingRelaxations,
 			int transportRelaxations, int heuristicEvaluations, int heuristicUnreachable, int bestBankUpdates,
 			int bankDominated, int bankGlobalSuppressed, int rekeys, int finalBestBankCost, int maxQueueSize,
@@ -794,79 +782,6 @@ public final class AStarForwardSearch
 				initialCapability.equals(other.initialCapability) ? initialCapability : "MIXED",
 				normalHeuristicEnabledAtStart && other.normalHeuristicEnabledAtStart);
 		}
-		public int statesPopped()
-	{ return statesPopped;
-	}
-		/** Heuristic lookups answered from the per-search cache rather than computed. */
-		public int heuristicCacheHits()
-	{ return heuristicCacheHits;
-	}
-		public int staleEntries()
-	{ return staleEntries;
-	}
-		public int pqPushes()
-	{ return pqPushes;
-	}
-		public int uniqueStatesReached()
-	{ return uniqueStatesReached;
-	}
-		public int walkingRelaxations()
-	{ return walkingRelaxations;
-	}
-		public int transportRelaxations()
-	{ return transportRelaxations;
-	}
-		public int heuristicEvaluations()
-	{ return heuristicEvaluations;
-	}
-		public int bestBankUpdates()
-	{ return bestBankUpdates;
-	}
-		public int bankDominated()
-	{ return bankDominated;
-	}
-		public int bankGlobalSuppressed()
-	{ return bankGlobalSuppressed;
-	}
-		public int rekeys()
-	{ return rekeys;
-	}
-		public int maxQueueSize()
-	{ return maxQueueSize;
-	}
-		public int walkingPqPushes()
-	{ return walkingPqPushes;
-	}
-		public int localTransportPqPushes()
-	{ return localTransportPqPushes;
-	}
-		public int globalPqPushes()
-	{ return globalPqPushes;
-	}
-		public int bankingPqPushes()
-	{ return bankingPqPushes;
-	}
-		public int transportCandidates()
-	{ return transportCandidates;
-	}
-		public int successfulTransportRelaxations()
-	{ return successfulTransportRelaxations;
-	}
-		public int restrictedHeuristicStates()
-	{ return restrictedHeuristicStates;
-	}
-		public int normalHeuristicStates()
-	{ return normalHeuristicStates;
-	}
-		public int restrictedHeuristicZeroes()
-	{ return restrictedHeuristicZeroes;
-	}
-		public String initialCapability()
-	{ return initialCapability;
-	}
-		public boolean normalHeuristicEnabledAtStart()
-	{ return normalHeuristicEnabledAtStart;
-	}
 	}
 	private static final class MutableCounters
 	{
