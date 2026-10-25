@@ -16,7 +16,7 @@ import net.runelite.api.gameval.ItemID;
  * All requirements must be satisfied.
  */
 @Getter
-public class TransportItems
+public final class TransportItems
 {
 	/**
 	 * Item ids treated as spendable currency by {@link #isSatisfiedBy}: a branch priced
