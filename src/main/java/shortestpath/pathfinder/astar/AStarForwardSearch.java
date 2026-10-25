@@ -39,12 +39,6 @@ public final class AStarForwardSearch
 		return search(target, heuristic, start, cancelled, true, 1);
 	}
 
-	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
-		BooleanSupplier cancelled, double heuristicWeight)
-	{
-		return search(target, heuristic, start, cancelled, true, heuristicWeight);
-	}
-
 	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start, boolean optimized)
 	{
 		return search(target, heuristic, start, () -> false, optimized, 1);
