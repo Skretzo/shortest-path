@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
@@ -140,16 +142,11 @@ public final class RoutingStaticBuilder
 	}
 
 	/** The derived static world plus the diagnostics collected while building it. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Result
 	{
 		public final RoutingStatic routingStatic;
 		public final Diagnostics diagnostics;
-
-		Result(RoutingStatic routingStatic, Diagnostics diagnostics)
-		{
-			this.routingStatic = routingStatic;
-			this.diagnostics = diagnostics;
-		}
 	}
 
 	/**
@@ -273,21 +270,13 @@ public final class RoutingStaticBuilder
 	 * reachability computed exactly as {@link #build} does. The tooling cut generator partitions
 	 * this graph, so generated cuts and the runtime agree on what a walking edge is.
 	 */
+	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	public static final class WalkingGraph
 	{
 		private final WalkableTiles walkable;
 		private final int[] naturalId;
 		@Getter @Accessors(fluent = true) private final int naturalComponentCount;
 		private final boolean[] reachableNatural;
-
-		private WalkingGraph(WalkableTiles walkable, int[] naturalId, int naturalComponentCount,
-			boolean[] reachableNatural)
-		{
-			this.walkable = walkable;
-			this.naturalId = naturalId;
-			this.naturalComponentCount = naturalComponentCount;
-			this.reachableNatural = reachableNatural;
-		}
 
 		/** Number of walkable tiles; tile indexes follow ascending unsigned packed order. */
 		public int tileCount()
@@ -350,18 +339,12 @@ public final class RoutingStaticBuilder
 
 	// ---- Tile selection and enumeration in ascending unsigned packed order ----
 
+	@AllArgsConstructor
 	private static final class WalkableTiles
 	{
 		final int[] tiles;
 		final byte[] masks;
 		final TileIndex index;
-
-		WalkableTiles(int[] tiles, byte[] masks)
-		{
-			this.tiles = tiles;
-			this.masks = masks;
-			this.index = new TileIndex(tiles);
-		}
 	}
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision)
@@ -399,7 +382,7 @@ public final class RoutingStaticBuilder
 				}
 			}
 		}
-		return new WalkableTiles(tiles, masks);
+		return new WalkableTiles(tiles, masks, new TileIndex(tiles));
 	}
 
 	/** Keep endpoint-connected land before allocating arrays; open sea can otherwise look walkable. */
@@ -621,20 +604,13 @@ public final class RoutingStaticBuilder
 
 	// ---- Cuts: validity ("ignore cuts that are not current walking edges") + canonical dedup ----
 
+	@AllArgsConstructor
 	private static final class CutSet
 	{
 		final List<long[]> valid; // each entry {a, b} as raw ints boxed in a long[2] for simplicity
 		final LongOpenHashSet blocked;
 		final int duplicateCount;
 		final int invalidCount;
-
-		CutSet(List<long[]> valid, LongOpenHashSet blocked, int duplicateCount, int invalidCount)
-		{
-			this.valid = valid;
-			this.blocked = blocked;
-			this.duplicateCount = duplicateCount;
-			this.invalidCount = invalidCount;
-		}
 	}
 
 	private static CutSet validateCuts(int[] cuts, WalkableTiles walkable)
@@ -821,21 +797,13 @@ public final class RoutingStaticBuilder
 
 	// ---- Section A: search tiles, routing components, walking masks, north/south ----
 
+	@AllArgsConstructor
 	private static final class SearchTiles
 	{
 		final int[] tiles;
 		final TileComponents components;
 		final char[] northOffsets, southOffsets;
 		final byte[] masks;
-
-		SearchTiles(int[] tiles, TileComponents components, byte[] masks, char[] northOffsets, char[] southOffsets)
-		{
-			this.tiles = tiles;
-			this.components = components;
-			this.masks = masks;
-			this.northOffsets = northOffsets;
-			this.southOffsets = southOffsets;
-		}
 	}
 
 	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId,
@@ -863,20 +831,15 @@ public final class RoutingStaticBuilder
 			north[i] = n < 0 ? 0 : (char) (n - i);
 			south[i] = s < 0 ? 0 : (char) (i - s);
 		}
-		return new SearchTiles(tileArray, componentArray, maskArray, north, south);
+		return new SearchTiles(tileArray, componentArray, north, south, maskArray);
 	}
 
 	// ---- Section: routing components / crossings ----
 
+	@AllArgsConstructor
 	private static final class Crossing
 	{
 		final int fromTile, toTile;
-
-		Crossing(int fromTile, int toTile)
-		{
-			this.fromTile = fromTile;
-			this.toTile = toTile;
-		}
 	}
 
 	private static List<Crossing> buildCrossings(List<long[]> validCuts, int[] routingId, WalkableTiles walkable)
@@ -904,21 +867,11 @@ public final class RoutingStaticBuilder
 
 	// ---- Sections B/C/D/E: sites and attachments ----
 
+	@AllArgsConstructor
 	private static final class SitesAndAttachments
 	{
 		final int[] siteTiles, siteComponentOffsets, siteComponentIds, componentSiteOffsets, componentSiteIds;
 		final int[] reachableBankTiles;
-
-		SitesAndAttachments(int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
-			int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles)
-		{
-			this.siteTiles = siteTiles;
-			this.siteComponentOffsets = siteComponentOffsets;
-			this.siteComponentIds = siteComponentIds;
-			this.componentSiteOffsets = componentSiteOffsets;
-			this.componentSiteIds = componentSiteIds;
-			this.reachableBankTiles = reachableBankTiles;
-		}
 	}
 
 	private static SitesAndAttachments buildSites(Map<Integer, Set<Transport>> rawTransports, Set<Integer> bankTiles,
