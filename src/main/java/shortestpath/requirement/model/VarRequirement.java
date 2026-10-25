@@ -16,7 +16,7 @@ import lombok.AllArgsConstructor;
  */
 @AllArgsConstructor
 @Getter
-public class VarRequirement
+public final class VarRequirement
 {
 
 	private final VarType varType;
