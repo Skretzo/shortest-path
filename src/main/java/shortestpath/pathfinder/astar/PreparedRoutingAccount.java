@@ -131,10 +131,6 @@ public final class PreparedRoutingAccount
 	{
 		return globalView(capability, banked).costs[index];
 	}
-	public int globalMaxWilderness(TeleportCapability capability, BankVisitState banked, int index)
-	{
-		return globalView(capability, banked).maxWilderness[index];
-	}
 	public Transport globalTransport(TeleportCapability capability, BankVisitState banked, int index)
 	{
 		return globalView(capability, banked).transports[index];
