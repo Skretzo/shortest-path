@@ -11,6 +11,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import lombok.RequiredArgsConstructor;
+
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ScriptID;
@@ -51,6 +53,7 @@ import shortestpath.transport.TransportType;
  * with its empty/no-op arm rather than throwing.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PathAnnotator
 {
 	/**
@@ -96,14 +99,6 @@ public class PathAnnotator
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
-
-	@Inject
-	public PathAnnotator(Client client, PohService pohService, ItemStateService itemState)
-	{
-		this.client = client;
-		this.pohService = pohService;
-		this.itemState = itemState;
-	}
 
 	private PathAnnotator()
 	{
