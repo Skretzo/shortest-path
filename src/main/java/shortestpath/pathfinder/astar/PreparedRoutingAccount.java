@@ -105,54 +105,6 @@ public final class PreparedRoutingAccount
 	}
 	/** The cost of switching into the banked layer at an accessible bank. */
 
-	public int accessibleBankCount()
-	{
-		return accessibleBankTiles.length;
-	}
-	public int accessibleBankTile(int index)
-	{
-		return accessibleBankTiles[index];
-	}
-
-	public String fingerprintHex()
-	{
-		return String.format("%016x", fingerprint);
-	}
-
-	public int localCount(BankVisitState banked)
-	{
-		return view(local, banked).count;
-	}
-	public int localOrigin(BankVisitState banked, int index)
-	{
-		return view(local, banked).origins[index];
-	}
-	public int localDestination(BankVisitState banked, int index)
-	{
-		return view(local, banked).destinations[index];
-	}
-	public int localCost(BankVisitState banked, int index)
-	{
-		return view(local, banked).costs[index];
-	}
-	public int localType(BankVisitState banked, int index)
-	{
-		return view(local, banked).types[index];
-	}
-	public int localMaxWilderness(BankVisitState banked, int index)
-	{
-		return view(local, banked).maxWilderness[index];
-	}
-	/**
-	 * The local transport's action class: entries in one layer share a class exactly when they are
-	 * the same game action (type, object and menu option, display text, consumption and item
-	 * requirements) to the same destination at the same cost, differing at most in origin. Taking
-	 * any of them leads to the same state, so a route may take the action from whichever origin.
-	 */
-	public int localActionClass(BankVisitState banked, int index)
-	{
-		return view(local, banked).actionClasses[index];
-	}
 	/** The global teleports castable outside the wilderness: every global this account has. */
 	public int globalCount(BankVisitState banked)
 	{
@@ -165,14 +117,6 @@ public final class PreparedRoutingAccount
 	public int globalCost(BankVisitState banked, int index)
 	{
 		return globalCost(TeleportCapability.ALL, banked, index);
-	}
-	public int globalType(BankVisitState banked, int index)
-	{
-		return globalView(TeleportCapability.ALL, banked).types[index];
-	}
-	public int globalMaxWilderness(BankVisitState banked, int index)
-	{
-		return globalMaxWilderness(TeleportCapability.ALL, banked, index);
 	}
 	/** The global teleports castable with {@code capability}. */
 	public int globalCount(TeleportCapability capability, BankVisitState banked)
