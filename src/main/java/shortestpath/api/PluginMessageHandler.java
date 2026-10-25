@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.coords.WorldPoint;
@@ -50,6 +51,7 @@ import shortestpath.transport.Transport;
  */
 @Slf4j
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PluginMessageHandler implements QueryResponder
 {
 	private static final String PLUGIN_MESSAGE_PATH = "path";
@@ -74,20 +76,6 @@ public class PluginMessageHandler implements QueryResponder
 	private final RefreshCoordinator coordinator;
 	private final Settings settings;
 	private final PathAnnotator annotator;
-
-	@Inject
-	public PluginMessageHandler(Client client, ClientThread clientThread, EventBus eventBus,
-		PathScheduler scheduler, RefreshCoordinator coordinator, Settings settings,
-		PathAnnotator annotator)
-	{
-		this.client = client;
-		this.clientThread = clientThread;
-		this.eventBus = eventBus;
-		this.scheduler = scheduler;
-		this.coordinator = coordinator;
-		this.settings = settings;
-		this.annotator = annotator;
-	}
 
 	public void onPluginMessage(PluginMessage event)
 	{
