@@ -39,8 +39,8 @@ import org.junit.Assert;
  * <p>Regen is for deliberate fixture changes only — the goldens are the
  * gate-chain parity oracle, so a regen that masks accidental verdict drift
  * voids it. The write goes to the source tree (the Gradle test working
- * directory is the {@code shortest-path} project dir), then a clean re-run
- * compares.
+ * directory is the {@code shortest-path} project dir — regen fails loudly
+ * when the markers are absent), then a clean re-run compares.
  */
 final class GateChainParityGolden
 {
@@ -120,6 +120,16 @@ final class GateChainParityGolden
 	private static void regen(String scenario, String body)
 	{
 		Path out = Paths.get("src/test/resources", RESOURCE_DIR, scenario + ".txt");
+		// The write is CWD-relative — refuse when the working directory is
+		// not the shortest-path project dir, or the regen would plant a
+		// stray golden tree and report a green, vacuous run while the real
+		// classpath goldens stay untouched.
+		if (!Files.isRegularFile(Paths.get("build.gradle"))
+			|| !Files.isDirectory(out.getParent().getParent()))
+		{
+			Assert.fail("VERDICT_REGEN must run with the shortest-path project dir as"
+				+ " the working directory — refusing to write " + out.toAbsolutePath());
+		}
 		try
 		{
 			Files.createDirectories(out.getParent());
