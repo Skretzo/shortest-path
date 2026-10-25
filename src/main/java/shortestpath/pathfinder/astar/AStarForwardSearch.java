@@ -819,9 +819,6 @@ public final class AStarForwardSearch
 		public int heuristicEvaluations()
 	{ return heuristicEvaluations;
 	}
-		public int heuristicUnreachable()
-	{ return heuristicUnreachable;
-	}
 		public int bestBankUpdates()
 	{ return bestBankUpdates;
 	}
@@ -833,9 +830,6 @@ public final class AStarForwardSearch
 	}
 		public int rekeys()
 	{ return rekeys;
-	}
-		public int finalBestBankCost()
-	{ return finalBestBankCost;
 	}
 		public int maxQueueSize()
 	{ return maxQueueSize;
