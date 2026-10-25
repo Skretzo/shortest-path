@@ -44,7 +44,11 @@ public class SettingsPayloadTest
 		Settings settings = Settings.wrap(new TestShortestPathConfig());
 		settings.applyOverrides(Map.of("useTeleportationItems", "Inventory and Bank"));
 
-		assertEquals(TeleportationItem.INVENTORY_AND_BANK, settings.effective().useTeleportationItems());
+		// The read shape the transport-type consumer uses: configured base
+		// plus payload coercion through the service seam.
+		assertEquals(TeleportationItem.INVENTORY_AND_BANK,
+			settings.coerceTeleportationItem("useTeleportationItems",
+				(TeleportationItem) settings.configuredValue("useTeleportationItems")));
 	}
 
 	@Test
@@ -124,6 +128,7 @@ public class SettingsPayloadTest
 		assertEquals(stub.avoidWilderness(), settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 		assertEquals(stub.includeBankPath(), settings.effective().bool(ConfigKey.INCLUDE_BANK_PATH));
 		assertEquals(stub.currencyThreshold(), settings.effective().num(ConfigKey.CURRENCY_THRESHOLD));
-		assertEquals(stub.useTeleportationItems(), settings.effective().useTeleportationItems());
+		assertEquals(stub.useTeleportationItems(),
+			settings.coerceTeleportationItem("useTeleportationItems", stub.useTeleportationItems()));
 	}
 }

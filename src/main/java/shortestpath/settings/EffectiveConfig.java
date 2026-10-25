@@ -24,8 +24,8 @@ import shortestpath.poh.PohNexusPortal;
  * enums — a string {@code fromType} does not recognise.
  *
  * <p>Hidden keys (raw {@code ConfigManager} keys, no interface method) read
- * through the typed {@link #val}/{@link #bool}/{@link #num}/{@link #str}/
- * {@link #set} helpers: the base value comes from the injected
+ * through the typed {@link #val}/{@link #bool}/{@link #num}/{@link #set}
+ * helpers: the base value comes from the injected
  * {@code hiddenBase} resolver, and keys with a coercion discipline consult
  * the override map the same way. Keys marked {@link ConfigKey.Coercion#NONE}
  * are inert — payload values never reach them.
@@ -84,36 +84,11 @@ public final class EffectiveConfig implements ShortestPathConfig
 		return value instanceof Number ? ((Number) value).intValue() : 0;
 	}
 
-	/** Effective value of a {@code String} key. */
-	public String str(ConfigKey key)
-	{
-		Object value = val(key);
-		return value instanceof String ? (String) value : null;
-	}
-
 	/** Effective value of a {@code Set}-typed key. */
 	@SuppressWarnings("unchecked")
 	public <E> Set<E> set(ConfigKey key)
 	{
 		return (Set<E>) val(key);
-	}
-
-	/**
-	 * {@code useTeleportationItems} — its payload coercion is a string
-	 * {@code fromType} parse rather than a type check.
-	 */
-	public TeleportationItem useTeleportationItems()
-	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_ITEMS.getKey());
-		if (value instanceof String)
-		{
-			TeleportationItem parsed = TeleportationItem.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return (TeleportationItem) baseOf(ConfigKey.USE_TELEPORTATION_ITEMS);
 	}
 
 	/** {@code showTileCounter} — string-parsed enum coercion. */
