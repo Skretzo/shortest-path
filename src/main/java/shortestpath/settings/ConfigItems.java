@@ -6,6 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 /**
  * Display metadata for the hidden config keys — the {@code name},
  * {@code description} and {@code @Range} bounds that used to live in the
@@ -18,44 +22,16 @@ public final class ConfigItems
 	 * The display record {@link Settings#item} returns; accessor names match
 	 * {@code ConfigItem}'s so the panel reads the same fields either way.
 	 */
+	@AllArgsConstructor
 	public static final class Meta
 	{
 		final String key;
-		final String name;
-		final String description;
-		final Integer min;
-		final Integer max;
-
-		public Meta(String key, String name, String description, Integer min, Integer max)
-		{
-			this.key = key;
-			this.name = name;
-			this.description = description;
-			this.min = min;
-			this.max = max;
-		}
-
-		public String name()
-		{
-			return name;
-		}
-
-		public String description()
-		{
-			return description;
-		}
-
+		@Getter @Accessors(fluent = true) final String name;
+		@Getter @Accessors(fluent = true) final String description;
 		/** The {@code @Range} lower bound, or {@code null} when unbounded. */
-		public Integer min()
-		{
-			return min;
-		}
-
+		@Getter @Accessors(fluent = true) final Integer min;
 		/** The {@code @Range} upper bound, or {@code null} when unbounded. */
-		public Integer max()
-		{
-			return max;
-		}
+		@Getter @Accessors(fluent = true) final Integer max;
 	}
 
 	private static final Map<String, Meta> META = load();
