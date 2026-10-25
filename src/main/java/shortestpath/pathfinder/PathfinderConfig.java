@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +40,7 @@ import shortestpath.requirement.PlayerStateSource;
 import shortestpath.requirement.RejectionReason;
 import shortestpath.requirement.RequirementContext;
 import shortestpath.requirement.RequirementHooks;
+import shortestpath.requirement.Capability;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
 import shortestpath.requirement.TeleportationItemPolicy;
@@ -841,6 +843,25 @@ public class PathfinderConfig
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
 		return new TransportAvailabilities(withoutBank.build(), withBank.build());
+	}
+
+	/**
+	 * Every capability that would open some transport this refresh locks: the most a search of
+	 * this refresh could suggest. For checking the suggestions; {@code null} before the first refresh.
+	 */
+	public Set<Capability> everyCapability()
+	{
+		Requirements current = requirements;
+		if (current == null)
+		{
+			return null;
+		}
+		Set<Capability> capabilities = new LinkedHashSet<>();
+		for (Transport transport : allTransports)
+		{
+			capabilities.addAll(current.capabilities(transport));
+		}
+		return capabilities;
 	}
 
 	/**
