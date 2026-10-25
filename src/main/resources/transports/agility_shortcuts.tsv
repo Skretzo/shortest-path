@@ -169,13 +169,13 @@
 1324 3785 0	1324 3777 0	Climb Rocks 34397	29 Agility				8	
 # Agility Pyramid: ascent and exit								
 # shortcut: uncaptured obstacle durations are estimates, replace after timed captures.								
-3356 2830 0	3355 2833 1	Climb-up Stairs 10857	30 Agility				2	
+3355 2830 0	3355 2833 1	Climb-up Stairs 10857	30 Agility				2	
 # Stone block 10877; automatic crossing captured with animation 1115								
-3355 2840 1	3354 2843 1		30 Agility				4	
+3354 2840 1	3354 2843 1		30 Agility				4	
 3354 2848 1	3354 2850 1	Climb-over Low wall 10865	30 Agility				4	
 # Stone block 10879; automatic walking obstacle								
 3374 2836 1	3374 2835 1		30 Agility				4	
-3359 2832 1	3357 2835 2	Climb-up Stairs 10857	30 Agility				2	
+3357 2832 1	3356 2835 2	Climb-up Stairs 10857	30 Agility				2	
 3357 2836 2	3357 2841 2	Cross Gap 10884	30 Agility				6	
 3357 2846 2	3357 2849 2	Jump Gap 10859	30 Agility				4	
 3359 2849 2	3364 2849 2	Cross Gap 10861	30 Agility				6	
@@ -184,19 +184,19 @@
 3372 2841 2	3372 2836 2	Cross Ledge 10860	30 Agility				6	
 3371 2833 2	3369 2833 2	Climb-over Low wall 10865	30 Agility				4	
 3366 2834 2	3363 2834 2	Jump Gap 10859	30 Agility				4	
-3361 2834 2	3359 2837 3	Climb-up Stairs 10857	30 Agility				2	
+3359 2834 2	3359 2837 3	Climb-up Stairs 10857	30 Agility				2	
 3358 2838 3	3358 2840 3	Climb-over Low wall 10865	30 Agility				4	
 3358 2842 3	3358 2847 3	Cross Ledge 10888	30 Agility				6	
 3371 2843 3	3371 2840 3	Jump Gap 10859	30 Agility				4	
 3370 2835 3	3365 2835 3	Cross Plank 10868	30 Agility				6	
-3363 2835 3	3041 4695 2	Climb-up Stairs 10857	30 Agility				2	
+3361 2836 3	3041 4695 2	Climb-up Stairs 10857	30 Agility				2	
 3041 4696 2	3041 4699 2	Jump Gap 10859	30 Agility				4	
 3041 4701 2	3043 4701 2	Climb-over Low wall 10865	30 Agility				4	
 # Stone block 10880; automatic walking obstacle								
 3048 4700 2	3048 4699 2		30 Agility				4	
 3049 4697 2	3049 4694 2	Jump Gap 10859	30 Agility				4	
 3048 4693 2	3046 4693 2	Climb-over Low wall 10865	30 Agility				4	
-3043 4693 2	3042 4697 3	Climb-up Stairs 10857	30 Agility				2	
+3042 4694 2	3042 4697 3	Climb-up Stairs 10857	30 Agility				2	
 # Stone block 10881; automatic walking obstacle								
 3044 4699 3	3045 4699 3		30 Agility				4	
 3046 4699 3	3046 4696 3	Jump Gap 10859	30 Agility				4	
