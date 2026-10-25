@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -28,8 +29,10 @@ import shortestpath.WorldPointUtil;
 /**
  * Owns the plugin's widget and viewport geometry: the world-map point
  * conversions that turn canvas coordinates into packed world points, the
- * minimap clip area the overlays and the menu code draw through, and the
- * last-opened menu position the selection read resolves against. The clip
+ * world-map open guard and drawable clip area the map overlays draw
+ * through, the minimap clip area the overlays and the menu code draw
+ * through, and the last-opened menu position the selection read resolves
+ * against. The clip
  * area and the two mask sprites it is built from are cached and invalidated
  * together whenever the minimap widget's bounds change — the self-assigning
  * bounds check is the single invalidation point.
@@ -206,6 +209,63 @@ public class WidgetGeometry
 			return yGraphDiff;
 		}
 		return Integer.MIN_VALUE;
+	}
+
+	/**
+	 * The world-map gate shared by the map overlays: the map is open — and
+	 * its projections and clip are meaningful — exactly while the
+	 * MAP_CONTAINER widget exists. A detached instance answers false.
+	 */
+	public boolean worldMapOpen()
+	{
+		return client != null && client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) != null;
+	}
+
+	/**
+	 * Both axes of the world-map projection in one read: {@code null} when
+	 * either axis collapses to {@code Integer.MIN_VALUE} (no client, or the
+	 * world map is closed), so paired consumers check a single {@code null}
+	 * instead of two sentinels.
+	 */
+	public Point mapWorldPointToGraphicsPoint(int packedWorldPoint)
+	{
+		int x = mapWorldPointToGraphicsPointX(packedWorldPoint);
+		int y = mapWorldPointToGraphicsPointY(packedWorldPoint);
+		if (x == Integer.MIN_VALUE || y == Integer.MIN_VALUE)
+		{
+			return null;
+		}
+		return new Point(x, y);
+	}
+
+	/**
+	 * The drawable area of the world map: {@code baseRectangle} minus the
+	 * overview panel and surface selector while they are open. The overlay
+	 * still owns the {@code setClip} call — it deliberately never restores
+	 * the clip. A detached instance yields the base rectangle's area.
+	 */
+	public Area getWorldMapClipArea(Rectangle baseRectangle)
+	{
+		if (client == null)
+		{
+			return new Area(baseRectangle);
+		}
+		final Widget overview = client.getWidget(InterfaceID.Worldmap.OVERVIEW_CONTAINER);
+		final Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAPLIST_BOX_GRAPHIC0);
+
+		Area clipArea = new Area(baseRectangle);
+
+		if (overview != null && !overview.isHidden())
+		{
+			clipArea.subtract(new Area(overview.getBounds()));
+		}
+
+		if (surfaceSelector != null && !surfaceSelector.isHidden())
+		{
+			clipArea.subtract(new Area(surfaceSelector.getBounds()));
+		}
+
+		return clipArea;
 	}
 
 	private Widget getMinimapDrawWidget()
