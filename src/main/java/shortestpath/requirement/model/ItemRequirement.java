@@ -15,7 +15,7 @@ import shortestpath.Util;
  * pass or by 5 coins.
  */
 @Getter
-public class ItemRequirement
+public final class ItemRequirement
 {
 	/**
 	 * One {@code NAME=quantity} alternative of an OR group. Its itemIds are
