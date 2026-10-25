@@ -146,20 +146,7 @@ public class Transport
 			.regionOverride(destination.regionOverride != null ? destination.regionOverride : origin.regionOverride);
 
 		Transport builtTransport = builder.build();
-
-		this.origin = builtTransport.origin;
-		this.destination = builtTransport.destination;
-		this.skillLevels = builtTransport.skillLevels;
-		this.quests = builtTransport.quests;
-		this.itemRequirements = builtTransport.itemRequirements;
-		this.type = builtTransport.type;
-		this.duration = builtTransport.duration;
-		this.displayInfo = builtTransport.displayInfo;
-		this.isConsumable = builtTransport.isConsumable;
-		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
-		this.objectInfo = builtTransport.objectInfo;
-		this.varRequirements = builtTransport.varRequirements;
-		this.regionOverride = builtTransport.regionOverride;
+		copyFrom(builtTransport);
 	}
 
 	Transport(TransportRecord record, TransportType transportType)
@@ -222,19 +209,24 @@ public class Transport
 		}
 
 		Transport builtTransport = builder.build();
-		this.origin = builtTransport.origin;
-		this.destination = builtTransport.destination;
-		this.skillLevels = builtTransport.skillLevels;
-		this.quests = builtTransport.quests;
-		this.itemRequirements = builtTransport.itemRequirements;
-		this.type = builtTransport.type;
-		this.duration = builtTransport.duration;
-		this.displayInfo = builtTransport.displayInfo;
-		this.isConsumable = builtTransport.isConsumable;
-		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
-		this.objectInfo = builtTransport.objectInfo;
-		this.varRequirements = builtTransport.varRequirements;
-		this.regionOverride = builtTransport.regionOverride;
+		copyFrom(builtTransport);
+	}
+
+	private void copyFrom(Transport t)
+	{
+		this.origin = t.origin;
+		this.destination = t.destination;
+		this.skillLevels = t.skillLevels;
+		this.quests = t.quests;
+		this.itemRequirements = t.itemRequirements;
+		this.type = t.type;
+		this.duration = t.duration;
+		this.displayInfo = t.displayInfo;
+		this.isConsumable = t.isConsumable;
+		this.maxWildernessLevel = t.maxWildernessLevel;
+		this.objectInfo = t.objectInfo;
+		this.varRequirements = t.varRequirements;
+		this.regionOverride = t.regionOverride;
 	}
 
 	private Transport()
