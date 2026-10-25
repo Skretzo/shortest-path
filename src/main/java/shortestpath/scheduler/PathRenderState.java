@@ -6,6 +6,8 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import lombok.RequiredArgsConstructor;
+
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
@@ -22,6 +24,7 @@ import shortestpath.settings.Settings;
  * presentation contract; it currently carries the sailing surface.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public final class PathRenderState
 {
 	/**
@@ -33,14 +36,6 @@ public final class PathRenderState
 	private final PathScheduler scheduler;
 	private final SailingService sailing;
 	private final Settings settings;
-
-	@Inject
-	public PathRenderState(PathScheduler scheduler, SailingService sailing, Settings settings)
-	{
-		this.scheduler = scheduler;
-		this.sailing = sailing;
-		this.settings = settings;
-	}
 
 	/**
 	 * Whether the active search sails a boat's headings rather than walking
