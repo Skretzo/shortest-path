@@ -42,17 +42,10 @@ import shortestpath.transport.TransportTypeConfig;
  * proxy, the runtime override map received through plugin-message payloads, and
  * the immutable snapshots consumers read.
  *
- * <p>Two publication cadences exist by design:
- * <ul>
- * <li>{@link #display()}, {@link #poh()}, {@link #bank()}, {@link #unlocks()},
- * and {@link #lifecycle()} are immutable view snapshots republished on every
- * override apply/clear and every {@link ConfigChanged} for this group. They are
- * captured from {@link #effective()}, so payload overrides and persisted config
- * both reach them.</li>
- * <li>{@link #routing()} is a different cadence: it returns the most recently
- * built {@link RoutingPolicy}, published by the refresh path after
- * transport-type derivations run — never republished by a config event.</li>
- * </ul>
+ * <p>{@link #display()} and {@link #lifecycle()} are immutable view snapshots
+ * republished on every override apply/clear and every {@link ConfigChanged}
+ * for this group. They are captured from {@link #effective()}, so payload
+ * overrides and persisted config both reach them.
  *
  * <p>The override map is stored verbatim — keys are never validated on apply,
  * so unknown keys survive for the raw echo — and every publication is an
@@ -88,12 +81,6 @@ public class Settings
 	 * never sees a payload apply's map without its matching views.
 	 */
 	private volatile Published published;
-
-	/**
-	 * The most recently built routing policy. Published by the refresh path once
-	 * transport-type derivations settle; {@code null} until the first build.
-	 */
-	private volatile RoutingPolicy routing;
 
 	/**
 	 * Keyed listeners registered through {@link #listen}. Read on whichever
@@ -187,43 +174,9 @@ public class Settings
 		return published.display;
 	}
 
-	public PohView poh()
-	{
-		return published.poh;
-	}
-
-	public BankView bank()
-	{
-		return published.bank;
-	}
-
-	public UnlocksView unlocks()
-	{
-		return published.unlocks;
-	}
-
 	public LifecycleView lifecycle()
 	{
 		return published.lifecycle;
-	}
-
-	/**
-	 * The routing policy built by the last refresh, or {@code null} until the
-	 * first build publishes one.
-	 */
-	public RoutingPolicy routing()
-	{
-		return routing;
-	}
-
-	/**
-	 * Publish a freshly built routing policy. Called from the refresh path after
-	 * disableUnless derivations, so the snapshot always reflects a complete
-	 * refresh rather than mid-derivation state.
-	 */
-	public void publishRouting(RoutingPolicy policy)
-	{
-		routing = policy;
 	}
 
 	/**
@@ -231,9 +184,7 @@ public class Settings
 	 * effective transport-type enablement (post-{@code disableUnless}), the
 	 * teleportation-item mode and the POH toggles. Called once per refresh —
 	 * after the transport-type derivations have run — so a built chain can
-	 * never observe later config mutation. The built policy is published into
-	 * the {@link #routing()} slot before returning, so the snapshot always
-	 * reflects a complete refresh rather than mid-derivation state.
+	 * never observe later config mutation.
 	 *
 	 * <p>The scalar arguments are the effective values the caller already
 	 * computed this refresh — production never re-reads config live.
@@ -257,7 +208,6 @@ public class Settings
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
 			currencyThreshold, includeBankPath);
-		publishRouting(policy);
 		return policy;
 	}
 
@@ -561,9 +511,6 @@ public class Settings
 			overrides,
 			effective,
 			new DisplayView(effective, configured, this::keyedBase),
-			new PohView(effective, configured, this::keyedBase),
-			new BankView(effective),
-			new UnlocksView(effective),
 			new LifecycleView(effective, configured, this::keyedBase));
 	}
 
@@ -572,21 +519,14 @@ public class Settings
 		private final Map<String, Object> overrides;
 		private final EffectiveConfig effective;
 		private final DisplayView display;
-		private final PohView poh;
-		private final BankView bank;
-		private final UnlocksView unlocks;
 		private final LifecycleView lifecycle;
 
 		private Published(Map<String, Object> overrides, EffectiveConfig effective,
-			DisplayView display, PohView poh, BankView bank, UnlocksView unlocks,
-			LifecycleView lifecycle)
+			DisplayView display, LifecycleView lifecycle)
 		{
 			this.overrides = overrides;
 			this.effective = effective;
 			this.display = display;
-			this.poh = poh;
-			this.bank = bank;
-			this.unlocks = unlocks;
 			this.lifecycle = lifecycle;
 		}
 	}
@@ -603,8 +543,7 @@ public class Settings
 	 * {@code unreachableTargetDistanceThreshold}), {@code showTileCounter},
 	 * {@code pathStyle}, and {@code unreachableText}. The bank-pickup display
 	 * pair ({@code showBankPickupInfo}, {@code colourBankPickupHighlight})
-	 * lives here rather than in {@link BankView} because they are draw-state,
-	 * not routing inputs.
+	 * lives here because they are draw-state, not routing inputs.
 	 *
 	 * <p>Every member reads the effective (override-aware) value except
 	 * {@code unreachableText}, which reads the configured value: payloads

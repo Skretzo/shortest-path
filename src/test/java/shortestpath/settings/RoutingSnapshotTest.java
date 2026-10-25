@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,45 +20,13 @@ import shortestpath.transport.TransportType;
 import shortestpath.transport.TransportTypeConfig;
 
 /**
- * Pins the two publication cadences on {@link Settings}: the view snapshots
- * (and the {@link EffectiveConfig} they derive from) are frozen between
- * republish events, while {@link #routing()} carries the refresh-built policy
- * on a separate slot that republishes never touch.
+ * Pins the publication cadence on {@link Settings}: the view snapshots (and
+ * the {@link EffectiveConfig} they derive from) are frozen between republish
+ * events — a held snapshot keeps its captured values rather than tracking the
+ * live base.
  */
 public class RoutingSnapshotTest
 {
-	private static RoutingPolicy policy(boolean includeBankPath)
-	{
-		return new RoutingPolicy(
-			EnumSet.of(TransportType.BOAT),
-			TeleportationItem.NONE,
-			false, false, false, false,
-			Set.of(), Set.of(),
-			JewelleryBoxTier.ORNATE,
-			0, includeBankPath);
-	}
-
-	@Test
-	public void routingIsNullUntilPublished()
-	{
-		Settings settings = Settings.wrap(new TestShortestPathConfig());
-		assertNull(settings.routing());
-	}
-
-	@Test
-	public void republishDoesNotTouchTheRoutingSlot()
-	{
-		Settings settings = Settings.wrap(new TestShortestPathConfig());
-		RoutingPolicy policy = policy(true);
-		settings.publishRouting(policy);
-
-		settings.applyOverrides(Map.of("avoidWilderness", false));
-		assertSame(policy, settings.routing());
-
-		settings.clearOverrides();
-		assertSame(policy, settings.routing());
-	}
-
 	@Test
 	public void heldEffectiveConfigStaysFrozenAfterRepublish()
 	{
@@ -82,18 +49,18 @@ public class RoutingSnapshotTest
 	{
 		TestShortestPathConfig stub = new TestShortestPathConfig();
 		Settings settings = Settings.wrap(stub);
-		Settings.BankView heldView = settings.bank();
+		Settings.DisplayView heldView = settings.display();
 
 		// Mutating the base config alone republishes nothing: a frozen view
 		// keeps the captured value rather than tracking the live base.
-		stub.setIncludeBankPathValue(true);
-		assertFalse(heldView.includeBankPath());
-		assertSame(heldView, settings.bank());
+		stub.setShowBankPickupInfoValue(true);
+		assertFalse(heldView.showBankPickupInfo());
+		assertSame(heldView, settings.display());
 
 		// Any publication rebuilds the views off the current base + overrides.
 		settings.applyOverrides(Map.of("avoidWilderness", false));
-		assertTrue(settings.bank().includeBankPath());
-		assertNotSame(heldView, settings.bank());
+		assertTrue(settings.display().showBankPickupInfo());
+		assertNotSame(heldView, settings.display());
 	}
 
 	@Test
@@ -101,41 +68,41 @@ public class RoutingSnapshotTest
 	{
 		TestShortestPathConfig stub = new TestShortestPathConfig();
 		Settings settings = Settings.wrap(stub);
-		Settings.BankView heldView = settings.bank();
+		Settings.DisplayView heldView = settings.display();
 
-		stub.setIncludeBankPathValue(true);
+		stub.setShowBankPickupInfoValue(true);
 
 		ConfigChanged event = new ConfigChanged();
 		event.setGroup("shortestpath");
-		event.setKey("includeBankPath");
+		event.setKey("showBankPickupInfo");
 		settings.onConfigChanged(event);
 
-		assertNotSame(heldView, settings.bank());
-		assertTrue(settings.bank().includeBankPath());
+		assertNotSame(heldView, settings.display());
+		assertTrue(settings.display().showBankPickupInfo());
 	}
 
 	@Test
 	public void foreignGroupEventIsIgnored()
 	{
 		Settings settings = Settings.wrap(new TestShortestPathConfig());
-		Settings.BankView heldView = settings.bank();
+		Settings.DisplayView heldView = settings.display();
 
 		ConfigChanged event = new ConfigChanged();
 		event.setGroup("someOtherPlugin");
-		event.setKey("includeBankPath");
+		event.setKey("showBankPickupInfo");
 		assertNull(settings.onConfigChanged(event));
 
-		assertSame(heldView, settings.bank());
+		assertSame(heldView, settings.display());
 	}
 
 	/**
-	 * The service builds the routing policy itself: the built snapshot is
-	 * published into the {@link #routing()} slot before the call returns, and
-	 * the enabled-type set is frozen off the (post-disableUnless)
-	 * transport-type view it was handed.
+	 * The service builds the routing policy itself: the enabled-type set in
+	 * the built snapshot is frozen off the (post-{@code disableUnless})
+	 * transport-type view it was handed, and the scalar arguments are the
+	 * effective values the caller already computed this refresh.
 	 */
 	@Test
-	public void buildRoutingPolicyPublishesTheBuiltSnapshot()
+	public void buildRoutingPolicyBuildsTheSnapshot()
 	{
 		TestShortestPathConfig config = new TestShortestPathConfig();
 		Settings settings = Settings.wrap(config);
@@ -146,7 +113,6 @@ public class RoutingSnapshotTest
 			false, true, false, true, Set.of(), Set.of(),
 			JewelleryBoxTier.ORNATE, 42, true);
 
-		assertSame("the built policy is the published snapshot", policy, settings.routing());
 		assertTrue(policy.isTransportTypeEnabled(TransportType.TRANSPORT));
 		assertFalse("disableUnless-derived state is frozen into the build",
 			policy.isTransportTypeEnabled(TransportType.BOAT));
