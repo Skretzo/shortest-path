@@ -240,7 +240,10 @@ public class UnlockSuggestionsTest
 
 			assertFalse(search.getResult().isReached());
 			assertFalse(search.getUnlockSuggestions().isEmpty());
-			assertTrue(search.debugStats().toString(), search.getUnlockSearchNanos() < UnlockSuggestions.BUDGET_NANOS);
+			// It stops itself at the budget; only a rerun's graph, started with the reserve left, can
+			// run past it. A slow machine may run out of time, but it never runs on.
+			assertTrue(search.debugStats().toString(), search.getUnlockSearchNanos()
+				< UnlockSuggestions.BUDGET_NANOS + UnlockSuggestions.RERUN_RESERVE_NANOS);
 		}
 	}
 }

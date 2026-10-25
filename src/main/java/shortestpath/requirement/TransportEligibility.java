@@ -389,7 +389,7 @@ public final class TransportEligibility
 				int id = ids[0];
 				for (int variation : ids)
 				{
-					if (heldItems.carriedAndBanked().getOrDefault(variation, 0) >= branch.getQuantity())
+					if (heldItems.carriedAndBanked().getOrDefault(variation, 0) >= pickupQuantity(branch))
 					{
 						id = variation;
 						break;
@@ -398,7 +398,7 @@ public final class TransportEligibility
 				for (Map<Integer, Integer> set : sets)
 				{
 					Map<Integer, Integer> grown = new HashMap<>(set);
-					grown.merge(id, branch.getQuantity(), Integer::sum);
+					grown.merge(id, pickupQuantity(branch), Integer::sum);
 					next.add(grown);
 				}
 			}

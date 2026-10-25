@@ -44,7 +44,7 @@ public final class UnlockSuggestions
 	 * No capability starts its rerun with less than this left, as preparing the rerun's graph can't
 	 * be interrupted.
 	 */
-	private static final long RERUN_RESERVE_NANOS = 100_000_000L;
+	static final long RERUN_RESERVE_NANOS = 100_000_000L;
 	/** A rerun stopped at the deadline takes a moment to return, so it is stopped this much early. */
 	private static final long WIND_DOWN_NANOS = 10_000_000L;
 	static final int MAX_SUGGESTIONS = 3;
@@ -147,7 +147,7 @@ public final class UnlockSuggestions
 		}
 
 		List<Capability> ranked = new ArrayList<>(frontier.keySet());
-		Collections.sort(ranked);
+		ranked.sort(requirements.cheapestFirst());
 		List<Suggestion> suggestions = new ArrayList<>();
 		int reruns = 0;
 		boolean outOfTime = false;

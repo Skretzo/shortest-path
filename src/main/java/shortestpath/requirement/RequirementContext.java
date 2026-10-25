@@ -131,15 +131,10 @@ public final class RequirementContext
 	 */
 	public RequirementContext granting(Capability capability)
 	{
-		int[] levels = boostedSkillLevelsAndMore.toArray();
-		for (int i = 0; i < levels.length; i++)
-		{
-			levels[i] = Math.max(levels[i], capability.getSkillLevels().get(i));
-		}
 		Map<Quest, QuestState> quests = new HashMap<>(questStates);
 		capability.getQuests().forEach(quest -> quests.put(quest, QuestState.FINISHED));
-		return new RequirementContext(this, SkillLevels.of(levels), quests,
-			capability.getItems().isEmpty() ? eligibility : eligibility.withCarried(capability.getItems()));
+		return new RequirementContext(this, SkillLevels.merge(boostedSkillLevelsAndMore, capability.getSkillLevels()),
+			quests, capability.getItems().isEmpty() ? eligibility : eligibility.withCarried(capability.getItems()));
 	}
 
 	/**
