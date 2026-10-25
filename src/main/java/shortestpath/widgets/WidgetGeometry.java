@@ -12,6 +12,8 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import lombok.RequiredArgsConstructor;
+
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
@@ -35,6 +37,7 @@ import shortestpath.WorldPointUtil;
  * This package is a leaf: nothing here may reference the plugin type.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class WidgetGeometry
 {
 	private final Client client;
@@ -46,13 +49,6 @@ public class WidgetGeometry
 	private BufferedImage minimapSpriteFixed;
 	private BufferedImage minimapSpriteResizeable;
 	private Rectangle minimapRectangle = new Rectangle();
-
-	@Inject
-	public WidgetGeometry(Client client, SpriteManager spriteManager)
-	{
-		this.client = client;
-		this.spriteManager = spriteManager;
-	}
 
 	private WidgetGeometry()
 	{
