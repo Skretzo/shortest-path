@@ -399,6 +399,9 @@
 1644 3673 0			13393=1		4	Xeric's talisman: 4. Xeric's Heart	T	20		
 # Requires the use of an ancient tablet to activate										
 1254 3560 0			13393=1&UNLOCK_XERICS_HONOUR=1		4	Xeric's talisman: 5. Xeric's Honour	T	20		
+# Archivist's folio										
+# Inert is 34722; shortcut: landing tile is approximate, replace after an exact capture.										
+4130 5544 0			34723=1		4	Archivist's folio	T	20		
 # Chronicle										
 3200 3355 0			13660=1		4	Chronicle	T	0		
 # Amulet of the eye										
