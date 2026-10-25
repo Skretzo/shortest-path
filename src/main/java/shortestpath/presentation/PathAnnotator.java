@@ -15,7 +15,6 @@ import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
-import shortestpath.requirement.Capability;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.transport.*;
@@ -139,33 +138,11 @@ public class PathAnnotator
 			List<String> lines = new ArrayList<>();
 			for (UnlockSuggestions.Suggestion suggestion : suggestions)
 			{
-				lines.add(capabilityLabel(suggestion.getCapability()) + " to use: " + transportLabel(suggestion.getTransport()));
+				lines.add(suggestion.getCapability().describe(this::itemName) + " to use: " + transportLabel(suggestion.getTransport()));
 			}
 			unlockLines = lines;
 		}
 		return unlockLines;
-	}
-
-	/** "Complete Twilight's Promise", "Reach 60 Agility", "Carry 20 Coins" */
-	private String capabilityLabel(Capability capability)
-	{
-		List<String> parts = new ArrayList<>();
-		capability.getQuests().forEach(quest -> parts.add(quest.getName()));
-		for (int i = 0; i < SkillLevels.LENGTH; i++)
-		{
-			int level = capability.getSkillLevels().get(i);
-			if (level > 0)
-			{
-				parts.add(i == SkillLevels.TOTAL_LEVEL_INDEX ? "total level " + level
-					: i == SkillLevels.COMBAT_LEVEL_INDEX ? "combat level " + level
-					: i == SkillLevels.QUEST_POINTS_INDEX ? level + " quest points"
-					: level + " " + Skill.values()[i].getName());
-			}
-		}
-		capability.getItems().forEach((id, quantity) -> parts.add(quantity > 1 ? quantity + " " + itemName(id) : itemName(id)));
-		Collections.sort(parts);
-		String verb = !capability.getQuests().isEmpty() ? "Complete " : capability.getItems().isEmpty() ? "Reach " : "Carry ";
-		return verb + String.join(", ", parts);
 	}
 
 	/** "Ship Aldarin", "Quetzal Aldarin", "Open Gate" */
