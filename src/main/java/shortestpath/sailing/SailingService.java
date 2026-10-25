@@ -5,6 +5,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import net.runelite.api.Client;
@@ -52,7 +53,7 @@ public class SailingService
 	 * value; readers on the render and pathfinder threads see whole
 	 * snapshots, never a torn field mix.
 	 */
-	private volatile SailingState state = SailingState.EMPTY;
+	@Getter private volatile SailingState state = SailingState.EMPTY;
 
 	private SailingService()
 	{
@@ -98,14 +99,6 @@ public class SailingService
 	public static SailingService forTesting(Client client, RefreshCoordinator coordinator)
 	{
 		return new SailingService(client, coordinator);
-	}
-
-	/**
-	 * The last published sailing snapshot; never null.
-	 */
-	public SailingState getState()
-	{
-		return state;
 	}
 
 	/**
