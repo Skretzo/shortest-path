@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 import lombok.Getter;
 import shortestpath.PrimitiveIntList;
@@ -124,11 +125,10 @@ public final class UnlockSuggestions
 		}
 		boolean[] leadsToTarget = graph.reach(targetComponents, null, true);
 
-		// What would open each locked transport, and the capabilities opening those out of the
-		// reached components that could still lead to the target.
+		// What would open each locked transport, and the capabilities opening the locked edges out of
+		// the reached components into ones that could still lead to the target.
 		Map<Transport, List<Capability>> opensWith = new IdentityHashMap<>();
-		PrimitiveIntList locked = new PrimitiveIntList();
-		Map<Capability, List<Transport>> frontier = new LinkedHashMap<>();
+		Map<Capability, PrimitiveIntList> frontier = new LinkedHashMap<>();
 		for (int edge = 0; edge < graph.edgeCount(); edge++)
 		{
 			Transport transport = graph.transport(edge);
@@ -137,15 +137,11 @@ public final class UnlockSuggestions
 				continue;
 			}
 			List<Capability> capabilities = opensWith.computeIfAbsent(transport, requirements::capabilities);
-			if (!capabilities.isEmpty())
-			{
-				locked.add(edge);
-			}
 			if ((graph.from(edge) < 0 || graph.any(reached, graph.from(edge))) && graph.any(leadsToTarget, graph.to(edge)))
 			{
 				for (Capability capability : capabilities)
 				{
-					frontier.computeIfAbsent(capability, ignored -> new ArrayList<>()).add(transport);
+					frontier.computeIfAbsent(capability, ignored -> new PrimitiveIntList()).add(edge);
 				}
 			}
 		}
@@ -169,17 +165,26 @@ public final class UnlockSuggestions
 			// Skip one a cheaper suggestion already covers, or that only opens what one already opens
 			// (another variation of the same item, say).
 			if (suggestions.stream().anyMatch(suggestion -> capability.covers(suggestion.getCapability())
-				|| frontier.get(suggestion.getCapability()).containsAll(frontier.get(capability))))
+				|| graph.transports(frontier.get(suggestion.getCapability()))
+					.containsAll(graph.transports(frontier.get(capability)))))
 			{
 				continue;
 			}
-			boolean[] opened = usable.clone();
-			for (int i = 0; i < locked.size(); i++)
+			// The way out it opens: its own edges and those of every capability it covers.
+			PrimitiveIntList exits = new PrimitiveIntList();
+			frontier.forEach((other, edges) ->
 			{
-				int edge = locked.get(i);
-				opened[edge] = opensWith.get(graph.transport(edge)).stream().anyMatch(capability::covers);
-			}
-			if (!graph.any(graph.reach(startComponents, opened, false), targetComponents))
+				if (capability.covers(other))
+				{
+					for (int i = 0; i < edges.size(); i++)
+					{
+						exits.add(edges.get(i));
+					}
+				}
+			});
+			IntPredicate open = edge -> usable[edge]
+				|| opensWith.get(graph.transport(edge)).stream().anyMatch(capability::covers);
+			if (!graph.joins(reached, exits, open, leadsToTarget, targetComponents))
 			{
 				continue;
 			}
@@ -199,7 +204,7 @@ public final class UnlockSuggestions
 			}
 			if (route.reached())
 			{
-				suggestions.add(new Suggestion(capability, onRoute(frontier.get(capability), route.path())));
+				suggestions.add(new Suggestion(capability, onRoute(graph.transports(frontier.get(capability)), route.path())));
 			}
 		}
 		return new Found(suggestions, ranked.size(), reruns, outOfTime, false);
@@ -314,6 +319,16 @@ public final class UnlockSuggestions
 			return transports.get(edge);
 		}
 
+		List<Transport> transports(PrimitiveIntList edges)
+		{
+			List<Transport> result = new ArrayList<>(edges.size());
+			for (int i = 0; i < edges.size(); i++)
+			{
+				result.add(transports.get(edges.get(i)));
+			}
+			return result;
+		}
+
 		/** The edges whose transports {@code account} may use, and every crossing. */
 		boolean[] edgesOf(PreparedRoutingAccount account)
 		{
@@ -385,6 +400,51 @@ public final class UnlockSuggestions
 				}
 			}
 			return reached;
+		}
+
+		/**
+		 * Whether going on from the {@code reached} components through the {@code exits} and other
+		 * edges that are {@code open}, staying {@code within} those components, gets to a
+		 * {@code targets} component. Only the newly reached components are walked, not those reached.
+		 */
+		boolean joins(boolean[] reached, PrimitiveIntList exits, IntPredicate open, boolean[] within, boolean[] targets)
+		{
+			boolean[] seen = reached.clone();
+			ArrayDeque<Integer> queue = new ArrayDeque<>();
+			for (int i = 0; i < exits.size(); i++)
+			{
+				enter(exits.get(i), open, within, seen, queue);
+			}
+			while (!queue.isEmpty())
+			{
+				int component = queue.poll();
+				if (targets[component])
+				{
+					return true;
+				}
+				PrimitiveIntList edges = outgoing.get(component);
+				for (int i = 0; i < edges.size(); i++)
+				{
+					enter(edges.get(i), open, within, seen, queue);
+				}
+			}
+			return false;
+		}
+
+		private void enter(int edge, IntPredicate open, boolean[] within, boolean[] seen, ArrayDeque<Integer> queue)
+		{
+			if (!open.test(edge))
+			{
+				return;
+			}
+			for (int component : siteComponents[to(edge)])
+			{
+				if (within[component] && !seen[component])
+				{
+					seen[component] = true;
+					queue.add(component);
+				}
+			}
 		}
 
 		private void visit(int edge, boolean[] allowed, int site, boolean[] reached, ArrayDeque<Integer> queue)
