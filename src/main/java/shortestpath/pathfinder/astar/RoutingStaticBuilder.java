@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.IntDeque;
@@ -275,7 +277,7 @@ public final class RoutingStaticBuilder
 	{
 		private final WalkableTiles walkable;
 		private final int[] naturalId;
-		private final int naturalComponentCount;
+		@Getter @Accessors(fluent = true) private final int naturalComponentCount;
 		private final boolean[] reachableNatural;
 
 		private WalkingGraph(WalkableTiles walkable, int[] naturalId, int naturalComponentCount,
@@ -308,11 +310,6 @@ public final class RoutingStaticBuilder
 		public int naturalComponent(int index)
 		{
 			return naturalId[index];
-		}
-
-		public int naturalComponentCount()
-		{
-			return naturalComponentCount;
 		}
 
 		public boolean isStructurallyReachable(int naturalComponent)
