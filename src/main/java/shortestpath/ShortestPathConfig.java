@@ -357,7 +357,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawDebugPanel",
 		name = "Show debug panel",
-		description = "Toggles displaying the pathfinding debug stats panel",
+		description = "Show the pathfinding debug stats panel",
 		position = 206,
 		section = sectionDebug
 	)
@@ -369,7 +369,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawClickPoints",
 		name = "Show click points",
-		description = "Highlight exact route click points in magenta in the game view",
+		description = "Highlight route click points in magenta in the game view",
 		position = 208,
 		section = sectionDebug
 	)
