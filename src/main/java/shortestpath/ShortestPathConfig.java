@@ -194,7 +194,7 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Colours",
-		description = "Colours for the path map, minimap and scene tiles",
+		description = "Path colours on map, minimap and scene tiles",
 		position = 183
 	)
 	String sectionColours = "sectionColours";
@@ -203,7 +203,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPath",
 		name = "Path",
-		description = "Colour of path tiles on world map, minimap and in game scene",
+		description = "Path tile colour on map, minimap and scene",
 		position = 184,
 		section = sectionColours
 	)
@@ -216,8 +216,8 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPathCalculating",
 		name = "Calculating",
-		description = "Colour of path tiles while pathfinding calculation is in progress," +
-			"<br>and the colour of unused targets if there are more than a single target",
+		description = "Path tile colour while calculating," +
+			"<br>and of unused targets with multiple targets",
 		position = 185,
 		section = sectionColours
 	)
@@ -230,7 +230,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPathUnreachable",
 		name = "Unreachable",
-		description = "Colour of path tiles when pathfinding has finished but target is still too far away",
+		description = "Path tile colour when the target is still too far away",
 		position = 186,
 		section = sectionColours
 	)
@@ -243,7 +243,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourTransports",
 		name = "Transports",
-		description = "Colour of the transport tiles",
+		description = "Transport tile colour",
 		position = 187,
 		section = sectionColours
 	)
@@ -256,7 +256,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourCollisionMap",
 		name = "Collision map",
-		description = "Colour of the collision map tiles",
+		description = "Collision map tile colour",
 		position = 188,
 		section = sectionColours
 	)
@@ -269,7 +269,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourText",
 		name = "Text",
-		description = "Colour of the text of the tile counter and fairy ring codes",
+		description = "Text colour for the tile counter and fairy ring codes",
 		position = 189,
 		section = sectionColours
 	)
@@ -281,7 +281,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourTeleportPulse",
 		name = "Teleport pulse",
-		description = "Colour of the pulsing teleport highlight",
+		description = "Pulsing teleport highlight colour",
 		position = 190,
 		section = sectionColours
 	)
