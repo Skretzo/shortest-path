@@ -123,7 +123,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawMap",
 		name = "Draw Path On World Map",
-		description = "Whether the path should be drawn on the world map",
+		description = "Draw the path on the world map",
 		position = 178,
 		section = sectionDisplay
 	)
@@ -135,7 +135,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawMinimap",
 		name = "Draw Path On Minimap",
-		description = "Whether the path should be drawn on the minimap",
+		description = "Draw the path on the minimap",
 		position = 179,
 		section = sectionDisplay
 	)
@@ -147,7 +147,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawTiles",
 		name = "Draw Path On Tiles",
-		description = "Whether the path should be drawn on the game tiles",
+		description = "Draw the path on the game tiles",
 		position = 180,
 		section = sectionDisplay
 	)
@@ -159,7 +159,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "pathStyle",
 		name = "Path Style",
-		description = "Whether to display the path as tiles, a segmented line, or a line with direction arrows",
+		description = "Draw the path as tiles, a segmented line, or a line with direction arrows",
 		position = 181,
 		section = sectionDisplay
 	)
@@ -171,7 +171,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showTeleportPulse",
 		name = "Teleport Pulse",
-		description = "Animate a pulsing highlight on the tile when the next teleport on the path is due",
+		description = "Pulse the tile when the next teleport on the path is due",
 		position = 182,
 		section = sectionDisplay
 	)
