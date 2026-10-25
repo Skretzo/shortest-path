@@ -305,7 +305,7 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Hotkeys",
-		description = "Options for keyboard shortcuts",
+		description = "Keyboard shortcut options",
 		position = 201
 	)
 	String sectionHotkeys = "sectionHotkeys";
@@ -313,7 +313,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "clearPathHotkey",
 		name = "Clear current path",
-		description = "Hotkey to clear the current path",
+		description = "Clear-path hotkey",
 		position = 202,
 		section = sectionHotkeys
 	)
@@ -324,7 +324,7 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Debug Options",
-		description = "Various options for debugging",
+		description = "Debugging options",
 		position = 203,
 		closedByDefault = true
 	)
