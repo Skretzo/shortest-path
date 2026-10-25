@@ -24,24 +24,6 @@ public class VarRequirement
 	private final int value;
 	private final VarCheckType checkType;
 
-
-
-	/**
-	 * Creates a varbit requirement.
-	 */
-	public static VarRequirement varbit(int id, int value, VarCheckType checkType)
-	{
-		return new VarRequirement(VarType.VARBIT, id, value, checkType);
-	}
-
-	/**
-	 * Creates a varplayer requirement.
-	 */
-	public static VarRequirement varPlayer(int id, int value, VarCheckType checkType)
-	{
-		return new VarRequirement(VarType.VARPLAYER, id, value, checkType);
-	}
-
 	/**
 	 * Checks if this requirement is satisfied given the current variable values.
 	 *
