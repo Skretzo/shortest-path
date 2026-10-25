@@ -72,10 +72,6 @@ public final class ItemVariations
 		this.ids = ids;
 	}
 
-
-
-
-
 	public static int[] staves(ItemVariations itemVariation)
 	{
 		return itemVariation == null ? null : STAVES.get(itemVariation.name);
