@@ -356,6 +356,26 @@ public class PathfinderTest
 		assertTrue("unknown keys carry no effects", change.getEffects().isEmpty());
 	}
 
+	@Test
+	public void slepeRequiresTheTabletUnlockInEveryItemMode()
+	{
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			for (int unlocked : new int[]{0, 1})
+			{
+				setupInventory(new Item(22400, 1));
+				setupConfig(QuestState.FINISHED, 99, mode,
+					Map.of(VarbitID.SLEPE_TELEPORT_UNLOCKED, unlocked));
+				assertEquals("Slepe under " + mode + " with unlock " + unlocked,
+					unlocked == 1 && mode != TeleportationItem.NONE,
+					hasUsableTeleport("Drakan's medallion: Slepe"));
+				assertEquals("Ver Sinhaza remains independent of the Slepe unlock under " + mode,
+					mode != TeleportationItem.NONE,
+					hasUsableTeleport("Drakan's medallion: Ver Sinhaza"));
+			}
+		}
+	}
+
 	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";
 	private static final String XERICS_LOOKOUT = "Xeric's talisman: 1. Xeric's Lookout";
 
