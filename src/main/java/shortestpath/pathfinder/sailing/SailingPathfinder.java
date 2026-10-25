@@ -488,7 +488,7 @@ public class SailingPathfinder implements ActiveSearch
 	// inherits the base's constant 0) and its own start/end clock.
 	private static final class Stats extends PathfinderStats
 	{
-		private int nodesChecked;
+		@Getter private int nodesChecked;
 		private long startNanos, endNanos;
 		private volatile boolean started, ended;
 
@@ -503,12 +503,6 @@ public class SailingPathfinder implements ActiveSearch
 		{
 			endNanos = System.nanoTime();
 			ended = true;
-		}
-
-		@Override
-		public int getNodesChecked()
-		{
-			return nodesChecked;
 		}
 
 		@Override
