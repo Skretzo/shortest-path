@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -52,6 +53,34 @@ import shortestpath.transport.TransportType;
 @Singleton
 public class PathAnnotator
 {
+	/**
+	 * Ordered {@code objInfo.contains} matcher → label-prefix pairs for the
+	 * teleportation-box arm of {@link #getPohExitInfo}; the first match wins,
+	 * and an unmatched (or absent) object info falls back to
+	 * {@link #OBJINFO_FALLBACK_LABEL}. Package-visible so the label table is
+	 * test-pinned.
+	 */
+	static final String[][] OBJINFO_LABELS = {
+		{"Amulet of Glory", "Mounted Glory: "},
+		{"Mythical cape", "Mythical Cape: "},
+		{"Xeric's Talisman", "Xeric's Talisman: "},
+		{"Digsite", "Digsite Pendant: "},
+	};
+	static final String OBJINFO_FALLBACK_LABEL = "Jewelry Box: ";
+
+	/**
+	 * Label prefix per exit-transport type for {@link #getPohExitInfo}; a
+	 * type absent from the map (including a null type) passes its display
+	 * info through unprefixed, and the teleportation box takes the
+	 * {@link #OBJINFO_LABELS} arm instead. The fairy-ring entry's missing
+	 * colon is upstream display text, not a typo.
+	 */
+	static final Map<TransportType, String> EXIT_PREFIX = Map.of(
+		TransportType.TELEPORTATION_PORTAL_POH, "Nexus: ",
+		TransportType.FAIRY_RING, "Fairy Ring ",
+		TransportType.SPIRIT_TREE, "Spirit Tree: ",
+		TransportType.WILDERNESS_OBELISK, "Obelisk: ");
+
 	private final Client client;
 	private final PohService pohService;
 	private final ItemStateService itemState;
@@ -344,46 +373,24 @@ public class PathAnnotator
 						if (TransportType.TELEPORTATION_BOX.equals(exitType))
 						{
 							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory"))
+							String label = OBJINFO_FALLBACK_LABEL;
+							if (objInfo != null)
 							{
-								immediateExitInfo = "Mounted Glory: " + exitInfo;
+								for (String[] pair : OBJINFO_LABELS)
+								{
+									if (objInfo.contains(pair[0]))
+									{
+										label = pair[1];
+										break;
+									}
+								}
 							}
-							else if (objInfo != null && objInfo.contains("Mythical cape"))
-							{
-								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-							{
-								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Digsite"))
-							{
-								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							}
-							else
-							{
-								immediateExitInfo = "Jewelry Box: " + exitInfo;
-							}
-						}
-						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-						{
-							immediateExitInfo = "Nexus: " + exitInfo;
-						}
-						else if (TransportType.FAIRY_RING.equals(exitType))
-						{
-							immediateExitInfo = "Fairy Ring " + exitInfo;
-						}
-						else if (TransportType.SPIRIT_TREE.equals(exitType))
-						{
-							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						}
-						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-						{
-							immediateExitInfo = "Obelisk: " + exitInfo;
+							immediateExitInfo = label + exitInfo;
 						}
 						else
 						{
-							immediateExitInfo = exitInfo;
+							String prefix = exitType == null ? null : EXIT_PREFIX.get(exitType);
+							immediateExitInfo = prefix == null ? exitInfo : prefix + exitInfo;
 						}
 					}
 					break;
