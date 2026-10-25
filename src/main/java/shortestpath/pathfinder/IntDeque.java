@@ -1,5 +1,9 @@
 package shortestpath.pathfinder;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 /**
  * A minimal growable FIFO of primitive {@code int} node ids backed by a ring buffer.
  * <p>
@@ -12,16 +16,11 @@ public class IntDeque
 	private int[] elements;
 	private int head;
 	private int tail;
-	private int size;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private int size;
 
 	public IntDeque(int initialCapacity)
 	{
 		elements = new int[Math.max(1, initialCapacity)];
-	}
-
-	int size()
-	{
-		return size;
 	}
 
 	public boolean isEmpty()
