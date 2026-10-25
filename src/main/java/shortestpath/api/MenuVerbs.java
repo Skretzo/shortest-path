@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
@@ -35,6 +36,7 @@ import shortestpath.widgets.WidgetGeometry;
  * <p>This package is a leaf: nothing here may reference the plugin type.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class MenuVerbs
 {
 	private static final String CLEAR = "Clear";
@@ -49,16 +51,6 @@ public class MenuVerbs
 	private final PathScheduler scheduler;
 	private final PathAnnotator annotator;
 	private final WidgetGeometry geometry;
-
-	@Inject
-	public MenuVerbs(Client client, PathScheduler scheduler, PathAnnotator annotator,
-		WidgetGeometry geometry)
-	{
-		this.client = client;
-		this.scheduler = scheduler;
-		this.annotator = annotator;
-		this.geometry = geometry;
-	}
 
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
