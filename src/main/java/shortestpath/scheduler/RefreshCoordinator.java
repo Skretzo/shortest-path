@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
 import shortestpath.ShortestPathConfig;
@@ -31,6 +32,7 @@ import shortestpath.spirittree.TreeChange;
  */
 @Slf4j
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class RefreshCoordinator
 {
 	/**
@@ -58,13 +60,6 @@ public class RefreshCoordinator
 	// The login transition memory for gameStateChanged's three-state gate.
 	private GameState lastGameState = null;
 	private GameState lastLastGameState = null;
-
-	@Inject
-	public RefreshCoordinator(PathScheduler scheduler, Settings settings)
-	{
-		this.scheduler = scheduler;
-		this.settings = settings;
-	}
 
 	/**
 	 * Maps an item-state change fact to its follow-up actions: the declared
