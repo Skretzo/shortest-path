@@ -16,6 +16,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,7 +88,7 @@ public class PathScheduler
 	private volatile Pathfinder legacyPathfinder;
 	private AStarRoutingStaticProvider aStarRoutingStatic;
 	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
-	private boolean startPointSet = false;
+	@Getter(AccessLevel.PACKAGE) private boolean startPointSet = false;
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
 	@Getter private volatile int sailingPivotX;
 	@Getter private volatile int sailingPivotY;
@@ -594,11 +595,6 @@ public class PathScheduler
 	public ActiveSearch getActiveSearch()
 	{
 		return pathfinder;
-	}
-
-	boolean isStartPointSet()
-	{
-		return startPointSet;
 	}
 
 	/**
