@@ -39,6 +39,7 @@ import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
+import shortestpath.requirement.RejectionReason;
 import shortestpath.requirement.RequirementContext;
 import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
@@ -685,13 +686,21 @@ public class PathfinderConfig
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
-			if (!requirements.usable(transport))
+			// The named gates run first; a transport failing any of them is
+			// dropped before either item pool is consulted.
+			if (requirements.gates(transport) != RejectionReason.NONE)
 			{
 				continue;
 			}
 
 			boolean usableWithoutBank = eligibility.usable(transport, BankVisitState.CARRIED);
 			boolean usableWithBank = eligibility.usable(transport, BankVisitState.BANKED);
+			// Both pools empty for its items == the ITEM_REQUIREMENT gate
+			// the composite check() would apply — the same skip, spelled out.
+			if (!usableWithoutBank && !usableWithBank)
+			{
+				continue;
+			}
 			if (usableWithoutBank)
 			{
 				withoutBank.add(transport);
