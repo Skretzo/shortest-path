@@ -164,7 +164,6 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 	private long activeConfigProfileId;
-	private boolean migratingAStarConfiguration;
 	@Inject
 	private EventBus eventBus;
 	@Inject
@@ -279,7 +278,6 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		migrateAStarConfiguration();
 		activeConfigProfileId = configManager.getProfile().getId();
 
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
@@ -520,19 +518,6 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	private void migrateAStarConfiguration()
-	{
-		migratingAStarConfiguration = true;
-		try
-		{
-			PathfinderConfigurationMigration.migrate(configManager, CONFIG_GROUP);
-		}
-		finally
-		{
-			migratingAStarConfiguration = false;
-		}
-	}
-
 	/**
 	 * Builds the A* backend's static routing data in the background when the A* backend is
 	 * selected, so the first route does not pay for it. The build runs on the pathfinding thread,
@@ -692,7 +677,7 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		if (migratingAStarConfiguration || configManager.getProfile().getId() != activeConfigProfileId)
+		if (configManager.getProfile().getId() != activeConfigProfileId)
 		{
 			return;
 		}
@@ -731,7 +716,6 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		migrateAStarConfiguration();
 		activeConfigProfileId = profileId;
 		syncDebugPanelVisibility();
 		if (pathfinderConfig == null)
