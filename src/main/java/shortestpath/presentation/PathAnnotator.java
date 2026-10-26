@@ -31,6 +31,7 @@ import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.pathfinder.UnlockSuggestions;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.Capability;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.transport.Transport;
@@ -154,7 +155,8 @@ public class PathAnnotator
 
 	/**
 	 * One line per unlock that would let an unreachable route reach its target, such as
-	 * "Carry 20 Coins to use: Ship Aldarin"; empty when there are none. The suggestions arrive after
+	 * "Carry 20 Coins to use: Ship Aldarin", or "Bring 20 Coins from your bank to use: Ship Aldarin"
+	 * when they're in the bank; empty when there are none. The suggestions arrive after
 	 * the search is done, so the lines are rebuilt, on the client thread, whenever the search
 	 * publishes a new list.
 	 */
@@ -168,7 +170,10 @@ public class PathAnnotator
 			List<String> lines = new ArrayList<>();
 			for (UnlockSuggestions.Suggestion suggestion : suggestions)
 			{
-				lines.add(suggestion.getCapability().describe(this::itemName) + " to use: " + transportLabel(suggestion.getTransport()));
+				// Items already in the bank read as a reminder to bring them.
+				boolean inBank = suggestion.getEffort() == Capability.Effort.OWNED_ITEMS;
+				lines.add(suggestion.getCapability().describe(this::itemName, inBank) + " to use: "
+					+ transportLabel(suggestion.getTransport()));
 			}
 			unlockLines = lines;
 		}
