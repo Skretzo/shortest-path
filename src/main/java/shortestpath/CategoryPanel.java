@@ -126,7 +126,7 @@ class CategoryPanel extends PluginPanel
 	}
 
 	/**
-	 * Extra header slot on the right edge — the Restrictions category parks
+	 * Extra header slot on the right edge — the Restrictions section parks
 	 * its "Owned" checkbox here.
 	 */
 	void setTrailing(JComponent component)
@@ -136,7 +136,7 @@ class CategoryPanel extends PluginPanel
 	}
 
 	/**
-	 * Appends a searchable row to the category's scroll content.
+	 * Appends a searchable row to the section's content column.
 	 */
 	void addRow(JComponent component, String displayText, String searchText)
 	{
@@ -151,7 +151,7 @@ class CategoryPanel extends PluginPanel
 
 	/**
 	 * The rows matching {@code query} (already lowercased): every row when
-	 * the query is empty or hits the category's own name/alias, otherwise
+	 * the query is empty or hits the section's own name/alias, otherwise
 	 * rows whose search text contains it. The restriction checklist matches
 	 * by its own family/member labels rather than its row text.
 	 */
@@ -226,15 +226,5 @@ class CategoryPanel extends PluginPanel
 		}
 		content.revalidate();
 		content.repaint();
-	}
-
-	/**
-	 * Muxer activation is the deep-link seam: a {@code pushState} into this
-	 * category lands it pre-filtered on the current search query.
-	 */
-	@Override
-	public void onActivate()
-	{
-		applyQuery(panel.getCurrentQuery());
 	}
 }
