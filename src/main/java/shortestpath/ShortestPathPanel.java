@@ -207,13 +207,12 @@ public class ShortestPathPanel extends PluginPanel
 		topPanel.add(searchBar, BorderLayout.CENTER);
 		add(topPanel, BorderLayout.NORTH);
 
-		// The categories exist before the home view so the tile callbacks
-		// can push them; the muxer roots at home and stacks categories on top.
-		buildGeneralCategory();
+		// The sections build in scroll order — each registers its
+		// syncFromConfig listeners as it is constructed, so every control
+		// is live before first paint. No drill-down: the sections stack in
+		// one scroll view.
 		buildTransportsCategory();
 		buildRestrictionsCategory();
-		buildUnlocksCategory();
-		buildBankCategory();
 		buildPohCategory();
 		buildDisplayCategory();
 
