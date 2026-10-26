@@ -46,6 +46,9 @@ import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.ui.components.IconTextField;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.items.ItemStateService;
 import shortestpath.settings.ConfigItems;
 import shortestpath.settings.Settings;
@@ -124,10 +127,12 @@ public class ShortestPathPanel extends PluginPanel
 	final EventBus eventBus;
 	final Plugin plugin;
 
-	private final IconTextField searchBar;
-	private final MultiplexingPluginPanel muxer;
-	private final ShortestPathHomePanel home;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final IconTextField searchBar;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final MultiplexingPluginPanel muxer;
+	@Getter @Accessors(fluent = true) private final ShortestPathHomePanel home;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<CategoryPanel> categories = new ArrayList<>();
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<TransportFamilyCard> transportCards = new ArrayList<>();
 
 	/**
@@ -143,8 +148,12 @@ public class ShortestPathPanel extends PluginPanel
 	private final List<SearchRow> pohSubRows = new ArrayList<>();
 
 	private CategoryPanel restrictionsCategory;
-	private RestrictionListPanel restrictionListPanel;
-	private String currentQuery = "";
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private RestrictionListPanel restrictionListPanel;
+	/**
+	 * The trimmed text currently in the search field — the query sub-panels
+	 * apply when they activate.
+	 */
+	@Getter(AccessLevel.PACKAGE) private String currentQuery = "";
 
 	ShortestPathPanel(Settings settings, Client client,
 		ClientThread clientThread, ItemManager itemManager,
@@ -842,15 +851,6 @@ public class ShortestPathPanel extends PluginPanel
 	// ---- Navigation ---------------------------------------------------------
 
 	/**
-	 * The trimmed text currently in the search field — the query sub-panels
-	 * apply when they activate.
-	 */
-	String getCurrentQuery()
-	{
-		return currentQuery;
-	}
-
-	/**
 	 * Push a category sub-panel onto the card stack.
 	 */
 	void drillInto(CategoryPanel category)
@@ -864,36 +864,6 @@ public class ShortestPathPanel extends PluginPanel
 	void backToHome()
 	{
 		muxer.popState();
-	}
-
-	MultiplexingPluginPanel muxer()
-	{
-		return muxer;
-	}
-
-	ShortestPathHomePanel home()
-	{
-		return home;
-	}
-
-	List<CategoryPanel> categories()
-	{
-		return categories;
-	}
-
-	List<TransportFamilyCard> transportCards()
-	{
-		return transportCards;
-	}
-
-	RestrictionListPanel restrictionListPanel()
-	{
-		return restrictionListPanel;
-	}
-
-	IconTextField searchBar()
-	{
-		return searchBar;
 	}
 
 	/**
