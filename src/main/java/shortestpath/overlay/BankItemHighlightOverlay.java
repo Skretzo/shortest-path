@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
-import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
@@ -21,8 +20,8 @@ import shortestpath.settings.Settings;
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
 	private final ItemManager itemManager;
-	private final Settings settings;
 	private final ItemStateService itemState;
+	private Widget bankContainer;
 
 	@Inject
 	public BankItemHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings,
@@ -30,54 +29,45 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 	{
 		super(client, plugin, settings);
 		this.itemManager = itemManager;
-		this.settings = settings;
 		this.itemState = itemState;
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
+	protected boolean enabled()
 	{
-		if (!settings.display().highlightBankPickupItems())
-		{
-			return null;
-		}
+		return settings.display().highlightBankPickupItems();
+	}
 
-		ActiveSearch search = plugin.getActiveSearch();
-		if (search == null)
-		{
-			return null;
-		}
-
-		List<PathStep> path = search.getPath();
-		if (path == null || path.isEmpty())
-		{
-			return null;
-		}
-
-		Widget bankContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
+	@Override
+	protected boolean extraGatesPass()
+	{
+		bankContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
 		if (bankContainer == null || bankContainer.isHidden())
 		{
-			return null;
+			return false;
 		}
 
 		if (itemState.getBank() == null)
 		{
-			return null;
+			return false;
 		}
 
-		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
-		if (bankLocations == null)
-		{
-			return null;
-		}
+		return plugin.getPathfinderConfig().getDestinations("bank") != null;
+	}
 
-		int pathIndex = getPlayerPathIndex(path);
-		if (pathIndex < 0)
-		{
-			return null;
-		}
+	@Override
+	protected boolean pathIndexUsable(int pathIndex, List<PathStep> path)
+	{
+		// Bank never indexes path.get(pathIndex + 1) — it only needs the
+		// player to be on the path at all.
+		return pathIndex >= 0;
+	}
 
-		BankPickupRequirements.BankPickupResult pickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex, plugin.getActiveSearch());
+	@Override
+	protected Dimension drawHighlights(Graphics2D graphics, List<PathStep> path, int pathIndex,
+		ActiveSearch search)
+	{
+		BankPickupRequirements.BankPickupResult pickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex, search);
 		if (pickup == null || pickup.bankItemIds.isEmpty())
 		{
 			return null;

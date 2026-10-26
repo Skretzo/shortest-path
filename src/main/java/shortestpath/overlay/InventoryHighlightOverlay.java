@@ -44,42 +44,24 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	// last scanned list doubles as the cache key by reference identity.
 	private List<PathStep> scannedPath;
 	private int lastFairyRingEdgeIndex = -1;
-	private final Settings settings;
 
 	@Inject
 	public InventoryHighlightOverlay(Client client, ShortestPathPlugin plugin, ItemManager itemManager, Settings settings)
 	{
 		super(client, plugin, settings);
 		this.itemManager = itemManager;
-		this.settings = settings;
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
+	protected boolean enabled()
 	{
-		if (!settings.display().highlightInventoryItems())
-		{
-			return null;
-		}
+		return settings.display().highlightInventoryItems();
+	}
 
-		ActiveSearch search = plugin.getActiveSearch();
-		if (search == null)
-		{
-			return null;
-		}
-
-		List<PathStep> path = search.getPath();
-		if (path == null || path.isEmpty())
-		{
-			return null;
-		}
-
-		int pathIndex = getPlayerPathIndex(path);
-		if (pathIndex < 0 || pathIndex + 1 >= path.size())
-		{
-			return null;
-		}
-
+	@Override
+	protected Dimension drawHighlights(Graphics2D graphics, List<PathStep> path, int pathIndex,
+		ActiveSearch search)
+	{
 		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
 		boolean lumbridgeEliteDone = client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1;

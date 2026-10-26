@@ -78,47 +78,29 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 		SPELL_WIDGET_IDS.put("Battlefront Teleport", InterfaceID.MagicSpellbook.TELEPORT_BATTLEFRONT);
 	}
 
-	private final Settings settings;
-
 	@Inject
 	public SpellbookHighlightOverlay(Client client, ShortestPathPlugin plugin, Settings settings)
 	{
 		super(client, plugin, settings);
-		this.settings = settings;
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
+	protected boolean enabled()
 	{
-		if (!settings.display().highlightSpellbookSpells())
-		{
-			return null;
-		}
+		return settings.display().highlightSpellbookSpells();
+	}
 
-		ActiveSearch search = plugin.getActiveSearch();
-		if (search == null)
-		{
-			return null;
-		}
-
-		List<PathStep> path = search.getPath();
-		if (path == null || path.isEmpty())
-		{
-			return null;
-		}
-
+	@Override
+	protected boolean extraGatesPass()
+	{
 		Widget spellLayer = client.getWidget(InterfaceID.MagicSpellbook.SPELLLAYER);
-		if (spellLayer == null || spellLayer.isHidden())
-		{
-			return null;
-		}
+		return spellLayer != null && !spellLayer.isHidden();
+	}
 
-		int pathIndex = getPlayerPathIndex(path);
-		if (pathIndex < 0 || pathIndex + 1 >= path.size())
-		{
-			return null;
-		}
-
+	@Override
+	protected Dimension drawHighlights(Graphics2D graphics, List<PathStep> path, int pathIndex,
+		ActiveSearch search)
+	{
 		Set<Transport> transports = plugin.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Color highlight = settings.display().colourBankPickupHighlight();
 
