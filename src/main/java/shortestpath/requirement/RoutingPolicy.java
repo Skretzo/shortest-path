@@ -109,7 +109,6 @@ public final class RoutingPolicy
 		this.currencyThreshold = currencyThreshold;
 		this.includeBankPath = includeBankPath;
 		this.blockedItemIds = Set.copyOf(blockedItemIds);
-		this.itemThresholdOverrides = Map.copyOf(itemThresholdOverrides);
 		// Inner sets are copied too — a mutable set handed out through the
 		// outer map would defeat the freeze every other collection gets.
 		Map<Integer, Set<Integer>> optionDests = new HashMap<>();
