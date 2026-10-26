@@ -71,7 +71,7 @@ public class AStarForwardSearchHotPathTest
 		int[] checks = {0};
 
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target, heuristic, RoutingStaticTestFixture.A,
-			() -> ++checks[0] >= 4);
+			() -> ++checks[0] >= 4, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 
 		assertTrue(result.cancelled());
 		assertEquals(List.of(RoutingStaticTestFixture.A), tiles(result.path()));
@@ -124,8 +124,8 @@ public class AStarForwardSearchHotPathTest
 		TargetOverlay target = target(stat, account, TARGET);
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
 
-		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target, heuristic, DEEP_WILDERNESS, false);
-		AStarForwardSearch.Result result = AStarForwardSearch.search(target, heuristic, DEEP_WILDERNESS, true);
+		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target, heuristic, DEEP_WILDERNESS, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
+		AStarForwardSearch.Result result = AStarForwardSearch.search(target, heuristic, DEEP_WILDERNESS, () -> false, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 
 		assertEquals(oracle.cost(), result.cost());
 		assertEquals(6, result.cost());

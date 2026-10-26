@@ -119,7 +119,7 @@ public class WildernessGlobalTeleportTest
 			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start);
 		assertTrue(result.reached());
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start, false);
+			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 		assertEquals("optimised search agrees with the unoptimised one", oracle.cost(), result.cost());
 		return result;
 	}

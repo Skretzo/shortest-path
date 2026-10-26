@@ -30,40 +30,14 @@ public final class AStarForwardSearch
 
 	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start)
 	{
-		return search(target, heuristic, start, () -> false, true, 1);
-	}
-
-	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
-		BooleanSupplier cancelled)
-	{
-		return search(target, heuristic, start, cancelled, true, 1);
-	}
-
-	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start, boolean optimized)
-	{
-		return search(target, heuristic, start, () -> false, optimized, 1);
-	}
-
-	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
-		BooleanSupplier cancelled, boolean optimized, double heuristicWeight)
-	{
-		return search(target, heuristic, start, cancelled, optimized, heuristicWeight,
-			SearchRestrictions.none(), NO_PROGRESS);
+		return search(target, heuristic, start, () -> false, true, 1, SearchRestrictions.none(), NO_PROGRESS,
+			(tile, banked) -> target.isTarget(tile));
 	}
 
 	/**
 	 * {@code restrictions} applies the same positional gates as legacy's per-edge checks: the
 	 * caller decides them per search, while the prepared graph and heuristic stay unchanged —
 	 * gating only removes edges, so the heuristic can only under-estimate the distances left.
-	 */
-	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
-		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions)
-	{
-		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions,
-			NO_PROGRESS);
-	}
-
-	/**
 	 * {@code progressed} runs whenever the closest-reached-tile record improves, the same
 	 * moment legacy reports progress for its without-progress cutoff.
 	 */
@@ -79,7 +53,7 @@ public final class AStarForwardSearch
 	 * {@code goal} decides which target states finish the search; it must only accept target
 	 * tiles, and leaves the prepared heuristic admissible since it can only accept fewer states.
 	 */
-	static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
+	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
 		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
 		Runnable progressed, GoalTest goal)
 	{
@@ -365,7 +339,7 @@ public final class AStarForwardSearch
 		int[] globalBounds, boolean optimized, PreparedHeuristic heuristic, double heuristicWeight, int[] bestBankCost)
 	{
 		PreparedRoutingAccount.View view = target.account().localView(banked);
-		int start = lowerBound(view.origins, tile);
+		int start = IntArrays.lowerBound(view.origins, tile);
 		for (int i = start; i < view.destinations.length && view.origins[i] == tile; i++)
 		{
 			int node = space.node(view.destinations[i]);
@@ -669,14 +643,7 @@ public final class AStarForwardSearch
 	{
 		return CAPABILITIES[(hubState - tileStates) / 2];
 	}
-	private static int lowerBound(int[] values, int target)
-	{
-		int low = 0, high = values.length;
-		while (low < high)
-	{ int middle = low + (high - low) / 2; if (Integer.compareUnsigned(values[middle], target) < 0) low = middle + 1; else high = middle;
-	}
-		return low;
-	}
+
 
 	public static final class Result
 	{
@@ -859,7 +826,7 @@ public final class AStarForwardSearch
 	{ if (stat.searchIndex(value) >= 0) return count; for (int i = 0; i < count; i++) if (values[i] == value) return count; values[count] = value; return count + 1;
 	}
 		int node(int tile)
-	{ int base = stat.searchIndex(tile); if (base >= 0) return base; int extra = binarySearch(extraTiles, tile); return extra < 0 ? -1 : baseCount + extra;
+	{ int base = stat.searchIndex(tile); if (base >= 0) return base; int extra = IntArrays.binarySearch(extraTiles, tile); return extra < 0 ? -1 : baseCount + extra;
 	}
 		int state(int tile, boolean banked)
 	{ return stateForNode(node(tile), banked);
@@ -896,7 +863,7 @@ public final class AStarForwardSearch
 		{ return account.allowTransports() && account.bankPathEnabled();
 		}
 		boolean hasLocalOrigin(int tile, boolean banked)
-	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.destinations.length && view.origins[index] == tile;
+	{ PreparedRoutingAccount.View view = account.localView(banked); int index = IntArrays.lowerBound(view.origins, tile); return index < view.destinations.length && view.origins[index] == tile;
 	}
 		/** The node's wilderness/blocked-region status bits, computed on first ask. */
 		private int gateStatus(int node)
@@ -925,10 +892,5 @@ public final class AStarForwardSearch
 		{
 			return restrictions.globalAllowed(capability, destination);
 		}
-		private static int binarySearch(int[] values, int target)
-	{ int low = 0, high = values.length - 1; while (low <= high)
-	{ int middle = low + (high - low) / 2, compare = Integer.compareUnsigned(values[middle], target); if (compare == 0) return middle; if (compare < 0) low = middle + 1; else high = middle - 1;
-	} return -1;
-	}
 	}
 }
