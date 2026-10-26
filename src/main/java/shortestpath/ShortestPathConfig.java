@@ -369,7 +369,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "postTransports",
 		name = "Post Transports",
-		description = "Whether to post the transports used in the current path as a PluginMessage event",
+		description = "Post the current path's transports as a PluginMessage event",
 		position = 209,
 		section = sectionDebug
 	)
