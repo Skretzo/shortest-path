@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.*;
 import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.util.SwingUtil;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 /**
@@ -22,7 +23,7 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	private static final int DETAIL_INDENT = ShortestPathPanel.CARD_ICON_SIZE + ICON_LABEL_GAP;
 
 	private final ShortestPathPanel panel;
-	private final String keyName;
+	@Getter(AccessLevel.PACKAGE) private final String keyName;
 	// True when the family's on/off state is owned by a control elsewhere
 	// (the teleport-items mode combo lives in General): no master control
 	// renders, and isMasterOn() reads the configured value directly.
@@ -33,10 +34,10 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	private final JLabel iconLabel;
 	@Getter private final JLabel nameLabel;
 	private final JPanel headerControls;
-	private final JComponent masterControl;
+	@Getter(AccessLevel.PACKAGE) private final JComponent masterControl;
 	private final JPanel detail;
 	private JButton expander;
-	private boolean detailOpen;
+	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
 	private boolean searchExpanded;
 	// Set while a config sync mirrors values into the controls, so the
 	// programmatic selection changes do not write back to config.
@@ -104,16 +105,6 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		panel.registerConfigListener(keyName, this::syncFromConfig);
 	}
 
-	String getKeyName()
-	{
-		return keyName;
-	}
-
-	JComponent getMasterControl()
-	{
-		return masterControl;
-	}
-
 	/**
 	 * Adds a row to the detail well. The first detail row also installs the
 	 * chevron expander and makes the header clickable — cards with no detail
@@ -135,11 +126,6 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			installExpandListener();
 		}
 		detail.revalidate();
-	}
-
-	boolean isDetailOpen()
-	{
-		return detailOpen;
 	}
 
 	void setDetailOpen(boolean open)
