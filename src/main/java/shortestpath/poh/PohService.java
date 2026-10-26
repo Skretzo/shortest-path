@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -44,6 +45,7 @@ import shortestpath.widgets.GameWidgets;
  * predicate).
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PohService
 {
 	// POH (Player Owned House) bounds for detecting when path goes through POH
@@ -233,15 +235,6 @@ public class PohService
 	private volatile Map<String, String> keysByNormalizedName = Map.of();
 	private String lastSaved = "";
 	private boolean dirty;
-
-	@Inject
-	public PohService(ConfigManager configManager, RefreshCoordinator coordinator,
-		GameWidgets gameWidgets)
-	{
-		this.configManager = configManager;
-		this.coordinator = coordinator;
-		this.gameWidgets = gameWidgets;
-	}
 
 	/**
 	 * Detached-coordinator seam for tests that exercise persistence without
