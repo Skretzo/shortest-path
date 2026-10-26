@@ -105,11 +105,6 @@ public enum PohNexusPortal
 		this.displayInfos = List.of(displayInfos);
 	}
 
-	public List<String> getDisplayInfos()
-	{
-		return displayInfos;
-	}
-
 	public static PohNexusPortal fromDisplayInfo(String displayInfo)
 	{
 		return BY_DISPLAY_INFO.get(displayInfo);
