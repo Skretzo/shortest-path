@@ -248,26 +248,20 @@ public class PathTileOverlay extends Overlay
 			}
 			else if (TileStyle.TURN_MARKERS.equals(settings.display().pathStyle()))
 			{
-				for (int i = 0; i < path.size(); i++)
-				{
-					PathStep currentStep = path.get(i);
-					int pathPoint = currentStep.getPackedPosition();
-					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
-					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
-					// Markers only where the route changes direction, plus both endpoints.
-					boolean marker = i == 0 || i == path.size() - 1
-						|| directionChanges(path.get(i - 1).getPackedPosition(), pathPoint,
-							path.get(i + 1).getPackedPosition());
-					// Skip markers inside POH (no collision data, tiles render at wrong positions)
-					if (marker && !PohService.isInsidePoh(pathX, pathY))
+				// Markers only where the route changes direction, plus both endpoints.
+				// The walker skips marker draws inside POH (no collision data, tiles
+				// render at wrong positions); the index doubles as the tile counter.
+				ProjectedTiles.forEachVisibleStep(this, graphics, path, colorCalculating,
+					i -> plugin.nextPathStep(path, i),
+					(steps, i) -> i == 0 || i == steps.size() - 1
+						|| directionChanges(steps.get(i - 1).getPackedPosition(),
+							steps.get(i).getPackedPosition(), steps.get(i + 1).getPackedPosition()),
+					(step, i) ->
 					{
-						drawTile(graphics, pathPoint, color, counter, true);
+						drawTile(graphics, step.getPackedPosition(), color, i, true);
 						drawTurnMarkerGlyph(graphics, path, i);
-					}
-					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
-				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+					},
+					true);
 			}
 			else if (TileStyle.TRACER.equals(settings.display().pathStyle()))
 			{
@@ -319,19 +313,15 @@ public class PathTileOverlay extends Overlay
 			}
 			else if (TileStyle.SPRITE_MARKERS.equals(settings.display().pathStyle()))
 			{
-				for (int i = 0; i < path.size(); i++)
-				{
-					PathStep currentStep = path.get(i);
-					int pathPoint = currentStep.getPackedPosition();
-					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
-					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
-					// Bounded stride — a sprite every SPRITE_STRIDE tiles plus the destination,
-					// never one sprite per tile (per-tile sprite density is too heavy).
-					boolean marker = i % SPRITE_STRIDE == 0 || i == path.size() - 1;
-					// Skip sprites inside POH (no collision data, tiles render at wrong positions)
-					if (marker && !PohService.isInsidePoh(pathX, pathY))
+				// Bounded stride — a sprite every SPRITE_STRIDE tiles plus the destination,
+				// never one sprite per tile (per-tile sprite density is too heavy).
+				// The walker skips sprite draws inside POH, same as the other markers.
+				ProjectedTiles.forEachVisibleStep(this, graphics, path, colorCalculating,
+					i -> plugin.nextPathStep(path, i),
+					(steps, i) -> i % SPRITE_STRIDE == 0 || i == steps.size() - 1,
+					(step, i) ->
 					{
-						Point p = tileCenter(pathPoint);
+						Point p = tileCenter(step.getPackedPosition());
 						if (p != null)
 						{
 							BufferedImage sprite = itemManager.getImage(SPRITE_ITEM_ID);
@@ -355,32 +345,21 @@ public class PathTileOverlay extends Overlay
 										p.getY() - sprite.getHeight() / 2, null);
 								}
 							}
-							drawCounter(graphics, p.getX(), p.getY(), counter);
+							drawCounter(graphics, p.getX(), p.getY(), i);
 						}
-					}
-					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
-				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true);
+					},
+					true);
 			}
 			else
 			{
+				// The walker skips tile draws inside POH (no collision data, tiles
+				// render at wrong positions); the index doubles as the tile counter.
 				boolean showTiles = TileStyle.TILES.equals(settings.display().pathStyle());
-				for (int i = 0; i < path.size(); i++)
-				{
-					// Skip drawing tiles inside POH (no collision data, tiles render at wrong positions)
-					PathStep currentStep = path.get(i);
-					int pathPoint = currentStep.getPackedPosition();
-					int pathX = WorldPointUtil.unpackWorldX(pathPoint);
-					int pathY = WorldPointUtil.unpackWorldY(pathPoint);
-					if (!PohService.isInsidePoh(pathX, pathY))
-					{
-						drawTile(graphics, pathPoint, color, counter, showTiles);
-					}
-					counter++;
-					drawTransportInfo(graphics, currentStep, plugin.nextPathStep(path, i), path, i);
-				}
-				drawUnreachedTargets(graphics, path, colorCalculating, showTiles);
+				ProjectedTiles.forEachVisibleStep(this, graphics, path, colorCalculating,
+					i -> plugin.nextPathStep(path, i),
+					(steps, i) -> true,
+					(step, i) -> drawTile(graphics, step.getPackedPosition(), color, i, showTiles),
+					showTiles);
 			}
 
 			if (plugin.isPathUnreachable() && settings.display().showUnreachableText())
@@ -464,7 +443,7 @@ public class PathTileOverlay extends Overlay
 			});
 	}
 
-	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
+	void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
 	{
 		for (int target : plugin.getActiveSearch().getTargets().points())
 		{
@@ -739,7 +718,7 @@ public class PathTileOverlay extends Overlay
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
+	void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
 	{
 		int location = currentStep.getPackedPosition();
 		int lx = WorldPointUtil.unpackWorldX(location);

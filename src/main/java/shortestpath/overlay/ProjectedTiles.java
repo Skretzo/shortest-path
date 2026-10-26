@@ -1,6 +1,12 @@
 package shortestpath.overlay;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
@@ -9,6 +15,8 @@ import net.runelite.api.coords.LocalPoint;
 
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.PathStep;
+import shortestpath.poh.PohService;
 
 /**
  * The shared packed-point projection walk: map a packed world point through
@@ -63,5 +71,41 @@ final class ProjectedTiles
 				return;
 			}
 		}
+	}
+
+	/**
+	 * The shared per-step walk for the tile-indexed style branches
+	 * (TURN_MARKERS / SPRITE_MARKERS / the TILES default): for every path
+	 * step the caller's marker predicate decides whether a marker draws —
+	 * the POH skip wraps that marker draw only — while the per-step
+	 * transport info and the trailing unreached-targets pass run
+	 * unconditionally. The loop index doubles as the tile counter
+	 * ({@code counter == i} in all three branches, POH-skipped steps
+	 * included); the segment-pair styles keep their own
+	 * {@code 1 + counter++} loops and never ride this walker.
+	 * <p>
+	 * Draw state stays on the overlay: the walker yields steps and calls
+	 * back into {@link PathTileOverlay#drawTransportInfo} and
+	 * {@link PathTileOverlay#drawUnreachedTargets}; per-frame accumulators
+	 * and per-style counters remain instance state there.
+	 */
+	static void forEachVisibleStep(PathTileOverlay overlay, Graphics2D graphics, List<PathStep> path,
+		Color colorCalculating, IntFunction<PathStep> nextPathStep,
+		BiPredicate<List<PathStep>, Integer> markerPredicate,
+		BiConsumer<PathStep, Integer> markerDraw, boolean drawUnreached)
+	{
+		for (int i = 0; i < path.size(); i++)
+		{
+			PathStep currentStep = path.get(i);
+			int pathPoint = currentStep.getPackedPosition();
+			if (markerPredicate.test(path, i)
+				&& !PohService.isInsidePoh(WorldPointUtil.unpackWorldX(pathPoint),
+					WorldPointUtil.unpackWorldY(pathPoint)))
+			{
+				markerDraw.accept(currentStep, i);
+			}
+			overlay.drawTransportInfo(graphics, currentStep, nextPathStep.apply(i), path, i);
+		}
+		overlay.drawUnreachedTargets(graphics, path, colorCalculating, drawUnreached);
 	}
 }
