@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
@@ -201,6 +202,10 @@ public class PohService
 	 */
 	public static final int TELENEXUS_CREATE_TELELINE = 2675;
 
+	// The dialog takes a few client ticks to populate its lines, so the
+	// open arm retries the read up to this many times.
+	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
+
 	// In-game labels look like "<col=ffffff>1 : Harmony Island" (space before the colon).
 	private static final Pattern KEYED_LINE = Pattern.compile("^([1-9A-Za-z]|F(?:[1-9]|1[0-2]))\\s*:\\s*(.+)$");
 	private static final Pattern PARENTHETICAL = Pattern.compile("\\(([^()]*)\\)");
@@ -323,6 +328,32 @@ public class PohService
 		keysByNormalizedName = Map.of();
 		dirty = true;
 		declare(new PohChange("dialogOpen", changed ? Set.of(Effect.DISPLAY_ONLY) : Set.of()));
+	}
+
+	/**
+	 * Schedules the nexus-dialog refresh retries on the client thread: each
+	 * tick re-reads whichever nexus interface is still open until
+	 * {@link #refreshFromDialog()} reports a populated read or the attempt
+	 * cap is reached. {@code clientThread} is a parameter, not an injected
+	 * field — the shell passes its own reference in, and detached service
+	 * instances never reach this method.
+	 */
+	public void nexusDialogOpened(ClientThread clientThread)
+	{
+		final int[] attempts = {0};
+		clientThread.invokeLater(() ->
+		{
+			attempts[0]++;
+			boolean dialogOpen = gameWidgets != null
+				&& (gameWidgets.isWidgetOpen(InterfaceID.TelenexusTeleport.UNIVERSE)
+					|| gameWidgets.isWidgetOpen(InterfaceID.Telenexus.UNIVERSE));
+			if (!dialogOpen)
+			{
+				return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
+			}
+			boolean changed = refreshFromDialog();
+			return changed || attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
+		});
 	}
 
 	/**
