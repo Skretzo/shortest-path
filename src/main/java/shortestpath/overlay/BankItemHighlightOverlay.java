@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
@@ -73,28 +72,9 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Widget[] items = bankContainer.getChildren();
-		if (items == null)
-		{
-			return null;
-		}
-
 		Color highlight = settings.display().colourBankPickupHighlight();
-		for (Widget item : items)
-		{
-			if (item == null || item.isHidden() || item.getItemId() < 0)
-			{
-				continue;
-			}
-			if (pickup.bankItemIds.contains(item.getItemId()))
-			{
-				BufferedImage outline = itemManager.getItemOutline(item.getItemId(), item.getItemQuantity(), highlight);
-				if (outline != null)
-				{
-					graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
-				}
-			}
-		}
+		drawItemOutlines(graphics, itemManager, bankContainer.getChildren(), pickup.bankItemIds,
+			highlight);
 
 		return null;
 	}
