@@ -1089,6 +1089,15 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	static final String ALWAYS_ENABLED = "shortestpath.alwaysEnabled";
 
+	/**
+	 * Client-property marker identifying a home-grid {@link Tile}. The
+	 * home scroll wrap's own chrome contains plain {@link JButton}s on
+	 * look-and-feels that draw scrollbar arrow buttons (Metal, Nimbus),
+	 * so a bare {@code instanceof JButton} sweep cannot tell a tile from
+	 * platform chrome.
+	 */
+	static final String HOME_TILE = "shortestpath.homeTile";
+
 	private static void applyEnabledDeep(Component component, boolean enabled)
 	{
 		if (component instanceof JComponent
@@ -1161,6 +1170,7 @@ public class ShortestPathPanel extends PluginPanel
 			setOpaque(false);
 			setBorder(new EmptyBorder(TEXT_INSET, TEXT_INSET, TEXT_INSET, TEXT_INSET));
 			setToolTipText(name);
+			putClientProperty(HOME_TILE, Boolean.TRUE);
 			addActionListener(e -> onClick.run());
 			// Armed/pressed transitions repaint so the pressed animation
 			// shows even though no UI delegate draws a state effect.

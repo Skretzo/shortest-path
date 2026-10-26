@@ -18,18 +18,14 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -65,7 +61,6 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
@@ -444,16 +439,18 @@ public class ShortestPathPanelLayoutTest
 
 	/**
 	 * The home grid's tile buttons — the footer link buttons are
-	 * JButtons too, but they carry their URL as the action command
-	 * while the tiles' stays empty.
+	 * JButtons too, and look-and-feels that draw scrollbar arrow
+	 * buttons (Metal, Nimbus) install more inside the home scroll
+	 * wrap, so tiles carry the {@link ShortestPathPanel#HOME_TILE}
+	 * client-property marker to stay identifiable on every platform.
 	 */
 	private static List<JButton> tileButtonsIn(Container root)
 	{
 		List<JButton> tiles = new ArrayList<>();
 		for (JButton button : buttonsIn(root))
 		{
-			String command = button.getActionCommand();
-			if (command == null || command.isEmpty())
+			if (Boolean.TRUE.equals(
+				button.getClientProperty(ShortestPathPanel.HOME_TILE)))
 			{
 				tiles.add(button);
 			}
