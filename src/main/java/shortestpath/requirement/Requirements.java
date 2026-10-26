@@ -106,9 +106,26 @@ public final class Requirements
 	 * Evaluates the gates in their fixed order and returns the first
 	 * rejection, or {@link RejectionReason#NONE} when every gate passes.
 	 * The order is part of the contract — later gates assume the earlier
-	 * ones passed.
+	 * ones passed. The composite is two halves: {@link #gates} runs the
+	 * named requirement gates, then {@link #itemRequirement} consults the
+	 * eligibility snapshot's item pools last.
 	 */
 	RejectionReason check(Transport transport)
+	{
+		RejectionReason reason = gates(transport);
+		if (reason == RejectionReason.NONE) reason = itemRequirement(transport);
+		return reason;
+	}
+
+	/**
+	 * The named requirement gates — every gate before the item-pool
+	 * evaluation — in the same fixed order {@link #check} applies.
+	 * {@code refreshTransports} calls this directly (it lives in another
+	 * package, hence {@code public}) so the two item pools can each be
+	 * evaluated once by the loop itself; a non-{@code NONE} verdict skips
+	 * the transport before any pool is consulted.
+	 */
+	public RejectionReason gates(Transport transport)
 	{
 		RejectionReason reason = sailing(transport);
 		if (reason == RejectionReason.NONE) reason = pohDisabled(transport);
@@ -124,7 +141,6 @@ public final class Requirements
 		if (reason == RejectionReason.NONE) reason = varbit(transport);
 		if (reason == RejectionReason.NONE) reason = varplayer(transport);
 		if (reason == RejectionReason.NONE) reason = plantedSpiritTree(transport);
-		if (reason == RejectionReason.NONE) reason = itemRequirement(transport);
 		return reason;
 	}
 
