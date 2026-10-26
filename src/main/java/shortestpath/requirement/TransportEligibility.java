@@ -291,29 +291,16 @@ public final class TransportEligibility
 	 */
 	public boolean usable(Transport transport, BankVisitState banked)
 	{
-		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType())
-			|| TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())
-			|| TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
+		// Mirror the requirement chain's teleportation-item gate: the shared
+		// policy verdict bypasses the pools or rejects outright, and
+		// EVALUATE_ITEMS falls through to pool evaluation below.
+		if (TeleportRestriction.isItemTeleportType(transport.getType()))
 		{
-			switch (teleportationItemSetting)
+			switch (TeleportationItemPolicy.verdict(teleportationItemSetting, transport.isConsumable()))
 			{
-				case ALL:
-				case UNLOCKED:
+				case BYPASS:
 					return true;
-				case ALL_NON_CONSUMABLE:
-				case UNLOCKED_NON_CONSUMABLE:
-					// Mirror the requirement chain's teleportation-item gate:
-					// non-consumable modes reject consumables even when their
-					// items are owned.
-					return !transport.isConsumable();
-				case INVENTORY_NON_CONSUMABLE:
-				case INVENTORY_AND_BANK_NON_CONSUMABLE:
-					if (transport.isConsumable())
-					{
-						return false;
-					}
-					break;
-				case NONE:
+				case REJECT:
 					return false;
 				default:
 					break;
