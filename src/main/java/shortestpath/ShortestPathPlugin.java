@@ -510,20 +510,7 @@ public class ShortestPathPlugin extends Plugin
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
 			|| event.getGroupId() == InterfaceID.TELENEXUS)
 		{
-			final int[] attempts = {0};
-			clientThread.invokeLater(() ->
-			{
-				attempts[0]++;
-				boolean dialogOpen = gameWidgets.isWidgetOpen(InterfaceID.TelenexusTeleport.UNIVERSE)
-					|| gameWidgets.isWidgetOpen(InterfaceID.Telenexus.UNIVERSE);
-				if (!dialogOpen)
-				{
-					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
-				}
-				boolean changed = pohService.refreshFromDialog();
-				return changed
-					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
-			});
+			pohService.nexusDialogOpened(clientThread);
 		}
 
 		// Refresh the spirit tree cache on every menu open: the menu is
