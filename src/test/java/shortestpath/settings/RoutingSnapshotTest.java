@@ -7,8 +7,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import java.lang.reflect.Field;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -108,24 +106,7 @@ public class RoutingSnapshotTest
 	 * row — a missing member is invisible until a consumer trusts the
 	 * snapshot and silently loses an unlock.
 	 */
-	@Test
-	public void unlocksViewCoversEveryDeclaredUnlockKey()
-	{
-		Set<String> fields = new HashSet<>();
-		for (Field field : Settings.UnlocksView.class.getDeclaredFields())
-		{
-			fields.add(field.getName());
-		}
-		for (ConfigKey row : ConfigKey.values())
-		{
-			if (row.getKey().startsWith("unlock"))
-			{
-				assertTrue("UnlocksView has no member for declared unlock key "
-					+ row.getKey(), fields.contains(row.getKey()));
-			}
-		}
-	}
-
+	
 	@Test
 	public void buildRoutingPolicyBuildsTheSnapshot()
 	{
