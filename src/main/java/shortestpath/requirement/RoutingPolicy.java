@@ -141,16 +141,6 @@ public final class RoutingPolicy
 
 
 	/**
-	 * Per-item tiles-saved threshold overrides parsed from the {@code id:N}
-	 * records of {@code blockedTeleportItems}; consumed by the additional-cost
-	 * path, not by the verdict chain.
-	 */
-	public Map<Integer, Integer> itemThresholdOverrides()
-	{
-		return itemThresholdOverrides;
-	}
-
-	/**
 	 * Destination-scoped restriction blocks parsed from the {@code rep@dest}
 	 * records of {@code blockedTeleportItems}: a family's representative
 	 * (display) item id to the packed destinations the player excluded for
