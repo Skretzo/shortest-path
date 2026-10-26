@@ -40,6 +40,7 @@ import shortestpath.requirement.RequirementContext;
 import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
+import shortestpath.requirement.TeleportationItemPolicy;
 import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.poh.PohNexusPortal;
@@ -465,8 +466,7 @@ public class PathfinderConfig
 		// otherwise the banked items are gathered but can never be offered.
 		TeleportationItem teleportationItemSetting = transportTypeConfig.getTeleportationItemSetting();
 		includeBankPath = effective.bool(ConfigKey.INCLUDE_BANK_PATH)
-			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
-			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
+			|| TeleportationItemPolicy.includesBank(teleportationItemSetting);
 		respawnPrifddinas = effective.bool(ConfigKey.RESPAWN_PRIFDDINAS);
 
 		// Unlocks come from detected account state or config declarations.
