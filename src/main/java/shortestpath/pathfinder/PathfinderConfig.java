@@ -997,9 +997,15 @@ public class PathfinderConfig
 			Map<Integer, Integer> values, long evaluationTimeMinutes,
 			VarRequirement.VarType kind)
 		{
-			return VarRequirement.VarType.VARBIT.equals(kind)
-				? PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes)
-				: PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+			if (VarRequirement.VarType.VARBIT.equals(kind))
+			{
+				return PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes);
+			}
+			if (VarRequirement.VarType.VARPLAYER.equals(kind))
+			{
+				return PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+			}
+			throw new IllegalArgumentException("unhandled VarType " + kind);
 		}
 	}
 
