@@ -41,7 +41,7 @@ public class HookLivenessTest
 		List<Transport> transports, Map<Integer, DestinationRequirements> bankRequirements)
 	{
 		return RequirementContext.capture(source, hooks, RequirementTestFixtures.policy(MODE), 0L,
-			transports, bankRequirements, null, Set.of(), false, new LeagueModeState(), null);
+			transports, bankRequirements, null, Set.of(), false, new LeagueModeState(), null, Set.of());
 	}
 
 	private static Requirements chain(RequirementContext context, TestRequirementHooks hooks)

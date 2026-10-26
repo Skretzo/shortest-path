@@ -72,26 +72,6 @@ public final class RoutingPolicy
 		JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold,
 		boolean includeBankPath,
-		Set<Integer> blockedItemIds)
-	{
-		this(enabledTypes, teleportationItemSetting, usePoh, usePohFairyRing,
-			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
-			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
-			includeBankPath, blockedItemIds, Map.of());
-	}
-
-	public RoutingPolicy(
-		Set<TransportType> enabledTypes,
-		TeleportationItem teleportationItemSetting,
-		boolean usePoh,
-		boolean usePohFairyRing,
-		boolean usePohSpiritTree,
-		boolean usePohObelisk,
-		Set<PohNexusPortal> enabledPohNexusPortals,
-		Set<PohMountedItem> enabledPohMountedItems,
-		JewelleryBoxTier pohJewelleryBoxTier,
-		int currencyThreshold,
-		boolean includeBankPath,
 		Set<Integer> blockedItemIds,
 		Map<Integer, Set<Integer>> blockedOptionDests)
 	{
