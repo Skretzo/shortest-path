@@ -197,7 +197,7 @@ public class Settings
 		return buildRoutingPolicy(transportTypeConfig, usePoh, usePohFairyRing,
 			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
 			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
-			includeBankPath, blockedItemIds, itemThresholdOverrides, Map.of());
+			includeBankPath, blockedItemIds, Map.of());
 	}
 
 	public RoutingPolicy buildRoutingPolicy(TransportTypeConfig transportTypeConfig,
@@ -205,7 +205,7 @@ public class Settings
 		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
 		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold, boolean includeBankPath,
-		Set<Integer> blockedItemIds, Map<Integer, Integer> itemThresholdOverrides,
+		Set<Integer> blockedItemIds,
 		Map<Integer, Set<Integer>> blockedOptionDests)
 	{
 		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
@@ -220,8 +220,7 @@ public class Settings
 			transportTypeConfig.getTeleportationItemSetting(),
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides,
-			blockedOptionDests);
+			currencyThreshold, includeBankPath, blockedItemIds, blockedOptionDests);
 		return policy;
 	}
 
