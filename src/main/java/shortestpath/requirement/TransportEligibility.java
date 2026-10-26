@@ -95,23 +95,6 @@ public final class TransportEligibility
 		TeleportationItem teleportationItemSetting,
 		int currencyThreshold,
 		Set<Unlock> unlocks,
-		boolean bankSeen)
-	{
-		this(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold,
-			unlocks, bankSeen, Set.of());
-	}
-
-	public TransportEligibility(
-		Map<Integer, Integer> carriedItems,
-		Map<Integer, Integer> bankPathItems,
-		Map<Integer, Integer> bankHas,
-		int bankPouchId,
-		Map<Integer, Integer> bankPouchRunes,
-		boolean fairyRingStaffRequired,
-		TeleportationItem teleportationItemSetting,
-		int currencyThreshold,
-		Set<Unlock> unlocks,
 		boolean bankSeen,
 		Set<Integer> balloonLogBasketDestinations)
 	{

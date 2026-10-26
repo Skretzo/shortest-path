@@ -268,7 +268,7 @@ public class BankPickupRequirementsTest
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, Map.of(),
-			fairyRingStaffRequired, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true);
+			fairyRingStaffRequired, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true, Set.of());
 	}
 
 	private static ItemRequirement rune(ItemVariations rune, int quantity)

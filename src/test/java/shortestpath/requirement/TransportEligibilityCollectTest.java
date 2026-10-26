@@ -80,7 +80,7 @@ public class TransportEligibilityCollectTest
 		TeleportationItem setting, boolean includeBankPath)
 	{
 		return TransportEligibility.collect(source, bank, setting,
-			Integer.MAX_VALUE, includeBankPath, Set.<Unlock>of());
+			Integer.MAX_VALUE, includeBankPath, Set.<Unlock>of(), Set.of());
 	}
 
 	private static Transport needsItem(int[] itemIds, int quantity)

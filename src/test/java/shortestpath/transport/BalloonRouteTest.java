@@ -148,14 +148,14 @@ public class BalloonRouteTest
 	}
 
 	@Test
-	public void collectOverloadDefaultsToNoUnlockedRoutes()
+	public void collectDefaultsToNoUnlockedRoutes()
 	{
 		Transport grandTree = balloonTo(BalloonRoute.GRAND_TREE);
 		TransportEligibility eligibility = TransportEligibility.collect(
 			mock(PlayerStateSource.class), null, TeleportationItem.NONE,
-			Integer.MAX_VALUE, false, Set.of());
+			Integer.MAX_VALUE, false, Set.of(), Set.of());
 
-		assertFalse("the six-arg collect captures no unlocked balloon routes",
+		assertFalse("an empty basket-destination set captures no unlocked balloon routes",
 			eligibility.usable(grandTree, BankVisitState.CARRIED));
 	}
 
