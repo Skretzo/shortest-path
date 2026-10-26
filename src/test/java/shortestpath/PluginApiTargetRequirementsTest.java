@@ -22,8 +22,6 @@ import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathfinderBackend;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TargetStatus;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
@@ -737,18 +735,6 @@ public class PluginApiTargetRequirementsTest
 	// ---- The A* backend agrees with legacy ----
 
 	@Test
-	public void legacyIsTheDefaultAndDispatchesToTheLegacyImplementation()
-	{
-		try (PluginApiHarness api = new PluginApiHarness())
-		{
-			assertSame(PathfinderBackend.LEGACY, api.settings.pathfinderBackend());
-			ActiveSearch search = api.path(START, FAR);
-			assertTrue(search instanceof Pathfinder);
-			assertFalse(search instanceof AStarPathfinder);
-		}
-	}
-
-	@Test
 	public void aStarBackendRoutesThroughTheBankAtTheSameCost()
 	{
 		try (PluginApiHarness api = new PluginApiHarness())
@@ -756,7 +742,6 @@ public class PluginApiTargetRequirementsTest
 			api.bank(ItemID.SPADE, 1);
 			int legacy = cost(api.query(START, target(NEAR, ItemID.SPADE)));
 
-			api.settings.selectedBackend = PathfinderBackend.ASTAR;
 			ActiveSearch search = api.path(START, target(NEAR, ItemID.SPADE));
 			assertTrue(search instanceof AStarPathfinder);
 			PathfinderResult result = search.getResult();
@@ -773,8 +758,6 @@ public class PluginApiTargetRequirementsTest
 	{
 		try (PluginApiHarness api = new PluginApiHarness())
 		{
-			api.settings.selectedBackend = PathfinderBackend.ASTAR;
-
 			api.carry(ItemID.SPADE, 1);
 			ActiveSearch carried = api.path(START, target(NEAR, ItemID.SPADE));
 			assertEquals(19, carried.getResult().getPathCost());

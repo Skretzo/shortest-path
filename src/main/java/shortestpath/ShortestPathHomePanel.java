@@ -176,16 +176,8 @@ class ShortestPathHomePanel extends PluginPanel
 		}
 		content.add(grid);
 
-		// Footer notes under the grid: the orange accent flags the new A*
-		// backend (its option is one click into the General category); the
-		// muted note covers the settings the sidebar does not surface.
-		JLabel astarNote = new JLabel(ShortestPathPanel.html(
-			"<center>New: the faster A* pathfinder - enable it under "
-				+ "General, Pathfinder Algorithm.</center>"));
-		astarNote.setForeground(ColorScheme.BRAND_ORANGE);
-		astarNote.setFont(FontManager.getRunescapeSmallFont());
-		content.add(astarNote);
-
+		// Footer note under the grid: the muted note covers the settings
+		// the sidebar does not surface.
 		JLabel settingsNote = new JLabel(ShortestPathPanel.html(
 			"<center>More settings live in the regular plugin settings panel: "
 				+ "Display (world map, minimap, tiles, path style, teleport "
@@ -452,7 +444,7 @@ class ShortestPathHomePanel extends PluginPanel
 			panel.registerConfigListener(key, this::refresh);
 		}
 		for (String key : new String[]{"balloonLogBasketRoutes",
-			"includeBankPath", "usePoh", "pathfinderAlgorithm", "blockedTeleportItems"})
+			"includeBankPath", "usePoh", "blockedTeleportItems"})
 		{
 			panel.registerConfigListener(key, this::refresh);
 		}
