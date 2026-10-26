@@ -12,8 +12,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.EventBus;
-import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.eventbus.*;
 import net.runelite.client.events.*;
 import net.runelite.client.game.*;
 import net.runelite.client.input.*;
@@ -42,8 +41,6 @@ import shortestpath.widgets.*;
 public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
-
-	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
 
 	@Inject
 	private Client client;
@@ -110,6 +107,9 @@ public class ShortestPathPlugin extends Plugin
 	private ShortestPathPanel panel;
 	private NavigationButton navButton;
 	private PathfinderConfig pathfinderConfig;
+	// Built in startUp — the overlay references it bundles are @Inject
+	// fields, so the composite cannot exist before injection completes.
+	private PluginOverlays pluginOverlays;
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -167,18 +167,10 @@ public class ShortestPathPlugin extends Plugin
 			spiritTrees.loadFromProfile();
 		}
 
-		overlayManager.add(pathOverlay);
-		overlayManager.add(pathMinimapOverlay);
-		overlayManager.add(pathMapOverlay);
-		overlayManager.add(pathMapTooltipOverlay);
-		overlayManager.add(bankItemHighlightOverlay);
-		overlayManager.add(spellbookHighlightOverlay);
-		overlayManager.add(inventoryHighlightOverlay);
-
-		if (settings.lifecycle().drawDebugPanel())
-		{
-			overlayManager.add(debugOverlayPanel);
-		}
+		pluginOverlays = new PluginOverlays(pathOverlay, pathMinimapOverlay,
+			pathMapOverlay, pathMapTooltipOverlay, bankItemHighlightOverlay,
+			spellbookHighlightOverlay, inventoryHighlightOverlay, debugOverlayPanel);
+		pluginOverlays.register(overlayManager, settings.lifecycle().drawDebugPanel());
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		pohService.loadFromProfile();
@@ -202,14 +194,12 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
-		overlayManager.remove(pathOverlay);
-		overlayManager.remove(pathMinimapOverlay);
-		overlayManager.remove(pathMapOverlay);
-		overlayManager.remove(pathMapTooltipOverlay);
-		overlayManager.remove(bankItemHighlightOverlay);
-		overlayManager.remove(spellbookHighlightOverlay);
-		overlayManager.remove(inventoryHighlightOverlay);
-		overlayManager.remove(debugOverlayPanel);
+		// The composite is built in startUp — a shutDown reached after a
+		// failed startUp has nothing to unregister.
+		if (pluginOverlays != null)
+		{
+			pluginOverlays.unregister(overlayManager);
+		}
 
 		scheduler.shutdown();
 
@@ -258,14 +248,7 @@ public class ShortestPathPlugin extends Plugin
 
 		if (effects.contains(Effect.SIDE_EFFECT_DEBUG_OVERLAY))
 		{
-			if (settings.lifecycle().drawDebugPanel())
-			{
-				overlayManager.add(debugOverlayPanel);
-			}
-			else
-			{
-				overlayManager.remove(debugOverlayPanel);
-			}
+			syncDebugPanelVisibility();
 		}
 
 		if ("showSidebarPanel".equals(change.getKey()))
@@ -324,14 +307,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private void syncDebugPanelVisibility()
 	{
-		if (settings.lifecycle().drawDebugPanel())
-		{
-			overlayManager.add(debugOverlayPanel);
-		}
-		else
-		{
-			overlayManager.remove(debugOverlayPanel);
-		}
+		pluginOverlays.syncDebug(overlayManager, settings.lifecycle().drawDebugPanel());
 	}
 
 	@Subscribe
