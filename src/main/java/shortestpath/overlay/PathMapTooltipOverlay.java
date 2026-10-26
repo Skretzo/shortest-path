@@ -80,13 +80,8 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : search.getTargets().points())
-			{
-				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-				{
-					drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1);
-				}
-			}
+			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
+				drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1));
 		}
 
 		return null;
