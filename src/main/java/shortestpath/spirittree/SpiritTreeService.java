@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -44,6 +45,7 @@ import shortestpath.widgets.GameWidgets;
  * evicts the persisted travelable entry for that patch.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class SpiritTreeService
 {
 	/**
@@ -89,16 +91,6 @@ public class SpiritTreeService
 	 * {@code getAvailableSpiritTrees()}.
 	 */
 	@Getter private volatile Set<String> availableSpiritTrees;
-
-	@Inject
-	public SpiritTreeService(ConfigManager configManager, Client client,
-		RefreshCoordinator coordinator, GameWidgets gameWidgets)
-	{
-		this.configManager = configManager;
-		this.client = client;
-		this.coordinator = coordinator;
-		this.gameWidgets = gameWidgets;
-	}
 
 	/**
 	 * Detached-widgets seam for tests that exercise the service without the
