@@ -89,7 +89,7 @@ public class PathMapOverlay extends Overlay
 
 		if (settings.display().drawTransports())
 		{
-			OverlayDrawing.forEachDisplayTransport(annotator.getAllDisplayTransports(), annotator.getTransports(),
+			OverlayDrawing.forEachDisplayTransport(annotator,
 				new OverlayDrawing.TransportVisitor()
 			{
 				private int mapAX;
