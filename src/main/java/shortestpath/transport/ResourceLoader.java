@@ -16,6 +16,9 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import shortestpath.Util;
@@ -510,41 +513,15 @@ public final class ResourceLoader
 	 * loader owns the resource read and row idiom; the caller maps rows onto
 	 * its own model ({@link shortestpath.requirement.TeleportRestriction.Family}).
 	 */
+	@Getter
+	@Accessors(fluent = true)
+	@AllArgsConstructor
 	public static final class RestrictionFamilyRow
 	{
 		private final String name;
 		private final int displayItemId;
 		private final Set<Integer> memberItemIds;
 		private final Map<Integer, String> memberLabels;
-
-		public RestrictionFamilyRow(String name, int displayItemId, Set<Integer> memberItemIds,
-			Map<Integer, String> memberLabels)
-		{
-			this.name = name;
-			this.displayItemId = displayItemId;
-			this.memberItemIds = memberItemIds;
-			this.memberLabels = memberLabels;
-		}
-
-		public String name()
-		{
-			return name;
-		}
-
-		public int displayItemId()
-		{
-			return displayItemId;
-		}
-
-		public Set<Integer> memberItemIds()
-		{
-			return memberItemIds;
-		}
-
-		public Map<Integer, String> memberLabels()
-		{
-			return memberLabels;
-		}
 	}
 
 	/**
