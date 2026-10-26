@@ -2290,6 +2290,76 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testMusicCapeRequiresAllNonHolidayTracks()
+	{
+		setupMusicDatabase();
+		setupInventory(new Item(ItemID.MUSIC_CAPE, 1));
+		setupEquipment();
+		// A holiday unlock cannot replace the missing required track.
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(1);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		// The required unlock uses bit 31 of the music varplayer.
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(Integer.MIN_VALUE);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertTrue(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(0);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+	}
+
+	@Test
+	public void testBankedMusicCapeRequiresAllNonHolidayTracks()
+	{
+		setupMusicDatabase();
+		config.set("includeBankPath", true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
+
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(Integer.MIN_VALUE);
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
+		assertTrue(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
+	}
+
+	@Test
+	public void testMusicCapeFailsClosedWithoutMusicData()
+	{
+		setupInventory(new Item(ItemID.MUSIC_CAPE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		setupMusicDatabase();
+		when(client.getDBTableField(1, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{28, 0});
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+	}
+
+	private void setupMusicDatabase()
+	{
+		when(client.getDBTableRows(DBTableID.Music.ID)).thenReturn(Arrays.asList(1, 2, 3, 4, 5));
+		for (int row = 1; row <= 5; row++)
+		{
+			when(client.getDBTableField(row, DBTableID.Music.COL_RELEASE_TYPE, 0))
+				.thenReturn(new Object[]{row == 5 ? 0 : 1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HIDDEN, 0))
+				.thenReturn(new Object[]{row == 4 ? 1 : 0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0))
+				.thenReturn(new Object[]{row == 3 ? 1 : 0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_AUTOMATIC_UNLOCK, 0))
+				.thenReturn(new Object[]{row == 2 ? 1 : 0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0))
+				.thenReturn(new Object[]{7, row == 1 ? 31 : 0});
+		}
+	}
+
+	@Test
 	public void testQuestCapeTeleportRequiresCapeAndCompletedQuests()
 	{
 		setupQuestPointDatabase(343);

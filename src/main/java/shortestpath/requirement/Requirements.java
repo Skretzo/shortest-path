@@ -460,7 +460,7 @@ public final class Requirements
 		// player is maxed for the available skills, so skip the total-level check.
 		LeagueModeSnapshot leagueMode = context.getLeagueModeSnapshot();
 		return boostedSkillLevelsAndMore.missingRequirement(requiredLevels,
-			leagueMode.isSeasonal(), context.getCurrentMaxQuestPoints());
+			leagueMode.isSeasonal(), context.getCurrentMaxQuestPoints(), context.getCurrentMaxMusicTracks());
 	}
 
 	private RejectionReason quest(Transport transport)

@@ -192,6 +192,7 @@ public class PlayerStateSourceTest
 		assertThrows(IllegalStateException.class, source::totalLevel);
 		assertThrows(IllegalStateException.class, () -> source.questState(Quest.TREE_GNOME_VILLAGE));
 		assertThrows(IllegalStateException.class, source::maximumQuestPoints);
+		assertThrows(IllegalStateException.class, source::musicTracks);
 		assertThrows(IllegalStateException.class, source::localPlayerWorldLocation);
 		assertThrows(IllegalStateException.class, source::modalWidgetOpen);
 		assertThrows(IllegalStateException.class, () -> source.itemContainer(InventoryID.INV));
