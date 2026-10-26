@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -108,30 +107,15 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 		Widget inventoryContainer = client.getWidget(InterfaceID.Inventory.ITEMS);
 		if (inventoryContainer != null && !inventoryContainer.isHidden())
 		{
-			Widget[] items = inventoryContainer.getChildren();
-			if (items != null)
-			{
-				for (Widget item : items)
-				{
-					if (item == null || item.isHidden() || item.getItemId() < 0)
-					{
-						continue;
-					}
-					if (itemsToHighlight.contains(item.getItemId()))
-					{
-						BufferedImage outline = itemManager.getItemOutline(item.getItemId(), item.getItemQuantity(), highlight);
-						if (outline != null)
-						{
-							graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
-						}
-					}
-				}
-			}
+			drawItemOutlines(graphics, itemManager, inventoryContainer.getChildren(),
+				itemsToHighlight, highlight);
 		}
 
 		// Highlight matching items in the equipment tab. Equipped items are
 		// rendered by child item widgets of the static slot components; the slot
-		// widgets themselves never carry an item id.
+		// widgets themselves never carry an item id. Dramen/lunar staff is the
+		// skip set — wearing it passively enables fairy rings — and equipment
+		// outlines pin quantity 1 because worn items are not stacks.
 		for (int slotWidgetId : EQUIPMENT_SLOT_WIDGET_IDS)
 		{
 			Widget slot = client.getWidget(slotWidgetId);
@@ -139,33 +123,8 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			{
 				continue;
 			}
-			Widget[] children = slot.getChildren();
-			if (children == null)
-			{
-				continue;
-			}
-			for (Widget item : children)
-			{
-				if (item == null || item.isHidden() || item.getItemId() < 0)
-				{
-					continue;
-				}
-				int itemId = item.getItemId();
-				if (!itemsToHighlight.contains(itemId))
-				{
-					continue;
-				}
-				// Dramen/lunar staff: skip when equipped — wearing it passively enables fairy rings
-				if (dramenStaffIds.contains(itemId))
-				{
-					continue;
-				}
-				BufferedImage outline = itemManager.getItemOutline(itemId, 1, highlight);
-				if (outline != null)
-				{
-					graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
-				}
-			}
+			drawItemOutlines(graphics, itemManager, slot.getChildren(), itemsToHighlight,
+				dramenStaffIds, 1, highlight);
 		}
 
 		return null;
