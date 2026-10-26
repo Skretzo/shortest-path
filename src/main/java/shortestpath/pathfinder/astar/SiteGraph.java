@@ -219,7 +219,7 @@ public final class SiteGraph
 		PreparedRoutingAccount.View view = account.globalView(BankVisitState.BANKED);
 		int[] result = new int[view.destinations.length];
 		int count = 0;
-		for (int i = 0; i < view.count; i++)
+		for (int i = 0; i < view.destinations.length; i++)
 		{
 			int destination = view.destinations[i];
 			boolean present = false;
