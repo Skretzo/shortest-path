@@ -282,7 +282,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourBankPickupHighlight",
 		name = "Bank Pickup Highlight",
-		description = "Colour used to highlight bank items that need to be picked up for the current path",
+		description = "Highlight colour for bank items needed on the current path",
 		position = 200,
 		section = sectionColours
 	)
