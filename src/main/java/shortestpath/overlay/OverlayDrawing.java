@@ -8,6 +8,7 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.presentation.PathAnnotator;
 import shortestpath.transport.Transport;
 
 /**
@@ -61,9 +62,11 @@ final class OverlayDrawing
 		}
 	}
 
-	static void forEachDisplayTransport(PrimitiveIntHashMap<Transport[]> allTransports,
-		PrimitiveIntHashMap<Transport[]> availableTransports, TransportVisitor visitor)
+	static void forEachDisplayTransport(PathAnnotator annotator, TransportVisitor visitor)
 	{
+		PrimitiveIntHashMap<Transport[]> allTransports = annotator.getAllDisplayTransports();
+		PrimitiveIntHashMap<Transport[]> availableTransports = annotator.getTransports();
+
 		for (int a : allTransports.keys())
 		{
 			// skip the teleport bucket; then the per-overlay origin gate

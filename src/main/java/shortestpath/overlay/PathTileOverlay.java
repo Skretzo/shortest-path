@@ -83,7 +83,7 @@ public class PathTileOverlay extends Overlay
 
 	private void renderTransports(Graphics2D graphics, ActiveSearch search)
 	{
-		OverlayDrawing.forEachDisplayTransport(annotator.getAllDisplayTransports(), annotator.getTransports(),
+		OverlayDrawing.forEachDisplayTransport(annotator,
 			new OverlayDrawing.TransportVisitor()
 		{
 			private Point ca;
