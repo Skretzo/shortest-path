@@ -1,22 +1,11 @@
 package shortestpath.pathfinder;
 
-import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.Transport;
 import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CollisionMap
 {
-	// Enum.values() makes copies every time which hurts performance in the hotpath
-	private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
-
 	private final SplitFlagMap collisionData;
-	// This is only safe if pathfinding is single-threaded. Holds the ids of the neighbour nodes
-	// appended to the NodeGraph during the most recent getNeighbors call.
-	private final PrimitiveIntList neighbors = new PrimitiveIntList(16);
-	private final boolean[] traversable = new boolean[8];
-
-
 
 	/**
 	 * The region grid bounds to scan when enumerating every collision tile (e.g.
@@ -27,14 +16,6 @@ public class CollisionMap
 	public SplitFlagMap.RegionExtent regionExtent()
 	{
 		return SplitFlagMap.getRegionExtents();
-	}
-
-	private static int packedPointFromOrdinal(int startPacked, OrdinalDirection direction)
-	{
-		final int x = WorldPointUtil.unpackWorldX(startPacked);
-		final int y = WorldPointUtil.unpackWorldY(startPacked);
-		final int plane = WorldPointUtil.unpackWorldPlane(startPacked);
-		return WorldPointUtil.packWorldPoint(x + direction.x, y + direction.y, plane);
 	}
 
 	public byte getRegionPlaneCounts(int regionIndex)
