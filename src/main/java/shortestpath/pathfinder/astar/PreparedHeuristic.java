@@ -222,7 +222,7 @@ public final class PreparedHeuristic
 			|| reverse.doubledLabel(state) != CostArithmetic.add(reverse.generatorWeightDoubled(state), CostArithmetic.twice(direct)))
 			return false;
 		int[] originComponents = overlay.nodeComponents(originNode);
-		return contains(originComponents, component);
+		return IntArrays.contains(originComponents, component);
 	}
 
 	private int targetLabel(int packed, boolean banked)
@@ -243,13 +243,7 @@ public final class PreparedHeuristic
 		raw[key].add(packed, label);
 	}
 
-	private static boolean contains(int[] values, int target)
-	{
-		for (int value : values)
-			if (value == target)
-				return true;
-		return false;
-	}
+
 
 	private static int total(int[][] values)
 	{

@@ -246,7 +246,7 @@ public final class AStarWalkCanonicalizer
 	{
 		PreparedRoutingAccount.View view = account.localView(banked);
 		int actionClass = Integer.MIN_VALUE;
-		for (int i = lowerBound(view.origins, origin); i < view.destinations.length && view.origins[i] == origin; i++)
+		for (int i = IntArrays.lowerBound(view.origins, origin); i < view.destinations.length && view.origins[i] == origin; i++)
 		{
 			if (view.destinations[i] != destination || view.costs[i] != cost) continue;
 			if (actionClass != Integer.MIN_VALUE && actionClass != view.actionClasses[i]) return null;
@@ -267,7 +267,7 @@ public final class AStarWalkCanonicalizer
 	private boolean hasLocalOrigin(int tile, boolean banked)
 	{
 		PreparedRoutingAccount.View view = account.localView(banked);
-		int index = lowerBound(view.origins, tile);
+		int index = IntArrays.lowerBound(view.origins, tile);
 		return index < view.destinations.length && view.origins[index] == tile;
 	}
 
@@ -396,17 +396,7 @@ public final class AStarWalkCanonicalizer
 		throw new IllegalArgumentException("not a walking move: " + dx + "," + dy);
 	}
 
-	private static int lowerBound(int[] values, int target)
-	{
-		int low = 0, high = values.length;
-		while (low < high)
-		{
-			int middle = low + (high - low) / 2;
-			if (Integer.compareUnsigned(values[middle], target) < 0) low = middle + 1;
-			else high = middle;
-		}
-		return low;
-	}
+
 
 	/**
 	 * The tiles a leg's search has reached, by their number in the leg's square, reused across legs.

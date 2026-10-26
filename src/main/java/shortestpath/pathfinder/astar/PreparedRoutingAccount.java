@@ -92,16 +92,7 @@ public final class PreparedRoutingAccount
 	 */
 	public boolean bankAccessible(int packedTile)
 	{
-		int low = 0, high = accessibleBankTiles.length - 1;
-		while (low <= high)
-		{
-			int middle = (low + high) >>> 1;
-			int compare = Integer.compareUnsigned(accessibleBankTiles[middle], packedTile);
-			if (compare == 0) return true;
-			if (compare < 0) low = middle + 1;
-			else high = middle - 1;
-		}
-		return false;
+		return IntArrays.binarySearch(accessibleBankTiles, packedTile) >= 0;
 	}
 	/** The cost of switching into the banked layer at an accessible bank. */
 

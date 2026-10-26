@@ -48,9 +48,9 @@ public final class RoutingStatic
 		this.reachableBankSites = new BitSet(siteTiles.length);
 		for (int tile : reachableBankTiles)
 		{
-			int node = binarySearch(searchTiles, tile);
+			int node = IntArrays.binarySearch(searchTiles, tile);
 			if (node >= 0) reachableBankNodes.set(node);
-			int site = binarySearch(siteTiles, tile);
+			int site = IntArrays.binarySearch(siteTiles, tile);
 			if (site >= 0) reachableBankSites.set(site);
 		}
 		this.crossingFromSite = crossingFromSite;
@@ -177,23 +177,16 @@ public final class RoutingStatic
 	{
 		for (int site = 0; site < siteTiles.length; site++)
 			for (int p = siteComponentOffsets[site]; p < siteComponentOffsets[site + 1]; p++)
-				if (!contains(componentSiteIds, componentSiteOffsets[siteComponentIds[p]],
+				if (!IntArrays.contains(componentSiteIds, componentSiteOffsets[siteComponentIds[p]],
 						componentSiteOffsets[siteComponentIds[p] + 1], site))
 					throw new IOException("site/component relation is not reciprocal");
 		for (int component = 0; component < routingComponentCount; component++)
 			for (int p = componentSiteOffsets[component]; p < componentSiteOffsets[component + 1]; p++)
-				if (!contains(siteComponentIds, siteComponentOffsets[componentSiteIds[p]],
+				if (!IntArrays.contains(siteComponentIds, siteComponentOffsets[componentSiteIds[p]],
 						siteComponentOffsets[componentSiteIds[p] + 1], component))
 					throw new IOException("component/site relation is not reciprocal");
 	}
 
-	private static boolean contains(int[] values, int start, int end, int target)
-	{
-		for (int i = start; i < end; i++)
-			if (values[i] == target)
-				return true;
-		return false;
-	}
 
 	public int searchTileCount()
 	{
@@ -255,11 +248,11 @@ public final class RoutingStatic
 	}
 	public int searchIndex(int packed)
 	{
-		return binarySearch(searchTiles, packed);
+		return IntArrays.binarySearch(searchTiles, packed);
 	}
 	public int siteIndex(int packed)
 	{
-		return binarySearch(siteTiles, packed);
+		return IntArrays.binarySearch(siteTiles, packed);
 	}
 	public int[] siteComponents(int site)
 	{
@@ -305,27 +298,11 @@ public final class RoutingStatic
 		for (int neighbor : collision.ordinaryWalkingNeighbors(packedPoint))
 		{
 			int neighborIndex = searchIndex(neighbor);
-			if (neighborIndex >= 0 && !contains(result, 0, count, searchComponents.get(neighborIndex)))
+			if (neighborIndex >= 0 && !IntArrays.contains(result, 0, count, searchComponents.get(neighborIndex)))
 				result[count++] = searchComponents.get(neighborIndex);
 		}
 		Arrays.sort(result, 0, count);
 		return Arrays.copyOf(result, count);
 	}
 
-	private static int binarySearch(int[] values, int target)
-	{
-		int low = 0, high = values.length - 1;
-		while (low <= high)
-		{
-			int middle = low + (high - low) / 2;
-			int compare = Integer.compareUnsigned(values[middle], target);
-			if (compare == 0)
-				return middle;
-			if (compare < 0)
-				low = middle + 1;
-			else
-				high = middle - 1;
-		}
-		return -1;
-	}
 }
