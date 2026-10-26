@@ -63,12 +63,11 @@ public class PathAnnotator
 	 * {@link #OBJINFO_FALLBACK_LABEL}. Package-visible so the label table is
 	 * test-pinned.
 	 */
-	static final String[][] OBJINFO_LABELS = {
-		{"Amulet of Glory", "Mounted Glory: "},
-		{"Mythical cape", "Mythical Cape: "},
-		{"Xeric's Talisman", "Xeric's Talisman: "},
-		{"Digsite", "Digsite Pendant: "},
-	};
+	static final List<List<String>> OBJINFO_LABELS = List.of(
+		List.of("Amulet of Glory", "Mounted Glory: "),
+		List.of("Mythical cape", "Mythical Cape: "),
+		List.of("Xeric's Talisman", "Xeric's Talisman: "),
+		List.of("Digsite", "Digsite Pendant: "));
 	static final String OBJINFO_FALLBACK_LABEL = "Jewelry Box: ";
 
 	/**
@@ -371,11 +370,11 @@ public class PathAnnotator
 							String label = OBJINFO_FALLBACK_LABEL;
 							if (objInfo != null)
 							{
-								for (String[] pair : OBJINFO_LABELS)
+								for (List<String> pair : OBJINFO_LABELS)
 								{
-									if (objInfo.contains(pair[0]))
+									if (objInfo.contains(pair.get(0)))
 									{
-										label = pair[1];
+										label = pair.get(1);
 										break;
 									}
 								}
