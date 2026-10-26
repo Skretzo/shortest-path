@@ -128,7 +128,7 @@ public class PathMapTooltipOverlay extends Overlay
 				{
 					// Check if this transport goes to POH - if so, look ahead to find the exit
 					// transport
-					String pohExitSuffix = OverlayDrawing.pohExitSuffix(annotator.getPohExitInfo(nextPoint, path, pathIndex));
+					String pohExitSuffix = OverlayDrawing.pohExitSuffix(annotator, nextPoint, path, pathIndex);
 					if (pohExitSuffix != null)
 					{
 						displayInfo = displayInfo + pohExitSuffix;

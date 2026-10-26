@@ -892,7 +892,7 @@ public class PathTileOverlay extends Overlay
 
 			// Check if this transport goes to POH - if so, look ahead to find the exit
 			// transport
-			String pohExitSuffix = OverlayDrawing.pohExitSuffix(annotator.getPohExitInfo(locationEnd, path, pathIndex));
+			String pohExitSuffix = OverlayDrawing.pohExitSuffix(annotator, locationEnd, path, pathIndex);
 			if (pohExitSuffix != null)
 			{
 				text = text + pohExitSuffix;
