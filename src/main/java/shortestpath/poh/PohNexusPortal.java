@@ -6,60 +6,50 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import shortestpath.Util;
 
 public enum PohNexusPortal
 {
-	APE_ATOLL_DUNGEON("Ape Atoll Dungeon", PortalGroup.ARCEUUS, "Ape Atoll Dungeon Portal"),
-	ANNAKARL("Annakarl", PortalGroup.ANCIENT, "Annakarl Portal"),
-	ARCEUUS_LIBRARY("Arceuus Library", PortalGroup.ARCEUUS, "Arceuus Library Portal"),
-	ARDOUGNE("Ardougne", PortalGroup.STANDARD, "Ardougne Portal"),
-	BARBARIAN_OUTPOST("Barbarian Outpost", PortalGroup.LUNAR, "Barbarian Outpost Portal"),
-	BARROWS("Barrows", PortalGroup.ARCEUUS, "Barrows Portal"),
-	BATTLEFRONT("Battlefront", PortalGroup.ARCEUUS, "Battlefront Portal"),
-	CAMELOT("Camelot / Seers' Village", PortalGroup.STANDARD, "Camelot Portal", "Seers' Village Portal"),
-	CARRALLANGER("Carrallanger", PortalGroup.ANCIENT, "Carrallanger Portal"),
-	CATHERBY("Catherby", PortalGroup.LUNAR, "Catherby Portal"),
-	CEMETERY("Cemetery", PortalGroup.ARCEUUS, "Cemetery Portal"),
-	CIVITAS_ILLA_FORTIS("Civitas illa Fortis", PortalGroup.STANDARD, "Civitas illa Fortis Portal"),
-	DAREEYAK("Dareeyak", PortalGroup.ANCIENT, "Dareeyak Portal"),
-	DRAYNOR_MANOR("Draynor Manor", PortalGroup.ARCEUUS, "Draynor Manor Portal"),
-	FALADOR("Falador", PortalGroup.STANDARD, "Falador Portal"),
-	FENKENSTRAINS_CASTLE("Fenkenstrain's Castle", PortalGroup.ARCEUUS, "Fenkenstrain's Castle Portal"),
-	FISHING_GUILD("Fishing Guild", PortalGroup.LUNAR, "Fishing Guild Portal"),
-	GHORROCK("Ghorrock", PortalGroup.ANCIENT, "Ghorrock Portal"),
-	HARMONY_ISLAND("Harmony Island", PortalGroup.ARCEUUS, "Harmony Island Portal"),
-	ICE_PLATEAU("Ice Plateau", PortalGroup.LUNAR, "Ice Plateau Portal"),
-	KHARYRLL("Kharyrll", PortalGroup.ANCIENT, "Kharyrll Portal"),
-	KOUREND("Kourend", PortalGroup.STANDARD, "Kourend Portal"),
-	LASSAR("Lassar", PortalGroup.ANCIENT, "Lassar Portal"),
-	LUMBRIDGE("Lumbridge", PortalGroup.STANDARD, "Lumbridge Portal"),
-	LUNAR_ISLE("Lunar Isle", PortalGroup.LUNAR, "Lunar Isle Portal"),
-	MARIM("Marim", PortalGroup.STANDARD, "Marim Portal"),
-	MIND_ALTAR("Mind Altar", PortalGroup.ARCEUUS, "Mind Altar Portal"),
-	OURANIA("Ourania", PortalGroup.LUNAR, "Ourania Portal"),
-	PADDEWWA("Paddewwa", PortalGroup.ANCIENT, "Paddewwa Portal"),
-	PORT_KHAZARD("Port Khazard", PortalGroup.LUNAR, "Port Khazard Portal"),
-	RESPAWN(
-		"Respawn",
-		PortalGroup.ARCEUUS,
-		"Respawn Portal (Lumbridge)",
-		"Respawn Portal (Falador)",
-		"Respawn Portal (Camelot)",
-		"Respawn Portal (Edgeville)",
-		"Respawn Portal (Prifddinas)",
-		"Respawn Portal (Ferox Enclave)",
-		"Respawn Portal (Kourend Castle)",
-		"Respawn Portal (Civitas illa Fortis)"
-	),
-	SALVE_GRAVEYARD("Salve Graveyard", PortalGroup.ARCEUUS, "Salve Graveyard Portal"),
-	SENNTISTEN("Senntisten", PortalGroup.ANCIENT, "Senntisten Portal"),
-	TROLLHEIM("Trollheim", PortalGroup.STANDARD, "Trollheim Portal"),
-	TROLL_STRONGHOLD("Troll Stronghold", PortalGroup.OTHER, "Troll Stronghold Portal"),
-	VARROCK("Varrock / Grand Exchange", PortalGroup.STANDARD, "Varrock Portal", "Grand Exchange Portal"),
-	WATERBIRTH_ISLAND("Waterbirth Island", PortalGroup.LUNAR, "Waterbirth Island Portal"),
-	WATCHTOWER("Watchtower / Yanille", PortalGroup.STANDARD, "Watchtower Portal", "Yanille Portal"),
-	WEISS("Weiss", PortalGroup.OTHER, "Weiss Portal"),
-	WEST_ARDOUGNE("West Ardougne", PortalGroup.ARCEUUS, "West Ardougne Portal");
+	APE_ATOLL_DUNGEON,
+	ANNAKARL,
+	ARCEUUS_LIBRARY,
+	ARDOUGNE,
+	BARBARIAN_OUTPOST,
+	BARROWS,
+	BATTLEFRONT,
+	CAMELOT,
+	CARRALLANGER,
+	CATHERBY,
+	CEMETERY,
+	CIVITAS_ILLA_FORTIS,
+	DAREEYAK,
+	DRAYNOR_MANOR,
+	FALADOR,
+	FENKENSTRAINS_CASTLE,
+	FISHING_GUILD,
+	GHORROCK,
+	HARMONY_ISLAND,
+	ICE_PLATEAU,
+	KHARYRLL,
+	KOUREND,
+	LASSAR,
+	LUMBRIDGE,
+	LUNAR_ISLE,
+	MARIM,
+	MIND_ALTAR,
+	OURANIA,
+	PADDEWWA,
+	PORT_KHAZARD,
+	RESPAWN,
+	SALVE_GRAVEYARD,
+	SENNTISTEN,
+	TROLLHEIM,
+	TROLL_STRONGHOLD,
+	VARROCK,
+	WATERBIRTH_ISLAND,
+	WATCHTOWER,
+	WEISS,
+	WEST_ARDOUGNE;
 
 	/**
 	 * Spellbook buckets the config panel drills the Portal Nexus list down
@@ -96,13 +86,24 @@ public enum PohNexusPortal
 			}
 		}
 		BY_DISPLAY_INFO = Collections.unmodifiableMap(lookup);
+		// The constructor fails loudly on a constant with no TSV row; this
+		// pass fails loudly on a TSV row whose name matches no constant.
+		for (String name : PortalRows.BY_NAME.keySet())
+		{
+			valueOf(name);
+		}
 	}
 
-	PohNexusPortal(String label, PortalGroup group, String... displayInfos)
+	PohNexusPortal()
 	{
-		this.label = label;
-		this.group = group;
-		this.displayInfos = List.of(displayInfos);
+		String[] cols = PortalRows.BY_NAME.get(name());
+		if (cols == null)
+		{
+			throw new IllegalStateException("no poh-nexus-portals.tsv row for " + name());
+		}
+		this.label = cols[1];
+		this.group = PortalGroup.valueOf(cols[2]);
+		this.displayInfos = List.of(cols[3].split(","));
 	}
 
 	public static PohNexusPortal fromDisplayInfo(String displayInfo)
@@ -114,5 +115,37 @@ public enum PohNexusPortal
 	public String toString()
 	{
 		return label;
+	}
+
+	/**
+	 * Row table loaded from the bundled {@code poh-nexus-portals.tsv} — a
+	 * nested holder so the load happens on first constant construction; the
+	 * enum's own static initializers would run too late (after every
+	 * constant is already built).
+	 */
+	private static final class PortalRows
+	{
+		private static final Map<String, String[]> BY_NAME = load();
+
+		private static Map<String, String[]> load()
+		{
+			Map<String, String[]> rows = new HashMap<>();
+			try
+			{
+				Util.each("/poh-nexus-portals.tsv", (line, cols) ->
+				{
+					if (cols.length < 4)
+					{
+						throw new IllegalStateException("malformed row: " + line);
+					}
+					rows.put(cols[0], cols);
+				});
+			}
+			catch (Exception e)
+			{
+				throw new IllegalStateException("failed to load poh-nexus-portals.tsv", e);
+			}
+			return Collections.unmodifiableMap(rows);
+		}
 	}
 }
