@@ -55,9 +55,7 @@ import shortestpath.pathfinder.BankPickupAnalysis;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.Targets;
-import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.requirement.model.TransportItems;
-import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.requirement.PlayerStateSource;
@@ -198,7 +196,8 @@ public class OverlayTranscriptTest
 		annotator = mock(PathAnnotator.class);
 		when(annotator.getAllDisplayTransports()).thenReturn(new PrimitiveIntHashMap<>(8));
 		when(annotator.getTransports()).thenReturn(new PrimitiveIntHashMap<>(8));
-		when(annotator.nextPathStep(any(), anyInt())).thenAnswer(inv -> {
+		when(annotator.nextPathStep(any(), anyInt())).thenAnswer(inv ->
+		{
 			List<PathStep> path = inv.getArgument(0);
 			int i = inv.getArgument(1);
 			return i >= 0 && i + 1 < path.size() ? path.get(i + 1) : null;
