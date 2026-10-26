@@ -3,6 +3,7 @@ package shortestpath.pathfinder;
 import java.util.*;
 import shortestpath.requirement.model.*;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * The items the player holds, as item id to quantity: what they carry (inventory, worn items and
@@ -13,8 +14,11 @@ public final class HeldItems
 {
 	public static final HeldItems NONE = new HeldItems(Map.of(), Map.of(), false);
 
-	private final Map<Integer, Integer> carried;
-	private final Map<Integer, Integer> carriedAndBanked;
+	/** Inventory, worn items and the rune pouch. */
+	@Getter @Accessors(fluent = true) private final Map<Integer, Integer> carried;
+	/** The carried items plus the bank's contents. */
+	@Getter @Accessors(fluent = true) private final Map<Integer, Integer> carriedAndBanked;
+	/** Whether the bank has been opened this session, so its contents are known. */
 	@Getter private final boolean bankSeen;
 
 	public HeldItems(Map<Integer, Integer> carried, Map<Integer, Integer> carriedAndBanked, boolean bankSeen)
@@ -23,21 +27,6 @@ public final class HeldItems
 		this.carriedAndBanked = Map.copyOf(carriedAndBanked);
 		this.bankSeen = bankSeen;
 	}
-
-	/** Inventory, worn items and the rune pouch. */
-	public Map<Integer, Integer> carried()
-	{
-		return carried;
-	}
-
-	/** The carried items plus the bank's contents. */
-	public Map<Integer, Integer> carriedAndBanked()
-	{
-		return carriedAndBanked;
-	}
-
-	/** Whether the bank has been opened this session, so its contents are known. */
-
 
 	/** Whether {@code required} is carried, covered once the bank is added, or neither. */
 	public TargetStatus statusOf(TransportItems required)
