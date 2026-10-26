@@ -757,13 +757,8 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 
-		// Sailing: teleports are suppressed while aboard a boat. When the path is
-		// unreachable as a result, show a one-time hint on the player tile.
-		if (settings.display().showTransportInfo() && pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
-			&& plugin.getActiveSearch().isDone() && plugin.isPathUnreachable())
+		if (drawSailingDisembarkHint(graphics, pathIndex))
 		{
-			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
-				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
 			return;
 		}
 
@@ -774,21 +769,7 @@ public class PathTileOverlay extends Overlay
 		int locationEnd = nextStep.getPackedPosition();
 		Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);
 
-		// Teleports ("use this item/spell") get a pulsing highlight on the tile you cast
-		// from. Only the first teleport edge of the path pulses — the next "teleport
-		// now" moment — and the pulse is independent of the transport info labels.
-		if (settings.display().showTeleportPulse() && !teleportPulseDrawn)
-		{
-			for (Transport transport : candidateTransports)
-			{
-				if (transport.getType() != null && transport.getType().isTeleport())
-				{
-					drawTeleportPulse(graphics, location);
-					teleportPulseDrawn = true;
-					break;
-				}
-			}
-		}
+		drawTeleportPulseOnce(graphics, location, candidateTransports);
 
 		if (!settings.display().showTransportInfo())
 		{
@@ -803,67 +784,140 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 		LocalPoint playerLocalPoint = player.getLocalLocation();
+
+		// When inside POH, only show the POH exit info once (not per-transport)
+		if (playerAndStepInsidePoh(player, playerLocalPoint, location))
+		{
+			drawPohExitLabel(graphics, location, path, pathIndex, playerLocalPoint);
+			return;
+		}
+
+		// Check if this is a bank step and items need to be picked up
+		if (drawBankPickupLabel(graphics, location, path, pathIndex))
+		{
+			return;
+		}
+
+		drawTransportLabels(graphics, location, locationEnd, path, pathIndex, candidateTransports);
+	}
+
+	// Sailing: teleports are suppressed while aboard a boat. When the path is
+	// unreachable as a result, show a one-time hint on the player tile.
+	private boolean drawSailingDisembarkHint(Graphics2D graphics, int pathIndex)
+	{
+		if (settings.display().showTransportInfo() && pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
+			&& plugin.getActiveSearch().isDone() && plugin.isPathUnreachable())
+		{
+			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
+				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
+			return true;
+		}
+		return false;
+	}
+
+	// Teleports ("use this item/spell") get a pulsing highlight on the tile you cast
+	// from. Only the first teleport edge of the path pulses — the next "teleport
+	// now" moment — and the pulse is independent of the transport info labels.
+	private void drawTeleportPulseOnce(Graphics2D graphics, int location, Set<Transport> candidateTransports)
+	{
+		if (!settings.display().showTeleportPulse() || teleportPulseDrawn)
+		{
+			return;
+		}
+		for (Transport transport : candidateTransports)
+		{
+			if (transport.getType() != null && transport.getType().isTeleport())
+			{
+				drawTeleportPulse(graphics, location);
+				teleportPulseDrawn = true;
+				break;
+			}
+		}
+	}
+
+	private boolean playerAndStepInsidePoh(Player player, LocalPoint playerLocalPoint, int location)
+	{
 		WorldPoint playerWorldPoint = player.getWorldLocation();
 		if (client.getTopLevelWorldView().isInstance())
 		{
 			playerWorldPoint = WorldPoint.fromLocalInstance(client, playerLocalPoint);
 		}
 		int playerPackedPoint = WorldPointUtil.packWorldPoint(playerWorldPoint);
-		int px = WorldPointUtil.unpackWorldX(playerPackedPoint);
-		int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
-		int tx = WorldPointUtil.unpackWorldX(location);
-		int ty = WorldPointUtil.unpackWorldY(location);
-		boolean transportAndPlayerInsidePoh = PohService.isInsidePoh(tx, ty)
-			&& PohService.isInsidePoh(px, py);
+		return PohService.isInsidePoh(WorldPointUtil.unpackWorldX(location), WorldPointUtil.unpackWorldY(location))
+			&& PohService.isInsidePoh(WorldPointUtil.unpackWorldX(playerPackedPoint),
+				WorldPointUtil.unpackWorldY(playerPackedPoint));
+	}
 
-		// When inside POH, only show the POH exit info once (not per-transport)
-		if (transportAndPlayerInsidePoh)
+	private void drawPohExitLabel(Graphics2D graphics, int location, List<PathStep> path,
+		int pathIndex, LocalPoint playerLocalPoint)
+	{
+		// No floor check here: path steps carry planes from the generic POH
+		// template (the landing is modelled at plane 0), while the player maps
+		// back at whatever template plane their actual house chunks occupy
+		// (e.g. plane 2 for a ground floor) — the two don't correspond, so any
+		// plane comparison would suppress the hint in real houses.
+		String pohExitInfo = plugin.getPohExitInfo(location, path, pathIndex - 1);
+
+		if (pohExitInfo == null)
 		{
-			// No floor check here: path steps carry planes from the generic POH
-			// template (the landing is modelled at plane 0), while the player maps
-			// back at whatever template plane their actual house chunks occupy
-			// (e.g. plane 2 for a ground floor) — the two don't correspond, so any
-			// plane comparison would suppress the hint in real houses.
-			String pohExitInfo = plugin.getPohExitInfo(location, path, pathIndex - 1);
+			return;
+		}
+		String text = "Exit: " + pohExitInfo;
 
-			if (pohExitInfo == null)
-			{
-				return;
-			}
-			String text = "Exit: " + pohExitInfo;
-
-			Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getTopLevelWorldView().getPlane());
-			if (p == null)
-			{
-				return;
-			}
-
-			drawLabel(graphics, p, text, 0);
+		Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getTopLevelWorldView().getPlane());
+		if (p == null)
+		{
 			return;
 		}
 
-		// Check if this is a bank step and items need to be picked up
-		{
-			BankPickupRequirements.BankPickupResult bankPickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex, plugin.getActiveSearch());
-			if (bankPickup != null && !bankPickup.phrases.isEmpty())
-			{
-				List<String> bankPickupItems = bankPickup.phrases;
-				String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
-				playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
+		drawLabel(graphics, p, text, 0);
+	}
 
-				// By default, bank pickup info replaces the default transport hint text;
-				// enable the option to show both
-				if (!settings.display().showBankPickupInfo())
-				{
-					return;
-				}
-			}
+	private boolean drawBankPickupLabel(Graphics2D graphics, int location, List<PathStep> path, int pathIndex)
+	{
+		BankPickupRequirements.BankPickupResult bankPickup = plugin.getPathfinderConfig().getBankPickup(path, pathIndex, plugin.getActiveSearch());
+		if (bankPickup == null || bankPickup.phrases.isEmpty())
+		{
+			return false;
 		}
 
-		// Only show transports the player can currently use; fall back to all if none are usable.
-		// A missing snapshot (pre-login or off the client thread) means no filtering —
-		// the same "show all" the empty-usable fallback below produces anyway.
-		TransportEligibility eligibility = plugin.getPathfinderConfig().getEligibility();
+		String pickupText = "Pick up: " + String.join(", ", bankPickup.phrases);
+		playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
+
+		// By default, bank pickup info replaces the default transport hint text;
+		// enable the option to show both
+		return !settings.display().showBankPickupInfo();
+	}
+
+	private void drawTransportLabels(Graphics2D graphics, int location, int locationEnd,
+		List<PathStep> path, int pathIndex, Set<Transport> candidateTransports)
+	{
+		for (Transport transport : usableTransportsFor(candidateTransports, plugin.getPathfinderConfig().getEligibility()))
+		{
+			String text = plugin.formatTransportDisplay(transport);
+			if (text == null || text.isEmpty())
+			{
+				continue;
+			}
+
+			// Check if this transport goes to POH - if so, look ahead to find the exit
+			// transport
+			String pohExitSuffix = OverlayDrawing.pohExitSuffix(plugin.getPohExitInfo(locationEnd, path, pathIndex));
+			if (pohExitSuffix != null)
+			{
+				text = text + pohExitSuffix;
+			}
+
+			playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, text, playerTileLabelOffset);
+		}
+	}
+
+	// Only show transports the player can currently use; fall back to all if none are usable.
+	// A missing snapshot (pre-login or off the client thread) means no filtering —
+	// the same "show all" the empty-usable fallback produces anyway.
+	private static Collection<Transport> usableTransportsFor(Set<Transport> candidateTransports,
+		TransportEligibility eligibility)
+	{
 		List<Transport> usableTransports = new ArrayList<>();
 		if (eligibility != null)
 		{
@@ -875,25 +929,6 @@ public class PathTileOverlay extends Overlay
 				}
 			}
 		}
-		Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
-
-		for (Transport transport : transportsToShow)
-		{
-			String text = plugin.formatTransportDisplay(transport);
-			if (text == null || text.isEmpty())
-			{
-				continue;
-			}
-
-			// Check if this transport goes to POH - if so, look ahead to find the exit
-			// transport
-			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
-			if (pohExitInfo != null)
-			{
-				text = text + " (Exit: " + pohExitInfo + ")";
-			}
-
-			playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, text, playerTileLabelOffset);
-		}
+		return usableTransports.isEmpty() ? candidateTransports : usableTransports;
 	}
 }

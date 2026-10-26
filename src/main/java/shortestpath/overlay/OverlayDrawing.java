@@ -105,4 +105,16 @@ final class OverlayDrawing
 			}
 		}
 	}
+
+	/**
+	 * The shared {@code " (Exit: …)"} suffix both overlays append to a
+	 * transport label when the transport leads into a POH — the tile
+	 * overlay's per-transport hint and the world-map tooltip row. Returns
+	 * {@code null} when there is no exit info to append, so each caller
+	 * keeps its own append target and its own argument order.
+	 */
+	static String pohExitSuffix(String pohExitInfo)
+	{
+		return pohExitInfo == null ? null : " (Exit: " + pohExitInfo + ")";
+	}
 }
