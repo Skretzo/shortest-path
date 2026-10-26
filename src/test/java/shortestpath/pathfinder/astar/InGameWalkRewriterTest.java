@@ -344,6 +344,15 @@ public class InGameWalkRewriterTest
 		assertTrue("cannot find the plugin sources; run tests from the module or composite "
 			+ "project directory (tried src/main/java/shortestpath and "
 			+ sourceRoot.toAbsolutePath() + ")", Files.isDirectory(sourceRoot));
+		Path testSourceRoot = Paths.get("src/test/java/shortestpath");
+		if (!Files.isDirectory(testSourceRoot))
+		{
+			// Composite builds run tests with the module nested one level down.
+			testSourceRoot = Paths.get("shortest-path/src/test/java/shortestpath");
+		}
+		assertTrue("cannot find the plugin test sources; run tests from the module or composite "
+			+ "project directory (tried src/test/java/shortestpath and "
+			+ testSourceRoot.toAbsolutePath() + ")", Files.isDirectory(testSourceRoot));
 		List<String> users;
 		try (Stream<Path> files = Files.walk(sourceRoot))
 		{
@@ -356,7 +365,7 @@ public class InGameWalkRewriterTest
 		}
 		assertEquals(List.of("AStarPathfinder.java"), users);
 		assertFalse(usesInGameWalkRewriter(
-			read(sourceRoot.resolve("pathfinder").resolve("Pathfinder.java"))));
+			read(testSourceRoot.resolve("pathfinder").resolve("Pathfinder.java"))));
 	}
 
 	// ---- helpers ----

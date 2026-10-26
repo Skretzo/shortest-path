@@ -335,7 +335,7 @@ public class Pathfinder implements ActiveSearch
 	@Override
 	public String backendName()
 	{
-		return PathfinderBackend.LEGACY.toString();
+		return "Legacy";
 	}
 
 	/**
