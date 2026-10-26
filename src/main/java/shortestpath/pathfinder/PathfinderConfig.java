@@ -35,10 +35,12 @@ import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.poh.PohService;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
+import shortestpath.requirement.RejectionReason;
 import shortestpath.requirement.RequirementContext;
 import shortestpath.requirement.RequirementHooks;
 import shortestpath.requirement.Requirements;
 import shortestpath.requirement.RoutingPolicy;
+import shortestpath.requirement.TeleportationItemPolicy;
 import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.poh.PohNexusPortal;
@@ -464,8 +466,7 @@ public class PathfinderConfig
 		// otherwise the banked items are gathered but can never be offered.
 		TeleportationItem teleportationItemSetting = transportTypeConfig.getTeleportationItemSetting();
 		includeBankPath = effective.bool(ConfigKey.INCLUDE_BANK_PATH)
-			|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
-			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting);
+			|| TeleportationItemPolicy.includesBank(teleportationItemSetting);
 		respawnPrifddinas = effective.bool(ConfigKey.RESPAWN_PRIFDDINAS);
 
 		// Unlocks come from detected account state or config declarations.
@@ -802,13 +803,21 @@ public class PathfinderConfig
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
-			if (!requirements.usable(transport))
+			// The named gates run first; a transport failing any of them is
+			// dropped before either item pool is consulted.
+			if (requirements.gates(transport) != RejectionReason.NONE)
 			{
 				continue;
 			}
 
 			boolean usableWithoutBank = eligibility.usable(transport, BankVisitState.CARRIED);
 			boolean usableWithBank = eligibility.usable(transport, BankVisitState.BANKED);
+			// Both pools empty for its items == the ITEM_REQUIREMENT gate
+			// the composite check() would apply — the same skip, spelled out.
+			if (!usableWithoutBank && !usableWithBank)
+			{
+				continue;
+			}
 			if (usableWithoutBank)
 			{
 				withoutBank.add(transport);

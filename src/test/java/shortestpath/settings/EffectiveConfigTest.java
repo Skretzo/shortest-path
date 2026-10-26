@@ -76,21 +76,6 @@ public class EffectiveConfigTest
 	}
 
 	@Test
-	public void teleportationItemDisplayStringApplies()
-	{
-		EffectiveConfig effective = effectiveWith(Map.of("useTeleportationItems", "Inventory and Bank"));
-		assertEquals(TeleportationItem.INVENTORY_AND_BANK, effective.useTeleportationItems());
-	}
-
-	@Test
-	public void teleportationItemEnumNameIsInert()
-	{
-		// Payload grammar is the fromType display string, not Enum.name().
-		EffectiveConfig effective = effectiveWith(Map.of("useTeleportationItems", "INVENTORY_AND_BANK"));
-		assertEquals(base().useTeleportationItems(), effective.useTeleportationItems());
-	}
-
-	@Test
 	public void jewelleryBoxTierDisplayStringApplies()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("pohJewelleryBoxTier", "Fancy"));
@@ -153,7 +138,7 @@ public class EffectiveConfigTest
 	public void stringKeyIsInert()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("unreachableText", "custom unreachable text"));
-		assertEquals(base().unreachableText(), effective.str(ConfigKey.UNREACHABLE_TEXT));
+		assertEquals(base().unreachableText(), effective.val(ConfigKey.UNREACHABLE_TEXT));
 	}
 
 	@Test
@@ -162,7 +147,7 @@ public class EffectiveConfigTest
 		// The refresh path parses the configured CSV directly; a payload
 		// value must never masquerade as applied through the decorator.
 		EffectiveConfig effective = effectiveWith(Map.of("blockedTeleportItems", "13103"));
-		assertEquals(base().blockedTeleportItems(), effective.str(ConfigKey.BLOCKED_TELEPORT_ITEMS));
+		assertEquals(base().blockedTeleportItems(), effective.val(ConfigKey.BLOCKED_TELEPORT_ITEMS));
 	}
 
 	@Test
@@ -299,8 +284,7 @@ public class EffectiveConfigTest
 		assertTrue(wrapped.rawOverrides().isEmpty());
 		assertEquals(stub.avoidWilderness(), wrapped.effective().bool(ConfigKey.AVOID_WILDERNESS));
 		assertEquals(stub.currencyThreshold(), wrapped.effective().num(ConfigKey.CURRENCY_THRESHOLD));
-		assertEquals(stub.useTeleportationItems(), wrapped.effective().useTeleportationItems());
-		assertEquals(stub.unreachableText(), wrapped.effective().str(ConfigKey.UNREACHABLE_TEXT));
+		assertEquals(stub.unreachableText(), wrapped.effective().val(ConfigKey.UNREACHABLE_TEXT));
 		assertEquals(stub.colourText(), wrapped.effective().colourText());
 		assertEquals(stub.drawTiles(), wrapped.display().drawTiles());
 	}

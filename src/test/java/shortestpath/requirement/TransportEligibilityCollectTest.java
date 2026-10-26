@@ -41,8 +41,8 @@ public class TransportEligibilityCollectTest
 	// TransportEligibility.collect — adversarial container and pouch cases
 	// ------------------------------------------------------------------
 
-	private static final Transport THREE_AIR = needsItem(ItemVariations.AIR_RUNE.getIds(), 3);
-	private static final Transport SHANTAY_GATE = needsItem(ItemVariations.SHANTAY_PASS.getIds(), 1);
+	private static final Transport THREE_AIR = needsItem(ItemVariations.fromName("AIR_RUNE").getIds(), 3);
+	private static final Transport SHANTAY_GATE = needsItem(ItemVariations.fromName("SHANTAY_PASS").getIds(), 1);
 
 	private static ItemContainer containerOf(Item... items)
 	{
@@ -131,7 +131,7 @@ public class TransportEligibilityCollectTest
 			TeleportationItem.INVENTORY_AND_BANK, true);
 
 		assertFalse("a zero-quantity air rune cannot satisfy the requirement",
-			eligibility.usable(needsItem(ItemVariations.AIR_RUNE.getIds(), 1), BankVisitState.BANKED));
+			eligibility.usable(needsItem(ItemVariations.fromName("AIR_RUNE").getIds(), 1), BankVisitState.BANKED));
 	}
 
 	@Test

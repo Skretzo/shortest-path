@@ -2,6 +2,7 @@ package shortestpath.sailing;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import shortestpath.WorldPointUtil;
 
@@ -37,10 +38,10 @@ public final class SailingState
 	/** Raw {@code SAILING_SIDEPANEL_BOAT_ACCELERATION} varbit value. */
 	private final int acceleration;
 	/** Whether the entity-graph boat lookup resolved (the boat is in the scene). */
-	@Getter(AccessLevel.NONE)
+	@Getter @Accessors(fluent = true)
 	private final boolean hasBoat;
 	/** Whether the boat's entity config (hull bounds) resolved. */
-	@Getter(AccessLevel.NONE)
+	@Getter @Accessors(fluent = true)
 	private final boolean hasBounds;
 	private final int boundsX;
 	private final int boundsY;
@@ -76,16 +77,6 @@ public final class SailingState
 		this.pivotX = pivotX;
 		this.pivotY = pivotY;
 		this.heading = heading;
-	}
-
-	public boolean hasBoat()
-	{
-		return hasBoat;
-	}
-
-	public boolean hasBounds()
-	{
-		return hasBounds;
 	}
 
 	/**

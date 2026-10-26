@@ -3,6 +3,10 @@ package shortestpath.pathfinder.astar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
@@ -36,7 +40,7 @@ import shortestpath.pathfinder.PathStep;
  * A leg need not end on the tile the search chose. It ends anywhere its next action can be taken
  * with the same consequences (a {@link WalkGoal}): the leg before a global teleport ends anywhere
  * the teleport can be cast, and the leg before a transport at any origin of the same action
- * ({@link PreparedRoutingAccount#localActionClass}). Every other leg keeps its end tile: the final
+ * (the prepared account's local action class). Every other leg keeps its end tile: the final
  * destination, a bank visit, or a transport taken straight after banking.
  * <p>
  * Each leg is searched with A* over (tile, incoming direction) under the lexicographic objective,
@@ -94,35 +98,13 @@ public final class AStarWalkCanonicalizer
 	}
 
 	/** A leg that kept the search's walk, and why. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Diagnostic
 	{
-		private final int startIndex, ticks, foundTicks;
-		private final Outcome outcome;
+		@Getter @Accessors(fluent = true) private final int startIndex, ticks;
+		private final int foundTicks;
+		@Getter @Accessors(fluent = true) private final Outcome outcome;
 		private final String goal;
-
-		Diagnostic(int startIndex, int ticks, Outcome outcome, int foundTicks, String goal)
-		{
-			this.startIndex = startIndex;
-			this.ticks = ticks;
-			this.outcome = outcome;
-			this.foundTicks = foundTicks;
-			this.goal = goal;
-		}
-
-		public int startIndex()
-		{
-			return startIndex;
-		}
-
-		public int ticks()
-		{
-			return ticks;
-		}
-
-		public Outcome outcome()
-		{
-			return outcome;
-		}
 
 		@Override
 		public String toString()
@@ -133,24 +115,14 @@ public final class AStarWalkCanonicalizer
 	}
 
 	/** A route with canonical walking legs. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Result
 	{
-		private final List<PathStep> path;
+		@Getter @Accessors(fluent = true) private final List<PathStep> path;
 		// Each leg's first and last step index in path, two entries per leg.
 		private final int[] legBounds;
-		private final List<Diagnostic> diagnostics;
-
-		Result(List<PathStep> path, int[] legBounds, List<Diagnostic> diagnostics)
-		{
-			this.path = path;
-			this.legBounds = legBounds;
-			this.diagnostics = diagnostics;
-		}
-
-		public List<PathStep> path()
-		{
-			return path;
-		}
+		/** Legs that kept the search's walk; empty when every leg was canonicalised. */
+		@Getter @Accessors(fluent = true) private final List<Diagnostic> diagnostics;
 
 		/** Walking legs of at least one tick in the route. */
 		public int legs()
@@ -169,28 +141,15 @@ public final class AStarWalkCanonicalizer
 		{
 			return legBounds[2 * leg + 1];
 		}
-
-		/** Legs that kept the search's walk; empty when every leg was canonicalised. */
-		public List<Diagnostic> diagnostics()
-		{
-			return diagnostics;
-		}
 	}
 
 	/** A walk found by {@link #walk}: the tiles after the start, or why there is none. */
+	@AllArgsConstructor
 	static final class Walk
 	{
 		final Outcome outcome;
 		final int[] tiles;
 		final int foundTicks, expansions;
-
-		Walk(Outcome outcome, int[] tiles, int foundTicks, int expansions)
-		{
-			this.outcome = outcome;
-			this.tiles = tiles;
-			this.foundTicks = foundTicks;
-			this.expansions = expansions;
-		}
 	}
 
 	public Result canonicalize(AStarRoute route)
@@ -221,7 +180,7 @@ public final class AStarWalkCanonicalizer
 				}
 				else
 				{
-					diagnostics.add(new Diagnostic(legStart, ticks, walk.outcome, walk.foundTicks, goal.toString()));
+					diagnostics.add(new Diagnostic(legStart, ticks, walk.foundTicks, walk.outcome, goal.toString()));
 				}
 			}
 			legStart = i;
@@ -288,7 +247,7 @@ public final class AStarWalkCanonicalizer
 	{
 		PreparedRoutingAccount.View view = account.localView(banked);
 		int actionClass = Integer.MIN_VALUE;
-		for (int i = lowerBound(view.origins, origin); i < view.count && view.origins[i] == origin; i++)
+		for (int i = lowerBound(view.origins, origin); i < view.destinations.length && view.origins[i] == origin; i++)
 		{
 			if (view.destinations[i] != destination || view.costs[i] != cost) continue;
 			if (actionClass != Integer.MIN_VALUE && actionClass != view.actionClasses[i]) return null;
@@ -297,7 +256,7 @@ public final class AStarWalkCanonicalizer
 		if (actionClass == Integer.MIN_VALUE) return null;
 		int[] origins = new int[4];
 		int count = 0;
-		for (int i = 0; i < view.count; i++)
+		for (int i = 0; i < view.destinations.length; i++)
 		{
 			if (view.actionClasses[i] != actionClass) continue;
 			if (count == origins.length) origins = Arrays.copyOf(origins, count * 2);
@@ -310,7 +269,7 @@ public final class AStarWalkCanonicalizer
 	{
 		PreparedRoutingAccount.View view = account.localView(banked);
 		int index = lowerBound(view.origins, tile);
-		return index < view.count && view.origins[index] == tile;
+		return index < view.destinations.length && view.origins[index] == tile;
 	}
 
 	/**

@@ -395,8 +395,9 @@ public final class AStarPathfinder implements ActiveSearch
 			graphPrepareNanos = System.nanoTime() - phaseStarted;
 			graphReused = graph.reused();
 			AtomicBoolean timedOut = new AtomicBoolean();
-			// A zero cutoff means no cutoff for the A* backend.
-			SearchDeadline deadline = cutoffMillis > 0 ? new SearchDeadline(cutoffMillis) : null;
+			// The cutoff counts time without progress — and a zero cutoff expires at the
+			// first clock read, exactly like the legacy backend's unconditional deadline.
+			SearchDeadline deadline = new SearchDeadline(cutoffMillis);
 			int[] packedTargets = goals.tiles().stream().mapToInt(Integer::intValue).toArray();
 			AStarForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
@@ -426,13 +427,13 @@ public final class AStarPathfinder implements ActiveSearch
 					() ->
 					{
 						if (cancelled) return true;
-						if (deadline != null && deadline.expired())
+						if (deadline.expired())
 						{
 							timedOut.set(true);
 							return true;
 						}
 						return false;
-					}, heuristicWeight, restrictions, deadline == null ? AStarForwardSearch.NO_PROGRESS : deadline::progressed,
+					}, heuristicWeight, restrictions, deadline::progressed,
 					goals::accepts);
 				forwardSearchNanos = System.nanoTime() - phaseStarted;
 				stats.nodesChecked += current.counters().statesPopped();

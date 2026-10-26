@@ -1,9 +1,13 @@
 package shortestpath.pathfinder;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 /**
  * A minimal growable FIFO of primitive {@code int} node ids backed by a ring buffer.
  * <p>
- * Replaces the {@code ArrayDeque<Node>} boundary queue in {@link Pathfinder} so the search frontier
+ * Replaces the {@code ArrayDeque<Node>} boundary queue in {@code Pathfinder} so the search frontier
  * no longer boxes node references. Only the operations the pathfinder needs are implemented; it is
  * single-threaded (worker only) like the queue it replaces.
  */
@@ -12,16 +16,11 @@ public class IntDeque
 	private int[] elements;
 	private int head;
 	private int tail;
-	private int size;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private int size;
 
 	public IntDeque(int initialCapacity)
 	{
 		elements = new int[Math.max(1, initialCapacity)];
-	}
-
-	int size()
-	{
-		return size;
 	}
 
 	public boolean isEmpty()

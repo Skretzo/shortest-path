@@ -9,8 +9,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.gameval.ItemID;
+import shortestpath.ItemVariations;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.TransportType;
@@ -67,50 +74,15 @@ public final class TeleportRestriction
 	 * harvested from the source TSV's {@code Display info} prefixes — the
 	 * variant-match surface for checklist search.
 	 */
+	@Getter
+	@Accessors(fluent = true)
+	@AllArgsConstructor
 	public static final class Family
 	{
 		private final String name;
 		private final int displayItemId;
 		private final Set<Integer> memberItemIds;
 		private final Map<Integer, String> memberLabels;
-		private final Map<Integer, String> options;
-
-		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
-			Map<Integer, String> memberLabels)
-		{
-			this(name, displayItemId, memberItemIds, memberLabels, Collections.emptyMap());
-		}
-
-		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
-			Map<Integer, String> memberLabels, Map<Integer, String> options)
-		{
-			this.name = name;
-			this.displayItemId = displayItemId;
-			this.memberItemIds = memberItemIds;
-			this.memberLabels = memberLabels;
-			this.options = options;
-		}
-
-		public String name()
-		{
-			return name;
-		}
-
-		public int displayItemId()
-		{
-			return displayItemId;
-		}
-
-		public Set<Integer> memberItemIds()
-		{
-			return memberItemIds;
-		}
-
-		public Map<Integer, String> memberLabels()
-		{
-			return memberLabels;
-		}
-
 		/**
 		 * The family's distinct teleport destinations as a packed-destination
 		 * → label map in first-seen order. Labels come straight from the
@@ -120,9 +92,12 @@ public final class TeleportRestriction
 		 * in {@code teleportation_items.tsv}, not in code. A family whose
 		 * serving rows all reach one destination yields a single entry.
 		 */
-		public Map<Integer, String> options()
+		private final Map<Integer, String> options;
+
+		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
+			Map<Integer, String> memberLabels)
 		{
-			return options;
+			this(name, displayItemId, memberItemIds, memberLabels, Collections.emptyMap());
 		}
 	}
 
@@ -133,20 +108,12 @@ public final class TeleportRestriction
 	 * {@code rep@dest} records back to whole option groups. Both are derived
 	 * in the same pass so they can never disagree about group membership.
 	 */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	private static final class DerivedOptions
 	{
 		private final List<ResourceLoader.RestrictionFamilyRow> rows;
 		private final List<Map<Integer, String>> options;
 		private final Map<Integer, Map<Integer, Set<Integer>>> expansion;
-
-		DerivedOptions(List<ResourceLoader.RestrictionFamilyRow> rows,
-			List<Map<Integer, String>> options,
-			Map<Integer, Map<Integer, Set<Integer>>> expansion)
-		{
-			this.rows = rows;
-			this.options = options;
-			this.expansion = expansion;
-		}
 	}
 
 	private static volatile DerivedOptions derivedOptionsHolder;
@@ -189,6 +156,48 @@ public final class TeleportRestriction
 				row.memberItemIds(), row.memberLabels(), derived.options.get(i)));
 		}
 		return Collections.unmodifiableList(families);
+	}
+
+	/**
+	 * Every family the restriction checklist lists: the generated
+	 * {@link #loadFamilies()} rows plus the code-defined families for item
+	 * requirements that exist only as injected requirements. The generated
+	 * map keeps its invariant — every member id traces to a
+	 * {@code teleportation_items.tsv} {@code Items} cell — while the
+	 * checklist surface additionally covers ids no TSV row can own.
+	 */
+	public static List<Family> checklistFamilies()
+	{
+		List<Family> families = new ArrayList<>(loadFamilies());
+		families.add(fairyStaffFamily());
+		return Collections.unmodifiableList(families);
+	}
+
+	/**
+	 * The code-defined family for the fairy-ring staff rule. Non-POH fairy
+	 * rings carry the Dramen/Lunar staff as a real item requirement
+	 * synthesized at availability build (see
+	 * {@link TransportEligibility#wrapFairyRingStaff}), so no
+	 * {@code teleportation_items.tsv} family owns the staff ids — yet the
+	 * ids restrict exactly like an item family's: a bare blocked id
+	 * covering every satisfying variant disables the rings. Member ids
+	 * come from the same {@link ItemVariations} name the injection reads,
+	 * so the family and the requirement can never drift. The family
+	 * exposes no destination options — no TSV row serves it.
+	 */
+	public static Family fairyStaffFamily()
+	{
+		Set<Integer> members = new TreeSet<>();
+		Map<Integer, String> labels = new HashMap<>();
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			members.add(id);
+			labels.put(id,
+				id == ItemID.DRAMEN_STAFF ? "Dramen staff" : "Lunar staff");
+		}
+		return new Family("Fairy staves", ItemID.DRAMEN_STAFF,
+			Collections.unmodifiableSet(members),
+			Collections.unmodifiableMap(labels));
 	}
 
 	/**
@@ -619,17 +628,6 @@ public final class TeleportRestriction
 			}
 		}
 		return Collections.unmodifiableMap(index);
-	}
-
-	/**
-	 * The representative (displayItemId) of the family {@code itemId} belongs
-	 * to, or a negative value when the id belongs to no restriction family.
-	 * The CSV {@code rep@dest} record stores the display id, so panel and
-	 * engine share one key space.
-	 */
-	public static int representativeFor(int itemId)
-	{
-		return representativeIndex().getOrDefault(itemId, -1);
 	}
 
 	/**

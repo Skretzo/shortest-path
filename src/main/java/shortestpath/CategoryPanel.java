@@ -16,6 +16,9 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
@@ -48,13 +51,20 @@ class CategoryPanel extends PluginPanel
 	}
 
 	private final ShortestPathPanel panel;
-	private final String categoryName;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final String categoryName;
 	// Lowercased name + aliases: a query contained here shows the whole
 	// category (the names double as search aliases, e.g. "routing" finds
 	// the renamed "General" category).
-	private final String matchText;
+	/**
+	 * The category's own match text (lowercased name + aliases). Rows
+	 * that self-filter — the restriction checklist's items-disabled
+	 * hint — match on this text rather than a second hardcoded copy,
+	 * so renaming the category or its alias cannot desync them.
+	 */
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final String matchText;
 	private final JPanel header;
 	private final FixedWidthPanel content;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<SearchRow> rows = new ArrayList<>();
 
 	CategoryPanel(ShortestPathPanel panel, String name, String alias)
@@ -104,11 +114,6 @@ class CategoryPanel extends PluginPanel
 		add(scrollPane, BorderLayout.CENTER);
 	}
 
-	String categoryName()
-	{
-		return categoryName;
-	}
-
 	/**
 	 * Whether {@code query} (already lowercased) hits the category's own
 	 * name/alias — the case where every row counts as a match regardless
@@ -118,17 +123,6 @@ class CategoryPanel extends PluginPanel
 	boolean nameMatches(String query)
 	{
 		return !query.isEmpty() && matchText.contains(query);
-	}
-
-	/**
-	 * The category's own match text (lowercased name + aliases). Rows
-	 * that self-filter — the restriction checklist's items-disabled
-	 * hint — match on this text rather than a second hardcoded copy,
-	 * so renaming the category or its alias cannot desync them.
-	 */
-	String matchText()
-	{
-		return matchText;
 	}
 
 	/**
@@ -153,11 +147,6 @@ class CategoryPanel extends PluginPanel
 	{
 		rows.add(row);
 		content.add(row.component);
-	}
-
-	List<SearchRow> rows()
-	{
-		return rows;
 	}
 
 	/**

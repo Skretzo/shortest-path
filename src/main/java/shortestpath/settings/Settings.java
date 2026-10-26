@@ -40,17 +40,10 @@ import shortestpath.transport.TransportTypeConfig;
  * proxy, the runtime override map received through plugin-message payloads, and
  * the immutable snapshots consumers read.
  *
- * <p>Two publication cadences exist by design:
- * <ul>
- * <li>{@link #display()}, {@link #poh()}, {@link #bank()}, {@link #unlocks()},
- * and {@link #lifecycle()} are immutable view snapshots republished on every
- * override apply/clear and every {@link ConfigChanged} for this group. They are
- * captured from {@link #effective()}, so payload overrides and persisted config
- * both reach them.</li>
- * <li>{@link #routing()} is a different cadence: it returns the most recently
- * built {@link RoutingPolicy}, published by the refresh path after
- * transport-type derivations run — never republished by a config event.</li>
- * </ul>
+ * <p>{@link #display()} and {@link #lifecycle()} are immutable view snapshots
+ * republished on every override apply/clear and every {@link ConfigChanged}
+ * for this group. They are captured from {@link #effective()}, so payload
+ * overrides and persisted config both reach them.
  *
  * <p>The override map is stored verbatim — keys are never validated on apply,
  * so unknown keys survive for the raw echo — and every publication is an
@@ -86,12 +79,6 @@ public class Settings
 	 * never sees a payload apply's map without its matching views.
 	 */
 	private volatile Published published;
-
-	/**
-	 * The most recently built routing policy. Published by the refresh path once
-	 * transport-type derivations settle; {@code null} until the first build.
-	 */
-	private volatile RoutingPolicy routing;
 
 	/**
 	 * Keyed listeners registered through {@link #listen}. Read on whichever
@@ -185,43 +172,9 @@ public class Settings
 		return published.display;
 	}
 
-	public PohView poh()
-	{
-		return published.poh;
-	}
-
-	public BankView bank()
-	{
-		return published.bank;
-	}
-
-	public UnlocksView unlocks()
-	{
-		return published.unlocks;
-	}
-
 	public LifecycleView lifecycle()
 	{
 		return published.lifecycle;
-	}
-
-	/**
-	 * The routing policy built by the last refresh, or {@code null} until the
-	 * first build publishes one.
-	 */
-	public RoutingPolicy routing()
-	{
-		return routing;
-	}
-
-	/**
-	 * Publish a freshly built routing policy. Called from the refresh path after
-	 * disableUnless derivations, so the snapshot always reflects a complete
-	 * refresh rather than mid-derivation state.
-	 */
-	public void publishRouting(RoutingPolicy policy)
-	{
-		routing = policy;
 	}
 
 	/**
@@ -229,9 +182,7 @@ public class Settings
 	 * effective transport-type enablement (post-{@code disableUnless}), the
 	 * teleportation-item mode and the POH toggles. Called once per refresh —
 	 * after the transport-type derivations have run — so a built chain can
-	 * never observe later config mutation. The built policy is published into
-	 * the {@link #routing()} slot before returning, so the snapshot always
-	 * reflects a complete refresh rather than mid-derivation state.
+	 * never observe later config mutation.
 	 *
 	 * <p>The scalar arguments are the effective values the caller already
 	 * computed this refresh — production never re-reads config live.
@@ -271,7 +222,6 @@ public class Settings
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
 			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides,
 			blockedOptionDests);
-		publishRouting(policy);
 		return policy;
 	}
 
@@ -577,9 +527,6 @@ public class Settings
 			overrides,
 			effective,
 			new DisplayView(effective, configured, this::keyedBase),
-			new PohView(effective, configured, this::keyedBase),
-			new BankView(effective),
-			new UnlocksView(effective),
 			new LifecycleView(effective, configured, this::keyedBase));
 	}
 
@@ -588,21 +535,14 @@ public class Settings
 		private final Map<String, Object> overrides;
 		private final EffectiveConfig effective;
 		private final DisplayView display;
-		private final PohView poh;
-		private final BankView bank;
-		private final UnlocksView unlocks;
 		private final LifecycleView lifecycle;
 
 		private Published(Map<String, Object> overrides, EffectiveConfig effective,
-			DisplayView display, PohView poh, BankView bank, UnlocksView unlocks,
-			LifecycleView lifecycle)
+			DisplayView display, LifecycleView lifecycle)
 		{
 			this.overrides = overrides;
 			this.effective = effective;
 			this.display = display;
-			this.poh = poh;
-			this.bank = bank;
-			this.unlocks = unlocks;
 			this.lifecycle = lifecycle;
 		}
 	}
@@ -619,8 +559,7 @@ public class Settings
 	 * {@code unreachableTargetDistanceThreshold}), {@code showTileCounter},
 	 * {@code pathStyle}, and {@code unreachableText}. The bank-pickup display
 	 * pair ({@code showBankPickupInfo}, {@code colourBankPickupHighlight})
-	 * lives here rather than in {@link BankView} because they are draw-state,
-	 * not routing inputs.
+	 * lives here because they are draw-state, not routing inputs.
 	 *
 	 * <p>Every member reads the effective (override-aware) value except
 	 * {@code unreachableText}, which reads the configured value: payloads
@@ -687,96 +626,6 @@ public class Settings
 			unreachableText = (String) base.apply(ConfigKey.UNREACHABLE_TEXT);
 			showTileCounter = effective.showTileCounter();
 			pathStyle = effective.pathStyle();
-		}
-	}
-
-	/**
-	 * Immutable snapshot of the player-owned-house routing inputs.
-	 *
-	 * <p>The {@code usePoh*} toggles and {@code pohJewelleryBoxTier} read the
-	 * effective (override-aware) value. The two {@code Set} members read the
-	 * configured value: they have no payload coercion, so callers see the same
-	 * bypass semantics the raw {@code config.pohNexusPortals()}/
-	 * {@code config.pohMountedItems()} reads always had.
-	 */
-	@Getter
-	@Accessors(fluent = true)
-	public static final class PohView
-	{
-		private final boolean usePoh;
-		private final boolean usePohFairyRing;
-		private final boolean usePohSpiritTree;
-		private final boolean useTeleportationPortalsPoh;
-		private final boolean usePohMountedItems;
-		private final boolean usePohObelisk;
-		private final JewelleryBoxTier pohJewelleryBoxTier;
-		private final Set<PohNexusPortal> pohNexusPortals;
-		private final Set<PohMountedItem> pohMountedItems;
-
-		@SuppressWarnings("unchecked")
-		private PohView(EffectiveConfig effective, ShortestPathConfig configured,
-			Function<ConfigKey, Object> base)
-		{
-			usePoh = effective.bool(ConfigKey.USE_POH);
-			usePohFairyRing = effective.bool(ConfigKey.USE_POH_FAIRY_RING);
-			usePohSpiritTree = effective.bool(ConfigKey.USE_POH_SPIRIT_TREE);
-			useTeleportationPortalsPoh = effective.bool(ConfigKey.USE_TELEPORTATION_PORTALS_POH);
-			usePohMountedItems = effective.bool(ConfigKey.USE_POH_MOUNTED_ITEMS);
-			usePohObelisk = effective.bool(ConfigKey.USE_POH_OBELISK);
-			pohJewelleryBoxTier = effective.pohJewelleryBoxTier();
-			// Set-typed keys are bypass reads — payloads never coerce them.
-			Set<PohNexusPortal> portals = (Set<PohNexusPortal>) base.apply(ConfigKey.POH_NEXUS_PORTALS);
-			pohNexusPortals = portals == null ? Set.of() : Set.copyOf(portals);
-			Set<PohMountedItem> mounted = (Set<PohMountedItem>) base.apply(ConfigKey.POH_MOUNTED_ITEMS);
-			pohMountedItems = mounted == null ? Set.of() : Set.copyOf(mounted);
-		}
-	}
-
-	/**
-	 * Immutable snapshot of the bank-path routing inputs: whether routes may
-	 * detour via a bank, the currency ceiling for paid transports, and the
-	 * cost charged per bank visit. All members read the effective
-	 * (override-aware) value. The bank-pickup <em>display</em> pair lives in
-	 * {@link DisplayView} — this view covers routing inputs only.
-	 */
-	@Getter
-	@Accessors(fluent = true)
-	public static final class BankView
-	{
-		private final boolean includeBankPath;
-		private final int currencyThreshold;
-		private final int costBankVisit;
-
-		private BankView(EffectiveConfig effective)
-		{
-			includeBankPath = effective.bool(ConfigKey.INCLUDE_BANK_PATH);
-			currencyThreshold = effective.num(ConfigKey.CURRENCY_THRESHOLD);
-			costBankVisit = effective.num(ConfigKey.COST_BANK_VISIT);
-		}
-	}
-
-	/**
-	 * Immutable snapshot of the declared unlocks — states the game does not
-	 * expose to the client, toggled in config. All members read the effective
-	 * (override-aware) value.
-	 */
-	@Getter
-	@Accessors(fluent = true)
-	public static final class UnlocksView
-	{
-		private final boolean unlockCanoeAxe;
-		private final boolean unlockXericsHonour;
-		private final boolean unlockDragontoothPassage;
-		private final boolean unlockMorUlRek;
-		private final boolean unlockBalloonLogBasket;
-
-		private UnlocksView(EffectiveConfig effective)
-		{
-			unlockCanoeAxe = effective.bool(ConfigKey.UNLOCK_CANOE_AXE);
-			unlockXericsHonour = effective.bool(ConfigKey.UNLOCK_XERICS_HONOUR);
-			unlockDragontoothPassage = effective.bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
-			unlockMorUlRek = effective.bool(ConfigKey.UNLOCK_MOR_UL_REK);
-			unlockBalloonLogBasket = effective.bool(ConfigKey.UNLOCK_BALLOON_LOG_BASKET);
 		}
 	}
 

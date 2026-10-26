@@ -45,9 +45,21 @@ public final class RoutingPolicy
 	@Getter @Accessors(fluent = true) private final JewelleryBoxTier pohJewelleryBoxTier;
 	@Getter @Accessors(fluent = true) private final int currencyThreshold;
 	@Getter @Accessors(fluent = true) private final boolean includeBankPath;
+	/**
+	 * Item ids the player excluded from routing via the hidden
+	 * {@code blockedTeleportItems} CSV — a candidate-set filter, not a fact
+	 * about what the player owns, so it lives on the policy side.
+	 */
 	@Getter @Accessors(fluent = true) private final Set<Integer> blockedItemIds;
 	private final Map<Integer, Integer> itemThresholdOverrides;
-	private final Map<Integer, Set<Integer>> blockedOptionDests;
+	/**
+	 * Destination-scoped restriction blocks parsed from the {@code rep@dest}
+	 * records of {@code blockedTeleportItems}: a family's representative
+	 * (display) item id to the packed destinations the player excluded for
+	 * it. Inner destination sets are frozen at construction, matching the
+	 * snapshot rule every other collection follows.
+	 */
+	@Getter @Accessors(fluent = true) private final Map<Integer, Set<Integer>> blockedOptionDests;
 
 	public RoutingPolicy(
 		Set<TransportType> enabledTypes,
@@ -139,26 +151,4 @@ public final class RoutingPolicy
 	 * about what the player owns, so it lives on the policy side.
 	 */
 
-
-	/**
-	 * Per-item tiles-saved threshold overrides parsed from the {@code id:N}
-	 * records of {@code blockedTeleportItems}; consumed by the additional-cost
-	 * path, not by the verdict chain.
-	 */
-	public Map<Integer, Integer> itemThresholdOverrides()
-	{
-		return itemThresholdOverrides;
-	}
-
-	/**
-	 * Destination-scoped restriction blocks parsed from the {@code rep@dest}
-	 * records of {@code blockedTeleportItems}: a family's representative
-	 * (display) item id to the packed destinations the player excluded for
-	 * it. Inner destination sets are frozen at construction, matching the
-	 * snapshot rule every other collection follows.
-	 */
-	public Map<Integer, Set<Integer>> blockedOptionDests()
-	{
-		return blockedOptionDests;
-	}
 }

@@ -20,8 +20,9 @@ public final class RoutingStatic
 	private final int[] componentSiteOffsets, componentSiteIds, reachableBankTiles;
 	private final BitSet reachableBankNodes, reachableBankSites;
 	private final int[] crossingFromSite, crossingToSite, crossingCosts;
-	private final int sparseOriginalCount, sparseVertexCount, sparseSteinerCount;
-	private final int sparseUndirectedEdgeCount, sparseAdjacencyCount;
+	@Getter @Accessors(fluent = true) private final int sparseOriginalCount, sparseVertexCount, sparseSteinerCount;
+	private final int sparseUndirectedEdgeCount;
+	@Getter @Accessors(fluent = true) private final int sparseAdjacencyCount;
 	private final int[] sparseOffsets, sparseDestinations, sparseWeights;
 
 	private RoutingStatic(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks,
@@ -227,22 +228,6 @@ public final class RoutingStatic
 	public int crossingCount()
 	{
 		return crossingFromSite.length;
-	}
-	public int sparseVertexCount()
-	{
-		return sparseVertexCount;
-	}
-	public int sparseOriginalCount()
-	{
-		return sparseOriginalCount;
-	}
-	public int sparseSteinerCount()
-	{
-		return sparseSteinerCount;
-	}
-	public int sparseAdjacencyCount()
-	{
-		return sparseAdjacencyCount;
 	}
 	public int searchTile(int index)
 	{

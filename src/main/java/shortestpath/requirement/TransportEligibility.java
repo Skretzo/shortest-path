@@ -33,8 +33,8 @@ import lombok.experimental.Accessors;
  * setting, the fairy-ring staff rule and the currency threshold.</li>
  * <li>{@link #satisfiedByPlayer} — the carried-pool-only check the overlays use, with no
  * currency threshold (the player already owns the items, so none would be spent).</li>
- * <li>{@link #bankPickupPlan} and {@link #fairyStaffPickup} — the items the bank must
- * supply for one transport, plus the bank item ids to highlight.</li>
+ * <li>{@link #bankPickupPlan} and {@link #targetPickupPlan} — the items the bank must
+ * supply for one transport or target, plus the bank item ids to highlight.</li>
  * </ul>
  *
  * <p>The pools are fixed at construction: {@code carriedItems} is inventory + worn +
@@ -58,7 +58,7 @@ public final class TransportEligibility
 	 */
 	private static final TransportItems DRAMEN_STAFF = new TransportItems(
 		new int[][]{null},
-		new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
+		new int[][]{ItemVariations.fromName("DRAMEN_STAFF").getIds()},
 		new int[][]{null},
 		new int[]{1});
 
@@ -152,7 +152,7 @@ public final class TransportEligibility
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerItems);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true);
+			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true, Set.of());
 	}
 
 	/**
@@ -242,8 +242,7 @@ public final class TransportEligibility
 		}
 
 		if (checkBank
-			&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting)))
+			&& TeleportationItemPolicy.includesBank(teleportationItemSetting))
 		{
 			OwnedItems.addContainer(itemsAndQuantities, bank);
 		}
@@ -291,29 +290,16 @@ public final class TransportEligibility
 	 */
 	public boolean usable(Transport transport, BankVisitState banked)
 	{
-		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType())
-			|| TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())
-			|| TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
+		// Mirror the requirement chain's teleportation-item gate: the shared
+		// policy verdict bypasses the pools or rejects outright, and
+		// EVALUATE_ITEMS falls through to pool evaluation below.
+		if (TeleportRestriction.isItemTeleportType(transport.getType()))
 		{
-			switch (teleportationItemSetting)
+			switch (TeleportationItemPolicy.verdict(teleportationItemSetting, transport.isConsumable()))
 			{
-				case ALL:
-				case UNLOCKED:
+				case BYPASS:
 					return true;
-				case ALL_NON_CONSUMABLE:
-				case UNLOCKED_NON_CONSUMABLE:
-					// Mirror the requirement chain's teleportation-item gate:
-					// non-consumable modes reject consumables even when their
-					// items are owned.
-					return !transport.isConsumable();
-				case INVENTORY_NON_CONSUMABLE:
-				case INVENTORY_AND_BANK_NON_CONSUMABLE:
-					if (transport.isConsumable())
-					{
-						return false;
-					}
-					break;
-				case NONE:
+				case REJECT:
 					return false;
 				default:
 					break;

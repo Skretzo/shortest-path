@@ -198,7 +198,7 @@ public class PathfinderTest
 			assertTrue("Boat destination should be reached from the rock", route.getResult().isReached());
 			assertTrue("Board the boat from the rock to the requested destination", route.getPath().stream()
 				.map(PathStep::getTransport)
-				.anyMatch(t -> t != null && t.isType(TransportType.BOAT)
+				.anyMatch(t -> t != null && t.getType() == TransportType.BOAT
 					&& t.getOrigin() == rock && t.getDestination() == destination));
 		}
 	}
@@ -461,7 +461,7 @@ public class PathfinderTest
 	{
 		for (Transport t : activeTransportList())
 		{
-			if (t.isType(TransportType.TELEPORTATION_BOX) && t.hasDisplayInfo(displayInfo))
+			if (t.getType() == TransportType.TELEPORTATION_BOX && t.hasDisplayInfo(displayInfo))
 			{
 				return true;
 			}
@@ -1560,7 +1560,7 @@ public class PathfinderTest
 		assertNotNull("Teleport destination step should carry the transport that produced the edge",
 			teleportStep.getTransport());
 		assertTrue("Banked edge should use an item teleport, not the minigame teleport",
-			teleportStep.getTransport().isType(TransportType.TELEPORTATION_ITEM));
+			teleportStep.getTransport().getType() == TransportType.TELEPORTATION_ITEM);
 		assertTrue("Expected the games necklace, got " + teleportStep.getTransport().getDisplayInfo(),
 			teleportStep.getTransport().hasDisplayInfo("Games necklace"));
 	}
@@ -2060,7 +2060,7 @@ public class PathfinderTest
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
-		assertFalse("No transports should be present that require a pickaxe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds()));
+		assertFalse("No transports should be present that require a pickaxe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("PICKAXE").getIds()));
 	}
 
 	@Test
@@ -2071,7 +2071,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 50, TeleportationItem.NONE); // transport in data requires 50 Mining
 
 		assertTrue("Transports requiring a pickaxe should be present",
-			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds()));
+			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("PICKAXE").getIds()));
 	}
 
 	@Test
@@ -2081,7 +2081,7 @@ public class PathfinderTest
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
-		assertFalse("No transports should be present that require an axe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds()));
+		assertFalse("No transports should be present that require an axe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("AXE").getIds()));
 	}
 
 	@Test
@@ -2092,7 +2092,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		assertTrue("Transports requiring an axe should be present",
-			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds()));
+			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("AXE").getIds()));
 	}
 
 	@Test
@@ -2761,13 +2761,13 @@ public class PathfinderTest
 		{
 			expected = new TransportItems(
 				new int[][]{
-					ItemVariations.AIR_RUNE.getIds(),
-					ItemVariations.FIRE_RUNE.getIds(),
-					ItemVariations.LAW_RUNE.getIds()},
+					ItemVariations.fromName("AIR_RUNE").getIds(),
+					ItemVariations.fromName("FIRE_RUNE").getIds(),
+					ItemVariations.fromName("LAW_RUNE").getIds()},
 				new int[][]{
-					ItemVariations.STAFF_OF_AIR.getIds(),
-					ItemVariations.STAFF_OF_FIRE.getIds(), null},
-				new int[][]{null, ItemVariations.TOME_OF_FIRE.getIds(), null},
+					ItemVariations.fromName("STAFF_OF_AIR").getIds(),
+					ItemVariations.fromName("STAFF_OF_FIRE").getIds(), null},
+				new int[][]{null, ItemVariations.fromName("TOME_OF_FIRE").getIds(), null},
 				new int[]{3, 1, 1});
 			assertEquals(expected, actual);
 		}
@@ -2786,13 +2786,13 @@ public class PathfinderTest
 		{
 			expected = new TransportItems(
 				new int[][]{
-					ItemVariations.FIRE_RUNE.getIds(),
-					ItemVariations.LAW_RUNE.getIds()},
+					ItemVariations.fromName("FIRE_RUNE").getIds(),
+					ItemVariations.fromName("LAW_RUNE").getIds()},
 				new int[][]{
-					ItemVariations.STAFF_OF_FIRE.getIds(),
+					ItemVariations.fromName("STAFF_OF_FIRE").getIds(),
 					null},
 				new int[][]{
-					ItemVariations.TOME_OF_FIRE.getIds(),
+					ItemVariations.fromName("TOME_OF_FIRE").getIds(),
 					null},
 				new int[]{2, 2});
 			assertEquals(expected, actual);
@@ -3170,7 +3170,8 @@ public class PathfinderTest
 		int count = 0;
 		for (Transport t : activeTransportList())
 		{
-			if (t.isType(TransportType.MINECART) && t.hasVarbit(7796))
+			if (t.getType() == TransportType.MINECART
+				&& t.getVarRequirements().stream().anyMatch(req -> req.isVarbit() && req.getId() == 7796))
 			{
 				count++;
 			}
@@ -3215,7 +3216,7 @@ public class PathfinderTest
 			Set<Transport> stepTransports = transportsForStep(origin, originStep.getBankVisitState());
 			for (Transport t : stepTransports)
 			{
-				if (t.getDestination() == dest && t.isType(type))
+				if (t.getDestination() == dest && t.getType() == type)
 				{
 					return true;
 				}
@@ -3260,7 +3261,7 @@ public class PathfinderTest
 				{
 					continue;
 				}
-				if (t.isType(type))
+				if (t.getType() == type)
 				{
 					matchingType = true;
 				}
@@ -3307,7 +3308,7 @@ public class PathfinderTest
 
 			for (Transport t : transportsForStep(origin, bankVisited))
 			{
-				if (t.getDestination() == destStep.getPackedPosition() && t.isType(type) && t.hasDisplayInfo(displayInfoSubstring))
+				if (t.getDestination() == destStep.getPackedPosition() && t.getType() == type && t.hasDisplayInfo(displayInfoSubstring))
 				{
 					return true;
 				}

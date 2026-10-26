@@ -16,6 +16,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -49,10 +52,11 @@ import shortestpath.sailing.SailingState;
  */
 @Slf4j
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PathScheduler
 {
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(PathScheduler.class, "/shortestpath/marker.png");
-	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
+	private final List<Integer> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
 
 	private final Client client;
@@ -82,21 +86,10 @@ public class PathScheduler
 	private volatile Pathfinder legacyPathfinder;
 	private AStarRoutingStaticProvider aStarRoutingStatic;
 	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
-	private boolean startPointSet = false;
+	@Getter(AccessLevel.PACKAGE) private boolean startPointSet = false;
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
-	private volatile int sailingPivotX;
-	private volatile int sailingPivotY;
-
-	@Inject
-	public PathScheduler(Client client, ClientThread clientThread, Settings settings,
-		WorldMapPointManager worldMapPointManager, DebugState debugState)
-	{
-		this.client = client;
-		this.clientThread = clientThread;
-		this.settings = settings;
-		this.worldMapPointManager = worldMapPointManager;
-		this.debugState = debugState;
-	}
+	@Getter private volatile int sailingPivotX;
+	@Getter private volatile int sailingPivotY;
 
 	/**
 	 * Binds the shell-owned pieces the scheduler needs: the pathfinder config the shell builds in
@@ -480,7 +473,7 @@ public class PathScheduler
 		{
 			return;
 		}
-		pendingTasks.add(new PendingTask(tick, pathfinderConfig::refresh));
+		pendingTasks.add(tick);
 	}
 
 	/**
@@ -490,9 +483,10 @@ public class PathScheduler
 	{
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
-			if (pendingTasks.get(i).check(tick))
+			if (tick >= pendingTasks.get(i))
 			{
-				pendingTasks.remove(i--).run();
+				pendingTasks.remove(i--);
+				pathfinderConfig.refresh();
 			}
 		}
 	}
@@ -601,21 +595,6 @@ public class PathScheduler
 		return pathfinder;
 	}
 
-	public int getSailingPivotX()
-	{
-		return sailingPivotX;
-	}
-
-	public int getSailingPivotY()
-	{
-		return sailingPivotY;
-	}
-
-	boolean isStartPointSet()
-	{
-		return startPointSet;
-	}
-
 	/**
 	 * Runs {@code action} while holding the scheduler mutex, for shell callers that must pair
 	 * their own state writes with the search snapshot.
@@ -626,5 +605,18 @@ public class PathScheduler
 		{
 			return action.get();
 		}
+	}
+
+	/**
+	 * {@link #withSchedulerLock(Supplier)} for bodies that have nothing to return; the same
+	 * monitor guards both overloads.
+	 */
+	public void withSchedulerLock(Runnable action)
+	{
+		withSchedulerLock(() ->
+		{
+			action.run();
+			return null;
+		});
 	}
 }

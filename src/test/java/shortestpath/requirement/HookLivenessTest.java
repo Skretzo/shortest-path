@@ -137,7 +137,7 @@ public class HookLivenessTest
 	public void varbitHookMovesTheBankVerdictOnTheSameChain()
 	{
 		DestinationRequirements gated = RequirementTestFixtures.bankRequirements(
-			null, null, Set.of(VarRequirement.varbit(4481, 1, VarCheckType.EQUAL)), null);
+			null, null, Set.of(new VarRequirement(VarRequirement.VarType.VARBIT, 4481, 1, VarCheckType.EQUAL)), null);
 		RequirementContext context = RequirementTestFixtures.context()
 			.varbitValues(Map.of(4481, 1)).build();
 		TestRequirementHooks hooks = new TestRequirementHooks();
@@ -178,7 +178,7 @@ public class HookLivenessTest
 	{
 		DestinationRequirements gated = RequirementTestFixtures.bankRequirements(
 			null, null, null,
-			Set.of(VarRequirement.varPlayer(4130, 1999, VarCheckType.GREATER)));
+			Set.of(new VarRequirement(VarRequirement.VarType.VARPLAYER, 4130, 1999, VarCheckType.GREATER)));
 		RequirementContext context = RequirementTestFixtures.context()
 			.varPlayerValues(Map.of(4130, 2000)).build();
 		TestRequirementHooks hooks = new TestRequirementHooks();

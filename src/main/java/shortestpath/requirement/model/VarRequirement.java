@@ -2,6 +2,7 @@ package shortestpath.requirement.model;
 
 import java.util.Map;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 
@@ -16,31 +17,14 @@ import lombok.AllArgsConstructor;
  */
 @AllArgsConstructor
 @Getter
-public class VarRequirement
+@EqualsAndHashCode
+public final class VarRequirement
 {
 
 	private final VarType varType;
 	private final int id;
 	private final int value;
 	private final VarCheckType checkType;
-
-
-
-	/**
-	 * Creates a varbit requirement.
-	 */
-	public static VarRequirement varbit(int id, int value, VarCheckType checkType)
-	{
-		return new VarRequirement(VarType.VARBIT, id, value, checkType);
-	}
-
-	/**
-	 * Creates a varplayer requirement.
-	 */
-	public static VarRequirement varPlayer(int id, int value, VarCheckType checkType)
-	{
-		return new VarRequirement(VarType.VARPLAYER, id, value, checkType);
-	}
 
 	/**
 	 * Checks if this requirement is satisfied given the current variable values.
@@ -91,31 +75,6 @@ public class VarRequirement
 	public boolean isVarPlayer()
 	{
 		return varType == VarType.VARPLAYER;
-	}
-
-	@Override
-	public int hashCode()
-	{
-		int result = varType.hashCode();
-		result = 31 * result + id;
-		result = 31 * result + value;
-		result = 31 * result + checkType.hashCode();
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object o)
-	{
-		if (this == o)
-		{
-			return true;
-		}
-		if (o == null || getClass() != o.getClass())
-		{
-			return false;
-		}
-		VarRequirement that = (VarRequirement) o;
-		return id == that.id && value == that.value && varType == that.varType && checkType == that.checkType;
 	}
 
 	@Override

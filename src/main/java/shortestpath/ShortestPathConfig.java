@@ -7,13 +7,14 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
+import net.runelite.client.config.Units;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config
 {
 	@ConfigSection(
 		name = "Settings",
-		description = "Options for the pathfinding. Transport, teleport-restriction, unlock and routing options live in the Shortest Path sidebar panel.",
+		description = "Pathfinding options. Transport, teleport-restriction, unlock and routing options live in the Shortest Path sidebar panel.",
 		position = 0
 	)
 	String sectionSettings = "sectionSettings";
@@ -21,7 +22,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showSidebarPanel",
 		name = "Show Sidebar Panel",
-		description = "Whether the Shortest Path icon is shown in the RuneLite sidebar",
+		description = "Show the Shortest Path icon in the RuneLite sidebar",
 		position = 70,
 		section = sectionSettings
 	)
@@ -37,7 +38,7 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Display",
-		description = "Options for displaying path on world map, minimap and scene tiles",
+		description = "Path display on world map, minimap and scene tiles",
 		position = 177
 	)
 	String sectionDisplay = "sectionDisplay";
@@ -45,7 +46,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawMap",
 		name = "Draw Path On World Map",
-		description = "Whether the path should be drawn on the world map",
+		description = "Draw the path on the world map",
 		position = 178,
 		section = sectionDisplay
 	)
@@ -57,7 +58,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawMinimap",
 		name = "Draw Path On Minimap",
-		description = "Whether the path should be drawn on the minimap",
+		description = "Draw the path on the minimap",
 		position = 179,
 		section = sectionDisplay
 	)
@@ -69,7 +70,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawTiles",
 		name = "Draw Path On Tiles",
-		description = "Whether the path should be drawn on the game tiles",
+		description = "Draw the path on the game tiles",
 		position = 180,
 		section = sectionDisplay
 	)
@@ -81,7 +82,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "pathStyle",
 		name = "Path Style",
-		description = "Whether to display the path as tiles, a segmented line, or a line with direction arrows",
+		description = "Draw the path as tiles, a segmented line, or a line with direction arrows",
 		position = 181,
 		section = sectionDisplay
 	)
@@ -93,7 +94,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showTeleportPulse",
 		name = "Teleport Pulse",
-		description = "Animate a pulsing highlight on the tile when the next teleport on the path is due",
+		description = "Pulse the tile when the next teleport on the path is due",
 		position = 182,
 		section = sectionDisplay
 	)
@@ -104,7 +105,7 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Colours",
-		description = "Colours for the path map, minimap and scene tiles",
+		description = "Path colours on map, minimap and scene tiles",
 		position = 183
 	)
 	String sectionColours = "sectionColours";
@@ -113,7 +114,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPath",
 		name = "Path",
-		description = "Colour of path tiles on world map, minimap and in game scene",
+		description = "Path tile colour on map, minimap and scene",
 		position = 184,
 		section = sectionColours
 	)
@@ -126,8 +127,8 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPathCalculating",
 		name = "Calculating",
-		description = "Colour of path tiles while pathfinding calculation is in progress," +
-			"<br>and the colour of unused targets if there are more than a single target",
+		description = "Path tile colour while calculating," +
+			"<br>and of unused targets with multiple targets",
 		position = 185,
 		section = sectionColours
 	)
@@ -140,7 +141,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourPathUnreachable",
 		name = "Unreachable",
-		description = "Colour of path tiles when pathfinding has finished but target is still too far away",
+		description = "Path tile colour when the target is still too far away",
 		position = 186,
 		section = sectionColours
 	)
@@ -153,7 +154,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourTransports",
 		name = "Transports",
-		description = "Colour of the transport tiles",
+		description = "Transport tile colour",
 		position = 187,
 		section = sectionColours
 	)
@@ -165,8 +166,8 @@ public interface ShortestPathConfig extends Config
 	@Alpha
 	@ConfigItem(
 		keyName = "colourCollisionMap",
-		name = "Collision Map",
-		description = "Colour of the collision map tiles",
+		name = "Collision map",
+		description = "Collision map tile colour",
 		position = 188,
 		section = sectionColours
 	)
@@ -179,7 +180,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourText",
 		name = "Text",
-		description = "Colour of the text of the tile counter and fairy ring codes",
+		description = "Text colour for the tile counter and fairy ring codes",
 		position = 189,
 		section = sectionColours
 	)
@@ -190,8 +191,8 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		keyName = "colourTeleportPulse",
-		name = "Teleport Pulse",
-		description = "Colour of the pulsing teleport highlight",
+		name = "Teleport pulse",
+		description = "Pulsing teleport highlight colour",
 		position = 190,
 		section = sectionColours
 	)
@@ -204,7 +205,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "colourBankPickupHighlight",
 		name = "Bank Pickup Highlight",
-		description = "Colour used to highlight bank items that need to be picked up for the current path",
+		description = "Highlight colour for bank items needed on the current path",
 		position = 200,
 		section = sectionColours
 	)
@@ -215,15 +216,15 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Hotkeys",
-		description = "Options for keyboard shortcuts",
+		description = "Keyboard shortcut options",
 		position = 201
 	)
 	String sectionHotkeys = "sectionHotkeys";
 
 	@ConfigItem(
 		keyName = "clearPathHotkey",
-		name = "Clear Current Path",
-		description = "Hotkey to clear the current path",
+		name = "Clear current path",
+		description = "Clear-path hotkey",
 		position = 202,
 		section = sectionHotkeys
 	)
@@ -234,7 +235,7 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigSection(
 		name = "Debug Options",
-		description = "Various options for debugging",
+		description = "Debugging options",
 		position = 203,
 		closedByDefault = true
 	)
@@ -243,7 +244,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawTransports",
 		name = "Draw Transports",
-		description = "Draw all transports on the map and game view.<br>White = available, Orange = unavailable (missing requirements)",
+		description = "Draw all transports on map and game view.<br>White = available, Orange = unavailable (missing requirements)",
 		position = 204,
 		section = sectionDebug
 	)
@@ -255,7 +256,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawCollisionMap",
 		name = "Draw Collision Map",
-		description = "Whether the collision map should be drawn",
+		description = "Draw the collision map",
 		position = 205,
 		section = sectionDebug
 	)
@@ -266,8 +267,8 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		keyName = "drawDebugPanel",
-		name = "Show Debug Panel",
-		description = "Toggles displaying the pathfinding debug stats panel",
+		name = "Show debug panel",
+		description = "Show the pathfinding debug stats panel",
 		position = 206,
 		section = sectionDebug
 	)
@@ -278,8 +279,8 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		keyName = "drawClickPoints",
-		name = "Show Click Points",
-		description = "Highlight exact route click points in magenta in the game view",
+		name = "Show click points",
+		description = "Highlight route click points in magenta in the game view",
 		position = 208,
 		section = sectionDebug
 	)
@@ -291,7 +292,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "postTransports",
 		name = "Post Transports",
-		description = "Whether to post the transports used in the current path as a PluginMessage event",
+		description = "Post the current path's transports as a PluginMessage event",
 		position = 209,
 		section = sectionDebug
 	)
