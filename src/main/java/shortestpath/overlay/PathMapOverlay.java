@@ -163,7 +163,7 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			for (int target : search.getTargets().points())
+			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
