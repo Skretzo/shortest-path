@@ -9,7 +9,6 @@ import java.util.function.Function;
 import lombok.Getter;
 
 import shortestpath.ShortestPathConfig;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
@@ -36,9 +35,8 @@ import shortestpath.transport.BalloonRoute;
  * <p>The effect set is declared per row so the table is the single source
  * for both "is read by the routing refresh" and "invalidates a running
  * route": every row whose key the refresh path reads carries
- * {@link Effect#ROUTE_INVALIDATING}, while {@code pathfinderAlgorithm}
- * additionally carries {@link Effect#SIDE_EFFECT_BACKEND_PREP} and
- * {@code drawDebugPanel} carries only {@link Effect#SIDE_EFFECT_DEBUG_OVERLAY}.
+ * {@link Effect#ROUTE_INVALIDATING}, while {@code drawDebugPanel} carries
+ * only {@link Effect#SIDE_EFFECT_DEBUG_OVERLAY}.
  * Rows with no shell consequence beyond view republish carry
  * {@link Effect#DISPLAY_ONLY}.
  *
@@ -50,7 +48,6 @@ import shortestpath.transport.BalloonRoute;
 @Getter
 public enum ConfigKey
 {
-	PATHFINDER_ALGORITHM("pathfinderAlgorithm", PathfinderBackend.class, PathfinderBackend.LEGACY, Coercion.NONE, Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP),
 	AVOID_WILDERNESS("avoidWilderness", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_AGILITY_SHORTCUTS("useAgilityShortcuts", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_GRAPPLE_SHORTCUTS("useGrappleShortcuts", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),

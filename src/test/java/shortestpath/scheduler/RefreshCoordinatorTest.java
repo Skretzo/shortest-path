@@ -160,14 +160,14 @@ public class RefreshCoordinatorTest
 	}
 
 	@Test
-	public void configChangedRestartsRoutingKeysAndPrepsTheBackend()
+	public void configChangedRestartsWithoutBackendPrepForThresholdKeys()
 	{
 		runningSearch(11, Targets.at(Set.of(13)));
 
-		coordinator.configChanged(configChange("pathfinderAlgorithm"));
+		coordinator.configChanged(configChange("calculationCutoff"));
 
-		verify(scheduler).prepareBackend();
-		verify(scheduler).restart("config: pathfinderAlgorithm", 11, Targets.at(Set.of(13)));
+		verify(scheduler).restart("config: calculationCutoff", 11, Targets.at(Set.of(13)));
+		verify(scheduler, never()).prepareBackend();
 	}
 
 	@Test
@@ -278,12 +278,13 @@ public class RefreshCoordinatorTest
 	}
 
 	@Test
-	public void loginTransitionDefersRefreshToTheNextTick()
+	public void loginTransitionPrepsTheBackendAndDefersRefreshToTheNextTick()
 	{
 		coordinator.gameStateChanged(GameState.LOGGING_IN, 10);
 		coordinator.gameStateChanged(GameState.LOADING, 11);
 		coordinator.gameStateChanged(GameState.LOGGED_IN, 12);
 
+		verify(scheduler).prepareBackend();
 		verify(scheduler).deferRefresh(13);
 	}
 
@@ -296,6 +297,7 @@ public class RefreshCoordinatorTest
 		coordinator.gameStateChanged(GameState.LOADING, 11);
 		coordinator.gameStateChanged(GameState.LOGGED_IN, 12);
 
+		verify(scheduler, never()).prepareBackend();
 		verify(scheduler, never()).deferRefresh(anyInt());
 	}
 

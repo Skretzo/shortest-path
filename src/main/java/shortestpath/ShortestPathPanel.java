@@ -52,7 +52,6 @@ import lombok.experimental.Accessors;
 import shortestpath.items.ItemStateService;
 import shortestpath.settings.ConfigItems;
 import shortestpath.settings.Settings;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.BalloonRoute;
@@ -255,16 +254,7 @@ public class ShortestPathPanel extends PluginPanel
 		// The teleport-items mode is a routing policy, so its combo lives
 		// with the other General rows; its Transports card is masterless.
 		general.addRow(comboRow("useTeleportationItems"));
-		general.addRow(comboRow("pathfinderAlgorithm"));
-
-		// The heuristic weight only steers the A* backend — dim it while
-		// legacy is selected, same contract as the transport cards.
-		SearchRow weightRow = spinnerRow("aStarHeuristicWeight");
-		general.addRow(weightRow);
-		Runnable applyWeightEnabled = () -> applyRowDisabledState(weightRow.component,
-			PathfinderBackend.ASTAR.equals(settings.configuredValue("pathfinderAlgorithm")));
-		applyWeightEnabled.run();
-		registerConfigListener("pathfinderAlgorithm", applyWeightEnabled);
+		general.addRow(spinnerRow("aStarHeuristicWeight"));
 	}
 
 	private void buildTransportsCategory()
