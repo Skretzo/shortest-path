@@ -39,9 +39,9 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	private JButton expander;
 	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
 	private boolean searchExpanded;
-	// Set while a config sync mirrors values into the controls, so the
+	// Held while a config sync mirrors values into the controls, so the
 	// programmatic selection changes do not write back to config.
-	private boolean syncing;
+	private final PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
 
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId)
 	{
@@ -220,8 +220,7 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	void syncFromConfig()
 	{
 		Object value = panel.settings.configuredValue(keyName);
-		syncing = true;
-		try
+		PanelRows.resync(syncing, () ->
 		{
 			if (masterControl instanceof JCheckBox)
 			{
@@ -231,14 +230,12 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				((JComboBox<?>) masterControl).setSelectedItem(value);
 			}
-		}
-		finally
+		}, () ->
 		{
-			syncing = false;
-		}
-		// Masterless cards hold no control to mirror into — only the dim
-		// state follows the configured value.
-		applyEnabled(isMasterOn());
+			// Masterless cards hold no control to mirror into — only the
+			// dim state follows the configured value.
+			applyEnabled(isMasterOn());
+		});
 	}
 
 	private JComponent createMasterControl(String description)
@@ -256,10 +253,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				if (e.getStateChange() == ItemEvent.SELECTED)
 				{
-					if (!syncing)
-					{
-						panel.settings.write(keyName, combo.getSelectedItem());
-					}
+					PanelRows.guardedWrite(syncing,
+						() -> panel.settings.write(keyName, combo.getSelectedItem()));
 					applyEnabled(isMasterOn());
 				}
 			});
@@ -271,10 +266,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		checkBox.setToolTipText(ShortestPathPanel.html(description));
 		checkBox.addActionListener(e ->
 		{
-			if (!syncing)
-			{
-				panel.settings.write(keyName, checkBox.isSelected());
-			}
+			PanelRows.guardedWrite(syncing,
+				() -> panel.settings.write(keyName, checkBox.isSelected()));
 			applyEnabled(checkBox.isSelected());
 		});
 		return checkBox;
