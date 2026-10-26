@@ -18,6 +18,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.SwingUtil;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 /**
@@ -44,10 +45,10 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 
 	private final JPanel header;
 	@Getter private final JLabel nameLabel;
-	private final JLabel countLabel;
+	@Getter(AccessLevel.PACKAGE) private final JLabel countLabel;
 	private final JButton expander;
 	private final JPanel detail;
-	private boolean detailOpen;
+	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
 	private boolean searchExpanded;
 	// Set while a config sync mirrors the stored set into the checkboxes,
 	// so the programmatic setSelected calls do not write it back.
@@ -123,16 +124,6 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		panel.registerConfigListener(keyName, this::syncFromConfig);
 		updateCount();
 		installExpandListener();
-	}
-
-	JLabel getCountLabel()
-	{
-		return countLabel;
-	}
-
-	boolean isDetailOpen()
-	{
-		return detailOpen;
 	}
 
 	void setDetailOpen(boolean open)
