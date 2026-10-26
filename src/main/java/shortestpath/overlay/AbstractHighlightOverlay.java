@@ -1,11 +1,14 @@
 package shortestpath.overlay;
 
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import shortestpath.WorldPointUtil;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
@@ -34,6 +37,76 @@ abstract class AbstractHighlightOverlay extends Overlay
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
+
+	/**
+	 * The shared highlight pipeline: the subclass gate, the active-search
+	 * and path guards, the per-overlay extra gates, the player-path index
+	 * bound, then the subclass draw tail. Evaluation order matches the
+	 * original trio bodies stage for stage — the extra gates ran after the
+	 * path guards and before the path-index bound, and they keep that
+	 * placement here.
+	 */
+	@Override
+	public Dimension render(Graphics2D graphics)
+	{
+		if (!enabled())
+		{
+			return null;
+		}
+
+		ActiveSearch search = scheduler.getActiveSearch();
+		if (search == null)
+		{
+			return null;
+		}
+
+		List<PathStep> path = search.getPath();
+		if (path == null || path.isEmpty())
+		{
+			return null;
+		}
+
+		if (!extraGatesPass())
+		{
+			return null;
+		}
+
+		int pathIndex = getPlayerPathIndex(path);
+		if (!pathIndexUsable(pathIndex, path))
+		{
+			return null;
+		}
+
+		return drawHighlights(graphics, path, pathIndex, search);
+	}
+
+	/** Whether this overlay's highlight setting is on. */
+	protected abstract boolean enabled();
+
+	/**
+	 * Per-overlay conjuncts that run after the path guards and before the
+	 * path-index bound (bank's widget/open/destination checks, spellbook's
+	 * spell-layer widget). Inventory has none.
+	 */
+	protected boolean extraGatesPass()
+	{
+		return true;
+	}
+
+	/**
+	 * The per-overlay path-index bound. The default requires a next step
+	 * ({@code pathIndex + 1 < path.size()}) because the draw tail indexes
+	 * {@code path.get(pathIndex + 1)}; bank never does, so it overrides
+	 * this with the looser {@code pathIndex >= 0}.
+	 */
+	protected boolean pathIndexUsable(int pathIndex, List<PathStep> path)
+	{
+		return pathIndex >= 0 && pathIndex + 1 < path.size();
+	}
+
+	/** The subclass draw tail: id-set computation plus per-child drawing. */
+	protected abstract Dimension drawHighlights(Graphics2D graphics, List<PathStep> path,
+		int pathIndex, ActiveSearch search);
 
 	protected int getPlayerPathIndex(List<PathStep> path)
 	{
