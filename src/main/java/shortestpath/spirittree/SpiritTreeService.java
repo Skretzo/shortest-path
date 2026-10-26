@@ -3,7 +3,7 @@ package shortestpath.spirittree;
 import java.util.*;
 import java.util.regex.*;
 import javax.inject.*;
-import lombok.Getter;
+import lombok.*;
 import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
@@ -34,6 +34,7 @@ import shortestpath.widgets.GameWidgets;
  * evicts the persisted travelable entry for that patch.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class SpiritTreeService
 {
 	/**
@@ -79,16 +80,6 @@ public class SpiritTreeService
 	 * {@code getAvailableSpiritTrees()}.
 	 */
 	@Getter private volatile Set<String> availableSpiritTrees;
-
-	@Inject
-	public SpiritTreeService(ConfigManager configManager, Client client,
-		RefreshCoordinator coordinator, GameWidgets gameWidgets)
-	{
-		this.configManager = configManager;
-		this.client = client;
-		this.coordinator = coordinator;
-		this.gameWidgets = gameWidgets;
-	}
 
 	/**
 	 * Detached-widgets seam for tests that exercise the service without the
