@@ -347,31 +347,6 @@ public class ShortestPathPanel extends PluginPanel
 		restrictionsCategory.setTrailing(owned);
 	}
 
-	private void buildUnlocksCategory()
-	{
-		CategoryPanel unlocks = new CategoryPanel(this, "Unlocks", "");
-		categories.add(unlocks);
-		unlocks.addRow(checkRow("unlockCanoeAxe"));
-		unlocks.addRow(checkRow("unlockXericsHonour"));
-		unlocks.addRow(checkRow("unlockDragontoothPassage"));
-		unlocks.addRow(checkRow("unlockMorUlRek"));
-		// The respawn flag is account state the client cannot read — it
-		// sits with the unlocks rather than the General routing policies.
-		unlocks.addRow(checkRow("respawnPrifddinas"));
-	}
-
-	private void buildBankCategory()
-	{
-		CategoryPanel bank = new CategoryPanel(this, "Bank", "");
-		categories.add(bank);
-		bank.addRow(checkRow("includeBankPath"));
-		bank.addRow(spinnerRow("costBankVisit"));
-		// The bank-pickup display pair belongs with the bank routing
-		// options — the hint and item highlight only act on bank visits.
-		bank.addRow(checkRow("showBankPickupInfo"));
-		bank.addRow(checkRow("highlightBankPickupItems"));
-	}
-
 	private void buildPohCategory()
 	{
 		CategoryPanel poh = new CategoryPanel(this, "Player-Owned House", "");
