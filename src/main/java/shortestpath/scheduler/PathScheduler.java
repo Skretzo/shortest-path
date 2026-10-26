@@ -36,7 +36,6 @@ import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
@@ -83,7 +82,6 @@ public class PathScheduler
 	// Volatile because the render thread reads it (through getActiveSearch() and friends)
 	// while restarts write it on the client thread under pathfinderMutex.
 	private volatile ActiveSearch pathfinder;
-	private volatile Pathfinder legacyPathfinder;
 	private AStarRoutingStaticProvider aStarRoutingStatic;
 	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
 	@Getter(AccessLevel.PACKAGE) private boolean startPointSet = false;
@@ -165,16 +163,12 @@ public class PathScheduler
 				// search would sail its headings across land
 				if (pathfinderConfig.isSailingMoves() && sailing.getState().hasBoat())
 				{
-					// A SailingPathfinder isn't a Pathfinder, so it can't be held by
-					// legacyPathfinder — the legacy-backend slot stays null while sailing
-					legacyPathfinder = null;
 					pathfinder = sailingPathfinder(start, ends);
 				}
-				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.ASTAR)
+				else
 				{
 					try
 					{
-						legacyPathfinder = null;
 						AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
 							aStarRoutingSession, start, ends, responder::postPluginMessages);
 						// Recalculating towards the same targets: keep the old route drawn until
@@ -186,14 +180,8 @@ public class PathScheduler
 					catch (RuntimeException error)
 					{
 						debugState.clientError(error, client.getTickCount());
-						legacyPathfinder = null;
 						pathfinder = AStarPathfinder.failed(start, ends, responder::postPluginMessages, error);
 					}
-				}
-				else
-				{
-					legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, responder::postPluginMessages);
-					pathfinder = legacyPathfinder;
 				}
 				ActiveSearch search = pathfinder;
 				debugState.searchStarted(search);
@@ -266,14 +254,14 @@ public class PathScheduler
 	}
 
 	/**
-	 * Builds the A* backend's static routing data in the background when the A* backend is
-	 * selected, so the first route does not pay for it. The build runs on the pathfinding thread,
-	 * so a search submitted meanwhile simply queues behind it; a failed build is remembered by the
-	 * provider and reported by that search.
+	 * Builds the A* backend's static routing data in the background, so the first route does
+	 * not pay for it. The build runs on the pathfinding thread, so a search submitted
+	 * meanwhile simply queues behind it; a failed build is remembered by the provider and
+	 * reported by that search.
 	 */
 	public void prepareBackend()
 	{
-		if (pathfinderConfig == null || settings.lifecycle().pathfinderBackend() != PathfinderBackend.ASTAR)
+		if (pathfinderConfig == null)
 		{
 			return;
 		}
@@ -390,9 +378,8 @@ public class PathScheduler
 				{
 					pathfinderConfig.refresh();
 				}
-				// Plugin queries always run on the legacy backend, even when the user-facing
-				// search opted into a different one: external callers get the proven engine's
-				// routes regardless of the experiment the user has enabled.
+				// Plugin queries always run on the legacy backend: external callers get the
+				// proven engine's routes.
 				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
 				QueryTask task = new QueryTask(id);
 				queries.put(query, task);
@@ -525,7 +512,6 @@ public class PathScheduler
 					pathfinder.cancel();
 				}
 				pathfinder = null;
-				legacyPathfinder = null;
 			}
 
 			worldMapPointManager.removeIf(x -> x == marker);
