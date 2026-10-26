@@ -116,8 +116,10 @@ final class OverlayDrawing
 	 * {@code null} when there is no exit info to append, so each caller
 	 * keeps its own append target and its own argument order.
 	 */
-	static String pohExitSuffix(String pohExitInfo)
+	static String pohExitSuffix(PathAnnotator annotator, int destination,
+		List<PathStep> path, int pathIndex)
 	{
+		String pohExitInfo = annotator.getPohExitInfo(destination, path, pathIndex);
 		return pohExitInfo == null ? null : " (Exit: " + pohExitInfo + ")";
 	}
 }
