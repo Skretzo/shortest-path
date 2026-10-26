@@ -37,7 +37,7 @@ import shortestpath.pathfinder.PathStep;
 public final class InGameWalkRewriter
 {
 	/** Roughly the reach of a minimap click, in tiles. */
-	public static final int DEFAULT_CLICK_RADIUS = 15;
+	public static final int DEFAULT_CLICK_RADIUS = 35;
 
 	/**
 	 * Checkpoint tiles the client keeps for one click's walk: the direction-change corners of
@@ -170,7 +170,7 @@ public final class InGameWalkRewriter
 			{
 				int tile = path.get(i).getPackedPosition();
 				if (!withinReach(sx, sy, tile)) continue;
-				// withinReach bounds the tile to (64±15) locally, inside the window: never -1.
+				// withinReach bounds the tile to (64±35) locally, inside the window: never -1.
 				int local = localIndex(originX, originY, tile);
 				// Exactly as long as the canonical walk: no shorter, which would change the cost.
 				if (distance[local] != i - current) continue;
