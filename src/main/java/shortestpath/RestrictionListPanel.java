@@ -442,7 +442,7 @@ class RestrictionListPanel extends JPanel
 	 * One family row: icon + name + allow checkbox + chevron expander on the
 	 * header line, with the threshold spinner in the collapsible detail well.
 	 */
-	private final class RestrictionRow extends JPanel
+	private final class RestrictionRow extends ExpandableSurface
 	{
 		final TeleportRestriction.Family family;
 		final String nameLower;
@@ -451,17 +451,14 @@ class RestrictionListPanel extends JPanel
 		private final JLabel iconLabel;
 		private final JLabel nameLabel;
 		private final JCheckBox allow;
-		private final JButton expander;
-		private final JPanel detail;
 		private final JSpinner thresholdSpinner;
 		// canonical packedDest -> option checkbox, in the options map's
 		// first-seen order — kept so syncFromModel can mirror external edits.
 		private final Map<Integer, JCheckBox> optionBoxes = new LinkedHashMap<>();
-		private boolean detailOpen;
-		private boolean searchExpanded;
 
 		RestrictionRow(TeleportRestriction.Family family)
 		{
+			super(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
 			this.family = family;
 			this.nameLower = family.name().toLowerCase(Locale.ROOT);
 			StringBuilder sb = new StringBuilder(nameLower);
@@ -475,7 +472,6 @@ class RestrictionListPanel extends JPanel
 			}
 			this.searchText = sb.toString();
 
-			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 			setOpaque(false);
 			setBorder(new EmptyBorder(4, 0, 4, 0));
 
@@ -503,11 +499,8 @@ class RestrictionListPanel extends JPanel
 			controls.setOpaque(false);
 			controls.setLayout(new BoxLayout(controls, BoxLayout.X_AXIS));
 
-			expander = new JButton(ShortestPathPanel.SECTION_EXPAND_ICON);
+			expander = newExpander();
 			expander.setPreferredSize(new Dimension(EXPANDER_WIDTH, 0));
-			expander.setToolTipText("Expand");
-			SwingUtil.removeButtonDecorations(expander);
-			expander.addActionListener(e -> setDetailOpen(!detailOpen));
 			controls.add(expander);
 
 			allow = new JCheckBox();
@@ -538,27 +531,10 @@ class RestrictionListPanel extends JPanel
 			header.add(controls, BorderLayout.EAST);
 
 			// Clicking anywhere on the header (icon/name area) also toggles the
-			// detail well, mirroring the transport cards. Swing never forwards
-			// child events to the parent, so each component needs the adapter.
-			MouseAdapter expandOnClick = new MouseAdapter()
-			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					if (expander.isEnabled())
-					{
-						setDetailOpen(!detailOpen);
-					}
-				}
-			};
-			header.addMouseListener(expandOnClick);
-			iconLabel.addMouseListener(expandOnClick);
-			nameLabel.addMouseListener(expandOnClick);
+			// detail well, mirroring the transport cards.
 			add(header);
+			installExpandListener(header, iconLabel, nameLabel);
 
-			detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
-			// Indented under the icon column so the detail lines up with the name.
-			detail.setBorder(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
 			// The shared expandable chrome: the header paints as an
 			// opaque dark bar while the detail well keeps the category
 			// background behind a thin orange border, like the cards.
@@ -605,7 +581,6 @@ class RestrictionListPanel extends JPanel
 			{
 				buildOptionsBlock();
 			}
-			detail.setVisible(false);
 			add(detail);
 
 			syncFromModel();
@@ -732,41 +707,12 @@ class RestrictionListPanel extends JPanel
 			ShortestPathPanel.applyRowDisabledState(detail, allowed);
 		}
 
-		void setDetailOpen(boolean open)
+		/** The header name — {@link SearchExpandable} reads it to tell
+		 * name-label matches from detail-label matches. */
+		@Override
+		public JLabel getNameLabel()
 		{
-			// A manual toggle counts as user intent, so search no longer owns
-			// the expansion state of this row.
-			searchExpanded = false;
-			setDetailOpenInternal(open);
-		}
-
-		void setSearchExpanded()
-		{
-			if (!detailOpen)
-			{
-				searchExpanded = true;
-				setDetailOpenInternal(true);
-			}
-		}
-
-		void clearSearchExpanded()
-		{
-			if (searchExpanded)
-			{
-				searchExpanded = false;
-				setDetailOpenInternal(false);
-			}
-		}
-
-		private void setDetailOpenInternal(boolean open)
-		{
-			detailOpen = open;
-			expander.setIcon(open ? ShortestPathPanel.SECTION_RETRACT_ICON
-				: ShortestPathPanel.SECTION_EXPAND_ICON);
-			expander.setToolTipText(open ? "Retract" : "Expand");
-			detail.setVisible(open);
-			revalidate();
-			repaint();
+			return nameLabel;
 		}
 	}
 }

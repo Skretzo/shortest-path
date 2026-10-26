@@ -7,7 +7,8 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -92,16 +93,7 @@ public final class PreparedRoutingAccount
 	 */
 	public boolean bankAccessible(int packedTile)
 	{
-		int low = 0, high = accessibleBankTiles.length - 1;
-		while (low <= high)
-		{
-			int middle = (low + high) >>> 1;
-			int compare = Integer.compareUnsigned(accessibleBankTiles[middle], packedTile);
-			if (compare == 0) return true;
-			if (compare < 0) low = middle + 1;
-			else high = middle - 1;
-		}
-		return false;
+		return IntArrays.binarySearch(accessibleBankTiles, packedTile) >= 0;
 	}
 	/** The cost of switching into the banked layer at an accessible bank. */
 
@@ -170,7 +162,7 @@ public final class PreparedRoutingAccount
 				View view = kind == 0 ? local[banked] : global[kind - 1][banked];
 				hash = mix(hash, kind);
 				hash = mix(hash, banked);
-				for (int i = 0; i < view.count; i++)
+				for (int i = 0; i < view.destinations.length; i++)
 				{
 					if (kind == 0)
 						hash = u32(hash, view.origins[i]);
@@ -196,15 +188,10 @@ public final class PreparedRoutingAccount
 		return (hash ^ (value & 0xffL)) * FNV_PRIME;
 	}
 
-	static String transportTypeName(int ordinal)
-	{
-		return TransportType.values()[ordinal].name();
-	}
-
+	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	static final class View
 	{
 		final boolean local;
-		final int count;
 		final int[] origins;
 		final int[] destinations;
 		final int[] costs;
@@ -214,20 +201,6 @@ public final class PreparedRoutingAccount
 		/** The transport each row represents; parallel to the other arrays so a search can
 		 *  report which transport produced an edge, not just its effect. */
 		final Transport[] transports;
-
-		private View(boolean local, int[] origins, int[] destinations, int[] costs, int[] types, int[] maxWilderness,
-			int[] actionClasses, Transport[] transports)
-		{
-			this.local = local;
-			this.count = destinations.length;
-			this.origins = origins;
-			this.destinations = destinations;
-			this.costs = costs;
-			this.types = types;
-			this.maxWilderness = maxWilderness;
-			this.actionClasses = actionClasses;
-			this.transports = transports;
-		}
 
 		static View empty(boolean local)
 		{

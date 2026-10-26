@@ -32,6 +32,13 @@ import shortestpath.transport.BalloonRoute;
  * base resolver for flag-derived set defaults).</li>
  * </ul>
  *
+ * <p>A keyed row may still be <i>declared</i> as a {@code @ConfigItem} so the
+ * stock config panel can reach the setting: {@link #isKeyed} records the
+ * read path (a raw {@code ConfigManager} read through the keyed base
+ * resolver), not whether the key has an item declaration. The declaration
+ * and the keyed read share one persisted key, so a declared keyed row's
+ * annotation default must mirror the row's declared default literal.
+ *
  * <p>The effect set is declared per row so the table is the single source
  * for both "is read by the routing refresh" and "invalidates a running
  * route": every row whose key the refresh path reads carries

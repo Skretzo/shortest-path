@@ -2,12 +2,14 @@ package shortestpath.transport;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.ItemVariations;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.TransportEligibility;
@@ -18,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -280,8 +283,10 @@ public class TransportEligibilityTest
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
 
-		assertFalse(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
-		assertFalse(eligibility.usable(fairyRing(), BankVisitState.BANKED));
+		assertFalse(eligibility.usable(eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING)),
+			BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING)),
+			BankVisitState.BANKED));
 	}
 
 	@Test
@@ -289,59 +294,32 @@ public class TransportEligibilityTest
 	{
 		bankHas.put(ItemID.DRAMEN_STAFF, 1);
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+		Transport wrapped = eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
 
-		assertFalse(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
-		assertTrue(eligibility.usable(fairyRing(), BankVisitState.BANKED));
+		assertFalse(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
 	}
 
 	@Test
 	public void fairyRingNeedsNoStaffWhenDiaryComplete()
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+		Transport wrapped = eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
 
-		assertTrue(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
-		assertTrue(eligibility.usable(fairyRing(), BankVisitState.BANKED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
 	}
 
 	@Test
-	public void fairyStaffPickupReturnsTheDramenStaffInTheBank()
-	{
-		bankHas.put(ItemID.DRAMEN_STAFF, 1);
-		bankHas.put(ItemID.DRAMEN_STAFF_AIR, 1);
-		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
-
-		TransportEligibility.BankPickupPlan plan = eligibility.fairyStaffPickup();
-
-		assertNotNull(plan);
-		assertEquals(Map.of(ItemID.DRAMEN_STAFF, 1L), plan.items);
-		assertEquals(Set.of(ItemID.DRAMEN_STAFF, ItemID.DRAMEN_STAFF_AIR), plan.bankItemIds);
-	}
-
-	@Test
-	public void fairyStaffPickupIsNullWhenThePlayerCarriesAStaff()
-	{
-		playerHas.put(ItemID.DRAMEN_STAFF_FIRE, 1);
-		bankHas.put(ItemID.DRAMEN_STAFF, 1);
-		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
-
-		assertNull(eligibility.fairyStaffPickup());
-	}
-
-	@Test
-	public void fairyStaffPickupIsNullWhenTheDiaryIsComplete()
-	{
-		bankHas.put(ItemID.DRAMEN_STAFF, 1);
-		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
-
-		assertNull(eligibility.fairyStaffPickup());
-	}
-
-	@Test
-	public void fairyStaffPickupIsNullWhenTheBankLacksAStaff()
+	public void pohRingNeedsNoStaffEvenWhenDiaryIncomplete()
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+		Transport pohRing = fairyRingAt(POH_RING);
+		Transport wrapped = eligibility.wrapFairyRingStaff(pohRing);
 
-		assertNull(eligibility.fairyStaffPickup());
+		assertSame("the POH ring passes through unwrapped", pohRing, wrapped);
+		assertTrue(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
 	}
 
 	@Test
@@ -534,6 +512,146 @@ public class TransportEligibilityTest
 
 		assertTrue(eligibility.usable(SHANTAY_GATE, BankVisitState.CARRIED));
 		assertTrue(eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
+	}
+
+	// ------------------------------------------------------------------
+	// Fairy-staff injection — the availability-build wrap carries the
+	// staff rule as a real item requirement on non-POH rings.
+	// ------------------------------------------------------------------
+
+	private static final int ZANARIS_RING = WorldPointUtil.packWorldPoint(2412, 4434, 0);
+	private static final int POH_RING = WorldPointUtil.packWorldPoint(1858, 7051, 0);
+
+	private static Transport fairyRingAt(int origin)
+	{
+		return new Transport.TransportBuilder().type(TransportType.FAIRY_RING).origin(origin).build();
+	}
+
+	private TransportEligibility staffEligibility(boolean staffRequired)
+	{
+		return eligibility(TeleportationItem.NONE, staffRequired, Integer.MAX_VALUE);
+	}
+
+	private static boolean contains(int[] ids, int id)
+	{
+		for (int candidate : ids)
+		{
+			if (candidate == id)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Test
+	public void wrapInjectsTheStaffRequirementOnANonPohRing()
+	{
+		Transport ring = fairyRingAt(ZANARIS_RING);
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(ring);
+
+		assertTrue(wrapped != ring);
+		assertNull("the shared instance must not be mutated", ring.getItemRequirements());
+		TransportItems merged = wrapped.getItemRequirements();
+		assertNotNull(merged);
+		// The injected requirement is a single OR group over every staff variant.
+		assertEquals(1, merged.size());
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			assertTrue("merged requirement missing staff variant " + id,
+				contains(merged.getRequirements().get(0).getStaffIds(), id));
+		}
+	}
+
+	@Test
+	public void wrapPassesThroughWhenDiaryComplete()
+	{
+		Transport ring = fairyRingAt(ZANARIS_RING);
+		assertSame(ring, staffEligibility(false).wrapFairyRingStaff(ring));
+	}
+
+	@Test
+	public void wrapPassesThroughNonFairyTransports()
+	{
+		assertSame(FALADOR_TELEPORT, staffEligibility(true).wrapFairyRingStaff(FALADOR_TELEPORT));
+	}
+
+	@Test
+	public void wrapExcludesThePohRing()
+	{
+		Transport pohRing = fairyRingAt(POH_RING);
+		assertSame(pohRing, staffEligibility(true).wrapFairyRingStaff(pohRing));
+		assertNull("an unwrapped POH ring stays staff-free", pohRing.getItemRequirements());
+	}
+
+	@Test
+	public void wrapMergesExistingRequirementsAsAnd()
+	{
+		// A ring that also declared an item requirement would need both —
+		// the merge ANDs the injected staff onto the existing OR groups.
+		TransportItems law = new TransportItems(
+			new int[][]{ItemVariations.fromName("LAW_RUNE").getIds()},
+			new int[][]{null}, new int[][]{null}, new int[]{1});
+		Transport ring = new Transport.TransportBuilder().type(TransportType.FAIRY_RING)
+			.origin(ZANARIS_RING).itemRequirements(law).build();
+
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(ring);
+		assertEquals(2, wrapped.getItemRequirements().size());
+	}
+
+	@Test
+	public void wrappedRingReadsTheStaffFromTheGenericPath()
+	{
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		assertFalse(staffEligibility(true).usable(wrapped, BankVisitState.CARRIED));
+
+		playerHas.put(ItemID.DRAMEN_STAFF, 1);
+		assertTrue(staffEligibility(true).usable(wrapped, BankVisitState.CARRIED));
+	}
+
+	@Test
+	public void wrappedRingUsableWithBankedStaffOnlyOnBankPath()
+	{
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		TransportEligibility eligibility = staffEligibility(true);
+		Transport wrapped = eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		assertFalse(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void everyTeleportationItemModeLeavesTheWrappedRingEvaluatingRequirements()
+	{
+		// The verdict dispatch never reaches fairy rings: NONE must not
+		// reject the ring outright, and ALL must not bypass the staff.
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			TransportEligibility lacking = eligibility(mode, true, Integer.MAX_VALUE);
+			assertFalse(mode + " must not bypass the staff requirement",
+				lacking.usable(wrapped, BankVisitState.CARRIED));
+
+			playerHas.put(ItemID.DRAMEN_STAFF, 1);
+			TransportEligibility carrying = eligibility(mode, true, Integer.MAX_VALUE);
+			assertTrue(mode + " must satisfy the staff requirement",
+				carrying.usable(wrapped, BankVisitState.CARRIED));
+			playerHas.clear();
+		}
+	}
+
+	@Test
+	public void wrappedRingStaffRequirementHonoursBlockedItems()
+	{
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		Set<Integer> allStaffIds = new HashSet<>();
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			allStaffIds.add(id);
+		}
+		assertFalse("blocking every staff variant disables the ring",
+			wrapped.getItemRequirements().survivesBlockedItems(allStaffIds));
+		assertTrue("a partial block leaves an unblocked branch",
+			wrapped.getItemRequirements().survivesBlockedItems(Set.of(ItemID.DRAMEN_STAFF)));
 	}
 
 	private TransportEligibility eligibility(int bankPouchId)

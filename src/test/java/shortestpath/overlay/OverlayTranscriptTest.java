@@ -56,6 +56,7 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.requirement.model.TransportItems;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements;
 import shortestpath.presentation.PathAnnotator;
@@ -572,13 +573,17 @@ public class OverlayTranscriptTest
 	@Test
 	public void highlightInventoryOn()
 	{
-		// A fairy ring ahead on the path pulls the dramen-staff ids into the
-		// highlight set (Lumbridge Elite not done); one inventory child carries
-		// a matching item id.
+		// A fairy ring whose injected staff requirement rides its item
+		// requirements pulls the dramen-staff ids into the highlight set; one
+		// inventory child carries a matching item id.
 		int dramen = ItemVariations.fromName("DRAMEN_STAFF").getIds()[0];
-		when(annotator.transportsForEdge(any(), any())).thenReturn(Set.of(
-			transport(packed(BASE + 20, BASE + 20), packed(BASE + 21, BASE + 20),
-				TransportType.FAIRY_RING, "Fairy ring")));
+		Transport ring = transport(packed(BASE + 20, BASE + 20), packed(BASE + 21, BASE + 20),
+			TransportType.FAIRY_RING, "Fairy ring").withItemRequirements(new TransportItems(
+				new int[][]{null},
+				new int[][]{ItemVariations.fromName("DRAMEN_STAFF").getIds()},
+				new int[][]{null},
+				new int[]{1}));
+		when(annotator.transportsForEdge(any(), any())).thenReturn(Set.of(ring));
 		Widget item = mock(Widget.class);
 		when(item.isHidden()).thenReturn(false);
 		when(item.getItemId()).thenReturn(dramen);
@@ -589,6 +594,60 @@ public class OverlayTranscriptTest
 		when(inventory.getChildren()).thenReturn(new Widget[]{item});
 		widgets.put(InterfaceID.Inventory.ITEMS, inventory);
 		check("highlight-inventory-on", injector.getInstance(InventoryHighlightOverlay.class));
+	}
+
+	@Test
+	public void highlightInventoryFairyRingAhead()
+	{
+		// The ring sits on a LATER edge — a carried staff still highlights:
+		// the injected requirement rides the ring's item requirements, and a
+		// staff in the bag satisfies the ring wherever it is.
+		List<PathStep> path = defaultPath();
+		when(search.getPath()).thenReturn(path);
+		int dramen = ItemVariations.fromName("DRAMEN_STAFF").getIds()[0];
+		Transport ring = transport(packed(BASE + 35, BASE + 22), packed(BASE + 36, BASE + 22),
+			TransportType.FAIRY_RING, "Fairy ring").withItemRequirements(new TransportItems(
+				new int[][]{null},
+				new int[][]{ItemVariations.fromName("DRAMEN_STAFF").getIds()},
+				new int[][]{null},
+				new int[]{1}));
+		when(annotator.transportsForEdge(path.get(3), path.get(4))).thenReturn(Set.of(ring));
+		Widget item = mock(Widget.class);
+		when(item.isHidden()).thenReturn(false);
+		when(item.getItemId()).thenReturn(dramen);
+		when(item.getItemQuantity()).thenReturn(1);
+		when(item.getBounds()).thenReturn(new Rectangle(10, 10, 30, 30));
+		Widget inventory = mock(Widget.class);
+		when(inventory.isHidden()).thenReturn(false);
+		when(inventory.getChildren()).thenReturn(new Widget[]{item});
+		widgets.put(InterfaceID.Inventory.ITEMS, inventory);
+		check("highlight-inventory-fairy-ahead", injector.getInstance(InventoryHighlightOverlay.class));
+	}
+
+	@Test
+	public void highlightInventoryWornStaffIsSkipped()
+	{
+		// The same ring ahead, but the staff is worn: equipment slots skip
+		// the staff ids — wearing one already satisfies the ring — so no
+		// outline draws.
+		List<PathStep> path = defaultPath();
+		when(search.getPath()).thenReturn(path);
+		int dramen = ItemVariations.fromName("DRAMEN_STAFF").getIds()[0];
+		Transport ring = transport(packed(BASE + 35, BASE + 22), packed(BASE + 36, BASE + 22),
+			TransportType.FAIRY_RING, "Fairy ring").withItemRequirements(new TransportItems(
+				new int[][]{null},
+				new int[][]{ItemVariations.fromName("DRAMEN_STAFF").getIds()},
+				new int[][]{null},
+				new int[]{1}));
+		when(annotator.transportsForEdge(path.get(3), path.get(4))).thenReturn(Set.of(ring));
+		Widget item = mock(Widget.class);
+		when(item.isHidden()).thenReturn(false);
+		when(item.getItemId()).thenReturn(dramen);
+		Widget slot = mock(Widget.class);
+		when(slot.isHidden()).thenReturn(false);
+		when(slot.getChildren()).thenReturn(new Widget[]{item});
+		widgets.put(InterfaceID.Wornitems.SLOT3, slot);
+		check("highlight-inventory-worn-staff", injector.getInstance(InventoryHighlightOverlay.class));
 	}
 
 	@Test

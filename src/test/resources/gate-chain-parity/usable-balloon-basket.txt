@@ -1,3 +1,3 @@
-balloon/basket-stocked-no-log | check=NONE | carried=true | banked=true
-balloon/basket-unstocked-no-log | check=ITEM_REQUIREMENT | carried=false | banked=false
-balloon/basket-unstocked-log-carried | check=NONE | carried=true | banked=true
+balloon/basket-stocked-no-log | check=NONE | carried=true | banked=true | gates=NONE
+balloon/basket-unstocked-no-log | check=ITEM_REQUIREMENT | carried=false | banked=false | gates=NONE
+balloon/basket-unstocked-log-carried | check=NONE | carried=true | banked=true | gates=NONE

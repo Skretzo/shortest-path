@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import lombok.EqualsAndHashCode;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import shortestpath.pathfinder.CollisionMap;
@@ -122,6 +122,7 @@ public final class AStarRoutingSession
 	@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 	private static final class TargetKey
 	{
+		@EqualsAndHashCode.Include
 		private final int[] tiles;
 
 		TargetKey(int[] packedTargets)

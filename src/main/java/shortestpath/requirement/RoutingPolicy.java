@@ -109,22 +109,4 @@ public final class RoutingPolicy
 	{
 		return enabledTypes.contains(type);
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-	/**
-	 * Item ids the player excluded from routing via the hidden
-	 * {@code blockedTeleportItems} CSV — a candidate-set filter, not a fact
-	 * about what the player owns, so it lives on the policy side.
-	 */
-
 }

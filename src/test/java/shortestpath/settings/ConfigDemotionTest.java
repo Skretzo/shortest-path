@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 
@@ -38,25 +39,19 @@ import shortestpath.TestShortestPathConfig;
 public class ConfigDemotionTest
 {
 	/**
-	 * The exact set of {@code @ConfigItem} keyNames allowed to carry
-	 * {@code hidden = true} — the panel-owned route options plus the internal
-	 * state keys. 87 names; the write-pair keys
+	 * The exact set of keyNames that may exist only as keyed registry rows —
+	 * the panel-owned route options plus the internal state keys. 61 names;
+	 * the write-pair keys
 	 * ({@code builtTeleportationBoxes}/{@code builtTeleportationPortalsPoh})
 	 * appear once even though each is declared on both a getter and a
 	 * {@code void set*} method.
 	 */
 	private static final Set<String> PANEL_OWNED_KEYS = new TreeSet<>(Arrays.asList(
-		"aStarHeuristicWeight",
-		"avoidWilderness",
 		"balloonLogBasketRoutes",
 		"blockedTeleportItems",
 		"builtTeleportationBoxes",
 		"builtTeleportationPortalsPoh",
-		"calculationCutoff",
-		"cancelInstead",
-		"collisionAwareBlockedTargets",
 		"costAgilityShortcuts",
-		"costBankVisit",
 		"costBoats",
 		"costCanoes",
 		"costCharterShips",
@@ -81,28 +76,10 @@ public class ConfigDemotionTest
 		"costTeleportationSpells",
 		"costTeleportationSpellsHome",
 		"costWildernessObelisks",
-		"currencyThreshold",
-		"finishDistance",
-		"highlightBankPickupItems",
-		"highlightInventoryItems",
-		"highlightSpellbookSpells",
-		"includeBankPath",
 		"pohJewelleryBoxTier",
 		"pohMountedItems",
 		"pohNexusPortals",
-		"recalculateDistance",
-		"respawnPrifddinas",
-		"showBankPickupInfo",
-		"showTileCounter",
-		"showTransportInfo",
-		"showUnreachableText",
-		"tileCounterStep",
 		"unlockBalloonLogBasket",
-		"unlockCanoeAxe",
-		"unlockDragontoothPassage",
-		"unlockMorUlRek",
-		"unlockXericsHonour",
-		"unreachableTargetDistanceThreshold",
 		"unreachableText",
 		"useAgilityShortcuts",
 		"useBoats",
@@ -121,11 +98,9 @@ public class ConfigDemotionTest
 		"usePohObelisk",
 		"usePohSpiritTree",
 		"useQuetzals",
-		"useSailingMoves",
 		"useSeasonalTransports",
 		"useShips",
 		"useSpiritTrees",
-		"useTeleportationItems",
 		"useTeleportationLevers",
 		"useTeleportationMinigames",
 		"useTeleportationPortals",
@@ -133,6 +108,43 @@ public class ConfigDemotionTest
 		"useTeleportationSpells",
 		"useTeleportationSpellsHome",
 		"useWildernessObelisks"
+	));
+
+	/**
+	 * The keyed rows that are <i>also</i> declared as {@code @ConfigItem}s so
+	 * the stock config panel can reach them — their sidebar read/write path is
+	 * unchanged (raw {@code ConfigManager} keyed reads), and they keep their
+	 * bundled {@code config-items.tsv} metadata because {@code Settings.item}
+	 * resolves the TSV on every seam, including the descriptor-less wrap seam
+	 * the panel tests run on. 26 names.
+	 */
+	private static final Set<String> DECLARED_KEYED_KEYS = new TreeSet<>(Arrays.asList(
+		"aStarHeuristicWeight",
+		"avoidWilderness",
+		"calculationCutoff",
+		"cancelInstead",
+		"collisionAwareBlockedTargets",
+		"costBankVisit",
+		"currencyThreshold",
+		"finishDistance",
+		"highlightBankPickupItems",
+		"highlightInventoryItems",
+		"highlightSpellbookSpells",
+		"includeBankPath",
+		"recalculateDistance",
+		"respawnPrifddinas",
+		"showBankPickupInfo",
+		"showTileCounter",
+		"showTransportInfo",
+		"showUnreachableText",
+		"tileCounterStep",
+		"unlockCanoeAxe",
+		"unlockDragontoothPassage",
+		"unlockMorUlRek",
+		"unlockXericsHonour",
+		"unreachableTargetDistanceThreshold",
+		"useSailingMoves",
+		"useTeleportationItems"
 	));
 
 	/**
@@ -144,7 +156,7 @@ public class ConfigDemotionTest
 	@Test
 	public void exactlyThePanelOwnedKeysAreHidden()
 	{
-		assertEquals("the pinned boundary is 87 keyNames", 87, PANEL_OWNED_KEYS.size());
+		assertEquals("the pinned boundary is 61 keyNames", 61, PANEL_OWNED_KEYS.size());
 
 		// The hidden-key surface lives in the keyed registry, not on the
 		// interface: no @ConfigItem may carry hidden=true any more, and every
@@ -176,6 +188,98 @@ public class ConfigDemotionTest
 		});
 		assertTrue("panel-owned keys missing a keyed row or metadata: " + missing,
 			missing.isEmpty());
+	}
+
+	/**
+	 * Every declared keyed row must keep all three halves of its contract:
+	 * a keyed {@link ConfigKey} row (the read/write path the sidebar and the
+	 * keyed seam share), a declared {@code @ConfigItem} getter (the stock
+	 * panel surface), and a bundled {@code config-items.tsv} row (the
+	 * metadata source {@code Settings.item} resolves first on every seam).
+	 * Losing any one strands the key on one of the two surfaces.
+	 */
+	@Test
+	public void declaredKeyedRowsStayKeyedAnnotatedAndMetadataComplete()
+	{
+		assertEquals("the declared keyed set is 26 keyNames", 26, DECLARED_KEYED_KEYS.size());
+
+		Set<String> annotated = new TreeSet<>();
+		for (Method method : ShortestPathConfig.class.getMethods())
+		{
+			ConfigItem item = method.getAnnotation(ConfigItem.class);
+			if (item != null && method.getParameterCount() == 0
+				&& method.getReturnType() != void.class)
+			{
+				annotated.add(item.keyName());
+			}
+		}
+
+		List<String> violations = new ArrayList<>();
+		for (String key : DECLARED_KEYED_KEYS)
+		{
+			ConfigKey row = ConfigKey.forKey(key);
+			if (row == null || !row.isKeyed())
+			{
+				violations.add(key + " lost its keyed ConfigKey row");
+			}
+			if (!annotated.contains(key))
+			{
+				violations.add(key + " lost its @ConfigItem declaration");
+			}
+			if (ConfigItems.of(key) == null)
+			{
+				violations.add(key + " lost its config-items.tsv metadata row");
+			}
+		}
+		assertTrue("declared keyed rows with a broken leg: " + violations,
+			violations.isEmpty());
+	}
+
+	/**
+	 * For a declared keyed key the TSV row and the {@code @ConfigItem}
+	 * annotation describe the same setting twice — the TSV feeds
+	 * {@code Settings.item} (sidebar + every descriptor-less seam) while the
+	 * annotation feeds the stock panel — so name, description and range
+	 * bounds must agree verbatim, or the two surfaces drift.
+	 */
+	@Test
+	public void declaredKeyedMetadataMatchesTheAnnotation()
+	{
+		List<String> mismatches = new ArrayList<>();
+		for (Method method : ShortestPathConfig.class.getMethods())
+		{
+			ConfigItem item = method.getAnnotation(ConfigItem.class);
+			if (item == null || !DECLARED_KEYED_KEYS.contains(item.keyName()))
+			{
+				continue;
+			}
+			ConfigItems.Meta meta = ConfigItems.of(item.keyName());
+			if (meta == null)
+			{
+				mismatches.add(item.keyName() + " has no tsv row");
+				continue;
+			}
+			if (!item.name().equals(meta.name()))
+			{
+				mismatches.add(item.keyName() + " name: tsv='" + meta.name()
+					+ "' annotation='" + item.name() + "'");
+			}
+			if (!item.description().equals(meta.description()))
+			{
+				mismatches.add(item.keyName() + " description: tsv='" + meta.description()
+					+ "' annotation='" + item.description() + "'");
+			}
+			Range range = method.getAnnotation(Range.class);
+			Integer min = range == null ? null : range.min();
+			Integer max = range == null ? null : range.max();
+			if (!java.util.Objects.equals(min, meta.min()) || !java.util.Objects.equals(max, meta.max()))
+			{
+				mismatches.add(item.keyName() + " range: tsv=[" + meta.min() + "," + meta.max()
+					+ "] annotation=[" + min + "," + max + "]");
+			}
+		}
+		assertTrue("declared keyed rows with drifting metadata: " + mismatches,
+			mismatches.isEmpty());
 	}
 
 	/**

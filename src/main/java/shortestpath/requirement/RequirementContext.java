@@ -223,20 +223,4 @@ public final class RequirementContext
 		}
 	}
 
-	/**
-	 * Builds a snapshot for tests without a {@code Client}: the supplied facts
-	 * plus empty unlocks, no respawn declaration, no boat, a fresh non-seasonal
-	 * league state and unresolved spirit-tree availability.
-	 */
-	public static RequirementContext forTesting(
-		int[] boostedSkillLevelsAndMore,
-		Map<Quest, QuestState> questStates,
-		Map<Integer, Integer> varbitValues,
-		Map<Integer, Integer> varPlayerValues,
-		TransportEligibility eligibility)
-	{
-		return new RequirementContext(0L, boostedSkillLevelsAndMore, 0, questStates,
-			varbitValues, varPlayerValues, eligibility, Set.of(), false, false,
-			new LeagueModeState(), null);
-	}
 }

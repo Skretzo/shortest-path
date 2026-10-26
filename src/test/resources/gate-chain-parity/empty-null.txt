@@ -1,5 +1,5 @@
 bank/null | check=NONE | satisfied=true
 bank/empty | check=NONE | satisfied=true
-transport/null-items/inventory-mode | check=NONE | carried=true | banked=true
-teleport/null-items/inventory-mode | check=NONE | carried=true | banked=true
-teleport/empty-items/inventory-mode | check=NONE | carried=true | banked=true
+transport/null-items/inventory-mode | check=NONE | carried=true | banked=true | gates=NONE
+teleport/null-items/inventory-mode | check=NONE | carried=true | banked=true | gates=NONE
+teleport/empty-items/inventory-mode | check=NONE | carried=true | banked=true | gates=NONE

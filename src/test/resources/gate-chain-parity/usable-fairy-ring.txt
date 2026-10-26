@@ -1,4 +1,4 @@
-fairy-ring/staff-required-absent | check=ITEM_REQUIREMENT | carried=false | banked=false
-fairy-ring/staff-required-carried | check=NONE | carried=true | banked=true
-fairy-ring/staff-required-banked-only | check=NONE | carried=false | banked=true
-fairy-ring/staff-not-required | check=NONE | carried=true | banked=true
+fairy-ring/staff-required-absent | check=ITEM_REQUIREMENT | carried=false | banked=false | gates=NONE
+fairy-ring/staff-required-carried | check=NONE | carried=true | banked=true | gates=NONE
+fairy-ring/staff-required-banked-only | check=NONE | carried=false | banked=true | gates=NONE
+fairy-ring/staff-not-required | check=NONE | carried=true | banked=true | gates=NONE

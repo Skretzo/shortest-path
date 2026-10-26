@@ -1,9 +1,6 @@
 package shortestpath.requirement;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,15 +8,13 @@ import java.util.Set;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.gameval.ItemID;
+import org.junit.Assert;
 import org.junit.Test;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.pathfinder.BankVisitState;
-import shortestpath.poh.JewelleryBoxTier;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.poh.PohNexusPortal;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.TransportItems;
@@ -104,15 +99,26 @@ public class GateChainParityTest
 
 	/**
 	 * The verdict line one transport fixture records: the gate chain's first
-	 * rejection, then the pool verdicts the same eligibility snapshot reports.
+	 * rejection, the pool verdicts the same eligibility snapshot reports,
+	 * and the {@code gates()} prefix verdict. The line also asserts the
+	 * post-split composite invariant: {@code check} is {@code NONE} exactly
+	 * when the gate prefix passes and at least one item pool satisfies.
 	 */
 	private static String verdict(String id, Requirements requirements,
 		TransportEligibility eligibility, Transport transport)
 	{
+		RejectionReason gates = requirements.gates(transport);
+		boolean carried = eligibility.usable(transport, BankVisitState.CARRIED);
+		boolean banked = eligibility.usable(transport, BankVisitState.BANKED);
+		RejectionReason check = requirements.check(transport);
+		Assert.assertEquals(id,
+			check == RejectionReason.NONE,
+			gates == RejectionReason.NONE && (carried || banked));
 		return id
-			+ " | check=" + requirements.check(transport)
-			+ " | carried=" + eligibility.usable(transport, BankVisitState.CARRIED)
-			+ " | banked=" + eligibility.usable(transport, BankVisitState.BANKED);
+			+ " | check=" + check
+			+ " | carried=" + carried
+			+ " | banked=" + banked
+			+ " | gates=" + gates;
 	}
 
 	/** The bank-side counterpart: {@code check} reason plus the {@code satisfied} adapter. */
@@ -144,22 +150,6 @@ public class GateChainParityTest
 		// here, which EnumSet.copyOf rejects.
 		state.setForTest(true, unlocked.length == 0 ? null : Set.of(unlocked));
 		return state;
-	}
-
-	/**
-	 * The widest {@link RoutingPolicy} form — the fixture builder carries no
-	 * {@code blockedItemIds}/{@code blockedOptionDests} setters, so the
-	 * blocked-item cases construct it directly.
-	 */
-	private static RoutingPolicy policyWithBlockedItems(TeleportationItem mode, Set<Integer> blockedItemIds)
-	{
-		return new RoutingPolicy(
-			EnumSet.allOf(TransportType.class), mode,
-			true, true, true, true,
-			new HashSet<>(Arrays.asList(PohNexusPortal.values())),
-			new HashSet<>(Arrays.asList(PohMountedItem.values())),
-			JewelleryBoxTier.ORNATE, Integer.MAX_VALUE, true,
-			blockedItemIds, Map.of());
 	}
 
 	/**
@@ -237,10 +227,10 @@ public class GateChainParityTest
 	@Test
 	public void usableFairyRingTails()
 	{
-		// The Dramen/Lunar-staff rule sits in usable(), after the mode
-		// dispatch — staff-required with no staff fails both pools even when
-		// the bank path could supply one, and the not-required case passes
-		// with empty pools.
+		// The Dramen/Lunar-staff rule rides the injected requirement on the
+		// wrapped ring — staff-required with no staff fails both pools even
+		// when the bank path could supply one, and the not-required case
+		// passes with empty pools.
 		Transport fairyRing = transport(TransportType.FAIRY_RING).build();
 		List<String> lines = new ArrayList<>();
 
@@ -250,7 +240,7 @@ public class GateChainParityTest
 			RequirementTestFixtures.requirements(
 				RequirementTestFixtures.context().eligibility(staffAbsent).build(),
 				RequirementTestFixtures.policy(TeleportationItem.NONE)),
-			staffAbsent, fairyRing));
+			staffAbsent, staffAbsent.wrapFairyRingStaff(fairyRing)));
 
 		TransportEligibility staffCarried = eligibility(true, TeleportationItem.NONE,
 			Map.of(DRAMEN_STAFF, 1), Map.of(DRAMEN_STAFF, 1), Integer.MAX_VALUE, Set.of(), Set.of());
@@ -258,7 +248,7 @@ public class GateChainParityTest
 			RequirementTestFixtures.requirements(
 				RequirementTestFixtures.context().eligibility(staffCarried).build(),
 				RequirementTestFixtures.policy(TeleportationItem.NONE)),
-			staffCarried, fairyRing));
+			staffCarried, staffCarried.wrapFairyRingStaff(fairyRing)));
 
 		TransportEligibility staffBanked = eligibility(true, TeleportationItem.NONE,
 			Map.of(), Map.of(DRAMEN_STAFF, 1), Integer.MAX_VALUE, Set.of(), Set.of());
@@ -266,7 +256,7 @@ public class GateChainParityTest
 			RequirementTestFixtures.requirements(
 				RequirementTestFixtures.context().eligibility(staffBanked).build(),
 				RequirementTestFixtures.policy(TeleportationItem.NONE)),
-			staffBanked, fairyRing));
+			staffBanked, staffBanked.wrapFairyRingStaff(fairyRing)));
 
 		TransportEligibility noStaff = eligibility(false, TeleportationItem.NONE,
 			Map.of(), Map.of(), Integer.MAX_VALUE, Set.of(), Set.of());
@@ -274,7 +264,7 @@ public class GateChainParityTest
 			RequirementTestFixtures.requirements(
 				RequirementTestFixtures.context().eligibility(noStaff).build(),
 				RequirementTestFixtures.policy(TeleportationItem.NONE)),
-			noStaff, fairyRing));
+			noStaff, noStaff.wrapFairyRingStaff(fairyRing)));
 
 		GateChainParityGolden.compareOrRegen("usable-fairy-ring", lines);
 	}
@@ -491,7 +481,7 @@ public class GateChainParityTest
 			.eligibility(nonePool).build();
 		lines.add(verdict("blocked-item/none-mode",
 			RequirementTestFixtures.requirements(noneContext,
-				policyWithBlockedItems(TeleportationItem.NONE, Set.of(LAW_RUNE))),
+				RequirementTestFixtures.policy(TeleportationItem.NONE, Set.of(LAW_RUNE))),
 			nonePool, blocked));
 
 		TransportEligibility allPool = RequirementTestFixtures.eligibility(
@@ -500,7 +490,7 @@ public class GateChainParityTest
 			.eligibility(allPool).build();
 		lines.add(verdict("blocked-item/all-mode",
 			RequirementTestFixtures.requirements(allContext,
-				policyWithBlockedItems(TeleportationItem.ALL, Set.of(LAW_RUNE))),
+				RequirementTestFixtures.policy(TeleportationItem.ALL, Set.of(LAW_RUNE))),
 			allPool, blocked));
 
 		GateChainParityGolden.compareOrRegen("gates-blocked-item", lines);

@@ -169,6 +169,68 @@ public class RequirementsTest
 	}
 
 	// ------------------------------------------------------------------
+	// Fairy-ring blocked-item arm — the injected staff requirement is
+	// restrictable like an item teleport's own items.
+	// ------------------------------------------------------------------
+
+	private static final int ZANARIS_RING = WorldPointUtil.packWorldPoint(2412, 4434, 0);
+
+	private static Transport wrappedFairyRing()
+	{
+		TransportEligibility staffRequired = new TransportEligibility(
+			Map.of(), Map.of(), Map.of(), -1, Map.of(),
+			true, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true, Set.of());
+		return staffRequired.wrapFairyRingStaff(
+			transport(TransportType.FAIRY_RING).origin(ZANARIS_RING).build());
+	}
+
+	private static Set<Integer> allStaffIds()
+	{
+		Set<Integer> ids = new HashSet<>();
+		for (int id : shortestpath.ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			ids.add(id);
+		}
+		return ids;
+	}
+
+	@Test
+	public void blockingEveryStaffVariantRejectsTheWrappedRing()
+	{
+		RoutingPolicy policy = RequirementTestFixtures.policy(TeleportationItem.NONE, allStaffIds());
+		assertEquals(RejectionReason.BLOCKED_ITEM,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(wrappedFairyRing()));
+	}
+
+	@Test
+	public void partialStaffBlockKeepsTheRingRoutable()
+	{
+		// One blocked variant leaves the rest of the OR branch alive.
+		RoutingPolicy policy = RequirementTestFixtures.policy(
+			TeleportationItem.NONE, Set.of(ItemID.DRAMEN_STAFF));
+		assertEquals(RejectionReason.NONE,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(wrappedFairyRing()));
+	}
+
+	@Test
+	public void unwrappedPohRingIgnoresBlockedStaff()
+	{
+		// The POH ring is never wrapped, so a blocked staff cannot reach it.
+		RoutingPolicy policy = RequirementTestFixtures.policy(TeleportationItem.NONE, allStaffIds());
+		Transport pohRing = transport(TransportType.FAIRY_RING).origin(POH).build();
+		assertEquals(RejectionReason.NONE,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(pohRing));
+	}
+
+	@Test
+	public void unblockedWrappedRingPassesTheGate()
+	{
+		RoutingPolicy policy = RequirementTestFixtures.policy(TeleportationItem.NONE, Set.of());
+		assertEquals(RejectionReason.NONE,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(wrappedFairyRing()));
+	}
+
+	// ------------------------------------------------------------------
 	// Gate 1: sailing — suppress teleports while aboard a boat.
 	// ------------------------------------------------------------------
 
@@ -1500,22 +1562,6 @@ public class RequirementsTest
 	// shared mode-verdict policy must reproduce verbatim.
 	// ------------------------------------------------------------------
 
-	/**
-	 * The widest {@link RoutingPolicy} form — the fixture builder carries no
-	 * {@code blockedItemIds} setter, so the blocked-item cases construct it
-	 * directly with an empty {@code blockedOptionDests} map.
-	 */
-	private static RoutingPolicy policyWithBlockedItems(TeleportationItem mode, Set<Integer> blockedItemIds)
-	{
-		return new RoutingPolicy(
-			EnumSet.allOf(TransportType.class), mode,
-			true, true, true, true,
-			new HashSet<>(java.util.Arrays.asList(PohNexusPortal.values())),
-			new HashSet<>(java.util.Arrays.asList(PohMountedItem.values())),
-			JewelleryBoxTier.ORNATE, Integer.MAX_VALUE, true,
-			blockedItemIds, Map.of());
-	}
-
 	@Test
 	public void blockedItemRunsBeforeTheModeDispatch()
 	{
@@ -1531,12 +1577,12 @@ public class RequirementsTest
 			requirements(RequirementTestFixtures.context()
 					.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.NONE, Map.of(LAW_RUNE, 1)))
 					.build(),
-				policyWithBlockedItems(TeleportationItem.NONE, Set.of(LAW_RUNE))).check(blocked));
+				RequirementTestFixtures.policy(TeleportationItem.NONE, Set.of(LAW_RUNE))).check(blocked));
 		assertEquals(RejectionReason.BLOCKED_ITEM,
 			requirements(RequirementTestFixtures.context()
 					.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.ALL, Map.of(LAW_RUNE, 1)))
 					.build(),
-				policyWithBlockedItems(TeleportationItem.ALL, Set.of(LAW_RUNE))).check(blocked));
+				RequirementTestFixtures.policy(TeleportationItem.ALL, Set.of(LAW_RUNE))).check(blocked));
 	}
 
 	@Test

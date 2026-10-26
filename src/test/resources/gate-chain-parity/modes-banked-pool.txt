@@ -1,18 +1,18 @@
-None/consumable | check=TELEPORT_MODE | carried=false | banked=false
-None/permanent | check=TELEPORT_MODE | carried=false | banked=false
-Inventory/consumable | check=NONE | carried=false | banked=true
-Inventory/permanent | check=NONE | carried=false | banked=true
-Inventory (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false
-Inventory (perm)/permanent | check=NONE | carried=false | banked=true
-Inventory and Bank/consumable | check=NONE | carried=false | banked=true
-Inventory and Bank/permanent | check=NONE | carried=false | banked=true
-Inventory and Bank (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false
-Inventory and Bank (perm)/permanent | check=NONE | carried=false | banked=true
-Unlocked/consumable | check=NONE | carried=true | banked=true
-Unlocked/permanent | check=NONE | carried=true | banked=true
-Unlocked (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false
-Unlocked (perm)/permanent | check=NONE | carried=true | banked=true
-All/consumable | check=NONE | carried=true | banked=true
-All/permanent | check=NONE | carried=true | banked=true
-All (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false
-All (perm)/permanent | check=NONE | carried=true | banked=true
+None/consumable | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE
+None/permanent | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE
+Inventory/consumable | check=NONE | carried=false | banked=true | gates=NONE
+Inventory/permanent | check=NONE | carried=false | banked=true | gates=NONE
+Inventory (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE
+Inventory (perm)/permanent | check=NONE | carried=false | banked=true | gates=NONE
+Inventory and Bank/consumable | check=NONE | carried=false | banked=true | gates=NONE
+Inventory and Bank/permanent | check=NONE | carried=false | banked=true | gates=NONE
+Inventory and Bank (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE
+Inventory and Bank (perm)/permanent | check=NONE | carried=false | banked=true | gates=NONE
+Unlocked/consumable | check=NONE | carried=true | banked=true | gates=NONE
+Unlocked/permanent | check=NONE | carried=true | banked=true | gates=NONE
+Unlocked (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE
+Unlocked (perm)/permanent | check=NONE | carried=true | banked=true | gates=NONE
+All/consumable | check=NONE | carried=true | banked=true | gates=NONE
+All/permanent | check=NONE | carried=true | banked=true | gates=NONE
+All (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE
+All (perm)/permanent | check=NONE | carried=true | banked=true | gates=NONE

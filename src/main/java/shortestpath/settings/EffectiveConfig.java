@@ -111,6 +111,7 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	/** {@code showTileCounter} — string-parsed enum coercion. */
+	@Override
 	public TileCounter showTileCounter()
 	{
 		return enumOverride(ConfigKey.SHOW_TILE_COUNTER, TileCounter::fromType,
@@ -269,5 +270,162 @@ public final class EffectiveConfig implements ShortestPathConfig
 	public boolean postTransports()
 	{
 		return override(ConfigKey.POST_TRANSPORTS, base.postTransports());
+	}
+
+	// ---- Stock-panel-visible keyed keys ----------------------------------
+	// These rows stay keyed (the base read runs through hiddenBase), so the
+	// item getters delegate to the same val/bool/num coercion helpers the
+	// hidden-key consumers use — a getter that fell through to the interface
+	// default would report the declared default, not the stored value.
+
+	@Override
+	public boolean avoidWilderness()
+	{
+		return bool(ConfigKey.AVOID_WILDERNESS);
+	}
+
+	@Override
+	public boolean collisionAwareBlockedTargets()
+	{
+		return bool(ConfigKey.COLLISION_AWARE_BLOCKED_TARGETS);
+	}
+
+	@Override
+	public boolean useSailingMoves()
+	{
+		return bool(ConfigKey.USE_SAILING_MOVES);
+	}
+
+	@Override
+	public int currencyThreshold()
+	{
+		return num(ConfigKey.CURRENCY_THRESHOLD);
+	}
+
+	@Override
+	public boolean cancelInstead()
+	{
+		return bool(ConfigKey.CANCEL_INSTEAD);
+	}
+
+	@Override
+	public int recalculateDistance()
+	{
+		return num(ConfigKey.RECALCULATE_DISTANCE);
+	}
+
+	@Override
+	public int reachedDistance()
+	{
+		return num(ConfigKey.FINISH_DISTANCE);
+	}
+
+	@Override
+	public int unreachableTargetDistance()
+	{
+		return num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
+	}
+
+	@Override
+	public boolean showUnreachableText()
+	{
+		return bool(ConfigKey.SHOW_UNREACHABLE_TEXT);
+	}
+
+	@Override
+	public int calculationCutoff()
+	{
+		return num(ConfigKey.CALCULATION_CUTOFF);
+	}
+
+	@Override
+	public TeleportationItem useTeleportationItems()
+	{
+		return enumOverride(ConfigKey.USE_TELEPORTATION_ITEMS, TeleportationItem::fromType,
+			(TeleportationItem) baseOf(ConfigKey.USE_TELEPORTATION_ITEMS));
+	}
+
+	@Override
+	public int aStarHeuristicWeight()
+	{
+		return num(ConfigKey.A_STAR_HEURISTIC_WEIGHT);
+	}
+
+	@Override
+	public boolean unlockCanoeAxe()
+	{
+		return bool(ConfigKey.UNLOCK_CANOE_AXE);
+	}
+
+	@Override
+	public boolean unlockXericsHonour()
+	{
+		return bool(ConfigKey.UNLOCK_XERICS_HONOUR);
+	}
+
+	@Override
+	public boolean unlockDragontoothPassage()
+	{
+		return bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
+	}
+
+	@Override
+	public boolean unlockMorUlRek()
+	{
+		return bool(ConfigKey.UNLOCK_MOR_UL_REK);
+	}
+
+	@Override
+	public boolean respawnPrifddinas()
+	{
+		return bool(ConfigKey.RESPAWN_PRIFDDINAS);
+	}
+
+	@Override
+	public boolean includeBankPath()
+	{
+		return bool(ConfigKey.INCLUDE_BANK_PATH);
+	}
+
+	@Override
+	public int costBankVisit()
+	{
+		return num(ConfigKey.COST_BANK_VISIT);
+	}
+
+	@Override
+	public boolean showBankPickupInfo()
+	{
+		return bool(ConfigKey.SHOW_BANK_PICKUP_INFO);
+	}
+
+	@Override
+	public boolean highlightBankPickupItems()
+	{
+		return bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS);
+	}
+
+	@Override
+	public boolean showTransportInfo()
+	{
+		return bool(ConfigKey.SHOW_TRANSPORT_INFO);
+	}
+
+	@Override
+	public boolean highlightSpellbookSpells()
+	{
+		return bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS);
+	}
+
+	@Override
+	public boolean highlightInventoryItems()
+	{
+		return bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS);
+	}
+
+	@Override
+	public int tileCounterStep()
+	{
+		return num(ConfigKey.TILE_COUNTER_STEP);
 	}
 }
