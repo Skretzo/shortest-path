@@ -50,9 +50,9 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 	private final JPanel detail;
 	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
 	private boolean searchExpanded;
-	// Set while a config sync mirrors the stored set into the checkboxes,
+	// Held while a config sync mirrors the stored set into the checkboxes,
 	// so the programmatic setSelected calls do not write it back.
-	private boolean syncing;
+	private final PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
 
 	CollapsibleEnumGroup(ShortestPathPanel panel, String keyName, Class<E> type,
 		String groupLabel, List<E> members, String description)
@@ -100,23 +100,20 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 			checkBox.setSelected(panel.currentSet(keyName, type).contains(member));
 			checkBox.setToolTipText(ShortestPathPanel.html(description));
 			checkBox.addActionListener(e ->
-			{
-				if (syncing)
+				PanelRows.guardedWrite(syncing, () ->
 				{
-					return;
-				}
-				EnumSet<E> updated = EnumSet.noneOf(type);
-				updated.addAll(panel.currentSet(keyName, type));
-				if (checkBox.isSelected())
-				{
-					updated.add(member);
-				}
-				else
-				{
-					updated.remove(member);
-				}
-				panel.settings.write(keyName, updated);
-			});
+					EnumSet<E> updated = EnumSet.noneOf(type);
+					updated.addAll(panel.currentSet(keyName, type));
+					if (checkBox.isSelected())
+					{
+						updated.add(member);
+					}
+					else
+					{
+						updated.remove(member);
+					}
+					panel.settings.write(keyName, updated);
+				}));
 			boxes.add(checkBox);
 			detail.add(checkBox);
 		}
@@ -178,19 +175,13 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 	void syncFromConfig()
 	{
 		Set<E> set = panel.currentSet(keyName, type);
-		syncing = true;
-		try
+		PanelRows.resync(syncing, () ->
 		{
 			for (int i = 0; i < members.size(); i++)
 			{
 				boxes.get(i).setSelected(set.contains(members.get(i)));
 			}
-		}
-		finally
-		{
-			syncing = false;
-		}
-		updateCount();
+		}, this::updateCount);
 	}
 
 	private void updateCount()
