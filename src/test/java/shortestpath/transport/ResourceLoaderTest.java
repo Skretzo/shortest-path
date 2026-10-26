@@ -319,7 +319,7 @@ public class ResourceLoaderTest
 
 		Assert.assertEquals("Total level should be 1500", 1500, skillLevels.totalLevel());
 		Assert.assertEquals("Combat level should be 100", 100, skillLevels.combatLevel());
-		Assert.assertEquals("Quest points should be 200", 200, skillLevels.questPoints());
+		Assert.assertEquals("Quest points should be 200", 200, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
 	}
 
 	@Test
@@ -336,7 +336,7 @@ public class ResourceLoaderTest
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(Skill.AGILITY));
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.totalLevel());
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.combatLevel());
-		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.questPoints());
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
 	}
 
 	@Test
@@ -645,7 +645,7 @@ public class ResourceLoaderTest
 		}
 
 		Assert.assertNotNull("Quest point cape teleport should be loaded", cape);
-		Assert.assertEquals("Quest points should be dynamic", SkillLevels.MAX_LEVEL, cape.getSkillLevels().questPoints());
+		Assert.assertEquals("Quest points should be dynamic", SkillLevels.MAX_LEVEL, cape.getSkillLevels().get(SkillLevels.QUEST_POINTS_INDEX));
 		Assert.assertFalse("Cape teleport should not have quest-name requirements", cape.isQuestLocked());
 	}
 
