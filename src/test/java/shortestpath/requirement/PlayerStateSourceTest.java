@@ -97,7 +97,7 @@ public class PlayerStateSourceTest
 		RequirementContext context = RequirementContext.capture(source, hooks,
 			RequirementTestFixtures.policy(MODE), 0L,
 			List.of(gated), Map.of(BANK_TILE, bankGated), null,
-			Set.of(), false, new LeagueModeState(), null);
+			Set.of(), false, new LeagueModeState(), null, Set.of());
 
 		// Round-trip: the declared varbit, varplayer and quests landed in the
 		// snapshot the gates read.
@@ -136,13 +136,13 @@ public class PlayerStateSourceTest
 		MapPlayerStateSource ashore = new MapPlayerStateSource();
 		assertFalse(RequirementContext.capture(ashore, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
-			Set.of(), false, new LeagueModeState(), null).isOnSailingBoat());
+			Set.of(), false, new LeagueModeState(), null, Set.of()).isOnSailingBoat());
 
 		MapPlayerStateSource aboard = new MapPlayerStateSource()
 			.varbit(VarbitID.SAILING_BOARDED_BOAT, 1);
 		assertTrue(RequirementContext.capture(aboard, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
-			Set.of(), false, new LeagueModeState(), null).isOnSailingBoat());
+			Set.of(), false, new LeagueModeState(), null, Set.of()).isOnSailingBoat());
 	}
 
 	// ------------------------------------------------------------------
@@ -207,7 +207,7 @@ public class PlayerStateSourceTest
 		assertThrows(IllegalStateException.class, () -> RequirementContext.capture(
 			source, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
-			Set.of(), false, new LeagueModeState(), null));
+			Set.of(), false, new LeagueModeState(), null, Set.of()));
 	}
 
 	@Test
@@ -239,7 +239,7 @@ public class PlayerStateSourceTest
 		Set<PohMountedItem> mounted = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 		RoutingPolicy policy = new RoutingPolicy(enabledTypes, MODE, true, true, true, true,
 			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true,
-			Set.of());
+			Set.of(), Map.of());
 
 		RequirementContext context = RequirementTestFixtures.context().build();
 		Requirements requirements = new Requirements(context, policy,

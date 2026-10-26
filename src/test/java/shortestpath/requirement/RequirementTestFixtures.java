@@ -151,7 +151,7 @@ final class RequirementTestFixtures
 			return new RoutingPolicy(enabledTypes, teleportationItemSetting, usePoh,
 				usePohFairyRing, usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
 				enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold, includeBankPath,
-				Set.of());
+				Set.of(), Map.of());
 		}
 	}
 
