@@ -102,13 +102,8 @@ public class PathMinimapOverlay extends Overlay
 
 			drawOnMinimap(graphics, pathPoint, pathColor, sailing ? 0.5 : 1.0);
 		}
-		for (int target : search.getTargets().points())
-		{
-			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
-			{
-				drawOnMinimap(graphics, target, settings.display().colourPathCalculating());
-			}
-		}
+		OverlayDrawing.forEachUnreachedTarget(search, pathPoints,
+			target -> drawOnMinimap(graphics, target, settings.display().colourPathCalculating()));
 
 		return null;
 	}

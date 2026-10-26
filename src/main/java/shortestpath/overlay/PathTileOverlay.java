@@ -456,13 +456,8 @@ public class PathTileOverlay extends Overlay
 	void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw,
 		ActiveSearch search)
 	{
-		for (int target : search.getTargets().points())
-		{
-			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-			{
-				drawTile(graphics, target, colorCalculating, -1, draw, search);
-			}
-		}
+		OverlayDrawing.forEachUnreachedTarget(search, path,
+			target -> drawTile(graphics, target, colorCalculating, -1, draw, search));
 	}
 
 	private static boolean directionChanges(int previous, int current, int next)
