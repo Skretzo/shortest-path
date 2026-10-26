@@ -51,9 +51,9 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	private JButton expander;
 	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
 	private boolean searchExpanded;
-	// Set while a config sync mirrors values into the controls, so the
+	// Held while a config sync mirrors values into the controls, so the
 	// programmatic selection changes do not write back to config.
-	private boolean syncing;
+	private final PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
 
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId)
 	{
@@ -232,8 +232,7 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	void syncFromConfig()
 	{
 		Object value = panel.settings.configuredValue(keyName);
-		syncing = true;
-		try
+		PanelRows.resync(syncing, () ->
 		{
 			if (masterControl instanceof JCheckBox)
 			{
@@ -243,8 +242,7 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				((JComboBox<?>) masterControl).setSelectedItem(value);
 			}
-		}
-		finally
+		}, () ->
 		{
 			syncing = false;
 		}
