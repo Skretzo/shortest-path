@@ -1,8 +1,5 @@
 package shortestpath;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -26,17 +23,10 @@ public final class ItemVariations
 
 	static
 	{
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-			ItemVariations.class.getResourceAsStream("/item-variations.tsv"), StandardCharsets.UTF_8)))
+		try
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
+			Util.each("/item-variations.tsv", (line, cols) ->
 			{
-				if (line.isEmpty() || line.startsWith("#"))
-				{
-					continue;
-				}
-				String[] cols = line.split("\t", -1);
 				ItemVariations v = new ItemVariations(cols[0], parseIds(cols[1]));
 				BY_NAME.put(v.name, v);
 				if (cols.length > 2 && !cols[2].isEmpty())
@@ -47,7 +37,7 @@ public final class ItemVariations
 				{
 					OFFHANDS.put(v.name, parseIds(cols[3]));
 				}
-			}
+			});
 		}
 		catch (Exception e)
 		{
