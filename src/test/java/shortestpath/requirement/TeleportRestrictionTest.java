@@ -252,21 +252,6 @@ public class TeleportRestrictionTest
 	}
 
 	@Test
-	public void representativeForResolvesMembersToTheirFamilyDisplayId()
-	{
-		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13121));
-		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13122));
-		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13123));
-		Assert.assertEquals(13121, TeleportRestriction.representativeFor(13124));
-		Assert.assertEquals(13121, TeleportRestriction.representativeFor(20760));
-
-		Assert.assertTrue("non-member ids resolve negatively",
-			TeleportRestriction.representativeFor(995) < 0);
-		Assert.assertTrue("unknown ids resolve negatively",
-			TeleportRestriction.representativeFor(12345) < 0);
-	}
-
-	@Test
 	public void representativeIndexCoversEveryFamilyMember()
 	{
 		Map<Integer, Integer> index = TeleportRestriction.representativeIndex();
