@@ -1,5 +1,7 @@
 package shortestpath.overlay;
 
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -150,6 +152,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 			}
 		}
 	}
+
 
 	protected int getPlayerPathIndex(List<PathStep> path)
 	{
