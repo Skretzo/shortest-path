@@ -21,7 +21,7 @@ public interface ShortestPathConfig extends Config
 {
 	@ConfigSection(
 		name = "Settings",
-		description = "Options for the pathfinding. Transport, teleport-restriction, unlock and routing options live in the Shortest Path sidebar panel.",
+		description = "Pathfinding options. Transport, teleport-restriction, unlock and routing options live in the Shortest Path sidebar panel.",
 		position = 0
 	)
 	String sectionSettings = "sectionSettings";
