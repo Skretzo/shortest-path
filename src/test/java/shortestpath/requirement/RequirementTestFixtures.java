@@ -308,7 +308,7 @@ final class RequirementTestFixtures
 		RequirementContext build()
 		{
 			return new RequirementContext(evaluationTimeMinutes, boostedSkillLevelsAndMore,
-				currentMaxQuestPoints, questStates, varbitValues, varPlayerValues, eligibility,
+				currentMaxQuestPoints, SkillLevels.MAX_LEVEL, questStates, varbitValues, varPlayerValues, eligibility,
 				unlocks, respawnPrifddinas, onSailingBoat, leagueModeState, availableSpiritTrees);
 		}
 	}

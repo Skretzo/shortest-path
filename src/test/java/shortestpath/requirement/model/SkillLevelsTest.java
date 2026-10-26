@@ -15,7 +15,7 @@ import shortestpath.requirement.RejectionReason;
 
 /**
  * Contract pin for {@link SkillLevels}: the extended-index layout
- * ({@code Skill.values().length + 3}), the {@code Max} sentinel, the
+ * ({@code Skill.values().length + 4}), the {@code Max} sentinel, the
  * flyweight {@code NONE} compaction, clone discipline, the per-index
  * maximum table and the folded gate loop ({@code missingRequirement}).
  */
@@ -43,10 +43,11 @@ public class SkillLevelsTest
 	@Test
 	public void layoutConstantsMatchTheExtendedIndexContract()
 	{
-		assertEquals(Skill.values().length + 3, SkillLevels.LENGTH);
+		assertEquals(Skill.values().length + 4, SkillLevels.LENGTH);
 		assertEquals(Skill.values().length, SkillLevels.TOTAL_LEVEL_INDEX);
 		assertEquals(Skill.values().length + 1, SkillLevels.COMBAT_LEVEL_INDEX);
 		assertEquals(Skill.values().length + 2, SkillLevels.QUEST_POINTS_INDEX);
+		assertEquals(Skill.values().length + 3, SkillLevels.MUSIC_TRACKS_INDEX);
 		assertEquals("the TSV Max sentinel is not a level", Integer.MAX_VALUE, SkillLevels.MAX_LEVEL);
 	}
 
@@ -147,15 +148,16 @@ public class SkillLevelsTest
 	@Test
 	public void maximumLevelResolvesTheCapPerIndex()
 	{
-		assertEquals(99, SkillLevels.maximumLevel(Skill.COOKING.ordinal(), QP_CAP));
+		assertEquals(99, SkillLevels.maximumLevel(Skill.COOKING.ordinal(), QP_CAP, 99));
 		assertEquals(99 * Skill.values().length,
-			SkillLevels.maximumLevel(SkillLevels.TOTAL_LEVEL_INDEX, QP_CAP));
-		assertEquals(126, SkillLevels.maximumLevel(SkillLevels.COMBAT_LEVEL_INDEX, QP_CAP));
+			SkillLevels.maximumLevel(SkillLevels.TOTAL_LEVEL_INDEX, QP_CAP, 99));
+		assertEquals(126, SkillLevels.maximumLevel(SkillLevels.COMBAT_LEVEL_INDEX, QP_CAP, 99));
 		// The quest-point cap is refresh state — a parameter, not a constant.
-		assertEquals(QP_CAP, SkillLevels.maximumLevel(SkillLevels.QUEST_POINTS_INDEX, QP_CAP));
-		assertEquals(200, SkillLevels.maximumLevel(SkillLevels.QUEST_POINTS_INDEX, 200));
+		assertEquals(QP_CAP, SkillLevels.maximumLevel(SkillLevels.QUEST_POINTS_INDEX, QP_CAP, 99));
+		assertEquals(200, SkillLevels.maximumLevel(SkillLevels.QUEST_POINTS_INDEX, 200, 99));
+		assertEquals(700, SkillLevels.maximumLevel(SkillLevels.MUSIC_TRACKS_INDEX, QP_CAP, 700));
 		// Out-of-range indices keep the sentinel — they declare no cap.
-		assertEquals(SkillLevels.MAX_LEVEL, SkillLevels.maximumLevel(SkillLevels.LENGTH, QP_CAP));
+		assertEquals(SkillLevels.MAX_LEVEL, SkillLevels.maximumLevel(SkillLevels.LENGTH, QP_CAP, 99));
 	}
 
 	@Test
@@ -167,9 +169,9 @@ public class SkillLevelsTest
 		SkillLevels totalGated = requiring(SkillLevels.TOTAL_LEVEL_INDEX, 99 * Skill.values().length);
 
 		assertEquals("seasonal mode skips the total-level check",
-			RejectionReason.NONE, player.missingRequirement(totalGated, true, QP_CAP));
+			RejectionReason.NONE, player.missingRequirement(totalGated, true, QP_CAP, 99));
 		assertEquals("non-seasonal mode still checks the total",
-			RejectionReason.SKILL_LEVEL, player.missingRequirement(totalGated, false, QP_CAP));
+			RejectionReason.SKILL_LEVEL, player.missingRequirement(totalGated, false, QP_CAP, 99));
 
 		// The skip names only the total index — a per-skill shortfall still rejects.
 		int[] weakCooking = maxed();
@@ -177,7 +179,7 @@ public class SkillLevelsTest
 		weakCooking[SkillLevels.TOTAL_LEVEL_INDEX] = 0;
 		SkillLevels seasonalWeak = SkillLevels.of(weakCooking);
 		assertEquals(RejectionReason.SKILL_LEVEL,
-			seasonalWeak.missingRequirement(requiring(Skill.COOKING.ordinal(), 99), true, QP_CAP));
+			seasonalWeak.missingRequirement(requiring(Skill.COOKING.ordinal(), 99), true, QP_CAP, 99));
 	}
 
 	@Test
@@ -187,16 +189,16 @@ public class SkillLevelsTest
 
 		// NONE declares nothing — it can never reject.
 		assertEquals(RejectionReason.NONE,
-			player.missingRequirement(SkillLevels.NONE, false, QP_CAP));
+			player.missingRequirement(SkillLevels.NONE, false, QP_CAP, 99));
 		assertEquals(RejectionReason.NONE,
-			SkillLevels.NONE.missingRequirement(SkillLevels.NONE, false, QP_CAP));
+			SkillLevels.NONE.missingRequirement(SkillLevels.NONE, false, QP_CAP, 99));
 
 		// A requirement shorter than the player reads 0 past its end.
 		SkillLevels shortRequired = SkillLevels.of(new int[]{50});
 		assertEquals(RejectionReason.NONE,
-			player.missingRequirement(shortRequired, false, QP_CAP));
+			player.missingRequirement(shortRequired, false, QP_CAP, 99));
 		assertEquals(RejectionReason.SKILL_LEVEL,
-			SkillLevels.NONE.missingRequirement(shortRequired, false, QP_CAP));
+			SkillLevels.NONE.missingRequirement(shortRequired, false, QP_CAP, 99));
 	}
 
 	@Test
@@ -207,18 +209,18 @@ public class SkillLevelsTest
 		SkillLevels maxRequired = SkillLevels.of(allMax);
 		SkillLevels player = SkillLevels.of(maxed());
 		assertEquals(RejectionReason.NONE,
-			player.missingRequirement(maxRequired, false, QP_CAP));
+			player.missingRequirement(maxRequired, false, QP_CAP, 99));
 
 		// Max on the quest-point slot resolves against the refresh-state cap.
 		int[] belowCap = maxed();
 		belowCap[SkillLevels.QUEST_POINTS_INDEX] = QP_CAP - 1;
 		assertEquals(RejectionReason.SKILL_LEVEL,
 			SkillLevels.of(belowCap).missingRequirement(
-				requiring(SkillLevels.QUEST_POINTS_INDEX, SkillLevels.MAX_LEVEL), false, QP_CAP));
+				requiring(SkillLevels.QUEST_POINTS_INDEX, SkillLevels.MAX_LEVEL), false, QP_CAP, 99));
 
 		// A literal requirement at the Max sentinel resolves the same way.
 		SkillLevels literalCap = requiring(Skill.COOKING.ordinal(), SkillLevels.MAX_LEVEL);
-		assertEquals(RejectionReason.NONE, player.missingRequirement(literalCap, false, QP_CAP));
+		assertEquals(RejectionReason.NONE, player.missingRequirement(literalCap, false, QP_CAP, 99));
 	}
 
 	@Test
@@ -233,10 +235,10 @@ public class SkillLevelsTest
 		required[Skill.COOKING.ordinal()] = 99;
 		required[Skill.ATTACK.ordinal()] = 50;
 		assertEquals(RejectionReason.SKILL_LEVEL,
-			player.missingRequirement(SkillLevels.of(required), false, QP_CAP));
+			player.missingRequirement(SkillLevels.of(required), false, QP_CAP, 99));
 
 		// Meeting every requirement accepts.
 		assertEquals(RejectionReason.NONE,
-			player.missingRequirement(requiring(Skill.MAGIC.ordinal(), 50), false, QP_CAP));
+			player.missingRequirement(requiring(Skill.MAGIC.ordinal(), 50), false, QP_CAP, 99));
 	}
 }
