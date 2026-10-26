@@ -88,7 +88,7 @@ public class InGameWalkRewriterTest
 
 		InGameWalkRewriter.Result result = rewrite(grid, route, 0, end);
 
-		assertTrue("expected several clicks: " + result.clickPoints(), result.clickPoints().size() > 2);
+		assertTrue("expected several clicks: " + result.clickPoints(), result.clickPoints().size() > 1);
 		assertEquals(end, (int) result.clickPoints().get(result.clickPoints().size() - 1));
 		assertEquals(route.size(), result.path().size());
 		assertEquals(describe(route.subList(end, end + 1)), describe(result.path().subList(end, end + 1)));
@@ -321,14 +321,14 @@ public class InGameWalkRewriterTest
 	public void clickReachIsEuclideanUpToTheRadiusBoundary()
 	{
 		AStarWalkCanonicalizerTest.Grid grid = new AStarWalkCanonicalizerTest.Grid();
-		// (15,0) is exactly at a click's reach (15^2 = 225); (15,1) is just beyond it (226).
+		// (35,0) is exactly at a click's reach (35^2 = 1225); (35,1) is just beyond it (1226).
 		List<PathStep> route = new ArrayList<>(steps(0, 0));
-		for (int x = 1; x <= 15; x++) route.add(step(x, 0));
-		route.add(step(15, 1));
+		for (int x = 1; x <= 35; x++) route.add(step(x, 0));
+		route.add(step(35, 1));
 
-		InGameWalkRewriter.Result result = rewrite(grid, route, 0, 16);
+		InGameWalkRewriter.Result result = rewrite(grid, route, 0, 36);
 
-		assertEquals(List.of(15, 16), result.clickPoints());
+		assertEquals(List.of(35, 36), result.clickPoints());
 		assertClicksFollowTheGame(grid, route, result, 0);
 	}
 
