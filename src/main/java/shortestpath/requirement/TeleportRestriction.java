@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.ResourceLoader;
@@ -67,50 +71,15 @@ public final class TeleportRestriction
 	 * harvested from the source TSV's {@code Display info} prefixes — the
 	 * variant-match surface for checklist search.
 	 */
+	@Getter
+	@Accessors(fluent = true)
+	@AllArgsConstructor
 	public static final class Family
 	{
 		private final String name;
 		private final int displayItemId;
 		private final Set<Integer> memberItemIds;
 		private final Map<Integer, String> memberLabels;
-		private final Map<Integer, String> options;
-
-		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
-			Map<Integer, String> memberLabels)
-		{
-			this(name, displayItemId, memberItemIds, memberLabels, Collections.emptyMap());
-		}
-
-		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
-			Map<Integer, String> memberLabels, Map<Integer, String> options)
-		{
-			this.name = name;
-			this.displayItemId = displayItemId;
-			this.memberItemIds = memberItemIds;
-			this.memberLabels = memberLabels;
-			this.options = options;
-		}
-
-		public String name()
-		{
-			return name;
-		}
-
-		public int displayItemId()
-		{
-			return displayItemId;
-		}
-
-		public Set<Integer> memberItemIds()
-		{
-			return memberItemIds;
-		}
-
-		public Map<Integer, String> memberLabels()
-		{
-			return memberLabels;
-		}
-
 		/**
 		 * The family's distinct teleport destinations as a packed-destination
 		 * → label map in first-seen order. Labels come straight from the
@@ -120,9 +89,12 @@ public final class TeleportRestriction
 		 * in {@code teleportation_items.tsv}, not in code. A family whose
 		 * serving rows all reach one destination yields a single entry.
 		 */
-		public Map<Integer, String> options()
+		private final Map<Integer, String> options;
+
+		public Family(String name, int displayItemId, Set<Integer> memberItemIds,
+			Map<Integer, String> memberLabels)
 		{
-			return options;
+			this(name, displayItemId, memberItemIds, memberLabels, Collections.emptyMap());
 		}
 	}
 
@@ -133,20 +105,12 @@ public final class TeleportRestriction
 	 * {@code rep@dest} records back to whole option groups. Both are derived
 	 * in the same pass so they can never disagree about group membership.
 	 */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	private static final class DerivedOptions
 	{
 		private final List<ResourceLoader.RestrictionFamilyRow> rows;
 		private final List<Map<Integer, String>> options;
 		private final Map<Integer, Map<Integer, Set<Integer>>> expansion;
-
-		DerivedOptions(List<ResourceLoader.RestrictionFamilyRow> rows,
-			List<Map<Integer, String>> options,
-			Map<Integer, Map<Integer, Set<Integer>>> expansion)
-		{
-			this.rows = rows;
-			this.options = options;
-			this.expansion = expansion;
-		}
 	}
 
 	private static volatile DerivedOptions derivedOptionsHolder;
