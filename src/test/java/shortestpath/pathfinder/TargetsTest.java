@@ -35,6 +35,7 @@ public class TargetsTest
 		assertEquals(Set.of(A, B), targets.points());
 		assertFalse(targets.hasRequiredItems());
 		assertEquals(Target.at(A), targets.get(A));
+		assertEquals(Target.at(A).hashCode(), targets.get(A).hashCode());
 		assertSame(Targets.NONE, Targets.at(List.of()));
 	}
 
@@ -76,6 +77,7 @@ public class TargetsTest
 	public void equalTargetsAreEqualWhateverTheirOrder()
 	{
 		assertEquals(Targets.at(List.of(A, B)), Targets.at(List.of(B, A)));
+		assertEquals(Targets.at(List.of(A, B)).hashCode(), Targets.at(List.of(B, A)).hashCode());
 		assertFalse(Targets.at(List.of(A)).equals(Targets.of(List.of(Target.requiring(A, items(ItemID.SPADE))))));
 	}
 }

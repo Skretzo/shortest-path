@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -27,6 +28,22 @@ public class RoutingCutsTest
 		assertEquals(0x1234L, read.collisionFingerprint());
 		assertEquals(PARAMETERS, read.parameters());
 		assertArrayEquals(cuts.write(), read.write());
+	}
+
+	@Test
+	public void parametersEqualityCoversEveryField()
+	{
+		assertEquals(PARAMETERS, new RoutingCuts.Parameters(20000, 500, 32, 40, 42, "strong"));
+		assertEquals(PARAMETERS.hashCode(),
+			new RoutingCuts.Parameters(20000, 500, 32, 40, 42, "strong").hashCode());
+
+		// Each field is load-bearing: a single-field mutation is not equal.
+		assertNotEquals(PARAMETERS, new RoutingCuts.Parameters(20001, 500, 32, 40, 42, "strong"));
+		assertNotEquals(PARAMETERS, new RoutingCuts.Parameters(20000, 501, 32, 40, 42, "strong"));
+		assertNotEquals(PARAMETERS, new RoutingCuts.Parameters(20000, 500, 33, 40, 42, "strong"));
+		assertNotEquals(PARAMETERS, new RoutingCuts.Parameters(20000, 500, 32, 41, 42, "strong"));
+		assertNotEquals(PARAMETERS, new RoutingCuts.Parameters(20000, 500, 32, 40, 43, "strong"));
+		assertNotEquals(PARAMETERS, new RoutingCuts.Parameters(20000, 500, 32, 40, 42, "fast"));
 	}
 
 	@Test
