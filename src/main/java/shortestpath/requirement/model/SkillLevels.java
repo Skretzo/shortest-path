@@ -90,11 +90,6 @@ public final class SkillLevels
 		return levels[COMBAT_LEVEL_INDEX];
 	}
 
-	public int questPoints()
-	{
-		return levels[QUEST_POINTS_INDEX];
-	}
-
 	public int length()
 	{
 		return levels.length;
