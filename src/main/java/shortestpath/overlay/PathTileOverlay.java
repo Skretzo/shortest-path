@@ -400,11 +400,14 @@ public class PathTileOverlay extends Overlay
 
 			if (renderState.isPathUnreachable() && settings.display().showUnreachableText())
 			{
-				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
-				for (String line : annotator.getUnlockSuggestionLines(search))
+				// Labels stack upward, so the dearest suggestion goes in first: read top-down, the
+				// unreachable text comes first and the cheapest suggestion right under it.
+				List<String> suggestions = annotator.getUnlockSuggestionLines(search);
+				for (int i = suggestions.size() - 1; i >= 0; i--)
 				{
-					playerTileLabelOffset += drawLabelOnPlayerTile(graphics, line, playerTileLabelOffset);
+					playerTileLabelOffset += drawLabelOnPlayerTile(graphics, suggestions.get(i), playerTileLabelOffset);
 				}
+				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
 			}
 			String missingItems = annotator.getMissingTargetItemsText(search);
 			if (missingItems != null)
