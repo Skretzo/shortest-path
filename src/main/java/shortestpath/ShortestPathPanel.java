@@ -537,8 +537,8 @@ public class ShortestPathPanel extends PluginPanel
 					() -> settings.write(keyName, control.getValue()))),
 			() ->
 			{
-				syncing[0] = true;
-				try
+				Object updated = settings.configuredValue(keyName);
+				if (updated instanceof Number)
 				{
 					// Same clamp as construction: an out-of-range external
 					// write degrades to the nearest bound rather than
@@ -701,7 +701,7 @@ public class ShortestPathPanel extends PluginPanel
 		// Shared across the route checkboxes: set while a config sync
 		// mirrors the stored set into the controls, so the programmatic
 		// setSelected calls do not write the same set back.
-		boolean[] syncing = new boolean[1];
+		PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
 
 		JPanel headerRow = new JPanel(new BorderLayout());
 		headerRow.setOpaque(false);
@@ -721,37 +721,25 @@ public class ShortestPathPanel extends PluginPanel
 			JCheckBox checkBox = new JCheckBox(html(route.displayLabel()));
 			checkBox.setSelected(currentSet(keyName, BalloonRoute.class).contains(route));
 			checkBox.setToolTipText(html(description));
-			checkBox.addActionListener(e ->
-			{
-				if (syncing[0])
-				{
-					return;
-				}
-				EnumSet<BalloonRoute> updated = EnumSet.noneOf(BalloonRoute.class);
-				updated.addAll(currentSet(keyName, BalloonRoute.class));
-				if (checkBox.isSelected())
-				{
-					updated.add(route);
-				}
-				else
-				{
-					updated.remove(route);
-				}
-				settings.write(keyName, updated);
-			});
-			registerConfigListener(keyName, () ->
-			{
-				syncing[0] = true;
-				try
-				{
-					checkBox.setSelected(
-						currentSet(keyName, BalloonRoute.class).contains(route));
-				}
-				finally
-				{
-					syncing[0] = false;
-				}
-			});
+			PanelRows.controlRow(this, keyName, checkBox, syncing,
+				(control, guard) -> control.addActionListener(e ->
+					PanelRows.guardedWrite(guard, () ->
+					{
+						EnumSet<BalloonRoute> updated = EnumSet.noneOf(BalloonRoute.class);
+						updated.addAll(currentSet(keyName, BalloonRoute.class));
+						if (control.isSelected())
+						{
+							updated.add(route);
+						}
+						else
+						{
+							updated.remove(route);
+						}
+						settings.write(keyName, updated);
+					})),
+				() -> checkBox.setSelected(
+					currentSet(keyName, BalloonRoute.class).contains(route)),
+				null);
 
 			JPanel row = new JPanel(new BorderLayout());
 			row.setOpaque(false);
