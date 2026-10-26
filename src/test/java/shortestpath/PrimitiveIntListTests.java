@@ -71,7 +71,7 @@ public class PrimitiveIntListTests
 		intList.add(10);
 		intList.add(11);
 		Assert.assertEquals(2, intList.size());
-		Assert.assertEquals(10, intList.removeAt(0));
+		Assert.assertTrue(intList.remove(10));
 		Assert.assertTrue(intList.remove(11));
 		Assert.assertTrue(intList.isEmpty());
 	}
@@ -200,14 +200,6 @@ public class PrimitiveIntListTests
 		PrimitiveIntList intList = new PrimitiveIntList();
 		intList.add(1);
 		intList.set(1, 2);
-	}
-
-	@Test(expected = IndexOutOfBoundsException.class)
-	public void removeAtOutOfBounds()
-	{
-		PrimitiveIntList intList = new PrimitiveIntList();
-		intList.add(1);
-		intList.removeAt(1);
 	}
 
 	@Test
