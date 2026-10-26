@@ -321,7 +321,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawTransports",
 		name = "Draw Transports",
-		description = "Draw all transports on the map and game view.<br>White = available, Orange = unavailable (missing requirements)",
+		description = "Draw all transports on map and game view.<br>White = available, Orange = unavailable (missing requirements)",
 		position = 204,
 		section = sectionDebug
 	)
@@ -333,7 +333,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "drawCollisionMap",
 		name = "Draw Collision Map",
-		description = "Whether the collision map should be drawn",
+		description = "Draw the collision map",
 		position = 205,
 		section = sectionDebug
 	)
