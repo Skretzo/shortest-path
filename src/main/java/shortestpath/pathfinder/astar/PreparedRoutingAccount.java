@@ -153,6 +153,10 @@ public final class PreparedRoutingAccount
 	{
 		return view(local, banked).actionClasses[index];
 	}
+	public Transport localTransport(BankVisitState banked, int index)
+	{
+		return view(local, banked).transports[index];
+	}
 	/** The global teleports castable outside the wilderness: every global this account has. */
 	public int globalCount(BankVisitState banked)
 	{

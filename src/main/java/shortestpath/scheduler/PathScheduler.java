@@ -203,12 +203,17 @@ public class PathScheduler
 					pathfinder = legacyPathfinder;
 				}
 				ActiveSearch search = pathfinder;
+				// They only show under the unreachable text.
+				boolean suggestUnlocks = settings.display().showUnreachableText();
 				debugState.searchStarted(search);
 				pathfinderFuture = pathfindingExecutor.submit(() ->
 				{
 					try
 					{
 						search.run();
+						// After the result is published, so the unreachable text doesn't wait for it.
+						if (suggestUnlocks)
+							search.findUnlockSuggestions();
 					}
 					catch (RuntimeException error)
 					{

@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Stroke;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.ToIntFunction;
 
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
@@ -51,6 +53,8 @@ import shortestpath.settings.Settings;
 public class PathTileOverlay extends Overlay
 {
 	private static final int TRANSPORT_LABEL_GAP = 3;
+	/** Space kept between a label and the viewport's side. */
+	private static final int LABEL_MARGIN = 4;
 	private static final long TRACER_STEP_MS = 200L;
 	private static final int TRACER_WINDOW_TILES = 60;
 	private static final int SPRITE_STRIDE = 10;
@@ -400,6 +404,13 @@ public class PathTileOverlay extends Overlay
 
 			if (renderState.isPathUnreachable() && settings.display().showUnreachableText())
 			{
+				// Labels stack upward, so the dearest suggestion goes in first: read top-down, the
+				// unreachable text comes first and the cheapest suggestion right under it.
+				List<String> suggestions = annotator.getUnlockSuggestionLines(search);
+				for (int i = suggestions.size() - 1; i >= 0; i--)
+				{
+					playerTileLabelOffset += drawLabelOnPlayerTile(graphics, suggestions.get(i), playerTileLabelOffset);
+				}
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, settings.display().unreachableText(), playerTileLabelOffset);
 			}
 			String missingItems = annotator.getMissingTargetItemsText(search);
@@ -684,9 +695,39 @@ public class PathTileOverlay extends Overlay
 			return 0;
 		}
 
-		double height = drawLabel(graphics, point, text, verticalOffset);
+		// Too wide for the viewport, it wraps; lines stack upward, so the last goes in first.
+		FontMetrics metrics = graphics.getFontMetrics();
+		int maxWidth = client.getViewportWidth() > 0 ? client.getViewportWidth() - 2 * LABEL_MARGIN : Integer.MAX_VALUE;
+		List<String> lines = wrap(text, metrics::stringWidth, maxWidth);
+		int offset = verticalOffset;
+		for (int i = lines.size() - 1; i >= 0; i--)
+		{
+			offset += (int) drawLabel(graphics, point, lines.get(i), offset);
+		}
 
-		return (int) height + TRANSPORT_LABEL_GAP;
+		return offset - verticalOffset + TRANSPORT_LABEL_GAP;
+	}
+
+	/** {@code text} broken at spaces into lines no wider than {@code maxWidth}; a longer word keeps a line of its own. */
+	static List<String> wrap(String text, ToIntFunction<String> width, int maxWidth)
+	{
+		List<String> lines = new ArrayList<>();
+		String line = "";
+		for (String word : text.split(" "))
+		{
+			String longer = line.isEmpty() ? word : line + " " + word;
+			if (!line.isEmpty() && width.applyAsInt(longer) > maxWidth)
+			{
+				lines.add(line);
+				line = word;
+			}
+			else
+			{
+				line = longer;
+			}
+		}
+		lines.add(line);
+		return lines;
 	}
 
 	private int drawLabelAtPackedLocation(Graphics2D graphics, int location, String text, int verticalOffset)
@@ -781,6 +822,13 @@ public class PathTileOverlay extends Overlay
 		Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
 		double height = textBounds.getHeight();
 		int x = (int) (point.getX() - textBounds.getWidth() / 2);
+		// Kept inside the viewport, so a label by its edge isn't cut off.
+		int left = client.getViewportXOffset() + LABEL_MARGIN;
+		int right = client.getViewportXOffset() + client.getViewportWidth() - LABEL_MARGIN;
+		if (right > left)
+		{
+			x = Math.max(left, Math.min(x, right - (int) textBounds.getWidth()));
+		}
 		int y = (int) (point.getY() - height) - verticalOffset;
 		graphics.setColor(Color.BLACK);
 		graphics.drawString(text, x + 1, y + 1);

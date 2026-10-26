@@ -28,8 +28,10 @@ import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.pathfinder.UnlockSuggestions;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
+import shortestpath.requirement.Capability;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.transport.Transport;
@@ -67,6 +69,11 @@ public class PathAnnotator
 	// The missing-items label of missingItemsSearch, built on the client thread when first drawn.
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
+	// The lines for unlockSource, the suggestions unlockSearch last published, built on the client
+	// thread when first drawn.
+	private ActiveSearch unlockSearch;
+	private List<UnlockSuggestions.Suggestion> unlockSource;
+	private List<String> unlockLines = List.of();
 
 	@Inject
 	public PathAnnotator(Client client, PohService pohService, ItemStateService itemState)
@@ -146,6 +153,51 @@ public class PathAnnotator
 		return missingItemsText == null || missingItemsText.isEmpty() ? null : missingItemsText;
 	}
 
+	/**
+	 * One line per unlock that would let an unreachable route reach its target, such as
+	 * "Carry 20 Coins to use: Ship Aldarin", or "Bring 20 Coins from your bank to use: Ship Aldarin"
+	 * when they're in the bank; empty when there are none. The suggestions arrive after
+	 * the search is done, so the lines are rebuilt, on the client thread, whenever the search
+	 * publishes a new list.
+	 */
+	public List<String> getUnlockSuggestionLines(ActiveSearch search)
+	{
+		List<UnlockSuggestions.Suggestion> suggestions = search == null ? List.of() : search.getUnlockSuggestions();
+		if (search != unlockSearch || suggestions != unlockSource)
+		{
+			unlockSearch = search;
+			unlockSource = suggestions;
+			List<String> lines = new ArrayList<>();
+			for (UnlockSuggestions.Suggestion suggestion : suggestions)
+			{
+				// Items already in the bank read as a reminder to bring them.
+				boolean inBank = suggestion.getEffort() == Capability.Effort.OWNED_ITEMS;
+				lines.add(suggestion.getCapability().describe(this::itemName, inBank) + " to use: "
+					+ transportLabel(suggestion.getTransport()));
+			}
+			unlockLines = lines;
+		}
+		return unlockLines;
+	}
+
+	/** "Ship Aldarin", "Quetzal Aldarin", "Open Gate" */
+	private static String transportLabel(Transport transport)
+	{
+		String type = transport.getType().name().replace('_', ' ').toLowerCase();
+		type = Character.toUpperCase(type.charAt(0)) + type.substring(1);
+		return transport.getDisplayInfo() != null ? type + " " + transport.getDisplayInfo()
+			: transport.getObjectInfo() != null ? transport.getObjectInfo().replaceAll(" \\d+$", "") : type;
+	}
+
+	private String itemName(int id)
+	{
+		// Requirement ids come from other plugins' messages; an invalid or renamed
+		// id may resolve to no name rather than crash every rendered frame.
+		ItemComposition def = client.getItemDefinition(id);
+		String name = def == null ? null : def.getName();
+		return name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name;
+	}
+
 	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
 	private String missingItemsLabel(List<ItemRequirement> missing)
 	{
@@ -157,11 +209,7 @@ public class PathAnnotator
 			{
 				for (int id : branch.getItemIds())
 				{
-					// Requirement ids come from other plugins' messages; an invalid or renamed
-					// id may resolve to no name rather than crash every rendered frame.
-					ItemComposition def = client.getItemDefinition(id);
-					String name = def == null ? null : def.getName();
-					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
+					names.add(itemName(id));
 				}
 			}
 			groups.add(String.join(" or ", names));

@@ -108,6 +108,35 @@ public final class RequirementContext
 			: Set.copyOf(availableSpiritTrees);
 	}
 
+	private RequirementContext(RequirementContext base, SkillLevels skillLevels, Map<Quest, QuestState> questStates,
+		TransportEligibility eligibility)
+	{
+		this.evaluationTimeMinutes = base.evaluationTimeMinutes;
+		this.boostedSkillLevelsAndMore = skillLevels;
+		this.currentMaxQuestPoints = base.currentMaxQuestPoints;
+		this.questStates = Map.copyOf(questStates);
+		this.varbitValues = base.varbitValues;
+		this.varPlayerValues = base.varPlayerValues;
+		this.eligibility = eligibility;
+		this.unlocks = base.unlocks;
+		this.respawnPrifddinas = base.respawnPrifddinas;
+		this.isOnSailingBoat = base.isOnSailingBoat;
+		this.leagueModeSnapshot = base.leagueModeSnapshot;
+		this.availableSpiritTrees = base.availableSpiritTrees;
+	}
+
+	/**
+	 * This snapshot as it would be had the player got {@code capability}: its quests finished,
+	 * its skill levels reached and its items carried.
+	 */
+	public RequirementContext granting(Capability capability)
+	{
+		Map<Quest, QuestState> quests = new HashMap<>(questStates);
+		capability.getQuests().forEach(quest -> quests.put(quest, QuestState.FINISHED));
+		return new RequirementContext(this, SkillLevels.merge(boostedSkillLevelsAndMore, capability.getSkillLevels()),
+			quests, capability.getItems().isEmpty() ? eligibility : eligibility.withCarried(capability.getItems()));
+	}
+
 	/**
 	 * Captures the immutable snapshot the requirement checks read this
 	 * refresh. All player-state reads go through {@code source} (loud off the

@@ -36,6 +36,7 @@ public final class AStarPathfinder implements ActiveSearch
 	private final AStarRoutingSession session;
 	private final PreparedRoutingAccount account;
 	private final SearchRestrictions restrictions;
+	private final UnlockSuggestions unlocks;
 	private final long cutoffMillis;
 	private final double heuristicWeight;
 	@Getter private final long accountPrepareNanos;
@@ -54,6 +55,10 @@ public final class AStarPathfinder implements ActiveSearch
 	private volatile long walkCanonicalizeNanos;
 	private volatile List<AStarWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
 	private volatile long walkRewriteNanos;
+	// The static data of a search that found its target unreachable, until findUnlockSuggestions runs.
+	private volatile RoutingStatic unreachableIn;
+	private volatile long unlockSearchNanos;
+	private volatile UnlockSuggestions.Found unlockSearch = UnlockSuggestions.Found.NONE;
 	private volatile List<Integer> clickPoints = List.of();
 	private volatile List<Integer> keptStepIndices = List.of();
 	private volatile boolean graphReused;
@@ -142,6 +147,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.account = config.prepareAStarRoutingAccount(true, goals.needsBank());
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, targets.points());
+		this.unlocks = config.unlockSuggestions(goals.needsBank());
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
@@ -189,6 +195,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.session = null;
 		this.account = null;
 		this.restrictions = SearchRestrictions.none();
+		this.unlocks = null;
 		this.goals = null;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
@@ -313,6 +320,39 @@ public final class AStarPathfinder implements ActiveSearch
 	{ return walkDiagnostics;
 	}
 
+	/** Empty until {@link #findUnlockSuggestions()} finds them, and for a cancelled search. */
+	@Override
+	public List<UnlockSuggestions.Suggestion> getUnlockSuggestions()
+	{ return cancelled ? List.of() : unlockSearch.getSuggestions();
+	}
+
+	/** How the last {@link #findUnlockSuggestions()} went: what it found and what it tried. */
+	public UnlockSuggestions.Found getUnlockSearch()
+	{ return unlockSearch;
+	}
+
+	/**
+	 * Once {@link #run()} has found the target unreachable, finds what the player could unlock to
+	 * reach it, within a game tick; otherwise, or once cancelled, does nothing. Kept out of the search
+	 * so the search's own time stays its own.
+	 */
+	@Override
+	public void findUnlockSuggestions()
+	{
+		RoutingStatic staticData = unreachableIn;
+		unreachableIn = null;
+		if (staticData == null || cancelled) return;
+		long started = System.nanoTime();
+		unlockSearch = unlocks.find(staticData, collision, account, start, goals, restrictions, heuristicWeight,
+			() -> cancelled);
+		unlockSearchNanos = System.nanoTime() - started;
+	}
+
+	/** Time spent finding what to unlock after the search found the target unreachable. */
+	public long getUnlockSearchNanos()
+	{ return unlockSearchNanos;
+	}
+
 	/** Time spent rewriting the canonical walking legs into the game's own walking paths. */
 	public long getWalkRewriteNanos()
 	{ return walkRewriteNanos;
@@ -362,6 +402,14 @@ public final class AStarPathfinder implements ActiveSearch
 		entries.put("Graph prep", isGraphReused() ? "reused"
 			: PathfinderStats.millis(getGraphPrepareNanos()));
 		entries.put("Account prep", PathfinderStats.millis(getAccountPrepareNanos()));
+		if (getUnlockSearchNanos() > 0)
+		{
+			UnlockSuggestions.Found found = getUnlockSearch();
+			entries.put("Unlock search", PathfinderStats.millis(getUnlockSearchNanos()) + ", "
+				+ found.getSuggestions().size() + " of " + found.getCandidates() + " (" + found.getReruns() + " reruns"
+				+ (found.getInconclusive() > 0 ? ", " + found.getInconclusive() + " inconclusive" : "") + ")"
+				+ (found.isOutOfTime() ? ", out of time" : "") + (found.isAlreadyConnected() ? ", already connected" : ""));
+		}
 		if (getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
 		{
 			entries.put("Static data", PathfinderStats.millis(getRoutingStaticNanos()));
@@ -484,9 +532,12 @@ public final class AStarPathfinder implements ActiveSearch
 					stats.transportsChecked, System.nanoTime() - started, PathTerminationReason.TARGET_REACHED, null,
 					arrival(path));
 			else
+			{
 				result = new PathfinderResult(start, firstTarget(), false, path, last(path), PathfinderResult.NO_PATH_COST,
 					stats.nodesChecked, stats.transportsChecked, System.nanoTime() - started,
 					PathTerminationReason.SEARCH_EXHAUSTED);
+				if (unlocks != null && goals.hasViableGoal()) unreachableIn = staticData;
+			}
 		}
 		// Errors too: the static build allocates the large search arrays, where OOM is the most
 		// plausible fatal failure; an uncaught Error would leave result null and display as
