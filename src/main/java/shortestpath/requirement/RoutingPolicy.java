@@ -77,7 +77,7 @@ public final class RoutingPolicy
 		this(enabledTypes, teleportationItemSetting, usePoh, usePohFairyRing,
 			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
 			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
-			includeBankPath, blockedItemIds, itemThresholdOverrides, Map.of());
+			includeBankPath, blockedItemIds, Map.of());
 	}
 
 	public RoutingPolicy(
@@ -93,7 +93,6 @@ public final class RoutingPolicy
 		int currencyThreshold,
 		boolean includeBankPath,
 		Set<Integer> blockedItemIds,
-		Map<Integer, Integer> itemThresholdOverrides,
 		Map<Integer, Set<Integer>> blockedOptionDests)
 	{
 		this.enabledTypes = enabledTypes.isEmpty()
