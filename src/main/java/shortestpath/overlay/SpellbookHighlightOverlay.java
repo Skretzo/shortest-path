@@ -2,9 +2,6 @@ package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.BasicStroke;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -17,6 +14,7 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
+import shortestpath.Util;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.presentation.PathAnnotator;
@@ -32,19 +30,10 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 	static
 	{
 		// spell display name -> InterfaceID.MagicSpellbook widget id
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-			SpellbookHighlightOverlay.class.getResourceAsStream("/spell-widget-ids.tsv"), StandardCharsets.UTF_8)))
+		try
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
-			{
-				if (line.isEmpty() || line.startsWith("#"))
-				{
-					continue;
-				}
-				String[] c = line.split("\t", -1);
-				SPELL_WIDGET_IDS.put(c[0], Integer.valueOf(c[1]));
-			}
+			Util.each("/spell-widget-ids.tsv", (line, c) ->
+				SPELL_WIDGET_IDS.put(c[0], Integer.valueOf(c[1])));
 		}
 		catch (Exception e)
 		{
