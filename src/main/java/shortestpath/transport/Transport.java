@@ -300,14 +300,6 @@ public class Transport
 	}
 
 	/**
-	 * Whether this transport is of the given type.
-	 */
-	public boolean isType(TransportType type)
-	{
-		return type.equals(this.type);
-	}
-
-	/**
 	 * Whether this transport's display info contains the given substring.
 	 * Returns false if displayInfo is null.
 	 */
@@ -322,21 +314,6 @@ public class Transport
 	public boolean isUsableAtWildernessLevel(int wildernessLevel)
 	{
 		return !type.isTeleport() || wildernessLevel <= maxWildernessLevel;
-	}
-
-	/**
-	 * Whether this transport has a varbit requirement with the given ID.
-	 */
-	public boolean hasVarbit(int varbitId)
-	{
-		for (VarRequirement req : varRequirements)
-		{
-			if (req.isVarbit() && req.getId() == varbitId)
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 
 	public static class TransportBuilder
