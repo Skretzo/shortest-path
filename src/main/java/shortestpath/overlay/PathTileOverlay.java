@@ -363,6 +363,8 @@ public class PathTileOverlay extends Overlay
 			{
 				// The walker skips tile draws inside POH (no collision data, tiles
 				// render at wrong positions); the index doubles as the tile counter.
+				// The walker skips tile draws inside POH (no collision data, tiles
+				// render at wrong positions); the index doubles as the tile counter.
 				boolean showTiles = TileStyle.TILES.equals(settings.display().pathStyle());
 				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
 					(steps, i) -> true,
