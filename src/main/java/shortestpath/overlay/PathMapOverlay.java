@@ -8,7 +8,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.geom.Area;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import net.runelite.api.Client;
@@ -18,13 +17,11 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.PrimitiveIntHashMap;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
@@ -101,44 +98,33 @@ public class PathMapOverlay extends Overlay
 
 		if (settings.display().drawTransports())
 		{
-			PrimitiveIntHashMap<Transport[]> allTransports = annotator.getAllDisplayTransports();
-			PrimitiveIntHashMap<Transport[]> availableTransports = annotator.getTransports();
-
-			for (int a : allTransports.keys())
+			OverlayDrawing.forEachDisplayTransport(annotator, new OverlayDrawing.TransportVisitor()
 			{
-				if (a == Transport.UNDEFINED_ORIGIN)
+				private int mapAX;
+				private int mapAY;
+
+				@Override
+				public boolean beginOrigin(int origin)
 				{
-					continue; // skip teleports
+					mapAX = geometry.mapWorldPointToGraphicsPointX(origin);
+					mapAY = geometry.mapWorldPointToGraphicsPointY(origin);
+					return worldMapClipArea.contains(mapAX, mapAY);
 				}
 
-				int mapAX = geometry.mapWorldPointToGraphicsPointX(a);
-				int mapAY = geometry.mapWorldPointToGraphicsPointY(a);
-				if (!worldMapClipArea.contains(mapAX, mapAY))
+				@Override
+				public void visit(int origin, Transport b, boolean isAvailable)
 				{
-					continue;
-				}
-
-				Transport[] availableAtOrigin = availableTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS);
-
-				for (Transport b : allTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
-				{
-					if (b == null || (b.getType() != null && b.getType().isTeleport()))
-					{
-						continue; // skip teleports
-					}
-
 					int mapBX = geometry.mapWorldPointToGraphicsPointX(b.getDestination());
 					int mapBY = geometry.mapWorldPointToGraphicsPointY(b.getDestination());
 					if (!worldMapClipArea.contains(mapBX, mapBY))
 					{
-						continue;
+						return;
 					}
 
-					boolean isAvailable = Arrays.asList(availableAtOrigin).contains(b);
 					graphics.setColor(isAvailable ? COLOR_AVAILABLE : COLOR_UNAVAILABLE);
 					graphics.drawLine(mapAX, mapAY, mapBX, mapBY);
 				}
-			}
+			});
 		}
 
 		ActiveSearch search = scheduler.getActiveSearch();
