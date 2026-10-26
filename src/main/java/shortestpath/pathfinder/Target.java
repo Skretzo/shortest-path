@@ -3,9 +3,6 @@ package shortestpath.pathfinder;
 import java.util.List;
 import shortestpath.WorldPointUtil;
 import shortestpath.requirement.model.TransportItems;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
@@ -13,8 +10,6 @@ import lombok.Getter;
  * for a dig spot, an emote clue's outfit. A target the player picks has no required items; other
  * plugins can add them. Immutable.
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@EqualsAndHashCode
 public final class Target
 {
 	/** The required items of a target that needs none. */
@@ -22,6 +17,12 @@ public final class Target
 
 	@Getter private final int point;
 	@Getter private final TransportItems requiredItems;
+
+	private Target(int point, TransportItems requiredItems)
+	{
+		this.point = point;
+		this.requiredItems = requiredItems;
+	}
 
 	/** A target at {@code point} that needs no items. */
 	public static Target at(int point)
@@ -48,6 +49,23 @@ public final class Target
 	public boolean hasRequiredItems()
 	{
 		return requiredItems.size() > 0;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (!(o instanceof Target))
+		{
+			return false;
+		}
+		Target that = (Target) o;
+		return point == that.point && requiredItems.equals(that.requiredItems);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return 31 * point + requiredItems.hashCode();
 	}
 
 	@Override
