@@ -19,7 +19,6 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
@@ -205,13 +204,6 @@ public class EffectiveConfigTest
 		EffectiveConfig effective = effectiveWith(Map.of(
 			"balloonLogBasketRoutes", Set.of(BalloonRoute.GRAND_TREE)));
 		assertEquals(base().balloonLogBasketRoutes(), effective.balloonLogBasketRoutes());
-	}
-
-	@Test
-	public void backendKeyIsInert()
-	{
-		EffectiveConfig effective = effectiveWith(Map.of("pathfinderAlgorithm", PathfinderBackend.ASTAR));
-		assertEquals(PathfinderBackend.LEGACY, effective.val(ConfigKey.PATHFINDER_ALGORITHM));
 	}
 
 	@Test

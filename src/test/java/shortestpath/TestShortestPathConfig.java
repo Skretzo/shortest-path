@@ -1,7 +1,6 @@
 package shortestpath;
 
 import java.util.Set;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
@@ -452,10 +451,6 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 	public boolean highlightSpellbookSpells()
 	{
 		return Boolean.TRUE.equals(def("highlightSpellbookSpells"));
-	}
-	public PathfinderBackend pathfinderBackend()
-	{
-		return (PathfinderBackend) def("pathfinderAlgorithm");
 	}
 	public JewelleryBoxTier pohJewelleryBoxTier()
 	{

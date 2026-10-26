@@ -6,7 +6,6 @@ import java.util.function.Function;
 import lombok.Getter;
 
 import shortestpath.*;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.*;
 import shortestpath.transport.BalloonRoute;
 
@@ -50,7 +49,6 @@ import shortestpath.transport.BalloonRoute;
 @Getter
 public enum ConfigKey
 {
-	PATHFINDER_ALGORITHM,
 	AVOID_WILDERNESS,
 	USE_AGILITY_SHORTCUTS,
 	USE_GRAPPLE_SHORTCUTS,
@@ -463,8 +461,7 @@ public enum ConfigKey
 			"Set", Set.class,
 			"TeleportationItem", TeleportationItem.class,
 			"TileCounter", TileCounter.class,
-			"JewelleryBoxTier", JewelleryBoxTier.class,
-			"PathfinderBackend", PathfinderBackend.class);
+			"JewelleryBoxTier", JewelleryBoxTier.class);
 
 		/** Element-class tokens for {@code Set}-typed rows. */
 		private static final Map<String, Class<?>> ELEMENT_TOKENS = Map.of(

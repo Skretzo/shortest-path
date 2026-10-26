@@ -33,7 +33,6 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.TestPathfinderConfig;
 import shortestpath.pathfinder.TestWorldData;
 import shortestpath.settings.TeleportationItem;
@@ -67,7 +66,6 @@ final class PluginApiHarness implements AutoCloseable
 	/** Plugin settings with the values the tests change. */
 	static final class Settings extends TestShortestPathConfig
 	{
-		PathfinderBackend selectedBackend = PathfinderBackend.LEGACY;
 		boolean includeBankPath;
 		int costBankVisit;
 		TeleportationItem teleportationItems = TeleportationItem.NONE;
@@ -78,8 +76,6 @@ final class PluginApiHarness implements AutoCloseable
 		{
 			switch (keyName)
 			{
-				case "pathfinderAlgorithm":
-					return selectedBackend;
 				case "includeBankPath":
 					return includeBankPath;
 				case "costBankVisit":

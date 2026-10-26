@@ -63,15 +63,12 @@ public class PathfinderConfigOverrideTest
 	public void overridePayloadIsIgnoredByRawReads()
 	{
 		config.set("calculationCutoff", 5);
-		config.set("pathfinderAlgorithm", PathfinderBackend.ASTAR);
 		settings.applyOverrides(Map.of(
-			"calculationCutoff", 99,
-			"pathfinderAlgorithm", "Legacy"));
+			"calculationCutoff", 99));
 
 		pathfinderConfig.refresh();
 
 		assertEquals(5L * Constants.GAME_TICK_LENGTH, pathfinderConfig.getCalculationCutoffMillis());
-		assertEquals(PathfinderBackend.ASTAR, pathfinderConfig.getPathfinderBackend());
 	}
 
 	@Test
