@@ -62,7 +62,7 @@ public class ItemStateService
 	 * state only: eligibility never reads it, and {@link #reset()} leaves it
 	 * intact.
 	 */
-	private volatile Map<Integer, Integer> lastSeenBank = Map.of();
+	@Getter @Accessors(fluent = true) private volatile Map<Integer, Integer> lastSeenBank = Map.of();
 
 	// The serialized form last written to (or read back from) the profile;
 	// identical re-persists are skipped on it, mirroring the PohService
@@ -219,17 +219,6 @@ public class ItemStateService
 			lastSeenBank = immutable;
 			persistLastSeenBank();
 		}
-	}
-
-	/**
-	 * The per-account last-seen bank contents — an immutable id-to-quantity
-	 * map remembered across sessions for the panel's Owned filter. Display
-	 * state only: eligibility never reads it, and {@link #reset()} leaves it
-	 * intact.
-	 */
-	public Map<Integer, Integer> lastSeenBank()
-	{
-		return lastSeenBank;
 	}
 
 	/**
