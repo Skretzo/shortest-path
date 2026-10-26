@@ -126,17 +126,6 @@ class CategoryPanel extends PluginPanel
 	}
 
 	/**
-	 * The category's own match text (lowercased name + aliases). Rows
-	 * that self-filter — the restriction checklist's items-disabled
-	 * hint — match on this text rather than a second hardcoded copy,
-	 * so renaming the category or its alias cannot desync them.
-	 */
-	String matchText()
-	{
-		return matchText;
-	}
-
-	/**
 	 * Extra header slot on the right edge — the Restrictions category parks
 	 * its "Owned" checkbox here.
 	 */
