@@ -149,11 +149,6 @@ class CategoryPanel extends PluginPanel
 		content.add(row.component);
 	}
 
-	List<SearchRow> rows()
-	{
-		return rows;
-	}
-
 	/**
 	 * The rows matching {@code query} (already lowercased): every row when
 	 * the query is empty or hits the category's own name/alias, otherwise
