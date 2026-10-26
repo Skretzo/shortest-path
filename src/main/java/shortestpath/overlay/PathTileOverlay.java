@@ -432,34 +432,20 @@ public class PathTileOverlay extends Overlay
 		// Map the canonical point into the viewed instance before checking the
 		// plane — inside an instance (e.g. a POH) the stored template plane can
 		// differ from the instance plane without being on a different floor.
-		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, b);
-		for (int i = 0; i < points.size(); i++)
-		{
-			int point = points.get(i);
-			if (point == WorldPointUtil.UNDEFINED
-				|| WorldPointUtil.unpackWorldPlane(point) != client.getTopLevelWorldView().getPlane())
+		// The point filter runs pre-projection so an out-of-plane mapped point
+		// never reaches toLocalPoint, and the consumer's early exit keeps the
+		// first-valid selection.
+		final Point[] centre = new Point[1];
+		ProjectedTiles.eachProjectedTile(client, b,
+			point -> WorldPointUtil.unpackWorldPlane(point) == client.getTopLevelWorldView().getPlane(),
+			lp -> Perspective.getCanvasTilePoly(client, lp), poly ->
 			{
-				continue;
-			}
-
-			LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
-			if (lp == null)
-			{
-				continue;
-			}
-
-			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-			if (poly == null)
-			{
-				continue;
-			}
-
-			int cx = poly.getBounds().x + poly.getBounds().width / 2;
-			int cy = poly.getBounds().y + poly.getBounds().height / 2;
-			return new Point(cx, cy);
-		}
-
-		return null;
+				int cx = poly.getBounds().x + poly.getBounds().width / 2;
+				int cy = poly.getBounds().y + poly.getBounds().height / 2;
+				centre[0] = new Point(cx, cy);
+				return true;
+			});
+		return centre[0];
 	}
 
 	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw)
@@ -469,35 +455,18 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 
-		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
-			int point = points.get(i);
-			if (point == WorldPointUtil.UNDEFINED)
+		ProjectedTiles.eachProjectedTile(client, location, null,
+			lp -> Perspective.getCanvasTilePoly(client, lp), poly ->
 			{
-				continue;
-			}
+				if (draw)
+				{
+					graphics.setColor(color);
+					graphics.fill(poly);
+				}
 
-			LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
-			if (lp == null)
-			{
-				continue;
-			}
-
-			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-			if (poly == null)
-			{
-				continue;
-			}
-
-			if (draw)
-			{
-				graphics.setColor(color);
-				graphics.fill(poly);
-			}
-
-			drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter);
-		}
+				drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter);
+				return false;
+			});
 	}
 
 	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw)
@@ -681,24 +650,14 @@ public class PathTileOverlay extends Overlay
 
 	private int drawLabelAtPackedLocation(Graphics2D graphics, int location, String text, int verticalOffset)
 	{
-		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
-			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-			if (lp == null)
+		final int[] offset = {verticalOffset};
+		ProjectedTiles.eachProjectedTile(client, location, null,
+			lp -> Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane()), p ->
 			{
-				continue;
-			}
-
-			Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
-			if (p == null)
-			{
-				continue;
-			}
-
-			verticalOffset += drawLabelAtCanvasPoint(graphics, p, text, verticalOffset);
-		}
-		return verticalOffset;
+				offset[0] += drawLabelAtCanvasPoint(graphics, p, text, offset[0]);
+				return false;
+			});
+		return offset[0];
 	}
 
 	/**
@@ -709,61 +668,56 @@ public class PathTileOverlay extends Overlay
 	 */
 	private void drawTeleportPulse(Graphics2D graphics, int location)
 	{
-		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
-			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-			if (lp == null)
+		ProjectedTiles.eachProjectedTile(client, location, null,
+			lp -> Perspective.getCanvasTilePoly(client, lp), poly ->
 			{
-				continue;
-			}
-			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-			if (poly == null || poly.npoints == 0)
-			{
-				continue;
-			}
-			final double cx = poly.getBounds().getCenterX();
-			final double cy = poly.getBounds().getCenterY();
+				if (poly.npoints == 0)
+				{
+					return false;
+				}
+				final double cx = poly.getBounds().getCenterX();
+				final double cy = poly.getBounds().getCenterY();
 
-			final long period = 1400L;
-			final int rings = 2;
-			final Color base = settings.display().colourTeleportPulse();
-			final Color previousColour = graphics.getColor();
-			final Stroke previousStroke = graphics.getStroke();
-			graphics.setStroke(new BasicStroke(2.2f));
-			for (int r = 0; r < rings; r++)
-			{
-				// Stagger the two rings by half a period so one is always small/bright while the other
-				// is large/faint — a continuous outward pulse.
-				double phase = ((System.currentTimeMillis() + (long) (r * period / (double) rings)) % period)
-					/ (double) period;
-				double scale = 1.0 + phase * 2.6;
-				int alpha = (int) Math.round(170 * (1.0 - phase));
-				if (alpha <= 0)
+				final long period = 1400L;
+				final int rings = 2;
+				final Color base = settings.display().colourTeleportPulse();
+				final Color previousColour = graphics.getColor();
+				final Stroke previousStroke = graphics.getStroke();
+				graphics.setStroke(new BasicStroke(2.2f));
+				for (int r = 0; r < rings; r++)
 				{
-					continue;
-				}
-				Path2D ring = new Path2D.Double();
-				for (int v = 0; v < poly.npoints; v++)
-				{
-					double x = cx + (poly.xpoints[v] - cx) * scale;
-					double y = cy + (poly.ypoints[v] - cy) * scale;
-					if (v == 0)
+					// Stagger the two rings by half a period so one is always small/bright while the other
+					// is large/faint — a continuous outward pulse.
+					double phase = ((System.currentTimeMillis() + (long) (r * period / (double) rings)) % period)
+						/ (double) period;
+					double scale = 1.0 + phase * 2.6;
+					int alpha = (int) Math.round(170 * (1.0 - phase));
+					if (alpha <= 0)
 					{
-						ring.moveTo(x, y);
+						continue;
 					}
-					else
+					Path2D ring = new Path2D.Double();
+					for (int v = 0; v < poly.npoints; v++)
 					{
-						ring.lineTo(x, y);
+						double x = cx + (poly.xpoints[v] - cx) * scale;
+						double y = cy + (poly.ypoints[v] - cy) * scale;
+						if (v == 0)
+						{
+							ring.moveTo(x, y);
+						}
+						else
+						{
+							ring.lineTo(x, y);
+						}
 					}
+					ring.closePath();
+					graphics.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha));
+					graphics.draw(ring);
 				}
-				ring.closePath();
-				graphics.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha));
-				graphics.draw(ring);
-			}
-			graphics.setColor(previousColour);
-			graphics.setStroke(previousStroke);
-		}
+				graphics.setColor(previousColour);
+				graphics.setStroke(previousStroke);
+				return false;
+			});
 	}
 
 	private double drawLabel(Graphics2D graphics, Point point, String text, int verticalOffset)
