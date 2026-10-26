@@ -768,7 +768,7 @@ public class RequirementsTest
 
 		RequirementContext unlocked = RequirementTestFixtures.context()
 			.eligibility(new TransportEligibility(Map.of(), Map.of(), Map.of(), -1, Map.of(),
-				false, TeleportationItem.INVENTORY, Integer.MAX_VALUE, Set.of(Unlock.XERICS_HONOUR), false))
+				false, TeleportationItem.INVENTORY, Integer.MAX_VALUE, Set.of(Unlock.XERICS_HONOUR), false, Set.of()))
 			.unlocks(Set.of(Unlock.XERICS_HONOUR))
 			.build();
 		assertEquals(RejectionReason.NONE,
@@ -824,7 +824,7 @@ public class RequirementsTest
 
 		RequirementContext unlocked = RequirementTestFixtures.context()
 			.eligibility(new TransportEligibility(Map.of(), Map.of(), Map.of(), -1, Map.of(),
-				false, TeleportationItem.INVENTORY, Integer.MAX_VALUE, Set.of(Unlock.CANOE_AXE), false))
+				false, TeleportationItem.INVENTORY, Integer.MAX_VALUE, Set.of(Unlock.CANOE_AXE), false, Set.of()))
 			.unlocks(Set.of(Unlock.CANOE_AXE))
 			.build();
 		assertEquals(RejectionReason.NONE,

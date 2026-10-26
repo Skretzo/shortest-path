@@ -115,7 +115,7 @@ public class PathfinderTest
 							Transport entry = Arrays.stream(pathfinderConfig.getTransportsPacked(BankVisitState.CARRIED).get(outside))
 								.filter(t -> t.getDestination() == inside).findFirst().orElseThrow();
 							TransportEligibility eligibility = new TransportEligibility(Map.of(), Map.of(), Map.of(), -1,
-								Map.of(), false, TeleportationItem.NONE, Integer.MAX_VALUE, pathfinderConfig.getUnlocks(), true);
+								Map.of(), false, TeleportationItem.NONE, Integer.MAX_VALUE, pathfinderConfig.getUnlocks(), true, Set.of());
 							assertTrue(eligibility.satisfiedByPlayer(entry));
 							Pathfinder route = runPathfinder(outside, inside);
 							assertTrue(route.getResult().isReached());
