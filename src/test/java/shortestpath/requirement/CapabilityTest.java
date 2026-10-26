@@ -110,6 +110,7 @@ public class CapabilityTest
 	public void describeNamesEveryPart()
 	{
 		assertEquals("Carry 20 Coins", Capability.items(Map.of(ItemID.COINS, 20)).describe(id -> "Coins"));
+		assertEquals("Bring 20 Coins from your bank", Capability.items(Map.of(ItemID.COINS, 20)).describe(id -> "Coins", true));
 		assertEquals("Carry Bronze axe and Machete", Capability.items(Map.of(ItemID.BRONZE_AXE, 1, ItemID.MACHETTE, 1))
 			.describe(id -> id == ItemID.BRONZE_AXE ? "Bronze axe" : "Machete"));
 		assertEquals("Complete Song of the Elves, reach 70 Agility and 70 Construction",
