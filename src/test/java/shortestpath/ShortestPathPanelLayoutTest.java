@@ -351,11 +351,9 @@ public class ShortestPathPanelLayoutTest
 	}
 
 	/**
-	 * Below the tile grid the home view carries two small-font footer
-	 * notes: an orange one announcing the A* pathfinder and pointing at
-	 * the General category's Pathfinder Algorithm option, and a muted one
-	 * telling users the remaining plugin options live in the regular
-	 * RuneLite settings panel.
+	 * Below the tile grid the home view carries a small-font footer
+	 * note telling users the remaining plugin options live in the
+	 * regular RuneLite settings panel.
 	 */
 	@Test
 	public void homeTilesCarryFooterNotes()
@@ -364,9 +362,7 @@ public class ShortestPathPanelLayoutTest
 		FixedWidthPanel content = contentOf(panel.home());
 
 		int gridIndex = -1;
-		int astarIndex = -1;
 		int settingsIndex = -1;
-		JLabel astarNote = null;
 		JLabel settingsNote = null;
 		Component[] children = content.getComponents();
 		for (int i = 0; i < children.length; i++)
@@ -383,26 +379,12 @@ public class ShortestPathPanelLayoutTest
 				continue;
 			}
 			String text = ((JLabel) children[i]).getText();
-			if (text != null && text.contains("A*"))
-			{
-				astarNote = (JLabel) children[i];
-				astarIndex = i;
-			}
 			if (text != null && text.contains("plugin settings panel"))
 			{
 				settingsNote = (JLabel) children[i];
 				settingsIndex = i;
 			}
 		}
-
-		assertNotNull("an A* footer note under the tile grid", astarNote);
-		assertTrue("the A* note renders below the grid", astarIndex > gridIndex);
-		assertEquals("the A* note is the orange accent",
-			ColorScheme.BRAND_ORANGE, astarNote.getForeground());
-		assertEquals("the A* note is small font",
-			FontManager.getRunescapeSmallFont(), astarNote.getFont());
-		assertTrue("the A* note points at General's Pathfinder Algorithm option",
-			astarNote.getText().contains("Pathfinder Algorithm"));
 
 		assertNotNull("a settings-panel footer note under the tile grid", settingsNote);
 		assertTrue("the settings note renders below the grid", settingsIndex > gridIndex);
@@ -802,7 +784,7 @@ public class ShortestPathPanelLayoutTest
 	 * threshold first, then the path-lifecycle controls moved in from the
 	 * settings panel — cancel/recalculate/finish distances, the
 	 * unreachable pair and the calculation cutoff — and finally the
-	 * backend selectors (teleport-item mode, algorithm, A* weight). The
+	 * remaining selectors (teleport-item mode, A* weight). The
 	 * lifecycle keys render per their config type: the two booleans as
 	 * check rows, the {@code @Range} ints as spinners.
 	 */
@@ -825,7 +807,7 @@ public class ShortestPathPanelLayoutTest
 				"Cancel Instead Of Recalculating", "Recalculate Distance", "Finish Distance",
 				"Unreachable Target Distance", "Show Unreachable Text",
 				"Calculation Cutoff",
-				"Use Teleportation Items", "Pathfinder Algorithm",
+				"Use Teleportation Items",
 				"A* Heuristic Weight"),
 			displays);
 

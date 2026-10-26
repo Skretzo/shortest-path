@@ -210,7 +210,6 @@ public class ShortestPathPlugin extends Plugin
 		keyManager.registerKeyListener(clearPathKeylistener);
 		pohService.loadFromProfile();
 		itemState.loadFromProfile();
-		scheduler.prepareBackend();
 
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
 			spriteManager, itemState, eventBus, this);

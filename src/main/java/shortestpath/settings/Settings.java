@@ -26,7 +26,6 @@ import net.runelite.client.config.ConfigItemDescriptor;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Range;
 import net.runelite.client.events.ConfigChanged;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
@@ -608,8 +607,8 @@ public class Settings
 	}
 
 	/**
-	 * Immutable snapshot of the running-search lifecycle inputs: backend
-	 * selection, search cutoffs, and the debug/post toggles that act on a live
+	 * Immutable snapshot of the running-search lifecycle inputs: search
+	 * cutoffs and the debug/post toggles that act on a live
 	 * search rather than display state.
 	 *
 	 * <p>These members mirror how the shell and refresh path always read them:
@@ -622,15 +621,13 @@ public class Settings
 	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	public static final class LifecycleView
 	{
-		private final PathfinderBackend pathfinderBackend;
 		private final int calculationCutoff, recalculateDistance, reachedDistance;
 		private final boolean cancelInstead, drawDebugPanel, postTransports;
 
 		private LifecycleView(EffectiveConfig effective, ShortestPathConfig configured,
 			Function<ConfigKey, Object> base)
 		{
-			this((PathfinderBackend) base.apply(ConfigKey.PATHFINDER_ALGORITHM),
-				num(base, ConfigKey.CALCULATION_CUTOFF),
+			this(num(base, ConfigKey.CALCULATION_CUTOFF),
 				num(base, ConfigKey.RECALCULATE_DISTANCE),
 				num(base, ConfigKey.FINISH_DISTANCE),
 				Boolean.TRUE.equals(base.apply(ConfigKey.CANCEL_INSTEAD)),

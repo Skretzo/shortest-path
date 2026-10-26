@@ -40,7 +40,7 @@ public class ConfigDemotionTest
 	/**
 	 * The exact set of {@code @ConfigItem} keyNames allowed to carry
 	 * {@code hidden = true} — the panel-owned route options plus the internal
-	 * state keys. 88 names; the write-pair keys
+	 * state keys. 87 names; the write-pair keys
 	 * ({@code builtTeleportationBoxes}/{@code builtTeleportationPortalsPoh})
 	 * appear once even though each is declared on both a getter and a
 	 * {@code void set*} method.
@@ -87,7 +87,6 @@ public class ConfigDemotionTest
 		"highlightInventoryItems",
 		"highlightSpellbookSpells",
 		"includeBankPath",
-		"pathfinderAlgorithm",
 		"pohJewelleryBoxTier",
 		"pohMountedItems",
 		"pohNexusPortals",
@@ -145,7 +144,7 @@ public class ConfigDemotionTest
 	@Test
 	public void exactlyThePanelOwnedKeysAreHidden()
 	{
-		assertEquals("the pinned boundary is 88 keyNames", 88, PANEL_OWNED_KEYS.size());
+		assertEquals("the pinned boundary is 87 keyNames", 87, PANEL_OWNED_KEYS.size());
 
 		// The hidden-key surface lives in the keyed registry, not on the
 		// interface: no @ConfigItem may carry hidden=true any more, and every
