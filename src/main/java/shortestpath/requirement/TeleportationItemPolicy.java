@@ -90,4 +90,16 @@ public final class TeleportationItemPolicy
 				return Verdict.EVALUATE_ITEMS;
 		}
 	}
+
+	/**
+	 * Whether the mode's bank-path pool includes the bank contents — the
+	 * second axis of mode semantics, single-sourced with the verdict table
+	 * above it. Only the {@code INVENTORY_AND_BANK*} modes collect the bank
+	 * into the pool banked transports are evaluated against.
+	 */
+	public static boolean includesBank(TeleportationItem mode)
+	{
+		return TeleportationItem.INVENTORY_AND_BANK.equals(mode)
+			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(mode);
+	}
 }
