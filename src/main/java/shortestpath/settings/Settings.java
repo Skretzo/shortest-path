@@ -192,7 +192,7 @@ public class Settings
 		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
 		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold, boolean includeBankPath,
-		Set<Integer> blockedItemIds, Map<Integer, Integer> itemThresholdOverrides)
+		Set<Integer> blockedItemIds)
 	{
 		return buildRoutingPolicy(transportTypeConfig, usePoh, usePohFairyRing,
 			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
