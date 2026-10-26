@@ -321,26 +321,14 @@ public final class Requirements
 			return RejectionReason.BLOCKED_ITEM;
 		}
 
-		switch (policy.teleportationItemSetting())
-		{
-			case ALL:
-				return RejectionReason.NONE;
-			case ALL_NON_CONSUMABLE:
-			case UNLOCKED_NON_CONSUMABLE:
-			case INVENTORY_NON_CONSUMABLE:
-			case INVENTORY_AND_BANK_NON_CONSUMABLE:
-				return transport.isConsumable()
-					? RejectionReason.TELEPORT_MODE
-					: RejectionReason.NONE;
-			case UNLOCKED:
-				return RejectionReason.NONE; // Ownership is implied by the unlock check; items are never evaluated
-			case INVENTORY:
-			case INVENTORY_AND_BANK:
-				return RejectionReason.NONE; // Will be checked later by the eligibility snapshot
-			case NONE:
-				return RejectionReason.TELEPORT_MODE;
-		}
-		return RejectionReason.NONE;
+		// BYPASS and EVALUATE_ITEMS both pass this gate — deferral to the item
+		// pools lands at the itemRequirement gate below, which re-dispatches
+		// through the eligibility snapshot.
+		return TeleportationItemPolicy.verdict(
+			policy.teleportationItemSetting(), transport.isConsumable())
+				== TeleportationItemPolicy.Verdict.REJECT
+			? RejectionReason.TELEPORT_MODE
+			: RejectionReason.NONE;
 	}
 
 
