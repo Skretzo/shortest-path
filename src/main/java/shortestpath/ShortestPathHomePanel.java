@@ -469,7 +469,7 @@ class ShortestPathHomePanel extends PluginPanel
 		switch (category.categoryName())
 		{
 			case "General":
-				return String.valueOf(panel.settings.configuredValue("pathfinderAlgorithm"));
+				return "A*";
 			case "Transports":
 				int on = 0;
 				for (TransportFamilyCard card : panel.transportCards())
