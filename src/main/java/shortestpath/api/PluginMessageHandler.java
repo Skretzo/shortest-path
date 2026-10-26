@@ -187,7 +187,7 @@ public class PluginMessageHandler implements QueryResponder
 	}
 
 	@Override
-	public void postQueryResult(Object id, Pathfinder query)
+	public void postQueryResult(Object id, ActiveSearch query)
 	{
 		PathfinderResult result = query.getResult();
 		if (result == null)

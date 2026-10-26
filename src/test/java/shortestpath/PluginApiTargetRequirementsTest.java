@@ -732,22 +732,30 @@ public class PluginApiTargetRequirementsTest
 		}
 	}
 
-	// ---- The A* backend agrees with legacy ----
+	// ---- Queries and the displayed path agree on the A* engine ----
 
+	/**
+	 * Queries ran on the legacy engine until the query path was rewired onto the
+	 * session-cached A* backend, so this test originally pinned legacy-vs-A*
+	 * agreement. Re-validated under the A* query engine: a bank route is not one
+	 * of the documented cost divergences (zero-duration transports priced at 0;
+	 * no queue-ordering penalty on shared-destination chains), so the query cost
+	 * and the displayed path's cost still match.
+	 */
 	@Test
 	public void aStarBackendRoutesThroughTheBankAtTheSameCost()
 	{
 		try (PluginApiHarness api = new PluginApiHarness())
 		{
 			api.bank(ItemID.SPADE, 1);
-			int legacy = cost(api.query(START, target(NEAR, ItemID.SPADE)));
+			int queried = cost(api.query(START, target(NEAR, ItemID.SPADE)));
 
 			ActiveSearch search = api.path(START, target(NEAR, ItemID.SPADE));
 			assertTrue(search instanceof AStarPathfinder);
 			PathfinderResult result = search.getResult();
 			assertNotNull(result);
 			assertTrue(result.getMessage(), result.isReached());
-			assertEquals(legacy, result.getPathCost());
+			assertEquals(queried, result.getPathCost());
 			assertTrue(last(search.getPath()).getBankVisitState() == BankVisitState.BANKED);
 			assertEquals(WorldPointUtil.packWorldPoint(NEAR), last(search.getPath()).getPackedPosition());
 		}

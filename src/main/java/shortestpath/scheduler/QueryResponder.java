@@ -1,6 +1,6 @@
 package shortestpath.scheduler;
 
-import shortestpath.pathfinder.Pathfinder;
+import shortestpath.pathfinder.ActiveSearch;
 
 /**
  * How the scheduler talks back to the plugin-message surface: a query finished, a query was
@@ -9,7 +9,7 @@ import shortestpath.pathfinder.Pathfinder;
  */
 public interface QueryResponder
 {
-	void postQueryResult(Object id, Pathfinder query);
+	void postQueryResult(Object id, ActiveSearch query);
 
 	void postQueryFailure(Object id, String reason);
 
