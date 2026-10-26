@@ -1,11 +1,10 @@
 package shortestpath.settings;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import lombok.*;
 import lombok.experimental.Accessors;
+import shortestpath.Util;
 
 /**
  * Display metadata for the hidden config keys — the {@code name},
@@ -41,24 +40,18 @@ public final class ConfigItems
 	private static Map<String, Meta> load()
 	{
 		Map<String, Meta> meta = new HashMap<>();
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-			ConfigItems.class.getResourceAsStream("/config-items.tsv"), StandardCharsets.UTF_8)))
+		try
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
+			// '#' rows absent in config-items.tsv — skip-set widened to the shared reader's
+			Util.each("/config-items.tsv", (line, cols) ->
 			{
-				if (line.isEmpty())
-				{
-					continue;
-				}
-				String[] cols = line.split("\t", -1);
 				String key = cols[0];
 				String name = cols.length > 1 ? cols[1] : "";
 				String description = cols.length > 2 ? cols[2] : "";
 				Integer min = cols.length > 3 && !cols[3].isEmpty() ? Integer.valueOf(cols[3]) : null;
 				Integer max = cols.length > 4 && !cols[4].isEmpty() ? Integer.valueOf(cols[4]) : null;
 				meta.put(key, new Meta(key, name, description, min, max));
-			}
+			});
 		}
 		catch (Exception e)
 		{

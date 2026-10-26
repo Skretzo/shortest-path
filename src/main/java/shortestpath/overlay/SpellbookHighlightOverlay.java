@@ -2,13 +2,12 @@ package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.*;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
+import shortestpath.Util;
 import shortestpath.pathfinder.*;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
@@ -22,19 +21,10 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 	static
 	{
 		// spell display name -> InterfaceID.MagicSpellbook widget id
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-			SpellbookHighlightOverlay.class.getResourceAsStream("/spell-widget-ids.tsv"), StandardCharsets.UTF_8)))
+		try
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
-			{
-				if (line.isEmpty() || line.startsWith("#"))
-				{
-					continue;
-				}
-				String[] c = line.split("\t", -1);
-				SPELL_WIDGET_IDS.put(c[0], Integer.valueOf(c[1]));
-			}
+			Util.each("/spell-widget-ids.tsv", (line, c) ->
+				SPELL_WIDGET_IDS.put(c[0], Integer.valueOf(c[1])));
 		}
 		catch (Exception e)
 		{
