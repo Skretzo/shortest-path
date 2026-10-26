@@ -52,6 +52,7 @@ import shortestpath.overlay.PathMapOverlay;
 import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
+import shortestpath.overlay.PluginOverlays;
 import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
@@ -76,8 +77,6 @@ public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "shortestpath";
 
-	private static final int NEXUS_DIALOG_REFRESH_ATTEMPTS = 10;
-
 	@Inject
 	private Client client;
 	@Inject
@@ -87,7 +86,6 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 	private long activeConfigProfileId;
-	private boolean migratingAStarConfiguration;
 	@Inject
 	private OverlayManager overlayManager;
 	@Inject
@@ -144,6 +142,9 @@ public class ShortestPathPlugin extends Plugin
 	private ShortestPathPanel panel;
 	private NavigationButton navButton;
 	private PathfinderConfig pathfinderConfig;
+	// Built in startUp — the overlay references it bundles are @Inject
+	// fields, so the composite cannot exist before injection completes.
+	private PluginOverlays pluginOverlays;
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -175,7 +176,6 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		migrateAStarConfiguration();
 		activeConfigProfileId = configManager.getProfile().getId();
 
 		pathfinderConfig = new PathfinderConfig(client, config, settings);
@@ -184,6 +184,10 @@ public class ShortestPathPlugin extends Plugin
 		pathfinderConfig.setSailingService(sailing);
 		scheduler.attach(pathfinderConfig, sailing, apiHandler);
 		annotator.attach(pathfinderConfig);
+		// The statics build reads only classpath resources, so it is safe to
+		// warm on enable too — relying on the login transition alone left a
+		// cold start for enables while already logged in.
+		scheduler.prepareBackend();
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load touches the same HashMaps the
@@ -202,23 +206,14 @@ public class ShortestPathPlugin extends Plugin
 			spiritTrees.loadFromProfile();
 		}
 
-		overlayManager.add(pathOverlay);
-		overlayManager.add(pathMinimapOverlay);
-		overlayManager.add(pathMapOverlay);
-		overlayManager.add(pathMapTooltipOverlay);
-		overlayManager.add(bankItemHighlightOverlay);
-		overlayManager.add(spellbookHighlightOverlay);
-		overlayManager.add(inventoryHighlightOverlay);
-
-		if (settings.lifecycle().drawDebugPanel())
-		{
-			overlayManager.add(debugOverlayPanel);
-		}
+		pluginOverlays = new PluginOverlays(pathOverlay, pathMinimapOverlay,
+			pathMapOverlay, pathMapTooltipOverlay, bankItemHighlightOverlay,
+			spellbookHighlightOverlay, inventoryHighlightOverlay, debugOverlayPanel);
+		pluginOverlays.register(overlayManager, settings.lifecycle().drawDebugPanel());
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		pohService.loadFromProfile();
 		itemState.loadFromProfile();
-		scheduler.prepareBackend();
 
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
 			spriteManager, itemState, eventBus, this);
@@ -237,14 +232,12 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
-		overlayManager.remove(pathOverlay);
-		overlayManager.remove(pathMinimapOverlay);
-		overlayManager.remove(pathMapOverlay);
-		overlayManager.remove(pathMapTooltipOverlay);
-		overlayManager.remove(bankItemHighlightOverlay);
-		overlayManager.remove(spellbookHighlightOverlay);
-		overlayManager.remove(inventoryHighlightOverlay);
-		overlayManager.remove(debugOverlayPanel);
+		// The composite is built in startUp — a shutDown reached after a
+		// failed startUp has nothing to unregister.
+		if (pluginOverlays != null)
+		{
+			pluginOverlays.unregister(overlayManager);
+		}
 
 		scheduler.shutdown();
 
@@ -275,19 +268,6 @@ public class ShortestPathPlugin extends Plugin
 		sailing.reset();
 	}
 
-	private void migrateAStarConfiguration()
-	{
-		migratingAStarConfiguration = true;
-		try
-		{
-			PathfinderConfigurationMigration.migrate(configManager, CONFIG_GROUP);
-		}
-		finally
-		{
-			migratingAStarConfiguration = false;
-		}
-	}
-
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
@@ -297,7 +277,7 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		if (migratingAStarConfiguration || configManager.getProfile().getId() != activeConfigProfileId)
+		if (configManager.getProfile().getId() != activeConfigProfileId)
 		{
 			return;
 		}
@@ -306,14 +286,7 @@ public class ShortestPathPlugin extends Plugin
 
 		if (effects.contains(Effect.SIDE_EFFECT_DEBUG_OVERLAY))
 		{
-			if (settings.lifecycle().drawDebugPanel())
-			{
-				overlayManager.add(debugOverlayPanel);
-			}
-			else
-			{
-				overlayManager.remove(debugOverlayPanel);
-			}
+			syncDebugPanelVisibility();
 		}
 
 		if ("showSidebarPanel".equals(change.getKey()))
@@ -354,7 +327,6 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		migrateAStarConfiguration();
 		activeConfigProfileId = profileId;
 		syncDebugPanelVisibility();
 		// The new profile may carry a different sidebar-visibility value —
@@ -373,14 +345,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private void syncDebugPanelVisibility()
 	{
-		if (settings.lifecycle().drawDebugPanel())
-		{
-			overlayManager.add(debugOverlayPanel);
-		}
-		else
-		{
-			overlayManager.remove(debugOverlayPanel);
-		}
+		pluginOverlays.syncDebug(overlayManager, settings.lifecycle().drawDebugPanel());
 	}
 
 	@Subscribe
@@ -526,20 +491,7 @@ public class ShortestPathPlugin extends Plugin
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT
 			|| event.getGroupId() == InterfaceID.TELENEXUS)
 		{
-			final int[] attempts = {0};
-			clientThread.invokeLater(() ->
-			{
-				attempts[0]++;
-				boolean dialogOpen = gameWidgets.isWidgetOpen(InterfaceID.TelenexusTeleport.UNIVERSE)
-					|| gameWidgets.isWidgetOpen(InterfaceID.Telenexus.UNIVERSE);
-				if (!dialogOpen)
-				{
-					return attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
-				}
-				boolean changed = pohService.refreshFromDialog();
-				return changed
-					|| attempts[0] >= NEXUS_DIALOG_REFRESH_ATTEMPTS;
-			});
+			pohService.nexusDialogOpened(clientThread);
 		}
 
 		// Refresh the spirit tree cache on every menu open: the menu is

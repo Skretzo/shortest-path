@@ -12,8 +12,11 @@ import static shortestpath.poh.PohService.POH_LANDING_Y;
 import shortestpath.WorldPointUtil;
 import shortestpath.poh.PohService;
 import shortestpath.transport.Transport;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class TransportAvailability
 {
 	public static final Transport[] EMPTY_TRANSPORTS = new Transport[0];
@@ -32,19 +35,6 @@ public final class TransportAvailability
 	@Getter private final PrimitiveIntHashMap<Transport[]> transportsPacked;
 	@Getter private final PrimitiveIntHashMap<Transport[]> displayTransports;
 	@Getter private final Transport[] usableTeleports;
-
-	TransportAvailability(
-		PrimitiveIntHashMap<Transport[]> transportsPacked,
-		PrimitiveIntHashMap<Transport[]> displayTransports,
-		Transport[] usableTeleports)
-	{
-		this.transportsPacked = transportsPacked;
-		this.displayTransports = displayTransports;
-		this.usableTeleports = usableTeleports;
-	}
-
-
-
 
 
 

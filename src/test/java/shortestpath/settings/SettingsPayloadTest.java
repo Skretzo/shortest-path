@@ -27,15 +27,15 @@ public class SettingsPayloadTest
 	{
 		TestShortestPathConfig stub = new TestShortestPathConfig();
 		Settings settings = Settings.wrap(stub);
-		Settings.BankView before = settings.bank();
+		Settings.DisplayView before = settings.display();
 
-		settings.applyOverrides(Map.of("includeBankPath", true, "costBankVisit", 9));
+		settings.applyOverrides(Map.of("showBankPickupInfo", true, "tileCounterStep", 9));
 
-		assertFalse("held view snapshot keeps the old value", before.includeBankPath());
-		assertTrue(settings.bank().includeBankPath());
-		assertEquals(9, settings.bank().costBankVisit());
-		assertTrue(settings.effective().bool(ConfigKey.INCLUDE_BANK_PATH));
-		assertNotSame(before, settings.bank());
+		assertFalse("held view snapshot keeps the old value", before.showBankPickupInfo());
+		assertTrue(settings.display().showBankPickupInfo());
+		assertEquals(9, settings.display().tileCounterStep());
+		assertTrue(settings.effective().bool(ConfigKey.SHOW_BANK_PICKUP_INFO));
+		assertNotSame(before, settings.display());
 	}
 
 	@Test
@@ -44,7 +44,11 @@ public class SettingsPayloadTest
 		Settings settings = Settings.wrap(new TestShortestPathConfig());
 		settings.applyOverrides(Map.of("useTeleportationItems", "Inventory and Bank"));
 
-		assertEquals(TeleportationItem.INVENTORY_AND_BANK, settings.effective().useTeleportationItems());
+		// The read shape the transport-type consumer uses: configured base
+		// plus payload coercion through the service seam.
+		assertEquals(TeleportationItem.INVENTORY_AND_BANK,
+			settings.coerceTeleportationItem("useTeleportationItems",
+				(TeleportationItem) settings.configuredValue("useTeleportationItems")));
 	}
 
 	@Test
@@ -52,12 +56,12 @@ public class SettingsPayloadTest
 	{
 		TestShortestPathConfig stub = new TestShortestPathConfig();
 		Settings settings = Settings.wrap(stub);
-		settings.applyOverrides(Map.of("includeBankPath", true, "avoidWilderness", false));
+		settings.applyOverrides(Map.of("showBankPickupInfo", true, "avoidWilderness", false));
 
 		settings.clearOverrides();
 
 		assertTrue(settings.rawOverrides().isEmpty());
-		assertFalse(settings.bank().includeBankPath());
+		assertFalse(settings.display().showBankPickupInfo());
 		assertEquals(stub.avoidWilderness(), settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 	}
 
@@ -124,6 +128,7 @@ public class SettingsPayloadTest
 		assertEquals(stub.avoidWilderness(), settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
 		assertEquals(stub.includeBankPath(), settings.effective().bool(ConfigKey.INCLUDE_BANK_PATH));
 		assertEquals(stub.currencyThreshold(), settings.effective().num(ConfigKey.CURRENCY_THRESHOLD));
-		assertEquals(stub.useTeleportationItems(), settings.effective().useTeleportationItems());
+		assertEquals(stub.useTeleportationItems(),
+			settings.coerceTeleportationItem("useTeleportationItems", stub.useTeleportationItems()));
 	}
 }

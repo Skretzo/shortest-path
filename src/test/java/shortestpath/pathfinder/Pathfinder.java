@@ -27,6 +27,7 @@ public class Pathfinder implements ActiveSearch
 	private final boolean bankPathEnabled;
 	private final PathfinderConfig config;
 	private final CollisionMap map;
+	private final LegacyNeighborGen neighborGen;
 	private final boolean targetInWilderness;
 	private final boolean targetInBlockedRegion;
 	private final Runnable completionCallback;
@@ -86,6 +87,7 @@ public class Pathfinder implements ActiveSearch
 		stats = new PathfinderStats();
 		this.config = config;
 		this.map = config.getMap();
+		this.neighborGen = new LegacyNeighborGen(map);
 		this.start = start;
 		this.targets = targets;
 		this.goals = GoalStates.resolve(config, start, targets);
@@ -204,7 +206,7 @@ public class Pathfinder implements ActiveSearch
 
 	private void addNeighbors(int node, boolean nodeIsTile, int nodePacked)
 	{
-		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph,
+		PrimitiveIntList nodes = neighborGen.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph,
 			bankPathEnabled);
 		final int count = nodes.size();
 		for (int i = 0; i < count; i++)
@@ -335,7 +337,7 @@ public class Pathfinder implements ActiveSearch
 	@Override
 	public String backendName()
 	{
-		return PathfinderBackend.LEGACY.toString();
+		return "Legacy";
 	}
 
 	/**

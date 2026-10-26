@@ -1,6 +1,7 @@
 package shortestpath.widgets;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -109,6 +110,8 @@ public class WidgetGeometryTest
 		assertEquals(Integer.MIN_VALUE, detached.mapWorldPointToGraphicsPointY(0));
 		assertEquals(WorldPointUtil.UNDEFINED, detached.calculateMapPoint(10, 20));
 		assertEquals(WorldPointUtil.UNDEFINED, detached.getSelectedWorldPoint());
+		assertNull(detached.mapWorldPointToGraphicsPoint(0));
+		assertFalse(detached.worldMapOpen());
 
 		// The write seam records without a client and still never throws.
 		detached.menuOpened(new Point(4, 4));
@@ -132,6 +135,26 @@ public class WidgetGeometryTest
 		int packed = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		assertEquals(260, clientOnly.mapWorldPointToGraphicsPointX(packed));
 		assertEquals(172, clientOnly.mapWorldPointToGraphicsPointY(packed));
+		assertEquals(new Point(260, 172), clientOnly.mapWorldPointToGraphicsPoint(packed));
+		assertTrue(clientOnly.worldMapOpen());
+	}
+
+	@Test
+	public void closedWorldMapCollapsesThePointAndTheGuard()
+	{
+		// MAP_CONTAINER absent: the X/Y pair both answer MIN_VALUE, the
+		// composed read must surface null rather than a sentinel pair, and
+		// the guard reports closed.
+		WidgetGeometry clientOnly = new WidgetGeometry(client);
+		WorldMap worldMap = mock(WorldMap.class);
+		when(client.getWorldMap()).thenReturn(worldMap);
+		when(worldMap.getWorldMapZoom()).thenReturn(8f);
+		when(worldMap.getWorldMapPosition()).thenReturn(new Point(3200, 3200));
+		when(client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER)).thenReturn(null);
+
+		int packed = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+		assertNull(clientOnly.mapWorldPointToGraphicsPoint(packed));
+		assertFalse(clientOnly.worldMapOpen());
 	}
 
 	@Test

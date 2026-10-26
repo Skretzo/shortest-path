@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
-import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;

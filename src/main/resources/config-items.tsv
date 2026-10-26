@@ -1,4 +1,3 @@
-pathfinderAlgorithm	Pathfinder Algorithm	Algorithm used for pathfinding		
 avoidWilderness	Avoid Wilderness	Whether the wilderness should be avoided if possible<br>(otherwise, will e.g. use wilderness lever from Edgeville to Ardougne)		
 useAgilityShortcuts	Use Agility Shortcuts	Whether to include agility shortcuts in the path.<br>You must also have the required agility level		
 useGrappleShortcuts	Use Grapple Shortcuts	Whether to include crossbow grapple agility shortcuts in the path.<br>You must also have the required agility, ranged and strength levels		

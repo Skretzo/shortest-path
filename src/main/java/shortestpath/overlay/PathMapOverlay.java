@@ -8,23 +8,19 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.geom.Area;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.PrimitiveIntHashMap;
 import shortestpath.TileStyle;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
@@ -68,13 +64,13 @@ public class PathMapOverlay extends Overlay
 			return null;
 		}
 
-		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
+		if (!geometry.worldMapOpen())
 		{
 			return null;
 		}
 
 		Rectangle worldMapRectangle = Objects.requireNonNull(client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER)).getBounds();
-		Area worldMapClipArea = getWorldMapClipArea(worldMapRectangle);
+		Area worldMapClipArea = geometry.getWorldMapClipArea(worldMapRectangle);
 		graphics.setClip(worldMapClipArea);
 
 		if (settings.display().drawCollisionMap())
@@ -101,44 +97,30 @@ public class PathMapOverlay extends Overlay
 
 		if (settings.display().drawTransports())
 		{
-			PrimitiveIntHashMap<Transport[]> allTransports = annotator.getAllDisplayTransports();
-			PrimitiveIntHashMap<Transport[]> availableTransports = annotator.getTransports();
-
-			for (int a : allTransports.keys())
+			OverlayDrawing.forEachDisplayTransport(annotator, new OverlayDrawing.TransportVisitor()
 			{
-				if (a == Transport.UNDEFINED_ORIGIN)
+				private Point mapA;
+
+				@Override
+				public boolean beginOrigin(int origin)
 				{
-					continue; // skip teleports
+					mapA = geometry.mapWorldPointToGraphicsPoint(origin);
+					return mapA != null && worldMapClipArea.contains(mapA.getX(), mapA.getY());
 				}
 
-				int mapAX = geometry.mapWorldPointToGraphicsPointX(a);
-				int mapAY = geometry.mapWorldPointToGraphicsPointY(a);
-				if (!worldMapClipArea.contains(mapAX, mapAY))
+				@Override
+				public void visit(int origin, Transport b, boolean isAvailable)
 				{
-					continue;
-				}
-
-				Transport[] availableAtOrigin = availableTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS);
-
-				for (Transport b : allTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
-				{
-					if (b == null || (b.getType() != null && b.getType().isTeleport()))
+					Point mapB = geometry.mapWorldPointToGraphicsPoint(b.getDestination());
+					if (mapB == null || !worldMapClipArea.contains(mapB.getX(), mapB.getY()))
 					{
-						continue; // skip teleports
+						return;
 					}
 
-					int mapBX = geometry.mapWorldPointToGraphicsPointX(b.getDestination());
-					int mapBY = geometry.mapWorldPointToGraphicsPointY(b.getDestination());
-					if (!worldMapClipArea.contains(mapBX, mapBY))
-					{
-						continue;
-					}
-
-					boolean isAvailable = Arrays.asList(availableAtOrigin).contains(b);
 					graphics.setColor(isAvailable ? COLOR_AVAILABLE : COLOR_UNAVAILABLE);
-					graphics.drawLine(mapAX, mapAY, mapBX, mapBY);
+					graphics.drawLine(mapA.getX(), mapA.getY(), mapB.getX(), mapB.getY());
 				}
-			}
+			});
 		}
 
 		ActiveSearch search = scheduler.getActiveSearch();
@@ -181,14 +163,11 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			for (int target : search.getTargets().points())
+			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
 			{
-				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-				{
-					graphics.setColor(settings.display().colourPathCalculating());
-					drawOnMap(graphics, target, true, cursorPos);
-				}
-			}
+				graphics.setColor(settings.display().colourPathCalculating());
+				drawOnMap(graphics, target, true, cursorPos);
+			});
 		}
 
 		return null;
@@ -242,15 +221,16 @@ public class PathMapOverlay extends Overlay
 
 	private void drawMapSegment(Graphics2D graphics, int from, int to, Stroke stroke)
 	{
-		int x1 = geometry.mapWorldPointToGraphicsPointX(from);
-		int y1 = geometry.mapWorldPointToGraphicsPointY(from);
-		int x2 = geometry.mapWorldPointToGraphicsPointX(to);
-		int y2 = geometry.mapWorldPointToGraphicsPointY(to);
-		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE
-			|| x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
+		Point p1 = geometry.mapWorldPointToGraphicsPoint(from);
+		Point p2 = geometry.mapWorldPointToGraphicsPoint(to);
+		if (p1 == null || p2 == null)
 		{
 			return;
 		}
+		int x1 = p1.getX();
+		int y1 = p1.getY();
+		int x2 = p2.getX();
+		int y2 = p2.getY();
 		graphics.setStroke(stroke);
 		graphics.drawLine(x1, y1, x2, y2);
 		// Skip the head on segments too short to fit it (e.g. zoomed far out).
@@ -262,29 +242,28 @@ public class PathMapOverlay extends Overlay
 
 	private void drawSmallSquareOnMap(Graphics2D graphics, int point)
 	{
-		int x = geometry.mapWorldPointToGraphicsPointX(point);
-		int y = geometry.mapWorldPointToGraphicsPointY(point);
-		int nextX = geometry.mapWorldPointToGraphicsPointX(WorldPointUtil.dxdy(point, 1, -1));
-		if (x == Integer.MIN_VALUE || y == Integer.MIN_VALUE || nextX == Integer.MIN_VALUE)
+		Point p = geometry.mapWorldPointToGraphicsPoint(point);
+		Point next = geometry.mapWorldPointToGraphicsPoint(WorldPointUtil.dxdy(point, 1, -1));
+		if (p == null || next == null)
 		{
 			return;
 		}
-		int size = Math.max(2, (nextX - x) / 2);
+		int x = p.getX();
+		int y = p.getY();
+		int size = Math.max(2, (next.getX() - x) / 2);
 		graphics.fillRect(x - size / 2, y - size / 2, size, size);
 	}
 
 	private void drawSolidLineOnMap(Graphics2D graphics, int from, int to)
 	{
-		int x1 = geometry.mapWorldPointToGraphicsPointX(from);
-		int y1 = geometry.mapWorldPointToGraphicsPointY(from);
-		int x2 = geometry.mapWorldPointToGraphicsPointX(to);
-		int y2 = geometry.mapWorldPointToGraphicsPointY(to);
-		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE || x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
+		Point p1 = geometry.mapWorldPointToGraphicsPoint(from);
+		Point p2 = geometry.mapWorldPointToGraphicsPoint(to);
+		if (p1 == null || p2 == null)
 		{
 			return;
 		}
 		graphics.setStroke(new BasicStroke(2));
-		graphics.drawLine(x1, y1, x2, y2);
+		graphics.drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 	}
 
 	private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos)
@@ -294,16 +273,18 @@ public class PathMapOverlay extends Overlay
 
 	private void drawOnMap(Graphics2D graphics, int point, int offsetPoint, boolean checkHover, Point cursorPos)
 	{
-		int startX = geometry.mapWorldPointToGraphicsPointX(point);
-		int startY = geometry.mapWorldPointToGraphicsPointY(point);
-		int endX = geometry.mapWorldPointToGraphicsPointX(offsetPoint);
-		int endY = geometry.mapWorldPointToGraphicsPointY(offsetPoint);
+		Point start = geometry.mapWorldPointToGraphicsPoint(point);
+		Point end = geometry.mapWorldPointToGraphicsPoint(offsetPoint);
 
-		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
+		if (start == null || end == null)
 		{
 			return;
 		}
+
+		int startX = start.getX();
+		int startY = start.getY();
+		int endX = end.getX();
+		int endY = end.getY();
 
 		int x = startX;
 		int y = startY;
@@ -327,26 +308,6 @@ public class PathMapOverlay extends Overlay
 			}
 			graphics.fillRect(x, y, width, height);
 		}
-	}
-
-	private Area getWorldMapClipArea(Rectangle baseRectangle)
-	{
-		final Widget overview = client.getWidget(InterfaceID.Worldmap.OVERVIEW_CONTAINER);
-		final Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAPLIST_BOX_GRAPHIC0);
-
-		Area clipArea = new Area(baseRectangle);
-
-		if (overview != null && !overview.isHidden())
-		{
-			clipArea.subtract(new Area(overview.getBounds()));
-		}
-
-		if (surfaceSelector != null && !surfaceSelector.isHidden())
-		{
-			clipArea.subtract(new Area(surfaceSelector.getBounds()));
-		}
-
-		return clipArea;
 	}
 
 	private int getWorldMapExtentWidth(Rectangle baseRectangle)

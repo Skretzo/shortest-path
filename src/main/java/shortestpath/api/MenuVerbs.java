@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
@@ -35,6 +36,7 @@ import shortestpath.widgets.WidgetGeometry;
  * <p>This package is a leaf: nothing here may reference the plugin type.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class MenuVerbs
 {
 	private static final String CLEAR = "Clear";
@@ -50,52 +52,12 @@ public class MenuVerbs
 	private final PathAnnotator annotator;
 	private final WidgetGeometry geometry;
 
-	@Inject
-	public MenuVerbs(Client client, PathScheduler scheduler, PathAnnotator annotator,
-		WidgetGeometry geometry)
-	{
-		this.client = client;
-		this.scheduler = scheduler;
-		this.annotator = annotator;
-		this.geometry = geometry;
-	}
-
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
 		if (client.isKeyPressed(KeyCode.KC_SHIFT)
 			&& event.getType() == MenuAction.WALK.getId())
 		{
-			addMenuEntry(event, SET, TARGET, 1);
-			ActiveSearch pathfinder = scheduler.getActiveSearch();
-			if (pathfinder != null)
-			{
-				if (!pathfinder.getTargets().isEmpty())
-				{
-					addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-						(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
-				}
-				for (int target : pathfinder.getTargets().points())
-				{
-					if (target != WorldPointUtil.UNDEFINED)
-					{
-						addMenuEntry(event, SET, START, 1);
-						break;
-					}
-				}
-				int selectedTile = geometry.getSelectedWorldPoint();
-				List<PathStep> path;
-				if ((path = pathfinder.getPath()) != null)
-				{
-					for (PathStep pathStep : path)
-					{
-						if (pathStep.getPackedPosition() == selectedTile)
-						{
-							addMenuEntry(event, CLEAR, PATH, 1);
-							break;
-						}
-					}
-				}
-			}
+			addSurfaceEntries(event, 1, true);
 		}
 
 		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
@@ -106,24 +68,7 @@ public class MenuVerbs
 				client.getMouseCanvasPosition().getX(),
 				client.getMouseCanvasPosition().getY()))
 			{
-				addMenuEntry(event, SET, TARGET, 0);
-				ActiveSearch pathfinder = scheduler.getActiveSearch();
-				if (pathfinder != null)
-				{
-					if (!pathfinder.getTargets().isEmpty())
-					{
-						addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
-							(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
-					}
-					for (int target : pathfinder.getTargets().points())
-					{
-						if (target != WorldPointUtil.UNDEFINED)
-						{
-							addMenuEntry(event, SET, START, 0);
-							addMenuEntry(event, CLEAR, PATH, 0);
-						}
-					}
-				}
+				addSurfaceEntries(event, 0, false);
 			}
 			if (event.getOption().equals(FLASH_ICONS) && annotator.hasDestination(simplify(event.getTarget())))
 			{
@@ -181,6 +126,70 @@ public class MenuVerbs
 		{
 			scheduler.setTargets(annotator.getDestinations(simplify(entry.getTarget())), true);
 		}
+	}
+
+	/**
+	 * The shared emission path for both verb surfaces: the two Set-target
+	 * entries, then SET/START on the first defined target (shift-right-click)
+	 * or SET/START + CLEAR/PATH on every defined target (world map —
+	 * addMenuEntry dedup makes the repeats idempotent). When
+	 * {@code clearOnSelectedTile} is set, CLEAR/PATH is instead offered only
+	 * when the selected tile sits on the displayed path.
+	 */
+	private void addSurfaceEntries(MenuEntryAdded event, int position, boolean clearOnSelectedTile)
+	{
+		ActiveSearch pathfinder = addSetTargetEntries(event, position);
+		if (pathfinder == null)
+		{
+			return;
+		}
+		for (int target : pathfinder.getTargets().points())
+		{
+			if (target == WorldPointUtil.UNDEFINED)
+			{
+				continue;
+			}
+			addMenuEntry(event, SET, START, position);
+			if (clearOnSelectedTile)
+			{
+				break;
+			}
+			addMenuEntry(event, CLEAR, PATH, position);
+		}
+		if (!clearOnSelectedTile)
+		{
+			return;
+		}
+		int selectedTile = geometry.getSelectedWorldPoint();
+		List<PathStep> path;
+		if ((path = pathfinder.getPath()) != null)
+		{
+			for (PathStep pathStep : path)
+			{
+				if (pathStep.getPackedPosition() == selectedTile)
+				{
+					addMenuEntry(event, CLEAR, PATH, position);
+					break;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Offers the two Set-target entries every verb surface shares and hands
+	 * back the active search (or null) so the caller can emit its own
+	 * Start/Clear verbs.
+	 */
+	private ActiveSearch addSetTargetEntries(MenuEntryAdded event, int position)
+	{
+		addMenuEntry(event, SET, TARGET, position);
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
+		if (pathfinder != null && !pathfinder.getTargets().isEmpty())
+		{
+			addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
+				(pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), position);
+		}
+		return pathfinder;
 	}
 
 	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)

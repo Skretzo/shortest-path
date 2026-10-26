@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import net.runelite.api.Quest;
@@ -318,7 +319,7 @@ public class ResourceLoaderTest
 
 		Assert.assertEquals("Total level should be 1500", 1500, skillLevels.totalLevel());
 		Assert.assertEquals("Combat level should be 100", 100, skillLevels.combatLevel());
-		Assert.assertEquals("Quest points should be 200", 200, skillLevels.questPoints());
+		Assert.assertEquals("Quest points should be 200", 200, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
 	}
 
 	@Test
@@ -335,7 +336,7 @@ public class ResourceLoaderTest
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(Skill.AGILITY));
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.totalLevel());
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.combatLevel());
-		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.questPoints());
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
 	}
 
 	@Test
@@ -644,7 +645,7 @@ public class ResourceLoaderTest
 		}
 
 		Assert.assertNotNull("Quest point cape teleport should be loaded", cape);
-		Assert.assertEquals("Quest points should be dynamic", SkillLevels.MAX_LEVEL, cape.getSkillLevels().questPoints());
+		Assert.assertEquals("Quest points should be dynamic", SkillLevels.MAX_LEVEL, cape.getSkillLevels().get(SkillLevels.QUEST_POINTS_INDEX));
 		Assert.assertFalse("Cape teleport should not have quest-name requirements", cape.isQuestLocked());
 	}
 
@@ -659,7 +660,8 @@ public class ResourceLoaderTest
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport transport = getFirstTransport(transports.get(origin));
 
-		Set<VarRequirement> varbits = transport.getVarbits();
+		Set<VarRequirement> varbits = transport.getVarRequirements().stream()
+			.filter(VarRequirement::isVarbit).collect(Collectors.toSet());
 		Assert.assertEquals("Should have one varbit requirement", 1, varbits.size());
 
 		VarRequirement varbit = varbits.iterator().next();
@@ -677,7 +679,8 @@ public class ResourceLoaderTest
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport transport = getFirstTransport(transports.get(origin));
 
-		Set<VarRequirement> varbits = transport.getVarbits();
+		Set<VarRequirement> varbits = transport.getVarRequirements().stream()
+			.filter(VarRequirement::isVarbit).collect(Collectors.toSet());
 		Assert.assertEquals("Should have five varbit requirements", 5, varbits.size());
 
 		// Verify all expected varbit IDs are present
@@ -721,7 +724,8 @@ public class ResourceLoaderTest
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport transport = getFirstTransport(transports.get(origin));
 
-		Set<VarRequirement> varPlayers = transport.getVarPlayers();
+		Set<VarRequirement> varPlayers = transport.getVarRequirements().stream()
+			.filter(VarRequirement::isVarPlayer).collect(Collectors.toSet());
 		Assert.assertEquals("Should have two varplayer requirements", 2, varPlayers.size());
 
 		// Verify expected varplayer IDs are present
@@ -752,8 +756,10 @@ public class ResourceLoaderTest
 		int origin = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		Transport transport = getFirstTransport(transports.get(origin));
 
-		Assert.assertTrue("Should have no varbit requirements", transport.getVarbits().isEmpty());
-		Assert.assertTrue("Should have no varplayer requirements", transport.getVarPlayers().isEmpty());
+		Assert.assertTrue("Should have no varbit requirements", transport.getVarRequirements().stream()
+			.noneMatch(VarRequirement::isVarbit));
+		Assert.assertTrue("Should have no varplayer requirements", transport.getVarRequirements().stream()
+			.noneMatch(VarRequirement::isVarPlayer));
 	}
 
 	@Test

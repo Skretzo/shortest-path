@@ -198,7 +198,7 @@ public class BankRequirementAdapterTest
 			Set.of(),
 			false,
 			new shortestpath.leagues.LeagueModeState(),
-			null);
+			null, Set.of());
 		Requirements requirements = requirements(context);
 		assertTrue(requirements.satisfied(fortis));
 
@@ -219,7 +219,7 @@ public class BankRequirementAdapterTest
 			Set.of(),
 			false,
 			new shortestpath.leagues.LeagueModeState(),
-			null);
+			null, Set.of());
 		assertFalse(requirements(recaptured).satisfied(fortis));
 	}
 }

@@ -1,0 +1,8 @@
+setColor rgb(0,0,0) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Exit: Nexus: Lumbridge Home Teleport" @270,237 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Exit: Nexus: Lumbridge Home Teleport" @269,236 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Exit: Nexus: Lumbridge Home Teleport" @270,237 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Exit: Nexus: Lumbridge Home Teleport" @269,236 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null

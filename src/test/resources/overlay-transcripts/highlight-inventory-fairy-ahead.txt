@@ -1,0 +1,1 @@
+drawImage @10,10 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null

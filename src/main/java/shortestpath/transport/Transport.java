@@ -143,20 +143,7 @@ public class Transport
 			.regionOverride(destination.regionOverride != null ? destination.regionOverride : origin.regionOverride);
 
 		Transport builtTransport = builder.build();
-
-		this.origin = builtTransport.origin;
-		this.destination = builtTransport.destination;
-		this.skillLevels = builtTransport.skillLevels;
-		this.quests = builtTransport.quests;
-		this.itemRequirements = builtTransport.itemRequirements;
-		this.type = builtTransport.type;
-		this.duration = builtTransport.duration;
-		this.displayInfo = builtTransport.displayInfo;
-		this.isConsumable = builtTransport.isConsumable;
-		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
-		this.objectInfo = builtTransport.objectInfo;
-		this.varRequirements = builtTransport.varRequirements;
-		this.regionOverride = builtTransport.regionOverride;
+		copyFrom(builtTransport);
 	}
 
 	Transport(TransportRecord record, TransportType transportType)
@@ -219,23 +206,42 @@ public class Transport
 		}
 
 		Transport builtTransport = builder.build();
-		this.origin = builtTransport.origin;
-		this.destination = builtTransport.destination;
-		this.skillLevels = builtTransport.skillLevels;
-		this.quests = builtTransport.quests;
-		this.itemRequirements = builtTransport.itemRequirements;
-		this.type = builtTransport.type;
-		this.duration = builtTransport.duration;
-		this.displayInfo = builtTransport.displayInfo;
-		this.isConsumable = builtTransport.isConsumable;
-		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
-		this.objectInfo = builtTransport.objectInfo;
-		this.varRequirements = builtTransport.varRequirements;
-		this.regionOverride = builtTransport.regionOverride;
+		copyFrom(builtTransport);
+	}
+
+	private void copyFrom(Transport t)
+	{
+		this.origin = t.origin;
+		this.destination = t.destination;
+		this.skillLevels = t.skillLevels;
+		this.quests = t.quests;
+		this.itemRequirements = t.itemRequirements;
+		this.type = t.type;
+		this.duration = t.duration;
+		this.displayInfo = t.displayInfo;
+		this.isConsumable = t.isConsumable;
+		this.maxWildernessLevel = t.maxWildernessLevel;
+		this.objectInfo = t.objectInfo;
+		this.varRequirements = t.varRequirements;
+		this.regionOverride = t.regionOverride;
 	}
 
 	private Transport()
 	{
+	}
+
+	/**
+	 * A copy of this transport with a different item-requirement set. Used to
+	 * inject requirements derived at availability-build time — such as the
+	 * fairy-ring staff rule — onto the offered transport without mutating the
+	 * shared loaded instance every refresh iterates.
+	 */
+	public Transport withItemRequirements(TransportItems items)
+	{
+		Transport copy = new Transport();
+		copy.copyFrom(this);
+		copy.itemRequirements = items;
+		return copy;
 	}
 
 	/**
@@ -308,14 +314,6 @@ public class Transport
 	}
 
 	/**
-	 * Whether this transport is of the given type.
-	 */
-	public boolean isType(TransportType type)
-	{
-		return type.equals(this.type);
-	}
-
-	/**
 	 * Whether this transport's display info contains the given substring.
 	 * Returns false if displayInfo is null.
 	 */
@@ -330,55 +328,6 @@ public class Transport
 	public boolean isUsableAtWildernessLevel(int wildernessLevel)
 	{
 		return !type.isTeleport() || wildernessLevel <= maxWildernessLevel;
-	}
-
-	/**
-	 * Gets varbit requirements (filtered from varRequirements).
-	 * For backward compatibility with code that needs separate varbit access.
-	 */
-	public Set<VarRequirement> getVarbits()
-	{
-		Set<VarRequirement> varbits = new HashSet<>();
-		for (VarRequirement req : varRequirements)
-		{
-			if (req.isVarbit())
-			{
-				varbits.add(req);
-			}
-		}
-		return varbits;
-	}
-
-	/**
-	 * Whether this transport has a varbit requirement with the given ID.
-	 */
-	public boolean hasVarbit(int varbitId)
-	{
-		for (VarRequirement req : varRequirements)
-		{
-			if (req.isVarbit() && req.getId() == varbitId)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Gets varplayer requirements (filtered from varRequirements).
-	 * For backward compatibility with code that needs separate varplayer access.
-	 */
-	public Set<VarRequirement> getVarPlayers()
-	{
-		Set<VarRequirement> varPlayers = new HashSet<>();
-		for (VarRequirement req : varRequirements)
-		{
-			if (req.isVarPlayer())
-			{
-				varPlayers.add(req);
-			}
-		}
-		return varPlayers;
 	}
 
 	public static class TransportBuilder

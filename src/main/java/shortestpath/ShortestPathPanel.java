@@ -1,10 +1,18 @@
 package shortestpath;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Rectangle;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -18,38 +26,53 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.border.BevelBorder;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import javax.swing.border.SoftBevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.MultiplexingPluginPanel;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.ui.components.IconTextField;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.LinkBrowser;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.items.ItemStateService;
 import shortestpath.settings.ConfigItems;
 import shortestpath.settings.Settings;
-import shortestpath.pathfinder.PathfinderBackend;
+import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.BalloonRoute;
@@ -62,12 +85,12 @@ import shortestpath.transport.BalloonRoute;
  * {@link Settings#listen} for same-key sync — so live recalculation rides the
  * same {@code ConfigChanged} path as a settings-panel edit.
  *
- * <p>Navigation is a tile drill-down: a pinned search strip sits NORTH of a
- * {@link MultiplexingPluginPanel} card-stack whose root is the seven-tile
- * {@link ShortestPathHomePanel}; each tile pushes its {@link CategoryPanel}
- * sub-panel and the sub-panel's back arrow pops home. Searching pushes the
- * home surface, which renders results grouped by category and deep-links
- * into the matching sub-panel.</p>
+ * <p>The body is a two-state {@link CardLayout} under a pinned search
+ * strip: a landing tile grid — one raised tile per section carrying its
+ * icon, name and a live count — and, after a tile click, that section's
+ * {@link CategoryPanel} filling the view with a back arrow returning to
+ * the grid. A non-empty query filters the drilled section's rows in
+ * place.</p>
  */
 public class ShortestPathPanel extends PluginPanel
 {
@@ -75,6 +98,15 @@ public class ShortestPathPanel extends PluginPanel
 	static final int CARD_ICON_SIZE = 16;
 	private static final int SPINNER_FIELD_WIDTH = 6;
 	static final int SUB_LIST_INDENT = 16;
+	/** The {@link CardLayout} name of the landing tile grid. */
+	private static final String HOME_VIEW = "home";
+	private static final int TILE_GAP = 4;
+	/**
+	 * One tile edge: the content column (viewport width minus the 8px
+	 * side insets) minus the grid gap, split across the two columns.
+	 */
+	private static final int TILE_EDGE = (PluginPanel.PANEL_WIDTH - 2 * 8 - TILE_GAP) / 2;
+	private static final int TILE_ICON_SIZE = 32;
 	/**
 	 * The chrome every expandable surface shares — transport cards,
 	 * restriction rows and collapsible enum groups alike: the collapsed
@@ -91,6 +123,12 @@ public class ShortestPathPanel extends PluginPanel
 	static final Color EXPANDABLE_DETAIL_BORDER = ColorScheme.DARKER_GRAY_COLOR;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_KEY = "restrictionsOwnedOnly";
+	private static final int FOOTER_BUTTON_EDGE = 22;
+	private static final int FOOTER_ICON_SIZE = 18;
+	private static final String GITHUB_URL = "https://github.com/Skretzo/shortest-path";
+	private static final String DISCORD_URL = "https://discord.gg/uX47xg8u3M";
+	private static final ImageIcon GITHUB_ICON = footerIcon("github_icon.png");
+	private static final ImageIcon DISCORD_ICON = footerIcon("discord_icon.png");
 	private static final String OWNED_FILTER_TOOLTIP =
 		"Only show teleports for items in your inventory, equipment or bank";
 	static final String OWNED_EMPTY_LINE_1 =
@@ -99,7 +137,7 @@ public class ShortestPathPanel extends PluginPanel
 		"Bank items are remembered from the last time you opened it on this account.";
 	static final String RESTRICTIONS_DISABLED_HINT =
 		"Teleportation items are disabled. Enable \"Use Teleportation Items\" "
-			+ "in General to restrict individual items.";
+			+ "in the plugin configuration to restrict individual items.";
 
 	static final ImageIcon SECTION_EXPAND_ICON;
 	static final ImageIcon SECTION_RETRACT_ICON;
@@ -120,16 +158,21 @@ public class ShortestPathPanel extends PluginPanel
 	private final ItemManager itemManager;
 	private final SpriteManager spriteManager;
 	private final ItemStateService itemState;
-	// The home footer's gear posts an overlay-config menu click on the
-	// shared bus; the event's overlay must resolve back to this plugin so
-	// the config surface knows which settings page to open.
+	// The Settings tile posts an overlay-config menu click on the shared
+	// bus; the event's overlay must resolve back to this plugin so the
+	// config surface knows which settings page to open.
 	final EventBus eventBus;
 	final Plugin plugin;
-
-	private final IconTextField searchBar;
-	private final MultiplexingPluginPanel muxer;
-	private final ShortestPathHomePanel home;
+	/**
+	 * A render-nothing overlay bound to the plugin — the posted config
+	 * click resolves the page to open off {@code overlay.getPlugin()}.
+	 * Never registered with the OverlayManager.
+	 */
+	private final Overlay configOverlay;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final IconTextField searchBar;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<CategoryPanel> categories = new ArrayList<>();
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<TransportFamilyCard> transportCards = new ArrayList<>();
 
 	/**
@@ -140,13 +183,19 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	private final List<Runnable> unlisteners = new CopyOnWriteArrayList<>();
 
-	// Every POH control below the master row; dimmed + disabled while the
-	// master is off, same contract as the transport cards.
-	private final List<SearchRow> pohSubRows = new ArrayList<>();
-
-	private CategoryPanel restrictionsCategory;
-	private RestrictionListPanel restrictionListPanel;
-	private String currentQuery = "";
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private RestrictionListPanel restrictionListPanel;
+	/**
+	 * The trimmed text currently in the search field — the query sub-panels
+	 * apply when they activate.
+	 */
+	@Getter(AccessLevel.PACKAGE) private String currentQuery = "";
+	/**
+	 * The two-state body: the {@link #HOME_VIEW} tile grid or one drilled
+	 * {@link CategoryPanel} filling it — swapped by {@link CardLayout}
+	 * name, never stacked.
+	 */
+	private final JPanel body = new JPanel(new CardLayout());
+	private final List<Tile> tiles = new ArrayList<>();
 
 	ShortestPathPanel(Settings settings, Client client,
 		ClientThread clientThread, ItemManager itemManager,
@@ -163,6 +212,7 @@ public class ShortestPathPanel extends PluginPanel
 		this.itemState = itemState;
 		this.eventBus = eventBus;
 		this.plugin = plugin;
+		this.configOverlay = new ConfigHandleOverlay(plugin);
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -200,69 +250,36 @@ public class ShortestPathPanel extends PluginPanel
 		topPanel.add(searchBar, BorderLayout.CENTER);
 		add(topPanel, BorderLayout.NORTH);
 
-		// The categories exist before the home view so the tile callbacks
-		// can push them; the muxer roots at home and stacks categories on top.
-		buildGeneralCategory();
+		// The sections build in drill order — each registers its
+		// syncFromConfig listeners as it is constructed, so every control
+		// is live before first paint.
 		buildTransportsCategory();
 		buildRestrictionsCategory();
-		buildUnlocksCategory();
-		buildBankCategory();
 		buildPohCategory();
-		buildDisplayCategory();
 
-		home = new ShortestPathHomePanel(this);
-		muxer = new MultiplexingPluginPanel(home);
-		add(muxer, BorderLayout.CENTER);
+		body.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		body.add(homeView(), HOME_VIEW);
+		for (CategoryPanel category : categories)
+		{
+			body.add(category, category.categoryName());
+		}
+		add(body, BorderLayout.CENTER);
 
-		// Tile statuses summarize live config: every key a status reads gets
-		// a refresh listener so tiles track panel writes and external edits.
-		// Ordering matters — listeners run in registration order, and the
-		// card / restriction-list syncFromConfig listeners (registered while
-		// the categories were built above) must update their model state
-		// before home::refresh reads it. Keep these registrations last, or
-		// have refresh() re-read config directly, or tiles go stale.
-		home.registerRefreshListeners();
+		// Tile count lines track the keys they summarize: every card
+		// master plus the restriction checklist's record store.
+		for (TransportFamilyCard card : transportCards)
+		{
+			registerConfigListener(card.getKeyName(), this::refreshTiles);
+		}
+		registerConfigListener("blockedTeleportItems", this::refreshTiles);
+		showHome();
 	}
 
-	// ---- Category builders -------------------------------------------------
-
-	private void buildGeneralCategory()
-	{
-		CategoryPanel general = new CategoryPanel(this, "General", "routing");
-		categories.add(general);
-		// Routing policies first, then the path-lifecycle controls, then
-		// the backend selectors.
-		general.addRow(checkRow("avoidWilderness"));
-		general.addRow(checkRow("collisionAwareBlockedTargets"));
-		// Sailing moves is a routing policy with no threshold family —
-		// a plain check row beside the other transport-adjacent policies
-		// rather than a Transports card.
-		general.addRow(checkRow("useSailingMoves"));
-		general.addRow(spinnerRow("currencyThreshold"));
-		general.addRow(checkRow("cancelInstead"));
-		general.addRow(spinnerRow("recalculateDistance"));
-		general.addRow(spinnerRow("finishDistance"));
-		general.addRow(spinnerRow("unreachableTargetDistanceThreshold"));
-		general.addRow(checkRow("showUnreachableText"));
-		general.addRow(spinnerRow("calculationCutoff"));
-		// The teleport-items mode is a routing policy, so its combo lives
-		// with the other General rows; its Transports card is masterless.
-		general.addRow(comboRow("useTeleportationItems"));
-		general.addRow(comboRow("pathfinderAlgorithm"));
-
-		// The heuristic weight only steers the A* backend — dim it while
-		// legacy is selected, same contract as the transport cards.
-		SearchRow weightRow = spinnerRow("aStarHeuristicWeight");
-		general.addRow(weightRow);
-		Runnable applyWeightEnabled = () -> applyRowDisabledState(weightRow.component,
-			PathfinderBackend.ASTAR.equals(settings.configuredValue("pathfinderAlgorithm")));
-		applyWeightEnabled.run();
-		registerConfigListener("pathfinderAlgorithm", applyWeightEnabled);
-	}
+	// ---- Section builders -------------------------------------------------
 
 	private void buildTransportsCategory()
 	{
-		CategoryPanel transports = new CategoryPanel(this, "Transports", "");
+		CategoryPanel transports = new CategoryPanel("Transports", "", this::showHome);
 		categories.add(transports);
 
 		addFamilyCard(transports, "useAgilityShortcuts", ItemID.AGILITY_JUMP,
@@ -282,11 +299,15 @@ public class ShortestPathPanel extends PluginPanel
 		addFamilyCard(transports, "useGnomeGliders", ItemID.ALUFT_GNOME_GOGGLES,
 			familyThresholdRows("useGnomeGliders"));
 		// The balloon card's detail well also carries the per-route basket
-		// checkboxes — the legacy single "basket stocked" unlock is gone
-		// from Unlocks now that routes are selected per destination.
+		// group — the basket set is account state (which baskets are
+		// stocked), not routing state, so the group stays editable while
+		// the balloon family itself is switched off.
 		List<SearchRow> balloonDetail = new ArrayList<>(
 			List.of(familyThresholdRows("useHotAirBalloons")));
-		balloonDetail.addAll(balloonRouteRows());
+		SearchRow basketRoutes = enumSetGroupRow("balloonLogBasketRoutes",
+			BalloonRoute.class, "Log Basket Routes", List.of(BalloonRoute.values()));
+		basketRoutes.component.putClientProperty(ALWAYS_ENABLED, Boolean.TRUE);
+		balloonDetail.add(basketRoutes);
 		addFamilyCard(transports, "useHotAirBalloons", ItemID.ZEP_TOY_BALLOON_RED,
 			balloonDetail.toArray(new SearchRow[0]));
 		// The spriteless MAGIC_CARPET placeholder renders empty — an
@@ -331,7 +352,7 @@ public class ShortestPathPanel extends PluginPanel
 
 	private void buildRestrictionsCategory()
 	{
-		restrictionsCategory = new CategoryPanel(this, "Teleport Restrictions", "");
+		CategoryPanel restrictionsCategory = new CategoryPanel("Teleport Restrictions", "", this::showHome);
 		categories.add(restrictionsCategory);
 		restrictionListPanel = new RestrictionListPanel(this, settings, client,
 			clientThread, itemState, restrictionsCategory.matchText());
@@ -355,86 +376,257 @@ public class ShortestPathPanel extends PluginPanel
 		restrictionsCategory.setTrailing(owned);
 	}
 
-	private void buildUnlocksCategory()
-	{
-		CategoryPanel unlocks = new CategoryPanel(this, "Unlocks", "");
-		categories.add(unlocks);
-		unlocks.addRow(checkRow("unlockCanoeAxe"));
-		unlocks.addRow(checkRow("unlockXericsHonour"));
-		unlocks.addRow(checkRow("unlockDragontoothPassage"));
-		unlocks.addRow(checkRow("unlockMorUlRek"));
-		// The respawn flag is account state the client cannot read — it
-		// sits with the unlocks rather than the General routing policies.
-		unlocks.addRow(checkRow("respawnPrifddinas"));
-	}
-
-	private void buildBankCategory()
-	{
-		CategoryPanel bank = new CategoryPanel(this, "Bank", "");
-		categories.add(bank);
-		bank.addRow(checkRow("includeBankPath"));
-		bank.addRow(spinnerRow("costBankVisit"));
-		// The bank-pickup display pair belongs with the bank routing
-		// options — the hint and item highlight only act on bank visits.
-		bank.addRow(checkRow("showBankPickupInfo"));
-		bank.addRow(checkRow("highlightBankPickupItems"));
-	}
-
+	/**
+	 * The house section is a single flat transport-family card: the
+	 * {@code usePoh} master gates the same dim/disable contract every
+	 * family card carries, and the detail rows — the sub-feature toggles
+	 * plus the two captioned sets of collapsible enum groups — sit always
+	 * expanded beneath it without the expandable frame. One card is the
+	 * whole section, so the collapsible chrome would only frame a lone
+	 * boxed block; the flat variant reads like a plain labelled group.
+	 */
 	private void buildPohCategory()
 	{
-		CategoryPanel poh = new CategoryPanel(this, "Player-Owned House", "");
+		CategoryPanel poh = new CategoryPanel("Player-Owned House", "", this::showHome);
 		categories.add(poh);
 
-		SearchRow master = checkRow("usePoh", () -> applyPohEnabled(settings.configuredBool("usePoh")));
-		poh.addRow(master);
-
-		pohSubRows.add(checkRow("usePohFairyRing"));
-		pohSubRows.add(checkRow("usePohSpiritTree"));
-		pohSubRows.add(checkRow("usePohObelisk"));
-		pohSubRows.add(comboRow("pohJewelleryBoxTier"));
+		List<SearchRow> detail = new ArrayList<>();
+		detail.add(checkRow("usePohFairyRing"));
+		detail.add(checkRow("usePohSpiritTree"));
+		detail.add(checkRow("usePohObelisk"));
+		detail.add(comboRow("pohJewelleryBoxTier"));
 		// The five nexus groups and the mounted group share identical
 		// chrome — the captions split them into their two named sets.
-		pohSubRows.add(captionRow("Portal Nexus", configName("pohNexusPortals")));
-		pohSubRows.addAll(setGroupedSubListRows("pohNexusPortals", PohNexusPortal.class, PohNexusPortal::group));
-		pohSubRows.add(captionRow("Mounted Items", configName("pohMountedItems")));
-		pohSubRows.add(enumSetGroupRow("pohMountedItems", PohMountedItem.class,
+		detail.add(captionRow("Portal Nexus", configName("pohNexusPortals")));
+		detail.addAll(setGroupedSubListRows("pohNexusPortals", PohNexusPortal.class, PohNexusPortal::group));
+		detail.add(captionRow("Mounted Items", configName("pohMountedItems")));
+		detail.add(enumSetGroupRow("pohMountedItems", PohMountedItem.class,
 			"All items", List.of(PohMountedItem.values())));
-		for (SearchRow row : pohSubRows)
+
+		addFlatFamilyCard(poh, "usePoh", ItemID.POH_TABLET_TELEPORTTOHOUSE,
+			detail.toArray(new SearchRow[0]));
+	}
+
+	// ---- Navigation ---------------------------------------------------------
+
+	/**
+	 * The landing view: a two-column grid of tiles — one per section
+	 * (icon, name and a live count line, drilling into the section on
+	 * click) plus a Settings tile that opens the plugin's stock config
+	 * page — over a footer row of external link buttons.
+	 */
+	private JComponent homeView()
+	{
+		JPanel grid = new JPanel(new DynamicGridLayout(0, 2, TILE_GAP, TILE_GAP));
+		grid.setOpaque(false);
+		for (CategoryPanel category : categories)
 		{
-			poh.addRow(row);
+			Tile tile = new Tile(category, () -> showSection(category));
+			if ("Transports".equals(category.categoryName()))
+			{
+				// The Transports tile wears the world map's transport
+				// POI glyph — a client sprite, not an item icon.
+				loadSpriteIcon(SpriteID.Mapfunction.TRANSPORTATION,
+					tile.iconLabel, TILE_ICON_SIZE);
+			}
+			else
+			{
+				loadItemIcon(tileIconFor(category), tile.iconLabel, TILE_ICON_SIZE);
+			}
+			tiles.add(tile);
+			grid.add(tile);
 		}
 
-		boolean enabled = settings.configuredBool("usePoh");
-		for (SearchRow row : pohSubRows)
+		// The fourth tile deep-links the plugin's stock config page;
+		// its white cog item sprite matches the other tiles' item-icon
+		// imagery.
+		Tile settingsTile = new Tile("Settings", this::openConfigurationPanel);
+		loadItemIcon(ItemID.WHITECOG, settingsTile.iconLabel, TILE_ICON_SIZE);
+		tiles.add(settingsTile);
+		grid.add(settingsTile);
+
+		FixedWidthPanel content = new FixedWidthPanel();
+		content.setLayout(new DynamicGridLayout(0, 1, 0, 5));
+		content.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		content.setBorder(new EmptyBorder(PluginPanel.BORDER_OFFSET, 8, PluginPanel.BORDER_OFFSET, 8));
+		content.add(grid);
+		content.add(linkRow());
+
+		FixedWidthPanel view = new FixedWidthPanel();
+		view.setLayout(new BorderLayout());
+		view.add(content, BorderLayout.NORTH);
+		JScrollPane scrollPane = new JScrollPane(view);
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		return scrollPane;
+	}
+
+	/**
+	 * Drill into a section: it fills the body under the pinned search
+	 * strip; the back arrow in its header returns to the tile grid.
+	 */
+	private void showSection(CategoryPanel category)
+	{
+		((CardLayout) body.getLayout()).show(body, category.categoryName());
+	}
+
+	/**
+	 * Back to the tile grid — the count lines recompute so the tiles
+	 * always show live state.
+	 */
+	private void showHome()
+	{
+		((CardLayout) body.getLayout()).show(body, HOME_VIEW);
+		refreshTiles();
+	}
+
+	private void refreshTiles()
+	{
+		for (Tile tile : tiles)
 		{
-			applyRowDisabledState(row.component, enabled);
+			if (tile.category != null)
+			{
+				tile.statusLabel.setText(tileStatus(tile.category));
+			}
 		}
 	}
 
 	/**
-	 * The display-side toggles: transport/pickup hint text plus the three
-	 * overlay highlights. They share a category of plain check rows — no
-	 * master/dim contract, since each toggle stands alone.
+	 * The item sprite a section's tile carries — the same item imagery
+	 * the family cards use. The Transports tile is the one exception:
+	 * it wears the world map's transport POI sprite, handled at build
+	 * time in {@link #homeView}.
 	 */
-	private void buildDisplayCategory()
+	private static int tileIconFor(CategoryPanel category)
 	{
-		CategoryPanel display = new CategoryPanel(this, "Display", "");
-		categories.add(display);
-		for (String key : ShortestPathHomePanel.DISPLAY_KEYS)
+		switch (category.categoryName())
 		{
-			display.addRow(checkRow(key));
+			case "Teleport Restrictions":
+				return ItemID.RING_OF_DUELING_8;
+			case "Player-Owned House":
+				return ItemID.POH_TABLET_TELEPORTTOHOUSE;
+			default:
+				return ItemID.TRAIL_SEXTANT;
 		}
-		// The tile counter moved over from the stock settings surface —
-		// a mode combo and its step spinner, not plain toggles.
-		display.addRow(comboRow("showTileCounter"));
-		display.addRow(spinnerRow("tileCounterStep"));
 	}
 
-	private void applyPohEnabled(boolean enabled)
+	/**
+	 * The live count line under a tile's name — an "n/N on" card tally
+	 * for Transports, the restriction count for Teleport Restrictions
+	 * and the master's on/off for Player-Owned House.
+	 */
+	private String tileStatus(CategoryPanel category)
 	{
-		for (SearchRow row : pohSubRows)
+		switch (category.categoryName())
 		{
-			applyRowDisabledState(row.component, enabled);
+			case "Transports":
+				int on = 0;
+				int total = 0;
+				for (SearchRow row : category.rows())
+				{
+					if (row.component instanceof TransportFamilyCard)
+					{
+						total++;
+						if (((TransportFamilyCard) row.component).isMasterOn())
+						{
+							on++;
+						}
+					}
+				}
+				return on + "/" + total + " on";
+			case "Teleport Restrictions":
+				if (TeleportationItem.NONE.equals(
+					settings.configuredValue("useTeleportationItems")))
+				{
+					return "Items disabled";
+				}
+				int restricted = restrictionListPanel == null
+					? 0 : restrictionListPanel.restrictionCount();
+				return restricted == 0 ? "All allowed" : restricted + " restricted";
+			case "Player-Owned House":
+				return settings.configuredBool("usePoh") ? "On" : "Off";
+			default:
+				return "";
+		}
+	}
+
+	/**
+	 * Deep-links into the plugin's stock config page — the Settings tile
+	 * posts the same overlay-config menu click a real overlay right-click
+	 * would send, so the config surface resolves the page to open off the
+	 * event overlay's plugin.
+	 */
+	private void openConfigurationPanel()
+	{
+		eventBus.post(new OverlayMenuClicked(
+			new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, null, null),
+			configOverlay));
+	}
+
+	/**
+	 * The footer link row under the tile grid: a thin divider, then small
+	 * square chromeless buttons opening the project's GitHub page and the
+	 * Discord invite through the system browser.
+	 */
+	private JComponent linkRow()
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+		row.setOpaque(false);
+		row.setBorder(new CompoundBorder(
+			new MatteBorder(1, 0, 0, 0, ColorScheme.MEDIUM_GRAY_COLOR),
+			new EmptyBorder(6, 0, 0, 0)));
+		row.add(linkButton(GITHUB_ICON, "GitHub", GITHUB_URL));
+		row.add(linkButton(DISCORD_ICON, "Discord", DISCORD_URL));
+		return row;
+	}
+
+	private static JButton linkButton(ImageIcon icon, String tooltip, String url)
+	{
+		JButton button = footerButton(icon, tooltip);
+		// The URL doubles as the action command so headless checks can
+		// read the target without firing a real browser open.
+		button.setActionCommand(url);
+		button.addActionListener(e -> LinkBrowser.browse(url));
+		return button;
+	}
+
+	private static JButton footerButton(ImageIcon icon, String tooltip)
+	{
+		JButton button = new JButton(icon);
+		button.setToolTipText(tooltip);
+		button.setPreferredSize(new Dimension(FOOTER_BUTTON_EDGE, FOOTER_BUTTON_EDGE));
+		button.setMargin(new Insets(0, 0, 0, 0));
+		button.setContentAreaFilled(false);
+		button.setBorderPainted(false);
+		button.setFocusPainted(false);
+		button.setOpaque(false);
+		button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		return button;
+	}
+
+	private static ImageIcon footerIcon(String file)
+	{
+		BufferedImage image = ImageUtil.loadImageResource(
+			ShortestPathPanel.class, "/shortestpath/" + file);
+		return new ImageIcon(
+			ImageUtil.resizeImage(image, FOOTER_ICON_SIZE, FOOTER_ICON_SIZE));
+	}
+
+	/**
+	 * A render-nothing {@link Overlay} — {@link Overlay} is abstract, so
+	 * the config-open trick needs a concrete subclass to carry the plugin
+	 * reference the posted menu click resolves through.
+	 */
+	private static final class ConfigHandleOverlay extends Overlay
+	{
+		ConfigHandleOverlay(Plugin plugin)
+		{
+			super(plugin);
+		}
+
+		@Override
+		public Dimension render(Graphics2D graphics)
+		{
+			return null;
 		}
 	}
 
@@ -452,6 +644,18 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
+	 * A family card without the collapsible chrome — used where a card is
+	 * a section's only row (the house section), so its detail sits always
+	 * expanded beneath the master row rather than behind a lone boxed
+	 * expander.
+	 */
+	private TransportFamilyCard addFlatFamilyCard(CategoryPanel category, String useKey, Integer iconItemId,
+		SearchRow... detailRows)
+	{
+		return addFamilyCard(category, useKey, iconItemId, false, true, detailRows);
+	}
+
+	/**
 	 * {@code masterless} cards render no master control — their on/off state
 	 * is owned elsewhere (the teleport-items mode combo lives in General) and
 	 * {@link TransportFamilyCard#isMasterOn()} reads it straight from config.
@@ -459,12 +663,18 @@ public class ShortestPathPanel extends PluginPanel
 	private TransportFamilyCard addFamilyCard(CategoryPanel category, String useKey, Integer iconItemId,
 		boolean masterless, SearchRow... detailRows)
 	{
+		return addFamilyCard(category, useKey, iconItemId, masterless, false, detailRows);
+	}
+
+	private TransportFamilyCard addFamilyCard(CategoryPanel category, String useKey, Integer iconItemId,
+		boolean masterless, boolean flat, SearchRow... detailRows)
+	{
 		ConfigItems.Meta item = settings.item(useKey);
 		String name = item == null ? useKey : item.name();
 		String title = name.startsWith("Use ") ? name.substring("Use ".length()) : name;
 		String description = item == null ? "" : item.description();
 
-		TransportFamilyCard card = new TransportFamilyCard(this, useKey, title, description, iconItemId, masterless);
+		TransportFamilyCard card = new TransportFamilyCard(this, useKey, title, description, iconItemId, masterless, flat);
 		transportCards.add(card);
 
 		List<String> searchParts = new ArrayList<>();
@@ -489,6 +699,26 @@ public class ShortestPathPanel extends PluginPanel
 		return settings.item(costKey) != null ? new SearchRow[]{spinnerRow(costKey)} : new SearchRow[0];
 	}
 
+	/**
+	 * The row tail every label + control row shares: an html-wrapped label
+	 * in CENTER and the control in EAST of a transparent BorderLayout row —
+	 * {@code control} == null renders a label-only degrade row.
+	 */
+	private SearchRow labeledRow(String name, String description, JComponent control)
+	{
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		JLabel label = new JLabel(html(name));
+		label.setForeground(Color.WHITE);
+		label.setToolTipText(html(description));
+		row.add(label, BorderLayout.CENTER);
+		if (control != null)
+		{
+			row.add(control, BorderLayout.EAST);
+		}
+		return new SearchRow(row, name, searchable(name));
+	}
+
 	private SearchRow checkRow(String keyName)
 	{
 		return checkRow(keyName, null);
@@ -503,41 +733,17 @@ public class ShortestPathPanel extends PluginPanel
 		JCheckBox checkBox = new JCheckBox();
 		checkBox.setSelected(settings.configuredBool(keyName));
 		checkBox.setToolTipText(html(description));
-		boolean[] syncing = new boolean[1];
-		checkBox.addActionListener(e ->
-		{
-			if (!syncing[0])
+		PanelRows.controlRow(this, keyName, checkBox,
+			(control, guard) -> control.addActionListener(e ->
 			{
 				// write()'s synchronous listener delivery runs onChange —
 				// calling it here too would invoke it twice per click.
-				settings.write(keyName, checkBox.isSelected());
-			}
-		});
-		registerConfigListener(keyName, () ->
-		{
-			syncing[0] = true;
-			try
-			{
-				checkBox.setSelected(settings.configuredBool(keyName));
-			}
-			finally
-			{
-				syncing[0] = false;
-			}
-			if (onChange != null)
-			{
-				onChange.run();
-			}
-		});
-
-		JPanel row = new JPanel(new BorderLayout());
-		row.setOpaque(false);
-		JLabel label = new JLabel(html(name));
-		label.setForeground(Color.WHITE);
-		label.setToolTipText(html(description));
-		row.add(label, BorderLayout.CENTER);
-		row.add(checkBox, BorderLayout.EAST);
-		return new SearchRow(row, name, searchable(name));
+				PanelRows.guardedWrite(guard,
+					() -> settings.write(keyName, control.isSelected()));
+			}),
+			() -> checkBox.setSelected(settings.configuredBool(keyName)),
+			onChange);
+		return labeledRow(name, description, checkBox);
 	}
 
 	private SearchRow spinnerRow(String keyName)
@@ -563,24 +769,14 @@ public class ShortestPathPanel extends PluginPanel
 			Integer.valueOf(current), Integer.valueOf(min), max, Integer.valueOf(1)));
 		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(SPINNER_FIELD_WIDTH);
 		spinner.setToolTipText(html(description));
-		// Set while a config sync mirrors the stored value into the control —
-		// the same guard the family cards use, so the programmatic setValue
-		// does not write the mirrored value straight back to config.
-		boolean[] syncing = new boolean[1];
-		spinner.addChangeListener(e ->
-		{
-			if (!syncing[0])
+		PanelRows.controlRow(this, keyName, spinner,
+			(control, guard) -> control.addChangeListener(e ->
+				PanelRows.guardedWrite(guard,
+					() -> settings.write(keyName, control.getValue()))),
+			() ->
 			{
-				settings.write(keyName, spinner.getValue());
-			}
-		});
-		registerConfigListener(keyName, () ->
-		{
-			Object updated = settings.configuredValue(keyName);
-			if (updated instanceof Number)
-			{
-				syncing[0] = true;
-				try
+				Object updated = settings.configuredValue(keyName);
+				if (updated instanceof Number)
 				{
 					// Same clamp as construction: an out-of-range external
 					// write degrades to the nearest bound rather than
@@ -589,21 +785,9 @@ public class ShortestPathPanel extends PluginPanel
 					spinner.setValue(Math.max(min,
 						Math.min(max == null ? Integer.MAX_VALUE : max.intValue(), updatedInt)));
 				}
-				finally
-				{
-					syncing[0] = false;
-				}
-			}
-		});
-
-		JPanel row = new JPanel(new BorderLayout());
-		row.setOpaque(false);
-		JLabel label = new JLabel(html(name));
-		label.setForeground(Color.WHITE);
-		label.setToolTipText(html(description));
-		row.add(label, BorderLayout.CENTER);
-		row.add(spinner, BorderLayout.EAST);
-		return new SearchRow(row, name, searchable(name));
+			},
+			null);
+		return labeledRow(name, description, spinner);
 	}
 
 	private SearchRow comboRow(String keyName)
@@ -619,13 +803,7 @@ public class ShortestPathPanel extends PluginPanel
 			// the constants from — render a label-only row (mirroring the
 			// TransportFamilyCard degrade path) rather than throwing during
 			// panel construction.
-			JPanel fallbackRow = new JPanel(new BorderLayout());
-			fallbackRow.setOpaque(false);
-			JLabel fallbackLabel = new JLabel(html(name));
-			fallbackLabel.setForeground(Color.WHITE);
-			fallbackLabel.setToolTipText(html(description));
-			fallbackRow.add(fallbackLabel, BorderLayout.CENTER);
-			return new SearchRow(fallbackRow, name, searchable(name));
+			return labeledRow(name, description, null);
 		}
 		@SuppressWarnings("unchecked")
 		Class<? extends Enum> type = (Class<? extends Enum>) ((Enum<?>) value).getClass();
@@ -633,51 +811,32 @@ public class ShortestPathPanel extends PluginPanel
 		combo.setSelectedItem(value);
 		PanelComboStyle.apply(combo);
 		combo.setToolTipText(html(description));
-		boolean[] syncing = new boolean[1];
-		combo.addItemListener(e ->
-		{
-			if (e.getStateChange() == ItemEvent.SELECTED && !syncing[0])
+		PanelRows.controlRow(this, keyName, combo,
+			(control, guard) -> control.addItemListener(e ->
 			{
-				settings.write(keyName, combo.getSelectedItem());
-			}
-		});
-		registerConfigListener(keyName, () ->
-		{
-			syncing[0] = true;
-			try
-			{
-				combo.setSelectedItem(settings.configuredValue(keyName));
-			}
-			finally
-			{
-				syncing[0] = false;
-			}
-		});
-
-		JPanel row = new JPanel(new BorderLayout());
-		row.setOpaque(false);
-		JLabel label = new JLabel(html(name));
-		label.setForeground(Color.WHITE);
-		label.setToolTipText(html(description));
-		row.add(label, BorderLayout.CENTER);
-		row.add(combo, BorderLayout.EAST);
-		return new SearchRow(row, name, searchable(name));
+				if (e.getStateChange() == ItemEvent.SELECTED)
+				{
+					PanelRows.guardedWrite(guard,
+						() -> settings.write(keyName, control.getSelectedItem()));
+				}
+			}),
+			() -> combo.setSelectedItem(settings.configuredValue(keyName)),
+			null);
+		return labeledRow(name, description, combo);
 	}
 
 	/**
-	 * A section caption inside the POH sub-list — names the grouped rows
+	 * A section caption inside a card detail well — names the grouped rows
 	 * that follow it, rendered in the panel's regular row typography so it
 	 * reads as an ordinary label rather than a small secondary hint. The
-	 * caption is pure chrome: it owns no control, but it rides
-	 * {@code pohSubRows} so it dims with the master toggle, and its search
-	 * text covers the section's config name so a matching query keeps it
-	 * visible over the groups it heads.
+	 * caption is pure chrome: it owns no control, but it dims with the card
+	 * master like every detail row, and its search text covers the
+	 * section's config name so a matching query keeps the card surfaced.
 	 */
 	private SearchRow captionRow(String caption, String configName)
 	{
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
-		row.setBorder(new EmptyBorder(0, SUB_LIST_INDENT, 0, 0));
 		JLabel label = new JLabel(caption);
 		label.setForeground(Color.WHITE);
 		row.add(label, BorderLayout.CENTER);
@@ -735,87 +894,6 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		return new SearchRow(group, groupLabel,
 			searchable(searchParts.toArray(new String[0])));
-	}
-
-	/**
-	 * The balloon card's "Log Basket Routes" detail block: a small-font
-	 * header then one labelled checkbox per {@link BalloonRoute}. Checked
-	 * means that route's destination basket is stocked — its log
-	 * requirement is waived. Read/write ride the same {@code Set<Enum>}
-	 * path the POH sub-lists use; labels come from
-	 * {@link BalloonRoute#displayLabel()} ("Grand Tree (magic logs)") so
-	 * the destination and its log type are both searchable.
-	 */
-	private List<SearchRow> balloonRouteRows()
-	{
-		String keyName = "balloonLogBasketRoutes";
-		ConfigItems.Meta item = settings.item(keyName);
-		String description = item == null ? "" : item.description();
-
-		List<SearchRow> rows = new ArrayList<>();
-		// Shared across the route checkboxes: set while a config sync
-		// mirrors the stored set into the controls, so the programmatic
-		// setSelected calls do not write the same set back.
-		boolean[] syncing = new boolean[1];
-
-		JPanel headerRow = new JPanel(new BorderLayout());
-		headerRow.setOpaque(false);
-		// The basket set is account state, not routing state — it stays
-		// editable while the balloon family itself is switched off.
-		headerRow.putClientProperty(ALWAYS_ENABLED, Boolean.TRUE);
-		JLabel header = new JLabel("Log Basket Routes");
-		header.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		header.setFont(FontManager.getRunescapeSmallFont());
-		header.setToolTipText(html(description));
-		headerRow.add(header, BorderLayout.CENTER);
-		rows.add(new SearchRow(headerRow, "Log Basket Routes",
-			searchable("Log Basket Routes")));
-
-		for (BalloonRoute route : BalloonRoute.values())
-		{
-			JCheckBox checkBox = new JCheckBox(html(route.displayLabel()));
-			checkBox.setSelected(currentSet(keyName, BalloonRoute.class).contains(route));
-			checkBox.setToolTipText(html(description));
-			checkBox.addActionListener(e ->
-			{
-				if (syncing[0])
-				{
-					return;
-				}
-				EnumSet<BalloonRoute> updated = EnumSet.noneOf(BalloonRoute.class);
-				updated.addAll(currentSet(keyName, BalloonRoute.class));
-				if (checkBox.isSelected())
-				{
-					updated.add(route);
-				}
-				else
-				{
-					updated.remove(route);
-				}
-				settings.write(keyName, updated);
-			});
-			registerConfigListener(keyName, () ->
-			{
-				syncing[0] = true;
-				try
-				{
-					checkBox.setSelected(
-						currentSet(keyName, BalloonRoute.class).contains(route));
-				}
-				finally
-				{
-					syncing[0] = false;
-				}
-			});
-
-			JPanel row = new JPanel(new BorderLayout());
-			row.setOpaque(false);
-			row.putClientProperty(ALWAYS_ENABLED, Boolean.TRUE);
-			row.add(checkBox, BorderLayout.CENTER);
-			rows.add(new SearchRow(row, route.displayLabel(),
-				searchable("Log Basket Routes", route.displayLabel())));
-		}
-		return rows;
 	}
 
 	// ---- Config access ------------------------------------------------------
@@ -906,133 +984,19 @@ public class ShortestPathPanel extends PluginPanel
 				label.setIcon(new ImageIcon(ImageUtil.resizeImage(image, size, size)))));
 	}
 
-	// ---- Navigation ---------------------------------------------------------
-
-	/**
-	 * The trimmed text currently in the search field — the query sub-panels
-	 * apply when they activate.
-	 */
-	String getCurrentQuery()
-	{
-		return currentQuery;
-	}
-
-	/**
-	 * Push a category sub-panel onto the card stack.
-	 */
-	void drillInto(CategoryPanel category)
-	{
-		muxer.pushState(category);
-	}
-
-	/**
-	 * Pop the top sub-panel, returning toward the tile home.
-	 */
-	void backToHome()
-	{
-		muxer.popState();
-	}
-
-	MultiplexingPluginPanel muxer()
-	{
-		return muxer;
-	}
-
-	ShortestPathHomePanel home()
-	{
-		return home;
-	}
-
-	List<CategoryPanel> categories()
-	{
-		return categories;
-	}
-
-	List<TransportFamilyCard> transportCards()
-	{
-		return transportCards;
-	}
-
-	RestrictionListPanel restrictionListPanel()
-	{
-		return restrictionListPanel;
-	}
-
-	IconTextField searchBar()
-	{
-		return searchBar;
-	}
-
-	/**
-	 * The rows of {@code category} matching the query — feeds the home
-	 * results view so it renders the same match set the sub-panel would
-	 * filter down to.
-	 */
-	List<SearchRow> matchingRows(CategoryPanel category, String query)
-	{
-		return category.matchingRows(query.toLowerCase(Locale.ROOT));
-	}
-
-	/**
-	 * Push {@code category} filtered on the current query (its
-	 * {@code onActivate} applies it), then scroll the matched row into
-	 * view once the push's layout has settled.
-	 */
-	void deepLink(CategoryPanel category, SearchRow row)
-	{
-		muxer.pushState(category);
-		if (row != null)
-		{
-			// scrollRectToVisible takes the rect in the component's own
-			// coordinate space — getBounds() is in parent space and would
-			// double the row's offset, scrolling past the match.
-			SwingUtilities.invokeLater(() ->
-				row.component.scrollRectToVisible(
-					new Rectangle(0, 0, row.component.getWidth(), row.component.getHeight())));
-		}
-	}
-
-	/**
-	 * The sidebar activates only this outer panel — forward activation into
-	 * the muxer so the visible sub-panel's {@code onActivate} (the deep-link
-	 * filter + status refresh) fires. {@link MultiplexingPluginPanel} only
-	 * dispatches child activation while its own active flag is set.
-	 */
-	@Override
-	public void onActivate()
-	{
-		muxer.onActivate();
-	}
-
-	@Override
-	public void onDeactivate()
-	{
-		muxer.onDeactivate();
-	}
-
 	// ---- Search -------------------------------------------------------------
 
 	/**
-	 * Live filter across the card stack: a non-empty query pushes the home
-	 * surface (whose {@code onActivate} renders the grouped results view —
-	 * pushing the already-stacked home also pops any drilled sub-panel, so
-	 * typing while drilled returns to results); clearing restores the tile
-	 * grid and every category's full row set in place.
+	 * Live filter across the drilled sections: every section rebuilds its
+	 * own visible rows in place on each keystroke; clearing restores the
+	 * full row set.
 	 */
 	private void onSearchChanged()
 	{
 		currentQuery = searchBar.getText().trim();
-		if (currentQuery.isEmpty())
+		for (CategoryPanel category : categories)
 		{
-			home.applyQuery("");
-			for (CategoryPanel category : categories)
-			{
-				category.applyQuery("");
-			}
-		}
-		else
-		{
-			muxer.pushState(home);
+			category.applyQuery(currentQuery);
 		}
 	}
 
@@ -1131,6 +1095,15 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	static final String ALWAYS_ENABLED = "shortestpath.alwaysEnabled";
 
+	/**
+	 * Client-property marker identifying a home-grid {@link Tile}. The
+	 * home scroll wrap's own chrome contains plain {@link JButton}s on
+	 * look-and-feels that draw scrollbar arrow buttons (Metal, Nimbus),
+	 * so a bare {@code instanceof JButton} sweep cannot tell a tile from
+	 * platform chrome.
+	 */
+	static final String HOME_TILE = "shortestpath.homeTile";
+
 	private static void applyEnabledDeep(Component component, boolean enabled)
 	{
 		if (component instanceof JComponent
@@ -1148,6 +1121,136 @@ public class ShortestPathPanel extends PluginPanel
 			for (Component child : ((Container) component).getComponents())
 			{
 				applyEnabledDeep(child, enabled);
+			}
+		}
+	}
+
+	/**
+	 * One home-grid tile: a square raised button — centered section icon
+	 * on top, the bold section name beneath it and a live count line at
+	 * the bottom — painted with a bevelled edge that lowers while the
+	 * button is pressed and an orange accent that lifts while armed
+	 * (hover). A real {@link JButton}, so Swing's button model supplies
+	 * the armed/pressed states and the click action for free; the labels
+	 * inside carry no listeners of their own, so a click anywhere on the
+	 * tile reaches the button.
+	 */
+	private static final class Tile extends JButton
+	{
+		private static final SoftBevelBorder RAISED = new SoftBevelBorder(BevelBorder.RAISED);
+		private static final SoftBevelBorder LOWERED = new SoftBevelBorder(BevelBorder.LOWERED);
+		/**
+		 * The tile's own text inset — the platform button border, though
+		 * never painted, would otherwise shrink the label column.
+		 */
+		private static final int TEXT_INSET = 4;
+
+		/**
+		 * The section this tile drills into — {@code null} for action
+		 * tiles like Settings, which open no section and carry no live
+		 * count line.
+		 */
+		private final CategoryPanel category;
+		private final JLabel iconLabel;
+		private final JLabel statusLabel;
+
+		Tile(CategoryPanel category, Runnable onClick)
+		{
+			this(category.categoryName(), onClick, category);
+		}
+
+		Tile(String name, Runnable onClick)
+		{
+			this(name, onClick, null);
+		}
+
+		private Tile(String name, Runnable onClick, CategoryPanel category)
+		{
+			this.category = category;
+			setLayout(new BorderLayout());
+			// The bevel + fill are painted by hand, so the platform
+			// button chrome stays off — only the model states are wanted.
+			setContentAreaFilled(false);
+			setBorderPainted(false);
+			setFocusPainted(false);
+			setOpaque(false);
+			setBorder(new EmptyBorder(TEXT_INSET, TEXT_INSET, TEXT_INSET, TEXT_INSET));
+			setToolTipText(name);
+			putClientProperty(HOME_TILE, Boolean.TRUE);
+			addActionListener(e -> onClick.run());
+			// Armed/pressed transitions repaint so the pressed animation
+			// shows even though no UI delegate draws a state effect.
+			getModel().addChangeListener(e -> repaint());
+
+			iconLabel = new JLabel();
+			iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			iconLabel.setPreferredSize(new Dimension(0, TILE_ICON_SIZE + 8));
+			add(iconLabel, BorderLayout.NORTH);
+
+			// The html wrap keeps long names ("Teleport Restrictions",
+			// "Player-Owned House") readable at the tile edge; a single
+			// token wider than the allotted label width ("Player-Owned")
+			// falls back to the small font rather than clipping mid-glyph.
+			JLabel nameLabel = new JLabel(
+				html("<center>" + name + "</center>"), SwingConstants.CENTER);
+			nameLabel.setForeground(Color.WHITE);
+			Font bold = FontManager.getRunescapeBoldFont();
+			nameLabel.setFont(
+				widestTokenWidth(name, nameLabel.getFontMetrics(bold))
+					<= TILE_EDGE - 2 * TEXT_INSET
+				? bold
+				: FontManager.getRunescapeSmallFont());
+			add(nameLabel, BorderLayout.CENTER);
+
+			statusLabel = new JLabel("", SwingConstants.CENTER);
+			statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			statusLabel.setFont(FontManager.getRunescapeSmallFont());
+			add(statusLabel, BorderLayout.SOUTH);
+		}
+
+		/**
+		 * The widest unbreakable run in a tile name — the html wrap only
+		 * breaks at spaces, so this is the minimum width the name can
+		 * render without clipping.
+		 */
+		private static int widestTokenWidth(String name, FontMetrics metrics)
+		{
+			int widest = 0;
+			for (String token : name.split(" "))
+			{
+				widest = Math.max(widest, metrics.stringWidth(token));
+			}
+			return widest;
+		}
+
+		/**
+		 * Square preferred size: the uniform grid then resolves every
+		 * cell to the same square bounds at the pinned content width.
+		 */
+		@Override
+		public Dimension getPreferredSize()
+		{
+			return new Dimension(TILE_EDGE, TILE_EDGE);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g)
+		{
+			g.setColor(ColorScheme.DARKER_GRAY_COLOR);
+			g.fillRect(0, 0, getWidth(), getHeight());
+			super.paintComponent(g);
+
+			(getModel().isPressed() ? LOWERED : RAISED)
+				.paintBorder(this, g, 0, 0, getWidth(), getHeight());
+
+			g.setColor(ColorScheme.BRAND_ORANGE);
+			if (getModel().isArmed())
+			{
+				g.drawRect(3, 3, getWidth() - 7, getHeight() - 7);
+			}
+			else
+			{
+				g.drawLine(3, getHeight() - 4, getWidth() - 4, getHeight() - 4);
 			}
 		}
 	}

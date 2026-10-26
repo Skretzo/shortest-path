@@ -1,0 +1,6 @@
+varbit/pass | check=NONE | carried=true | banked=true | gates=NONE
+varbit/fail | check=VARBIT | carried=true | banked=true | gates=VARBIT
+varplayer/pass | check=NONE | carried=true | banked=true | gates=NONE
+varplayer/fail | check=VARPLAYER | carried=true | banked=true | gates=VARPLAYER
+seasonal-varbit/pass | check=NONE | carried=true | banked=true | gates=NONE
+seasonal-varbit/fail | check=VARBIT | carried=true | banked=true | gates=VARBIT
