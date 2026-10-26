@@ -113,10 +113,10 @@ public final class AStarRoutingSession
 	}
 
 	/** A target set in canonical (sorted, duplicate-free) form. */
-	@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 	private static final class TargetKey
 	{
 		private final int[] tiles;
+		private final int hash;
 
 		TargetKey(int[] packedTargets)
 		{
@@ -127,6 +127,19 @@ public final class AStarRoutingSession
 				if (count == 0 || sorted[count - 1] != sorted[i])
 					sorted[count++] = sorted[i];
 			tiles = Arrays.copyOf(sorted, count);
+			hash = Arrays.hashCode(tiles);
+		}
+
+		@Override
+		public boolean equals(Object other)
+		{
+			return other instanceof TargetKey && Arrays.equals(tiles, ((TargetKey) other).tiles);
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return hash;
 		}
 	}
 

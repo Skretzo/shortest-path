@@ -2,7 +2,6 @@ package shortestpath.requirement.model;
 
 import java.util.*;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.runelite.api.gameval.ItemID;
 
@@ -11,7 +10,6 @@ import net.runelite.api.gameval.ItemID;
  * All requirements must be satisfied.
  */
 @Getter
-@EqualsAndHashCode
 public final class TransportItems
 {
 	/**
@@ -383,6 +381,38 @@ public final class TransportItems
 			text.append((text.length() == 0) ? "" : ", ").append(Arrays.toString(inner));
 		}
 		return "[" + text + "]";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return requirements.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+		TransportItems that = (TransportItems) o;
+		if (requirements.size() != that.requirements.size())
+		{
+			return false;
+		}
+		for (int i = 0; i < requirements.size(); i++)
+		{
+			if (!requirements.get(i).equals(that.requirements.get(i)))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override

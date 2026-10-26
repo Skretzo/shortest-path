@@ -50,8 +50,8 @@ public class TransportItemsTest
 		TransportItems a = new TransportItems(items1, staves1, offhands1, quantities1);
 		TransportItems b = new TransportItems(items2, staves2, offhands2, quantities2);
 
-		// The generated equality compares the requirements list elementwise;
-		// ItemRequirement/Branch equality reaches the id arrays' contents.
+		// Lombok @EqualsAndHashCode performs deep array equality; same contents should
+		// be equal
 		assertEquals(a, b);
 		assertEquals(a.hashCode(), b.hashCode());
 
