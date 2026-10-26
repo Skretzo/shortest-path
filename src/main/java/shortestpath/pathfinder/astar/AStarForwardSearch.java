@@ -436,11 +436,7 @@ public final class AStarForwardSearch
 					counters.heuristicUnreachable++;
 					continue;
 				}
-				best[state] = cost; previous[state] = startState;
-				transportWins.record(state, target.account().globalTransport(capability, BankVisitState.CARRIED, i), cost);
-				push(queue, state, cost, priority(cost, h, heuristicWeight), counters, true, PUSH_GLOBAL);
-				counters.successfulTransportRelaxations++;
-		}
+			}
 		}
 	}
 
