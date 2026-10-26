@@ -242,8 +242,7 @@ public final class TransportEligibility
 		}
 
 		if (checkBank
-			&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting)))
+			&& TeleportationItemPolicy.includesBank(teleportationItemSetting))
 		{
 			OwnedItems.addContainer(itemsAndQuantities, bank);
 		}
