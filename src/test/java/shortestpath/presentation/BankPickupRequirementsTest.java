@@ -46,9 +46,9 @@ public class BankPickupRequirementsTest
 	private static final int EDGE_ORIGIN = WorldPointUtil.packWorldPoint(3101, 3500, 0);
 	private static final int EDGE_DESTINATION = WorldPointUtil.packWorldPoint(3102, 3500, 0);
 	private static final Set<Integer> BANK_LOCATIONS = Set.of(BANK_TILE);
-	private static final Transport LAW_ONLY = teleport(rune(ItemVariations.LAW_RUNE, 1));
+	private static final Transport LAW_ONLY = teleport(rune(ItemVariations.fromName("LAW_RUNE"), 1));
 	private static final Transport FALADOR_TELEPORT = teleport(
-		rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.AIR_RUNE, 3), rune(ItemVariations.WATER_RUNE, 1));
+		rune(ItemVariations.fromName("LAW_RUNE"), 1), rune(ItemVariations.fromName("AIR_RUNE"), 3), rune(ItemVariations.fromName("WATER_RUNE"), 1));
 
 	@Mock
 	private Client client;
