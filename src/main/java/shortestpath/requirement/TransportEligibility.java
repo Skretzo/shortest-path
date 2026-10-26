@@ -95,23 +95,6 @@ public final class TransportEligibility
 		TeleportationItem teleportationItemSetting,
 		int currencyThreshold,
 		Set<Unlock> unlocks,
-		boolean bankSeen)
-	{
-		this(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold,
-			unlocks, bankSeen, Set.of());
-	}
-
-	public TransportEligibility(
-		Map<Integer, Integer> carriedItems,
-		Map<Integer, Integer> bankPathItems,
-		Map<Integer, Integer> bankHas,
-		int bankPouchId,
-		Map<Integer, Integer> bankPouchRunes,
-		boolean fairyRingStaffRequired,
-		TeleportationItem teleportationItemSetting,
-		int currencyThreshold,
-		Set<Unlock> unlocks,
 		boolean bankSeen,
 		Set<Integer> balloonLogBasketDestinations)
 	{
@@ -160,27 +143,12 @@ public final class TransportEligibility
 	 * read: the carried pool (inventory + worn + rune pouch in hand), the bank-path pool
 	 * (which adds the bank contents when bank paths are enabled), the bank contents
 	 * themselves, the runes inside a banked rune pouch, the fairy-ring staff gate and
-	 * the currency threshold. Shared by
+	 * the currency threshold. {@code balloonLogBasketDestinations} additionally
+	 * captures the packed destinations of the balloon routes whose log basket the
+	 * player declared stocked. Shared by
 	 * {@link RequirementContext#capture RequirementContext.capture}
 	 * and the lazy {@code PathfinderConfig#getEligibility()} rebuild so exactly one
 	 * collection path exists.
-	 */
-	public static TransportEligibility collect(
-		PlayerStateSource source,
-		ItemContainer bank,
-		TeleportationItem teleportationItemSetting,
-		int currencyThreshold,
-		boolean includeBankPath,
-		Set<Unlock> unlocks)
-	{
-		return collect(source, bank, teleportationItemSetting, currencyThreshold,
-			includeBankPath, unlocks, Set.of());
-	}
-
-	/**
-	 * As {@link #collect(PlayerStateSource, ItemContainer, TeleportationItem, int,
-	 * boolean, Set)}, additionally capturing the packed destinations of the balloon
-	 * routes whose log basket the player declared stocked.
 	 */
 	public static TransportEligibility collect(
 		PlayerStateSource source,
