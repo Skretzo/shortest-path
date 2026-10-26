@@ -171,7 +171,7 @@ final class RequirementTestFixtures
 		int currencyThreshold)
 	{
 		return new TransportEligibility(carried, carried, Map.of(), -1, Map.of(),
-			false, mode, currencyThreshold, Set.of(), false);
+			false, mode, currencyThreshold, Set.of(), false, Set.of());
 	}
 
 	/**
@@ -183,7 +183,7 @@ final class RequirementTestFixtures
 		Map<Integer, Integer> bankPath)
 	{
 		return new TransportEligibility(carried, bankPath, Map.of(), -1, Map.of(),
-			false, mode, Integer.MAX_VALUE, Set.of(), true);
+			false, mode, Integer.MAX_VALUE, Set.of(), true, Set.of());
 	}
 
 	/** A context with every field defaulted to the always-passing value. */
