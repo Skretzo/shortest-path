@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Assert;
 
@@ -44,6 +46,27 @@ final class TranscriptGolden
 	private static final String RESOURCE_DIR = "overlay-transcripts";
 	private static final boolean REGEN = regenRequested();
 	private static boolean regenAnnounced;
+	/**
+	 * The {@code @x,y} coordinate pair a {@code drawString} record carries
+	 * — the last such pair on the line, pinned by the {@code | state}
+	 * suffix or end-of-line so a coordinate-shaped substring inside the
+	 * quoted text cannot be mistaken for it.
+	 */
+	private static final Pattern DRAW_STRING_COORDS =
+		Pattern.compile(" @(-?\\d+(?:\\.\\d+)?),(-?\\d+(?:\\.\\d+)?)(?= \\| |$)");
+	/**
+	 * Cross-platform slack on a {@code drawString} x coordinate. The
+	 * info-banner and counter labels centre on
+	 * {@code getStringBounds(...).getWidth()}, and the same font rasterises
+	 * to measurably different advance widths on macOS vs Linux (~10px on a
+	 * mid-length string — the goldens were recorded on macOS). x is the
+	 * only font-metric input: the y baseline, text and draw state are
+	 * platform-independent and stay byte-exact. Fixed-position drawStrings
+	 * (canvas-anchored counters) differ by 0, so the tolerance forfeits
+	 * nothing on deterministic positions while still catching a real
+	 * anchoring change, which shifts x by far more than 32px.
+	 */
+	private static final double DRAW_STRING_X_TOLERANCE = 32.0;
 
 	private TranscriptGolden()
 	{
@@ -88,13 +111,60 @@ final class TranscriptGolden
 		{
 			String e = i < expectedLines.length ? expectedLines[i] : "<missing>";
 			String a = i < actualLines.length ? actualLines[i] : "<missing>";
-			if (!e.equals(a))
+			if (!linesEqual(e, a))
 			{
 				Assert.fail(scenario + " transcript drift at line " + (i + 1)
 					+ "\n  expected: " + e + "\n  actual:   " + a
 					+ "\n(regenerate with TRANSCRIPT_REGEN=1 only for a deliberate draw change)");
 			}
 		}
+	}
+
+	/**
+	 * One transcript line against the golden's — byte-exact except on
+	 * {@code drawString} lines, where the x coordinate absorbs
+	 * cross-platform font-metric drift within
+	 * {@link #DRAW_STRING_X_TOLERANCE}. The quoted text, the y coordinate
+	 * and the whole {@code | color/stroke/clip} suffix stay exact.
+	 */
+	private static boolean linesEqual(String expected, String actual)
+	{
+		if (expected.equals(actual))
+		{
+			return true;
+		}
+		if (!expected.startsWith("drawString") || !actual.startsWith("drawString"))
+		{
+			return false;
+		}
+		String[] e = splitDrawString(expected);
+		String[] a = splitDrawString(actual);
+		if (e == null || a == null || !e[0].equals(a[0]) || !e[2].equals(a[2]))
+		{
+			return false;
+		}
+		return Math.abs(Double.parseDouble(e[1]) - Double.parseDouble(a[1]))
+			<= DRAW_STRING_X_TOLERANCE;
+	}
+
+	/**
+	 * Splits a {@code drawString} line into the text through the {@code @}
+	 * sign, the x coordinate, and the remainder ({@code ,y} plus the draw
+	 * state suffix). {@code null} when the line carries no pinned
+	 * coordinate pair — such lines never tolerate an inexact match.
+	 */
+	private static String[] splitDrawString(String line)
+	{
+		Matcher m = DRAW_STRING_COORDS.matcher(line);
+		if (!m.find())
+		{
+			return null;
+		}
+		return new String[]{
+			line.substring(0, m.start()),
+			m.group(1),
+			line.substring(m.start(2) - 1)
+		};
 	}
 
 	private static String read(String scenario)
