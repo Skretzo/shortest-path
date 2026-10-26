@@ -40,6 +40,11 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	// (the teleport-items mode combo lives in General): no master control
 	// renders, and isMasterOn() reads the configured value directly.
 	private final boolean masterless;
+	// True when the card drops the collapsible chrome entirely — no
+	// expander, no framed well, detail always expanded. A card that is a
+	// section's only row (the house card) uses this so it reads like a
+	// plain labelled group instead of a lone boxed expander.
+	private final boolean flat;
 
 	private final DimmableJPanel header;
 	private final JPanel nameArea;
@@ -63,9 +68,16 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId,
 		boolean masterless)
 	{
+		this(panel, keyName, title, description, iconItemId, masterless, false);
+	}
+
+	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId,
+		boolean masterless, boolean flat)
+	{
 		this.panel = panel;
 		this.keyName = keyName;
 		this.masterless = masterless;
+		this.flat = flat;
 
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -109,9 +121,22 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		detail.setVisible(false);
 		add(detail);
 
-		// The shared expandable chrome: dark header bar over the
-		// category-toned, orange-bordered detail well.
-		ShortestPathPanel.styleExpandable(header, detail);
+		if (flat)
+		{
+			// No expandable chrome: the card and its rows sit transparent
+			// on the section tone, and the detail stays expanded — no
+			// expander ever installs, so the toggle paths no-op.
+			setOpaque(false);
+			header.setOpaque(false);
+			detail.setOpaque(false);
+			detail.setVisible(true);
+		}
+		else
+		{
+			// The shared expandable chrome: dark header bar over the
+			// category-toned, orange-bordered detail well.
+			ShortestPathPanel.styleExpandable(header, detail);
+		}
 
 		applyEnabled(isMasterOn());
 		panel.registerConfigListener(keyName, this::syncFromConfig);
