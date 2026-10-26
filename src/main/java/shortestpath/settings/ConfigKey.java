@@ -48,7 +48,6 @@ import shortestpath.transport.BalloonRoute;
 @Getter
 public enum ConfigKey
 {
-	PATHFINDER_ALGORITHM("pathfinderAlgorithm", PathfinderBackend.class, PathfinderBackend.LEGACY, Coercion.NONE, Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP),
 	AVOID_WILDERNESS("avoidWilderness", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_AGILITY_SHORTCUTS("useAgilityShortcuts", boolean.class, true, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
 	USE_GRAPPLE_SHORTCUTS("useGrappleShortcuts", boolean.class, false, Coercion.BOOLEAN, Effect.ROUTE_INVALIDATING),
