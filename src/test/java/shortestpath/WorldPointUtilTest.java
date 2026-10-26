@@ -100,18 +100,12 @@ public class WorldPointUtilTest
 		int inside = WorldPointUtil.packWorldPoint(3002, 4001, 0);
 		int leftOutside = WorldPointUtil.packWorldPoint(2995, 4002, 0);
 		int diagOutside = WorldPointUtil.packWorldPoint(2990, 3990, 0);
-		int otherPlane = WorldPointUtil.packWorldPoint(3002, 4001, 1);
 
-		assertEquals(0, WorldPointUtil.distanceToArea(inside, area));
 		assertEquals(0, WorldPointUtil.distanceToArea2D(inside, area));
 		// leftOutside: dx = 3000-2995=5, dy=0 => Chebyshev 5
-		assertEquals(5, WorldPointUtil.distanceToArea(leftOutside, area));
 		assertEquals(5, WorldPointUtil.distanceToArea2D(leftOutside, area));
 		// diagOutside: dx=3000-2990=10, dy=4000-3990=10 => Chebyshev 10
-		assertEquals(10, WorldPointUtil.distanceToArea(diagOutside, area));
 		assertEquals(10, WorldPointUtil.distanceToArea2D(diagOutside, area));
-		// plane mismatch
-		assertEquals(Integer.MAX_VALUE, WorldPointUtil.distanceToArea(otherPlane, area));
 	}
 
 	@Test
@@ -254,13 +248,12 @@ public class WorldPointUtilTest
 		testPoints.add(new WorldPoint(2900, 4300, 0));
 		testPoints.add(new WorldPoint(3000, 4300, 0));
 		testPoints.add(new WorldPoint(3600, 4300, 0));
-		testPoints.add(new WorldPoint(3600, 4200, 1));
 
 		for (WorldPoint point : testPoints)
 		{
 			final int areaDistance = WILDERNESS_ABOVE_GROUND.distanceTo(point);
 			final int packedPoint = WorldPointUtil.packWorldPoint(point);
-			final int worldUtilDistance = WorldPointUtil.distanceToArea(packedPoint, WILDERNESS_ABOVE_GROUND);
+			final int worldUtilDistance = WorldPointUtil.distanceToArea2D(packedPoint, WILDERNESS_ABOVE_GROUND);
 			assertEquals("Calculating distance to " + point + " failed", areaDistance, worldUtilDistance);
 		}
 	}

@@ -90,10 +90,9 @@ public class SkillLevelsTest
 		assertEquals(99, levels.get(Skill.COOKING.ordinal()));
 		assertEquals(99 * Skill.values().length, levels.totalLevel());
 		assertEquals(126, levels.combatLevel());
-		assertEquals(QP_CAP, levels.questPoints());
+		assertEquals(QP_CAP, levels.get(SkillLevels.QUEST_POINTS_INDEX));
 		assertEquals(levels.totalLevel(), levels.get(SkillLevels.TOTAL_LEVEL_INDEX));
 		assertEquals(levels.combatLevel(), levels.get(SkillLevels.COMBAT_LEVEL_INDEX));
-		assertEquals(levels.questPoints(), levels.get(SkillLevels.QUEST_POINTS_INDEX));
 	}
 
 	@Test

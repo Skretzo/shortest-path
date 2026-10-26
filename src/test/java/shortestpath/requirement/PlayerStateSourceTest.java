@@ -30,6 +30,7 @@ import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
@@ -106,7 +107,7 @@ public class PlayerStateSourceTest
 		assertEquals(QuestState.FINISHED, context.getQuestStates().get(Quest.BONE_VOYAGE));
 		assertEquals(99, context.getBoostedSkillLevelsAndMore().get(Skill.COOKING));
 		assertEquals(1500, context.getBoostedSkillLevelsAndMore().totalLevel());
-		assertEquals(42, context.getBoostedSkillLevelsAndMore().questPoints());
+		assertEquals(42, context.getBoostedSkillLevelsAndMore().get(SkillLevels.QUEST_POINTS_INDEX));
 		assertEquals(200, context.getCurrentMaxQuestPoints());
 		assertFalse(context.isOnSailingBoat());
 
