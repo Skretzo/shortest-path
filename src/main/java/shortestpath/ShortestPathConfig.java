@@ -30,7 +30,7 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "showSidebarPanel",
 		name = "Show Sidebar Panel",
-		description = "Whether the Shortest Path icon is shown in the RuneLite sidebar",
+		description = "Show the Shortest Path icon in the RuneLite sidebar",
 		position = 70,
 		section = sectionSettings
 	)
