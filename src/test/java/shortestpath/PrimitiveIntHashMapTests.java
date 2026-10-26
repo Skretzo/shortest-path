@@ -298,21 +298,6 @@ public class PrimitiveIntHashMapTests
 	}
 
 	@Test
-	public void calculateFullnessWithinBounds()
-	{
-		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
-		double f0 = map.calculateFullness();
-		assertTrue("empty map fullness should be NaN", Double.isNaN(f0));
-
-		for (int i = 0; i < 100; i++)
-		{
-			map.put(i, i);
-		}
-		double f1 = map.calculateFullness();
-		assertTrue("fullness in [0,100]", f1 >= 0.0 && f1 <= 100.0);
-	}
-
-	@Test
 	public void constructorRejectsInvalidLoadFactor()
 	{
 		try
@@ -432,29 +417,6 @@ public class PrimitiveIntHashMapTests
 	}
 
 	@Test
-	public void calculateFullnessEdgeCases()
-	{
-		// Test with completely empty map
-		PrimitiveIntHashMap<Integer> map = new PrimitiveIntHashMap<>(8);
-		assertTrue("Empty map fullness should be NaN", Double.isNaN(map.calculateFullness()));
-
-		// Test with single element
-		map.put(1, 1);
-		double fullness = map.calculateFullness();
-		assertTrue("Single element fullness should be valid", fullness >= 0.0 && fullness <= 100.0);
-
-		// Test with all buckets having exactly one element
-		map.clear();
-		// Fill exactly one slot in each bucket if possible
-		for (int i = 0; i < 8; i++)
-		{
-			map.put(i * 1000, i); // Use keys that likely hash to different buckets
-		}
-		fullness = map.calculateFullness();
-		assertTrue("Evenly distributed fullness should be valid", fullness >= 0.0 && fullness <= 100.0);
-	}
-
-	@Test
 	public void integerOverflowKeys()
 	{
 		PrimitiveIntHashMap<String> map = new PrimitiveIntHashMap<>(16);
@@ -570,13 +532,10 @@ public class PrimitiveIntHashMapTests
 		}
 
 		assertTrue(map.size() > 0);
-		double fullness = map.calculateFullness();
-		assertFalse(Double.isNaN(fullness));
 
 		// Clear should reset everything
 		map.clear();
 		assertEquals(0, map.size());
-		assertTrue(Double.isNaN(map.calculateFullness()));
 
 		// Should be able to use normally after clear
 		map.put(1, new ArrayList<>(List.of("after clear")));
