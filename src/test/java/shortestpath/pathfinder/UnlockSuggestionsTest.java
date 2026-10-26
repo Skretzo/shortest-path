@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Item;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
@@ -32,7 +34,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
+import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.astar.RoutingStatic;
+import shortestpath.presentation.PathAnnotator;
+import shortestpath.requirement.Capability;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.Transport;
@@ -114,6 +119,33 @@ public class UnlockSuggestionsTest
 		// And following the first suggestion does get there.
 		setup(99, new Item(ItemID.COINS, 20));
 		assertTrue(search(SUNSET_COAST, ALDARIN).getResult().isReached());
+	}
+
+	@Test
+	public void coinsInTheBankReadAsAReminderToBringThem()
+	{
+		// An ironman with the fare in the bank but not on them, and routes through a bank turned off.
+		ItemContainer bank = mock(ItemContainer.class);
+		doReturn(new Item[]{new Item(ItemID.COINS, 1000)}).when(bank).getItems();
+		ItemStateService itemState = ItemStateService.forTesting();
+		itemState.onContainerChanged(InventoryID.BANK, bank);
+		config.disableTransportToggles();
+		config.set("useShips", true);
+		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+		doReturn(new Item[0]).when(inventory).getItems();
+		pathfinderConfig = new TestPathfinderConfig(client, config, QuestState.NOT_STARTED, true, true);
+		pathfinderConfig.setItemStateService(itemState);
+		pathfinderConfig.refresh();
+
+		AStarPathfinder search = search(SUNSET_COAST, ALDARIN);
+
+		UnlockSuggestions.Suggestion first = search.getUnlockSuggestions().get(0);
+		assertEquals(Capability.Effort.OWNED_ITEMS, first.getEffort());
+		ItemComposition coins = mock(ItemComposition.class);
+		when(coins.getName()).thenReturn("Coins");
+		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
+		assertEquals("Bring 20 Coins from your bank to use: Ship Aldarin",
+			PathAnnotator.forTesting(client, null, null).getUnlockSuggestionLines(search).get(0));
 	}
 
 	/** The Sunset Coast to Aldarin search with ships and quetzals only, running {@code completed} once it's done. */

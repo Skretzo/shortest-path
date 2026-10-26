@@ -114,6 +114,12 @@ public final class Capability
 	 */
 	public String describe(IntFunction<String> itemName)
 	{
+		return describe(itemName, false);
+	}
+
+	/** As {@link #describe(IntFunction)}, or "Bring 20 Coins from your bank" for items the player has there. */
+	public String describe(IntFunction<String> itemName, boolean inBank)
+	{
 		List<String> clauses = new ArrayList<>();
 		List<String> names = new ArrayList<>();
 		quests.forEach(quest -> names.add(quest.getName()));
@@ -131,8 +137,8 @@ public final class Capability
 		}
 		clause(clauses, "reach ", names);
 		items.forEach((id, quantity) -> names.add(quantity > 1 ? quantity + " " + itemName.apply(id) : itemName.apply(id)));
-		clause(clauses, "carry ", names);
-		String line = String.join(", ", clauses);
+		clause(clauses, inBank ? "bring " : "carry ", names);
+		String line = String.join(", ", clauses) + (inBank && !items.isEmpty() ? " from your bank" : "");
 		return line.isEmpty() ? line : Character.toUpperCase(line.charAt(0)) + line.substring(1);
 	}
 
