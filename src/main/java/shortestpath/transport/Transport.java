@@ -325,23 +325,6 @@ public class Transport
 	}
 
 	/**
-	 * Gets varbit requirements (filtered from varRequirements).
-	 * For backward compatibility with code that needs separate varbit access.
-	 */
-	public Set<VarRequirement> getVarbits()
-	{
-		Set<VarRequirement> varbits = new HashSet<>();
-		for (VarRequirement req : varRequirements)
-		{
-			if (req.isVarbit())
-			{
-				varbits.add(req);
-			}
-		}
-		return varbits;
-	}
-
-	/**
 	 * Whether this transport has a varbit requirement with the given ID.
 	 */
 	public boolean hasVarbit(int varbitId)
@@ -354,23 +337,6 @@ public class Transport
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Gets varplayer requirements (filtered from varRequirements).
-	 * For backward compatibility with code that needs separate varplayer access.
-	 */
-	public Set<VarRequirement> getVarPlayers()
-	{
-		Set<VarRequirement> varPlayers = new HashSet<>();
-		for (VarRequirement req : varRequirements)
-		{
-			if (req.isVarPlayer())
-			{
-				varPlayers.add(req);
-			}
-		}
-		return varPlayers;
 	}
 
 	public static class TransportBuilder

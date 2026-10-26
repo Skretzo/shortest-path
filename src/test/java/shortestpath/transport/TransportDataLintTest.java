@@ -129,7 +129,7 @@ public class TransportDataLintTest
 				// only the display info is different between those two options so we need to
 				// include it in the signature.
 				String signature = String.format(
-					"%s -> %s [%s] '%s' Consumable:%s Items:%s Quests:%s Varbits:%s VarPlayers:%s ObjectInfo:%s",
+					"%s -> %s [%s] '%s' Consumable:%s Items:%s Quests:%s VarRequirements:%s ObjectInfo:%s",
 					WorldPointUtil.unpackWorldX(origin) + " " + WorldPointUtil.unpackWorldY(origin) + " "
 						+ WorldPointUtil.unpackWorldPlane(origin),
 					WorldPointUtil.unpackWorldX(destination) + " " + WorldPointUtil.unpackWorldY(destination) + " "
@@ -139,8 +139,7 @@ public class TransportDataLintTest
 					transport.isConsumable(),
 					transport.getItemRequirements() != null ? transport.getItemRequirements().toString() : "none",
 					transport.getQuests().toString(),
-					transport.getVarbits().toString(),
-					transport.getVarPlayers().toString(),
+					transport.getVarRequirements().toString(),
 					transport.getObjectInfo() != null ? transport.getObjectInfo() : "none");
 
 				// Check if this exact transport signature already exists
