@@ -156,14 +156,11 @@ public class PathMapOverlay extends Overlay
 					drawOnMap(graphics, point, true, cursorPos);
 				}
 			}
-			for (int target : plugin.getActiveSearch().getTargets().points())
+			OverlayDrawing.forEachUnreachedTarget(plugin.getActiveSearch(), path, target ->
 			{
-				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-				{
-					graphics.setColor(settings.display().colourPathCalculating());
-					drawOnMap(graphics, target, true, cursorPos);
-				}
-			}
+				graphics.setColor(settings.display().colourPathCalculating());
+				drawOnMap(graphics, target, true, cursorPos);
+			});
 		}
 
 		return null;

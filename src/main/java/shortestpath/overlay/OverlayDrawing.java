@@ -1,8 +1,12 @@
 package shortestpath.overlay;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.IntConsumer;
 
 import shortestpath.PrimitiveIntHashMap;
+import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.Transport;
 
@@ -81,6 +85,24 @@ final class OverlayDrawing
 			}
 
 			visitor.endOrigin(a);
+		}
+	}
+
+	/**
+	 * The shared unreached-target pass every path overlay runs after its route
+	 * drawing: yield each requested target the returned path does not already end
+	 * on, so the caller can mark it (calculating colour, tooltip, tile). The
+	 * {@code !path.isEmpty()} guard is part of the contract — no markers render
+	 * before a route exists.
+	 */
+	static void forEachUnreachedTarget(ActiveSearch search, List<PathStep> path, IntConsumer draw)
+	{
+		for (int target : search.getTargets().points())
+		{
+			if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
+			{
+				draw.accept(target);
+			}
 		}
 	}
 }
