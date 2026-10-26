@@ -366,7 +366,7 @@ public final class AStarForwardSearch
 	{
 		PreparedRoutingAccount.View view = target.account().localView(banked);
 		int start = lowerBound(view.origins, tile);
-		for (int i = start; i < view.count && view.origins[i] == tile; i++)
+		for (int i = start; i < view.destinations.length && view.origins[i] == tile; i++)
 		{
 			int node = space.node(view.destinations[i]);
 			// Legacy checks the positional gates on a transport's destination node exactly like a
@@ -896,7 +896,7 @@ public final class AStarForwardSearch
 		{ return account.allowTransports() && account.bankPathEnabled();
 		}
 		boolean hasLocalOrigin(int tile, boolean banked)
-	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.count && view.origins[index] == tile;
+	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.destinations.length && view.origins[index] == tile;
 	}
 		/** The node's wilderness/blocked-region status bits, computed on first ask. */
 		private int gateStatus(int node)

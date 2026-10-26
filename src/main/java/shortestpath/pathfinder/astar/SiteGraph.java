@@ -161,7 +161,7 @@ public final class SiteGraph
 	private static void addLocalEdges(
 		EdgeBuilder edges, PreparedRoutingAccount.View view, boolean banked, RoutingStatic stat)
 	{
-		for (int i = 0; i < view.count; i++)
+		for (int i = 0; i < view.destinations.length; i++)
 		{
 			int from = stat.siteIndex(view.origins[i]);
 			int to = stat.siteIndex(view.destinations[i]);
@@ -177,13 +177,13 @@ public final class SiteGraph
 		for (boolean banked : new boolean[] {false, true})
 		{
 			PreparedRoutingAccount.View local = account.localView(banked);
-			for (int i = 0; i < local.count; i++)
+			for (int i = 0; i < local.destinations.length; i++)
 			{
 				requireSite(stat, local.origins[i], "local origin");
 				requireSite(stat, local.destinations[i], "local destination");
 			}
 			PreparedRoutingAccount.View global = account.globalView(banked);
-			for (int i = 0; i < global.count; i++)
+			for (int i = 0; i < global.destinations.length; i++)
 				requireSite(stat, global.destinations[i], "global destination");
 		}
 	}
@@ -216,9 +216,9 @@ public final class SiteGraph
 	private static int[] globalDestinations(PreparedRoutingAccount account, RoutingStatic stat)
 	{
 		PreparedRoutingAccount.View view = account.globalView(true);
-		int[] result = new int[view.count];
+		int[] result = new int[view.destinations.length];
 		int count = 0;
-		for (int i = 0; i < view.count; i++)
+		for (int i = 0; i < view.destinations.length; i++)
 		{
 			int destination = view.destinations[i];
 			boolean present = false;
@@ -246,7 +246,7 @@ public final class SiteGraph
 	private static int minimumGlobalCost(PreparedRoutingAccount.View view, int destination)
 	{
 		int minimum = CostArithmetic.INF;
-		for (int i = 0; i < view.count; i++)
+		for (int i = 0; i < view.destinations.length; i++)
 		{
 			if (view.destinations[i] == destination && view.costs[i] < minimum)
 				minimum = view.costs[i];
