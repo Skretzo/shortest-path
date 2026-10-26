@@ -58,7 +58,7 @@ public class PathMapTooltipOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!settings.display().drawMap() || !geometry.worldMapOpen())
+		if (!settings.display().drawMap() || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
 		{
 			return null;
 		}
@@ -80,13 +80,8 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : search.getTargets().points())
-			{
-				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-				{
-					drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1);
-				}
-			}
+			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
+				drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1));
 		}
 
 		return null;
@@ -130,10 +125,10 @@ public class PathMapTooltipOverlay extends Overlay
 				{
 					// Check if this transport goes to POH - if so, look ahead to find the exit
 					// transport
-					String pohExitInfo = annotator.getPohExitInfo(nextPoint, path, pathIndex);
-					if (pohExitInfo != null)
+					String pohExitSuffix = OverlayDrawing.pohExitSuffix(annotator, nextPoint, path, pathIndex);
+					if (pohExitSuffix != null)
 					{
-						displayInfo = displayInfo + " (Exit: " + pohExitInfo + ")";
+						displayInfo = displayInfo + pohExitSuffix;
 					}
 					rows.add(displayInfo);
 					break;
