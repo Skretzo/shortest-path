@@ -586,17 +586,6 @@ public final class TeleportRestriction
 	}
 
 	/**
-	 * The representative (displayItemId) of the family {@code itemId} belongs
-	 * to, or a negative value when the id belongs to no restriction family.
-	 * The CSV {@code rep@dest} record stores the display id, so panel and
-	 * engine share one key space.
-	 */
-	public static int representativeFor(int itemId)
-	{
-		return representativeIndex().getOrDefault(itemId, -1);
-	}
-
-	/**
 	 * The rep → member-destination → option-group-destinations expansion
 	 * index derived alongside {@link #loadFamilies()}' option groups. A
 	 * {@code rep@dest} record names one option by its canonical destination,
