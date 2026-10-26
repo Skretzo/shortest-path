@@ -926,14 +926,7 @@ public class PathfinderConfig
 	public boolean varbitChecks(Collection<VarRequirement> requirements,
 		Map<Integer, Integer> values, long evaluationTimeMinutes)
 	{
-		for (VarRequirement varRequirement : requirements)
-		{
-			if (varRequirement.isVarbit() && !varRequirement.check(values, evaluationTimeMinutes))
-			{
-				return true;
-			}
-		}
-		return false;
+		return varChecks(requirements, values, evaluationTimeMinutes, VarRequirement.VarType.VARBIT);
 	}
 
 	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
@@ -959,9 +952,22 @@ public class PathfinderConfig
 	public boolean varPlayerChecks(Collection<VarRequirement> requirements,
 		Map<Integer, Integer> values, long evaluationTimeMinutes)
 	{
+		return varChecks(requirements, values, evaluationTimeMinutes, VarRequirement.VarType.VARPLAYER);
+	}
+
+	/**
+	 * The shared var-requirement loop behind the keyed publics: only
+	 * requirements whose {@link VarRequirement#getVarType()} equals
+	 * {@code kind} are evaluated, so a varbit dispatch never reads varplayer
+	 * requirements and vice versa.
+	 */
+	private boolean varChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes,
+		VarRequirement.VarType kind)
+	{
 		for (VarRequirement varRequirement : requirements)
 		{
-			if (varRequirement.isVarPlayer() && !varRequirement.check(values, evaluationTimeMinutes))
+			if (varRequirement.getVarType() == kind && !varRequirement.check(values, evaluationTimeMinutes))
 			{
 				return true;
 			}
@@ -971,10 +977,12 @@ public class PathfinderConfig
 
 	/**
 	 * Routes the {@link RequirementHooks} seam the gate chain consumes to the
-	 * protected override points above. Dynamic dispatch keeps test overrides
-	 * live with no test-side changes — an override of {@link #getQuestState},
-	 * {@link #varbitChecks} or {@link #varPlayerChecks} still reaches every
-	 * transport and bank-destination verdict.
+	 * protected override points above. {@link RequirementHooks#varChecks}
+	 * dispatches on the {@link VarRequirement.VarType} kind to the keyed
+	 * {@link #varbitChecks}/{@link #varPlayerChecks} methods — never the
+	 * shared loop directly — so dynamic dispatch keeps test overrides live
+	 * with no test-side changes: an override of {@link #getQuestState} or any
+	 * keyed form still reaches every transport and bank-destination verdict.
 	 */
 	private final class ConfigHooks implements RequirementHooks
 	{
@@ -985,17 +993,13 @@ public class PathfinderConfig
 		}
 
 		@Override
-		public boolean varbitChecks(Collection<VarRequirement> requirements,
-			Map<Integer, Integer> values, long evaluationTimeMinutes)
+		public boolean varChecks(Collection<VarRequirement> requirements,
+			Map<Integer, Integer> values, long evaluationTimeMinutes,
+			VarRequirement.VarType kind)
 		{
-			return PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes);
-		}
-
-		@Override
-		public boolean varPlayerChecks(Collection<VarRequirement> requirements,
-			Map<Integer, Integer> values, long evaluationTimeMinutes)
-		{
-			return PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+			return VarRequirement.VarType.VARBIT.equals(kind)
+				? PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes)
+				: PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
 		}
 	}
 
