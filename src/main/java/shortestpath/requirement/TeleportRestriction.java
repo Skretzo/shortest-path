@@ -2,12 +2,11 @@ package shortestpath.requirement;
 
 import java.util.*;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.WorldPointUtil;
+import net.runelite.api.gameval.ItemID;
+import shortestpath.*;
 import shortestpath.transport.*;
 import shortestpath.transport.parser.TransportRecord;
 
@@ -144,6 +143,48 @@ public final class TeleportRestriction
 				row.memberItemIds(), row.memberLabels(), derived.options.get(i)));
 		}
 		return Collections.unmodifiableList(families);
+	}
+
+	/**
+	 * Every family the restriction checklist lists: the generated
+	 * {@link #loadFamilies()} rows plus the code-defined families for item
+	 * requirements that exist only as injected requirements. The generated
+	 * map keeps its invariant — every member id traces to a
+	 * {@code teleportation_items.tsv} {@code Items} cell — while the
+	 * checklist surface additionally covers ids no TSV row can own.
+	 */
+	public static List<Family> checklistFamilies()
+	{
+		List<Family> families = new ArrayList<>(loadFamilies());
+		families.add(fairyStaffFamily());
+		return Collections.unmodifiableList(families);
+	}
+
+	/**
+	 * The code-defined family for the fairy-ring staff rule. Non-POH fairy
+	 * rings carry the Dramen/Lunar staff as a real item requirement
+	 * synthesized at availability build (see
+	 * {@link TransportEligibility#wrapFairyRingStaff}), so no
+	 * {@code teleportation_items.tsv} family owns the staff ids — yet the
+	 * ids restrict exactly like an item family's: a bare blocked id
+	 * covering every satisfying variant disables the rings. Member ids
+	 * come from the same {@link ItemVariations} name the injection reads,
+	 * so the family and the requirement can never drift. The family
+	 * exposes no destination options — no TSV row serves it.
+	 */
+	public static Family fairyStaffFamily()
+	{
+		Set<Integer> members = new TreeSet<>();
+		Map<Integer, String> labels = new HashMap<>();
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			members.add(id);
+			labels.put(id,
+				id == ItemID.DRAMEN_STAFF ? "Dramen staff" : "Lunar staff");
+		}
+		return new Family("Fairy staves", ItemID.DRAMEN_STAFF,
+			Collections.unmodifiableSet(members),
+			Collections.unmodifiableMap(labels));
 	}
 
 	/**

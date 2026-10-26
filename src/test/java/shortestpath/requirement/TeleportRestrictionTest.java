@@ -1,11 +1,15 @@
 package shortestpath.requirement;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
+import shortestpath.ItemVariations;
+import shortestpath.requirement.model.TransportItems;
 
 /**
  * Direct unit coverage of the {@code blockedTeleportItems} CSV contract shared
@@ -502,6 +506,74 @@ public class TeleportRestrictionTest
 			Assert.assertEquals(entry.getKey() + " reps by its lowest member id",
 				(int) entry.getValue(), family.displayItemId());
 		}
+	}
+
+	/**
+	 * The injected fairy-ring staff requirement is player-restrictable like an
+	 * item family: the checklist's code-defined family must cover every staff
+	 * variant the injected requirement accepts — the same ItemVariations name —
+	 * and blocking the whole set must leave the ring requirement with no
+	 * unblocked alternative while blocking a proper subset keeps it routable.
+	 */
+	@Test
+	public void fairyStaffFamilyCoversEveryInjectedStaffVariant()
+	{
+		TeleportRestriction.Family staves = TeleportRestriction.fairyStaffFamily();
+
+		Set<Integer> injected = new HashSet<>();
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			injected.add(id);
+		}
+		Assert.assertEquals("the family covers every staff id the ring requirement accepts",
+			injected, staves.memberItemIds());
+		Assert.assertTrue("displayItemId is a member",
+			staves.memberItemIds().contains(staves.displayItemId()));
+		for (int id : staves.memberItemIds())
+		{
+			Assert.assertFalse("member id " + id + " has a non-empty label",
+				staves.memberLabels().getOrDefault(id, "").isEmpty());
+		}
+
+		// The injected requirement's shape — one AND entry whose OR branches
+		// are the staff variants, the same construction
+		// TransportEligibility#wrapFairyRingStaff merges onto the ring.
+		TransportItems ringRequirement = new TransportItems(
+			new int[][]{null},
+			new int[][]{ItemVariations.fromName("DRAMEN_STAFF").getIds()},
+			new int[][]{null},
+			new int[]{1});
+		Assert.assertFalse("blocking every staff variant disables the ring",
+			ringRequirement.survivesBlockedItems(staves.memberItemIds()));
+		Set<Integer> partial = new HashSet<>(staves.memberItemIds());
+		partial.remove(partial.iterator().next());
+		Assert.assertTrue("a surviving staff variant keeps the ring routable",
+			ringRequirement.survivesBlockedItems(partial));
+	}
+
+	/**
+	 * The staff family is checklist-only: the generated map's invariant —
+	 * every member id traces to a {@code teleportation_items.tsv} Items
+	 * cell — excludes it, so {@link TeleportRestriction#loadFamilies()} must
+	 * not return it while {@link TeleportRestriction#checklistFamilies()}
+	 * must add exactly it.
+	 */
+	@Test
+	public void fairyStaffFamilyIsChecklistOnlyNotGenerated()
+	{
+		Set<Integer> staffIds = TeleportRestriction.fairyStaffFamily().memberItemIds();
+		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
+		{
+			Assert.assertTrue("generated family '" + family.name()
+				+ "' owns no fairy staff id",
+				Collections.disjoint(family.memberItemIds(), staffIds));
+		}
+
+		List<TeleportRestriction.Family> checklist = TeleportRestriction.checklistFamilies();
+		Assert.assertEquals("the checklist adds exactly one code-defined family",
+			TeleportRestriction.loadFamilies().size() + 1, checklist.size());
+		Assert.assertTrue("the added family is the fairy staves",
+			checklist.stream().anyMatch(f -> f.name().equals("Fairy staves")));
 	}
 
 	private static TeleportRestriction.Family familyNamed(String name)

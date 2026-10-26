@@ -26,6 +26,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -68,6 +70,7 @@ import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
 import shortestpath.poh.PohNexusPortal;
+import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.BalloonRoute;
@@ -1585,6 +1588,37 @@ public class ShortestPathPanelLayoutTest
 		assertTrue("an option-label query surfaces the family",
 			panel.restrictionListPanel().matchingLabels("farm")
 				.contains("Ardougne Cloaks"));
+	}
+
+	/**
+	 * The injected fairy-ring staff requirement rides no generated family —
+	 * the checklist lists it as the code-defined "Fairy Staves" row, a staff
+	 * name search surfaces it, and unchecking writes every staff variant to
+	 * the {@code blockedTeleportItems} CSV the ring gate reads.
+	 */
+	@Test
+	public void fairyStavesRowBlocksEveryStaffVariant() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Fairy Staves");
+		assertNotNull("the injected staff requirement is a checklist row", row);
+		assertTrue("a staff-name search surfaces the row",
+			panel.restrictionListPanel().matchingLabels("dramen")
+				.contains("Fairy Staves"));
+
+		click(masterBox(row));
+		flushEdt();
+
+		Set<Integer> blocked = new HashSet<>();
+		TeleportRestriction.parseBlocked(config.blockedTeleportItems(),
+			blocked, new HashMap<>());
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			assertTrue("unchecking writes staff id " + id + " to the CSV",
+				blocked.contains(id));
+		}
 	}
 
 	@Test
