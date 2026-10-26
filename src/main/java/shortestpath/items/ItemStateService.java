@@ -5,6 +5,7 @@ import java.util.*;
 import javax.inject.*;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemContainer;
@@ -36,6 +37,7 @@ import shortestpath.settings.*;
  */
 @Slf4j
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ItemStateService
 {
 	private final RefreshCoordinator coordinator;
@@ -66,13 +68,6 @@ public class ItemStateService
 	// state (e.g. the bank-pickup projection) key their caches on it instead
 	// of this service observing their invalidation needs.
 	@Getter @Accessors(fluent = true) private int itemStateRevision;
-
-	@Inject
-	public ItemStateService(RefreshCoordinator coordinator, ConfigManager configManager)
-	{
-		this.coordinator = coordinator;
-		this.configManager = configManager;
-	}
 
 	private ItemStateService()
 	{
