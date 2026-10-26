@@ -45,6 +45,11 @@ public final class RoutingPolicy
 	@Getter @Accessors(fluent = true) private final JewelleryBoxTier pohJewelleryBoxTier;
 	@Getter @Accessors(fluent = true) private final int currencyThreshold;
 	@Getter @Accessors(fluent = true) private final boolean includeBankPath;
+	/**
+	 * Item ids the player excluded from routing via the hidden
+	 * {@code blockedTeleportItems} CSV — a candidate-set filter, not a fact
+	 * about what the player owns, so it lives on the policy side.
+	 */
 	@Getter @Accessors(fluent = true) private final Set<Integer> blockedItemIds;
 	private final Map<Integer, Integer> itemThresholdOverrides;
 	/**
