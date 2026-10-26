@@ -32,7 +32,6 @@ import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
@@ -78,7 +77,7 @@ public class PathScheduler
 	private Future<?> pathfinderFuture;
 	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
 	// whose query never ran and to know whether a search is reading the transport availability.
-	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
+	private final Map<ActiveSearch, QueryTask> queries = new LinkedHashMap<>();
 	// Volatile because the render thread reads it (through getActiveSearch() and friends)
 	// while restarts write it on the client thread under pathfinderMutex.
 	private volatile ActiveSearch pathfinder;
@@ -378,9 +377,9 @@ public class PathScheduler
 				{
 					pathfinderConfig.refresh();
 				}
-				// Plugin queries always run on the legacy backend: external callers get the
-				// proven engine's routes.
-				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
+				// The plugin's only engine serves external callers too: queries run on the
+				// same A* backend as the displayed path and reuse its session cache.
+				ActiveSearch query = querySearch(start, targets);
 				QueryTask task = new QueryTask(id);
 				queries.put(query, task);
 				task.future = pathfindingExecutor.submit(() -> runQuery(query, task));
@@ -388,7 +387,25 @@ public class PathScheduler
 		});
 	}
 
-	private void runQuery(Pathfinder query, QueryTask task)
+	/**
+	 * The engine a plugin-message query runs. A constructor failure still owes the caller a
+	 * result, so it becomes a finished {@code failed()} search carrying BACKEND_FAILURE
+	 * rather than an uncaught exception thrown across the client-thread hop.
+	 */
+	private ActiveSearch querySearch(int start, Targets targets)
+	{
+		try
+		{
+			return new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(), aStarRoutingSession,
+				start, targets, null);
+		}
+		catch (RuntimeException error)
+		{
+			return AStarPathfinder.failed(start, targets, null, error);
+		}
+	}
+
+	private void runQuery(ActiveSearch query, QueryTask task)
 	{
 		try
 		{
@@ -416,9 +433,9 @@ public class PathScheduler
 	 */
 	private void cancelQueries(String reason)
 	{
-		for (Iterator<Map.Entry<Pathfinder, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
+		for (Iterator<Map.Entry<ActiveSearch, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
 		{
-			Map.Entry<Pathfinder, QueryTask> entry = it.next();
+			Map.Entry<ActiveSearch, QueryTask> entry = it.next();
 			QueryTask task = entry.getValue();
 			if (task.future != null && task.future.cancel(false))
 			{
