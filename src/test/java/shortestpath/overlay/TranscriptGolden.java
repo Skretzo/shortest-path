@@ -55,18 +55,21 @@ final class TranscriptGolden
 	private static final Pattern DRAW_STRING_COORDS =
 		Pattern.compile(" @(-?\\d+(?:\\.\\d+)?),(-?\\d+(?:\\.\\d+)?)(?= \\| |$)");
 	/**
-	 * Cross-platform slack on a {@code drawString} x coordinate. The
-	 * info-banner and counter labels centre on
-	 * {@code getStringBounds(...).getWidth()}, and the same font rasterises
-	 * to measurably different advance widths on macOS vs Linux (~10px on a
-	 * mid-length string — the goldens were recorded on macOS). x is the
-	 * only font-metric input: the y baseline, text and draw state are
-	 * platform-independent and stay byte-exact. Fixed-position drawStrings
-	 * (canvas-anchored counters) differ by 0, so the tolerance forfeits
-	 * nothing on deterministic positions while still catching a real
-	 * anchoring change, which shifts x by far more than 32px.
+	 * Cross-platform slack on {@code drawString} coordinates. The
+	 * transcript harness renders with the graphics' default logical font,
+	 * whose physical face differs between macOS and Linux: centred labels
+	 * land ~10px off horizontally ({@code getStringBounds().getWidth()}),
+	 * and the baseline sits ~1px lower ({@code textBounds.getHeight()} is
+	 * a pixel shorter). The goldens were recorded on macOS. Both drifts
+	 * are font-metric only — the text and draw state stay byte-exact, and
+	 * fixed-position drawStrings (canvas-anchored counters) differ by 0,
+	 * so the tolerances forfeit nothing on deterministic output while a
+	 * real anchoring change shifts coordinates by far more than the
+	 * slack. y gets the tighter bound: label line spacing is ~17px, so
+	 * 8px still catches a dropped or reordered line.
 	 */
 	private static final double DRAW_STRING_X_TOLERANCE = 32.0;
+	private static final double DRAW_STRING_Y_TOLERANCE = 8.0;
 
 	private TranscriptGolden()
 	{
@@ -122,10 +125,11 @@ final class TranscriptGolden
 
 	/**
 	 * One transcript line against the golden's — byte-exact except on
-	 * {@code drawString} lines, where the x coordinate absorbs
+	 * {@code drawString} lines, where the coordinates absorb
 	 * cross-platform font-metric drift within
-	 * {@link #DRAW_STRING_X_TOLERANCE}. The quoted text, the y coordinate
-	 * and the whole {@code | color/stroke/clip} suffix stay exact.
+	 * {@link #DRAW_STRING_X_TOLERANCE} / {@link #DRAW_STRING_Y_TOLERANCE}.
+	 * The quoted text and the whole {@code | color/stroke/clip} suffix
+	 * stay exact.
 	 */
 	private static boolean linesEqual(String expected, String actual)
 	{
@@ -139,19 +143,21 @@ final class TranscriptGolden
 		}
 		String[] e = splitDrawString(expected);
 		String[] a = splitDrawString(actual);
-		if (e == null || a == null || !e[0].equals(a[0]) || !e[2].equals(a[2]))
+		if (e == null || a == null || !e[0].equals(a[0]) || !e[3].equals(a[3]))
 		{
 			return false;
 		}
 		return Math.abs(Double.parseDouble(e[1]) - Double.parseDouble(a[1]))
-			<= DRAW_STRING_X_TOLERANCE;
+				<= DRAW_STRING_X_TOLERANCE
+			&& Math.abs(Double.parseDouble(e[2]) - Double.parseDouble(a[2]))
+				<= DRAW_STRING_Y_TOLERANCE;
 	}
 
 	/**
 	 * Splits a {@code drawString} line into the text through the {@code @}
-	 * sign, the x coordinate, and the remainder ({@code ,y} plus the draw
-	 * state suffix). {@code null} when the line carries no pinned
-	 * coordinate pair — such lines never tolerate an inexact match.
+	 * sign, the x and y coordinates, and the draw-state suffix.
+	 * {@code null} when the line carries no pinned coordinate pair —
+	 * such lines never tolerate an inexact match.
 	 */
 	private static String[] splitDrawString(String line)
 	{
@@ -163,7 +169,8 @@ final class TranscriptGolden
 		return new String[]{
 			line.substring(0, m.start()),
 			m.group(1),
-			line.substring(m.start(2) - 1)
+			m.group(2),
+			line.substring(m.end())
 		};
 	}
 
