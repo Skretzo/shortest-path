@@ -146,6 +146,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 		}
 	}
 
+
 	protected int getPlayerPathIndex(List<PathStep> path)
 	{
 		if (client.getLocalPlayer() == null)
