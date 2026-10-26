@@ -239,7 +239,7 @@ public class PlayerStateSourceTest
 		Set<PohMountedItem> mounted = new HashSet<>(java.util.Arrays.asList(PohMountedItem.values()));
 		RoutingPolicy policy = new RoutingPolicy(enabledTypes, MODE, true, true, true, true,
 			portals, mounted, JewelleryBoxTier.BASIC, Integer.MAX_VALUE, true,
-			Set.of(), Map.of());
+			Set.of());
 
 		RequirementContext context = RequirementTestFixtures.context().build();
 		Requirements requirements = new Requirements(context, policy,

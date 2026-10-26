@@ -62,7 +62,7 @@ public class RestrictionOptionGateTest
 		return new RoutingPolicy(EnumSet.allOf(TransportType.class), mode,
 			true, true, true, true, EnumSet.allOf(PohNexusPortal.class),
 			EnumSet.allOf(PohMountedItem.class), JewelleryBoxTier.ORNATE,
-			Integer.MAX_VALUE, true, Set.of(), Map.of(), optionBlocks);
+			Integer.MAX_VALUE, true, Set.of(), optionBlocks);
 	}
 
 	private static RejectionReason check(TeleportationItem mode,

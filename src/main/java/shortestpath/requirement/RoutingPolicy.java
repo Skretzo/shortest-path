@@ -15,8 +15,8 @@ import lombok.experimental.Accessors;
  * derivations ran), the POH master and variant toggles, the enabled nexus
  * portals and mounted items, the jewellery-box tier, the teleportation-item
  * mode, the currency threshold, whether bank paths are included, and the
- * player-declared blocked teleport items with their {@code id:N} threshold
- * overrides. Facts the
+ * player-declared blocked teleport items with their destination-scoped
+ * restriction blocks. Facts the
  * game or config asserts about the player — skill levels, quest states, var
  * values, owned items, declared unlocks, respawn, sailing and league state,
  * planted spirit trees — are state, not policy, and live on
@@ -46,7 +46,6 @@ public final class RoutingPolicy
 	 * about what the player owns, so it lives on the policy side.
 	 */
 	@Getter @Accessors(fluent = true) private final Set<Integer> blockedItemIds;
-	private final Map<Integer, Integer> itemThresholdOverrides;
 	/**
 	 * Destination-scoped restriction blocks parsed from the {@code rep@dest}
 	 * records of {@code blockedTeleportItems}: a family's representative
@@ -68,13 +67,12 @@ public final class RoutingPolicy
 		JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold,
 		boolean includeBankPath,
-		Set<Integer> blockedItemIds,
-		Map<Integer, Integer> itemThresholdOverrides)
+		Set<Integer> blockedItemIds)
 	{
 		this(enabledTypes, teleportationItemSetting, usePoh, usePohFairyRing,
 			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
 			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
-			includeBankPath, blockedItemIds, itemThresholdOverrides, Map.of());
+			includeBankPath, blockedItemIds, Map.of());
 	}
 
 	public RoutingPolicy(
@@ -90,7 +88,6 @@ public final class RoutingPolicy
 		int currencyThreshold,
 		boolean includeBankPath,
 		Set<Integer> blockedItemIds,
-		Map<Integer, Integer> itemThresholdOverrides,
 		Map<Integer, Set<Integer>> blockedOptionDests)
 	{
 		this.enabledTypes = enabledTypes.isEmpty()
@@ -107,7 +104,6 @@ public final class RoutingPolicy
 		this.currencyThreshold = currencyThreshold;
 		this.includeBankPath = includeBankPath;
 		this.blockedItemIds = Set.copyOf(blockedItemIds);
-		this.itemThresholdOverrides = Map.copyOf(itemThresholdOverrides);
 		// Inner sets are copied too — a mutable set handed out through the
 		// outer map would defeat the freeze every other collection gets.
 		Map<Integer, Set<Integer>> optionDests = new HashMap<>();

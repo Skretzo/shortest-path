@@ -117,7 +117,7 @@ public class RoutingSnapshotTest
 
 		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
 			false, true, false, true, Set.of(), Set.of(),
-			JewelleryBoxTier.ORNATE, 42, true, Set.of(), Map.of());
+			JewelleryBoxTier.ORNATE, 42, true, Set.of());
 
 		assertTrue(policy.isTransportTypeEnabled(TransportType.TRANSPORT));
 		assertFalse("disableUnless-derived state is frozen into the build",
