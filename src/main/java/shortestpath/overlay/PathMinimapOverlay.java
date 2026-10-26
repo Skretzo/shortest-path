@@ -11,11 +11,9 @@ import java.awt.Shape;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
@@ -120,24 +118,11 @@ public class PathMinimapOverlay extends Overlay
 
 	private void drawOnMinimap(Graphics2D graphics, int location, Color color, double scale)
 	{
-		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
-			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-
-			if (lp == null)
+		ProjectedTiles.eachProjectedTile(client, location, null,
+			lp -> Perspective.localToMinimap(client, lp), posOnMinimap ->
 			{
-				continue;
-			}
-
-			Point posOnMinimap = Perspective.localToMinimap(client, lp);
-
-			if (posOnMinimap == null)
-			{
-				continue;
-			}
-
-			renderMinimapRect(client, graphics, posOnMinimap, color, scale);
-		}
+				renderMinimapRect(client, graphics, posOnMinimap, color, scale);
+				return false;
+			});
 	}
 }

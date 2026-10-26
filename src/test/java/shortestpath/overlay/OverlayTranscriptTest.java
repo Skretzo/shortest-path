@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -339,12 +340,11 @@ public class OverlayTranscriptTest
 	@Test
 	public void tracer()
 	{
-		// The moving marker's index is wall-clock phased — a path of identical
-		// steps makes every index draw the same marker, pinning determinism.
+		// The moving marker's index is wall-clock phased: tracerWindow caps at
+		// 60, so a 61-step path makes every index have a successor (the
+		// arrowhead always draws), and identical steps pin its coordinates.
 		override("pathStyle", "Tracer");
-		when(search.getPath()).thenReturn(List.of(
-			step(BASE + 20, BASE + 20), step(BASE + 20, BASE + 20),
-			step(BASE + 20, BASE + 20), step(BASE + 20, BASE + 20), step(BASE + 20, BASE + 20)));
+		when(search.getPath()).thenReturn(Collections.nCopies(61, step(BASE + 20, BASE + 20)));
 		checkTileOverlay("tracer");
 	}
 

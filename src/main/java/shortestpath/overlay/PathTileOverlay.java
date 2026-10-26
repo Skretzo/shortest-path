@@ -477,35 +477,18 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 
-		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
-			int point = points.get(i);
-			if (point == WorldPointUtil.UNDEFINED)
+		ProjectedTiles.eachProjectedTile(client, location, null,
+			lp -> Perspective.getCanvasTilePoly(client, lp), poly ->
 			{
-				continue;
-			}
+				if (draw)
+				{
+					graphics.setColor(color);
+					graphics.fill(poly);
+				}
 
-			LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
-			if (lp == null)
-			{
-				continue;
-			}
-
-			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-			if (poly == null)
-			{
-				continue;
-			}
-
-			if (draw)
-			{
-				graphics.setColor(color);
-				graphics.fill(poly);
-			}
-
-			drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter, search);
-		}
+				drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter, search);
+				return false;
+			});
 	}
 
 	private void drawUnreachedTargets(Graphics2D graphics, List<PathStep> path, Color colorCalculating, boolean draw,
