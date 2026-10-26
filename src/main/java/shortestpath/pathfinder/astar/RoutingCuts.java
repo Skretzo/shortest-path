@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -43,6 +44,7 @@ public final class RoutingCuts
 	private final int[] pairs;
 
 	/** The KaHIP partitioning parameters the cuts were generated with. */
+	@EqualsAndHashCode
 	public static final class Parameters
 	{
 		public final int maximumComponentSize;
@@ -63,23 +65,6 @@ public final class RoutingCuts
 			this.preconfiguration = Objects.requireNonNull(preconfiguration, "preconfiguration");
 			if (preconfiguration.length() > 255 || !StandardCharsets.US_ASCII.newEncoder().canEncode(preconfiguration))
 				throw new IllegalArgumentException("preconfiguration must be ASCII and at most 255 characters");
-		}
-
-		@Override
-		public boolean equals(Object other)
-		{
-			if (!(other instanceof Parameters)) return false;
-			Parameters that = (Parameters) other;
-			return maximumComponentSize == that.maximumComponentSize && minimumChildSize == that.minimumChildSize
-				&& maximumSeparatorSize == that.maximumSeparatorSize && imbalance == that.imbalance
-				&& seed == that.seed && preconfiguration.equals(that.preconfiguration);
-		}
-
-		@Override
-		public int hashCode()
-		{
-			return Objects.hash(maximumComponentSize, minimumChildSize, maximumSeparatorSize, imbalance, seed,
-				preconfiguration);
 		}
 
 		@Override
