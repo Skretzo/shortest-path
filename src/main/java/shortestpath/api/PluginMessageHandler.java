@@ -151,6 +151,19 @@ public class PluginMessageHandler implements QueryResponder
 			postQueryFailure(id, "INVALID");
 			return;
 		}
+		scheduler.queryPath(id, start, targets);
+	}
+
+	private void onGetTargetMessage(PluginMessage event)
+	{
+		Map<String, Object> data = event.getData();
+		postCurrentTarget(data == null ? null : data.get(PLUGIN_MESSAGE_ID));
+	}
+
+	private void onClearMessage(PluginMessage event)
+	{
+		scheduler.withSchedulerLock(() -> settings.clearOverrides());
+		scheduler.setTarget(WorldPointUtil.UNDEFINED);
 	}
 
 	/**
