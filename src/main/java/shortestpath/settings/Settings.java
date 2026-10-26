@@ -209,7 +209,6 @@ public class Settings
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
 			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides);
-		publishRouting(policy);
 		return policy;
 	}
 
