@@ -110,7 +110,10 @@ class RestrictionListPanel extends JPanel
 		itemsDisabled = TeleportationItem.NONE.equals(
 			settings.configuredValue("useTeleportationItems"));
 
-		for (TeleportRestriction.Family family : TeleportRestriction.loadFamilies())
+		// checklistFamilies adds the code-defined fairy-staff family to the
+		// generated map — the injected ring requirement is restrictable like
+		// an item family's ids but no TSV row owns it.
+		for (TeleportRestriction.Family family : TeleportRestriction.checklistFamilies())
 		{
 			rows.add(new RestrictionRow(family));
 		}
