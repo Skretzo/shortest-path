@@ -10,6 +10,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.IntDeque;
@@ -50,6 +54,7 @@ public final class RoutingStaticBuilder
 	}
 
 	/** Per-step timings and derivation counts, for the plugin's build diagnostics. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Diagnostics
 	{
 		public final long enumerateWalkableNanos;
@@ -80,39 +85,6 @@ public final class RoutingStaticBuilder
 		public final int siteCount;
 		public final int reachableBankCount;
 
-		Diagnostics(long enumerateWalkableNanos, long naturalComponentsNanos, long cutValidationNanos,
-			long routingComponentsNanos, long reachabilityNanos, long searchTilesNanos,
-			long sitesAndAttachmentsNanos, long sparseNetworkNanos, long validateNanos, long totalNanos,
-			int walkableTileCount, int naturalComponentCount, int routingComponentCount,
-			int largestRoutingComponentSize, int reachableNaturalComponentCount, int inputCutCount,
-			int duplicateCutCount, int invalidCutCount, int nonSeparatingCutCount, int crossingCount,
-			int searchTileCount, int siteCount, int reachableBankCount)
-		{
-			this.enumerateWalkableNanos = enumerateWalkableNanos;
-			this.naturalComponentsNanos = naturalComponentsNanos;
-			this.cutValidationNanos = cutValidationNanos;
-			this.routingComponentsNanos = routingComponentsNanos;
-			this.reachabilityNanos = reachabilityNanos;
-			this.searchTilesNanos = searchTilesNanos;
-			this.sitesAndAttachmentsNanos = sitesAndAttachmentsNanos;
-			this.sparseNetworkNanos = sparseNetworkNanos;
-			this.validateNanos = validateNanos;
-			this.totalNanos = totalNanos;
-			this.walkableTileCount = walkableTileCount;
-			this.naturalComponentCount = naturalComponentCount;
-			this.routingComponentCount = routingComponentCount;
-			this.largestRoutingComponentSize = largestRoutingComponentSize;
-			this.reachableNaturalComponentCount = reachableNaturalComponentCount;
-			this.inputCutCount = inputCutCount;
-			this.duplicateCutCount = duplicateCutCount;
-			this.invalidCutCount = invalidCutCount;
-			this.nonSeparatingCutCount = nonSeparatingCutCount;
-			this.crossingCount = crossingCount;
-			this.searchTileCount = searchTileCount;
-			this.siteCount = siteCount;
-			this.reachableBankCount = reachableBankCount;
-		}
-
 		@Override
 		public String toString()
 		{
@@ -138,16 +110,11 @@ public final class RoutingStaticBuilder
 	}
 
 	/** The derived static world plus the diagnostics collected while building it. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Result
 	{
 		public final RoutingStatic routingStatic;
 		public final Diagnostics diagnostics;
-
-		Result(RoutingStatic routingStatic, Diagnostics diagnostics)
-		{
-			this.routingStatic = routingStatic;
-			this.diagnostics = diagnostics;
-		}
 	}
 
 	/**
@@ -243,8 +210,8 @@ public final class RoutingStaticBuilder
 		for (int i = 0; i < crossings.size(); i++)
 		{
 			Crossing crossing = crossings.get(i);
-			crossingFrom[i] = binarySearchUnsigned(sites.siteTiles, crossing.fromTile);
-			crossingTo[i] = binarySearchUnsigned(sites.siteTiles, crossing.toTile);
+			crossingFrom[i] = IntArrays.binarySearch(sites.siteTiles, crossing.fromTile);
+			crossingTo[i] = IntArrays.binarySearch(sites.siteTiles, crossing.toTile);
 			crossingCost[i] = 1;
 		}
 
@@ -271,21 +238,13 @@ public final class RoutingStaticBuilder
 	 * reachability computed exactly as {@link #build} does. The tooling cut generator partitions
 	 * this graph, so generated cuts and the runtime agree on what a walking edge is.
 	 */
+	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	public static final class WalkingGraph
 	{
 		private final WalkableTiles walkable;
 		private final int[] naturalId;
-		private final int naturalComponentCount;
+		@Getter @Accessors(fluent = true) private final int naturalComponentCount;
 		private final boolean[] reachableNatural;
-
-		private WalkingGraph(WalkableTiles walkable, int[] naturalId, int naturalComponentCount,
-			boolean[] reachableNatural)
-		{
-			this.walkable = walkable;
-			this.naturalId = naturalId;
-			this.naturalComponentCount = naturalComponentCount;
-			this.reachableNatural = reachableNatural;
-		}
 
 		/** Number of walkable tiles; tile indexes follow ascending unsigned packed order. */
 		public int tileCount()
@@ -308,11 +267,6 @@ public final class RoutingStaticBuilder
 		public int naturalComponent(int index)
 		{
 			return naturalId[index];
-		}
-
-		public int naturalComponentCount()
-		{
-			return naturalComponentCount;
 		}
 
 		public boolean isStructurallyReachable(int naturalComponent)
@@ -353,18 +307,12 @@ public final class RoutingStaticBuilder
 
 	// ---- Tile selection and enumeration in ascending unsigned packed order ----
 
+	@AllArgsConstructor
 	private static final class WalkableTiles
 	{
 		final int[] tiles;
 		final byte[] masks;
 		final TileIndex index;
-
-		WalkableTiles(int[] tiles, byte[] masks)
-		{
-			this.tiles = tiles;
-			this.masks = masks;
-			this.index = new TileIndex(tiles);
-		}
 	}
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision)
@@ -402,7 +350,7 @@ public final class RoutingStaticBuilder
 				}
 			}
 		}
-		return new WalkableTiles(tiles, masks);
+		return new WalkableTiles(tiles, masks, new TileIndex(tiles));
 	}
 
 	/** Keep endpoint-connected land before allocating arrays; open sea can otherwise look walkable. */
@@ -624,20 +572,13 @@ public final class RoutingStaticBuilder
 
 	// ---- Cuts: validity ("ignore cuts that are not current walking edges") + canonical dedup ----
 
+	@AllArgsConstructor
 	private static final class CutSet
 	{
 		final List<long[]> valid; // each entry {a, b} as raw ints boxed in a long[2] for simplicity
 		final LongOpenHashSet blocked;
 		final int duplicateCount;
 		final int invalidCount;
-
-		CutSet(List<long[]> valid, LongOpenHashSet blocked, int duplicateCount, int invalidCount)
-		{
-			this.valid = valid;
-			this.blocked = blocked;
-			this.duplicateCount = duplicateCount;
-			this.invalidCount = invalidCount;
-		}
 	}
 
 	private static CutSet validateCuts(int[] cuts, WalkableTiles walkable)
@@ -669,7 +610,7 @@ public final class RoutingStaticBuilder
 			int b = (int) candidate[1];
 			int posA = walkable.index.get(a);
 			int[] neighborsOfA = posA < 0 ? new int[0] : ordinaryNeighborsFromMask(a, walkable.masks[posA]);
-			if (posA < 0 || !contains(neighborsOfA, 0, neighborsOfA.length, b))
+			if (posA < 0 || !IntArrays.contains(neighborsOfA, 0, neighborsOfA.length, b))
 			{
 				invalidCount++;
 				continue;
@@ -813,7 +754,7 @@ public final class RoutingStaticBuilder
 			if (neighborPosition >= 0)
 			{
 				int component = naturalId[neighborPosition];
-				if (!contains(buffer, 0, count, component))
+				if (!IntArrays.contains(buffer, 0, count, component))
 				{
 					buffer[count++] = component;
 				}
@@ -824,21 +765,13 @@ public final class RoutingStaticBuilder
 
 	// ---- Section A: search tiles, routing components, walking masks, north/south ----
 
+	@AllArgsConstructor
 	private static final class SearchTiles
 	{
 		final int[] tiles;
 		final TileComponents components;
 		final char[] northOffsets, southOffsets;
 		final byte[] masks;
-
-		SearchTiles(int[] tiles, TileComponents components, byte[] masks, char[] northOffsets, char[] southOffsets)
-		{
-			this.tiles = tiles;
-			this.components = components;
-			this.masks = masks;
-			this.northOffsets = northOffsets;
-			this.southOffsets = southOffsets;
-		}
 	}
 
 	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId,
@@ -860,26 +793,21 @@ public final class RoutingStaticBuilder
 		for (int i = 0; i < tileArray.length; i++)
 		{
 			int y = WorldPointUtil.unpackWorldY(tileArray[i]);
-			int n = y == 32767 ? -1 : binarySearchUnsigned(tileArray, tileArray[i] + Y_UNIT);
-			int s = y == 0 ? -1 : binarySearchUnsigned(tileArray, tileArray[i] - Y_UNIT);
+			int n = y == 32767 ? -1 : IntArrays.binarySearch(tileArray, tileArray[i] + Y_UNIT);
+			int s = y == 0 ? -1 : IntArrays.binarySearch(tileArray, tileArray[i] - Y_UNIT);
 			// Adjacent rows contain at most 32768 distinct x coordinates, so these offsets fit.
 			north[i] = n < 0 ? 0 : (char) (n - i);
 			south[i] = s < 0 ? 0 : (char) (i - s);
 		}
-		return new SearchTiles(tileArray, componentArray, maskArray, north, south);
+		return new SearchTiles(tileArray, componentArray, north, south, maskArray);
 	}
 
 	// ---- Section: routing components / crossings ----
 
+	@AllArgsConstructor
 	private static final class Crossing
 	{
 		final int fromTile, toTile;
-
-		Crossing(int fromTile, int toTile)
-		{
-			this.fromTile = fromTile;
-			this.toTile = toTile;
-		}
 	}
 
 	private static List<Crossing> buildCrossings(List<long[]> validCuts, int[] routingId, WalkableTiles walkable)
@@ -907,21 +835,11 @@ public final class RoutingStaticBuilder
 
 	// ---- Sections B/C/D/E: sites and attachments ----
 
+	@AllArgsConstructor
 	private static final class SitesAndAttachments
 	{
 		final int[] siteTiles, siteComponentOffsets, siteComponentIds, componentSiteOffsets, componentSiteIds;
 		final int[] reachableBankTiles;
-
-		SitesAndAttachments(int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
-			int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles)
-		{
-			this.siteTiles = siteTiles;
-			this.siteComponentOffsets = siteComponentOffsets;
-			this.siteComponentIds = siteComponentIds;
-			this.componentSiteOffsets = componentSiteOffsets;
-			this.componentSiteIds = componentSiteIds;
-			this.reachableBankTiles = reachableBankTiles;
-		}
 	}
 
 	private static SitesAndAttachments buildSites(Map<Integer, Set<Transport>> rawTransports, Set<Integer> bankTiles,
@@ -1008,7 +926,7 @@ public final class RoutingStaticBuilder
 	 */
 	private static int[] routingAttachments(int point, SearchTiles search, CollisionMap collision)
 	{
-		int index = binarySearchUnsigned(search.tiles, point);
+		int index = IntArrays.binarySearch(search.tiles, point);
 		if (index >= 0)
 		{
 			return new int[] {search.components.get(index)};
@@ -1018,11 +936,11 @@ public final class RoutingStaticBuilder
 		int count = 0;
 		for (int neighbor : neighbors)
 		{
-			int neighborIndex = binarySearchUnsigned(search.tiles, neighbor);
+			int neighborIndex = IntArrays.binarySearch(search.tiles, neighbor);
 			if (neighborIndex >= 0)
 			{
 				int component = search.components.get(neighborIndex);
-				if (!contains(buffer, 0, count, component))
+				if (!IntArrays.contains(buffer, 0, count, component))
 				{
 					buffer[count++] = component;
 				}
@@ -1034,17 +952,7 @@ public final class RoutingStaticBuilder
 
 	// ---- Small shared utilities ----
 
-	private static boolean contains(int[] values, int start, int end, int target)
-	{
-		for (int i = start; i < end; i++)
-		{
-			if (values[i] == target)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
+
 
 	private static int count(boolean[] values)
 	{
@@ -1088,29 +996,6 @@ public final class RoutingStaticBuilder
 	{
 		int highest = Integer.highestOneBit(value);
 		return highest == value ? highest : highest * 2;
-	}
-
-	private static int binarySearchUnsigned(int[] values, int target)
-	{
-		int low = 0, high = values.length - 1;
-		while (low <= high)
-		{
-			int middle = low + (high - low) / 2;
-			int compare = Integer.compareUnsigned(values[middle], target);
-			if (compare == 0)
-			{
-				return middle;
-			}
-			if (compare < 0)
-			{
-				low = middle + 1;
-			}
-			else
-			{
-				high = middle - 1;
-			}
-		}
-		return -1;
 	}
 
 	/** Each entry covers 64 packed tiles; set bits give membership and the offset from the first tile. */

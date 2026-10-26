@@ -17,13 +17,12 @@ import shortestpath.TestShortestPathConfig;
  * key resolves to the exact {@link Effect} set the shell must act on. The
  * routing-read keys carry {@link Effect#ROUTE_INVALIDATING} — the same rows
  * the refresh path reads, so "is read by routing" and "invalidates the route"
- * cannot diverge — while display-only keys never invalidate and the two
- * side-effect keys carry their own effects.
+ * cannot diverge — while display-only keys never invalidate and the
+ * side-effect key carries its own effect.
  *
  * <p>Coverage is per-key and explicit: the former restart-regex arms, the
  * keys the regex silently missed but the refresh path always read, the
- * multi-effect backend key, the early-return debug-overlay key, and the
- * display-only keys.
+ * debug-overlay key, and the display-only keys.
  */
 public class ConfigChangeTest
 {
@@ -159,13 +158,6 @@ public class ConfigChangeTest
 		assertRouteInvalidating("pohJewelleryBoxTier");
 		assertRouteInvalidating("useTeleportationPortalsPoh");
 		assertRouteInvalidating("usePohMountedItems");
-	}
-
-	@Test
-	public void pathfinderAlgorithmCarriesBothEffects()
-	{
-		assertEffects("pathfinderAlgorithm",
-			Set.of(Effect.ROUTE_INVALIDATING, Effect.SIDE_EFFECT_BACKEND_PREP));
 	}
 
 	@Test

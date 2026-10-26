@@ -7,7 +7,8 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -92,67 +93,10 @@ public final class PreparedRoutingAccount
 	 */
 	public boolean bankAccessible(int packedTile)
 	{
-		int low = 0, high = accessibleBankTiles.length - 1;
-		while (low <= high)
-		{
-			int middle = (low + high) >>> 1;
-			int compare = Integer.compareUnsigned(accessibleBankTiles[middle], packedTile);
-			if (compare == 0) return true;
-			if (compare < 0) low = middle + 1;
-			else high = middle - 1;
-		}
-		return false;
+		return IntArrays.binarySearch(accessibleBankTiles, packedTile) >= 0;
 	}
 	/** The cost of switching into the banked layer at an accessible bank. */
 
-	public int accessibleBankCount()
-	{
-		return accessibleBankTiles.length;
-	}
-	public int accessibleBankTile(int index)
-	{
-		return accessibleBankTiles[index];
-	}
-
-	public String fingerprintHex()
-	{
-		return String.format("%016x", fingerprint);
-	}
-
-	public int localCount(BankVisitState banked)
-	{
-		return view(local, banked).count;
-	}
-	public int localOrigin(BankVisitState banked, int index)
-	{
-		return view(local, banked).origins[index];
-	}
-	public int localDestination(BankVisitState banked, int index)
-	{
-		return view(local, banked).destinations[index];
-	}
-	public int localCost(BankVisitState banked, int index)
-	{
-		return view(local, banked).costs[index];
-	}
-	public int localType(BankVisitState banked, int index)
-	{
-		return view(local, banked).types[index];
-	}
-	public int localMaxWilderness(BankVisitState banked, int index)
-	{
-		return view(local, banked).maxWilderness[index];
-	}
-	/**
-	 * The local transport's action class: entries in one layer share a class exactly when they are
-	 * the same game action (type, object and menu option, display text, consumption and item
-	 * requirements) to the same destination at the same cost, differing at most in origin. Taking
-	 * any of them leads to the same state, so a route may take the action from whichever origin.
-	 */
-	public int localActionClass(BankVisitState banked, int index)
-	{
-		return view(local, banked).actionClasses[index];
-	}
 	/** The global teleports castable outside the wilderness: every global this account has. */
 	public int globalCount(BankVisitState banked)
 	{
@@ -166,18 +110,10 @@ public final class PreparedRoutingAccount
 	{
 		return globalCost(TeleportCapability.ALL, banked, index);
 	}
-	public int globalType(BankVisitState banked, int index)
-	{
-		return globalView(TeleportCapability.ALL, banked).types[index];
-	}
-	public int globalMaxWilderness(BankVisitState banked, int index)
-	{
-		return globalMaxWilderness(TeleportCapability.ALL, banked, index);
-	}
 	/** The global teleports castable with {@code capability}. */
 	public int globalCount(TeleportCapability capability, BankVisitState banked)
 	{
-		return globalView(capability, banked).count;
+		return globalView(capability, banked).destinations.length;
 	}
 	public int globalDestination(TeleportCapability capability, BankVisitState banked, int index)
 	{
@@ -186,10 +122,6 @@ public final class PreparedRoutingAccount
 	public int globalCost(TeleportCapability capability, BankVisitState banked, int index)
 	{
 		return globalView(capability, banked).costs[index];
-	}
-	public int globalMaxWilderness(TeleportCapability capability, BankVisitState banked, int index)
-	{
-		return globalView(capability, banked).maxWilderness[index];
 	}
 	public Transport globalTransport(TeleportCapability capability, BankVisitState banked, int index)
 	{
@@ -230,7 +162,7 @@ public final class PreparedRoutingAccount
 				View view = kind == 0 ? local[banked] : global[kind - 1][banked];
 				hash = mix(hash, kind);
 				hash = mix(hash, banked);
-				for (int i = 0; i < view.count; i++)
+				for (int i = 0; i < view.destinations.length; i++)
 				{
 					if (kind == 0)
 						hash = u32(hash, view.origins[i]);
@@ -256,15 +188,10 @@ public final class PreparedRoutingAccount
 		return (hash ^ (value & 0xffL)) * FNV_PRIME;
 	}
 
-	static String transportTypeName(int ordinal)
-	{
-		return TransportType.values()[ordinal].name();
-	}
-
+	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	static final class View
 	{
 		final boolean local;
-		final int count;
 		final int[] origins;
 		final int[] destinations;
 		final int[] costs;
@@ -274,20 +201,6 @@ public final class PreparedRoutingAccount
 		/** The transport each row represents; parallel to the other arrays so a search can
 		 *  report which transport produced an edge, not just its effect. */
 		final Transport[] transports;
-
-		private View(boolean local, int[] origins, int[] destinations, int[] costs, int[] types, int[] maxWilderness,
-			int[] actionClasses, Transport[] transports)
-		{
-			this.local = local;
-			this.count = destinations.length;
-			this.origins = origins;
-			this.destinations = destinations;
-			this.costs = costs;
-			this.types = types;
-			this.maxWilderness = maxWilderness;
-			this.actionClasses = actionClasses;
-			this.transports = transports;
-		}
 
 		static View empty(boolean local)
 		{

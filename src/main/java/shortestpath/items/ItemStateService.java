@@ -10,6 +10,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemContainer;
@@ -43,6 +44,7 @@ import shortestpath.settings.Settings;
  */
 @Slf4j
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ItemStateService
 {
 	private final RefreshCoordinator coordinator;
@@ -60,7 +62,7 @@ public class ItemStateService
 	 * state only: eligibility never reads it, and {@link #reset()} leaves it
 	 * intact.
 	 */
-	private volatile Map<Integer, Integer> lastSeenBank = Map.of();
+	@Getter @Accessors(fluent = true) private volatile Map<Integer, Integer> lastSeenBank = Map.of();
 
 	// The serialized form last written to (or read back from) the profile;
 	// identical re-persists are skipped on it, mirroring the PohService
@@ -73,13 +75,6 @@ public class ItemStateService
 	// state (e.g. the bank-pickup projection) key their caches on it instead
 	// of this service observing their invalidation needs.
 	@Getter @Accessors(fluent = true) private int itemStateRevision;
-
-	@Inject
-	public ItemStateService(RefreshCoordinator coordinator, ConfigManager configManager)
-	{
-		this.coordinator = coordinator;
-		this.configManager = configManager;
-	}
 
 	private ItemStateService()
 	{
@@ -224,17 +219,6 @@ public class ItemStateService
 			lastSeenBank = immutable;
 			persistLastSeenBank();
 		}
-	}
-
-	/**
-	 * The per-account last-seen bank contents — an immutable id-to-quantity
-	 * map remembered across sessions for the panel's Owned filter. Display
-	 * state only: eligibility never reads it, and {@link #reset()} leaves it
-	 * intact.
-	 */
-	public Map<Integer, Integer> lastSeenBank()
-	{
-		return lastSeenBank;
 	}
 
 	/**

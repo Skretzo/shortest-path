@@ -1,10 +1,10 @@
 package shortestpath.requirement.model;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import shortestpath.Util;
 
@@ -17,13 +17,15 @@ import shortestpath.Util;
  * pass or by 5 coins.
  */
 @Getter
-public class ItemRequirement
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public final class ItemRequirement
 {
 	/**
 	 * One {@code NAME=quantity} alternative of an OR group. Its itemIds are
 	 * that item's variation ids.
 	 */
 	@Getter
+	@EqualsAndHashCode
 	public static final class Branch
 	{
 		private final int[] itemIds;
@@ -136,42 +138,13 @@ public class ItemRequirement
 			}
 			return !hasIds;
 		}
-
-		@Override
-		public int hashCode()
-		{
-			int result = Arrays.hashCode(itemIds);
-			result = 31 * result + Arrays.hashCode(staffIds);
-			result = 31 * result + Arrays.hashCode(offhandIds);
-			result = 31 * result + quantity;
-			result = 31 * result + (unlock == null ? 0 : unlock.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object o)
-		{
-			if (this == o)
-			{
-				return true;
-			}
-			if (o == null || getClass() != o.getClass())
-			{
-				return false;
-			}
-			Branch that = (Branch) o;
-			return quantity == that.quantity &&
-				unlock == that.unlock &&
-				Arrays.equals(itemIds, that.itemIds) &&
-				Arrays.equals(staffIds, that.staffIds) &&
-				Arrays.equals(offhandIds, that.offhandIds);
-		}
 	}
 
 	/**
 	 * The OR alternatives of this requirement, in declaration order, each with
 	 * its own quantity. A requirement without OR alternatives has one branch.
 	 */
+	@EqualsAndHashCode.Include
 	private final List<Branch> branches;
 
 	/**
@@ -314,26 +287,5 @@ public class ItemRequirement
 			}
 		}
 		return false;
-	}
-
-	@Override
-	public int hashCode()
-	{
-		return branches.hashCode();
-	}
-
-	@Override
-	public boolean equals(Object o)
-	{
-		if (this == o)
-		{
-			return true;
-		}
-		if (o == null || getClass() != o.getClass())
-		{
-			return false;
-		}
-		ItemRequirement that = (ItemRequirement) o;
-		return branches.equals(that.branches);
 	}
 }

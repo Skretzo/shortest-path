@@ -160,6 +160,97 @@ public class PathAnnotatorTest
 	}
 
 	// ---------------------------------------------------------------
+	// POH exit label tables — every table entry is pinned literally so
+	// the table conversion provably preserves the chain's output.
+	// ---------------------------------------------------------------
+
+	@Test
+	public void objInfoLabelTablePinsEveryPairInFirstMatchOrder()
+	{
+		// Order is load-bearing: the first objInfo.contains(match) wins.
+		assertEquals(4, PathAnnotator.OBJINFO_LABELS.size());
+		assertEquals(List.of("Amulet of Glory", "Mounted Glory: "),
+			PathAnnotator.OBJINFO_LABELS.get(0));
+		assertEquals(List.of("Mythical cape", "Mythical Cape: "),
+			PathAnnotator.OBJINFO_LABELS.get(1));
+		assertEquals(List.of("Xeric's Talisman", "Xeric's Talisman: "),
+			PathAnnotator.OBJINFO_LABELS.get(2));
+		assertEquals(List.of("Digsite", "Digsite Pendant: "),
+			PathAnnotator.OBJINFO_LABELS.get(3));
+		assertEquals("Jewelry Box: ", PathAnnotator.OBJINFO_FALLBACK_LABEL);
+	}
+
+	@Test
+	public void exitPrefixTablePinsEveryTypeAndThePassthrough()
+	{
+		assertEquals("Nexus: ",
+			PathAnnotator.EXIT_PREFIX.get(TransportType.TELEPORTATION_PORTAL_POH));
+		// The missing colon is upstream display text, not a typo — pinned
+		// literally so it cannot be normalized to "Fairy Ring: ".
+		assertEquals("Fairy Ring ",
+			PathAnnotator.EXIT_PREFIX.get(TransportType.FAIRY_RING));
+		assertEquals("Spirit Tree: ",
+			PathAnnotator.EXIT_PREFIX.get(TransportType.SPIRIT_TREE));
+		assertEquals("Obelisk: ",
+			PathAnnotator.EXIT_PREFIX.get(TransportType.WILDERNESS_OBELISK));
+		// The teleportation box takes the objInfo arm, not this table.
+		assertNull(PathAnnotator.EXIT_PREFIX.get(TransportType.TELEPORTATION_BOX));
+		// Unlisted types pass the exit info through unprefixed.
+		assertNull(PathAnnotator.EXIT_PREFIX.get(TransportType.TELEPORTATION_ITEM));
+	}
+
+	@Test
+	public void testGetPohExitInfoLabelArms()
+	{
+		// Every objInfo pair plus the null/unmatched fallback, end to end.
+		assertEquals("Mythical Cape: Falador", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.TELEPORTATION_BOX,
+				"Falador", "Mounted Mythical cape", 0)), 0));
+		assertEquals("Xeric's Talisman: Xeric's Heart", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.TELEPORTATION_BOX,
+				"Xeric's Heart", "Xeric's Talisman", 0)), 0));
+		assertEquals("Digsite Pendant: Digsite", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.TELEPORTATION_BOX,
+				"Digsite", "Digsite pendant", 0)), 0));
+		assertEquals("Jewelry Box: Al Kharid", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.TELEPORTATION_BOX,
+				"Al Kharid", "Basic Jewellery Box 37492", 0)), 0));
+		assertEquals("Jewelry Box: Home", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.TELEPORTATION_BOX,
+				"Home", null, 0)), 0));
+
+		// First-match order: an objInfo matching two pairs takes the earlier.
+		assertEquals("Mounted Glory: Edgeville", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.TELEPORTATION_BOX,
+				"Edgeville", "Amulet of Glory Digsite", 0)), 0));
+
+		// Every exitType pair plus the passthrough arm, end to end.
+		assertEquals("Fairy Ring DIQ", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.FAIRY_RING, "DIQ", null, 0)), 0));
+		assertEquals("Spirit Tree: Tree Gnome Village", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.SPIRIT_TREE,
+				"Tree Gnome Village", null, 0)), 0));
+		assertEquals("Obelisk: Level 44", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.WILDERNESS_OBELISK,
+				"Level 44", null, 0)), 0));
+		assertEquals("Grand seed pod", annotator.getPohExitInfo(LANDING,
+			pohExitPath(transport(TransportType.TELEPORTATION_ITEM,
+				"Grand seed pod", null, 0)), 0));
+	}
+
+	private static List<PathStep> pohExitPath(Transport exitTransport)
+	{
+		int inside1 = WorldPointUtil.packWorldPoint(1900, 7060, 0);
+		int inside2 = WorldPointUtil.packWorldPoint(1901, 7060, 0);
+		int outside = WorldPointUtil.packWorldPoint(3000, 3300, 0);
+		return List.of(
+			new PathStep(outside, BankVisitState.CARRIED),
+			new PathStep(inside1, BankVisitState.CARRIED),
+			new PathStep(inside2, BankVisitState.CARRIED),
+			new PathStep(outside, BankVisitState.CARRIED, exitTransport));
+	}
+
+	// ---------------------------------------------------------------
 	// Display facades — detached arm and attached delegation
 	// ---------------------------------------------------------------
 

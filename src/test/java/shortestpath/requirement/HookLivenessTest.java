@@ -37,20 +37,11 @@ public class HookLivenessTest
 	private static final TeleportationItem MODE = TeleportationItem.INVENTORY;
 	private static final int BANK_TILE = WorldPointUtil.packWorldPoint(1804, 9501, 0);
 
-	private static Transport transport()
-	{
-		return new Transport.TransportBuilder()
-			.type(TransportType.TRANSPORT)
-			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
-			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
-			.build();
-	}
-
 	private static RequirementContext capture(MapPlayerStateSource source, TestRequirementHooks hooks,
 		List<Transport> transports, Map<Integer, List<DestinationRequirements>> bankRequirements)
 	{
 		return RequirementContext.capture(source, hooks, RequirementTestFixtures.policy(MODE), 0L,
-			transports, bankRequirements, null, Set.of(), false, new LeagueModeState(), null);
+			transports, bankRequirements, null, Set.of(), false, new LeagueModeState(), null, Set.of());
 	}
 
 	private static Requirements chain(RequirementContext context, TestRequirementHooks hooks)
@@ -107,7 +98,7 @@ public class HookLivenessTest
 	}
 
 	// ------------------------------------------------------------------
-	// varbitChecks — consulted per check against the captured map.
+	// varChecks(VARBIT) — consulted per check against the captured map.
 	// ------------------------------------------------------------------
 
 	@Test
@@ -137,7 +128,7 @@ public class HookLivenessTest
 	public void varbitHookMovesTheBankVerdictOnTheSameChain()
 	{
 		DestinationRequirements gated = RequirementTestFixtures.bankRequirements(
-			null, null, Set.of(VarRequirement.varbit(4481, 1, VarCheckType.EQUAL)), null);
+			null, null, Set.of(new VarRequirement(VarRequirement.VarType.VARBIT, 4481, 1, VarCheckType.EQUAL)), null);
 		RequirementContext context = RequirementTestFixtures.context()
 			.varbitValues(Map.of(4481, 1)).build();
 		TestRequirementHooks hooks = new TestRequirementHooks();
@@ -150,7 +141,7 @@ public class HookLivenessTest
 	}
 
 	// ------------------------------------------------------------------
-	// varPlayerChecks — same polarity, bank and transport.
+	// varChecks(VARPLAYER) — same polarity, bank and transport.
 	// ------------------------------------------------------------------
 
 	@Test
@@ -178,7 +169,7 @@ public class HookLivenessTest
 	{
 		DestinationRequirements gated = RequirementTestFixtures.bankRequirements(
 			null, null, null,
-			Set.of(VarRequirement.varPlayer(4130, 1999, VarCheckType.GREATER)));
+			Set.of(new VarRequirement(VarRequirement.VarType.VARPLAYER, 4130, 1999, VarCheckType.GREATER)));
 		RequirementContext context = RequirementTestFixtures.context()
 			.varPlayerValues(Map.of(4130, 2000)).build();
 		TestRequirementHooks hooks = new TestRequirementHooks();
@@ -188,5 +179,60 @@ public class HookLivenessTest
 		hooks.failVarPlayers(true);
 		assertFalse(requirements.satisfied(gated));
 		assertEquals(RejectionReason.VARPLAYER, requirements.check(gated));
+	}
+
+	// ------------------------------------------------------------------
+	// Kind isolation — each dispatched call sees only its own var family.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void varKindKnobsStayIsolatedAcrossTheCollapsedSeam()
+	{
+		Transport both = new Transport.TransportBuilder()
+			.type(TransportType.TRANSPORT)
+			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
+			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
+			.varbits("4481=1")
+			.varPlayers("4130>1999")
+			.build();
+		Transport varPlayerOnly = new Transport.TransportBuilder()
+			.type(TransportType.TRANSPORT)
+			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
+			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
+			.varPlayers("4130>1999")
+			.build();
+		Transport varbitOnly = new Transport.TransportBuilder()
+			.type(TransportType.TRANSPORT)
+			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
+			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
+			.varbits("4481=1")
+			.build();
+		RequirementContext context = RequirementTestFixtures.context()
+			.varbitValues(Map.of(4481, 1))
+			.varPlayerValues(Map.of(4130, 2000))
+			.build();
+		TestRequirementHooks hooks = new TestRequirementHooks();
+		Requirements requirements = chain(context, hooks);
+
+		// All requirement sets pass their checks.
+		assertTrue(requirements.usable(both));
+		assertTrue(requirements.usable(varPlayerOnly));
+		assertTrue(requirements.usable(varbitOnly));
+
+		// The varbit knob only fails the VARBIT dispatch — a varplayer-only
+		// transport's verdict is unmoved.
+		hooks.failVarbits(true);
+		assertFalse(requirements.usable(both));
+		assertFalse(requirements.usable(varbitOnly));
+		assertEquals(RejectionReason.VARBIT, requirements.check(both));
+		assertTrue(requirements.usable(varPlayerOnly));
+
+		// And symmetrically the varplayer knob only fails the VARPLAYER
+		// dispatch — the varbit side keeps passing on the same chain.
+		hooks.failVarbits(false);
+		hooks.failVarPlayers(true);
+		assertFalse(requirements.usable(both));
+		assertEquals(RejectionReason.VARPLAYER, requirements.check(both));
+		assertTrue(requirements.usable(varbitOnly));
 	}
 }

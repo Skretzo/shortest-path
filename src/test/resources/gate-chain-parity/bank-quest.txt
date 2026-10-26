@@ -1,0 +1,2 @@
+bank-quest/finished | check=NONE | satisfied=true
+bank-quest/not-started | check=QUEST | satisfied=false

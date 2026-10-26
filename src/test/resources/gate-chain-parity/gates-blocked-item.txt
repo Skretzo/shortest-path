@@ -1,0 +1,2 @@
+blocked-item/none-mode | check=BLOCKED_ITEM | carried=false | banked=false | gates=BLOCKED_ITEM
+blocked-item/all-mode | check=BLOCKED_ITEM | carried=true | banked=true | gates=BLOCKED_ITEM

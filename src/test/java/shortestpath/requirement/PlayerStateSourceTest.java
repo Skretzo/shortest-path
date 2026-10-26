@@ -30,6 +30,7 @@ import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.SkillLevels;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
@@ -96,7 +97,7 @@ public class PlayerStateSourceTest
 		RequirementContext context = RequirementContext.capture(source, hooks,
 			RequirementTestFixtures.policy(MODE), 0L,
 			List.of(gated), Map.of(BANK_TILE, List.of(bankGated)), null,
-			Set.of(), false, new LeagueModeState(), null);
+			Set.of(), false, new LeagueModeState(), null, Set.of());
 
 		// Round-trip: the declared varbit, varplayer and quests landed in the
 		// snapshot the gates read.
@@ -106,7 +107,7 @@ public class PlayerStateSourceTest
 		assertEquals(QuestState.FINISHED, context.getQuestStates().get(Quest.BONE_VOYAGE));
 		assertEquals(99, context.getBoostedSkillLevelsAndMore().get(Skill.COOKING));
 		assertEquals(1500, context.getBoostedSkillLevelsAndMore().totalLevel());
-		assertEquals(42, context.getBoostedSkillLevelsAndMore().questPoints());
+		assertEquals(42, context.getBoostedSkillLevelsAndMore().get(SkillLevels.QUEST_POINTS_INDEX));
 		assertEquals(200, context.getCurrentMaxQuestPoints());
 		assertFalse(context.isOnSailingBoat());
 
@@ -135,13 +136,13 @@ public class PlayerStateSourceTest
 		MapPlayerStateSource ashore = new MapPlayerStateSource();
 		assertFalse(RequirementContext.capture(ashore, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
-			Set.of(), false, new LeagueModeState(), null).isOnSailingBoat());
+			Set.of(), false, new LeagueModeState(), null, Set.of()).isOnSailingBoat());
 
 		MapPlayerStateSource aboard = new MapPlayerStateSource()
 			.varbit(VarbitID.SAILING_BOARDED_BOAT, 1);
 		assertTrue(RequirementContext.capture(aboard, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
-			Set.of(), false, new LeagueModeState(), null).isOnSailingBoat());
+			Set.of(), false, new LeagueModeState(), null, Set.of()).isOnSailingBoat());
 	}
 
 	// ------------------------------------------------------------------
@@ -206,7 +207,7 @@ public class PlayerStateSourceTest
 		assertThrows(IllegalStateException.class, () -> RequirementContext.capture(
 			source, new TestRequirementHooks(),
 			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
-			Set.of(), false, new LeagueModeState(), null));
+			Set.of(), false, new LeagueModeState(), null, Set.of()));
 	}
 
 	@Test

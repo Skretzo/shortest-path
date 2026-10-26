@@ -283,8 +283,6 @@ public class PluginDependencyRuleTest
 			"RoutingPolicy/TransportEligibility read settings types");
 		LEAF_EDGES.put("requirement -> transport",
 			"requirements evaluate Transport records");
-		LEAF_EDGES.put("settings -> pathfinder",
-			"Settings/EffectiveConfig expose pathfinder-facing config");
 		LEAF_EDGES.put("settings -> requirement",
 			"Settings/EffectiveConfig expose requirement-facing config");
 		LEAF_EDGES.put("settings -> transport",

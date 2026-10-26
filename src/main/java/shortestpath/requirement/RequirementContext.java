@@ -116,31 +116,9 @@ public final class RequirementContext
 	 * protected override seam keeps feeding the snapshot. Declared var and
 	 * quest ids from both the transports and the bank requirements land in
 	 * the same maps — a var or quest missing from them fails closed when the
-	 * shared evaluator looks it up.
-	 */
-	public static RequirementContext capture(
-		PlayerStateSource source,
-		RequirementHooks hooks,
-		RoutingPolicy policy,
-		long evaluationTimeMinutes,
-		Collection<Transport> transports,
-		Map<Integer, List<DestinationRequirements>> bankRequirements,
-		ItemContainer bank,
-		Set<Unlock> unlocks,
-		boolean respawnPrifddinas,
-		LeagueModeState leagueModeState,
-		Set<String> availableSpiritTrees)
-	{
-		return capture(source, hooks, policy, evaluationTimeMinutes, transports,
-			bankRequirements, bank, unlocks, respawnPrifddinas, leagueModeState,
-			availableSpiritTrees, Set.of());
-	}
-
-	/**
-	 * As {@link #capture(PlayerStateSource, RequirementHooks, RoutingPolicy, long,
-	 * Collection, Map, ItemContainer, Set, boolean, LeagueModeState, Set)},
-	 * additionally forwarding the packed destinations of the balloon routes whose
-	 * log basket the player declared stocked into the eligibility snapshot.
+	 * shared evaluator looks it up. {@code balloonLogBasketDestinations}
+	 * forwards the packed destinations of the balloon routes whose log basket
+	 * the player declared stocked into the eligibility snapshot.
 	 */
 	public static RequirementContext capture(
 		PlayerStateSource source,
@@ -249,20 +227,4 @@ public final class RequirementContext
 		}
 	}
 
-	/**
-	 * Builds a snapshot for tests without a {@code Client}: the supplied facts
-	 * plus empty unlocks, no respawn declaration, no boat, a fresh non-seasonal
-	 * league state and unresolved spirit-tree availability.
-	 */
-	public static RequirementContext forTesting(
-		int[] boostedSkillLevelsAndMore,
-		Map<Quest, QuestState> questStates,
-		Map<Integer, Integer> varbitValues,
-		Map<Integer, Integer> varPlayerValues,
-		TransportEligibility eligibility)
-	{
-		return new RequirementContext(0L, boostedSkillLevelsAndMore, 0, questStates,
-			varbitValues, varPlayerValues, eligibility, Set.of(), false, false,
-			new LeagueModeState(), null);
-	}
 }

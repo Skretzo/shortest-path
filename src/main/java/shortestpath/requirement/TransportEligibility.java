@@ -11,7 +11,9 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.ItemVariations;
+import shortestpath.WorldPointUtil;
 import shortestpath.items.OwnedItems;
+import shortestpath.poh.PohService;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.HeldItems;
 import shortestpath.requirement.model.ItemRequirement;
@@ -33,8 +35,8 @@ import lombok.experimental.Accessors;
  * setting, the fairy-ring staff rule and the currency threshold.</li>
  * <li>{@link #satisfiedByPlayer} — the carried-pool-only check the overlays use, with no
  * currency threshold (the player already owns the items, so none would be spent).</li>
- * <li>{@link #bankPickupPlan} and {@link #fairyStaffPickup} — the items the bank must
- * supply for one transport, plus the bank item ids to highlight.</li>
+ * <li>{@link #bankPickupPlan} and {@link #targetPickupPlan} — the items the bank must
+ * supply for one transport or target, plus the bank item ids to highlight.</li>
  * </ul>
  *
  * <p>The pools are fixed at construction: {@code carriedItems} is inventory + worn +
@@ -58,7 +60,7 @@ public final class TransportEligibility
 	 */
 	private static final TransportItems DRAMEN_STAFF = new TransportItems(
 		new int[][]{null},
-		new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
+		new int[][]{ItemVariations.fromName("DRAMEN_STAFF").getIds()},
 		new int[][]{null},
 		new int[]{1});
 
@@ -84,23 +86,6 @@ public final class TransportEligibility
 	 */
 	private final Set<Unlock> unlocksWithBalloonBasket;
 	@Getter @Accessors(fluent = true) private final HeldItems heldItems;
-
-	public TransportEligibility(
-		Map<Integer, Integer> carriedItems,
-		Map<Integer, Integer> bankPathItems,
-		Map<Integer, Integer> bankHas,
-		int bankPouchId,
-		Map<Integer, Integer> bankPouchRunes,
-		boolean fairyRingStaffRequired,
-		TeleportationItem teleportationItemSetting,
-		int currencyThreshold,
-		Set<Unlock> unlocks,
-		boolean bankSeen)
-	{
-		this(carriedItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold,
-			unlocks, bankSeen, Set.of());
-	}
 
 	public TransportEligibility(
 		Map<Integer, Integer> carriedItems,
@@ -152,7 +137,7 @@ public final class TransportEligibility
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerItems);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true);
+			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true, Set.of());
 	}
 
 	/**
@@ -160,27 +145,12 @@ public final class TransportEligibility
 	 * read: the carried pool (inventory + worn + rune pouch in hand), the bank-path pool
 	 * (which adds the bank contents when bank paths are enabled), the bank contents
 	 * themselves, the runes inside a banked rune pouch, the fairy-ring staff gate and
-	 * the currency threshold. Shared by
+	 * the currency threshold. {@code balloonLogBasketDestinations} additionally
+	 * captures the packed destinations of the balloon routes whose log basket the
+	 * player declared stocked. Shared by
 	 * {@link RequirementContext#capture RequirementContext.capture}
 	 * and the lazy {@code PathfinderConfig#getEligibility()} rebuild so exactly one
 	 * collection path exists.
-	 */
-	public static TransportEligibility collect(
-		PlayerStateSource source,
-		ItemContainer bank,
-		TeleportationItem teleportationItemSetting,
-		int currencyThreshold,
-		boolean includeBankPath,
-		Set<Unlock> unlocks)
-	{
-		return collect(source, bank, teleportationItemSetting, currencyThreshold,
-			includeBankPath, unlocks, Set.of());
-	}
-
-	/**
-	 * As {@link #collect(PlayerStateSource, ItemContainer, TeleportationItem, int,
-	 * boolean, Set)}, additionally capturing the packed destinations of the balloon
-	 * routes whose log basket the player declared stocked.
 	 */
 	public static TransportEligibility collect(
 		PlayerStateSource source,
@@ -242,8 +212,7 @@ public final class TransportEligibility
 		}
 
 		if (checkBank
-			&& (TeleportationItem.INVENTORY_AND_BANK.equals(teleportationItemSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportationItemSetting)))
+			&& TeleportationItemPolicy.includesBank(teleportationItemSetting))
 		{
 			OwnedItems.addContainer(itemsAndQuantities, bank);
 		}
@@ -282,38 +251,51 @@ public final class TransportEligibility
 	}
 
 	/**
+	 * The transport offered to the refresh loop with the fairy-ring staff rule
+	 * injected as a real item requirement: when the Lumbridge Elite diary is
+	 * incomplete, every {@link TransportType#FAIRY_RING} transport whose origin
+	 * sits outside the POH bounds is replaced by a copy whose
+	 * {@link Transport#getItemRequirements()} is the merge of its own
+	 * requirements and {@link #DRAMEN_STAFF}. The in-house ring needs no staff
+	 * in-game, and POH-ness is positional rather than typed, so the exclusion
+	 * keys off the origin tile. Returns the transport unchanged when the rule
+	 * does not apply — every caller sees one consistent instance, so
+	 * identity-keyed consumers stay coherent.
+	 */
+	public Transport wrapFairyRingStaff(Transport transport)
+	{
+		if (!fairyRingStaffRequired || !TransportType.FAIRY_RING.equals(transport.getType())
+			|| PohService.isInsidePoh(
+				WorldPointUtil.unpackWorldX(transport.getOrigin()),
+				WorldPointUtil.unpackWorldY(transport.getOrigin())))
+		{
+			return transport;
+		}
+		return transport.withItemRequirements(
+			TransportItems.merge(transport.getItemRequirements(), DRAMEN_STAFF));
+	}
+
+	/**
 	 * Whether the transport's item requirements are met by the carried pool
 	 * ({@link BankVisitState#CARRIED}) or the bank-path pool ({@link BankVisitState#BANKED}).
 	 * Teleportation item transports are first bypassed or blocked by the
-	 * teleportation-item setting; fairy rings additionally require a Dramen/Lunar
-	 * staff when the Lumbridge Elite diary is incomplete; everything else defers to
+	 * teleportation-item setting; everything else defers to
 	 * {@link TransportItems#isSatisfiedBy} at the configured currency threshold.
+	 * Fairy rings reaching this point already carry the injected staff
+	 * requirement — see {@link #wrapFairyRingStaff}.
 	 */
 	public boolean usable(Transport transport, BankVisitState banked)
 	{
-		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType())
-			|| TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())
-			|| TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
+		// Mirror the requirement chain's teleportation-item gate: the shared
+		// policy verdict bypasses the pools or rejects outright, and
+		// EVALUATE_ITEMS falls through to pool evaluation below.
+		if (TeleportRestriction.isItemTeleportType(transport.getType()))
 		{
-			switch (teleportationItemSetting)
+			switch (TeleportationItemPolicy.verdict(teleportationItemSetting, transport.isConsumable()))
 			{
-				case ALL:
-				case UNLOCKED:
+				case BYPASS:
 					return true;
-				case ALL_NON_CONSUMABLE:
-				case UNLOCKED_NON_CONSUMABLE:
-					// Mirror the requirement chain's teleportation-item gate:
-					// non-consumable modes reject consumables even when their
-					// items are owned.
-					return !transport.isConsumable();
-				case INVENTORY_NON_CONSUMABLE:
-				case INVENTORY_AND_BANK_NON_CONSUMABLE:
-					if (transport.isConsumable())
-					{
-						return false;
-					}
-					break;
-				case NONE:
+				case REJECT:
 					return false;
 				default:
 					break;
@@ -321,13 +303,6 @@ public final class TransportEligibility
 		}
 
 		Map<Integer, Integer> ownedItems = banked == BankVisitState.BANKED ? bankPathItems : carriedItems;
-
-		// Fairy rings require Dramen/Lunar staff unless the Lumbridge Elite diary is complete
-		if (TransportType.FAIRY_RING.equals(transport.getType()) && fairyRingStaffRequired
-			&& !DRAMEN_STAFF.isSatisfiedBy(ownedItems, TransportItems.CURRENCIES, currencyThreshold))
-		{
-			return false;
-		}
 
 		TransportItems transportItems = transport.getItemRequirements();
 		return transportItems == null
@@ -345,15 +320,6 @@ public final class TransportEligibility
 		return transportItems == null
 			|| transportItems.isSatisfiedBy(carriedItems, TransportItems.CURRENCIES, Integer.MAX_VALUE,
 				unlocksFor(transport));
-	}
-
-	/**
-	 * A copy of the item ids of the Dramen/Lunar staves that unlock fairy rings without
-	 * the Lumbridge Elite diary.
-	 */
-	public static int[] fairyStaffIds()
-	{
-		return DRAMEN_STAFF.getRequirements().get(0).getStaffIds().clone();
 	}
 
 	/**
@@ -457,33 +423,6 @@ public final class TransportEligibility
 	}
 
 	/**
-	 * The single staff pickup for a path that uses fairy rings: one covering
-	 * Dramen/Lunar staff from the bank, or {@code null} when the Lumbridge Elite diary
-	 * is complete, the player already carries a covering staff, or the bank holds none.
-	 */
-	public BankPickupPlan fairyStaffPickup()
-	{
-		if (!fairyRingStaffRequired)
-		{
-			return null;
-		}
-		int[] staffIds = fairyStaffIds();
-		if (findCovering(staffIds, 1, Map.of(), carriedItems) != -1)
-		{
-			return null;
-		}
-		Set<Integer> bankItemIds = new HashSet<>();
-		addCovering(staffIds, 1, Map.of(), bankHas, bankItemIds);
-		if (bankItemIds.isEmpty())
-		{
-			return null;
-		}
-		Map<Integer, Long> items = new LinkedHashMap<>();
-		items.put(staffIds[0], 1L);
-		return new BankPickupPlan(items, bankItemIds);
-	}
-
-	/**
 	 * The pickup plan for a target's required items: {@link BankPickupPlan#items} holds one
 	 * entry per item group the player doesn't already carry, keyed by the first bank-covering
 	 * item id of the covering OR branch and valued at the shortfall quantity; each entry is a
@@ -526,8 +465,8 @@ public final class TransportEligibility
 	}
 
 	/**
-	 * The result of {@link #bankPickupPlan}, {@link #fairyStaffPickup} or
-	 * {@link #targetPickupPlan}: the pickup items (id to quantity; {@code null} when the
+	 * The result of {@link #bankPickupPlan} or {@link #targetPickupPlan}:
+	 * the pickup items (id to quantity; {@code null} when the
 	 * bank cannot fully supply the transport) and the bank item ids to highlight.
 	 */
 	public static final class BankPickupPlan

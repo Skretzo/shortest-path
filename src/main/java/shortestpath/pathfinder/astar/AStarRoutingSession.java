@@ -4,6 +4,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import shortestpath.pathfinder.CollisionMap;
 
 /**
@@ -114,10 +119,11 @@ public final class AStarRoutingSession
 	}
 
 	/** A target set in canonical (sorted, duplicate-free) form. */
+	@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 	private static final class TargetKey
 	{
+		@EqualsAndHashCode.Include
 		private final int[] tiles;
-		private final int hash;
 
 		TargetKey(int[] packedTargets)
 		{
@@ -128,41 +134,16 @@ public final class AStarRoutingSession
 				if (count == 0 || sorted[count - 1] != sorted[i])
 					sorted[count++] = sorted[i];
 			tiles = Arrays.copyOf(sorted, count);
-			hash = Arrays.hashCode(tiles);
-		}
-
-		@Override
-		public boolean equals(Object other)
-		{
-			return other instanceof TargetKey && Arrays.equals(tiles, ((TargetKey) other).tiles);
-		}
-
-		@Override
-		public int hashCode()
-		{
-			return hash;
 		}
 	}
 
 	/** A cached stage together with whether it was reused rather than built by this call. */
+	@Getter
+	@Accessors(fluent = true)
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Lookup<T>
 	{
 		private final T value;
 		private final boolean reused;
-
-		Lookup(T value, boolean reused)
-		{
-			this.value = value;
-			this.reused = reused;
-		}
-
-		public T value()
-		{
-			return value;
-		}
-		public boolean reused()
-		{
-			return reused;
-		}
 	}
 }

@@ -6,12 +6,16 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import shortestpath.WorldPointUtil;
 
 /**
  * The targets of one route: at most one {@link Target} per tile. A search ends at whichever target
  * is cheapest to reach with that target's items in hand. Immutable.
  */
+@EqualsAndHashCode
+@ToString
 public final class Targets implements Iterable<Target>
 {
 	public static final Targets NONE = new Targets(Map.of());
@@ -127,23 +131,5 @@ public final class Targets implements Iterable<Target>
 	public Iterator<Target> iterator()
 	{
 		return byPoint.values().iterator();
-	}
-
-	@Override
-	public boolean equals(Object o)
-	{
-		return o instanceof Targets && byPoint.equals(((Targets) o).byPoint);
-	}
-
-	@Override
-	public int hashCode()
-	{
-		return byPoint.hashCode();
-	}
-
-	@Override
-	public String toString()
-	{
-		return byPoint.values().toString();
 	}
 }

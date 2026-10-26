@@ -20,8 +20,8 @@ import lombok.experimental.Accessors;
  * derivations ran), the POH master and variant toggles, the enabled nexus
  * portals and mounted items, the jewellery-box tier, the teleportation-item
  * mode, the currency threshold, whether bank paths are included, and the
- * player-declared blocked teleport items with their {@code id:N} threshold
- * overrides. Facts the
+ * player-declared blocked teleport items with their destination-scoped
+ * restriction blocks. Facts the
  * game or config asserts about the player — skill levels, quest states, var
  * values, owned items, declared unlocks, respawn, sailing and league state,
  * planted spirit trees — are state, not policy, and live on
@@ -45,9 +45,20 @@ public final class RoutingPolicy
 	@Getter @Accessors(fluent = true) private final JewelleryBoxTier pohJewelleryBoxTier;
 	@Getter @Accessors(fluent = true) private final int currencyThreshold;
 	@Getter @Accessors(fluent = true) private final boolean includeBankPath;
+	/**
+	 * Item ids the player excluded from routing via the hidden
+	 * {@code blockedTeleportItems} CSV — a candidate-set filter, not a fact
+	 * about what the player owns, so it lives on the policy side.
+	 */
 	@Getter @Accessors(fluent = true) private final Set<Integer> blockedItemIds;
-	private final Map<Integer, Integer> itemThresholdOverrides;
-	private final Map<Integer, Set<Integer>> blockedOptionDests;
+	/**
+	 * Destination-scoped restriction blocks parsed from the {@code rep@dest}
+	 * records of {@code blockedTeleportItems}: a family's representative
+	 * (display) item id to the packed destinations the player excluded for
+	 * it. Inner destination sets are frozen at construction, matching the
+	 * snapshot rule every other collection follows.
+	 */
+	@Getter @Accessors(fluent = true) private final Map<Integer, Set<Integer>> blockedOptionDests;
 
 	public RoutingPolicy(
 		Set<TransportType> enabledTypes,
@@ -62,28 +73,6 @@ public final class RoutingPolicy
 		int currencyThreshold,
 		boolean includeBankPath,
 		Set<Integer> blockedItemIds,
-		Map<Integer, Integer> itemThresholdOverrides)
-	{
-		this(enabledTypes, teleportationItemSetting, usePoh, usePohFairyRing,
-			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
-			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
-			includeBankPath, blockedItemIds, itemThresholdOverrides, Map.of());
-	}
-
-	public RoutingPolicy(
-		Set<TransportType> enabledTypes,
-		TeleportationItem teleportationItemSetting,
-		boolean usePoh,
-		boolean usePohFairyRing,
-		boolean usePohSpiritTree,
-		boolean usePohObelisk,
-		Set<PohNexusPortal> enabledPohNexusPortals,
-		Set<PohMountedItem> enabledPohMountedItems,
-		JewelleryBoxTier pohJewelleryBoxTier,
-		int currencyThreshold,
-		boolean includeBankPath,
-		Set<Integer> blockedItemIds,
-		Map<Integer, Integer> itemThresholdOverrides,
 		Map<Integer, Set<Integer>> blockedOptionDests)
 	{
 		this.enabledTypes = enabledTypes.isEmpty()
@@ -100,7 +89,6 @@ public final class RoutingPolicy
 		this.currencyThreshold = currencyThreshold;
 		this.includeBankPath = includeBankPath;
 		this.blockedItemIds = Set.copyOf(blockedItemIds);
-		this.itemThresholdOverrides = Map.copyOf(itemThresholdOverrides);
 		// Inner sets are copied too — a mutable set handed out through the
 		// outer map would defeat the freeze every other collection gets.
 		Map<Integer, Set<Integer>> optionDests = new HashMap<>();
@@ -120,45 +108,5 @@ public final class RoutingPolicy
 	public boolean isTransportTypeEnabled(TransportType type)
 	{
 		return enabledTypes.contains(type);
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-	/**
-	 * Item ids the player excluded from routing via the hidden
-	 * {@code blockedTeleportItems} CSV — a candidate-set filter, not a fact
-	 * about what the player owns, so it lives on the policy side.
-	 */
-
-
-	/**
-	 * Per-item tiles-saved threshold overrides parsed from the {@code id:N}
-	 * records of {@code blockedTeleportItems}; consumed by the additional-cost
-	 * path, not by the verdict chain.
-	 */
-	public Map<Integer, Integer> itemThresholdOverrides()
-	{
-		return itemThresholdOverrides;
-	}
-
-	/**
-	 * Destination-scoped restriction blocks parsed from the {@code rep@dest}
-	 * records of {@code blockedTeleportItems}: a family's representative
-	 * (display) item id to the packed destinations the player excluded for
-	 * it. Inner destination sets are frozen at construction, matching the
-	 * snapshot rule every other collection follows.
-	 */
-	public Map<Integer, Set<Integer>> blockedOptionDests()
-	{
-		return blockedOptionDests;
 	}
 }

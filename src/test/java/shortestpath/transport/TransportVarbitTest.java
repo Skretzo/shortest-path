@@ -16,7 +16,7 @@ public class TransportVarbitTest
 	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(1, 5);
-		VarRequirement v = VarRequirement.varbit(1, 5, VarCheckType.EQUAL);
+		VarRequirement v = new VarRequirement(VarRequirement.VarType.VARBIT, 1, 5, VarCheckType.EQUAL);
 		assertTrue(v.check(values, 0));
 		values.put(1, 4);
 		assertFalse(v.check(values, 0));
@@ -27,7 +27,7 @@ public class TransportVarbitTest
 	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(2, 10);
-		VarRequirement v = VarRequirement.varbit(2, 5, VarCheckType.GREATER);
+		VarRequirement v = new VarRequirement(VarRequirement.VarType.VARBIT, 2, 5, VarCheckType.GREATER);
 		assertTrue(v.check(values, 0));
 		values.put(2, 5);
 		assertFalse(v.check(values, 0));
@@ -38,7 +38,7 @@ public class TransportVarbitTest
 	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(3, 3);
-		VarRequirement v = VarRequirement.varbit(3, 5, VarCheckType.SMALLER);
+		VarRequirement v = new VarRequirement(VarRequirement.VarType.VARBIT, 3, 5, VarCheckType.SMALLER);
 		assertTrue(v.check(values, 0));
 		values.put(3, 5);
 		assertFalse(v.check(values, 0));
@@ -49,9 +49,9 @@ public class TransportVarbitTest
 	{
 		Map<Integer, Integer> values = new HashMap<>();
 		values.put(4, 0b1010);
-		VarRequirement v = VarRequirement.varbit(4, 0b0010, VarCheckType.BIT_SET);
+		VarRequirement v = new VarRequirement(VarRequirement.VarType.VARBIT, 4, 0b0010, VarCheckType.BIT_SET);
 		assertTrue(v.check(values, 0));
-		v = VarRequirement.varbit(4, 0b0100, VarCheckType.BIT_SET);
+		v = new VarRequirement(VarRequirement.VarType.VARBIT, 4, 0b0100, VarCheckType.BIT_SET);
 		assertFalse(v.check(values, 0));
 	}
 
@@ -62,7 +62,7 @@ public class TransportVarbitTest
 		long nowMinutes = 100000000L;
 		values.put(5, 99999979); // stored timestamp 21 minutes ago
 
-		VarRequirement v = VarRequirement.varbit(5, 20, VarCheckType.COOLDOWN_MINUTES);
+		VarRequirement v = new VarRequirement(VarRequirement.VarType.VARBIT, 5, 20, VarCheckType.COOLDOWN_MINUTES);
 		assertTrue(v.check(values, nowMinutes)); // 21 > 5
 
 		values.put(5, 99999981); // 19 minutes ago

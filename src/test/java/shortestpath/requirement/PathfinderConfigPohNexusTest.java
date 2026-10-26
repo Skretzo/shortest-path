@@ -35,14 +35,26 @@ public class PathfinderConfigPohNexusTest
 	@Test
 	public void testRespawnPortalFiltering()
 	{
+		// RESPAWN declares 8 respawn-point aliases — keep in step with the
+		// enum's displayInfo varargs.
+		String[] respawnAliases = {
+			"Respawn Portal (Lumbridge)",
+			"Respawn Portal (Falador)",
+			"Respawn Portal (Camelot)",
+			"Respawn Portal (Edgeville)",
+			"Respawn Portal (Prifddinas)",
+			"Respawn Portal (Ferox Enclave)",
+			"Respawn Portal (Kourend Castle)",
+			"Respawn Portal (Civitas illa Fortis)"};
+
 		Set<PohNexusPortal> selected = Set.of(PohNexusPortal.RESPAWN);
-		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
+		for (String displayInfo : respawnAliases)
 		{
 			assertTrue(PohService.isNexusPortalEnabled(selected, displayInfo));
 		}
 
 		selected = Set.<PohNexusPortal>of();
-		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
+		for (String displayInfo : respawnAliases)
 		{
 			assertFalse(PohService.isNexusPortalEnabled(selected, displayInfo));
 		}

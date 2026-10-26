@@ -151,9 +151,9 @@
 3220 9532 2	3226 9542 0	Enter Tunnel 6658						2	
 									
 # Tears of Guthix									
-3227 9526 2	3224 9504 2	Attract Light creature 5435		4702=1		451>0			Travel across the chasm.
-3227 9526 2	4075 4601 0	Attract Light creature 5435		4702=1		451>0;9653>709			Travel into the chasm.
-4075 4601 0	3228 9526 2	Attract Light creature 5435		4702=1		451>0;9653>709			Return to the Chasm of Tears
+3227 9526 2	3224 9504 2	Attract Light creature 5435		4702=1		451>0			1: Travel across the chasm.
+3227 9526 2	4075 4601 0	Attract Light creature 5435		4702=1		451>0;9653>709		20	2: Travel into the chasm.
+4075 4601 0	3228 9526 2	Attract Light creature 5435		4702=1		451>0;9653>709		20	
 3239 9525 2	3241 9525 2	Climb Rocks 6673						4	
 3241 9525 2	3239 9525 2	Climb Rocks 6673						4	
 3239 9524 2	3241 9524 2	Climb Rocks 6673						4	
@@ -169,6 +169,10 @@
 4066 4552 2	4066 4553 1	Jump-down Wall 53676							
 4063 4550 2	4061 4466 0	Climb-through Opening 53622				9653>759;10820=0			
 4061 4466 0	4063 4550 2	Crawl-through Hole 53637				9653>759			
+									
+# The Fractured Archive entrance									
+4053 4568 0	4127 5508 0	Crawl-through Opening 62542			While Guthix Sleeps			2	
+4127 5508 0	4053 4568 0	Enter Opening 63009			While Guthix Sleeps				
 									
 # Farm between Lumbridge and Draynor									
 3197 3278 0	3197 3275 0	Climb-over Stile 12982						6	
@@ -545,6 +549,10 @@
 2594 3209 0	2597 3208 1	Climb-up Staircase 16671						1	
 2595 3210 0	2597 3208 1	Climb-up Staircase 16671						1	
 2596 3210 0	2597 3208 1	Climb-up Staircase 16671						1	
+									
+# Witchaven Dungeon									
+2698 3283 0	2696 9684 0	Climb-down Old ruin entrance 18270							
+2696 9683 0	2697 3283 0	Climb-up Exit 18354							
 									
 # Ardougne Sewers									
 2587 3237 0	2570 9682 0	Enter Cave entrance 2852							
@@ -5868,6 +5876,165 @@
 # Prifddinas									
 2157 3330 0	2157 3333 1	Cross Gangplank 34948						3	
 2157 3333 1	2157 3330 0	Cross Gangplank 34949						3	
+## Trahaearn Mine									
+3271 6051 0	3302 12454 0	Enter Cave entrance 36556							
+3302 12454 0	3271 6051 0	Exit Steps 36215							
+## Zalcano entrance									
+3282 6057 0	3033 6068 0	Channel Teleport Platform 36198							
+3033 6068 0	3283 6058 0	Channel Teleport Platform 36197							
+## Iorwerth Dungeon entrance									
+3225 6046 0	3225 12445 0	Enter Cave 36690							
+3225 12445 0	3225 6046 0	Exit Steps 36691							
+## Central Crystal Staircase: ground floor and upper floor									
+3263 6078 0	3268 6082 2	Climb up Crystal Staircase 36387							
+3264 6078 0	3268 6082 2	Climb up Crystal Staircase 36387							
+3268 6082 2	3263 6078 0	Climb down Crystal Staircase 36390							
+## Prifddinas Library teleport platform: central tower and library									
+3256 6082 2	3232 12537 0	Travel Teleport Platform 36614							
+3256 6083 2	3232 12537 0	Travel Teleport Platform 36614							
+3254 6081 2	3232 12537 0	Travel Teleport Platform 36614							
+3255 6081 2	3232 12537 0	Travel Teleport Platform 36614							
+3254 6084 2	3232 12537 0	Travel Teleport Platform 36614							
+3255 6084 2	3232 12537 0	Travel Teleport Platform 36614							
+3231 12537 0	3256 6082 2	Travel Teleport Platform 36615							
+3232 12537 0	3256 6082 2	Travel Teleport Platform 36615							
+3233 12537 0	3256 6082 2	Travel Teleport Platform 36615							
+## North-west teleport platform: ground floor and upper floor									
+3245 6125 0	3245 6125 2	Channel Teleport Platform 36490							
+3245 6126 0	3245 6126 2	Channel Teleport Platform 36490							
+3248 6125 0	3248 6125 2	Channel Teleport Platform 36490							
+3248 6126 0	3248 6126 2	Channel Teleport Platform 36490							
+3246 6124 0	3246 6124 2	Channel Teleport Platform 36490							
+3247 6124 0	3247 6124 2	Channel Teleport Platform 36490							
+3246 6127 0	3246 6127 2	Channel Teleport Platform 36490							
+3247 6127 0	3247 6127 2	Channel Teleport Platform 36490							
+3245 6125 2	3245 6125 0	Channel Teleport Platform 36490							
+3245 6126 2	3245 6126 0	Channel Teleport Platform 36490							
+3248 6125 2	3248 6125 0	Channel Teleport Platform 36490							
+3248 6126 2	3248 6126 0	Channel Teleport Platform 36490							
+3246 6124 2	3246 6124 0	Channel Teleport Platform 36490							
+3247 6124 2	3247 6124 0	Channel Teleport Platform 36490							
+3246 6127 2	3246 6127 0	Channel Teleport Platform 36490							
+3247 6127 2	3247 6127 0	Channel Teleport Platform 36490							
+## West-north teleport platform: ground floor and upper floor									
+3219 6099 0	3219 6099 2	Channel Teleport Platform 36490							
+3219 6100 0	3219 6100 2	Channel Teleport Platform 36490							
+3222 6099 0	3222 6099 2	Channel Teleport Platform 36490							
+3222 6100 0	3222 6100 2	Channel Teleport Platform 36490							
+3220 6098 0	3220 6098 2	Channel Teleport Platform 36490							
+3221 6098 0	3221 6098 2	Channel Teleport Platform 36490							
+3220 6101 0	3220 6101 2	Channel Teleport Platform 36490							
+3221 6101 0	3221 6101 2	Channel Teleport Platform 36490							
+3219 6099 2	3219 6099 0	Channel Teleport Platform 36490							
+3219 6100 2	3219 6100 0	Channel Teleport Platform 36490							
+3222 6099 2	3222 6099 0	Channel Teleport Platform 36490							
+3222 6100 2	3222 6100 0	Channel Teleport Platform 36490							
+3220 6098 2	3220 6098 0	Channel Teleport Platform 36490							
+3221 6098 2	3221 6098 0	Channel Teleport Platform 36490							
+3220 6101 2	3220 6101 0	Channel Teleport Platform 36490							
+3221 6101 2	3221 6101 0	Channel Teleport Platform 36490							
+## North-east teleport platform: ground floor and upper floor									
+3279 6125 0	3279 6125 2	Channel Teleport Platform 36490							
+3279 6126 0	3279 6126 2	Channel Teleport Platform 36490							
+3282 6125 0	3282 6125 2	Channel Teleport Platform 36490							
+3282 6126 0	3282 6126 2	Channel Teleport Platform 36490							
+3280 6124 0	3280 6124 2	Channel Teleport Platform 36490							
+3281 6124 0	3281 6124 2	Channel Teleport Platform 36490							
+3280 6127 0	3280 6127 2	Channel Teleport Platform 36490							
+3281 6127 0	3281 6127 2	Channel Teleport Platform 36490							
+3279 6125 2	3279 6125 0	Channel Teleport Platform 36490							
+3279 6126 2	3279 6126 0	Channel Teleport Platform 36490							
+3282 6125 2	3282 6125 0	Channel Teleport Platform 36490							
+3282 6126 2	3282 6126 0	Channel Teleport Platform 36490							
+3280 6124 2	3280 6124 0	Channel Teleport Platform 36490							
+3281 6124 2	3281 6124 0	Channel Teleport Platform 36490							
+3280 6127 2	3280 6127 0	Channel Teleport Platform 36490							
+3281 6127 2	3281 6127 0	Channel Teleport Platform 36490							
+## East-north teleport platform: ground floor and upper floor									
+3305 6099 0	3305 6099 2	Channel Teleport Platform 36490							
+3305 6100 0	3305 6100 2	Channel Teleport Platform 36490							
+3308 6099 0	3308 6099 2	Channel Teleport Platform 36490							
+3308 6100 0	3308 6100 2	Channel Teleport Platform 36490							
+3306 6098 0	3306 6098 2	Channel Teleport Platform 36490							
+3307 6098 0	3307 6098 2	Channel Teleport Platform 36490							
+3306 6101 0	3306 6101 2	Channel Teleport Platform 36490							
+3307 6101 0	3307 6101 2	Channel Teleport Platform 36490							
+3305 6099 2	3305 6099 0	Channel Teleport Platform 36490							
+3305 6100 2	3305 6100 0	Channel Teleport Platform 36490							
+3308 6099 2	3308 6099 0	Channel Teleport Platform 36490							
+3308 6100 2	3308 6100 0	Channel Teleport Platform 36490							
+3306 6098 2	3306 6098 0	Channel Teleport Platform 36490							
+3307 6098 2	3307 6098 0	Channel Teleport Platform 36490							
+3306 6101 2	3306 6101 0	Channel Teleport Platform 36490							
+3307 6101 2	3307 6101 0	Channel Teleport Platform 36490							
+## East-south teleport platform: ground floor and upper floor									
+3305 6065 0	3305 6065 2	Channel Teleport Platform 36490							
+3305 6066 0	3305 6066 2	Channel Teleport Platform 36490							
+3308 6065 0	3308 6065 2	Channel Teleport Platform 36490							
+3308 6066 0	3308 6066 2	Channel Teleport Platform 36490							
+3306 6064 0	3306 6064 2	Channel Teleport Platform 36490							
+3307 6064 0	3307 6064 2	Channel Teleport Platform 36490							
+3306 6067 0	3306 6067 2	Channel Teleport Platform 36490							
+3307 6067 0	3307 6067 2	Channel Teleport Platform 36490							
+3305 6065 2	3305 6065 0	Channel Teleport Platform 36490							
+3305 6066 2	3305 6066 0	Channel Teleport Platform 36490							
+3308 6065 2	3308 6065 0	Channel Teleport Platform 36490							
+3308 6066 2	3308 6066 0	Channel Teleport Platform 36490							
+3306 6064 2	3306 6064 0	Channel Teleport Platform 36490							
+3307 6064 2	3307 6064 0	Channel Teleport Platform 36490							
+3306 6067 2	3306 6067 0	Channel Teleport Platform 36490							
+3307 6067 2	3307 6067 0	Channel Teleport Platform 36490							
+## South-east teleport platform: ground floor and upper floor									
+3279 6039 0	3279 6039 2	Channel Teleport Platform 36490							
+3279 6040 0	3279 6040 2	Channel Teleport Platform 36490							
+3282 6039 0	3282 6039 2	Channel Teleport Platform 36490							
+3282 6040 0	3282 6040 2	Channel Teleport Platform 36490							
+3280 6038 0	3280 6038 2	Channel Teleport Platform 36490							
+3281 6038 0	3281 6038 2	Channel Teleport Platform 36490							
+3280 6041 0	3280 6041 2	Channel Teleport Platform 36490							
+3281 6041 0	3281 6041 2	Channel Teleport Platform 36490							
+3279 6039 2	3279 6039 0	Channel Teleport Platform 36490							
+3279 6040 2	3279 6040 0	Channel Teleport Platform 36490							
+3282 6039 2	3282 6039 0	Channel Teleport Platform 36490							
+3282 6040 2	3282 6040 0	Channel Teleport Platform 36490							
+3280 6038 2	3280 6038 0	Channel Teleport Platform 36490							
+3281 6038 2	3281 6038 0	Channel Teleport Platform 36490							
+3280 6041 2	3280 6041 0	Channel Teleport Platform 36490							
+3281 6041 2	3281 6041 0	Channel Teleport Platform 36490							
+## South-west teleport platform: ground floor and upper floor									
+3245 6039 0	3245 6039 2	Channel Teleport Platform 36490							
+3245 6040 0	3245 6040 2	Channel Teleport Platform 36490							
+3248 6039 0	3248 6039 2	Channel Teleport Platform 36490							
+3248 6040 0	3248 6040 2	Channel Teleport Platform 36490							
+3246 6038 0	3246 6038 2	Channel Teleport Platform 36490							
+3247 6038 0	3247 6038 2	Channel Teleport Platform 36490							
+3246 6041 0	3246 6041 2	Channel Teleport Platform 36490							
+3247 6041 0	3247 6041 2	Channel Teleport Platform 36490							
+3245 6039 2	3245 6039 0	Channel Teleport Platform 36490							
+3245 6040 2	3245 6040 0	Channel Teleport Platform 36490							
+3248 6039 2	3248 6039 0	Channel Teleport Platform 36490							
+3248 6040 2	3248 6040 0	Channel Teleport Platform 36490							
+3246 6038 2	3246 6038 0	Channel Teleport Platform 36490							
+3247 6038 2	3247 6038 0	Channel Teleport Platform 36490							
+3246 6041 2	3246 6041 0	Channel Teleport Platform 36490							
+3247 6041 2	3247 6041 0	Channel Teleport Platform 36490							
+## West-south teleport platform: ground floor and upper floor									
+3219 6065 0	3219 6065 2	Channel Teleport Platform 36490							
+3219 6066 0	3219 6066 2	Channel Teleport Platform 36490							
+3222 6065 0	3222 6065 2	Channel Teleport Platform 36490							
+3222 6066 0	3222 6066 2	Channel Teleport Platform 36490							
+3220 6064 0	3220 6064 2	Channel Teleport Platform 36490							
+3221 6064 0	3221 6064 2	Channel Teleport Platform 36490							
+3220 6067 0	3220 6067 2	Channel Teleport Platform 36490							
+3221 6067 0	3221 6067 2	Channel Teleport Platform 36490							
+3219 6065 2	3219 6065 0	Channel Teleport Platform 36490							
+3219 6066 2	3219 6066 0	Channel Teleport Platform 36490							
+3222 6065 2	3222 6065 0	Channel Teleport Platform 36490							
+3222 6066 2	3222 6066 0	Channel Teleport Platform 36490							
+3220 6064 2	3220 6064 0	Channel Teleport Platform 36490							
+3221 6064 2	3221 6064 0	Channel Teleport Platform 36490							
+3220 6067 2	3220 6067 0	Channel Teleport Platform 36490							
+3221 6067 2	3221 6067 0	Channel Teleport Platform 36490							
 									
 # Port Tyras									
 2142 3122 0	2142 3125 1	Cross Gangplank 17408						3	

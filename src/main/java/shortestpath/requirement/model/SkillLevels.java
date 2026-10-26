@@ -4,6 +4,7 @@ import java.util.Arrays;
 import net.runelite.api.Skill;
 import shortestpath.requirement.RejectionReason;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 /**
  * Immutable skill-level set in the extended-index layout: one slot per
@@ -15,6 +16,7 @@ import lombok.AllArgsConstructor;
  * this type.
  */
 @AllArgsConstructor
+@EqualsAndHashCode
 public final class SkillLevels
 {
 	/**
@@ -88,11 +90,6 @@ public final class SkillLevels
 	public int combatLevel()
 	{
 		return levels[COMBAT_LEVEL_INDEX];
-	}
-
-	public int questPoints()
-	{
-		return levels[QUEST_POINTS_INDEX];
 	}
 
 	public int length()
@@ -191,26 +188,6 @@ public final class SkillLevels
 			}
 		}
 		return RejectionReason.NONE;
-	}
-
-	@Override
-	public boolean equals(Object other)
-	{
-		if (this == other)
-		{
-			return true;
-		}
-		if (!(other instanceof SkillLevels))
-		{
-			return false;
-		}
-		return Arrays.equals(levels, ((SkillLevels) other).levels);
-	}
-
-	@Override
-	public int hashCode()
-	{
-		return Arrays.hashCode(levels);
 	}
 
 	@Override

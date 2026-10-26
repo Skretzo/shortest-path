@@ -1,11 +1,14 @@
 package shortestpath.pathfinder;
 
 import java.util.Arrays;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * A binary min-heap of primitive {@code int} node ids ordered by {@link NodeGraph#compareCost}.
  * <p>
- * Replaces the {@code PriorityQueue<TransportNode>} pending queue in {@link Pathfinder} so transport
+ * Replaces the {@code PriorityQueue<TransportNode>} pending queue in {@code Pathfinder} so transport
  * candidates are stored as int ids rather than boxed node objects. The ordering key is fixed when a
  * node is created (its differential cost never changes), so no decrease-key support is needed; the
  * pathfinder discards stale cheaper duplicates with its dequeue-time visited re-check. Single-threaded
@@ -15,17 +18,12 @@ public class IntMinHeap
 {
 	private final NodeGraph graph;
 	private int[] heap;
-	private int size;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private int size;
 
 	public IntMinHeap(NodeGraph graph, int initialCapacity)
 	{
 		this.graph = graph;
 		this.heap = new int[Math.max(1, initialCapacity)];
-	}
-
-	int size()
-	{
-		return size;
 	}
 
 	public boolean isEmpty()
