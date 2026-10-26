@@ -159,7 +159,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.account = config.prepareAStarRoutingAccount(true, GoalStates.needsBank(targets, heldItems));
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, targets.points());
-		this.unlocks = config.unlockSuggestions(goals.needsBank());
+		this.unlocks = config.unlockSuggestions(GoalStates.needsBank(targets, heldItems));
 		this.cutoffMillis = config.getCalculationCutoffMillis();
 		this.heuristicWeight = heuristicWeight;
 		this.failure = null;
