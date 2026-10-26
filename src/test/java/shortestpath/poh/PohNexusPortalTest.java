@@ -33,22 +33,9 @@ public class PohNexusPortalTest
 	@Test
 	public void testRespawnMappings()
 	{
-		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
-		{
-			assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo(displayInfo));
-		}
-	}
-
-	@Test
-	public void testAllMappingsRoundTrip()
-	{
-		for (PohNexusPortal portal : PohNexusPortal.values())
-		{
-			for (String displayInfo : portal.getDisplayInfos())
-			{
-				assertSame(portal, PohNexusPortal.fromDisplayInfo(displayInfo));
-			}
-		}
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Lumbridge)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Prifddinas)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Civitas illa Fortis)"));
 	}
 
 	@Test

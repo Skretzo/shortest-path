@@ -199,7 +199,7 @@ public class PathfinderTest
 			assertTrue("Boat destination should be reached from the rock", route.getResult().isReached());
 			assertTrue("Board the boat from the rock to the requested destination", route.getPath().stream()
 				.map(PathStep::getTransport)
-				.anyMatch(t -> t != null && t.isType(TransportType.BOAT)
+				.anyMatch(t -> t != null && t.getType() == TransportType.BOAT
 					&& t.getOrigin() == rock && t.getDestination() == destination));
 		}
 	}
@@ -442,7 +442,7 @@ public class PathfinderTest
 	{
 		for (Transport t : activeTransportList())
 		{
-			if (t.isType(TransportType.TELEPORTATION_BOX) && t.hasDisplayInfo(displayInfo))
+			if (t.getType() == TransportType.TELEPORTATION_BOX && t.hasDisplayInfo(displayInfo))
 			{
 				return true;
 			}
@@ -1541,7 +1541,7 @@ public class PathfinderTest
 		assertNotNull("Teleport destination step should carry the transport that produced the edge",
 			teleportStep.getTransport());
 		assertTrue("Banked edge should use an item teleport, not the minigame teleport",
-			teleportStep.getTransport().isType(TransportType.TELEPORTATION_ITEM));
+			teleportStep.getTransport().getType() == TransportType.TELEPORTATION_ITEM);
 		assertTrue("Expected the games necklace, got " + teleportStep.getTransport().getDisplayInfo(),
 			teleportStep.getTransport().hasDisplayInfo("Games necklace"));
 	}
@@ -3151,7 +3151,8 @@ public class PathfinderTest
 		int count = 0;
 		for (Transport t : activeTransportList())
 		{
-			if (t.isType(TransportType.MINECART) && t.hasVarbit(7796))
+			if (t.getType() == TransportType.MINECART
+				&& t.getVarRequirements().stream().anyMatch(req -> req.isVarbit() && req.getId() == 7796))
 			{
 				count++;
 			}
@@ -3196,7 +3197,7 @@ public class PathfinderTest
 			Set<Transport> stepTransports = transportsForStep(origin, originStep.getBankVisitState());
 			for (Transport t : stepTransports)
 			{
-				if (t.getDestination() == dest && t.isType(type))
+				if (t.getDestination() == dest && t.getType() == type)
 				{
 					return true;
 				}
@@ -3241,7 +3242,7 @@ public class PathfinderTest
 				{
 					continue;
 				}
-				if (t.isType(type))
+				if (t.getType() == type)
 				{
 					matchingType = true;
 				}
@@ -3288,7 +3289,7 @@ public class PathfinderTest
 
 			for (Transport t : transportsForStep(origin, bankVisited))
 			{
-				if (t.getDestination() == destStep.getPackedPosition() && t.isType(type) && t.hasDisplayInfo(displayInfoSubstring))
+				if (t.getDestination() == destStep.getPackedPosition() && t.getType() == type && t.hasDisplayInfo(displayInfoSubstring))
 				{
 					return true;
 				}
