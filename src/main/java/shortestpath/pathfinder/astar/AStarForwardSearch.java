@@ -436,7 +436,11 @@ public final class AStarForwardSearch
 					counters.heuristicUnreachable++;
 					continue;
 				}
-			}
+				best[state] = cost; previous[state] = startState;
+				transportWins.record(state, target.account().globalTransport(capability, BankVisitState.CARRIED, i), cost);
+				push(queue, state, cost, priority(cost, h, heuristicWeight), counters, true, PUSH_GLOBAL);
+				counters.successfulTransportRelaxations++;
+		}
 		}
 	}
 
@@ -897,7 +901,7 @@ public final class AStarForwardSearch
 		{ return account.allowTransports() && account.bankPathEnabled();
 		}
 		boolean hasLocalOrigin(int tile, BankVisitState banked)
-	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.destinations.length && view.origins[index] == tile;
+	{ PreparedRoutingAccount.View view = account.localView(banked); int index = lowerBound(view.origins, tile); return index < view.count && view.origins[index] == tile;
 	}
 		/** The node's wilderness/blocked-region status bits, computed on first ask. */
 		private int gateStatus(int node)
