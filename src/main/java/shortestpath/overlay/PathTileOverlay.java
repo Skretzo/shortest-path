@@ -13,7 +13,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -30,7 +29,6 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.PrimitiveIntHashMap;
 import shortestpath.PrimitiveIntList;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.TileCounter;
@@ -39,7 +37,6 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.TransportAvailability;
 import shortestpath.poh.PohService;
 import shortestpath.requirement.BankPickupRequirements;
 import shortestpath.transport.Transport;
@@ -78,41 +75,35 @@ public class PathTileOverlay extends Overlay
 
 	private void renderTransports(Graphics2D graphics)
 	{
-		PrimitiveIntHashMap<Transport[]> allTransports = plugin.getAllDisplayTransports();
-		PrimitiveIntHashMap<Transport[]> availableTransports = plugin.getTransports();
-
-		for (int a : allTransports.keys())
+		OverlayDrawing.forEachDisplayTransport(plugin.getAllDisplayTransports(), plugin.getTransports(),
+			new OverlayDrawing.TransportVisitor()
 		{
-			if (a == Transport.UNDEFINED_ORIGIN)
+			private Point ca;
+			private boolean drawStart;
+			private StringBuilder s;
+
+			@Override
+			public boolean beginOrigin(int origin)
 			{
-				continue; // skip teleports
-			}
-
-			Point ca = tileCenter(a);
-
-			if (ca == null)
-			{
-				continue;
-			}
-
-			boolean drawStart = false;
-			StringBuilder s = new StringBuilder();
-			Transport[] availableAtOrigin = availableTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS);
-
-			for (Transport b : allTransports.getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
-			{
-				if (b == null || (b.getType() != null && b.getType().isTeleport()))
+				ca = tileCenter(origin);
+				if (ca == null)
 				{
-					continue; // skip teleports
+					return false;
 				}
+				drawStart = false;
+				s = new StringBuilder();
+				return true;
+			}
 
-				boolean isAvailable = Arrays.asList(availableAtOrigin).contains(b);
+			@Override
+			public void visit(int origin, Transport b, boolean isAvailable)
+			{
 				graphics.setColor(isAvailable ? COLOR_AVAILABLE : COLOR_UNAVAILABLE);
 
 				int destination = b.getDestination();
 				if (destination == Transport.UNDEFINED_DESTINATION)
 				{
-					continue;
+					return;
 				}
 				Point cb = tileCenter(destination);
 				if (cb != null)
@@ -120,11 +111,11 @@ public class PathTileOverlay extends Overlay
 					graphics.drawLine(ca.getX(), ca.getY(), cb.getX(), cb.getY());
 					drawStart = true;
 				}
-				if (WorldPointUtil.unpackWorldPlane(destination) > WorldPointUtil.unpackWorldPlane(a))
+				if (WorldPointUtil.unpackWorldPlane(destination) > WorldPointUtil.unpackWorldPlane(origin))
 				{
 					s.append("+");
 				}
-				else if (WorldPointUtil.unpackWorldPlane(destination) < WorldPointUtil.unpackWorldPlane(a))
+				else if (WorldPointUtil.unpackWorldPlane(destination) < WorldPointUtil.unpackWorldPlane(origin))
 				{
 					s.append("-");
 				}
@@ -134,14 +125,18 @@ public class PathTileOverlay extends Overlay
 				}
 			}
 
-			if (drawStart)
+			@Override
+			public void endOrigin(int origin)
 			{
-				drawTile(graphics, a, settings.display().colourTransports(), -1, true);
-			}
+				if (drawStart)
+				{
+					drawTile(graphics, origin, settings.display().colourTransports(), -1, true);
+				}
 
-			graphics.setColor(Color.WHITE);
-			graphics.drawString(s.toString(), ca.getX(), ca.getY());
-		}
+				graphics.setColor(Color.WHITE);
+				graphics.drawString(s.toString(), ca.getX(), ca.getY());
+			}
+		});
 	}
 
 	private void renderCollisionMap(Graphics2D graphics)
