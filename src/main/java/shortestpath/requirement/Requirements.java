@@ -4,6 +4,7 @@ import java.util.*;
 
 import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
+import shortestpath.ShortestPathPlugin;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.*;
@@ -138,7 +139,7 @@ public final class Requirements
 	 *
 	 * <p>Bank evaluation intentionally reads this refresh's captured
 	 * context values and routes through the shared overridable hooks
-	 * ({@link RequirementHooks#varbitChecks}, {@link RequirementHooks#varPlayerChecks},
+	 * ({@link RequirementHooks#varChecks} dispatched per var kind,
 	 * the quest map the {@link RequirementHooks#getQuestState} hook feeds)
 	 * instead of querying the client per tile as it used to. A bank tile and
 	 * a transport can therefore never disagree about the same requirement
@@ -156,14 +157,14 @@ public final class Requirements
 			reason = RejectionReason.QUEST;
 		}
 		if (reason == RejectionReason.NONE
-			&& hooks.varbitChecks(requirements.getVarbits(), context.getVarbitValues(),
-				context.getEvaluationTimeMinutes()))
+			&& hooks.varChecks(requirements.getVarbits(), context.getVarbitValues(),
+				context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARBIT))
 		{
 			reason = RejectionReason.VARBIT;
 		}
 		if (reason == RejectionReason.NONE
-			&& hooks.varPlayerChecks(requirements.getVarPlayers(), context.getVarPlayerValues(),
-				context.getEvaluationTimeMinutes()))
+			&& hooks.varChecks(requirements.getVarPlayers(), context.getVarPlayerValues(),
+				context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARPLAYER))
 		{
 			reason = RejectionReason.VARPLAYER;
 		}
@@ -466,8 +467,8 @@ public final class Requirements
 
 	private RejectionReason varbit(Transport transport)
 	{
-		if (hooks.varbitChecks(transport.getVarRequirements(), context.getVarbitValues(),
-			context.getEvaluationTimeMinutes()))
+		if (hooks.varChecks(transport.getVarRequirements(), context.getVarbitValues(),
+			context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARBIT))
 		{
 			return RejectionReason.VARBIT;
 		}
@@ -476,8 +477,8 @@ public final class Requirements
 
 	private RejectionReason varplayer(Transport transport)
 	{
-		if (hooks.varPlayerChecks(transport.getVarRequirements(), context.getVarPlayerValues(),
-			context.getEvaluationTimeMinutes()))
+		if (hooks.varChecks(transport.getVarRequirements(), context.getVarPlayerValues(),
+			context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARPLAYER))
 		{
 			return RejectionReason.VARPLAYER;
 		}
