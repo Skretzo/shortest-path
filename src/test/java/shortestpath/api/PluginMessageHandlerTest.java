@@ -32,7 +32,6 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.Targets;
@@ -247,7 +246,7 @@ public class PluginMessageHandlerTest
 		PathfinderResult result = new PathfinderResult(packed(1, 1), packed(9, 9), true,
 			List.of(first, second), packed(9, 9), 42, 7, 3, 5L,
 			PathTerminationReason.TARGET_REACHED);
-		Pathfinder query = mock(Pathfinder.class);
+		ActiveSearch query = mock(ActiveSearch.class);
 		when(query.getResult()).thenReturn(result);
 		Transport transport = mock(Transport.class);
 		when(transport.getObjectInfo()).thenReturn("obj-info");
@@ -274,9 +273,30 @@ public class PluginMessageHandlerTest
 	}
 
 	@Test
+	public void postQueryResultSerializesBackendFailure()
+	{
+		// The failed() search a broken query produces carries BACKEND_FAILURE, and the
+		// reason reaches the wire through the same name() serialization as any other.
+		PathStep startStep = new PathStep(packed(1, 1), null);
+		PathfinderResult result = new PathfinderResult(packed(1, 1), packed(9, 9), false,
+			List.of(startStep), packed(1, 1), PathfinderResult.NO_PATH_COST, 0, 0, 5L,
+			PathTerminationReason.BACKEND_FAILURE, "A* backend unavailable: boom");
+		ActiveSearch query = mock(ActiveSearch.class);
+		when(query.getResult()).thenReturn(result);
+
+		handler.postQueryResult("r3", query);
+
+		PluginMessage posted = singlePost();
+		assertEquals("result", posted.getName());
+		assertEquals("r3", posted.getData().get("id"));
+		assertEquals(false, posted.getData().get("reached"));
+		assertEquals("BACKEND_FAILURE", posted.getData().get("reason"));
+	}
+
+	@Test
 	public void postQueryResultWithoutResultPostsError()
 	{
-		Pathfinder query = mock(Pathfinder.class);
+		ActiveSearch query = mock(ActiveSearch.class);
 		when(query.getResult()).thenReturn(null);
 
 		handler.postQueryResult("r2", query);

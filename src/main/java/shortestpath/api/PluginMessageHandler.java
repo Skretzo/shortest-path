@@ -19,7 +19,6 @@ import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.Arrival;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.Target;
@@ -201,7 +200,7 @@ public class PluginMessageHandler implements QueryResponder
 	}
 
 	@Override
-	public void postQueryResult(Object id, Pathfinder query)
+	public void postQueryResult(Object id, ActiveSearch query)
 	{
 		PathfinderResult result = query.getResult();
 		if (result == null)

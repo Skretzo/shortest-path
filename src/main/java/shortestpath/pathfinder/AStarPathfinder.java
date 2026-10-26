@@ -246,7 +246,7 @@ public final class AStarPathfinder implements ActiveSearch
 	@Override
 	public String backendName()
 	{
-		return PathfinderBackend.ASTAR.toString();
+		return "A*";
 	}
 
 	/**
