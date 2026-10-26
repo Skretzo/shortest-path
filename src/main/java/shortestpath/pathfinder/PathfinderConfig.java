@@ -275,8 +275,6 @@ public class PathfinderConfig
 	{
 		return sailing.getState().isAboard();
 	}
-	@Getter
-	private volatile PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
 	/**
 	 * On a boat with the option on, search with sailing moves (see {@link SailingMoves}) instead of walking.
 	 */
@@ -435,7 +433,6 @@ public class PathfinderConfig
 		// read below draws from this snapshot, so a republish landing
 		// mid-refresh cannot mix fields from two publications.
 		EffectiveConfig effective = settings.effective();
-		pathfinderBackend = (PathfinderBackend) settings.configuredValue("pathfinderAlgorithm");
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) ((Number) settings.configuredValue("calculationCutoff")).intValue() * Constants.GAME_TICK_LENGTH;
 		unreachableTargetDistance = effective.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
