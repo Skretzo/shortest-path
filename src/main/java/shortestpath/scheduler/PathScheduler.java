@@ -163,7 +163,7 @@ public class PathScheduler
 				}
 				ActiveSearch search = pathfinder;
 				// They only show under the unreachable text.
-				boolean suggestUnlocks = settings.display().showUnreachableText();
+				boolean suggestUnlocks = settings.bool(ConfigKey.SHOW_UNREACHABLE_TEXT);
 				debugState.searchStarted(search);
 				pathfinderFuture = pathfindingExecutor.submit(() ->
 				{
