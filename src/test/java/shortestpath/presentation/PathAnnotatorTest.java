@@ -1,6 +1,5 @@
 package shortestpath.presentation;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -134,15 +133,15 @@ public class PathAnnotatorTest
 	public void objInfoLabelTablePinsEveryPairInFirstMatchOrder()
 	{
 		// Order is load-bearing: the first objInfo.contains(match) wins.
-		assertEquals(4, PathAnnotator.OBJINFO_LABELS.length);
-		assertArrayEquals(new String[] {"Amulet of Glory", "Mounted Glory: "},
-			PathAnnotator.OBJINFO_LABELS[0]);
-		assertArrayEquals(new String[] {"Mythical cape", "Mythical Cape: "},
-			PathAnnotator.OBJINFO_LABELS[1]);
-		assertArrayEquals(new String[] {"Xeric's Talisman", "Xeric's Talisman: "},
-			PathAnnotator.OBJINFO_LABELS[2]);
-		assertArrayEquals(new String[] {"Digsite", "Digsite Pendant: "},
-			PathAnnotator.OBJINFO_LABELS[3]);
+		assertEquals(4, PathAnnotator.OBJINFO_LABELS.size());
+		assertEquals(List.of("Amulet of Glory", "Mounted Glory: "),
+			PathAnnotator.OBJINFO_LABELS.get(0));
+		assertEquals(List.of("Mythical cape", "Mythical Cape: "),
+			PathAnnotator.OBJINFO_LABELS.get(1));
+		assertEquals(List.of("Xeric's Talisman", "Xeric's Talisman: "),
+			PathAnnotator.OBJINFO_LABELS.get(2));
+		assertEquals(List.of("Digsite", "Digsite Pendant: "),
+			PathAnnotator.OBJINFO_LABELS.get(3));
 		assertEquals("Jewelry Box: ", PathAnnotator.OBJINFO_FALLBACK_LABEL);
 	}
 
