@@ -66,6 +66,12 @@ final class RequirementTestFixtures
 		return policy().teleportationItemSetting(mode).build();
 	}
 
+	/** Everything-enabled policy carrying a blocked-item set. */
+	static RoutingPolicy policy(TeleportationItem mode, Set<Integer> blockedItemIds)
+	{
+		return policy().teleportationItemSetting(mode).blockedItemIds(blockedItemIds).build();
+	}
+
 	static final class PolicyBuilder
 	{
 		private Set<TransportType> enabledTypes = EnumSet.allOf(TransportType.class);
@@ -79,6 +85,8 @@ final class RequirementTestFixtures
 		private JewelleryBoxTier pohJewelleryBoxTier = JewelleryBoxTier.ORNATE;
 		private int currencyThreshold = Integer.MAX_VALUE;
 		private boolean includeBankPath = true;
+		private Set<Integer> blockedItemIds = Set.of();
+		private Map<Integer, Set<Integer>> blockedOptionDests = Map.of();
 
 		PolicyBuilder enabledTypes(Set<TransportType> types)
 		{
@@ -146,12 +154,24 @@ final class RequirementTestFixtures
 			return this;
 		}
 
+		PolicyBuilder blockedItemIds(Set<Integer> ids)
+		{
+			blockedItemIds = ids;
+			return this;
+		}
+
+		PolicyBuilder blockedOptionDests(Map<Integer, Set<Integer>> dests)
+		{
+			blockedOptionDests = dests;
+			return this;
+		}
+
 		RoutingPolicy build()
 		{
 			return new RoutingPolicy(enabledTypes, teleportationItemSetting, usePoh,
 				usePohFairyRing, usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
 				enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold, includeBankPath,
-				Set.of(), Map.of());
+				blockedItemIds, blockedOptionDests);
 		}
 	}
 
@@ -171,7 +191,7 @@ final class RequirementTestFixtures
 		int currencyThreshold)
 	{
 		return new TransportEligibility(carried, carried, Map.of(), -1, Map.of(),
-			false, mode, currencyThreshold, Set.of(), false);
+			false, mode, currencyThreshold, Set.of(), false, Set.of());
 	}
 
 	/**
@@ -183,7 +203,7 @@ final class RequirementTestFixtures
 		Map<Integer, Integer> bankPath)
 	{
 		return new TransportEligibility(carried, bankPath, Map.of(), -1, Map.of(),
-			false, mode, Integer.MAX_VALUE, Set.of(), true);
+			false, mode, Integer.MAX_VALUE, Set.of(), true, Set.of());
 	}
 
 	/** A context with every field defaulted to the always-passing value. */

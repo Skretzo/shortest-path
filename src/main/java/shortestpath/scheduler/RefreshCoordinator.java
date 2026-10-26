@@ -139,19 +139,14 @@ public class RefreshCoordinator
 	}
 
 	/**
-	 * Maps a config change fact to its follow-up actions: the backend-prep side
-	 * effect warms the selected backend, and a routing-input change restarts
-	 * the running search. The debug-overlay side effect stays with the shell,
-	 * which owns the overlay manager; {@link Effect#DISPLAY_ONLY} maps to no
-	 * action.
+	 * Maps a config change fact to its follow-up actions: a routing-input
+	 * change restarts the running search. The debug-overlay side effect stays
+	 * with the shell, which owns the overlay manager; {@link
+	 * Effect#DISPLAY_ONLY} maps to no action.
 	 */
 	public void configChanged(ConfigChange change)
 	{
 		Set<Effect> effects = change.getEffects();
-		if (effects.contains(Effect.SIDE_EFFECT_BACKEND_PREP))
-		{
-			scheduler.prepareBackend();
-		}
 
 		// A routing input changed; rerun pathfinding
 		if (effects.contains(Effect.ROUTE_INVALIDATING) && scheduler.getActiveSearch() != null)
@@ -162,7 +157,7 @@ public class RefreshCoordinator
 	}
 
 	/**
-	 * A config-profile switch: warms the selected backend again and restarts the
+	 * A config-profile switch: warms the backend again and restarts the
 	 * running search, if any. Returns whether a search was restarted so the
 	 * shell can queue its no-search config refresh fallback itself.
 	 */
@@ -190,9 +185,10 @@ public class RefreshCoordinator
 
 	/**
 	 * A {@code LOGGING_IN} → {@code LOADING} → {@code LOGGED_IN} login
-	 * transition queues a config refresh for the next client tick, once the
-	 * fresh profile's state is readable. Other transitions only update the
-	 * transition memory.
+	 * transition warms the backend and queues a config refresh for the next
+	 * client tick, once the fresh profile's state is readable — the statics
+	 * build needs resources that only exist after login. Other transitions
+	 * only update the transition memory.
 	 */
 	public void gameStateChanged(GameState state, int tick)
 	{
@@ -208,6 +204,7 @@ public class RefreshCoordinator
 			return;
 		}
 
+		scheduler.prepareBackend();
 		scheduler.deferRefresh(tick + 1);
 	}
 

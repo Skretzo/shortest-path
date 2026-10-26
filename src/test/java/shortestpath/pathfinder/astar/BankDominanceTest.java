@@ -20,8 +20,8 @@ public class BankDominanceTest
 		TargetOverlay target = new TargetOverlay(new SiteGraph(stat, account), emptyCollision(), D);
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
 
-		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target, heuristic, A, false);
-		AStarForwardSearch.Result optimized = AStarForwardSearch.search(target, heuristic, A, true);
+		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target, heuristic, A, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
+		AStarForwardSearch.Result optimized = AStarForwardSearch.search(target, heuristic, A, () -> false, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 
 		assertEquals(oracle.reached(), optimized.reached());
 		assertEquals(oracle.cost(), optimized.cost());

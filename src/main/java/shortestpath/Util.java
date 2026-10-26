@@ -1,8 +1,13 @@
 package shortestpath;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.function.BiConsumer;
 
 /**
  * General utility helpers for I/O and primitive array manipulation used by the
@@ -36,6 +41,66 @@ public class Util
 
 			result.write(buffer, 0, read);
 		}
+	}
+
+	/**
+	 * Reads a bundled TSV resource line by line, invoking {@code row} for
+	 * every non-empty, non-{@code #}-comment line with the raw line and its
+	 * keep-arity tab-split columns ({@code split("\t", -1)}). The resource is
+	 * resolved from an absolute classpath path ({@code "/name.tsv"}) anchored
+	 * on {@code Util.class} — identical to each caller's own
+	 * {@code *.class.getResourceAsStream} lookup for {@code /}-prefixed
+	 * paths. A missing resource throws {@link NullPointerException}; an I/O
+	 * failure propagates to the caller so each call site keeps its own error
+	 * posture.
+	 *
+	 * @param path the absolute classpath path of the resource to read.
+	 * @param row  consumer invoked once per visited row with the line and its
+	 *             columns.
+	 * @throws IllegalArgumentException if {@code path} is not absolute.
+	 * @throws IOException if an I/O error occurs while reading.
+	 */
+	public static void each(String path, BiConsumer<String, String[]> row) throws IOException
+	{
+		if (!path.startsWith("/"))
+		{
+			throw new IllegalArgumentException("resource path must be absolute: " + path);
+		}
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+			Objects.requireNonNull(Util.class.getResourceAsStream(path)), StandardCharsets.UTF_8)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				if (line.isEmpty() || line.startsWith("#"))
+				{
+					continue;
+				}
+				row.accept(line, line.split("\t", -1));
+			}
+		}
+	}
+
+	/**
+	 * Reads an entire bundled resource into a UTF-8 {@link String}. Absolute
+	 * classpath paths only; a missing resource throws
+	 * {@link NullPointerException} and an I/O failure propagates to the
+	 * caller.
+	 *
+	 * @param path the absolute classpath path of the resource to read.
+	 * @return the resource contents decoded as UTF-8.
+	 * @throws IllegalArgumentException if {@code path} is not absolute.
+	 * @throws IOException if an I/O error occurs while reading.
+	 */
+	public static String resourceString(String path) throws IOException
+	{
+		if (!path.startsWith("/"))
+		{
+			throw new IllegalArgumentException("resource path must be absolute: " + path);
+		}
+		return new String(
+			readAllBytes(Objects.requireNonNull(Util.class.getResourceAsStream(path))),
+			StandardCharsets.UTF_8);
 	}
 
 	/**

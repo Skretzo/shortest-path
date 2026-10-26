@@ -1,6 +1,7 @@
 package shortestpath;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -28,18 +29,18 @@ import net.runelite.client.util.SwingUtil;
 import shortestpath.ShortestPathPanel.SearchRow;
 
 /**
- * One drill-down sub-panel of the sidebar: a back-arrow header over a
- * {@link FixedWidthPanel} scroll view holding the category's rows. The back
- * icon reuses the bundled chevron rotated 180 degrees; the header keeps the
- * old section chrome (orange bold name, bottom divider) but carries a 4px
- * left inset so the arrow and title are not flush against the panel edge.
+ * One drilled section of the sidebar: a back-arrow header pinned over its
+ * own scroll of rows. A tile click on the home grid shows it; the arrow
+ * returns to the grid. The back icon reuses the bundled chevron rotated
+ * 180 degrees; the header keeps the section chrome (orange bold name,
+ * bottom divider) and carries a trailing slot on its right edge — the
+ * restrictions section parks its "Owned" checkbox there.
  *
- * <p>The scroll view is a {@code FixedWidthPanel} {@code BorderLayout}
- * wrapper north-anchoring the content {@code FixedWidthPanel} — mirroring
- * {@code PluginListPanel}, so short content does not stretch and the view
- * can never outgrow the 225px viewport.</p>
+ * <p>Each section filters its own rows in place on a search query; the
+ * pinned header keeps the back affordance and the trailing slot reachable
+ * while the rows scroll.</p>
  */
-class CategoryPanel extends PluginPanel
+class CategoryPanel extends JPanel
 {
 	private static final ImageIcon BACK_ICON;
 
@@ -50,16 +51,15 @@ class CategoryPanel extends PluginPanel
 		BACK_ICON = new ImageIcon(ImageUtil.rotateImage(chevron, Math.PI));
 	}
 
-	private final ShortestPathPanel panel;
 	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final String categoryName;
 	// Lowercased name + aliases: a query contained here shows the whole
-	// category (the names double as search aliases, e.g. "routing" finds
-	// the renamed "General" category).
+	// section (the names double as search aliases, e.g. "routing" finds
+	// the renamed "General" section).
 	/**
-	 * The category's own match text (lowercased name + aliases). Rows
+	 * The section's own match text (lowercased name + aliases). Rows
 	 * that self-filter — the restriction checklist's items-disabled
 	 * hint — match on this text rather than a second hardcoded copy,
-	 * so renaming the category or its alias cannot desync them.
+	 * so renaming the section or its alias cannot desync them.
 	 */
 	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final String matchText;
 	private final JPanel header;
@@ -67,10 +67,8 @@ class CategoryPanel extends PluginPanel
 	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<SearchRow> rows = new ArrayList<>();
 
-	CategoryPanel(ShortestPathPanel panel, String name, String alias)
+	CategoryPanel(String name, String alias, Runnable onBack)
 	{
-		super(false);
-		this.panel = panel;
 		this.categoryName = name;
 		this.matchText = ShortestPathPanel.searchable(name, alias);
 
@@ -88,7 +86,7 @@ class CategoryPanel extends PluginPanel
 		back.setPreferredSize(new Dimension(22, 0));
 		back.setBorder(new EmptyBorder(0, 0, 0, 5));
 		back.setToolTipText("Back");
-		back.addActionListener(e -> panel.backToHome());
+		back.addActionListener(e -> onBack.run());
 		header.add(back, BorderLayout.WEST);
 
 		JLabel nameLabel = new JLabel(name);
@@ -103,7 +101,7 @@ class CategoryPanel extends PluginPanel
 		content.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		content.setBorder(new CompoundBorder(
 			new MatteBorder(0, 0, 1, 0, ColorScheme.MEDIUM_GRAY_COLOR),
-			new EmptyBorder(BORDER_OFFSET, 8, BORDER_OFFSET, 8)));
+			new EmptyBorder(PluginPanel.BORDER_OFFSET, 8, PluginPanel.BORDER_OFFSET, 8)));
 
 		FixedWidthPanel view = new FixedWidthPanel();
 		view.setLayout(new BorderLayout());
@@ -115,18 +113,7 @@ class CategoryPanel extends PluginPanel
 	}
 
 	/**
-	 * Whether {@code query} (already lowercased) hits the category's own
-	 * name/alias — the case where every row counts as a match regardless
-	 * of its own search text. The home results view applies the same
-	 * normalization the drilled category uses in {@link #applyQuery}.
-	 */
-	boolean nameMatches(String query)
-	{
-		return !query.isEmpty() && matchText.contains(query);
-	}
-
-	/**
-	 * Extra header slot on the right edge — the Restrictions category parks
+	 * Extra header slot on the right edge — the Restrictions section parks
 	 * its "Owned" checkbox here.
 	 */
 	void setTrailing(JComponent component)
@@ -136,7 +123,7 @@ class CategoryPanel extends PluginPanel
 	}
 
 	/**
-	 * Appends a searchable row to the category's scroll content.
+	 * Appends a searchable row to the section's content column.
 	 */
 	void addRow(JComponent component, String displayText, String searchText)
 	{
@@ -151,7 +138,7 @@ class CategoryPanel extends PluginPanel
 
 	/**
 	 * The rows matching {@code query} (already lowercased): every row when
-	 * the query is empty or hits the category's own name/alias, otherwise
+	 * the query is empty or hits the section's own name/alias, otherwise
 	 * rows whose search text contains it. The restriction checklist matches
 	 * by its own family/member labels rather than its row text.
 	 */
@@ -208,6 +195,28 @@ class CategoryPanel extends PluginPanel
 			{
 				((SearchExpandable) row.component).clearSearchExpanded();
 			}
+			// Expandable rows can stack expandable children (enum groups
+			// inside a family card): an empty query clears their search
+			// state too, and a member-label hit expands the group inside
+			// the card the same query opens.
+			if (row.component instanceof ExpandableSurface)
+			{
+				for (Component child : ((ExpandableSurface) row.component).detail.getComponents())
+				{
+					if (child instanceof CollapsibleEnumGroup)
+					{
+						CollapsibleEnumGroup<?> group = (CollapsibleEnumGroup<?>) child;
+						if (query.isEmpty())
+						{
+							group.clearSearchExpanded();
+						}
+						else if (!nameMatch && group.matchesMember(query))
+						{
+							group.setSearchExpanded();
+						}
+					}
+				}
+			}
 			if (query.isEmpty() || nameMatch || row.text.contains(query))
 			{
 				content.add(row.component);
@@ -226,15 +235,5 @@ class CategoryPanel extends PluginPanel
 		}
 		content.revalidate();
 		content.repaint();
-	}
-
-	/**
-	 * Muxer activation is the deep-link seam: a {@code pushState} into this
-	 * category lands it pre-filtered on the current search query.
-	 */
-	@Override
-	public void onActivate()
-	{
-		applyQuery(panel.getCurrentQuery());
 	}
 }

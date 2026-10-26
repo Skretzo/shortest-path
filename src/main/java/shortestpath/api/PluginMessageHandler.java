@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,6 @@ import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.Arrival;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.Target;
@@ -77,6 +77,17 @@ public class PluginMessageHandler implements QueryResponder
 	private final Settings settings;
 	private final PathAnnotator annotator;
 
+	/**
+	 * The inbound action dispatch: message name to its handler. Lookup — not
+	 * iteration — dispatches, so an unmatched action falls through to silence
+	 * exactly as the former chain's absent {@code else} did.
+	 */
+	private final Map<String, Consumer<PluginMessage>> actions = Map.of(
+		PLUGIN_MESSAGE_PATH, this::onPathMessage,
+		PLUGIN_MESSAGE_QUERY, this::onQueryMessage,
+		PLUGIN_MESSAGE_GET_TARGET, this::onGetTargetMessage,
+		PLUGIN_MESSAGE_CLEAR, this::onClearMessage);
+
 	public void onPluginMessage(PluginMessage event)
 	{
 		if (!Settings.CONFIG_GROUP.equals(event.getNamespace()))
@@ -84,74 +95,75 @@ public class PluginMessageHandler implements QueryResponder
 			return;
 		}
 
-		String action = event.getName();
-		if (PLUGIN_MESSAGE_PATH.equals(action))
+		Consumer<PluginMessage> handler = actions.get(event.getName());
+		if (handler == null)
 		{
-			Map<String, Object> data = event.getData();
-			if (data == null)
-			{
-				return;
-			}
-			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
-			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
-			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
-
-			@SuppressWarnings("unchecked")
-			Map<String, Object> payloadOverrides = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
-			if (payloadOverrides != null && !payloadOverrides.isEmpty())
-			{
-				scheduler.withSchedulerLock(() ->
-				{
-					settings.applyOverrides(payloadOverrides);
-					return null;
-				});
-			}
-
-			if (objStart == null && objTarget == null)
-			{
-				return;
-			}
-
-			int start = parseStart(objStart);
-			Targets targets = decodeTargets(objTarget);
-			if (start == WorldPointUtil.UNDEFINED || targets == null)
-			{
-				return;
-			}
-
-			coordinator.targetRequest(start, targets);
+			return;
 		}
-		else if (PLUGIN_MESSAGE_QUERY.equals(action))
+		handler.accept(event);
+	}
+
+	private void onPathMessage(PluginMessage event)
+	{
+		Map<String, Object> data = event.getData();
+		if (data == null)
 		{
-			Map<String, Object> data = event.getData();
-			if (data == null)
-			{
-				return;
-			}
-			Object id = data.get(PLUGIN_MESSAGE_ID);
-			int start = parseStart(data.get(PLUGIN_MESSAGE_START));
-			Targets targets = decodeTargets(data.get(PLUGIN_MESSAGE_TARGET));
-			if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
-			{
-				postQueryFailure(id, "INVALID");
-				return;
-			}
-			scheduler.queryPath(id, start, targets);
+			return;
 		}
-		else if (PLUGIN_MESSAGE_GET_TARGET.equals(action))
+		Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
+		Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
+		Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
+
+		@SuppressWarnings("unchecked")
+		Map<String, Object> payloadOverrides = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
+		if (payloadOverrides != null && !payloadOverrides.isEmpty())
 		{
-			Map<String, Object> data = event.getData();
-			postCurrentTarget(data == null ? null : data.get(PLUGIN_MESSAGE_ID));
+			scheduler.withSchedulerLock(() -> settings.applyOverrides(payloadOverrides));
 		}
-		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
+
+		if (objStart == null && objTarget == null)
 		{
-			scheduler.withSchedulerLock(() ->
-			{
-				settings.clearOverrides();
-				return null;
-			});
-			scheduler.setTarget(WorldPointUtil.UNDEFINED);
+			return;
 		}
+
+		int start = parseStart(objStart);
+		Targets targets = decodeTargets(objTarget);
+		if (start == WorldPointUtil.UNDEFINED || targets == null)
+		{
+			return;
+		}
+
+		coordinator.targetRequest(start, targets);
+	}
+
+	private void onQueryMessage(PluginMessage event)
+	{
+		Map<String, Object> data = event.getData();
+		if (data == null)
+		{
+			return;
+		}
+		Object id = data.get(PLUGIN_MESSAGE_ID);
+		int start = parseStart(data.get(PLUGIN_MESSAGE_START));
+		Targets targets = decodeTargets(data.get(PLUGIN_MESSAGE_TARGET));
+		if (start == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
+		{
+			postQueryFailure(id, "INVALID");
+			return;
+		}
+		scheduler.queryPath(id, start, targets);
+	}
+
+	private void onGetTargetMessage(PluginMessage event)
+	{
+		Map<String, Object> data = event.getData();
+		postCurrentTarget(data == null ? null : data.get(PLUGIN_MESSAGE_ID));
+	}
+
+	private void onClearMessage(PluginMessage event)
+	{
+		scheduler.withSchedulerLock(() -> settings.clearOverrides());
+		scheduler.setTarget(WorldPointUtil.UNDEFINED);
 	}
 
 	/**
@@ -188,7 +200,7 @@ public class PluginMessageHandler implements QueryResponder
 	}
 
 	@Override
-	public void postQueryResult(Object id, Pathfinder query)
+	public void postQueryResult(Object id, ActiveSearch query)
 	{
 		PathfinderResult result = query.getResult();
 		if (result == null)

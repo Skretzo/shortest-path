@@ -24,7 +24,6 @@ import net.runelite.client.config.ConfigItemDescriptor;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Range;
 import net.runelite.client.events.ConfigChanged;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
@@ -192,12 +191,12 @@ public class Settings
 		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
 		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold, boolean includeBankPath,
-		Set<Integer> blockedItemIds, Map<Integer, Integer> itemThresholdOverrides)
+		Set<Integer> blockedItemIds)
 	{
 		return buildRoutingPolicy(transportTypeConfig, usePoh, usePohFairyRing,
 			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
 			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
-			includeBankPath, blockedItemIds, itemThresholdOverrides, Map.of());
+			includeBankPath, blockedItemIds, Map.of());
 	}
 
 	public RoutingPolicy buildRoutingPolicy(TransportTypeConfig transportTypeConfig,
@@ -205,7 +204,7 @@ public class Settings
 		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
 		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
 		int currencyThreshold, boolean includeBankPath,
-		Set<Integer> blockedItemIds, Map<Integer, Integer> itemThresholdOverrides,
+		Set<Integer> blockedItemIds,
 		Map<Integer, Set<Integer>> blockedOptionDests)
 	{
 		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
@@ -220,8 +219,7 @@ public class Settings
 			transportTypeConfig.getTeleportationItemSetting(),
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides,
-			blockedOptionDests);
+			currencyThreshold, includeBankPath, blockedItemIds, blockedOptionDests);
 		return policy;
 	}
 
@@ -630,8 +628,8 @@ public class Settings
 	}
 
 	/**
-	 * Immutable snapshot of the running-search lifecycle inputs: backend
-	 * selection, search cutoffs, and the debug/post toggles that act on a live
+	 * Immutable snapshot of the running-search lifecycle inputs: search
+	 * cutoffs and the debug/post toggles that act on a live
 	 * search rather than display state.
 	 *
 	 * <p>These members mirror how the shell and refresh path always read them:
@@ -643,7 +641,6 @@ public class Settings
 	@Accessors(fluent = true)
 	public static final class LifecycleView
 	{
-		private final PathfinderBackend pathfinderBackend;
 		private final int calculationCutoff;
 		private final int recalculateDistance;
 		private final int reachedDistance;
@@ -654,7 +651,6 @@ public class Settings
 		private LifecycleView(EffectiveConfig effective, ShortestPathConfig configured,
 			Function<ConfigKey, Object> base)
 		{
-			pathfinderBackend = (PathfinderBackend) base.apply(ConfigKey.PATHFINDER_ALGORITHM);
 			calculationCutoff = num(base, ConfigKey.CALCULATION_CUTOFF);
 			recalculateDistance = num(base, ConfigKey.RECALCULATE_DISTANCE);
 			reachedDistance = num(base, ConfigKey.FINISH_DISTANCE);

@@ -167,7 +167,8 @@ public class BankPickupRequirementsTest
 	{
 		bankHas.put(ItemID.DRAMEN_STAFF, 1);
 		bankHas.put(ItemID.DRAMEN_STAFF_AIR, 1);
-		when(pathfinderConfig.getEligibility()).thenReturn(eligibility(true));
+		TransportEligibility eligibility = eligibility(true);
+		when(pathfinderConfig.getEligibility()).thenReturn(eligibility);
 		when(pathfinderConfig.getTransportAvailability(any(BankVisitState.class))).thenReturn(
 			TestPathfinderConfig.availabilityOf());
 		when(client.getItemDefinition(ItemID.DRAMEN_STAFF)).thenReturn(dramenStaff);
@@ -177,7 +178,8 @@ public class BankPickupRequirementsTest
 			new PathStep(BANK_TILE, BankVisitState.CARRIED),
 			new PathStep(EDGE_ORIGIN, BankVisitState.CARRIED),
 			new PathStep(EDGE_DESTINATION, BankVisitState.CARRIED,
-				new Transport.TransportBuilder().type(TransportType.FAIRY_RING).build()));
+				eligibility.wrapFairyRingStaff(
+					new Transport.TransportBuilder().type(TransportType.FAIRY_RING).build())));
 
 		BankPickupResult result = BankPickupResult.compute(
 			client, bank, pathfinderConfig, BANK_LOCATIONS, path, 0);
@@ -268,7 +270,7 @@ public class BankPickupRequirementsTest
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerHas);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerHas, bankPathItems, bankHas, NO_POUCH, Map.of(),
-			fairyRingStaffRequired, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true);
+			fairyRingStaffRequired, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true, Set.of());
 	}
 
 	private static ItemRequirement rune(ItemVariations rune, int quantity)

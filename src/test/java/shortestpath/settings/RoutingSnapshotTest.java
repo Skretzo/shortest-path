@@ -101,12 +101,6 @@ public class RoutingSnapshotTest
 	 * transport-type view it was handed, and the scalar arguments are the
 	 * effective values the caller already computed this refresh.
 	 */
-	/**
-	 * The unlocks view must carry every declared {@code unlock*} registry
-	 * row — a missing member is invisible until a consumer trusts the
-	 * snapshot and silently loses an unlock.
-	 */
-	
 	@Test
 	public void buildRoutingPolicyBuildsTheSnapshot()
 	{
@@ -117,7 +111,7 @@ public class RoutingSnapshotTest
 
 		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
 			false, true, false, true, Set.of(), Set.of(),
-			JewelleryBoxTier.ORNATE, 42, true, Set.of(), Map.of());
+			JewelleryBoxTier.ORNATE, 42, true, Set.of());
 
 		assertTrue(policy.isTransportTypeEnabled(TransportType.TRANSPORT));
 		assertFalse("disableUnless-derived state is frozen into the build",

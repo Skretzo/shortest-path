@@ -15,6 +15,7 @@ import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.astar.ReverseLabels;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticTestFixture;
+import shortestpath.pathfinder.astar.SearchRestrictions;
 import shortestpath.pathfinder.astar.SiteGraph;
 import shortestpath.pathfinder.astar.TargetOverlay;
 import shortestpath.transport.Transport;
@@ -103,7 +104,7 @@ public class AStarForwardSearchTest
 		BooleanSupplier cancelled = () -> true;
 
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), RoutingStaticTestFixture.A, cancelled);
+			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), RoutingStaticTestFixture.A, cancelled, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS, (tile, banked) -> target.isTarget(tile));
 
 		assertTrue(result.cancelled());
 		assertFalse(result.reached());

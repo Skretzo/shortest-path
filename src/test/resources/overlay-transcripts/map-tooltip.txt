@@ -1,0 +1,9 @@
+setFont RuneScape 16 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,160) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fillRect 231,178 185x50 | color=rgb(255,255,160) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(255,255,160) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawRect 231,178 185x50 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Shortest path:" @233,193 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Step 1 of 5" @233,209 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Portal chamber (Exit: Port Sarim)" @233,225 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null

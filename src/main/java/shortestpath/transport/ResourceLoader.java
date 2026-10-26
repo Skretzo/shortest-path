@@ -77,9 +77,7 @@ public final class ResourceLoader
 	{
 		try
 		{
-			String s = new String(
-				Util.readAllBytes(Objects.requireNonNull(ResourceLoader.class.getResourceAsStream(path))),
-				StandardCharsets.UTF_8);
+			String s = Util.resourceString(path);
 			addTransportsFromContents(transports, s, transportType, radiusThreshold);
 		}
 		catch (IOException e)
@@ -220,8 +218,7 @@ public final class ResourceLoader
 	{
 		try
 		{
-			String s = new String(Util.readAllBytes(Objects.requireNonNull(ResourceLoader.class.getResourceAsStream(path))),
-				StandardCharsets.UTF_8);
+			String s = Util.resourceString(path);
 			parseDestinations(destinations, path, s);
 		}
 		catch (IOException e)
@@ -316,7 +313,7 @@ public final class ResourceLoader
 		final String path = "/destinations/game_features/bank.tsv";
 		try
 		{
-			String s = new String(Util.readAllBytes(Objects.requireNonNull(ResourceLoader.class.getResourceAsStream(path))), StandardCharsets.UTF_8);
+			String s = Util.resourceString(path);
 			return parseBankRequirements(s);
 		}
 		catch (IOException e)

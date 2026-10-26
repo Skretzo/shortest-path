@@ -80,13 +80,8 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : search.getTargets().points())
-			{
-				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-				{
-					drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1);
-				}
-			}
+			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
+				drawTooltip(graphics, cursorPos, target, WorldPointUtil.UNDEFINED, -1, path, -1));
 		}
 
 		return null;
@@ -96,16 +91,18 @@ public class PathMapTooltipOverlay extends Overlay
 		List<PathStep> path, int pathIndex)
 	{
 		int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
-		int startX = geometry.mapWorldPointToGraphicsPointX(point);
-		int startY = geometry.mapWorldPointToGraphicsPointY(point);
-		int endX = geometry.mapWorldPointToGraphicsPointX(offsetPoint);
-		int endY = geometry.mapWorldPointToGraphicsPointY(offsetPoint);
+		Point start = geometry.mapWorldPointToGraphicsPoint(point);
+		Point end = geometry.mapWorldPointToGraphicsPoint(offsetPoint);
 
-		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
+		if (start == null || end == null)
 		{
 			return false;
 		}
+
+		int startX = start.getX();
+		int startY = start.getY();
+		int endX = end.getX();
+		int endY = end.getY();
 
 		int width = endX - startX;
 
@@ -128,10 +125,10 @@ public class PathMapTooltipOverlay extends Overlay
 				{
 					// Check if this transport goes to POH - if so, look ahead to find the exit
 					// transport
-					String pohExitInfo = annotator.getPohExitInfo(nextPoint, path, pathIndex);
-					if (pohExitInfo != null)
+					String pohExitSuffix = OverlayDrawing.pohExitSuffix(annotator, nextPoint, path, pathIndex);
+					if (pohExitSuffix != null)
 					{
-						displayInfo = displayInfo + " (Exit: " + pohExitInfo + ")";
+						displayInfo = displayInfo + pohExitSuffix;
 					}
 					rows.add(displayInfo);
 					break;

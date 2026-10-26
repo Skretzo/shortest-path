@@ -266,21 +266,6 @@ public class WorldPointUtil
 	}
 
 	/**
-	 * Distance from a packed point to a {@link WorldArea} using Chebyshev metric,
-	 * respecting plane.
-	 * Returns {@code Integer.MAX_VALUE} if the plane differs.
-	 */
-	public static int distanceToArea(int packedPoint, WorldArea area)
-	{
-		final int plane = unpackWorldPlane(packedPoint);
-		if (area.getPlane() != plane)
-		{
-			return Integer.MAX_VALUE;
-		}
-		return distanceToArea2D(packedPoint, area);
-	}
-
-	/**
 	 * 2D distance (Chebyshev) from a packed point to a {@link WorldArea} ignoring
 	 * plane, equivalent to
 	 * {@link WorldArea#distanceTo(WorldPoint)} semantics in 2D.

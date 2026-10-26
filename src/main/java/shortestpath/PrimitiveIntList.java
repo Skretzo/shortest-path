@@ -226,26 +226,6 @@ public class PrimitiveIntList
 	}
 
 	/**
-	 * Removes the value at the specified index and compacts the list.
-	 *
-	 * @param index zero-based index of the element to remove.
-	 * @return the removed value.
-	 * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}.
-	 */
-	public int removeAt(int index)
-	{
-		rangeCheck(index);
-		int oldValue = elementData[index];
-		int numMoved = size - index - 1;
-		if (numMoved > 0)
-		{
-			System.arraycopy(elementData, index + 1, elementData, index, numMoved);
-		}
-		elementData[--size] = 0;
-		return oldValue;
-	}
-
-	/**
 	 * Removes the first occurrence of the specified value, if present.
 	 *
 	 * @param e value to remove.

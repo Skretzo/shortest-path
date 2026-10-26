@@ -1,0 +1,20 @@
+setColor rgb(200,40,240) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=1.0) clip=null
+draw Line2D(382.0,251.0->482.0,251.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+drawString "Disembark the boat to resume pathfinding" @260,237 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=4.0) clip=null
+drawString "Disembark the boat to resume pathfinding" @259,236 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(482.0,251.0->582.0,251.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=255 | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(582.0,251.0->1582.0,251.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(200,40,240) a=255 | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(1582.0,251.0->1662.0,251.0) | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(200,40,240) a=255 stroke=BasicStroke(w=4.0) clip=null
+drawString "Destination could not be reached" @287,220 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=4.0) clip=null
+drawString "Destination could not be reached" @286,219 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=4.0) clip=null

@@ -267,6 +267,8 @@ public class TeleportRestrictionTest
 					family.displayItemId(), (int) index.getOrDefault(member, -1));
 			}
 		}
+		Assert.assertTrue("a non-member id resolves to the negative default",
+			index.getOrDefault(995, -1) < 0);
 	}
 
 	/**

@@ -1,8 +1,5 @@
 package shortestpath.poh;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,6 +17,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
+import shortestpath.Util;
 import shortestpath.WorldPointUtil;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
@@ -217,19 +215,9 @@ public class PohService
 	private static Map<String, String> nameAliases()
 	{
 		Map<String, String> aliases = new HashMap<>();
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-			PohService.class.getResourceAsStream("/poh-name-aliases.tsv"), StandardCharsets.UTF_8)))
+		try
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
-			{
-				if (line.isEmpty() || line.startsWith("#"))
-				{
-					continue;
-				}
-				String[] c = line.split("\t", -1);
-				aliases.put(c[0], c[1]);
-			}
+			Util.each("/poh-name-aliases.tsv", (line, c) -> aliases.put(c[0], c[1]));
 		}
 		catch (Exception e)
 		{

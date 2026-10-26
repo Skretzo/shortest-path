@@ -1,0 +1,12 @@
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+draw Line2D(382.0,251.0->482.0,251.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(482.0,251.0->582.0,251.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(582.0,251.0->1582.0,251.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+setStroke BasicStroke(w=4.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null
+draw Line2D(1582.0,251.0->1662.0,251.0) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=4.0) clip=null

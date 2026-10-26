@@ -4,10 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ItemEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -16,9 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.components.DimmableJPanel;
-import net.runelite.client.util.SwingUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -29,7 +24,7 @@ import lombok.Getter;
  * enum-valued masters (teleportation items) render an enum combo. Detail rows
  * live in an indented well that is dimmed and disabled while the master is off.
  */
-class TransportFamilyCard extends JPanel implements SearchExpandable
+class TransportFamilyCard extends ExpandableSurface
 {
 	private static final int ICON_LABEL_GAP = 4;
 	private static final int DETAIL_INDENT = ShortestPathPanel.CARD_ICON_SIZE + ICON_LABEL_GAP;
@@ -37,9 +32,15 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	private final ShortestPathPanel panel;
 	@Getter(AccessLevel.PACKAGE) private final String keyName;
 	// True when the family's on/off state is owned by a control elsewhere
-	// (the teleport-items mode combo lives in General): no master control
-	// renders, and isMasterOn() reads the configured value directly.
+	// (the teleport-items mode combo lives in the plugin configuration):
+	// no master control renders, and isMasterOn() reads the configured
+	// value directly.
 	private final boolean masterless;
+	// True when the card drops the collapsible chrome entirely — no
+	// expander, no framed well, detail always expanded. A card that is a
+	// section's only row (the house card) uses this so it reads like a
+	// plain labelled group instead of a lone boxed expander.
+	private final boolean flat;
 
 	private final DimmableJPanel header;
 	private final JPanel nameArea;
@@ -47,13 +48,9 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	@Getter private final JLabel nameLabel;
 	private final JPanel headerControls;
 	@Getter(AccessLevel.PACKAGE) private final JComponent masterControl;
-	private final JPanel detail;
-	private JButton expander;
-	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
-	private boolean searchExpanded;
-	// Set while a config sync mirrors values into the controls, so the
+	// Held while a config sync mirrors values into the controls, so the
 	// programmatic selection changes do not write back to config.
-	private boolean syncing;
+	private final PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
 
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId)
 	{
@@ -63,11 +60,19 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId,
 		boolean masterless)
 	{
+		this(panel, keyName, title, description, iconItemId, masterless, false);
+	}
+
+	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId,
+		boolean masterless, boolean flat)
+	{
+		// Indented under the icon column so detail rows line up with the name.
+		super(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
 		this.panel = panel;
 		this.keyName = keyName;
 		this.masterless = masterless;
+		this.flat = flat;
 
-		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		setBorder(new EmptyBorder(4, 8, 4, 8));
 
@@ -103,15 +108,24 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		header.add(headerControls, BorderLayout.EAST);
 		add(header);
 
-		detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
-		// Indented under the icon column so detail rows line up with the name.
-		detail.setBorder(new EmptyBorder(4, DETAIL_INDENT, 4, 0));
-		detail.setVisible(false);
 		add(detail);
 
-		// The shared expandable chrome: dark header bar over the
-		// category-toned, orange-bordered detail well.
-		ShortestPathPanel.styleExpandable(header, detail);
+		if (flat)
+		{
+			// No expandable chrome: the card and its rows sit transparent
+			// on the section tone, and the detail stays expanded — no
+			// expander ever installs, so the toggle paths no-op.
+			setOpaque(false);
+			header.setOpaque(false);
+			detail.setOpaque(false);
+			detail.setVisible(true);
+		}
+		else
+		{
+			// The shared expandable chrome: dark header bar over the
+			// category-toned, orange-bordered detail well.
+			ShortestPathPanel.styleExpandable(header, detail);
+		}
 
 		applyEnabled(isMasterOn());
 		panel.registerConfigListener(keyName, this::syncFromConfig);
@@ -120,75 +134,22 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	/**
 	 * Adds a row to the detail well. The first detail row also installs the
 	 * chevron expander and makes the header clickable — cards with no detail
-	 * content never grow a dead expander.
+	 * content never grow a dead expander, and flat cards never grow one at
+	 * all.
 	 */
 	void addDetailRow(JComponent row)
 	{
 		detail.add(row);
 		ShortestPathPanel.applyRowDisabledState(row, isMasterOn());
-		if (expander == null)
+		if (expander == null && !flat)
 		{
-			expander = new JButton(ShortestPathPanel.SECTION_EXPAND_ICON);
+			expander = newExpander();
 			expander.setPreferredSize(new Dimension(ShortestPathPanel.SECTION_TOGGLE_WIDTH, 0));
 			expander.setBorder(new EmptyBorder(0, 0, 0, 5));
-			expander.setToolTipText("Expand");
-			SwingUtil.removeButtonDecorations(expander);
-			expander.addActionListener(e -> setDetailOpen(!detailOpen));
 			headerControls.add(expander, 0);
-			installExpandListener();
+			installExpandListener(header, nameArea, iconLabel, nameLabel);
 		}
 		detail.revalidate();
-	}
-
-	void setDetailOpen(boolean open)
-	{
-		if (expander == null)
-		{
-			return;
-		}
-		// A manual toggle counts as user intent, so search no longer owns the
-		// expansion state of this card.
-		searchExpanded = false;
-		setDetailOpenInternal(open);
-	}
-
-	/**
-	 * Search-driven expansion: opens the detail well when the query matched a
-	 * detail label rather than the card name, so the matched control is
-	 * visible. Only fires on cards the user had collapsed, and
-	 * {@link #clearSearchExpanded()} restores them when the query clears.
-	 */
-	@Override
-	public void setSearchExpanded()
-	{
-		if (expander != null && !detailOpen)
-		{
-			searchExpanded = true;
-			setDetailOpenInternal(true);
-		}
-	}
-
-	@Override
-	public void clearSearchExpanded()
-	{
-		if (searchExpanded)
-		{
-			searchExpanded = false;
-			setDetailOpenInternal(false);
-		}
-	}
-
-	private void setDetailOpenInternal(boolean open)
-	{
-		detailOpen = open;
-		if (expander != null)
-		{
-			expander.setIcon(open ? ShortestPathPanel.SECTION_RETRACT_ICON : ShortestPathPanel.SECTION_EXPAND_ICON);
-			expander.setToolTipText(open ? "Retract" : "Expand");
-		}
-		detail.setVisible(open);
-		revalidate();
-		repaint();
 	}
 
 	boolean isMasterOn()
@@ -232,8 +193,7 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	void syncFromConfig()
 	{
 		Object value = panel.settings.configuredValue(keyName);
-		syncing = true;
-		try
+		PanelRows.resync(syncing, () ->
 		{
 			if (masterControl instanceof JCheckBox)
 			{
@@ -243,14 +203,12 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				((JComboBox<?>) masterControl).setSelectedItem(value);
 			}
-		}
-		finally
+		}, () ->
 		{
-			syncing = false;
-		}
-		// Masterless cards hold no control to mirror into — only the dim
-		// state follows the configured value.
-		applyEnabled(isMasterOn());
+			// Masterless cards hold no control to mirror into — only the
+			// dim state follows the configured value.
+			applyEnabled(isMasterOn());
+		});
 	}
 
 	private JComponent createMasterControl(String description)
@@ -268,10 +226,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				if (e.getStateChange() == ItemEvent.SELECTED)
 				{
-					if (!syncing)
-					{
-						panel.settings.write(keyName, combo.getSelectedItem());
-					}
+					PanelRows.guardedWrite(syncing,
+						() -> panel.settings.write(keyName, combo.getSelectedItem()));
 					applyEnabled(isMasterOn());
 				}
 			});
@@ -283,28 +239,11 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		checkBox.setToolTipText(ShortestPathPanel.html(description));
 		checkBox.addActionListener(e ->
 		{
-			if (!syncing)
-			{
-				panel.settings.write(keyName, checkBox.isSelected());
-			}
+			PanelRows.guardedWrite(syncing,
+				() -> panel.settings.write(keyName, checkBox.isSelected()));
 			applyEnabled(checkBox.isSelected());
 		});
 		return checkBox;
 	}
 
-	private void installExpandListener()
-	{
-		MouseAdapter adapter = new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				setDetailOpen(!detailOpen);
-			}
-		};
-		header.addMouseListener(adapter);
-		nameArea.addMouseListener(adapter);
-		iconLabel.addMouseListener(adapter);
-		nameLabel.addMouseListener(adapter);
-	}
 }

@@ -286,21 +286,6 @@ public class PrimitiveIntHashMap<V>
 	}
 
 	/**
-	 * Approximate fullness of the table as a percentage of the entry count over the table length.
-	 *
-	 * @return fullness percentage in {@code [0.0, 100.0]}, or {@link Double#NaN} when the map is
-	 * empty.
-	 */
-	public double calculateFullness()
-	{
-		if (size == 0)
-		{
-			return Double.NaN;
-		}
-		return 100.0 * (double) size / (double) maxSize;
-	}
-
-	/**
 	 * Removes all entries from the map. The backing arrays are retained and reused.
 	 */
 	public void clear()

@@ -126,9 +126,9 @@ public class SearchRestrictionsTest
 		TargetOverlay overlay = new TargetOverlay(new SiteGraph(routingStatic(), account), emptyCollision(), target);
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, ReverseLabels.compute(overlay));
 		AStarForwardSearch.Result result = AStarForwardSearch.search(overlay, heuristic, start,
-			() -> false, true, 1, restrictions);
+			() -> false, true, 1, restrictions, AStarForwardSearch.NO_PROGRESS);
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(overlay, heuristic, start,
-			() -> false, false, 1, restrictions);
+			() -> false, false, 1, restrictions, AStarForwardSearch.NO_PROGRESS);
 		assertEquals("optimised search agrees with the unoptimised one", oracle.reached(), result.reached());
 		assertEquals("optimised search agrees with the unoptimised one", oracle.cost(), result.cost());
 		return result;

@@ -275,8 +275,6 @@ public class PathfinderConfig
 	{
 		return sailing.getState().isAboard();
 	}
-	@Getter
-	private volatile PathfinderBackend pathfinderBackend = PathfinderBackend.LEGACY;
 	/**
 	 * On a boat with the option on, search with sailing moves (see {@link SailingMoves}) instead of walking.
 	 */
@@ -435,7 +433,6 @@ public class PathfinderConfig
 		// read below draws from this snapshot, so a republish landing
 		// mid-refresh cannot mix fields from two publications.
 		EffectiveConfig effective = settings.effective();
-		pathfinderBackend = (PathfinderBackend) settings.configuredValue("pathfinderAlgorithm");
 		long evaluationTimeMinutes = currentTimeMinutes();
 		calculationCutoffMillis = (long) ((Number) settings.configuredValue("calculationCutoff")).intValue() * Constants.GAME_TICK_LENGTH;
 		unreachableTargetDistance = effective.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
@@ -784,8 +781,7 @@ public class PathfinderConfig
 		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides,
-			blockedOptionDests);
+			currencyThreshold, includeBankPath, blockedItemIds, blockedOptionDests);
 
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
@@ -803,15 +799,21 @@ public class PathfinderConfig
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
+			// Fairy rings carry the staff rule as an injected item requirement
+			// when the Lumbridge Elite diary is incomplete — the same wrapped
+			// instance goes through every gate and into both availability
+			// views, so downstream consumers share one identity.
+			Transport offered = eligibility.wrapFairyRingStaff(transport);
+
 			// The named gates run first; a transport failing any of them is
 			// dropped before either item pool is consulted.
-			if (requirements.gates(transport) != RejectionReason.NONE)
+			if (requirements.gates(offered) != RejectionReason.NONE)
 			{
 				continue;
 			}
 
-			boolean usableWithoutBank = eligibility.usable(transport, BankVisitState.CARRIED);
-			boolean usableWithBank = eligibility.usable(transport, BankVisitState.BANKED);
+			boolean usableWithoutBank = eligibility.usable(offered, BankVisitState.CARRIED);
+			boolean usableWithBank = eligibility.usable(offered, BankVisitState.BANKED);
 			// Both pools empty for its items == the ITEM_REQUIREMENT gate
 			// the composite check() would apply — the same skip, spelled out.
 			if (!usableWithoutBank && !usableWithBank)
@@ -820,11 +822,11 @@ public class PathfinderConfig
 			}
 			if (usableWithoutBank)
 			{
-				withoutBank.add(transport);
+				withoutBank.add(offered);
 			}
 			if (usableWithBank)
 			{
-				withBank.add(transport);
+				withBank.add(offered);
 			}
 		}
 
@@ -930,14 +932,7 @@ public class PathfinderConfig
 	public boolean varbitChecks(Collection<VarRequirement> requirements,
 		Map<Integer, Integer> values, long evaluationTimeMinutes)
 	{
-		for (VarRequirement varRequirement : requirements)
-		{
-			if (varRequirement.isVarbit() && !varRequirement.check(values, evaluationTimeMinutes))
-			{
-				return true;
-			}
-		}
-		return false;
+		return varChecks(requirements, values, evaluationTimeMinutes, VarRequirement.VarType.VARBIT);
 	}
 
 	public boolean varPlayerChecks(Transport transport, long evaluationTimeMinutes)
@@ -963,9 +958,22 @@ public class PathfinderConfig
 	public boolean varPlayerChecks(Collection<VarRequirement> requirements,
 		Map<Integer, Integer> values, long evaluationTimeMinutes)
 	{
+		return varChecks(requirements, values, evaluationTimeMinutes, VarRequirement.VarType.VARPLAYER);
+	}
+
+	/**
+	 * The shared var-requirement loop behind the keyed publics: only
+	 * requirements whose {@link VarRequirement#getVarType()} equals
+	 * {@code kind} are evaluated, so a varbit dispatch never reads varplayer
+	 * requirements and vice versa.
+	 */
+	private boolean varChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes,
+		VarRequirement.VarType kind)
+	{
 		for (VarRequirement varRequirement : requirements)
 		{
-			if (varRequirement.isVarPlayer() && !varRequirement.check(values, evaluationTimeMinutes))
+			if (varRequirement.getVarType() == kind && !varRequirement.check(values, evaluationTimeMinutes))
 			{
 				return true;
 			}
@@ -975,10 +983,12 @@ public class PathfinderConfig
 
 	/**
 	 * Routes the {@link RequirementHooks} seam the gate chain consumes to the
-	 * protected override points above. Dynamic dispatch keeps test overrides
-	 * live with no test-side changes — an override of {@link #getQuestState},
-	 * {@link #varbitChecks} or {@link #varPlayerChecks} still reaches every
-	 * transport and bank-destination verdict.
+	 * protected override points above. {@link RequirementHooks#varChecks}
+	 * dispatches on the {@link VarRequirement.VarType} kind to the keyed
+	 * {@link #varbitChecks}/{@link #varPlayerChecks} methods — never the
+	 * shared loop directly — so dynamic dispatch keeps test overrides live
+	 * with no test-side changes: an override of {@link #getQuestState} or any
+	 * keyed form still reaches every transport and bank-destination verdict.
 	 */
 	private final class ConfigHooks implements RequirementHooks
 	{
@@ -989,17 +999,19 @@ public class PathfinderConfig
 		}
 
 		@Override
-		public boolean varbitChecks(Collection<VarRequirement> requirements,
-			Map<Integer, Integer> values, long evaluationTimeMinutes)
+		public boolean varChecks(Collection<VarRequirement> requirements,
+			Map<Integer, Integer> values, long evaluationTimeMinutes,
+			VarRequirement.VarType kind)
 		{
-			return PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes);
-		}
-
-		@Override
-		public boolean varPlayerChecks(Collection<VarRequirement> requirements,
-			Map<Integer, Integer> values, long evaluationTimeMinutes)
-		{
-			return PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+			if (VarRequirement.VarType.VARBIT.equals(kind))
+			{
+				return PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes);
+			}
+			if (VarRequirement.VarType.VARPLAYER.equals(kind))
+			{
+				return PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+			}
+			throw new IllegalArgumentException("unhandled VarType " + kind);
 		}
 	}
 

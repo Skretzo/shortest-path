@@ -4,24 +4,21 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import shortestpath.ItemVariations;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.transport.Transport;
-import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.TransportType;
 import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.model.TransportItems;
 import shortestpath.settings.Settings;
 
 public class InventoryHighlightOverlay extends AbstractHighlightOverlay
@@ -41,11 +38,16 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	};
 
 	private final ItemManager itemManager;
-	// Fairy-ring scan cache: pathfinder searches hand out immutable path lists, so the
-	// last scanned list doubles as the cache key by reference identity.
+	// Fairy-ring scan cache: pathfinder searches hand out immutable path
+	// lists, so the last scanned list doubles as the cache key by reference
+	// identity. lastFairyRingEdgeIndex is the last edge index whose edge
+	// offers a fairy ring; fairyRingItemIds is the union of item
+	// requirements those rings carry — the injected staff rule, so a
+	// staff-free ring (POH, or every ring with Lumbridge Elite done)
+	// contributes nothing.
 	private List<PathStep> scannedPath;
 	private int lastFairyRingEdgeIndex = -1;
-	private final Settings settings;
+	private Set<Integer> fairyRingItemIds = Set.of();
 
 	@Inject
 	public InventoryHighlightOverlay(Client client, ItemManager itemManager, Settings settings,
@@ -53,35 +55,18 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	{
 		super(client, scheduler, annotator, settings);
 		this.itemManager = itemManager;
-		this.settings = settings;
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
+	protected boolean enabled()
 	{
-		if (!settings.display().highlightInventoryItems())
-		{
-			return null;
-		}
+		return settings.display().highlightInventoryItems();
+	}
 
-		ActiveSearch search = scheduler.getActiveSearch();
-		if (search == null)
-		{
-			return null;
-		}
-
-		List<PathStep> path = search.getPath();
-		if (path == null || path.isEmpty())
-		{
-			return null;
-		}
-
-		int pathIndex = getPlayerPathIndex(path);
-		if (pathIndex < 0 || pathIndex + 1 >= path.size())
-		{
-			return null;
-		}
-
+	@Override
+	protected Dimension drawHighlights(Graphics2D graphics, List<PathStep> path, int pathIndex,
+		ActiveSearch search)
+	{
 		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
 		Set<Integer> itemsToHighlight = new HashSet<>();
 
@@ -95,29 +80,22 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			{
 				continue;
 			}
-			if (transport.getItemRequirements() == null || transport.getItemRequirements().size() == 0)
-			{
-				continue;
-			}
-			for (ItemRequirement req : transport.getItemRequirements().getRequirements())
-			{
-				addItemIds(itemsToHighlight, req.getItemIds());
-				addItemIds(itemsToHighlight, req.getStaffIds());
-				addItemIds(itemsToHighlight, req.getOffhandIds());
-			}
+			addRequirementIds(transport.getItemRequirements(), itemsToHighlight);
+		}
+
+		// A carried staff satisfies the ring wherever it is, so surface it
+		// while a staff-requiring ring remains ahead — not only while
+		// standing on the ring edge. The ids ride the ring's own injected
+		// requirement; nothing is derived here.
+		scanFairyRings(path);
+		if (lastFairyRingEdgeIndex >= pathIndex)
+		{
+			itemsToHighlight.addAll(fairyRingItemIds);
 		}
 
 		if (itemsToHighlight.isEmpty())
 		{
 			return null;
-		}
-
-		// Build set of dramen/lunar staff IDs — skip highlighting when already equipped,
-		// since wearing them passively enables fairy rings without any active use.
-		Set<Integer> dramenStaffIds = new HashSet<>();
-		for (int id : TransportEligibility.fairyStaffIds())
-		{
-			dramenStaffIds.add(id);
 		}
 
 		Color highlight = settings.display().colourBankPickupHighlight();
@@ -126,30 +104,16 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 		Widget inventoryContainer = client.getWidget(InterfaceID.Inventory.ITEMS);
 		if (inventoryContainer != null && !inventoryContainer.isHidden())
 		{
-			Widget[] items = inventoryContainer.getChildren();
-			if (items != null)
-			{
-				for (Widget item : items)
-				{
-					if (item == null || item.isHidden() || item.getItemId() < 0)
-					{
-						continue;
-					}
-					if (itemsToHighlight.contains(item.getItemId()))
-					{
-						BufferedImage outline = itemManager.getItemOutline(item.getItemId(), item.getItemQuantity(), highlight);
-						if (outline != null)
-						{
-							graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
-						}
-					}
-				}
-			}
+			drawItemOutlines(graphics, itemManager, inventoryContainer.getChildren(),
+				itemsToHighlight, highlight);
 		}
 
 		// Highlight matching items in the equipment tab. Equipped items are
 		// rendered by child item widgets of the static slot components; the slot
-		// widgets themselves never carry an item id.
+		// widgets themselves never carry an item id. The fairy-staff ids are
+		// the skip set — wearing one already satisfies the ring, so it needs
+		// no outline — and equipment outlines pin quantity 1 because worn
+		// items are not stacks.
 		for (int slotWidgetId : EQUIPMENT_SLOT_WIDGET_IDS)
 		{
 			Widget slot = client.getWidget(slotWidgetId);
@@ -157,36 +121,55 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			{
 				continue;
 			}
-			Widget[] children = slot.getChildren();
-			if (children == null)
-			{
-				continue;
-			}
-			for (Widget item : children)
-			{
-				if (item == null || item.isHidden() || item.getItemId() < 0)
-				{
-					continue;
-				}
-				int itemId = item.getItemId();
-				if (!itemsToHighlight.contains(itemId))
-				{
-					continue;
-				}
-				// Dramen/lunar staff: skip when equipped — wearing it passively enables fairy rings
-				if (dramenStaffIds.contains(itemId))
-				{
-					continue;
-				}
-				BufferedImage outline = itemManager.getItemOutline(itemId, 1, highlight);
-				if (outline != null)
-				{
-					graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
-				}
-			}
+			drawItemOutlines(graphics, itemManager, slot.getChildren(), itemsToHighlight,
+				fairyRingItemIds, 1, highlight);
 		}
 
 		return null;
+	}
+
+	/**
+	 * Scans the path once (paths are immutable per search) for fairy-ring
+	 * edges, recording the last ring edge index and the union of item
+	 * requirement ids those rings carry. The ring's requirements are read
+	 * straight off the transport — the injected staff rule — so this stays
+	 * a generic read with no fairy-specific item knowledge of its own.
+	 */
+	private void scanFairyRings(List<PathStep> path)
+	{
+		if (path == scannedPath)
+		{
+			return;
+		}
+		scannedPath = path;
+		lastFairyRingEdgeIndex = -1;
+		Set<Integer> ids = new HashSet<>();
+		for (int i = 0; i + 1 < path.size(); ++i)
+		{
+			for (Transport transport : annotator.transportsForEdge(path.get(i), path.get(i + 1)))
+			{
+				if (TransportType.FAIRY_RING.equals(transport.getType()))
+				{
+					lastFairyRingEdgeIndex = i;
+					addRequirementIds(transport.getItemRequirements(), ids);
+				}
+			}
+		}
+		fairyRingItemIds = ids;
+	}
+
+	private static void addRequirementIds(TransportItems items, Set<Integer> target)
+	{
+		if (items == null)
+		{
+			return;
+		}
+		for (ItemRequirement req : items.getRequirements())
+		{
+			addItemIds(target, req.getItemIds());
+			addItemIds(target, req.getStaffIds());
+			addItemIds(target, req.getOffhandIds());
+		}
 	}
 
 	private static void addItemIds(Set<Integer> target, int[] ids)

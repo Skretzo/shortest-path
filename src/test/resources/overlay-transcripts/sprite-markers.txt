@@ -1,0 +1,5 @@
+drawImage @378,247 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawImage @1660,245 12x12 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawOval 1657,242 18x18 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
