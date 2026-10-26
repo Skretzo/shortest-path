@@ -95,6 +95,12 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 		this.unlockBalloonLogBasket = unlockBalloonLogBasket;
 	}
 
+	@SuppressWarnings("unused")
+	public void setShowBankPickupInfoValue(boolean showBankPickupInfo)
+	{
+		set("showBankPickupInfo", showBankPickupInfo);
+	}
+
 	public TeleportationItem useTeleportationItems()
 	{
 		return (TeleportationItem) def("useTeleportationItems");
