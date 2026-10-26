@@ -6,6 +6,8 @@ import java.util.*;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.*;
+import lombok.*;
+import lombok.experimental.Accessors;
 import net.runelite.client.ui.*;
 import net.runelite.client.util.*;
 import shortestpath.ShortestPathPanel.SearchRow;
@@ -34,13 +36,20 @@ class CategoryPanel extends PluginPanel
 	}
 
 	private final ShortestPathPanel panel;
-	private final String categoryName;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final String categoryName;
 	// Lowercased name + aliases: a query contained here shows the whole
 	// category (the names double as search aliases, e.g. "routing" finds
 	// the renamed "General" category).
-	private final String matchText;
+	/**
+	 * The category's own match text (lowercased name + aliases). Rows
+	 * that self-filter — the restriction checklist's items-disabled
+	 * hint — match on this text rather than a second hardcoded copy,
+	 * so renaming the category or its alias cannot desync them.
+	 */
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final String matchText;
 	private final JPanel header;
 	private final FixedWidthPanel content;
+	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<SearchRow> rows = new ArrayList<>();
 
 	CategoryPanel(ShortestPathPanel panel, String name, String alias)
@@ -88,11 +97,6 @@ class CategoryPanel extends PluginPanel
 		JScrollPane scrollPane = new JScrollPane(view);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		add(scrollPane, BorderLayout.CENTER);
-	}
-
-	String categoryName()
-	{
-		return categoryName;
 	}
 
 	/**
