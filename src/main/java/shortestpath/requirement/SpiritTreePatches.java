@@ -1,12 +1,11 @@
 package shortestpath.requirement;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import shortestpath.Util;
 
 /**
  * Static metadata for the five plantable spirit tree patches (Port Sarim,
@@ -29,20 +28,11 @@ public final class SpiritTreePatches
 	static
 	{
 		Map<String, int[]> patches = new LinkedHashMap<>();
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-			SpiritTreePatches.class.getResourceAsStream("/spirit-tree-patches.tsv"), StandardCharsets.UTF_8)))
+		try
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
-			{
-				if (line.isEmpty() || line.startsWith("#"))
-				{
-					continue;
-				}
-				String[] c = line.split("\t", -1);
+			Util.each("/spirit-tree-patches.tsv", (line, c) ->
 				patches.put(c[0], new int[]{Integer.parseInt(c[1]), Integer.parseInt(c[2]),
-					Integer.parseInt(c[3]), Integer.parseInt(c[4]), Integer.parseInt(c[5]), Integer.parseInt(c[6])});
-			}
+					Integer.parseInt(c[3]), Integer.parseInt(c[4]), Integer.parseInt(c[5]), Integer.parseInt(c[6])}));
 		}
 		catch (Exception e)
 		{
