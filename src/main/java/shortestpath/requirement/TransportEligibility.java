@@ -152,7 +152,7 @@ public final class TransportEligibility
 		Map<Integer, Integer> bankPathItems = new HashMap<>(playerItems);
 		bankHas.forEach((itemId, quantity) -> bankPathItems.merge(itemId, quantity, Integer::sum));
 		return new TransportEligibility(playerItems, bankPathItems, bankHas, bankPouchId, bankPouchRunes,
-			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true);
+			false, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true, Set.of());
 	}
 
 	/**
