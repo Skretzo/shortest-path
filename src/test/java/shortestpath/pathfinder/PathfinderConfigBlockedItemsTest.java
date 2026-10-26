@@ -221,7 +221,7 @@ public class PathfinderConfigBlockedItemsTest
 		// Only the rune item ids are blocked; staff and offhand substitutes of
 		// the same branch keep it alive.
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL,
-			csvOf(ItemVariations.FIRE_RUNE.getIds()), RUNE_TELE);
+			csvOf(ItemVariations.fromName("FIRE_RUNE").getIds()), RUNE_TELE);
 
 		assertTrue(usable(cfg, RUNE_TELE, BankVisitState.CARRIED));
 	}
@@ -230,9 +230,9 @@ public class PathfinderConfigBlockedItemsTest
 	public void branchBlockedOnlyWhenEverySubstituteBlocked()
 	{
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL,
-			csvOf(ItemVariations.FIRE_RUNE.getIds(),
-				ItemVariations.staves(ItemVariations.FIRE_RUNE),
-				ItemVariations.offhands(ItemVariations.FIRE_RUNE)),
+			csvOf(ItemVariations.fromName("FIRE_RUNE").getIds(),
+				ItemVariations.staves(ItemVariations.fromName("FIRE_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("FIRE_RUNE"))),
 			RUNE_TELE);
 
 		assertFalse(usable(cfg, RUNE_TELE, BankVisitState.CARRIED));
@@ -405,7 +405,7 @@ public class PathfinderConfigBlockedItemsTest
 		config.set("costNonConsumableTeleportationItems", 10);
 		// A threshold pinned on a staff substitute id applies too — substitutes
 		// are member ids of the transport's item requirement.
-		int staffId = ItemVariations.staves(ItemVariations.FIRE_RUNE)[0];
+		int staffId = ItemVariations.staves(ItemVariations.fromName("FIRE_RUNE"))[0];
 		PathfinderConfig cfg = refreshConfig(TeleportationItem.ALL, staffId + ":33", RUNE_TELE);
 
 		assertEquals(33, cfg.getAdditionalTransportCost(RUNE_TELE));

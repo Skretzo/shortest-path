@@ -387,7 +387,7 @@ public class TransportItemsSatisfactionTest
 		TransportItems items = new ItemRequirementParser().parse("FIRE_RUNE=1");
 		Assert.assertNotNull(items);
 		Set<Integer> allRunes =
-			Arrays.stream(ItemVariations.FIRE_RUNE.getIds()).boxed().collect(Collectors.toSet());
+			Arrays.stream(ItemVariations.fromName("FIRE_RUNE").getIds()).boxed().collect(Collectors.toSet());
 		Assert.assertTrue(items.survivesBlockedItems(allRunes));
 	}
 
@@ -425,17 +425,17 @@ public class TransportItemsSatisfactionTest
 	{
 		return new TransportItems(
 			new int[][]{
-				ItemVariations.AIR_RUNE.getIds(),
-				ItemVariations.WATER_RUNE.getIds(),
-				ItemVariations.LAW_RUNE.getIds()},
+				ItemVariations.fromName("AIR_RUNE").getIds(),
+				ItemVariations.fromName("WATER_RUNE").getIds(),
+				ItemVariations.fromName("LAW_RUNE").getIds()},
 			new int[][]{
-				ItemVariations.STAFF_OF_AIR.getIds(),
-				ItemVariations.STAFF_OF_WATER.getIds(),
-				ItemVariations.staves(ItemVariations.LAW_RUNE)},
+				ItemVariations.fromName("STAFF_OF_AIR").getIds(),
+				ItemVariations.fromName("STAFF_OF_WATER").getIds(),
+				ItemVariations.staves(ItemVariations.fromName("LAW_RUNE"))},
 			new int[][]{
-				ItemVariations.offhands(ItemVariations.AIR_RUNE),
-				ItemVariations.offhands(ItemVariations.WATER_RUNE),
-				ItemVariations.offhands(ItemVariations.LAW_RUNE)},
+				ItemVariations.offhands(ItemVariations.fromName("AIR_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("WATER_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("LAW_RUNE"))},
 			new int[]{3, 1, 1});
 	}
 
@@ -443,17 +443,17 @@ public class TransportItemsSatisfactionTest
 	{
 		return new TransportItems(
 			new int[][]{
-				ItemVariations.AIR_RUNE.getIds(),
-				ItemVariations.EARTH_RUNE.getIds(),
-				ItemVariations.LAW_RUNE.getIds()},
+				ItemVariations.fromName("AIR_RUNE").getIds(),
+				ItemVariations.fromName("EARTH_RUNE").getIds(),
+				ItemVariations.fromName("LAW_RUNE").getIds()},
 			new int[][]{
-				ItemVariations.STAFF_OF_AIR.getIds(),
-				ItemVariations.STAFF_OF_EARTH.getIds(),
-				ItemVariations.staves(ItemVariations.LAW_RUNE)},
+				ItemVariations.fromName("STAFF_OF_AIR").getIds(),
+				ItemVariations.fromName("STAFF_OF_EARTH").getIds(),
+				ItemVariations.staves(ItemVariations.fromName("LAW_RUNE"))},
 			new int[][]{
-				ItemVariations.offhands(ItemVariations.AIR_RUNE),
-				ItemVariations.offhands(ItemVariations.EARTH_RUNE),
-				ItemVariations.offhands(ItemVariations.LAW_RUNE)},
+				ItemVariations.offhands(ItemVariations.fromName("AIR_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("EARTH_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("LAW_RUNE"))},
 			new int[]{1, 1, 1});
 	}
 
@@ -461,17 +461,17 @@ public class TransportItemsSatisfactionTest
 	{
 		return new TransportItems(
 			new int[][]{
-				ItemVariations.AIR_RUNE.getIds(),
-				ItemVariations.FIRE_RUNE.getIds(),
-				ItemVariations.LAW_RUNE.getIds()},
+				ItemVariations.fromName("AIR_RUNE").getIds(),
+				ItemVariations.fromName("FIRE_RUNE").getIds(),
+				ItemVariations.fromName("LAW_RUNE").getIds()},
 			new int[][]{
-				ItemVariations.STAFF_OF_AIR.getIds(),
-				ItemVariations.STAFF_OF_FIRE.getIds(),
-				ItemVariations.staves(ItemVariations.LAW_RUNE)},
+				ItemVariations.fromName("STAFF_OF_AIR").getIds(),
+				ItemVariations.fromName("STAFF_OF_FIRE").getIds(),
+				ItemVariations.staves(ItemVariations.fromName("LAW_RUNE"))},
 			new int[][]{
-				ItemVariations.offhands(ItemVariations.AIR_RUNE),
-				ItemVariations.offhands(ItemVariations.FIRE_RUNE),
-				ItemVariations.offhands(ItemVariations.LAW_RUNE)},
+				ItemVariations.offhands(ItemVariations.fromName("AIR_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("FIRE_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("LAW_RUNE"))},
 			new int[]{3, 1, 1});
 	}
 
@@ -479,14 +479,14 @@ public class TransportItemsSatisfactionTest
 	{
 		return new TransportItems(
 			new int[][]{
-				ItemVariations.EARTH_RUNE.getIds(),
-				ItemVariations.FIRE_RUNE.getIds()},
+				ItemVariations.fromName("EARTH_RUNE").getIds(),
+				ItemVariations.fromName("FIRE_RUNE").getIds()},
 			new int[][]{
-				ItemVariations.STAFF_OF_EARTH.getIds(),
-				ItemVariations.STAFF_OF_FIRE.getIds()},
+				ItemVariations.fromName("STAFF_OF_EARTH").getIds(),
+				ItemVariations.fromName("STAFF_OF_FIRE").getIds()},
 			new int[][]{
-				ItemVariations.offhands(ItemVariations.EARTH_RUNE),
-				ItemVariations.offhands(ItemVariations.FIRE_RUNE)},
+				ItemVariations.offhands(ItemVariations.fromName("EARTH_RUNE")),
+				ItemVariations.offhands(ItemVariations.fromName("FIRE_RUNE"))},
 			new int[]{1, 1});
 	}
 }

@@ -30,11 +30,11 @@ public class TransportEligibilityTest
 	private static final int[] NO_SUBSTITUTES = new int[0];
 	// Falador Teleport: 1 law, 3 air, 1 water
 	private static final Transport FALADOR_TELEPORT = teleport(
-		rune(ItemVariations.LAW_RUNE, 1), rune(ItemVariations.AIR_RUNE, 3), rune(ItemVariations.WATER_RUNE, 1));
-	private static final Transport THREE_AIR = teleport(rune(ItemVariations.AIR_RUNE, 3));
+		rune(ItemVariations.fromName("LAW_RUNE"), 1), rune(ItemVariations.fromName("AIR_RUNE"), 3), rune(ItemVariations.fromName("WATER_RUNE"), 1));
+	private static final Transport THREE_AIR = teleport(rune(ItemVariations.fromName("AIR_RUNE"), 3));
 	private static final Transport SHANTAY_GATE = teleport(new ItemRequirement(List.of(
-		new ItemRequirement.Branch(ItemVariations.SHANTAY_PASS.getIds(), null, null, 1),
-		new ItemRequirement.Branch(ItemVariations.COINS.getIds(), null, null, 5))));
+		new ItemRequirement.Branch(ItemVariations.fromName("SHANTAY_PASS").getIds(), null, null, 1),
+		new ItemRequirement.Branch(ItemVariations.fromName("COINS").getIds(), null, null, 5))));
 
 	private final Map<Integer, Integer> playerHas = new HashMap<>();
 	private final Map<Integer, Integer> bankHas = new HashMap<>();
