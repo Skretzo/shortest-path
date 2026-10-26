@@ -46,12 +46,10 @@ import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.ui.components.IconTextField;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 import shortestpath.items.ItemStateService;
 import shortestpath.settings.ConfigItems;
 import shortestpath.settings.Settings;
+import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.BalloonRoute;
@@ -127,12 +125,10 @@ public class ShortestPathPanel extends PluginPanel
 	final EventBus eventBus;
 	final Plugin plugin;
 
-	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final IconTextField searchBar;
-	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final MultiplexingPluginPanel muxer;
-	@Getter @Accessors(fluent = true) private final ShortestPathHomePanel home;
-	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
+	private final IconTextField searchBar;
+	private final MultiplexingPluginPanel muxer;
+	private final ShortestPathHomePanel home;
 	private final List<CategoryPanel> categories = new ArrayList<>();
-	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true)
 	private final List<TransportFamilyCard> transportCards = new ArrayList<>();
 
 	/**
@@ -148,12 +144,8 @@ public class ShortestPathPanel extends PluginPanel
 	private final List<SearchRow> pohSubRows = new ArrayList<>();
 
 	private CategoryPanel restrictionsCategory;
-	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private RestrictionListPanel restrictionListPanel;
-	/**
-	 * The trimmed text currently in the search field — the query sub-panels
-	 * apply when they activate.
-	 */
-	@Getter(AccessLevel.PACKAGE) private String currentQuery = "";
+	private RestrictionListPanel restrictionListPanel;
+	private String currentQuery = "";
 
 	ShortestPathPanel(Settings settings, Client client,
 		ClientThread clientThread, ItemManager itemManager,
@@ -207,12 +199,13 @@ public class ShortestPathPanel extends PluginPanel
 		topPanel.add(searchBar, BorderLayout.CENTER);
 		add(topPanel, BorderLayout.NORTH);
 
-		// The sections build in scroll order — each registers its
-		// syncFromConfig listeners as it is constructed, so every control
-		// is live before first paint. No drill-down: the sections stack in
-		// one scroll view.
+		// The categories exist before the home view so the tile callbacks
+		// can push them; the muxer roots at home and stacks categories on top.
+		buildGeneralCategory();
 		buildTransportsCategory();
 		buildRestrictionsCategory();
+		buildUnlocksCategory();
+		buildBankCategory();
 		buildPohCategory();
 		buildDisplayCategory();
 
@@ -254,7 +247,16 @@ public class ShortestPathPanel extends PluginPanel
 		// The teleport-items mode is a routing policy, so its combo lives
 		// with the other General rows; its Transports card is masterless.
 		general.addRow(comboRow("useTeleportationItems"));
-		general.addRow(spinnerRow("aStarHeuristicWeight"));
+		general.addRow(comboRow("pathfinderAlgorithm"));
+
+		// The heuristic weight only steers the A* backend — dim it while
+		// legacy is selected, same contract as the transport cards.
+		SearchRow weightRow = spinnerRow("aStarHeuristicWeight");
+		general.addRow(weightRow);
+		Runnable applyWeightEnabled = () -> applyRowDisabledState(weightRow.component,
+			PathfinderBackend.ASTAR.equals(settings.configuredValue("pathfinderAlgorithm")));
+		applyWeightEnabled.run();
+		registerConfigListener("pathfinderAlgorithm", applyWeightEnabled);
 	}
 
 	private void buildTransportsCategory()
@@ -345,6 +347,31 @@ public class ShortestPathPanel extends PluginPanel
 			restrictionListPanel.setOwnedOnly(owned.isSelected());
 		});
 		restrictionsCategory.setTrailing(owned);
+	}
+
+	private void buildUnlocksCategory()
+	{
+		CategoryPanel unlocks = new CategoryPanel(this, "Unlocks", "");
+		categories.add(unlocks);
+		unlocks.addRow(checkRow("unlockCanoeAxe"));
+		unlocks.addRow(checkRow("unlockXericsHonour"));
+		unlocks.addRow(checkRow("unlockDragontoothPassage"));
+		unlocks.addRow(checkRow("unlockMorUlRek"));
+		// The respawn flag is account state the client cannot read — it
+		// sits with the unlocks rather than the General routing policies.
+		unlocks.addRow(checkRow("respawnPrifddinas"));
+	}
+
+	private void buildBankCategory()
+	{
+		CategoryPanel bank = new CategoryPanel(this, "Bank", "");
+		categories.add(bank);
+		bank.addRow(checkRow("includeBankPath"));
+		bank.addRow(spinnerRow("costBankVisit"));
+		// The bank-pickup display pair belongs with the bank routing
+		// options — the hint and item highlight only act on bank visits.
+		bank.addRow(checkRow("showBankPickupInfo"));
+		bank.addRow(checkRow("highlightBankPickupItems"));
 	}
 
 	private void buildPohCategory()
@@ -470,16 +497,32 @@ public class ShortestPathPanel extends PluginPanel
 		JCheckBox checkBox = new JCheckBox();
 		checkBox.setSelected(settings.configuredBool(keyName));
 		checkBox.setToolTipText(html(description));
-		PanelRows.controlRow(this, keyName, checkBox,
-			(control, guard) -> control.addActionListener(e ->
+		boolean[] syncing = new boolean[1];
+		checkBox.addActionListener(e ->
+		{
+			if (!syncing[0])
 			{
 				// write()'s synchronous listener delivery runs onChange —
 				// calling it here too would invoke it twice per click.
-				PanelRows.guardedWrite(guard,
-					() -> settings.write(keyName, control.isSelected()));
-			}),
-			() -> checkBox.setSelected(settings.configuredBool(keyName)),
-			onChange);
+				settings.write(keyName, checkBox.isSelected());
+			}
+		});
+		registerConfigListener(keyName, () ->
+		{
+			syncing[0] = true;
+			try
+			{
+				checkBox.setSelected(settings.configuredBool(keyName));
+			}
+			finally
+			{
+				syncing[0] = false;
+			}
+			if (onChange != null)
+			{
+				onChange.run();
+			}
+		});
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -514,14 +557,24 @@ public class ShortestPathPanel extends PluginPanel
 			Integer.valueOf(current), Integer.valueOf(min), max, Integer.valueOf(1)));
 		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(SPINNER_FIELD_WIDTH);
 		spinner.setToolTipText(html(description));
-		PanelRows.controlRow(this, keyName, spinner,
-			(control, guard) -> control.addChangeListener(e ->
-				PanelRows.guardedWrite(guard,
-					() -> settings.write(keyName, control.getValue()))),
-			() ->
+		// Set while a config sync mirrors the stored value into the control —
+		// the same guard the family cards use, so the programmatic setValue
+		// does not write the mirrored value straight back to config.
+		boolean[] syncing = new boolean[1];
+		spinner.addChangeListener(e ->
+		{
+			if (!syncing[0])
 			{
-				Object updated = settings.configuredValue(keyName);
-				if (updated instanceof Number)
+				settings.write(keyName, spinner.getValue());
+			}
+		});
+		registerConfigListener(keyName, () ->
+		{
+			Object updated = settings.configuredValue(keyName);
+			if (updated instanceof Number)
+			{
+				syncing[0] = true;
+				try
 				{
 					// Same clamp as construction: an out-of-range external
 					// write degrades to the nearest bound rather than
@@ -530,8 +583,12 @@ public class ShortestPathPanel extends PluginPanel
 					spinner.setValue(Math.max(min,
 						Math.min(max == null ? Integer.MAX_VALUE : max.intValue(), updatedInt)));
 				}
-			},
-			null);
+				finally
+				{
+					syncing[0] = false;
+				}
+			}
+		});
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -570,17 +627,26 @@ public class ShortestPathPanel extends PluginPanel
 		combo.setSelectedItem(value);
 		PanelComboStyle.apply(combo);
 		combo.setToolTipText(html(description));
-		PanelRows.controlRow(this, keyName, combo,
-			(control, guard) -> control.addItemListener(e ->
+		boolean[] syncing = new boolean[1];
+		combo.addItemListener(e ->
+		{
+			if (e.getStateChange() == ItemEvent.SELECTED && !syncing[0])
 			{
-				if (e.getStateChange() == ItemEvent.SELECTED)
-				{
-					PanelRows.guardedWrite(guard,
-						() -> settings.write(keyName, control.getSelectedItem()));
-				}
-			}),
-			() -> combo.setSelectedItem(settings.configuredValue(keyName)),
-			null);
+				settings.write(keyName, combo.getSelectedItem());
+			}
+		});
+		registerConfigListener(keyName, () ->
+		{
+			syncing[0] = true;
+			try
+			{
+				combo.setSelectedItem(settings.configuredValue(keyName));
+			}
+			finally
+			{
+				syncing[0] = false;
+			}
+		});
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -684,7 +750,7 @@ public class ShortestPathPanel extends PluginPanel
 		// Shared across the route checkboxes: set while a config sync
 		// mirrors the stored set into the controls, so the programmatic
 		// setSelected calls do not write the same set back.
-		PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
+		boolean[] syncing = new boolean[1];
 
 		JPanel headerRow = new JPanel(new BorderLayout());
 		headerRow.setOpaque(false);
@@ -704,25 +770,37 @@ public class ShortestPathPanel extends PluginPanel
 			JCheckBox checkBox = new JCheckBox(html(route.displayLabel()));
 			checkBox.setSelected(currentSet(keyName, BalloonRoute.class).contains(route));
 			checkBox.setToolTipText(html(description));
-			PanelRows.controlRow(this, keyName, checkBox, syncing,
-				(control, guard) -> control.addActionListener(e ->
-					PanelRows.guardedWrite(guard, () ->
-					{
-						EnumSet<BalloonRoute> updated = EnumSet.noneOf(BalloonRoute.class);
-						updated.addAll(currentSet(keyName, BalloonRoute.class));
-						if (control.isSelected())
-						{
-							updated.add(route);
-						}
-						else
-						{
-							updated.remove(route);
-						}
-						settings.write(keyName, updated);
-					})),
-				() -> checkBox.setSelected(
-					currentSet(keyName, BalloonRoute.class).contains(route)),
-				null);
+			checkBox.addActionListener(e ->
+			{
+				if (syncing[0])
+				{
+					return;
+				}
+				EnumSet<BalloonRoute> updated = EnumSet.noneOf(BalloonRoute.class);
+				updated.addAll(currentSet(keyName, BalloonRoute.class));
+				if (checkBox.isSelected())
+				{
+					updated.add(route);
+				}
+				else
+				{
+					updated.remove(route);
+				}
+				settings.write(keyName, updated);
+			});
+			registerConfigListener(keyName, () ->
+			{
+				syncing[0] = true;
+				try
+				{
+					checkBox.setSelected(
+						currentSet(keyName, BalloonRoute.class).contains(route));
+				}
+				finally
+				{
+					syncing[0] = false;
+				}
+			});
 
 			JPanel row = new JPanel(new BorderLayout());
 			row.setOpaque(false);
@@ -825,6 +903,15 @@ public class ShortestPathPanel extends PluginPanel
 	// ---- Navigation ---------------------------------------------------------
 
 	/**
+	 * The trimmed text currently in the search field — the query sub-panels
+	 * apply when they activate.
+	 */
+	String getCurrentQuery()
+	{
+		return currentQuery;
+	}
+
+	/**
 	 * Push a category sub-panel onto the card stack.
 	 */
 	void drillInto(CategoryPanel category)
@@ -838,6 +925,36 @@ public class ShortestPathPanel extends PluginPanel
 	void backToHome()
 	{
 		muxer.popState();
+	}
+
+	MultiplexingPluginPanel muxer()
+	{
+		return muxer;
+	}
+
+	ShortestPathHomePanel home()
+	{
+		return home;
+	}
+
+	List<CategoryPanel> categories()
+	{
+		return categories;
+	}
+
+	List<TransportFamilyCard> transportCards()
+	{
+		return transportCards;
+	}
+
+	RestrictionListPanel restrictionListPanel()
+	{
+		return restrictionListPanel;
+	}
+
+	IconTextField searchBar()
+	{
+		return searchBar;
 	}
 
 	/**

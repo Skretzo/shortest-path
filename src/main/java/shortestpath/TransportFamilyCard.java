@@ -40,11 +40,6 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	// (the teleport-items mode combo lives in General): no master control
 	// renders, and isMasterOn() reads the configured value directly.
 	private final boolean masterless;
-	// True when the card drops the collapsible chrome entirely — no
-	// expander, no framed well, detail always expanded. A card that is a
-	// section's only row (the house card) uses this so it reads like a
-	// plain labelled group instead of a lone boxed expander.
-	private final boolean flat;
 
 	private final DimmableJPanel header;
 	private final JPanel nameArea;
@@ -56,9 +51,9 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	private JButton expander;
 	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
 	private boolean searchExpanded;
-	// Held while a config sync mirrors values into the controls, so the
+	// Set while a config sync mirrors values into the controls, so the
 	// programmatic selection changes do not write back to config.
-	private final PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
+	private boolean syncing;
 
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId)
 	{
@@ -68,16 +63,9 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId,
 		boolean masterless)
 	{
-		this(panel, keyName, title, description, iconItemId, masterless, false);
-	}
-
-	TransportFamilyCard(ShortestPathPanel panel, String keyName, String title, String description, Integer iconItemId,
-		boolean masterless, boolean flat)
-	{
 		this.panel = panel;
 		this.keyName = keyName;
 		this.masterless = masterless;
-		this.flat = flat;
 
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -121,22 +109,9 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		detail.setVisible(false);
 		add(detail);
 
-		if (flat)
-		{
-			// No expandable chrome: the card and its rows sit transparent
-			// on the section tone, and the detail stays expanded — no
-			// expander ever installs, so the toggle paths no-op.
-			setOpaque(false);
-			header.setOpaque(false);
-			detail.setOpaque(false);
-			detail.setVisible(true);
-		}
-		else
-		{
-			// The shared expandable chrome: dark header bar over the
-			// category-toned, orange-bordered detail well.
-			ShortestPathPanel.styleExpandable(header, detail);
-		}
+		// The shared expandable chrome: dark header bar over the
+		// category-toned, orange-bordered detail well.
+		ShortestPathPanel.styleExpandable(header, detail);
 
 		applyEnabled(isMasterOn());
 		panel.registerConfigListener(keyName, this::syncFromConfig);
@@ -257,7 +232,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 	void syncFromConfig()
 	{
 		Object value = panel.settings.configuredValue(keyName);
-		PanelRows.resync(syncing, () ->
+		syncing = true;
+		try
 		{
 			if (masterControl instanceof JCheckBox)
 			{
@@ -267,12 +243,14 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				((JComboBox<?>) masterControl).setSelectedItem(value);
 			}
-		}, () ->
+		}
+		finally
 		{
-			// Masterless cards hold no control to mirror into — only the
-			// dim state follows the configured value.
-			applyEnabled(isMasterOn());
-		});
+			syncing = false;
+		}
+		// Masterless cards hold no control to mirror into — only the dim
+		// state follows the configured value.
+		applyEnabled(isMasterOn());
 	}
 
 	private JComponent createMasterControl(String description)
@@ -290,8 +268,10 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				if (e.getStateChange() == ItemEvent.SELECTED)
 				{
-					PanelRows.guardedWrite(syncing,
-						() -> panel.settings.write(keyName, combo.getSelectedItem()));
+					if (!syncing)
+					{
+						panel.settings.write(keyName, combo.getSelectedItem());
+					}
 					applyEnabled(isMasterOn());
 				}
 			});
@@ -303,8 +283,10 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		checkBox.setToolTipText(ShortestPathPanel.html(description));
 		checkBox.addActionListener(e ->
 		{
-			PanelRows.guardedWrite(syncing,
-				() -> panel.settings.write(keyName, checkBox.isSelected()));
+			if (!syncing)
+			{
+				panel.settings.write(keyName, checkBox.isSelected());
+			}
 			applyEnabled(checkBox.isSelected());
 		});
 		return checkBox;

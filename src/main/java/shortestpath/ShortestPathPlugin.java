@@ -184,10 +184,6 @@ public class ShortestPathPlugin extends Plugin
 		pathfinderConfig.setSailingService(sailing);
 		scheduler.attach(pathfinderConfig, sailing, apiHandler);
 		annotator.attach(pathfinderConfig);
-		// The statics build reads only classpath resources, so it is safe to
-		// warm on enable too — relying on the login transition alone left a
-		// cold start for enables while already logged in.
-		scheduler.prepareBackend();
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load touches the same HashMaps the
@@ -214,6 +210,7 @@ public class ShortestPathPlugin extends Plugin
 		keyManager.registerKeyListener(clearPathKeylistener);
 		pohService.loadFromProfile();
 		itemState.loadFromProfile();
+		scheduler.prepareBackend();
 
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
 			spriteManager, itemState, eventBus, this);
