@@ -195,7 +195,7 @@ public class PluginMessageHandlerTest
 		handler.onPluginMessage(new PluginMessage(Settings.CONFIG_GROUP, "clear", Map.of()));
 
 		assertTrue(settings.rawOverrides().isEmpty());
-		verify(scheduler).withSchedulerLock(any(Supplier.class));
+		verify(scheduler).withSchedulerLock(any(Runnable.class));
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 	}
 
