@@ -5,6 +5,9 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Perspective;
@@ -37,6 +40,7 @@ import shortestpath.settings.Effect;
  * engine.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class SailingService
 {
 	private final Client client;
@@ -49,14 +53,7 @@ public class SailingService
 	 * value; readers on the render and pathfinder threads see whole
 	 * snapshots, never a torn field mix.
 	 */
-	private volatile SailingState state = SailingState.EMPTY;
-
-	@Inject
-	public SailingService(Client client, RefreshCoordinator coordinator)
-	{
-		this.client = client;
-		this.coordinator = coordinator;
-	}
+	@Getter private volatile SailingState state = SailingState.EMPTY;
 
 	private SailingService()
 	{
@@ -102,14 +99,6 @@ public class SailingService
 	public static SailingService forTesting(Client client, RefreshCoordinator coordinator)
 	{
 		return new SailingService(client, coordinator);
-	}
-
-	/**
-	 * The last published sailing snapshot; never null.
-	 */
-	public SailingState getState()
-	{
-		return state;
 	}
 
 	/**

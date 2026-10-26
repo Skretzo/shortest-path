@@ -7,13 +7,10 @@ import java.util.Set;
 import java.util.function.Function;
 
 import net.runelite.client.config.Keybind;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TileCounter;
 import shortestpath.TileStyle;
 import shortestpath.poh.JewelleryBoxTier;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.BalloonRoute;
 
 /**
@@ -25,8 +22,8 @@ import shortestpath.transport.BalloonRoute;
  * enums — a string {@code fromType} does not recognise.
  *
  * <p>Hidden keys (raw {@code ConfigManager} keys, no interface method) read
- * through the typed {@link #val}/{@link #bool}/{@link #num}/{@link #str}/
- * {@link #set} helpers: the base value comes from the injected
+ * through the typed {@link #val}/{@link #bool}/{@link #num}/{@link #set}
+ * helpers: the base value comes from the injected
  * {@code hiddenBase} resolver, and keys with a coercion discipline consult
  * the override map the same way. Keys marked {@link ConfigKey.Coercion#NONE}
  * are inert — payload values never reach them.
@@ -50,6 +47,27 @@ public final class EffectiveConfig implements ShortestPathConfig
 	{
 		Object value = overrides.get(key.getKey());
 		return value != null && (fallback == null || fallback.getClass().isInstance(value)) ? (T) value : fallback;
+	}
+
+	/**
+	 * The effective value for a string-parsed enum key: the payload string
+	 * coerced through {@code fromType} when it produces a non-null value,
+	 * {@code base} otherwise (absent key, non-String payload, unrecognised
+	 * string). Mirrors the {@code Settings.coerceStringEnum} coercion
+	 * discipline.
+	 */
+	private <T> T enumOverride(ConfigKey key, Function<String, T> fromType, T base)
+	{
+		Object value = overrides.get(key.getKey());
+		if (value instanceof String)
+		{
+			T parsed = fromType.apply((String) value);
+			if (parsed != null)
+			{
+				return parsed;
+			}
+		}
+		return base;
 	}
 
 	/**
@@ -85,13 +103,6 @@ public final class EffectiveConfig implements ShortestPathConfig
 		return value instanceof Number ? ((Number) value).intValue() : 0;
 	}
 
-	/** Effective value of a {@code String} key. */
-	public String str(ConfigKey key)
-	{
-		Object value = val(key);
-		return value instanceof String ? (String) value : null;
-	}
-
 	/** Effective value of a {@code Set}-typed key. */
 	@SuppressWarnings("unchecked")
 	public <E> Set<E> set(ConfigKey key)
@@ -99,52 +110,19 @@ public final class EffectiveConfig implements ShortestPathConfig
 		return (Set<E>) val(key);
 	}
 
-	/**
-	 * {@code useTeleportationItems} — its payload coercion is a string
-	 * {@code fromType} parse rather than a type check.
-	 */
-	public TeleportationItem useTeleportationItems()
-	{
-		Object value = overrides.get(ConfigKey.USE_TELEPORTATION_ITEMS.getKey());
-		if (value instanceof String)
-		{
-			TeleportationItem parsed = TeleportationItem.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return (TeleportationItem) baseOf(ConfigKey.USE_TELEPORTATION_ITEMS);
-	}
-
 	/** {@code showTileCounter} — string-parsed enum coercion. */
+	@Override
 	public TileCounter showTileCounter()
 	{
-		Object value = overrides.get(ConfigKey.SHOW_TILE_COUNTER.getKey());
-		if (value instanceof String)
-		{
-			TileCounter parsed = TileCounter.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return (TileCounter) baseOf(ConfigKey.SHOW_TILE_COUNTER);
+		return enumOverride(ConfigKey.SHOW_TILE_COUNTER, TileCounter::fromType,
+			(TileCounter) baseOf(ConfigKey.SHOW_TILE_COUNTER));
 	}
 
 	/** {@code pohJewelleryBoxTier} — string-parsed enum coercion. */
 	public JewelleryBoxTier pohJewelleryBoxTier()
 	{
-		Object value = overrides.get(ConfigKey.POH_JEWELLERY_BOX_TIER.getKey());
-		if (value instanceof String)
-		{
-			JewelleryBoxTier parsed = JewelleryBoxTier.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return (JewelleryBoxTier) baseOf(ConfigKey.POH_JEWELLERY_BOX_TIER);
+		return enumOverride(ConfigKey.POH_JEWELLERY_BOX_TIER, JewelleryBoxTier::fromType,
+			(JewelleryBoxTier) baseOf(ConfigKey.POH_JEWELLERY_BOX_TIER));
 	}
 
 	/**
@@ -207,16 +185,7 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public TileStyle pathStyle()
 	{
-		Object value = overrides.get(ConfigKey.PATH_STYLE.getKey());
-		if (value instanceof String)
-		{
-			TileStyle parsed = TileStyle.fromType((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return base.pathStyle();
+		return enumOverride(ConfigKey.PATH_STYLE, TileStyle::fromType, base.pathStyle());
 	}
 
 	@Override
@@ -301,5 +270,162 @@ public final class EffectiveConfig implements ShortestPathConfig
 	public boolean postTransports()
 	{
 		return override(ConfigKey.POST_TRANSPORTS, base.postTransports());
+	}
+
+	// ---- Stock-panel-visible keyed keys ----------------------------------
+	// These rows stay keyed (the base read runs through hiddenBase), so the
+	// item getters delegate to the same val/bool/num coercion helpers the
+	// hidden-key consumers use — a getter that fell through to the interface
+	// default would report the declared default, not the stored value.
+
+	@Override
+	public boolean avoidWilderness()
+	{
+		return bool(ConfigKey.AVOID_WILDERNESS);
+	}
+
+	@Override
+	public boolean collisionAwareBlockedTargets()
+	{
+		return bool(ConfigKey.COLLISION_AWARE_BLOCKED_TARGETS);
+	}
+
+	@Override
+	public boolean useSailingMoves()
+	{
+		return bool(ConfigKey.USE_SAILING_MOVES);
+	}
+
+	@Override
+	public int currencyThreshold()
+	{
+		return num(ConfigKey.CURRENCY_THRESHOLD);
+	}
+
+	@Override
+	public boolean cancelInstead()
+	{
+		return bool(ConfigKey.CANCEL_INSTEAD);
+	}
+
+	@Override
+	public int recalculateDistance()
+	{
+		return num(ConfigKey.RECALCULATE_DISTANCE);
+	}
+
+	@Override
+	public int reachedDistance()
+	{
+		return num(ConfigKey.FINISH_DISTANCE);
+	}
+
+	@Override
+	public int unreachableTargetDistance()
+	{
+		return num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
+	}
+
+	@Override
+	public boolean showUnreachableText()
+	{
+		return bool(ConfigKey.SHOW_UNREACHABLE_TEXT);
+	}
+
+	@Override
+	public int calculationCutoff()
+	{
+		return num(ConfigKey.CALCULATION_CUTOFF);
+	}
+
+	@Override
+	public TeleportationItem useTeleportationItems()
+	{
+		return enumOverride(ConfigKey.USE_TELEPORTATION_ITEMS, TeleportationItem::fromType,
+			(TeleportationItem) baseOf(ConfigKey.USE_TELEPORTATION_ITEMS));
+	}
+
+	@Override
+	public int aStarHeuristicWeight()
+	{
+		return num(ConfigKey.A_STAR_HEURISTIC_WEIGHT);
+	}
+
+	@Override
+	public boolean unlockCanoeAxe()
+	{
+		return bool(ConfigKey.UNLOCK_CANOE_AXE);
+	}
+
+	@Override
+	public boolean unlockXericsHonour()
+	{
+		return bool(ConfigKey.UNLOCK_XERICS_HONOUR);
+	}
+
+	@Override
+	public boolean unlockDragontoothPassage()
+	{
+		return bool(ConfigKey.UNLOCK_DRAGONTOOTH_PASSAGE);
+	}
+
+	@Override
+	public boolean unlockMorUlRek()
+	{
+		return bool(ConfigKey.UNLOCK_MOR_UL_REK);
+	}
+
+	@Override
+	public boolean respawnPrifddinas()
+	{
+		return bool(ConfigKey.RESPAWN_PRIFDDINAS);
+	}
+
+	@Override
+	public boolean includeBankPath()
+	{
+		return bool(ConfigKey.INCLUDE_BANK_PATH);
+	}
+
+	@Override
+	public int costBankVisit()
+	{
+		return num(ConfigKey.COST_BANK_VISIT);
+	}
+
+	@Override
+	public boolean showBankPickupInfo()
+	{
+		return bool(ConfigKey.SHOW_BANK_PICKUP_INFO);
+	}
+
+	@Override
+	public boolean highlightBankPickupItems()
+	{
+		return bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS);
+	}
+
+	@Override
+	public boolean showTransportInfo()
+	{
+		return bool(ConfigKey.SHOW_TRANSPORT_INFO);
+	}
+
+	@Override
+	public boolean highlightSpellbookSpells()
+	{
+		return bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS);
+	}
+
+	@Override
+	public boolean highlightInventoryItems()
+	{
+		return bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS);
+	}
+
+	@Override
+	public int tileCounterStep()
+	{
+		return num(ConfigKey.TILE_COUNTER_STEP);
 	}
 }

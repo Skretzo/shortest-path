@@ -4,9 +4,7 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.util.List;
-import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
@@ -26,7 +24,9 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 	private static final int POTION_STORE_TAB = 15;
 
 	private final ItemManager itemManager;
-	private final Settings settings;
+	// extraGatesPass() fetches the container; drawHighlights reads it in the
+	// same render pass, keeping the widget lookup once per frame.
+	private Widget bankContainer;
 
 	@Inject
 	public BankItemHighlightOverlay(Client client, ItemManager itemManager, Settings settings,
@@ -34,91 +34,66 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 	{
 		super(client, scheduler, annotator, settings);
 		this.itemManager = itemManager;
-		this.settings = settings;
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
+	protected boolean enabled()
 	{
-		if (!settings.display().highlightBankPickupItems())
-		{
-			return null;
-		}
+		return settings.display().highlightBankPickupItems();
+	}
 
-		ActiveSearch search = scheduler.getActiveSearch();
-		if (search == null)
-		{
-			return null;
-		}
-
-		List<PathStep> path = search.getPath();
-		if (path == null || path.isEmpty())
-		{
-			return null;
-		}
-
-		Widget bankContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
+	@Override
+	protected boolean extraGatesPass()
+	{
+		bankContainer = client.getWidget(InterfaceID.Bankmain.ITEMS);
 		if (bankContainer == null || bankContainer.isHidden())
 		{
-			return null;
+			return false;
 		}
 
 		if (!annotator.isBankOpen())
 		{
-			return null;
+			return false;
 		}
 
 		// Potion storage covers the bank's item area, so the outlines would be drawn over its list
 		if (client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
 		{
-			return null;
+			return false;
 		}
 
-		Set<Integer> bankLocations = annotator.getDestinations("bank");
-		if (bankLocations == null)
-		{
-			return null;
-		}
+		return annotator.getDestinations("bank") != null;
+	}
 
-		int pathIndex = getPlayerPathIndex(path);
-		if (pathIndex < 0)
-		{
-			return null;
-		}
+	@Override
+	protected boolean pathIndexUsable(int pathIndex, List<PathStep> path)
+	{
+		// Bank never indexes path.get(pathIndex + 1) — it only needs the
+		// player to be on the path at all.
+		return pathIndex >= 0;
+	}
 
+	@Override
+	protected Dimension drawHighlights(Graphics2D graphics, List<PathStep> path, int pathIndex,
+		ActiveSearch search)
+	{
 		BankPickupRequirements.BankPickupResult pickup = annotator.getBankPickup(path, pathIndex, search);
 		if (pickup == null || pickup.bankItemIds.isEmpty())
 		{
 			return null;
 		}
 
-		Widget[] items = bankContainer.getChildren();
-		if (items == null)
-		{
-			return null;
-		}
-
+		// bankContainer was populated by extraGatesPass() earlier in this same
+		// render pass — the template always calls extraGatesPass before
+		// drawHighlights, so the widget is non-null here (the gate returns
+		// false on a null/hidden container).
 		Color highlight = settings.display().colourBankPickupHighlight();
 		// Items scrolled out of view keep their positions above or below the visible item area,
 		// so only that area is drawn on. RuneLite resets the clip after each overlay.
 		graphics.clip(bankContainer.getBounds());
-		for (Widget item : items)
-		{
-			if (item == null || item.isHidden() || item.getItemId() < 0)
-			{
-				continue;
-			}
-			if (pickup.bankItemIds.contains(item.getItemId()))
-			{
-				BufferedImage outline = itemManager.getItemOutline(item.getItemId(), item.getItemQuantity(), highlight);
-				if (outline != null)
-				{
-					graphics.drawImage(outline, item.getBounds().x, item.getBounds().y, null);
-				}
-			}
-		}
+		drawItemOutlines(graphics, itemManager, bankContainer.getChildren(), pickup.bankItemIds,
+			highlight);
 
 		return null;
 	}
 }
-

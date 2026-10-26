@@ -1,9 +1,15 @@
 package shortestpath;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import javax.annotation.Nonnull;
 import org.junit.Assert;
@@ -67,6 +73,116 @@ public class UtilTest
 		};
 		// Should throw on second read attempt
 		Util.readAllBytes(failing);
+	}
+
+	// --- each -------------------------------------------------------------
+
+	@Test
+	public void eachVisitsSameRowsAsHandRolledReader() throws IOException
+	{
+		String path = "/config-items.tsv";
+
+		List<String> expectedLines = new ArrayList<>();
+		List<String[]> expectedCols = new ArrayList<>();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+			Objects.requireNonNull(Util.class.getResourceAsStream(path)), StandardCharsets.UTF_8)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				if (line.isEmpty() || line.startsWith("#"))
+				{
+					continue;
+				}
+				expectedLines.add(line);
+				expectedCols.add(line.split("\t", -1));
+			}
+		}
+
+		List<String> actualLines = new ArrayList<>();
+		List<String[]> actualCols = new ArrayList<>();
+		Util.each(path, (line, cols) ->
+		{
+			actualLines.add(line);
+			actualCols.add(cols);
+		});
+
+		Assert.assertEquals(expectedLines, actualLines);
+		Assert.assertEquals(expectedCols.size(), actualCols.size());
+		for (int i = 0; i < expectedCols.size(); i++)
+		{
+			Assert.assertArrayEquals(expectedCols.get(i), actualCols.get(i));
+		}
+		Assert.assertFalse(expectedLines.isEmpty());
+	}
+
+	@Test
+	public void eachSkipsCommentsAndBlankLines() throws IOException
+	{
+		// item-variations.tsv carries a '#' header comment; assert the skip
+		// applies by comparing row counts with and without the '#' filter.
+		int withSkip = countRows("/item-variations.tsv", true);
+		int withoutCommentSkip = countRows("/item-variations.tsv", false);
+		Assert.assertTrue(withSkip < withoutCommentSkip);
+	}
+
+	private static int countRows(String path, boolean skipComments) throws IOException
+	{
+		int[] count = {0};
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+			Objects.requireNonNull(Util.class.getResourceAsStream(path)), StandardCharsets.UTF_8)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				if (line.isEmpty() || (skipComments && line.startsWith("#")))
+				{
+					continue;
+				}
+				count[0]++;
+			}
+		}
+		return count[0];
+	}
+
+	@Test
+	public void eachMissingResourceThrowsNpe()
+	{
+		Assert.assertThrows(NullPointerException.class,
+			() -> Util.each("/no-such-resource.tsv", (line, cols) ->
+			{
+			}));
+	}
+
+	@Test
+	public void eachPropagatesRowConsumerExceptions()
+	{
+		IllegalStateException boom = new IllegalStateException("boom");
+		IllegalStateException thrown = Assert.assertThrows(IllegalStateException.class,
+			() -> Util.each("/config-items.tsv", (line, cols) ->
+			{
+				throw boom;
+			}));
+		Assert.assertSame(boom, thrown);
+	}
+
+	// --- resourceString ---------------------------------------------------
+
+	@Test
+	public void resourceStringMatchesLiteralRead() throws IOException
+	{
+		String path = "/item-variations.tsv";
+		String expected = new String(
+			Util.readAllBytes(Objects.requireNonNull(Util.class.getResourceAsStream(path))),
+			StandardCharsets.UTF_8);
+		Assert.assertEquals(expected, Util.resourceString(path));
+	}
+
+	@Test
+	public void resourceStringMissingResourceThrowsNpe()
+	{
+		Assert.assertThrows(NullPointerException.class,
+			() -> Util.resourceString("/no-such-resource.tsv"));
 	}
 
 	// --- concatenate ------------------------------------------------------

@@ -66,7 +66,7 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
   - Single token: `8013=1` or `EQUIPMENT_NAME=1`.
   - There are two ways of selecting items:
     - by numeric item ID (e.g., `3853=1` for Games necklace)
-    - by named constant recognized by the client (e.g., `LAW_RUNE=1`). These names are created in the `ItemVariations.java` file and are used to combine multiple items with the same properties (e.g., runes that count as the same type, swords with slash, crossbows).
+    - by named constant recognized by the client (e.g., `LAW_RUNE=1`). These names are defined in `item-variations.tsv` — the sole name registry, resolved by Java code via `ItemVariations.fromName(...)` — and are used to combine multiple items with the same properties (e.g., runes that count as the same type, swords with slash, crossbows).
 - Parsing specifics:
   - Spaces are removed and the whole token string is uppercased before parsing (item names are effectively case-insensitive).
   - `&&` and `||` are normalized to `&` and `|` respectively; both forms are accepted.

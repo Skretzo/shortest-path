@@ -1,0 +1,29 @@
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(329,251 435,251 429,251 335,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+create | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+transform AffineTransform[[-0.0, 1.0, 485.0], [-1.0, 0.0, 251.0]] | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Path2D(M L L Z) | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+dispose | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(542,251 648,251 617,251 523,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+create | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+transform AffineTransform[[-0.0, 1.0, 1586.0], [-1.0, 0.0, 251.0]] | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Path2D(M L L Z) | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+dispose | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1603,251 1687,251 1562,251 1486,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+create | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+transform AffineTransform[[-0.0, 1.0, 1666.0], [-1.0, 0.0, 251.0]] | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Path2D(M L L Z) | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+dispose | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1687,251 1771,251 1639,251 1562,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+drawOval 1661,246 10x10 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null

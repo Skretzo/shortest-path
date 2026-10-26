@@ -11,15 +11,15 @@ import shortestpath.requirement.model.VarRequirement;
  * never consults {@code PathfinderConfig} or the client directly; instead it
  * calls these hooks for every check a test or the dashboard harness may
  * bypass. {@code PathfinderConfig} supplies the implementation through a
- * private adapter that delegates to its own protected
- * {@code getQuestState}/{@code varbitChecks}/{@code varPlayerChecks} methods,
- * so overrides such as {@code TestPathfinderConfig}'s bypass flags keep
- * changing transport and bank-destination verdicts after the extraction.
+ * private adapter that dispatches {@link #varChecks} on the
+ * {@link VarRequirement.VarType} kind to its own keyed
+ * {@code varbitChecks}/{@code varPlayerChecks} methods, so overrides such as
+ * {@code TestPathfinderConfig}'s bypass flags keep changing transport and
+ * bank-destination verdicts after the extraction.
  *
- * <p>Failure polarity contract: {@code varbitChecks} and
- * {@code varPlayerChecks} return {@code true} when a check FAILED — the same
- * polarity the {@code PathfinderConfig} methods and every existing override
- * use. Do not invert it.
+ * <p>Failure polarity contract: {@code varChecks} returns {@code true} when
+ * a check FAILED — the same polarity the {@code PathfinderConfig} methods
+ * and every existing override use. Do not invert it.
  */
 public interface RequirementHooks
 {
@@ -29,20 +29,16 @@ public interface RequirementHooks
 	QuestState getQuestState(Quest quest);
 
 	/**
-	 * Whether any varbit requirement in the collection fails against the
-	 * supplied values — the map the calling chain captured into its context,
-	 * so a stale chain always evaluates its own refresh's snapshot rather
-	 * than whatever a newer refresh wrote. Returns {@code true} when a
-	 * check FAILED.
+	 * Whether any requirement of the given {@link VarRequirement.VarType}
+	 * kind in the collection fails against the supplied values — the map the
+	 * calling chain captured into its context, so a stale chain always
+	 * evaluates its own refresh's snapshot rather than whatever a newer
+	 * refresh wrote. Only requirements whose
+	 * {@link VarRequirement#getVarType()} equals {@code kind} are evaluated;
+	 * the other var family is invisible to the call. Returns {@code true}
+	 * when a check FAILED.
 	 */
-	boolean varbitChecks(Collection<VarRequirement> requirements,
-		Map<Integer, Integer> values, long evaluationTimeMinutes);
-
-	/**
-	 * Whether any varplayer requirement in the collection fails against the
-	 * supplied values. Same snapshot binding and failure polarity as
-	 * {@link #varbitChecks(Collection, Map, long)}.
-	 */
-	boolean varPlayerChecks(Collection<VarRequirement> requirements,
-		Map<Integer, Integer> values, long evaluationTimeMinutes);
+	boolean varChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes,
+		VarRequirement.VarType kind);
 }

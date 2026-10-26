@@ -19,6 +19,7 @@ import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.Unlock;
+import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -102,9 +103,26 @@ public final class Requirements
 	 * Evaluates the gates in their fixed order and returns the first
 	 * rejection, or {@link RejectionReason#NONE} when every gate passes.
 	 * The order is part of the contract — later gates assume the earlier
-	 * ones passed.
+	 * ones passed. The composite is two halves: {@link #gates} runs the
+	 * named requirement gates, then {@link #itemRequirement} consults the
+	 * eligibility snapshot's item pools last.
 	 */
 	RejectionReason check(Transport transport)
+	{
+		RejectionReason reason = gates(transport);
+		if (reason == RejectionReason.NONE) reason = itemRequirement(transport);
+		return reason;
+	}
+
+	/**
+	 * The named requirement gates — every gate before the item-pool
+	 * evaluation — in the same fixed order {@link #check} applies.
+	 * {@code refreshTransports} calls this directly (it lives in another
+	 * package, hence {@code public}) so the two item pools can each be
+	 * evaluated once by the loop itself; a non-{@code NONE} verdict skips
+	 * the transport before any pool is consulted.
+	 */
+	public RejectionReason gates(Transport transport)
 	{
 		RejectionReason reason = sailing(transport);
 		if (reason == RejectionReason.NONE) reason = pohDisabled(transport);
@@ -120,7 +138,6 @@ public final class Requirements
 		if (reason == RejectionReason.NONE) reason = varbit(transport);
 		if (reason == RejectionReason.NONE) reason = varplayer(transport);
 		if (reason == RejectionReason.NONE) reason = plantedSpiritTree(transport);
-		if (reason == RejectionReason.NONE) reason = itemRequirement(transport);
 		return reason;
 	}
 
@@ -132,7 +149,7 @@ public final class Requirements
 	 *
 	 * <p>Bank evaluation intentionally reads this refresh's captured
 	 * context values and routes through the shared overridable hooks
-	 * ({@link RequirementHooks#varbitChecks}, {@link RequirementHooks#varPlayerChecks},
+	 * ({@link RequirementHooks#varChecks} dispatched per var kind,
 	 * the quest map the {@link RequirementHooks#getQuestState} hook feeds)
 	 * instead of querying the client per tile as it used to. A bank tile and
 	 * a transport can therefore never disagree about the same requirement
@@ -150,14 +167,14 @@ public final class Requirements
 			reason = RejectionReason.QUEST;
 		}
 		if (reason == RejectionReason.NONE
-			&& hooks.varbitChecks(requirements.getVarbits(), context.getVarbitValues(),
-				context.getEvaluationTimeMinutes()))
+			&& hooks.varChecks(requirements.getVarbits(), context.getVarbitValues(),
+				context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARBIT))
 		{
 			reason = RejectionReason.VARBIT;
 		}
 		if (reason == RejectionReason.NONE
-			&& hooks.varPlayerChecks(requirements.getVarPlayers(), context.getVarPlayerValues(),
-				context.getEvaluationTimeMinutes()))
+			&& hooks.varChecks(requirements.getVarPlayers(), context.getVarPlayerValues(),
+				context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARPLAYER))
 		{
 			reason = RejectionReason.VARPLAYER;
 		}
@@ -181,11 +198,9 @@ public final class Requirements
 	{
 		if (!policy.usePoh())
 		{
-			int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-			if (PohService.isInsidePoh(originX, originY) || PohService.isInsidePoh(destX, destY))
+			int[] endpoints = unpackEndpoints(transport);
+			if (PohService.isInsidePoh(endpoints[0], endpoints[1])
+				|| PohService.isInsidePoh(endpoints[2], endpoints[3]))
 			{
 				return RejectionReason.POH_DISABLED;
 			}
@@ -247,12 +262,10 @@ public final class Requirements
 	// Handle POH variants for types that have them
 	private RejectionReason pohVariant(Transport transport)
 	{
-		int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+		int[] endpoints = unpackEndpoints(transport);
 
-		if (!PohService.isInsidePoh(originX, originY) && !PohService.isInsidePoh(destX, destY))
+		if (!PohService.isInsidePoh(endpoints[0], endpoints[1])
+			&& !PohService.isInsidePoh(endpoints[2], endpoints[3]))
 		{
 			return RejectionReason.NONE; // Not a POH transport
 		}
@@ -268,6 +281,16 @@ public final class Requirements
 		TransportType type = transport.getType();
 		if (!TeleportRestriction.isItemTeleportType(type))
 		{
+			// The injected fairy-staff requirement is player-restrictable like an
+			// item teleport's own items: a bare blocked id covering every
+			// Dramen/Lunar staff variant disables the ring. POH rings never
+			// carry the injected requirement, so they pass through.
+			if (TransportType.FAIRY_RING.equals(type)
+				&& transport.getItemRequirements() != null
+				&& !transport.getItemRequirements().survivesBlockedItems(policy.blockedItemIds()))
+			{
+				return RejectionReason.BLOCKED_ITEM;
+			}
 			return RejectionReason.NONE; // Not a teleportation item type
 		}
 
@@ -308,26 +331,14 @@ public final class Requirements
 			return RejectionReason.BLOCKED_ITEM;
 		}
 
-		switch (policy.teleportationItemSetting())
-		{
-			case ALL:
-				return RejectionReason.NONE;
-			case ALL_NON_CONSUMABLE:
-			case UNLOCKED_NON_CONSUMABLE:
-			case INVENTORY_NON_CONSUMABLE:
-			case INVENTORY_AND_BANK_NON_CONSUMABLE:
-				return transport.isConsumable()
-					? RejectionReason.TELEPORT_MODE
-					: RejectionReason.NONE;
-			case UNLOCKED:
-				return RejectionReason.NONE; // Ownership is implied by the unlock check; items are never evaluated
-			case INVENTORY:
-			case INVENTORY_AND_BANK:
-				return RejectionReason.NONE; // Will be checked later by the eligibility snapshot
-			case NONE:
-				return RejectionReason.TELEPORT_MODE;
-		}
-		return RejectionReason.NONE;
+		// BYPASS and EVALUATE_ITEMS both pass this gate — deferral to the item
+		// pools lands at the itemRequirement gate below, which re-dispatches
+		// through the eligibility snapshot.
+		return TeleportationItemPolicy.verdict(
+			policy.teleportationItemSetting(), transport.isConsumable())
+				== TeleportationItemPolicy.Verdict.REJECT
+			? RejectionReason.TELEPORT_MODE
+			: RejectionReason.NONE;
 	}
 
 
@@ -476,8 +487,8 @@ public final class Requirements
 
 	private RejectionReason varbit(Transport transport)
 	{
-		if (hooks.varbitChecks(transport.getVarRequirements(), context.getVarbitValues(),
-			context.getEvaluationTimeMinutes()))
+		if (hooks.varChecks(transport.getVarRequirements(), context.getVarbitValues(),
+			context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARBIT))
 		{
 			return RejectionReason.VARBIT;
 		}
@@ -486,8 +497,8 @@ public final class Requirements
 
 	private RejectionReason varplayer(Transport transport)
 	{
-		if (hooks.varPlayerChecks(transport.getVarRequirements(), context.getVarPlayerValues(),
-			context.getEvaluationTimeMinutes()))
+		if (hooks.varChecks(transport.getVarRequirements(), context.getVarPlayerValues(),
+			context.getEvaluationTimeMinutes(), VarRequirement.VarType.VARPLAYER))
 		{
 			return RejectionReason.VARPLAYER;
 		}
@@ -510,20 +521,16 @@ public final class Requirements
 
 	private boolean checkPlantedSpiritTrees(Transport transport)
 	{
-		int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+		int[] endpoints = unpackEndpoints(transport);
 
 		// Check planted spirit tree origins (travel FROM a planted tree)
-		if (isUnavailablePlantedSpiritTree(originX, originY))
+		if (isUnavailablePlantedSpiritTree(endpoints[0], endpoints[1]))
 		{
 			return false;
 		}
 
 		// Check planted spirit tree destinations (travel TO a planted tree)
-		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-
-		return !isUnavailablePlantedSpiritTree(destX, destY);
+		return !isUnavailablePlantedSpiritTree(endpoints[2], endpoints[3]);
 	}
 
 	/**
@@ -590,5 +597,19 @@ public final class Requirements
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * The four unpacked endpoint coordinates every spatial gate reads:
+	 * {@code {originX, originY, destX, destY}} in that order.
+	 */
+	private static int[] unpackEndpoints(Transport transport)
+	{
+		return new int[]{
+			WorldPointUtil.unpackWorldX(transport.getOrigin()),
+			WorldPointUtil.unpackWorldY(transport.getOrigin()),
+			WorldPointUtil.unpackWorldX(transport.getDestination()),
+			WorldPointUtil.unpackWorldY(transport.getDestination())
+		};
 	}
 }

@@ -1,0 +1,16 @@
+setColor rgb(200,40,240) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(329,251 435,251 429,251 335,251) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(435,251 542,251 523,251 429,251) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(542,251 648,251 617,251 523,251) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1603,251 1687,251 1562,251 1486,251) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(200,40,240) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1687,251 1771,251 1639,251 1562,251) | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,255) a=* | color=rgb(200,40,240) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1104,251 1114,251 1105,251 1095,251) | color=rgb(0,0,255) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(0,0,0) a=255 | color=rgb(0,0,255) a=* stroke=BasicStroke(w=1.0) clip=null
+drawString "Destination could not be reached" @287,237 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Destination could not be reached" @286,236 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null

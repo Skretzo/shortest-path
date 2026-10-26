@@ -10,7 +10,6 @@ import net.runelite.api.ItemContainer;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.TransportItems;
 import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
 
 /**
  * The raw result of the bank-pickup analysis for a path: which pickup
@@ -89,7 +88,9 @@ public class BankPickupAnalysis
 		// "Air rune (3), Law rune or Varrock teleport".
 		List<List<Map<Integer, Long>>> groups = new ArrayList<>();
 		Set<Integer> itemIds = new HashSet<>();
-		boolean usesFairyRing = false;
+		// Trip-level dedup: an identical pickup map emitted by more than one
+		// edge — e.g. the fairy staff every ring now asks for — is shown once.
+		Set<Map<Integer, Long>> seenPickups = new HashSet<>();
 
 		// Walk each edge in the remaining path in a single pass.
 		for (int i = pathIndex; i < path.size() - 1; i++)
@@ -131,27 +132,9 @@ public class BankPickupAnalysis
 				continue;
 			}
 
-			// Fairy rings handled once globally via the staff requirement below.
-			List<Transport> nonFairy = new ArrayList<>();
-			for (Transport t : edgeAlternatives)
-			{
-				if (TransportType.FAIRY_RING.equals(t.getType()))
-				{
-					usesFairyRing = true;
-				}
-				else
-				{
-					nonFairy.add(t);
-				}
-			}
-			if (nonFairy.isEmpty())
-			{
-				continue;
-			}
-
 			// If at least one alternative requires no items, nothing to pick up for this edge.
 			boolean anyAlternativeIsFree = false;
-			for (Transport t : nonFairy)
+			for (Transport t : edgeAlternatives)
 			{
 				if (t.getItemRequirements() == null || t.getItemRequirements().size() == 0)
 				{
@@ -166,7 +149,7 @@ public class BankPickupAnalysis
 
 			// If any alternative is fully satisfied by the player already, no pickup needed.
 			boolean satisfied = false;
-			for (Transport t : nonFairy)
+			for (Transport t : edgeAlternatives)
 			{
 				if (eligibility.satisfiedByPlayer(t))
 				{
@@ -184,10 +167,10 @@ public class BankPickupAnalysis
 			// plan touches — the plan's display ids are canonical (e.g. air
 			// rune) while the bank may only hold a variant (e.g. mist rune).
 			List<Map<Integer, Long>> supplyable = new ArrayList<>();
-			for (Transport t : nonFairy)
+			for (Transport t : edgeAlternatives)
 			{
 				TransportEligibility.BankPickupPlan plan = eligibility.bankPickupPlan(t);
-				if (plan.items != null && !plan.items.isEmpty())
+				if (plan.items != null && !plan.items.isEmpty() && seenPickups.add(plan.items))
 				{
 					supplyable.add(plan.items);
 				}
@@ -196,17 +179,6 @@ public class BankPickupAnalysis
 			if (!supplyable.isEmpty())
 			{
 				groups.add(supplyable);
-			}
-		}
-
-		// Fairy ring staff (Dramen / Lunar) is a single OR requirement across the whole trip.
-		if (usesFairyRing)
-		{
-			TransportEligibility.BankPickupPlan staff = eligibility.fairyStaffPickup();
-			if (staff != null)
-			{
-				groups.add(List.of(staff.items));
-				itemIds.addAll(staff.bankItemIds);
 			}
 		}
 

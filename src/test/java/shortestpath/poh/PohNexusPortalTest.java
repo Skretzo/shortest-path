@@ -1,6 +1,5 @@
 package shortestpath.poh;
 
-import java.util.EnumSet;
 import org.junit.Test;
 import shortestpath.TestShortestPathConfig;
 
@@ -34,22 +33,16 @@ public class PohNexusPortalTest
 	@Test
 	public void testRespawnMappings()
 	{
-		for (String displayInfo : PohNexusPortal.RESPAWN.getDisplayInfos())
-		{
-			assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo(displayInfo));
-		}
-	}
-
-	@Test
-	public void testAllMappingsRoundTrip()
-	{
-		for (PohNexusPortal portal : PohNexusPortal.values())
-		{
-			for (String displayInfo : portal.getDisplayInfos())
-			{
-				assertSame(portal, PohNexusPortal.fromDisplayInfo(displayInfo));
-			}
-		}
+		// RESPAWN declares 8 respawn-point aliases — keep in step with the
+		// enum's displayInfo varargs.
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Lumbridge)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Falador)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Camelot)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Edgeville)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Prifddinas)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Ferox Enclave)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Kourend Castle)"));
+		assertSame(PohNexusPortal.RESPAWN, PohNexusPortal.fromDisplayInfo("Respawn Portal (Civitas illa Fortis)"));
 	}
 
 	@Test

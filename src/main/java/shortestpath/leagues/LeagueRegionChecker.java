@@ -46,16 +46,8 @@ public class LeagueRegionChecker
 	}
 
 	/**
-	 * Convenience predicate for the always-blocked region.
-	 */
-	public static boolean isInMisthalin(int packedPoint)
-	{
-		return getRegion(packedPoint) == LeagueRegion.MISTHALIN;
-	}
-
-	/**
 	 * Returns the underlying region-id-to-region map. Lazily initialised on
-	 * first call. Visible to tests via {@link #reload(String)}.
+	 * first call.
 	 */
 	private static Map<Integer, LeagueRegion> regions()
 	{
@@ -73,20 +65,5 @@ public class LeagueRegionChecker
 			}
 		}
 		return snapshot;
-	}
-
-	/**
-	 * Replaces the in-memory mapping with a parsed copy of the supplied
-	 * TSV body. Intended for tests. Pass {@code null} to clear the cache so
-	 * the next call re-loads from the resource file.
-	 */
-	static synchronized void reload(String tsv)
-	{
-		if (tsv == null)
-		{
-			regionsById = null;
-			return;
-		}
-		regionsById = ResourceLoader.parseLeagueRegions(tsv);
 	}
 }

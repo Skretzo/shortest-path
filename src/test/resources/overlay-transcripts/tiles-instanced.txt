@@ -1,0 +1,8 @@
+setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1092,251 1103,251 1093,251 1082,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1108,251 1118,251 1109,251 1100,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1103,251 1114,251 1104,251 1093,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+setColor rgb(255,0,0) a=* | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
+fill Polygon(1118,251 1127,251 1118,251 1109,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null

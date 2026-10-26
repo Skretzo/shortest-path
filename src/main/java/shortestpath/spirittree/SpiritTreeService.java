@@ -10,6 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.coords.WorldPoint;
@@ -43,6 +45,7 @@ import shortestpath.widgets.GameWidgets;
  * evicts the persisted travelable entry for that patch.
  */
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class SpiritTreeService
 {
 	/**
@@ -78,22 +81,16 @@ public class SpiritTreeService
 	private int lastPlayerRegionTick = -1;
 	private int settledRegionID = -1;
 
-	// The resolved travelable-tree set as last published — null while no
-	// source has produced any observation (tri-state: null = unresolved,
-	// empty = observed but nothing travelable). Written solely inside this
-	// service as a single volatile write of an immutable copy; the engine's
-	// capture step reads it through getAvailableSpiritTrees().
-	private volatile Set<String> availableSpiritTrees;
-
-	@Inject
-	public SpiritTreeService(ConfigManager configManager, Client client,
-		RefreshCoordinator coordinator, GameWidgets gameWidgets)
-	{
-		this.configManager = configManager;
-		this.client = client;
-		this.coordinator = coordinator;
-		this.gameWidgets = gameWidgets;
-	}
+	/**
+	 * The resolved travelable-tree set as last published. Tri-state by
+	 * contract: {@code null} while no detection source has produced an
+	 * observation (consumers stay conservative), an empty set when every
+	 * observed patch reported unusable, and the resolved names otherwise.
+	 * The returned set is immutable — publication is a single volatile
+	 * write; the engine's capture step reads it through
+	 * {@code getAvailableSpiritTrees()}.
+	 */
+	@Getter private volatile Set<String> availableSpiritTrees;
 
 	/**
 	 * Detached-widgets seam for tests that exercise the service without the
@@ -310,18 +307,6 @@ public class SpiritTreeService
 	public Set<String> getTravelableTreesOrNull()
 	{
 		return observedValues.isEmpty() ? null : getTravelableTrees();
-	}
-
-	/**
-	 * The resolved travelable-tree set as last published. Tri-state by
-	 * contract: {@code null} while no detection source has produced an
-	 * observation (consumers stay conservative), an empty set when every
-	 * observed patch reported unusable, and the resolved names otherwise.
-	 * The returned set is immutable — publication is a single volatile write.
-	 */
-	public Set<String> getAvailableSpiritTrees()
-	{
-		return availableSpiritTrees;
 	}
 
 	/**

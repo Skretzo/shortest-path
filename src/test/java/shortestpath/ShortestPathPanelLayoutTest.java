@@ -18,16 +18,14 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -63,30 +61,26 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
+import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohNexusPortal;
+import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.BalloonRoute;
 
 /**
- * Headless structure tests pinning the tile drill-down layout contract:
- * the seven-tile home rooted in the muxer, drill/back stack mechanics, every
- * scroll view pinned to the 225px viewport (so the scrollbar never covers
- * content or the master toggles), a real left inset on every scroll
- * surface, live tile statuses, and the grouped search results + filtered
- * deep-link seam.
+ * Headless structure tests pinning the sidebar layout contract: a landing
+ * tile grid swapping to a drilled section view (each its own scroll under
+ * a pinned back-arrow header), section content pinned to the 225px
+ * viewport (so the scrollbar never covers content or the master toggles),
+ * a real left inset on every scroll surface, and in-place search
+ * filtering per section.
  *
  * <p>The harness wraps {@link TestShortestPathConfig} through the
- * {@link Settings#wrap} seam — reads and listeners work, writes are inert.
- * {@code panel.onActivate()} runs once after construction because
- * {@code MultiplexingPluginPanel} only dispatches child activation while
- * its own active flag is set (the sidebar sets it in production); without
- * it pushes swap the visible card but never run the deep-link
- * {@code applyQuery} path under test.</p>
+ * {@link Settings#wrap} seam — reads and listeners work, writes are inert.</p>
  */
 public class ShortestPathPanelLayoutTest
 {
@@ -173,6 +167,8 @@ public class ShortestPathPanelLayoutTest
 			spriteRequests.add((Integer) i.getArgument(0));
 			return null;
 		}).when(spriteManager).getSpriteAsync(anyInt(), anyInt(), any(Consumer.class));
+		// The Settings tile's config deep-link posts on the shared bus —
+		// the mock records every post rather than delivering it.
 		EventBus eventBus = mock(EventBus.class);
 		doAnswer(i ->
 		{
@@ -182,7 +178,6 @@ public class ShortestPathPanelLayoutTest
 		plugin = mock(Plugin.class);
 		panel = new ShortestPathPanel(settings, client, clientThread, itemManager,
 			spriteManager, itemState, eventBus, plugin);
-		panel.onActivate();
 		return panel;
 	}
 
@@ -223,14 +218,31 @@ public class ShortestPathPanelLayoutTest
 
 	/**
 	 * The content {@link FixedWidthPanel} inside a category/home panel's
-	 * scroll wrap: view → BorderLayout.NORTH child.
+	 * scroll wrap: view → BorderLayout.NORTH child — the innermost
+	 * {@code FixedWidthPanel} on that branch, so the returned panel is
+	 * the row container and not its scroll wrap.
 	 */
-	private static FixedWidthPanel contentOf(JComponent surface)
+	private static FixedWidthPanel contentOf(Container surface)
 	{
-		JScrollPane scroll = findScrollPane(surface);
-		assertNotNull("scroll pane exists", scroll);
-		JComponent view = (JComponent) scroll.getViewport().getView();
-		return (FixedWidthPanel) view.getComponent(0);
+		for (Component child : surface.getComponents())
+		{
+			if (child instanceof FixedWidthPanel)
+			{
+				FixedWidthPanel inner = contentOf((FixedWidthPanel) child);
+				return inner != null ? inner : (FixedWidthPanel) child;
+			}
+			if (child instanceof Container)
+			{
+				// Container, not JComponent — a combo box's
+				// CellRendererPane child is a plain AWT container.
+				FixedWidthPanel found = contentOf((Container) child);
+				if (found != null)
+				{
+					return found;
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -240,70 +252,59 @@ public class ShortestPathPanelLayoutTest
 	private List<JComponent> surfaces()
 	{
 		List<JComponent> surfaces = new ArrayList<>(panel.categories());
-		surfaces.add(panel.home());
+		surfaces.add(homeView());
 		return surfaces;
 	}
 
 	/**
-	 * The tile grid inside the home content — the JPanel child. The view
-	 * also carries footer note labels beneath the grid, so the lookup
-	 * discriminates on type rather than position.
+	 * The panel body — the {@link java.awt.CardLayout} container swapping
+	 * the home tile grid for a drilled section.
 	 */
-	private JPanel tileGrid()
+	private Container body()
 	{
-		FixedWidthPanel content = contentOf(panel.home());
-		for (Component child : content.getComponents())
-		{
-			if (child instanceof JPanel)
-			{
-				return (JPanel) child;
-			}
-		}
-		throw new AssertionError("tile view contains no grid");
+		return (Container) ((BorderLayout) panel.getLayout())
+			.getLayoutComponent(BorderLayout.CENTER);
 	}
 
-	/**
-	 * The grid tile for {@code name}: whichever grid child carries a label
-	 * with that exact text. Shape-agnostic so it holds across the tile
-	 * restyle (plain panel vs. button component).
-	 */
-	private JComponent tileNamed(String name)
+	/** The landing tile grid — the body's first card. */
+	private JComponent homeView()
 	{
-		for (Component child : tileGrid().getComponents())
+		return (JComponent) body().getComponent(0);
+	}
+
+	/** Every {@link JScrollPane} anywhere under {@code root}. */
+	private static List<JScrollPane> scrollsIn(Container root)
+	{
+		List<JScrollPane> scrolls = new ArrayList<>();
+		for (Component child : root.getComponents())
 		{
-			if (child instanceof Container
-				&& containsLabelEqual((Container) child, name))
+			if (child instanceof JScrollPane)
 			{
-				return (JComponent) child;
+				scrolls.add((JScrollPane) child);
+			}
+			if (child instanceof Container)
+			{
+				scrolls.addAll(scrollsIn((Container) child));
+			}
+		}
+		return scrolls;
+	}
+
+	/** The back-arrow button on a section's pinned header. */
+	private static JButton backButton(CategoryPanel category)
+	{
+		for (JButton button : buttonsIn(headerOf(category)))
+		{
+			if ("Back".equals(button.getToolTipText()))
+			{
+				return button;
 			}
 		}
 		return null;
 	}
 
-	/**
-	 * The tile's live status line — the last {@link JLabel} in the tile
-	 * subtree (icon/name sit above it in every tile shape).
-	 */
-	private static JLabel statusLabelOf(JComponent tile)
-	{
-		JLabel found = null;
-		for (Component child : tile.getComponents())
-		{
-			if (child instanceof JLabel)
-			{
-				found = (JLabel) child;
-			}
-			if (child instanceof Container)
-			{
-				JLabel nested = statusLabelOf((JComponent) child);
-				if (nested != null)
-				{
-					found = nested;
-				}
-			}
-		}
-		return found;
-	}
+
+
 
 	/** Every {@link JLabel} anywhere under {@code root}. */
 	private static List<JLabel> labelsIn(Container root)
@@ -323,287 +324,195 @@ public class ShortestPathPanelLayoutTest
 		return labels;
 	}
 
-	@Test
-	public void homeIsMuxRootWithSevenTiles()
-	{
-		newPanel();
 
-		assertEquals(1, panel.muxer().getComponentCount());
-		assertSame(panel.home(), panel.muxer().getComponent(0));
 
-		String[] expected = {"General", "Transports", "Teleport Restrictions",
-			"Unlocks", "Bank", "Player-Owned House", "Display"};
-		JPanel grid = tileGrid();
-		assertEquals(7, grid.getComponentCount());
-		for (int i = 0; i < expected.length; i++)
-		{
-			JComponent tile = (JComponent) grid.getComponent(i);
-			assertTrue(expected[i] + " tile carries its name",
-				containsLabelEqual(tile, expected[i]));
-			JLabel statusLabel = statusLabelOf(tile);
-			assertNotNull(expected[i] + " status line", statusLabel);
-			assertFalse(expected[i] + " status is populated",
-				statusLabel.getText().isEmpty());
-		}
-	}
 
-	/**
-	 * Below the tile grid the home view carries two small-font footer
-	 * notes: an orange one announcing the A* pathfinder and pointing at
-	 * the General category's Pathfinder Algorithm option, and a muted one
-	 * telling users the remaining plugin options live in the regular
-	 * RuneLite settings panel.
-	 */
-	@Test
-	public void homeTilesCarryFooterNotes()
-	{
-		newPanel();
-		FixedWidthPanel content = contentOf(panel.home());
 
-		int gridIndex = -1;
-		int astarIndex = -1;
-		int settingsIndex = -1;
-		JLabel astarNote = null;
-		JLabel settingsNote = null;
-		Component[] children = content.getComponents();
-		for (int i = 0; i < children.length; i++)
-		{
-			if (children[i] instanceof JPanel && gridIndex < 0)
-			{
-				// First JPanel is the tile grid — later JPanels (the
-				// footer link row) are not it.
-				gridIndex = i;
-				continue;
-			}
-			if (!(children[i] instanceof JLabel))
-			{
-				continue;
-			}
-			String text = ((JLabel) children[i]).getText();
-			if (text != null && text.contains("A*"))
-			{
-				astarNote = (JLabel) children[i];
-				astarIndex = i;
-			}
-			if (text != null && text.contains("plugin settings panel"))
-			{
-				settingsNote = (JLabel) children[i];
-				settingsIndex = i;
-			}
-		}
 
-		assertNotNull("an A* footer note under the tile grid", astarNote);
-		assertTrue("the A* note renders below the grid", astarIndex > gridIndex);
-		assertEquals("the A* note is the orange accent",
-			ColorScheme.BRAND_ORANGE, astarNote.getForeground());
-		assertEquals("the A* note is small font",
-			FontManager.getRunescapeSmallFont(), astarNote.getFont());
-		assertTrue("the A* note points at General's Pathfinder Algorithm option",
-			astarNote.getText().contains("Pathfinder Algorithm"));
 
-		assertNotNull("a settings-panel footer note under the tile grid", settingsNote);
-		assertTrue("the settings note renders below the grid", settingsIndex > gridIndex);
-		assertEquals("the settings note is the muted tone",
-			ColorScheme.LIGHT_GRAY_COLOR, settingsNote.getForeground());
-		assertEquals("the settings note is small font",
-			FontManager.getRunescapeSmallFont(), settingsNote.getFont());
-		assertTrue("the settings note enumerates what remains in the "
-				+ "settings panel",
-			settingsNote.getText().contains("Display")
-				&& settingsNote.getText().contains("Colours")
-				&& settingsNote.getText().contains("Hotkeys")
-				&& settingsNote.getText().contains("Debug"));
-	}
-
-	/** The direct-child {@link JButton} of {@code row} with this tooltip. */
-	private static JButton footerButton(Container row, String tooltip)
-	{
-		for (Component child : row.getComponents())
-		{
-			if (child instanceof JButton
-				&& tooltip.equals(((JButton) child).getToolTipText()))
-			{
-				return (JButton) child;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Under the footer notes (and a thin divider) the home view carries a
-	 * row of small square chromeless buttons: GitHub and Discord glyphs
-	 * opening the project links through the system browser, and a gear
-	 * that opens the plugin's classic settings page by posting the same
-	 * overlay-config menu click an overlay right-click would.
-	 */
-	@Test
-	public void homeFooterCarriesLinkButtons() throws Exception
-	{
-		newPanel();
-		FixedWidthPanel content = contentOf(panel.home());
-
-		// The link row is the JPanel below the settings note whose direct
-		// children are the three chromeless buttons.
-		JPanel linkRow = null;
-		int linkRowIndex = -1;
-		int settingsIndex = -1;
-		Component[] children = content.getComponents();
-		for (int i = 0; i < children.length; i++)
-		{
-			if (children[i] instanceof JLabel
-				&& ((JLabel) children[i]).getText() != null
-				&& ((JLabel) children[i]).getText().contains("plugin settings panel"))
-			{
-				settingsIndex = i;
-			}
-			if (children[i] instanceof JPanel
-				&& footerButton((Container) children[i], "GitHub") != null)
-			{
-				linkRow = (JPanel) children[i];
-				linkRowIndex = i;
-			}
-		}
-		assertNotNull("a link-button row under the footer notes", linkRow);
-		assertTrue("the link row renders below the settings note",
-			linkRowIndex > settingsIndex);
-		assertTrue("the link row carries a top divider border",
-			linkRow.getBorder() instanceof CompoundBorder
-				&& ((CompoundBorder) linkRow.getBorder()).getOutsideBorder()
-					instanceof MatteBorder);
-
-		List<JButton> buttons = new ArrayList<>();
-		for (Component child : linkRow.getComponents())
-		{
-			if (child instanceof JButton)
-			{
-				buttons.add((JButton) child);
-			}
-		}
-		assertEquals("three footer buttons", 3, buttons.size());
-		assertEquals("GitHub", buttons.get(0).getToolTipText());
-		assertEquals("Discord", buttons.get(1).getToolTipText());
-		assertEquals("Plugin Settings", buttons.get(2).getToolTipText());
-
-		for (JButton button : buttons)
-		{
-			assertTrue("footer buttons are chromeless",
-				!button.isContentAreaFilled()
-					&& !button.isBorderPainted()
-					&& !button.isOpaque());
-			Dimension preferred = button.getPreferredSize();
-			assertEquals("footer buttons are square",
-				preferred.width, preferred.height);
-			assertTrue("footer buttons are icon-sized",
-				preferred.width <= 28);
-			assertNotNull("footer buttons carry an icon", button.getIcon());
-		}
-
-		assertEquals("https://github.com/Skretzo/shortest-path",
-			buttons.get(0).getActionCommand());
-		assertEquals("https://discord.gg/uX47xg8u3M",
-			buttons.get(1).getActionCommand());
-
-		buttons.get(2).doClick();
-		flushEdt();
-		assertEquals("the gear posts exactly one event",
-			1, postedEvents.size());
-		Object posted = postedEvents.get(0);
-		assertTrue("the gear posts an overlay-menu click",
-			posted instanceof OverlayMenuClicked);
-		OverlayMenuClicked clicked = (OverlayMenuClicked) posted;
-		assertEquals("the click carries the overlay-config menu action",
-			MenuAction.RUNELITE_OVERLAY_CONFIG, clicked.getEntry().getMenuAction());
-		assertNotNull("the click carries an overlay", clicked.getOverlay());
-		assertSame("the overlay resolves to our plugin so its config page opens",
-			plugin, clicked.getOverlay().getPlugin());
-	}
-
-	/**
-	 * The home tiles are large square buttons: laid out at the fixed panel
-	 * width each tile's bounds are square, it is a real {@link JButton}
-	 * (Swing's armed/pressed model drives the press state), and it carries
-	 * the icon + name + status trio of labels.
-	 */
-	@Test
-	public void tilesAreSquareRaisedIconButtons()
-	{
-		newPanel();
-		JPanel grid = tileGrid();
-		grid.setSize(new Dimension(PluginPanel.PANEL_WIDTH - 16,
-			grid.getPreferredSize().height));
-		grid.doLayout();
-
-		for (Component child : grid.getComponents())
-		{
-			assertTrue("tile is a raised button with Swing's armed/pressed model",
-				child instanceof JButton);
-			JComponent tile = (JComponent) child;
-			assertTrue("tile bounds are square at the fixed panel width",
-				Math.abs(tile.getBounds().width - tile.getBounds().height) <= 2);
-			assertTrue("tile carries the icon + name + status labels",
-				labelsIn(tile).size() >= 3);
-		}
-
-		assertTrue("tiles request their category item sprites",
-			iconRequests.contains(ItemID.TRAIL_SEXTANT)
-				&& iconRequests.contains(ItemID.CANOEING_PADDLE)
-				&& iconRequests.contains(ItemID.RING_OF_DUELING_8)
-				&& iconRequests.contains(ItemID.CRYSTAL_KEY)
-				&& iconRequests.contains(ItemID.COINS_10000)
-				&& iconRequests.contains(ItemID.POH_TABLET_TELEPORTTOHOUSE));
-		assertTrue("the Display tile requests the settings monitor sprite",
-			spriteRequests.contains(SpriteID.OptionsIcons.DISPLAY));
-	}
 
 	@Test
-	public void tileClickDrillsIntoCategory() throws Exception
+	public void theScrollViewIsViewportWidth()
 	{
 		newPanel();
-		CategoryPanel unlocks = panel.categories().get(3);
-		JComponent tile = tileNamed("Unlocks");
-		assertNotNull(tile);
-		assertTrue("tile fires like a button", tile instanceof JButton);
-
-		((JButton) tile).doClick();
-		flushEdt();
-		assertSame("clicking a tile drills into its category",
-			unlocks,
-			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-		panel.backToHome();
-	}
-
-	@Test
-	public void drillPushAndBack()
-	{
-		newPanel();
-		CategoryPanel transports = panel.categories().get(1);
-		assertEquals("Transports", transports.categoryName());
-
-		panel.drillInto(transports);
-		assertEquals(2, panel.muxer().getComponentCount());
-		assertSame(transports, panel.muxer().getComponent(1));
-
-		panel.backToHome();
-		assertEquals(1, panel.muxer().getComponentCount());
-		assertSame(panel.home(), panel.muxer().getComponent(0));
-	}
-
-	@Test
-	public void everyScrollViewIsViewportWidth()
-	{
-		newPanel();
-		for (JComponent surface : surfaces())
+		List<JScrollPane> scrolls = scrollsIn(panel);
+		assertEquals("the home view plus one scroll per section",
+			4, scrolls.size());
+		for (JScrollPane scroll : scrolls)
 		{
-			JScrollPane scroll = findScrollPane(surface);
 			JComponent view = (JComponent) scroll.getViewport().getView();
 			assertTrue("scroll view is a FixedWidthPanel",
 				view instanceof FixedWidthPanel);
 			assertEquals("view pinned to viewport width",
 				PluginPanel.PANEL_WIDTH, view.getPreferredSize().width);
-			FixedWidthPanel content = (FixedWidthPanel) view.getComponent(0);
-			assertEquals("content pinned to viewport width",
-				PluginPanel.PANEL_WIDTH, content.getPreferredSize().width);
+			assertEquals("the surfaced content is viewport width",
+				PluginPanel.PANEL_WIDTH,
+				((JComponent) view.getComponent(0)).getPreferredSize().width);
 		}
+	}
+
+	/**
+	 * The two-state shell: the landing view is a tile grid — one tile per
+	 * section plus the Settings tile — and a tile click swaps the body to
+	 * that section's own scroll; the section header's back arrow returns
+	 * to the grid.
+	 */
+	@Test
+	public void sidebarOpensOnTileGridAndDrillsIntoSections()
+	{
+		newPanel();
+		assertEquals("exactly three sections", 3, panel.categories().size());
+		assertEquals("Transports", panel.categories().get(0).categoryName());
+		assertEquals("Teleport Restrictions", panel.categories().get(1).categoryName());
+		assertEquals("Player-Owned House", panel.categories().get(2).categoryName());
+
+		JComponent home = homeView();
+		List<JButton> tileButtons = tileButtonsIn(home);
+		assertEquals("one tile per section plus the Settings tile",
+			4, tileButtons.size());
+
+		// CardLayout flags only the current card visible once the body
+		// lays out — the tile grid is the initial card.
+		body().setSize(PluginPanel.PANEL_WIDTH, 600);
+		body().doLayout();
+		assertTrue("the tile grid is the initial view", home.isVisible());
+		for (CategoryPanel section : panel.categories())
+		{
+			assertFalse(section.categoryName() + " starts hidden",
+				section.isVisible());
+			assertNotNull(section.categoryName() + " scrolls its own rows",
+				findScrollPane(section));
+			assertNotNull(section.categoryName()
+				+ " header carries a back arrow", backButton(section));
+		}
+
+		// Drill: the second tile opens Teleport Restrictions; its back
+		// arrow returns to the tile grid.
+		tileButtons.get(1).doClick();
+		assertTrue("the drilled section shows",
+			panel.categories().get(1).isVisible());
+		assertFalse("the grid is swapped out", home.isVisible());
+		backButton(panel.categories().get(1)).doClick();
+		assertTrue("the back arrow returns to the tile grid",
+			home.isVisible());
+		assertFalse(panel.categories().get(1).isVisible());
+	}
+
+	/**
+	 * A query filters every section's rows in place — matching rows stay,
+	 * the rest drop out of the content; clearing restores the full set.
+	 */
+	@Test
+	public void searchFiltersRowsInPlace() throws Exception
+	{
+		newPanel();
+		CategoryPanel transports = panel.categories().get(0);
+		int fullRows = transports.rows().size();
+
+		setSearchText("agility");
+		FixedWidthPanel filtered = contentOf(transports);
+		assertTrue("the query leaves only the matching rows",
+			filtered.getComponentCount() < fullRows
+				&& filtered.getComponentCount() > 0);
+
+		setSearchText("");
+		assertEquals("clearing restores the section's rows",
+			fullRows, contentOf(transports).getComponentCount());
+	}
+
+	private static java.util.List<JButton> buttonsIn(Container root)
+	{
+		java.util.List<JButton> buttons = new ArrayList<>();
+		for (Component child : root.getComponents())
+		{
+			if (child instanceof JButton)
+			{
+				buttons.add((JButton) child);
+			}
+			if (child instanceof Container)
+			{
+				buttons.addAll(buttonsIn((Container) child));
+			}
+		}
+		return buttons;
+	}
+
+	/**
+	 * The home grid's tile buttons — the footer link buttons are
+	 * JButtons too, and look-and-feels that draw scrollbar arrow
+	 * buttons (Metal, Nimbus) install more inside the home scroll
+	 * wrap, so tiles carry the {@link ShortestPathPanel#HOME_TILE}
+	 * client-property marker to stay identifiable on every platform.
+	 */
+	private static List<JButton> tileButtonsIn(Container root)
+	{
+		List<JButton> tiles = new ArrayList<>();
+		for (JButton button : buttonsIn(root))
+		{
+			if (Boolean.TRUE.equals(
+				button.getClientProperty(ShortestPathPanel.HOME_TILE)))
+			{
+				tiles.add(button);
+			}
+		}
+		return tiles;
+	}
+
+	/**
+	 * The home grid's non-section tile and its footer link row: the
+	 * Settings tile opens the plugin's stock config page by posting the
+	 * overlay-config menu click the config surface resolves off the
+	 * event overlay's plugin; the footer buttons open their URLs
+	 * through the system browser (the URL rides as the action command
+	 * so the target is pinned without a real browser).
+	 */
+	@Test
+	public void settingsTileDeepLinksTheConfigPageAndFooterCarriesLinks()
+	{
+		newPanel();
+		JComponent home = homeView();
+
+		List<JButton> tiles = tileButtonsIn(home);
+		JButton settings = tiles.get(3);
+		assertEquals("Settings", settings.getToolTipText());
+		settings.doClick();
+		assertEquals("one config-open event posted", 1, postedEvents.size());
+		OverlayMenuClicked clicked = (OverlayMenuClicked) postedEvents.get(0);
+		assertEquals(MenuAction.RUNELITE_OVERLAY_CONFIG,
+			clicked.getEntry().getMenuAction());
+		assertSame("the event's overlay resolves back to the plugin",
+			plugin, clicked.getOverlay().getPlugin());
+
+		List<JButton> links = new ArrayList<>();
+		for (JButton button : buttonsIn(home))
+		{
+			String command = button.getActionCommand();
+			if (command != null && !command.isEmpty())
+			{
+				links.add(button);
+			}
+		}
+		assertEquals("github + discord footer buttons", 2, links.size());
+		assertEquals("https://github.com/Skretzo/shortest-path",
+			links.get(0).getActionCommand());
+		assertEquals("https://discord.gg/uX47xg8u3M",
+			links.get(1).getActionCommand());
+	}
+
+	/**
+	 * The Transports tile wears the world map's transport POI glyph — a
+	 * client sprite routed through {@code loadSpriteIcon}, not an item
+	 * icon.
+	 */
+	@Test
+	public void transportsTileUsesTheWorldmapTransportIcon()
+	{
+		newPanel();
+		assertTrue("the Transports tile requests the world map's "
+				+ "transportation POI sprite",
+			spriteRequests.contains(SpriteID.Mapfunction.TRANSPORTATION));
+		assertFalse("the transport POI icon is a sprite, not an item",
+			iconRequests.contains(SpriteID.Mapfunction.TRANSPORTATION));
 	}
 
 	@Test
@@ -623,7 +532,7 @@ public class ShortestPathPanelLayoutTest
 	public void masterControlsInsideViewport()
 	{
 		newPanel();
-		CategoryPanel transports = panel.categories().get(1);
+		CategoryPanel transports = panel.categories().get(0);
 		int cards = 0;
 		for (ShortestPathPanel.SearchRow row : transports.rows())
 		{
@@ -637,7 +546,8 @@ public class ShortestPathPanelLayoutTest
 			if (master == null)
 			{
 				// The teleport-items card is masterless — its mode combo
-				// lives in General; every other card carries a master.
+				// lives in the plugin configuration; every other card
+				// carries a master.
 				assertEquals("only the teleport-items card is masterless",
 					"useTeleportationItems", card.getKeyName());
 				continue;
@@ -703,16 +613,6 @@ public class ShortestPathPanelLayoutTest
 		return null;
 	}
 
-	@Test
-	public void teleportationItemsModeComboLivesInGeneral()
-	{
-		newPanel();
-		CategoryPanel general = panel.categories().get(0);
-		assertEquals("General", general.categoryName());
-
-		assertNotNull("the teleport-items mode combo renders in General",
-			comboContaining(contentOf(general), TeleportationItem.NONE));
-	}
 
 	@Test
 	public void teleportationItemsCardIsMasterless()
@@ -732,34 +632,6 @@ public class ShortestPathPanelLayoutTest
 			card.getComponentCount() > 1);
 	}
 
-	/**
-	 * "Sail On Boats" is a routing policy, not a transport family with
-	 * thresholds — it renders as a plain check row in General alongside
-	 * the other transport-adjacent rows, and the Transports master count
-	 * drops to 22 cards.
-	 */
-	@Test
-	public void sailingMovesIsAGeneralCheckRow()
-	{
-		newPanel();
-		CategoryPanel general = panel.categories().get(0);
-		// Hidden rows take their display name from the bundled key metadata.
-		assertNotNull("sailing renders as a General check row",
-			labelContaining(contentOf(general), "Sail On Boats"));
-
-		assertNull("no sailing family card remains",
-			transportCardByKey("useSailingMoves"));
-		CategoryPanel transports = panel.categories().get(1);
-		for (ShortestPathPanel.SearchRow row : transports.rows())
-		{
-			assertFalse("sailing left the transports rows",
-				row.text.contains("sailingmoves"));
-		}
-		assertEquals("Transports counts 22 masters",
-			22, panel.transportCards().size());
-		assertTrue("the tile status counts the 22 masters",
-			statusLabelOf(tileNamed("Transports")).getText().endsWith("/22 on"));
-	}
 
 	private static ShortestPathPanel.SearchRow rowByDisplay(
 		CategoryPanel category, String display)
@@ -794,47 +666,6 @@ public class ShortestPathPanelLayoutTest
 		return null;
 	}
 
-	/**
-	 * General reads in three groups: routing toggles and the currency
-	 * threshold first, then the path-lifecycle controls moved in from the
-	 * settings panel — cancel/recalculate/finish distances, the
-	 * unreachable pair and the calculation cutoff — and finally the
-	 * backend selectors (teleport-item mode, algorithm, A* weight). The
-	 * lifecycle keys render per their config type: the two booleans as
-	 * check rows, the {@code @Range} ints as spinners.
-	 */
-	@Test
-	public void generalGroupsRoutingLifecycleAndBackendRows()
-	{
-		newPanel();
-		CategoryPanel general = panel.categories().get(0);
-
-		List<String> displays = new ArrayList<>();
-		for (ShortestPathPanel.SearchRow row : general.rows())
-		{
-			displays.add(row.display);
-		}
-		// Hidden rows take their display name from the bundled key metadata.
-		assertEquals("General rows in grouped order",
-			Arrays.asList(
-				"Avoid Wilderness", "Collision-Aware Blocked Targets",
-				"Sail On Boats", "Currency Threshold",
-				"Cancel Instead Of Recalculating", "Recalculate Distance", "Finish Distance",
-				"Unreachable Target Distance", "Show Unreachable Text",
-				"Calculation Cutoff",
-				"Use Teleportation Items", "Pathfinder Algorithm",
-				"A* Heuristic Weight"),
-			displays);
-
-		assertNotNull("cancelInstead renders a check row",
-			masterBox(rowByDisplay(general, "Cancel Instead Of Recalculating").component));
-		assertNotNull("showUnreachableText renders a check row",
-			masterBox(rowByDisplay(general, "Show Unreachable Text").component));
-		assertNotNull("recalculateDistance renders a spinner row",
-			spinnerIn(rowByDisplay(general, "Recalculate Distance").component));
-		assertNotNull("finishDistance renders a spinner row",
-			spinnerIn(rowByDisplay(general, "Finish Distance").component));
-	}
 
 	@Test
 	public void everyTransportCardRequestsAnIcon()
@@ -881,8 +712,8 @@ public class ShortestPathPanelLayoutTest
 		flushEdt();
 
 		JLabel rowLabel = labelContaining(
-			contentOf(panel.categories().get(0)), "Avoid Wilderness");
-		assertNotNull("General check row label", rowLabel);
+			contentOf(pohCategory()), "POH Fairy Ring");
+		assertNotNull("a check row label", rowLabel);
 		assertTrue("row labels are html-wrapped",
 			rowLabel.getText().startsWith("<html>"));
 
@@ -908,7 +739,7 @@ public class ShortestPathPanelLayoutTest
 		config.setUseTeleportationItemsValue(TeleportationItem.NONE);
 		settings.onConfigChanged(event("useTeleportationItems"));
 		flushEdt();
-		CategoryPanel restrictions = panel.categories().get(2);
+		CategoryPanel restrictions = panel.categories().get(1);
 		restrictions.applyQuery("");
 		JLabel hint = labelContaining(contentOf(restrictions),
 			"Teleportation items are disabled");
@@ -919,19 +750,6 @@ public class ShortestPathPanelLayoutTest
 			hint.getPreferredSize().height > oneLine);
 	}
 
-	@Test
-	public void statusLinesLive() throws Exception
-	{
-		newPanel();
-		JLabel bankStatus = statusLabelOf(tileNamed("Bank"));
-		assertEquals("Off", bankStatus.getText());
-
-		config.setIncludeBankPathValue(true);
-		settings.onConfigChanged(event("includeBankPath"));
-		flushEdt();
-
-		assertEquals("Bank tile tracks the external edit", "On", bankStatus.getText());
-	}
 
 	/**
 	 * {@code IconTextField.setText} asserts the EDT; the document listener
@@ -943,43 +761,6 @@ public class ShortestPathPanelLayoutTest
 		SwingUtilities.invokeAndWait(() -> panel.searchBar().setText(text));
 	}
 
-	@Test
-	public void searchResultsAndDeepLink() throws Exception
-	{
-		newPanel();
-		CategoryPanel transports = panel.categories().get(1);
-
-		setSearchText("quetzal");
-		assertSame("a query pops back to the home surface",
-			panel.home(), panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-
-		FixedWidthPanel homeContent = contentOf(panel.home());
-		boolean sawTransportsHeader = false;
-		for (Component child : homeContent.getComponents())
-		{
-			if (child instanceof JLabel
-				&& "Transports".equals(((JLabel) child).getText()))
-			{
-				sawTransportsHeader = true;
-			}
-		}
-		assertTrue("results view groups under the Transports header",
-			sawTransportsHeader);
-
-		List<ShortestPathPanel.SearchRow> matches = panel.matchingRows(transports, "quetzal");
-		assertFalse(matches.isEmpty());
-		panel.deepLink(transports, matches.get(0));
-		assertSame(transports,
-			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-		assertEquals("deep link lands filtered to the match",
-			matches.size(), contentOf(transports).getComponentCount());
-
-		setSearchText("");
-		assertEquals("clearing restores the tile grid",
-			7, tileGrid().getComponentCount());
-		assertEquals("clearing restores the drilled category's full rows",
-			transports.rows().size(), contentOf(transports).getComponentCount());
-	}
 
 	/**
 	 * The {@code BorderLayout.NORTH} header strip of a category panel — it
@@ -1014,47 +795,13 @@ public class ShortestPathPanelLayoutTest
 		return false;
 	}
 
-	/**
-	 * True when the home content shows a category group header (the results
-	 * view's {@code BRAND_ORANGE} category labels) rather than the tile grid.
-	 */
-	private boolean resultsContainHeader(String name)
-	{
-		return containsLabelText(contentOf(panel.home()), name);
-	}
 
-	@Test
-	public void everyCategoryHasBackHeader()
-	{
-		newPanel();
-		for (CategoryPanel category : panel.categories())
-		{
-			Container header = headerOf(category);
-			assertNotNull(category.categoryName() + " header strip", header);
-			Component west = ((BorderLayout) header.getLayout())
-				.getLayoutComponent(BorderLayout.WEST);
-			assertTrue(category.categoryName() + " back button",
-				west instanceof JButton);
-			JButton back = (JButton) west;
-			assertEquals("Back", back.getToolTipText());
-			assertNotNull("back button carries the rotated chevron",
-				back.getIcon());
-
-			panel.drillInto(category);
-			assertSame(category,
-				panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-			back.doClick();
-			assertEquals("back pops " + category.categoryName() + " to home",
-				1, panel.muxer().getComponentCount());
-			assertSame(panel.home(), panel.muxer().getComponent(0));
-		}
-	}
 
 	@Test
 	public void ownedCheckboxOnRestrictionsHeader()
 	{
 		newPanel();
-		CategoryPanel restrictions = panel.categories().get(2);
+		CategoryPanel restrictions = panel.categories().get(1);
 		assertEquals("Teleport Restrictions", restrictions.categoryName());
 
 		Container header = headerOf(restrictions);
@@ -1065,156 +812,49 @@ public class ShortestPathPanelLayoutTest
 		JCheckBox owned = (JCheckBox) east;
 		assertEquals("Owned", owned.getText());
 
-		// The header spans the full 242px frame above the scroll area: laid
-		// out there, the checkbox lands fully inside the visible strip...
+		// Laid out at viewport width the checkbox lands fully inside the
+		// section header strip...
 		header.setSize(new Dimension(
-			PluginPanel.PANEL_WIDTH + PluginPanel.SCROLLBAR_WIDTH,
-			header.getPreferredSize().height));
+			PluginPanel.PANEL_WIDTH, header.getPreferredSize().height));
 		header.doLayout();
 		assertTrue("Owned checkbox fully inside the header strip",
-			owned.getBounds().getMaxX()
-				<= PluginPanel.PANEL_WIDTH + PluginPanel.SCROLLBAR_WIDTH);
+			owned.getBounds().getMaxX() <= PluginPanel.PANEL_WIDTH);
 
-		// ...and it lives on the header, never inside the scroll view where
-		// the 17px scrollbar column could cover it.
+		// ...and it lives on that header, which stays pinned above the
+		// section's own scroll rather than scrolling with the rows.
 		assertSame(header, owned.getParent());
 		JScrollPane scroll = findScrollPane(restrictions);
-		assertNotNull(scroll);
-		assertFalse("Owned checkbox is not a scroll-view descendant",
+		assertNotNull("the section scrolls its rows under the pinned header",
+			scroll);
+		assertFalse("the Owned filter stays pinned on the header",
 			SwingUtilities.isDescendingFrom(owned,
 				scroll.getViewport().getView()));
 	}
 
-	@Test
-	public void statusRefreshOnExternalChange() throws Exception
-	{
-		newPanel();
-		JLabel transportsStatus = statusLabelOf(tileNamed("Transports"));
-		JLabel bankStatus = statusLabelOf(tileNamed("Bank"));
-		assertEquals("Off", bankStatus.getText());
-		int onBefore = Integer.parseInt(
-			transportsStatus.getText().split("/")[0]);
 
-		// The enum-combo card's key: NONE turns that one master off, which
-		// must reach the tile through the external-change path.
-		config.setUseTeleportationItemsValue(TeleportationItem.NONE);
-		settings.onConfigChanged(event("useTeleportationItems"));
-		flushEdt();
-		assertEquals("Transports tile tracks the external edit",
-			(onBefore - 1) + "/" + panel.transportCards().size() + " on",
-			transportsStatus.getText());
 
-		config.setIncludeBankPathValue(true);
-		settings.onConfigChanged(event("includeBankPath"));
-		flushEdt();
-		assertEquals("Bank tile tracks the external edit", "On",
-			bankStatus.getText());
-	}
 
-	@Test
-	public void restrictionTileCountsEveryRecordKind() throws Exception
-	{
-		newPanel();
-		flushEdt();
-		JLabel status = statusLabelOf(tileNamed("Teleport Restrictions"));
-		assertEquals("All allowed", status.getText());
-
-		// A rep@dest option block alone is an active restriction even
-		// though no bare item id is blocked.
-		int farmDest = WorldPointUtil.packWorldPoint(2665, 3374, 0);
-		config.setBlockedTeleportItemsValue("13121@" + farmDest);
-		settings.onConfigChanged(event("blockedTeleportItems"));
-		flushEdt();
-		assertEquals("an option block counts", "1 restricted", status.getText());
-
-		config.setBlockedTeleportItemsValue("13121:5");
-		settings.onConfigChanged(event("blockedTeleportItems"));
-		flushEdt();
-		assertEquals("a threshold override counts", "1 restricted", status.getText());
-
-		config.setBlockedTeleportItemsValue("13121,13121:5");
-		settings.onConfigChanged(event("blockedTeleportItems"));
-		flushEdt();
-		assertEquals("block and threshold sum", "2 restricted", status.getText());
-	}
-
-	@Test
-	public void deepLinkRoundTrip() throws Exception
-	{
-		newPanel();
-		CategoryPanel transports = panel.categories().get(1);
-
-		setSearchText("quetz");
-		assertSame("a query pops back to the home surface",
-			panel.home(),
-			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-		assertTrue("results view groups under the Transports header",
-			resultsContainHeader("Transports"));
-
-		List<ShortestPathPanel.SearchRow> matches =
-			panel.matchingRows(transports, "quetz");
-		assertFalse(matches.isEmpty());
-		panel.deepLink(transports, matches.get(0));
-		assertSame("deep link pushes the owning category",
-			transports,
-			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-		assertEquals("filtered landing shows only the matching rows",
-			matches.size(), contentOf(transports).getComponentCount());
-		assertEquals("query survives the deep link",
-			"quetz", panel.getCurrentQuery());
-
-		panel.backToHome();
-		assertSame("back returns to the results view",
-			panel.home(),
-			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-		assertTrue("results view still groups under Transports",
-			resultsContainHeader("Transports"));
-		assertEquals("quetz", panel.getCurrentQuery());
-
-		setSearchText("");
-		assertEquals("clearing restores the tile grid",
-			7, tileGrid().getComponentCount());
-		assertEquals("clearing restores the drilled category's full rows",
-			transports.rows().size(), contentOf(transports).getComponentCount());
-	}
-
-	@Test
-	public void noMatchShowsHint() throws Exception
-	{
-		newPanel();
-		setSearchText("zzzzz");
-		assertSame(panel.home(),
-			panel.muxer().getComponent(panel.muxer().getComponentCount() - 1));
-		assertTrue("no-match renders the pinned hint copy",
-			containsLabelText(contentOf(panel.home()),
-				"No options matching"));
-
-		setSearchText("");
-		assertEquals("clearing restores the tile grid",
-			7, tileGrid().getComponentCount());
-	}
 
 	@Test
 	public void categoryNameQueryListsTheRestrictionFamilies() throws Exception
 	{
 		newPanel();
-		// "restrictions" hits the category's own name but no family label:
-		// the results view must expand the checklist like the drilled
-		// category does rather than render a dangling header over zero rows.
+		// "restrictions" hits the section's own name but no family label:
+		// the checklist must expand in place rather than leave a dangling
+		// header over zero rows.
 		setSearchText("restrictions");
+		flushEdt();
 
-		FixedWidthPanel homeContent = contentOf(panel.home());
-		assertTrue("name-hit query groups under the category header",
-			resultsContainHeader("Teleport Restrictions"));
-		assertTrue("and lists families beneath it",
-			containsLabelText(homeContent, "Ardougne Cloaks"));
+		CategoryPanel restrictions = panel.categories().get(1);
+		assertTrue("name-hit query keeps the families listed",
+			containsLabelText(contentOf(restrictions), "Ardougne Cloaks"));
 	}
 
 	@Test
 	public void itemsDisabledHintSurfaces() throws Exception
 	{
 		newPanel();
-		CategoryPanel restrictions = panel.categories().get(2);
+		CategoryPanel restrictions = panel.categories().get(1);
 
 		config.setUseTeleportationItemsValue(TeleportationItem.NONE);
 		settings.onConfigChanged(event("useTeleportationItems"));
@@ -1587,6 +1227,37 @@ public class ShortestPathPanelLayoutTest
 				.contains("Ardougne Cloaks"));
 	}
 
+	/**
+	 * The injected fairy-ring staff requirement rides no generated family —
+	 * the checklist lists it as the code-defined "Fairy Staves" row, a staff
+	 * name search surfaces it, and unchecking writes every staff variant to
+	 * the {@code blockedTeleportItems} CSV the ring gate reads.
+	 */
+	@Test
+	public void fairyStavesRowBlocksEveryStaffVariant() throws Exception
+	{
+		newPanel();
+		flushEdt();
+
+		JPanel row = restrictionRowByName("Fairy Staves");
+		assertNotNull("the injected staff requirement is a checklist row", row);
+		assertTrue("a staff-name search surfaces the row",
+			panel.restrictionListPanel().matchingLabels("dramen")
+				.contains("Fairy Staves"));
+
+		click(masterBox(row));
+		flushEdt();
+
+		Set<Integer> blocked = new HashSet<>();
+		TeleportRestriction.parseBlocked(config.blockedTeleportItems(),
+			blocked, new HashMap<>());
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			assertTrue("unchecking writes staff id " + id + " to the CSV",
+				blocked.contains(id));
+		}
+	}
+
 	@Test
 	public void externalOptionBlockResyncsTheCheckboxes() throws Exception
 	{
@@ -1646,21 +1317,6 @@ public class ShortestPathPanelLayoutTest
 
 	// ---- Balloon log-basket routes -----------------------------------------
 
-	@Test
-	public void unlocksCategoryDropsTheBalloonRow()
-	{
-		newPanel();
-		CategoryPanel unlocks = panel.categories().get(3);
-		assertEquals("Unlocks", unlocks.categoryName());
-		assertEquals("four unlock toggles plus the respawn flag", 5,
-			unlocks.rows().size());
-		for (ShortestPathPanel.SearchRow row : unlocks.rows())
-		{
-			assertFalse("no balloon row remains in Unlocks",
-				row.display.toLowerCase(Locale.ROOT).contains("balloon")
-					|| row.text.toLowerCase(Locale.ROOT).contains("balloon"));
-		}
-	}
 
 	@Test
 	public void balloonCardCarriesPerRouteLogBasketCheckboxes()
@@ -1671,9 +1327,10 @@ public class ShortestPathPanelLayoutTest
 		card.setDetailOpen(true);
 		assertTrue("the balloon card still expands", card.isDetailOpen());
 
-		assertNotNull("the detail carries the Log Basket Routes header",
-			labelContaining(card, "Log Basket Routes"));
-		List<JCheckBox> boxes = labeledCheckboxesIn(card);
+		CollapsibleEnumGroup<?> basket = groupByLabel("Log Basket Routes");
+		assertNotNull("the detail carries the Log Basket Routes group", basket);
+		basket.setDetailOpen(true);
+		List<JCheckBox> boxes = labeledCheckboxesIn(basket);
 		assertEquals("one checkbox per balloon route",
 			BalloonRoute.values().length, boxes.size());
 		for (BalloonRoute route : BalloonRoute.values())
@@ -1723,7 +1380,7 @@ public class ShortestPathPanelLayoutTest
 	public void balloonRouteLabelsJoinTheCardSearchText() throws Exception
 	{
 		newPanel();
-		CategoryPanel transports = panel.categories().get(1);
+		CategoryPanel transports = panel.categories().get(0);
 		TransportFamilyCard card = transportCardByKey("useHotAirBalloons");
 		assertNotNull(card);
 
@@ -1733,89 +1390,9 @@ public class ShortestPathPanelLayoutTest
 		transports.applyQuery("");
 	}
 
-	@Test
-	public void unlocksTileCountsFiveKeys() throws Exception
-	{
-		newPanel();
-		assertEquals("0/5 on", statusLabelOf(tileNamed("Unlocks")).getText());
 
-		config.setUnlockCanoeAxeValue(true);
-		settings.onConfigChanged(event("unlockCanoeAxe"));
-		flushEdt();
-		assertEquals("1/5 on", statusLabelOf(tileNamed("Unlocks")).getText());
-	}
 
-	// ---- Display category -----------------------------------------------
 
-	private CategoryPanel displayCategory()
-	{
-		return panel.categories().get(6);
-	}
-
-	/**
-	 * The seventh home tile drills into "Display": the three plain check
-	 * rows the toggle keys map to, the tile-counter mode combo and its
-	 * step spinner — a live {@code n/3 on} status line counting the
-	 * boolean rows only, and a real item sprite. All three display
-	 * toggles default on.
-	 */
-	@Test
-	public void displayTileCoversTheDisplayRows() throws Exception
-	{
-		newPanel();
-		CategoryPanel display = displayCategory();
-		assertEquals("Display", display.categoryName());
-		assertEquals("three check rows plus the tile-counter pair", 5,
-			display.rows().size());
-
-		String[] keys = {"Show Transport Info", "Highlight Spellbook Spells",
-			"Highlight Inventory Items"};
-		for (int i = 0; i < keys.length; i++)
-		{
-			ShortestPathPanel.SearchRow row = display.rows().get(i);
-			// Hidden rows take their display name from the bundled key metadata.
-			assertEquals(keys[i] + " row in build order", keys[i], row.display);
-			assertNotNull(keys[i] + " row carries a checkbox",
-				masterBox(row.component));
-		}
-		assertEquals("showTileCounter row in build order", "Show Tile Counter",
-			display.rows().get(3).display);
-		assertFalse("showTileCounter renders a combo",
-			combosIn(display.rows().get(3).component).isEmpty());
-		assertEquals("tileCounterStep row in build order", "Tile Counter Step",
-			display.rows().get(4).display);
-		assertNotNull("tileCounterStep renders a spinner",
-			spinnerIn(display.rows().get(4).component));
-
-		assertTrue("the Display tile requests the settings monitor sprite",
-			spriteRequests.contains(SpriteID.OptionsIcons.DISPLAY));
-
-		JLabel status = statusLabelOf(tileNamed("Display"));
-		assertEquals("defaults count all three toggles on",
-			"3/3 on", status.getText());
-
-		config.setShowTransportInfoValue(false);
-		settings.onConfigChanged(event("showTransportInfo"));
-		flushEdt();
-		assertEquals("the tile status tracks external edits",
-			"2/3 on", status.getText());
-	}
-
-	/**
-	 * Highlights rows ride the same search surface as every other
-	 * category: a category-name query lands all five rows, a key-label
-	 * query lands just the matching rows.
-	 */
-	@Test
-	public void displayRowsSurfaceThroughSearch()
-	{
-		newPanel();
-		CategoryPanel display = displayCategory();
-		assertEquals("a category-name query lists every display row",
-			5, panel.matchingRows(display, "display").size());
-		assertEquals("a key-label query narrows to the matching rows",
-			2, panel.matchingRows(display, "tile counter").size());
-	}
 
 	// ---- Combo styling + tile-name fit ------------------------------------
 
@@ -1838,8 +1415,7 @@ public class ShortestPathPanelLayoutTest
 			combos.addAll(combosIn(surface));
 		}
 		assertFalse("the panel builds combos", combos.isEmpty());
-		assertTrue("the General rows and the POH tier combo all surface",
-			combos.size() >= 3);
+		assertTrue("the POH tier combo surfaces", combos.size() >= 1);
 
 		// A card bound to an enum-valued key exercises the master-combo
 		// branch — no shipped card is enum-mastered today (the teleport
@@ -1874,8 +1450,8 @@ public class ShortestPathPanelLayoutTest
 	{
 		newPanel();
 		JComboBox<?> combo = comboContaining(
-			contentOf(panel.categories().get(0)), TeleportationItem.NONE);
-		assertNotNull("the teleport-items mode combo", combo);
+			contentOf(pohCategory()), JewelleryBoxTier.ORNATE);
+		assertNotNull("the POH tier combo", combo);
 
 		// Raw types: the wildcard combo's renderer capture rejects typed
 		// calls. The renderer is a flyweight — the same JLabel comes back
@@ -1898,101 +1474,8 @@ public class ShortestPathPanelLayoutTest
 					list, combo.getItemAt(0), 0, true, false)).getBackground()));
 	}
 
-	/**
-	 * The teleport-items mode combo in General is the widest enum on the
-	 * panel ("Inventory and Bank (perm)") — uncapped it squeezes the row's
-	 * label column until the html-wrapped label needs three lines. Capping
-	 * the combo's preferred width keeps the whole row one line tall.
-	 */
-	@Test
-	public void teleportItemsComboRowStaysOneLine()
-	{
-		newPanel();
-		JComboBox<?> combo = comboContaining(
-			contentOf(panel.categories().get(0)), TeleportationItem.NONE);
-		assertNotNull("the teleport-items mode combo", combo);
-		assertTrue("the mode combo's preferred width is capped like the "
-				+ "card combos", combo.getPreferredSize().width <= 110);
-	}
 
-	/**
-	 * The long category names never clip on the square tiles: "Teleport
-	 * Restrictions" and "Player-Owned House" exceed the ~102px tile edge on
-	 * one line, so the name label wraps to two centered lines rather than
-	 * truncating.
-	 */
-	@Test
-	public void longTileNamesWrapInsteadOfClipping()
-	{
-		newPanel();
-		for (String name : new String[]{"Teleport Restrictions", "Player-Owned House"})
-		{
-			JComponent tile = tileNamed(name);
-			assertNotNull(name + " tile", tile);
-			JLabel nameLabel = null;
-			for (JLabel label : labelsIn(tile))
-			{
-				if (stripHtml(label.getText()).contains(name))
-				{
-					nameLabel = label;
-				}
-			}
-			assertNotNull(name + " name label", nameLabel);
-			assertTrue(name + " name label carries the html wrap",
-				nameLabel.getText().startsWith("<html>"));
-			// An html label only reflows once a paint pass hands the view a
-			// real width — getPreferredSize() alone reports the unwrapped
-			// one-line span regardless of setSize.
-			int tileEdge = (PluginPanel.PANEL_WIDTH - 2 * 8 - 4) / 2;
-			nameLabel.setSize(tileEdge, 200);
-			BufferedImage scratch =
-				new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D graphics = scratch.createGraphics();
-			nameLabel.paint(graphics);
-			graphics.dispose();
-			int oneLine = nameLabel.getFontMetrics(nameLabel.getFont()).getHeight();
-			assertTrue(name + " wraps to a second line at tile width",
-				nameLabel.getPreferredSize().height > oneLine);
-		}
-	}
 
-	/**
-	 * A tile-name token can never clip mid-glyph: html only wraps at
-	 * spaces, so an unbreakable run wider than the label's allotted width
-	 * ("Player-Owned") renders half-cut. Laid out at the tile edge, every
-	 * token of every tile label must measure inside the label's real
-	 * width — a token that cannot fit falls back to the small font.
-	 */
-	@Test
-	public void tileNameTokensFitInsideTheTileEdge()
-	{
-		newPanel();
-		int tileEdge = (PluginPanel.PANEL_WIDTH - 2 * 8 - 4) / 2;
-		for (Component child : tileGrid().getComponents())
-		{
-			JComponent tile = (JComponent) child;
-			tile.setSize(tileEdge, tileEdge);
-			tile.doLayout();
-			for (JLabel label : labelsIn(tile))
-			{
-				String text = stripHtml(label.getText());
-				if (text == null || text.isEmpty())
-				{
-					continue;
-				}
-				int allotted = label.getWidth();
-				assertTrue("tile label is laid out with a real width",
-					allotted > 0);
-				FontMetrics metrics = label.getFontMetrics(label.getFont());
-				for (String token : text.split(" "))
-				{
-					assertTrue("\"" + token + "\" fits its " + allotted
-							+ "px label width in the label's resolved font",
-						metrics.stringWidth(token) <= allotted);
-				}
-			}
-		}
-	}
 
 	// ---- Expandable surfaces: dark header over a background-toned,
 	// ---- dark-framed detail well ---------------------------------------
@@ -2123,19 +1606,62 @@ public class ShortestPathPanelLayoutTest
 
 	private CategoryPanel pohCategory()
 	{
-		return panel.categories().get(5);
+		return panel.categories().get(2);
 	}
 
-	/** The {@link CollapsibleEnumGroup} row carrying {@code label}. */
+	/** The {@link CollapsibleEnumGroup} carrying {@code label} anywhere in
+	 * the panel tree — groups nest inside family-card detail wells now. */
 	private CollapsibleEnumGroup<?> groupByLabel(String label)
 	{
-		for (ShortestPathPanel.SearchRow row : pohCategory().rows())
+		return groupByLabel(panel, label);
+	}
+
+	private static CollapsibleEnumGroup<?> groupByLabel(Container root, String label)
+	{
+		for (Component child : root.getComponents())
 		{
-			if (row.component instanceof CollapsibleEnumGroup
+			if (child instanceof CollapsibleEnumGroup
 				&& label.equals(stripHtml(
-					((CollapsibleEnumGroup<?>) row.component).getNameLabel().getText())))
+					((CollapsibleEnumGroup<?>) child).getNameLabel().getText())))
 			{
-				return (CollapsibleEnumGroup<?>) row.component;
+				return (CollapsibleEnumGroup<?>) child;
+			}
+			if (child instanceof Container)
+			{
+				CollapsibleEnumGroup<?> found = groupByLabel((Container) child, label);
+				if (found != null)
+				{
+					return found;
+				}
+			}
+		}
+		return null;
+	}
+
+	/** The POH family card — the house section is a single card row. */
+	private TransportFamilyCard pohCard()
+	{
+		return transportCardByKey("usePoh");
+	}
+
+	/**
+	 * The caption row component carrying {@code caption} inside the POH
+	 * card's detail well — the caption is a plain label row the well dims
+	 * with the master like every detail child.
+	 */
+	private JComponent pohCaptionRow(String caption)
+	{
+		TransportFamilyCard card = pohCard();
+		if (card == null)
+		{
+			return null;
+		}
+		for (Component child : card.detail.getComponents())
+		{
+			if (child instanceof JComponent
+				&& containsLabelEqual((JComponent) child, caption))
+			{
+				return (JComponent) child;
 			}
 		}
 		return null;
@@ -2145,18 +1671,47 @@ public class ShortestPathPanelLayoutTest
 	public void pohCategoryShowsCollapsibleGroupsNotFlatRows()
 	{
 		newPanel();
+		assertEquals("the POH section is a single family-card row",
+			1, pohCategory().rows().size());
+		TransportFamilyCard card = pohCard();
+		assertNotNull("the usePoh card", card);
+		assertNotNull("the card carries the usePoh master checkbox",
+			card.getMasterControl());
+
 		int groups = 0;
-		for (ShortestPathPanel.SearchRow row : pohCategory().rows())
+		for (Component child : card.detail.getComponents())
 		{
-			if (row.component instanceof CollapsibleEnumGroup)
+			if (child instanceof CollapsibleEnumGroup)
 			{
 				groups++;
 			}
 		}
 		assertEquals("five spellbook groups + the mounted-items group", 6, groups);
-		assertEquals("the collapsed POH category is compact — master + 4 rows "
-				+ "+ 2 section captions + 6 group headers instead of 40+ flat member rows",
-			13, pohCategory().rows().size());
+		assertEquals("the card detail is compact — 4 rows + 2 captions "
+				+ "+ 6 group headers instead of 40+ flat member rows",
+			12, card.detail.getComponentCount());
+	}
+
+	/**
+	 * The house card is its section's only row, so it drops the
+	 * collapsible chrome a lone boxed expander would draw: no expander,
+	 * the detail sits always expanded, and the well carries no frame
+	 * border — it reads as a flat labelled group like the surrounding
+	 * rows. The inner enum groups keep their own expanders.
+	 */
+	@Test
+	public void pohCardRendersFlatNotCollapsible()
+	{
+		newPanel();
+		TransportFamilyCard card = pohCard();
+		assertNotNull("the usePoh card", card);
+		assertTrue("flat card's detail is always expanded",
+			card.detail.isVisible());
+		assertNull("flat card grows no expander", card.expander);
+		assertNull("flat card's detail carries no frame border",
+			frameInsets(card.detail.getBorder(), card.detail));
+		assertFalse("the card body sits transparent on the section tone",
+			card.isOpaque());
 	}
 
 	@Test
@@ -2194,7 +1749,7 @@ public class ShortestPathPanelLayoutTest
 		assertFalse("groups start collapsed", ancient.isDetailOpen());
 
 		assertFalse("a member-label query matches the group's row",
-			panel.matchingRows(poh, "kharyrll").isEmpty());
+			poh.matchingRows("kharyrll").isEmpty());
 		poh.applyQuery("kharyrll");
 		assertTrue("the matched group row stays visible",
 			SwingUtilities.isDescendingFrom(ancient, contentOf(poh)));
@@ -2293,18 +1848,6 @@ public class ShortestPathPanelLayoutTest
 
 	// ---- POH section captions ---------------------------------------------
 
-	private ShortestPathPanel.SearchRow pohRowByDisplay(String display)
-	{
-		for (ShortestPathPanel.SearchRow row : pohCategory().rows())
-		{
-			if (display.equals(row.display))
-			{
-				return row;
-			}
-		}
-		return null;
-	}
-
 	/**
 	 * The five nexus spellbook groups and the mounted-items group share
 	 * identical chrome — without captions the six rows read as one
@@ -2316,30 +1859,34 @@ public class ShortestPathPanelLayoutTest
 	public void pohCaptionsDivideNexusGroupsFromMountedItems()
 	{
 		newPanel();
-		List<ShortestPathPanel.SearchRow> rows = pohCategory().rows();
+		TransportFamilyCard card = pohCard();
+		assertNotNull("the usePoh card", card);
+		Component[] children = card.detail.getComponents();
 		int nexusCaption = -1;
 		int mountedCaption = -1;
 		int mountedGroup = -1;
 		int groupsBetween = 0;
-		for (int i = 0; i < rows.size(); i++)
+		for (int i = 0; i < children.length; i++)
 		{
-			ShortestPathPanel.SearchRow row = rows.get(i);
-			if ("Portal Nexus".equals(row.display))
+			Component child = children[i];
+			if (child instanceof JComponent
+				&& containsLabelEqual((JComponent) child, "Portal Nexus"))
 			{
 				nexusCaption = i;
 			}
-			else if ("Mounted Items".equals(row.display))
+			else if (child instanceof JComponent
+				&& containsLabelEqual((JComponent) child, "Mounted Items"))
 			{
 				mountedCaption = i;
 			}
-			if (row.component instanceof CollapsibleEnumGroup)
+			if (child instanceof CollapsibleEnumGroup)
 			{
 				if (nexusCaption >= 0 && mountedCaption < 0)
 				{
 					groupsBetween++;
 				}
 				String groupLabel = stripHtml(
-					((CollapsibleEnumGroup<?>) row.component).getNameLabel().getText());
+					((CollapsibleEnumGroup<?>) child).getNameLabel().getText());
 				if ("All items".equals(groupLabel))
 				{
 					mountedGroup = i;
@@ -2365,17 +1912,18 @@ public class ShortestPathPanelLayoutTest
 	public void pohCaptionsUseThePanelRowTypography()
 	{
 		newPanel();
+		TransportFamilyCard card = pohCard();
+		assertNotNull("the usePoh card", card);
 
-		// The reference: a sibling checkRow label in the same category
+		// The reference: a sibling checkRow label in the same detail well
 		// (hidden rows take their display name from the bundled key metadata).
-		JLabel reference = labelContaining(
-			contentOf(pohCategory()), "POH Fairy Ring");
+		JLabel reference = labelContaining(card.detail, "POH Fairy Ring");
 		assertNotNull("a sibling check row label", reference);
 
-		ShortestPathPanel.SearchRow caption = pohRowByDisplay("Portal Nexus");
-		assertNotNull("the Portal Nexus caption row", caption);
+		JComponent captionRow = pohCaptionRow("Portal Nexus");
+		assertNotNull("the Portal Nexus caption row", captionRow);
 		JLabel captionLabel = null;
-		for (JLabel label : labelsIn(caption.component))
+		for (JLabel label : labelsIn(captionRow))
 		{
 			if ("Portal Nexus".equals(stripHtml(label.getText())))
 			{
@@ -2398,10 +1946,10 @@ public class ShortestPathPanelLayoutTest
 	public void pohCaptionsDimWithTheMasterToggle() throws Exception
 	{
 		newPanel();
-		ShortestPathPanel.SearchRow caption = pohRowByDisplay("Portal Nexus");
-		assertNotNull("the Portal Nexus caption row", caption);
+		JComponent captionRow = pohCaptionRow("Portal Nexus");
+		assertNotNull("the Portal Nexus caption row", captionRow);
 		JLabel captionLabel = null;
-		for (JLabel label : labelsIn(caption.component))
+		for (JLabel label : labelsIn(captionRow))
 		{
 			if ("Portal Nexus".equals(stripHtml(label.getText())))
 			{
@@ -2425,15 +1973,13 @@ public class ShortestPathPanelLayoutTest
 	public void pohCaptionsSurfaceThroughSearch()
 	{
 		newPanel();
-		boolean nexusCaption = false;
-		for (ShortestPathPanel.SearchRow row :
-			panel.matchingRows(pohCategory(), "portal nexus"))
-		{
-			if ("Portal Nexus".equals(row.display))
-			{
-				nexusCaption = true;
-			}
-		}
-		assertTrue("a 'portal nexus' query keeps its caption visible", nexusCaption);
+		// The caption's search text folds into the card row's match text,
+		// so a "portal nexus" query keeps the card (and its well) surfaced.
+		List<ShortestPathPanel.SearchRow> matches =
+			pohCategory().matchingRows("portal nexus");
+		assertEquals("the query matches only the POH card row",
+			1, matches.size());
+		assertSame("the match is the usePoh card",
+			pohCard(), matches.get(0).component);
 	}
 }

@@ -16,6 +16,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -24,17 +27,14 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
 import shortestpath.settings.Settings;
-import shortestpath.ShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.sailing.BoatHull;
 import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
-import shortestpath.pathfinder.PathfinderBackend;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
@@ -50,10 +50,11 @@ import shortestpath.sailing.SailingState;
  */
 @Slf4j
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PathScheduler
 {
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(PathScheduler.class, "/shortestpath/marker.png");
-	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
+	private final List<Integer> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
 
 	private final Client client;
@@ -76,28 +77,16 @@ public class PathScheduler
 	private Future<?> pathfinderFuture;
 	// Queries in flight or still queued, guarded by pathfinderMutex. Used both to answer callers
 	// whose query never ran and to know whether a search is reading the transport availability.
-	private final Map<Pathfinder, QueryTask> queries = new LinkedHashMap<>();
+	private final Map<ActiveSearch, QueryTask> queries = new LinkedHashMap<>();
 	// Volatile because the render thread reads it (through getActiveSearch() and friends)
 	// while restarts write it on the client thread under pathfinderMutex.
 	private volatile ActiveSearch pathfinder;
-	private volatile Pathfinder legacyPathfinder;
 	private AStarRoutingStaticProvider aStarRoutingStatic;
 	private final AStarRoutingSession aStarRoutingSession = new AStarRoutingSession();
-	private boolean startPointSet = false;
+	@Getter(AccessLevel.PACKAGE) private boolean startPointSet = false;
 	// Where the boat sat within its tile when the sailing search started, in local units from the tile centre
-	private volatile int sailingPivotX;
-	private volatile int sailingPivotY;
-
-	@Inject
-	public PathScheduler(Client client, ClientThread clientThread, Settings settings,
-		WorldMapPointManager worldMapPointManager, DebugState debugState)
-	{
-		this.client = client;
-		this.clientThread = clientThread;
-		this.settings = settings;
-		this.worldMapPointManager = worldMapPointManager;
-		this.debugState = debugState;
-	}
+	@Getter private volatile int sailingPivotX;
+	@Getter private volatile int sailingPivotY;
 
 	/**
 	 * Binds the shell-owned pieces the scheduler needs: the pathfinder config the shell builds in
@@ -173,16 +162,12 @@ public class PathScheduler
 				// search would sail its headings across land
 				if (pathfinderConfig.isSailingMoves() && sailing.getState().hasBoat())
 				{
-					// A SailingPathfinder isn't a Pathfinder, so it can't be held by
-					// legacyPathfinder — the legacy-backend slot stays null while sailing
-					legacyPathfinder = null;
 					pathfinder = sailingPathfinder(start, ends);
 				}
-				else if (pathfinderConfig.getPathfinderBackend() == PathfinderBackend.ASTAR)
+				else
 				{
 					try
 					{
-						legacyPathfinder = null;
 						AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
 							aStarRoutingSession, start, ends, responder::postPluginMessages);
 						// Recalculating towards the same targets: keep the old route drawn until
@@ -194,14 +179,8 @@ public class PathScheduler
 					catch (RuntimeException error)
 					{
 						debugState.clientError(error, client.getTickCount());
-						legacyPathfinder = null;
 						pathfinder = AStarPathfinder.failed(start, ends, responder::postPluginMessages, error);
 					}
-				}
-				else
-				{
-					legacyPathfinder = new Pathfinder(pathfinderConfig, start, ends, responder::postPluginMessages);
-					pathfinder = legacyPathfinder;
 				}
 				ActiveSearch search = pathfinder;
 				debugState.searchStarted(search);
@@ -274,14 +253,14 @@ public class PathScheduler
 	}
 
 	/**
-	 * Builds the A* backend's static routing data in the background when the A* backend is
-	 * selected, so the first route does not pay for it. The build runs on the pathfinding thread,
-	 * so a search submitted meanwhile simply queues behind it; a failed build is remembered by the
-	 * provider and reported by that search.
+	 * Builds the A* backend's static routing data in the background, so the first route does
+	 * not pay for it. The build runs on the pathfinding thread, so a search submitted
+	 * meanwhile simply queues behind it; a failed build is remembered by the provider and
+	 * reported by that search.
 	 */
 	public void prepareBackend()
 	{
-		if (pathfinderConfig == null || settings.lifecycle().pathfinderBackend() != PathfinderBackend.ASTAR)
+		if (pathfinderConfig == null)
 		{
 			return;
 		}
@@ -398,10 +377,9 @@ public class PathScheduler
 				{
 					pathfinderConfig.refresh();
 				}
-				// Plugin queries always run on the legacy backend, even when the user-facing
-				// search opted into a different one: external callers get the proven engine's
-				// routes regardless of the experiment the user has enabled.
-				Pathfinder query = new Pathfinder(pathfinderConfig, start, targets);
+				// The plugin's only engine serves external callers too: queries run on the
+				// same A* backend as the displayed path and reuse its session cache.
+				ActiveSearch query = querySearch(start, targets);
 				QueryTask task = new QueryTask(id);
 				queries.put(query, task);
 				task.future = pathfindingExecutor.submit(() -> runQuery(query, task));
@@ -409,7 +387,25 @@ public class PathScheduler
 		});
 	}
 
-	private void runQuery(Pathfinder query, QueryTask task)
+	/**
+	 * The engine a plugin-message query runs. A constructor failure still owes the caller a
+	 * result, so it becomes a finished {@code failed()} search carrying BACKEND_FAILURE
+	 * rather than an uncaught exception thrown across the client-thread hop.
+	 */
+	private ActiveSearch querySearch(int start, Targets targets)
+	{
+		try
+		{
+			return new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(), aStarRoutingSession,
+				start, targets, null);
+		}
+		catch (RuntimeException error)
+		{
+			return AStarPathfinder.failed(start, targets, null, error);
+		}
+	}
+
+	private void runQuery(ActiveSearch query, QueryTask task)
 	{
 		try
 		{
@@ -437,9 +433,9 @@ public class PathScheduler
 	 */
 	private void cancelQueries(String reason)
 	{
-		for (Iterator<Map.Entry<Pathfinder, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
+		for (Iterator<Map.Entry<ActiveSearch, QueryTask>> it = queries.entrySet().iterator(); it.hasNext();)
 		{
-			Map.Entry<Pathfinder, QueryTask> entry = it.next();
+			Map.Entry<ActiveSearch, QueryTask> entry = it.next();
 			QueryTask task = entry.getValue();
 			if (task.future != null && task.future.cancel(false))
 			{
@@ -481,7 +477,7 @@ public class PathScheduler
 		{
 			return;
 		}
-		pendingTasks.add(new PendingTask(tick, pathfinderConfig::refresh));
+		pendingTasks.add(tick);
 	}
 
 	/**
@@ -491,9 +487,10 @@ public class PathScheduler
 	{
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
-			if (pendingTasks.get(i).check(tick))
+			if (tick >= pendingTasks.get(i))
 			{
-				pendingTasks.remove(i--).run();
+				pendingTasks.remove(i--);
+				pathfinderConfig.refresh();
 			}
 		}
 	}
@@ -532,7 +529,6 @@ public class PathScheduler
 					pathfinder.cancel();
 				}
 				pathfinder = null;
-				legacyPathfinder = null;
 			}
 
 			worldMapPointManager.removeIf(x -> x == marker);
@@ -602,21 +598,6 @@ public class PathScheduler
 		return pathfinder;
 	}
 
-	public int getSailingPivotX()
-	{
-		return sailingPivotX;
-	}
-
-	public int getSailingPivotY()
-	{
-		return sailingPivotY;
-	}
-
-	boolean isStartPointSet()
-	{
-		return startPointSet;
-	}
-
 	/**
 	 * Runs {@code action} while holding the scheduler mutex, for shell callers that must pair
 	 * their own state writes with the search snapshot.
@@ -627,5 +608,18 @@ public class PathScheduler
 		{
 			return action.get();
 		}
+	}
+
+	/**
+	 * {@link #withSchedulerLock(Supplier)} for bodies that have nothing to return; the same
+	 * monitor guards both overloads.
+	 */
+	public void withSchedulerLock(Runnable action)
+	{
+		withSchedulerLock(() ->
+		{
+			action.run();
+			return null;
+		});
 	}
 }
