@@ -26,6 +26,7 @@ import net.runelite.api.Skill;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -76,6 +77,14 @@ public class UnlockSuggestionsTest
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		doReturn(inventory).when(client).getItemContainer(InventoryID.INV);
+		// What is found shouldn't depend on how busy the machine is; the budget test sets it back.
+		UnlockSuggestions.timeScale = 10;
+	}
+
+	@After
+	public void after()
+	{
+		UnlockSuggestions.timeScale = 1;
 	}
 
 	/** An account with no quests done, every skill at {@code level}, carrying {@code items}. */
@@ -248,6 +257,7 @@ public class UnlockSuggestionsTest
 
 		assertFalse(search.getResult().isReached());
 		List<UnlockSuggestions.Suggestion> suggestions = search.getUnlockSuggestions();
+		assertFalse(search.debugStats().toString(), suggestions.isEmpty());
 		assertEquals(Map.of(ItemID.BRONZE_AXE, 1, ItemID.MACHETTE, 1), suggestions.get(0).getCapability().getItems());
 		int[] agility = new int[SkillLevels.LENGTH];
 		agility[Skill.AGILITY.ordinal()] = 79;
@@ -264,6 +274,7 @@ public class UnlockSuggestionsTest
 	public void suggestionsStayWithinOneTickOnLongRoutes()
 	{
 		// A level 1 account has the most locked transports to weigh: well over a hundred capabilities.
+		UnlockSuggestions.timeScale = 1;
 		setup(1);
 		for (int target : new int[] {ALDARIN, WorldPointUtil.packWorldPoint(2932, 2936, 0),
 			WorldPointUtil.packWorldPoint(2795, 2940, 0), WorldPointUtil.packWorldPoint(1388, 9313, 0)})

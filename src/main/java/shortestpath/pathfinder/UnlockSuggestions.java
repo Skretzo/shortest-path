@@ -49,6 +49,11 @@ public final class UnlockSuggestions
 	private static final long WIND_DOWN_NANOS = 10_000_000L;
 	/** How long each of a rerun's two searches may take before the capability is left undecided. */
 	static final long CHECK_SLICE_NANOS = 60_000_000L;
+	/**
+	 * Stretches every limit above. Tests that check what is found, rather than how fast, raise it so
+	 * a busy machine can't change the answer.
+	 */
+	static int timeScale = 1;
 	/** The heuristic weight of a rerun's second, greedier search. */
 	private static final double QUICK_WEIGHT = 3.0;
 	static final int MAX_SUGGESTIONS = 3;
@@ -122,7 +127,7 @@ public final class UnlockSuggestions
 	Found find(RoutingStatic stat, CollisionMap collision, PreparedRoutingAccount account, int start,
 		GoalStates goals, SearchRestrictions restrictions, double heuristicWeight, BooleanSupplier cancelled)
 	{
-		long deadline = System.nanoTime() + BUDGET_NANOS - WIND_DOWN_NANOS;
+		long deadline = System.nanoTime() + (BUDGET_NANOS - WIND_DOWN_NANOS) * timeScale;
 		BooleanSupplier stop = () -> cancelled.getAsBoolean() || System.nanoTime() > deadline;
 		int[] targets = goals.tiles().stream().mapToInt(Integer::intValue).toArray();
 		ComponentGraph graph = new ComponentGraph(stat, obtainable.get());
@@ -190,7 +195,7 @@ public final class UnlockSuggestions
 			{
 				break;
 			}
-			if (System.nanoTime() > deadline - RERUN_RESERVE_NANOS)
+			if (System.nanoTime() > deadline - RERUN_RESERVE_NANOS * timeScale)
 			{
 				outOfTime = true;
 				break;
@@ -276,7 +281,7 @@ public final class UnlockSuggestions
 	private static AStarForwardSearch.Result check(PreparedTarget target, int start, double weight, BooleanSupplier stop,
 		SearchRestrictions restrictions, GoalStates goals)
 	{
-		long sliceEnd = System.nanoTime() + CHECK_SLICE_NANOS;
+		long sliceEnd = System.nanoTime() + CHECK_SLICE_NANOS * timeScale;
 		return target.search(start, () -> stop.getAsBoolean() || System.nanoTime() > sliceEnd, weight, restrictions,
 			AStarForwardSearch.NO_PROGRESS, goals::accepts);
 	}
