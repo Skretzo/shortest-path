@@ -244,11 +244,10 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			}
 		}, () ->
 		{
-			syncing = false;
-		}
-		// Masterless cards hold no control to mirror into — only the dim
-		// state follows the configured value.
-		applyEnabled(isMasterOn());
+			// Masterless cards hold no control to mirror into — only the
+			// dim state follows the configured value.
+			applyEnabled(isMasterOn());
+		});
 	}
 
 	private JComponent createMasterControl(String description)
@@ -266,10 +265,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 			{
 				if (e.getStateChange() == ItemEvent.SELECTED)
 				{
-					if (!syncing)
-					{
-						panel.settings.write(keyName, combo.getSelectedItem());
-					}
+					PanelRows.guardedWrite(syncing,
+						() -> panel.settings.write(keyName, combo.getSelectedItem()));
 					applyEnabled(isMasterOn());
 				}
 			});
@@ -281,10 +278,8 @@ class TransportFamilyCard extends JPanel implements SearchExpandable
 		checkBox.setToolTipText(ShortestPathPanel.html(description));
 		checkBox.addActionListener(e ->
 		{
-			if (!syncing)
-			{
-				panel.settings.write(keyName, checkBox.isSelected());
-			}
+			PanelRows.guardedWrite(syncing,
+				() -> panel.settings.write(keyName, checkBox.isSelected()));
 			applyEnabled(checkBox.isSelected());
 		});
 		return checkBox;
