@@ -107,7 +107,7 @@ public class HookLivenessTest
 	}
 
 	// ------------------------------------------------------------------
-	// varbitChecks — consulted per check against the captured map.
+	// varChecks(VARBIT) — consulted per check against the captured map.
 	// ------------------------------------------------------------------
 
 	@Test
@@ -150,7 +150,7 @@ public class HookLivenessTest
 	}
 
 	// ------------------------------------------------------------------
-	// varPlayerChecks — same polarity, bank and transport.
+	// varChecks(VARPLAYER) — same polarity, bank and transport.
 	// ------------------------------------------------------------------
 
 	@Test
@@ -188,5 +188,51 @@ public class HookLivenessTest
 		hooks.failVarPlayers(true);
 		assertFalse(requirements.satisfied(gated));
 		assertEquals(RejectionReason.VARPLAYER, requirements.check(gated));
+	}
+
+	// ------------------------------------------------------------------
+	// Kind isolation — each dispatched call sees only its own var family.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void varKindKnobsStayIsolatedAcrossTheCollapsedSeam()
+	{
+		Transport both = new Transport.TransportBuilder()
+			.type(TransportType.TRANSPORT)
+			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
+			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
+			.varbits("4481=1")
+			.varPlayers("4130>1999")
+			.build();
+		Transport varPlayerOnly = new Transport.TransportBuilder()
+			.type(TransportType.TRANSPORT)
+			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
+			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
+			.varPlayers("4130>1999")
+			.build();
+		RequirementContext context = RequirementTestFixtures.context()
+			.varbitValues(Map.of(4481, 1))
+			.varPlayerValues(Map.of(4130, 2000))
+			.build();
+		TestRequirementHooks hooks = new TestRequirementHooks();
+		Requirements requirements = chain(context, hooks);
+
+		// Both requirement sets pass their checks.
+		assertTrue(requirements.usable(both));
+		assertTrue(requirements.usable(varPlayerOnly));
+
+		// The varbit knob only fails the VARBIT dispatch — a varplayer-only
+		// transport's verdict is unmoved.
+		hooks.failVarbits(true);
+		assertFalse(requirements.usable(both));
+		assertEquals(RejectionReason.VARBIT, requirements.check(both));
+		assertTrue(requirements.usable(varPlayerOnly));
+
+		// And symmetrically the varplayer knob only fails the VARPLAYER
+		// dispatch — the varbit side keeps passing on the same chain.
+		hooks.failVarbits(false);
+		hooks.failVarPlayers(true);
+		assertFalse(requirements.usable(both));
+		assertEquals(RejectionReason.VARPLAYER, requirements.check(both));
 	}
 }

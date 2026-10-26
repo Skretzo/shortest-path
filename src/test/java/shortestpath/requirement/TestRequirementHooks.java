@@ -16,9 +16,11 @@ import shortestpath.requirement.model.VarRequirement;
  * config's bypassable methods receive the per-refresh snapshot.
  *
  * <p>The {@code failVarbits}/{@code failVarPlayers} knobs force the failure
- * polarity ({@code true} = a check FAILED) for liveness assertions: flipping
- * one must move the verdict of a chain that already exists, proving the gates
- * read the seam per call rather than a frozen copy.
+ * polarity ({@code true} = a check FAILED) for liveness assertions — the
+ * single {@link #varChecks} impl picks the knob matching the dispatched
+ * {@link VarRequirement.VarType} kind, so flipping one must move the verdict
+ * of a chain that already exists without touching the other var family,
+ * proving the gates read the seam per call rather than a frozen copy.
  */
 final class TestRequirementHooks implements RequirementHooks
 {
@@ -51,28 +53,15 @@ final class TestRequirementHooks implements RequirementHooks
 	}
 
 	@Override
-	public boolean varbitChecks(Collection<VarRequirement> requirements,
-		Map<Integer, Integer> values, long evaluationTimeMinutes)
+	public boolean varChecks(Collection<VarRequirement> requirements,
+		Map<Integer, Integer> values, long evaluationTimeMinutes,
+		VarRequirement.VarType kind)
 	{
+		boolean fail = VarRequirement.VarType.VARBIT.equals(kind) ? failVarbits : failVarPlayers;
 		for (VarRequirement requirement : requirements)
 		{
-			if (requirement.isVarbit()
-				&& (failVarbits || !requirement.check(values, evaluationTimeMinutes)))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public boolean varPlayerChecks(Collection<VarRequirement> requirements,
-		Map<Integer, Integer> values, long evaluationTimeMinutes)
-	{
-		for (VarRequirement requirement : requirements)
-		{
-			if (requirement.isVarPlayer()
-				&& (failVarPlayers || !requirement.check(values, evaluationTimeMinutes)))
+			if (requirement.getVarType() == kind
+				&& (fail || !requirement.check(values, evaluationTimeMinutes)))
 			{
 				return true;
 			}
