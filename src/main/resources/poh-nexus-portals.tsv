@@ -1,0 +1,41 @@
+#enum-name	label	portal-group	display-infos
+APE_ATOLL_DUNGEON	Ape Atoll Dungeon	ARCEUUS	Ape Atoll Dungeon Portal
+ANNAKARL	Annakarl	ANCIENT	Annakarl Portal
+ARCEUUS_LIBRARY	Arceuus Library	ARCEUUS	Arceuus Library Portal
+ARDOUGNE	Ardougne	STANDARD	Ardougne Portal
+BARBARIAN_OUTPOST	Barbarian Outpost	LUNAR	Barbarian Outpost Portal
+BARROWS	Barrows	ARCEUUS	Barrows Portal
+BATTLEFRONT	Battlefront	ARCEUUS	Battlefront Portal
+CAMELOT	Camelot / Seers' Village	STANDARD	Camelot Portal,Seers' Village Portal
+CARRALLANGER	Carrallanger	ANCIENT	Carrallanger Portal
+CATHERBY	Catherby	LUNAR	Catherby Portal
+CEMETERY	Cemetery	ARCEUUS	Cemetery Portal
+CIVITAS_ILLA_FORTIS	Civitas illa Fortis	STANDARD	Civitas illa Fortis Portal
+DAREEYAK	Dareeyak	ANCIENT	Dareeyak Portal
+DRAYNOR_MANOR	Draynor Manor	ARCEUUS	Draynor Manor Portal
+FALADOR	Falador	STANDARD	Falador Portal
+FENKENSTRAINS_CASTLE	Fenkenstrain's Castle	ARCEUUS	Fenkenstrain's Castle Portal
+FISHING_GUILD	Fishing Guild	LUNAR	Fishing Guild Portal
+GHORROCK	Ghorrock	ANCIENT	Ghorrock Portal
+HARMONY_ISLAND	Harmony Island	ARCEUUS	Harmony Island Portal
+ICE_PLATEAU	Ice Plateau	LUNAR	Ice Plateau Portal
+KHARYRLL	Kharyrll	ANCIENT	Kharyrll Portal
+KOUREND	Kourend	STANDARD	Kourend Portal
+LASSAR	Lassar	ANCIENT	Lassar Portal
+LUMBRIDGE	Lumbridge	STANDARD	Lumbridge Portal
+LUNAR_ISLE	Lunar Isle	LUNAR	Lunar Isle Portal
+MARIM	Marim	STANDARD	Marim Portal
+MIND_ALTAR	Mind Altar	ARCEUUS	Mind Altar Portal
+OURANIA	Ourania	LUNAR	Ourania Portal
+PADDEWWA	Paddewwa	ANCIENT	Paddewwa Portal
+PORT_KHAZARD	Port Khazard	LUNAR	Port Khazard Portal
+RESPAWN	Respawn	ARCEUUS	Respawn Portal (Lumbridge),Respawn Portal (Falador),Respawn Portal (Camelot),Respawn Portal (Edgeville),Respawn Portal (Prifddinas),Respawn Portal (Ferox Enclave),Respawn Portal (Kourend Castle),Respawn Portal (Civitas illa Fortis)
+SALVE_GRAVEYARD	Salve Graveyard	ARCEUUS	Salve Graveyard Portal
+SENNTISTEN	Senntisten	ANCIENT	Senntisten Portal
+TROLLHEIM	Trollheim	STANDARD	Trollheim Portal
+TROLL_STRONGHOLD	Troll Stronghold	OTHER	Troll Stronghold Portal
+VARROCK	Varrock / Grand Exchange	STANDARD	Varrock Portal,Grand Exchange Portal
+WATERBIRTH_ISLAND	Waterbirth Island	LUNAR	Waterbirth Island Portal
+WATCHTOWER	Watchtower / Yanille	STANDARD	Watchtower Portal,Yanille Portal
+WEISS	Weiss	OTHER	Weiss Portal
+WEST_ARDOUGNE	West Ardougne	ARCEUUS	West Ardougne Portal
