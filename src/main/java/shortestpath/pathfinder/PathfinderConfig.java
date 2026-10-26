@@ -784,8 +784,7 @@ public class PathfinderConfig
 		RoutingPolicy policy = settings.buildRoutingPolicy(transportTypeConfig,
 			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
 			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath, blockedItemIds, itemThresholdOverrides,
-			blockedOptionDests);
+			currencyThreshold, includeBankPath, blockedItemIds, blockedOptionDests);
 
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
