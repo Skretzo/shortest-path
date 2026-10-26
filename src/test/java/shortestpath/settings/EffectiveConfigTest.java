@@ -147,7 +147,7 @@ public class EffectiveConfigTest
 		// The refresh path parses the configured CSV directly; a payload
 		// value must never masquerade as applied through the decorator.
 		EffectiveConfig effective = effectiveWith(Map.of("blockedTeleportItems", "13103"));
-		assertEquals(base().blockedTeleportItems(), effective.str(ConfigKey.BLOCKED_TELEPORT_ITEMS));
+		assertEquals(base().blockedTeleportItems(), effective.val(ConfigKey.BLOCKED_TELEPORT_ITEMS));
 	}
 
 	@Test

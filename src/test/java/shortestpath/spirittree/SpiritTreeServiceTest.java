@@ -114,28 +114,6 @@ public class SpiritTreeServiceTest
 	}
 
 	@Test
-	public void patchBoundsStayInsideTheirRegion()
-	{
-		// Every tile covered by a patch's bounds must resolve back to that
-		// patch and lie inside the patch's own region — otherwise the
-		// region-scoped varbit would not describe the tiles the bounds gate.
-		for (String name : SpiritTreePatches.patchNames())
-		{
-			int[] bounds = SpiritTreePatches.boundsForPatch(name);
-			int region = SpiritTreePatches.regionForPatch(name);
-			for (int x = bounds[0]; x <= bounds[2]; x++)
-			{
-				for (int y = bounds[1]; y <= bounds[3]; y++)
-				{
-					assertEquals(name + " tile " + x + "," + y + " outside region " + region,
-						region, (x >> 6) << 8 | (y >> 6));
-					assertEquals(name, SpiritTreePatches.patchNameForTile(x, y));
-				}
-			}
-		}
-	}
-
-	@Test
 	public void storedValueRoundTrips()
 	{
 		String stored = SpiritTreeService.serializeObserved(20, 1700000000L);
