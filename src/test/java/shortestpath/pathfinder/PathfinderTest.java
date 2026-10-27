@@ -2336,7 +2336,7 @@ public class PathfinderTest
 		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
 
 		setupMusicDatabase();
-		when(client.getDBTableField(1, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{28, 0});
+		when(client.getDBTableField(1, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{28});
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
 	}
@@ -2351,11 +2351,13 @@ public class PathfinderTest
 			when(client.getDBTableField(row, DBTableID.Music.COL_HIDDEN, 0))
 				.thenReturn(new Object[]{row == 4 ? 1 : 0});
 			when(client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0))
-				.thenReturn(new Object[]{row == 3 ? 1 : 0});
+				.thenReturn(new Object[]{row == 3 ? 1 : -1});
 			when(client.getDBTableField(row, DBTableID.Music.COL_AUTOMATIC_UNLOCK, 0))
 				.thenReturn(new Object[]{row == 2 ? 1 : 0});
 			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0))
-				.thenReturn(new Object[]{7, row == 1 ? 31 : 0});
+				.thenReturn(new Object[]{7});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1))
+				.thenReturn(new Object[]{row == 1 ? 31 : 0});
 		}
 	}
 
