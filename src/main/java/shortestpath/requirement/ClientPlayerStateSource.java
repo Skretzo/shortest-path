@@ -1,5 +1,7 @@
 package shortestpath.requirement;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.EnumSet;
 import java.util.Map;
 import net.runelite.api.Client;
@@ -20,6 +22,7 @@ import shortestpath.requirement.model.SkillLevels;
 import net.runelite.api.widgets.WidgetModalMode;
 import shortestpath.items.OwnedItems;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * The {@link Client}-backed {@link PlayerStateSource} and the only client
@@ -32,6 +35,7 @@ import lombok.AllArgsConstructor;
  * stale-snapshot contract.
  */
 @AllArgsConstructor
+@Slf4j
 public final class ClientPlayerStateSource implements PlayerStateSource
 {
 	// Music database variables use a one-based MUSICMULTI index, not a varplayer ID.
@@ -106,11 +110,13 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 		checkOnClientThread();
 		int unlocked = 0;
 		int required = 0;
+		List<String> lockedTracks = new ArrayList<>();
 		for (int row : client.getDBTableRows(DBTableID.Music.ID))
 		{
+			// Holiday is an event ID; -1 means the track is not tied to a holiday.
 			if ((Integer) client.getDBTableField(row, DBTableID.Music.COL_RELEASE_TYPE, 0)[0] == 0 ||
 				(Integer) client.getDBTableField(row, DBTableID.Music.COL_HIDDEN, 0)[0] != 0 ||
-				(Integer) client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0)[0] != 0)
+				(Integer) client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0)[0] != -1)
 			{
 				continue;
 			}
@@ -120,17 +126,24 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 				unlocked++;
 				continue;
 			}
-			Object[] variable = client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0);
-			int varpIndex = (Integer) variable[0] - 1;
-			int bit = (Integer) variable[1];
+			int varpIndex = (Integer) client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0)[0] - 1;
+			int bit = (Integer) client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1)[0];
 			if (varpIndex >= 0 && varpIndex < MUSIC_VARPS.length && bit >= 0 && bit < Integer.SIZE &&
 				(client.getVarpValue(MUSIC_VARPS[varpIndex]) & (1 << bit)) != 0)
 			{
 				unlocked++;
 			}
+			else if (log.isDebugEnabled())
+			{
+				Object[] name = client.getDBTableField(row, DBTableID.Music.COL_DISPLAYNAME, 0);
+				lockedTracks.add(name.length > 0 ? String.valueOf(name[0]) : "row " + row);
+			}
 		}
+		log.debug("Music cape: {} required tracks locked ({} unlocked / {} required): {}",
+			required - unlocked, unlocked, required, lockedTracks);
 		if (required == 0)
 		{
+			log.debug("Music cape: no required track data available; teleport remains unavailable");
 			required = SkillLevels.MAX_LEVEL;
 		}
 		return new MusicTracks(unlocked, required);
