@@ -159,7 +159,7 @@
 3797 2866 0	LAW_RUNE=1&&NATURE_RUNE=1&&SOUL_RUNE=1	65 Magic	The Great Brain Robbery	4	Harmony Island Teleport	20	4070=3	
 								
 # Cemetery Teleport								
-2981 3762 0	BLOOD_RUNE=1&&LAW_RUNE=1&&SOUL_RUNE=1	71 Magic		4	Cemetery Teleport	20	4070=3	
+2980 3763 0	BLOOD_RUNE=1&&LAW_RUNE=1&&SOUL_RUNE=1	71 Magic		4	Cemetery Teleport	20	4070=3	
 								
 # Barrows Teleport								
 3564 3315 0	BLOOD_RUNE=1&&LAW_RUNE=2&&SOUL_RUNE=2	83 Magic		4	Barrows Teleport	20	4070=3	
