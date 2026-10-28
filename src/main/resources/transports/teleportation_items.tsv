@@ -232,6 +232,14 @@
 1645 3580 0			21389=1		4	Master scroll book: Watson teleport	T	20	8253>0	
 4063 4557 0			29684=1	While Guthix Sleeps	4	Guthixian temple teleport	T	20		
 4063 4557 0			21389=1	While Guthix Sleeps	4	Master scroll book: Guthixian temple teleport	T	20	10967>0	
+3659 3404 0			29782=1	Priest in Peril	4	Spider cave teleport	T	20		302>60
+3659 3404 0			21389=1	Priest in Peril	4	Master scroll book: Spider cave teleport	T	20	10995>0	302>60
+1641 2921 0			30040=1	Children of the Sun	4	Colossal wyrm teleport scroll	T	20	9650=1	
+1641 2921 0			21389=1	Children of the Sun	4	Master scroll book: Colossal wyrm teleport scroll	T	20	9650=1;11029>0	
+1439 10076 0			30775=1		4	Chasm teleport scroll	T	20		
+1439 10076 0			21389=1		4	Master scroll book: Chasm teleport scroll	T	20	16238>0	
+2542 2216 0			34033=1	Fallen From Grace	4	Ardeaglais teleport	T	20		
+2542 2216 0			21389=1	Fallen From Grace	4	Master scroll book: Ardeaglais teleport	T	20	15749>0	
 										
 # Crafting cape										
 2931 3286 0		99 Crafting	9780=1||9781=1		4	Crafting cape: Teleport	F	20		
