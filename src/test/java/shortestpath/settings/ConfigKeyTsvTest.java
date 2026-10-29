@@ -122,7 +122,7 @@ public class ConfigKeyTsvTest
 					k.getKey().equals(flagKey) ? Boolean.TRUE : null;
 				Set<Object> all = (Set<Object>) row.resolveDefault(base);
 				assertEquals(name + " flag-true default is the full set",
-					Set.copyOf(ConfigKey.elementValues(row.getElement())), all);
+					EnumSet.allOf(row.getElement()), all);
 				Function<ConfigKey, Object> flagOff = k ->
 					k.getKey().equals(flagKey) ? Boolean.FALSE : null;
 				assertTrue(name + " flag-false default is empty",

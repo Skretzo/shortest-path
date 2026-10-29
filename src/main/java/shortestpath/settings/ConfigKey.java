@@ -2,7 +2,6 @@ package shortestpath.settings;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -292,13 +291,13 @@ public enum ConfigKey
 		return type;
 	}
 
-	static Class<?> parseElement(String name, String token)
+	static Class<? extends Enum> parseElement(String name, String token)
 	{
 		if (token.isEmpty())
 		{
 			return null;
 		}
-		Class<?> element = Rows.ELEMENT_TOKENS.get(token);
+		Class<? extends Enum> element = Rows.ELEMENT_TOKENS.get(token);
 		if (element == null)
 		{
 			throw new IllegalStateException("unrecognised element '" + token + "' for " + name);
@@ -314,7 +313,7 @@ public enum ConfigKey
 	 * than a loud load failure.
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	static Object parseDef(String name, Class<?> type, Class<?> element, String token)
+	static Object parseDef(String name, Class<?> type, Class<? extends Enum> element, String token)
 	{
 		if (token.startsWith("flag:"))
 		{
@@ -325,7 +324,7 @@ public enum ConfigKey
 			String flagKey = token.substring("flag:".length());
 			return (Function<Function<ConfigKey, Object>, Object>) b ->
 				Boolean.TRUE.equals(b.apply(forKey(flagKey)))
-					? Set.copyOf(elementValues(element)) : Set.of();
+					? EnumSet.allOf(element) : EnumSet.noneOf(element);
 		}
 		if (type == boolean.class)
 		{
@@ -398,32 +397,6 @@ public enum ConfigKey
 	 * init. Package-visible so the TSV test can exercise the load's loud
 	 * posture against fixture resources.
 	 */
-	static java.util.Collection<?> elementValues(Class<?> element)
-	{
-		if (element == PohNexusPortal.class)
-		{
-			return PohNexusPortal.values();
-		}
-		if (element == PohMountedItem.class)
-		{
-			return PohMountedItem.values();
-		}
-		throw new IllegalStateException("no element values for " + element);
-	}
-
-	private static Object elementFromName(Class<?> element, String name)
-	{
-		if (element == PohNexusPortal.class)
-		{
-			return PohNexusPortal.fromName(name);
-		}
-		if (element == PohMountedItem.class)
-		{
-			return PohMountedItem.fromName(name);
-		}
-		throw new IllegalStateException("no element resolver for " + element);
-	}
-
 	static Map<String, String[]> loadRows(String path)
 	{
 		Map<String, String[]> rows = new HashMap<>();
@@ -473,9 +446,10 @@ public enum ConfigKey
 			"JewelleryBoxTier", JewelleryBoxTier.class);
 
 		/** Element-class tokens for {@code Set}-typed rows. */
-		private static final Map<String, Class<?>> ELEMENT_TOKENS = Map.of(
+		private static final Map<String, Class<? extends Enum>> ELEMENT_TOKENS = Map.of(
 			"PohNexusPortal", PohNexusPortal.class,
-			"PohMountedItem", PohMountedItem.class);
+			"PohMountedItem", PohMountedItem.class,
+			"BalloonRoute", BalloonRoute.class);
 	}
 
 	/** Whether this row is a raw keyed read rather than a proxy-backed one. */
@@ -510,7 +484,7 @@ public enum ConfigKey
 	 * mirroring the proxy's fall-to-default behaviour.
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static Set<?> parseSet(String stored, Class<?> element)
+	public static Set<?> parseSet(String stored, Class<? extends Enum> element)
 	{
 		if (stored == null || stored.isEmpty())
 		{
@@ -522,7 +496,7 @@ public enum ConfigKey
 			return null;
 		}
 		inner = inner.substring(1, inner.length() - 1).trim();
-		Set<Object> out = new LinkedHashSet<>();
+		EnumSet out = EnumSet.noneOf(element);
 		if (inner.isEmpty())
 		{
 			return out;
@@ -536,7 +510,7 @@ public enum ConfigKey
 				{
 					return null;
 				}
-				out.add(elementFromName(element, token.substring(1, token.length() - 1)));
+				out.add(Enum.valueOf(element, token.substring(1, token.length() - 1)));
 			}
 		}
 		catch (RuntimeException e)
