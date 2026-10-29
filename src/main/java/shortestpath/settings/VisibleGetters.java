@@ -16,7 +16,6 @@ import shortestpath.ShortestPathConfig;
 final class VisibleGetters
 {
 	static final Map<String, Function<ShortestPathConfig, Object>> BY_NAME = Map.ofEntries(
-		Map.entry("SHOW_SIDEBAR_PANEL", ShortestPathConfig::showSidebarPanel),
 		Map.entry("DRAW_MAP", ShortestPathConfig::drawMap),
 		Map.entry("DRAW_MINIMAP", ShortestPathConfig::drawMinimap),
 		Map.entry("DRAW_TILES", ShortestPathConfig::drawTiles),
