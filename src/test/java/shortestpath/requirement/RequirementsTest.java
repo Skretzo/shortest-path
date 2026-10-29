@@ -213,12 +213,16 @@ public class RequirementsTest
 	}
 
 	@Test
-	public void unwrappedPohRingIgnoresBlockedStaff()
+	public void pohRingHonoursBlockedStaff()
 	{
-		// The POH ring is never wrapped, so a blocked staff cannot reach it.
+		// POH rings have the same injected staff requirement as outdoor rings.
 		RoutingPolicy policy = RequirementTestFixtures.policy(TeleportationItem.NONE, allStaffIds());
-		Transport pohRing = transport(TransportType.FAIRY_RING).origin(POH).build();
-		assertEquals(RejectionReason.NONE,
+		TransportEligibility eligibility = new TransportEligibility(
+			Map.of(), Map.of(), Map.of(), -1, Map.of(),
+			true, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), false, Set.of());
+		Transport pohRing = eligibility.wrapFairyRingStaff(
+			transport(TransportType.FAIRY_RING).origin(POH).build());
+		assertEquals(RejectionReason.BLOCKED_ITEM,
 			requirements(RequirementTestFixtures.context().build(), policy).gates(pohRing));
 	}
 

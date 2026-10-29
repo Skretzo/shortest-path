@@ -642,6 +642,23 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testChasmOfFireDoesNotUsePohRingWithoutStaff()
+	{
+		config.set("useFairyRings", true);
+		config.set("usePoh", true);
+		config.set("usePohFairyRing", true);
+		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
+		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		Pathfinder route = runScenario(WorldPointUtil.packWorldPoint(1323, 3819, 0),
+			WorldPointUtil.packWorldPoint(1435, 3671, 0));
+		assertTrue(route.getResult().isReached());
+		assertFalse(usedExclusiveTransportType(route, TransportType.FAIRY_RING));
+	}
+
+	@Test
 	public void testFairyRingsNotUsedWithoutDramenStaff()
 	{
 		config.set("useFairyRings", true);
