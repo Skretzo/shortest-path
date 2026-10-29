@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.IntDeque;
@@ -260,7 +261,7 @@ public final class RoutingStaticBuilder
 		/** Index of a walkable tile, or -1 when the tile is not walkable. */
 		public int indexOf(int tile)
 		{
-			return walkable.index.get(tile);
+			return tilePosition(walkable, tile);
 		}
 
 		/** Natural component id of a tile index, in {@code 1..naturalComponentCount()}. */
@@ -282,7 +283,7 @@ public final class RoutingStaticBuilder
 			int count = 0;
 			for (int tile : tiles)
 			{
-				int neighbour = walkable.index.get(tile);
+				int neighbour = tilePosition(walkable, tile);
 				if (neighbour >= 0) result[count++] = neighbour;
 			}
 			return count == result.length ? result : Arrays.copyOf(result, count);
@@ -312,7 +313,8 @@ public final class RoutingStaticBuilder
 	{
 		final int[] tiles;
 		final byte[] masks;
-		final TileIndex index;
+		/** Per 64-tile group, the group's first index and the bitmask of tiles present. */
+		final PrimitiveIntHashMap<long[]> index;
 	}
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision)
@@ -350,7 +352,19 @@ public final class RoutingStaticBuilder
 				}
 			}
 		}
-		return new WalkableTiles(tiles, masks, new TileIndex(tiles));
+		PrimitiveIntHashMap<long[]> index = new PrimitiveIntHashMap<>(tiles.length / 64 + 1);
+		for (int i = 0; i < tiles.length; i++)
+		{
+			int group = tiles[i] >>> 6;
+			long[] entry = index.get(group);
+			if (entry == null)
+			{
+				entry = new long[] {i, 0};
+				index.put(group, entry);
+			}
+			entry[1] |= 1L << (tiles[i] & 63);
+		}
+		return new WalkableTiles(tiles, masks, index);
 	}
 
 	/** Keep endpoint-connected land before allocating arrays; open sea can otherwise look walkable. */
@@ -483,7 +497,7 @@ public final class RoutingStaticBuilder
 	// ---- Step 1/3: flood fill (natural when blocked==null, routing when blocked is a valid-cut set) ----
 
 	/** Returns the number of components assigned (ids {@code 1..count}), 0 if there were no walkable tiles. */
-	private static int floodFillComponents(WalkableTiles walkable, LongOpenHashSet blocked, int[] componentOut)
+	private static int floodFillComponents(WalkableTiles walkable, int[] blocked, int[] componentOut)
 	{
 		int n = walkable.tiles.length;
 		IntDeque queue = new IntDeque(4096);
@@ -511,12 +525,13 @@ public final class RoutingStaticBuilder
 						continue;
 					}
 					int neighbor = WorldPointUtil.packWorldPoint(x + NEIGHBOR_DX[bit], y + NEIGHBOR_DY[bit], plane);
-					int neighborPosition = walkable.index.get(neighbor);
+					int neighborPosition = tilePosition(walkable, neighbor);
 					if (neighborPosition < 0 || componentOut[neighborPosition] != 0)
 					{
 						continue;
 					}
-					if (blocked != null && blocked.contains(canonicalKey(tile, neighbor)))
+					if (blocked != null && IntArrays.binarySearch(blocked,
+						blockedEdgeKey(tile, neighbor, position, neighborPosition, bit)) >= 0)
 					{
 						continue;
 					}
@@ -576,7 +591,7 @@ public final class RoutingStaticBuilder
 	private static final class CutSet
 	{
 		final List<long[]> valid; // each entry {a, b} as raw ints boxed in a long[2] for simplicity
-		final LongOpenHashSet blocked;
+		final int[] blocked; // sorted edge keys, see blockedEdgeKey
 		final int duplicateCount;
 		final int invalidCount;
 	}
@@ -602,13 +617,14 @@ public final class RoutingStaticBuilder
 			candidates.add(new long[] {Integer.toUnsignedLong(a), Integer.toUnsignedLong(b)});
 		}
 		List<long[]> valid = new ArrayList<>();
-		LongOpenHashSet blocked = new LongOpenHashSet(Math.max(16, candidates.size() * 2));
+		int[] blockedKeys = new int[candidates.size()];
+		int blockedCount = 0;
 		int invalidCount = 0;
 		for (long[] candidate : candidates)
 		{
 			int a = (int) candidate[0];
 			int b = (int) candidate[1];
-			int posA = walkable.index.get(a);
+			int posA = tilePosition(walkable, a);
 			int[] neighborsOfA = posA < 0 ? new int[0] : ordinaryNeighborsFromMask(a, walkable.masks[posA]);
 			if (posA < 0 || !IntArrays.contains(neighborsOfA, 0, neighborsOfA.length, b))
 			{
@@ -616,8 +632,12 @@ public final class RoutingStaticBuilder
 				continue;
 			}
 			valid.add(candidate);
-			blocked.add(canonicalKey(a, b));
+			int direction = directionIndex(WorldPointUtil.unpackWorldX(b) - WorldPointUtil.unpackWorldX(a),
+				WorldPointUtil.unpackWorldY(b) - WorldPointUtil.unpackWorldY(a));
+			blockedKeys[blockedCount++] = (posA << 3) | direction;
 		}
+		int[] blocked = Arrays.copyOf(blockedKeys, blockedCount);
+		Arrays.sort(blocked); // keys are non-negative, so signed order is unsigned order
 		return new CutSet(valid, blocked, duplicateCount, invalidCount);
 	}
 
@@ -740,7 +760,7 @@ public final class RoutingStaticBuilder
 	 */
 	private static int[] naturalAttachments(int point, WalkableTiles walkable, int[] naturalId, CollisionMap collision)
 	{
-		int position = walkable.index.get(point);
+		int position = tilePosition(walkable, point);
 		if (position >= 0)
 		{
 			return new int[] {naturalId[position]};
@@ -750,7 +770,7 @@ public final class RoutingStaticBuilder
 		int count = 0;
 		for (int neighbor : neighbors)
 		{
-			int neighborPosition = walkable.index.get(neighbor);
+			int neighborPosition = tilePosition(walkable, neighbor);
 			if (neighborPosition >= 0)
 			{
 				int component = naturalId[neighborPosition];
@@ -817,8 +837,8 @@ public final class RoutingStaticBuilder
 		{
 			int a = (int) cut[0];
 			int b = (int) cut[1];
-			int posA = walkable.index.get(a);
-			int posB = walkable.index.get(b);
+			int posA = tilePosition(walkable, a);
+			int posB = tilePosition(walkable, b);
 			if (posA < 0 || posB < 0 || routingId[posA] == routingId[posB])
 			{
 				continue;
@@ -952,7 +972,50 @@ public final class RoutingStaticBuilder
 
 	// ---- Small shared utilities ----
 
+	/**
+	 * Index of a walkable tile, or -1: the shared map holds {@code {firstIndex, presentBits}}
+	 * per 64-tile group, so the index is the group's first index plus the tile's rank among
+	 * the group's present bits.
+	 */
+	private static int tilePosition(WalkableTiles walkable, int tile)
+	{
+		long[] group = walkable.index.get(tile >>> 6);
+		if (group == null)
+		{
+			return -1;
+		}
+		long bit = 1L << (tile & 63);
+		if ((group[1] & bit) == 0)
+		{
+			return -1;
+		}
+		return (int) group[0] + Long.bitCount(group[1] & (bit - 1));
+	}
 
+	/** The direction index ({@link #NEIGHBOR_DX}/{@link #NEIGHBOR_DY} order) of a one-step delta. */
+	private static int directionIndex(int dx, int dy)
+	{
+		for (int bit = 0; bit < 8; bit++)
+		{
+			if (NEIGHBOR_DX[bit] == dx && NEIGHBOR_DY[bit] == dy)
+			{
+				return bit;
+			}
+		}
+		throw new IllegalArgumentException("non-adjacent edge delta " + dx + "," + dy);
+	}
+
+	/**
+	 * Canonical key of a blocked walking edge: the index of its unsigned-lowest tile (the
+	 * {@code validateCuts} pair order) and the direction from that tile to the other.
+	 */
+	private static int blockedEdgeKey(int tile, int neighbor, int position, int neighborPosition, int direction)
+	{
+		boolean tileIsLow = Integer.compareUnsigned(tile, neighbor) <= 0;
+		int anchor = tileIsLow ? position : neighborPosition;
+		int dir = tileIsLow ? direction : direction ^ 4; // i^4 is the opposite direction in NEIGHBOR_* order
+		return (anchor << 3) | dir;
+	}
 
 	private static int count(boolean[] values)
 	{
@@ -989,121 +1052,6 @@ public final class RoutingStaticBuilder
 		for (int i = 0; i < values.length; i++)
 		{
 			values[i] ^= Integer.MIN_VALUE;
-		}
-	}
-
-	private static int nextPowerOfTwo(int value)
-	{
-		int highest = Integer.highestOneBit(value);
-		return highest == value ? highest : highest * 2;
-	}
-
-	/** Each entry covers 64 packed tiles; set bits give membership and the offset from the first tile. */
-	private static final class TileIndex
-	{
-		private final int[] tiles;
-		private final int[] slots; // slots[h] - 1 == index; 0 == empty
-		private final long[] present;
-		private final int mask;
-
-		TileIndex(int[] sortedTiles)
-		{
-			int groups = 0;
-			for (int i = 0; i < sortedTiles.length; i++)
-			{
-				if (i == 0 || (sortedTiles[i] >>> 6) != (sortedTiles[i - 1] >>> 6)) groups++;
-			}
-			int capacity = nextPowerOfTwo(Math.max(16, groups) * 2);
-			tiles = sortedTiles;
-			slots = new int[capacity];
-			present = new long[capacity];
-			mask = capacity - 1;
-			for (int i = 0; i < sortedTiles.length; i++)
-			{
-				int group = sortedTiles[i] >>> 6;
-				int h = hash(group) & mask;
-				while (slots[h] != 0 && (tiles[slots[h] - 1] >>> 6) != group)
-				{
-					h = (h + 1) & mask;
-				}
-				if (slots[h] == 0) slots[h] = i + 1;
-				present[h] |= 1L << (sortedTiles[i] & 63);
-			}
-		}
-
-		int get(int tile)
-		{
-			int group = tile >>> 6;
-			long bit = 1L << (tile & 63);
-			int h = hash(group) & mask;
-			while (slots[h] != 0)
-			{
-				int first = slots[h] - 1;
-				if ((tiles[first] >>> 6) == group)
-				{
-					return (present[h] & bit) == 0 ? -1 : first + Long.bitCount(present[h] & (bit - 1));
-				}
-				h = (h + 1) & mask;
-			}
-			return -1;
-		}
-
-		private static int hash(int value)
-		{
-			int h = value * 0x9E3779B1;
-			return h ^ (h >>> 16);
-		}
-	}
-
-	/** Open-addressing packed 64-bit canonical-cut-pair set. */
-	private static final class LongOpenHashSet
-	{
-		private long[] keys;
-		private int mask;
-		private int size;
-
-		LongOpenHashSet(int expectedSize)
-		{
-			int capacity = nextPowerOfTwo(Math.max(16, expectedSize) * 2);
-			keys = new long[capacity];
-			Arrays.fill(keys, Long.MIN_VALUE);
-			mask = capacity - 1;
-		}
-
-		void add(long value)
-		{
-			int h = hash(value) & mask;
-			while (keys[h] != Long.MIN_VALUE)
-			{
-				if (keys[h] == value)
-				{
-					return;
-				}
-				h = (h + 1) & mask;
-			}
-			keys[h] = value;
-			size++;
-		}
-
-		boolean contains(long value)
-		{
-			int h = hash(value) & mask;
-			while (keys[h] != Long.MIN_VALUE)
-			{
-				if (keys[h] == value)
-				{
-					return true;
-				}
-				h = (h + 1) & mask;
-			}
-			return false;
-		}
-
-		private static int hash(long value)
-		{
-			long h = value * 0x9E3779B97F4A7C15L;
-			h ^= h >>> 32;
-			return (int) h;
 		}
 	}
 }

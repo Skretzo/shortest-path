@@ -565,4 +565,20 @@ public class RoutingStaticBuilderTest
 		org.junit.Assert.assertArrayEquals(expected, neighbours);
 		assertEquals(0, graph.neighbours(i).length);
 	}
+
+	@Test
+	public void buildPathReusesSharedPrimitiveCollections()
+	{
+		// TileIndex and LongOpenHashSet were private open-addressed duplicates of the
+		// shared primitive structures; the build path must use the in-tree
+		// implementations instead of carrying its own.
+		Set<String> nested = new HashSet<>();
+		for (Class<?> declared : RoutingStaticBuilder.class.getDeclaredClasses())
+		{
+			nested.add(declared.getSimpleName());
+		}
+		assertFalse("private TileIndex duplicates the shared tile lookup", nested.contains("TileIndex"));
+		assertFalse("private LongOpenHashSet duplicates the shared blocked-edge set",
+			nested.contains("LongOpenHashSet"));
+	}
 }
