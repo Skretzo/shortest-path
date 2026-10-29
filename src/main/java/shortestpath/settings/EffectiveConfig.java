@@ -133,25 +133,25 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean drawMap()
 	{
-		return override(ConfigKey.DRAW_MAP, base.drawMap());
+		return bool(ConfigKey.DRAW_MAP);
 	}
 
 	@Override
 	public boolean drawMinimap()
 	{
-		return override(ConfigKey.DRAW_MINIMAP, base.drawMinimap());
+		return bool(ConfigKey.DRAW_MINIMAP);
 	}
 
 	@Override
 	public boolean drawTiles()
 	{
-		return override(ConfigKey.DRAW_TILES, base.drawTiles());
+		return bool(ConfigKey.DRAW_TILES);
 	}
 
 	@Override
 	public boolean drawClickPoints()
 	{
-		return override(ConfigKey.DRAW_CLICK_POINTS, base.drawClickPoints());
+		return bool(ConfigKey.DRAW_CLICK_POINTS);
 	}
 
 	@Override
@@ -163,55 +163,55 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean showTeleportPulse()
 	{
-		return override(ConfigKey.SHOW_TELEPORT_PULSE, base.showTeleportPulse());
+		return bool(ConfigKey.SHOW_TELEPORT_PULSE);
 	}
 
 	@Override
 	public Color colourPath()
 	{
-		return override(ConfigKey.COLOUR_PATH, base.colourPath());
+		return val(ConfigKey.COLOUR_PATH);
 	}
 
 	@Override
 	public Color colourPathCalculating()
 	{
-		return override(ConfigKey.COLOUR_PATH_CALCULATING, base.colourPathCalculating());
+		return val(ConfigKey.COLOUR_PATH_CALCULATING);
 	}
 
 	@Override
 	public Color colourPathUnreachable()
 	{
-		return override(ConfigKey.COLOUR_PATH_UNREACHABLE, base.colourPathUnreachable());
+		return val(ConfigKey.COLOUR_PATH_UNREACHABLE);
 	}
 
 	@Override
 	public Color colourTransports()
 	{
-		return override(ConfigKey.COLOUR_TRANSPORTS, base.colourTransports());
+		return val(ConfigKey.COLOUR_TRANSPORTS);
 	}
 
 	@Override
 	public Color colourCollisionMap()
 	{
-		return override(ConfigKey.COLOUR_COLLISION_MAP, base.colourCollisionMap());
+		return val(ConfigKey.COLOUR_COLLISION_MAP);
 	}
 
 	@Override
 	public Color colourText()
 	{
-		return override(ConfigKey.COLOUR_TEXT, base.colourText());
+		return val(ConfigKey.COLOUR_TEXT);
 	}
 
 	@Override
 	public Color colourTeleportPulse()
 	{
-		return override(ConfigKey.COLOUR_TELEPORT_PULSE, base.colourTeleportPulse());
+		return val(ConfigKey.COLOUR_TELEPORT_PULSE);
 	}
 
 	@Override
 	public Color colourBankPickupHighlight()
 	{
-		return override(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT, base.colourBankPickupHighlight());
+		return val(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
 	}
 
 	@Override
@@ -223,24 +223,24 @@ public final class EffectiveConfig implements ShortestPathConfig
 	@Override
 	public boolean drawTransports()
 	{
-		return override(ConfigKey.DRAW_TRANSPORTS, base.drawTransports());
+		return bool(ConfigKey.DRAW_TRANSPORTS);
 	}
 
 	@Override
 	public boolean drawCollisionMap()
 	{
-		return override(ConfigKey.DRAW_COLLISION_MAP, base.drawCollisionMap());
+		return bool(ConfigKey.DRAW_COLLISION_MAP);
 	}
 
 	@Override
 	public boolean drawDebugPanel()
 	{
-		return override(ConfigKey.DRAW_DEBUG_PANEL, base.drawDebugPanel());
+		return bool(ConfigKey.DRAW_DEBUG_PANEL);
 	}
 
 	@Override
 	public boolean postTransports()
 	{
-		return override(ConfigKey.POST_TRANSPORTS, base.postTransports());
+		return bool(ConfigKey.POST_TRANSPORTS);
 	}
 }
