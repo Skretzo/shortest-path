@@ -17,6 +17,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -553,31 +555,17 @@ public class Settings
 	 */
 	@Getter
 	@Accessors(fluent = true)
+	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	public static final class DisplayView
 	{
-		private final boolean drawCollisionMap;
-		private final boolean drawMap;
-		private final boolean drawMinimap;
-		private final boolean drawTiles;
-		private final boolean drawTransports;
-		private final boolean drawClickPoints;
-		private final boolean showTransportInfo;
-		private final boolean showBankPickupInfo;
-		private final boolean showUnreachableText;
-		private final boolean highlightBankPickupItems;
-		private final boolean highlightSpellbookSpells;
-		private final boolean highlightInventoryItems;
-		private final boolean showTeleportPulse;
-		private final Color colourCollisionMap;
-		private final Color colourPath;
-		private final Color colourPathCalculating;
-		private final Color colourPathUnreachable;
-		private final Color colourText;
-		private final Color colourTransports;
-		private final Color colourBankPickupHighlight;
-		private final Color colourTeleportPulse;
-		private final int tileCounterStep;
-		private final int unreachableTargetDistance;
+		private final boolean drawCollisionMap, drawMap, drawMinimap, drawTiles, drawTransports,
+			drawClickPoints, showTransportInfo, showBankPickupInfo, showUnreachableText,
+			highlightBankPickupItems, highlightSpellbookSpells, highlightInventoryItems,
+			showTeleportPulse;
+		private final Color colourCollisionMap, colourPath, colourPathCalculating,
+			colourPathUnreachable, colourText, colourTransports, colourBankPickupHighlight,
+			colourTeleportPulse;
+		private final int tileCounterStep, unreachableTargetDistance;
 		private final String unreachableText;
 		private final TileCounter showTileCounter;
 		private final TileStyle pathStyle;
@@ -585,33 +573,24 @@ public class Settings
 		private DisplayView(EffectiveConfig effective, ShortestPathConfig configured,
 			Function<ConfigKey, Object> base)
 		{
-			drawCollisionMap = effective.drawCollisionMap();
-			drawMap = effective.drawMap();
-			drawMinimap = effective.drawMinimap();
-			drawTiles = effective.drawTiles();
-			drawTransports = effective.drawTransports();
-			drawClickPoints = effective.drawClickPoints();
-			showTransportInfo = effective.bool(ConfigKey.SHOW_TRANSPORT_INFO);
-			showBankPickupInfo = effective.bool(ConfigKey.SHOW_BANK_PICKUP_INFO);
-			showUnreachableText = effective.bool(ConfigKey.SHOW_UNREACHABLE_TEXT);
-			highlightBankPickupItems = effective.bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS);
-			highlightSpellbookSpells = effective.bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS);
-			highlightInventoryItems = effective.bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS);
-			showTeleportPulse = effective.showTeleportPulse();
-			colourCollisionMap = effective.colourCollisionMap();
-			colourPath = effective.colourPath();
-			colourPathCalculating = effective.colourPathCalculating();
-			colourPathUnreachable = effective.colourPathUnreachable();
-			colourText = effective.colourText();
-			colourTransports = effective.colourTransports();
-			colourBankPickupHighlight = effective.colourBankPickupHighlight();
-			colourTeleportPulse = effective.colourTeleportPulse();
-			tileCounterStep = effective.num(ConfigKey.TILE_COUNTER_STEP);
-			unreachableTargetDistance = effective.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
-			// Payloads never coerced this key — it stays a raw read.
-			unreachableText = (String) base.apply(ConfigKey.UNREACHABLE_TEXT);
-			showTileCounter = effective.showTileCounter();
-			pathStyle = effective.pathStyle();
+			this(effective.drawCollisionMap(), effective.drawMap(), effective.drawMinimap(),
+				effective.drawTiles(), effective.drawTransports(), effective.drawClickPoints(),
+				effective.bool(ConfigKey.SHOW_TRANSPORT_INFO),
+				effective.bool(ConfigKey.SHOW_BANK_PICKUP_INFO),
+				effective.bool(ConfigKey.SHOW_UNREACHABLE_TEXT),
+				effective.bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS),
+				effective.bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS),
+				effective.bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS),
+				effective.showTeleportPulse(),
+				effective.colourCollisionMap(), effective.colourPath(),
+				effective.colourPathCalculating(), effective.colourPathUnreachable(),
+				effective.colourText(), effective.colourTransports(),
+				effective.colourBankPickupHighlight(), effective.colourTeleportPulse(),
+				effective.num(ConfigKey.TILE_COUNTER_STEP),
+				effective.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD),
+				// Payloads never coerced this key — it stays a raw read.
+				(String) base.apply(ConfigKey.UNREACHABLE_TEXT),
+				effective.showTileCounter(), effective.pathStyle());
 		}
 	}
 
@@ -715,26 +694,22 @@ public class Settings
 	 */
 	@Getter
 	@Accessors(fluent = true)
+	@AllArgsConstructor(access = AccessLevel.PRIVATE)
 	public static final class LifecycleView
 	{
 		private final PathfinderBackend pathfinderBackend;
-		private final int calculationCutoff;
-		private final int recalculateDistance;
-		private final int reachedDistance;
-		private final boolean cancelInstead;
-		private final boolean drawDebugPanel;
-		private final boolean postTransports;
+		private final int calculationCutoff, recalculateDistance, reachedDistance;
+		private final boolean cancelInstead, drawDebugPanel, postTransports;
 
 		private LifecycleView(EffectiveConfig effective, ShortestPathConfig configured,
 			Function<ConfigKey, Object> base)
 		{
-			pathfinderBackend = (PathfinderBackend) base.apply(ConfigKey.PATHFINDER_ALGORITHM);
-			calculationCutoff = num(base, ConfigKey.CALCULATION_CUTOFF);
-			recalculateDistance = num(base, ConfigKey.RECALCULATE_DISTANCE);
-			reachedDistance = num(base, ConfigKey.FINISH_DISTANCE);
-			cancelInstead = Boolean.TRUE.equals(base.apply(ConfigKey.CANCEL_INSTEAD));
-			drawDebugPanel = configured.drawDebugPanel();
-			postTransports = effective.postTransports();
+			this((PathfinderBackend) base.apply(ConfigKey.PATHFINDER_ALGORITHM),
+				num(base, ConfigKey.CALCULATION_CUTOFF),
+				num(base, ConfigKey.RECALCULATE_DISTANCE),
+				num(base, ConfigKey.FINISH_DISTANCE),
+				Boolean.TRUE.equals(base.apply(ConfigKey.CANCEL_INSTEAD)),
+				configured.drawDebugPanel(), effective.postTransports());
 		}
 
 		private static int num(Function<ConfigKey, Object> base, ConfigKey key)
