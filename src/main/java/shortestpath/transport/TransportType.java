@@ -1,13 +1,19 @@
 package shortestpath.transport;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.runelite.api.Skill;
+import shortestpath.Util;
 
 @Getter
 public enum TransportType
 {
-	TRANSPORT("/transports/transports.tsv", null, null),
-	AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", "costAgilityShortcuts")
+	TRANSPORT,
+	AGILITY_SHORTCUT
 		{
 			@Override
 			public TransportType refine(int[] skillLevels)
@@ -19,109 +25,173 @@ public enum TransportType
 				return this;
 			}
 		},
-	GRAPPLE_SHORTCUT(null, "useGrappleShortcuts", "costGrappleShortcuts"),
-	BOAT("/transports/boats.tsv", "useBoats", "costBoats"),
-	CANOE("/transports/canoes.tsv", "useCanoes", "costCanoes"),
-	CHARTER_SHIP("/transports/charter_ships.tsv", "useCharterShips", "costCharterShips"),
-	SHIP("/transports/ships.tsv", "useShips", "costShips"),
-	FAIRY_RING("/transports/fairy_rings.tsv", "useFairyRings", "costFairyRings", 6),
-	GNOME_GLIDER("/transports/gnome_gliders.tsv", "useGnomeGliders", "costGnomeGliders", 6),
-	HOT_AIR_BALLOON("/transports/hot_air_balloons.tsv", "useHotAirBalloons", "costHotAirBalloons", 7),
-	MAGIC_CARPET("/transports/magic_carpets.tsv", "useMagicCarpets", "costMagicCarpets"),
-	MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", "costMagicMushtrees", 5),
-	MINECART("/transports/minecarts.tsv", "useMinecarts", "costMinecarts"),
-	QUETZAL("/transports/quetzals.tsv", "useQuetzals", "costQuetzals", 5)
-		{
-			@Override
-			public TransportType sharesDestinationsWith()
-			{
-				return QUETZAL_WHISTLE;
-			}
-		},
-	QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", "costQuetzalWhistle")
-		{
-			@Override
-			public boolean isTeleport()
-			{
-				return true;
-			}
-
-			@Override
-			public TransportType sharesDestinationsWith()
-			{
-				return QUETZAL;
-			}
-
-			@Override
-			public String differentialCostKey()
-			{
-				return "costQuetzalWhistle";
-			}
-		},
-	SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv", "useSeasonalTransports", "costSeasonalTransports"),
-	SPIRIT_TREE("/transports/spirit_trees.tsv", "useSpiritTrees", "costSpiritTrees", 5),
-	TELEPORTATION_BOX("/transports/teleportation_boxes.tsv", null, "costTeleportationBoxes"),
-	TELEPORTATION_ITEM("/transports/teleportation_items.tsv", null, "costNonConsumableTeleportationItems")
-		{
-			@Override
-			public boolean isTeleport()
-			{
-				return true;
-			}
-		},
-	TELEPORTATION_LEVER("/transports/teleportation_levers.tsv", "useTeleportationLevers", "costTeleportationLevers"),
-	TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv", "useTeleportationMinigames", "costTeleportationMinigames")
-		{
-			@Override
-			public boolean isTeleport()
-			{
-				return true;
-			}
-		},
-	TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv", "useTeleportationPortals", "costTeleportationPortals"),
-	TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv", null, "costTeleportationPortals"),
-	TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", "costTeleportationSpells")
-		{
-			@Override
-			public boolean isTeleport()
-			{
-				return true;
-			}
-		},
-	TELEPORTATION_SPELL_HOME("/transports/teleportation_spells_home.tsv", "useTeleportationSpellsHome", "costTeleportationSpellsHome")
-		{
-			@Override
-			public boolean isTeleport()
-			{
-				return true;
-			}
-		},
-	WILDERNESS_OBELISK("/transports/wilderness_obelisks.tsv", "useWildernessObelisks", "costWildernessObelisks"),
+	GRAPPLE_SHORTCUT,
+	BOAT,
+	CANOE,
+	CHARTER_SHIP,
+	SHIP,
+	FAIRY_RING,
+	GNOME_GLIDER,
+	HOT_AIR_BALLOON,
+	MAGIC_CARPET,
+	MAGIC_MUSHTREE,
+	MINECART,
+	QUETZAL,
+	QUETZAL_WHISTLE,
+	SEASONAL_TRANSPORTS,
+	SPIRIT_TREE,
+	TELEPORTATION_BOX,
+	TELEPORTATION_ITEM,
+	TELEPORTATION_LEVER,
+	TELEPORTATION_MINIGAME,
+	TELEPORTATION_PORTAL,
+	TELEPORTATION_PORTAL_POH,
+	TELEPORTATION_SPELL,
+	TELEPORTATION_SPELL_HOME,
+	WILDERNESS_OBELISK,
 	;
+
+	static
+	{
+		// The ctor fails loudly on a constant with no TSV row; these passes
+		// fail loudly on a row naming no constant and on a shares-with
+		// column naming a constant that does not exist.
+		for (String name : Rows.BY_NAME.keySet())
+		{
+			valueOf(name);
+		}
+		for (TransportType type : values())
+		{
+			if (type.sharedTypeName != null)
+			{
+				valueOf(type.sharedTypeName);
+			}
+		}
+	}
 
 	private final String resourcePath;
 	private final String enabledKey;
 	private final String costKey;
 	private final Integer radiusThreshold;
+	/**
+	 * The {@code teleport} column; read through {@link #isTeleport()}.
+	 * Levers, portals and wilderness obelisks are considered transports
+	 * and not teleports because they have a pre-defined origin and no
+	 * wilderness level limit.
+	 */
+	private final boolean teleport;
+	/**
+	 * The enum name of the {@link #sharesDestinationsWith()} pairing,
+	 * stored as a name because the paired constant is not reliably
+	 * constructed yet while rows initialise; resolved at call time.
+	 */
+	@Getter(AccessLevel.NONE)
+	private final String sharedTypeName;
+	/** The {@code differential-cost-key} column; read through {@link #differentialCostKey()}. */
+	@Getter(AccessLevel.NONE)
+	private final String differentialCostKey;
 
-	TransportType(
-		String resourcePath,
-		String enabledKey,
-		String costKey)
+	/**
+	 * Row backed by a {@code transport-types.tsv} line: every data column
+	 * resolves out of {@link Rows}. Fails loudly on a missing row or a
+	 * malformed literal; the enum's static block fails loudly on surplus
+	 * rows and unresolvable shares-with names.
+	 */
+	TransportType()
 	{
-		this(resourcePath, enabledKey, costKey, null);
+		String[] cols = Rows.BY_NAME.get(name());
+		if (cols == null)
+		{
+			throw new IllegalStateException("no transport-types.tsv row for " + name());
+		}
+		this.resourcePath = emptyToNull(cols[1]);
+		this.enabledKey = emptyToNull(cols[2]);
+		this.costKey = emptyToNull(cols[3]);
+		this.radiusThreshold = parseRadius(name(), cols[4]);
+		this.teleport = parseTeleport(name(), cols[5]);
+		this.sharedTypeName = emptyToNull(cols[6]);
+		this.differentialCostKey = emptyToNull(cols[7]);
 	}
 
-	TransportType(
-		String resourcePath,
-		String enabledKey,
-		String costKey,
-		Integer radiusThreshold)
+	/** Column count every {@code transport-types.tsv} line must carry. */
+	private static final int ROW_COLUMNS = 8;
+
+	static String emptyToNull(String token)
 	{
-		this.resourcePath = resourcePath;
-		this.enabledKey = enabledKey;
-		this.costKey = costKey;
-		this.radiusThreshold = radiusThreshold;
+		return token.isEmpty() ? null : token;
+	}
+
+	static Integer parseRadius(String name, String token)
+	{
+		if (token.isEmpty())
+		{
+			return null;
+		}
+		try
+		{
+			return Integer.valueOf(token);
+		}
+		catch (NumberFormatException e)
+		{
+			throw new IllegalStateException("unparseable radius threshold '" + token + "' for " + name, e);
+		}
+	}
+
+	/**
+	 * The {@code teleport} column parsed strictly: an empty or
+	 * {@code false} cell is a transport, {@code true} is a teleport, and
+	 * anything else throws — a silently wrong flag would change
+	 * wilderness routing behaviour without failing the load.
+	 */
+	static boolean parseTeleport(String name, String token)
+	{
+		if (token.isEmpty() || "false".equals(token))
+		{
+			return false;
+		}
+		if ("true".equals(token))
+		{
+			return true;
+		}
+		throw new IllegalStateException("unparseable teleport flag '" + token + "' for " + name);
+	}
+
+	/**
+	 * Load a {@code transport-types.tsv}-shaped resource into its
+	 * name-keyed row map — the same shape {@link Rows} binds at class
+	 * init. Package-visible so the TSV test can exercise the load's loud
+	 * posture against fixture resources.
+	 */
+	static Map<String, String[]> loadRows(String path)
+	{
+		Map<String, String[]> rows = new HashMap<>();
+		try
+		{
+			Util.each(path, (line, cols) ->
+			{
+				if (cols.length != ROW_COLUMNS)
+				{
+					throw new IllegalStateException("malformed transport-types.tsv row: " + line);
+				}
+				rows.put(cols[0], cols);
+			});
+		}
+		catch (Exception e)
+		{
+			throw new IllegalStateException("failed to load " + path.substring(1), e);
+		}
+		return Collections.unmodifiableMap(rows);
+	}
+
+	/**
+	 * Row table loaded from the bundled {@code transport-types.tsv} — a
+	 * nested holder so the load happens on first constant construction;
+	 * the enum's own static initializers would run too late (after every
+	 * constant is already built).
+	 */
+	private static final class Rows
+	{
+		private static final Map<String, String[]> BY_NAME = loadRows("/transport-types.tsv");
 	}
 
 	public boolean hasResourcePath()
@@ -144,25 +214,13 @@ public enum TransportType
 		return costKey != null;
 	}
 
-	/*
-	 * Indicates whether a TransportType is a teleport.
-	 * Levers, portals and wilderness obelisks are considered transports
-	 * and not teleports because they have a pre-defined origin and no
-	 * wilderness level limit.
-	 */
-	public boolean isTeleport()
-	{
-		return false;
-	}
-
-
 	/**
 	 * Stores which transport type this transport shares destinations with, if any.
 	 * Used for delayed visit pathfinding so both types can compete in the priority queue.
 	 */
 	public TransportType sharesDestinationsWith()
 	{
-		return null;
+		return sharedTypeName == null ? null : valueOf(sharedTypeName);
 	}
 
 	/**
@@ -173,7 +231,7 @@ public enum TransportType
 	 */
 	public String differentialCostKey()
 	{
-		return null;
+		return differentialCostKey;
 	}
 
 

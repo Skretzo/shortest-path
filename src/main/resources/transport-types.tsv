@@ -1,0 +1,27 @@
+#enum-name	resource-path	enabled-key	cost-key	radius-threshold	teleport	shares-with	differential-cost-key
+TRANSPORT	/transports/transports.tsv						
+AGILITY_SHORTCUT	/transports/agility_shortcuts.tsv	useAgilityShortcuts	costAgilityShortcuts				
+GRAPPLE_SHORTCUT		useGrappleShortcuts	costGrappleShortcuts				
+BOAT	/transports/boats.tsv	useBoats	costBoats				
+CANOE	/transports/canoes.tsv	useCanoes	costCanoes				
+CHARTER_SHIP	/transports/charter_ships.tsv	useCharterShips	costCharterShips				
+SHIP	/transports/ships.tsv	useShips	costShips				
+FAIRY_RING	/transports/fairy_rings.tsv	useFairyRings	costFairyRings	6			
+GNOME_GLIDER	/transports/gnome_gliders.tsv	useGnomeGliders	costGnomeGliders	6			
+HOT_AIR_BALLOON	/transports/hot_air_balloons.tsv	useHotAirBalloons	costHotAirBalloons	7			
+MAGIC_CARPET	/transports/magic_carpets.tsv	useMagicCarpets	costMagicCarpets				
+MAGIC_MUSHTREE	/transports/magic_mushtrees.tsv	useMagicMushtrees	costMagicMushtrees	5			
+MINECART	/transports/minecarts.tsv	useMinecarts	costMinecarts				
+QUETZAL	/transports/quetzals.tsv	useQuetzals	costQuetzals	5		QUETZAL_WHISTLE	
+QUETZAL_WHISTLE	/transports/quetzal_whistle.tsv	useQuetzals	costQuetzalWhistle		true	QUETZAL	costQuetzalWhistle
+SEASONAL_TRANSPORTS	/transports/seasonal_transports.tsv	useSeasonalTransports	costSeasonalTransports				
+SPIRIT_TREE	/transports/spirit_trees.tsv	useSpiritTrees	costSpiritTrees	5			
+TELEPORTATION_BOX	/transports/teleportation_boxes.tsv		costTeleportationBoxes				
+TELEPORTATION_ITEM	/transports/teleportation_items.tsv		costNonConsumableTeleportationItems		true		
+TELEPORTATION_LEVER	/transports/teleportation_levers.tsv	useTeleportationLevers	costTeleportationLevers				
+TELEPORTATION_MINIGAME	/transports/teleportation_minigames.tsv	useTeleportationMinigames	costTeleportationMinigames		true		
+TELEPORTATION_PORTAL	/transports/teleportation_portals.tsv	useTeleportationPortals	costTeleportationPortals				
+TELEPORTATION_PORTAL_POH	/transports/teleportation_portals_poh.tsv		costTeleportationPortals				
+TELEPORTATION_SPELL	/transports/teleportation_spells.tsv	useTeleportationSpells	costTeleportationSpells		true		
+TELEPORTATION_SPELL_HOME	/transports/teleportation_spells_home.tsv	useTeleportationSpellsHome	costTeleportationSpellsHome		true		
+WILDERNESS_OBELISK	/transports/wilderness_obelisks.tsv	useWildernessObelisks	costWildernessObelisks				
