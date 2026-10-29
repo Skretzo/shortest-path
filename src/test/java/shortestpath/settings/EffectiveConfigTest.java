@@ -75,6 +75,38 @@ public class EffectiveConfigTest
 	}
 
 	@Test
+	public void visibleBooleanGettersMatchKeyedReads()
+	{
+		// Every plain override(key, base.x()) boolean body is the keyed
+		// bool() read by definition — assert the equality the delegation
+		// fold relies on, driven on both sides of the payload.
+		assertEquals(effectiveWith(Map.of()).drawMap(),
+			effectiveWith(Map.of()).bool(ConfigKey.DRAW_MAP));
+		EffectiveConfig off = effectiveWith(Map.of("drawMap", false, "drawTiles", false));
+		assertFalse(off.drawMap());
+		assertFalse(off.bool(ConfigKey.DRAW_MAP));
+		assertFalse(off.drawTiles());
+		assertFalse(off.bool(ConfigKey.DRAW_TILES));
+		// A wrong-type payload is inert through both read paths.
+		EffectiveConfig inert = effectiveWith(Map.of("drawMinimap", "off"));
+		assertEquals(base().drawMinimap(), inert.drawMinimap());
+		assertEquals(base().drawMinimap(), inert.bool(ConfigKey.DRAW_MINIMAP));
+	}
+
+	@Test
+	public void visibleColorGettersMatchKeyedReads()
+	{
+		Color override = new Color(9, 8, 7);
+		EffectiveConfig effective = effectiveWith(Map.of("colourPath", override, "colourText", "blue"));
+
+		assertEquals(override, effective.colourPath());
+		assertEquals(override, effective.<Color>val(ConfigKey.COLOUR_PATH));
+		// A wrong-type payload is inert through both read paths.
+		assertEquals(base().colourText(), effective.colourText());
+		assertEquals(base().colourText(), effective.<Color>val(ConfigKey.COLOUR_TEXT));
+	}
+
+	@Test
 	public void jewelleryBoxTierDisplayStringApplies()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("pohJewelleryBoxTier", "Fancy"));
