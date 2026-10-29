@@ -659,6 +659,37 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testKingAwowogeiEntranceRequiresMonkeyMadnessII()
+	{
+		int outside = WorldPointUtil.packWorldPoint(2802, 2756, 0);
+		int entrance = WorldPointUtil.packWorldPoint(2802, 2759, 0);
+		int inside = WorldPointUtil.packWorldPoint(2802, 2762, 0);
+		setupInventory();
+		setupConfig(QuestState.IN_PROGRESS, 99, TeleportationItem.NONE);
+		assertTrue(pathfinderConfig.getMap().isBlocked(2799, 2762, 0));
+		assertTrue(pathfinderConfig.getMap().isBlocked(2802, 2759, 0));
+		assertFalse(activeTransportList().stream().anyMatch(t ->
+			t.getOrigin() == outside && t.getDestination() == entrance
+				|| t.getOrigin() == entrance && t.getDestination() == outside));
+		AStarPathfinder locked = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+			null, outside, Set.of(inside), null, 1);
+		locked.run();
+		assertFalse("The guard must not be bypassed before MM2", locked.getResult().isReached());
+
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertEquals(2, activeTransportList().stream().filter(t ->
+			t.getOrigin() == outside && t.getDestination() == entrance
+				|| t.getOrigin() == entrance && t.getDestination() == outside).count());
+		for (int[] route : new int[][]{{outside, inside}, {inside, outside}})
+		{
+			AStarPathfinder search = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+				null, route[0], Set.of(route[1]), null, 1);
+			search.run();
+			assertTrue(search.getResult().getTerminationReason().toString(), search.getResult().isReached());
+		}
+	}
+
+	@Test
 	public void testFairyRingsNotUsedWithoutDramenStaff()
 	{
 		config.set("useFairyRings", true);

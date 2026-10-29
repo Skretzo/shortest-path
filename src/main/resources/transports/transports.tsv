@@ -5372,6 +5372,10 @@
 2800 2793 0	2800 2797 1	Climb-up Staircase						1	
 2800 2797 1	2800 2793 0	Climb-down Staircase						1	
 									
+# Ape Atoll - King Awowogei entrance									
+2802 2756 0	2802 2759 0	Talk-to Elder Guard 5277			Monkey Madness II			4	I must speak with Awowogei on a subject of great import.
+2802 2759 0	2802 2756 0	Talk-to Elder Guard 5277			Monkey Madness II			4	I would like to leave now.
+									
 # Ape Atoll - Marim bamboo gate									
 2720 2765 0	2720 2767 0	Open Bamboo Gate 4787			Monkey Madness II			2	
 2720 2767 0	2720 2765 0	Open Bamboo Gate 4787			Monkey Madness II			2	
