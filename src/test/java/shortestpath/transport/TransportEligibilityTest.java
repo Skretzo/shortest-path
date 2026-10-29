@@ -311,15 +311,18 @@ public class TransportEligibilityTest
 	}
 
 	@Test
-	public void pohRingNeedsNoStaffEvenWhenDiaryIncomplete()
+	public void pohRingNeedsStaffWhenDiaryIncomplete()
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
 		Transport pohRing = fairyRingAt(POH_RING);
 		Transport wrapped = eligibility.wrapFairyRingStaff(pohRing);
 
-		assertSame("the POH ring passes through unwrapped", pohRing, wrapped);
-		assertTrue(eligibility.usable(wrapped, BankVisitState.CARRIED));
-		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
+		assertNotNull(wrapped.getItemRequirements());
+		assertFalse(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(wrapped, BankVisitState.BANKED));
+		playerHas.put(ItemID.DRAMEN_STAFF, 1);
+		assertTrue(staffEligibility(true).usable(wrapped, BankVisitState.CARRIED));
+		assertSame(pohRing, staffEligibility(false).wrapFairyRingStaff(pohRing));
 	}
 
 	@Test
@@ -516,7 +519,7 @@ public class TransportEligibilityTest
 
 	// ------------------------------------------------------------------
 	// Fairy-staff injection — the availability-build wrap carries the
-	// staff rule as a real item requirement on non-POH rings.
+	// staff rule as a real item requirement on all rings.
 	// ------------------------------------------------------------------
 
 	private static final int ZANARIS_RING = WorldPointUtil.packWorldPoint(2412, 4434, 0);
@@ -574,14 +577,6 @@ public class TransportEligibilityTest
 	public void wrapPassesThroughNonFairyTransports()
 	{
 		assertSame(FALADOR_TELEPORT, staffEligibility(true).wrapFairyRingStaff(FALADOR_TELEPORT));
-	}
-
-	@Test
-	public void wrapExcludesThePohRing()
-	{
-		Transport pohRing = fairyRingAt(POH_RING);
-		assertSame(pohRing, staffEligibility(true).wrapFairyRingStaff(pohRing));
-		assertNull("an unwrapped POH ring stays staff-free", pohRing.getItemRequirements());
 	}
 
 	@Test

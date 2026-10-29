@@ -174,7 +174,7 @@ public final class TeleportRestriction
 	}
 
 	/**
-	 * The code-defined family for the fairy-ring staff rule. Non-POH fairy
+	 * The code-defined family for the fairy-ring staff rule. Fairy
 	 * rings carry the Dramen/Lunar staff as a real item requirement
 	 * synthesized at availability build (see
 	 * {@link TransportEligibility#wrapFairyRingStaff}), so no

@@ -283,8 +283,7 @@ public final class Requirements
 		{
 			// The injected fairy-staff requirement is player-restrictable like an
 			// item teleport's own items: a bare blocked id covering every
-			// Dramen/Lunar staff variant disables the ring. POH rings never
-			// carry the injected requirement, so they pass through.
+			// Dramen/Lunar staff variant disables the ring.
 			if (TransportType.FAIRY_RING.equals(type)
 				&& transport.getItemRequirements() != null
 				&& !transport.getItemRequirements().survivesBlockedItems(policy.blockedItemIds()))
