@@ -66,6 +66,8 @@ public class RoutingKeyParityTest
 		Paths.get("src/main/java/shortestpath/ShortestPathConfig.java");
 	private static final Path CONFIG_KEY =
 		Paths.get("src/main/java/shortestpath/settings/ConfigKey.java");
+	private static final Path CONFIG_KEYS_TSV =
+		Paths.get("src/main/resources/config-keys.tsv");
 
 	/** Identifier call sites — {@code name(} — inside a method body. */
 	private static final Pattern CALL = Pattern.compile("([A-Za-z_$][\\w$]*)\\s*\\(");
@@ -103,6 +105,13 @@ public class RoutingKeyParityTest
 	 */
 	private static final Pattern FORKEY_READ =
 		Pattern.compile("forKey\\s*\\(\\s*\"([^\"]+)\"");
+	/**
+	 * {@code flag:<key>} tokens in {@code config-keys.tsv} — the TSV-carried
+	 * form of the same flag-derived default reads {@link #FORKEY_READ}
+	 * catches when the default is a Java lambda.
+	 */
+	private static final Pattern FLAG_TOKEN =
+		Pattern.compile("flag:([A-Za-z_$][\\w$]*)");
 	/** Keywords whose {@code name(} is never a method declaration. */
 	private static final Set<String> CONTROL_TOKENS = Set.of(
 		"if", "for", "while", "switch", "catch", "try", "do", "else",
@@ -257,11 +266,17 @@ public class RoutingKeyParityTest
 			}
 		}
 		// Keys a default lambda resolves transitively (the flag reads inside
-		// the flag-derived set defaults).
+		// the flag-derived set defaults — whether carried as a Java lambda
+		// or as a flag:<key> token in config-keys.tsv).
 		Matcher derived = FORKEY_READ.matcher(readSource(CONFIG_KEY));
 		while (derived.find())
 		{
 			keys.add(derived.group(1));
+		}
+		Matcher flagTokens = FLAG_TOKEN.matcher(readSource(CONFIG_KEYS_TSV));
+		while (flagTokens.find())
+		{
+			keys.add(flagTokens.group(1));
 		}
 		return keys;
 	}
