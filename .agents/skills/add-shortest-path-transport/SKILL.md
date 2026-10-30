@@ -66,6 +66,16 @@ The TSV's `Origin` is the player traversal tile, not necessarily the object's
 placement tile. Confirm the exact menu option, object name, and object ID for
 each direction. Never infer an ID or action from coordinates alone.
 
+For teleporters that accept normal cardinally adjacent interactions, cover every
+walkable tile along the object's footprint perimeter, accounting for its size
+and orientation. Exclude diagonal-only corners and blocked tiles. Verify each
+landing tile too. Do not assume a fixed landing or preserved X/Y without
+evidence of that teleporter's behavior.
+
+Capture logs can associate an earlier click with later movement. Check
+same-plane "Automatic jump" captures against the cache and ordinary walking
+connectivity before adding an edge; normal walking needs no transport row.
+
 The quickest manual source is RuneLite developer mode's object-ID overlay. For
 an offline cache lookup, use the sibling `shortest-path-tooling` checkout:
 
@@ -131,12 +141,33 @@ missing; do not guess.
 Use tabs and preserve every empty field required by the target header. Add the
 row near related coordinates or under the matching area comment.
 
+### Display labels and comments
+
+Leave `Display info` empty for a single, unambiguous interaction. Populate it
+only when a dialogue/menu destination choice must be identified, or when the
+interaction would otherwise be ambiguous. Do not use it for general location
+names, object names, or to avoid trailing empty TSV cells.
+
+Use section comments to identify areas and groups instead: for example,
+`## Trahaearn Mine`, `## Iorwerth Dungeon entrance`, or
+`## North-west teleport platform: ground floor and upper floor`. Group a
+connection's directions together; for repeated platforms, comment each
+location group. Preserve the file's column count on comments as required by
+the TSV checker, using empty tab-separated fields.
+
 A row is one-way. Add a reverse row only when the connection is confirmed to be
 two-way. Verify the reverse interaction separately: it may use a different menu
 option, name, object ID, origin tile, requirement, or duration.
 
 Do not invent requirements. Carry Skills, Items, Quests, Varbits, and VarPlayers
-only from user-provided or verified game evidence. Use the supplied duration;
+only from user-provided or verified game evidence. Avoid redundant area-access
+quest guards on internal traversal when reaching either endpoint already
+requires that quest (for example, Song of the Elves inside Prifddinas). Keep
+guards on actual area-entry edges and retain any interaction-specific skill,
+item, or unlock requirements. Verify that other entrances or teleports cannot
+bypass the area gate before treating it as implicit.
+
+Use the supplied duration;
 otherwise establish it in-game or follow a directly comparable existing row.
 Before finishing, consider every known blocker to taking the edge: skill level,
 quest stage, inventory/equipment, payment, diary or area unlock, construction
@@ -155,6 +186,14 @@ git diff --check
 git diff -- src/main/resources/transports
 ```
 
+On this machine, use Java 11 through `nix shell nixpkgs#jdk11 --command ./gradlew`.
+The broad TSV check can reject unrelated non-transport resource formats; also
+run `python3 scripts/check_tsv.py ./src/main/resources/transports` to isolate the
+transport result. Required trailing empty TSV cells and padded comments may
+trigger Git's end-of-line whitespace check; preserve them and use
+`git -c core.whitespace=-blank-at-eol diff --check` for this data change rather
+than adding display labels or changing the schema to silence it.
+
 Check that only intended rows changed, both directions are present when needed,
 the object-info cells are complete, no duplicate edge was introduced, and every
 known availability gate is represented by a necessary or conservatively
@@ -168,6 +207,11 @@ python3 scripts/maintenance.py validate --drift
 ```
 
 ## 6. Commit and open a PR only when requested
+
+For in-game testing, rebuild the runnable JAR with
+`nix shell nixpkgs#jdk11 --command ./gradlew shadowJar` only when the user
+explicitly asks. Rebuilding while the game is open can crash it. Do not include
+`shadowJar` in routine validation or automatically rebuild after data edits.
 
 Do not infer permission to commit, push, or create a PR from a request to edit
 or validate data. When the user requests a PR:
