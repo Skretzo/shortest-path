@@ -171,6 +171,7 @@ public enum ConfigKey
 	static
 	{
 		BY_KEY = indexByKey(values());
+		validateFlagTargets(BY_KEY, Rows.BY_NAME.values());
 		// The ctor fails loudly on a constant with no TSV row or getter
 		// binding; these passes fail loudly on a TSV row or binding that
 		// names no constant.
@@ -201,6 +202,29 @@ public enum ConfigKey
 			}
 		}
 		return Map.copyOf(byKey);
+	}
+
+	/**
+	 * Fail loudly if a {@code flag:<key>} default token names no persisted
+	 * boolean key — the flag is otherwise only resolved lazily at first
+	 * read, so a typo would surface as an NPE mid-refresh.
+	 */
+	static void validateFlagTargets(Map<String, ConfigKey> byKey, Iterable<String[]> rows)
+	{
+		for (String[] cols : rows)
+		{
+			if (!cols[4].startsWith("flag:"))
+			{
+				continue;
+			}
+			String flagKey = cols[4].substring("flag:".length());
+			ConfigKey target = byKey.get(flagKey);
+			if (target == null || target.getType() != boolean.class)
+			{
+				throw new IllegalStateException("flag-derived def '" + cols[4] + "' for " + cols[0]
+					+ " names no persisted boolean key");
+			}
+		}
 	}
 
 	/**

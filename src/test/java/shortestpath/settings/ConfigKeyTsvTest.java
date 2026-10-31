@@ -208,6 +208,24 @@ public class ConfigKeyTsvTest
 	}
 
 	@Test
+	public void badFlagTargetIsRejectedAtLoad()
+	{
+		Map<String, ConfigKey> index = ConfigKey.indexByKey(ConfigKey.values());
+		String[] typo = {"POH_MOUNTED_ITEMS", "pohMountedItems", "Set", "PohMountedItem",
+			"flag:usePohMountedItem", "", "NONE", "ROUTE_INVALIDATING"};
+		assertThrows("an unknown flag key must fail validation, not NPE at first read",
+			IllegalStateException.class,
+			() -> ConfigKey.validateFlagTargets(index, java.util.List.<String[]>of(typo)));
+		String[] nonBoolean = {"POH_MOUNTED_ITEMS", "pohMountedItems", "Set", "PohMountedItem",
+			"flag:pohNexusPortals", "", "NONE", "ROUTE_INVALIDATING"};
+		assertThrows("a non-boolean flag target must fail validation",
+			IllegalStateException.class,
+			() -> ConfigKey.validateFlagTargets(index, java.util.List.<String[]>of(nonBoolean)));
+		// the shipped rows validate cleanly
+		ConfigKey.validateFlagTargets(index, rows().values());
+	}
+
+	@Test
 	public void missingResourceIsRejected()
 	{
 		assertThrows("a missing resource must fail the load",
