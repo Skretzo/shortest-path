@@ -711,6 +711,9 @@
 3339 2981 0	3348 2981 0	Climb-down Slope 62415	83 Agility					
 2832 3247 0	2832 3252 0	Climb Rocks 53234	84 Agility				6	
 2832 3252 0	2832 3247 0	Climb Rocks 53236	84 Agility				6	
+## Deepfin Mine dungeon crevice: 84 Agility								
+2076 9203 0	2082 9203 0	Squeeze-through Crevice 60146	84 Agility					
+2082 9203 0	2076 9203 0	Squeeze-through Crevice 60146	84 Agility					
 ## Iorwerth Dungeon southern gap: 84 Agility								
 3232 12420 0	3242 12420 0	Pass Tight Gap 36695	84 Agility					
 3242 12420 0	3232 12420 0	Pass Tight Gap 36694	84 Agility					
