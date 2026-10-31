@@ -136,9 +136,9 @@
 1858 7051 0	2500 3290 0	Enter West Ardougne Portal 37588		1	West Ardougne Portal
 1858 7051 0	2500 3290 0	Enter West Ardougne Portal 37600		1	West Ardougne Portal
 1858 7051 0	2500 3290 0	Enter West Ardougne Portal 37612		1	West Ardougne Portal
-1858 7051 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33096		1	Watchtower Portal
-1858 7051 0	2546 3114 0	Watchtower Yanille Watchtower Portal 33108		1	Watchtower Portal
-1858 7051 0	2546 3114 0	Watchtower Yanille Portal 33102		1	Watchtower Portal
+1858 7051 0	2546 3112 0	Watchtower Yanille Watchtower Portal 33096		1	Watchtower Portal
+1858 7051 0	2546 3112 0	Watchtower Yanille Watchtower Portal 33108		1	Watchtower Portal
+1858 7051 0	2546 3112 0	Watchtower Yanille Portal 33102		1	Watchtower Portal
 # Varbit 4460 is DIARY_ARDOUGNE_HARD; the Watchtower teleport toggle (varbit 4548) only picks the default destination					
 1858 7051 0	2584 3097 0	Yanille Yanille Portal 33097	4460=1	1	Yanille Portal
 1858 7051 0	2584 3097 0	Yanille Yanille Portal 33103	4460=1	1	Yanille Portal
