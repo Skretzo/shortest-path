@@ -46,7 +46,7 @@ public final class EffectiveConfig implements ShortestPathConfig
 	private <T> T override(ConfigKey key, T fallback)
 	{
 		Object value = overrides.get(key.getKey());
-		return value != null && (fallback == null || fallback.getClass().isInstance(value)) ? (T) value : fallback;
+		return value != null && fallback != null && fallback.getClass().isInstance(value) ? (T) value : fallback;
 	}
 
 	/**
@@ -87,7 +87,21 @@ public final class EffectiveConfig implements ShortestPathConfig
 	public <T> T val(ConfigKey key)
 	{
 		T fallback = (T) baseOf(key);
-		return key.getCoercion() == ConfigKey.Coercion.NONE ? fallback : override(key, fallback);
+		switch (key.getCoercion())
+		{
+			case NONE:
+				return fallback;
+			case TELEPORTATION_ITEM:
+				return (T) enumOverride(key, TeleportationItem::fromType, (TeleportationItem) fallback);
+			case JEWELLERY_BOX_TIER:
+				return (T) enumOverride(key, JewelleryBoxTier::fromType, (JewelleryBoxTier) fallback);
+			case TILE_COUNTER:
+				return (T) enumOverride(key, TileCounter::fromType, (TileCounter) fallback);
+			case TILE_STYLE:
+				return (T) enumOverride(key, TileStyle::fromType, (TileStyle) fallback);
+			default:
+				return override(key, fallback);
+		}
 	}
 
 	/** Effective value of a {@code boolean} key. */
