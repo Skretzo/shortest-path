@@ -20,6 +20,14 @@ public final class ItemChange
 	private final String key;
 	private final Set<Effect> effects;
 
+	/**
+	 * The key a change to the item container with this id is declared under.
+	 */
+	public static String containerKey(int containerId)
+	{
+		return "container:" + containerId;
+	}
+
 	ItemChange(String key, Set<Effect> effects)
 	{
 		this.key = Objects.requireNonNull(key);
