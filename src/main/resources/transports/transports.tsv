@@ -5861,11 +5861,8 @@
 3319 6081 0	2298 3329 0	Exit City Gate 36523			Song of the Elves			4	
 									
 # Ape Atoll Dungeon									
-2763 9103 0	2763 2703 0	Climb-up Bamboo Ladder 4781						2	
-2763 2704 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
-2764 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
-2763 2702 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
-2762 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2	
+2764 9103 0	2764 2703 0	Climb-up Bamboo Ladder 4781						3	
+2764 2703 0	2764 9103 0	Climb-down Bamboo Ladder 4780						2	
 									
 # Varrock Palace trellis									
 3228 3470 0	3228 3472 0	Climb Trellis 2149			Garden of Tranquillity			2	
