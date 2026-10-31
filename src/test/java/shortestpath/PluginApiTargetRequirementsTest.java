@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.ItemID;
+import org.junit.Rule;
 import org.junit.Test;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
@@ -37,6 +38,9 @@ import shortestpath.settings.TeleportationItem;
  */
 public class PluginApiTargetRequirementsTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.api.PluginMessageHandler");
+
 	private static final WorldPoint START = new WorldPoint(3222, 3218, 0);
 	private static final WorldPoint NEAR = new WorldPoint(3240, 3225, 0);
 	private static final WorldPoint FARTHER = new WorldPoint(3260, 3230, 0);

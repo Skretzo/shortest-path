@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -29,6 +30,7 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ConfigManager;
+import shortestpath.LogCapture;
 import shortestpath.pathfinder.BankPickupProjection;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
@@ -51,6 +53,9 @@ import shortestpath.settings.Effect;
  */
 public class ItemStateServiceTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.items.ItemStateService");
+
 	private static void assertEligibilityStale(ItemChange change, String what)
 	{
 		assertNotNull(what + " produces a change fact", change);
@@ -390,12 +395,17 @@ public class ItemStateServiceTest
 
 		assertEquals("only the well-formed entries survive",
 			Map.of(13121, 1, 4151, 2), service.lastSeenBank());
+		assertEquals("each skipped entry is logged once, and the sibling entries are not",
+			6, log.messages().size());
+		assertEquals("ignoring malformed lastSeenBankItems entry 'abc'", log.messages().get(0));
 
 		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
 			.thenReturn("not a csv at all");
 		service.loadFromProfile();
 		assertEquals("whole-string garbage yields an empty snapshot, never a throw",
 			Map.of(), service.lastSeenBank());
+		assertEquals("the unparseable string is logged as one malformed entry",
+			7, log.messages().size());
 	}
 
 	@Test

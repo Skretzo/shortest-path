@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -28,6 +29,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 
+import shortestpath.LogCapture;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
@@ -51,6 +53,9 @@ import shortestpath.transport.Transport;
  */
 public class PluginMessageHandlerTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.api.PluginMessageHandler");
+
 	private Client client;
 	private ClientThread clientThread;
 	private EventBus eventBus;

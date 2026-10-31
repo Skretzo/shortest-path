@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import java.util.Set;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -22,6 +23,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.events.ConfigChanged;
 
+import shortestpath.LogCapture;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.TestItemChange;
@@ -45,6 +47,9 @@ import shortestpath.spirittree.TestTreeChange;
  */
 public class RefreshCoordinatorTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.scheduler.RefreshCoordinator");
+
 	private PathScheduler scheduler;
 	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private Settings settings;
