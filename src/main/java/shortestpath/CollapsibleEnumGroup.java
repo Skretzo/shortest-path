@@ -156,5 +156,4 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends ExpandableSurface
 		}
 		countLabel.setText(selected + "/" + members.size());
 	}
-
 }

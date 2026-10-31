@@ -238,7 +238,6 @@ public enum TransportType
 		return differentialCostKey;
 	}
 
-
 	/**
 	 * Refines the TransportType based on the required skill levels.
 	 */

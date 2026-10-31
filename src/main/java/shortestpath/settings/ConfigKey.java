@@ -164,7 +164,6 @@ public enum ConfigKey
 	BLOCKED_TELEPORT_ITEMS,
 	UNLOCK_BALLOON_LOG_BASKET,
 	BALLOON_LOG_BASKET_ROUTES;
-	;
 
 	private static final Map<String, ConfigKey> BY_KEY;
 
