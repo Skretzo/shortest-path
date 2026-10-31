@@ -268,16 +268,20 @@ public class Settings
 	 */
 	public Runnable listen(String key, Runnable listener)
 	{
-		List<Runnable> keyed = listeners.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>());
-		keyed.add(listener);
-		return () ->
+		// List creation, add, remove and empty-pruning all run inside the
+		// map's per-key atomic compute, so a concurrent unregister can never
+		// detach a list a registration is about to add to.
+		listeners.compute(key, (k, existing) ->
+		{
+			List<Runnable> keyed = existing != null ? existing : new CopyOnWriteArrayList<>();
+			keyed.add(listener);
+			return keyed;
+		});
+		return () -> listeners.computeIfPresent(key, (k, keyed) ->
 		{
 			keyed.remove(listener);
-			if (keyed.isEmpty())
-			{
-				listeners.remove(key, keyed);
-			}
-		};
+			return keyed.isEmpty() ? null : keyed;
+		});
 	}
 
 	/**
@@ -360,7 +364,7 @@ public class Settings
 		return value instanceof Set ? (Set<?>) value : null;
 	}
 
-	private void fireListeners(String key)
+	void fireListeners(String key)
 	{
 		List<Runnable> keyed = listeners.get(key);
 		if (keyed == null)

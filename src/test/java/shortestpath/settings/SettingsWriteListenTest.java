@@ -342,4 +342,48 @@ public class SettingsWriteListenTest
 		{
 		}
 	}
+
+	@Test
+	public void unregisterNeverDropsAConcurrentRegistration() throws Exception
+	{
+		Settings settings = Settings.wrap(new TestShortestPathConfig());
+		int threads = 4;
+		int rounds = 20000;
+		java.util.concurrent.ExecutorService pool =
+			java.util.concurrent.Executors.newFixedThreadPool(threads);
+		try
+		{
+			java.util.List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+			for (int t = 0; t < threads; t++)
+			{
+				results.add(pool.submit(() ->
+				{
+					int missed = 0;
+					for (int r = 0; r < rounds; r++)
+					{
+						java.util.concurrent.atomic.AtomicBoolean fired =
+							new java.util.concurrent.atomic.AtomicBoolean();
+						Runnable unregister = settings.listen("avoidWilderness", () -> fired.set(true));
+						settings.fireListeners("avoidWilderness");
+						if (!fired.get())
+						{
+							missed++;
+						}
+						unregister.run();
+					}
+					return missed;
+				}));
+			}
+			int missed = 0;
+			for (java.util.concurrent.Future<Integer> result : results)
+			{
+				missed += result.get();
+			}
+			assertEquals("a registered listener must always be reachable from the map", 0, missed);
+		}
+		finally
+		{
+			pool.shutdownNow();
+		}
+	}
 }
