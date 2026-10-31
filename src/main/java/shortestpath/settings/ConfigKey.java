@@ -263,9 +263,7 @@ public enum ConfigKey
 	 * {@link #baseRow()} call time.
 	 */
 	private final String baseKey;
-	/** The config getter a visible key's value pairs with (hidden: null). */
-	private final Function<ShortestPathConfig, Object> getter;
-	/** The config getter a visible key's stored read invokes (hidden: null). */
+	/** The config getter a visible key's value pairs with and its stored read invokes (hidden: null). */
 	private final Function<ShortestPathConfig, Object> configuredGetter;
 	private final Coercion coercion;
 	/** The effects a change to this key triggers for the shell. */
@@ -301,12 +299,10 @@ public enum ConfigKey
 			{
 				throw new IllegalStateException("no VisibleGetters binding for visible key " + name());
 			}
-			this.getter = bound;
 			this.configuredGetter = bound;
 		}
 		else
 		{
-			this.getter = null;
 			this.configuredGetter = null;
 		}
 	}

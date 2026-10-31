@@ -152,7 +152,7 @@ public class ConfigKeyTsvTest
 	/**
 	 * Every visible row binds a {@link VisibleGetters} entry; the map
 	 * carries no binding for a hidden or non-existent row, and the bound
-	 * function is the getter the row reports on both read paths.
+	 * function is the getter the row reports.
 	 */
 	@Test
 	public void visibleRowsBindThroughVisibleGetters()
@@ -165,7 +165,6 @@ public class ConfigKeyTsvTest
 			}
 			var bound = VisibleGetters.BY_NAME.get(row.name());
 			assertNotNull(row.name() + " has no VisibleGetters binding", bound);
-			assertSame(row.name() + " getter is the bound function", bound, row.getGetter());
 			assertSame(row.name() + " configured getter is the bound function",
 				bound, row.getConfiguredGetter());
 		}
