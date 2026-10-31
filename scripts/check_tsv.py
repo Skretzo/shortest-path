@@ -68,6 +68,7 @@ SKIP_FILES = {
     "spell-widget-ids.tsv",
     "spirit-tree-patches.tsv",
     "teleport_restrictions.tsv",
+    "world-map-areas.tsv",
 }
 
 SKILL_NAMES = {

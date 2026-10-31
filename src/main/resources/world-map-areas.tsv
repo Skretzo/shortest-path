@@ -1,0 +1,122 @@
+#map	x	y	width	height	dx	dy	plane
+Ancient Cavern	1792	5312	64	128	-64	-64	1
+Asgarnia Ice Cave	2984	9536	32	24	0	0	1
+Asgarnia Ice Cave	3080	9536	72	64	-64	0	1
+Asgarnia Ice Cave	3008	9616	64	48	-64	0	0
+Dorgesh-Kaan	2752	5312	64	128	-64	-64	1
+Dorgesh-Kaan	2816	5376	64	128	-128	-128	2
+Dwarven Mines	3072	9664	64	64	640	-4032	0
+Dwarven Mines	3168	9664	64	64	544	-4032	1
+God Wars Dungeon	2816	5152	128	48	0	32	0
+God Wars Dungeon	2888	5216	56	40	-8	32	0
+God Wars Dungeon	2816	5248	64	128	0	0	2
+God Wars Dungeon	2936	5264	40	40	-32	8	1
+God Wars Dungeon	2880	5280	40	96	0	0	2
+God Wars Dungeon	2920	5312	24	64	0	0	2
+Ghorrock Prison	2880	6336	128	128	0	0	2
+Keldagrim	2840	10072	24	32	-56	48	0
+Keldagrim	2816	10080	24	40	-56	48	0
+Misthalin Underground	3200	9472	64	64	0	0	2
+Morytania Underground	3456	9560	64	40	0	40	0
+Morytania Underground	3648	9600	64	128	-64	64	0
+Morytania Underground	3456	9640	64	64	0	24	0
+Morytania Underground	3584	9664	64	128	-64	64	0
+Morytania Underground	3776	9664	128	192	0	0	1
+Morytania Underground	3728	9688	48	168	0	0	1
+Morytania Underground	3712	9696	16	16	16	-24	0
+Morytania Underground	3712	9712	16	144	0	0	1
+Morytania Underground	3520	9728	40	24	-40	128	0
+Morytania Underground	3576	9744	8	16	-64	64	0
+Morytania Underground	3376	9848	64	64	16	8	0
+Morytania Underground	3712	9856	16	16	-40	96	0
+Morytania Underground	3392	9920	64	64	0	0	3
+Fremennik Slayer Cave	2688	9920	40	40	0	32	1
+Stronghold of Security	1952	4896	64	64	352	288	0
+Stronghold of Security	1920	4992	64	64	192	256	0
+Stronghold of Security	1888	5088	64	64	96	96	0
+Taverley Underground	2752	9600	192	64	0	192	1
+Taverley Underground	2944	9608	32	48	0	192	1
+Taverley Underground	2656	9856	64	56	-1376	-8632	0
+Taverley Underground	2840	9984	40	24	64	-32	0
+Troll Stronghold	2880	10080	64	64	-64	-32	1
+Troll Stronghold	2944	10112	64	64	-128	-64	2
+Mor Ul Rek	2464	4992	64	64	-224	320	0
+Lair of Tarn Razorlor	3232	4544	64	64	-96	0	1
+Lair of Tarn Razorlor	3328	4544	64	64	-192	0	2
+Lair of Tarn Razorlor	3168	4608	40	32	-32	32	0
+Waterbirth Dungeon	2608	9640	56	56	280	-5216	0
+Waterbirth Dungeon	2664	9640	56	56	224	-5280	0
+Waterbirth Dungeon	2544	9728	192	64	-752	-5376	0
+Waterbirth Dungeon	2544	9824	192	64	-752	-5472	1
+Waterbirth Dungeon	2544	9920	192	64	-752	-5568	2
+Waterbirth Dungeon	2544	10016	192	64	-752	-5664	3
+Wilderness Dungeons	3280	10064	40	32	-320	-5696	2
+Wilderness Dungeons	2928	10072	64	56	80	40	0
+Wilderness Dungeons	3008	10112	16	40	48	24	3
+Wilderness Dungeons	2992	10128	16	24	48	24	3
+Wilderness Dungeons	3264	10176	64	64	0	0	1
+Wilderness Dungeons	3392	10176	64	64	0	0	2
+Wilderness Dungeons	3088	10240	48	48	-840	-5568	0
+Wilderness Dungeons	3072	10320	56	56	-576	-5640	0
+Yanille Underground	2520	9424	48	48	40	120	0
+Yanille Underground	2624	9472	16	16	-16	88	0
+Fossil Island Underground	3872	10144	64	128	-96	-32	3
+Fossil Island Underground	3712	10240	128	64	0	0	1
+Feldip Hills Underground	1856	8960	256	64	0	0	1
+Feldip Hills Underground	1856	9024	128	64	0	0	1
+Feldip Hills Underground	2008	9064	32	32	496	216	0
+Kourend Underground	1408	9792	64	64	0	64	0
+Kourend Underground	1280	9856	128	64	128	192	0
+Kourend Underground	1440	9856	64	64	32	64	1
+Kourend Underground	1280	9952	64	64	128	96	1
+Kourend Underground	1440	9952	64	64	32	-32	2
+Kourend Underground	1280	10048	64	64	128	0	2
+Kourend Underground	1440	10048	64	64	32	-128	3
+Kourend Underground	1792	10112	128	64	-64	0	0
+Kebos Underground	1280	9904	64	64	0	16	0
+Kebos Underground	1280	10000	64	64	0	48	1
+Kebos Underground	1152	10032	64	64	64	16	0
+Kebos Underground	1160	10120	32	112	152	40	1
+Kebos Underground	1192	10128	8	96	152	40	1
+Kebos Underground	1128	10136	32	64	152	40	1
+Kebos Underground	1200	10136	16	88	152	40	1
+Kebos Underground	1112	10144	16	40	152	40	1
+Kebos Underground	1136	10200	24	32	152	40	1
+Kebos Underground	1120	10240	96	56	144	-64	2
+Prifddinas Underground	3264	12352	64	64	0	64	0
+Prifddinas Underground	3264	12416	64	64	-256	-6400	0
+Prifddinas Underground	3216	12488	24	24	-192	-6376	1
+Prifddinas Grand Library	2752	6080	128	128	-192	0	1
+Prifddinas Grand Library	2944	6080	128	128	-384	0	2
+Kharidian Desert Underground	3328	9216	64	64	0	-128	0
+Kharidian Desert Underground	3168	9400	64	64	288	72	0
+Kharidian Desert Underground	3168	9472	64	64	288	0	2
+Kharidian Desert Underground	3328	9472	96	56	-64	0	0
+Kharidian Desert Underground	3328	9528	80	8	-64	0	0
+Kharidian Desert Underground	3328	9536	64	16	-64	0	0
+Kharidian Desert Underground	3424	9568	56	48	-88	1904	0
+Varlamore Underground	1368	9408	32	32	0	24	0
+Varlamore Underground	1536	9408	64	64	0	0	1
+Varlamore Underground	1280	9472	56	64	-64	0	0
+Varlamore Underground	1472	9472	64	40	0	0	1
+Varlamore Underground	1280	9664	128	128	-64	64	0
+Cam Torum	1408	9472	64	128	0	0	1
+Cam Torum	1472	9512	64	24	0	0	1
+Cam Torum	1384	9536	24	64	0	0	1
+Cam Torum	1472	9536	56	64	0	0	1
+Cam Torum	1424	9600	32	8	0	0	1
+Neypotzli	1408	9544	64	56	0	64	1
+Ardent Ocean Underground	3080	9352	32	56	-1584	-4744	0
+Ardent Ocean Underground	2880	9408	64	64	-64	64	1
+Ardent Ocean Underground	2560	9472	64	128	64	0	2
+Unquiet Ocean Underground	2752	8576	64	128	-192	0	0
+Unquiet Ocean Underground	2688	8768	128	64	-64	64	0
+Unquiet Ocean Underground	3200	8768	64	64	0	64	0
+Unquiet Ocean Underground	3264	8832	64	64	0	0	1
+Shrouded Ocean Underground	2176	8960	64	64	0	-256	0
+Shrouded Ocean Underground	2240	9216	64	64	-128	64	0
+Shrouded Ocean Underground	2112	9280	64	64	-192	128	0
+Western Ocean Underground	1984	9664	64	64	-64	-192	0
+Western Ocean Underground	2048	9984	64	64	0	64	0
+Northern Ocean Underground	2368	10240	64	64	0	0	1
+Northern Ocean Underground	2112	10304	64	64	192	0	2

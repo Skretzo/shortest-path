@@ -13,15 +13,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
@@ -72,6 +75,9 @@ public class PathScheduler
 	private QueryResponder responder;
 
 	private WorldMapPoint marker;
+	// Where the open world map draws a tile; the plugin sets it, as the scheduler stays clear of widgets
+	@Setter
+	private IntUnaryOperator mapPosition = IntUnaryOperator.identity();
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
 	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
 	private Future<?> pathfinderFuture;
@@ -545,9 +551,23 @@ public class PathScheduler
 			worldMapPointManager.removeIf(x -> x == marker);
 			if (targets.size() == 1)
 			{
-				marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(targets.iterator().next()), MARKER_IMAGE);
+				int target = targets.iterator().next();
+				marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(target), MARKER_IMAGE)
+				{
+					// RuneLite draws the marker, and jumps to it on click, at a spot of the open world map
+					@Override
+					public WorldPoint getWorldPoint()
+					{
+						return WorldPointUtil.unpackWorldPoint(mapPosition.applyAsInt(target));
+					}
+
+					@Override
+					public WorldPoint getTarget()
+					{
+						return getWorldPoint();
+					}
+				};
 				marker.setName("Target");
-				marker.setTarget(marker.getWorldPoint());
 				marker.setJumpOnClick(true);
 				worldMapPointManager.add(marker);
 			}

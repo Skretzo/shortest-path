@@ -104,14 +104,14 @@ public class PathMapOverlay extends Overlay
 				@Override
 				public boolean beginOrigin(int origin)
 				{
-					mapA = geometry.mapWorldPointToGraphicsPoint(origin);
+					mapA = geometry.mapWorldPointToGraphicsPoint(geometry.drawnMapPoint(origin));
 					return mapA != null && worldMapClipArea.contains(mapA.getX(), mapA.getY());
 				}
 
 				@Override
 				public void visit(int origin, Transport b, boolean isAvailable)
 				{
-					Point mapB = geometry.mapWorldPointToGraphicsPoint(b.getDestination());
+					Point mapB = geometry.mapWorldPointToGraphicsPoint(geometry.drawnMapPoint(b.getDestination()));
 					if (mapB == null || !worldMapClipArea.contains(mapB.getX(), mapB.getY()))
 					{
 						return;
@@ -158,7 +158,7 @@ public class PathMapOverlay extends Overlay
 					int lastPoint = (i > 0) ? path.get(i - 1).getPackedPosition() : point;
 					if (WorldPointUtil.distanceBetween(point, lastPoint) > 1)
 					{
-						drawOnMap(graphics, lastPoint, point, true, cursorPos);
+						drawOnMap(graphics, geometry.drawnMapPoint(lastPoint), geometry.drawnMapPoint(point), true, cursorPos);
 					}
 					drawOnMap(graphics, point, true, cursorPos);
 				}
@@ -221,8 +221,8 @@ public class PathMapOverlay extends Overlay
 
 	private void drawMapSegment(Graphics2D graphics, int from, int to, Stroke stroke)
 	{
-		Point p1 = geometry.mapWorldPointToGraphicsPoint(from);
-		Point p2 = geometry.mapWorldPointToGraphicsPoint(to);
+		Point p1 = geometry.mapWorldPointToGraphicsPoint(geometry.drawnMapPoint(from));
+		Point p2 = geometry.mapWorldPointToGraphicsPoint(geometry.drawnMapPoint(to));
 		if (p1 == null || p2 == null)
 		{
 			return;
@@ -242,6 +242,7 @@ public class PathMapOverlay extends Overlay
 
 	private void drawSmallSquareOnMap(Graphics2D graphics, int point)
 	{
+		point = geometry.drawnMapPoint(point);
 		Point p = geometry.mapWorldPointToGraphicsPoint(point);
 		Point next = geometry.mapWorldPointToGraphicsPoint(WorldPointUtil.dxdy(point, 1, -1));
 		if (p == null || next == null)
@@ -256,8 +257,8 @@ public class PathMapOverlay extends Overlay
 
 	private void drawSolidLineOnMap(Graphics2D graphics, int from, int to)
 	{
-		Point p1 = geometry.mapWorldPointToGraphicsPoint(from);
-		Point p2 = geometry.mapWorldPointToGraphicsPoint(to);
+		Point p1 = geometry.mapWorldPointToGraphicsPoint(geometry.drawnMapPoint(from));
+		Point p2 = geometry.mapWorldPointToGraphicsPoint(geometry.drawnMapPoint(to));
 		if (p1 == null || p2 == null)
 		{
 			return;
@@ -268,6 +269,7 @@ public class PathMapOverlay extends Overlay
 
 	private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos)
 	{
+		point = geometry.drawnMapPoint(point);
 		drawOnMap(graphics, point, WorldPointUtil.dxdy(point, 1, -1), checkHover, cursorPos);
 	}
 

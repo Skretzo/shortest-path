@@ -61,9 +61,9 @@ jobs:
           sed -i 's/"mapsquare"/"region"/g' keys.json
           sed -i 's/"key"/"keys"/g' keys.json
 
-      - name: Insert CollisionMapDumper.java
+      - name: Insert CollisionMapDumper.java and WorldMapDumper.java
         run: |
-          cp ./tooling/collision-map-update/CollisionMapDumper.java runelite/cache/src/main/java/net/runelite/cache
+          cp ./tooling/collision-map-update/CollisionMapDumper.java ./tooling/collision-map-update/WorldMapDumper.java runelite/cache/src/main/java/net/runelite/cache
 
       - name: Patch Runelite build.gradle.kts
         run: |
@@ -83,6 +83,10 @@ jobs:
       - name: Export collision map
         run: |
           java -jar cache.jar --cachedir ./cache --xteapath ./keys.json --outputdir "output"
+
+      - name: Export world map areas
+        run: |
+          java -cp cache.jar net.runelite.cache.WorldMapDumper ./cache src/main/resources/world-map-areas.tsv
 
       - name: Zip output directory
         run: |
@@ -135,11 +139,11 @@ jobs:
           rm -rf runelite cache output cache.jar keys.json cache.zip tooling
 
       # `add` is an explicit pathspec so the commit can only ever contain the
-      # two generated artifacts, regardless of what else is left in the
+      # three generated artifacts, regardless of what else is left in the
       # workspace.
       - name: Commit changes
         uses: EndBug/add-and-commit@v11
         with:
           default_author: github_actions
-          add: "src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin"
+          add: "src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin src/main/resources/world-map-areas.tsv"
           message: "Update collision map"

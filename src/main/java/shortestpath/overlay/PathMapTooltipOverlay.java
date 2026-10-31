@@ -90,6 +90,7 @@ public class PathMapTooltipOverlay extends Overlay
 	private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n,
 		List<PathStep> path, int pathIndex)
 	{
+		point = geometry.drawnMapPoint(point);
 		int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
 		Point start = geometry.mapWorldPointToGraphicsPoint(point);
 		Point end = geometry.mapWorldPointToGraphicsPoint(offsetPoint);
