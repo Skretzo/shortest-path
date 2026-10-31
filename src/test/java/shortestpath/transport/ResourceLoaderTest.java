@@ -12,7 +12,9 @@ import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import shortestpath.LogCapture;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -36,6 +38,9 @@ import shortestpath.transport.parser.ItemRequirementParser;
  */
 public class ResourceLoaderTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.transport");
+
 
 	private Map<Integer, Set<Transport>> transports;
 

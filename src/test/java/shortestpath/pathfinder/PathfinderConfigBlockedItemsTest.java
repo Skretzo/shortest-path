@@ -16,11 +16,13 @@ import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
+import shortestpath.LogCapture;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
@@ -46,6 +48,9 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderConfigBlockedItemsTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.requirement.TeleportRestriction");
+
 	// Item ids used by the synthetic transports below; they mirror real TSV
 	// rows so the grammar under test is the same one the loader parses.
 	private static final int ARDY_CLOAK_1 = 13121;
