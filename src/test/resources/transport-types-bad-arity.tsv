@@ -1,0 +1,2 @@
+#enum-name	resource-path	enabled-key	cost-key	radius-threshold	teleport	shares-with	differential-cost-key
+TRANSPORT	/transports/transports.tsv	useTransports	costTransports
