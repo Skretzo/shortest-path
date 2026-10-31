@@ -170,12 +170,7 @@ public enum ConfigKey
 
 	static
 	{
-		Map<String, ConfigKey> byKey = new HashMap<>();
-		for (ConfigKey row : values())
-		{
-			byKey.put(row.getKey(), row);
-		}
-		BY_KEY = Map.copyOf(byKey);
+		BY_KEY = indexByKey(values());
 		// The ctor fails loudly on a constant with no TSV row or getter
 		// binding; these passes fail loudly on a TSV row or binding that
 		// names no constant.
@@ -187,6 +182,25 @@ public enum ConfigKey
 		{
 			valueOf(name);
 		}
+	}
+
+	/**
+	 * Index rows by persisted key name, failing loudly if two rows share a
+	 * key — a duplicate would silently shadow one row in {@link #forKey}.
+	 */
+	static Map<String, ConfigKey> indexByKey(ConfigKey[] rows)
+	{
+		Map<String, ConfigKey> byKey = new HashMap<>();
+		for (ConfigKey row : rows)
+		{
+			ConfigKey prior = byKey.put(row.getKey(), row);
+			if (prior != null)
+			{
+				throw new IllegalStateException("duplicate config key '" + row.getKey()
+					+ "' on " + prior.name() + " and " + row.name());
+			}
+		}
+		return Map.copyOf(byKey);
 	}
 
 	/**
@@ -408,7 +422,10 @@ public enum ConfigKey
 				{
 					throw new IllegalStateException("malformed config-keys.tsv row: " + line);
 				}
-				rows.put(cols[0], cols);
+				if (rows.put(cols[0], cols) != null)
+				{
+					throw new IllegalStateException("duplicate config-keys.tsv row: " + cols[0]);
+				}
 			});
 		}
 		catch (Exception e)

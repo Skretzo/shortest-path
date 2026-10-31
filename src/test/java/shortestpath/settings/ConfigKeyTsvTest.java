@@ -185,6 +185,29 @@ public class ConfigKeyTsvTest
 	}
 
 	@Test
+	public void duplicateRowIsRejected()
+	{
+		IllegalStateException e = assertThrows(
+			"a repeated enum-name row must fail the load, not overwrite",
+			IllegalStateException.class,
+			() -> ConfigKey.loadRows("/config-keys-dup-row.tsv"));
+		assertTrue("must be the duplicate check, not the arity check: " + e.getCause(),
+			e.getCause().getMessage().startsWith("duplicate config-keys.tsv row"));
+	}
+
+	@Test
+	public void duplicatePersistedKeyIsRejected()
+	{
+		ConfigKey[] shadowing = {ConfigKey.AVOID_WILDERNESS, ConfigKey.AVOID_WILDERNESS};
+		assertThrows("two rows sharing one persisted key must fail the index",
+			IllegalStateException.class,
+			() -> ConfigKey.indexByKey(shadowing));
+		// the shipped rows index cleanly and every key round-trips
+		Map<String, ConfigKey> index = ConfigKey.indexByKey(ConfigKey.values());
+		assertEquals(ConfigKey.values().length, index.size());
+	}
+
+	@Test
 	public void missingResourceIsRejected()
 	{
 		assertThrows("a missing resource must fail the load",

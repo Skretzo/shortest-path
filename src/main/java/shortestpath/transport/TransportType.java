@@ -174,7 +174,10 @@ public enum TransportType
 				{
 					throw new IllegalStateException("malformed transport-types.tsv row: " + line);
 				}
-				rows.put(cols[0], cols);
+				if (rows.put(cols[0], cols) != null)
+				{
+					throw new IllegalStateException("duplicate transport-types.tsv row: " + cols[0]);
+				}
 			});
 		}
 		catch (Exception e)
