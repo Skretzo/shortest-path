@@ -256,6 +256,55 @@ public final class RoutingStaticBuilder
 	}
 
 	/**
+	 * The routing components of every walkable tile and the separating cuts between them, as the
+	 * {@link ComponentLayer} that {@link RoutingStaticLoader} reads. Ids are numbered from 1 in order
+	 * of each component's first tile, with the valid cuts blocked; nothing hash-ordered reaches the output.
+	 */
+	static ComponentLayer generate(CollisionMap collision, int[] cuts)
+	{
+		WalkableTiles walkable = enumerateWalkableTiles(collision);
+		CutSet cutSet = validateCuts(cuts, walkable);
+		int[] componentIds = new int[walkable.tiles.length];
+		floodFillComponents(walkable, cutSet.blocked, componentIds);
+
+		int runCount = 0;
+		for (int i = 0, length = 0; i < componentIds.length; i++)
+		{
+			length = extendsRun(walkable, componentIds, i, length) ? length + 1 : 1;
+			if (length == 1) runCount++;
+		}
+		int[] starts = new int[runCount];
+		char[] lengths = new char[runCount];
+		int[] ids = new int[runCount];
+		for (int i = 0, run = -1; i < componentIds.length; i++)
+		{
+			if (extendsRun(walkable, componentIds, i, run < 0 ? 0 : lengths[run])) lengths[run]++;
+			else
+			{
+				starts[++run] = walkable.tiles[i];
+				lengths[run] = 1;
+				ids[run] = componentIds[i];
+			}
+		}
+
+		List<Crossing> crossings = buildCrossings(cutSet.valid, componentIds, walkable);
+		int[] crossingTiles = new int[crossings.size() * 2];
+		for (int i = 0; i < crossings.size(); i++)
+		{
+			crossingTiles[2 * i] = crossings.get(i).fromTile;
+			crossingTiles[2 * i + 1] = crossings.get(i).toTile;
+		}
+		return new ComponentLayer(starts, lengths, ids, crossingTiles);
+	}
+
+	/** Whether tile {@code index} continues a run of {@code length} tiles ending at the tile before it. */
+	private static boolean extendsRun(WalkableTiles walkable, int[] componentIds, int index, int length)
+	{
+		return index > 0 && length < Character.MAX_VALUE && walkable.tiles[index] == walkable.tiles[index - 1] + 1
+			&& componentIds[index] == componentIds[index - 1];
+	}
+
+	/**
 	 * The ordinary walking graph over every walkable tile, with natural components and structural
 	 * reachability computed exactly as {@link #build} does. The tooling cut generator partitions
 	 * this graph, so generated cuts and the runtime agree on what a walking edge is.
