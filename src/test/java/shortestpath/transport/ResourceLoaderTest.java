@@ -3,6 +3,7 @@ package shortestpath.transport;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1353,26 +1354,26 @@ public class ResourceLoaderTest
 
 	// ------------------------------------------------------------------
 	// Bank-requirements seam — keep-arity split, trimmed headers, per-row
-	// merge. Missing Destination column yields an empty map.
+	// alternatives. Missing Destination column yields an empty map.
 	// ------------------------------------------------------------------
 
 	@Test
 	public void bankRequirementsSeamSkipsBadCoordinates()
 	{
-		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+		Map<Integer, List<DestinationRequirements>> reqs = ResourceLoader.parseBankRequirements(
 			"# Destination\tSkills\n" +
 				"a b c\tskipped row\n" +
 				"3147 3450 0\t99 Cooking\n");
 
 		Assert.assertEquals(1, reqs.size());
 		Assert.assertEquals(99,
-			reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).getSkillLevels().get(Skill.COOKING));
+			reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).get(0).getSkillLevels().get(Skill.COOKING));
 	}
 
 	@Test
 	public void bankRequirementsSeamYieldsEmptyMapWithoutDestinationColumn()
 	{
-		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+		Map<Integer, List<DestinationRequirements>> reqs = ResourceLoader.parseBankRequirements(
 			"# Info\tSkills\n" +
 				"some info\t99 Cooking\n");
 
@@ -1382,37 +1383,40 @@ public class ResourceLoaderTest
 	@Test
 	public void bankRequirementsSeamParsesMaxSentinel()
 	{
-		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+		Map<Integer, List<DestinationRequirements>> reqs = ResourceLoader.parseBankRequirements(
 			"# Destination\tSkills\n" +
 				"3147 3450 0\tMax Cooking\n");
 
 		Assert.assertEquals(SkillLevels.MAX_LEVEL,
-			reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).getSkillLevels().get(Skill.COOKING));
+			reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).get(0).getSkillLevels().get(Skill.COOKING));
 	}
 
 	@Test
-	public void bankRequirementsSeamMergesRowsSharingACoordinate()
+	public void bankRequirementsSeamKeepsRowsSharingACoordinateAsAlternatives()
 	{
-		Map<Integer, DestinationRequirements> reqs = ResourceLoader.parseBankRequirements(
+		Map<Integer, List<DestinationRequirements>> reqs = ResourceLoader.parseBankRequirements(
 			"# Destination\tSkills\n" +
 				"3147 3450 0\t99 Cooking\n" +
 				"3147 3450 0\t50 Farming\n");
 
 		Assert.assertEquals(1, reqs.size());
-		SkillLevels levels = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0)).getSkillLevels();
-		Assert.assertEquals(99, levels.get(Skill.COOKING));
-		Assert.assertEquals(50, levels.get(Skill.FARMING));
+		List<DestinationRequirements> rows = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0));
+		Assert.assertEquals(2, rows.size());
+		Assert.assertEquals(99, rows.get(0).getSkillLevels().get(Skill.COOKING));
+		Assert.assertEquals(0, rows.get(0).getSkillLevels().get(Skill.FARMING));
+		Assert.assertEquals(50, rows.get(1).getSkillLevels().get(Skill.FARMING));
 	}
 
 	@Test
 	public void bankRequirementsEntryPointMatchesCommittedResource()
 	{
-		Map<Integer, DestinationRequirements> reqs = ResourceLoader.bankRequirements();
+		Map<Integer, List<DestinationRequirements>> reqs = ResourceLoader.bankRequirements();
 
 		assertFloor("bank requirement tiles", 289, reqs.size());
-		DestinationRequirements cooksGuild = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0));
+		List<DestinationRequirements> cooksGuild = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0));
 		Assert.assertNotNull("Cooks' Guild bank tile carries a requirement", cooksGuild);
-		Assert.assertEquals(99, cooksGuild.getSkillLevels().get(Skill.COOKING));
+		Assert.assertEquals("99 Cooking or the hard Varrock diary", 2, cooksGuild.size());
+		Assert.assertEquals(99, cooksGuild.get(0).getSkillLevels().get(Skill.COOKING));
 	}
 
 	// ------------------------------------------------------------------

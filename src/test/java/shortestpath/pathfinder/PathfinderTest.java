@@ -128,6 +128,27 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void guildBankOpensWithEitherSkillOrDiary()
+	{
+		// bank.tsv lists the Crafting Guild bank chest on two rows: 99 Crafting, or the hard Falador diary
+		int craftingGuildBank = WorldPointUtil.packWorldPoint(2935, 3280, 0);
+		setupInventory();
+		setupEquipment();
+		for (int crafting : new int[]{1, 99})
+		{
+			for (int diary : new int[]{0, 1})
+			{
+				setupConfig(QuestState.FINISHED, 1, TeleportationItem.NONE,
+					Map.of(VarbitID.FALADOR_DIARY_HARD_COMPLETE, diary));
+				when(client.getBoostedSkillLevel(Skill.CRAFTING)).thenReturn(crafting);
+				pathfinderConfig.refresh();
+				assertEquals("crafting " + crafting + ", diary " + diary,
+					crafting == 99 || diary == 1, pathfinderConfig.bankAccessible(craftingGuildBank));
+			}
+		}
+	}
+
+	@Test
 	public void testAgilityShortcuts()
 	{
 		config.set("useAgilityShortcuts", true);
