@@ -308,7 +308,7 @@ public class ResourceLoaderTest
 	public void testSpecialSkillRequirements()
 	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-			"3200 3200 0\t3300 3300 0\t1500 Total;100 Combat;200 Quest\n";
+			"3200 3200 0\t3300 3300 0\t1500 Total;100 Combat;200 Quest;700 Music\n";
 
 		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -320,13 +320,14 @@ public class ResourceLoaderTest
 		Assert.assertEquals("Total level should be 1500", 1500, skillLevels.totalLevel());
 		Assert.assertEquals("Combat level should be 100", 100, skillLevels.combatLevel());
 		Assert.assertEquals("Quest points should be 200", 200, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
+		Assert.assertEquals(700, skillLevels.get(SkillLevels.MUSIC_TRACKS_INDEX));
 	}
 
 	@Test
 	public void testMaximumSkillRequirements()
 	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-			"3200 3200 0\t3300 3300 0\tMax Agility;Max Total;Max Combat;Max Quest\n";
+			"3200 3200 0\t3300 3300 0\tMax Agility;Max Total;Max Combat;Max Quest;Max Music\n";
 
 		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -337,6 +338,7 @@ public class ResourceLoaderTest
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.totalLevel());
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.combatLevel());
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(SkillLevels.MUSIC_TRACKS_INDEX));
 	}
 
 	@Test

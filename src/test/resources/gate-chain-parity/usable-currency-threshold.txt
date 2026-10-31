@@ -1,0 +1,2 @@
+currency/under-threshold | check=NONE | carried=true | banked=true | gates=NONE
+currency/over-threshold | check=ITEM_REQUIREMENT | carried=false | banked=false | gates=NONE

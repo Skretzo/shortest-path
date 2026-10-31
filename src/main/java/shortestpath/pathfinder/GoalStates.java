@@ -79,12 +79,7 @@ public final class GoalStates
 		this.viable = anyViable;
 	}
 
-	/** Resolves {@code targets} against the map and the items {@code config} last collected. */
-	public static GoalStates resolve(PathfinderConfig config, int start, Targets targets)
-	{
-		return resolve(TargetGoals.resolve(config, start, targets.points()), targets, config.getHeldItems());
-	}
-
+	/** Puts {@code targets}, resolved to {@code tiles}, into the layers {@code heldItems} decide. */
 	static GoalStates resolve(TargetGoals tiles, Targets targets, HeldItems heldItems)
 	{
 		Map<Integer, TargetStatus> statuses = new HashMap<>();
@@ -92,8 +87,7 @@ public final class GoalStates
 		boolean anyCompletable = false;
 		for (Target target : targets)
 		{
-			TargetStatus status = target.hasRequiredItems() ? heldItems.statusOf(target.getRequiredItems())
-				: TargetStatus.CARRIED;
+			TargetStatus status = statusOf(target, heldItems);
 			int targetLayers = status == TargetStatus.CARRIED ? EITHER : status == TargetStatus.BANK ? BANKED : 0;
 			statuses.put(target.getPoint(), status);
 			layers.put(target.getPoint(), targetLayers);
@@ -108,10 +102,37 @@ public final class GoalStates
 		return new GoalStates(targets, tiles, heldItems, statuses, layers);
 	}
 
+	/**
+	 * Whether some target's items are only in the bank, so the route may have to visit one. A
+	 * property of the targets and the items held, not of the tiles they resolve to.
+	 */
+	public static boolean needsBank(Targets targets, HeldItems heldItems)
+	{
+		for (Target target : targets)
+		{
+			if (statusOf(target, heldItems) == TargetStatus.BANK)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static TargetStatus statusOf(Target target, HeldItems heldItems)
+	{
+		return target.hasRequiredItems() ? heldItems.statusOf(target.getRequiredItems()) : TargetStatus.CARRIED;
+	}
+
 	/** Whether reaching {@code tile} in the given bank layer finishes the route. */
 	public boolean accepts(int tile, BankVisitState banked)
 	{
 		return eitherLayerTiles.contains(tile) || banked == BankVisitState.BANKED && bankedOnlyTiles.contains(tile);
+	}
+
+	/** Effective terminal layers after resolving target associations: 1 carried, 2 banked, 3 either. */
+	public int acceptedLayers(int tile)
+	{
+		return eitherLayerTiles.contains(tile) ? EITHER : bankedOnlyTiles.contains(tile) ? BANKED : 0;
 	}
 
 	/** Whether a path in the given bank layer may finish at or near the target at {@code point}. */
@@ -124,12 +145,6 @@ public final class GoalStates
 	public Set<Integer> tiles()
 	{
 		return allTiles;
-	}
-
-	/** Whether some goal tile only finishes the route after a bank visit, so the search must bank. */
-	public boolean needsBank()
-	{
-		return !bankedOnlyTiles.isEmpty();
 	}
 
 	/**

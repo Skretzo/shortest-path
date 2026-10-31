@@ -24,14 +24,17 @@ public final class RoutingStatic
 	private final int sparseUndirectedEdgeCount;
 	@Getter @Accessors(fluent = true) private final int sparseAdjacencyCount;
 	private final int[] sparseOffsets, sparseDestinations, sparseWeights;
+	/** Exact site-pair walks of small components, joined into the sparse network; {@code null} if none. */
+	private final ExactWalks exactWalks;
 
 	private RoutingStatic(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks,
 		char[] northOffsets, char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
 		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
 		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
 		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
-		int[] sparseOffsets, int[] sparseDestinations, int[] sparseWeights)
+		int[] sparseOffsets, int[] sparseDestinations, int[] sparseWeights, ExactWalks exactWalks)
 	{
+		this.exactWalks = exactWalks;
 		this.searchTiles = searchTiles;
 		this.searchComponents = searchComponents;
 		this.walkingMasks = walkingMasks;
@@ -77,12 +80,27 @@ public final class RoutingStatic
 		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
 		int[] sparseOffsets, int[] sparseDestinations, int[] sparseWeights) throws IOException
 	{
+		return takeOwnership(searchTiles, searchComponents, walkingMasks, northOffsets, southOffsets, siteTiles,
+			siteComponentOffsets, siteComponentIds, routingComponentCount, componentSiteOffsets, componentSiteIds,
+			reachableBankTiles, crossingFromSite, crossingToSite, crossingCosts, sparseOriginalCount, sparseVertexCount,
+			sparseSteinerCount, sparseUndirectedEdgeCount, sparseAdjacencyCount, sparseOffsets, sparseDestinations,
+			sparseWeights, null);
+	}
+
+	/** As above, with the exact walks the sparse network already joins small components by. */
+	static RoutingStatic takeOwnership(int[] searchTiles, TileComponents searchComponents, byte[] walkingMasks,
+		char[] northOffsets, char[] southOffsets, int[] siteTiles, int[] siteComponentOffsets, int[] siteComponentIds,
+		int routingComponentCount, int[] componentSiteOffsets, int[] componentSiteIds, int[] reachableBankTiles,
+		int[] crossingFromSite, int[] crossingToSite, int[] crossingCosts, int sparseOriginalCount,
+		int sparseVertexCount, int sparseSteinerCount, int sparseUndirectedEdgeCount, int sparseAdjacencyCount,
+		int[] sparseOffsets, int[] sparseDestinations, int[] sparseWeights, ExactWalks exactWalks) throws IOException
+	{
 		RoutingStatic result = new RoutingStatic(searchTiles, searchComponents, walkingMasks,
 			northOffsets, southOffsets, siteTiles, siteComponentOffsets,
 			siteComponentIds, routingComponentCount, componentSiteOffsets, componentSiteIds,
 			reachableBankTiles, crossingFromSite, crossingToSite, crossingCosts,
 			sparseOriginalCount, sparseVertexCount, sparseSteinerCount, sparseUndirectedEdgeCount, sparseAdjacencyCount,
-			sparseOffsets, sparseDestinations, sparseWeights);
+			sparseOffsets, sparseDestinations, sparseWeights, exactWalks);
 		result.validate();
 		return result;
 	}
@@ -258,6 +276,34 @@ public final class RoutingStatic
 	{
 		return Arrays.copyOfRange(siteComponentIds, siteComponentOffsets[site], siteComponentOffsets[site + 1]);
 	}
+	public int componentSiteCount(int component)
+	{
+		return componentSiteOffsets[component + 1] - componentSiteOffsets[component];
+	}
+
+	/** The search tile one walking step from {@code node} along mask bit {@code bit}, or a negative value. */
+	int walkSuccessor(int node, int bit)
+	{
+		int south = southNode(node), north = northNode(node);
+		switch (bit)
+		{
+			case 0: return north;
+			case 1: return north < 0 ? -1 : north + 1;
+			case 2: return node + 1;
+			case 3: return south < 0 ? -1 : south + 1;
+			case 4: return south;
+			case 5: return south < 0 ? -1 : south - 1;
+			case 6: return node - 1;
+			default: return north < 0 ? -1 : north - 1;
+		}
+	}
+
+	/** Exact site-pair walks of small components, or {@code null} when the network has none. */
+	ExactWalks exactWalks()
+	{
+		return exactWalks;
+	}
+
 	public int[] componentSites(int component)
 	{
 		return Arrays.copyOfRange(

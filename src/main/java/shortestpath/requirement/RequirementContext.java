@@ -16,6 +16,7 @@ import shortestpath.leagues.LeagueModeSnapshot;
 import shortestpath.leagues.LeagueModeState;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.requirement.model.SkillLevels;
+import shortestpath.requirement.model.MusicTracks;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.transport.Transport;
@@ -53,6 +54,8 @@ public final class RequirementContext
 	@Getter
 	private final int currentMaxQuestPoints;
 	@Getter
+	private final int currentMaxMusicTracks;
+	@Getter
 	private final Map<Quest, QuestState> questStates;
 	@Getter
 	private final Map<Integer, Integer> varbitValues;
@@ -80,6 +83,7 @@ public final class RequirementContext
 		long evaluationTimeMinutes,
 		int[] boostedSkillLevelsAndMore,
 		int currentMaxQuestPoints,
+		int currentMaxMusicTracks,
 		Map<Quest, QuestState> questStates,
 		Map<Integer, Integer> varbitValues,
 		Map<Integer, Integer> varPlayerValues,
@@ -93,6 +97,7 @@ public final class RequirementContext
 		this.evaluationTimeMinutes = evaluationTimeMinutes;
 		this.boostedSkillLevelsAndMore = SkillLevels.of(boostedSkillLevelsAndMore);
 		this.currentMaxQuestPoints = currentMaxQuestPoints;
+		this.currentMaxMusicTracks = currentMaxMusicTracks;
 		this.questStates = Map.copyOf(questStates);
 		this.varbitValues = Map.copyOf(varbitValues);
 		this.varPlayerValues = Map.copyOf(varPlayerValues);
@@ -142,9 +147,11 @@ public final class RequirementContext
 		}
 		boostedSkillLevelsAndMore[i++] = source.totalLevel(); // skill total level
 		boostedSkillLevelsAndMore[i++] = source.combatLevel(); // combat level
-		boostedSkillLevelsAndMore[i] = source.varp(VarPlayerID.QP); // quest points
+		boostedSkillLevelsAndMore[i++] = source.varp(VarPlayerID.QP); // quest points
 
 		int currentMaxQuestPoints = source.maximumQuestPoints();
+		MusicTracks music = source.musicTracks();
+		boostedSkillLevelsAndMore[i] = music.getUnlocked();
 
 		TransportEligibility eligibilitySnapshot = TransportEligibility.collect(source, bank,
 			policy.teleportationItemSetting(), policy.currencyThreshold(), policy.includeBankPath(),
@@ -188,7 +195,7 @@ public final class RequirementContext
 		}
 
 		return new RequirementContext(evaluationTimeMinutes, boostedSkillLevelsAndMore,
-			currentMaxQuestPoints, capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
+			currentMaxQuestPoints, music.getRequired(), capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
 			eligibilitySnapshot, unlocks, respawnPrifddinas, onSailingBoat,
 			leagueModeState, availableSpiritTrees);
 	}
@@ -221,5 +228,6 @@ public final class RequirementContext
 			{
 			}
 		}
-}
+	}
+
 }

@@ -193,7 +193,7 @@
 3548 3529 0			19621=1	Priest in Peril	4	Fenkenstrain's Castle tablet	T	20		
 2500 3290 0			19623=1	Biohazard	4	West Ardougne tablet	T	20		
 3797 2866 0			19625=1	The Great Brain Robbery	4	Harmony Island tablet	T	20		
-2981 3764 0			19627=1		4	Cemetery tablet	T	20		
+2980 3763 0			19627=1		4	Cemetery tablet	T	20		
 3564 3315 0			19629=1	Priest in Peril	4	Barrows tablet	T	20		
 2771 9102 0			19631=1	Monkey Madness I	4	Ape Atoll tablet	T	20		
 3811 3813 0			21541=1		4	Volcanic Mine tablet	T	20		
@@ -230,6 +230,16 @@
 3128 3832 0			21389=1		4	Master scroll book: Revenant cave teleport	T	20	6056>0	
 1645 3580 0			23387=1		4	Watson teleport	T	20		
 1645 3580 0			21389=1		4	Master scroll book: Watson teleport	T	20	8253>0	
+4063 4557 0			29684=1	While Guthix Sleeps	4	Guthixian temple teleport	T	20		
+4063 4557 0			21389=1	While Guthix Sleeps	4	Master scroll book: Guthixian temple teleport	T	20	10967>0	
+3659 3404 0			29782=1	Priest in Peril	4	Spider cave teleport	T	20		302>60
+3659 3404 0			21389=1	Priest in Peril	4	Master scroll book: Spider cave teleport	T	20	10995>0	302>60
+1641 2921 0			30040=1	Children of the Sun	4	Colossal wyrm teleport scroll	T	20	9650=1	
+1641 2921 0			21389=1	Children of the Sun	4	Master scroll book: Colossal wyrm teleport scroll	T	20	9650=1;11029>0	
+1439 10076 0			30775=1		4	Chasm teleport scroll	T	20		
+1439 10076 0			21389=1		4	Master scroll book: Chasm teleport scroll	T	20	16238>0	
+2542 2216 0			34033=1	Fallen From Grace	4	Ardeaglais teleport	T	20		
+2542 2216 0			21389=1	Fallen From Grace	4	Master scroll book: Ardeaglais teleport	T	20	15749>0	
 										
 # Crafting cape										
 2931 3286 0		99 Crafting	9780=1||9781=1		4	Crafting cape: Teleport	F	20		
@@ -316,7 +326,7 @@
 # Quest point cape										
 2729 3348 0		Max Quest	9813=1||13068=1		4	Quest point cape: Legends' Guild	F	20		
 # Music cape										
-2689 3547 0			13221=1||13222=1		4	Music cape: Falo the Bard	F	20		
+2689 3547 0		Max Music	13221=1||13222=1		4	Music cape: Falo the Bard	F	20		
 # Diary cape										
 2574 3323 0			13069=1||19476=1		4	Achievement diary cape: 1. Two-pints	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 3302 3122 0			13069=1||19476=1		4	Achievement diary cape: 2. Jarr	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
@@ -324,7 +334,7 @@
 2659 3627 0			13069=1||19476=1		4	Achievement diary cape: 4. Thorodin	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 2744 3443 0			13069=1||19476=1		4	Achievement diary cape: 5. Flax keeper	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 2808 3192 0			13069=1||19476=1		4	Achievement diary cape: 6. Pirate Jackie the Fruit	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
-2862 2997 0			13069=1||19476=1		4	Achievement diary cape: 7. Kaleb Paramaya	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
+2862 2996 1			13069=1||19476=1		4	Achievement diary cape: 7. Kaleb Paramaya	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 2795 2945 0			13069=1||19476=1		4	Achievement diary cape: 8. Jungle forester	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 2455 5133 0			13069=1||19476=1		4	Achievement diary cape: 9. TzHaar-Mej	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
 1648 3665 0			13069=1||19476=1		4	Achievement diary cape: A. Elise	F	20	4461=1;4465=1;4469=1;4474=1;4478=1;4482=1;4486=1;4490=1;4494=1;4498=1;4566=1	
@@ -375,8 +385,9 @@
 # Drakan's medallion										
 3649 3230 0			22400=1		4	Drakan's medallion: Ver Sinhaza	F	20		
 3592 3337 0			22400=1	Sins of the Father	4	Drakan's medallion: Darkmeyer	F	20		
-# todo: this only works if you've used a Slepey tablet on the medallion										
-3808 9700 0			22400=1		4	Drakan's medallion: Slepe	F	20		
+3166 7711 0			22400=1	The Blood Moon Rises	4	Drakan's medallion: Castle Drakan	F	20	15470>0	
+# Slepe requires using a Slepey tablet on the medallion (varbit 12416).										
+3808 9700 1			22400=1		4	Drakan's medallion: Slepe	F	20	12416>0	
 # Mythical cape										
 2457 2850 0			21913=1||22114=1||24855=1		4	Mythical cape	F	20		
 # Stony basalt - 6528 is MAKING_FRIENDS_WITH_MY_ARM and 4493 is DIARY_FREMENNIK_HARD										
@@ -399,6 +410,9 @@
 1644 3673 0			13393=1		4	Xeric's talisman: 4. Xeric's Heart	T	20		
 # Requires the use of an ancient tablet to activate										
 1254 3560 0			13393=1&UNLOCK_XERICS_HONOUR=1		4	Xeric's talisman: 5. Xeric's Honour	T	20		
+# Archivist's folio										
+# Inert is 34722; shortcut: landing tile is approximate, replace after an exact capture.										
+4130 5544 0			34723=1		4	Archivist's folio	T	20		
 # Chronicle										
 3200 3355 0			13660=1		4	Chronicle	T	0		
 # Amulet of the eye										

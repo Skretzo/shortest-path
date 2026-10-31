@@ -1,12 +1,15 @@
 package shortestpath.transport;
 
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import shortestpath.ItemVariations;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.requirement.TransportEligibility;
@@ -17,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -279,8 +283,10 @@ public class TransportEligibilityTest
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
 
-		assertFalse(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
-		assertFalse(eligibility.usable(fairyRing(), BankVisitState.BANKED));
+		assertFalse(eligibility.usable(eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING)),
+			BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING)),
+			BankVisitState.BANKED));
 	}
 
 	@Test
@@ -288,59 +294,35 @@ public class TransportEligibilityTest
 	{
 		bankHas.put(ItemID.DRAMEN_STAFF, 1);
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+		Transport wrapped = eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
 
-		assertFalse(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
-		assertTrue(eligibility.usable(fairyRing(), BankVisitState.BANKED));
+		assertFalse(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
 	}
 
 	@Test
 	public void fairyRingNeedsNoStaffWhenDiaryComplete()
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+		Transport wrapped = eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
 
-		assertTrue(eligibility.usable(fairyRing(), BankVisitState.CARRIED));
-		assertTrue(eligibility.usable(fairyRing(), BankVisitState.BANKED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
 	}
 
 	@Test
-	public void fairyStaffPickupReturnsTheDramenStaffInTheBank()
-	{
-		bankHas.put(ItemID.DRAMEN_STAFF, 1);
-		bankHas.put(ItemID.DRAMEN_STAFF_AIR, 1);
-		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
-
-		TransportEligibility.BankPickupPlan plan = eligibility.fairyStaffPickup();
-
-		assertNotNull(plan);
-		assertEquals(Map.of(ItemID.DRAMEN_STAFF, 1L), plan.items);
-		assertEquals(Set.of(ItemID.DRAMEN_STAFF, ItemID.DRAMEN_STAFF_AIR), plan.bankItemIds);
-	}
-
-	@Test
-	public void fairyStaffPickupIsNullWhenThePlayerCarriesAStaff()
-	{
-		playerHas.put(ItemID.DRAMEN_STAFF_FIRE, 1);
-		bankHas.put(ItemID.DRAMEN_STAFF, 1);
-		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
-
-		assertNull(eligibility.fairyStaffPickup());
-	}
-
-	@Test
-	public void fairyStaffPickupIsNullWhenTheDiaryIsComplete()
-	{
-		bankHas.put(ItemID.DRAMEN_STAFF, 1);
-		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
-
-		assertNull(eligibility.fairyStaffPickup());
-	}
-
-	@Test
-	public void fairyStaffPickupIsNullWhenTheBankLacksAStaff()
+	public void pohRingNeedsStaffWhenDiaryIncomplete()
 	{
 		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, true, Integer.MAX_VALUE);
+		Transport pohRing = fairyRingAt(POH_RING);
+		Transport wrapped = eligibility.wrapFairyRingStaff(pohRing);
 
-		assertNull(eligibility.fairyStaffPickup());
+		assertNotNull(wrapped.getItemRequirements());
+		assertFalse(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(wrapped, BankVisitState.BANKED));
+		playerHas.put(ItemID.DRAMEN_STAFF, 1);
+		assertTrue(staffEligibility(true).usable(wrapped, BankVisitState.CARRIED));
+		assertSame(pohRing, staffEligibility(false).wrapFairyRingStaff(pohRing));
 	}
 
 	@Test
@@ -393,6 +375,280 @@ public class TransportEligibilityTest
 		assertTrue(eligibility.bankPickupPlan(free).bankItemIds.isEmpty());
 	}
 
+	// ------------------------------------------------------------------
+	// Usable-side teleportation-item mode matrix — the twin of the
+	// check-side matrix: every mode x consumable cell asserts the
+	// usable(CARRIED) verdict on a carried-satisfying pool.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void everyTeleportationItemModeIsUsableOnACarriedConsumable()
+	{
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		Transport consumable = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+
+		Map<TeleportationItem, Boolean> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, false);
+		expected.put(TeleportationItem.INVENTORY, true);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, true);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.UNLOCKED, true);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.ALL, true);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, false);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (Map.Entry<TeleportationItem, Boolean> entry : expected.entrySet())
+		{
+			TeleportationItem mode = entry.getKey();
+			assertEquals(mode + " usable(carried) on a carried consumable",
+				entry.getValue(),
+				eligibility(mode, false, Integer.MAX_VALUE).usable(consumable, BankVisitState.CARRIED));
+		}
+	}
+
+	@Test
+	public void everyTeleportationItemModeIsUsableOnACarriedNonConsumable()
+	{
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		Transport nonConsumable = teleportItem(FALADOR_TELEPORT.getItemRequirements(), false);
+
+		Map<TeleportationItem, Boolean> expected = new EnumMap<>(TeleportationItem.class);
+		expected.put(TeleportationItem.NONE, false);
+		expected.put(TeleportationItem.INVENTORY, true);
+		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK, true);
+		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.UNLOCKED, true);
+		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.ALL, true);
+		expected.put(TeleportationItem.ALL_NON_CONSUMABLE, true);
+		assertEquals("the matrix must cover every mode",
+			TeleportationItem.values().length, expected.size());
+
+		for (Map.Entry<TeleportationItem, Boolean> entry : expected.entrySet())
+		{
+			TeleportationItem mode = entry.getKey();
+			assertEquals(mode + " usable(carried) on a carried non-consumable",
+				entry.getValue(),
+				eligibility(mode, false, Integer.MAX_VALUE).usable(nonConsumable, BankVisitState.CARRIED));
+		}
+	}
+
+	// ------------------------------------------------------------------
+	// Named divergent-branch cases — the cells that distinguish a bypass
+	// verdict from a deferral that happens to pass.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void unlockedModeBypassesItemPoolsEntirely()
+	{
+		// UNLOCKED returns true on both pools even when they are empty —
+		// items are never evaluated. A deferred verdict would read false on
+		// these pools, so this is the bypass/deferral boundary.
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+		TransportEligibility eligibility = eligibility(TeleportationItem.UNLOCKED, false, Integer.MAX_VALUE);
+
+		assertTrue(eligibility.usable(teleport, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(teleport, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void nonConsumableModesSplitBypassFromDeferral()
+	{
+		// On a non-consumable with EMPTY pools the table splits: ALL/UNLOCKED
+		// non-consumable bypass the pools (true), while INVENTORY
+		// non-consumable modes defer to them and fail. A mode merged into the
+		// wrong arm is caught here and nowhere else.
+		Transport nonConsumable = teleportItem(FALADOR_TELEPORT.getItemRequirements(), false);
+
+		assertTrue(eligibility(TeleportationItem.ALL_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+		assertTrue(eligibility(TeleportationItem.UNLOCKED_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+		assertFalse(eligibility(TeleportationItem.INVENTORY_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+		assertFalse(eligibility(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, false, Integer.MAX_VALUE)
+			.usable(nonConsumable, BankVisitState.CARRIED));
+	}
+
+	@Test
+	public void inventoryAndBankReadsTheBankedPool()
+	{
+		// The item sits only in the bank: carried fails, banked passes.
+		bankHas.put(ItemID.LAWRUNE, 1);
+		bankHas.put(ItemID.AIRRUNE, 3);
+		bankHas.put(ItemID.WATERRUNE, 1);
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+		TransportEligibility eligibility = eligibility(TeleportationItem.INVENTORY_AND_BANK, false, Integer.MAX_VALUE);
+
+		assertFalse(eligibility.usable(teleport, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(teleport, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void noneModeRejectsOnBothPools()
+	{
+		playerHas.put(ItemID.LAWRUNE, 1);
+		playerHas.put(ItemID.AIRRUNE, 3);
+		playerHas.put(ItemID.WATERRUNE, 1);
+		Transport teleport = teleportItem(FALADOR_TELEPORT.getItemRequirements(), true);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+
+		assertFalse(eligibility.usable(teleport, BankVisitState.CARRIED));
+		assertFalse(eligibility.usable(teleport, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void nonItemTeleportTypesAreNotModeRejected()
+	{
+		// A non-teleport-item type under NONE mode still reads the pools —
+		// the mode dispatch never reaches it.
+		playerHas.put(ItemID.SHANTAY_PASS, 1);
+		TransportEligibility eligibility = eligibility(TeleportationItem.NONE, false, Integer.MAX_VALUE);
+
+		assertTrue(eligibility.usable(SHANTAY_GATE, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(SHANTAY_GATE, BankVisitState.BANKED));
+	}
+
+	// ------------------------------------------------------------------
+	// Fairy-staff injection — the availability-build wrap carries the
+	// staff rule as a real item requirement on all rings.
+	// ------------------------------------------------------------------
+
+	private static final int ZANARIS_RING = WorldPointUtil.packWorldPoint(2412, 4434, 0);
+	private static final int POH_RING = WorldPointUtil.packWorldPoint(1858, 7051, 0);
+
+	private static Transport fairyRingAt(int origin)
+	{
+		return new Transport.TransportBuilder().type(TransportType.FAIRY_RING).origin(origin).build();
+	}
+
+	private TransportEligibility staffEligibility(boolean staffRequired)
+	{
+		return eligibility(TeleportationItem.NONE, staffRequired, Integer.MAX_VALUE);
+	}
+
+	private static boolean contains(int[] ids, int id)
+	{
+		for (int candidate : ids)
+		{
+			if (candidate == id)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Test
+	public void wrapInjectsTheStaffRequirementOnANonPohRing()
+	{
+		Transport ring = fairyRingAt(ZANARIS_RING);
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(ring);
+
+		assertTrue(wrapped != ring);
+		assertNull("the shared instance must not be mutated", ring.getItemRequirements());
+		TransportItems merged = wrapped.getItemRequirements();
+		assertNotNull(merged);
+		// The injected requirement is a single OR group over every staff variant.
+		assertEquals(1, merged.size());
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			assertTrue("merged requirement missing staff variant " + id,
+				contains(merged.getRequirements().get(0).getStaffIds(), id));
+		}
+	}
+
+	@Test
+	public void wrapPassesThroughWhenDiaryComplete()
+	{
+		Transport ring = fairyRingAt(ZANARIS_RING);
+		assertSame(ring, staffEligibility(false).wrapFairyRingStaff(ring));
+	}
+
+	@Test
+	public void wrapPassesThroughNonFairyTransports()
+	{
+		assertSame(FALADOR_TELEPORT, staffEligibility(true).wrapFairyRingStaff(FALADOR_TELEPORT));
+	}
+
+	@Test
+	public void wrapMergesExistingRequirementsAsAnd()
+	{
+		// A ring that also declared an item requirement would need both —
+		// the merge ANDs the injected staff onto the existing OR groups.
+		TransportItems law = new TransportItems(
+			new int[][]{ItemVariations.fromName("LAW_RUNE").getIds()},
+			new int[][]{null}, new int[][]{null}, new int[]{1});
+		Transport ring = new Transport.TransportBuilder().type(TransportType.FAIRY_RING)
+			.origin(ZANARIS_RING).itemRequirements(law).build();
+
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(ring);
+		assertEquals(2, wrapped.getItemRequirements().size());
+	}
+
+	@Test
+	public void wrappedRingReadsTheStaffFromTheGenericPath()
+	{
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		assertFalse(staffEligibility(true).usable(wrapped, BankVisitState.CARRIED));
+
+		playerHas.put(ItemID.DRAMEN_STAFF, 1);
+		assertTrue(staffEligibility(true).usable(wrapped, BankVisitState.CARRIED));
+	}
+
+	@Test
+	public void wrappedRingUsableWithBankedStaffOnlyOnBankPath()
+	{
+		bankHas.put(ItemID.DRAMEN_STAFF, 1);
+		TransportEligibility eligibility = staffEligibility(true);
+		Transport wrapped = eligibility.wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		assertFalse(eligibility.usable(wrapped, BankVisitState.CARRIED));
+		assertTrue(eligibility.usable(wrapped, BankVisitState.BANKED));
+	}
+
+	@Test
+	public void everyTeleportationItemModeLeavesTheWrappedRingEvaluatingRequirements()
+	{
+		// The verdict dispatch never reaches fairy rings: NONE must not
+		// reject the ring outright, and ALL must not bypass the staff.
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			TransportEligibility lacking = eligibility(mode, true, Integer.MAX_VALUE);
+			assertFalse(mode + " must not bypass the staff requirement",
+				lacking.usable(wrapped, BankVisitState.CARRIED));
+
+			playerHas.put(ItemID.DRAMEN_STAFF, 1);
+			TransportEligibility carrying = eligibility(mode, true, Integer.MAX_VALUE);
+			assertTrue(mode + " must satisfy the staff requirement",
+				carrying.usable(wrapped, BankVisitState.CARRIED));
+			playerHas.clear();
+		}
+	}
+
+	@Test
+	public void wrappedRingStaffRequirementHonoursBlockedItems()
+	{
+		Transport wrapped = staffEligibility(true).wrapFairyRingStaff(fairyRingAt(ZANARIS_RING));
+		Set<Integer> allStaffIds = new HashSet<>();
+		for (int id : ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			allStaffIds.add(id);
+		}
+		assertFalse("blocking every staff variant disables the ring",
+			wrapped.getItemRequirements().survivesBlockedItems(allStaffIds));
+		assertTrue("a partial block leaves an unblocked branch",
+			wrapped.getItemRequirements().survivesBlockedItems(Set.of(ItemID.DRAMEN_STAFF)));
+	}
+
 	private TransportEligibility eligibility(int bankPouchId)
 	{
 		return TransportEligibility.forPlayerAndBank(playerHas, bankHas, bankPouchId, bankPouchRunes);
@@ -431,8 +687,14 @@ public class TransportEligibilityTest
 
 	private static Transport teleportItem(TransportItems requirements)
 	{
+		return teleportItem(requirements, false);
+	}
+
+	private static Transport teleportItem(TransportItems requirements, boolean consumable)
+	{
 		return new Transport.TransportBuilder()
 			.type(TransportType.TELEPORTATION_ITEM)
+			.isConsumable(consumable)
 			.itemRequirements(requirements)
 			.build();
 	}

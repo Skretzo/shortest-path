@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
 import shortestpath.settings.Settings;
-import shortestpath.ShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;
 import shortestpath.pathfinder.ActiveSearch;
@@ -17,7 +16,6 @@ import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.PohChange;
 import shortestpath.sailing.SailingChange;
 import shortestpath.settings.ConfigChange;
-import shortestpath.settings.Settings;
 import shortestpath.settings.Effect;
 import shortestpath.spirittree.TreeChange;
 

@@ -57,10 +57,15 @@ public class Util
 	 * @param path the absolute classpath path of the resource to read.
 	 * @param row  consumer invoked once per visited row with the line and its
 	 *             columns.
+	 * @throws IllegalArgumentException if {@code path} is not absolute.
 	 * @throws IOException if an I/O error occurs while reading.
 	 */
 	public static void each(String path, BiConsumer<String, String[]> row) throws IOException
 	{
+		if (!path.startsWith("/"))
+		{
+			throw new IllegalArgumentException("resource path must be absolute: " + path);
+		}
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
 			Objects.requireNonNull(Util.class.getResourceAsStream(path)), StandardCharsets.UTF_8)))
 		{
@@ -84,10 +89,15 @@ public class Util
 	 *
 	 * @param path the absolute classpath path of the resource to read.
 	 * @return the resource contents decoded as UTF-8.
+	 * @throws IllegalArgumentException if {@code path} is not absolute.
 	 * @throws IOException if an I/O error occurs while reading.
 	 */
 	public static String resourceString(String path) throws IOException
 	{
+		if (!path.startsWith("/"))
+		{
+			throw new IllegalArgumentException("resource path must be absolute: " + path);
+		}
 		return new String(
 			readAllBytes(Objects.requireNonNull(Util.class.getResourceAsStream(path))),
 			StandardCharsets.UTF_8);

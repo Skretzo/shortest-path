@@ -63,4 +63,10 @@ public enum BalloonRoute
 	{
 		return label + " (" + logLabel + ")";
 	}
+
+	@Override
+	public String toString()
+	{
+		return displayLabel();
+	}
 }

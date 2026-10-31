@@ -91,16 +91,18 @@ public class PathMapTooltipOverlay extends Overlay
 		List<PathStep> path, int pathIndex)
 	{
 		int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
-		int startX = geometry.mapWorldPointToGraphicsPointX(point);
-		int startY = geometry.mapWorldPointToGraphicsPointY(point);
-		int endX = geometry.mapWorldPointToGraphicsPointX(offsetPoint);
-		int endY = geometry.mapWorldPointToGraphicsPointY(offsetPoint);
+		Point start = geometry.mapWorldPointToGraphicsPoint(point);
+		Point end = geometry.mapWorldPointToGraphicsPoint(offsetPoint);
 
-		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
+		if (start == null || end == null)
 		{
 			return false;
 		}
+
+		int startX = start.getX();
+		int startY = start.getY();
+		int endX = end.getX();
+		int endY = end.getY();
 
 		int width = endX - startX;
 

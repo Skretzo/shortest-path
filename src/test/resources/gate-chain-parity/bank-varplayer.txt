@@ -1,0 +1,2 @@
+bank-varplayer/pass | check=NONE | satisfied=true
+bank-varplayer/fail | check=VARPLAYER | satisfied=false

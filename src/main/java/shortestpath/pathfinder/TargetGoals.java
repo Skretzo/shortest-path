@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntPredicate;
 import shortestpath.WorldPointUtil;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -16,7 +17,9 @@ import lombok.experimental.Accessors;
  * walk-in edges, so it expands to the nearest fallback tiles within the
  * configured unreachable distance — every walkable tile in the square, or only
  * the tiles on the target's enclosed (interior) side when
- * collisionAwareBlockedTargets is on (issue #640).
+ * collisionAwareBlockedTargets is on (issue #640). That is
+ * {@link #collisionRule}; a search can resolve its targets with another
+ * {@link GoalRule}, which can use the ring and wall helpers here.
  */
 public final class TargetGoals
 {
@@ -31,7 +34,7 @@ public final class TargetGoals
 	private static final int ENCLOSURE_SCAN_RADIUS = 4;
 	// Upper bound for the blocked-target expansion scan. The unreachable distance
 	// config allows values up to 20000; scanning a (2r+1)^2 square per blocked
-	// target must stay cheap since it runs per request on the client thread.
+	// target must stay cheap since it runs per request.
 	private static final int MAX_GOAL_EXPANSION_RADIUS = 64;
 
 	@Getter @Accessors(fluent = true) private final Set<Integer> goals;
@@ -79,45 +82,30 @@ public final class TargetGoals
 		return viableTargets.contains(target);
 	}
 
-	public static TargetGoals resolve(PathfinderConfig config, int start, Set<Integer> targets)
+	/**
+	 * Resolves each of {@code targets} with {@code rule}: a target the search can end on is its own
+	 * goal; any other is replaced by its fallback tiles. A target is viable when the search can end
+	 * on it, a transport lands on it, or it has fallback tiles.
+	 */
+	public static TargetGoals resolve(Set<Integer> targets, IntPredicate transportDestination, GoalRule rule)
 	{
-		final CollisionMap map = config.getMap();
 		Set<Integer> resolvedGoals = targets;
 		Map<Integer, Set<Integer>> fallbacks = new HashMap<>();
 		Set<Integer> viableTargets = new HashSet<>();
 		for (int target : targets)
 		{
-			final int x = WorldPointUtil.unpackWorldX(target);
-			final int y = WorldPointUtil.unpackWorldY(target);
-			final int z = WorldPointUtil.unpackWorldPlane(target);
-			if (!map.isBlocked(x, y, z))
+			if (rule.endsOnItself(target))
 			{
 				viableTargets.add(target);
 				continue;
 			}
 			// A transport landing on the target can still visit it even when the tile
 			// is blocked for walking (e.g. fairy rings).
-			if (config.isTransportDestination(target))
+			if (transportDestination.test(target))
 			{
 				viableTargets.add(target);
 			}
-			// The target tile is blocked so it can never be walked into. Route to the
-			// nearest fallback tiles within the configured unreachable distance
-			// instead: walkable tiles, and blocked tiles that a transport can land
-			// on (a teleport that lands adjacent to the target still gets close
-			// enough). Both modes scan expanding rings and keep only the innermost
-			// ring that yields goals, so the path ends on the tiles closest to the
-			// target rather than whichever radius tile is cheapest for the player.
-			// The scan is bounded: the config allows huge distances and this runs
-			// per pathfinding request on the client thread.
-			final int radius = Math.min(config.getUnreachableTargetDistance(), MAX_GOAL_EXPANSION_RADIUS);
-			// When collisionAwareBlockedTargets is on, walkable fallback goals are
-			// limited to the target's open side, so the path cannot "reach the
-			// target" from the wrong side of a wall. Transport destinations stay
-			// goals in both modes.
-			final Set<Integer> targetGoals = config.isCollisionAwareBlockedTargets()
-				? expandingConnectedGoals(config, map, start, target, radius)
-				: expandingRingGoals(config, map, start, x, y, z, radius);
+			final Set<Integer> targetGoals = rule.fallbackTiles(target);
 			if (!targetGoals.isEmpty())
 			{
 				if (resolvedGoals == targets)
@@ -132,10 +120,65 @@ public final class TargetGoals
 		return new TargetGoals(resolvedGoals, !viableTargets.isEmpty(), fallbacks, viableTargets);
 	}
 
+	/**
+	 * The rule decided from the collision map alone: a walkable target ends the search itself; a
+	 * blocked target falls back as the class describes. The config values are read here, so a rule
+	 * built when a search is created can be applied later on the search's own thread.
+	 */
+	public static GoalRule collisionRule(PathfinderConfig config, int start)
+	{
+		final CollisionMap map = config.getMap();
+		final IntPredicate transportDestination = config::isTransportDestination;
+		final int radius = expansionRadius(config.getUnreachableTargetDistance());
+		final boolean collisionAware = config.isCollisionAwareBlockedTargets();
+		return new GoalRule()
+		{
+			@Override
+			public boolean endsOnItself(int target)
+			{
+				return !isBlocked(map, target);
+			}
+
+			// The target tile is blocked so it can never be walked into. Route to the
+			// nearest fallback tiles within the configured unreachable distance
+			// instead: walkable tiles, and blocked tiles that a transport can land
+			// on (a teleport that lands adjacent to the target still gets close
+			// enough). Both modes scan expanding rings and keep only the innermost
+			// ring that yields goals, so the path ends on the tiles closest to the
+			// target rather than whichever radius tile is cheapest for the player.
+			// When collisionAwareBlockedTargets is on, walkable fallback goals are
+			// limited to the target's open side, so the path cannot "reach the
+			// target" from the wrong side of a wall. Transport destinations stay
+			// goals in both modes.
+			@Override
+			public Set<Integer> fallbackTiles(int target)
+			{
+				return collisionAware
+					? expandingConnectedGoals(map, transportDestination, start, target, radius)
+					: expandingRingGoals(map, transportDestination, start, target, radius);
+			}
+		};
+	}
+
+	/**
+	 * How far out a rule looks for fallback tiles. The scan is bounded: the config allows huge
+	 * distances and goals are resolved per pathfinding request.
+	 */
+	static int expansionRadius(int unreachableDistance)
+	{
+		return Math.min(unreachableDistance, MAX_GOAL_EXPANSION_RADIUS);
+	}
+
+	static boolean isBlocked(CollisionMap map, int packed)
+	{
+		return map.isBlocked(WorldPointUtil.unpackWorldX(packed), WorldPointUtil.unpackWorldY(packed),
+			WorldPointUtil.unpackWorldPlane(packed));
+	}
+
 	// The tiles on Chebyshev ring r as flat (dx, dy) pairs, perimeter order.
 	// Generating the perimeter directly keeps ring scans O(r) rather than
 	// O(r^2) over the whole square.
-	private static int[] ringOffsets(int r)
+	static int[] ringOffsets(int r)
 	{
 		final int[] offsets = new int[r * 16];
 		int i = 0;
@@ -156,9 +199,12 @@ public final class TargetGoals
 	// Expanding Chebyshev rings around a blocked target: returns the innermost
 	// ring that contains any walkable tile or transport destination. Used when
 	// collisionAwareBlockedTargets is off, so connectivity is not considered.
-	private static Set<Integer> expandingRingGoals(PathfinderConfig config, CollisionMap map,
-		int start, int x, int y, int z, int radius)
+	private static Set<Integer> expandingRingGoals(CollisionMap map, IntPredicate transportDestination,
+		int start, int target, int radius)
 	{
+		final int x = WorldPointUtil.unpackWorldX(target);
+		final int y = WorldPointUtil.unpackWorldY(target);
+		final int z = WorldPointUtil.unpackWorldPlane(target);
 		final Set<Integer> goals = new HashSet<>();
 		for (int r = 1; r <= radius && goals.isEmpty(); r++)
 		{
@@ -178,7 +224,7 @@ public final class TargetGoals
 					diagonals.add(packed);
 					continue;
 				}
-				addRingGoal(config, map, start, goals, nx, ny, z);
+				addRingGoal(map, transportDestination, start, goals, nx, ny, z);
 			}
 			if (r == 1 && goals.isEmpty())
 			{
@@ -188,7 +234,7 @@ public final class TargetGoals
 		return goals;
 	}
 
-	private static void addRingGoal(PathfinderConfig config, CollisionMap map, int start,
+	private static void addRingGoal(CollisionMap map, IntPredicate transportDestination, int start,
 		Set<Integer> goals, int nx, int ny, int nz)
 	{
 		final int packed = WorldPointUtil.packWorldPoint(nx, ny, nz);
@@ -196,7 +242,7 @@ public final class TargetGoals
 		{
 			return;
 		}
-		if (!map.isBlocked(nx, ny, nz) || config.isTransportDestination(packed))
+		if (!map.isBlocked(nx, ny, nz) || transportDestination.test(packed))
 		{
 			goals.add(packed);
 		}
@@ -217,7 +263,7 @@ public final class TargetGoals
 	// adjacent tile lies outside the room and only ring 2+ tiles sit inside
 	// it. Transport destinations ignore walls entirely; they are scanned per
 	// Chebyshev ring and count as equally near goals.
-	private static Set<Integer> expandingConnectedGoals(PathfinderConfig config, CollisionMap map,
+	private static Set<Integer> expandingConnectedGoals(CollisionMap map, IntPredicate transportDestination,
 		int start, int target, int radius)
 	{
 		final int x = WorldPointUtil.unpackWorldX(target);
@@ -341,7 +387,7 @@ public final class TargetGoals
 					}
 				}
 			}
-			addTransportRingGoals(config, start, goals, x, y, z, d);
+			addTransportRingGoals(transportDestination, start, goals, x, y, z, d);
 		}
 		return goals;
 	}
@@ -368,7 +414,7 @@ public final class TargetGoals
 	// A cardinal neighbour shares exactly one edge with the target; a
 	// diagonal neighbour counts as separated only when both flanking
 	// cardinal routes to it cross a boundary edge.
-	private static boolean wallSeparated(CollisionMap map, int x, int y, int nx, int ny, int z)
+	static boolean wallSeparated(CollisionMap map, int x, int y, int nx, int ny, int z)
 	{
 		final int dx = nx - x;
 		final int dy = ny - y;
@@ -411,14 +457,14 @@ public final class TargetGoals
 		return seen.size();
 	}
 
-	private static void addTransportRingGoals(PathfinderConfig config, int start,
+	private static void addTransportRingGoals(IntPredicate transportDestination, int start,
 		Set<Integer> goals, int x, int y, int z, int r)
 	{
 		final int[] ring = ringOffsets(r);
 		for (int i = 0; i < ring.length; i += 2)
 		{
 			final int packed = WorldPointUtil.packWorldPoint(x + ring[i], y + ring[i + 1], z);
-			if (packed != start && config.isTransportDestination(packed))
+			if (packed != start && transportDestination.test(packed))
 			{
 				goals.add(packed);
 			}

@@ -167,6 +167,62 @@
 1609 10061 0	1613 10070 0	Jump-to Stone 28893	28 Agility					
 1324 3777 0	1324 3785 0	Climb Rocks 34397	29 Agility				8	
 1324 3785 0	1324 3777 0	Climb Rocks 34397	29 Agility				8	
+# Agility Pyramid: ascent and exit								
+# shortcut: uncaptured obstacle durations are estimates, replace after timed captures.								
+3355 2830 0	3355 2833 1	Climb-up Stairs 10857	30 Agility				2	
+# Stone block 10877; automatic crossing captured with animation 1115								
+3354 2840 1	3354 2843 1		30 Agility				4	
+3354 2848 1	3354 2850 1	Climb-over Low wall 10865	30 Agility				4	
+3354 2850 1	3354 2848 1	Climb-over Low wall 10865	30 Agility				4	
+3355 2848 1	3355 2850 1	Climb-over Low wall 10865	30 Agility				4	
+3355 2850 1	3355 2848 1	Climb-over Low wall 10865	30 Agility				4	
+# Stone block 10879; automatic walking obstacle								
+3374 2836 1	3374 2835 1		30 Agility				4	
+3357 2832 1	3356 2835 2	Climb-up Stairs 10857	30 Agility				2	
+3357 2836 2	3357 2841 2	Cross Gap 10884	30 Agility				6	
+3357 2846 2	3357 2849 2	Jump Gap 10859	30 Agility				4	
+3356 2846 2	3356 2849 2	Jump Gap 10859	30 Agility				4	
+3359 2849 2	3364 2849 2	Cross Gap 10861	30 Agility				6	
+# Stone block 10878; automatic walking obstacle								
+3368 2849 2	3369 2849 2		30 Agility				4	
+3372 2841 2	3372 2836 2	Cross Ledge 10860	30 Agility				6	
+3371 2833 2	3369 2833 2	Climb-over Low wall 10865	30 Agility				4	
+3369 2833 2	3371 2833 2	Climb-over Low wall 10865	30 Agility				4	
+3371 2834 2	3369 2834 2	Climb-over Low wall 10865	30 Agility				4	
+3369 2834 2	3371 2834 2	Climb-over Low wall 10865	30 Agility				4	
+3366 2834 2	3363 2834 2	Jump Gap 10859	30 Agility				4	
+3366 2833 2	3363 2833 2	Jump Gap 10859	30 Agility				4	
+3359 2834 2	3358 2837 3	Climb-up Stairs 10857	30 Agility				2	
+3358 2838 3	3358 2840 3	Climb-over Low wall 10865	30 Agility				4	
+3358 2840 3	3358 2838 3	Climb-over Low wall 10865	30 Agility				4	
+3359 2838 3	3359 2840 3	Climb-over Low wall 10865	30 Agility				4	
+3359 2840 3	3359 2838 3	Climb-over Low wall 10865	30 Agility				4	
+3359 2842 3	3359 2847 3	Cross Ledge 10888	30 Agility				6	
+3371 2843 3	3371 2840 3	Jump Gap 10859	30 Agility				4	
+3370 2843 3	3370 2840 3	Jump Gap 10859	30 Agility				4	
+3370 2835 3	3365 2835 3	Cross Plank 10868	30 Agility				6	
+3361 2836 3	3040 4695 2	Climb-up Stairs 10857	30 Agility				2	
+3041 4696 2	3041 4699 2	Jump Gap 10859	30 Agility				4	
+3040 4696 2	3040 4699 2	Jump Gap 10859	30 Agility				4	
+3041 4701 2	3043 4701 2	Climb-over Low wall 10865	30 Agility				4	
+3043 4701 2	3041 4701 2	Climb-over Low wall 10865	30 Agility				4	
+3041 4702 2	3043 4702 2	Climb-over Low wall 10865	30 Agility				4	
+3043 4702 2	3041 4702 2	Climb-over Low wall 10865	30 Agility				4	
+# Stone block 10880; automatic walking obstacle								
+3048 4700 2	3048 4699 2		30 Agility				4	
+3049 4697 2	3049 4694 2	Jump Gap 10859	30 Agility				4	
+3048 4697 2	3048 4694 2	Jump Gap 10859	30 Agility				4	
+3048 4693 2	3046 4693 2	Climb-over Low wall 10865	30 Agility				4	
+3046 4693 2	3048 4693 2	Climb-over Low wall 10865	30 Agility				4	
+3048 4694 2	3046 4694 2	Climb-over Low wall 10865	30 Agility				4	
+3046 4694 2	3048 4694 2	Climb-over Low wall 10865	30 Agility				4	
+3043 4694 2	3042 4697 3	Climb-up Stairs 10857	30 Agility				2	
+# Stone block 10881; automatic walking obstacle								
+3044 4699 3	3045 4699 3		30 Agility				4	
+3046 4699 3	3046 4696 3	Jump Gap 10859	30 Agility				4	
+3047 4699 3	3047 4696 3	Jump Gap 10859	30 Agility				4	
+3045 4696 3	3364 2830 0	Enter Doorway 10855	30 Agility					
+								
 2485 2898 0	2489 2898 0	Climb-down Rocks 31759	30 Agility			176=10		
 2489 2898 0	2485 2898 0	Climb-down Rocks 31758	30 Agility			176=10		
 2925 2951 0	2925 2950 0	Cross Stepping stones 23645	30 Agility				2	
@@ -351,7 +407,7 @@
 1774 3849 0	1769 3849 0	Climb Rocks 27988	52 Agility					
 2998 3916 0	2998 3931 0	Open Door 23555	52 Agility					
 3191 3339 0	3193 3346 0	Jump-to Stepping stone 62412	52 Agility					
-3193 3346 0	3191 3339 0	Jump-to Stepping stone 62412	52 Agility					
+3193 3346 0	3193 3338 0	Jump-to Stepping stone 62412	52 Agility					
 3033 3390 0	3033 3389 1	Climb Rough wall 62418	52 Agility					
 3032 3388 0	3032 3389 1	Climb Rough wall 62419	52 Agility					
 1627 3804 1	1629 3804 0	Jump-down Railing 28374	52 Agility					
@@ -625,6 +681,9 @@
 2874 3133 0	2874 3127 0	Swim-to Strong Tree 17074	78 Agility					
 2874 3136 0	2874 3142 0	Swim-to Shore 62420	78 Agility					
 2874 3142 0	2874 3136 0	Swim-to Shore 62420	78 Agility					
+## Iorwerth Dungeon northern gap: 78 Agility								
+3216 12441 0	3222 12441 0	Pass Tight Gap 36693	78 Agility					
+3222 12441 0	3216 12441 0	Pass Tight Gap 36692	78 Agility					
 2871 3008 0	2871 3003 0	Climb Rocks 53238	79 Agility				5	
 2871 3003 0	2871 3008 0	Climb Rocks 53240	79 Agility				5	
 2899 2937 0	2899 2942 0	Climb Vine 26877	79 Agility			139>49	5	
@@ -652,6 +711,9 @@
 3339 2981 0	3348 2981 0	Climb-down Slope 62415	83 Agility					
 2832 3247 0	2832 3252 0	Climb Rocks 53234	84 Agility				6	
 2832 3252 0	2832 3247 0	Climb Rocks 53236	84 Agility				6	
+## Iorwerth Dungeon southern gap: 84 Agility								
+3232 12420 0	3242 12420 0	Pass Tight Gap 36695	84 Agility					
+3242 12420 0	3232 12420 0	Pass Tight Gap 36694	84 Agility					
 2338 3253 0	2332 3252 0	Climb Rocks 16515	85 Agility				6	
 2332 3252 0	2338 3253 0	Climb Rocks 16514	85 Agility				6	
 2547 3749 0	2547 3744 0	Climb Rocks 53252	85 Agility				5	

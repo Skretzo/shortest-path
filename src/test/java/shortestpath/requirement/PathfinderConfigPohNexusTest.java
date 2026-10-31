@@ -1,6 +1,5 @@
 package shortestpath.requirement;
 
-import java.util.EnumSet;
 import java.util.Set;
 import org.junit.Test;
 import shortestpath.poh.PohNexusPortal;
@@ -36,9 +35,16 @@ public class PathfinderConfigPohNexusTest
 	@Test
 	public void testRespawnPortalFiltering()
 	{
+		// RESPAWN declares 8 respawn-point aliases — keep in step with the
+		// enum's displayInfo varargs.
 		String[] respawnAliases = {
 			"Respawn Portal (Lumbridge)",
+			"Respawn Portal (Falador)",
+			"Respawn Portal (Camelot)",
+			"Respawn Portal (Edgeville)",
 			"Respawn Portal (Prifddinas)",
+			"Respawn Portal (Ferox Enclave)",
+			"Respawn Portal (Kourend Castle)",
 			"Respawn Portal (Civitas illa Fortis)"};
 
 		Set<PohNexusPortal> selected = Set.of(PohNexusPortal.RESPAWN);

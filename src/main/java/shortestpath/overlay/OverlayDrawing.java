@@ -12,14 +12,14 @@ import shortestpath.presentation.PathAnnotator;
 import shortestpath.transport.Transport;
 
 /**
- * The shared display-transport walk: iterate the all-display map in
- * occupied-slot order, skip the undefined-origin teleport bucket, resolve
- * the origin's available array (empty when absent), and yield each
+ * The shared display-transport walk: iterate the annotator's all-display
+ * map in occupied-slot order, skip the undefined-origin teleport bucket,
+ * resolve the origin's available array (empty when absent), and yield each
  * non-null, non-teleport transport together with its identity availability.
  * <p>
  * The {@code Arrays.asList(availableAtOrigin).contains(b)} read is identity
  * matching — {@link Transport} has no {@code equals} — so the arrays the
- * plugin returned pass through untouched; copying or canonicalizing them
+ * annotator returned pass through untouched; copying or canonicalizing them
  * would silently break the availability colours. Iterating {@code keys()} on
  * the same map instance the inner {@code getOrDefault} reads preserves the
  * occupied-slot order both arms relied on.
@@ -92,6 +92,20 @@ final class OverlayDrawing
 	}
 
 	/**
+	 * The shared {@code " (Exit: …)"} suffix both overlays append to a
+	 * transport label when the transport leads into a POH — the tile
+	 * overlay's per-transport hint and the world-map tooltip row. Returns
+	 * {@code null} when there is no exit info to append, so each caller
+	 * keeps its own append target and its own argument order.
+	 */
+	static String pohExitSuffix(PathAnnotator annotator, int destination, List<PathStep> path,
+		int pathIndex)
+	{
+		String pohExitInfo = annotator.getPohExitInfo(destination, path, pathIndex);
+		return pohExitInfo == null ? null : " (Exit: " + pohExitInfo + ")";
+	}
+
+	/**
 	 * The shared unreached-target pass every path overlay runs after its route
 	 * drawing: yield each requested target the returned path does not already end
 	 * on, so the caller can mark it (calculating colour, tooltip, tile). The
@@ -107,19 +121,5 @@ final class OverlayDrawing
 				draw.accept(target);
 			}
 		}
-	}
-
-	/**
-	 * The shared {@code " (Exit: …)"} suffix both overlays append to a
-	 * transport label when the transport leads into a POH — the tile
-	 * overlay's per-transport hint and the world-map tooltip row. Returns
-	 * {@code null} when there is no exit info to append, so each caller
-	 * keeps its own append target and its own argument order.
-	 */
-	static String pohExitSuffix(PathAnnotator annotator, int destination,
-		List<PathStep> path, int pathIndex)
-	{
-		String pohExitInfo = annotator.getPohExitInfo(destination, path, pathIndex);
-		return pohExitInfo == null ? null : " (Exit: " + pohExitInfo + ")";
 	}
 }

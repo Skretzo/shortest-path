@@ -231,6 +231,20 @@ public class Transport
 	}
 
 	/**
+	 * A copy of this transport with a different item-requirement set. Used to
+	 * inject requirements derived at availability-build time — such as the
+	 * fairy-ring staff rule — onto the offered transport without mutating the
+	 * shared loaded instance every refresh iterates.
+	 */
+	public Transport withItemRequirements(TransportItems items)
+	{
+		Transport copy = new Transport();
+		copy.copyFrom(this);
+		copy.itemRequirements = items;
+		return copy;
+	}
+
+	/**
 	 * Hands back a shared immutable empty set when the builder accumulated nothing, so empty
 	 * requirement sets do not allocate a {@code HashSet}/{@code HashMap} per transport. A non-empty
 	 * builder set is handed over directly (the single-use builder is discarded afterwards).

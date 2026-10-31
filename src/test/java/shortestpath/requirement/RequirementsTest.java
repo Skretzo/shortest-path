@@ -169,6 +169,72 @@ public class RequirementsTest
 	}
 
 	// ------------------------------------------------------------------
+	// Fairy-ring blocked-item arm — the injected staff requirement is
+	// restrictable like an item teleport's own items.
+	// ------------------------------------------------------------------
+
+	private static final int ZANARIS_RING = WorldPointUtil.packWorldPoint(2412, 4434, 0);
+
+	private static Transport wrappedFairyRing()
+	{
+		TransportEligibility staffRequired = new TransportEligibility(
+			Map.of(), Map.of(), Map.of(), -1, Map.of(),
+			true, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), true, Set.of());
+		return staffRequired.wrapFairyRingStaff(
+			transport(TransportType.FAIRY_RING).origin(ZANARIS_RING).build());
+	}
+
+	private static Set<Integer> allStaffIds()
+	{
+		Set<Integer> ids = new HashSet<>();
+		for (int id : shortestpath.ItemVariations.fromName("DRAMEN_STAFF").getIds())
+		{
+			ids.add(id);
+		}
+		return ids;
+	}
+
+	@Test
+	public void blockingEveryStaffVariantRejectsTheWrappedRing()
+	{
+		RoutingPolicy policy = RequirementTestFixtures.policy(TeleportationItem.NONE, allStaffIds());
+		assertEquals(RejectionReason.BLOCKED_ITEM,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(wrappedFairyRing()));
+	}
+
+	@Test
+	public void partialStaffBlockKeepsTheRingRoutable()
+	{
+		// One blocked variant leaves the rest of the OR branch alive.
+		RoutingPolicy policy = RequirementTestFixtures.policy(
+			TeleportationItem.NONE, Set.of(ItemID.DRAMEN_STAFF));
+		assertEquals(RejectionReason.NONE,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(wrappedFairyRing()));
+	}
+
+	@Test
+	public void pohRingHonoursBlockedStaff()
+	{
+		// POH rings have the same injected staff requirement as outdoor rings.
+		RoutingPolicy policy = RequirementTestFixtures.policy(TeleportationItem.NONE, allStaffIds());
+		TransportEligibility eligibility = new TransportEligibility(
+			Map.of(), Map.of(), Map.of(), -1, Map.of(),
+			true, TeleportationItem.NONE, Integer.MAX_VALUE, Set.of(), false, Set.of());
+		Transport pohRing = eligibility.wrapFairyRingStaff(
+			transport(TransportType.FAIRY_RING).origin(POH).build());
+		assertEquals(RejectionReason.BLOCKED_ITEM,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(pohRing));
+	}
+
+	@Test
+	public void unblockedWrappedRingPassesTheGate()
+	{
+		RoutingPolicy policy = RequirementTestFixtures.policy(TeleportationItem.NONE, Set.of());
+		assertEquals(RejectionReason.NONE,
+			requirements(RequirementTestFixtures.context().build(), policy).gates(wrappedFairyRing()));
+	}
+
+	// ------------------------------------------------------------------
 	// Gate 1: sailing — suppress teleports while aboard a boat.
 	// ------------------------------------------------------------------
 
@@ -1493,5 +1559,84 @@ public class RequirementsTest
 		assertFalse(requirements.usable(gated));
 		assertEquals(RejectionReason.NONE, requirements.check(plain));
 		assertEquals(RejectionReason.QUEST, requirements.check(gated));
+	}
+
+	// ------------------------------------------------------------------
+	// Adapter boundaries — the ordering and defer/bypass semantics that a
+	// shared mode-verdict policy must reproduce verbatim.
+	// ------------------------------------------------------------------
+
+	@Test
+	public void blockedItemRunsBeforeTheModeDispatch()
+	{
+		// A blocked item collides with the transport's only alternative:
+		// under NONE the verdict is BLOCKED_ITEM, not TELEPORT_MODE — the
+		// restriction gate seats ahead of the mode dispatch. Under ALL the
+		// bypass still cannot skip it.
+		Transport blocked = transport(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(items(item(LAW_RUNE)))
+			.build();
+
+		assertEquals(RejectionReason.BLOCKED_ITEM,
+			requirements(RequirementTestFixtures.context()
+					.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.NONE, Map.of(LAW_RUNE, 1)))
+					.build(),
+				RequirementTestFixtures.policy(TeleportationItem.NONE, Set.of(LAW_RUNE))).check(blocked));
+		assertEquals(RejectionReason.BLOCKED_ITEM,
+			requirements(RequirementTestFixtures.context()
+					.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.ALL, Map.of(LAW_RUNE, 1)))
+					.build(),
+				RequirementTestFixtures.policy(TeleportationItem.ALL, Set.of(LAW_RUNE))).check(blocked));
+	}
+
+	@Test
+	public void gate15DistinguishesBypassFromDeferral()
+	{
+		// The bypass modes pass gate 15 on empty pools; INVENTORY defers and
+		// fails; NONE never reaches the item gate at all.
+		Transport teleport = transport(TransportType.TELEPORTATION_ITEM)
+			.itemRequirements(items(item(LAW_RUNE)))
+			.build();
+
+		for (TeleportationItem mode : new TeleportationItem[]{
+			TeleportationItem.ALL, TeleportationItem.UNLOCKED})
+		{
+			RequirementContext empty = RequirementTestFixtures.context()
+				.eligibility(RequirementTestFixtures.eligibility(mode, Map.of()))
+				.build();
+			assertEquals(mode + " bypasses empty pools",
+				RejectionReason.NONE,
+				requirements(empty, RequirementTestFixtures.policy(mode)).check(teleport));
+		}
+
+		RequirementContext empty = RequirementTestFixtures.context()
+			.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.INVENTORY, Map.of()))
+			.build();
+		assertEquals("INVENTORY defers to the pools",
+			RejectionReason.ITEM_REQUIREMENT,
+			requirements(empty, RequirementTestFixtures.policy(TeleportationItem.INVENTORY)).check(teleport));
+
+		RequirementContext carried = RequirementTestFixtures.context()
+			.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.NONE, Map.of(LAW_RUNE, 1)))
+			.build();
+		assertEquals("NONE rejects at the mode seat regardless of items",
+			RejectionReason.TELEPORT_MODE,
+			requirements(carried, RequirementTestFixtures.policy(TeleportationItem.NONE)).check(teleport));
+	}
+
+	@Test
+	public void seasonalWorldRejectsRegardlessOfMode()
+	{
+		// The seasonal check sits ahead of the mode dispatch, so deferring
+		// and non-consumable modes report SEASONAL_WORLD on a normal world
+		// just as NONE and ALL already do.
+		RequirementContext normal = RequirementTestFixtures.context().build();
+		Transport seasonalTransport = transport(TransportType.SEASONAL_TRANSPORTS).build();
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			assertEquals(mode + " must not reach the mode dispatch",
+				RejectionReason.SEASONAL_WORLD,
+				requirements(normal, RequirementTestFixtures.policy(mode)).check(seasonalTransport));
+		}
 	}
 }

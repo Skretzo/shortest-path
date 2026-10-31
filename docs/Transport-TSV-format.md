@@ -54,6 +54,8 @@ Other columns (for example, `menuOption menuTarget objectID`) may appear and are
 - Format: one or more `LEVEL SkillName` tokens separated by `;`.
   - single: `25 Magic`
   - multiple: `75 Construction;83 Farming`
+- `Max` resolves the current maximum, for example `Max Quest` or `Max Music`.
+  `Music` counts released, visible, non-holiday tracks required for the music cape.
 - Notes (parser constraints):
   - Use exactly one space between the level and the skill name (e.g., `83 Farming`).
   - Skill names must match the client’s enum names exactly (case/spacing), e.g., `Magic`, `Construction`.

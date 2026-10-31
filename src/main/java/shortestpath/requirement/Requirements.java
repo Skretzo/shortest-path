@@ -281,6 +281,15 @@ public final class Requirements
 		TransportType type = transport.getType();
 		if (!TeleportRestriction.isItemTeleportType(type))
 		{
+			// The injected fairy-staff requirement is player-restrictable like an
+			// item teleport's own items: a bare blocked id covering every
+			// Dramen/Lunar staff variant disables the ring.
+			if (TransportType.FAIRY_RING.equals(type)
+				&& transport.getItemRequirements() != null
+				&& !transport.getItemRequirements().survivesBlockedItems(policy.blockedItemIds()))
+			{
+				return RejectionReason.BLOCKED_ITEM;
+			}
 			return RejectionReason.NONE; // Not a teleportation item type
 		}
 
@@ -450,7 +459,7 @@ public final class Requirements
 		// player is maxed for the available skills, so skip the total-level check.
 		LeagueModeSnapshot leagueMode = context.getLeagueModeSnapshot();
 		return boostedSkillLevelsAndMore.missingRequirement(requiredLevels,
-			leagueMode.isSeasonal(), context.getCurrentMaxQuestPoints());
+			leagueMode.isSeasonal(), context.getCurrentMaxQuestPoints(), context.getCurrentMaxMusicTracks());
 	}
 
 	private RejectionReason quest(Transport transport)

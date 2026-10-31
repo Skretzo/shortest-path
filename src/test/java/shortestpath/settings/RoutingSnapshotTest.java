@@ -101,12 +101,6 @@ public class RoutingSnapshotTest
 	 * transport-type view it was handed, and the scalar arguments are the
 	 * effective values the caller already computed this refresh.
 	 */
-	/**
-	 * The unlocks view must carry every declared {@code unlock*} registry
-	 * row — a missing member is invisible until a consumer trusts the
-	 * snapshot and silently loses an unlock.
-	 */
-	
 	@Test
 	public void buildRoutingPolicyBuildsTheSnapshot()
 	{

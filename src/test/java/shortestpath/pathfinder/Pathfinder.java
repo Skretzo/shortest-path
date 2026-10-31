@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.IntPredicate;
 
 import lombok.Getter;
 import shortestpath.PrimitiveIntList;
@@ -17,16 +18,21 @@ public class Pathfinder implements ActiveSearch
 	private final Targets targets;
 	// Which (tile, bank layer) states terminate the search: the targets plus, for each blocked
 	// target, its fallback tiles (issue #640), each in the layers where the player holds that
-	// target's items.
-	private final GoalStates goals;
+	// target's items. Resolved at the start of run(), from the rule and items taken when the
+	// search is created.
+	private GoalStates goals;
 	// Whether any goal could possibly terminate the search: non-blocked,
 	// a transport destination, or resolved to at least one walkable nearby tile.
 	// When false the search is skipped entirely, since no goal can ever be visited.
-	private final boolean hasViableGoal;
+	private boolean hasViableGoal;
+	private final GoalRule goalRule;
+	private final IntPredicate transportDestination;
+	private final HeldItems heldItems;
 	// Whether the search may visit a bank: the setting, or a target whose items are in the bank.
 	private final boolean bankPathEnabled;
 	private final PathfinderConfig config;
 	private final CollisionMap map;
+	private final LegacyNeighborGen neighborGen;
 	private final boolean targetInWilderness;
 	private final boolean targetInBlockedRegion;
 	private final Runnable completionCallback;
@@ -86,11 +92,13 @@ public class Pathfinder implements ActiveSearch
 		stats = new PathfinderStats();
 		this.config = config;
 		this.map = config.getMap();
+		this.neighborGen = new LegacyNeighborGen(map);
 		this.start = start;
 		this.targets = targets;
-		this.goals = GoalStates.resolve(config, start, targets);
-		this.hasViableGoal = goals.hasViableGoal();
-		this.bankPathEnabled = config.isBankPathEnabled() || goals.needsBank();
+		this.goalRule = TargetGoals.collisionRule(config, start);
+		this.transportDestination = config::isTransportDestination;
+		this.heldItems = config.getHeldItems();
+		this.bankPathEnabled = config.isBankPathEnabled() || GoalStates.needsBank(targets, heldItems);
 		this.completionCallback = completionCallback;
 		visited = new VisitedTiles(map, config.getBankVisitCost());
 		targetInWilderness = WildernessChecker.isInWilderness(targets.points());
@@ -204,7 +212,7 @@ public class Pathfinder implements ActiveSearch
 
 	private void addNeighbors(int node, boolean nodeIsTile, int nodePacked)
 	{
-		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph,
+		PrimitiveIntList nodes = neighborGen.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph,
 			bankPathEnabled);
 		final int count = nodes.size();
 		for (int i = 0; i < count; i++)
@@ -352,6 +360,9 @@ public class Pathfinder implements ActiveSearch
 	public void run()
 	{
 		stats.start();
+		goals = GoalStates.resolve(TargetGoals.resolve(targets.points(), transportDestination, goalRule), targets,
+			heldItems);
+		hasViableGoal = goals.hasViableGoal();
 		boundary.addFirst(graph.createStart(start));
 
 		// The cutoff counts time without progress towards the target.

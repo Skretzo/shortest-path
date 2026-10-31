@@ -799,15 +799,21 @@ public class PathfinderConfig
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
 		{
+			// Fairy rings carry the staff rule as an injected item requirement
+			// when the Lumbridge Elite diary is incomplete — the same wrapped
+			// instance goes through every gate and into both availability
+			// views, so downstream consumers share one identity.
+			Transport offered = eligibility.wrapFairyRingStaff(transport);
+
 			// The named gates run first; a transport failing any of them is
 			// dropped before either item pool is consulted.
-			if (requirements.gates(transport) != RejectionReason.NONE)
+			if (requirements.gates(offered) != RejectionReason.NONE)
 			{
 				continue;
 			}
 
-			boolean usableWithoutBank = eligibility.usable(transport, BankVisitState.CARRIED);
-			boolean usableWithBank = eligibility.usable(transport, BankVisitState.BANKED);
+			boolean usableWithoutBank = eligibility.usable(offered, BankVisitState.CARRIED);
+			boolean usableWithBank = eligibility.usable(offered, BankVisitState.BANKED);
 			// Both pools empty for its items == the ITEM_REQUIREMENT gate
 			// the composite check() would apply — the same skip, spelled out.
 			if (!usableWithoutBank && !usableWithBank)
@@ -816,11 +822,11 @@ public class PathfinderConfig
 			}
 			if (usableWithoutBank)
 			{
-				withoutBank.add(transport);
+				withoutBank.add(offered);
 			}
 			if (usableWithBank)
 			{
-				withBank.add(transport);
+				withBank.add(offered);
 			}
 		}
 
@@ -997,9 +1003,15 @@ public class PathfinderConfig
 			Map<Integer, Integer> values, long evaluationTimeMinutes,
 			VarRequirement.VarType kind)
 		{
-			return VarRequirement.VarType.VARBIT.equals(kind)
-				? PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes)
-				: PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+			if (VarRequirement.VarType.VARBIT.equals(kind))
+			{
+				return PathfinderConfig.this.varbitChecks(requirements, values, evaluationTimeMinutes);
+			}
+			if (VarRequirement.VarType.VARPLAYER.equals(kind))
+			{
+				return PathfinderConfig.this.varPlayerChecks(requirements, values, evaluationTimeMinutes);
+			}
+			throw new IllegalArgumentException("unhandled VarType " + kind);
 		}
 	}
 

@@ -47,7 +47,7 @@ public final class AStarForwardSearch
 		Runnable progressed)
 	{
 		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions, progressed,
-			(tile, banked) -> target.isTarget(tile));
+			target::accepts);
 	}
 
 	/**
@@ -73,7 +73,7 @@ public final class AStarForwardSearch
 		int startH = ctx.effectiveHeuristic(startState, 0);
 		if (startH != CostArithmetic.INF)
 		{
-			ctx.best[startState] = 0;
+			ctx.best.set(startState, 0);
 			ctx.push(startState, 0, priority(0, startH, heuristicWeight), true, PUSH_INITIAL);
 		}
 		else
@@ -83,7 +83,7 @@ public final class AStarForwardSearch
 		if (ctx.capability != TeleportCapability.ALL)
 		{
 			int hub = hub(ctx.tileStates, ctx.capability, BankVisitState.CARRIED);
-			ctx.best[hub] = 0;
+			ctx.best.set(hub, 0);
 			ctx.push(hub, 0, 0, true, PUSH_GLOBAL);
 		}
 		ctx.seedGlobals(startState);
@@ -94,7 +94,7 @@ public final class AStarForwardSearch
 				return Result.cancelled(ctx.counters.snapshot(ctx.bestBankCost[0]), startPath,
 					closest.path(ctx, startState, startPath), closest.cost());
 			int state = ctx.queue.state(), cost = ctx.queue.cost(), queuedPriority = ctx.queue.priority();
-			if (cost != ctx.best[state])
+			if (cost != ctx.best.get(state))
 	{ ctx.counters.staleEntries++; continue;
 	}
 			if (state >= ctx.tileStates)
@@ -236,7 +236,7 @@ public final class AStarForwardSearch
 	/**
 	 * One search's mutable state: the workspace arrays, queue, counters and the per-query
 	 * settings the relax helpers share. A single instance lives for the whole search — the
-	 * {@code best}/{@code previous} arrays stay plain fields and nothing in the relax loop
+	 * {@code best}/{@code previous} arrays stay final fields and nothing in the relax loop
 	 * allocates — so the helpers stay monomorphic private methods the JIT inlines like the
 	 * static methods they replace.
 	 */
@@ -249,7 +249,8 @@ public final class AStarForwardSearch
 		final AStarMinHeap queue;
 		final TransportWins transportWins = new TransportWins();
 		final MutableCounters counters;
-		final int[] best, previous, globalBounds;
+		final PagedSearchArray best, previous;
+		final int[] globalBounds;
 		final int[] bestBankCost = {CostArithmetic.INF};
 		final boolean restrictedHeuristic, optimized;
 		final double heuristicWeight;
@@ -265,13 +266,9 @@ public final class AStarForwardSearch
 			space = SearchSpace.create(target, start, restrictions);
 			capability = capabilityAt(start);
 			tileStates = space.tileCount * 2;
-			// These arrays span every reachable tile, so allocating them is a fixed cost on every query:
-			// about 1 ms for the 1.4M reachable tiles, measured on a Ryzen 9 7900. If the reachable set
-			// grows a lot (Sailing would add about 4M sea tiles), reuse them across searches, using a
-			// per-search stamp in place of the fill.
 			int stateCount = tileStates + (capability == TeleportCapability.ALL ? 0 : HUB_STATES);
-			best = new int[stateCount]; Arrays.fill(best, CostArithmetic.INF);
-			previous = new int[stateCount];
+			best = new PagedSearchArray(stateCount, CostArithmetic.INF);
+			previous = new PagedSearchArray(stateCount, 0);
 			restrictedHeuristic = capability != TeleportCapability.ALL && hasGlobals(target.account());
 			counters = new MutableCounters(capability, !restrictedHeuristic);
 			globalBounds = restrictedHeuristic ? computeGlobalBounds() : null;
@@ -373,14 +370,14 @@ public final class AStarForwardSearch
 			int candidate = CostArithmetic.add(cost, stepCost);
 			if (candidate == CostArithmetic.INF) return;
 			if (pushKind == PUSH_WALKING) counters.walkingRelaxations++; else counters.transportRelaxations++;
-			if (candidate >= best[state]) return;
+			if (candidate >= best.get(state)) return;
 			updateBestBank(state, candidate);
 			int h = effectiveHeuristic(state, candidate);
 			if (h == CostArithmetic.INF)
 	{ counters.heuristicUnreachable++; return;
 	}
-			boolean newState = best[state] == CostArithmetic.INF;
-			best[state] = candidate; previous[state] = from; transportWins.record(state, transport, candidate);
+			boolean newState = best.get(state) == CostArithmetic.INF;
+			best.set(state, candidate); previous.set(state, from); transportWins.record(state, transport, candidate);
 			push(state, candidate, priority(candidate, h, heuristicWeight), newState, pushKind);
 			if (pushKind == PUSH_LOCAL || pushKind == PUSH_GLOBAL) counters.successfulTransportRelaxations++;
 		}
@@ -399,7 +396,7 @@ public final class AStarForwardSearch
 				if (node < 0) continue;
 				int state = stateForNode(node, BankVisitState.CARRIED);
 				int cost = target.account().globalCost(capability, BankVisitState.CARRIED, i);
-				if (cost < best[state])
+				if (cost < best.get(state))
 				{
 					updateBestBank(state, cost);
 					int h = effectiveHeuristic(state, cost);
@@ -408,7 +405,7 @@ public final class AStarForwardSearch
 						counters.heuristicUnreachable++;
 						continue;
 					}
-					best[state] = cost; previous[state] = startState;
+					best.set(state, cost); previous.set(state, startState);
 					transportWins.record(state, target.account().globalTransport(capability, BankVisitState.CARRIED, i), cost);
 					push(state, cost, priority(cost, h, heuristicWeight), true, PUSH_GLOBAL);
 					counters.successfulTransportRelaxations++;
@@ -421,10 +418,10 @@ public final class AStarForwardSearch
 			TeleportCapability tileCapability = capabilityAt(tile);
 			if (target.account().globalCount(tileCapability, banked) == 0) return;
 			int state = hub(tileStates, tileCapability, banked);
-			if (cost < best[state])
+			if (cost < best.get(state))
 			{
-				boolean newState = best[state] == CostArithmetic.INF;
-				best[state] = cost; previous[state] = from;
+				boolean newState = best.get(state) == CostArithmetic.INF;
+				best.set(state, cost); previous.set(state, from);
 				push(state, cost, cost, newState, PUSH_GLOBAL);
 		}
 		}
@@ -447,9 +444,9 @@ public final class AStarForwardSearch
 				int next = stateForNode(node, banked), candidate = CostArithmetic.add(cost, stepCost);
 				if (candidate == CostArithmetic.INF) continue;
 				counters.transportRelaxations++;
-				if (candidate >= best[next]) continue;
-				boolean newState = best[next] == CostArithmetic.INF;
-				best[next] = candidate; previous[next] = state;
+				if (candidate >= best.get(next)) continue;
+				boolean newState = best.get(next) == CostArithmetic.INF;
+				best.set(next, candidate); previous.set(next, state);
 				transportWins.record(next, target.account().globalTransport(hubCap, banked, i), candidate);
 				push(next, candidate, candidate, newState, PUSH_GLOBAL);
 				counters.successfulTransportRelaxations++;
@@ -462,7 +459,7 @@ public final class AStarForwardSearch
 			int[] costs = new int[16];
 			byte[] arrivals = new byte[16];
 			int count = 0;
-			for (int state = terminal; ; state = previous[state])
+			for (int state = terminal; ; state = previous.get(state))
 			{
 				if (state >= tileStates) continue;
 				if (count == costs.length)
@@ -472,9 +469,9 @@ public final class AStarForwardSearch
 				}
 				result.add(new PathStep(space.tile(state / 2),
 					(state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED,
-					transportWins.at(state, best[state])));
-				costs[count] = state == start ? 0 : best[state];
-				int from = state == start ? start : previous[state];
+					transportWins.at(state, best.get(state))));
+				costs[count] = state == start ? 0 : best.get(state);
+				int from = state == start ? start : previous.get(state);
 				arrivals[count++] = from < tileStates ? AStarRoute.FROM_STEP
 					: AStarRoute.fromHub(hubCapability(tileStates, from));
 				if (state == start) break;
@@ -533,17 +530,16 @@ public final class AStarForwardSearch
 				}
 			}
 			boolean allGlobalsActivated = restrictedHeuristic
-				&& best[hub(tileStates, TeleportCapability.ALL, banked)] <= cost;
+				&& best.get(hub(tileStates, TeleportCapability.ALL, banked)) <= cost;
 			if (restrictedHeuristic && (capabilityAt(space.tile(state / 2)) != TeleportCapability.ALL
 				|| !allGlobalsActivated))
 			{
 				counters.restrictedHeuristicStates++;
 				int restricted = Math.min(resolved, globalBounds[banked == BankVisitState.BANKED ? 1 : 0]);
-				if (restricted == CostArithmetic.INF)
-				{
-					counters.restrictedHeuristicZeroes++;
-					return 0;
-				}
+				// Both infinite: no route from here reaches a target without a global teleport of this
+				// layer (h), nor with one (every cast lands where h is infinite), so the state is pruned
+				// like any other.
+				if (restricted == CostArithmetic.INF) counters.restrictedHeuristicZeroes++;
 				return restricted;
 			}
 			counters.normalHeuristicStates++;
@@ -689,12 +685,15 @@ public final class AStarForwardSearch
 			heuristicEvaluations, bestBankUpdates, bankDominated, bankGlobalSuppressed, rekeys,
 			maxQueueSize, walkingPqPushes, localTransportPqPushes, globalPqPushes,
 			bankingPqPushes, transportCandidates, successfulTransportRelaxations, restrictedHeuristicStates,
-			normalHeuristicStates, restrictedHeuristicZeroes;
+			normalHeuristicStates;
+		/** Restricted states with no route to a target, with or without a global teleport: pruned. */
+		private final int restrictedHeuristicZeroes;
 		/** Heuristic lookups answered from the per-search cache rather than computed. */
 		private final int heuristicCacheHits;
 		private final String initialCapability;
 		private final boolean normalHeuristicEnabledAtStart;
-		@Getter(AccessLevel.NONE) private final int heuristicUnreachable, finalBestBankCost;
+		private final int heuristicUnreachable;
+		@Getter(AccessLevel.NONE) private final int finalBestBankCost;
 		private Counters(int statesPopped, int staleEntries, int pqPushes, int uniqueStatesReached, int walkingRelaxations,
 			int transportRelaxations, int heuristicEvaluations, int heuristicUnreachable, int bestBankUpdates,
 			int bankDominated, int bankGlobalSuppressed, int rekeys, int finalBestBankCost, int maxQueueSize,

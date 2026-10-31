@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
@@ -28,13 +27,18 @@ import shortestpath.presentation.PathAnnotator;
  * Iterating every mapped point — not just the first — is the contract the
  * tile fills rely on inside instances.
  * <p>
- * Only the skips that were uniform across every former call site are baked
- * in: the {@link WorldPointUtil#UNDEFINED} sentinel, a null local point, and
- * a null projection. Per-site input guards ({@code client == null},
- * {@code b == UNDEFINED}) and pre-projection checks like {@code tileCenter}'s
- * plane test stay at the call sites — the optional {@code pointFilter} is the
- * slot that check folds into later. The consumer returning {@code true} stops
- * the walk early ({@code tileCenter}'s first-valid semantics).
+ * The baked-in skips are: the {@link WorldPointUtil#UNDEFINED} sentinel, a
+ * null local point, and a null projection. The sentinel check is a
+ * normalization, not a uniform former guard — only {@code drawTile} and
+ * {@code tileCenter} tested for it, while {@code drawOnMinimap},
+ * {@code drawLabelAtPackedLocation}, and {@code drawTeleportPulse} relied on
+ * {@code toLocalPoint(UNDEFINED)} returning {@code null}; hoisting it here is
+ * safe because a sentinel can never project. Per-site input guards
+ * ({@code client == null}, {@code b == UNDEFINED}) and pre-projection checks
+ * like {@code tileCenter}'s plane test stay at the call sites — the optional
+ * {@code pointFilter} is the slot that check folds into later. The consumer
+ * returning {@code true} stops the walk early ({@code tileCenter}'s
+ * first-valid semantics).
  * <p>
  * This package is a leaf: nothing here may reference the plugin type.
  */

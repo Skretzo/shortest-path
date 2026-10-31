@@ -181,8 +181,14 @@ data.put("config", configOverride);
 ## `query` and `result`
 
 `query` finds a path without showing it, and answers with a `result` message carrying the same
-`id`. Queries always use the legacy pathfinder, whichever one the user picked. A new shown path
-cancels queries still waiting.
+`id`. Queries run on the plugin's A* pathfinder — its only engine, and the same session-cached
+engine that computes shown paths. A new shown path cancels queries still waiting.
+
+A* matches the legacy engine that previously answered queries on reachability and legality, but
+two cost-level divergences are deliberate: transports recorded with a zero duration are taken at
+that cost, so free hops can appear in a route; and a hop that lands on another transport's origin
+carries no queue-ordering penalty, so such chains can price differently. Both affect a route's
+cost, never whether it is valid — for query results and shown paths alike.
 
 | `query` key | Type | Meaning |
 | --- | --- | --- |
@@ -200,7 +206,7 @@ cancels queries still waiting.
 | `closest` | `WorldPoint` | The closest tile reached. |
 | `cost` | `Integer` | The path's cost in ticks; -1 without a path. |
 | `transports` | `List<Map>` | One map per transport used: `origin`, `destination` (`WorldPoint`), `objectInfo`, `displayInfo` (`String`). |
-| `reason` | `String` | `TARGET_REACHED`, `SEARCH_EXHAUSTED`, `CUTOFF_REACHED` or `CANCELLED`; for a query that didn't run: `INVALID`, `CANCELLED`, `SHUTDOWN` or `ERROR`. |
+| `reason` | `String` | `TARGET_REACHED`, `SEARCH_EXHAUSTED`, `CUTOFF_REACHED`, `CANCELLED` or `BACKEND_FAILURE` (the engine failed to build or run the search); for a query that didn't run: `INVALID`, `CANCELLED`, `SHUTDOWN` or `ERROR`. |
 | `bankVisited` | `Boolean` | Whether the path visits a bank. |
 | `targetStatus` | `String` | The reached target's [status](#how-requirements-change-the-route): `CARRIED`, `BANK` or `UNKNOWN`. `null` when it has no requirement or nothing was reached. |
 | `missingItems` | `List<List<Integer>>` | For an `UNKNOWN` target, the "any of" groups not found, as item ids; otherwise empty. |

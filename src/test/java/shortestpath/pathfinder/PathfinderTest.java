@@ -356,6 +356,26 @@ public class PathfinderTest
 		assertTrue("unknown keys carry no effects", change.getEffects().isEmpty());
 	}
 
+	@Test
+	public void slepeRequiresTheTabletUnlockInEveryItemMode()
+	{
+		for (TeleportationItem mode : TeleportationItem.values())
+		{
+			for (int unlocked : new int[]{0, 1})
+			{
+				setupInventory(new Item(22400, 1));
+				setupConfig(QuestState.FINISHED, 99, mode,
+					Map.of(VarbitID.SLEPE_TELEPORT_UNLOCKED, unlocked));
+				assertEquals("Slepe under " + mode + " with unlock " + unlocked,
+					unlocked == 1 && mode != TeleportationItem.NONE,
+					hasUsableTeleport("Drakan's medallion: Slepe"));
+				assertEquals("Ver Sinhaza remains independent of the Slepe unlock under " + mode,
+					mode != TeleportationItem.NONE,
+					hasUsableTeleport("Drakan's medallion: Ver Sinhaza"));
+			}
+		}
+	}
+
 	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";
 	private static final String XERICS_LOOKOUT = "Xeric's talisman: 1. Xeric's Lookout";
 
@@ -619,6 +639,54 @@ public class PathfinderTest
 
 		// Verify ALL fairy ring transports are available, but only calculate one path
 		testAllTransportsAvailableWithSinglePath(TransportType.FAIRY_RING);
+	}
+
+	@Test
+	public void testChasmOfFireDoesNotUsePohRingWithoutStaff()
+	{
+		config.set("useFairyRings", true);
+		config.set("usePoh", true);
+		config.set("usePohFairyRing", true);
+		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
+		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		Pathfinder route = runScenario(WorldPointUtil.packWorldPoint(1323, 3819, 0),
+			WorldPointUtil.packWorldPoint(1435, 3671, 0));
+		assertTrue(route.getResult().isReached());
+		assertFalse(usedExclusiveTransportType(route, TransportType.FAIRY_RING));
+	}
+
+	@Test
+	public void testKingAwowogeiEntranceRequiresMonkeyMadnessII()
+	{
+		int outside = WorldPointUtil.packWorldPoint(2802, 2756, 0);
+		int entrance = WorldPointUtil.packWorldPoint(2802, 2759, 0);
+		int inside = WorldPointUtil.packWorldPoint(2802, 2762, 0);
+		setupInventory();
+		setupConfig(QuestState.IN_PROGRESS, 99, TeleportationItem.NONE);
+		assertTrue(pathfinderConfig.getMap().isBlocked(2799, 2762, 0));
+		assertTrue(pathfinderConfig.getMap().isBlocked(2802, 2759, 0));
+		assertFalse(activeTransportList().stream().anyMatch(t ->
+			t.getOrigin() == outside && t.getDestination() == entrance
+				|| t.getOrigin() == entrance && t.getDestination() == outside));
+		AStarPathfinder locked = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+			null, outside, Set.of(inside), null, 1);
+		locked.run();
+		assertFalse("The guard must not be bypassed before MM2", locked.getResult().isReached());
+
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertEquals(2, activeTransportList().stream().filter(t ->
+			t.getOrigin() == outside && t.getDestination() == entrance
+				|| t.getOrigin() == entrance && t.getDestination() == outside).count());
+		for (int[] route : new int[][]{{outside, inside}, {inside, outside}})
+		{
+			AStarPathfinder search = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+				null, route[0], Set.of(route[1]), null, 1);
+			search.run();
+			assertTrue(search.getResult().getTerminationReason().toString(), search.getResult().isReached());
+		}
 	}
 
 	@Test
@@ -2267,6 +2335,78 @@ public class PathfinderTest
 		assertScenarioPathLength("Varrock teleport with runes and magic level", 2,
 			WorldPointUtil.packWorldPoint(3223, 3424, 0),
 			WorldPointUtil.packWorldPoint(3213, 3424, 0));
+	}
+
+	@Test
+	public void testMusicCapeRequiresAllNonHolidayTracks()
+	{
+		setupMusicDatabase();
+		setupInventory(new Item(ItemID.MUSIC_CAPE, 1));
+		setupEquipment();
+		// A holiday unlock cannot replace the missing required track.
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(1);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		// The required unlock uses bit 31 of the music varplayer.
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(Integer.MIN_VALUE);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertTrue(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(0);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+	}
+
+	@Test
+	public void testBankedMusicCapeRequiresAllNonHolidayTracks()
+	{
+		setupMusicDatabase();
+		config.set("includeBankPath", true);
+		setupInventory();
+		setupEquipment();
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
+
+		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(Integer.MIN_VALUE);
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
+		assertTrue(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
+	}
+
+	@Test
+	public void testMusicCapeFailsClosedWithoutMusicData()
+	{
+		setupInventory(new Item(ItemID.MUSIC_CAPE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		setupMusicDatabase();
+		when(client.getDBTableField(1, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{28});
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+	}
+
+	private void setupMusicDatabase()
+	{
+		when(client.getDBTableRows(DBTableID.Music.ID)).thenReturn(Arrays.asList(1, 2, 3, 4, 5));
+		for (int row = 1; row <= 5; row++)
+		{
+			when(client.getDBTableField(row, DBTableID.Music.COL_RELEASE_TYPE, 0))
+				.thenReturn(new Object[]{row == 5 ? 0 : 1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HIDDEN, 0))
+				.thenReturn(new Object[]{row == 4 ? 1 : 0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0))
+				.thenReturn(new Object[]{row == 3 ? 1 : -1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_AUTOMATIC_UNLOCK, 0))
+				.thenReturn(new Object[]{row == 2 ? 1 : 0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0))
+				.thenReturn(new Object[]{7});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1))
+				.thenReturn(new Object[]{row == 1 ? 31 : 0});
+		}
 	}
 
 	@Test

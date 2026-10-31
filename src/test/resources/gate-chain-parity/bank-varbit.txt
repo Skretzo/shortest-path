@@ -1,0 +1,2 @@
+bank-varbit/pass | check=NONE | satisfied=true
+bank-varbit/fail | check=VARBIT | satisfied=false

@@ -53,6 +53,7 @@ import shortestpath.overlay.PathMapTooltipOverlay;
 import shortestpath.overlay.PathMinimapOverlay;
 import shortestpath.overlay.PathTileOverlay;
 import shortestpath.overlay.PluginOverlays;
+import shortestpath.overlay.ScrollBookHighlightOverlay;
 import shortestpath.overlay.SpellbookHighlightOverlay;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
@@ -102,6 +103,8 @@ public class ShortestPathPlugin extends Plugin
 	private SpellbookHighlightOverlay spellbookHighlightOverlay;
 	@Inject
 	private InventoryHighlightOverlay inventoryHighlightOverlay;
+	@Inject
+	private ScrollBookHighlightOverlay scrollBookHighlightOverlay;
 	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
@@ -184,6 +187,10 @@ public class ShortestPathPlugin extends Plugin
 		pathfinderConfig.setSailingService(sailing);
 		scheduler.attach(pathfinderConfig, sailing, apiHandler);
 		annotator.attach(pathfinderConfig);
+		// The statics build reads only classpath resources, so it is safe to
+		// warm on enable too — relying on the login transition alone left a
+		// cold start for enables while already logged in.
+		scheduler.prepareBackend();
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			// The profile load touches the same HashMaps the
@@ -204,7 +211,7 @@ public class ShortestPathPlugin extends Plugin
 
 		pluginOverlays = new PluginOverlays(pathOverlay, pathMinimapOverlay,
 			pathMapOverlay, pathMapTooltipOverlay, bankItemHighlightOverlay,
-			spellbookHighlightOverlay, inventoryHighlightOverlay, debugOverlayPanel);
+			spellbookHighlightOverlay, inventoryHighlightOverlay, scrollBookHighlightOverlay, debugOverlayPanel);
 		pluginOverlays.register(overlayManager, settings.lifecycle().drawDebugPanel());
 
 		keyManager.registerKeyListener(clearPathKeylistener);

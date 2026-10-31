@@ -65,6 +65,7 @@ public final class RoutingStaticBuilder
 		public final long reachabilityNanos;
 		public final long searchTilesNanos;
 		public final long sitesAndAttachmentsNanos;
+		public final long exactWalksNanos;
 		public final long sparseNetworkNanos;
 		public final long validateNanos;
 		public final long totalNanos;
@@ -85,6 +86,9 @@ public final class RoutingStaticBuilder
 		public final int searchTileCount;
 		public final int siteCount;
 		public final int reachableBankCount;
+		/** Components whose sites the network joins by exact walks, and the edges it keeps for them. */
+		public final int exactComponentCount;
+		public final int exactEdgeCount;
 
 		@Override
 		public String toString()
@@ -97,6 +101,7 @@ public final class RoutingStaticBuilder
 				+ ", reachabilityMs=" + (reachabilityNanos / 1_000_000)
 				+ ", searchTilesMs=" + (searchTilesNanos / 1_000_000)
 				+ ", sitesAndAttachmentsMs=" + (sitesAndAttachmentsNanos / 1_000_000)
+				+ ", exactWalksMs=" + (exactWalksNanos / 1_000_000)
 				+ ", sparseNetworkMs=" + (sparseNetworkNanos / 1_000_000)
 				+ ", validateMs=" + (validateNanos / 1_000_000)
 				+ ", walkableTileCount=" + walkableTileCount + ", naturalComponentCount=" + naturalComponentCount
@@ -106,7 +111,8 @@ public final class RoutingStaticBuilder
 				+ ", inputCutCount=" + inputCutCount + ", duplicateCutCount=" + duplicateCutCount
 				+ ", invalidCutCount=" + invalidCutCount + ", nonSeparatingCutCount=" + nonSeparatingCutCount
 				+ ", crossingCount=" + crossingCount + ", searchTileCount=" + searchTileCount
-				+ ", siteCount=" + siteCount + ", reachableBankCount=" + reachableBankCount + "}";
+				+ ", siteCount=" + siteCount + ", reachableBankCount=" + reachableBankCount
+				+ ", exactComponentCount=" + exactComponentCount + ", exactEdgeCount=" + exactEdgeCount + "}";
 		}
 	}
 
@@ -200,11 +206,6 @@ public final class RoutingStaticBuilder
 			routingComponentCount);
 		long sitesAndAttachmentsNanos = System.nanoTime() - stepStarted;
 
-		stepStarted = System.nanoTime();
-		SparseWalkingNetworkBuilder.Result sparse = SparseWalkingNetworkBuilder.build(sites.siteTiles,
-			sites.siteComponentOffsets, sites.siteComponentIds);
-		long sparseNetworkNanos = System.nanoTime() - stepStarted;
-
 		int[] crossingFrom = new int[crossings.size()];
 		int[] crossingTo = new int[crossings.size()];
 		int[] crossingCost = new int[crossings.size()];
@@ -216,21 +217,41 @@ public final class RoutingStaticBuilder
 			crossingCost[i] = 1;
 		}
 
+		// The exact walks need the search tiles and sites in their final form, so they walk a
+		// first RoutingStatic without a network, and the network is built after them.
+		stepStarted = System.nanoTime();
+		int siteCount = sites.siteTiles.length;
+		RoutingStatic walking = RoutingStatic.takeOwnership(search.tiles, search.components, search.masks,
+			search.northOffsets, search.southOffsets, sites.siteTiles, sites.siteComponentOffsets, sites.siteComponentIds,
+			routingComponentCount, sites.componentSiteOffsets, sites.componentSiteIds, sites.reachableBankTiles,
+			crossingFrom, crossingTo, crossingCost, siteCount, siteCount, 0, 0, 0, new int[siteCount + 1], new int[0],
+			new int[0]);
+		long validateNanos = System.nanoTime() - stepStarted;
+
+		stepStarted = System.nanoTime();
+		ExactWalks exactWalks = ExactWalks.build(walking);
+		long exactWalksNanos = System.nanoTime() - stepStarted;
+
+		stepStarted = System.nanoTime();
+		SparseWalkingNetworkBuilder.Result sparse = SparseWalkingNetworkBuilder.build(sites.siteTiles,
+			sites.siteComponentOffsets, sites.siteComponentIds, exactWalks);
+		long sparseNetworkNanos = System.nanoTime() - stepStarted;
+
 		stepStarted = System.nanoTime();
 		RoutingStatic result = RoutingStatic.takeOwnership(search.tiles, search.components, search.masks, search.northOffsets,
 			search.southOffsets, sites.siteTiles, sites.siteComponentOffsets, sites.siteComponentIds, routingComponentCount,
 			sites.componentSiteOffsets, sites.componentSiteIds, sites.reachableBankTiles, crossingFrom, crossingTo,
 			crossingCost, sparse.originalCount, sparse.vertexCount, sparse.steinerCount, sparse.undirectedEdgeCount,
-			sparse.adjacencyCount(), sparse.offsets, sparse.destinations, sparse.weights);
-		long validateNanos = System.nanoTime() - stepStarted;
+			sparse.adjacencyCount(), sparse.offsets, sparse.destinations, sparse.weights, exactWalks);
+		validateNanos += System.nanoTime() - stepStarted;
 
 		long totalNanos = System.nanoTime() - totalStarted;
 		Diagnostics diagnostics = new Diagnostics(enumerateWalkableNanos, naturalComponentsNanos, cutValidationNanos,
-			routingComponentsNanos, reachabilityNanos, searchTilesNanos, sitesAndAttachmentsNanos, sparseNetworkNanos,
-			validateNanos, totalNanos, walkableTileCount, naturalComponentCount, maxRoutingComponentId,
+			routingComponentsNanos, reachabilityNanos, searchTilesNanos, sitesAndAttachmentsNanos, exactWalksNanos,
+			sparseNetworkNanos, validateNanos, totalNanos, walkableTileCount, naturalComponentCount, maxRoutingComponentId,
 			largestRoutingComponentSize, reachableNaturalCount, cuts.length / 2, cutSet.duplicateCount,
 			cutSet.invalidCount, nonSeparating, crossings.size(), search.tiles.length, sites.siteTiles.length,
-			sites.reachableBankTiles.length);
+			sites.reachableBankTiles.length, exactWalks.exactComponentCount(), exactWalks.edgeCount());
 		return new Result(result, diagnostics);
 	}
 

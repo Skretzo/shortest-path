@@ -82,8 +82,7 @@ public class PathTileOverlay extends Overlay
 
 	private void renderTransports(Graphics2D graphics, ActiveSearch search)
 	{
-		OverlayDrawing.forEachDisplayTransport(annotator,
-			new OverlayDrawing.TransportVisitor()
+		OverlayDrawing.forEachDisplayTransport(annotator, new OverlayDrawing.TransportVisitor()
 		{
 			private Point ca;
 			private boolean drawStart;
@@ -362,8 +361,6 @@ public class PathTileOverlay extends Overlay
 			{
 				// The walker skips tile draws inside POH (no collision data, tiles
 				// render at wrong positions); the index doubles as the tile counter.
-				// The walker skips tile draws inside POH (no collision data, tiles
-				// render at wrong positions); the index doubles as the tile counter.
 				boolean showTiles = TileStyle.TILES.equals(settings.display().pathStyle());
 				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
 					(steps, i) -> true,
@@ -444,6 +441,7 @@ public class PathTileOverlay extends Overlay
 					graphics.setColor(color);
 					graphics.fill(poly);
 				}
+
 				drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter, search);
 				return false;
 			});
@@ -856,7 +854,9 @@ public class PathTileOverlay extends Overlay
 		drawLabel(graphics, p, text, 0);
 	}
 
-	private boolean drawBankPickupLabel(Graphics2D graphics, int location, List<PathStep> path, int pathIndex, ActiveSearch search)
+	// Returns true when the pickup label suppressed the default transport hints.
+	private boolean drawBankPickupLabel(Graphics2D graphics, int location, List<PathStep> path,
+		int pathIndex, ActiveSearch search)
 	{
 		BankPickupRequirements.BankPickupResult bankPickup = annotator.getBankPickup(path, pathIndex, search);
 		if (bankPickup == null || bankPickup.phrases.isEmpty())
@@ -870,6 +870,26 @@ public class PathTileOverlay extends Overlay
 		// By default, bank pickup info replaces the default transport hint text;
 		// enable the option to show both
 		return !settings.display().showBankPickupInfo();
+	}
+
+	// Only show transports the player can currently use; fall back to all if none are usable.
+	// A missing snapshot (pre-login or off the client thread) means no filtering —
+	// the same "show all" the empty-usable fallback produces anyway.
+	private static Collection<Transport> usableTransportsFor(Set<Transport> candidateTransports,
+		TransportEligibility eligibility)
+	{
+		List<Transport> usableTransports = new ArrayList<>();
+		if (eligibility != null)
+		{
+			for (Transport t : candidateTransports)
+			{
+				if (eligibility.satisfiedByPlayer(t))
+				{
+					usableTransports.add(t);
+				}
+			}
+		}
+		return usableTransports.isEmpty() ? candidateTransports : usableTransports;
 	}
 
 	private void drawTransportLabels(Graphics2D graphics, int location, int locationEnd,
@@ -893,25 +913,5 @@ public class PathTileOverlay extends Overlay
 
 			playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, text, playerTileLabelOffset);
 		}
-	}
-
-	// Only show transports the player can currently use; fall back to all if none are usable.
-	// A missing snapshot (pre-login or off the client thread) means no filtering —
-	// the same "show all" the empty-usable fallback produces anyway.
-	private static Collection<Transport> usableTransportsFor(Set<Transport> candidateTransports,
-		TransportEligibility eligibility)
-	{
-		List<Transport> usableTransports = new ArrayList<>();
-		if (eligibility != null)
-		{
-			for (Transport t : candidateTransports)
-			{
-				if (eligibility.satisfiedByPlayer(t))
-				{
-					usableTransports.add(t);
-				}
-			}
-		}
-		return usableTransports.isEmpty() ? candidateTransports : usableTransports;
 	}
 }

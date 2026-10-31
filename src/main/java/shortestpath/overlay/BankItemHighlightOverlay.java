@@ -20,6 +20,8 @@ import shortestpath.settings.Settings;
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
 	private final ItemManager itemManager;
+	// extraGatesPass() fetches the container; drawHighlights reads it in the
+	// same render pass, keeping the widget lookup once per frame.
 	private Widget bankContainer;
 
 	@Inject
@@ -71,6 +73,10 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
+		// bankContainer was populated by extraGatesPass() earlier in this same
+		// render pass — the template always calls extraGatesPass before
+		// drawHighlights, so the widget is non-null here (the gate returns
+		// false on a null/hidden container).
 		Color highlight = settings.display().colourBankPickupHighlight();
 		drawItemOutlines(graphics, itemManager, bankContainer.getChildren(), pickup.bankItemIds,
 			highlight);
@@ -78,4 +84,3 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		return null;
 	}
 }
-

@@ -1,5 +1,7 @@
 package shortestpath.requirement;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.EnumSet;
 import java.util.Map;
 import net.runelite.api.Client;
@@ -14,9 +16,13 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.HashTable;
 import net.runelite.api.WidgetNode;
 import net.runelite.api.gameval.DBTableID;
+import net.runelite.api.gameval.VarPlayerID;
+import shortestpath.requirement.model.MusicTracks;
+import shortestpath.requirement.model.SkillLevels;
 import net.runelite.api.widgets.WidgetModalMode;
 import shortestpath.items.OwnedItems;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * The {@link Client}-backed {@link PlayerStateSource} and the only client
@@ -29,8 +35,22 @@ import lombok.AllArgsConstructor;
  * stale-snapshot contract.
  */
 @AllArgsConstructor
+@Slf4j
 public final class ClientPlayerStateSource implements PlayerStateSource
 {
+	// Music database variables use a one-based MUSICMULTI index, not a varplayer ID.
+	private static final int[] MUSIC_VARPS = {
+		VarPlayerID.MUSICMULTI_1, VarPlayerID.MUSICMULTI_2, VarPlayerID.MUSICMULTI_3,
+		VarPlayerID.MUSICMULTI_4, VarPlayerID.MUSICMULTI_5, VarPlayerID.MUSICMULTI_6,
+		VarPlayerID.MUSICMULTI_7, VarPlayerID.MUSICMULTI_8, VarPlayerID.MUSICMULTI_9,
+		VarPlayerID.MUSICMULTI_10, VarPlayerID.MUSICMULTI_11, VarPlayerID.MUSICMULTI_12,
+		VarPlayerID.MUSICMULTI_13, VarPlayerID.MUSICMULTI_14, VarPlayerID.MUSICMULTI_15,
+		VarPlayerID.MUSICMULTI_16, VarPlayerID.MUSICMULTI_17, VarPlayerID.MUSICMULTI_18,
+		VarPlayerID.MUSICMULTI_19, VarPlayerID.MUSICMULTI_20, VarPlayerID.MUSICMULTI_21,
+		VarPlayerID.MUSICMULTI_22, VarPlayerID.MUSICMULTI_23, VarPlayerID.MUSICMULTI_24,
+		VarPlayerID.MUSICMULTI_25, VarPlayerID.MUSICMULTI_26, VarPlayerID.MUSICMULTI_27
+	};
+
 	private final Client client;
 
 
@@ -82,6 +102,51 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 	{
 		checkOnClientThread();
 		return quest.getState(client);
+	}
+
+	@Override
+	public MusicTracks musicTracks()
+	{
+		checkOnClientThread();
+		int unlocked = 0;
+		int required = 0;
+		List<String> lockedTracks = new ArrayList<>();
+		for (int row : client.getDBTableRows(DBTableID.Music.ID))
+		{
+			// Holiday is an event ID; -1 means the track is not tied to a holiday.
+			if ((Integer) client.getDBTableField(row, DBTableID.Music.COL_RELEASE_TYPE, 0)[0] == 0 ||
+				(Integer) client.getDBTableField(row, DBTableID.Music.COL_HIDDEN, 0)[0] != 0 ||
+				(Integer) client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0)[0] != -1)
+			{
+				continue;
+			}
+			required++;
+			if ((Integer) client.getDBTableField(row, DBTableID.Music.COL_AUTOMATIC_UNLOCK, 0)[0] != 0)
+			{
+				unlocked++;
+				continue;
+			}
+			int varpIndex = (Integer) client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0)[0] - 1;
+			int bit = (Integer) client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1)[0];
+			if (varpIndex >= 0 && varpIndex < MUSIC_VARPS.length && bit >= 0 && bit < Integer.SIZE &&
+				(client.getVarpValue(MUSIC_VARPS[varpIndex]) & (1 << bit)) != 0)
+			{
+				unlocked++;
+			}
+			else if (log.isDebugEnabled())
+			{
+				Object[] name = client.getDBTableField(row, DBTableID.Music.COL_DISPLAYNAME, 0);
+				lockedTracks.add(name.length > 0 ? String.valueOf(name[0]) : "row " + row);
+			}
+		}
+		log.debug("Music cape: {} required tracks locked ({} unlocked / {} required): {}",
+			required - unlocked, unlocked, required, lockedTracks);
+		if (required == 0)
+		{
+			log.debug("Music cape: no required track data available; teleport remains unavailable");
+			required = SkillLevels.MAX_LEVEL;
+		}
+		return new MusicTracks(unlocked, required);
 	}
 
 	@Override

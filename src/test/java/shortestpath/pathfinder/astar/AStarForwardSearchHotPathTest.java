@@ -23,6 +23,37 @@ public class AStarForwardSearchHotPathTest
 	private static final int DEEP_WILDERNESS = WorldPointUtil.packWorldPoint(3200, 3760, 0);
 
 	@Test
+	public void reconstructsWalkingRouteAcrossSearchPages() throws Exception
+	{
+		int[] corridor = new int[600];
+		int[][] edges = new int[corridor.length - 1][2];
+		Set<Integer> tiles = new java.util.HashSet<>();
+		for (int i = 0; i < corridor.length; i++)
+		{
+			int row = i / 60;
+			int x = (row & 1) == 0 ? i % 60 + 1 : 60 - i % 60;
+			corridor[i] = WorldPointUtil.packWorldPoint(x, row + 1, 0);
+			tiles.add(corridor[i]);
+			if (i > 0) edges[i - 1] = new int[] {corridor[i - 1], corridor[i]};
+		}
+		SyntheticCollisionMap collision = new SyntheticCollisionMap(tiles,
+			SyntheticCollisionMap.symmetricAdjacency(edges), 1);
+		RoutingStatic stat = RoutingStaticBuilder.build(collision, Map.of(), Set.of(), new int[0],
+			corridor[0]).routingStatic;
+		TargetOverlay target = new TargetOverlay(new SiteGraph(stat, account()), collision,
+			corridor[corridor.length - 1]);
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+
+		AStarForwardSearch.Result result = AStarForwardSearch.search(target, heuristic, corridor[0]);
+
+		assertTrue(result.reached());
+		assertEquals(corridor.length - 1, result.cost());
+		assertEquals(corridor.length, result.path().size());
+		for (int i = 0; i < corridor.length; i++)
+			assertEquals(corridor[i], result.path().get(i).getPackedPosition());
+	}
+
+	@Test
 	public void nodeStatesAndReachableBankIndexesMatchTileData() throws Exception
 	{
 		RoutingStatic stat = RoutingStaticTestFixture.createT4Walking();

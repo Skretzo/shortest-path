@@ -2,22 +2,17 @@ package shortestpath;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
-import net.runelite.client.util.SwingUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -35,7 +30,7 @@ import lombok.Getter;
  * is display structure only — the config key, type and persistence are
  * untouched.</p>
  */
-class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchExpandable
+class CollapsibleEnumGroup<E extends Enum<E>> extends ExpandableSurface
 {
 	private final ShortestPathPanel panel;
 	private final String keyName;
@@ -46,10 +41,6 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 	private final JPanel header;
 	@Getter private final JLabel nameLabel;
 	@Getter(AccessLevel.PACKAGE) private final JLabel countLabel;
-	private final JButton expander;
-	private final JPanel detail;
-	@Getter(AccessLevel.PACKAGE) private boolean detailOpen;
-	private boolean searchExpanded;
 	// Held while a config sync mirrors the stored set into the checkboxes,
 	// so the programmatic setSelected calls do not write it back.
 	private final PanelRows.SyncGuard syncing = new PanelRows.SyncGuard();
@@ -57,22 +48,19 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 	CollapsibleEnumGroup(ShortestPathPanel panel, String keyName, Class<E> type,
 		String groupLabel, List<E> members, String description)
 	{
+		super(new EmptyBorder(0, ShortestPathPanel.SUB_LIST_INDENT, 4, 0));
 		this.panel = panel;
 		this.keyName = keyName;
 		this.type = type;
 		this.members = members;
 
-		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setOpaque(false);
 
 		header = new JPanel(new BorderLayout());
 
-		expander = new JButton(ShortestPathPanel.SECTION_EXPAND_ICON);
+		expander = newExpander();
 		expander.setPreferredSize(new Dimension(ShortestPathPanel.SECTION_TOGGLE_WIDTH, 0));
 		expander.setBorder(new EmptyBorder(0, 0, 0, 5));
-		expander.setToolTipText("Expand");
-		SwingUtil.removeButtonDecorations(expander);
-		expander.addActionListener(e -> setDetailOpen(!detailOpen));
 		header.add(expander, BorderLayout.WEST);
 
 		nameLabel = new JLabel(ShortestPathPanel.html(groupLabel));
@@ -85,9 +73,6 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		header.add(countLabel, BorderLayout.EAST);
 		add(header);
 
-		detail = new JPanel(new DynamicGridLayout(0, 1, 0, 4));
-		detail.setBorder(new EmptyBorder(0, ShortestPathPanel.SUB_LIST_INDENT, 4, 0));
-		detail.setVisible(false);
 		add(detail);
 
 		// The shared expandable chrome: dark header bar over the
@@ -120,51 +105,25 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 
 		panel.registerConfigListener(keyName, this::syncFromConfig);
 		updateCount();
-		installExpandListener();
-	}
-
-	void setDetailOpen(boolean open)
-	{
-		// A manual toggle counts as user intent, so search no longer owns
-		// the expansion state of this group.
-		searchExpanded = false;
-		setDetailOpenInternal(open);
+		installExpandListener(header, nameLabel, countLabel);
 	}
 
 	/**
-	 * Search-driven expansion: opens the detail well when the query matched
-	 * a member label rather than the group name, so the matched checkbox is
-	 * visible. {@link #clearSearchExpanded()} restores the collapsed state
-	 * when the query clears — the same contract transport cards follow.
+	 * Whether {@code query} (already lowercased) hits a member label —
+	 * the nested expansion hook {@link CategoryPanel#applyQuery} runs so
+	 * a member-name query opens a group stacked inside a card's detail
+	 * well the same way it opens a free-standing one.
 	 */
-	@Override
-	public void setSearchExpanded()
+	boolean matchesMember(String query)
 	{
-		if (!detailOpen)
+		for (E member : members)
 		{
-			searchExpanded = true;
-			setDetailOpenInternal(true);
+			if (member.toString().toLowerCase(Locale.ROOT).contains(query))
+			{
+				return true;
+			}
 		}
-	}
-
-	@Override
-	public void clearSearchExpanded()
-	{
-		if (searchExpanded)
-		{
-			searchExpanded = false;
-			setDetailOpenInternal(false);
-		}
-	}
-
-	private void setDetailOpenInternal(boolean open)
-	{
-		detailOpen = open;
-		expander.setIcon(open ? ShortestPathPanel.SECTION_RETRACT_ICON : ShortestPathPanel.SECTION_EXPAND_ICON);
-		expander.setToolTipText(open ? "Retract" : "Expand");
-		detail.setVisible(open);
-		revalidate();
-		repaint();
+		return false;
 	}
 
 	/**
@@ -198,18 +157,4 @@ class CollapsibleEnumGroup<E extends Enum<E>> extends JPanel implements SearchEx
 		countLabel.setText(selected + "/" + members.size());
 	}
 
-	private void installExpandListener()
-	{
-		MouseAdapter adapter = new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				setDetailOpen(!detailOpen);
-			}
-		};
-		header.addMouseListener(adapter);
-		nameLabel.addMouseListener(adapter);
-		countLabel.addMouseListener(adapter);
-	}
 }

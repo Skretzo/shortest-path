@@ -9,10 +9,11 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import shortestpath.requirement.model.MusicTracks;
+import shortestpath.requirement.model.SkillLevels;
 import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
 import shortestpath.items.OwnedItems;
-import java.util.Set;
 
 /**
  * Map-backed {@link PlayerStateSource} for client-free requirement tests.
@@ -175,6 +176,12 @@ final class MapPlayerStateSource implements PlayerStateSource
 	public QuestState questState(Quest quest)
 	{
 		return questStates.getOrDefault(quest, QuestState.NOT_STARTED);
+	}
+
+	@Override
+	public MusicTracks musicTracks()
+	{
+		return new MusicTracks(0, SkillLevels.MAX_LEVEL);
 	}
 
 	@Override

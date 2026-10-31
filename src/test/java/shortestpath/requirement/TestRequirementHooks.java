@@ -57,7 +57,19 @@ final class TestRequirementHooks implements RequirementHooks
 		Map<Integer, Integer> values, long evaluationTimeMinutes,
 		VarRequirement.VarType kind)
 	{
-		boolean fail = VarRequirement.VarType.VARBIT.equals(kind) ? failVarbits : failVarPlayers;
+		final boolean fail;
+		if (VarRequirement.VarType.VARBIT.equals(kind))
+		{
+			fail = failVarbits;
+		}
+		else if (VarRequirement.VarType.VARPLAYER.equals(kind))
+		{
+			fail = failVarPlayers;
+		}
+		else
+		{
+			throw new IllegalArgumentException("unhandled VarType " + kind);
+		}
 		for (VarRequirement requirement : requirements)
 		{
 			if (requirement.getVarType() == kind

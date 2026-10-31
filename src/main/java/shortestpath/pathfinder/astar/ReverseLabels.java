@@ -1,11 +1,12 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import shortestpath.pathfinder.BankVisitState;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-
 
 /** Reverse labels in the relaxed graph with a clique oracle and sparse production path. */
 @AllArgsConstructor
@@ -31,7 +32,11 @@ public final class ReverseLabels
 		return usableSparse(overlay) ? computeSparse(overlay) : computeClique(overlay);
 	}
 
-	/** Transparent component-clique correctness oracle. */
+	/**
+	 * Transparent component-clique correctness oracle: every pair of a component's sites walks at
+	 * Chebyshev distance, or at the full {@link ExactWalks#pairDistances} table's distance in a
+	 * component the network joins by exact walks.
+	 */
 	static ReverseLabels computeClique(TargetOverlay overlay)
 	{
 		long started = System.nanoTime();
@@ -41,11 +46,14 @@ public final class ReverseLabels
 		int[] labels = new int[overlay.queryNodeCount() * 2];
 		Arrays.fill(labels, CostArithmetic.INF);
 		AStarMinHeap queue = new AStarMinHeap(Math.max(16, labels.length));
+		ExactWalks exactWalks = stat.exactWalks();
+		Map<Integer, int[][]> pairTables = new HashMap<>();
 		int pushes = 0;
 		for (int target = 0; target < overlay.targetCount(); target++)
 		{
 			for (BankVisitState banked : BankVisitState.values())
 			{
+				if (!overlay.isTerminal(target, banked)) continue;
 				int seed = overlay.targetState(target, banked);
 				labels[seed] = 0;
 				queue.push(0, 0, seed);
@@ -77,14 +85,23 @@ public final class ReverseLabels
 			{
 				for (int component : stat.siteComponents(node))
 				{
-					for (int other : stat.componentSites(component))
+					int[] sites = stat.componentSites(component);
+					boolean exact = exactWalks != null && exactWalks.isExact(component);
+					int[][] pairs = exact ? pairTables.computeIfAbsent(component,
+						c -> ExactWalks.pairDistances(stat, c)) : null;
+					int self = exact ? Arrays.binarySearch(sites, node) : -1;
+					for (int i = 0; i < sites.length; i++)
 					{
+						int other = sites[i];
+						// Relaxing `other` from this site is the walk other -> node.
+						int walk = exact ? pairs[i][self] : distance(stat.siteTile(node), stat.siteTile(other));
 						if (other != node && relax(labels, queue, SiteGraph.stateId(other, banked),
-							CostArithmetic.add(cost, distance(stat.siteTile(node), stat.siteTile(other)))))
+							CostArithmetic.add(cost, walk)))
 							pushes++;
 					}
 				}
-				// Targets are seeded at zero, so walking from a site into a target never improves it.
+				// Synthetic targets only emit reverse attachments; non-terminal tile estimates
+				// also consult the component's finite site labels in PreparedHeuristic.
 			}
 			else
 			{
@@ -122,6 +139,7 @@ public final class ReverseLabels
 		{
 			for (BankVisitState banked : BankVisitState.values())
 			{
+				if (!overlay.isTerminal(target, banked)) continue;
 				int seed = overlay.targetState(target, banked);
 				doubled[seed] = 0;
 				origins[seed] = seed;
@@ -166,8 +184,8 @@ public final class ReverseLabels
 						pushes++;
 				}
 			}
-			// Targets are seeded at zero, so walking from a site into a target never improves it;
-			// only a synthetic target's own attachment edges need relaxing.
+			// Synthetic targets only emit reverse attachments; PreparedHeuristic also estimates
+			// non-terminal layers from their component's finite site labels.
 			int target = vertex < routingNodes ? overlay.syntheticTarget(vertex) : -1;
 			for (int i = 0; target >= 0 && i < overlay.attachmentCount(target); i++)
 			{

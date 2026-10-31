@@ -248,13 +248,25 @@ public final class TransportEligibility
 			: unlocks;
 	}
 
+	/** Injects the staff requirement for every fairy ring unless Lumbridge Elite is complete. */
+	public Transport wrapFairyRingStaff(Transport transport)
+	{
+		if (!fairyRingStaffRequired || !TransportType.FAIRY_RING.equals(transport.getType()))
+		{
+			return transport;
+		}
+		return transport.withItemRequirements(
+			TransportItems.merge(transport.getItemRequirements(), DRAMEN_STAFF));
+	}
+
 	/**
 	 * Whether the transport's item requirements are met by the carried pool
 	 * ({@link BankVisitState#CARRIED}) or the bank-path pool ({@link BankVisitState#BANKED}).
 	 * Teleportation item transports are first bypassed or blocked by the
-	 * teleportation-item setting; fairy rings additionally require a Dramen/Lunar
-	 * staff when the Lumbridge Elite diary is incomplete; everything else defers to
+	 * teleportation-item setting; everything else defers to
 	 * {@link TransportItems#isSatisfiedBy} at the configured currency threshold.
+	 * Fairy rings reaching this point already carry the injected staff
+	 * requirement — see {@link #wrapFairyRingStaff}.
 	 */
 	public boolean usable(Transport transport, BankVisitState banked)
 	{
@@ -276,13 +288,6 @@ public final class TransportEligibility
 
 		Map<Integer, Integer> ownedItems = banked == BankVisitState.BANKED ? bankPathItems : carriedItems;
 
-		// Fairy rings require Dramen/Lunar staff unless the Lumbridge Elite diary is complete
-		if (TransportType.FAIRY_RING.equals(transport.getType()) && fairyRingStaffRequired
-			&& !DRAMEN_STAFF.isSatisfiedBy(ownedItems, TransportItems.CURRENCIES, currencyThreshold))
-		{
-			return false;
-		}
-
 		TransportItems transportItems = transport.getItemRequirements();
 		return transportItems == null
 			|| transportItems.isSatisfiedBy(ownedItems, TransportItems.CURRENCIES, currencyThreshold,
@@ -299,15 +304,6 @@ public final class TransportEligibility
 		return transportItems == null
 			|| transportItems.isSatisfiedBy(carriedItems, TransportItems.CURRENCIES, Integer.MAX_VALUE,
 				unlocksFor(transport));
-	}
-
-	/**
-	 * A copy of the item ids of the Dramen/Lunar staves that unlock fairy rings without
-	 * the Lumbridge Elite diary.
-	 */
-	public static int[] fairyStaffIds()
-	{
-		return DRAMEN_STAFF.getRequirements().get(0).getStaffIds().clone();
 	}
 
 	/**
@@ -411,33 +407,6 @@ public final class TransportEligibility
 	}
 
 	/**
-	 * The single staff pickup for a path that uses fairy rings: one covering
-	 * Dramen/Lunar staff from the bank, or {@code null} when the Lumbridge Elite diary
-	 * is complete, the player already carries a covering staff, or the bank holds none.
-	 */
-	public BankPickupPlan fairyStaffPickup()
-	{
-		if (!fairyRingStaffRequired)
-		{
-			return null;
-		}
-		int[] staffIds = fairyStaffIds();
-		if (findCovering(staffIds, 1, Map.of(), carriedItems) != -1)
-		{
-			return null;
-		}
-		Set<Integer> bankItemIds = new HashSet<>();
-		addCovering(staffIds, 1, Map.of(), bankHas, bankItemIds);
-		if (bankItemIds.isEmpty())
-		{
-			return null;
-		}
-		Map<Integer, Long> items = new LinkedHashMap<>();
-		items.put(staffIds[0], 1L);
-		return new BankPickupPlan(items, bankItemIds);
-	}
-
-	/**
 	 * The pickup plan for a target's required items: {@link BankPickupPlan#items} holds one
 	 * entry per item group the player doesn't already carry, keyed by the first bank-covering
 	 * item id of the covering OR branch and valued at the shortfall quantity; each entry is a
@@ -480,8 +449,8 @@ public final class TransportEligibility
 	}
 
 	/**
-	 * The result of {@link #bankPickupPlan}, {@link #fairyStaffPickup} or
-	 * {@link #targetPickupPlan}: the pickup items (id to quantity; {@code null} when the
+	 * The result of {@link #bankPickupPlan} or {@link #targetPickupPlan}:
+	 * the pickup items (id to quantity; {@code null} when the
 	 * bank cannot fully supply the transport) and the bank item ids to highlight.
 	 */
 	public static final class BankPickupPlan

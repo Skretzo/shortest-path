@@ -1,11 +1,11 @@
 # A* pathfinder
 
-The A* pathfinder is an optional tile search. Select it from the native RuneLite
-"Pathfinder algorithm" dropdown, which displays `Legacy` and `A*`; `Legacy`
-remains the default. RuneLite persists the typed enum as `LEGACY` or `ASTAR`.
-If A* fails, the failure is reported and the plugin never falls back to legacy
-silently. Legacy profile settings are migrated when that configuration profile
-becomes active.
+The A* pathfinder is the plugin's tile search — its only engine. It computes
+every shown path and answers every cross-plugin `query`. The legacy engine
+survives only in the test sources, as a frozen oracle the parity tests and the
+route corpus check A* against. If A* fails to build its routing data or run a
+search, the failure is reported — a query answers with `BACKEND_FAILURE` —
+rather than silently degrading.
 
 ## Layout
 
@@ -36,6 +36,10 @@ requirements or reads the client directly.
   see [astar-heuristic.md](astar-heuristic.md). The session keeps recent
   targets for reuse while the graph and collision map are unchanged.
 - **Search state** (`AStarForwardSearch`) belongs to one active search.
+  Costs and predecessors use 1,024-entry pages allocated on first write,
+  including bank layers and teleport hubs. Reading an untouched page returns
+  the initial value without allocating it. Only the small page directories
+  are allocated for the full state space upfront.
 
 ## Routing cuts
 

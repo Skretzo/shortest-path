@@ -37,15 +37,6 @@ public class HookLivenessTest
 	private static final TeleportationItem MODE = TeleportationItem.INVENTORY;
 	private static final int BANK_TILE = WorldPointUtil.packWorldPoint(1804, 9501, 0);
 
-	private static Transport transport()
-	{
-		return new Transport.TransportBuilder()
-			.type(TransportType.TRANSPORT)
-			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
-			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
-			.build();
-	}
-
 	private static RequirementContext capture(MapPlayerStateSource source, TestRequirementHooks hooks,
 		List<Transport> transports, Map<Integer, DestinationRequirements> bankRequirements)
 	{
@@ -210,6 +201,12 @@ public class HookLivenessTest
 			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
 			.varPlayers("4130>1999")
 			.build();
+		Transport varbitOnly = new Transport.TransportBuilder()
+			.type(TransportType.TRANSPORT)
+			.origin(WorldPointUtil.packWorldPoint(2965, 3378, 0))
+			.destination(WorldPointUtil.packWorldPoint(3213, 3424, 0))
+			.varbits("4481=1")
+			.build();
 		RequirementContext context = RequirementTestFixtures.context()
 			.varbitValues(Map.of(4481, 1))
 			.varPlayerValues(Map.of(4130, 2000))
@@ -217,14 +214,16 @@ public class HookLivenessTest
 		TestRequirementHooks hooks = new TestRequirementHooks();
 		Requirements requirements = chain(context, hooks);
 
-		// Both requirement sets pass their checks.
+		// All requirement sets pass their checks.
 		assertTrue(requirements.usable(both));
 		assertTrue(requirements.usable(varPlayerOnly));
+		assertTrue(requirements.usable(varbitOnly));
 
 		// The varbit knob only fails the VARBIT dispatch — a varplayer-only
 		// transport's verdict is unmoved.
 		hooks.failVarbits(true);
 		assertFalse(requirements.usable(both));
+		assertFalse(requirements.usable(varbitOnly));
 		assertEquals(RejectionReason.VARBIT, requirements.check(both));
 		assertTrue(requirements.usable(varPlayerOnly));
 
@@ -234,5 +233,6 @@ public class HookLivenessTest
 		hooks.failVarPlayers(true);
 		assertFalse(requirements.usable(both));
 		assertEquals(RejectionReason.VARPLAYER, requirements.check(both));
+		assertTrue(requirements.usable(varbitOnly));
 	}
 }

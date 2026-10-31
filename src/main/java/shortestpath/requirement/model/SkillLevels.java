@@ -4,17 +4,19 @@ import java.util.Arrays;
 import net.runelite.api.Skill;
 import shortestpath.requirement.RejectionReason;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 /**
  * Immutable skill-level set in the extended-index layout: one slot per
- * {@link Skill} ordinal plus three trailing slots for total level, combat
- * level and quest points. The same type carries requirement data (what a
+ * {@link Skill} ordinal plus four trailing slots for total level, combat
+ * level, quest points and music unlocks. The same type carries requirement data (what a
  * transport or bank tile demands) and player data (what the refresh
  * snapshot captured), so the two sides can never disagree about the
  * layout. The backing array is the TSV wire contract and never escapes
  * this type.
  */
 @AllArgsConstructor
+@EqualsAndHashCode
 public final class SkillLevels
 {
 	/**
@@ -24,10 +26,11 @@ public final class SkillLevels
 	 */
 	public static final int MAX_LEVEL = Integer.MAX_VALUE;
 
-	public static final int LENGTH = Skill.values().length + 3;
+	public static final int LENGTH = Skill.values().length + 4;
 	public static final int TOTAL_LEVEL_INDEX = Skill.values().length;
 	public static final int COMBAT_LEVEL_INDEX = Skill.values().length + 1;
 	public static final int QUEST_POINTS_INDEX = Skill.values().length + 2;
+	public static final int MUSIC_TRACKS_INDEX = Skill.values().length + 3;
 
 	private static final int MAX_SKILL_LEVEL = 99;
 	private static final int MAX_COMBAT_LEVEL = 126;
@@ -145,12 +148,12 @@ public final class SkillLevels
 	/**
 	 * The level a {@code Max} requirement resolves to at the given index:
 	 * 99 for the skill ordinals, the all-99 total, 126 for combat, the
-	 * refresh-state quest-point cap for the quest slot, and the sentinel
+	 * refresh-state quest-point and music caps for their slots, and the sentinel
 	 * itself anywhere else (an index outside the layout declares no cap).
-	 * The quest cap arrives as a parameter because it changes between
-	 * refreshes — a constant here would go stale.
+	 * The quest and music caps arrive as parameters because they change
+	 * between refreshes — constants here would go stale.
 	 */
-	public static int maximumLevel(int index, int currentMaxQuestPoints)
+	public static int maximumLevel(int index, int currentMaxQuestPoints, int currentMaxMusicTracks)
 	{
 		if (index < TOTAL_LEVEL_INDEX)
 		{
@@ -168,6 +171,10 @@ public final class SkillLevels
 		{
 			return currentMaxQuestPoints;
 		}
+		if (index == MUSIC_TRACKS_INDEX)
+		{
+			return currentMaxMusicTracks;
+		}
 		return MAX_LEVEL;
 	}
 
@@ -182,7 +189,7 @@ public final class SkillLevels
 	 * Runs allocation-free on the check path.
 	 */
 	public RejectionReason missingRequirement(SkillLevels required, boolean skipTotalLevel,
-		int currentMaxQuestPoints)
+		int currentMaxQuestPoints, int currentMaxMusicTracks)
 	{
 		if (required == null)
 		{
@@ -200,7 +207,7 @@ public final class SkillLevels
 			int requiredLevel = i < required.levels.length ? required.levels[i] : 0;
 			if (requiredLevel == MAX_LEVEL)
 			{
-				requiredLevel = maximumLevel(i, currentMaxQuestPoints);
+				requiredLevel = maximumLevel(i, currentMaxQuestPoints, currentMaxMusicTracks);
 			}
 			if (level < requiredLevel)
 			{
@@ -208,26 +215,6 @@ public final class SkillLevels
 			}
 		}
 		return RejectionReason.NONE;
-	}
-
-	@Override
-	public boolean equals(Object other)
-	{
-		if (this == other)
-		{
-			return true;
-		}
-		if (!(other instanceof SkillLevels))
-		{
-			return false;
-		}
-		return Arrays.equals(levels, ((SkillLevels) other).levels);
-	}
-
-	@Override
-	public int hashCode()
-	{
-		return Arrays.hashCode(levels);
 	}
 
 	@Override
