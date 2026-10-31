@@ -5047,8 +5047,8 @@
 2578 9583 0	2567 9524 0	Climb-up Staircase 16665						1	
 									
 # Yanille Wizard Guild									
-2594 3085 0	2594 9485 0	Climb-down Ladder 17384						2	
-2594 9486 0	2594 3085 0	Climb-up Ladder 17383						2	
+2594 3086 0	2594 9486 0	Climb-down Ladder 17384						2	
+2594 9486 0	2594 3086 0	Climb-up Ladder 17385						3	
 2590 3088 0	2590 3092 1	Climb-up Staircase 15645						1	
 2591 3088 0	2590 3092 1	Climb-up Staircase 15645						1	
 2590 3092 1	2590 3088 0	Climb-down Staircase 15648						1	
