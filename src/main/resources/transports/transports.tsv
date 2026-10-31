@@ -3559,6 +3559,32 @@
 1934 4420 3	3288 2801 0	Leave Tomb Tomb Door 20932						3	
 1968 4450 3	3288 2801 0	Leave Tomb Tomb Door 20932						3	
 									
+# River Elid - lily island									
+3353 2925 0	3353 2921 0	Cross Stepping stone 43988				13841>75		4	
+3353 2921 0	3353 2925 0	Cross Stepping stone 43988				13841>75		4	
+									
+# Ruins of Ullek									
+3419 2802 0	3416 2806 0	Climb Steps 44113							
+3416 2806 0	3419 2802 0	Climb Steps 44111							
+									
+# Scabaras Dungeon									
+3412 2848 0	3445 9248 2	Enter Entry 6643				13841>37			
+3445 9248 2	3412 2848 0	Climb-up Stairs 43955							
+3437 9245 2	3438 9242 0	Climb-down Stairs 43959				13841>41			
+3438 9242 0	3437 9245 2	Climb-up Stairs 43957							
+3437 9251 2	3438 9254 0	Climb-down Stairs 43958				13841>41			
+3438 9254 0	3437 9251 2	Climb-up Stairs 43956							
+									
+## Lever and urn-riddle doors									
+3406 9248 0	3405 9248 0	Open Door 43961				13841>45		1	
+3405 9248 0	3406 9248 0	Open Door 43961				13841>45		1	
+3390 9248 0	3389 9248 0	Open Door 43962				13841>47		1	
+3389 9248 0	3390 9248 0	Open Door 43962				13841>47		1	
+									
+# Tombs of Amascut - lobby									
+3357 2713 0	3359 9128 0	Enter Entry 44596			Beneath Cursed Sands			1	
+3359 9128 0	3357 2713 0	Leave Exit 46087						1	
+									
 # Necropolis									
 3347 2759 0	3349 2759 0	Climb-over Rubble 44003				13841>10		4	
 3349 2759 0	3347 2759 0	Climb-over Rubble 44003				13841>10		4	
