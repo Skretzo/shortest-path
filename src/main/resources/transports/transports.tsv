@@ -6371,3 +6371,21 @@
 # Morytania Spider Cave									
 3657 3407 0	3679 9797 0	Enter Cave 42594						2	
 3679 9797 0	3658 3407 0	Exit Cave 42595						2	
+## Spider Cave web tunnels									
+# shortcut: landing tiles inferred from cache footprints; confirm with in-game captures.									
+### Middle passage									
+3677 9820 0	3684 9820 0	Squeeze-through Web tunnel 54152				10996=0	394>0;395=4		
+3677 9820 0	3684 9820 0	Squeeze-through Web tunnel 54152				10996=0	394>0;395=124		
+3684 9820 0	3677 9820 0	Squeeze-through Web tunnel 54155				10996=0			
+### Northern passage									
+3689 9837 0	3696 9837 0	Squeeze-through Web tunnel 54152				10996=0	394>0;395=4		
+3689 9837 0	3696 9837 0	Squeeze-through Web tunnel 54152				10996=0	394>0;395=124		
+3696 9837 0	3689 9837 0	Squeeze-through Web tunnel 54155				10996=0			
+### Upper passage									
+3678 9842 0	3678 9849 0	Squeeze-through Web tunnel 54152				10996=0	394>0;395=4		
+3678 9842 0	3678 9849 0	Squeeze-through Web tunnel 54152				10996=0	394>0;395=124		
+3678 9849 0	3678 9842 0	Squeeze-through Web tunnel 54157				10996=0			
+### Araxxor lair									
+3658 9815 0	3647 9815 0	Squeeze-through Web tunnel 54152	92 Slayer			10996=0	394>0;395=4		
+3658 9815 0	3647 9815 0	Squeeze-through Web tunnel 54152	92 Slayer			10996=0	394>0;395=124		
+3647 9815 0	3658 9815 0	Squeeze-through Web tunnel 54159				10996=0			
