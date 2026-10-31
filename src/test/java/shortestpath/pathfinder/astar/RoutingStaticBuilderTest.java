@@ -116,7 +116,8 @@ public class RoutingStaticBuilderTest
 		Set<Integer> tiles = new HashSet<>();
 		for (int tile : expected) tiles.add(tile);
 		SyntheticCollisionMap world = new SyntheticCollisionMap(tiles,
-			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{expected[0], expected[1]}}), 4)
+			SyntheticCollisionMap.withStubEdges(tiles,
+				SyntheticCollisionMap.symmetricAdjacency(new int[][] {{expected[0], expected[1]}}), 0, 1), 4)
 		{
 			@Override
 			public SplitFlagMap.RegionExtent regionExtent()
@@ -155,8 +156,10 @@ public class RoutingStaticBuilderTest
 	{
 		int a = tile(191, 256), b = tile(192, 256);
 		int upper = WorldPointUtil.packWorldPoint(128, 320, 3);
-		SyntheticCollisionMap world = new SyntheticCollisionMap(Set.of(a, b, upper),
-			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{a, b}}), 4)
+		Set<Integer> tiles = Set.of(a, b, upper);
+		SyntheticCollisionMap world = new SyntheticCollisionMap(tiles,
+			SyntheticCollisionMap.withStubEdges(tiles, SyntheticCollisionMap.symmetricAdjacency(new int[][] {{a, b}}),
+				0, 1), 4)
 		{
 			@Override
 			public SplitFlagMap.RegionExtent regionExtent()
@@ -190,7 +193,9 @@ public class RoutingStaticBuilderTest
 	{
 		int top = WorldPointUtil.packWorldPoint(10, 32767, 0);
 		int bottom = WorldPointUtil.packWorldPoint(10, 0, 1);
-		SyntheticCollisionMap world = new SyntheticCollisionMap(Set.of(top, bottom), Map.of(), 2)
+		Set<Integer> tiles = Set.of(top, bottom);
+		SyntheticCollisionMap world = new SyntheticCollisionMap(tiles,
+			SyntheticCollisionMap.withStubEdges(tiles, Map.of(), 1, 0), 2)
 		{
 			@Override
 			public SplitFlagMap.RegionExtent regionExtent()
@@ -317,7 +322,8 @@ public class RoutingStaticBuilderTest
 		int x1 = tile(30, 10);
 		int y1 = tile(40, 10);
 		Set<Integer> walkable = Set.of(x1, y1);
-		SyntheticCollisionMap world = new SyntheticCollisionMap(walkable, Map.of(), 1);
+		SyntheticCollisionMap world = new SyntheticCollisionMap(walkable,
+			SyntheticCollisionMap.withStubEdges(walkable, Map.of(), 0, 1), 1);
 		Map<Integer, Set<Transport>> transports = transports(transport(x1, y1, TransportType.TRANSPORT));
 
 		RoutingStaticBuilder.Result result =
@@ -357,8 +363,8 @@ public class RoutingStaticBuilderTest
 		RoutingStaticBuilder.Result result =
 			RoutingStaticBuilder.build(seasonalWorld(), transports(SEASONAL), Set.of(), new int[0], A1);
 
-		assertEquals(2, result.diagnostics.naturalComponentCount);
-		assertEquals(5, result.diagnostics.walkableTileCount);
+		assertEquals(3, result.diagnostics.naturalComponentCount);
+		assertEquals(7, result.diagnostics.walkableTileCount);
 		assertEquals(2, result.diagnostics.reachableNaturalComponentCount);
 		for (int tile : new int[] {A1, A2, B1, B2, B3})
 			assertTrue(result.routingStatic.searchIndex(tile) >= 0);
@@ -483,13 +489,13 @@ public class RoutingStaticBuilderTest
 	}
 
 	@Test
-	public void discoverySkipsDisconnectedSpaceBeforeAllocatingTileArrays() throws Exception
+	public void unreachableIslandsStayOutOfTheSearchTiles() throws Exception
 	{
 		RoutingStaticBuilder.Result result = RoutingStaticBuilder.build(seasonalWorld(), Map.of(),
 			Set.of(C1), new int[0], A1);
 
-		assertEquals(2, result.diagnostics.walkableTileCount);
-		assertEquals(1, result.diagnostics.naturalComponentCount);
+		assertEquals(7, result.diagnostics.walkableTileCount);
+		assertEquals(3, result.diagnostics.naturalComponentCount);
 		assertEquals(2, result.routingStatic.searchTileCount());
 		assertEquals(0, result.routingStatic.reachableBankCount());
 		assertEquals(-1, result.routingStatic.searchIndex(B1));
@@ -497,7 +503,7 @@ public class RoutingStaticBuilderTest
 	}
 
 	@Test
-	public void discoveryKeepsBlockedEndpointsAndGlobalTeleports() throws Exception
+	public void blockedEndpointsAndGlobalTeleportsAttachTheirIslands() throws Exception
 	{
 		int blocked = tile(39, 20);
 		Map<Integer, int[]> adjacency = SyntheticCollisionMap.symmetricAdjacency(
@@ -516,7 +522,7 @@ public class RoutingStaticBuilderTest
 	}
 
 	@Test
-	public void discoveryKeepsUnreachableOriginsButDoesNotMakeThemReachable() throws Exception
+	public void unreachableOriginsKeepTheirIdsButStayUnreachable() throws Exception
 	{
 		RoutingStaticBuilder.Result result = RoutingStaticBuilder.build(seasonalWorld(),
 			transports(transport(B1, C1, TransportType.SEASONAL_TRANSPORTS)), Set.of(), new int[0], A1);
@@ -530,12 +536,12 @@ public class RoutingStaticBuilderTest
 	}
 
 	@Test
-	public void discoveryPreservesCutsOnUnreachableLand() throws Exception
+	public void cutsOnUnreachableLandKeepTheirCrossing() throws Exception
 	{
 		RoutingStaticBuilder.Result result = RoutingStaticBuilder.build(seasonalWorld(), Map.of(), Set.of(),
 			cuts(pair(C1, C2)), A1);
 
-		assertEquals(4, result.diagnostics.walkableTileCount);
+		assertEquals(7, result.diagnostics.walkableTileCount);
 		assertEquals(1, result.diagnostics.crossingCount);
 		assertEquals(2, result.routingStatic.searchTileCount());
 		assertEquals(-1, result.routingStatic.searchIndex(C1));
