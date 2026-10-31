@@ -6367,3 +6367,7 @@
 # The Great Conch, Gryphon cave (north-western cave)									
 3122 2490 0	3125 8880 0	Enter Cave entrance 57908						2	
 3125 8880 0	3122 2490 0	Exit Cave exit 57909						2	
+									
+# Morytania Spider Cave									
+3657 3407 0	3679 9797 0	Enter Cave 42594						2	
+3679 9797 0	3658 3407 0	Exit Cave 42595						2	
