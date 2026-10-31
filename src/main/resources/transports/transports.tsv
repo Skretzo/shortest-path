@@ -5404,8 +5404,8 @@
 2772 9341 0	2781 2934 0	Walk through Cave entrance 2904						1	
 									
 # Ice Queen's lair - Rock formations									
-2840 3516 0	2836 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
-2839 3516 0	2836 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
+2840 3516 0	2837 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
+2839 3516 0	2837 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
 2837 3517 0	2840 3516 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
 2837 3518 0	2840 3517 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
 2840 3517 0	2837 3518 0	Mine Rock slide 2634	50 Mining	PICKAXE=1				10	
