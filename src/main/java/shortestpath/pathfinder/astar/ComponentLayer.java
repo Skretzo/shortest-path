@@ -2,6 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -48,38 +49,60 @@ final class ComponentLayer
 	{
 		if (stream == null) throw new IOException("missing " + RESOURCE);
 		ByteBuffer in = ByteBuffer.wrap(Util.readAllBytes(stream));
-		byte[] magic = new byte[MAGIC.length];
-		if (in.remaining() < magic.length) throw new IOException("truncated " + RESOURCE);
-		in.get(magic);
-		if (!Arrays.equals(magic, MAGIC)) throw new IOException("wrong magic in " + RESOURCE);
-		int version = varint(in);
-		if (version != VERSION) throw new IOException("unsupported version " + version + " of " + RESOURCE);
-		int runs = varint(in);
-		int crossings = varint(in);
-		if (runs < 0 || runs > in.remaining() || crossings < 0 || (long) crossings * 4 > in.remaining())
-			throw new IOException("bad counts in " + RESOURCE);
-		ComponentLayer layer = new ComponentLayer(new int[runs], new char[runs], new int[runs], new int[crossings]);
-		for (int i = 0; i < runs; i++)
-			layer.lengths[i] = (char) (varint(in) + 1);
-		for (int i = 0, end = 0; i < runs; i++)
-			end = (layer.starts[i] = end + varint(in)) + layer.lengths[i];
-		for (int i = 0; i < runs; i++)
-			layer.ids[i] = varint(in);
-		for (int i = 0; i < crossings; i++)
-			layer.crossings[i] = in.getInt();
-		if (in.hasRemaining()) throw new IOException("trailing bytes in " + RESOURCE);
-		return layer;
+		try
+		{
+			byte[] magic = new byte[MAGIC.length];
+			in.get(magic);
+			if (!Arrays.equals(magic, MAGIC)) throw new IOException("wrong magic in " + RESOURCE);
+			int version = varint(in);
+			if (version != VERSION) throw new IOException("unsupported version " + version + " of " + RESOURCE);
+			int runs = varint(in);
+			int crossings = varint(in);
+			// Every count is checked against the bytes left before anything is sized from it.
+			if (runs < 0 || runs > in.remaining() / 3 || crossings < 0 || (crossings & 1) != 0
+				|| (long) crossings * 4 > in.remaining())
+				throw new IOException("bad counts in " + RESOURCE);
+			ComponentLayer layer = new ComponentLayer(new int[runs], new char[runs], new int[runs], new int[crossings]);
+			for (int i = 0; i < runs; i++)
+			{
+				int length = varint(in) + 1;
+				if (length < 1 || length > Character.MAX_VALUE) throw new IOException("bad run length in " + RESOURCE);
+				layer.lengths[i] = (char) length;
+			}
+			long end = 0;
+			for (int i = 0; i < runs; i++)
+			{
+				long start = end + Integer.toUnsignedLong(varint(in));
+				end = start + layer.lengths[i];
+				if (end > 1L << 32) throw new IOException("run " + i + " leaves the tile range of " + RESOURCE);
+				layer.starts[i] = (int) start;
+			}
+			for (int i = 0; i < runs; i++)
+			{
+				layer.ids[i] = varint(in);
+				if (layer.ids[i] < 1 || layer.ids[i] > runs) throw new IOException("bad component id in " + RESOURCE);
+			}
+			for (int i = 0; i < crossings; i++)
+				layer.crossings[i] = in.getInt();
+			if (in.hasRemaining()) throw new IOException("trailing bytes in " + RESOURCE);
+			return layer;
+		}
+		catch (BufferUnderflowException error)
+		{
+			throw new IOException("truncated " + RESOURCE, error);
+		}
 	}
 
-	private static int varint(ByteBuffer in)
+	private static int varint(ByteBuffer in) throws IOException
 	{
 		int value = 0;
-		for (int shift = 0; ; shift += 7)
+		for (int shift = 0; shift < 35; shift += 7)
 		{
 			byte next = in.get();
 			value |= (next & 0x7f) << shift;
 			if (next >= 0) return value;
 		}
+		throw new IOException("over-long varint in " + RESOURCE);
 	}
 
 	/** The routing component of a tile, or 0 when no run covers it. */
