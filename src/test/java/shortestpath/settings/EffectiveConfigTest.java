@@ -233,8 +233,8 @@ public class EffectiveConfigTest
 		EffectiveConfig effective = effectiveWith(Map.of(
 			"pohNexusPortals", Set.of(PohNexusPortal.FALADOR),
 			"pohMountedItems", Set.of(PohMountedItem.GLORY)));
-		assertEquals(base().pohNexusPortals(), effective.set(ConfigKey.POH_NEXUS_PORTALS));
-		assertEquals(base().pohMountedItems(), effective.set(ConfigKey.POH_MOUNTED_ITEMS));
+		assertEquals(base().pohNexusPortals(), effective.val(ConfigKey.POH_NEXUS_PORTALS));
+		assertEquals(base().pohMountedItems(), effective.val(ConfigKey.POH_MOUNTED_ITEMS));
 	}
 
 	@Test

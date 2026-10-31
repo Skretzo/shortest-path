@@ -22,7 +22,7 @@ import shortestpath.transport.BalloonRoute;
  * enums — a string {@code fromType} does not recognise.
  *
  * <p>Hidden keys (raw {@code ConfigManager} keys, no interface method) read
- * through the typed {@link #val}/{@link #bool}/{@link #num}/{@link #set}
+ * through the typed {@link #val}/{@link #bool}/{@link #num}
  * helpers: the base value comes from the injected
  * {@code hiddenBase} resolver, and keys with a coercion discipline consult
  * the override map the same way. Keys marked {@link ConfigKey.Coercion#NONE}
@@ -115,13 +115,6 @@ public final class EffectiveConfig implements ShortestPathConfig
 	{
 		Object value = val(key);
 		return value instanceof Number ? ((Number) value).intValue() : 0;
-	}
-
-	/** Effective value of a {@code Set}-typed key. */
-	@SuppressWarnings("unchecked")
-	public <E> Set<E> set(ConfigKey key)
-	{
-		return (Set<E>) val(key);
 	}
 
 	/** {@code showTileCounter} — string-parsed enum coercion. */
