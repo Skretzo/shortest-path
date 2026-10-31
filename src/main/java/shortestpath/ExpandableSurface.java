@@ -58,6 +58,16 @@ abstract class ExpandableSurface extends JPanel implements SearchExpandable
 		expander.setToolTipText("Expand");
 		SwingUtil.removeButtonDecorations(expander);
 		expander.addActionListener(e -> setDetailOpen(!isDetailOpen()));
+		// If the lock lands while the detail is open, collapse it so it cannot
+		// be stuck open behind a disabled chevron.
+		expander.addPropertyChangeListener("enabled", e ->
+		{
+			if (!expander.isEnabled() && detailOpen)
+			{
+				searchExpanded = false;
+				setDetailOpenInternal(false);
+			}
+		});
 		return expander;
 	}
 

@@ -2,6 +2,7 @@ package shortestpath.settings;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -149,6 +150,50 @@ public class EffectiveConfigTest
 	}
 
 	@Test
+	public void genericValHonoursStringEnumPayloadsLikeTheDedicatedGetters()
+	{
+		EffectiveConfig effective = effectiveWith(Map.of(
+			"pohJewelleryBoxTier", "Fancy",
+			"showTileCounter", "Remaining",
+			"pathStyle", "Lines",
+			"useTeleportationItems", "All"));
+		assertEquals(effective.pohJewelleryBoxTier(),
+			effective.<JewelleryBoxTier>val(ConfigKey.POH_JEWELLERY_BOX_TIER));
+		assertEquals(JewelleryBoxTier.FANCY,
+			effective.<JewelleryBoxTier>val(ConfigKey.POH_JEWELLERY_BOX_TIER));
+		assertEquals(effective.showTileCounter(),
+			effective.<TileCounter>val(ConfigKey.SHOW_TILE_COUNTER));
+		assertEquals(TileCounter.REMAINING,
+			effective.<TileCounter>val(ConfigKey.SHOW_TILE_COUNTER));
+		assertEquals(effective.pathStyle(), effective.<TileStyle>val(ConfigKey.PATH_STYLE));
+		assertEquals(TileStyle.LINES, effective.<TileStyle>val(ConfigKey.PATH_STYLE));
+		assertEquals(TeleportationItem.ALL,
+			effective.<TeleportationItem>val(ConfigKey.USE_TELEPORTATION_ITEMS));
+	}
+
+	@Test
+	public void genericValIgnoresUnrecognisedStringEnumPayloads()
+	{
+		EffectiveConfig effective = effectiveWith(Map.of(
+			"showTileCounter", "REMAINING",
+			"pathStyle", 7));
+		assertEquals(base().showTileCounter(),
+			effective.<TileCounter>val(ConfigKey.SHOW_TILE_COUNTER));
+		assertEquals(base().pathStyle(), effective.<TileStyle>val(ConfigKey.PATH_STYLE));
+	}
+
+	@Test
+	public void nullBaseNeverAdoptsAnArbitraryPayload()
+	{
+		// A keyed base that resolves to null must not let a wrong-typed
+		// payload through to be cast at the call site.
+		EffectiveConfig effective = new EffectiveConfig(base(),
+			Map.of("costNonConsumableTeleportationItems", "banana"), k -> null);
+		Object value = effective.val(ConfigKey.COST_NON_CONSUMABLE_TELEPORTATION_ITEMS);
+		assertNull(value);
+	}
+
+	@Test
 	public void colorOverrideApplies()
 	{
 		EffectiveConfig effective = effectiveWith(Map.of("colourText", Color.RED));
@@ -188,8 +233,8 @@ public class EffectiveConfigTest
 		EffectiveConfig effective = effectiveWith(Map.of(
 			"pohNexusPortals", Set.of(PohNexusPortal.FALADOR),
 			"pohMountedItems", Set.of(PohMountedItem.GLORY)));
-		assertEquals(base().pohNexusPortals(), effective.set(ConfigKey.POH_NEXUS_PORTALS));
-		assertEquals(base().pohMountedItems(), effective.set(ConfigKey.POH_MOUNTED_ITEMS));
+		assertEquals(base().pohNexusPortals(), effective.val(ConfigKey.POH_NEXUS_PORTALS));
+		assertEquals(base().pohMountedItems(), effective.val(ConfigKey.POH_MOUNTED_ITEMS));
 	}
 
 	@Test

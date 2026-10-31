@@ -298,7 +298,7 @@ public class ConfigKeyTest
 				0, read.getParameterCount());
 			assertTrue(row.getKey() + " read method returns a value",
 				read.getReturnType() != void.class);
-			row.getGetter().apply(config);
+			row.getConfiguredGetter().apply(config);
 		}
 	}
 

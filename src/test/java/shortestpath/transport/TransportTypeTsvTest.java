@@ -169,6 +169,17 @@ public class TransportTypeTsvTest
 	}
 
 	@Test
+	public void duplicateRowIsRejected()
+	{
+		IllegalStateException e = assertThrows(
+			"a repeated enum-name row must fail the load, not overwrite",
+			IllegalStateException.class,
+			() -> TransportType.loadRows("/transport-types-dup-row.tsv"));
+		assertTrue("must be the duplicate check, not the arity check: " + e.getCause(),
+			e.getCause().getMessage().startsWith("duplicate transport-types.tsv row"));
+	}
+
+	@Test
 	public void missingResourceIsRejected()
 	{
 		assertThrows("a missing resource must fail the load",

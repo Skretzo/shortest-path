@@ -164,18 +164,13 @@ public enum ConfigKey
 	BLOCKED_TELEPORT_ITEMS,
 	UNLOCK_BALLOON_LOG_BASKET,
 	BALLOON_LOG_BASKET_ROUTES;
-	;
 
 	private static final Map<String, ConfigKey> BY_KEY;
 
 	static
 	{
-		Map<String, ConfigKey> byKey = new HashMap<>();
-		for (ConfigKey row : values())
-		{
-			byKey.put(row.getKey(), row);
-		}
-		BY_KEY = Map.copyOf(byKey);
+		BY_KEY = indexByKey(values());
+		validateFlagTargets(BY_KEY, Rows.BY_NAME.values());
 		// The ctor fails loudly on a constant with no TSV row or getter
 		// binding; these passes fail loudly on a TSV row or binding that
 		// names no constant.
@@ -186,6 +181,48 @@ public enum ConfigKey
 		for (String name : VisibleGetters.BY_NAME.keySet())
 		{
 			valueOf(name);
+		}
+	}
+
+	/**
+	 * Index rows by persisted key name, failing loudly if two rows share a
+	 * key — a duplicate would silently shadow one row in {@link #forKey}.
+	 */
+	static Map<String, ConfigKey> indexByKey(ConfigKey[] rows)
+	{
+		Map<String, ConfigKey> byKey = new HashMap<>();
+		for (ConfigKey row : rows)
+		{
+			ConfigKey prior = byKey.put(row.getKey(), row);
+			if (prior != null)
+			{
+				throw new IllegalStateException("duplicate config key '" + row.getKey()
+					+ "' on " + prior.name() + " and " + row.name());
+			}
+		}
+		return Map.copyOf(byKey);
+	}
+
+	/**
+	 * Fail loudly if a {@code flag:<key>} default token names no persisted
+	 * boolean key — the flag is otherwise only resolved lazily at first
+	 * read, so a typo would surface as an NPE mid-refresh.
+	 */
+	static void validateFlagTargets(Map<String, ConfigKey> byKey, Iterable<String[]> rows)
+	{
+		for (String[] cols : rows)
+		{
+			if (!cols[4].startsWith("flag:"))
+			{
+				continue;
+			}
+			String flagKey = cols[4].substring("flag:".length());
+			ConfigKey target = byKey.get(flagKey);
+			if (target == null || target.getType() != boolean.class)
+			{
+				throw new IllegalStateException("flag-derived def '" + cols[4] + "' for " + cols[0]
+					+ " names no persisted boolean key");
+			}
 		}
 	}
 
@@ -226,9 +263,7 @@ public enum ConfigKey
 	 * {@link #baseRow()} call time.
 	 */
 	private final String baseKey;
-	/** The config getter a visible key's value pairs with (hidden: null). */
-	private final Function<ShortestPathConfig, Object> getter;
-	/** The config getter a visible key's stored read invokes (hidden: null). */
+	/** The config getter a visible key's value pairs with and its stored read invokes (hidden: null). */
 	private final Function<ShortestPathConfig, Object> configuredGetter;
 	private final Coercion coercion;
 	/** The effects a change to this key triggers for the shell. */
@@ -264,12 +299,10 @@ public enum ConfigKey
 			{
 				throw new IllegalStateException("no VisibleGetters binding for visible key " + name());
 			}
-			this.getter = bound;
 			this.configuredGetter = bound;
 		}
 		else
 		{
-			this.getter = null;
 			this.configuredGetter = null;
 		}
 	}
@@ -408,7 +441,10 @@ public enum ConfigKey
 				{
 					throw new IllegalStateException("malformed config-keys.tsv row: " + line);
 				}
-				rows.put(cols[0], cols);
+				if (rows.put(cols[0], cols) != null)
+				{
+					throw new IllegalStateException("duplicate config-keys.tsv row: " + cols[0]);
+				}
 			});
 		}
 		catch (Exception e)

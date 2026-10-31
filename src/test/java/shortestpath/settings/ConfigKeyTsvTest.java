@@ -152,7 +152,7 @@ public class ConfigKeyTsvTest
 	/**
 	 * Every visible row binds a {@link VisibleGetters} entry; the map
 	 * carries no binding for a hidden or non-existent row, and the bound
-	 * function is the getter the row reports on both read paths.
+	 * function is the getter the row reports.
 	 */
 	@Test
 	public void visibleRowsBindThroughVisibleGetters()
@@ -165,7 +165,6 @@ public class ConfigKeyTsvTest
 			}
 			var bound = VisibleGetters.BY_NAME.get(row.name());
 			assertNotNull(row.name() + " has no VisibleGetters binding", bound);
-			assertSame(row.name() + " getter is the bound function", bound, row.getGetter());
 			assertSame(row.name() + " configured getter is the bound function",
 				bound, row.getConfiguredGetter());
 		}
@@ -182,6 +181,47 @@ public class ConfigKeyTsvTest
 		assertThrows("a row with the wrong column count must fail the load",
 			IllegalStateException.class,
 			() -> ConfigKey.loadRows("/config-keys-bad-arity.tsv"));
+	}
+
+	@Test
+	public void duplicateRowIsRejected()
+	{
+		IllegalStateException e = assertThrows(
+			"a repeated enum-name row must fail the load, not overwrite",
+			IllegalStateException.class,
+			() -> ConfigKey.loadRows("/config-keys-dup-row.tsv"));
+		assertTrue("must be the duplicate check, not the arity check: " + e.getCause(),
+			e.getCause().getMessage().startsWith("duplicate config-keys.tsv row"));
+	}
+
+	@Test
+	public void duplicatePersistedKeyIsRejected()
+	{
+		ConfigKey[] shadowing = {ConfigKey.AVOID_WILDERNESS, ConfigKey.AVOID_WILDERNESS};
+		assertThrows("two rows sharing one persisted key must fail the index",
+			IllegalStateException.class,
+			() -> ConfigKey.indexByKey(shadowing));
+		// the shipped rows index cleanly and every key round-trips
+		Map<String, ConfigKey> index = ConfigKey.indexByKey(ConfigKey.values());
+		assertEquals(ConfigKey.values().length, index.size());
+	}
+
+	@Test
+	public void badFlagTargetIsRejectedAtLoad()
+	{
+		Map<String, ConfigKey> index = ConfigKey.indexByKey(ConfigKey.values());
+		String[] typo = {"POH_MOUNTED_ITEMS", "pohMountedItems", "Set", "PohMountedItem",
+			"flag:usePohMountedItem", "", "NONE", "ROUTE_INVALIDATING"};
+		assertThrows("an unknown flag key must fail validation, not NPE at first read",
+			IllegalStateException.class,
+			() -> ConfigKey.validateFlagTargets(index, java.util.List.<String[]>of(typo)));
+		String[] nonBoolean = {"POH_MOUNTED_ITEMS", "pohMountedItems", "Set", "PohMountedItem",
+			"flag:pohNexusPortals", "", "NONE", "ROUTE_INVALIDATING"};
+		assertThrows("a non-boolean flag target must fail validation",
+			IllegalStateException.class,
+			() -> ConfigKey.validateFlagTargets(index, java.util.List.<String[]>of(nonBoolean)));
+		// the shipped rows validate cleanly
+		ConfigKey.validateFlagTargets(index, rows().values());
 	}
 
 	@Test
