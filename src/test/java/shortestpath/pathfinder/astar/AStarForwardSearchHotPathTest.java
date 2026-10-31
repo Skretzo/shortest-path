@@ -120,8 +120,9 @@ public class AStarForwardSearchHotPathTest
 			WorldPointUtil.packWorldPoint(10, 9, 0), WorldPointUtil.packWorldPoint(10, 11, 0)};
 		for (int origin : origins)
 		{
-			SyntheticCollisionMap collision = new SyntheticCollisionMap(Set.of(start, destination),
-				Map.of(origin, new int[] {start}), 1);
+			Set<Integer> walkable = Set.of(start, destination);
+			SyntheticCollisionMap collision = new SyntheticCollisionMap(walkable,
+				SyntheticCollisionMap.withStubEdges(walkable, Map.of(origin, new int[] {start}), 0, 1), 1);
 			Transport transport = local(origin, destination, 3);
 			RoutingStatic stat = RoutingStaticBuilder.build(collision, Map.of(origin, Set.of(transport)),
 				Set.of(), new int[0], start).routingStatic;
