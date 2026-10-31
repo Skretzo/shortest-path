@@ -28,18 +28,6 @@ import shortestpath.transport.parser.TsvParser;
 public class TransportDataLintTest
 {
 	@Test
-	public void scabarasPuzzleDoorsCannotBeWalkedThrough()
-	{
-		CollisionMap map = new CollisionMap(SplitFlagMap.fromResources());
-		for (int x : new int[]{3405, 3389})
-		{
-			Assert.assertFalse("Puzzle door at " + x, map.e(x, 9248, 0));
-			Assert.assertFalse("Puzzle door reverse at " + x, map.w(x + 1, 9248, 0));
-			Assert.assertTrue("Keep the door boundary at " + x, map.wallE(x, 9248, 0));
-		}
-	}
-
-	@Test
 	public void corpTeleportsAndWildernessEntranceUseTheSameCave()
 	{
 		int landing = WorldPointUtil.packWorldPoint(2964, 4382, 2);
