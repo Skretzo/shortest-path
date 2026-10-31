@@ -83,5 +83,6 @@ unreachableText		Text shown on the player tile when the destination cannot be re
 builtTeleportationBoxes		ID=X Y Z;ID=X Y Z;ID=X Y Z		
 builtTeleportationPortalsPoh		ID=X Y Z;ID=X Y Z;ID=X Y Z		
 blockedTeleportItems	Blocked Teleport Items	Internal: comma-separated restricted teleport item ids and per-item threshold overrides (id or id:tiles). Managed by the Shortest Path sidebar.		
+restrictionsOwnedOnly	Owned Filter	Only show teleports for items in your inventory, equipment or bank		
 unlockBalloonLogBasket	Balloon Log Basket Stocked	Enable if you have stored logs in the balloon transport baskets.<br>The game does not expose the stored logs to the client,<br>so the plugin cannot detect them automatically.<br>Enabling this declares the unlock without verification		
 balloonLogBasketRoutes	Balloon Log Basket Routes	The balloon routes whose destination basket is stocked with logs.<br>The game does not expose the stored logs to the client,<br>so the plugin cannot detect them automatically.<br>Managed by the Shortest Path sidebar; defaults to every route<br>when the legacy basket toggle is set, and to none otherwise		

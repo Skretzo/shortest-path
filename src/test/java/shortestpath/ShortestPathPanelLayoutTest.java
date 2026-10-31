@@ -107,10 +107,18 @@ public class ShortestPathPanelLayoutTest
 
 	private ShortestPathPanel newPanel(ItemStateService itemState)
 	{
+		return newPanel(itemState, saved ->
+		{
+		});
+	}
+
+	private ShortestPathPanel newPanel(ItemStateService itemState, Consumer<TestShortestPathConfig> savedSettings)
+	{
 		iconRequests.clear();
 		spriteRequests.clear();
 		postedEvents.clear();
 		config = new TestShortestPathConfig();
+		savedSettings.accept(config);
 		// A mocked ConfigManager routes Settings.write back into the stub
 		// config, so panel-side writes (restriction toggles) round-trip the
 		// way production's real manager does — including the synchronous
@@ -130,6 +138,10 @@ public class ShortestPathPanelLayoutTest
 				@SuppressWarnings("unchecked")
 				Set<BalloonRoute> routes = (Set<BalloonRoute>) value;
 				config.setBalloonLogBasketRoutesValue(routes);
+			}
+			else if ("restrictionsOwnedOnly".equals(i.getArgument(1)))
+			{
+				config.set("restrictionsOwnedOnly", i.getArgument(2));
 			}
 			else if ("pohNexusPortals".equals(i.getArgument(1)))
 			{
@@ -829,6 +841,38 @@ public class ShortestPathPanelLayoutTest
 		assertFalse("the Owned filter stays pinned on the header",
 			SwingUtilities.isDescendingFrom(owned,
 				scroll.getViewport().getView()));
+	}
+
+	@Test
+	public void ownedFilterComesBackFromTheSavedSetting()
+	{
+		newPanel(ItemStateService.forTesting(), saved -> saved.set("restrictionsOwnedOnly", true));
+		assertTrue("Owned stays on after a restart", ownedCheckbox().isSelected());
+	}
+
+	@Test
+	public void clickingOwnedSavesTheFilter()
+	{
+		newPanel();
+		JCheckBox owned = ownedCheckbox();
+		assertFalse(owned.isSelected());
+
+		owned.doClick();
+		assertTrue(owned.isSelected());
+		assertTrue(settings.configuredBool("restrictionsOwnedOnly"));
+
+		owned.doClick();
+		assertFalse(owned.isSelected());
+		assertFalse(settings.configuredBool("restrictionsOwnedOnly"));
+	}
+
+	private JCheckBox ownedCheckbox()
+	{
+		CategoryPanel restrictions = panel.categories().stream()
+			.filter(category -> "Teleport Restrictions".equals(category.categoryName()))
+			.findFirst().orElseThrow();
+		Container header = headerOf(restrictions);
+		return (JCheckBox) ((BorderLayout) header.getLayout()).getLayoutComponent(BorderLayout.EAST);
 	}
 
 
