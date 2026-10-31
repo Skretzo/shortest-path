@@ -1,24 +1,29 @@
 package shortestpath.pathfinder.astar;
 
 import shortestpath.WorldPointUtil;
+import shortestpath.poh.PohService;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
 /**
  * Which global teleports the A* backend lets the player cast from a tile, by the tile's
- * wilderness band. These are legacy's global-teleport abstract nodes ({@code AbstractNodeKind}):
+ * wilderness band. These are legacy's global-teleport abstract nodes ({@code AbstractNodeKind}),
+ * plus the player-owned house:
  *
  * <pre>
  * OVER_30  level 31+     cast level 31  GLOBAL_TELEPORTS_OVER_30
  * OVER_20  levels 21-30  cast level 30  GLOBAL_TELEPORTS_OVER_20
  * OVER_0   levels 1-20   cast level 20  GLOBAL_TELEPORTS_OVER_0
+ * POH      in the house  cast level 0, no minigame teleports
  * ALL      level 0       cast level 0   GLOBAL_TELEPORTS_NORMAL
  * </pre>
  *
  * A global is castable with a capability when {@link Transport#isUsableAtWildernessLevel} allows
- * the capability's cast level, as in legacy. Cast levels only fall from {@code OVER_30} to
- * {@code ALL}, so each capability can cast everything the one before it can.
+ * the capability's cast level, as in legacy. Grouping (minigame) teleports cannot be cast from
+ * inside the house (https://oldschool.runescape.wiki/w/Grouping), and none is usable in the
+ * wilderness, so each capability can still cast everything the one before it can.
  *
  * <p>The bands are {@code WildernessChecker}'s level-30, level-20 and wilderness areas (checked by
  * {@code TeleportCapabilityTest}), on every plane, inlined here because the forward search asks
@@ -26,7 +31,7 @@ import lombok.experimental.Accessors;
  */
 public enum TeleportCapability
 {
-	OVER_30(31), OVER_20(30), OVER_0(20), ALL(0);
+	OVER_30(31), OVER_20(30), OVER_0(20), POH(0), ALL(0);
 
 	@Getter @Accessors(fluent = true) private final int castLevel;
 
@@ -41,13 +46,14 @@ public enum TeleportCapability
 	/** Whether {@code transport} can be cast as a global teleport in this band. */
 	public boolean canCast(Transport transport)
 	{
-		return transport.isUsableAtWildernessLevel(castLevel);
+		return transport.isUsableAtWildernessLevel(castLevel)
+			&& !(this == POH && transport.getType() == TransportType.TELEPORTATION_MINIGAME);
 	}
 
 	/** Whether a tile with this capability may cast everything {@code required} can. */
 	boolean allows(TeleportCapability required)
 	{
-		return castLevel <= required.castLevel;
+		return ordinal() >= required.ordinal();
 	}
 
 	// {left, bottom, width, height}: above ground, then underground.
@@ -58,6 +64,8 @@ public enum TeleportCapability
 	static final int[][] NOT_WILDERNESS = {{3123, 3622, 2, 10}, {3125, 3617, 16, 23}, {3138, 3636, 18, 10},
 		{3141, 3625, 14, 11}, {3141, 3619, 7, 6}, {2997, 3525, 34, 9}, {3005, 3534, 21, 10}, {3000, 3534, 5, 5},
 		{3031, 3525, 2, 2}};
+	/** {@link PohService#isInsidePoh}'s bounds, on every plane. */
+	static final int[] HOUSE = {1856, 7040, 192, 72};
 
 	public static TeleportCapability at(int tile)
 	{
@@ -67,7 +75,7 @@ public enum TeleportCapability
 	static TeleportCapability at(int x, int y)
 	{
 		// Unrolled WILDERNESS, ABOVE_LEVEL_30 and ABOVE_LEVEL_20.
-		if (x < 2944 || x >= 3462 || y < 3525) return ALL;
+		if (x < 2944 || x >= 3462 || y < 3525) return PohService.isInsidePoh(x, y) ? POH : ALL;
 		if (y >= 9918)
 		{
 			if (y >= 10376) return ALL;
@@ -91,6 +99,8 @@ public enum TeleportCapability
 				return ABOVE_LEVEL_30;
 			case OVER_0:
 				return EXCLUDED_FROM_OVER_0;
+			case POH:
+				return EXCLUDED_FROM_POH;
 			case ALL:
 			default:
 				return EXCLUDED_FROM_ALL;
@@ -100,14 +110,16 @@ public enum TeleportCapability
 	/** Areas inside {@link #excludedAreas()} that still allow this capability. */
 	int[][] holes()
 	{
-		return this == ALL ? NOT_WILDERNESS : new int[0][];
+		return this == POH || this == ALL ? NOT_WILDERNESS : new int[0][];
 	}
 
 	// The level-30 area reaches further north than the level-20 and wilderness ones, so all are excluded.
 	private static final int[][] EXCLUDED_FROM_OVER_0 = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
 		ABOVE_LEVEL_20[1]};
-	private static final int[][] EXCLUDED_FROM_ALL = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
+	private static final int[][] EXCLUDED_FROM_POH = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
 		ABOVE_LEVEL_20[1], WILDERNESS[0], WILDERNESS[1]};
+	private static final int[][] EXCLUDED_FROM_ALL = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
+		ABOVE_LEVEL_20[1], WILDERNESS[0], WILDERNESS[1], HOUSE};
 
 	static boolean inAny(int[][] areas, int x, int y)
 	{
