@@ -1,11 +1,9 @@
 package shortestpath.pathfinder.astar;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,57 +21,43 @@ import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
 /**
- * Derives the A* backend's {@link RoutingStatic} from the {@link CollisionMap}, the raw
- * (account-independent) transports and global teleports, the bank list, and separator cut edges.
+ * Generates the routing component layer ({@link ComponentLayer}) offline and composes it with
+ * {@link RoutingStaticLoader}, so tests and tooling derive a {@link RoutingStatic} exactly the way
+ * the plugin does from the bundled layer.
  *
+ * <p>The layer is derived from the {@link CollisionMap} and the separator cut edges:
  * <ol>
- *   <li>Candidate tiles: follow walking edges from the seed and every transport and cut endpoint,
- *       keeping disconnected space out of the per-tile arrays.</li>
- *   <li>Natural components: flood fill over ordinary walking edges among candidate tiles.</li>
- *   <li>Structural reachability: natural components reachable from Lumbridge through any
- *       transport or global teleport of any type, seasonal included, regardless of requirements.</li>
- *   <li>Routing components: the same flood fill, not crossing cut edges. Cuts that are no longer
- *       walking edges are ignored; cuts that no longer separate two routing components are
- *       dropped. Cuts therefore only affect performance, never routes.</li>
- *   <li>Search tiles: every tile of a reachable natural component, with its walking mask,
- *       routing component and north/south neighbour indexes.</li>
- *   <li>Sites (transport endpoints, crossing endpoints and reachable banks), their component
- *       attachments in both directions, and separator crossings.</li>
- *   <li>The sparse walking network over the sites ({@link SparseWalkingNetworkBuilder}).</li>
+ *   <li>Every walkable tile is enumerated in ascending unsigned packed order.</li>
+ *   <li>Cuts that are no longer walking edges are ignored and duplicates dropped.</li>
+ *   <li>Routing components: a flood fill over ordinary walking edges that does not cross a valid
+ *       cut. Cuts that no longer separate two routing components are dropped; the rest become
+ *       crossings. Cuts therefore only affect performance, never routes.</li>
+ *   <li>The component ids are stored as runs of consecutive tiles, with the crossings.</li>
  * </ol>
+ *
+ * <p>{@link #build(CollisionMap, Map, Set, int[], int)} then hands that layer, the raw
+ * (account-independent) transports of every {@link TransportType}, and the bank list to
+ * {@link RoutingStaticLoader}.
  */
 public final class RoutingStaticBuilder
 {
-	/** Structural-reachability seed tile (Lumbridge). */
-	private static final int SEED_TILE = WorldPointUtil.packWorldPoint(3221, 3218, 0);
-	/** One full {@code y} unit in the packed encoding (bit 15). */
-	private static final int Y_UNIT = 1 << 15;
 	private static final int REGION_SIZE = 64;
 
 	private RoutingStaticBuilder()
 	{
 	}
 
-	/** Per-step timings and derivation counts, for the plugin's build diagnostics. */
+	/** Derivation counts of one build, for the cut report and the tests. */
 	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Diagnostics
 	{
-		public final long enumerateWalkableNanos;
-		public final long naturalComponentsNanos;
-		public final long cutValidationNanos;
-		public final long routingComponentsNanos;
-		public final long reachabilityNanos;
-		public final long searchTilesNanos;
-		public final long sitesAndAttachmentsNanos;
-		public final long exactWalksNanos;
-		public final long sparseNetworkNanos;
-		public final long validateNanos;
 		public final long totalNanos;
 
-		/** Tiles considered after removing land with no seed, transport endpoint or cut endpoint. */
+		/** Every walkable tile of the collision map. */
 		public final int walkableTileCount;
 		public final int naturalComponentCount;
 		public final int routingComponentCount;
+		/** The most search tiles in one routing component. */
 		public final int largestRoutingComponentSize;
 		public final int reachableNaturalComponentCount;
 
@@ -85,25 +69,14 @@ public final class RoutingStaticBuilder
 
 		public final int searchTileCount;
 		public final int siteCount;
-		public final int reachableBankCount;
-		/** Components whose sites the network joins by exact walks, and the edges it keeps for them. */
+		/** Components whose sites the network joins by exact walks. */
 		public final int exactComponentCount;
-		public final int exactEdgeCount;
 
 		@Override
 		public String toString()
 		{
 			return "RoutingStaticBuilder.Diagnostics{"
-				+ "totalMs=" + (totalNanos / 1_000_000) + ", enumerateWalkableMs=" + (enumerateWalkableNanos / 1_000_000)
-				+ ", naturalComponentsMs=" + (naturalComponentsNanos / 1_000_000)
-				+ ", cutValidationMs=" + (cutValidationNanos / 1_000_000)
-				+ ", routingComponentsMs=" + (routingComponentsNanos / 1_000_000)
-				+ ", reachabilityMs=" + (reachabilityNanos / 1_000_000)
-				+ ", searchTilesMs=" + (searchTilesNanos / 1_000_000)
-				+ ", sitesAndAttachmentsMs=" + (sitesAndAttachmentsNanos / 1_000_000)
-				+ ", exactWalksMs=" + (exactWalksNanos / 1_000_000)
-				+ ", sparseNetworkMs=" + (sparseNetworkNanos / 1_000_000)
-				+ ", validateMs=" + (validateNanos / 1_000_000)
+				+ "totalMs=" + (totalNanos / 1_000_000)
 				+ ", walkableTileCount=" + walkableTileCount + ", naturalComponentCount=" + naturalComponentCount
 				+ ", routingComponentCount=" + routingComponentCount
 				+ ", largestRoutingComponentSize=" + largestRoutingComponentSize
@@ -111,8 +84,7 @@ public final class RoutingStaticBuilder
 				+ ", inputCutCount=" + inputCutCount + ", duplicateCutCount=" + duplicateCutCount
 				+ ", invalidCutCount=" + invalidCutCount + ", nonSeparatingCutCount=" + nonSeparatingCutCount
 				+ ", crossingCount=" + crossingCount + ", searchTileCount=" + searchTileCount
-				+ ", siteCount=" + siteCount + ", reachableBankCount=" + reachableBankCount
-				+ ", exactComponentCount=" + exactComponentCount + ", exactEdgeCount=" + exactEdgeCount + "}";
+				+ ", siteCount=" + siteCount + ", exactComponentCount=" + exactComponentCount + "}";
 		}
 	}
 
@@ -125,7 +97,8 @@ public final class RoutingStaticBuilder
 	}
 
 	/**
-	 * Builds the derived {@link RoutingStatic}.
+	 * Builds the derived {@link RoutingStatic}: generates the layer from the collision map and the
+	 * cuts, then loads it with {@link RoutingStaticLoader}.
 	 *
 	 * @param collision      authoritative walking-neighbour source.
 	 * @param rawTransports  the plugin's raw, unfiltered, account-independent transports, keyed by
@@ -141,118 +114,53 @@ public final class RoutingStaticBuilder
 	public static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles, int[] cuts) throws IOException
 	{
-		return build(collision, rawTransports, bankTiles, cuts, SEED_TILE);
+		return build(collision, rawTransports, bankTiles, cuts, RoutingStaticLoader.SEED_TILE);
 	}
 
 	/**
 	 * Same as {@link #build(CollisionMap, Map, Set, int[])}, but with an overridable structural
-	 * reachability seed tile. Production callers must use the four-argument overload (the
-	 * production seed policy is not configurable); this overload exists so synthetic-world unit
-	 * tests can exercise structural reachability without embedding the real seed tile
-	 * {@code (3221, 3218, 0)} in every tiny test world.
+	 * reachability seed tile. Production callers use the loader with its fixed seed; this overload
+	 * lets synthetic-world unit tests exercise structural reachability without embedding the real
+	 * seed tile {@code (3221, 3218, 0)} in every tiny test world.
 	 */
 	public static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles, int[] cuts, int seedTile) throws IOException
 	{
-		long totalStarted = System.nanoTime();
-
-		long stepStarted = System.nanoTime();
-		TileSelection selected = discoverCandidateTiles(collision, rawTransports, cuts, seedTile);
-		WalkableTiles walkable = enumerateWalkableTiles(collision, selected);
-		selected = null;
-		int walkableTileCount = walkable.tiles.length;
-		long enumerateWalkableNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		int[] componentIds = new int[walkable.tiles.length];
-		int naturalComponentCount = floodFillComponents(walkable, null, componentIds);
-		long naturalComponentsNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
+		long started = System.nanoTime();
+		WalkableTiles walkable = enumerateWalkableTiles(collision);
 		CutSet cutSet = validateCuts(cuts, walkable);
-		long cutValidationNanos = System.nanoTime() - stepStarted;
+		int[] componentIds = new int[walkable.tiles.length];
+		floodFillComponents(walkable, cutSet.blocked, componentIds);
+		ComponentLayer layer = formLayer(walkable, componentIds, cutSet.valid);
 
-		stepStarted = System.nanoTime();
-		boolean[] reachableNatural = structuralReachability(collision, walkable, componentIds, naturalComponentCount,
-			rawTransports, seedTile);
-		int reachableNaturalCount = count(reachableNatural);
-		BitSet reachableTiles = new BitSet(walkable.tiles.length);
-		for (int i = 0; i < componentIds.length; i++)
+		RoutingStatic routingStatic = RoutingStaticLoader.build(collision, rawTransports, bankTiles, layer, seedTile);
+
+		int[] natural = RoutingStaticLoader.naturalComponents(layer);
+		int naturalComponentCount = 0;
+		for (int id = 1; id < natural.length; id++)
 		{
-			if (reachableNatural[componentIds[i]]) reachableTiles.set(i);
+			if (natural[id] == id) naturalComponentCount++;
 		}
-		long reachabilityNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		// Reachability now needs only one bit per tile, so the next pass can reuse the labels.
-		Arrays.fill(componentIds, 0);
-		int maxRoutingComponentId = floodFillComponents(walkable, cutSet.blocked, componentIds);
-		// Component arrays are indexed by id, so capacity is maxComponentId + 1 with empty groups retained.
-		int routingComponentCount = maxRoutingComponentId + 1;
-		int largestRoutingComponentSize = largestGroup(componentIds, maxRoutingComponentId);
-		long routingComponentsNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		SearchTiles search = buildSearchTiles(walkable, componentIds, reachableTiles, routingComponentCount);
-		long searchTilesNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		List<Crossing> crossings = buildCrossings(cutSet.valid, componentIds, walkable);
-		// Release the scratch map before assembling and validating the final routing data.
-		walkable = null;
-		componentIds = null;
-		int nonSeparating = cutSet.valid.size() - crossings.size();
-		SitesAndAttachments sites = buildSites(rawTransports, bankTiles, crossings, search, collision,
-			routingComponentCount);
-		long sitesAndAttachmentsNanos = System.nanoTime() - stepStarted;
-
-		int[] crossingFrom = new int[crossings.size()];
-		int[] crossingTo = new int[crossings.size()];
-		int[] crossingCost = new int[crossings.size()];
-		for (int i = 0; i < crossings.size(); i++)
+		int reachableNaturalComponentCount = 0;
+		for (boolean reachable : RoutingStaticLoader.structuralReachability(collision, layer, natural,
+			new boolean[natural.length], rawTransports, seedTile))
 		{
-			Crossing crossing = crossings.get(i);
-			crossingFrom[i] = IntArrays.binarySearch(sites.siteTiles, crossing.fromTile);
-			crossingTo[i] = IntArrays.binarySearch(sites.siteTiles, crossing.toTile);
-			crossingCost[i] = 1;
+			if (reachable) reachableNaturalComponentCount++;
 		}
-
-		// The exact walks need the search tiles and sites in their final form, so they walk a
-		// first RoutingStatic without a network, and the network is built after them.
-		stepStarted = System.nanoTime();
-		int siteCount = sites.siteTiles.length;
-		RoutingStatic walking = RoutingStatic.takeOwnership(search.tiles, search.components, search.masks,
-			search.northOffsets, search.southOffsets, sites.siteTiles, sites.siteComponentOffsets, sites.siteComponentIds,
-			routingComponentCount, sites.componentSiteOffsets, sites.componentSiteIds, sites.reachableBankTiles,
-			crossingFrom, crossingTo, crossingCost, siteCount, siteCount, 0, 0, 0, new int[siteCount + 1], new int[0],
-			new int[0]);
-		long validateNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		ExactWalks exactWalks = ExactWalks.build(walking);
-		long exactWalksNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		SparseWalkingNetworkBuilder.Result sparse = SparseWalkingNetworkBuilder.build(sites.siteTiles,
-			sites.siteComponentOffsets, sites.siteComponentIds, exactWalks);
-		long sparseNetworkNanos = System.nanoTime() - stepStarted;
-
-		stepStarted = System.nanoTime();
-		RoutingStatic result = RoutingStatic.takeOwnership(search.tiles, search.components, search.masks, search.northOffsets,
-			search.southOffsets, sites.siteTiles, sites.siteComponentOffsets, sites.siteComponentIds, routingComponentCount,
-			sites.componentSiteOffsets, sites.componentSiteIds, sites.reachableBankTiles, crossingFrom, crossingTo,
-			crossingCost, sparse.originalCount, sparse.vertexCount, sparse.steinerCount, sparse.undirectedEdgeCount,
-			sparse.adjacencyCount(), sparse.offsets, sparse.destinations, sparse.weights, exactWalks);
-		validateNanos += System.nanoTime() - stepStarted;
-
-		long totalNanos = System.nanoTime() - totalStarted;
-		Diagnostics diagnostics = new Diagnostics(enumerateWalkableNanos, naturalComponentsNanos, cutValidationNanos,
-			routingComponentsNanos, reachabilityNanos, searchTilesNanos, sitesAndAttachmentsNanos, exactWalksNanos,
-			sparseNetworkNanos, validateNanos, totalNanos, walkableTileCount, naturalComponentCount, maxRoutingComponentId,
-			largestRoutingComponentSize, reachableNaturalCount, cuts.length / 2, cutSet.duplicateCount,
-			cutSet.invalidCount, nonSeparating, crossings.size(), search.tiles.length, sites.siteTiles.length,
-			sites.reachableBankTiles.length, exactWalks.exactComponentCount(), exactWalks.edgeCount());
-		return new Result(result, diagnostics);
+		int[] searchTilesPerComponent = new int[routingStatic.routingComponentCount()];
+		int largestRoutingComponentSize = 0;
+		for (int i = 0; i < routingStatic.searchTileCount(); i++)
+		{
+			largestRoutingComponentSize = Math.max(largestRoutingComponentSize,
+				++searchTilesPerComponent[routingStatic.routingComponent(i)]);
+		}
+		int crossingCount = layer.crossings.length / 2;
+		Diagnostics diagnostics = new Diagnostics(System.nanoTime() - started, walkable.tiles.length,
+			naturalComponentCount, routingStatic.routingComponentCount() - 1, largestRoutingComponentSize,
+			reachableNaturalComponentCount, cuts.length / 2, cutSet.duplicateCount, cutSet.invalidCount,
+			cutSet.valid.size() - crossingCount, crossingCount, routingStatic.searchTileCount(),
+			routingStatic.siteCount(), routingStatic.exactWalks().exactComponentCount());
+		return new Result(routingStatic, diagnostics);
 	}
 
 	/**
@@ -266,7 +174,12 @@ public final class RoutingStaticBuilder
 		CutSet cutSet = validateCuts(cuts, walkable);
 		int[] componentIds = new int[walkable.tiles.length];
 		floodFillComponents(walkable, cutSet.blocked, componentIds);
+		return formLayer(walkable, componentIds, cutSet.valid);
+	}
 
+	/** The runs of equal component ids over the walkable tiles, plus the valid cuts that separate two components. */
+	private static ComponentLayer formLayer(WalkableTiles walkable, int[] componentIds, List<long[]> validCuts)
+	{
 		int runCount = 0;
 		for (int i = 0, length = 0; i < componentIds.length; i++)
 		{
@@ -287,7 +200,7 @@ public final class RoutingStaticBuilder
 			}
 		}
 
-		List<Crossing> crossings = buildCrossings(cutSet.valid, componentIds, walkable);
+		List<Crossing> crossings = buildCrossings(validCuts, componentIds, walkable);
 		int[] crossingTiles = new int[crossings.size() * 2];
 		for (int i = 0; i < crossings.size(); i++)
 		{
@@ -363,7 +276,7 @@ public final class RoutingStaticBuilder
 	/** Builds the walking graph used for cut generation; see {@link WalkingGraph}. */
 	public static WalkingGraph walkingGraph(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports)
 	{
-		return walkingGraph(collision, rawTransports, SEED_TILE);
+		return walkingGraph(collision, rawTransports, RoutingStaticLoader.SEED_TILE);
 	}
 
 	static WalkingGraph walkingGraph(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports, int seedTile)
@@ -371,12 +284,14 @@ public final class RoutingStaticBuilder
 		WalkableTiles walkable = enumerateWalkableTiles(collision);
 		int[] naturalId = new int[walkable.tiles.length];
 		int naturalComponentCount = floodFillComponents(walkable, null, naturalId);
-		boolean[] reachable = structuralReachability(collision, walkable, naturalId, naturalComponentCount,
-			rawTransports, seedTile);
+		ComponentLayer layer = formLayer(walkable, naturalId, List.of());
+		int[] natural = RoutingStaticLoader.naturalComponents(layer);
+		boolean[] reachable = RoutingStaticLoader.structuralReachability(collision, layer, natural,
+			new boolean[natural.length], rawTransports, seedTile);
 		return new WalkingGraph(walkable, naturalId, naturalComponentCount, reachable);
 	}
 
-	// ---- Tile selection and enumeration in ascending unsigned packed order ----
+	// ---- Enumeration of every walkable tile in ascending unsigned packed order ----
 
 	@AllArgsConstructor
 	private static final class WalkableTiles
@@ -389,11 +304,7 @@ public final class RoutingStaticBuilder
 
 	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision)
 	{
-		return enumerateWalkableTiles(collision, TileSelection.allWalkable(collision));
-	}
-
-	private static WalkableTiles enumerateWalkableTiles(CollisionMap collision, TileSelection selected)
-	{
+		TileSelection selected = TileSelection.allWalkable(collision);
 		int[] tiles = new int[selected.tileCount()];
 		byte[] masks = new byte[tiles.length];
 		int next = 0;
@@ -437,45 +348,7 @@ public final class RoutingStaticBuilder
 		return new WalkableTiles(tiles, masks, index);
 	}
 
-	/** Keep endpoint-connected land before allocating arrays; open sea can otherwise look walkable. */
-	private static TileSelection discoverCandidateTiles(CollisionMap collision,
-		Map<Integer, Set<Transport>> rawTransports, int[] cuts, int seedTile)
-	{
-		TileSelection selected = new TileSelection(collision);
-		IntDeque queue = new IntDeque(4096);
-		selected.attach(seedTile, collision, queue);
-		if (queue.isEmpty())
-		{
-			throw new IllegalStateException("missing structural reachability seed: no natural component attaches to the production seed tile");
-		}
-		for (Set<Transport> transports : rawTransports.values())
-		{
-			for (Transport transport : transports)
-			{
-				if (transport.getOrigin() != WorldPointUtil.UNDEFINED)
-					selected.attach(transport.getOrigin(), collision, queue);
-				selected.attach(transport.getDestination(), collision, queue);
-			}
-		}
-		// Preserve cut diagnostics and crossings even when their land is unreachable.
-		for (int tile : cuts) selected.add(tile, collision, queue);
-		while (!queue.isEmpty())
-		{
-			int tile = queue.pollFirst();
-			int x = WorldPointUtil.unpackWorldX(tile);
-			int y = WorldPointUtil.unpackWorldY(tile);
-			int plane = WorldPointUtil.unpackWorldPlane(tile);
-			int mask = Byte.toUnsignedInt(collision.ordinaryWalkingMask(tile));
-			for (int bit = 0; bit < 8; bit++)
-			{
-				if ((mask & (1 << bit)) != 0)
-					selected.add(WorldPointUtil.packWorldPoint(x + NEIGHBOR_DX[bit], y + NEIGHBOR_DY[bit], plane), collision, queue);
-			}
-		}
-		return selected;
-	}
-
-	/** One bit per discovered tile, allocating bits only for regions the discovery reaches. */
+	/** One bit per walkable tile, allocating bits only for regions that have any. */
 	private static final class TileSelection
 	{
 		final BitSet[] regions;
@@ -531,40 +404,9 @@ public final class RoutingStaticBuilder
 			if (bits == null) regions[region] = bits = new BitSet(REGION_SIZE * REGION_SIZE);
 			bits.set(bit);
 		}
-
-		void attach(int tile, CollisionMap collision, IntDeque queue)
-		{
-			if (!collision.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile),
-				WorldPointUtil.unpackWorldPlane(tile)))
-			{
-				add(tile, collision, queue);
-			}
-			else
-			{
-				for (int neighbor : collision.ordinaryWalkingNeighbors(tile)) add(neighbor, collision, queue);
-			}
-		}
-
-		void add(int tile, CollisionMap collision, IntDeque queue)
-		{
-			int x = WorldPointUtil.unpackWorldX(tile);
-			int y = WorldPointUtil.unpackWorldY(tile);
-			int plane = WorldPointUtil.unpackWorldPlane(tile);
-			int rx = x / REGION_SIZE - minX, ry = y / REGION_SIZE - minY;
-			if (rx < 0 || rx >= width || ry < 0 || ry >= height) return;
-			int region = rx + ry * width;
-			if (plane >= collision.getRegionPlaneCounts(region)) return;
-			int index = region * 4 + plane;
-			int bit = (y & (REGION_SIZE - 1)) * REGION_SIZE + (x & (REGION_SIZE - 1));
-			BitSet bits = regions[index];
-			if (bits != null && bits.get(bit)) return;
-			if (collision.isBlocked(x, y, plane)) return;
-			mark(index, bit);
-			queue.addLast(tile);
-		}
 	}
 
-	// ---- Step 1/3: flood fill (natural when blocked==null, routing when blocked is a valid-cut set) ----
+	// ---- Flood fill (natural when blocked==null, routing when blocked is a valid-cut set) ----
 
 	/** Returns the number of components assigned (ids {@code 1..count}), 0 if there were no walkable tiles. */
 	private static int floodFillComponents(WalkableTiles walkable, int[] blocked, int[] componentOut)
@@ -636,25 +478,6 @@ public final class RoutingStaticBuilder
 		return result;
 	}
 
-	private static int largestGroup(int[] componentOf, int componentCount)
-	{
-		if (componentCount <= 0)
-		{
-			return 0;
-		}
-		int[] sizes = new int[componentCount + 1];
-		for (int component : componentOf)
-		{
-			sizes[component]++;
-		}
-		int largest = 0;
-		for (int size : sizes)
-		{
-			largest = Math.max(largest, size);
-		}
-		return largest;
-	}
-
 	// ---- Cuts: validity ("ignore cuts that are not current walking edges") + canonical dedup ----
 
 	@AllArgsConstructor
@@ -718,180 +541,6 @@ public final class RoutingStaticBuilder
 		return (Integer.toUnsignedLong(min) << 32) | Integer.toUnsignedLong(max);
 	}
 
-	// ---- Structural reachability: closure over NATURAL components ----
-	// Reachability must use natural, not routing, components: a cut never makes a tile unreachable.
-	// The closure is an account-independent overapproximation of the geography routes can use, so it
-	// deliberately follows every known transport, seasonal ones included, whatever its requirements.
-	// It only prunes components nothing can reach, such as the sea. Whether an account can take a
-	// transport is decided later, by PreparedRoutingAccount and the forward search.
-
-	private static boolean[] structuralReachability(CollisionMap collision, WalkableTiles walkable, int[] naturalId,
-		int naturalComponentCount, Map<Integer, Set<Transport>> rawTransports, int seedTile)
-	{
-		Map<Integer, List<Integer>> edges = new HashMap<>();
-		Set<Integer> globalDestinations = new HashSet<>();
-		for (Set<Transport> set : rawTransports.values())
-		{
-			for (Transport transport : set)
-			{
-				int origin = transport.getOrigin();
-				int destination = transport.getDestination();
-
-				// attachmentEdges: every endpoint point of every transport, any type, any origin state.
-				int[] originAttachments = origin == WorldPointUtil.UNDEFINED ? new int[0]
-					: naturalAttachments(origin, walkable, naturalId, collision);
-				int[] destinationAttachments = naturalAttachments(destination, walkable, naturalId, collision);
-				addAttachmentClique(edges, originAttachments);
-				addAttachmentClique(edges, destinationAttachments);
-
-				if (origin == WorldPointUtil.UNDEFINED)
-				{
-					// globalDestinations: global-teleport destinations.
-					for (int naturalComponent : destinationAttachments)
-					{
-						globalDestinations.add(naturalComponent);
-					}
-				}
-				else
-				{
-					// transportEdges: local transports, directed origin -> destination.
-					for (int fromComponent : originAttachments)
-					{
-						for (int toComponent : destinationAttachments)
-						{
-							edges.computeIfAbsent(fromComponent, k -> new ArrayList<>()).add(toComponent);
-						}
-					}
-				}
-			}
-		}
-
-		int[] seedComponents = naturalAttachments(seedTile, walkable, naturalId, collision);
-		if (seedComponents.length == 0)
-		{
-			throw new IllegalStateException(
-				"missing structural reachability seed: no natural component attaches to the production seed tile");
-		}
-
-		boolean[] reachable = new boolean[naturalComponentCount + 1];
-		ArrayDeque<Integer> queue = new ArrayDeque<>();
-		for (int seed : seedComponents)
-		{
-			if (!reachable[seed])
-			{
-				reachable[seed] = true;
-				queue.add(seed);
-			}
-		}
-		while (!queue.isEmpty())
-		{
-			int component = queue.poll();
-			for (int next : edges.getOrDefault(component, List.of()))
-			{
-				if (!reachable[next])
-				{
-					reachable[next] = true;
-					queue.add(next);
-				}
-			}
-			for (int global : globalDestinations)
-			{
-				if (!reachable[global])
-				{
-					reachable[global] = true;
-					queue.add(global);
-				}
-			}
-		}
-		return reachable;
-	}
-
-	private static void addAttachmentClique(Map<Integer, List<Integer>> edges, int[] attachments)
-	{
-		if (attachments.length < 2)
-		{
-			return;
-		}
-		for (int a : attachments)
-		{
-			for (int b : attachments)
-			{
-				if (a != b)
-				{
-					edges.computeIfAbsent(a, k -> new ArrayList<>()).add(b);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Natural components a point attaches to: its own component if it is walkable, otherwise
-	 * the union of its ordinary walking neighbours' components.
-	 */
-	private static int[] naturalAttachments(int point, WalkableTiles walkable, int[] naturalId, CollisionMap collision)
-	{
-		int position = tilePosition(walkable, point);
-		if (position >= 0)
-		{
-			return new int[] {naturalId[position]};
-		}
-		int[] neighbors = collision.ordinaryWalkingNeighbors(point);
-		int[] buffer = new int[8];
-		int count = 0;
-		for (int neighbor : neighbors)
-		{
-			int neighborPosition = tilePosition(walkable, neighbor);
-			if (neighborPosition >= 0)
-			{
-				int component = naturalId[neighborPosition];
-				if (!IntArrays.contains(buffer, 0, count, component))
-				{
-					buffer[count++] = component;
-				}
-			}
-		}
-		return Arrays.copyOf(buffer, count);
-	}
-
-	// ---- Section A: search tiles, routing components, walking masks, north/south ----
-
-	@AllArgsConstructor
-	private static final class SearchTiles
-	{
-		final int[] tiles;
-		final TileComponents components;
-		final char[] northOffsets, southOffsets;
-		final byte[] masks;
-	}
-
-	private static SearchTiles buildSearchTiles(WalkableTiles walkable, int[] routingId,
-		BitSet reachableTiles, int componentCount)
-	{
-		int count = reachableTiles.cardinality();
-		int[] tileArray = new int[count];
-		TileComponents componentArray = new TileComponents(count, componentCount);
-		byte[] maskArray = new byte[count];
-		int next = 0;
-		for (int i = reachableTiles.nextSetBit(0); i >= 0; i = reachableTiles.nextSetBit(i + 1))
-		{
-			tileArray[next] = walkable.tiles[i];
-			componentArray.set(next, routingId[i]);
-			maskArray[next++] = walkable.masks[i];
-		}
-		char[] north = new char[tileArray.length];
-		char[] south = new char[tileArray.length];
-		for (int i = 0; i < tileArray.length; i++)
-		{
-			int y = WorldPointUtil.unpackWorldY(tileArray[i]);
-			int n = y == 32767 ? -1 : IntArrays.binarySearch(tileArray, tileArray[i] + Y_UNIT);
-			int s = y == 0 ? -1 : IntArrays.binarySearch(tileArray, tileArray[i] - Y_UNIT);
-			// Adjacent rows contain at most 32768 distinct x coordinates, so these offsets fit.
-			north[i] = n < 0 ? 0 : (char) (n - i);
-			south[i] = s < 0 ? 0 : (char) (i - s);
-		}
-		return new SearchTiles(tileArray, componentArray, north, south, maskArray);
-	}
-
 	// ---- Section: routing components / crossings ----
 
 	@AllArgsConstructor
@@ -921,123 +570,6 @@ public final class RoutingStaticBuilder
 			return cmp != 0 ? cmp : Integer.compareUnsigned(left.toTile, right.toTile);
 		});
 		return crossings;
-	}
-
-	// ---- Sections B/C/D/E: sites and attachments ----
-
-	@AllArgsConstructor
-	private static final class SitesAndAttachments
-	{
-		final int[] siteTiles, siteComponentOffsets, siteComponentIds, componentSiteOffsets, componentSiteIds;
-		final int[] reachableBankTiles;
-	}
-
-	private static SitesAndAttachments buildSites(Map<Integer, Set<Transport>> rawTransports, Set<Integer> bankTiles,
-		List<Crossing> crossings, SearchTiles search, CollisionMap collision, int routingComponentCount)
-	{
-		HashSet<Integer> siteSet = new HashSet<>();
-		for (Set<Transport> set : rawTransports.values())
-		{
-			for (Transport transport : set)
-			{
-				if (transport.getOrigin() != WorldPointUtil.UNDEFINED)
-				{
-					siteSet.add(transport.getOrigin());
-				}
-				siteSet.add(transport.getDestination());
-			}
-		}
-		for (Crossing crossing : crossings)
-		{
-			siteSet.add(crossing.fromTile);
-			siteSet.add(crossing.toTile);
-		}
-		List<Integer> reachableBanks = new ArrayList<>();
-		for (int bank : bankTiles)
-		{
-			if (routingAttachments(bank, search, collision).length > 0)
-			{
-				reachableBanks.add(bank);
-				siteSet.add(bank);
-			}
-		}
-
-		int[] siteTiles = toSortedUnsignedArray(siteSet);
-		int[] reachableBankTiles = toSortedUnsignedArray(reachableBanks);
-
-		int[] siteComponentOffsets = new int[siteTiles.length + 1];
-		int[][] perSite = new int[siteTiles.length][];
-		int totalSiteComponentValues = 0;
-		for (int i = 0; i < siteTiles.length; i++)
-		{
-			perSite[i] = routingAttachments(siteTiles[i], search, collision);
-			siteComponentOffsets[i + 1] = siteComponentOffsets[i] + perSite[i].length;
-			totalSiteComponentValues += perSite[i].length;
-		}
-		int[] siteComponentIds = new int[totalSiteComponentValues];
-		int cursor = 0;
-		for (int[] components : perSite)
-		{
-			for (int component : components)
-			{
-				siteComponentIds[cursor++] = component;
-			}
-		}
-
-		int[] groupCounts = new int[routingComponentCount];
-		for (int component : siteComponentIds)
-		{
-			groupCounts[component]++;
-		}
-		int[] componentSiteOffsets = new int[routingComponentCount + 1];
-		for (int i = 0; i < routingComponentCount; i++)
-		{
-			componentSiteOffsets[i + 1] = componentSiteOffsets[i] + groupCounts[i];
-		}
-		int[] componentSiteIds = new int[componentSiteOffsets[routingComponentCount]];
-		int[] fillCursor = Arrays.copyOf(componentSiteOffsets, componentSiteOffsets.length);
-		for (int site = 0; site < siteTiles.length; site++)
-		{
-			for (int p = siteComponentOffsets[site]; p < siteComponentOffsets[site + 1]; p++)
-			{
-				int component = siteComponentIds[p];
-				componentSiteIds[fillCursor[component]++] = site;
-			}
-		}
-
-		return new SitesAndAttachments(siteTiles, siteComponentOffsets, siteComponentIds, componentSiteOffsets,
-			componentSiteIds, reachableBankTiles);
-	}
-
-	/**
-	 * Routing components a point attaches to, using the final reachability-filtered search tiles:
-	 * the tile's own component if it is a search tile, otherwise those of its walking neighbours.
-	 * This matches {@link RoutingStatic#attachments} at runtime.
-	 */
-	private static int[] routingAttachments(int point, SearchTiles search, CollisionMap collision)
-	{
-		int index = IntArrays.binarySearch(search.tiles, point);
-		if (index >= 0)
-		{
-			return new int[] {search.components.get(index)};
-		}
-		int[] neighbors = collision.ordinaryWalkingNeighbors(point);
-		int[] buffer = new int[8];
-		int count = 0;
-		for (int neighbor : neighbors)
-		{
-			int neighborIndex = IntArrays.binarySearch(search.tiles, neighbor);
-			if (neighborIndex >= 0)
-			{
-				int component = search.components.get(neighborIndex);
-				if (!IntArrays.contains(buffer, 0, count, component))
-				{
-					buffer[count++] = component;
-				}
-			}
-		}
-		Arrays.sort(buffer, 0, count);
-		return Arrays.copyOf(buffer, count);
 	}
 
 	// ---- Small shared utilities ----
@@ -1085,43 +617,5 @@ public final class RoutingStaticBuilder
 		int anchor = tileIsLow ? position : neighborPosition;
 		int dir = tileIsLow ? direction : direction ^ 4; // i^4 is the opposite direction in NEIGHBOR_* order
 		return (anchor << 3) | dir;
-	}
-
-	private static int count(boolean[] values)
-	{
-		int count = 0;
-		for (boolean value : values)
-		{
-			if (value)
-			{
-				count++;
-			}
-		}
-		return count;
-	}
-
-	private static int[] toSortedUnsignedArray(java.util.Collection<Integer> values)
-	{
-		int[] result = new int[values.size()];
-		int i = 0;
-		for (int value : values)
-		{
-			result[i++] = value;
-		}
-		sortUnsigned(result);
-		return result;
-	}
-
-	private static void sortUnsigned(int[] values)
-	{
-		for (int i = 0; i < values.length; i++)
-		{
-			values[i] ^= Integer.MIN_VALUE;
-		}
-		Arrays.sort(values);
-		for (int i = 0; i < values.length; i++)
-		{
-			values[i] ^= Integer.MIN_VALUE;
-		}
 	}
 }
