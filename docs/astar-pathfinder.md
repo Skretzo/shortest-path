@@ -22,11 +22,11 @@ requirements or reads the client directly.
 
 ## Data lifetimes
 
-- **Static routing data** (`RoutingStatic`) is derived once per plugin session,
+- **Static routing data** (`RoutingStatic`) is built once per plugin session,
   on the pathfinding thread, the first time an A* search runs
-  (`AStarRoutingStaticProvider`, `RoutingStaticBuilder`). It comes from
-  `collision-map.zip`, the transport and bank resources, and
-  `routing-cuts.bin`.
+  (`AStarRoutingStaticProvider`, `RoutingStaticLoader`). It comes from the
+  precomputed routing component layer `routing-components.bin`,
+  `collision-map.zip`, and the transport and bank resources.
 - **Prepared account data** (`PreparedRoutingAccount`) is compiled from the
   current account state for each search. The `SiteGraph` built from it is kept
   by `AStarRoutingSession` while the account's routing fingerprint is
@@ -41,15 +41,24 @@ requirements or reads the client directly.
   the initial value without allocating it. Only the small page directories
   are allocated for the full state space upfront.
 
-## Routing cuts
+## Routing components and cuts
 
 Large walking areas are split into routing components along separator cut
-edges stored in `src/main/resources/routing-cuts.bin`. The cuts only affect how
-much preparation and search the heuristic needs: cuts that no longer match the
-collision map are ignored, so routes stay exact with any cut file, including an
-empty one.
+edges. The cuts (`src/test/resources/routing-cuts.bin`, generated with KaHIP by
+the `routingCuts` task in
+[shortest-path-tooling](https://github.com/osrs-pathfinding/shortest-path-tooling))
+are an offline input. The test sources derive `src/main/resources/routing-components.bin`
+from the collision map and the cuts: a routing component for every
+collision-walkable tile, stored as runs, plus the crossings. The plugin ships
+only that file. Reachability, sites, exact walks and the sparse network stay
+runtime work because they depend on the transports.
 
-The file is generated with KaHIP by the `routingCuts` task in
-[shortest-path-tooling](https://github.com/osrs-pathfinding/shortest-path-tooling).
-The `ExtractCollisionMap` workflow regenerates it whenever it dumps a new
-collision map and commits both files together.
+`RoutingComponentsFreshnessTest` fails when the layer is stale. The
+`ExtractCollisionMap` workflow regenerates the collision map, the cuts and the
+layer together and commits all three files in one commit. To regenerate the
+layer locally, run
+`ROUTING_COMPONENTS_REGEN=1 ./gradlew test --tests '*RoutingComponentsFreshnessTest' --rerun`.
+
+The cuts only affect how much preparation and search the heuristic needs: cuts
+that no longer match the collision map are dropped at generation, so they only
+cost performance, never routes.
