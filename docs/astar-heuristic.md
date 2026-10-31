@@ -30,7 +30,7 @@ bucket empty, so it is pruned without being expanded.
 
 | Stage | Lifetime | Class | Produces |
 |---|---|---|---|
-| Sites, components, sparse network | plugin session | `RoutingStaticBuilder` → `RoutingStatic` | sites, attachments, `ExactWalks`, `SparseWalkingNetworkBuilder` CSR |
+| Sites, components, sparse network | plugin session | `RoutingStaticLoader` → `RoutingStatic` | sites, attachments, `ExactWalks`, `SparseWalkingNetworkBuilder` CSR |
 | Relaxed account graph | account fingerprint | `SiteGraph` | two-layer reverse CSR of explicit edges |
 | Target overlay | target set | `TargetOverlay` | target nodes and attachment edges |
 | Reverse search | target set | `ReverseLabels` | `label(node, banked)` and generator provenance |
