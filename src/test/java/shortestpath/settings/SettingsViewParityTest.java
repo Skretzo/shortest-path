@@ -104,16 +104,25 @@ public class SettingsViewParityTest
 		stub.set("finishDistance", 33);
 		stub.set("cancelInstead", true);
 		Settings settings = Settings.wrap(stub);
-		settings.applyOverrides(Map.of("postTransports", true));
+		// Every raw-read member gets a payload that differs from the stub:
+		// the stub value must win. Only postTransports honours its payload.
+		settings.applyOverrides(Map.of(
+			"postTransports", true,
+			"drawDebugPanel", true,
+			"cancelInstead", false,
+			"calculationCutoff", 99,
+			"recalculateDistance", 98,
+			"finishDistance", 97));
 
 		Settings.LifecycleView view = settings.lifecycle();
 		assertEquals(11, view.calculationCutoff());
 		assertEquals(22, view.recalculateDistance());
 		assertEquals(33, view.reachedDistance());
-		assertTrue(view.cancelInstead());
+		assertTrue("stub true, payload false is ignored", view.cancelInstead());
 		// drawDebugPanel is a raw configured read — the payload map never
-		// reaches it, so the member reports the base value.
-		assertEquals(stub.drawDebugPanel(), view.drawDebugPanel());
+		// reaches it, so the member reports the stub's false, not the true payload.
+		assertFalse("the stub declares drawDebugPanel false", stub.drawDebugPanel());
+		assertFalse("stub false, payload true is ignored", view.drawDebugPanel());
 		assertTrue(view.postTransports());
 	}
 
