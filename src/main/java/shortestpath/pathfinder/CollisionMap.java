@@ -8,8 +8,8 @@ public class CollisionMap
 	private final SplitFlagMap collisionData;
 
 	/**
-	 * The region grid bounds to scan when enumerating every collision tile (e.g.
-	 * {@link shortestpath.pathfinder.astar.RoutingStaticBuilder}). Delegates to
+	 * The region grid bounds to scan when enumerating every collision tile (e.g. the
+	 * routing-component generator in the test sources). Delegates to
 	 * {@link SplitFlagMap#getRegionExtents()} by default; overridable so tests can substitute a
 	 * small synthetic extent without touching that shared static state.
 	 */
