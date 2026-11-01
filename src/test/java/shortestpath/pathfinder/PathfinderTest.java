@@ -659,6 +659,92 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testKharaziJungleTransportsNeverStrandThePlayer()
+	{
+		setupInventory(
+			new Item(ItemID.MACHETTE, 1),
+			new Item(ItemID.RUNE_AXE, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		CollisionMap map = pathfinderConfig.getMap();
+		List<Transport> jungle = new ArrayList<>();
+		Set<Integer> origins = new HashSet<>();
+		for (Transport t : activeTransportList())
+		{
+			int x = WorldPointUtil.unpackWorldX(t.getOrigin());
+			int y = WorldPointUtil.unpackWorldY(t.getOrigin());
+			boolean chop = t.getObjectInfo() != null && t.getObjectInfo().startsWith("Chop-down Jungle");
+			boolean stepOff = (t.getObjectInfo() == null || t.getObjectInfo().isEmpty())
+				&& x >= 2755 && x <= 2945 && y >= 2930 && y <= 2945;
+			if (chop || stepOff)
+			{
+				jungle.add(t);
+				origins.add(t.getOrigin());
+			}
+		}
+		assertEquals(63, jungle.size());
+		// Only the jungle is chopped: a tropical tree (2817 2936) under a jungle tree's canopy is not crossed
+		int tropicalTree = WorldPointUtil.packWorldPoint(2817, 2936, 0);
+		assertFalse(jungle.stream().anyMatch(t -> t.getOrigin() == WorldPointUtil.packWorldPoint(2817, 2935, 0)
+			|| t.getOrigin() == tropicalTree || t.getDestination() == tropicalTree));
+		for (Transport t : jungle)
+		{
+			int d = t.getDestination();
+			boolean walkable = !map.isBlocked(WorldPointUtil.unpackWorldX(d), WorldPointUtil.unpackWorldY(d), 0);
+			assertTrue("Kharazi jungle transport strands the player at " + WorldPointUtil.unpackWorldPoint(d),
+				walkable || origins.contains(d));
+		}
+		// A* lets a route walk onto a blocked transport origin from an open neighbour. So a chop may
+		// not start on a blocked tile beside open ground (the route would skip the chop in), and a
+		// step-off may only start beside the one open tile it steps onto (else it cuts a corner)
+		for (Transport t : jungle)
+		{
+			int x = WorldPointUtil.unpackWorldX(t.getOrigin());
+			int y = WorldPointUtil.unpackWorldY(t.getOrigin());
+			if (!map.isBlocked(x, y, 0)) continue;
+			boolean chop = t.getObjectInfo() != null && !t.getObjectInfo().isEmpty();
+			for (int[] o : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}})
+			{
+				int next = WorldPointUtil.packWorldPoint(x + o[0], y + o[1], 0);
+				assertFalse("Kharazi jungle transport at " + WorldPointUtil.unpackWorldPoint(t.getOrigin())
+						+ " can be walked onto from " + WorldPointUtil.unpackWorldPoint(next),
+					!map.isBlocked(x + o[0], y + o[1], 0) && (chop || next != t.getDestination()));
+			}
+		}
+
+		// North-to-south and back through each patch of jungle trees and bushes
+		int[][] crossings = {
+			{2762, 2944, 2762, 2933},
+			{2795, 2944, 2795, 2934},
+			{2816, 2942, 2816, 2934},
+			{2866, 2942, 2866, 2933},
+			{2865, 2938, 2866, 2942},
+			{2823, 2942, 2818, 2930},
+			{2932, 2944, 2932, 2935},
+		};
+		for (int[] c : crossings)
+		{
+			int north = WorldPointUtil.packWorldPoint(c[0], c[1], 0);
+			int south = WorldPointUtil.packWorldPoint(c[2], c[3], 0);
+			for (int[] route : new int[][]{{north, south}, {south, north}})
+			{
+				AStarPathfinder search = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+					null, route[0], Set.of(route[1]), null, 1);
+				search.run();
+				assertTrue(WorldPointUtil.unpackWorldPoint(route[0]) + " -> " + WorldPointUtil.unpackWorldPoint(route[1]),
+					search.getResult().isReached());
+				// and never walks onto a blocked jungle tile instead of chopping
+				List<PathStep> path = search.getPath();
+				for (int i = 1; i < path.size(); i++)
+				{
+					int p = path.get(i).getPackedPosition();
+					assertFalse("walked onto " + WorldPointUtil.unpackWorldPoint(p),
+						path.get(i).getTransport() == null && map.isBlocked(WorldPointUtil.unpackWorldX(p), WorldPointUtil.unpackWorldY(p), 0));
+				}
+			}
+		}
+	}
+
+	@Test
 	public void testKingAwowogeiEntranceRequiresMonkeyMadnessII()
 	{
 		int outside = WorldPointUtil.packWorldPoint(2802, 2756, 0);
