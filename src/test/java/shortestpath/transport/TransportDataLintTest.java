@@ -147,8 +147,7 @@ public class TransportDataLintTest
 	 * Every transport must land the player on a walkable tile, or on the origin of another transport
 	 * (a chain such as stepping stones, or a step-off row from a blocked landing tile). A
 	 * blocked destination with an open neighbour is not enough: it is almost always the object's own
-	 * tile instead of the tile the game places the player on. Seasonal transports are not checked,
-	 * nor yet the Kharazi jungle chops, which land on blocked jungle tiles and need modelling of their own.
+	 * tile instead of the tile the game places the player on. Seasonal transports are not checked.
 	 */
 	@Test
 	public void testEveryTransportDestinationCanBeWalkedAwayFrom()
@@ -162,7 +161,6 @@ public class TransportDataLintTest
 			{
 				int destination = transport.getDestination();
 				if (TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())
-					|| isKharaziJungleChop(transport)
 					|| canEscape(map, transports, destination))
 				{
 					continue;
@@ -239,11 +237,6 @@ public class TransportDataLintTest
 		int y = WorldPointUtil.unpackWorldY(origin);
 		int z = WorldPointUtil.unpackWorldPlane(origin);
 		return !map.isBlocked(x, y, z) || arrivals.contains(origin);
-	}
-
-	private static boolean isKharaziJungleChop(Transport transport)
-	{
-		return transport.getObjectInfo() != null && transport.getObjectInfo().startsWith("Chop-down Jungle");
 	}
 
 	private static boolean canEscape(CollisionMap map, Map<Integer, Set<Transport>> transports, int destination)
