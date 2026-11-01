@@ -1168,6 +1168,10 @@
 3097 3432 1	3097 3432 2	Climb-up Ladder 17026						2	
 3097 3432 2	3097 3432 1	Climb-down Ladder 16685						2	
 									
+# Sorceress's Garden - 3328 is OSMAN_APPRENTICE; 3329 is OSMAN_WANT_POMES									
+3320 3139 0	2912 5474 0	Teleport Apprentice 1808				3328=1;3329=1			
+2912 5473 0	3321 3141 0	Drink-from Fountain 12941						9	
+									
 # Al Kharid									
 3267 3228 0	3268 3228 0	Open Gate 44051						1	
 3268 3228 0	3267 3228 0	Open Gate 44051						1	

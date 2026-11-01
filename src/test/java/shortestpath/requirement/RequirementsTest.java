@@ -32,6 +32,9 @@ import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+import shortestpath.transport.ResourceLoader;
 
 /**
  * Adversarial suite over the ordered {@link Requirements} gate chain: every
@@ -784,6 +787,53 @@ public class RequirementsTest
 		assertEquals(RejectionReason.RESPAWN_DECLARED, prif.check(lumbridgeRespawn));
 		assertEquals(RejectionReason.NONE, notPrif.check(lumbridgeRespawn));
 		assertEquals(RejectionReason.RESPAWN_DECLARED, notPrif.check(prifRespawn));
+	}
+
+	@Test
+	public void calcifiedMothUnlocksAfterReturningToAttala()
+	{
+		Transport moth = ResourceLoader.transports().values().stream().flatMap(Set::stream)
+			.filter(t -> "Calcified moth".equals(t.getDisplayInfo())).findFirst().orElseThrow();
+		for (int stage : new int[]{0, 2, 4, 5, 6, 32})
+		{
+			Requirements check = requirements(RequirementTestFixtures.context()
+				.varbitValues(Map.of(9819, stage))
+				.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.INVENTORY, Map.of(29090, 1)))
+				.build(), RequirementTestFixtures.policy(TeleportationItem.INVENTORY));
+			assertEquals("Perilous Moons stage " + stage, stage >= 5, check.check(moth) == RejectionReason.NONE);
+		}
+	}
+
+	@Test
+	public void ringOfReturningOffersOnlyTheActiveRespawnForEveryCharge()
+	{
+		List<Transport> rings = ResourceLoader.transports().values().stream()
+			.flatMap(Set::stream).filter(t -> t.hasDisplayInfo("Ring of returning:"))
+			.collect(Collectors.toList());
+		assertEquals(8, rings.size());
+		String[] names = {"Lumbridge", "Camelot", "Falador", "Edgeville", "Ferox Enclave",
+			"Kourend Castle", "Civitas illa Fortis", "Prifddinas"};
+		int[] flags = {0, 3910, 668, 621, 10528, 12310, 9805, 0};
+		for (int active = 0; active < names.length; active++)
+		{
+			Map<Integer, Integer> vars = new HashMap<>();
+			for (int flag : flags) if (flag != 0) vars.put(flag, 0);
+			if (flags[active] != 0) vars.put(flags[active], 1);
+			for (int itemId : new int[]{21129, 21132, 21134, 21136, 21138})
+			{
+				Requirements check = requirements(RequirementTestFixtures.context()
+					.varbitValues(vars).respawnPrifddinas(active == 7)
+					.questStates(Map.of(Quest.SONG_OF_THE_ELVES, QuestState.FINISHED))
+					.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.INVENTORY, Map.of(itemId, 1))).build(),
+					RequirementTestFixtures.policy(TeleportationItem.INVENTORY));
+				for (Transport ring : rings)
+				{
+					assertEquals(names[active] + " with item " + itemId + ": " + ring.getDisplayInfo(),
+						("Ring of returning: " + names[active]).equals(ring.getDisplayInfo()),
+						check.check(ring) == RejectionReason.NONE);
+				}
+			}
+		}
 	}
 
 	@Test

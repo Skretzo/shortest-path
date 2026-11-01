@@ -28,6 +28,20 @@
 2934 10184 0			Blast Furnace Minigame Teleport	19	0	571>4	4560&512;888@20
 2934 10184 0			Blast Furnace Minigame Teleport	23	0	571>4	4560&1024;888@20
 							
+# Bounty Hunter - Ferox Enclave							
+3140 3626 0			Bounty Hunter Minigame Teleport	24	0		4560=0;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	24	0		4560&1;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	21	0		4560&2;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	19	0		4560&4;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	24	0		4560&8;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	24	0		4560&16;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	25	0		4560&32;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	20	0		4560&64;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	21	0		4560&128;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	21	0		4560&256;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	19	0		4560&512;888@20
+3140 3626 0			Bounty Hunter Minigame Teleport	23	0		4560&1024;888@20
+							
 # Burthorpe Games Room							
 2899 3553 0			Burthorpe Games Room Minigame Teleport	24	0		4560=0;888@20
 2899 3553 0			Burthorpe Games Room Minigame Teleport	24	0		4560&1;888@20
@@ -140,6 +154,20 @@
 3363 3295 0			Mage Training Arena Minigame Teleport	19	0	1499>0	4560&512;888@20
 3363 3295 0			Mage Training Arena Minigame Teleport	23	0	1499>0	4560&1024;888@20
 							
+# Mastering Mixology - Aldarin; 9650 confirms the first visit to Varlamore							
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	24	0	9650=1	4560=0;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	24	0	9650=1	4560&1;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	21	0	9650=1	4560&2;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	19	0	9650=1	4560&4;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	24	0	9650=1	4560&8;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	24	0	9650=1	4560&16;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	25	0	9650=1	4560&32;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	20	0	9650=1	4560&64;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	21	0	9650=1	4560&128;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	21	0	9650=1	4560&256;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	19	0	9650=1	4560&512;888@20
+1388 2918 0	60 Herblore	Children of the Sun	Mastering Mixology Minigame Teleport	23	0	9650=1	4560&1024;888@20
+							
 # Nightmare Zone - North of Yanille							
 2609 3114 0			Nightmare Zone Minigame Teleport	24	0		4560=0;888@20
 2609 3114 0			Nightmare Zone Minigame Teleport	24	0		4560&1;888@20
@@ -231,6 +259,20 @@
 3506 3304 0		Shades of Mort'ton	Shades of Mort'ton Minigame Teleport	21	0		4560&256;888@20
 3506 3304 0		Shades of Mort'ton	Shades of Mort'ton Minigame Teleport	19	0		4560&512;888@20
 3506 3304 0		Shades of Mort'ton	Shades of Mort'ton Minigame Teleport	23	0		4560&1024;888@20
+							
+# Sorceress's Garden - captured default 23t; 3329 is OSMAN_WANT_POMES (sq'irk dialogue unlocked)							
+3319 3140 0			Sorceress's Garden Minigame Teleport	23	0	3329>0	4560=0;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	23	0	3329>0	4560&1;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	21	0	3329>0	4560&2;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	19	0	3329>0	4560&4;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	24	0	3329>0	4560&8;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	24	0	3329>0	4560&16;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	25	0	3329>0	4560&32;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	20	0	3329>0	4560&64;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	21	0	3329>0	4560&128;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	21	0	3329>0	4560&256;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	19	0	3329>0	4560&512;888@20
+3319 3140 0			Sorceress's Garden Minigame Teleport	23	0	3329>0	4560&1024;888@20
 							
 # Soul Wars - Isle of Souls							
 2018 5929 0			Soul Wars Minigame Teleport	24	0		4560=0;888@20

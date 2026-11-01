@@ -92,6 +92,7 @@
 2802 9999 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1		4	Slayer ring: Fremennik	T	30		
 3185 4601 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Haunted Mine	4	Slayer ring: Tarn's Lair	T	30		
 2028 4636 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Mourning's End Part II	4	Slayer ring: Dark Beasts	T	30		
+2581 8633 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Fallen From Grace	4	Slayer ring: Wyrmscraig Cavern	T	30		
 										
 # Slayer ring (eternal)										
 2431 3422 0			21268=1		4	Slayer ring: Stronghold	F	30		
@@ -99,6 +100,7 @@
 2802 9999 0			21268=1		4	Slayer ring: Fremennik	F	30		
 3185 4601 0			21268=1	Haunted Mine	4	Slayer ring: Tarn's Lair	F	30		
 2028 4636 0			21268=1	Mourning's End Part II	4	Slayer ring: Dark Beasts	F	30		
+2581 8633 0			21268=1	Fallen From Grace	4	Slayer ring: Wyrmscraig Cavern	F	30		
 										
 # Digsite pendant (can't find a varbit for the other location's activation)										
 3341 3445 0			11190=1||11191=1||11192=1||11193=1||11194=1		4	Digsite pendant: Digsite	T	20		
@@ -155,6 +157,9 @@
 2964 3378 0			8009=1		4	Falador tablet	T	20		
 3221 3218 0			8008=1		4	Lumbridge tablet	T	20		
 2757 3479 0			8010=1		4	Camelot tablet	T	20		
+2726 3485 0			8010=1		4	Camelot tablet: Seers' Village	T	20	4477=1	
+1642 3674 0			28790=1	Client of Kourend	4	Kourend Castle tablet	T	20		
+1681 3133 0			28824=1	Twilight's Promise	4	Civitas illa Fortis tablet	T	20		
 2662 3305 0			8011=1	Plague City	4	Ardougne tablet	T	20		
 2546 3112 0			8012=1	Watchtower	4	Watchtower tablet	T	20		
 # Varbit 4460 is DIARY_ARDOUGNE_HARD										
@@ -226,8 +231,12 @@
 2196 3056 0			21389=1	Regicide	4	Master scroll book: Zul-andra teleport	T	20	5683>0	
 1310 1250 0			13249=1		4	Key master teleport	T	20		
 1310 1250 0			21389=1		4	Master scroll book: Key master teleport	T	20	5684>0	
-3128 3832 0			21802=1		4	Revenant cave teleport	T	20		
-3128 3832 0			21389=1		4	Master scroll book: Revenant cave teleport	T	20	6056>0	
+3073 3653 0			21802=1		4	Revenant cave teleport (level 17 entrance)	T	20		
+3067 3739 0			21802=1		4	Revenant cave teleport (level 26 entrance)	T	20		
+3128 3832 0			21802=1		4	Revenant cave teleport (level 40 entrance)	T	20		
+3073 3653 0			21389=1		4	Master scroll book: Revenant cave teleport (level 17 entrance)	T	20	6056>0	
+3067 3739 0			21389=1		4	Master scroll book: Revenant cave teleport (level 26 entrance)	T	20	6056>0	
+3128 3832 0			21389=1		4	Master scroll book: Revenant cave teleport (level 40 entrance)	T	20	6056>0	
 1645 3580 0			23387=1		4	Watson teleport	T	20		
 1645 3580 0			21389=1		4	Master scroll book: Watson teleport	T	20	8253>0	
 4063 4557 0			29684=1	While Guthix Sleeps	4	Guthixian temple teleport	T	20		
@@ -571,3 +580,19 @@
 2848 3930 0			28564=1	Making Friends with My Arm	4	Trinket of fairies: Tool Lep - Weiss	F	30		
 2863 3432 0			28564=1		4	Trinket of fairies: Tool Lep - White Wolf Mountain	F	30		
 2573 3108 0			28564=1		4	Trinket of fairies: Tool Lep - Yanille	F	30		
+										
+# Calcified moth - 9819 is PMOON_QUEST; stage 5 grants Cam Torum entry after returning to Attala										
+1439 9550 1			29090=1		4	Calcified moth	T	20	9819>4	
+										
+# Mokhaiotl waystone										
+1311 9497 1			31099=1	The Final Dawn	4	Mokhaiotl waystone	T	20		
+										
+# Ring of returning										
+3221 3219 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Lumbridge	T	20	668=0;3910=0;621=0;10528=0;12310=0;9805=0	
+2758 3480 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Camelot	T	20	3910=1	
+2971 3338 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Falador	T	20	668=1	
+3095 3470 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Edgeville	T	20	621=1	
+3150 3635 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Ferox Enclave	T	20	10528=1	
+1629 3673 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Kourend Castle	T	20	12310=1	
+1681 3134 0			21129=1||21132=1||21134=1||21136=1||21138=1		4	Ring of returning: Civitas illa Fortis	T	20	9805=1	
+3263 6066 0			21129=1||21132=1||21134=1||21136=1||21138=1	Song of the Elves	4	Ring of returning: Prifddinas	T	20	668=0;3910=0;621=0;10528=0;12310=0;9805=0	

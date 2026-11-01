@@ -145,6 +145,8 @@ public final class RequirementContext
 		{
 			boostedSkillLevelsAndMore[i] = source.boostedSkillLevel(Skill.values()[i]);
 		}
+		// The Herblore transport requirement (Mastering Mixology) checks the base level.
+		boostedSkillLevelsAndMore[Skill.HERBLORE.ordinal()] = source.realSkillLevel(Skill.HERBLORE);
 		boostedSkillLevelsAndMore[i++] = source.totalLevel(); // skill total level
 		boostedSkillLevelsAndMore[i++] = source.combatLevel(); // combat level
 		boostedSkillLevelsAndMore[i++] = source.varp(VarPlayerID.QP); // quest points

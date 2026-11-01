@@ -111,6 +111,26 @@ public class PlayerStateSourceTest
 	}
 
 	@Test
+	public void mixologyUsesBaseHerbloreWhileOtherSkillsKeepBoosts()
+	{
+		for (int base : new int[]{59, 60})
+		{
+			MapPlayerStateSource source = new MapPlayerStateSource()
+				.realSkillLevel(Skill.HERBLORE, base).boostedSkillLevel(Skill.HERBLORE, 64)
+				.realSkillLevel(Skill.MAGIC, 59).boostedSkillLevel(Skill.MAGIC, 64);
+			Transport mixology = new Transport.TransportBuilder().type(TransportType.TELEPORTATION_MINIGAME)
+				.skillLevels("60 Herblore").build();
+			RequirementContext context = RequirementContext.capture(source, new TestRequirementHooks(),
+				RequirementTestFixtures.policy(MODE), 0L, List.of(mixology), Map.of(), null,
+				Set.of(), false, new LeagueModeState(), null, Set.of());
+			assertEquals(base, context.getBoostedSkillLevelsAndMore().get(Skill.HERBLORE));
+			assertEquals(64, context.getBoostedSkillLevelsAndMore().get(Skill.MAGIC));
+			assertEquals(base >= 60, RequirementTestFixtures.requirements(context,
+				RequirementTestFixtures.policy(MODE)).check(mixology) == RejectionReason.NONE);
+		}
+	}
+
+	@Test
 	public void capturePopulatesTheContextWithoutAClient()
 	{
 		MapPlayerStateSource source = new MapPlayerStateSource()
