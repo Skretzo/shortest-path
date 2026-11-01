@@ -19,11 +19,11 @@ import shortestpath.Util;
  * Natural components (walking edges only) are not stored: they are the routing components joined
  * through the crossings.
  *
- * <p>Format: the 8-byte magic, then unsigned base-128 varints, least-significant group first, for
- * the version, the run count and the crossing int count; then three columns of run-count varints
- * (run length minus one, the gap from the previous run's end with the first gap measured from 0 in
- * unsigned 32-bit arithmetic, and the routing component id); then the crossings as big-endian 32-bit
- * packed tiles in (from, to) pairs. The reader rejects any other shape, so a stale or damaged
+ * <p>Format: the 8-byte magic, then unsigned base-128 varints, least-significant group first, each
+ * in its shortest form and within 32 bits, for the version, the run count and the crossing int count;
+ * then three columns of run-count varints (run length minus one, the gap from the previous run's end
+ * with the first gap measured from 0 in unsigned 32-bit arithmetic, and the routing component id);
+ * then the crossings as big-endian 32-bit packed tiles in (from, to) pairs. The reader rejects any other shape, so a stale or damaged
  * resource fails loudly instead of routing differently.
  */
 final class ComponentLayer
@@ -99,8 +99,13 @@ final class ComponentLayer
 		for (int shift = 0; shift < 35; shift += 7)
 		{
 			byte next = in.get();
+			if (shift == 28 && (next & 0x70) != 0) throw new IOException("varint above 32 bits in " + RESOURCE);
 			value |= (next & 0x7f) << shift;
-			if (next >= 0) return value;
+			if (next >= 0)
+			{
+				if (next == 0 && shift > 0) throw new IOException("non-canonical varint in " + RESOURCE);
+				return value;
+			}
 		}
 		throw new IOException("over-long varint in " + RESOURCE);
 	}

@@ -255,6 +255,17 @@ public class ComponentLayerTest
 	}
 
 	@Test
+	public void nonCanonicalVarintsAreRejected()
+	{
+		// 0 with a redundant continuation byte.
+		assertRejectedWith("varint", new Encoder().varint(ComponentLayer.VERSION).varint(1).varint(0)
+			.raw(0x80, 0x00).varint(0).varint(1).bytes());
+		// A fifth byte carrying bits above 2^32 would be dropped silently.
+		assertRejectedWith("varint", new Encoder().varint(ComponentLayer.VERSION).varint(1).varint(0)
+			.raw(0xff, 0xff, 0xff, 0xff, 0x1f).varint(0).varint(1).bytes());
+	}
+
+	@Test
 	public void largestRunAndTheLastTileOfTheRangeAreAccepted() throws Exception
 	{
 		byte[] bytes = header(2, 0).varint(65534).varint(1).varint(0).varint(0xfffffffeL - 65535).varint(1).varint(2).bytes();
