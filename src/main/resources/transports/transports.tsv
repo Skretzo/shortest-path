@@ -6397,6 +6397,16 @@
 3122 2490 0	3125 8880 0	Enter Cave entrance 57908						2	
 3125 8880 0	3122 2490 0	Exit Cave exit 57909						2	
 									
+# Deepfin Point Dungeon									
+1942 2805 0	1957 9190 0	Enter Cave 60166						2	
+1957 9190 0	1942 2805 0	Exit Cave 60167						2	
+									
+# Smoke Devil Dungeon									
+2412 3060 0	2404 9415 0	Enter Smoky cave 30176							
+2404 9415 0	2412 3060 0	Use Crevice 534							
+2379 9452 0	2376 9452 0	Use Crevice 535							
+2376 9452 0	2379 9452 0	Use Crevice 536							
+									
 # Morytania Spider Cave									
 3657 3407 0	3679 9797 0	Enter Cave 42594						2	
 3679 9797 0	3658 3407 0	Exit Cave 42595						2	
