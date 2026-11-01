@@ -56,7 +56,7 @@
 2662 3305 0	WATER_RUNE=2&&LAW_RUNE=2	51 Magic	Plague City	4	Ardougne Teleport	20	4070=0	165=30
 								
 # Civitas illa Fortis Teleport								
-1681 3136 0	EARTH_RUNE=1&&FIRE_RUNE=1&&LAW_RUNE=2	54 Magic	Twilight's Promise	4	Civitas illa Fortis Teleport	20	4070=0	
+1681 3133 0	EARTH_RUNE=1&&FIRE_RUNE=1&&LAW_RUNE=2	54 Magic	Twilight's Promise	4	Civitas illa Fortis Teleport	20	4070=0	
 								
 # Watchtower Teleport								
 2546 3112 0	EARTH_RUNE=2&&LAW_RUNE=2	58 Magic	Watchtower	4	Watchtower Teleport	20	4070=0	212=14
@@ -147,7 +147,7 @@
 1682 3135 0	LAW_RUNE=1&&SOUL_RUNE=1	34 Magic		4	Respawn Teleport	20	4070=3;9805=1	
 								
 # Salve Graveyard Teleport								
-3433 3459 0	LAW_RUNE=1&&SOUL_RUNE=2	40 Magic	Priest in Peril	4	Salve Graveyard Teleport	20	4070=3	
+3433 3461 0	LAW_RUNE=1&&SOUL_RUNE=2	40 Magic	Priest in Peril	4	Salve Graveyard Teleport	20	4070=3	
 								
 # Fenkenstrain's Castle Teleport								
 3548 3529 0	EARTH_RUNE=1&&LAW_RUNE=1&&SOUL_RUNE=1	48 Magic	Priest in Peril	4	Fenkenstrain's Castle Teleport	20	4070=3	
