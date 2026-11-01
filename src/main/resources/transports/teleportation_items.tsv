@@ -573,3 +573,6 @@
 2848 3930 0			28564=1	Making Friends with My Arm	4	Trinket of fairies: Tool Lep - Weiss	F	30		
 2863 3432 0			28564=1		4	Trinket of fairies: Tool Lep - White Wolf Mountain	F	30		
 2573 3108 0			28564=1		4	Trinket of fairies: Tool Lep - Yanille	F	30		
+										
+# Calcified moth - full quest completion conservatively guarantees Cam Torum access										
+1439 9550 1			29090=1	Perilous Moons	4	Calcified moth	T	20		
