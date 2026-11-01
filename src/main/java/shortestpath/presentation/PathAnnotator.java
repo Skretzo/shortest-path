@@ -4,9 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntFunction;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -82,6 +87,23 @@ public class PathAnnotator
 		TransportType.FAIRY_RING, "Fairy Ring ",
 		TransportType.SPIRIT_TREE, "Spirit Tree: ",
 		TransportType.WILDERNESS_OBELISK, "Obelisk: ");
+
+	/**
+	 * A count in brackets at the end of an item name, "(4)": the charges and doses that variants
+	 * of one item differ by. A bare number is left alone, as "Godsword shard 1" to 3 are
+	 * different items.
+	 */
+	private static final Pattern NAME_COUNT = Pattern.compile("\\s*\\(\\d+\\)$");
+
+	/** A note in brackets at the end of an item name, e.g. " (or)" or " (inactive)". */
+	private static final Pattern NAME_NOTE = Pattern.compile("\\s*\\([^()]*\\)$");
+
+	/**
+	 * A missing item group with more entries than this whose entries all end in the same words
+	 * reads "any axe". Kept above the 4 and 5 entries of the fire and infernal capes or the
+	 * heraldic rune shields, which are not "any cape" or "any shield".
+	 */
+	private static final int MAX_LISTED_ENTRIES = 5;
 
 	private final Client client;
 	private final PohService pohService;
@@ -172,25 +194,152 @@ public class PathAnnotator
 	/** "Not found in inventory or bank: Spade, Rope or Knife", one entry per missing item group. */
 	private String missingItemsLabel(List<ItemRequirement> missing)
 	{
+		return missingItemsLabel(missing, this::itemName, pathfinderConfig.getHeldItems().isBankSeen());
+	}
+
+	/** The item's name, or {@code null} when it has none. */
+	private String itemName(int id)
+	{
+		// Requirement ids come from other plugins' messages; an invalid or renamed
+		// id may resolve to no name rather than crash every rendered frame.
+		ItemComposition def = client.getItemDefinition(id);
+		String name = def == null ? null : def.getName();
+		return name == null || name.isEmpty() || "null".equals(name) ? null : name;
+	}
+
+	/**
+	 * "Not found in inventory or bank: Spade, any Combat bracelet, Rope or Knife", one
+	 * {@link #itemGroupLabel entry} per missing item group. {@code itemName} gives an item's
+	 * name, or {@code null} when it has none.
+	 */
+	static String missingItemsLabel(List<ItemRequirement> missing, IntFunction<String> itemName, boolean bankSeen)
+	{
 		List<String> groups = new ArrayList<>(missing.size());
 		for (ItemRequirement group : missing)
 		{
-			List<String> names = new ArrayList<>();
+			List<Integer> ids = new ArrayList<>();
 			for (ItemRequirement.Branch branch : group.getBranches())
 			{
 				for (int id : branch.getItemIds())
 				{
-					// Requirement ids come from other plugins' messages; an invalid or renamed
-					// id may resolve to no name rather than crash every rendered frame.
-					ItemComposition def = client.getItemDefinition(id);
-					String name = def == null ? null : def.getName();
-					names.add(name == null || name.isEmpty() || "null".equals(name) ? "Item " + id : name);
+					ids.add(id);
 				}
 			}
-			groups.add(String.join(" or ", names));
+			groups.add(itemGroupLabel(ids, itemName));
 		}
 		return "Not found in inventory or bank: " + String.join(", ", groups)
-			+ (pathfinderConfig.getHeldItems().isBankSeen() ? "" : " (bank not checked)");
+			+ (bankSeen ? "" : " (bank not checked)");
+	}
+
+	/**
+	 * One "any one of these" item group, shortened: other plugins send every variant of an item
+	 * (charges, ornament kits, noted copies), which would run the label across the screen.
+	 * <ul>
+	 * <li>Names that differ only in case are one name: a spade and its noted copy are "Spade".</li>
+	 * <li>A name that holds a shorter name of the group as whole words, once a count in brackets at
+	 * its end is dropped, is a variant of it: "any Combat bracelet", "any Slayer helmet", and
+	 * "any Ring of dueling" for (1) to (8).</li>
+	 * <li>Different items are joined by "or": "Nose peg or any Slayer helmet".</li>
+	 * <li>More than {@link #MAX_LISTED_ENTRIES} entries that all end in the same words, ignoring
+	 * a note in brackets, become those words: "any axe".</li>
+	 * </ul>
+	 * Ids without a name are listed last, as "Item 123".
+	 */
+	static String itemGroupLabel(List<Integer> ids, IntFunction<String> itemName)
+	{
+		Map<String, String> names = new LinkedHashMap<>();
+		Set<String> unnamed = new LinkedHashSet<>();
+		for (int id : ids)
+		{
+			String name = itemName.apply(id);
+			if (name == null)
+			{
+				unnamed.add("Item " + id);
+			}
+			else
+			{
+				names.putIfAbsent(name.toLowerCase(Locale.ROOT), name);
+			}
+		}
+
+		List<String> distinct = new ArrayList<>(names.values());
+		List<String> bases = new ArrayList<>(distinct.size());
+		for (String name : distinct)
+		{
+			String base = NAME_COUNT.matcher(name).replaceFirst("");
+			bases.add(base.isEmpty() ? name : base);
+		}
+
+		// Each name joins the family of the shortest base it holds, at least its own.
+		Map<String, List<String>> families = new LinkedHashMap<>();
+		Map<String, String> roots = new LinkedHashMap<>();
+		for (int i = 0; i < distinct.size(); i++)
+		{
+			int root = i;
+			for (int j = 0; j < distinct.size(); j++)
+			{
+				if (bases.get(j).length() < bases.get(root).length() && containsWords(bases.get(i), bases.get(j)))
+				{
+					root = j;
+				}
+			}
+			String key = bases.get(root).toLowerCase(Locale.ROOT);
+			roots.putIfAbsent(key, bases.get(root));
+			families.computeIfAbsent(key, k -> new ArrayList<>()).add(distinct.get(i));
+		}
+
+		List<String> entries = new ArrayList<>();
+		String[] sharedWords = null;
+		int shared = 0;
+		for (Map.Entry<String, List<String>> family : families.entrySet())
+		{
+			String root = roots.get(family.getKey());
+			List<String> members = family.getValue();
+			entries.add(members.size() == 1 ? members.get(0) : "any " + root);
+
+			String[] words = NAME_NOTE.matcher(root).replaceFirst("").split(" ");
+			if (sharedWords == null)
+			{
+				sharedWords = words;
+				shared = words.length;
+				continue;
+			}
+			int same = 0;
+			while (same < shared && same < words.length
+				&& words[words.length - 1 - same].equalsIgnoreCase(sharedWords[sharedWords.length - 1 - same]))
+			{
+				same++;
+			}
+			shared = same;
+		}
+		if (entries.size() > MAX_LISTED_ENTRIES && shared > 0)
+		{
+			entries.clear();
+			entries.add("any "
+				+ String.join(" ", Arrays.copyOfRange(sharedWords, sharedWords.length - shared, sharedWords.length)));
+		}
+		entries.addAll(unnamed);
+		return String.join(" or ", entries);
+	}
+
+	/**
+	 * Whether {@code text} holds {@code part} as whole words, ignoring case: "Black slayer helmet"
+	 * holds "Slayer helmet", but "Unholy book" does not hold "Holy book".
+	 */
+	private static boolean containsWords(String text, String part)
+	{
+		String lowerText = text.toLowerCase(Locale.ROOT);
+		String lowerPart = part.toLowerCase(Locale.ROOT);
+		for (int start = lowerText.indexOf(lowerPart); start >= 0; start = lowerText.indexOf(lowerPart, start + 1))
+		{
+			int end = start + lowerPart.length();
+			if ((start == 0 || !Character.isLetterOrDigit(lowerText.charAt(start - 1)))
+				&& (end == lowerText.length() || !Character.isLetterOrDigit(lowerText.charAt(end))))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

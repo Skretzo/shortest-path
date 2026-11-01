@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +29,7 @@ import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.TransportEligibility;
+import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
@@ -322,5 +324,115 @@ public class PathAnnotatorTest
 		assertEquals(Set.of(954), result.bankItemIds);
 		assertEquals("the raw pickup map is formatted into a phrase",
 			List.of("1 Unknown item"), result.phrases);
+	}
+
+	// ---------------------------------------------------------------
+	// Missing-items label — one short entry per item group
+	// ---------------------------------------------------------------
+
+	/** The label of one item group whose ids 0, 1, 2, ... have these names (null: no name). */
+	private static String groupLabel(String... names)
+	{
+		List<Integer> ids = new ArrayList<>();
+		for (int id = 0; id < names.length; id++)
+		{
+			ids.add(id);
+		}
+		return PathAnnotator.itemGroupLabel(ids, id -> names[id]);
+	}
+
+	/** An item group as a plugin message decodes it: one branch per item id. */
+	private static ItemRequirement group(int... ids)
+	{
+		List<ItemRequirement.Branch> branches = new ArrayList<>();
+		for (int id : ids)
+		{
+			branches.add(new ItemRequirement.Branch(new int[] {id}, new int[0], new int[0], 1));
+		}
+		return new ItemRequirement(branches);
+	}
+
+	@Test
+	public void itemGroupLabelFoldsTheVariantsOfAnItem()
+	{
+		assertEquals("any Combat bracelet", groupLabel("Combat bracelet(4)", "Combat bracelet(3)",
+			"Combat bracelet(2)", "Combat bracelet(1)", "Combat bracelet", "Combat bracelet(6)", "Combat bracelet(5)"));
+		assertEquals("any Ahrim's hood", groupLabel("Ahrim's hood", "Ahrim's hood 100", "Ahrim's hood 75",
+			"Ahrim's hood 50", "Ahrim's hood 25", "Ahrim's hood 0"));
+		assertEquals("any Slayer helmet", groupLabel("Slayer helmet", "Slayer helmet (i)", "Black slayer helmet",
+			"Twisted slayer helmet (i)"));
+		assertEquals("any Logs", groupLabel("Logs", "Achey tree logs", "Oak logs", "Willow logs", "Teak logs",
+			"Arctic pine logs", "Maple logs", "Mahogany logs", "Yew logs", "Camphor logs", "Magic logs",
+			"Ironwood logs", "Redwood logs", "Rosewood logs"));
+		// Charges with no uncharged item in the group fold by the count at the end of the name.
+		assertEquals("any Ring of dueling", groupLabel("Ring of dueling(1)", "Ring of dueling(2)",
+			"Ring of dueling(3)", "Ring of dueling(4)", "Ring of dueling(5)", "Ring of dueling(6)",
+			"Ring of dueling(7)", "Ring of dueling(8)"));
+	}
+
+	@Test
+	public void itemGroupLabelNamesOneItemOnce()
+	{
+		assertEquals("Spade", groupLabel("Spade"));
+		// An item and its noted copy share a name.
+		assertEquals("Tinderbox", groupLabel("Tinderbox", "Tinderbox"));
+		// A lone item keeps its count.
+		assertEquals("Ring of dueling(8)", groupLabel("Ring of dueling(8)", "Ring of dueling(8)"));
+	}
+
+	@Test
+	public void itemGroupLabelJoinsDifferentItemsWithOr()
+	{
+		assertEquals("Rope or Knife", groupLabel("Rope", "Knife"));
+		assertEquals("Mirror shield or V's shield", groupLabel("Mirror shield", "V's shield", "Mirror shield"));
+		assertEquals("Nose peg or any Slayer helmet", groupLabel("Nose peg", "Slayer helmet", "Slayer helmet (i)",
+			"Black slayer helmet", "Black slayer helmet (i)", "Twisted slayer helmet", "Twisted slayer helmet (i)",
+			"Nose peg"));
+		// Only whole words make a variant: an unholy book is not a holy book.
+		assertEquals("Holy book or Unholy book", groupLabel("Holy book", "Unholy book"));
+		// Only a count in brackets is dropped: these shards are three different items.
+		assertEquals("Godsword shard 1 or Godsword shard 2 or Godsword shard 3",
+			groupLabel("Godsword shard 1", "Godsword shard 2", "Godsword shard 3"));
+	}
+
+	@Test
+	public void itemGroupLabelCallsALongListByTheWordsItsEntriesEndIn()
+	{
+		assertEquals("any axe", groupLabel("Bronze axe", "Iron axe", "Steel axe", "Black axe", "Mithril axe",
+			"Adamant axe", "Rune axe", "Dragon axe", "Dragon axe (or)", "Crystal axe", "Crystal axe (inactive)",
+			"Bronze felling axe", "Iron felling axe", "Steel felling axe", "Black felling axe", "Mithril felling axe",
+			"Adamant felling axe", "Rune felling axe", "Dragon felling axe", "Crystal felling axe",
+			"Crystal felling axe (inactive)", "Blessed axe", "Gilded axe", "Infernal axe", "Infernal axe (uncharged)",
+			"Infernal axe (or)", "3rd Age axe", "3rd Age felling axe"));
+		assertEquals("any slayer helmet", groupLabel("Black slayer helmet", "Green slayer helmet",
+			"Red slayer helmet", "Purple slayer helmet", "Turquoise slayer helmet", "Hydra slayer helmet (i)"));
+		// Up to MAX_LISTED_ENTRIES entries stay listed: these are not any cape.
+		assertEquals("any Fire cape or any Fire max cape or any Infernal cape or any Infernal max cape",
+			groupLabel("Fire cape", "Fire cape (l)", "Fire max cape", "Fire max cape (l)", "Infernal cape",
+				"Infernal cape (l)", "Infernal max cape", "Infernal max cape (l)"));
+		// Entries that end in different words stay listed.
+		assertEquals("Lit candle or Lit torch or Oil lamp or Candle lantern or Oil lantern or Mining helmet",
+			groupLabel("Lit candle", "Lit torch", "Oil lamp", "Candle lantern", "Oil lantern", "Mining helmet"));
+	}
+
+	@Test
+	public void itemGroupLabelListsIdsWithoutANameLast()
+	{
+		assertEquals("Spade or Item 0 or Item 2", groupLabel(null, "Spade", null));
+		// Placeholders never fold: two unnamed ids are two items.
+		assertEquals("Item 0 or Item 1", groupLabel(null, null));
+	}
+
+	@Test
+	public void missingItemsLabelJoinsGroupsAndNotesAnUncheckedBank()
+	{
+		Map<Integer, String> names = Map.of(952, "Spade", 954, "Rope", 946, "Knife",
+			11118, "Combat bracelet(4)", 11126, "Combat bracelet", 11972, "Combat bracelet(6)");
+		List<ItemRequirement> missing = List.of(group(952), group(954, 946), group(11118, 11126, 11972));
+
+		assertEquals("Not found in inventory or bank: Spade, Rope or Knife, any Combat bracelet",
+			PathAnnotator.missingItemsLabel(missing, names::get, true));
+		assertEquals("Not found in inventory or bank: Spade (bank not checked)",
+			PathAnnotator.missingItemsLabel(List.of(group(952)), names::get, false));
 	}
 }
