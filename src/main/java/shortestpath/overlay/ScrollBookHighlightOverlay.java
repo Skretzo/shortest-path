@@ -41,7 +41,9 @@ public class ScrollBookHighlightOverlay extends AbstractHighlightOverlay
 		SCROLL_WIDGET_IDS.put("Master scroll book: Lumberyard teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_LUMBERYARD);
 		SCROLL_WIDGET_IDS.put("Master scroll book: Zul-andra teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_ZULANDRA);
 		SCROLL_WIDGET_IDS.put("Master scroll book: Key master teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_CERBERUS);
-		SCROLL_WIDGET_IDS.put("Master scroll book: Revenant cave teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_REVENANTS);
+		SCROLL_WIDGET_IDS.put("Master scroll book: Revenant cave teleport (level 17 entrance)", InterfaceID.Bookofscrolls.TELEPORTSCROLL_REVENANTS);
+		SCROLL_WIDGET_IDS.put("Master scroll book: Revenant cave teleport (level 26 entrance)", InterfaceID.Bookofscrolls.TELEPORTSCROLL_REVENANTS);
+		SCROLL_WIDGET_IDS.put("Master scroll book: Revenant cave teleport (level 40 entrance)", InterfaceID.Bookofscrolls.TELEPORTSCROLL_REVENANTS);
 		SCROLL_WIDGET_IDS.put("Master scroll book: Watson teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_WATSON);
 		SCROLL_WIDGET_IDS.put("Master scroll book: Guthixian temple teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_GUTHIXIAN_TEMPLE);
 		SCROLL_WIDGET_IDS.put("Master scroll book: Spider cave teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_SPIDERCAVE);
