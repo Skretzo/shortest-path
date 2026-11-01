@@ -609,8 +609,6 @@
 2869 3428 0	2866 3428 0	Climb Rocks 62424	68 Agility					
 1761 3874 0	1761 3872 0	Climb Rocks 34741	69 Agility				2	
 1761 3872 0	1761 3874 0	Climb Rocks 34741	69 Agility				2	
-3565 3379 0	3562 3379 0	Jump-over Rocks 57666	69 Agility		7255=138			
-3562 3379 0	3565 3379 0	Jump-over Inconspicuous rocks (master) 29044	69 Agility		7255=138			
 3504 3559 0	3504 3562 0	Cross Bridge 57717	69 Agility		4441=2;5023=2		4	
 3504 3562 0	3504 3559 0	Cross Bridge 57716	69 Agility		4441=2;5023=2		4	
 3503 3559 0	3503 3562 0	Cross Bridge 57718	69 Agility		4441=2;5023=2		4	
@@ -721,6 +719,8 @@
 2332 3252 0	2338 3253 0	Climb Rocks 16514	85 Agility				6	
 2547 3749 0	2547 3744 0	Climb Rocks 53252	85 Agility				5	
 2547 3744 0	2547 3749 0	Climb Rocks 53254	85 Agility				5	
+3565 3379 0	3562 3379 0	Jump-over Rocks 57666	86 Agility		7255=138			
+3562 3379 0	3565 3379 0	Jump-over Inconspicuous rocks (master) 29044	86 Agility		7255=138			
 3500 9510 2	3506 9505 2	Squeeze-through Crevice 16465	86 Agility					
 3506 9505 2	3500 9510 2	Squeeze-through Crevice 16465	86 Agility					
 2770 9340 0	2764 9339 0	Squeeze-through Crevice 53242	96 Agility					Legends' Quest
