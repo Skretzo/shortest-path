@@ -46,6 +46,11 @@ public final class RoutingStaticLoader
 	static final int SEED_TILE = WorldPointUtil.packWorldPoint(3221, 3218, 0);
 	/** One full {@code y} unit in the packed encoding (bit 15). */
 	private static final int Y_UNIT = 1 << 15;
+	/**
+	 * Upper bound on the search tiles of one layer. The world has well under ten million walkable
+	 * tiles; the bound only keeps a damaged layer from sizing arrays that cannot be allocated.
+	 */
+	private static final long MAX_SEARCH_TILES = Integer.MAX_VALUE / 16;
 
 	private RoutingStaticLoader()
 	{
@@ -93,11 +98,15 @@ public final class RoutingStaticLoader
 			if (candidate[natural[id]]) renumbered[id] = routingComponentCount++;
 		}
 
-		int count = 0;
+		// The reader validates each run alone, so the total is bounded here, before anything is sized from it.
+		long total = 0;
 		for (int run = 0; run < layer.starts.length; run++)
 		{
-			if (reachable[natural[layer.ids[run]]]) count += layer.lengths[run];
+			if (reachable[natural[layer.ids[run]]]) total += layer.lengths[run];
 		}
+		if (total > MAX_SEARCH_TILES)
+			throw new IOException("routing component layer is stale: " + total + " search tiles");
+		int count = (int) total;
 		int[] tiles = new int[count];
 		byte[] masks = new byte[count];
 		TileComponents components = new TileComponents(count, routingComponentCount);
