@@ -246,6 +246,32 @@ public class RoutingStaticLoaderTest
 	}
 
 	@Test
+	public void layerWhoseRunLengthsOverflowTheTileCountIsRejected() throws Exception
+	{
+		// 40,000 maximal runs hold more tiles than an int can count; none of them has to match the map.
+		int runs = 40000;
+		int[] starts = new int[runs];
+		char[] lengths = new char[runs];
+		int[] ids = new int[runs];
+		for (int i = 0; i < runs; i++)
+		{
+			starts[i] = i * Character.MAX_VALUE;
+			lengths[i] = Character.MAX_VALUE;
+			ids[i] = 1;
+		}
+		ComponentLayer layer = new ComponentLayer(starts, lengths, ids, new int[0]);
+		try
+		{
+			RoutingStaticLoader.build(chainWorld(), Map.of(), Set.of(), layer, 0);
+			fail("the run lengths add up to more search tiles than the loader can hold");
+		}
+		catch (IOException expected)
+		{
+			assertTrue(expected.getMessage(), expected.getMessage().contains("stale"));
+		}
+	}
+
+	@Test
 	public void crossingOutsideTheLayerIsRejected() throws Exception
 	{
 		ComponentLayer layer = new ComponentLayer(new int[] {A}, new char[] {1}, new int[] {1}, new int[] {A, C});
