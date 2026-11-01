@@ -92,6 +92,7 @@
 2802 9999 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1		4	Slayer ring: Fremennik	T	30		
 3185 4601 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Haunted Mine	4	Slayer ring: Tarn's Lair	T	30		
 2028 4636 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Mourning's End Part II	4	Slayer ring: Dark Beasts	T	30		
+2581 8633 0			11866=1||11867=1||11868=1||11869=1||11870=1||11871=1||11872=1||11873=1	Fallen From Grace	4	Slayer ring: Wyrmscraig Cavern	T	30		
 										
 # Slayer ring (eternal)										
 2431 3422 0			21268=1		4	Slayer ring: Stronghold	F	30		
@@ -99,6 +100,7 @@
 2802 9999 0			21268=1		4	Slayer ring: Fremennik	F	30		
 3185 4601 0			21268=1	Haunted Mine	4	Slayer ring: Tarn's Lair	F	30		
 2028 4636 0			21268=1	Mourning's End Part II	4	Slayer ring: Dark Beasts	F	30		
+2581 8633 0			21268=1	Fallen From Grace	4	Slayer ring: Wyrmscraig Cavern	F	30		
 										
 # Digsite pendant (can't find a varbit for the other location's activation)										
 3341 3445 0			11190=1||11191=1||11192=1||11193=1||11194=1		4	Digsite pendant: Digsite	T	20		
