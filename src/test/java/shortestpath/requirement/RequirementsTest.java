@@ -790,6 +790,21 @@ public class RequirementsTest
 	}
 
 	@Test
+	public void calcifiedMothUnlocksAfterReturningToAttala()
+	{
+		Transport moth = ResourceLoader.transports().values().stream().flatMap(Set::stream)
+			.filter(t -> "Calcified moth".equals(t.getDisplayInfo())).findFirst().orElseThrow();
+		for (int stage : new int[]{0, 2, 4, 5, 6, 32})
+		{
+			Requirements check = requirements(RequirementTestFixtures.context()
+				.varbitValues(Map.of(9819, stage))
+				.eligibility(RequirementTestFixtures.eligibility(TeleportationItem.INVENTORY, Map.of(29090, 1)))
+				.build(), RequirementTestFixtures.policy(TeleportationItem.INVENTORY));
+			assertEquals("Perilous Moons stage " + stage, stage >= 5, check.check(moth) == RejectionReason.NONE);
+		}
+	}
+
+	@Test
 	public void ringOfReturningOffersOnlyTheActiveRespawnForEveryCharge()
 	{
 		List<Transport> rings = ResourceLoader.transports().values().stream()
