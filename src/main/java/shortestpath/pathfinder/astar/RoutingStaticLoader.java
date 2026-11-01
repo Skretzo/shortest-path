@@ -80,10 +80,17 @@ public final class RoutingStaticLoader
 	static RoutingStatic build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles, ComponentLayer layer, int seedTile) throws IOException
 	{
-		for (int tile : layer.crossings)
+		for (int i = 0; i < layer.crossings.length; i += 2)
 		{
-			if (layer.component(tile) == 0)
-				throw new IOException("routing component layer is stale: crossing tile " + tile + " is not covered");
+			int from = layer.crossings[i];
+			int to = layer.crossings[i + 1];
+			if (layer.component(from) == 0 || layer.component(to) == 0)
+				throw new IOException("routing component layer is stale: crossing tile "
+					+ (layer.component(from) == 0 ? from : to) + " is not covered");
+			int[] neighbors = collision.ordinaryWalkingNeighbors(from);
+			if (!IntArrays.contains(neighbors, 0, neighbors.length, to))
+				throw new IOException("routing component layer is stale: crossing " + from + " -> " + to
+					+ " is not a walking edge");
 		}
 		int[] natural = naturalComponents(layer);
 		boolean[] candidate = new boolean[natural.length];

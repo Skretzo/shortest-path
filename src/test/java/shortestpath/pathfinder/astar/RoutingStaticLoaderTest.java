@@ -272,6 +272,23 @@ public class RoutingStaticLoaderTest
 	}
 
 	@Test
+	public void crossingThatIsNotAWalkingEdgeIsRejected() throws Exception
+	{
+		ComponentLayer covered = layerOf(chainWorld(), new int[0]);
+		// A and C are both in the layer, but B lies between them, so no walking edge joins them.
+		ComponentLayer layer = new ComponentLayer(covered.starts, covered.lengths, covered.ids, new int[] {A, C});
+		try
+		{
+			RoutingStaticLoader.build(chainWorld(), Map.of(), Set.of(), layer, A);
+			fail("the crossing is not a walking edge of the collision map");
+		}
+		catch (IOException expected)
+		{
+			assertTrue(expected.getMessage(), expected.getMessage().contains("walking edge"));
+		}
+	}
+
+	@Test
 	public void crossingOutsideTheLayerIsRejected() throws Exception
 	{
 		ComponentLayer layer = new ComponentLayer(new int[] {A}, new char[] {1}, new int[] {1}, new int[] {A, C});
