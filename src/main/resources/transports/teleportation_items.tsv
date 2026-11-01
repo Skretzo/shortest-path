@@ -231,8 +231,12 @@
 2196 3056 0			21389=1	Regicide	4	Master scroll book: Zul-andra teleport	T	20	5683>0	
 1310 1250 0			13249=1		4	Key master teleport	T	20		
 1310 1250 0			21389=1		4	Master scroll book: Key master teleport	T	20	5684>0	
-3128 3832 0			21802=1		4	Revenant cave teleport	T	20		
-3128 3832 0			21389=1		4	Master scroll book: Revenant cave teleport	T	20	6056>0	
+3073 3653 0			21802=1		4	Revenant cave teleport (level 17 entrance)	T	20		
+3067 3739 0			21802=1		4	Revenant cave teleport (level 26 entrance)	T	20		
+3128 3832 0			21802=1		4	Revenant cave teleport (level 40 entrance)	T	20		
+3073 3653 0			21389=1		4	Master scroll book: Revenant cave teleport (level 17 entrance)	T	20	6056>0	
+3067 3739 0			21389=1		4	Master scroll book: Revenant cave teleport (level 26 entrance)	T	20	6056>0	
+3128 3832 0			21389=1		4	Master scroll book: Revenant cave teleport (level 40 entrance)	T	20	6056>0	
 1645 3580 0			23387=1		4	Watson teleport	T	20		
 1645 3580 0			21389=1		4	Master scroll book: Watson teleport	T	20	8253>0	
 4063 4557 0			29684=1	While Guthix Sleeps	4	Guthixian temple teleport	T	20		
