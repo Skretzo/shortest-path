@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import org.junit.Assume;
 import org.junit.Test;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
@@ -20,9 +21,9 @@ import shortestpath.pathfinder.SplitFlagMap;
  * <pre>ROUTING_COMPONENTS_REGEN=1 ./gradlew -p shortest-path test --tests '*RoutingComponentsFreshnessTest' --rerun</pre>
  *
  * Only the values {@code 1} and {@code true} opt in; any other value is ignored with a stderr
- * note and the file is compared normally. While regenerating nothing is compared. The write goes
- * to the source tree (the Gradle test working directory is the {@code shortest-path} project
- * directory); a clean re-run then compares.
+ * note and the file is compared normally. While regenerating nothing is compared, so the test is
+ * reported as skipped rather than passed. The write goes to the source tree (the Gradle test working
+ * directory is the {@code shortest-path} project directory); a clean re-run then compares.
  */
 public class RoutingComponentsFreshnessTest
 {
@@ -44,6 +45,7 @@ public class RoutingComponentsFreshnessTest
 			Files.write(COMMITTED, expected);
 			System.err.println(REGEN_VARIABLE + " active - rewrote " + COMMITTED + " (" + expected.length
 				+ " bytes), nothing was compared");
+			Assume.assumeTrue(REGEN_VARIABLE + " is set, so the layer was rewritten instead of checked", false);
 			return;
 		}
 
