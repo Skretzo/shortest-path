@@ -90,8 +90,8 @@ jobs:
           zip -r collision-map.zip .
           mv collision-map.zip ../src/main/resources/collision-map.zip
 
-      # The exact pathfinder's routing cuts are derived from the collision map, so they are
-      # regenerated with it and committed in the same commit.
+      # The exact pathfinder's routing cuts and the routing component layer are derived from
+      # the collision map, so both are regenerated with it and committed in the same commit.
       - name: Restore KaHIP
         id: kahip-cache
         uses: actions/cache@v6
@@ -115,17 +115,27 @@ jobs:
           ./gradlew routingCuts \
             -PshortestPathDir=.. \
             -PkahipNodeSeparator="$RUNNER_TEMP/kahip-bin/node_separator" \
-            -ProutingCutsOutput="$GITHUB_WORKSPACE/src/main/resources/routing-cuts.bin"
+            -ProutingCutsOutput="$GITHUB_WORKSPACE/src/test/resources/routing-cuts.bin"
+
+      - name: Generate routing components
+        run: |
+          cd tooling
+          ./gradlew routingComponents \
+            -PshortestPathDir=.. \
+            -ProutingCutsFile="$GITHUB_WORKSPACE/src/test/resources/routing-cuts.bin" \
+            -ProutingComponentsOutput="$GITHUB_WORKSPACE/src/main/resources/routing-components.bin"
 
       # Gate: a corrupt or truncated export must never reach master. The zip
       # integrity check catches a broken archive; the test suite below loads
-      # collision-map.zip and routing-cuts.bin from the real resources, so a
-      # semantically broken map fails the job before the commit step runs.
+      # collision-map.zip from the real resources, and regenerates routing-components.bin
+      # from the committed map and cuts and fails when it differs, so a semantically broken
+      # map or a stale layer fails the job before the commit step runs.
       - name: Verify generated artifacts
         run: |
           unzip -t src/main/resources/collision-map.zip > /dev/null
-          test -s src/main/resources/routing-cuts.bin
-          ls -lh src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin
+          test -s src/test/resources/routing-cuts.bin
+          test -s src/main/resources/routing-components.bin
+          ls -lh src/main/resources/collision-map.zip src/test/resources/routing-cuts.bin src/main/resources/routing-components.bin
 
       - name: Build and test plugin with new data
         run: ./gradlew jar test --stacktrace
@@ -135,11 +145,11 @@ jobs:
           rm -rf runelite cache output cache.jar keys.json cache.zip tooling
 
       # `add` is an explicit pathspec so the commit can only ever contain the
-      # two generated artifacts, regardless of what else is left in the
+      # three generated artifacts, regardless of what else is left in the
       # workspace.
       - name: Commit changes
         uses: EndBug/add-and-commit@v11
         with:
           default_author: github_actions
-          add: "src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin"
+          add: "src/main/resources/collision-map.zip src/test/resources/routing-cuts.bin src/main/resources/routing-components.bin"
           message: "Update collision map"
