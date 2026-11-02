@@ -80,35 +80,6 @@ public enum TeleportCapability
 		return OVER_0;
 	}
 
-	/** The areas a tile must lie outside of all of, or inside a {@link #holes() hole}, to allow this capability. */
-	int[][] excludedAreas()
-	{
-		switch (this)
-		{
-			case OVER_30:
-				return new int[0][];
-			case OVER_20:
-				return ABOVE_LEVEL_30;
-			case OVER_0:
-				return EXCLUDED_FROM_OVER_0;
-			case ALL:
-			default:
-				return EXCLUDED_FROM_ALL;
-		}
-	}
-
-	/** Areas inside {@link #excludedAreas()} that still allow this capability. */
-	int[][] holes()
-	{
-		return this == ALL ? NOT_WILDERNESS : new int[0][];
-	}
-
-	// The level-30 area reaches further north than the level-20 and wilderness ones, so all are excluded.
-	private static final int[][] EXCLUDED_FROM_OVER_0 = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
-		ABOVE_LEVEL_20[1]};
-	private static final int[][] EXCLUDED_FROM_ALL = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
-		ABOVE_LEVEL_20[1], WILDERNESS[0], WILDERNESS[1]};
-
 	static boolean inAny(int[][] areas, int x, int y)
 	{
 		for (int[] area : areas)
