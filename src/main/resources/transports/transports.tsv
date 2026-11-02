@@ -4999,8 +4999,8 @@
 # Entrances: the passageway, and the lift once it has been activated									
 1305 3036 0	1311 9346 2	Enter Passageway 56636			The Final Dawn				
 1311 9346 2	1305 3036 0	Exit Passageway 56637			The Final Dawn				
-1309 3104 0	1310 9428 2	Use Lift Platform 56650			The Final Dawn	16694=1			
-1310 9428 2	1309 3104 0	Use Lift Platform 56647			The Final Dawn	16694=1			
+1311 3102 0	1311 9430 2	Use Lift Platform 56650			The Final Dawn	16694=1			
+1311 9430 2	1311 3102 0	Use Lift Platform 56647			The Final Dawn	16694=1			
 # Inside									
 1334 9359 2	1337 9360 1	Climb-down Staircase 56663							
 1337 9360 1	1334 9359 2	Climb-up Staircase 56664							
