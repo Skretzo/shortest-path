@@ -4995,6 +4995,28 @@
 1274 9770 0	1297 9780 0	Enter Cave 57273			Shadows of Custodia				
 1297 9780 0	1274 9770 0	Enter Cave 57274			Shadows of Custodia				
 									
+# Tonali Cavern									
+# Entrances: the passageway, and the lift once it has been activated									
+1305 3036 0	1311 9346 2	Enter Passageway 56636			The Final Dawn				
+1311 9346 2	1305 3036 0	Exit Passageway 56637			The Final Dawn				
+1311 3102 0	1311 9430 2	Use Lift Platform 56650			The Final Dawn	16694=1			
+1311 9430 2	1311 3102 0	Use Lift Platform 56647			The Final Dawn	16694=1			
+# Inside									
+1334 9359 2	1337 9360 1	Climb-down Staircase 56663							
+1337 9360 1	1334 9359 2	Climb-up Staircase 56664							
+1334 9367 1	1332 9366 0	Climb-down Staircase 56663							
+1332 9366 0	1334 9367 1	Climb-up Staircase 56664							
+1316 9420 0	1314 9420 2	Climb Rope 56711							
+1314 9420 2	1316 9420 0	Climb Rope 56712							
+1307 9420 1	1309 9420 2	Climb Rope 56713							
+1309 9420 2	1307 9420 1	Climb Rope 56714							
+1305 9410 0	1302 9409 1	Climb Rope 56715							
+1302 9409 1	1305 9410 0	Climb Rope 56716							
+1301 9398 0	1306 9398 0	Walk-across Log balance 56718	46 Agility						
+1306 9398 0	1301 9398 0	Walk-across Log balance 56718	46 Agility						
+1313 9378 0	1317 9378 0	Cross Stepping stone 56717	46 Agility						
+1317 9378 0	1313 9378 0	Cross Stepping stone 56717	46 Agility						
+									
 # Mountain Guide between Nemus Retreat and Quetzacalli Gorge									
 1486 3232 0	1361 3309 0	Follow Mountain Guide 14529						5	
 1361 3309 0	1486 3232 0	Follow Mountain Guide 14529						5	
