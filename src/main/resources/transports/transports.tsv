@@ -4963,6 +4963,10 @@
 1799 9506 0	1795 3106 0	Exit Stairs 50750							
 1799 9507 0	1795 3106 0	Exit Stairs 50750							
 									
+# Twilight Temple lift to the Ruins of Tapoyauik									
+1642 3222 0	1631 9632 0	Use Lift Platform 54524			The Heart of Darkness				
+1631 9632 0	1642 3222 0	Use Lift Platform 54521			The Heart of Darkness				
+									
 # Arandar Gates									
 2386 3333 0	2386 3335 0	Enter Huge Gate 3944			Regicide			2	
 2386 3335 0	2386 3333 0	Enter Huge Gate 3944			Regicide			2	
