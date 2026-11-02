@@ -1476,6 +1476,10 @@
 2750 3491 1	2750 3491 2	Climb-up Ladder 26107						2	
 2750 3491 2	2750 3491 1	Climb-down Ladder 25606						2	
 									
+# Sinclair Mansion									
+2736 3580 0	2736 3580 1	Climb-up Staircase 25682							
+2736 3580 1	2736 3580 0	Climb-down Staircase 25683							
+									
 # Lighthouse									
 2596 3608 0	2598 3608 0	Cross Broken bridge 4615						2	
 2598 3608 0	2596 3608 0	Cross Broken bridge 4616						2	
