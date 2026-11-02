@@ -12,7 +12,6 @@ import shortestpath.pathfinder.astar.AStarForwardSearch;
 import shortestpath.pathfinder.astar.AStarRoute;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.pathfinder.astar.AStarWalkCanonicalizer;
-import shortestpath.pathfinder.astar.InGameWalkRewriter;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.astar.PreparedTarget;
 import shortestpath.pathfinder.astar.RoutingStatic;
@@ -59,9 +58,7 @@ public final class AStarPathfinder implements ActiveSearch
 	private volatile long reverseSearchNanos;
 	private volatile long heuristicPrepareNanos;
 	private volatile long forwardSearchNanos;
-	private volatile long walkCanonicalizeNanos;
-	private volatile List<AStarWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
-	private volatile long walkRewriteNanos;
+	private volatile long walkNanos;
 	private volatile List<Integer> clickPoints = List.of();
 	private volatile List<Integer> keptStepIndices = List.of();
 	private volatile boolean graphReused;
@@ -317,22 +314,9 @@ public final class AStarPathfinder implements ActiveSearch
 	{ return forwardSearchNanos;
 	}
 
-	/** Time spent choosing each walking leg's canonical walk. */
-	public long getWalkCanonicalizeNanos()
-	{ return walkCanonicalizeNanos;
-	}
-
-	/**
-	 * Walking legs that kept the search's own walk because the canonicaliser disagreed with the
-	 * route about them; empty when every leg was canonicalised.
-	 */
-	public List<AStarWalkCanonicalizer.Diagnostic> getWalkDiagnostics()
-	{ return walkDiagnostics;
-	}
-
-	/** Time spent rewriting the canonical walking legs into the game's own walking paths. */
-	public long getWalkRewriteNanos()
-	{ return walkRewriteNanos;
+	/** Time spent rewriting the walking legs into the game's own walking paths. */
+	public long getWalkNanos()
+	{ return walkNanos;
 	}
 
 	/**
@@ -366,13 +350,8 @@ public final class AStarPathfinder implements ActiveSearch
 	{
 		Map<String, String> entries = new LinkedHashMap<>();
 		entries.put("Forward search", PathfinderStats.millis(getForwardSearchNanos()));
-		entries.put("Walk canonicalize", PathfinderStats.millis(getWalkCanonicalizeNanos()));
-		if (!getWalkDiagnostics().isEmpty())
-		{
-			entries.put("Legs kept as found", Integer.toString(getWalkDiagnostics().size()));
-		}
 		int keptSteps = getKeptStepIndices().size();
-		entries.put("Walk rewrite", PathfinderStats.millis(getWalkRewriteNanos())
+		entries.put("Walk rewrite", PathfinderStats.millis(getWalkNanos())
 			+ (keptSteps > 0 ? ", " + keptSteps + " kept" : ""));
 		entries.put("Target prep", isTargetReused() ? "reused"
 			: PathfinderStats.millis(getReverseSearchNanos() + getHeuristicPrepareNanos()));
@@ -481,17 +460,12 @@ public final class AStarPathfinder implements ActiveSearch
 				}
 				if (found != null)
 				{
-					// Publish only the final path, so the render thread never shows the raw one. First
-					// pick each walking leg's canonical walk among the equally cheap ones, then turn it
-					// into the clicks along it and the paths the game's own walking takes between them.
+					// Publish only the final path, so the render thread never shows the raw one: turn each
+					// walking leg into the clicks along it and the paths the game's own walking takes between them.
 					phaseStarted = System.nanoTime();
-					AStarWalkCanonicalizer.Result canonical = new AStarWalkCanonicalizer(collision, account,
+					AStarWalkCanonicalizer.Result walked = new AStarWalkCanonicalizer(collision, account,
 						restrictions).canonicalize(found);
-					walkCanonicalizeNanos = System.nanoTime() - phaseStarted;
-					walkDiagnostics = canonical.diagnostics();
-					phaseStarted = System.nanoTime();
-					InGameWalkRewriter.Result walked = new InGameWalkRewriter(collision, restrictions).rewrite(canonical);
-					walkRewriteNanos = System.nanoTime() - phaseStarted;
+					walkNanos = System.nanoTime() - phaseStarted;
 					clickPoints = walked.clickPoints();
 					keptStepIndices = walked.keptStepIndices();
 					path = walked.path();
