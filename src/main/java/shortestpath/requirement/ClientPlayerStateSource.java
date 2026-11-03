@@ -97,7 +97,7 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 			)[0] != 0)
 			.mapToInt(row -> (Integer) client.getDBTableField(
 				row,
-				DBTableID.Quest.COL_QUESTPOINTS,
+				DBTableID.Quest.COL_QUESTPOINTS_OVERRIDE,
 				0
 			)[0])
 			.sum();
