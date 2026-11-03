@@ -423,9 +423,10 @@ public final class AStarPathfinder implements ActiveSearch
 		{
 			UnlockSuggestions.Found found = getUnlockSearch();
 			entries.put("Unlock search", PathfinderStats.millis(getUnlockSearchNanos()) + ", "
-				+ found.getSuggestions().size() + " of " + found.getCandidates() + " (" + found.getReruns() + " reruns"
-				+ (found.getInconclusive() > 0 ? ", " + found.getInconclusive() + " inconclusive" : "") + ")"
-				+ (found.isOutOfTime() ? ", out of time" : "") + (found.isAlreadyConnected() ? ", already connected" : ""));
+				+ found.getOutcome().name().toLowerCase().replace('_', ' ')
+				+ (found.getExplanation() == null ? "" : ", " + found.getExplanation().getTransports().size() + " locked")
+				+ " (graph " + PathfinderStats.millis(found.getGraphNanos()) + ", rerun "
+				+ PathfinderStats.millis(found.getRerunNanos()) + ")");
 		}
 		if (getRoutingStaticNanos() >= STATIC_BUILD_THRESHOLD_NANOS)
 		{

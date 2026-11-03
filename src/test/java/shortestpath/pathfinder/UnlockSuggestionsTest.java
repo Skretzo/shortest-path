@@ -9,12 +9,10 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Item;
@@ -41,7 +39,6 @@ import shortestpath.presentation.PathAnnotator;
 import shortestpath.requirement.Capability;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.settings.TeleportationItem;
-import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 
 /** What an A* search that can't reach its target suggests unlocking, on the real world data. */
@@ -117,15 +114,13 @@ public class UnlockSuggestionsTest
 		AStarPathfinder search = search(SUNSET_COAST, ALDARIN);
 
 		assertFalse(search.getResult().isReached());
-		List<UnlockSuggestions.Suggestion> suggestions = search.getUnlockSuggestions();
-		UnlockSuggestions.Suggestion first = suggestions.get(0);
-		assertEquals(Map.of(ItemID.COINS, 20), first.getCapability().getItems());
-		assertEquals(TransportType.SHIP, first.getTransport().getType());
-		assertEquals("Aldarin", first.getTransport().getDisplayInfo());
-		assertTrue("Twilight's Promise is suggested after the coins", suggestions.stream().skip(1)
-			.anyMatch(suggestion -> suggestion.getCapability().getQuests().equals(Set.of(Quest.TWILIGHTS_PROMISE))));
+		UnlockSuggestions.Suggestion first = search.getUnlockSuggestions().get(0);
+		assertEquals(Capability.items(Map.of(ItemID.COINS, 20)), first.getCapability());
+		assertEquals(1, first.getTransports().size());
+		assertEquals(TransportType.SHIP, first.getTransports().get(0).getType());
+		assertEquals("Aldarin", first.getTransports().get(0).getDisplayInfo());
 
-		// And following the first suggestion does get there.
+		// And following the suggestion does get there.
 		setup(99, new Item(ItemID.COINS, 20));
 		assertTrue(search(SUNSET_COAST, ALDARIN).getResult().isReached());
 	}
@@ -206,27 +201,39 @@ public class UnlockSuggestionsTest
 	}
 
 	@Test
-	public void anotherWayToOpenTheSameTransportIsNotSuggestedAgain()
+	public void withoutTheBoatTheQuetzalNeedsTwilightsPromise()
 	{
-		// With teleport items on, any of the quetzal whistles takes the player to Aldarin: one is enough.
 		config.disableTransportToggles();
-		config.set("useShips", true);
 		config.set("useQuetzals", true);
-		config.set("useTeleportationItems", TeleportationItem.INVENTORY);
 		setup(99);
 
-		List<Transport> opened = search(SUNSET_COAST, ALDARIN).getUnlockSuggestions().stream()
-			.map(UnlockSuggestions.Suggestion::getTransport).collect(Collectors.toList());
+		UnlockSuggestions.Suggestion suggestion = search(SUNSET_COAST, ALDARIN).getUnlockSuggestions().get(0);
 
-		assertTrue(opened.stream().anyMatch(transport -> transport.getType() == TransportType.QUETZAL_WHISTLE));
-		assertEquals(opened.toString(), new HashSet<>(opened).size(), opened.size());
+		assertEquals(Capability.quests(Set.of(Quest.TWILIGHTS_PROMISE)), suggestion.getCapability());
+		assertEquals(Capability.Effort.PROGRESS, suggestion.getEffort());
+		assertTrue(suggestion.getTransports().stream().allMatch(transport -> transport.getType() == TransportType.QUETZAL));
 	}
 
 	@Test
-	public void theBoatToAldarinIsNotSuggestedForATileItDoesNotLeadTo()
+	public void aTargetOnlyASettingClosesSuggestsNothingAtOnce()
 	{
-		// Just off Aldarin, closer to where Antonia's boat lands than anything else locked, but the
-		// boat doesn't get there. (For Aldarin itself it does; see above.)
+		// With neither the boat nor the quetzal on, no unlock gets the player onto Aldarin.
+		config.disableTransportToggles();
+		setup(99);
+
+		AStarPathfinder search = search(SUNSET_COAST, ALDARIN);
+
+		assertFalse(search.getResult().isReached());
+		assertEquals(UnlockSuggestions.Outcome.CLOSED, search.getUnlockSearch().getOutcome());
+		assertTrue(search.getUnlockSuggestions().isEmpty());
+		assertEquals(0, search.getUnlockSearch().getRerunNanos());
+	}
+
+	@Test
+	public void unlocksAlongOnePathAreSuggestedTogether()
+	{
+		// Just off Aldarin: Antonia's boat lands on the island, and the way on from there is behind
+		// Death on the Isle. Neither the fare nor the quest gets there alone; both together do.
 		config.disableTransportToggles();
 		config.set("useShips", true);
 		config.set("useQuetzals", true);
@@ -236,20 +243,20 @@ public class UnlockSuggestionsTest
 		AStarPathfinder search = search(SUNSET_COAST, target);
 
 		assertFalse(search.getResult().isReached());
-		for (UnlockSuggestions.Suggestion suggestion : search.getUnlockSuggestions())
-		{
-			assertNotEquals(TransportType.SHIP, suggestion.getTransport().getType());
-		}
+		UnlockSuggestions.Suggestion suggestion = search.getUnlockSuggestions().get(0);
+		assertEquals(Capability.of(Set.of(Quest.DEATH_ON_THE_ISLE), SkillLevels.NONE, Map.of(ItemID.COINS, 20)),
+			suggestion.getCapability());
+		assertEquals(TransportType.SHIP, suggestion.getTransports().get(0).getType());
+		assertTrue(suggestion.getTransports().size() > 1);
 		setup(99, new Item(ItemID.COINS, 20));
-		assertFalse("the fare doesn't help", search(SUNSET_COAST, target).getResult().isReached());
+		assertFalse("the fare alone doesn't help", search(SUNSET_COAST, target).getResult().isReached());
 	}
 
 	@Test
-	public void anUnlockIsOnlySuggestedOnceTheSearchRerunReachesTheTarget()
+	public void itemsComeBeforeAMajorSkillGoal()
 	{
-		// By Tai Bwo Wannai on a level 1 account, 79 Agility opens shortcuts that look like a way in
-		// on the component graph, but the search rerun with them doesn't get there. Carrying an axe
-		// and a machete to cut through the jungle does.
+		// By Tai Bwo Wannai on a level 1 account, carrying an axe and a machete to cut through the
+		// jungle gets there, and is far less than the 79 Agility of the vine shortcut, which also does.
 		int target = WorldPointUtil.packWorldPoint(2795, 2940, 0);
 		setup(1);
 
@@ -267,13 +274,13 @@ public class UnlockSuggestionsTest
 		}
 		when(client.getBoostedSkillLevel(Skill.AGILITY)).thenReturn(79);
 		pathfinderConfig.refresh();
-		assertFalse("79 Agility doesn't help", search(LUMBRIDGE, target).getResult().isReached());
+		assertTrue("79 Agility also gets there", search(LUMBRIDGE, target).getResult().isReached());
 	}
 
 	@Test
 	public void suggestionsStayWithinOneTickOnLongRoutes()
 	{
-		// A level 1 account has the most locked transports to weigh: well over a hundred capabilities.
+		// A level 1 account has the most locked transports to weigh.
 		UnlockSuggestions.timeScale = 1;
 		setup(1);
 		for (int target : new int[] {ALDARIN, WorldPointUtil.packWorldPoint(2932, 2936, 0),
@@ -283,10 +290,8 @@ public class UnlockSuggestionsTest
 
 			assertFalse(search.getResult().isReached());
 			assertFalse(search.getUnlockSuggestions().isEmpty());
-			// It stops itself at the budget; only a rerun's graph, started with the reserve left, can
-			// run past it. A slow machine may run out of time, but it never runs on.
-			assertTrue(search.debugStats().toString(), search.getUnlockSearchNanos()
-				< UnlockSuggestions.BUDGET_NANOS + UnlockSuggestions.RERUN_RESERVE_NANOS);
+			// It stops itself at the budget.
+			assertTrue(search.debugStats().toString(), search.getUnlockSearchNanos() < UnlockSuggestions.BUDGET_NANOS);
 		}
 	}
 }

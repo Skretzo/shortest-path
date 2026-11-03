@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -92,18 +91,37 @@ public class CapabilityTest
 	}
 
 	@Test
-	public void cheapestFirstRanksABundleByItsHardestPart()
+	public void effortUnitsWeighEachPartInItsTier()
 	{
+		Requirements novice = novice();
 		Capability coins = Capability.items(Map.of(ItemID.COINS, 20));
 		Capability rope = Capability.items(Map.of(ItemID.ROPE, 1));
 		Capability quest = Capability.quests(Set.of(Quest.THE_FREMENNIK_TRIALS));
-		Capability questAndItem = quest.plus(rope);
 		Capability agility = Capability.skills(levels(Skill.AGILITY, 2));
-		List<Capability> ranked = new ArrayList<>(List.of(agility, questAndItem, rope, quest, coins));
+		Capability maxed = Capability.skills(levels(Skill.AGILITY, 99));
 
-		ranked.sort(novice().cheapestFirst());
+		assertEquals(Capability.Effort.CURRENCY, novice.effort(coins));
+		assertEquals(Capability.Effort.ITEMS, novice.effort(rope));
+		assertEquals(Capability.Effort.PROGRESS, novice.effort(quest));
+		assertEquals(Capability.Effort.PROGRESS, novice.effort(agility));
+		assertEquals(Capability.Effort.MAJOR, novice.effort(maxed));
+		assertEquals(Capability.Effort.PROGRESS, novice.effort(quest.plus(rope)));
+		int[] units = novice.effortUnits(quest.plus(rope).plus(agility));
+		assertEquals(2, units[Capability.Effort.PROGRESS.ordinal()]);
+		assertEquals(1, units[Capability.Effort.ITEMS.ordinal()]);
+	}
 
-		assertEquals(List.of(coins, rope, quest, questAndItem, agility), ranked);
+	@Test
+	public void unionAsksForEachRequirementOnce()
+	{
+		Capability fare = Capability.quests(Set.of(Quest.THE_FREMENNIK_TRIALS)).plus(Capability.items(Map.of(ItemID.COINS, 20)));
+		Capability climb = Capability.items(Map.of(ItemID.COINS, 30)).plus(Capability.skills(levels(Skill.AGILITY, 50)));
+
+		Capability both = fare.union(climb).union(fare);
+
+		assertEquals(Set.of(Quest.THE_FREMENNIK_TRIALS), both.getQuests());
+		assertEquals(Map.of(ItemID.COINS, 30), both.getItems());
+		assertEquals(50, both.getSkillLevels().get(Skill.AGILITY.ordinal()));
 	}
 
 	@Test

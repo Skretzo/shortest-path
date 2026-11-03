@@ -2,13 +2,13 @@ package shortestpath.requirement;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import net.runelite.api.Experience;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.gameval.ItemID;
@@ -169,46 +169,75 @@ public final class Requirements
 		return SkillLevels.of(levels);
 	}
 
+	/** Missing experience from which reaching a level counts as {@link Capability.Effort#MAJOR}. */
+	static final int MAJOR_EXPERIENCE = 1_000_000;
+	/** Missing experience per unit of {@link Capability.Effort#PROGRESS}, so more training weighs more. */
+	static final int EXPERIENCE_PER_UNIT = 250_000;
+	/** Missing total levels from which the total level counts as major. */
+	static final int MAJOR_TOTAL_LEVELS = 300;
+	/** Missing combat levels from which the combat level counts as major. */
+	static final int MAJOR_COMBAT_LEVELS = 30;
+
 	/**
-	 * Orders capabilities cheapest first for this player: by the {@link Capability.Effort} tier of
-	 * their hardest part, then by how many levels, quests and items they ask for, in that order.
+	 * How much of each {@link Capability.Effort} tier, by ordinal, the capability asks of this
+	 * player: a unit per quest and per item, and per skill a unit or more by how much experience
+	 * it lacks. Comparing the counts hardest tier first ranks capabilities by effort.
 	 */
-	public Comparator<Capability> cheapestFirst()
+	public int[] effortUnits(Capability capability)
 	{
-		return Comparator.comparing(this::effort)
-			.thenComparingInt(this::levelsMissing)
-			.thenComparingInt(capability -> capability.getQuests().size())
-			.thenComparingInt(capability -> capability.getItems().values().stream().mapToInt(Integer::intValue).sum());
+		int[] units = new int[Capability.Effort.values().length];
+		units[Capability.Effort.PROGRESS.ordinal()] += capability.getQuests().size();
+		for (int i = 0; i < SkillLevels.LENGTH; i++)
+		{
+			int required = capability.getSkillLevels().get(i);
+			int current = boostedSkillLevelsAndMore.get(i);
+			if (required <= current)
+			{
+				continue;
+			}
+			if (i == SkillLevels.QUEST_POINTS_INDEX)
+			{
+				units[(required >= context.getCurrentMaxQuestPoints() ? Capability.Effort.MAJOR
+					: Capability.Effort.PROGRESS).ordinal()]++;
+			}
+			else if (i == SkillLevels.TOTAL_LEVEL_INDEX || i == SkillLevels.COMBAT_LEVEL_INDEX)
+			{
+				int major = i == SkillLevels.TOTAL_LEVEL_INDEX ? MAJOR_TOTAL_LEVELS : MAJOR_COMBAT_LEVELS;
+				units[(required - current >= major ? Capability.Effort.MAJOR : Capability.Effort.PROGRESS).ordinal()]++;
+			}
+			else
+			{
+				int missing = Experience.getXpForLevel(Math.min(required, Experience.MAX_REAL_LEVEL))
+					- Experience.getXpForLevel(Math.max(1, Math.min(current, Experience.MAX_REAL_LEVEL)));
+				if (missing >= MAJOR_EXPERIENCE)
+				{
+					units[Capability.Effort.MAJOR.ordinal()]++;
+				}
+				else
+				{
+					units[Capability.Effort.PROGRESS.ordinal()] += 1 + missing / EXPERIENCE_PER_UNIT;
+				}
+			}
+		}
+		Map<Integer, Integer> owned = context.getEligibility().heldItems().carriedAndBanked();
+		capability.getItems().forEach((id, quantity) -> units[(owned.getOrDefault(id, 0) >= quantity
+			? Capability.Effort.OWNED_ITEMS : TransportItems.CURRENCIES.contains(id) ? Capability.Effort.CURRENCY
+			: Capability.Effort.ITEMS).ordinal()]++);
+		return units;
 	}
 
 	/** The effort tier of the capability's hardest part for this player. */
 	public Capability.Effort effort(Capability capability)
 	{
-		if (levelsMissing(capability) > 0)
+		int[] units = effortUnits(capability);
+		for (int tier = units.length - 1; tier > 0; tier--)
 		{
-			return Capability.Effort.SKILLS;
+			if (units[tier] > 0)
+			{
+				return Capability.Effort.values()[tier];
+			}
 		}
-		if (!capability.getQuests().isEmpty())
-		{
-			return Capability.Effort.QUESTS;
-		}
-		Map<Integer, Integer> owned = context.getEligibility().heldItems().carriedAndBanked();
-		if (capability.getItems().entrySet().stream().allMatch(item -> owned.getOrDefault(item.getKey(), 0) >= item.getValue()))
-		{
-			return Capability.Effort.OWNED_ITEMS;
-		}
-		return TransportItems.CURRENCIES.containsAll(capability.getItems().keySet())
-			? Capability.Effort.CURRENCY : Capability.Effort.ITEMS;
-	}
-
-	private int levelsMissing(Capability capability)
-	{
-		int missing = 0;
-		for (int i = 0; i < SkillLevels.LENGTH; i++)
-		{
-			missing += Math.max(0, capability.getSkillLevels().get(i) - boostedSkillLevelsAndMore.get(i));
-		}
-		return missing;
+		return Capability.Effort.OWNED_ITEMS;
 	}
 
 	/** These requirements as they would be had the player got {@code capability}. */

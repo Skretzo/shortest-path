@@ -17,14 +17,17 @@ import shortestpath.requirement.model.SkillLevels;
  * What the player could get to open a locked transport: quests to finish, skill levels to reach
  * and items to carry, in any mix. Bundles combine with {@link #plus}, compare with
  * {@link #covers} and read as one line through {@link #describe}. What one is worth depends on
- * the player, so {@link Requirements#cheapestFirst()} ranks them and
+ * the player, so {@link Requirements#effortUnits} weighs them and
  * {@link RequirementContext#granting} applies them.
  */
 @Getter
 @EqualsAndHashCode
 public final class Capability
 {
-	/** Coarse effort tiers, cheapest first; a bundle sits in the tier of its hardest part. */
+	/**
+	 * Coarse effort tiers, cheapest first. Any amount of a harder tier outweighs every amount of
+	 * the easier ones; a bundle sits in the tier of its hardest part.
+	 */
 	public enum Effort
 	{
 		/** Items the player already has in the bank. */
@@ -32,8 +35,13 @@ public final class Capability
 		/** Coins, trading sticks and other currencies. */
 		CURRENCY,
 		ITEMS,
-		QUESTS,
-		SKILLS
+		/** Quests, and skill levels a moderate amount of training away. */
+		PROGRESS,
+		/**
+		 * Long-term goals: levels a lot of experience away, maximum levels such as a max cape's, and
+		 * every quest point.
+		 */
+		MAJOR
 	}
 
 	private final Set<Quest> quests;
@@ -81,6 +89,20 @@ public final class Capability
 		allQuests.addAll(other.quests);
 		Map<Integer, Integer> allItems = new HashMap<>(items);
 		other.items.forEach((id, quantity) -> allItems.merge(id, quantity, Integer::sum));
+		return of(allQuests, SkillLevels.merge(skillLevels, other.skillLevels), allItems);
+	}
+
+	/**
+	 * What meets both without counting a requirement twice: every quest of either, the higher of
+	 * each level, and the larger amount of each item. Several transports asking for the same fare or
+	 * quest along one route ask for it once.
+	 */
+	public Capability union(Capability other)
+	{
+		Set<Quest> allQuests = new HashSet<>(quests);
+		allQuests.addAll(other.quests);
+		Map<Integer, Integer> allItems = new HashMap<>(items);
+		other.items.forEach((id, quantity) -> allItems.merge(id, quantity, Math::max));
 		return of(allQuests, SkillLevels.merge(skillLevels, other.skillLevels), allItems);
 	}
 
