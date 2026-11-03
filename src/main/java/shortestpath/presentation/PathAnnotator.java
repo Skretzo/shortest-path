@@ -1,6 +1,7 @@
 package shortestpath.presentation;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.inject.*;
 
@@ -124,9 +125,10 @@ public class PathAnnotator
 	}
 
 	/**
-	 * One line per unlock that would let an unreachable route reach its target, such as
-	 * "Carry 20 Coins to use: Ship Aldarin", or "Bring 20 Coins from your bank to use: Ship Aldarin"
-	 * when they're in the bank; empty when there are none. The suggestions arrive after
+	 * One line per set of unlocks that would let an unreachable route reach its target, such as
+	 * "Carry 20 Coins to use: Ship Aldarin", "Bring 20 Coins from your bank to use: Ship Aldarin"
+	 * when they're in the bank, or "Complete Twilight's Promise and carry 20 Coins to use: Ship
+	 * Aldarin, Quetzal Tal Teklan"; empty when there are none. The suggestions arrive after
 	 * the search is done, so the lines are rebuilt, on the client thread, whenever the search
 	 * publishes a new list.
 	 */
@@ -143,7 +145,8 @@ public class PathAnnotator
 				// Items already in the bank read as a reminder to bring them.
 				boolean inBank = suggestion.getEffort() == Capability.Effort.OWNED_ITEMS;
 				lines.add(suggestion.getCapability().describe(this::itemName, inBank) + " to use: "
-					+ transportLabel(suggestion.getTransport()));
+					+ suggestion.getTransports().stream().map(PathAnnotator::transportLabel).distinct()
+						.collect(Collectors.joining(", ")));
 			}
 			unlockLines = lines;
 		}
