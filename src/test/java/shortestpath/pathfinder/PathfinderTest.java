@@ -2858,9 +2858,9 @@ public class PathfinderTest
 		when(client.getDBTableField(1, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
 		when(client.getDBTableField(2, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
 		when(client.getDBTableField(3, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{0});
-		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{300});
-		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{43});
-		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{4});
+		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS_OVERRIDE, 0)).thenReturn(new Object[]{300});
+		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS_OVERRIDE, 0)).thenReturn(new Object[]{43});
+		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS_OVERRIDE, 0)).thenReturn(new Object[]{4});
 		when(client.getVarpValue(VarPlayerID.QP)).thenReturn(currentQuestPoints);
 	}
 
