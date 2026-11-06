@@ -10,6 +10,7 @@ import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -94,6 +95,20 @@ public class PathfinderConfigConsumableModesTest
 			assertTrue(mode + " surfaces a carried consumable",
 				teleportUsable(NECKLACE_OF_PASSAGE, false));
 		}
+	}
+
+	@Test
+	public void mixedModeUsesCarriedConsumablesAndOnlyPermanentBankItems()
+	{
+		setupInventory(new Item(NECKLACE_OF_PASSAGE_1, 1));
+		setupBank(new Item(AMULET_OF_ETERNAL_GLORY, 1), new Item(ItemID.RING_OF_DUELING_8, 1));
+		refresh(TeleportationItem.INVENTORY_ALL_AND_BANK_NON_CONSUMABLE, false);
+
+		assertTrue(teleportUsable(NECKLACE_OF_PASSAGE, false));
+		assertTrue(teleportUsable(NECKLACE_OF_PASSAGE, true));
+		assertFalse(teleportUsable("Ring of dueling: Castle Wars", true));
+		assertFalse(teleportUsable(ETERNAL_GLORY, false));
+		assertTrue(teleportUsable(ETERNAL_GLORY, true));
 	}
 
 	@Test

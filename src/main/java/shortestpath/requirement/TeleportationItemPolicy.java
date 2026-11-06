@@ -5,7 +5,7 @@ import shortestpath.settings.TeleportationItem;
 /**
  * The single source for what a {@link TeleportationItem} mode means: given the
  * configured mode and whether the transport consumes its item, {@link #verdict}
- * answers the nine-mode truth table both the requirement chain
+ * answers the mode truth table both the requirement chain
  * ({@link Requirements#check}) and the eligibility snapshot
  * ({@link TransportEligibility#usable}) used to encode as twin switches.
  *
@@ -49,9 +49,12 @@ public final class TeleportationItemPolicy
 		 */
 		EVALUATE_ITEMS,
 
+		/** Evaluate only carried items, even after visiting a bank. */
+		EVALUATE_CARRIED_ITEMS,
+
 		/**
 		 * The mode refuses this transport outright: {@code NONE} always, and
-		 * every {@code *_NON_CONSUMABLE} mode on a consumable transport.
+		 * modes restricted to permanent items on a consumable transport.
 		 */
 		REJECT
 	}
@@ -61,9 +64,9 @@ public final class TeleportationItemPolicy
 	 * (previously encoded identically in {@code Requirements.teleportationItem}
 	 * and {@code TransportEligibility.usable}):
 	 * {@code NONE} rejects; {@code ALL} and {@code UNLOCKED} bypass; the
-	 * {@code INVENTORY*} modes defer to the pools; and every
-	 * {@code *_NON_CONSUMABLE} mode rejects a consumable transport while
-	 * behaving like its unrestricted counterpart on a non-consumable one.
+	 * inventory modes evaluate items, with consumables limited to carried
+	 * items in the mixed mode. Modes restricted to permanent items reject
+	 * consumable transports.
 	 */
 	public static Verdict verdict(TeleportationItem mode, boolean consumable)
 	{
@@ -80,6 +83,8 @@ public final class TeleportationItemPolicy
 			case INVENTORY:
 			case INVENTORY_AND_BANK:
 				return Verdict.EVALUATE_ITEMS;
+			case INVENTORY_ALL_AND_BANK_NON_CONSUMABLE:
+				return consumable ? Verdict.EVALUATE_CARRIED_ITEMS : Verdict.EVALUATE_ITEMS;
 			case INVENTORY_NON_CONSUMABLE:
 			case INVENTORY_AND_BANK_NON_CONSUMABLE:
 				return consumable ? Verdict.REJECT : Verdict.EVALUATE_ITEMS;
@@ -94,12 +99,13 @@ public final class TeleportationItemPolicy
 	/**
 	 * Whether the mode's bank-path pool includes the bank contents — the
 	 * second axis of mode semantics, single-sourced with the verdict table
-	 * above it. Only the {@code INVENTORY_AND_BANK*} modes collect the bank
-	 * into the pool banked transports are evaluated against.
+	 * above it. Modes supporting banked items collect the bank into the pool
+	 * banked transports are evaluated against.
 	 */
 	public static boolean includesBank(TeleportationItem mode)
 	{
 		return TeleportationItem.INVENTORY_AND_BANK.equals(mode)
-			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(mode);
+			|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(mode)
+			|| TeleportationItem.INVENTORY_ALL_AND_BANK_NON_CONSUMABLE.equals(mode);
 	}
 }

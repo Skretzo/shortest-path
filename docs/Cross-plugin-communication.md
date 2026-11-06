@@ -165,10 +165,14 @@ eventBus.post(new PluginMessage("shortestpath", "path", data));
   `colourTransports`
 - `String` naming an option as the settings panel shows it:
   - `useTeleportationItems`: `None`, `Inventory`, `Inventory (perm)`, `Inventory and Bank`,
-    `Inventory and Bank (perm)`, `Unlocked`, `Unlocked (perm)`, `All`, `All (perm)`
+    `Inventory and Bank (perm)`, `Inventory (all) and bank (perm)`, `Unlocked`,
+    `Unlocked (perm)`, `All`, `All (perm)`
   - `pohJewelleryBoxTier`: `None`, `Basic`, `Fancy`, `Ornate`
   - `showTileCounter`: `Disabled`, `Travelled`, `Remaining`
   - `pathStyle`: `Tiles`, `Lines`
+
+`Inventory (all) and bank (perm)` uses all carried teleport items and only permanent
+teleport items from the bank.
 
 ```java
 Map<String, Object> configOverride = new HashMap<>();
