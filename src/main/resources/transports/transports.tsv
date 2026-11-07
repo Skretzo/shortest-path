@@ -6505,8 +6505,7 @@
 									
 # Stranglewood - Kasonde pyramid									
 1174 3427 0	1183 9812 0	Enter Entry 48723				15125>27			
-1183 9812 0	1174 3432 0	Climb-up Stairs 48730							
-1174 3432 0	1174 3427 0							1	Leave pyramid
+1183 9812 0	1174 3427 0	Climb-up Stairs 48730							
 									
 # Stranglewood - ritual site shortcut									
 1146 3434 0	1149 3445 0	Enter Entry 48746				15125>39			
