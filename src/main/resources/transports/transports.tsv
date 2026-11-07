@@ -6171,6 +6171,8 @@
 1808 3679 0	1811 3679 1	Cross Gangplank 50063						3	
 									
 # The Pandemonium									
+3046 2996 0	3042 9399 0	Enter Cave entrance 58092						2	
+3042 9399 0	3046 2996 0	Exit Opening 58093						2	
 3060 3000 1	3063 3000 0	Cross Gangplank 60523						3	
 3063 3000 0	3060 3000 1	Cross Gangplank 60522						3	
 									
