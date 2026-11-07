@@ -120,6 +120,19 @@ public class AStarWalkCanonicalizerTest
 	}
 
 	@Test
+	public void legThatDriftedSidewaysIsWalkedStraight()
+	{
+		Grid grid = new Grid();
+		// The search's queue order drifts north and back; the same five ticks run straight east.
+		List<PathStep> route = steps(0, 0, 1, 1, 2, 0, 3, 1, 4, 0, 5, 0);
+
+		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, 5);
+
+		assertEquals(describe(steps(0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0)), describe(result.path()));
+		assertEquals(List.of(5), result.clickPoints());
+	}
+
+	@Test
 	public void stepTheGameDoesNotWalkKeepsTheSearchsStep()
 	{
 		// A blocked transport origin at (6,0), stepped onto by the A* search to take the transport.
