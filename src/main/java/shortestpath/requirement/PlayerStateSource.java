@@ -46,6 +46,11 @@ public interface PlayerStateSource
 	int varbit(int varbitId);
 
 	/**
+	 * The values of a field of a game database table's row, or {@code null} when the source has none.
+	 */
+	Object[] dbTableField(int row, int column, int tuple);
+
+	/**
 	 * The current value of one varplayer.
 	 */
 	int varp(int varpId);

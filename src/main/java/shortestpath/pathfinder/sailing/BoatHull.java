@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 import net.runelite.api.Perspective;
+import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
 import lombok.Getter;
@@ -16,11 +17,9 @@ import lombok.experimental.Accessors;
  * centre.
  * <p>
  * A boat is a rectangle in its own frame (the game's bounds for its world entity: the raft is 1 by 3 tiles, the skiff
- * 2 by 5 and the sloop 3 by 10, reaching further toward its bow), turned to face its heading, at the spot within its
- * tile where the boat sits. Every move lands whole tiles away, so the boat keeps that spot along the whole route.
- * Holding a heading for a move sweeps the rectangle from where the move starts to where it ends, over the convex hull
+ * 2 by 5 and the sloop 3 by 10, reaching further toward its bow), turned to face its heading, at its tile's centre. Holding a heading for a move sweeps the rectangle from where the move starts to where it ends, over the convex hull
  * of the two (the game's rounding can take a move slightly off the boat's axis); the move is only taken if no blocked
- * tile overlaps it. Turning between moves isn't checked. A tile blocks a boat if it's blocked or has a wall on any
+ * tile overlaps it. A tile blocks a boat if it's blocked or has a wall on any
  * side. Touching a blocked tile's edge is fine, so a 3-wide sloop lined up exactly fits a 3-wide gap, as players have
  * seen in game.
  * <p>
@@ -35,8 +34,6 @@ public final class BoatHull
 	private static final int REGION_SHIFT = Integer.numberOfTrailingZeros(REGION_SIZE);
 	private static final int REGION_MASK = REGION_SIZE - 1;
 	private static final int PLANES = 4;
-	// A shape with no rows, so no tiles count as covered where a move starts
-	private static final int[] EMPTY_SHAPE = {0};
 
 	// The rectangle in the boat's own frame, in local units (128 per tile): its centre across and along the boat
 	// (the bow is toward negative along) and its size
@@ -44,9 +41,6 @@ public final class BoatHull
 	private final int boundsY;
 	private final int boundsWidth;
 	private final int boundsHeight;
-	// Where the boat sits within its tile, in local units from the tile's centre
-	private final int pivotX;
-	private final int pivotY;
 
 	// Tiles the hull covers, relative to the tile it starts on: {first row, then each row's first and last column}.
 	// Concurrent: the search fills it on the pathfinding thread while the client thread's arrival
@@ -59,17 +53,21 @@ public final class BoatHull
 	private final SplitFlagMap.RegionExtent extent;
 	private final long[][] blockedRows;
 
-	private BoatHull(int boundsX, int boundsY, int boundsWidth, int boundsHeight, int pivotX, int pivotY)
+	private BoatHull(int boundsX, int boundsY, int boundsWidth, int boundsHeight)
 	{
 		this.boundsX = boundsX;
 		this.boundsY = boundsY;
 		this.boundsWidth = boundsWidth;
 		this.boundsHeight = boundsHeight;
-		this.pivotX = pivotX;
-		this.pivotY = pivotY;
 		extent = SplitFlagMap.getRegionExtents();
 		blockedRows = new long[(extent.getWidth() + 1) * (extent.getHeight() + 1) * PLANES][];
 
+		reach = reach(boundsX, boundsY, boundsWidth, boundsHeight);
+	}
+
+	/** How far a hull with these bounds reaches from the centre of the boat's tile, facing any heading, in tiles. */
+	static double reach(int boundsX, int boundsY, int boundsWidth, int boundsHeight)
+	{
 		double corner = 0;
 		for (int across = -1; across <= 1; across += 2)
 		{
@@ -79,7 +77,7 @@ public final class BoatHull
 			}
 		}
 		// A local unit more, for the game's rounding when it turns the hull
-		reach = (Math.hypot(pivotX, pivotY) + corner + 1) / Perspective.LOCAL_TILE_SIZE;
+		return (corner + 1) / Perspective.LOCAL_TILE_SIZE;
 	}
 
 	/**
@@ -87,17 +85,15 @@ public final class BoatHull
 	 * @param boundsY      centre of the rectangle along the boat, in local units; negative is toward the bow
 	 * @param boundsWidth  width of the rectangle, in local units
 	 * @param boundsHeight length of the rectangle, in local units
-	 * @param pivotX       where the boat sits within its tile, in local units from the tile's centre
-	 * @param pivotY       where the boat sits within its tile, in local units from the tile's centre
 	 * @return the hull, or {@code null} if the bounds are empty
 	 */
-	public static BoatHull fromBounds(int boundsX, int boundsY, int boundsWidth, int boundsHeight, int pivotX, int pivotY)
+	public static BoatHull fromBounds(int boundsX, int boundsY, int boundsWidth, int boundsHeight)
 	{
 		if (boundsWidth <= 0 || boundsHeight <= 0)
 		{
 			return null;
 		}
-		return new BoatHull(boundsX, boundsY, boundsWidth, boundsHeight, pivotX, pivotY);
+		return new BoatHull(boundsX, boundsY, boundsWidth, boundsHeight);
 	}
 
 	/**
@@ -112,11 +108,6 @@ public final class BoatHull
 	}
 
 	/**
-	 * How far the hull reaches from the centre of the boat's tile, facing any heading, in tiles.
-	 */
-
-
-	/**
 	 * Whether the hull, on a tile facing {@code heading}, covers the tile (dx, dy) tiles from it: overlaps it by more
 	 * than touching its edge.
 	 */
@@ -127,47 +118,69 @@ public final class BoatHull
 		return row >= 0 && row < rows(shape) && dx >= shape[1 + 2 * row] && dx <= shape[2 + 2 * row];
 	}
 
-	/**
-	 * Whether the hull, facing {@code heading}, can sail (dx, dy) tiles from tile (x, y, z) without overlapping a tile
-	 * that blocks it anywhere along the way, where it starts and ends included.
-	 */
-	public boolean canMove(CollisionMap map, int x, int y, int z, int heading, int dx, int dy)
+	/** Whether the hull on {@code tile} facing {@code heading} (-1 any) covers the packed tile {@code target}. */
+	public boolean coversTile(int target, int tile, int heading)
 	{
-		return canMove(map, x, y, z, heading, dx, dy, false);
+		if (WorldPointUtil.unpackWorldPlane(target) != WorldPointUtil.unpackWorldPlane(tile)) return false;
+		int dx = WorldPointUtil.unpackWorldX(target) - WorldPointUtil.unpackWorldX(tile);
+		int dy = WorldPointUtil.unpackWorldY(target) - WorldPointUtil.unpackWorldY(tile);
+		if (heading >= 0) return covers(heading, dx, dy);
+		for (int facing = 0; facing < HEADINGS; facing++)
+		{
+			if (covers(facing, dx, dy)) return true;
+		}
+		return false;
+	}
+
+	/**
+	 * The tiles the hull sweeps sailing (dx, dy) tiles facing {@code heading}, where it starts and ends included, as
+	 * offsets from the tile it starts on: {dx0, dy0, dx1, dy1, ...}. The same tiles a move has to find clear.
+	 */
+	public int[] sweptOffsets(int heading, int dx, int dy)
+	{
+		int[] shape = shape(heading, dx, dy);
+		int count = 0;
+		for (int row = 0; row < rows(shape); row++) count += shape[2 + 2 * row] - shape[1 + 2 * row] + 1;
+		int[] offsets = new int[2 * count];
+		int i = 0;
+		for (int row = 0; row < rows(shape); row++)
+		{
+			for (int x = shape[1 + 2 * row]; x <= shape[2 + 2 * row]; x++)
+			{
+				offsets[i++] = x;
+				offsets[i++] = shape[0] + row;
+			}
+		}
+		return offsets;
 	}
 
 	/**
 	 * Whether the hull, facing {@code heading}, can sail (dx, dy) tiles from tile (x, y, z) without overlapping a tile
-	 * that blocks it anywhere along the way — or only ones it doesn't already cover, when {@code exemptStart} marks
-	 * the search's first move: a berthed boat's hull can overlap blocked tiles where it starts (a moored boat may sit
-	 * over marked tiles), and like {@link SailingSearch#canSailLine}'s first-tile escape they can't stop it leaving.
-	 * Later moves keep the full start check, which also catches the hull turning onto a blocked tile between moves.
+	 * that blocks it anywhere along the way, where it starts and ends included. A move from a state the boat can't be
+	 * in (its hull over a blocked tile) is never allowed, so the start check also catches the hull turning onto a
+	 * blocked tile between moves, as turning is free but the turned hull must fit.
 	 */
-	public boolean canMove(CollisionMap map, int x, int y, int z, int heading, int dx, int dy, boolean exemptStart)
+	public boolean canMove(CollisionMap map, int x, int y, int z, int heading, int dx, int dy)
 	{
 		final int[] shape = shape(heading, dx, dy);
-		final int[] start = exemptStart ? shape(heading, 0, 0) : EMPTY_SHAPE;
 		for (int row = 0; row < rows(shape); row++)
 		{
-			final int rowY = shape[0] + row;
-			final int lo = shape[1 + 2 * row];
-			final int hi = shape[2 + 2 * row];
-			final int startRow = rowY - start[0];
-			if (startRow < 0 || startRow >= rows(start))
-			{
-				if (anyBlocked(map, x + lo, x + hi, y + rowY, z))
-				{
-					return false;
-				}
-				continue;
-			}
-			if (anyBlocked(map, x + lo, x + Math.min(hi, start[1 + 2 * startRow] - 1), y + rowY, z)
-				|| anyBlocked(map, x + Math.max(lo, start[2 + 2 * startRow] + 1), x + hi, y + rowY, z))
+			if (anyBlocked(map, x + shape[1 + 2 * row], x + shape[2 + 2 * row], y + shape[0] + row, z))
 			{
 				return false;
 			}
 		}
 		return true;
+	}
+
+	/** Whether the boat can be on tile (x, y, z) facing some heading: its hull then overlaps no tile that blocks it. */
+	public boolean fits(CollisionMap map, int x, int y, int z)
+	{
+		for (int heading = 0; heading < HEADINGS; heading++)
+		{
+			if (canMove(map, x, y, z, heading, 0, 0)) return true;
+		}
+		return false;
 	}
 
 	/**
@@ -284,8 +297,8 @@ public final class BoatHull
 				{
 					int modelX = boundsX + across * boundsWidth / 2;
 					int modelY = boundsY + along * boundsHeight / 2;
-					int x = pivotX + end * dx * Perspective.LOCAL_TILE_SIZE + ((modelX * cos + modelY * sin) >> 16);
-					int y = pivotY + end * dy * Perspective.LOCAL_TILE_SIZE + ((modelY * cos - modelX * sin) >> 16);
+					int x = end * dx * Perspective.LOCAL_TILE_SIZE + ((modelX * cos + modelY * sin) >> 16);
+					int y = end * dy * Perspective.LOCAL_TILE_SIZE + ((modelY * cos - modelX * sin) >> 16);
 					points[i++] = (double) x / Perspective.LOCAL_TILE_SIZE;
 					points[i++] = (double) y / Perspective.LOCAL_TILE_SIZE;
 				}

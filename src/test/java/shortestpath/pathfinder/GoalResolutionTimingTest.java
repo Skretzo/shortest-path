@@ -11,8 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.sailing.SailingMoves;
-import shortestpath.pathfinder.sailing.SailingPathfinder;
 
 /**
  * Every search resolves its goals when it runs, on the pathfinding thread, not when it is created
@@ -50,13 +48,6 @@ public class GoalResolutionTimingTest
 	public void legacyResolvesGoalsWhenItRuns()
 	{
 		assertResolvesGoalsWhenItRuns(new Pathfinder(config, START, Set.of(BOOTH)));
-	}
-
-	@Test
-	public void sailingResolvesGoalsWhenItRuns()
-	{
-		assertResolvesGoalsWhenItRuns(new SailingPathfinder(config, START, Set.of(BOOTH), null,
-			SailingMoves.forSpeed(1.5), null));
 	}
 
 	@Test

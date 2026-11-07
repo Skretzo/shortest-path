@@ -1,5 +1,7 @@
 package shortestpath.sailing;
 
+import java.util.EnumSet;
+import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -29,6 +31,7 @@ import net.runelite.api.WorldEntityConfig;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.DBTableID;
 import shortestpath.WorldPointUtil;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.scheduler.RefreshCoordinator;
@@ -74,6 +77,97 @@ public class SailingServiceTest
 		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(baseSpeed);
 		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_SPEEDCAP)).thenReturn(speedCap);
 		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_ACCELERATION)).thenReturn(acceleration);
+	}
+
+	@Test
+	public void eachOwnedBoatIsReadFromItsSlot()
+	{
+		stubVarbits(0, 0, 0, 0);
+		// Slot 1: a skiff at dock 21 with an adamant keel, a mithril helm, wooden sails, the eternal brazier, an
+		// inoculation station and a camphor hull
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_OWNED)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_TYPE)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_PORT)).thenReturn(21);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_KEEL)).thenReturn(4);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_STEERING)).thenReturn(3);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_BRAZIER)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_HOTSPOT_5)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_1_HULL)).thenReturn(4);
+		// Slot 3: a raft at dock 0 with oak sails and a rune helm; slot 2 is not owned
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_3_OWNED)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_3_SAIL)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.SAILING_BOAT_3_STEERING)).thenReturn(5);
+		SailingService service = SailingService.forTesting();
+
+		service.refresh(source());
+
+		assertEquals(List.of(
+			new SailingBoat(1, 1, 21, EnumSet.of(SeaArea.CRYSTALLINE, SeaArea.NORTHERN, SeaArea.FETID), 320),
+			new SailingBoat(3, 0, 0, EnumSet.of(SeaArea.TEMPOR_TANTRUM, SeaArea.KELP), 192)),
+			service.getState().getBoats());
+		assertEquals("not aboard", 0, service.getState().getBoardedSlot());
+	}
+
+	@Test
+	public void recoveryFeeIncludesHullAndCapsizedOrBottledSurcharge()
+	{
+		when(client.getDBTableField(DBTableID.SailingBoat.Row.SAILING_BOAT_SKIFF,
+			DBTableID.SailingBoat.COL_RETRIEVAL_COST, 0)).thenReturn(new Object[]{3750});
+		when(client.getDBTableField(DBTableID.SailingBoat.Row.SAILING_BOAT_SKIFF,
+			DBTableID.SailingBoat.COL_HULL_OPTION, 0)).thenReturn(new Object[]{100, 100, 100, 100, 102});
+		when(client.getDBTableField(100, DBTableID.SailingBoatHull.COL_FACILITY_STATS, 0))
+			.thenReturn(new Object[]{101});
+		when(client.getDBTableField(101, DBTableID.SailingBoatFacilityStats.COL_BOAT_ADDITIONAL_RECOVERY_COST_PERCENTAGE, 0))
+			.thenReturn(new Object[]{10});
+		when(client.getDBTableField(102, DBTableID.SailingBoatHull.COL_FACILITY_STATS, 0))
+			.thenReturn(new Object[]{103});
+		when(client.getDBTableField(103, DBTableID.SailingBoatFacilityStats.COL_BOAT_ADDITIONAL_RECOVERY_COST_PERCENTAGE, 0))
+			.thenReturn(new Object[]{50});
+
+		assertEquals(4125, SailingService.recoveryCost(new ClientPlayerStateSource(client), 1, 0, 6));
+		assertEquals(4125, SailingService.recoveryCost(new ClientPlayerStateSource(client), 1, 0, 253));
+		assertEquals(6000, SailingService.recoveryCost(new ClientPlayerStateSource(client), 1, 0, 254));
+		assertEquals(7875, SailingService.recoveryCost(new ClientPlayerStateSource(client), 1, 0, 255));
+		assertEquals(5625, SailingService.recoveryCost(new ClientPlayerStateSource(client), 1, 4, 6));
+		assertEquals(-1, SailingService.recoveryCost(new ClientPlayerStateSource(client), 3, 0, 6));
+		assertEquals(-1, SailingService.recoveryCost(new ClientPlayerStateSource(client), 1, 99, 6));
+		assertEquals(-1, SailingService.recoveryCost(new ClientPlayerStateSource(client), 0, 0, 6));
+	}
+
+	@Test
+	public void theBoardedBoatEntersTheAreasItsPartsResist()
+	{
+		stubVarbits(1, 192, 384, 96);
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_FETIDWATER_RESISTANT)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_STORMRESISTANCE)).thenReturn(2);
+		SailingService service = SailingService.forTesting();
+
+		service.refresh(source());
+
+		assertEquals(EnumSet.of(SeaArea.FETID, SeaArea.TEMPOR_TANTRUM), service.getState().getSeaAreas());
+	}
+
+	@Test
+	public void aBoatWithoutPartsEntersNoRestrictedArea()
+	{
+		stubVarbits(1, 192, 384, 96);
+		SailingService service = SailingService.forTesting();
+
+		service.refresh(source());
+
+		assertEquals(SeaArea.NONE, service.getState().getSeaAreas());
+	}
+
+	@Test
+	public void theResistancesAreOnlyReadAboard()
+	{
+		stubVarbits(0, 192, 384, 96);
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_ICYSEAS_RESISTANT)).thenReturn(1);
+		SailingService service = SailingService.forTesting();
+
+		service.refresh(source());
+
+		assertEquals(SeaArea.NONE, service.getState().getSeaAreas());
 	}
 
 	@Test
@@ -295,6 +389,24 @@ public class SailingServiceTest
 	}
 
 	@Test
+	public void boardingAnotherPersonalBoatInvalidatesTheRoute()
+	{
+		stubVarbits(1, 192, 384, 96);
+		when(client.getVarbitValue(VarbitID.SAILING_LAST_PERSONAL_BOAT_BOARDED)).thenReturn(1);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SailingService service = SailingService.forTesting(client, coordinator);
+		service.refresh(source());
+
+		when(client.getVarbitValue(VarbitID.SAILING_LAST_PERSONAL_BOAT_BOARDED)).thenReturn(2);
+		service.onVarbitChanged(VarbitID.SAILING_LAST_PERSONAL_BOAT_BOARDED);
+
+		assertEquals(2, service.getState().getBoardedSlot());
+		ArgumentCaptor<SailingChange> captor = ArgumentCaptor.forClass(SailingChange.class);
+		verify(coordinator).sailingChanged(captor.capture());
+		assertTrue(captor.getValue().getEffects().contains(Effect.ROUTE_INVALIDATING));
+	}
+
+	@Test
 	public void boardingDeclaresARouteInvalidatingFact()
 	{
 		stubVarbits(0, 192, 384, 96);
@@ -312,6 +424,23 @@ public class SailingServiceTest
 		SailingChange change = captor.getValue();
 		assertEquals("varbit:" + VarbitID.SAILING_BOARDED_BOAT, change.getKey());
 		assertTrue(change.getEffects().contains(Effect.ROUTE_INVALIDATING));
+	}
+
+	@Test
+	public void fittingAPartDeclaresARouteInvalidatingFact()
+	{
+		stubVarbits(1, 192, 384, 96);
+		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
+		SailingService service = SailingService.forTesting(client, coordinator);
+		service.refresh(source());
+
+		// The route keeps out of water the boat's parts don't let it into, so a new part is material.
+		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_CRYSTALFLECKED_RESISTANT)).thenReturn(1);
+		service.onVarbitChanged(VarbitID.SAILING_SIDEPANEL_BOAT_CRYSTALFLECKED_RESISTANT);
+
+		ArgumentCaptor<SailingChange> captor = ArgumentCaptor.forClass(SailingChange.class);
+		verify(coordinator).sailingChanged(captor.capture());
+		assertTrue(captor.getValue().getEffects().contains(Effect.ROUTE_INVALIDATING));
 	}
 
 	@Test

@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -178,7 +179,6 @@ public class OverlayTranscriptTest
 		when(search.getPath()).thenReturn(defaultPath());
 		when(search.getTargets()).thenReturn(Targets.at(Set.of(packed(BASE + 36, BASE + 22))));
 		when(search.isDone()).thenReturn(true);
-		when(search.isSailing()).thenReturn(false);
 		// Mock default returns null here; render() iterates it at the
 		// click-points gate — the stub is mandatory.
 		when(search.getClickPoints()).thenReturn(List.of());
@@ -398,6 +398,33 @@ public class OverlayTranscriptTest
 	}
 
 	@Test
+	public void recoveryHintForASeaTargetIsDrawnAtBoardingInEveryStyle()
+	{
+		int dock = packed(BASE + 20, BASE + 20);
+		String hint = "Recover boat (4125 gp), then board raft";
+		Transport boat = transport(dock, packed(BASE + 30, BASE + 24), TransportType.SAILING, hint);
+		List<PathStep> path = List.of(step(BASE + 20, BASE + 20),
+			new PathStep(packed(BASE + 21, BASE + 20), shortestpath.pathfinder.BankVisitState.CARRIED,
+				boat, shortestpath.pathfinder.Traversal.SAILING),
+			PathStep.sailing(packed(BASE + 30, BASE + 24), shortestpath.pathfinder.BankVisitState.CARRIED));
+		when(search.getPath()).thenReturn(path);
+		org.mockito.Mockito.doCallRealMethod().when(annotator).nextPathStep(any(), anyInt());
+		when(annotator.transportsForEdge(any(), any())).thenCallRealMethod();
+		when(annotator.formatTransportDisplay(any())).thenCallRealMethod();
+		for (String style : List.of("Tiles", "Lines", "Arrow line", "Turn markers", "Tracer", "Sprite markers"))
+		{
+			override("pathStyle", style);
+			List<String> transcript = new ArrayList<>();
+			Graphics2D graphics = new RecordingGraphics2D(
+				new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB).createGraphics(), transcript);
+			tileOverlay.render(graphics);
+			graphics.dispose();
+			org.junit.Assert.assertEquals(style + ": one label plus its shadow", 2,
+				transcript.stream().filter(line -> line.contains("drawString") && line.contains(hint)).count());
+		}
+	}
+
+	@Test
 	public void infoTransportLabels()
 	{
 		Set<Transport> transports = new LinkedHashSet<>(List.of(
@@ -423,7 +450,9 @@ public class OverlayTranscriptTest
 		// PathTileOverlay's ctor is public — no rebinding needed.
 		tileOverlay = new PathTileOverlay(client, itemManager, settings, renderState, scheduler, annotator);
 
-		when(search.isSailing()).thenReturn(true);
+		// A route that starts aboard: every step a point of the sailing leg
+		when(search.getPath()).thenReturn(defaultPath().stream()
+			.map(step -> PathStep.sailing(step.getPackedPosition(), step.getBankVisitState())).collect(Collectors.toList()));
 		PathfinderResult result = mock(PathfinderResult.class);
 		when(result.isReached()).thenReturn(false);
 		when(search.getResult()).thenReturn(result);

@@ -32,14 +32,12 @@ import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.AStarPathfinder;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.sailing.BoatHull;
-import shortestpath.pathfinder.sailing.SailingMoves;
-import shortestpath.pathfinder.sailing.SailingPathfinder;
+import shortestpath.pathfinder.sailing.PreparedSailingCapability;
+import shortestpath.pathfinder.sailing.SailingFleet;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
 import shortestpath.sailing.SailingService;
-import shortestpath.sailing.SailingState;
 
 /**
  * Owns the plugin's pathfinding concurrency: the single-worker executor, the mutex that pairs
@@ -157,30 +155,30 @@ public class PathScheduler
 			}
 			else
 			{
-				// The boarded-boat varbit can lag the world entity (stale across a teleport or
-				// login), so only sail when the boat is actually in the scene — otherwise the
-				// search would sail its headings across land
-				if (pathfinderConfig.isSailingMoves() && sailing.getState().hasBoat())
+				// One router whether or not the player is aboard: on a boat with "Sail on boats" on, the account's
+				// sailing capability starts the route from the boat (see PathfinderConfig#sailingFleet), which needs
+				// the boat in the scene: the boarded-boat varbit can lag the world entity, stale across a teleport or
+				// login. A start point the user set is a walking start.
+				try
 				{
-					pathfinder = sailingPathfinder(start, ends);
+					PreparedSailingCapability sailingCapability = pathfinderConfig.prepareSailingCapability();
+					if (startPointSet) sailingCapability = sailingCapability.onFoot();
+					SailingFleet.Aboard aboard = sailingCapability.fleet().aboard();
+					// Routing has the boat at its tile's centre; the line drawn for it goes through where it really sits
+					sailingPivotX = aboard == null ? 0 : sailing.getState().getPivotX();
+					sailingPivotY = aboard == null ? 0 : sailing.getState().getPivotY();
+					AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
+						aStarRoutingSession, aboard == null ? start : aboard.tile(), ends, responder::postPluginMessages,
+						pathfinderConfig.getAStarHeuristicWeight(), sailingCapability);
+					// Aboard, the old route may have been planned for a different hull.
+					if (aboard == null && ends.equals(previousTargets))
+						aStar.showUntilDone(previousPath);
+					pathfinder = aStar;
 				}
-				else
+				catch (RuntimeException error)
 				{
-					try
-					{
-						AStarPathfinder aStar = new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(),
-							aStarRoutingSession, start, ends, responder::postPluginMessages);
-						// Recalculating towards the same targets: keep the old route drawn until
-						// the new one is ready.
-						if (ends.equals(previousTargets))
-							aStar.showUntilDone(previousPath);
-						pathfinder = aStar;
-					}
-					catch (RuntimeException error)
-					{
-						debugState.clientError(error, client.getTickCount());
-						pathfinder = AStarPathfinder.failed(start, ends, responder::postPluginMessages, error);
-					}
+					debugState.clientError(error, client.getTickCount());
+					pathfinder = AStarPathfinder.failed(start, ends, responder::postPluginMessages, error);
 				}
 				ActiveSearch search = pathfinder;
 				debugState.searchStarted(search);
@@ -198,36 +196,6 @@ public class PathScheduler
 				});
 			}
 		}
-	}
-
-	/**
-	 * On a boat, a search that sails the boat's 16 headings at its base speed instead of walking. It starts from the
-	 * boat's exact tile and remembers where the boat sits within it: every sailing move lands whole tiles away, so the
-	 * boat stays at that spot at each turn of the path. The boat's whole hull, from its bounds, must fit along every move
-	 * there.
-	 */
-	private SailingPathfinder sailingPathfinder(int start, Targets ends)
-	{
-		int sailingStart = start;
-		sailingPivotX = 0;
-		sailingPivotY = 0;
-		SailingState state = sailing.getState();
-		if (state.getBoatPoint() != WorldPointUtil.UNDEFINED && !startPointSet)
-		{
-			sailingStart = state.getBoatPoint();
-			sailingPivotX = state.getPivotX();
-			sailingPivotY = state.getPivotY();
-		}
-		BoatHull hull = !state.hasBounds() ? null : BoatHull.fromBounds(state.getBoundsX(), state.getBoundsY(),
-			state.getBoundsWidth(), state.getBoundsHeight(), sailingPivotX, sailingPivotY);
-		// The heading the boat faces where the route starts, as one of the 16 headings 128 angle units
-		// apart: a target under its hull only counts as reached facing that way — berthed, the boat hasn't
-		// arrived at a target astern of it. The target orientation pairs with the target tile the route
-		// starts from
-		int sailingHeading = state.getHeading() < 0 ? WorldPointUtil.UNDEFINED
-			: Math.floorMod((state.getHeading() + 64) / 128, 16);
-		return new SailingPathfinder(pathfinderConfig, sailingStart, ends, responder::postPluginMessages,
-			SailingMoves.forSpeed(pathfinderConfig.getSailingSpeed()), hull, sailingHeading);
 	}
 
 	private void ensurePathfindingExecutor()
@@ -312,16 +280,14 @@ public class PathScheduler
 			}
 		}
 
-		// A sailing path has a point at the end of each move, up to a dozen tiles apart, so the boat can be between them
-		if (isSailing())
+		// A sailing leg has a point at the end of each move, up to a dozen tiles apart, so the boat can be between them
+		for (int i = 1; i < path.size(); i++)
 		{
-			for (int i = 1; i < path.size(); i++)
+			if (PathStep.sailedInto(path, i)
+				&& distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
+				< settings.lifecycle().recalculateDistance())
 			{
-				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
-					< settings.lifecycle().recalculateDistance())
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 
@@ -345,11 +311,6 @@ public class PathScheduler
 		final double lengthSquared = dx * dx + dy * dy;
 		final double t = lengthSquared == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSquared));
 		return (int) Math.round(Math.max(Math.abs(px - (ax + t * dx)), Math.abs(py - (ay + t * dy))));
-	}
-
-	private boolean isSailing()
-	{
-		return pathfinder != null && pathfinder.isSailing();
 	}
 
 	/**
@@ -397,7 +358,7 @@ public class PathScheduler
 		try
 		{
 			return new AStarPathfinder(pathfinderConfig, aStarRoutingStatic(), aStarRoutingSession,
-				start, targets, null);
+				start, targets, null, pathfinderConfig.getAStarHeuristicWeight(), pathfinderConfig.prepareSailingCapability());
 		}
 		catch (RuntimeException error)
 		{

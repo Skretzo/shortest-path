@@ -143,6 +143,12 @@ final class MapPlayerStateSource implements PlayerStateSource
 	}
 
 	@Override
+	public Object[] dbTableField(int row, int column, int tuple)
+	{
+		return null;
+	}
+
+	@Override
 	public int varbit(int varbitId)
 	{
 		return varbits.getOrDefault(varbitId, 0);

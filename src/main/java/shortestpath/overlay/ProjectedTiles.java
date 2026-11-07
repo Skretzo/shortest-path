@@ -110,7 +110,7 @@ final class ProjectedTiles
 			{
 				markerDraw.accept(currentStep, i);
 			}
-			overlay.drawTransportInfo(graphics, currentStep, annotator.nextPathStep(path, i), path, i, search);
+			overlay.drawTransportInfo(graphics, currentStep, path, i, search);
 		}
 		overlay.drawUnreachedTargets(graphics, path, colorCalculating, drawUnreached, search);
 	}

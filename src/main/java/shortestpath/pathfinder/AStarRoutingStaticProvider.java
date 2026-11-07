@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import shortestpath.pathfinder.astar.RoutingCuts;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticBuilder;
+import shortestpath.pathfinder.sailing.SailingMoorings;
 import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.Transport;
 
@@ -47,8 +48,9 @@ public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 				log.warn("{} is missing or empty; building A* routing data without cuts",
 					RoutingCuts.RESOURCE);
 			}
+			// The moorings are joined by the sea
 			RoutingStaticBuilder.Result result = RoutingStaticBuilder.build(collision.get(), transports,
-				banks == null ? Set.of() : banks, cuts.pairs());
+				SailingMoorings.landTiles(), banks == null ? Set.of() : banks, cuts.pairs());
 			diagnostics = result.diagnostics;
 			routingStatic = result.routingStatic;
 			log.debug("Built A* routing data with cuts for collision map {}: {}",

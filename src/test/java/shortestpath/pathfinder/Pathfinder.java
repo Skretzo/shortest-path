@@ -346,16 +346,6 @@ public class Pathfinder implements ActiveSearch
 		return "Legacy";
 	}
 
-	/**
-	 * Always {@code false}: a walking search never sails — sailing searches are
-	 * {@link shortestpath.pathfinder.sailing.SailingPathfinder} instances.
-	 */
-	@Override
-	public boolean isSailing()
-	{
-		return false;
-	}
-
 	@Override
 	public void run()
 	{
