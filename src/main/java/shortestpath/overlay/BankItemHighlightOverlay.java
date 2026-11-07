@@ -64,6 +64,12 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 	}
 
 	@Override
+	protected int getPlayerPathIndex(List<PathStep> path)
+	{
+		return getBankStepIndex(path, annotator.getDestinations("bank"));
+	}
+
+	@Override
 	protected Dimension drawHighlights(Graphics2D graphics, List<PathStep> path, int pathIndex,
 		ActiveSearch search)
 	{
