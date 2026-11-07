@@ -198,6 +198,9 @@ public class AStarWalkCanonicalizerTest
 			assertEquals(describe(raw.subList(0, 1)), describe(result.path().subList(0, 1)));
 			assertEquals(describe(raw.subList(raw.size() - 1, raw.size())),
 				describe(result.path().subList(raw.size() - 1, raw.size())));
+			// Already the game's own walk, so rewriting it must hand the same tiles back, as clicks.
+			assertEquals(describe(raw), describe(result.path()));
+			assertFalse(result.clickPoints().isEmpty());
 			assertClicksFollowTheGame(grid, raw, result, 0);
 			assertEquals(List.of(), result.keptStepIndices());
 		}
@@ -650,7 +653,8 @@ public class AStarWalkCanonicalizerTest
 	 * game's path between them, as long as the search's walk between the same indices. A click need
 	 * not be a tile of the search's walk: it lies on the way the game walks. A kept step
 	 * bounds a segment too (it sits between clicks) but is a single step the search may take rather
-	 * than a walked-to tile, so it has no game path to check.
+	 * than a walked-to tile, so it has no game path to check. The leg is the whole route, so the
+	 * last boundary must be its final step: a dropped trailing click, or no boundary at all, fails.
 	 */
 	private static void assertClicksFollowTheGame(CollisionMap grid, List<PathStep> searched,
 		AStarWalkCanonicalizer.Result result, int legStart)
@@ -659,6 +663,11 @@ public class AStarWalkCanonicalizerTest
 		List<Integer> boundaries = new ArrayList<>(result.clickPoints());
 		boundaries.addAll(kept);
 		Collections.sort(boundaries);
+		int legEnd = searched.size() - 1;
+		assertEquals("the leg is not covered by clicks and kept steps: " + boundaries,
+			legEnd > legStart, !boundaries.isEmpty());
+		if (!boundaries.isEmpty())
+			assertEquals("the last boundary is not the leg's end", legEnd, (int) boundaries.get(boundaries.size() - 1));
 		int previous = legStart;
 		for (int boundary : boundaries)
 		{
