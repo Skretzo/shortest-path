@@ -20,12 +20,15 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import net.runelite.api.GameState;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.events.ConfigChanged;
 
 import shortestpath.LogCapture;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
+import shortestpath.items.ItemChange;
 import shortestpath.items.TestItemChange;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.Targets;
@@ -449,5 +452,117 @@ public class RefreshCoordinatorTest
 		coordinator.targetRequest(5, Targets.NONE);
 
 		verify(scheduler).restart("plugin message", 5, Targets.at(Set.of(3, 4)), true);
+	}
+
+	// ---------------------------------------------------------------
+	// Item panels: item changes while one is open re-plan from the player's tile
+	// ---------------------------------------------------------------
+
+	private static final int TARGET = WorldPointUtil.packWorldPoint(3200, 3200, 0);
+	private static final int AT_BANK = WorldPointUtil.packWorldPoint(3185, 3436, 0);
+
+	private void standingOnTheRoute()
+	{
+		runningSearch(50, Targets.at(Set.of(TARGET)));
+		when(scheduler.isNearPath(AT_BANK)).thenReturn(true);
+	}
+
+	private static ItemChange inventoryChanged()
+	{
+		return TestItemChange.of(ItemChange.containerKey(InventoryID.INV), Set.of(Effect.ELIGIBILITY_STALE));
+	}
+
+	private void tick(int tick)
+	{
+		coordinator.offRouteTick(tick, AT_BANK, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+	}
+
+	@Test
+	public void depositingReplansOnceOnTheNextTick()
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.BANK_DEPOSITBOX);
+		coordinator.itemsChanged(inventoryChanged());
+		coordinator.itemsChanged(inventoryChanged());
+		tick(20);
+		tick(21);
+
+		verify(scheduler).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void openingTheBankReplans()
+	{
+		// The bank's contents are only known once it opens
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		tick(20);
+
+		verify(scheduler).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void buyingThenClosingTheShopInOneTickStillReplans()
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
+		coordinator.itemsChanged(inventoryChanged());
+		coordinator.widgetClosed(InterfaceID.SHOPMAIN);
+		tick(20);
+
+		verify(scheduler).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void browsingAShopWithoutBuyingDoesNothing()
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
+		coordinator.widgetClosed(InterfaceID.SHOPMAIN);
+		tick(20);
+
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+	}
+
+	@Test
+	public void itemChangesWithNoPanelOpenDoNotReplan()
+	{
+		// Eating or drinking along the route changes the inventory too
+		standingOnTheRoute();
+
+		coordinator.itemsChanged(inventoryChanged());
+		tick(20);
+
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+	}
+
+	@Test
+	public void itemReplansKeepASetStartPoint()
+	{
+		standingOnTheRoute();
+		when(scheduler.isStartPointSet()).thenReturn(true);
+
+		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
+		coordinator.itemsChanged(inventoryChanged());
+		tick(20);
+
+		verify(scheduler).restart("items changed", 50, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void loggingOutForgetsOpenPanels()
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		coordinator.gameStateChanged(GameState.LOGIN_SCREEN, 10);
+		coordinator.itemsChanged(inventoryChanged());
+		tick(20);
+
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
 	}
 }

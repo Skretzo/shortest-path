@@ -130,7 +130,7 @@ public class ItemStateService
 			|| containerId == InventoryID.WORN)
 		{
 			itemStateRevision++;
-			declare(new ItemChange("container:" + containerId, Set.of(Effect.ELIGIBILITY_STALE)));
+			declare(new ItemChange(ItemChange.containerKey(containerId), Set.of(Effect.ELIGIBILITY_STALE)));
 		}
 	}
 
