@@ -1,6 +1,7 @@
 package shortestpath.requirement;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.EnumSet;
 import java.util.Map;
@@ -16,7 +17,6 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.HashTable;
 import net.runelite.api.WidgetNode;
 import net.runelite.api.gameval.DBTableID;
-import net.runelite.api.gameval.VarPlayerID;
 import shortestpath.requirement.model.MusicTracks;
 import shortestpath.requirement.model.SkillLevels;
 import net.runelite.api.widgets.WidgetModalMode;
@@ -38,21 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class ClientPlayerStateSource implements PlayerStateSource
 {
-	// Music database variables use a one-based MUSICMULTI index, not a varplayer ID.
-	private static final int[] MUSIC_VARPS = {
-		VarPlayerID.MUSICMULTI_1, VarPlayerID.MUSICMULTI_2, VarPlayerID.MUSICMULTI_3,
-		VarPlayerID.MUSICMULTI_4, VarPlayerID.MUSICMULTI_5, VarPlayerID.MUSICMULTI_6,
-		VarPlayerID.MUSICMULTI_7, VarPlayerID.MUSICMULTI_8, VarPlayerID.MUSICMULTI_9,
-		VarPlayerID.MUSICMULTI_10, VarPlayerID.MUSICMULTI_11, VarPlayerID.MUSICMULTI_12,
-		VarPlayerID.MUSICMULTI_13, VarPlayerID.MUSICMULTI_14, VarPlayerID.MUSICMULTI_15,
-		VarPlayerID.MUSICMULTI_16, VarPlayerID.MUSICMULTI_17, VarPlayerID.MUSICMULTI_18,
-		VarPlayerID.MUSICMULTI_19, VarPlayerID.MUSICMULTI_20, VarPlayerID.MUSICMULTI_21,
-		VarPlayerID.MUSICMULTI_22, VarPlayerID.MUSICMULTI_23, VarPlayerID.MUSICMULTI_24,
-		VarPlayerID.MUSICMULTI_25, VarPlayerID.MUSICMULTI_26, VarPlayerID.MUSICMULTI_27
-	};
+	// [proc,get_music_varp](int)(int): takes a one-based MUSICMULTI index, returns that varp's current value.
+	public static final int GET_MUSIC_VARP = 7305;
 
 	private final Client client;
-
 
 
 	@Override
@@ -111,6 +100,7 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 		int unlocked = 0;
 		int required = 0;
 		List<String> lockedTracks = new ArrayList<>();
+		Map<Integer, Integer> varpValues = new HashMap<>();
 		for (int row : client.getDBTableRows(DBTableID.Music.ID))
 		{
 			// Holiday is an event ID; -1 means the track is not tied to a holiday.
@@ -126,10 +116,22 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 				unlocked++;
 				continue;
 			}
-			int varpIndex = (Integer) client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0)[0] - 1;
+			// One-based MUSICMULTI index, passed to get_music_varp
+			int varpIndex = (Integer) client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0)[0];
 			int bit = (Integer) client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1)[0];
-			if (varpIndex >= 0 && varpIndex < MUSIC_VARPS.length && bit >= 0 && bit < Integer.SIZE &&
-				(client.getVarpValue(MUSIC_VARPS[varpIndex]) & (1 << bit)) != 0)
+			boolean isUnlocked = false;
+			if (varpIndex >= 1 && bit >= 0 && bit < Integer.SIZE)
+			{
+				Integer varpValue = varpValues.get(varpIndex);
+				if (varpValue == null)
+				{
+					client.runScript(GET_MUSIC_VARP, varpIndex);
+					varpValue = client.getIntStack()[0];
+					varpValues.put(varpIndex, varpValue);
+				}
+				isUnlocked = (varpValue & (1 << bit)) != 0;
+			}
+			if (isUnlocked)
 			{
 				unlocked++;
 			}
