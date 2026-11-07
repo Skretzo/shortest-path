@@ -83,6 +83,18 @@ public final class PreparedTarget
 
 
 
+	/**
+	 * As {@link #search(int, BooleanSupplier, double, SearchRestrictions, Runnable, GoalTest)}, with a side graph; see
+	 * {@link AStarForwardSearch#search(TargetOverlay, PreparedHeuristic, int, BooleanSupplier, boolean, double,
+	 * SearchRestrictions, Runnable, GoalTest, SideGraph)}.
+	 */
+	public AStarForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight,
+		SearchRestrictions restrictions, Runnable progressed, GoalTest goal, SideGraph side)
+	{
+		return AStarForwardSearch.search(overlay, heuristic, start, cancelled, true, heuristicWeight,
+			restrictions, progressed, goal, side);
+	}
+
 	/** The target tiles, in unsigned order. */
 	public int[] packedTargets()
 	{
