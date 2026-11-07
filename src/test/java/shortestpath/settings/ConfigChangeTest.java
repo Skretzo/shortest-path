@@ -176,6 +176,7 @@ public class ConfigChangeTest
 		assertDisplayOnly("highlightBankPickupItems");
 		assertDisplayOnly("highlightSpellbookSpells");
 		assertDisplayOnly("highlightInventoryItems");
+		assertDisplayOnly("highlightTransportObjects");
 		assertDisplayOnly("drawMap");
 		assertDisplayOnly("drawMinimap");
 		assertDisplayOnly("drawTiles");
