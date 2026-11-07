@@ -6502,3 +6502,7 @@
 # Mort Myre Swamp - quest Hespori island									
 3501 3355 0	3497 3355 0	Cross Stepping stone 42588						4	
 3497 3355 0	3501 3355 0	Cross Stepping stone 42588				12276>39		4	
+									
+# Minotaurs' Rest - Here be minotaurs									
+1933 9519 0	1966 3097 0	Exit Opening 60174						2	
+1966 3097 0	1933 9519 0	Enter Cave entrance 60173						2	
