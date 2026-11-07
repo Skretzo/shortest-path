@@ -6504,3 +6504,31 @@
 # Mort Myre Swamp - quest Hespori island									
 3501 3355 0	3497 3355 0	Cross Stepping stone 42588						4	
 3497 3355 0	3501 3355 0	Cross Stepping stone 42588				12276>39		4	
+									
+# Stranglewood - Kasonde pyramid									
+1174 3427 0	1183 9812 0	Enter Entry 48723				15125>27			
+1183 9812 0	1174 3432 0	Climb-up Stairs 48730							
+1174 3432 0	1174 3427 0							1	Leave pyramid
+									
+# Stranglewood - ritual site shortcut									
+1146 3434 0	1149 3445 0	Enter Entry 48746				15125>39			
+1149 3445 0	1146 3434 0	Enter Entry 48745				15125>39			
+									
+# Stranglewood - quest barricade									
+# shortcut: allow early quest access from stage 10; refine when the early entry sequence is verified.									
+1193 3400 0	1193 3402 0	Climb-over Barricade 48735				15125>9			
+1193 3402 0	1193 3400 0	Climb-over Barricade 48735				15125>9			
+									
+# Stranglewood - Kasonde defence room									
+# shortcut: landings placed beside the entry and ladder; replace with captured tiles when available.									
+1191 3410 0	1187 9763 0	Enter Entry 48722				15125>17;15125<22			
+1187 9763 0	1191 3410 0	Climb-up Ladder 48732							
+									
+# Ancient Vault - Desert Treasure II									
+3510 2971 0	3929 9631 1	Enter Vault Door 46743				14862>5			
+3929 9631 1	3510 2971 0	Climb-up Steps 48795							
+									
+# Stranglewood - Vardorvis ritual site									
+# shortcut: crossings inferred from the rocks footprint; confirm landings and instanced exit in-game.									
+1117 3428 0	1119 3428 0	Climb-over Rocks 48740				15125>37			
+1119 3428 0	1117 3428 0	Leave Rocks 48742							
