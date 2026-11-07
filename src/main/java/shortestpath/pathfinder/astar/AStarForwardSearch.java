@@ -58,45 +58,95 @@ public final class AStarForwardSearch
 		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
 		Runnable progressed, GoalTest goal)
 	{
+		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions, progressed, goal,
+			SideGraph.NONE);
+	}
+
+	/**
+	 * As above, with {@code side}: the states beside the walking ones a route may enter and leave, such as the sea
+	 * ({@link SideGraph}). A route may start on it, and end on it.
+	 */
+	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
+		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
+		Runnable progressed, GoalTest goal, SideGraph side)
+	{
 		if (target == null || heuristic == null || cancelled == null || restrictions == null || progressed == null
-			|| goal == null)
+			|| goal == null || side == null)
 			throw new NullPointerException();
 		if (heuristic.overlay() != target) throw new IllegalArgumentException("heuristic belongs to another target overlay");
 		validateHeuristicWeight(heuristicWeight);
-		SearchCtx ctx = new SearchCtx(target, heuristic, start, optimized, heuristicWeight, restrictions);
+		boolean walkStart = side.startNode() < 0;
+		SearchCtx ctx = new SearchCtx(target, heuristic, start, optimized, heuristicWeight, restrictions, walkStart, side);
 		AStarRoute startPath = AStarRoute.of(List.of(new PathStep(start, BankVisitState.CARRIED)), new int[1]);
 		Closest closest = new Closest(target);
 		if (cancelled.getAsBoolean()) return Result.cancelled(ctx.counters.snapshot(ctx.bestBankCost[0]), startPath);
 
-		int startState = ctx.space.state(start, BankVisitState.CARRIED);
-		ctx.updateBestBank(startState, 0);
-		int startH = ctx.effectiveHeuristic(startState, 0);
-		if (startH != CostArithmetic.INF)
+		int startState;
+		if (!walkStart)
 		{
-			ctx.best.set(startState, 0);
-			ctx.push(startState, 0, priority(0, startH, heuristicWeight), true, PUSH_INITIAL);
+			// Aboard: the route starts on the side graph, and only leaves it by its edges
+			startState = ctx.sideState(side.startNode(), BankVisitState.CARRIED);
+			int startH = ctx.effectiveHeuristic(startState, 0);
+			if (startH != CostArithmetic.INF)
+			{
+				ctx.best.set(startState, 0);
+				ctx.push(startState, 0, priority(0, startH, heuristicWeight), true, PUSH_INITIAL);
+			}
 		}
 		else
 		{
-			ctx.counters.heuristicUnreachable++;
+			startState = ctx.space.state(start, BankVisitState.CARRIED);
+			ctx.updateBestBank(startState, 0);
+			int startH = ctx.effectiveHeuristic(startState, 0);
+			if (startH != CostArithmetic.INF)
+			{
+				ctx.best.set(startState, 0);
+				ctx.push(startState, 0, priority(0, startH, heuristicWeight), true, PUSH_INITIAL);
+			}
+			else
+			{
+				ctx.counters.heuristicUnreachable++;
+			}
+			if (ctx.capability != TeleportCapability.ALL)
+			{
+				int hub = hub(ctx.tileStates, ctx.capability, BankVisitState.CARRIED);
+				ctx.best.set(hub, 0);
+				ctx.push(hub, 0, 0, true, PUSH_GLOBAL);
+			}
+			ctx.seedGlobals(startState, 0);
 		}
-		if (ctx.capability != TeleportCapability.ALL)
-		{
-			int hub = hub(ctx.tileStates, ctx.capability, BankVisitState.CARRIED);
-			ctx.best.set(hub, 0);
-			ctx.push(hub, 0, 0, true, PUSH_GLOBAL);
-		}
-		ctx.seedGlobals(startState);
 
-		while (ctx.queue.poll())
+		while (true)
 		{
 			if (cancelled.getAsBoolean())
 				return Result.cancelled(ctx.counters.snapshot(ctx.bestBankCost[0]), startPath,
 					closest.path(ctx, startState, startPath), closest.cost());
+			if (!ctx.queue.poll()) break;
 			int state = ctx.queue.state(), cost = ctx.queue.cost(), queuedPriority = ctx.queue.priority();
 			if (cost != ctx.best.get(state))
 	{ ctx.counters.staleEntries++; continue;
 	}
+			if (state >= ctx.sideBase)
+			{
+				if (state >= ctx.endBase)
+				{
+					ctx.counters.statesPopped++;
+					return Result.reachedBy(cost, ctx.counters.snapshot(ctx.bestBankCost[0]), ctx.reconstruct(startState, state),
+						ctx.endTiles[state - ctx.endBase]);
+				}
+				int currentH = ctx.effectiveHeuristic(state, cost);
+				if (currentH == CostArithmetic.INF) continue;
+				int currentPriority = priority(cost, currentH, heuristicWeight);
+				if (currentPriority > queuedPriority)
+				{
+					ctx.push(state, cost, currentPriority, false, PUSH_REKEY);
+					ctx.counters.rekeys++;
+					continue;
+				}
+				ctx.counters.statesPopped++;
+				ctx.expandSide(state, cost);
+				continue;
+			}
 			if (state >= ctx.tileStates)
 			{
 				ctx.relaxGlobalHub(state, cost);
@@ -118,7 +168,8 @@ public final class AStarForwardSearch
 			}
 			ctx.counters.statesPopped++;
 			if (target.isTarget(tile) && goal.accepts(tile, banked))
-				return Result.reached(cost, state, ctx.counters.snapshot(ctx.bestBankCost[0]), ctx.reconstruct(startState, state));
+				return Result.reached(cost, state, ctx.counters.snapshot(ctx.bestBankCost[0]),
+					ctx.reconstruct(startState, state));
 			if (closest.consider(state, tile, cost))
 				progressed.run();
 			if (ctx.space.isBase(node))
@@ -134,6 +185,8 @@ public final class AStarForwardSearch
 			}
 			ctx.relaxBank(node, banked, state, cost);
 			ctx.relaxLocalTransports(tile, banked, state, cost);
+			if (ctx.side != SideGraph.NONE && ctx.side.entersAt(tile))
+				ctx.enterSide(tile, banked, state, cost);
 		}
 		return Result.unreachable(ctx.counters.snapshot(ctx.bestBankCost[0]), startPath,
 			closest.path(ctx, startState, startPath), closest.cost());
@@ -255,18 +308,40 @@ public final class AStarForwardSearch
 		final boolean restrictedHeuristic, optimized;
 		final double heuristicWeight;
 		final int tileStates;
+		// The side graph, its states (two per node, from sideBase), and the route's end on it (one per bank layer, from
+		// endBase), with the tile each end state was last reached at
+		final SideGraph side;
+		final int sideBase, endBase;
+		final int[] endTiles = new int[2];
+		// Whether the route starts on the side graph
+		final boolean startsAboard;
+		// Each side state's estimate, filled on first ask: 0 for none yet, else the value plus one
+		private final int[] sideEstimates;
+		private final SideEdges sideEdges = new SideEdges();
 
 		SearchCtx(TargetOverlay target, PreparedHeuristic heuristic, int start, boolean optimized,
 			double heuristicWeight, SearchRestrictions restrictions)
+		{
+			this(target, heuristic, start, optimized, heuristicWeight, restrictions, true, SideGraph.NONE);
+		}
+
+		/** {@code walkStart} false: the route starts off land, so its tile is no state of the search. */
+		SearchCtx(TargetOverlay target, PreparedHeuristic heuristic, int start, boolean optimized,
+			double heuristicWeight, SearchRestrictions restrictions, boolean walkStart, SideGraph side)
 		{
 			this.target = target;
 			this.heuristic = heuristic;
 			this.optimized = optimized;
 			this.heuristicWeight = heuristicWeight;
-			space = SearchSpace.create(target, start, restrictions);
+			space = SearchSpace.create(target, walkStart ? start : WorldPointUtil.UNDEFINED, restrictions);
 			capability = capabilityAt(start);
 			tileStates = space.tileCount * 2;
-			int stateCount = tileStates + (capability == TeleportCapability.ALL ? 0 : HUB_STATES);
+			this.side = side;
+			startsAboard = !walkStart;
+			sideBase = tileStates + (capability == TeleportCapability.ALL ? 0 : HUB_STATES);
+			endBase = sideBase + side.size() * 2;
+			sideEstimates = side == SideGraph.NONE ? new int[0] : new int[side.size() * 2];
+			int stateCount = side == SideGraph.NONE ? sideBase : endBase + 2;
 			best = new PagedSearchArray(stateCount, CostArithmetic.INF);
 			previous = new PagedSearchArray(stateCount, 0);
 			restrictedHeuristic = capability != TeleportCapability.ALL && hasGlobals(target.account());
@@ -382,7 +457,7 @@ public final class AStarForwardSearch
 			if (pushKind == PUSH_LOCAL || pushKind == PUSH_GLOBAL) counters.successfulTransportRelaxations++;
 		}
 
-		private void seedGlobals(int startState)
+		private void seedGlobals(int startState, int startCost)
 		{
 			int count = target.account().globalCount(capability, BankVisitState.CARRIED);
 			for (int i = 0; i < count; i++)
@@ -395,7 +470,7 @@ public final class AStarForwardSearch
 				int node = space.node(destination);
 				if (node < 0) continue;
 				int state = stateForNode(node, BankVisitState.CARRIED);
-				int cost = target.account().globalCost(capability, BankVisitState.CARRIED, i);
+				int cost = CostArithmetic.add(startCost, target.account().globalCost(capability, BankVisitState.CARRIED, i));
 				if (cost < best.get(state))
 				{
 					updateBestBank(state, cost);
@@ -453,6 +528,90 @@ public final class AStarForwardSearch
 			}
 		}
 
+		/** The state of side node {@code node} in bank layer {@code banked}. */
+		int sideState(int node, BankVisitState banked)
+		{
+			return sideBase + node * 2 + (banked == BankVisitState.BANKED ? 1 : 0);
+		}
+
+		private int sideEstimate(int state, BankVisitState banked)
+		{
+			int slot = state - sideBase;
+			int cached = sideEstimates[slot];
+			if (cached != 0) return cached == SearchSpace.CACHED_INF ? CostArithmetic.INF : cached - 1;
+			counters.heuristicEvaluations++;
+			int value = side.estimate(slot / 2, banked, this::landEstimate);
+			sideEstimates[slot] = value == CostArithmetic.INF ? SearchSpace.CACHED_INF : value + 1;
+			return value;
+		}
+
+		// The walking search's estimate from a tile the side graph leaves onto
+		private int landEstimate(int tile, BankVisitState banked)
+		{
+			int node = space.node(tile);
+			return node < 0 ? CostArithmetic.INF : heuristicValue(stateForNode(node, banked));
+		}
+
+		/** Takes the edges into the side graph from {@code tile}, reached as {@code state} at {@code cost}. */
+		void enterSide(int tile, BankVisitState banked, int state, int cost)
+		{
+			sideEdges.from(state, cost, banked);
+			side.enter(tile, banked, sideEdges);
+		}
+
+		/** Takes the edges out of side state {@code state}, reached at {@code cost}. */
+		void expandSide(int state, int cost)
+		{
+			BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
+			sideEdges.from(state, cost, banked);
+			side.expand((state - sideBase) / 2, banked, sideEdges);
+		}
+
+		/** The side graph's edges from one state, relaxed as they are given. */
+		private final class SideEdges implements SideGraph.Edges
+		{
+			private int from, cost;
+			private BankVisitState banked;
+
+			void from(int state, int cost, BankVisitState banked)
+			{
+				this.from = state;
+				this.cost = cost;
+				this.banked = banked;
+			}
+
+			@Override
+			public void toNode(int node, int stepCost, Transport transport)
+			{
+				relaxState(from, sideState(node, banked), cost, stepCost, transport, PUSH_LOCAL);
+			}
+
+			@Override
+			public void toTile(int tile, int stepCost, Transport transport)
+			{
+				counters.transportCandidates++;
+				int node = space.node(tile);
+				if (node < 0) return;
+				int state = stateForNode(node, banked), candidate = CostArithmetic.add(cost, stepCost);
+				relaxState(from, state, cost, stepCost, transport, PUSH_LOCAL);
+				// A route that starts aboard can't teleport from the boat: its teleports are cast once it comes ashore,
+				// as a walk's are from its start
+				if (startsAboard && banked == BankVisitState.CARRIED && candidate != CostArithmetic.INF
+					&& best.get(state) == candidate && TeleportCapability.at(tile) == capability)
+					seedGlobals(state, candidate);
+			}
+
+			@Override
+			public void toEnd(int tile, int stepCost)
+			{
+				int end = endBase + (banked == BankVisitState.BANKED ? 1 : 0);
+				int candidate = CostArithmetic.add(cost, stepCost);
+				if (candidate == CostArithmetic.INF || candidate >= best.get(end)) return;
+				endTiles[end - endBase] = tile;
+				relaxState(from, end, cost, stepCost, null, PUSH_LOCAL);
+			}
+		}
+
 		private AStarRoute reconstruct(int start, int terminal)
 		{
 			ArrayList<PathStep> result = new ArrayList<>();
@@ -461,18 +620,21 @@ public final class AStarForwardSearch
 			int count = 0;
 			for (int state = terminal; ; state = previous.get(state))
 			{
-				if (state >= tileStates) continue;
+				// A hub is no step
+				if (state >= tileStates && state < sideBase) continue;
 				if (count == costs.length)
 				{
 					costs = Arrays.copyOf(costs, count * 2);
 					arrivals = Arrays.copyOf(arrivals, count * 2);
 				}
-				result.add(new PathStep(space.tile(state / 2),
-					(state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED,
-					transportWins.at(state, best.get(state))));
+				BankVisitState layer = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
+				Transport transport = transportWins.at(state, best.get(state));
+				if (state < tileStates) result.add(new PathStep(space.tile(state / 2), layer, transport));
+				else result.add(new PathStep(state >= endBase ? endTiles[state - endBase] : side.tile((state - sideBase) / 2),
+					layer, transport, side.traversal()));
 				costs[count] = state == start ? 0 : best.get(state);
-				int from = state == start ? start : previous.get(state);
-				arrivals[count++] = from < tileStates ? AStarRoute.FROM_STEP
+				int from = state == start ? state : previous.get(state);
+				arrivals[count++] = from < tileStates || from >= sideBase ? AStarRoute.FROM_STEP
 					: AStarRoute.fromHub(hubCapability(tileStates, from));
 				if (state == start) break;
 			}
@@ -509,6 +671,12 @@ public final class AStarForwardSearch
 		private int effectiveHeuristic(int state, int cost)
 		{
 			BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
+			if (state >= sideBase)
+			{
+				if (state >= endBase) return 0;
+				int estimate = sideEstimate(state, banked);
+				return restrictedHeuristic ? Math.min(estimate, globalBounds[banked == BankVisitState.BANKED ? 1 : 0]) : estimate;
+			}
 			int resolved;
 			if (banked == BankVisitState.BANKED)
 			{
@@ -548,7 +716,7 @@ public final class AStarForwardSearch
 
 		private void updateBestBank(int state, int cost)
 		{
-			if (optimized && (state & 1) == 0 && space.bankGlobalRelevant() && cost < bestBankCost[0]
+			if (optimized && state < tileStates && (state & 1) == 0 && space.bankGlobalRelevant() && cost < bestBankCost[0]
 				&& space.isUsableBankNode(state / 2))
 			{
 				bestBankCost[0] = cost;
@@ -641,16 +809,27 @@ public final class AStarForwardSearch
 	{
 		@Getter @Accessors(fluent = true) private final boolean reached, cancelled;
 		@Getter @Accessors(fluent = true) private final int cost, terminalState, closestCost;
+		/** The tile a route that ended on the side graph ended at, or {@link WorldPointUtil#UNDEFINED}. */
+		@Getter @Accessors(fluent = true) private final int sideEnd;
 		@Getter @Accessors(fluent = true) private final Counters counters;
 		private final AStarRoute path, closestPath;
 		private Result(boolean reached, boolean cancelled, int cost, int terminalState, Counters counters, AStarRoute path,
 			AStarRoute closestPath, int closestCost)
 		{
+			this(reached, cancelled, cost, terminalState, counters, path, closestPath, closestCost, WorldPointUtil.UNDEFINED);
+		}
+
+		private Result(boolean reached, boolean cancelled, int cost, int terminalState, Counters counters, AStarRoute path,
+			AStarRoute closestPath, int closestCost, int sideEnd)
+		{
 			this.reached = reached; this.cancelled = cancelled; this.cost = cost; this.terminalState = terminalState; this.counters = counters; this.path = path;
-			this.closestPath = closestPath; this.closestCost = closestCost;
+			this.closestPath = closestPath; this.closestCost = closestCost; this.sideEnd = sideEnd;
 		}
 		static Result reached(int cost, int state, Counters counters, AStarRoute path)
 	{ return new Result(true, false, cost, state, counters, path, path, cost);
+	}
+		static Result reachedBy(int cost, Counters counters, AStarRoute path, int sideEnd)
+	{ return new Result(true, false, cost, -1, counters, path, path, cost, sideEnd);
 	}
 		static Result unreachable(Counters counters, AStarRoute path, AStarRoute closestPath, int closestCost)
 	{ return new Result(false, false, CostArithmetic.INF, -1, counters, path, closestPath, closestCost);
@@ -798,7 +977,7 @@ public final class AStarForwardSearch
 			RoutingStatic stat = target.routingStatic(); int[] values = new int[stat.siteCount() + target.targetCount() + 1]; int count = 0;
 			for (int site = 0; site < stat.siteCount(); site++) count = add(values, count, stat.siteTile(site), stat);
 			for (int i = 0; i < target.targetCount(); i++) count = add(values, count, target.packedTarget(i), stat);
-			count = add(values, count, start, stat);
+			if (start != WorldPointUtil.UNDEFINED) count = add(values, count, start, stat);
 			for (int i = 1; i < count; i++)
 	{ int value = values[i], j = i - 1; while (j >= 0 && Integer.compareUnsigned(values[j], value) > 0) values[j + 1] = values[j--]; values[j + 1] = value;
 	}

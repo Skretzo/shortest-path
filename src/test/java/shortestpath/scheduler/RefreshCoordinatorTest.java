@@ -29,7 +29,6 @@ import shortestpath.WorldPointUtil;
 import shortestpath.items.TestItemChange;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.Targets;
-import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.TestPohChange;
 import shortestpath.sailing.TestSailingChange;
 import shortestpath.settings.ConfigChange;
@@ -386,18 +385,17 @@ public class RefreshCoordinatorTest
 	@Test
 	public void sailingSearchReachedItsTargetClearsThePath()
 	{
-		// A sailing path arrives once the live boat's hull covers a target —
+		// A route ending at sea arrives once the live boat's hull covers a target —
 		// the search's own verdict is not trusted, so the coordinator checks
 		// the boat's position and heading supplied by the shell.
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(1000, 1000, 0);
 		int boat = WorldPointUtil.packWorldPoint(3200, 3201, 0);
-		SailingPathfinder sailingSearch = mock(SailingPathfinder.class);
+		ActiveSearch sailingSearch = mock(ActiveSearch.class);
 		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
-		when(sailingSearch.isSailing()).thenReturn(true);
 		config.set("finishDistance", 10);
-		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(target);
+		when(sailingSearch.sailingArrivedTarget(boat, 8)).thenReturn(target);
 
 		coordinator.offRouteTick(20, location, boat, 8);
 
@@ -416,12 +414,11 @@ public class RefreshCoordinatorTest
 		int target = WorldPointUtil.packWorldPoint(3200, 3200, 0);
 		int location = WorldPointUtil.packWorldPoint(3200, 3201, 0);
 		int boat = WorldPointUtil.packWorldPoint(1500, 1500, 0);
-		SailingPathfinder sailingSearch = mock(SailingPathfinder.class);
+		ActiveSearch sailingSearch = mock(ActiveSearch.class);
 		search = sailingSearch;
 		runningSearch(50, Targets.at(Set.of(target)));
-		when(sailingSearch.isSailing()).thenReturn(true);
 		config.set("finishDistance", 10);
-		when(sailingSearch.arrivedTarget(boat, 8)).thenReturn(WorldPointUtil.UNDEFINED);
+		when(sailingSearch.sailingArrivedTarget(boat, 8)).thenReturn(WorldPointUtil.UNDEFINED);
 
 		coordinator.offRouteTick(20, location, boat, 8);
 

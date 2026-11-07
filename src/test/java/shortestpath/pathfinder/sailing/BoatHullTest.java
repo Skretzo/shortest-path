@@ -1,7 +1,6 @@
 package shortestpath.pathfinder.sailing;
 
 import java.util.List;
-import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
@@ -21,11 +20,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.NodeGraph;
 import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.TestPathfinderConfig;
 
@@ -70,44 +66,28 @@ public class BoatHullTest
 	public void testSloopFitsAThreeTileGapOnlyWhenLinedUp()
 	{
 		// Rocks at (2630, 2548) and (2634, 2548) south of Pest Control leave a gap three tiles wide, which a sloop
-		// fits through sailing straight north with the boat on a tile centre, touching the rocks either side. In game
-		// it only gets through from that spot: from the 3 others across its tile it stops at the rocks
-		assertTrue(hull(SLOOP, 0, 0).canMove(map, 2632, 2538, 0, NORTH, 0, 12));
-		assertFalse("A quarter tile off centre", hull(SLOOP, -32, 0).canMove(map, 2632, 2538, 0, NORTH, 0, 12));
-		assertFalse("A quarter tile the other way", hull(SLOOP, 32, 0).canMove(map, 2632, 2538, 0, NORTH, 0, 12));
-		assertFalse("On the tile's west edge", hull(SLOOP, -64, 0).canMove(map, 2632, 2538, 0, NORTH, 0, 12));
-		assertFalse("Turned a heading", hull(SLOOP, 0, 0).canMove(map, 2632, 2538, 0, NORTH_NORTH_EAST, 0, 12));
+		// fits through sailing straight north with the boat on a tile centre, touching the rocks either side
+		assertTrue(hull(SLOOP).canMove(map, 2632, 2538, 0, NORTH, 0, 12));
+		assertFalse("Turned a heading", hull(SLOOP).canMove(map, 2632, 2538, 0, NORTH_NORTH_EAST, 0, 12));
 	}
 
 	@Test
 	public void testOnlyARaftFitsAOneTileChannel()
 	{
 		// Rocks either side of x 2796 from y 2962 to 2967 leave a channel one tile wide
-		assertTrue(hull(RAFT, 0, 0).canMove(map, 2796, 2963, 0, NORTH, 0, 5));
-		assertFalse(hull(SKIFF, 0, 0).canMove(map, 2796, 2963, 0, NORTH, 0, 5));
-	}
-
-	@Test
-	public void testSkiffFitsPastTheLumSteppingStoneOnlyOnItsTilesSouthEdge()
-	{
-		// The channel between the Lum Lagoon and the Lumbridge Basin has an Agility shortcut's stepping stone in it at
-		// (3214, 3135), with 2 tiles of water between it and the bank to the south. A skiff sailing east along the row
-		// just south of the stone fits between them only sitting on its tile's south edge, as in game
-		assertTrue(hull(SKIFF, 0, -64).canMove(map, 3207, 3134, 0, EAST, 13, 0));
-		assertFalse(hull(SKIFF, 0, -32).canMove(map, 3207, 3134, 0, EAST, 13, 0));
-		assertFalse(hull(SKIFF, 0, 0).canMove(map, 3207, 3134, 0, EAST, 13, 0));
-		assertFalse(hull(SKIFF, 0, 32).canMove(map, 3207, 3134, 0, EAST, 13, 0));
+		assertTrue(hull(RAFT).canMove(map, 2796, 2963, 0, NORTH, 0, 5));
+		assertFalse(hull(SKIFF).canMove(map, 2796, 2963, 0, NORTH, 0, 5));
 	}
 
 	@Test
 	public void testHullCoversTheTilesUnderIt()
 	{
 		// A raft is a tile wide and 3 long, so sitting on a tile it covers that tile and the ones fore and aft
-		assertTrue(hull(RAFT, 0, 0).covers(NORTH, 0, 1));
-		assertTrue(hull(RAFT, 0, 0).covers(NORTH, 0, -1));
-		assertFalse(hull(RAFT, 0, 0).covers(NORTH, 1, 0));
-		assertTrue(hull(RAFT, 0, 0).covers(EAST, 1, 0));
-		assertFalse(hull(RAFT, 0, 0).covers(EAST, 0, 1));
+		assertTrue(hull(RAFT).covers(NORTH, 0, 1));
+		assertTrue(hull(RAFT).covers(NORTH, 0, -1));
+		assertFalse(hull(RAFT).covers(NORTH, 1, 0));
+		assertTrue(hull(RAFT).covers(EAST, 1, 0));
+		assertFalse(hull(RAFT).covers(EAST, 0, 1));
 	}
 
 	@Test
@@ -118,10 +98,10 @@ public class BoatHullTest
 		int start = WorldPointUtil.packWorldPoint(2948, 3074, 0);
 		int target = WorldPointUtil.packWorldPoint(3074, 2983, 0);
 
-		List<PathStep> pointPath = findPath(start, target, moves, null);
-		List<PathStep> sloopPath = findPath(start, target, moves, hull(SLOOP, 0, 0));
+		List<PathStep> raftPath = findPath(start, target, moves, hull(RAFT));
+		List<PathStep> sloopPath = findPath(start, target, moves, hull(SLOOP));
 
-		assertNotNull("Steering only the boat's centre clear takes a sloop over rocks", hullHit(pointPath, moves, 1.5, 3, 7));
+		assertNotNull("A raft's route takes a sloop over rocks", hullHit(raftPath, moves, 1.5, 3, 7));
 		assertNull(hullHit(sloopPath, moves, 1.5, 3, 7));
 	}
 
@@ -131,18 +111,18 @@ public class BoatHullTest
 		// Open sea between Rimmington and Karamja
 		SailingMoves moves = SailingMoves.forSpeed(1.5);
 		int target = WorldPointUtil.packWorldPoint(2963, 3109, 0);
-		List<PathStep> path = findPath(WorldPointUtil.packWorldPoint(2948, 3074, 0), target, moves, hull(SLOOP, 0, 0));
+		List<PathStep> path = findPath(WorldPointUtil.packWorldPoint(2948, 3074, 0), target, moves, hull(SLOOP));
 
-		assertTrue(endsCovering(path, moves, hull(SLOOP, 0, 0), target));
+		assertTrue(endsCovering(path, moves, hull(SLOOP), target));
 	}
 
 	@Test
 	public void testRaftGetsPastTheElidDeltaIslands()
 	{
 		SailingMoves moves = SailingMoves.forSpeed(1.5);
-		List<PathStep> path = findPath(UNKAH_HARBOUR, TOP_OF_ELID_DELTA, moves, hull(RAFT, 0, 0));
+		List<PathStep> path = findPath(UNKAH_HARBOUR, TOP_OF_ELID_DELTA, moves, hull(RAFT));
 
-		assertTrue(endsCovering(path, moves, hull(RAFT, 0, 0), TOP_OF_ELID_DELTA));
+		assertTrue(endsCovering(path, moves, hull(RAFT), TOP_OF_ELID_DELTA));
 		assertNull(hullHit(path, moves, 0.5, 1.5, 1.5));
 	}
 
@@ -150,90 +130,20 @@ public class BoatHullTest
 	public void testSloopCantGetPastTheElidDeltaIslands()
 	{
 		// As in game, the channels between the islands are too narrow for a sloop
-		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, UNKAH_HARBOUR, Set.of(TOP_OF_ELID_DELTA),
-			null, SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0));
-		pathfinder.run();
-
-		assertFalse(pathfinder.getResult().isReached());
+		assertNull(TestSail.sail(map, SailingMoves.forSpeed(1.5), hull(SLOOP), -1, UNKAH_HARBOUR,
+			TOP_OF_ELID_DELTA));
 	}
 
 	@Test
-	public void testBoatSailsOutOfTilesItsHullSitsOn()
+	public void testABoatOverBlockedTilesCannotMove()
 	{
-		// Moored on the 3x2 shipwreck at (2704-2706, 3050-3051), a raft's hull overlaps blocked tiles
-		// where it starts; like a boat on a blocked tile it can sail out of them with its first move,
-		// but not over other blocked tiles its hull doesn't already cover
-		BoatHull raft = hull(RAFT, 0, 0);
-		assertTrue("North over the wreck row its hull sits on", raft.canMove(map, 2705, 3050, 0, NORTH, 0, 3, true));
-		assertTrue("South out of the wreck", raft.canMove(map, 2705, 3050, 0, SOUTH, 0, -3, true));
-		assertFalse("Only the first move gets the escape", raft.canMove(map, 2705, 3050, 0, NORTH, 0, 3));
-		assertFalse("Facing along the wreck, its hull doesn't cover the other row",
-			raft.canMove(map, 2705, 3050, 0, WEST, 0, 3, true));
-
-		int start = WorldPointUtil.packWorldPoint(2705, 3050, 0);
-		int target = WorldPointUtil.packWorldPoint(2705, 3042, 0);
-		findPath(start, target, SailingMoves.forSpeed(1.5), raft);
-	}
-
-	@Test
-	public void testSailingSearchesWhenNoGoalIsViable()
-	{
-		// A target on the shipwreck is blocked, and with the unreachable distance at 0 it resolves to
-		// no goal tiles: a walking search is skipped outright, but a sailing search still runs — its
-		// hull covering the target doesn't need a walkable goal tile
-		config.set("unreachableTargetDistanceThreshold", 0);
-		pathfinderConfig.refresh();
-		int start = WorldPointUtil.packWorldPoint(2705, 3044, 0);
-		int target = WorldPointUtil.packWorldPoint(2705, 3050, 0);
-
-		Pathfinder walking = new Pathfinder(pathfinderConfig, start, Set.of(target));
-		walking.run();
-		assertEquals(0, walking.getResult().getNodesChecked());
-
-		SailingPathfinder sailing = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
-			SailingMoves.forSpeed(1.5), hull(RAFT, 0, 0));
-		sailing.run();
-		assertTrue(sailing.getResult().getNodesChecked() > 0);
-	}
-
-	@Test
-	public void testACostlierMoveStillQueuesWhenItWouldArrive()
-	{
-		// With the target a tile east, a raft only covers it facing east: if the cheapest route to
-		// that tile faces another way, a costlier move facing east must still be queued
-		SailingMoves moves = SailingMoves.forSpeed(1.5);
-		int target = WorldPointUtil.packWorldPoint(2706, 3049, 0);
-		SailingSearch search = new SailingSearch(moves, hull(RAFT, 0, 0), new int[]{target}, new int[]{target});
-
-		int tile = WorldPointUtil.packWorldPoint(2705, 3049, 0);
-		int eastMove = moves.indexOf(3, 0);
-		int northMove = moves.indexOf(0, 3);
-		assertTrue(search.queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
-		assertFalse("A move is only let through once", search.queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
-		assertFalse("Facing north doesn't cover the target", search.queueArrival(tile, northMove, 2705, 3049, 0, BankVisitState.CARRIED));
-		assertFalse("Without a hull, facing doesn't matter", new SailingSearch(moves, null, new int[]{target},
-			new int[]{target}).queueArrival(tile, eastMove, 2705, 3049, 0, BankVisitState.CARRIED));
-	}
-
-	@Test
-	public void testTheStartNodeFacesTheWayTheBoatDoes()
-	{
-		// The start node has no move to face, so it faces the heading the boat was pointing where the
-		// route began; a tile a move reached faces the way it sailed there
-		SailingMoves moves = SailingMoves.ESTIMATE;
-		NodeGraph graph = new NodeGraph(4);
-		int start = graph.createStart(WorldPointUtil.packWorldPoint(2948, 3074, 0));
-		int move = moves.indexOf(2, 0);
-		int node = graph.createWeightedTile(WorldPointUtil.packWorldPoint(2950, 3074, 0), start, 2000, 0,
-			BankVisitState.CARRIED, move);
-
-		SailingSearch facingSouth = new SailingSearch(moves, null, new int[0], new int[0], SOUTH);
-		assertEquals(SOUTH, facingSouth.arrivalHeading(graph, start));
-		assertEquals("A move's own heading wins", EAST, facingSouth.arrivalHeading(graph, node));
-
-		SailingSearch facingUnknown = new SailingSearch(moves, null, new int[0], new int[0]);
-		assertEquals("An unknown start heading still tries them all", WorldPointUtil.UNDEFINED,
-			facingUnknown.arrivalHeading(graph, start));
+		// On the 3x2 shipwreck at (2704-2706, 3050-3051) a raft's hull overlaps blocked tiles: no boat can be there,
+		// so no move leaves it; a moored boat sets out from where it casts off instead
+		BoatHull raft = hull(RAFT);
+		assertFalse(raft.fits(map, 2705, 3050, 0));
+		assertFalse("North over the wreck", raft.canMove(map, 2705, 3050, 0, NORTH, 0, 3));
+		assertFalse("South out of the wreck", raft.canMove(map, 2705, 3050, 0, SOUTH, 0, -3));
+		assertTrue("Clear of it", raft.fits(map, 2705, 3046, 0));
 	}
 
 	@Test
@@ -242,45 +152,33 @@ public class BoatHullTest
 		// A sloop reaches 7 tiles toward its bow but only 3 astern: a target 5 tiles north is under the
 		// hull only facing north
 		int here = WorldPointUtil.packWorldPoint(2948, 3074, 0);
-		int[] target = {WorldPointUtil.packWorldPoint(2948, 3079, 0)};
-		SailingSearch search = new SailingSearch(SailingMoves.ESTIMATE, hull(SLOOP, 0, 0), target, target);
+		int target = WorldPointUtil.packWorldPoint(2948, 3079, 0);
+		BoatHull sloop = hull(SLOOP);
 
-		assertEquals("Facing south the target is astern, out of the hull", WorldPointUtil.UNDEFINED,
-			search.arrivedTarget(here, SOUTH));
-		assertEquals("Facing north it's under the bow", target[0], search.arrivedTarget(here, NORTH));
-		assertEquals("Unknown heading tries them all", target[0],
-			search.arrivedTarget(here, WorldPointUtil.UNDEFINED));
+		assertFalse("Facing south the target is astern, out of the hull", sloop.coversTile(target, here, SOUTH));
+		assertTrue("Facing north it's under the bow", sloop.coversTile(target, here, NORTH));
+		assertTrue("Unknown heading tries them all", sloop.coversTile(target, here, -1));
 	}
 
 	@Test
 	public void testASailingSearchDoesNotArriveOnTheSpotBehindTheStern()
 	{
-		// Aboard at (2948, 3074) facing south, the target at (2948, 3079) is under the hull only facing
-		// north: the search must sail away rather than ending with the boat still on the spot, which is
-		// what trying every heading at the start did
-		int start = WorldPointUtil.packWorldPoint(2948, 3074, 0);
-		int target = WorldPointUtil.packWorldPoint(2948, 3079, 0);
+		// Aboard in open water at (2705, 3038) facing south, the target at (2705, 3043) is under the hull only
+		// facing north: the search must sail round to it rather than ending with the boat still on the spot, which
+		// is what trying every heading at the start did
+		int start = WorldPointUtil.packWorldPoint(2705, 3038, 0);
+		int target = WorldPointUtil.packWorldPoint(2705, 3043, 0);
 
-		SailingPathfinder astern = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
-			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0), SOUTH);
-		astern.run();
-		assertFalse("Arrived on the spot facing away from the target",
-			astern.getResult().isReached() && astern.getPath().size() <= 1);
-		assertTrue("But still reached it by sailing", astern.getResult().isReached());
-		assertTrue(astern.getPath().size() > 1);
+		SailingMoves moves = SailingMoves.forSpeed(1.5);
+		List<PathStep> astern = TestSail.sail(map, moves, hull(SLOOP), SOUTH, start, target);
+		assertNotNull("Still reached it by sailing", astern);
+		assertTrue("Not on the spot facing away from the target", astern.size() > 1);
 
-		SailingPathfinder facing = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
-			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0), NORTH);
-		facing.run();
-		assertTrue(facing.getResult().isReached());
-		assertEquals("A target already under the bow still arrives on the spot", 1, facing.getPath().size());
+		List<PathStep> facing = TestSail.sail(map, moves, hull(SLOOP), NORTH, start, target);
+		assertEquals("A target already under the bow still arrives on the spot", 1, facing.size());
 
-		SailingPathfinder noHeading = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null,
-			SailingMoves.forSpeed(1.5), hull(SLOOP, 0, 0));
-		noHeading.run();
-		assertTrue(noHeading.getResult().isReached());
-		assertEquals("An unknown heading still counts an under-hull target as arrived", 1,
-			noHeading.getPath().size());
+		List<PathStep> noHeading = TestSail.sail(map, moves, hull(SLOOP), -1, start, target);
+		assertEquals("An unknown heading still counts an under-hull target as arrived", 1, noHeading.size());
 	}
 
 	@Test
@@ -289,16 +187,15 @@ public class BoatHullTest
 		// West out of the Lum Lagoon through the channel past the stepping stone (see above)
 		SailingMoves moves = SailingMoves.forSpeed(1.5);
 		int west = WorldPointUtil.packWorldPoint(3196, 3125, 0);
-		List<PathStep> path = findPath(WorldPointUtil.packWorldPoint(3229, 3124, 0), west, moves, hull(RAFT, 0, 0));
+		List<PathStep> path = findPath(WorldPointUtil.packWorldPoint(3229, 3124, 0), west, moves, hull(RAFT));
 
-		assertTrue(endsCovering(path, moves, hull(RAFT, 0, 0), west));
+		assertTrue(endsCovering(path, moves, hull(RAFT), west));
 		assertNull(hullHit(path, moves, 0.5, 1.5, 1.5));
 	}
 
-	// The boat sitting (pivotX, pivotY) local units from the centre of its tile
-	private static BoatHull hull(int[] bounds, int pivotX, int pivotY)
+	private static BoatHull hull(int[] bounds)
 	{
-		return BoatHull.fromBounds(bounds[0], bounds[1], bounds[2], bounds[3], pivotX, pivotY);
+		return BoatHull.fromBounds(bounds[0], bounds[1], bounds[2], bounds[3]);
 	}
 
 	// Whether the boat's hull, where the path ends and facing the way it sailed there, covers the target
@@ -314,10 +211,9 @@ public class BoatHullTest
 
 	private List<PathStep> findPath(int start, int target, SailingMoves moves, BoatHull hull)
 	{
-		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null, moves, hull);
-		pathfinder.run();
-		assertTrue("Target should be reachable", pathfinder.getResult().isReached());
-		return pathfinder.getPath();
+		List<PathStep> path = TestSail.sail(map, moves, hull, -1, start, target);
+		assertNotNull("Target should be reachable", path);
+		return path;
 	}
 
 	// Checks every move independently of BoatHull: samples the hull's rectangle every quarter tile along the move and

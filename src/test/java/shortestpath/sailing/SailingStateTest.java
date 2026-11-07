@@ -1,5 +1,6 @@
 package shortestpath.sailing;
 
+import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -22,7 +23,7 @@ public class SailingStateTest
 		int boundsX, int boundsY, int boundsWidth, int boundsHeight,
 		int hullConfigId, int boatPoint, int pivotX, int pivotY, int heading)
 	{
-		return new SailingState(aboard, baseSpeed, speedCap, acceleration,
+		return new SailingState(aboard, baseSpeed, speedCap, acceleration, SeaArea.NONE, List.of(), 0,
 			hasBoat, hasBounds, boundsX, boundsY, boundsWidth, boundsHeight,
 			hullConfigId, boatPoint, pivotX, pivotY, heading);
 	}

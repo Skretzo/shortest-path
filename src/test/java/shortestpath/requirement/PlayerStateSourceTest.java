@@ -121,7 +121,7 @@ public class PlayerStateSourceTest
 			Transport mixology = new Transport.TransportBuilder().type(TransportType.TELEPORTATION_MINIGAME)
 				.skillLevels("60 Herblore").build();
 			RequirementContext context = RequirementContext.capture(source, new TestRequirementHooks(),
-				RequirementTestFixtures.policy(MODE), 0L, List.of(mixology), Map.of(), null,
+				RequirementTestFixtures.policy(MODE), 0L, List.of(mixology), List.of(), null,
 				Set.of(), false, new LeagueModeState(), null, Set.of());
 			assertEquals(base, context.getBoostedSkillLevelsAndMore().get(Skill.HERBLORE));
 			assertEquals(64, context.getBoostedSkillLevelsAndMore().get(Skill.MAGIC));
@@ -159,7 +159,7 @@ public class PlayerStateSourceTest
 
 		RequirementContext context = RequirementContext.capture(source, hooks,
 			RequirementTestFixtures.policy(MODE), 0L,
-			List.of(gated), Map.of(BANK_TILE, bankGated), null,
+			List.of(gated), List.of(bankGated), null,
 			Set.of(), false, new LeagueModeState(), null, Set.of());
 
 		// Round-trip: the declared varbit, varplayer and quests landed in the
@@ -198,13 +198,13 @@ public class PlayerStateSourceTest
 	{
 		MapPlayerStateSource ashore = new MapPlayerStateSource();
 		assertFalse(RequirementContext.capture(ashore, new TestRequirementHooks(),
-			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
+			RequirementTestFixtures.policy(MODE), 0L, List.of(), List.of(), null,
 			Set.of(), false, new LeagueModeState(), null, Set.of()).isOnSailingBoat());
 
 		MapPlayerStateSource aboard = new MapPlayerStateSource()
 			.varbit(VarbitID.SAILING_BOARDED_BOAT, 1);
 		assertTrue(RequirementContext.capture(aboard, new TestRequirementHooks(),
-			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
+			RequirementTestFixtures.policy(MODE), 0L, List.of(), List.of(), null,
 			Set.of(), false, new LeagueModeState(), null, Set.of()).isOnSailingBoat());
 	}
 
@@ -270,7 +270,7 @@ public class PlayerStateSourceTest
 		PlayerStateSource source = new ClientPlayerStateSource(offThreadClient());
 		assertThrows(IllegalStateException.class, () -> RequirementContext.capture(
 			source, new TestRequirementHooks(),
-			RequirementTestFixtures.policy(MODE), 0L, List.of(), Map.of(), null,
+			RequirementTestFixtures.policy(MODE), 0L, List.of(), List.of(), null,
 			Set.of(), false, new LeagueModeState(), null, Set.of()));
 	}
 

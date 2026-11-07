@@ -118,8 +118,8 @@ public final class RequirementContext
 	 * refresh. All player-state reads go through {@code source} (loud off the
 	 * client thread) and quest states go through {@code hooks} so the
 	 * protected override seam keeps feeding the snapshot. Declared var and
-	 * quest ids from both the transports and the bank requirements land in
-	 * the same maps — a var or quest missing from them fails closed when the
+	 * quest ids from both the transports and the destination requirements
+	 * (banks and moorings, which no transport declares) land in the same maps — a var or quest missing from them fails closed when the
 	 * shared evaluator looks it up. {@code balloonLogBasketDestinations}
 	 * forwards the packed destinations of the balloon routes whose log basket
 	 * the player declared stocked into the eligibility snapshot.
@@ -130,7 +130,7 @@ public final class RequirementContext
 		RoutingPolicy policy,
 		long evaluationTimeMinutes,
 		Collection<Transport> transports,
-		Map<Integer, DestinationRequirements> bankRequirements,
+		Collection<DestinationRequirements> destinationRequirements,
 		ItemContainer bank,
 		Set<Unlock> unlocks,
 		boolean respawnPrifddinas,
@@ -179,18 +179,18 @@ public final class RequirementContext
 			}
 		}
 
-		// Bank destinations can carry quest and var ids that no transport
+		// Banks and moorings can carry quest and var ids that no transport
 		// declares; they must land in the same snapshot, because a var or
 		// quest missing from these maps fails closed when the shared
 		// evaluator looks it up.
-		for (DestinationRequirements destinationRequirements : bankRequirements.values())
+		for (DestinationRequirements requirements : destinationRequirements)
 		{
-			captureQuestStates(hooks, destinationRequirements.getQuests(), refreshedQuests, capturedQuestStates);
-			for (VarRequirement varRequirement : destinationRequirements.getVarbits())
+			captureQuestStates(hooks, requirements.getQuests(), refreshedQuests, capturedQuestStates);
+			for (VarRequirement varRequirement : requirements.getVarbits())
 			{
 				capturedVarbitValues.put(varRequirement.getId(), source.varbit(varRequirement.getId()));
 			}
-			for (VarRequirement varRequirement : destinationRequirements.getVarPlayers())
+			for (VarRequirement varRequirement : requirements.getVarPlayers())
 			{
 				capturedVarPlayerValues.put(varRequirement.getId(), source.varp(varRequirement.getId()));
 			}

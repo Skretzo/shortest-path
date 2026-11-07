@@ -27,10 +27,12 @@ public final class PreparedRoutingAccount
 	private final View[] local = new View[2];
 	/** The global teleports castable with each {@link TeleportCapability}, by ordinal, in each bank layer. */
 	private final View[][] global;
+	/** Edges only the estimate uses, such as the least times to sail between moorings. */
+	@Getter @Accessors(fluent = true) private final EstimateEdges estimateEdges;
 	@Getter @Accessors(fluent = true) private final long fingerprint;
 
 	private PreparedRoutingAccount(boolean allowTransports, boolean bankPathEnabled, int[] accessibleBankTiles,
-		int bankVisitCost, View[] local, View[][] global)
+		int bankVisitCost, View[] local, View[][] global, EstimateEdges estimateEdges)
 	{
 		this.allowTransports = allowTransports;
 		this.bankPathEnabled = bankPathEnabled;
@@ -39,6 +41,7 @@ public final class PreparedRoutingAccount
 		this.local[0] = local[0];
 		this.local[1] = local[1];
 		this.global = global;
+		this.estimateEdges = estimateEdges;
 		this.fingerprint = computeFingerprint();
 	}
 
@@ -66,7 +69,16 @@ public final class PreparedRoutingAccount
 				global[capability.ordinal()][bankedState] = allowTransports
 					? View.global(availability.getUsableTeleports(), additionalCost, capability) : View.empty(false);
 		}
-		return new PreparedRoutingAccount(allowTransports, bankPathEnabled, banks, bankVisitCost, local, global);
+		return new PreparedRoutingAccount(allowTransports, bankPathEnabled, banks, bankVisitCost, local, global,
+			EstimateEdges.NONE);
+	}
+
+	/** This account with {@code edges} for the estimate, as a side graph's lower bounds; see {@link EstimateEdges}. */
+	public PreparedRoutingAccount withEstimateEdges(EstimateEdges edges)
+	{
+		if (edges == estimateEdges) return this;
+		return new PreparedRoutingAccount(allowTransports, bankPathEnabled, accessibleBankTiles, bankVisitCost, local,
+			global, edges);
 	}
 
 	private static int[] sortedUnsigned(Collection<Integer> tiles)
@@ -171,6 +183,15 @@ public final class PreparedRoutingAccount
 					hash = u32(hash, view.types[i]);
 					hash = u32(hash, view.maxWilderness[i]);
 				}
+			}
+		}
+		for (BankVisitState banked : BankVisitState.values())
+		{
+			for (int i = 0; i < estimateEdges.count(banked); i++)
+			{
+				hash = u32(hash, estimateEdges.origin(banked, i));
+				hash = u32(hash, estimateEdges.destination(banked, i));
+				hash = u32(hash, estimateEdges.cost(banked, i));
 			}
 		}
 		return hash;

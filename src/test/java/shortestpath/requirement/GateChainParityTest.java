@@ -161,7 +161,7 @@ public class GateChainParityTest
 		List<Transport> transports, Map<Integer, DestinationRequirements> bankRequirements)
 	{
 		return RequirementContext.capture(source, hooks, RequirementTestFixtures.policy(MODE), 0L,
-			transports, bankRequirements, null, Set.of(), false, new LeagueModeState(), null, Set.of());
+			transports, bankRequirements.values(), null, Set.of(), false, new LeagueModeState(), null, Set.of());
 	}
 
 	// ------------------------------------------------------------------
