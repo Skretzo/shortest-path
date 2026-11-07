@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.function.BooleanSupplier;
+import java.util.function.IntPredicate;
 import net.runelite.api.gameval.ItemID;
 import shortestpath.PrimitiveIntHashMap;
 import shortestpath.WorldPointUtil;
@@ -37,6 +38,8 @@ import shortestpath.transport.TransportType;
  */
 public final class SeaSearch implements SideGraph
 {
+	// The widest corridor the drawing tries before letting the boat turn any way into a move
+	private static final int WIDEST_CORRIDOR = 4 * SeaGraph.CORRIDOR;
 	private final CollisionMap map;
 	private final SailingWaters waters;
 	private final SailingFleet fleet;
@@ -597,8 +600,10 @@ public final class SeaSearch implements SideGraph
 	 * taut, within {@link SeaGraph#CORRIDOR} tiles of one, as the graph sailed its runs; to dock at mooring
 	 * {@code dockAt} (by id) if not -1, else to the hull over the target at sea that is the last node if {@code toTarget}.
 	 * The boat slows where it must ({@link SailingMoves#withSlow}); of the ways that take the fewest ticks, it takes one
-	 * with the fewest turns. Where there is none, as for a boat aboard facing a coast it can't turn from, or the drawing
-	 * runs out of time, the stretch is drawn through its nodes.
+	 * with the fewest turns. Where there is none, as where the graph's smoothed coast or dropped rocks leave no room to
+	 * turn, it looks in a wider corridor, up to {@link #WIDEST_CORRIDOR} tiles, and then lets the boat turn any way into a
+	 * move, as the graph sailed its runs: so the stretch keeps to water. Only if the drawing runs out of time, or a boat
+	 * aboard is where nothing can sail, is it drawn through its nodes.
 	 */
 	int[] sail(SailingVessel vessel, int[] nodes, int heading, int dockAt, boolean toTarget, BooleanSupplier cancelled)
 	{
@@ -611,10 +616,19 @@ public final class SeaSearch implements SideGraph
 		double reach = docking != null ? SailingMooring.DOCKING_REACH : toTarget ? 0 : near;
 		int[] taut = taut(vessel, nodes);
 		List<int[]> routes = taut.length == nodes.length ? List.of(nodes) : List.of(nodes, taut);
-		HeadingSearch.Sailed sailed = HeadingSearch.along(map, vessel.moves().withSlow(), vessel.hull(), waters.landing(vessel),
-			gate, from, heading, routes, end, reach, SeaGraph.CORRIDOR, true, cancelled);
-		if (sailed != null) return sailed.tiles;
-		return nodes;
+		SailingMoves moves = vessel.moves().withSlow();
+		IntPredicate landing = waters.landing(vessel);
+		// Steered, in a wider corridor each time; then unsteered, as the graph sailed each run when it was built
+		for (int corridor = SeaGraph.CORRIDOR; corridor <= WIDEST_CORRIDOR; corridor *= 2)
+		{
+			HeadingSearch.Sailed sailed = HeadingSearch.along(map, moves, vessel.hull(), landing, gate, from, heading, routes,
+				end, reach, corridor, true, cancelled);
+			if (sailed != null) return sailed.tiles;
+			if (cancelled.getAsBoolean()) return nodes;
+		}
+		HeadingSearch.Sailed sailed = HeadingSearch.along(map, moves, vessel.hull(), landing, gate, from, heading, routes,
+			end, reach, WIDEST_CORRIDOR, false, cancelled);
+		return sailed != null ? sailed.tiles : nodes;
 	}
 
 	/**

@@ -399,6 +399,29 @@ public class AStarSailingRoutesTest
 		assertFalse(search.getResult().isReached());
 	}
 
+	@Test
+	public void aLegTheCorridorCannotDrawIsStillDrawnOnWater()
+	{
+		// The sloop's way from Vatrachos Island to Minotaurs' Rest needs more room to turn than the graph's corridor:
+		// the drawing widens it rather than joining the graph's nodes in straight lines across land
+		SailingMooring vatrachos = SailingMoorings.all().stream().filter(m -> m.name().equals("Vatrachos Island")).findFirst().orElseThrow();
+		SailingMooring minotaurs = SailingMoorings.all().stream().filter(m -> m.name().equals("Minotaurs' Rest")).findFirst().orElseThrow();
+		AStarPathfinder search = search(everywhere(SailingVessel.of(SailingVessel.Kind.SLOOP, 384).fullyFitted()), 99,
+			vatrachos.landTile(), minotaurs.landTile());
+		assertTrue(search.getResult().isReached());
+		List<PathStep> path = search.getPath();
+		assertTrue("the route sails", transportIndex(path) > 0);
+		for (int i = 1; i < path.size(); i++)
+		{
+			if (!PathStep.sailedInto(path, i) || path.get(i).getTransport() != null) continue;
+			int from = path.get(i - 1).getPackedPosition(), to = path.get(i).getPackedPosition();
+			double length = Math.hypot(WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from),
+				WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from));
+			// The longest move at this speed is four ticks on an in-between heading, about 12 tiles
+			assertTrue("a move of " + length + " tiles at step " + i, length < 13);
+		}
+	}
+
 	// The filled-in leg docks at the mooring the transport lands at
 	private static void assertLegDocksWhereItLands(List<PathStep> path)
 	{
