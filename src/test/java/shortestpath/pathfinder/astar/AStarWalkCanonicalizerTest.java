@@ -326,15 +326,27 @@ public class AStarWalkCanonicalizerTest
 	public void clickReachIsEuclideanUpToTheRadiusBoundary()
 	{
 		Grid grid = new Grid();
-		// (35,0) is exactly at a click's reach (35^2 = 1225); (35,1) is just beyond it (1226).
-		List<PathStep> route = new ArrayList<>(steps(0, 0));
-		for (int x = 1; x <= 35; x++) route.add(step(x, 0));
-		route.add(step(35, 1));
+		// (35,0) is exactly at a click's reach (35^2 = 1225): one click covers the whole leg.
+		List<PathStep> inside = new ArrayList<>(steps(0, 0));
+		for (int x = 1; x <= 35; x++) inside.add(step(x, 0));
 
-		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, 36);
+		AStarWalkCanonicalizer.Result reached = rewrite(grid, inside, 0, 35);
 
-		assertEquals(List.of(35, 36), result.clickPoints());
-		assertClicksFollowTheGame(grid, route, result, 0);
+		assertEquals(List.of(35), reached.clickPoints());
+		assertClicksFollowTheGame(grid, inside, reached, 0);
+
+		// (35,1) is 35 ticks away too (east 34, then north-east), so the game's walk to it is as long as
+		// the search's and nothing but its reach (35^2 + 1 = 1226) stops a single click there: the click
+		// falls back to the previous tile of the game's walk, and the last one lands on (35,1).
+		List<PathStep> beyond = new ArrayList<>(steps(0, 0));
+		for (int x = 1; x <= 34; x++) beyond.add(step(x, 0));
+		beyond.add(step(35, 1));
+
+		AStarWalkCanonicalizer.Result result = rewrite(grid, beyond, 0, 35);
+
+		assertEquals(List.of(34, 35), result.clickPoints());
+		assertEquals(gamePath(grid, pack(0, 0), pack(35, 1)), tiles(result.path(), 0, 35));
+		assertClicksFollowTheGame(grid, beyond, result, 0);
 	}
 
 	@Test
