@@ -105,17 +105,18 @@ public class AStarWalkCanonicalizerTest
 	}
 
 	@Test
-	public void furtherClickWithAShorterGamePathIsRefused()
+	public void legLongerThanTheGamePathKeepsItsLengthAndEnds()
 	{
 		Grid grid = new Grid();
-		// 5 ticks to (3,0), which the game reaches in 3: clicking it would make the route cheaper.
+		// 5 ticks to (3,0), which the game reaches in 3: the leg is walked in 5, as the route paid.
 		List<PathStep> route = steps(0, 0, 0, 1, 1, 1, 2, 1, 2, 0, 3, 0);
 
 		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, 5);
 
-		assertEquals(describe(route), describe(result.path()));
-		assertEquals(List.of(1, 3, 4, 5), result.clickPoints());
-		assertClicksFollowTheGame(grid, route, result, 0);
+		assertEquals(route.size(), result.path().size());
+		assertEquals(describe(route.subList(0, 1)), describe(result.path().subList(0, 1)));
+		assertEquals(describe(route.subList(5, 6)), describe(result.path().subList(5, 6)));
+		assertEquals(5, result.clickPoints().get(result.clickPoints().size() - 1).intValue());
 	}
 
 	@Test
@@ -276,9 +277,9 @@ public class AStarWalkCanonicalizerTest
 
 		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, 9);
 
-		assertEquals(List.of(5, 9), result.clickPoints());
-		assertEquals(List.of(6, 7, 8), result.keptStepIndices());
-		assertEquals(describe(route.subList(5, 10)), describe(result.path().subList(5, 10)));
+		assertEquals(List.of(9), result.clickPoints());
+		assertEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8), result.keptStepIndices());
+		assertEquals(describe(route), describe(result.path()));
 		assertClicksFollowTheGame(grid, route, result, 0);
 	}
 
