@@ -2,6 +2,7 @@ package shortestpath.overlay;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -328,6 +329,18 @@ public class OverlayTranscriptTest
 		// ArrowHead.draw's graphics.create()/dispose() tunnel lands here.
 		override("pathStyle", "Arrow line");
 		checkTileOverlay("arrow-line");
+	}
+
+	@Test
+	public void outlinedLine()
+	{
+		// The player stands on the second tile: the line is clipped around them.
+		override("pathStyle", "Outlined line");
+		when(client.getCanvasWidth()).thenReturn(765);
+		when(client.getCanvasHeight()).thenReturn(503);
+		Polygon hull = new Polygon(new int[]{470, 495, 495, 470}, new int[]{200, 200, 260, 260}, 4);
+		when(client.getLocalPlayer().getConvexHull()).thenReturn(hull);
+		checkTileOverlay("outlined-line");
 	}
 
 	@Test

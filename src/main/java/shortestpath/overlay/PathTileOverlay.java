@@ -7,7 +7,10 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.Stroke;
+import java.awt.geom.Area;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -254,6 +257,10 @@ public class PathTileOverlay extends Overlay
 						1 + counter++, head, search);
 					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, search);
 				}
+			}
+			else if (TileStyle.OUTLINED_LINE.equals(settings.display().pathStyle()))
+			{
+				drawOutlinedLine(graphics, path, pathColor, search);
 			}
 			else if (TileStyle.TURN_MARKERS.equals(settings.display().pathStyle()))
 			{
@@ -545,6 +552,54 @@ public class PathTileOverlay extends Overlay
 			drawCounter(graphics, p1.getX(), p1.getY(), 0, search);
 		}
 		drawCounter(graphics, p2.getX(), p2.getY(), counter, search);
+	}
+
+	// The path as one line through the tile centres with round ends and a dark edge, broken where a tile is off the
+	// scene or on another plane, and left out where the player stands so the player is drawn on top of it. One
+	// Path2D, so the see-through edge is not darker where the pieces overlap. Then the counters and transport info.
+	private void drawOutlinedLine(Graphics2D graphics, List<PathStep> path, Color color, ActiveSearch search)
+	{
+		Point[] points = new Point[path.size()];
+		Path2D.Float line = new Path2D.Float();
+		for (int i = 0; i < points.length; i++)
+		{
+			points[i] = tileCenter(path.get(i).getPackedPosition());
+			if (i > 0 && points[i - 1] != null && points[i] != null)
+			{
+				line.moveTo(points[i - 1].getX(), points[i - 1].getY());
+				line.lineTo(points[i].getX(), points[i].getY());
+			}
+		}
+
+		// A copy, so the clip and pens set here end with the line
+		Graphics2D g = (Graphics2D) graphics.create();
+		Player player = client.getLocalPlayer();
+		Shape hull = player == null ? null : player.getConvexHull();
+		if (hull != null)
+		{
+			Area uncovered = new Area(new Rectangle(client.getCanvasWidth(), client.getCanvasHeight()));
+			uncovered.subtract(new Area(hull));
+			g.clip(uncovered);
+		}
+		g.setStroke(new BasicStroke(6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		g.setColor(new Color(0, 0, 0, 140));
+		g.draw(line);
+		g.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		g.setColor(color);
+		g.draw(line);
+		g.dispose();
+
+		for (int i = 0; i < points.length; i++)
+		{
+			if (points[i] != null)
+			{
+				drawCounter(graphics, points[i].getX(), points[i].getY(), i, search);
+			}
+			if (i > 0)
+			{
+				drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1, search);
+			}
+		}
 	}
 
 	// A line between two tiles, shifted from the tile centres by (offsetX, offsetY) local units
