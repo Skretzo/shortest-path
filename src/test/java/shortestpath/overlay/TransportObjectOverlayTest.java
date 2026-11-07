@@ -65,4 +65,32 @@ public class TransportObjectOverlayTest
 		assertEquals(-1, TransportObjectOverlay.objectId("Enter Cave 12a"));
 		assertEquals(-1, TransportObjectOverlay.objectId("Enter Cave 99999999999"));
 	}
+
+	// Object actions below are from the game cache (2740)
+	@Test
+	public void optionToPickWhenALeftClickPicksAnother()
+	{
+		assertEquals("Climb-down", TransportObjectOverlay.optionToPick("Climb-down Staircase 16672",
+			new String[]{"Climb", "Climb-up", "Climb-down", null, null}));
+		assertEquals("Jump-down", TransportObjectOverlay.optionToPick("Jump-down Railing 28374",
+			new String[]{"Inspect", "Jump-down", null, null, null}));
+	}
+
+	@Test
+	public void noOptionToPickWhenALeftClickPicksIt()
+	{
+		assertNull(TransportObjectOverlay.optionToPick("Climb over Broken cart 28931",
+			new String[]{null, "Climb over", null, null, null}));
+		assertNull(TransportObjectOverlay.optionToPick("Climb Staircase 16672",
+			new String[]{"Climb", "Climb-up", "Climb-down", null, null}));
+	}
+
+	@Test
+	public void noOptionToPickWhenTheObjectLacksIt()
+	{
+		assertNull(TransportObjectOverlay.optionToPick("Climb-up Ladder 16683",
+			new String[]{"Open", "Close", null, null, null}));
+		assertNull(TransportObjectOverlay.optionToPick("Climb-up Ladder 16683", null));
+		assertNull(TransportObjectOverlay.optionToPick(null, new String[]{"Climb-up"}));
+	}
 }

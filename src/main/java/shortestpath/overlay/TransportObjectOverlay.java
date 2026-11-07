@@ -3,18 +3,26 @@ package shortestpath.overlay;
 import com.google.inject.Inject;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
+import net.runelite.api.NPCComposition;
 import net.runelite.api.ObjectComposition;
+import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.TileObject;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.OverlayLayer;
+import net.runelite.client.ui.overlay.OverlayUtil;
 import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
 import shortestpath.PrimitiveIntList;
 import shortestpath.WorldPointUtil;
@@ -25,11 +33,12 @@ import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 /**
  * Outlines the object or NPC to click for the next transport on the path: the id that ends the
  * transport's "menuOption menuTarget objectID" text, looked up near the transport's origin tile,
- * in the path's colour.
+ * in the path's colour. When a left click would pick another option, the option to pick is written above it.
  */
 public class TransportObjectOverlay extends AbstractHighlightOverlay
 {
@@ -44,6 +53,7 @@ public class TransportObjectOverlay extends AbstractHighlightOverlay
 	private Transport searchedTransport;
 	private TileObject object;
 	private NPC npc;
+	private String option;
 
 	@Inject
 	public TransportObjectOverlay(Client client, Settings settings, PathScheduler scheduler,
@@ -75,6 +85,9 @@ public class TransportObjectOverlay extends AbstractHighlightOverlay
 			searchedTransport = transport;
 			searchedTick = client.getTickCount();
 			find(transport);
+			// Fairy rings show their code in the transport info instead of "Configure"
+			option = object == null && npc == null || TransportType.FAIRY_RING.equals(transport.getType())
+				? null : optionToPick(transport.getObjectInfo(), actions());
 		}
 		if (object != null)
 		{
@@ -84,7 +97,48 @@ public class TransportObjectOverlay extends AbstractHighlightOverlay
 		{
 			outlineRenderer.drawOutline(npc, 2, renderState.getPathColor(), 2);
 		}
+		Shape shape = option == null ? null : object != null ? object.getClickbox() : npc.getConvexHull();
+		if (shape != null)
+		{
+			// Centred just above the top of the object
+			Rectangle bounds = shape.getBounds();
+			OverlayUtil.renderTextLocation(graphics, new Point((int) bounds.getCenterX()
+				- graphics.getFontMetrics().stringWidth(option) / 2, bounds.y - 2), option, settings.display().colourText());
+		}
 		return null;
+	}
+
+	/**
+	 * The option the transport's "menuOption menuTarget objectID" text starts with when it is one of
+	 * the actions but not the first, which a left click picks; otherwise null.
+	 */
+	static String optionToPick(String objectInfo, String[] actions)
+	{
+		if (objectInfo == null || actions == null)
+		{
+			return null;
+		}
+		List<String> options = Arrays.stream(actions).filter(a -> a != null && !a.isEmpty()).collect(Collectors.toList());
+		// The longest that fits, as an option can be the first words of another
+		String match = options.stream().filter(a -> objectInfo.regionMatches(true, 0, a + " ", 0, a.length() + 1))
+			.max(Comparator.comparingInt(String::length)).orElse(null);
+		return match == null || match.equals(options.get(0)) ? null : match;
+	}
+
+	/** The found object's or NPC's actions in its current form. */
+	private String[] actions()
+	{
+		if (object == null)
+		{
+			NPCComposition composition = npc.getTransformedComposition();
+			return composition == null ? null : composition.getActions();
+		}
+		ObjectComposition composition = client.getObjectDefinition(object.getId());
+		if (composition != null && composition.getImpostorIds() != null)
+		{
+			composition = composition.getImpostor();
+		}
+		return composition == null ? null : composition.getActions();
 	}
 
 	/** The transport of the first transport edge after the player's step, or null. */
