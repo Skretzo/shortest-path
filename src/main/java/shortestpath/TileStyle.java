@@ -8,6 +8,7 @@ public enum TileStyle
 	TILES("Tiles"),
 	LINES("Lines"),
 	ARROW_LINE("Arrow line"),
+	OUTLINED_LINE("Outlined line"),
 	TURN_MARKERS("Turn markers"),
 	TRACER("Tracer"),
 	SPRITE_MARKERS("Sprite markers");

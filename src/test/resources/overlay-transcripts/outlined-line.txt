@@ -1,0 +1,9 @@
+create | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+clip Area(0.0,0.0 765.0x503.0) | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+setStroke BasicStroke(w=6.0) | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=Path2D(M L L L Z M L L L Z)
+setColor rgb(0,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=6.0) clip=Path2D(M L L L Z M L L L Z)
+draw Path2D(M L M L M L M L) | color=rgb(0,0,0) a=* stroke=BasicStroke(w=6.0) clip=Path2D(M L L L Z M L L L Z)
+setStroke BasicStroke(w=4.0) | color=rgb(0,0,0) a=* stroke=BasicStroke(w=6.0) clip=Path2D(M L L L Z M L L L Z)
+setColor rgb(255,0,0) a=255 | color=rgb(0,0,0) a=* stroke=BasicStroke(w=4.0) clip=Path2D(M L L L Z M L L L Z)
+draw Path2D(M L M L M L M L) | color=rgb(255,0,0) a=255 stroke=BasicStroke(w=4.0) clip=Path2D(M L L L Z M L L L Z)
+dispose | color=rgb(255,0,0) a=255 stroke=BasicStroke(w=4.0) clip=Path2D(M L L L Z M L L L Z)
