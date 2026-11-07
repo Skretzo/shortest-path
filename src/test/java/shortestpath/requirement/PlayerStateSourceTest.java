@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Level;
@@ -88,7 +90,7 @@ public class PlayerStateSourceTest
 			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{1});
 			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1)).thenReturn(new Object[]{row});
 		}
-		when(client.getVarpValue(VarPlayerID.MUSICMULTI_1)).thenReturn(1 << 2);
+		when(client.getIntStack()).thenReturn(new int[]{1 << 2});
 		when(client.getDBTableField(1, DBTableID.Music.COL_DISPLAYNAME, 0)).thenReturn(new Object[]{"Adventure"});
 		Logger logger = (Logger) LoggerFactory.getLogger(ClientPlayerStateSource.class);
 		Level previousLevel = logger.getLevel();
@@ -101,6 +103,8 @@ public class PlayerStateSourceTest
 			assertEquals(1, new ClientPlayerStateSource(client).musicTracks().getUnlocked());
 			assertEquals("Music cape: 1 required tracks locked (1 unlocked / 2 required): [Adventure]",
 				appender.list.get(0).getFormattedMessage());
+			// Both rows share varp index 1, so the script should only run once.
+			verify(client, times(1)).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 1);
 		}
 		finally
 		{

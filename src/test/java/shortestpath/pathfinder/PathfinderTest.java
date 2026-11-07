@@ -36,7 +36,10 @@ import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
@@ -46,6 +49,7 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.items.ItemStateService;
 import shortestpath.poh.PohService;
+import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -2430,18 +2434,20 @@ public class PathfinderTest
 		setupInventory(new Item(ItemID.MUSIC_CAPE, 1));
 		setupEquipment();
 		// A holiday unlock cannot replace the missing required track.
-		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(1);
+		when(client.getIntStack()).thenReturn(new int[]{1});
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
 
 		// The required unlock uses bit 31 of the music varplayer.
-		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(Integer.MIN_VALUE);
+		when(client.getIntStack()).thenReturn(new int[]{Integer.MIN_VALUE});
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertTrue(hasUsableTeleport("Music cape: Falo the Bard"));
 
-		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(0);
+		when(client.getIntStack()).thenReturn(new int[]{0});
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
 		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		verify(client, atLeastOnce()).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 7);
 	}
 
 	@Test
@@ -2451,14 +2457,17 @@ public class PathfinderTest
 		config.set("includeBankPath", true);
 		setupInventory();
 		setupEquipment();
+		when(client.getIntStack()).thenReturn(new int[]{0});
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
 		assertFalse(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
 
-		when(client.getVarpValue(VarPlayerID.MUSICMULTI_7)).thenReturn(Integer.MIN_VALUE);
+		when(client.getIntStack()).thenReturn(new int[]{Integer.MIN_VALUE});
 		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
 			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
 		assertTrue(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
+
+		verify(client, atLeastOnce()).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 7);
 	}
 
 	@Test
@@ -2470,9 +2479,12 @@ public class PathfinderTest
 		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
 
 		setupMusicDatabase();
-		when(client.getDBTableField(1, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{28});
+		// Out of range: indexes are one-based
+		when(client.getDBTableField(1, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{0});
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		verify(client, never()).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 0);
 	}
 
 	private void setupMusicDatabase()
