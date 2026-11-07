@@ -1,7 +1,9 @@
 # Origin	Destination	menuOption menuTarget objectID	Skills	Items	Quests	Varbits	Duration	Display info
 # Fishing Platform								
-2720 3301 0	2782 3273 0	Travel Holgart 7789			Sea Slug		9	
-2782 3273 0	2720 3301 0	Travel Holgart 5070			Sea Slug		9	
+2720 3301 0	2782 3273 0	Travel Holgart 7789			Sea Slug	2614=0	9	
+2782 3273 0	2720 3301 0	Travel Holgart 5070			Sea Slug	2614=0	9	
+2720 3301 0	2782 3273 0	Travel Jeb 4803			Sea Slug	2614=1	9	
+2782 3273 0	2720 3301 0	Travel Jeb 4803			Sea Slug	2614=1	9	
 								
 # Post Phasmatys, Braindeath Island								
 3680 3536 0	2162 5114 1	Talk-to Pirate Pete 601			Rum Deal		9	
