@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
@@ -613,6 +614,144 @@ public class AStarWalkCanonicalizerTest
 	}
 
 	@Test
+	public void randomGridsMatchTheReferenceOrdering()
+	{
+		Random random = new Random(364);
+		int checked = 0;
+		for (int trial = 0; trial < 300; trial++)
+		{
+			// A walled box of random obstacles, so both the game's and the reference walk stay inside it.
+			Set<Integer> blocked = new HashSet<>();
+			for (int x = -40; x <= 40; x++)
+				for (int y = -40; y <= 40; y++)
+					if (Math.abs(x) == 40 || Math.abs(y) == 40 || random.nextInt(100) < 20) blocked.add(pack(x, y));
+			int from = pack(random.nextInt(61) - 30, random.nextInt(61) - 30);
+			int to = pack(random.nextInt(61) - 30, random.nextInt(61) - 30);
+			blocked.remove(from);
+			blocked.remove(to);
+			Grid grid = new Grid(blocked);
+			// A shortest route found in the opposite expansion order, so it differs from the game's walk.
+			List<Integer> walk = reversedOrderPath(grid, from, to);
+			if (walk.size() < 2) continue;
+			List<PathStep> raw = new ArrayList<>();
+			raw.add(new PathStep(from, BankVisitState.CARRIED));
+			for (int tile : walk) raw.add(new PathStep(tile, BankVisitState.CARRIED));
+
+			AStarWalkCanonicalizer.Result result = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS)
+				.canonicalize(AStarRoute.of(raw, costs(raw.size())));
+
+			assertEquals(raw.size(), result.path().size());
+			assertEquals(from, result.path().get(0).getPackedPosition());
+			assertEquals(to, last(result.path()));
+			assertEquals(List.of(), result.keptStepIndices());
+			assertClicksFollowTheGame(grid, raw, result, 0);
+			for (int i = 1; i < result.path().size(); i++)
+			{
+				int previous = result.path().get(i - 1).getPackedPosition(), tile = result.path().get(i).getPackedPosition();
+				assertTrue("step " + i + " is not a walking move",
+					Arrays.stream(grid.ordinaryWalkingNeighbors(previous)).anyMatch(next -> next == tile));
+			}
+			checked++;
+		}
+		assertTrue("too few connected pairs: " + checked, checked > 100);
+	}
+
+	@Test
+	public void legsOnAnotherPlaneAreRewrittenOnThatPlane()
+	{
+		Grid grid = new Grid();
+		// The search went NE then E; the game expands E before NE, so it walks E then NE, on plane 2.
+		List<PathStep> route = List.of(plane2(0, 0), plane2(1, 1), plane2(2, 1));
+
+		AStarWalkCanonicalizer.Result result = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS)
+			.rewrite(route, new int[]{0, 2});
+
+		assertEquals(describe(List.of(plane2(0, 0), plane2(1, 0), plane2(2, 1))), describe(result.path()));
+		for (PathStep step : result.path())
+			assertEquals(2, WorldPointUtil.unpackWorldPlane(step.getPackedPosition()));
+		assertEquals(List.of(2), result.clickPoints());
+		assertEquals(List.of(), result.keptStepIndices());
+	}
+
+	@Test
+	public void legsLongerThanTheSearchWindowAreWalkedInSeveralClicks()
+	{
+		Grid grid = new Grid();
+		// 100 tiles east: tiles past 63 are outside the 128x128 window of the first click's source.
+		List<PathStep> route = new ArrayList<>(steps(0, 0));
+		for (int x = 1; x <= 100; x++) route.add(step(x, 0));
+
+		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, 100);
+
+		assertEquals(describe(route), describe(result.path()));
+		assertEquals(List.of(35, 70, 100), result.clickPoints());
+		assertEquals(List.of(), result.keptStepIndices());
+	}
+
+	@Test
+	public void legBeforeAGlobalTeleportSkipsACastableTileTheRestrictionsGateOff()
+	{
+		Grid grid = new Grid();
+		int start = WorldPointUtil.packWorldPoint(3000, 3779, 0);
+		List<PathStep> route = new ArrayList<>();
+		route.add(new PathStep(start, BankVisitState.CARRIED));
+		for (int i = 1; i <= 10; i++)
+			route.add(new PathStep(WorldPointUtil.packWorldPoint(3000 + i, 3779 - i, 0), BankVisitState.CARRIED));
+		for (int i = 11; i <= 20; i++)
+			route.add(new PathStep(WorldPointUtil.packWorldPoint(3010, 3779 - i, 0), BankVisitState.CARRIED));
+		route.add(new PathStep(WorldPointUtil.packWorldPoint(3213, 3424, 0), BankVisitState.CARRIED));
+		byte[] arrivals = new byte[route.size()];
+		arrivals[route.size() - 1] = AStarRoute.fromHub(TeleportCapability.OVER_20);
+		int[] costs = new int[route.size()];
+		for (int i = 0; i < 21; i++) costs[i] = i;
+		costs[21] = 20 + 4;
+		IntPredicate castable = tile -> TeleportCapability.at(tile).allows(TeleportCapability.OVER_20);
+		// The tile the unrestricted walk ends on, which the game's search finds first: gate it off.
+		int preferred = firstDiscovered(grid, start, 20, castable);
+		SearchRestrictions restrictions = SearchRestrictions.of(false, tile -> tile == preferred);
+
+		AStarWalkCanonicalizer.Result result = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS, restrictions)
+			.canonicalize(new AStarRoute(route, arrivals, costs));
+
+		int end = result.path().get(20).getPackedPosition();
+		assertNotEquals("the gated tile must not be walked onto", preferred, end);
+		assertTrue(castable.test(end));
+		assertFalse(tiles(result.path(), 0, 20).contains(preferred));
+		assertEquals(route.size(), result.path().size());
+		assertEquals(List.of(), result.keptStepIndices());
+		assertEquals(List.of(20), result.clickPoints());
+		assertEquals(gamePath(grid, start, end), tiles(result.path(), 0, 20));
+	}
+
+	@Test
+	public void legBeforeABankedTransportUsesTheBankedActions()
+	{
+		Grid grid = new Grid();
+		int destination = pack(50, 50);
+		Transport near = transport(pack(0, 10), destination, "Climb-up Ladder 1");
+		Transport far = transport(pack(5, 10), destination, "Climb-up Ladder 1");
+		// Only the far ladder is open to a player carrying items; with banked items both are.
+		PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(far),
+			TransportAvailabilityFixture.of(near, far), false, Set.of(), 0, true, ignored -> 0);
+		List<PathStep> carried = new ArrayList<>(), banked = new ArrayList<>();
+		int[][] tiles = {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}, {5, 6}, {5, 7}, {5, 8}, {5, 9}, {5, 10}, {50, 50}};
+		for (int[] tile : tiles)
+		{
+			carried.add(step(tile[0], tile[1]));
+			banked.add(new PathStep(pack(tile[0], tile[1]), BankVisitState.BANKED));
+		}
+
+		AStarWalkCanonicalizer.Result carriedResult = canonicalize(grid, account, carried);
+		AStarWalkCanonicalizer.Result bankedResult = canonicalize(grid, account, banked);
+
+		assertEquals(pack(5, 10), carriedResult.path().get(10).getPackedPosition());
+		assertEquals(pack(0, 10), bankedResult.path().get(10).getPackedPosition());
+		assertEquals(gamePath(grid, pack(0, 0), pack(0, 10)), tiles(bankedResult.path(), 0, 10));
+		assertEquals(BankVisitState.BANKED, bankedResult.path().get(10).getBankVisitState());
+		assertEquals(destination, last(bankedResult.path()));
+	}
+
+	@Test
 	public void onlyTheAStarPathfinderUsesTheCanonicalizer() throws IOException
 	{
 		Path sourceRoot = Paths.get("src/main/java/shortestpath");
@@ -762,6 +901,40 @@ public class AStarWalkCanonicalizerTest
 		for (int tile : order)
 			if (steps.get(tile) == distance && accepted.test(tile)) return tile;
 		return -1;
+	}
+
+	/**
+	 * A shortest path, tiles after {@code from} up to {@code to}, found by a BFS expanding in the
+	 * reverse of the game's order, so it is as short as the game's but usually not the same tiles.
+	 */
+	private static List<Integer> reversedOrderPath(CollisionMap grid, int from, int to)
+	{
+		int[] dx = {-1, 1, 0, 0, -1, 1, -1, 1}, dy = {0, 0, -1, 1, -1, -1, 1, 1};
+		int[] bits = {6, 2, 4, 0, 5, 3, 7, 1};
+		Map<Integer, Integer> parent = new HashMap<>();
+		ArrayDeque<Integer> queue = new ArrayDeque<>();
+		parent.put(from, from);
+		queue.add(from);
+		while (!queue.isEmpty() && !parent.containsKey(to))
+		{
+			int at = queue.poll();
+			int mask = grid.ordinaryWalkingMask(at);
+			for (int i = 7; i >= 0; i--)
+			{
+				if ((mask & 1 << bits[i]) == 0) continue;
+				int next = WorldPointUtil.packWorldPoint(x(at) + dx[i], y(at) + dy[i], 0);
+				if (parent.putIfAbsent(next, at) == null) queue.add(next);
+			}
+		}
+		List<Integer> path = new ArrayList<>();
+		if (!parent.containsKey(to)) return path;
+		for (int at = to; at != from; at = parent.get(at)) path.add(0, at);
+		return path;
+	}
+
+	private static PathStep plane2(int x, int y)
+	{
+		return new PathStep(WorldPointUtil.packWorldPoint(BASE_X + x, BASE_Y + y, 2), BankVisitState.CARRIED);
 	}
 
 	private static List<Integer> tiles(List<PathStep> path, int from, int to)
