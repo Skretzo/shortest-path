@@ -6584,3 +6584,6 @@
 2092 6380 0	2090 6380 0	Climb Handholds 47594				15128>41			
 2094 6382 0	2098 6382 0	Cross Stepping Stone 49529				15128>41			
 2098 6382 0	2094 6382 0	Cross Stepping Stone 49529				15128>41			
+# Minotaurs' Rest - Here be minotaurs									
+1933 9519 0	1966 3097 0	Exit Opening 60174						2	
+1966 3097 0	1933 9519 0	Enter Cave entrance 60173						2	
