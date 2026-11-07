@@ -97,6 +97,22 @@ public final class PreparedRoutingAccount
 	}
 	/** The cost of switching into the banked layer at an accessible bank. */
 
+	public int localCount(BankVisitState banked)
+	{
+		return view(local, banked).destinations.length;
+	}
+	public int localOrigin(BankVisitState banked, int index)
+	{
+		return view(local, banked).origins[index];
+	}
+	public int localDestination(BankVisitState banked, int index)
+	{
+		return view(local, banked).destinations[index];
+	}
+	public Transport localTransport(BankVisitState banked, int index)
+	{
+		return view(local, banked).transports[index];
+	}
 	/** The global teleports castable outside the wilderness: every global this account has. */
 	public int globalCount(BankVisitState banked)
 	{

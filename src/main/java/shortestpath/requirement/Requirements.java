@@ -1,9 +1,14 @@
 package shortestpath.requirement;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
+import net.runelite.api.Experience;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.gameval.ItemID;
@@ -91,6 +96,163 @@ public final class Requirements
 	}
 
 	/**
+	 * Whether nothing but the player's own progress could stand between them and the transport:
+	 * every gate a setting, the world type or a league region decides passes.
+	 */
+	public boolean obtainable(Transport transport)
+	{
+		return passes(transport, Kind.SETTING);
+	}
+
+	/**
+	 * The capabilities that would each open the locked transport on their own: the quests it needs
+	 * the player hasn't finished and the skill levels they lack, with one set of items per
+	 * alternative they could carry when items are missing too. Empty when the transport is usable,
+	 * or when a gate no capability can open closes it: a setting, or progress not modelled as a
+	 * capability yet (vars, declared unlocks, respawn, planted spirit trees).
+	 */
+	public List<Capability> capabilities(Transport transport)
+	{
+		if (!passes(transport, Kind.SETTING) || !passes(transport, Kind.UNHANDLED))
+		{
+			return List.of();
+		}
+		Capability progress = Capability.of(missingQuests(transport), missingLevels(transport), Map.of());
+		if (itemRequirement(transport) == RejectionReason.NONE)
+		{
+			return progress.isEmpty() ? List.of() : List.of(progress);
+		}
+		List<Capability> alternatives = new ArrayList<>();
+		for (Map<Integer, Integer> carry : context.getEligibility().missingItems(transport))
+		{
+			alternatives.add(progress.plus(Capability.items(carry)));
+		}
+		return alternatives;
+	}
+
+	private Set<Quest> missingQuests(Transport transport)
+	{
+		Set<Quest> missing = new HashSet<>();
+		if (quest(transport) != RejectionReason.NONE)
+		{
+			for (Quest quest : transport.getQuests())
+			{
+				if (!completedQuests(List.of(quest)))
+				{
+					missing.add(quest);
+				}
+			}
+		}
+		return missing;
+	}
+
+	private SkillLevels missingLevels(Transport transport)
+	{
+		if (skillLevel(transport) == RejectionReason.NONE)
+		{
+			return SkillLevels.NONE;
+		}
+		boolean skipTotalLevel = context.getLeagueModeSnapshot().isSeasonal();
+		int[] levels = new int[SkillLevels.LENGTH];
+		for (int i = 0; i < levels.length; i++)
+		{
+			int required = transport.getSkillLevels().get(i);
+			if (required == SkillLevels.MAX_LEVEL)
+			{
+				required = SkillLevels.maximumLevel(i, context.getCurrentMaxQuestPoints(), context.getCurrentMaxMusicTracks());
+			}
+			if ((!skipTotalLevel || i != SkillLevels.TOTAL_LEVEL_INDEX) && boostedSkillLevelsAndMore.get(i) < required)
+			{
+				levels[i] = required;
+			}
+		}
+		return SkillLevels.of(levels);
+	}
+
+	/** Missing experience from which reaching a level counts as {@link Capability.Effort#MAJOR}. */
+	static final int MAJOR_EXPERIENCE = 1_000_000;
+	/** Missing experience per unit of {@link Capability.Effort#PROGRESS}, so more training weighs more. */
+	static final int EXPERIENCE_PER_UNIT = 250_000;
+	/** Missing total levels from which the total level counts as major. */
+	static final int MAJOR_TOTAL_LEVELS = 300;
+	/** Missing combat levels from which the combat level counts as major. */
+	static final int MAJOR_COMBAT_LEVELS = 30;
+
+	/**
+	 * How much of each {@link Capability.Effort} tier, by ordinal, the capability asks of this
+	 * player: a unit per quest and per item, and per skill a unit or more by how much experience
+	 * it lacks. Comparing the counts hardest tier first ranks capabilities by effort.
+	 */
+	public int[] effortUnits(Capability capability)
+	{
+		int[] units = new int[Capability.Effort.values().length];
+		units[Capability.Effort.PROGRESS.ordinal()] += capability.getQuests().size();
+		for (int i = 0; i < SkillLevels.LENGTH; i++)
+		{
+			int required = capability.getSkillLevels().get(i);
+			int current = boostedSkillLevelsAndMore.get(i);
+			if (required <= current)
+			{
+				continue;
+			}
+			if (i == SkillLevels.QUEST_POINTS_INDEX)
+			{
+				units[(required >= context.getCurrentMaxQuestPoints() ? Capability.Effort.MAJOR
+					: Capability.Effort.PROGRESS).ordinal()]++;
+			}
+			else if (i == SkillLevels.TOTAL_LEVEL_INDEX || i == SkillLevels.COMBAT_LEVEL_INDEX)
+			{
+				int major = i == SkillLevels.TOTAL_LEVEL_INDEX ? MAJOR_TOTAL_LEVELS : MAJOR_COMBAT_LEVELS;
+				units[(required - current >= major ? Capability.Effort.MAJOR : Capability.Effort.PROGRESS).ordinal()]++;
+			}
+			else
+			{
+				int missing = Experience.getXpForLevel(Math.min(required, Experience.MAX_REAL_LEVEL))
+					- Experience.getXpForLevel(Math.max(1, Math.min(current, Experience.MAX_REAL_LEVEL)));
+				if (missing >= MAJOR_EXPERIENCE)
+				{
+					units[Capability.Effort.MAJOR.ordinal()]++;
+				}
+				else
+				{
+					units[Capability.Effort.PROGRESS.ordinal()] += 1 + missing / EXPERIENCE_PER_UNIT;
+				}
+			}
+		}
+		Map<Integer, Integer> owned = context.getEligibility().heldItems().carriedAndBanked();
+		capability.getItems().forEach((id, quantity) -> units[(owned.getOrDefault(id, 0) >= quantity
+			? Capability.Effort.OWNED_ITEMS : TransportItems.CURRENCIES.contains(id) ? Capability.Effort.CURRENCY
+			: Capability.Effort.ITEMS).ordinal()]++);
+		return units;
+	}
+
+	/** The effort tier of the capability's hardest part for this player. */
+	public Capability.Effort effort(Capability capability)
+	{
+		int[] units = effortUnits(capability);
+		for (int tier = units.length - 1; tier > 0; tier--)
+		{
+			if (units[tier] > 0)
+			{
+				return Capability.Effort.values()[tier];
+			}
+		}
+		return Capability.Effort.OWNED_ITEMS;
+	}
+
+	/** These requirements as they would be had the player got {@code capability}. */
+	public Requirements granting(Capability capability)
+	{
+		return new Requirements(context.granting(capability), policy, hooks);
+	}
+
+	/** The item snapshot these requirements were built over. */
+	public TransportEligibility eligibility()
+	{
+		return context.getEligibility();
+	}
+
+	/**
 	 * Whether the bank-destination requirement set is satisfied by this
 	 * refresh's snapshot — the bank-side counterpart of {@link #usable}.
 	 */
@@ -124,22 +286,75 @@ public final class Requirements
 	 */
 	public RejectionReason gates(Transport transport)
 	{
-		RejectionReason reason = sailing(transport);
-		if (reason == RejectionReason.NONE) reason = pohDisabled(transport);
-		if (reason == RejectionReason.NONE) reason = leagueRegion(transport);
-		if (reason == RejectionReason.NONE) reason = typeDisabled(transport);
-		if (reason == RejectionReason.NONE) reason = pohVariant(transport);
-		if (reason == RejectionReason.NONE) reason = teleportationItem(transport);
-		if (reason == RejectionReason.NONE) reason = respawn(transport);
-		if (reason == RejectionReason.NONE) reason = unlockGate(transport);
-		if (reason == RejectionReason.NONE) reason = jewelleryBoxTier(transport);
-		if (reason == RejectionReason.NONE) reason = skillLevel(transport);
-		if (reason == RejectionReason.NONE) reason = quest(transport);
-		if (reason == RejectionReason.NONE) reason = varbit(transport);
-		if (reason == RejectionReason.NONE) reason = varplayer(transport);
-		if (reason == RejectionReason.NONE) reason = plantedSpiritTree(transport);
-		return reason;
+		for (Gate gate : GATES)
+		{
+			if (gate == Gate.ITEM_REQUIREMENT)
+			{
+				continue;
+			}
+			RejectionReason reason = gate.test.apply(this, transport);
+			if (reason != RejectionReason.NONE)
+			{
+				return reason;
+			}
+		}
+		return RejectionReason.NONE;
 	}
+
+	/** Whether every gate of {@code kind} passes. */
+	private boolean passes(Transport transport, Kind kind)
+	{
+		for (Gate gate : GATES)
+		{
+			if (gate.kind == kind && gate.test.apply(this, transport) != RejectionReason.NONE)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** What the suggestions can do about a gate that closes a transport. */
+	private enum Kind
+	{
+		/** Decided by a setting, the world type or a league region: never suggested. */
+		SETTING,
+		/** The player's own progress a {@link Capability} names: quests, skill levels, items. */
+		UNLOCKABLE,
+		/** Progress no {@link Capability} names yet, such as vars and declared unlocks. */
+		UNHANDLED
+	}
+
+	/** The gates in the order {@link #check} runs them, each tagged with what can open it. */
+	private enum Gate
+	{
+		SAILING(Kind.SETTING, Requirements::sailing),
+		POH_DISABLED(Kind.SETTING, Requirements::pohDisabled),
+		LEAGUE_REGION(Kind.SETTING, Requirements::leagueRegion),
+		TYPE_DISABLED(Kind.SETTING, Requirements::typeDisabled),
+		POH_VARIANT(Kind.SETTING, Requirements::pohVariant),
+		TELEPORTATION_ITEM(Kind.SETTING, Requirements::teleportationItem),
+		RESPAWN(Kind.UNHANDLED, Requirements::respawn),
+		UNLOCK_GATE(Kind.UNHANDLED, Requirements::unlockGate),
+		JEWELLERY_BOX_TIER(Kind.SETTING, Requirements::jewelleryBoxTier),
+		SKILL_LEVEL(Kind.UNLOCKABLE, Requirements::skillLevel),
+		QUEST(Kind.UNLOCKABLE, Requirements::quest),
+		VARBIT(Kind.UNHANDLED, Requirements::varbit),
+		VARPLAYER(Kind.UNHANDLED, Requirements::varplayer),
+		PLANTED_SPIRIT_TREE(Kind.UNHANDLED, Requirements::plantedSpiritTree),
+		ITEM_REQUIREMENT(Kind.UNLOCKABLE, Requirements::itemRequirement);
+
+		private final Kind kind;
+		private final BiFunction<Requirements, Transport, RejectionReason> test;
+
+		Gate(Kind kind, BiFunction<Requirements, Transport, RejectionReason> test)
+		{
+			this.kind = kind;
+			this.test = test;
+		}
+	}
+
+	private static final Gate[] GATES = Gate.values();
 
 	/**
 	 * Bank-destination admissibility: a {@link DestinationRequirements} is
