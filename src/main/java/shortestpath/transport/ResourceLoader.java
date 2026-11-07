@@ -306,9 +306,11 @@ public final class ResourceLoader
 	/**
 	 * Per-packed-point requirements for bank tiles, parsed from {@code bank.tsv} columns
 	 * Skills, Quests, Varbits, and VarPlayers (same TSV format as transports).
+	 * Each row is one way to use the bank, so a tile listed on several rows (a skill level
+	 * or a diary, say) is usable when any one of them is met.
 	 * Tiles with no requirement rows behave as {@link DestinationRequirements#EMPTY}.
 	 */
-	public static Map<Integer, DestinationRequirements> bankRequirements()
+	public static Map<Integer, List<DestinationRequirements>> bankRequirements()
 	{
 		final String path = "/destinations/game_features/bank.tsv";
 		try
@@ -327,9 +329,9 @@ public final class ResourceLoader
 	 * splitting with trimmed headers, kept verbatim from the incumbent
 	 * reader. Package-private for tests.
 	 */
-	static Map<Integer, DestinationRequirements> parseBankRequirements(String contents)
+	static Map<Integer, List<DestinationRequirements>> parseBankRequirements(String contents)
 	{
-		Map<Integer, DestinationRequirements> requirements = new HashMap<>();
+		Map<Integer, List<DestinationRequirements>> requirements = new HashMap<>();
 		final String DELIM_COLUMN = "\t";
 		final String PREFIX_COMMENT = "#";
 		final String DELIM = " ";
@@ -395,7 +397,7 @@ public final class ResourceLoader
 				Set<VarRequirement> varPlayers = varPlayersCol >= 0 ? VARPLAYER_PARSER.parse(blankToNull(varPlayersStr)) : Set.of();
 
 				DestinationRequirements rowReq = new DestinationRequirements(skillLevels, quests, varbits, varPlayers);
-				requirements.merge(packed, rowReq, DestinationRequirements::merge);
+				requirements.computeIfAbsent(packed, k -> new ArrayList<>(1)).add(rowReq);
 			}
 		}
 		return requirements;
