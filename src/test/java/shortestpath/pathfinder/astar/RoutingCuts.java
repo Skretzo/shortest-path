@@ -14,10 +14,10 @@ import lombok.experimental.Accessors;
 /**
  * Separator cut edges for the A* backend, stored as {@code routing-cuts.bin}.
  *
- * <p>The cuts are generated offline with KaHIP by the tooling repository and committed next to
- * {@code collision-map.zip}. They only affect performance: {@link RoutingStaticBuilder} ignores
- * cuts that are no longer walking edges or no longer separate anything, so stale cuts never make
- * routes wrong.
+ * <p>The cuts are generated offline with KaHIP by the tooling repository and committed in
+ * {@code src/test/resources} as an offline input of the routing-component generator. They only
+ * affect performance: {@link RoutingStaticBuilder} ignores cuts that are no longer walking edges or
+ * no longer separate anything, so stale cuts never make routes wrong.
  *
  * <p>Format, all little-endian:
  * <pre>
