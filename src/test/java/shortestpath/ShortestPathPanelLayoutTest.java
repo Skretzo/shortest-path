@@ -39,6 +39,7 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -666,6 +667,24 @@ public class ShortestPathPanelLayoutTest
 		return null;
 	}
 
+
+	@Test
+	public void numberBoxesKeepTheirLimits()
+	{
+		newPanel();
+		CategoryPanel general = panel.categories().get(0);
+		assertLimits(general, "Recalculate Distance", -1, 20000);
+		assertLimits(general, "Finish Distance", -1, 50);
+		assertLimits(general, "Calculation Cutoff", 1, 30);
+		assertLimits(general, "A* Heuristic Weight", 100, 300);
+	}
+
+	private static void assertLimits(CategoryPanel category, String display, int min, int max)
+	{
+		SpinnerNumberModel model = (SpinnerNumberModel) spinnerIn(rowByDisplay(category, display).component).getModel();
+		assertEquals(display + " min", min, model.getMinimum());
+		assertEquals(display + " max", max, model.getMaximum());
+	}
 
 	@Test
 	public void everyTransportCardRequestsAnIcon()
