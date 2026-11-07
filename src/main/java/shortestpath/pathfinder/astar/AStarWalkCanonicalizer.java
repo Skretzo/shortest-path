@@ -3,6 +3,7 @@ package shortestpath.pathfinder.astar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.IntPredicate;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -81,10 +82,9 @@ public final class AStarWalkCanonicalizer
 	 */
 	public AStarWalkCanonicalizer(CollisionMap map, PreparedRoutingAccount account, SearchRestrictions restrictions)
 	{
-		if (map == null || account == null || restrictions == null) throw new NullPointerException();
-		this.map = map;
-		this.account = account;
-		this.restrictions = restrictions;
+		this.map = Objects.requireNonNull(map, "map");
+		this.account = Objects.requireNonNull(account, "account");
+		this.restrictions = Objects.requireNonNull(restrictions, "restrictions");
 	}
 
 	/** A rewritten route and the indices of its steps the player clicks to walk it. */
