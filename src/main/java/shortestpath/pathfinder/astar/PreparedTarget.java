@@ -42,6 +42,21 @@ public final class PreparedTarget
 		return prepare(new TargetOverlay(graph, collision, targets));
 	}
 
+	static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, long[] targets, int[] seeds)
+	{
+		return prepare(TargetOverlay.withCanonicalSeeds(graph, collision, targets, seeds));
+	}
+
+	/**
+	 * Towards targets some of which are where a route goes on from rather than ends: {@code seedCosts[i]} more from
+	 * {@code packedTargets[i]}, 0 for a destination (see {@link TargetOverlay#withSeedCosts}).
+	 */
+	public static PreparedTarget prepare(SiteGraph graph, CollisionMap collision, int[] packedTargets,
+		int[] terminalLayers, int[] seedCosts)
+	{
+		return prepare(TargetOverlay.withSeedCosts(graph, collision, packedTargets, terminalLayers, seedCosts));
+	}
+
 	private static PreparedTarget prepare(TargetOverlay overlay)
 	{
 		long phaseStarted = System.nanoTime();
