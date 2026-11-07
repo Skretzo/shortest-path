@@ -18,8 +18,10 @@ import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.SearchRestrictions;
 import shortestpath.pathfinder.astar.SiteGraph;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /** ActiveSearch adapter for the A* core. */
+@Slf4j
 public final class AStarPathfinder implements ActiveSearch
 {
 	private final PathfinderStats stats = new PathfinderStats();
@@ -463,12 +465,28 @@ public final class AStarPathfinder implements ActiveSearch
 					// Publish only the final path, so the render thread never shows the raw one: turn each
 					// walking leg into the clicks along it and the paths the game's own walking takes between them.
 					phaseStarted = System.nanoTime();
-					AStarWalkCanonicalizer.Result walked = new AStarWalkCanonicalizer(collision, account,
-						restrictions).canonicalize(found);
+					// The rewrite changes no cost and no non-walking step, so if it fails the search's own
+					// route is still a valid answer: keep it rather than report the search as failed.
+					List<PathStep> finalPath;
+					List<Integer> finalClicks = List.of();
+					List<Integer> finalKept = List.of();
+					try
+					{
+						AStarWalkCanonicalizer.Result walked = new AStarWalkCanonicalizer(collision, account,
+							restrictions).canonicalize(found);
+						finalPath = walked.path();
+						finalClicks = walked.clickPoints();
+						finalKept = walked.keptStepIndices();
+					}
+					catch (RuntimeException e)
+					{
+						log.warn("Walk canonicalization failed; keeping the search's own route", e);
+						finalPath = found.steps();
+					}
 					walkNanos = System.nanoTime() - phaseStarted;
-					clickPoints = walked.clickPoints();
-					keptStepIndices = walked.keptStepIndices();
-					path = walked.path();
+					clickPoints = finalClicks;
+					keptStepIndices = finalKept;
+					path = finalPath;
 					if (best != null) bestTarget = last(path);
 				}
 			}
