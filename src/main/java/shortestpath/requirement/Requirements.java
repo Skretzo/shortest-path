@@ -330,9 +330,8 @@ public final class Requirements
 			return RejectionReason.BLOCKED_ITEM;
 		}
 
-		// BYPASS and EVALUATE_ITEMS both pass this gate — deferral to the item
-		// pools lands at the itemRequirement gate below, which re-dispatches
-		// through the eligibility snapshot.
+		// Bypass and item evaluation pass this gate; the eligibility snapshot
+		// selects the item pool at the itemRequirement gate below.
 		return TeleportationItemPolicy.verdict(
 			policy.teleportationItemSetting(), transport.isConsumable())
 				== TeleportationItemPolicy.Verdict.REJECT
