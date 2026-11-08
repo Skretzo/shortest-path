@@ -132,6 +132,21 @@ public class AStarWalkCanonicalizerTest
 	}
 
 	@Test
+	public void legCrossingABlockedTileIsWalkedStraightOnBothSides()
+	{
+		Grid grid = new Grid(Set.of(pack(5, 0)));
+		// The search drifts sideways before and after a blocked tile it crosses; the game cannot.
+		List<PathStep> route = steps(0, 0, 1, 1, 2, 0, 3, 1, 4, 0, 5, 0, 6, 0, 7, 1, 8, 0, 9, 0);
+
+		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, 9);
+
+		assertEquals(describe(steps(0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9, 0)),
+			describe(result.path()));
+		assertEquals(List.of(4, 9), result.clickPoints());
+		assertEquals(List.of(5, 6), result.keptStepIndices());
+	}
+
+	@Test
 	public void stepTheGameDoesNotWalkKeepsTheSearchsStep()
 	{
 		// A blocked transport origin at (6,0), stepped onto by the A* search to take the transport.
@@ -289,9 +304,9 @@ public class AStarWalkCanonicalizerTest
 
 		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, 9);
 
-		assertEquals(List.of(9), result.clickPoints());
-		assertEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8), result.keptStepIndices());
-		assertEquals(describe(route), describe(result.path()));
+		assertEquals(List.of(5, 9), result.clickPoints());
+		assertEquals(List.of(6, 7, 8), result.keptStepIndices());
+		assertEquals(describe(route.subList(5, 10)), describe(result.path().subList(5, 10)));
 		assertClicksFollowTheGame(grid, route, result, 0);
 	}
 

@@ -270,6 +270,17 @@ public final class AStarWalkCanonicalizer
 		BankVisitState banked = leg.get(from).getBankVisitState();
 		int start = leg.get(from).getPackedPosition();
 		int plane = WorldPointUtil.unpackWorldPlane(start);
+		// The search may cross a blocked tile the game's search cannot, so the game's walk to the leg's
+		// end would not exist from before it: each side is rewritten on its own around the kept step.
+		for (int k = from + 1; k < to; k++)
+		{
+			int tile = leg.get(k).getPackedPosition();
+			if (!map.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile), plane)) continue;
+			if (k - 1 > from) rewriteLeg(leg, from, k - 1, null, clicks, kept);
+			kept.add(k);
+			rewriteLeg(leg, k, to, goal, clicks, kept);
+			return;
+		}
 		int endTile = leg.get(to).getPackedPosition();
 		// The step onto a blocked transport origin is the search's own: the game does not walk it.
 		boolean blockedEnd = map.isBlocked(WorldPointUtil.unpackWorldX(endTile), WorldPointUtil.unpackWorldY(endTile), plane);
