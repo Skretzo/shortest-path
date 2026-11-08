@@ -23,8 +23,17 @@ import shortestpath.Util;
  * collision map the layer was generated from, then the run count and the crossing int count as
  * varints; then three columns of run-count varints (run length minus one, the gap from the previous
  * run's end with the first gap measured from 0 in unsigned 32-bit arithmetic, and the routing
- * component id); then the crossings as big-endian 32-bit packed tiles in (from, to) pairs. The reader rejects any other shape, so a stale or damaged
- * resource fails loudly instead of routing differently.
+ * component id); then the crossings as big-endian 32-bit packed tiles in (from, to) pairs. The
+ * fingerprint and the crossings are big-endian, unlike the little-endian {@code routing-cuts.bin}.
+ *
+ * <p>The reader rejects malformed and truncated files: a wrong magic or version, non-canonical or
+ * over-wide varints, counts larger than the bytes left, runs outside the tile range or longer than
+ * 65,535 tiles, component ids outside 1..run count, and trailing bytes. It does not check that the
+ * crossings are sorted and distinct, that adjacent runs have different ids, or that ids are
+ * numbered in first-tile order: the generator produces that shape and the loader does not depend on
+ * it. Whether the layer matches the collision map is checked by {@link RoutingStaticLoader} (the
+ * fingerprint, then every crossing and reachable tile) and, for the packaged file, by the
+ * freshness test.
  */
 final class ComponentLayer
 {
