@@ -26,10 +26,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      # Pinned: this job writes straight to master on a schedule, so a rename or removal of the
+      # routingCuts/routingComponents tasks in the tooling repository must not break it silently.
+      # Bump the ref when the tooling tasks or the generator classes they share with this repository change.
       - name: Checkout tooling repository
         uses: actions/checkout@v7
         with:
           repository: osrs-pathfinding/shortest-path-tooling
+          ref: 4f617372fc38259a32fddd7d3d56c61456f2c903
           path: tooling
 
       - name: Checkout runelite
@@ -90,8 +94,8 @@ jobs:
           zip -r collision-map.zip .
           mv collision-map.zip ../src/main/resources/collision-map.zip
 
-      # The exact pathfinder's routing cuts are derived from the collision map, so they are
-      # regenerated with it and committed in the same commit.
+      # The exact pathfinder's routing cuts and the routing component layer are derived from
+      # the collision map, so both are regenerated with it and committed in the same commit.
       - name: Restore KaHIP
         id: kahip-cache
         uses: actions/cache@v6
@@ -115,17 +119,30 @@ jobs:
           ./gradlew routingCuts \
             -PshortestPathDir=.. \
             -PkahipNodeSeparator="$RUNNER_TEMP/kahip-bin/node_separator" \
-            -ProutingCutsOutput="$GITHUB_WORKSPACE/src/main/resources/routing-cuts.bin"
+            -ProutingCutsOutput="$GITHUB_WORKSPACE/src/test/resources/routing-cuts.bin"
 
-      # Gate: a corrupt or truncated export must never reach master. The zip
-      # integrity check catches a broken archive; the test suite below loads
-      # collision-map.zip and routing-cuts.bin from the real resources, so a
-      # semantically broken map fails the job before the commit step runs.
+      # The layer fingerprints the collision data, so this step must stay after every step that
+      # writes collision-map.zip or anything SplitFlagMap.fromResources reads from it.
+      - name: Generate routing components
+        run: |
+          cd tooling
+          ./gradlew routingComponents \
+            -PshortestPathDir=.. \
+            -ProutingCutsFile="$GITHUB_WORKSPACE/src/test/resources/routing-cuts.bin" \
+            -ProutingComponentsOutput="$GITHUB_WORKSPACE/src/main/resources/routing-components.bin"
+
+      # Gate: a corrupt or truncated export must never reach master. The zip integrity check
+      # catches a broken archive and `test -s` catches an empty output. The test suite below loads
+      # collision-map.zip from the real resources and checks the committed layer against the
+      # committed map and cuts. That check is only a consistency check of the committed inputs
+      # (the layer was just produced by the same generator code, so it cannot catch a generator
+      # bug); a semantically broken map is caught by the rest of the suite.
       - name: Verify generated artifacts
         run: |
           unzip -t src/main/resources/collision-map.zip > /dev/null
-          test -s src/main/resources/routing-cuts.bin
-          ls -lh src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin
+          test -s src/test/resources/routing-cuts.bin
+          test -s src/main/resources/routing-components.bin
+          ls -lh src/main/resources/collision-map.zip src/test/resources/routing-cuts.bin src/main/resources/routing-components.bin
 
       - name: Build and test plugin with new data
         run: ./gradlew jar test --stacktrace
@@ -135,11 +152,11 @@ jobs:
           rm -rf runelite cache output cache.jar keys.json cache.zip tooling
 
       # `add` is an explicit pathspec so the commit can only ever contain the
-      # two generated artifacts, regardless of what else is left in the
+      # three generated artifacts, regardless of what else is left in the
       # workspace.
       - name: Commit changes
         uses: EndBug/add-and-commit@v11
         with:
           default_author: github_actions
-          add: "src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin"
+          add: "src/main/resources/collision-map.zip src/test/resources/routing-cuts.bin src/main/resources/routing-components.bin"
           message: "Update collision map"

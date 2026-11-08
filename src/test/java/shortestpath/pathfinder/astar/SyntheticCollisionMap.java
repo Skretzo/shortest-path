@@ -1,8 +1,10 @@
 package shortestpath.pathfinder.astar;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
@@ -39,6 +41,22 @@ class SyntheticCollisionMap extends CollisionMap
 		this.neighbors = new HashMap<>(neighborOverrides);
 		this.extent = new SplitFlagMap.RegionExtent(0, 0, 0, 0);
 		this.planeCount = planeCount;
+	}
+
+	/** Covers the walkable set and every declared edge, in a fixed order, so any change to either shows. */
+	@Override
+	public long fingerprint()
+	{
+		long hash = planeCount;
+		for (int tile : new TreeSet<>(walkable)) hash = hash * 1000003L + tile;
+		for (int tile : new TreeSet<>(neighbors.keySet()))
+		{
+			int[] declared = neighbors.get(tile).clone();
+			Arrays.sort(declared);
+			hash = hash * 1000003L + tile;
+			for (int neighbor : declared) hash = hash * 1000003L + neighbor;
+		}
+		return hash;
 	}
 
 	@Override
@@ -98,6 +116,25 @@ class SyntheticCollisionMap extends CollisionMap
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Gives every walkable tile without a declared neighbour one open edge toward {@code (dx, dy)}, at
+	 * a tile that is not walkable. A real collision map never has a walkable tile without a walking
+	 * edge (a tile with no open cardinal flag is blocked), and the routing loader rejects a zero
+	 * walking mask as a stale layer; some synthetic worlds want single tiles, and the stub keeps their
+	 * masks non-zero while joining nothing. The stub direction must not point at a search tile.
+	 */
+	static Map<Integer, int[]> withStubEdges(Set<Integer> walkableTiles, Map<Integer, int[]> adjacency, int dx, int dy)
+	{
+		Map<Integer, int[]> result = new HashMap<>(adjacency);
+		for (int tile : walkableTiles)
+		{
+			if (result.containsKey(tile)) continue;
+			result.put(tile, new int[] {WorldPointUtil.packWorldPoint(WorldPointUtil.unpackWorldX(tile) + dx,
+				WorldPointUtil.unpackWorldY(tile) + dy, WorldPointUtil.unpackWorldPlane(tile))});
+		}
+		return result;
 	}
 
 	/** Builds symmetric adjacency from an explicit list of open, undirected tile-pair edges. */

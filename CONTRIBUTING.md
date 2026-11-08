@@ -49,6 +49,14 @@ The data lives in `src/main/resources/`:
   that moves you between tiles
 - `destinations/` — the named places you can path to
 - `collision-map.zip` — **generated**, don't edit it by hand
+- `routing-components.bin` — **generated** from `collision-map.zip` and
+  `src/test/resources/routing-cuts.bin`. If the map or the cuts change, the
+  freshness test fails until you regenerate it (the `ExtractCollisionMap`
+  workflow does this for you):
+
+  ```bash
+  ROUTING_COMPONENTS_REGEN=1 ./gradlew test --tests '*RoutingComponentsFreshnessTest' --rerun
+  ```
 - `transports/teleport_restrictions.tsv` — **generated** from
   `transports/teleportation_items.tsv`. Adding or removing an item id in
   an `Items` cell there means the map is stale — regenerate it and
