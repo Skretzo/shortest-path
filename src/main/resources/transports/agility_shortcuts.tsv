@@ -503,6 +503,10 @@
 2598 9494 0	2598 9489 0	Swing across Monkeybars 23567	57 Agility				6	
 2599 9489 0	2599 9494 0	Swing across Monkeybars 23567	57 Agility				6	
 2599 9494 0	2599 9489 0	Swing across Monkeybars 23567	57 Agility				6	
+# Great Conch eastern rocks								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3254 2398 0	3260 2398 0	Climb Rocks 57933	57 Agility				3	
+3260 2398 0	3254 2398 0	Climb Rocks 57934	57 Agility				3	
 3670 9888 3	3671 9888 2	Jump-down Weathered wall 16526	58 Agility					
 3671 9888 2	3670 9888 3	Jump-up Weathered wall 16525	58 Agility					
 2346 3300 0	2344 3294 0	Climb Rocks 16515	59 Agility				6	
