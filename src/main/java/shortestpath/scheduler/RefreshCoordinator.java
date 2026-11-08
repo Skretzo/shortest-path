@@ -7,7 +7,6 @@ import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
-import shortestpath.ShortestPathConfig;
 import shortestpath.settings.Settings;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;

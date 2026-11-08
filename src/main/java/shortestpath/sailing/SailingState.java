@@ -1,6 +1,5 @@
 package shortestpath.sailing;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 

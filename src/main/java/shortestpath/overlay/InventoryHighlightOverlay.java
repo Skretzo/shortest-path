@@ -9,7 +9,6 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import shortestpath.ItemVariations;
 import shortestpath.pathfinder.*;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;

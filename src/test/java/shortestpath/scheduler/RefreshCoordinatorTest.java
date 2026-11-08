@@ -1,6 +1,5 @@
 package shortestpath.scheduler;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -23,7 +22,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.events.ConfigChanged;
 
-import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.TestItemChange;
