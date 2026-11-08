@@ -29,6 +29,7 @@ import shortestpath.requirement.model.Unlock;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
+import shortestpath.transport.ResourceLoader;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import java.util.HashSet;
