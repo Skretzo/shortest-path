@@ -440,7 +440,7 @@ public class AStarWalkCanonicalizerTest
 	}
 
 	@Test
-	public void legBeforeAGlobalTeleportEndsOnTheFirstCastableTileTheGameFinds()
+	public void legBeforeAGlobalTeleportEndsOnTheMostDirectCastableTile()
 	{
 		Grid grid = new Grid();
 		// Level 31 starts at y = 3760: the search walked south-east then south to y = 3759, the
@@ -466,7 +466,7 @@ public class AStarWalkCanonicalizerTest
 			.canonicalize(new AStarRoute(route, arrivals, costs));
 
 		int end = result.path().get(20).getPackedPosition();
-		assertEquals(firstDiscovered(grid, start, 20, castable), end);
+		assertEquals(mostDirectDiscovered(grid, start, 20, castable), end);
 		assertNotEquals("the leg should end elsewhere than the search's tile", searchEnd, end);
 		assertTrue(castable.test(end));
 		assertEquals(route.size(), result.path().size());
@@ -477,11 +477,44 @@ public class AStarWalkCanonicalizerTest
 	}
 
 	@Test
+	public void longLegBeforeAGlobalTeleportHeadsForTheMostDirectCastableTile()
+	{
+		Grid grid = new Grid();
+		// 50 ticks: south-west for 25, then south, to a level 30 tile the search found; the castable
+		// tile straight south of the start is as far away and a whole walk more direct.
+		int start = WorldPointUtil.packWorldPoint(3000, 3809, 0);
+		List<PathStep> route = new ArrayList<>();
+		route.add(new PathStep(start, BankVisitState.CARRIED));
+		for (int i = 1; i <= 25; i++)
+			route.add(new PathStep(WorldPointUtil.packWorldPoint(3000 - i, 3809 - i, 0), BankVisitState.CARRIED));
+		for (int i = 26; i <= 50; i++)
+			route.add(new PathStep(WorldPointUtil.packWorldPoint(2975, 3809 - i, 0), BankVisitState.CARRIED));
+		route.add(new PathStep(WorldPointUtil.packWorldPoint(3213, 3424, 0), BankVisitState.CARRIED));
+		byte[] arrivals = new byte[route.size()];
+		arrivals[route.size() - 1] = AStarRoute.fromHub(TeleportCapability.OVER_20);
+		int[] costs = new int[route.size()];
+		for (int i = 0; i < 51; i++) costs[i] = i;
+		costs[51] = 50 + 4;
+		IntPredicate castable = tile -> TeleportCapability.at(tile).allows(TeleportCapability.OVER_20);
+
+		AStarWalkCanonicalizer.Result result = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS)
+			.canonicalize(new AStarRoute(route, arrivals, costs));
+
+		int end = result.path().get(50).getPackedPosition();
+		assertEquals(mostDirectDiscovered(grid, start, 50, castable), end);
+		assertEquals(WorldPointUtil.packWorldPoint(3000, 3759, 0), end);
+		for (int i = 0; i <= 50; i++)
+			assertEquals(3000, WorldPointUtil.unpackWorldX(result.path().get(i).getPackedPosition()));
+		assertEquals(50, (int) result.clickPoints().get(result.clickPoints().size() - 1));
+		assertEquals(route.size(), result.path().size());
+	}
+
+	@Test
 	public void castableTileNearerThanTheRemainingDistanceIsNeverTaken()
 	{
 		Grid grid = new Grid();
 		// Straight south from level 31 into level 30: the first castable tile is 11 ticks away
-		// but the leg is 14 ticks long, so it ends where the game finds a castable tile at 14.
+		// but the leg is 14 ticks long, so it ends on the most direct castable tile at 14.
 		int start = WorldPointUtil.packWorldPoint(3000, 3770, 0);
 		List<PathStep> route = new ArrayList<>();
 		for (int i = 0; i <= 14; i++)
@@ -493,20 +526,20 @@ public class AStarWalkCanonicalizerTest
 		for (int i = 0; i < 15; i++) costs[i] = i;
 		costs[15] = 14 + 4;
 		IntPredicate castable = tile -> TeleportCapability.at(tile).allows(TeleportCapability.OVER_20);
-		assertNotEquals("a castable tile exists 11 ticks away", -1, firstDiscovered(grid, start, 11, castable));
+		assertNotEquals("a castable tile exists 11 ticks away", -1, mostDirectDiscovered(grid, start, 11, castable));
 
 		AStarWalkCanonicalizer.Result result = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS)
 			.canonicalize(new AStarRoute(route, arrivals, costs));
 
 		int end = result.path().get(14).getPackedPosition();
-		assertEquals(firstDiscovered(grid, start, 14, castable), end);
+		assertEquals(mostDirectDiscovered(grid, start, 14, castable), end);
 		assertEquals(14, gamePath(grid, start, end).size());
 		assertEquals(gamePath(grid, start, end), tiles(result.path(), 0, 14));
 		assertEquals(route.size(), result.path().size());
 	}
 
 	@Test
-	public void legBeforeATransportEndsOnTheFirstOriginOfTheSameActionTheGameFinds()
+	public void legBeforeATransportEndsOnTheMostDirectOriginOfTheSameAction()
 	{
 		Grid grid = new Grid();
 		int destination = pack(50, 50);
@@ -518,7 +551,7 @@ public class AStarWalkCanonicalizerTest
 
 		AStarWalkCanonicalizer.Result result = canonicalize(grid, account, route);
 
-		int expected = firstDiscovered(grid, pack(0, 0), 10, tile -> tile == pack(0, 10) || tile == pack(5, 10));
+		int expected = mostDirectDiscovered(grid, pack(0, 0), 10, tile -> tile == pack(0, 10) || tile == pack(5, 10));
 		assertEquals(expected, result.path().get(10).getPackedPosition());
 		assertEquals(pack(0, 10), expected);
 		assertEquals(gamePath(grid, pack(0, 0), expected), tiles(result.path(), 0, 10));
@@ -735,7 +768,7 @@ public class AStarWalkCanonicalizerTest
 		costs[21] = 20 + 4;
 		IntPredicate castable = tile -> TeleportCapability.at(tile).allows(TeleportCapability.OVER_20);
 		// The tile the unrestricted walk ends on, which the game's search finds first: gate it off.
-		int preferred = firstDiscovered(grid, start, 20, castable);
+		int preferred = mostDirectDiscovered(grid, start, 20, castable);
 		SearchRestrictions restrictions = SearchRestrictions.of(false, tile -> tile == preferred);
 
 		AStarWalkCanonicalizer.Result result = new AStarWalkCanonicalizer(grid, NO_TRANSPORTS, restrictions)
@@ -903,11 +936,12 @@ public class AStarWalkCanonicalizerTest
 	}
 
 	/**
-	 * The first tile, in the order the game's walking BFS discovers tiles (no window), that is
-	 * exactly {@code distance} steps from {@code from} and accepted; -1 if there is none. Re-derived
-	 * like {@link #gamePath} so the end-tile rule is checked against an independent search.
+	 * The tile exactly {@code distance} steps from {@code from} and accepted whose game path has the
+	 * least axis travel (|dx| + |dy| over its moves), the first discovered in the order of the game's
+	 * walking BFS (no window) among equals; -1 if there is none. Re-derived like {@link #gamePath}
+	 * so the end-tile rule is checked against an independent search.
 	 */
-	private static int firstDiscovered(CollisionMap grid, int from, int distance, IntPredicate accepted)
+	private static int mostDirectDiscovered(CollisionMap grid, int from, int distance, IntPredicate accepted)
 	{
 		int[] dx = {-1, 1, 0, 0, -1, 1, -1, 1}, dy = {0, 0, -1, 1, -1, -1, 1, 1};
 		int[] bits = {6, 2, 4, 0, 5, 3, 7, 1};
@@ -926,9 +960,23 @@ public class AStarWalkCanonicalizerTest
 				if (steps.putIfAbsent(next, steps.get(at) + 1) == null) order.add(next);
 			}
 		}
+		int best = -1, bestTravel = 0;
 		for (int tile : order)
-			if (steps.get(tile) == distance && accepted.test(tile)) return tile;
-		return -1;
+		{
+			if (steps.get(tile) != distance || !accepted.test(tile)) continue;
+			int travel = 0, previous = from;
+			for (int step : gamePath(grid, from, tile))
+			{
+				travel += Math.abs(x(step) - x(previous)) + Math.abs(y(step) - y(previous));
+				previous = step;
+			}
+			if (best < 0 || travel < bestTravel)
+			{
+				best = tile;
+				bestTravel = travel;
+			}
+		}
+		return best;
 	}
 
 	/**

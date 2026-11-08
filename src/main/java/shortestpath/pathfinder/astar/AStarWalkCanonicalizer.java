@@ -297,9 +297,9 @@ public final class AStarWalkCanonicalizer
 			// A transport may land on a blocked tile: the game walks off it, but is not clicked from it.
 			boolean blocked = map.isBlocked(sx, sy, plane);
 			int remaining = last - current;
-			// Once the leg's end is a click away, it may end on any tile the goal accepts; the BFS
-			// then runs as deep as the leg is long, to see every tile that far from the source.
-			boolean finalStretch = goal != null && !blocked && to - current <= CLICK_RADIUS;
+			// Once the leg fits the game's window, it may end on any tile the goal accepts; the BFS then
+			// runs as deep as the leg is long, to see every tile that far from the source.
+			boolean finalStretch = goal != null && !blocked && to - current <= HALF_WINDOW;
 			int discovered = search(originX, originY, plane, sx, sy,
 				finalStretch ? to - current : blocked ? 1 : Math.min(remaining, HALF_WINDOW),
 				finalStretch ? -1 : remaining);
@@ -307,11 +307,21 @@ public final class AStarWalkCanonicalizer
 			if (finalStretch)
 			{
 				int end = goalTile(goal, originX, originY, plane, sx, sy, to - current, discovered);
-				if (end >= 0)
+				if (end >= 0 && withinReach(sx, sy, WorldPointUtil.packWorldPoint(originX + end % WINDOW,
+					originY + end / WINDOW, plane)))
 				{
 					splice(leg, to, current, end, originX, originY, plane, banked);
 					clicks.add(to);
 					return;
+				}
+				if (end >= 0)
+				{
+					// Too far to click: the rest of the leg heads for that tile, the most direct end.
+					goal = null;
+					blockedEnd = false;
+					last = to;
+					remaining = to - current;
+					reverse(plane, originX + end % WINDOW, originY + end / WINDOW, sx, sy, remaining);
 				}
 			}
 
@@ -413,23 +423,24 @@ public final class AStarWalkCanonicalizer
 	}
 
 	/**
-	 * The local index of the first tile the game's search discovered at exactly {@code remaining}
-	 * steps that {@code goal} accepts, is within a click's reach and whose traced path the
-	 * restrictions allow; -1 when there is none. A tile nearer than {@code remaining} is never
-	 * taken: the leg would end short of its length and change the route's cost.
+	 * The local index of the tile the game's search discovered at exactly {@code remaining} steps that
+	 * {@code goal} accepts and whose traced path the restrictions allow, with the least axis travel
+	 * along that path (the first discovered of equals); -1 when there is none. The game's expansion order decides which path leads to a tile, not where a player stops, so
+	 * it is no tie-break between tiles. A tile nearer than {@code remaining} is never taken: the leg
+	 * would end short of its length and change the route's cost.
 	 */
 	private int goalTile(IntPredicate goal, int originX, int originY, int plane, int sx, int sy, int remaining,
 		int discovered)
 	{
+		int best = -1;
 		for (int k = 0; k < discovered; k++)
 		{
 			int at = queue[k];
-			if (distance[at] != remaining) continue;
+			if (distance[at] != remaining || best >= 0 && axis[at] >= axis[best]) continue;
 			int tile = WorldPointUtil.packWorldPoint(originX + at % WINDOW, originY + at / WINDOW, plane);
-			if (withinReach(sx, sy, tile) && goal.test(tile) && traceAllowed(originX, originY, plane, at, remaining))
-				return at;
+			if (goal.test(tile) && traceAllowed(originX, originY, plane, at, remaining)) best = at;
 		}
-		return -1;
+		return best;
 	}
 
 	/** Writes the traced path from the search's source to local index {@code at} over {@code rewritten[from + 1..click]}. */
