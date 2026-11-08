@@ -431,6 +431,12 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean highlightTransportObjects()
+	{
+		return bool(ConfigKey.HIGHLIGHT_TRANSPORT_OBJECTS);
+	}
+
+	@Override
 	public int tileCounterStep()
 	{
 		return num(ConfigKey.TILE_COUNTER_STEP);

@@ -439,6 +439,18 @@ public interface ShortestPathConfig extends Config
 		return 1;
 	}
 
+	@ConfigItem(
+		keyName = "highlightTransportObjects",
+		name = "Highlight Transport Objects",
+		description = "Outline the object to click for the next transport",
+		position = 196,
+		section = sectionDisplay
+	)
+	default boolean highlightTransportObjects()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 		name = "Colours",
 		description = "Path colours on map, minimap and scene tiles",
