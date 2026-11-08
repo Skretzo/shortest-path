@@ -178,8 +178,6 @@ public class PluginDependencyRuleTest
 			"RoutingPolicy/Requirements delegate the POH gates' enablement reads to PohService");
 		LEAF_EDGES.put("settings -> poh",
 			"Settings/EffectiveConfig expose POH-facing effective-config reads");
-		LEAF_EDGES.put("transport -> poh",
-			"TransportTypeConfig reads POH-facing config types");
 
 		// scheduler package — the extraction's seams. The outbound edges are
 		// the engine inputs and the attach seam; the inbound edge is the
