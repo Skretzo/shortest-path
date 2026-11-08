@@ -18,6 +18,15 @@ public class CollisionMap
 		return SplitFlagMap.getRegionExtents();
 	}
 
+	/**
+	 * A digest of the collision data, used to tie derived data (the routing component layer) to the
+	 * map it was generated from. Overridable so synthetic test maps can supply their own.
+	 */
+	public long fingerprint()
+	{
+		return collisionData.fingerprint();
+	}
+
 	public byte getRegionPlaneCounts(int regionIndex)
 	{
 		return collisionData.getRegionPlaneCounts(regionIndex);

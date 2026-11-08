@@ -21,6 +21,12 @@ public class AStarRoutingStaticProviderTest
 		}
 
 		@Override
+		public long fingerprint()
+		{
+			return 0;
+		}
+
+		@Override
 		public byte ordinaryWalkingMask(int packedPoint)
 		{
 			return 0;

@@ -22,9 +22,10 @@ public final class ComponentLayerWriter
 	static byte[] write(ComponentLayer layer)
 	{
 		int runs = layer.starts.length;
-		ByteArrayOutputStream out = new ByteArrayOutputStream(runs * 5 + layer.crossings.length * 4 + 32);
+		ByteArrayOutputStream out = new ByteArrayOutputStream(runs * 5 + layer.crossings.length * 4 + 40);
 		out.write(ComponentLayer.MAGIC, 0, ComponentLayer.MAGIC.length);
 		varint(out, ComponentLayer.VERSION);
+		for (int shift = 56; shift >= 0; shift -= 8) out.write((int) (layer.fingerprint >>> shift));
 		varint(out, runs);
 		varint(out, layer.crossings.length);
 		for (int i = 0; i < runs; i++)

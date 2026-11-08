@@ -17,26 +17,31 @@ import shortestpath.Util;
  * Natural components (walking edges only) are not stored: they are the routing components joined
  * through the crossings.
  *
- * <p>Format: the 8-byte magic, then unsigned base-128 varints, least-significant group first, each
- * in its shortest form and within 32 bits, for the version, the run count and the crossing int count;
- * then three columns of run-count varints (run length minus one, the gap from the previous run's end
- * with the first gap measured from 0 in unsigned 32-bit arithmetic, and the routing component id);
- * then the crossings as big-endian 32-bit packed tiles in (from, to) pairs. The reader rejects any other shape, so a stale or damaged
+ * <p>Format: the 8-byte magic, then the version as an unsigned base-128 varint (least-significant
+ * group first, each in its shortest form and within 32 bits, as are all varints below), then the
+ * big-endian 64-bit {@link shortestpath.pathfinder.CollisionMap#fingerprint() fingerprint} of the
+ * collision map the layer was generated from, then the run count and the crossing int count as
+ * varints; then three columns of run-count varints (run length minus one, the gap from the previous
+ * run's end with the first gap measured from 0 in unsigned 32-bit arithmetic, and the routing
+ * component id); then the crossings as big-endian 32-bit packed tiles in (from, to) pairs. The reader rejects any other shape, so a stale or damaged
  * resource fails loudly instead of routing differently.
  */
 final class ComponentLayer
 {
 	static final String RESOURCE = "/routing-components.bin";
 	static final byte[] MAGIC = "RSPCOMP\0".getBytes(StandardCharsets.US_ASCII);
-	static final int VERSION = 1;
+	static final int VERSION = 2;
 
+	/** {@link shortestpath.pathfinder.CollisionMap#fingerprint()} of the map the layer was generated from. */
+	final long fingerprint;
 	final int[] starts;
 	final char[] lengths;
 	final int[] ids;
 	final int[] crossings;
 
-	ComponentLayer(int[] starts, char[] lengths, int[] ids, int[] crossings)
+	ComponentLayer(long fingerprint, int[] starts, char[] lengths, int[] ids, int[] crossings)
 	{
+		this.fingerprint = fingerprint;
 		this.starts = starts;
 		this.lengths = lengths;
 		this.ids = ids;
@@ -54,13 +59,15 @@ final class ComponentLayer
 			if (!Arrays.equals(magic, MAGIC)) throw new IOException("wrong magic in " + RESOURCE);
 			int version = varint(in);
 			if (version != VERSION) throw new IOException("unsupported version " + version + " of " + RESOURCE);
+			long fingerprint = in.getLong();
 			int runs = varint(in);
 			int crossings = varint(in);
 			// Every count is checked against the bytes left before anything is sized from it.
 			if (runs < 0 || runs > in.remaining() / 3 || crossings < 0 || (crossings & 1) != 0
 				|| (long) crossings * 4 > in.remaining())
 				throw new IOException("bad counts in " + RESOURCE);
-			ComponentLayer layer = new ComponentLayer(new int[runs], new char[runs], new int[runs], new int[crossings]);
+			ComponentLayer layer = new ComponentLayer(fingerprint, new int[runs], new char[runs], new int[runs],
+				new int[crossings]);
 			for (int i = 0; i < runs; i++)
 			{
 				int length = varint(in) + 1;

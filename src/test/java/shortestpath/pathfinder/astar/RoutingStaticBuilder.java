@@ -119,7 +119,7 @@ public final class RoutingStaticBuilder
 		CutSet cutSet = validateCuts(cuts, walkable);
 		int[] componentIds = new int[walkable.tiles.length];
 		floodFillComponents(walkable, cutSet.blocked, componentIds);
-		ComponentLayer layer = formLayer(walkable, componentIds, cutSet.valid);
+		ComponentLayer layer = formLayer(collision.fingerprint(), walkable, componentIds, cutSet.valid);
 
 		RoutingStatic routingStatic = RoutingStaticLoader.build(collision, rawTransports, bankTiles, layer, seedTile);
 
@@ -162,11 +162,12 @@ public final class RoutingStaticBuilder
 		CutSet cutSet = validateCuts(cuts, walkable);
 		int[] componentIds = new int[walkable.tiles.length];
 		floodFillComponents(walkable, cutSet.blocked, componentIds);
-		return formLayer(walkable, componentIds, cutSet.valid);
+		return formLayer(collision.fingerprint(), walkable, componentIds, cutSet.valid);
 	}
 
 	/** The runs of equal component ids over the walkable tiles, plus the valid cuts that separate two components. */
-	private static ComponentLayer formLayer(WalkableTiles walkable, int[] componentIds, List<long[]> validCuts)
+	private static ComponentLayer formLayer(long fingerprint, WalkableTiles walkable, int[] componentIds,
+		List<long[]> validCuts)
 	{
 		int runCount = 0;
 		for (int i = 0, length = 0; i < componentIds.length; i++)
@@ -195,7 +196,7 @@ public final class RoutingStaticBuilder
 			crossingTiles[2 * i] = crossings.get(i).fromTile;
 			crossingTiles[2 * i + 1] = crossings.get(i).toTile;
 		}
-		return new ComponentLayer(starts, lengths, ids, crossingTiles);
+		return new ComponentLayer(fingerprint, starts, lengths, ids, crossingTiles);
 	}
 
 	/** Whether tile {@code index} continues a run of {@code length} tiles ending at the tile before it. */
@@ -272,7 +273,8 @@ public final class RoutingStaticBuilder
 		WalkableTiles walkable = enumerateWalkableTiles(collision);
 		int[] naturalId = new int[walkable.tiles.length];
 		int naturalComponentCount = floodFillComponents(walkable, null, naturalId);
-		ComponentLayer layer = formLayer(walkable, naturalId, List.of());
+		// Only read in memory for its natural components, never serialized or loaded, so it needs no fingerprint.
+		ComponentLayer layer = formLayer(0L, walkable, naturalId, List.of());
 		int[] natural = RoutingStaticLoader.naturalComponents(layer);
 		boolean[] reachable = RoutingStaticLoader.structuralReachability(collision, layer, natural,
 			new boolean[natural.length], rawTransports, seedTile);

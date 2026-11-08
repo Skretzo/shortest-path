@@ -1,8 +1,10 @@
 package shortestpath.pathfinder.astar;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
@@ -39,6 +41,22 @@ class SyntheticCollisionMap extends CollisionMap
 		this.neighbors = new HashMap<>(neighborOverrides);
 		this.extent = new SplitFlagMap.RegionExtent(0, 0, 0, 0);
 		this.planeCount = planeCount;
+	}
+
+	/** Covers the walkable set and every declared edge, in a fixed order, so any change to either shows. */
+	@Override
+	public long fingerprint()
+	{
+		long hash = planeCount;
+		for (int tile : new TreeSet<>(walkable)) hash = hash * 1000003L + tile;
+		for (int tile : new TreeSet<>(neighbors.keySet()))
+		{
+			int[] declared = neighbors.get(tile).clone();
+			Arrays.sort(declared);
+			hash = hash * 1000003L + tile;
+			for (int neighbor : declared) hash = hash * 1000003L + neighbor;
+		}
+		return hash;
 	}
 
 	@Override

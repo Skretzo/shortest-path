@@ -21,6 +21,9 @@ public class ComponentLayerTest
 		return WorldPointUtil.packWorldPoint(x, y, plane);
 	}
 
+	/** Has the sign bit and every byte position set, so a reader that drops or reorders bytes shows. */
+	private static final long FINGERPRINT = 0x8123456789abcdefL;
+
 	/** Runs on planes 0 and 3, a gap above 2^31, a maximal run and three crossings. */
 	private static ComponentLayer layer()
 	{
@@ -28,7 +31,7 @@ public class ComponentLayerTest
 		int second = first + 3;
 		int upper = tile(20, 30, 3);
 		int last = upper + 1 + 5;
-		return new ComponentLayer(new int[] {first, second, upper, last}, new char[] {3, 65535, 1, 2},
+		return new ComponentLayer(FINGERPRINT, new int[] {first, second, upper, last}, new char[] {3, 65535, 1, 2},
 			new int[] {1, 2, 3, 1}, new int[] {first, second, second + 1, upper, upper, last});
 	}
 
@@ -55,6 +58,12 @@ public class ComponentLayerTest
 			return this;
 		}
 
+		Encoder fingerprint(long value)
+		{
+			for (int shift = 56; shift >= 0; shift -= 8) out.write((int) (value >>> shift));
+			return this;
+		}
+
 		Encoder tile(int tile)
 		{
 			return raw(tile >>> 24, tile >>> 16, tile >>> 8, tile);
@@ -68,7 +77,7 @@ public class ComponentLayerTest
 
 	private static Encoder header(long runs, long crossings)
 	{
-		return new Encoder().varint(ComponentLayer.VERSION).varint(runs).varint(crossings);
+		return new Encoder().varint(ComponentLayer.VERSION).fingerprint(FINGERPRINT).varint(runs).varint(crossings);
 	}
 
 	private static ComponentLayer read(byte[] bytes) throws IOException
@@ -102,6 +111,7 @@ public class ComponentLayerTest
 		ComponentLayer expected = layer();
 		ComponentLayer actual = read(ComponentLayerWriter.write(expected));
 
+		assertEquals(FINGERPRINT, actual.fingerprint);
 		assertArrayEquals(expected.starts, actual.starts);
 		assertArrayEquals(expected.lengths, actual.lengths);
 		assertArrayEquals(expected.ids, actual.ids);
@@ -113,7 +123,7 @@ public class ComponentLayerTest
 	@Test
 	public void emptyLayerRoundTrips() throws Exception
 	{
-		ComponentLayer actual = read(ComponentLayerWriter.write(new ComponentLayer(new int[0], new char[0], new int[0],
+		ComponentLayer actual = read(ComponentLayerWriter.write(new ComponentLayer(0, new int[0], new char[0], new int[0],
 			new int[0])));
 
 		assertEquals(0, actual.starts.length);
@@ -249,7 +259,7 @@ public class ComponentLayerTest
 	@Test
 	public void overLongVarintIsRejected()
 	{
-		byte[] bytes = new Encoder().varint(ComponentLayer.VERSION).varint(1).varint(0)
+		byte[] bytes = new Encoder().varint(ComponentLayer.VERSION).fingerprint(0).varint(1).varint(0)
 			.raw(0x80, 0x80, 0x80, 0x80, 0x80, 0x00).varint(0).varint(1).bytes();
 		assertRejectedWith("varint", bytes);
 	}
@@ -258,10 +268,10 @@ public class ComponentLayerTest
 	public void nonCanonicalVarintsAreRejected()
 	{
 		// 0 with a redundant continuation byte.
-		assertRejectedWith("varint", new Encoder().varint(ComponentLayer.VERSION).varint(1).varint(0)
+		assertRejectedWith("varint", new Encoder().varint(ComponentLayer.VERSION).fingerprint(0).varint(1).varint(0)
 			.raw(0x80, 0x00).varint(0).varint(1).bytes());
 		// A fifth byte carrying bits above 2^32 would be dropped silently.
-		assertRejectedWith("varint", new Encoder().varint(ComponentLayer.VERSION).varint(1).varint(0)
+		assertRejectedWith("varint", new Encoder().varint(ComponentLayer.VERSION).fingerprint(0).varint(1).varint(0)
 			.raw(0xff, 0xff, 0xff, 0xff, 0x1f).varint(0).varint(1).bytes());
 	}
 
@@ -278,9 +288,9 @@ public class ComponentLayerTest
 	@Test
 	public void writerRefusesLayersTheReaderWouldReject()
 	{
-		assertWriterRefuses(new ComponentLayer(new int[] {0}, new char[] {0}, new int[] {1}, new int[0]));
-		assertWriterRefuses(new ComponentLayer(new int[] {0}, new char[] {1}, new int[] {0}, new int[0]));
-		assertWriterRefuses(new ComponentLayer(new int[] {0}, new char[] {1}, new int[] {-3}, new int[0]));
+		assertWriterRefuses(new ComponentLayer(0, new int[] {0}, new char[] {0}, new int[] {1}, new int[0]));
+		assertWriterRefuses(new ComponentLayer(0, new int[] {0}, new char[] {1}, new int[] {0}, new int[0]));
+		assertWriterRefuses(new ComponentLayer(0, new int[] {0}, new char[] {1}, new int[] {-3}, new int[0]));
 	}
 
 	private static void assertWriterRefuses(ComponentLayer layer)

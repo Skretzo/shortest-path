@@ -234,9 +234,12 @@ public class RoutingStaticLoaderTest
 		ComponentLayer layer = layerOf(seasonalWorld(), new int[0]);
 		SyntheticCollisionMap shrunk = new SyntheticCollisionMap(Set.of(A1, A2, B1, B2, C1, C2),
 			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{A1, A2}, {B1, B2}, {C1, C2}}), 1);
+		// Stamped for the shrunk map, so the content check passes and the per-tile check is what rejects it.
+		ComponentLayer restamped = new ComponentLayer(shrunk.fingerprint(), layer.starts, layer.lengths, layer.ids,
+			layer.crossings);
 		try
 		{
-			RoutingStaticLoader.build(shrunk, transports, Set.of(), layer, A1);
+			RoutingStaticLoader.build(shrunk, transports, Set.of(), restamped, A1);
 			fail("a walkable tile of the layer is blocked in the map");
 		}
 		catch (IOException expected)
@@ -259,7 +262,7 @@ public class RoutingStaticLoaderTest
 			lengths[i] = Character.MAX_VALUE;
 			ids[i] = 1;
 		}
-		ComponentLayer layer = new ComponentLayer(starts, lengths, ids, new int[0]);
+		ComponentLayer layer = new ComponentLayer(chainWorld().fingerprint(), starts, lengths, ids, new int[0]);
 		try
 		{
 			RoutingStaticLoader.build(chainWorld(), Map.of(), Set.of(), layer, 0);
@@ -276,7 +279,8 @@ public class RoutingStaticLoaderTest
 	{
 		ComponentLayer covered = layerOf(chainWorld(), new int[0]);
 		// A and C are both in the layer, but B lies between them, so no walking edge joins them.
-		ComponentLayer layer = new ComponentLayer(covered.starts, covered.lengths, covered.ids, new int[] {A, C});
+		ComponentLayer layer = new ComponentLayer(covered.fingerprint, covered.starts, covered.lengths, covered.ids,
+			new int[] {A, C});
 		try
 		{
 			RoutingStaticLoader.build(chainWorld(), Map.of(), Set.of(), layer, A);
@@ -291,7 +295,8 @@ public class RoutingStaticLoaderTest
 	@Test
 	public void crossingOutsideTheLayerIsRejected() throws Exception
 	{
-		ComponentLayer layer = new ComponentLayer(new int[] {A}, new char[] {1}, new int[] {1}, new int[] {A, C});
+		ComponentLayer layer = new ComponentLayer(chainWorld().fingerprint(), new int[] {A}, new char[] {1},
+			new int[] {1}, new int[] {A, C});
 		try
 		{
 			RoutingStaticLoader.build(chainWorld(), Map.of(), Set.of(), layer, A);
@@ -301,5 +306,49 @@ public class RoutingStaticLoaderTest
 		{
 			assertTrue(expected.getMessage(), expected.getMessage().contains("stale"));
 		}
+	}
+
+	private static void assertStale(CollisionMap loaded, ComponentLayer layer)
+	{
+		try
+		{
+			RoutingStaticLoader.build(loaded, Map.of(), Set.of(), layer, A);
+			fail("the layer was generated for different collision data");
+		}
+		catch (IOException expected)
+		{
+			assertTrue(expected.getMessage(), expected.getMessage().contains("stale"));
+		}
+	}
+
+	@Test
+	public void walkableTileAddedToTheMapAfterTheLayerWasGeneratedIsRejected() throws Exception
+	{
+		// D joins C. Without the content fingerprint the load succeeded and D was silently unroutable.
+		int d = tile(13, 10);
+		SyntheticCollisionMap grown = new SyntheticCollisionMap(Set.of(A, B, C, d),
+			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{A, B}, {B, C}, {C, d}}), 1);
+
+		assertStale(grown, layerOf(chainWorld(), new int[0]));
+	}
+
+	@Test
+	public void edgeRemovedFromTheMapAfterTheLayerWasGeneratedIsRejected() throws Exception
+	{
+		// The tile set is unchanged but A and B no longer connect. Without the fingerprint the load
+		// succeeded and treated A, B and C as one natural component.
+		Set<Integer> tiles = Set.of(A, B, C);
+		SyntheticCollisionMap cut = new SyntheticCollisionMap(tiles, SyntheticCollisionMap.withStubEdges(tiles,
+			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{B, C}}), -1, 0), 1);
+
+		assertStale(cut, layerOf(chainWorld(), new int[0]));
+	}
+
+	@Test
+	public void layerGeneratedForTheSameMapIsAccepted() throws Exception
+	{
+		RoutingStatic loaded = viaLayer(chainWorld(), Map.of(), Set.of(), new int[0], A);
+
+		assertEquals(3, loaded.searchTileCount());
 	}
 }

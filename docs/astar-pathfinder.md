@@ -53,7 +53,10 @@ collision-walkable tile, stored as runs, plus the crossings. The plugin ships
 only that file. Reachability, sites, exact walks and the sparse network stay
 runtime work because they depend on the transports.
 
-`RoutingComponentsFreshnessTest` fails when the layer is stale. The
+The layer records a fingerprint of the collision data it was generated from,
+and the loader refuses a layer whose fingerprint differs from the loaded map,
+so a stale layer fails at load instead of routing differently.
+`RoutingComponentsFreshnessTest` fails in CI when the layer is stale. The
 `ExtractCollisionMap` workflow regenerates the collision map, the cuts and the
 layer together and commits all three files in one commit. To regenerate the
 layer locally, run

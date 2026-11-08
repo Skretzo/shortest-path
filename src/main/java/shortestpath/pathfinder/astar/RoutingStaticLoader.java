@@ -71,6 +71,13 @@ public final class RoutingStaticLoader
 	static RoutingStatic build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles, ComponentLayer layer, int seedTile) throws IOException
 	{
+		// The one check that ties the layer to the exact collision data it was generated from. The
+		// per-crossing and per-tile checks below only catch some of the ways a layer goes stale.
+		long expected = collision.fingerprint();
+		if (layer.fingerprint != expected)
+			throw new IOException("routing component layer is stale: it was generated for collision data "
+				+ String.format("%016x", layer.fingerprint) + " but the loaded collision map is "
+				+ String.format("%016x", expected));
 		for (int i = 0; i < layer.crossings.length; i += 2)
 		{
 			int from = layer.crossings[i];
