@@ -205,3 +205,6 @@
 3191 2370 0	3264 2463 0	Travel Rowboat 57952				18321>3	6	2: Eastern Coast.
 3192 2370 0	3197 2531 0	Travel Rowboat 57952				18321>3	6	1: Northern Coast.
 3192 2370 0	3264 2463 0	Travel Rowboat 57952				18321>3	6	2: Eastern Coast.
+# The Scar - Leviathan boat								
+2064 6436 0	2066 6370 0	Travel Rowboat 49212				15128>37		
+2066 6370 0	2064 6436 0	Travel Rowboat 49213						
