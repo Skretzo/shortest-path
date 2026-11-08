@@ -547,6 +547,10 @@
 3422 3551 1	3422 3551 0	Climb-down Spikey chain 16538	61 Agility					
 3422 3549 1	3422 3549 0	Climb-down Spikey chain 16538	61 Agility					
 3423 3550 1	3423 3550 0	Climb-down Spikey chain 16538	61 Agility					
+# Great Conch stepping stone								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3207 2397 0	3212 2392 0	Cross Stepping stone 57936	61 Agility				3	
+3212 2392 0	3207 2397 0	Cross Stepping stone 57936	61 Agility				3	
 3289 2700 0	3295 2700 0	Cross Stepping stone 43989	62 Agility					
 3295 2700 0	3289 2700 0	Cross Stepping stone 43989	62 Agility					
 3295 2704 0	3295 2708 0	Cross Stepping stone 43990	62 Agility					
