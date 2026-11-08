@@ -451,6 +451,18 @@ public interface ShortestPathConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "showLeftClickOption",
+		name = "Show Left-Click Option",
+		description = "Also show the option above the transport object when a left click picks it",
+		position = 197,
+		section = sectionDisplay
+	)
+	default boolean showLeftClickOption()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Colours",
 		description = "Path colours on map, minimap and scene tiles",

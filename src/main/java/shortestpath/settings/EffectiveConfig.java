@@ -437,6 +437,12 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public boolean showLeftClickOption()
+	{
+		return bool(ConfigKey.SHOW_LEFT_CLICK_OPTION);
+	}
+
+	@Override
 	public int tileCounterStep()
 	{
 		return num(ConfigKey.TILE_COUNTER_STEP);

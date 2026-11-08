@@ -55,6 +55,7 @@ public class SettingsViewParityTest
 			Map.entry("highlightSpellbookSpells", false),
 			Map.entry("highlightInventoryItems", true),
 			Map.entry("highlightTransportObjects", false),
+			Map.entry("showLeftClickOption", true),
 			Map.entry("showTeleportPulse", false),
 			Map.entry("colourCollisionMap", collisionMapColour),
 			Map.entry("colourPath", pathColour),
@@ -81,6 +82,7 @@ public class SettingsViewParityTest
 		assertFalse(view.highlightSpellbookSpells());
 		assertTrue(view.highlightInventoryItems());
 		assertFalse(view.highlightTransportObjects());
+		assertTrue(view.showLeftClickOption());
 		assertFalse(view.showTeleportPulse());
 		assertEquals(collisionMapColour, view.colourCollisionMap());
 		assertEquals(pathColour, view.colourPath());

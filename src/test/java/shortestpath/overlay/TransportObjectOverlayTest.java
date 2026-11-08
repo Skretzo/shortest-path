@@ -71,26 +71,35 @@ public class TransportObjectOverlayTest
 	public void optionToPickWhenALeftClickPicksAnother()
 	{
 		assertEquals("Climb-down", TransportObjectOverlay.optionToPick("Climb-down Staircase 16672",
-			new String[]{"Climb", "Climb-up", "Climb-down", null, null}));
+			new String[]{"Climb", "Climb-up", "Climb-down", null, null}, false));
 		assertEquals("Jump-down", TransportObjectOverlay.optionToPick("Jump-down Railing 28374",
-			new String[]{"Inspect", "Jump-down", null, null, null}));
+			new String[]{"Inspect", "Jump-down", null, null, null}, false));
 	}
 
 	@Test
 	public void noOptionToPickWhenALeftClickPicksIt()
 	{
 		assertNull(TransportObjectOverlay.optionToPick("Climb over Broken cart 28931",
-			new String[]{null, "Climb over", null, null, null}));
+			new String[]{null, "Climb over", null, null, null}, false));
 		assertNull(TransportObjectOverlay.optionToPick("Climb Staircase 16672",
-			new String[]{"Climb", "Climb-up", "Climb-down", null, null}));
+			new String[]{"Climb", "Climb-up", "Climb-down", null, null}, false));
+	}
+
+	@Test
+	public void leftClickOptionWhenAskedFor()
+	{
+		assertEquals("Climb", TransportObjectOverlay.optionToPick("Climb Staircase 16672",
+			new String[]{"Climb", "Climb-up", "Climb-down", null, null}, true));
+		assertEquals("Climb-down", TransportObjectOverlay.optionToPick("Climb-down Staircase 16672",
+			new String[]{"Climb", "Climb-up", "Climb-down", null, null}, true));
 	}
 
 	@Test
 	public void noOptionToPickWhenTheObjectLacksIt()
 	{
 		assertNull(TransportObjectOverlay.optionToPick("Climb-up Ladder 16683",
-			new String[]{"Open", "Close", null, null, null}));
-		assertNull(TransportObjectOverlay.optionToPick("Climb-up Ladder 16683", null));
-		assertNull(TransportObjectOverlay.optionToPick(null, new String[]{"Climb-up"}));
+			new String[]{"Open", "Close", null, null, null}, false));
+		assertNull(TransportObjectOverlay.optionToPick("Climb-up Ladder 16683", null, false));
+		assertNull(TransportObjectOverlay.optionToPick(null, new String[]{"Climb-up"}, false));
 	}
 }

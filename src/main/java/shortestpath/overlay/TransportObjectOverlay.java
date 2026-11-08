@@ -87,7 +87,7 @@ public class TransportObjectOverlay extends AbstractHighlightOverlay
 			find(transport);
 			// Fairy rings show their code in the transport info instead of "Configure"
 			option = object == null && npc == null || TransportType.FAIRY_RING.equals(transport.getType())
-				? null : optionToPick(transport.getObjectInfo(), actions());
+				? null : optionToPick(transport.getObjectInfo(), actions(), settings.display().showLeftClickOption());
 		}
 		if (object != null)
 		{
@@ -110,9 +110,9 @@ public class TransportObjectOverlay extends AbstractHighlightOverlay
 
 	/**
 	 * The option the transport's "menuOption menuTarget objectID" text starts with when it is one of
-	 * the actions but not the first, which a left click picks; otherwise null.
+	 * the actions and, unless {@code leftClick}, not the first, which a left click picks; otherwise null.
 	 */
-	static String optionToPick(String objectInfo, String[] actions)
+	static String optionToPick(String objectInfo, String[] actions, boolean leftClick)
 	{
 		if (objectInfo == null || actions == null)
 		{
@@ -122,7 +122,7 @@ public class TransportObjectOverlay extends AbstractHighlightOverlay
 		// The longest that fits, as an option can be the first words of another
 		String match = options.stream().filter(a -> objectInfo.regionMatches(true, 0, a + " ", 0, a.length() + 1))
 			.max(Comparator.comparingInt(String::length)).orElse(null);
-		return match == null || match.equals(options.get(0)) ? null : match;
+		return match == null || !leftClick && match.equals(options.get(0)) ? null : match;
 	}
 
 	/** The found object's or NPC's actions in its current form. */
