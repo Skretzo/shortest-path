@@ -26,10 +26,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      # Pinned: this job writes straight to master on a schedule, so a rename or removal of the
+      # routingCuts/routingComponents tasks in the tooling repository must not break it silently.
+      # Bump the ref when the tooling tasks or the generator classes they share with this repository change.
       - name: Checkout tooling repository
         uses: actions/checkout@v7
         with:
           repository: osrs-pathfinding/shortest-path-tooling
+          ref: 4f617372fc38259a32fddd7d3d56c61456f2c903
           path: tooling
 
       - name: Checkout runelite
@@ -117,6 +121,8 @@ jobs:
             -PkahipNodeSeparator="$RUNNER_TEMP/kahip-bin/node_separator" \
             -ProutingCutsOutput="$GITHUB_WORKSPACE/src/test/resources/routing-cuts.bin"
 
+      # The layer fingerprints the collision data, so this step must stay after every step that
+      # writes collision-map.zip or anything SplitFlagMap.fromResources reads from it.
       - name: Generate routing components
         run: |
           cd tooling
@@ -125,11 +131,12 @@ jobs:
             -ProutingCutsFile="$GITHUB_WORKSPACE/src/test/resources/routing-cuts.bin" \
             -ProutingComponentsOutput="$GITHUB_WORKSPACE/src/main/resources/routing-components.bin"
 
-      # Gate: a corrupt or truncated export must never reach master. The zip
-      # integrity check catches a broken archive; the test suite below loads
-      # collision-map.zip from the real resources, and regenerates routing-components.bin
-      # from the committed map and cuts and fails when it differs, so a semantically broken
-      # map or a stale layer fails the job before the commit step runs.
+      # Gate: a corrupt or truncated export must never reach master. The zip integrity check
+      # catches a broken archive and `test -s` catches an empty output. The test suite below loads
+      # collision-map.zip from the real resources and checks the committed layer against the
+      # committed map and cuts. That check is only a consistency check of the committed inputs
+      # (the layer was just produced by the same generator code, so it cannot catch a generator
+      # bug); a semantically broken map is caught by the rest of the suite.
       - name: Verify generated artifacts
         run: |
           unzip -t src/main/resources/collision-map.zip > /dev/null
