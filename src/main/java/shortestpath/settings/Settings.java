@@ -573,7 +573,7 @@ public class Settings
 		private final boolean drawCollisionMap, drawMap, drawMinimap, drawTiles, drawTransports,
 			drawClickPoints, showTransportInfo, showBankPickupInfo, showUnreachableText,
 			highlightBankPickupItems, highlightSpellbookSpells, highlightInventoryItems,
-			showTeleportPulse;
+			highlightTransportObjects, showLeftClickOption, showTeleportPulse;
 		private final Color colourCollisionMap, colourPath, colourPathCalculating,
 			colourPathUnreachable, colourText, colourTransports, colourBankPickupHighlight,
 			colourTeleportPulse;
@@ -593,6 +593,8 @@ public class Settings
 				effective.bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS),
 				effective.bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS),
 				effective.bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS),
+				effective.bool(ConfigKey.HIGHLIGHT_TRANSPORT_OBJECTS),
+				effective.bool(ConfigKey.SHOW_LEFT_CLICK_OPTION),
 				effective.showTeleportPulse(),
 				effective.colourCollisionMap(), effective.colourPath(),
 				effective.colourPathCalculating(), effective.colourPathUnreachable(),
