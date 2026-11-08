@@ -8,8 +8,10 @@ public class CollisionMap
 	private final SplitFlagMap collisionData;
 
 	/**
-	 * The region grid bounds to scan when enumerating every collision tile (e.g. the
-	 * routing-component generator in the test sources). Delegates to
+	 * The region grid bounds to scan when enumerating every collision tile. Only the
+	 * routing-component generator in the test sources (and its tests) call it, but it stays on the
+	 * production class because the generator takes a plain {@code CollisionMap}; do not remove it as
+	 * dead code. Delegates to
 	 * {@link SplitFlagMap#getRegionExtents()} by default; overridable so tests can substitute a
 	 * small synthetic extent without touching that shared static state.
 	 */
