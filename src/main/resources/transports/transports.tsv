@@ -6578,7 +6578,6 @@
 1898 6456 0	1901 6456 0	Enter Passage 49418				15258=1;15259=1;15260=1		5	
 1901 6456 0	1898 6456 0	Enter Passage 49418							
 # The Scar - Leviathan arena									
-# shortcut: handhold and stepping-stone endpoints inferred from collision; replace with captures when available.									
 2069 6368 0	2071 6368 0	Climb Handholds 47593				15128>37			
 2071 6368 0	2069 6368 0	Climb Handholds 47593				15128>41			
 2090 6380 0	2092 6380 0	Climb Handholds 47594				15128>41			
