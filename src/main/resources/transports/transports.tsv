@@ -6531,3 +6531,50 @@
 # shortcut: crossings inferred from the rocks footprint; confirm landings and instanced exit in-game.									
 1117 3428 0	1119 3428 0	Climb-over Rocks 48740				15125>37			
 1119 3428 0	1117 3428 0	Leave Rocks 48742							
+# The Scar									
+# shortcut: require quest completion to avoid the quest monster gate; relax when its unlock can be verified.									
+2035 6430 0	2029 6430 0	Cross Stepping Stone 49209			Desert Treasure II - The Fallen Empire			4	
+2029 6430 0	2035 6430 0	Cross Stepping Stone 49209			Desert Treasure II - The Fallen Empire			4	
+# shortcut: entrance limited to the captured Scar stage and puzzle order; expand with verified destinations.									
+2044 6440 0	1789 6405 0	Enter Passage 49526				15128=16;15191=2;15192=0;15193=1;15194=1			
+1789 6405 0	2047 6436 0	Exit Passage 49408							Yes.
+# The Scar - maze passage									
+1758 6421 0	1755 6421 0	Enter Passage 49410						2	
+1755 6421 0	1758 6421 0	Enter Passage 49410							
+1782 6419 0	1782 6422 0	Enter Passage 49411						4	
+1782 6422 0	1782 6419 0	Enter Passage 49411							
+1745 6459 0	1745 6456 0	Enter Passage 49412						2	
+1745 6456 0	1745 6459 0	Enter Passage 49412							
+1770 6459 0	1773 6459 0	Enter Passage 49418				15258=1;15259=1;15260=1		5	
+1773 6459 0	1770 6459 0	Enter Passage 49418							
+# The Scar - second puzzle entrance									
+# shortcut: entrance limited to stage 24 and the recorded puzzle order; expand with verified destinations.									
+2046 6428 0	2179 6459 0	Enter Passage 49527				15128=24;15191=2;15192=0;15193=1;15194=1			
+2178 6459 0	2046 6436 0	Exit Passage 49408							Yes.
+2197 6456 0	2197 6453 0	Enter Passage 49410						2	
+2197 6453 0	2197 6456 0	Enter Passage 49410							
+2189 6412 0	2192 6412 0	Enter Passage 49411						2	
+2192 6412 0	2189 6412 0	Enter Passage 49411							
+2207 6413 0	2210 6413 0	Enter Passage 49411						2	
+2210 6413 0	2207 6413 0	Enter Passage 49411						2	
+2226 6420 0	2226 6423 0	Enter Passage 49412						2	
+2226 6423 0	2226 6420 0	Enter Passage 49412							
+2219 6403 0	2222 6403 0	Enter Passage 49418				15258=1;15259=1;15260=1		5	
+2222 6403 0	2219 6403 0	Enter Passage 49418							
+# The Scar - third puzzle entrance									
+# shortcut: destination limited to the recorded puzzle order; expand with verified destinations.									
+2052 6435 0	1880 6437 0	Enter Passage 49528				15128>29;15128<36;15191=2;15192=0;15193=1;15194=1			I'll be alright.
+1880 6437 0	2046 6438 0	Exit Fleshy Strand 49409							Yes.
+1896 6437 0	1899 6437 0	Enter Passage 49410						4	
+1899 6437 0	1896 6437 0	Enter Passage 49410							
+# shortcut: passage tiles inferred from its footprint; replace with captured landing tiles when available.									
+1913 6429 0	1913 6426 0	Enter Passage 49410						2	
+1913 6426 0	1913 6429 0	Enter Passage 49410						2	
+1903 6413 0	1903 6410 0	Enter Passage 49412						2	
+1903 6410 0	1903 6413 0	Enter Passage 49412							
+1862 6420 0	1862 6423 0	Enter Passage 49411						2	
+1862 6423 0	1862 6420 0	Enter Passage 49411							
+1871 6443 0	1871 6440 0	Enter Passage 49411						2	
+1871 6440 0	1871 6443 0	Enter Passage 49411						2	
+1898 6456 0	1901 6456 0	Enter Passage 49418				15258=1;15259=1;15260=1		5	
+1901 6456 0	1898 6456 0	Enter Passage 49418							
