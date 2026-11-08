@@ -1415,9 +1415,9 @@ public class ResourceLoaderTest
 		Map<Integer, DestinationRequirements> reqs = ResourceLoader.bankRequirements();
 
 		assertFloor("bank requirement tiles", 289, reqs.size());
-		DestinationRequirements cooksGuild = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0));
-		Assert.assertNotNull("Cooks' Guild bank tile carries a requirement", cooksGuild);
-		Assert.assertEquals(99, cooksGuild.getSkillLevels().get(Skill.COOKING));
+		DestinationRequirements craftingGuild = reqs.get(WorldPointUtil.packWorldPoint(2935, 3280, 0));
+		Assert.assertNotNull("Crafting Guild bank tile carries a requirement", craftingGuild);
+		Assert.assertEquals(99, craftingGuild.getSkillLevels().get(Skill.CRAFTING));
 	}
 
 	// ------------------------------------------------------------------
