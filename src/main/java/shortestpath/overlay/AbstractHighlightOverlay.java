@@ -1,5 +1,6 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -153,7 +154,7 @@ abstract class AbstractHighlightOverlay extends Overlay
 			return -1;
 		}
 		int playerLocation = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
-		return playerPathIndex(path, playerLocation, settings.lifecycle().recalculateDistance());
+		return playerPathIndex(path, playerLocation, settings.num(ConfigKey.RECALCULATE_DISTANCE));
 	}
 
 	static int playerPathIndex(List<PathStep> path, int playerLocation, int recalculateDistance)

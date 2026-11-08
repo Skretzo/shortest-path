@@ -1,50 +1,24 @@
 package shortestpath.settings;
 
+import java.awt.Color;
 import java.util.*;
-import java.util.function.Function;
 
 import lombok.Getter;
-
+import net.runelite.client.config.ConfigManager;
+import net.runelite.client.util.ColorUtil;
 import shortestpath.*;
 import shortestpath.poh.*;
 import shortestpath.transport.BalloonRoute;
 
 /**
- * Registry of every config key: one row per persisted key name, recording
- * the payload key, how the base (configured) value is read, the coercion
- * discipline a payload value must satisfy to take effect, and the
- * {@link Effect}s a change to the key triggers.
+ * Every setting the plugin reads. Each constant is one row of
+ * {@code config-keys.tsv}: the persisted key name, its type, its default and
+ * the {@link Effect}s a change to it triggers. {@link Settings#get} resolves
+ * a key's value.
  *
- * <p>Two row shapes exist:
- * <ul>
- * <li><b>Visible</b> keys are declared as {@code @ConfigItem} methods on
- * {@link ShortestPathConfig}; the row carries the getter whose stored value
- * the base read invokes.</li>
- * <li><b>Hidden</b> keys are raw {@code ConfigManager} keys — the row carries
- * the persisted type ({@code boolean.class}, an enum class, or {@code
- * Set.class} + element class) and the default literal (or a lambda over the
- * base resolver for flag-derived set defaults).</li>
- * </ul>
- *
- * <p>A keyed row may still be <i>declared</i> as a {@code @ConfigItem} so the
- * stock config panel can reach the setting: {@link #isKeyed} records the
- * read path (a raw {@code ConfigManager} read through the keyed base
- * resolver), not whether the key has an item declaration. The declaration
- * and the keyed read share one persisted key, so a declared keyed row's
- * annotation default must mirror the row's declared default literal.
- *
- * <p>The effect set is declared per row so the table is the single source
- * for both "is read by the routing refresh" and "invalidates a running
- * route": every row whose key the refresh path reads carries
- * {@link Effect#ROUTE_INVALIDATING}, while {@code drawDebugPanel} carries
- * only {@link Effect#SIDE_EFFECT_DEBUG_OVERLAY}.
- * Rows with no shell consequence beyond view republish carry
- * {@link Effect#DISPLAY_ONLY}.
- *
- * <p>Most rows read their own stored value as the payload pairing; the one
- * exception is {@code costQuetzalWhistle}, whose payload pairs with the
- * {@code costQuetzals} base value (declared as {@code baseKey}) while its
- * stored value reads through its own key.
+ * <p>A {@code Set} default may be {@code flag:<key>}: every element while that
+ * boolean key is on, none while it is off. Those sets replaced on/off
+ * toggles, so a profile that never wrote the set keeps the toggle's meaning.
  */
 @Getter
 public enum ConfigKey
@@ -79,7 +53,6 @@ public enum ConfigKey
 	UNLOCK_MOR_UL_REK,
 	INCLUDE_BANK_PATH,
 	CURRENCY_THRESHOLD,
-	SHOW_SIDEBAR_PANEL,
 	CANCEL_INSTEAD,
 	RECALCULATE_DISTANCE,
 	FINISH_DISTANCE,
@@ -145,7 +118,6 @@ public enum ConfigKey
 	COLOUR_TEXT,
 	COLOUR_TELEPORT_PULSE,
 	COLOUR_BANK_PICKUP_HIGHLIGHT,
-	CLEAR_PATH_HOTKEY,
 	DRAW_TRANSPORTS,
 	DRAW_COLLISION_MAP,
 	DRAW_DEBUG_PANEL,
@@ -157,119 +129,16 @@ public enum ConfigKey
 	UNLOCK_BALLOON_LOG_BASKET,
 	BALLOON_LOG_BASKET_ROUTES;
 
-	private static final Map<String, ConfigKey> BY_KEY;
-
-	static
-	{
-		BY_KEY = indexByKey(values());
-		validateFlagTargets(BY_KEY, Rows.BY_NAME.values());
-		// The ctor fails loudly on a constant with no TSV row or getter
-		// binding; these passes fail loudly on a TSV row or binding that
-		// names no constant.
-		for (String name : Rows.BY_NAME.keySet())
-		{
-			valueOf(name);
-		}
-		for (String name : VisibleGetters.BY_NAME.keySet())
-		{
-			valueOf(name);
-		}
-	}
-
-	/**
-	 * Index rows by persisted key name, failing loudly if two rows share a
-	 * key — a duplicate would silently shadow one row in {@link #forKey}.
-	 */
-	static Map<String, ConfigKey> indexByKey(ConfigKey[] rows)
-	{
-		Map<String, ConfigKey> byKey = new HashMap<>();
-		for (ConfigKey row : rows)
-		{
-			ConfigKey prior = byKey.put(row.getKey(), row);
-			if (prior != null)
-			{
-				throw new IllegalStateException("duplicate config key '" + row.getKey()
-					+ "' on " + prior.name() + " and " + row.name());
-			}
-		}
-		return Map.copyOf(byKey);
-	}
-
-	/**
-	 * Fail loudly if a {@code flag:<key>} default token names no persisted
-	 * boolean key — the flag is otherwise only resolved lazily at first
-	 * read, so a typo would surface as an NPE mid-refresh.
-	 */
-	static void validateFlagTargets(Map<String, ConfigKey> byKey, Iterable<String[]> rows)
-	{
-		for (String[] cols : rows)
-		{
-			if (!cols[4].startsWith("flag:"))
-			{
-				continue;
-			}
-			String flagKey = cols[4].substring("flag:".length());
-			ConfigKey target = byKey.get(flagKey);
-			if (target == null || target.getType() != boolean.class)
-			{
-				throw new IllegalStateException("flag-derived def '" + cols[4] + "' for " + cols[0]
-					+ " names no persisted boolean key");
-			}
-		}
-	}
-
-	/**
-	 * The coercion discipline applied to a payload value for this key;
-	 * mirrors the legacy override() overloads one-for-one. NONE keys are
-	 * inert: payload values never reach the getter.
-	 */
-	enum Coercion
-	{
-		NONE,
-		BOOLEAN,
-		INT,
-		COLOR,
-		TELEPORTATION_ITEM,
-		JEWELLERY_BOX_TIER,
-		TILE_COUNTER,
-		TILE_STYLE
-	}
-
-	/** Payload/config key name — the persisted key for hidden rows. */
 	private final String key;
-	/** Persisted type of a hidden key; {@code null} on proxy-backed rows. */
 	private final Class<?> type;
-	/** Element class of a {@code Set}-typed hidden key. */
 	private final Class<? extends Enum> element;
-	/**
-	 * The unwritten default: a literal, or a
-	 * {@code Function<baseResolver, Object>} for flag-derived set defaults.
-	 */
 	private final Object def;
-	/**
-	 * The enum name of the row whose base value a payload on this key pairs
-	 * with, where that pairing diverges from the key itself
-	 * ({@code costQuetzalWhistle} pairs with {@code costQuetzals}).
-	 * {@code null} means self. Stored as a name because the paired constant
-	 * is not reliably constructed yet while rows initialise; resolved at
-	 * {@link #baseRow()} call time.
-	 */
-	private final String baseKey;
-	/** The config getter a visible key's value pairs with and its stored read invokes (hidden: null). */
-	private final Function<ShortestPathConfig, Object> configuredGetter;
-	private final Coercion coercion;
-	/** The effects a change to this key triggers for the shell. */
+	/** The boolean key a {@code flag:} set default follows, or null. */
+	@Getter(lombok.AccessLevel.NONE)
+	private final String flagKey;
 	private final Set<Effect> effects;
 
-	// ---- TSV-backed rows --------------------------------------------------
-
-	/**
-	 * Row backed by a {@code config-keys.tsv} line: every data column
-	 * resolves out of {@link Rows}, with the getter binding for visible
-	 * keys coming from {@link VisibleGetters}. Fails loudly on a missing
-	 * row, a malformed literal, or a visible row with no binding; the
-	 * enum's static block fails loudly on surplus rows and bindings.
-	 */
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	ConfigKey()
 	{
 		String[] cols = Rows.BY_NAME.get(name());
@@ -277,252 +146,93 @@ public enum ConfigKey
 		{
 			throw new IllegalStateException("no config-keys.tsv row for " + name());
 		}
-		this.key = cols[1];
-		this.type = parseType(name(), cols[2]);
-		this.element = parseElement(name(), cols[3]);
-		this.def = type == null ? null : parseDef(name(), type, element, cols[4]);
-		this.baseKey = cols[5].isEmpty() ? null : cols[5];
-		this.coercion = parseCoercion(name(), cols[6]);
-		this.effects = parseEffects(name(), cols[7]);
-		if (type == null)
+		key = cols[1];
+		type = Rows.TYPES.get(cols[2]);
+		element = cols[3].isEmpty() ? null : Rows.ELEMENTS.get(cols[3]);
+		if (type == null || (type == Set.class) != (element != null))
 		{
-			Function<ShortestPathConfig, Object> bound = VisibleGetters.BY_NAME.get(name());
-			if (bound == null)
-			{
-				throw new IllegalStateException("no VisibleGetters binding for visible key " + name());
-			}
-			this.configuredGetter = bound;
+			throw new IllegalStateException("bad type for " + name());
+		}
+		String def = cols[4];
+		flagKey = def.startsWith("flag:") ? def.substring("flag:".length()) : null;
+		if (flagKey != null || type == String.class)
+		{
+			this.def = flagKey != null ? null : def;
+		}
+		else if (type == Boolean.class)
+		{
+			this.def = Boolean.valueOf(def);
+		}
+		else if (type == Integer.class)
+		{
+			this.def = Integer.valueOf(def);
+		}
+		else if (type == Color.class)
+		{
+			this.def = ColorUtil.fromHex(def);
 		}
 		else
 		{
-			this.configuredGetter = null;
+			this.def = Enum.valueOf((Class) type, def);
 		}
+		Set<Effect> effects = EnumSet.noneOf(Effect.class);
+		for (String effect : cols[5].split(","))
+		{
+			effects.add(Effect.valueOf(effect));
+		}
+		this.effects = Collections.unmodifiableSet(effects);
 	}
 
-	/** Column count every {@code config-keys.tsv} line must carry. */
-	private static final int ROW_COLUMNS = 8;
-
-	static Class<?> parseType(String name, String token)
+	public static ConfigKey forKey(String key)
 	{
-		if (token.isEmpty())
-		{
-			return null;
-		}
-		Class<?> type = Rows.TYPE_TOKENS.get(token);
-		if (type == null)
-		{
-			throw new IllegalStateException("unrecognised type '" + token + "' for " + name);
-		}
-		return type;
+		return Rows.NAMES.containsKey(key) ? valueOf(Rows.NAMES.get(key)) : null;
 	}
 
-	static Class<? extends Enum> parseElement(String name, String token)
+	/** The value stored for this key, or null when it was never written or does not parse. */
+	Object read(ConfigManager configManager)
 	{
-		if (token.isEmpty())
-		{
-			return null;
-		}
-		Class<? extends Enum> element = Rows.ELEMENT_TOKENS.get(token);
-		if (element == null)
-		{
-			throw new IllegalStateException("unrecognised element '" + token + "' for " + name);
-		}
-		return element;
+		return type == Set.class
+			? parseSet(configManager.getConfiguration(Settings.CONFIG_GROUP, key), element)
+			: configManager.getConfiguration(Settings.CONFIG_GROUP, key, type);
 	}
 
-	/**
-	 * The {@code def} column parsed into the same literal the tuple row
-	 * carried: boolean/int/String literals, enum constants by name, or a
-	 * {@code flag:<key>} token producing the flag-derived set-default
-	 * lambda. Every mis-parse throws — a silently wrong default is worse
-	 * than a loud load failure.
-	 */
+	/** {@code value} if it has this key's type (enum keys also take their display name), otherwise null. */
+	Object coerce(Object value)
+	{
+		if (value instanceof String && type.isEnum())
+		{
+			for (Object constant : type.getEnumConstants())
+			{
+				if (constant.toString().equals(value))
+				{
+					return constant;
+				}
+			}
+		}
+		return type.isInstance(value) ? value : null;
+	}
+
+	/** The boolean key a {@code flag:} set default follows, or null. */
+	public ConfigKey getFlag()
+	{
+		return flagKey == null ? null : forKey(flagKey);
+	}
+
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	static Object parseDef(String name, Class<?> type, Class<? extends Enum> element, String token)
+	Set<?> flagDefault(boolean on)
 	{
-		if (token.startsWith("flag:"))
-		{
-			if (element == null)
-			{
-				throw new IllegalStateException("flag-derived def on a non-Set row for " + name);
-			}
-			String flagKey = token.substring("flag:".length());
-			return (Function<Function<ConfigKey, Object>, Object>) b ->
-				Boolean.TRUE.equals(b.apply(forKey(flagKey)))
-					? EnumSet.allOf(element) : EnumSet.noneOf(element);
-		}
-		if (type == boolean.class)
-		{
-			if ("true".equals(token) || "false".equals(token))
-			{
-				return Boolean.valueOf(token);
-			}
-		}
-		else if (type == int.class)
-		{
-			try
-			{
-				return Integer.valueOf(token);
-			}
-			catch (NumberFormatException e)
-			{
-				throw new IllegalStateException("unparseable int def '" + token + "' for " + name, e);
-			}
-		}
-		else if (type == String.class)
-		{
-			return token;
-		}
-		else if (Enum.class.isAssignableFrom(type))
-		{
-			try
-			{
-				return Enum.valueOf((Class) type, token);
-			}
-			catch (IllegalArgumentException e)
-			{
-				throw new IllegalStateException("unparseable enum def '" + token + "' for " + name, e);
-			}
-		}
-		throw new IllegalStateException("unparseable def '" + token + "' for " + name);
+		return on ? EnumSet.allOf(element) : EnumSet.noneOf(element);
 	}
 
-	static Coercion parseCoercion(String name, String token)
-	{
-		try
-		{
-			return Coercion.valueOf(token);
-		}
-		catch (IllegalArgumentException e)
-		{
-			throw new IllegalStateException("unparseable coercion '" + token + "' for " + name, e);
-		}
-	}
-
-	static Set<Effect> parseEffects(String name, String token)
-	{
-		try
-		{
-			Set<Effect> out = EnumSet.noneOf(Effect.class);
-			for (String effect : token.split(","))
-			{
-				out.add(Effect.valueOf(effect));
-			}
-			return Set.copyOf(out);
-		}
-		catch (IllegalArgumentException e)
-		{
-			throw new IllegalStateException("unparseable effects '" + token + "' for " + name, e);
-		}
-	}
-
-	/**
-	 * Load a {@code config-keys.tsv}-shaped resource into its
-	 * name-keyed row map — the same shape {@link Rows} binds at class
-	 * init. Package-visible so the TSV test can exercise the load's loud
-	 * posture against fixture resources.
-	 */
-	static Map<String, String[]> loadRows(String path)
-	{
-		Map<String, String[]> rows = new HashMap<>();
-		try
-		{
-			Util.each(path, (line, cols) ->
-			{
-				if (cols.length != ROW_COLUMNS)
-				{
-					throw new IllegalStateException("malformed config-keys.tsv row: " + line);
-				}
-				if (rows.put(cols[0], cols) != null)
-				{
-					throw new IllegalStateException("duplicate config-keys.tsv row: " + cols[0]);
-				}
-			});
-		}
-		catch (Exception e)
-		{
-			throw new IllegalStateException("failed to load " + path.substring(1), e);
-		}
-		return Collections.unmodifiableMap(rows);
-	}
-
-	/**
-	 * Row table loaded from the bundled {@code config-keys.tsv} — a nested
-	 * holder so the load happens on first constant construction; the
-	 * enum's own static initializers would run too late (after every
-	 * constant is already built).
-	 */
-	private static final class Rows
-	{
-		private static final Map<String, String[]> BY_NAME = loadRows("/config-keys.tsv");
-
-		/**
-		 * Persisted-type tokens the {@code type} column recognises.
-		 * Explicit — no class-name lookup: a type not named here fails
-		 * loudly rather than resolving anything the resource happened to
-		 * contain. Nested so the maps initialise before the first constant
-		 * constructor reads them (the enum's own static fields run too
-		 * late, like every static on this enum).
-		 */
-		private static final Map<String, Class<?>> TYPE_TOKENS = Map.of(
-			"boolean", boolean.class,
-			"int", int.class,
-			"String", String.class,
-			"Set", Set.class,
-			"TeleportationItem", TeleportationItem.class,
-			"TileCounter", TileCounter.class,
-			"JewelleryBoxTier", JewelleryBoxTier.class);
-
-		/** Element-class tokens for {@code Set}-typed rows. */
-		private static final Map<String, Class<? extends Enum>> ELEMENT_TOKENS = Map.of(
-			"PohNexusPortal", PohNexusPortal.class,
-			"PohMountedItem", PohMountedItem.class,
-			"BalloonRoute", BalloonRoute.class);
-	}
-
-	/** Whether this row is a raw keyed read rather than a proxy-backed one. */
-	public boolean isKeyed()
-	{
-		return type != null;
-	}
-
-	/** The row whose base value a payload on this key pairs with. */
-	public ConfigKey baseRow()
-	{
-		return baseKey == null ? this : valueOf(baseKey);
-	}
-
-	/**
-	 * The unwritten default for a hidden key; literal rows return the
-	 * literal, derived rows (the flag-gated set defaults) evaluate against
-	 * the given base resolver.
-	 */
-	@SuppressWarnings("unchecked")
-	public Object resolveDefault(Function<ConfigKey, Object> base)
-	{
-		return def instanceof Function
-			? ((Function<Function<ConfigKey, Object>, Object>) def).apply(base)
-			: def;
-	}
-
-	/**
-	 * Parses the persisted form of a {@code Set}-typed hidden key —
-	 * {@code ["A","B"]} as {@code ConfigManager}'s gson write produces —
-	 * into an {@code EnumSet}. {@code null} on unset or corrupt content,
-	 * mirroring the proxy's fall-to-default behaviour.
-	 */
+	/** Parses the {@code ["A", "B"]} form a stored enum set takes; null when unset or malformed. */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static Set<?> parseSet(String stored, Class<? extends Enum> element)
 	{
-		if (stored == null || stored.isEmpty())
+		if (stored == null || !stored.trim().startsWith("[") || !stored.trim().endsWith("]"))
 		{
 			return null;
 		}
 		String inner = stored.trim();
-		if (!inner.startsWith("[") || !inner.endsWith("]"))
-		{
-			return null;
-		}
 		inner = inner.substring(1, inner.length() - 1).trim();
 		EnumSet out = EnumSet.noneOf(element);
 		if (inner.isEmpty())
@@ -548,14 +258,42 @@ public enum ConfigKey
 		return out;
 	}
 
-	/** Whether a change to this key restarts pathfinding. */
-	boolean isRouteInvalidating()
+	private static final class Rows
 	{
-		return effects.contains(Effect.ROUTE_INVALIDATING);
-	}
+		private static final Map<String, String[]> BY_NAME = new HashMap<>();
+		/** Persisted key name to enum constant name. */
+		private static final Map<String, String> NAMES = new HashMap<>();
+		private static final Map<String, Class<?>> TYPES = Map.of(
+			"boolean", Boolean.class,
+			"int", Integer.class,
+			"String", String.class,
+			"Color", Color.class,
+			"Set", Set.class,
+			"TeleportationItem", TeleportationItem.class,
+			"TileCounter", TileCounter.class,
+			"TileStyle", TileStyle.class,
+			"JewelleryBoxTier", JewelleryBoxTier.class);
+		private static final Map<String, Class<? extends Enum>> ELEMENTS = Map.of(
+			"PohNexusPortal", PohNexusPortal.class,
+			"PohMountedItem", PohMountedItem.class,
+			"BalloonRoute", BalloonRoute.class);
 
-	public static ConfigKey forKey(String key)
-	{
-		return BY_KEY.get(key);
+		static
+		{
+			try
+			{
+				Util.each("/config-keys.tsv", (line, cols) ->
+				{
+					if (cols.length != 6 || BY_NAME.put(cols[0], cols) != null || NAMES.put(cols[1], cols[0]) != null)
+					{
+						throw new IllegalStateException("bad config-keys.tsv row: " + line);
+					}
+				});
+			}
+			catch (Exception e)
+			{
+				throw new IllegalStateException("failed to load config-keys.tsv", e);
+			}
+		}
 	}
 }

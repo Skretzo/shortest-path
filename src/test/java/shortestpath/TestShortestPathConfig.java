@@ -4,9 +4,7 @@ import java.util.Set;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohMountedItem;
 import shortestpath.poh.PohNexusPortal;
-import shortestpath.settings.ConfigKey;
-import shortestpath.settings.KeyedValues;
-import shortestpath.settings.TeleportationItem;
+import shortestpath.settings.*;
 import shortestpath.transport.BalloonRoute;
 
 /**
@@ -225,11 +223,7 @@ public class TestShortestPathConfig implements ShortestPathConfig, KeyedValues
 	 */
 	private Object def(String keyName)
 	{
-		// Mirrors Settings.keyedBase: the declared default runs on the same
-		// resolver, so flag-derived defaults see the flag's own default.
-		Object value = value(keyName);
-		return value != null ? value
-			: ConfigKey.forKey(keyName).resolveDefault(row -> def(row.getKey()));
+		return Settings.wrap(this).configured(keyName);
 	}
 
 	public TeleportationItem useTeleportationItems()

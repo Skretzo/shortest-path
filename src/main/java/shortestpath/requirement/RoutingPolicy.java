@@ -22,10 +22,9 @@ import lombok.experimental.Accessors;
  * planted spirit trees — are state, not policy, and live on
  * {@link RequirementContext} instead.
  *
- * <p>Every collection is frozen at construction and the transport-type
- * enablement is copied out of the mutable {@code TransportTypeConfig}, so
- * mutating config after the snapshot is built cannot change the verdicts of
- * a gate chain already holding it.
+ * <p>Every collection is copied and frozen at construction, so mutating
+ * config after the snapshot is built cannot change the verdicts of a gate
+ * chain already holding it.
  */
 public final class RoutingPolicy
 {
@@ -95,9 +94,8 @@ public final class RoutingPolicy
 	}
 
 	/**
-	 * Whether the transport type is enabled in the captured view — the answer
-	 * {@code TransportTypeConfig.isEnabled} would have given at snapshot time,
-	 * after the {@code disableUnless} derivations. The enabled set itself is
+	 * Whether the transport type was enabled at snapshot time, after the
+	 * {@code disableUnless} derivations. The enabled set itself is
 	 * never handed out, so there is no live mutable reference to leak.
 	 */
 	public boolean isTransportTypeEnabled(TransportType type)

@@ -19,18 +19,6 @@ public enum TeleportationItem
 
 	private final String type;
 
-	public static TeleportationItem fromType(String type)
-	{
-		for (TeleportationItem teleportationItem : values())
-		{
-			if (teleportationItem.type.equals(type))
-			{
-				return teleportationItem;
-			}
-		}
-		return null;
-	}
-
 	@Override
 	public String toString()
 	{

@@ -1,5 +1,6 @@
 package shortestpath.scheduler;
 
+import shortestpath.settings.ConfigKey;
 import java.awt.Color;
 import java.util.List;
 
@@ -113,7 +114,7 @@ public final class PathRenderState
 			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
 		}
 
-		return closestTargetDistance > settings.display().unreachableTargetDistance();
+		return closestTargetDistance > settings.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD);
 	}
 
 	/**
@@ -126,20 +127,20 @@ public final class PathRenderState
 		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (pathfinder == null || !pathfinder.isDone())
 		{
-			return settings.display().colourPathCalculating();
+			return settings.get(ConfigKey.COLOUR_PATH_CALCULATING);
 		}
 
 		List<PathStep> path = pathfinder.getPath();
 		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
 		{
-			return settings.display().colourPath();
+			return settings.get(ConfigKey.COLOUR_PATH);
 		}
 
 		if (isPathUnreachable())
 		{
-			return settings.display().colourPathUnreachable();
+			return settings.get(ConfigKey.COLOUR_PATH_UNREACHABLE);
 		}
 
-		return settings.display().colourPath();
+		return settings.get(ConfigKey.COLOUR_PATH);
 	}
 }

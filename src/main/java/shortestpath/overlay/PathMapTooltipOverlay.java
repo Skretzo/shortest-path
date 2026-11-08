@@ -1,5 +1,6 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 import java.awt.*;
 import java.util.*;
@@ -49,7 +50,7 @@ public class PathMapTooltipOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!settings.display().drawMap() || !geometry.worldMapOpen())
+		if (!settings.bool(ConfigKey.DRAW_MAP) || !geometry.worldMapOpen())
 		{
 			return null;
 		}

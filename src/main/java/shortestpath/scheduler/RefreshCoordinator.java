@@ -232,7 +232,7 @@ public class RefreshCoordinator
 		// tile farther than the reached distance on long hulls — check the live boat rather than the
 		// player's tile, and not the search's verdict: that says a route was found, not that it sailed
 		// there. The reached-distance check below still runs for goal-tile arrivals and disembarking.
-		if (pathfinder.isSailing() && settings.lifecycle().reachedDistance() >= 0
+		if (pathfinder.isSailing() && settings.num(ConfigKey.FINISH_DISTANCE) >= 0
 			&& boatLocation != WorldPointUtil.UNDEFINED && boatHeading != WorldPointUtil.UNDEFINED
 			&& ((SailingPathfinder) pathfinder).arrivedTarget(boatLocation, boatHeading) != WorldPointUtil.UNDEFINED)
 		{
@@ -242,7 +242,7 @@ public class RefreshCoordinator
 
 		for (int target : pathfinder.getTargets().points())
 		{
-			if (WorldPointUtil.distanceBetween(currentLocation, target) < settings.lifecycle().reachedDistance())
+			if (WorldPointUtil.distanceBetween(currentLocation, target) < settings.num(ConfigKey.FINISH_DISTANCE))
 			{
 				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;
@@ -251,7 +251,7 @@ public class RefreshCoordinator
 
 		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(currentLocation))
 		{
-			if (settings.lifecycle().cancelInstead())
+			if (settings.bool(ConfigKey.CANCEL_INSTEAD))
 			{
 				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;

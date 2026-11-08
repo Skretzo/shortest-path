@@ -1,5 +1,6 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 import java.awt.*;
 import java.awt.geom.Area;
@@ -48,7 +49,7 @@ public class PathMapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!settings.display().drawMap())
+		if (!settings.bool(ConfigKey.DRAW_MAP))
 		{
 			return null;
 		}
@@ -62,9 +63,9 @@ public class PathMapOverlay extends Overlay
 		Area worldMapClipArea = geometry.getWorldMapClipArea(worldMapRectangle);
 		graphics.setClip(worldMapClipArea);
 
-		if (settings.display().drawCollisionMap())
+		if (settings.bool(ConfigKey.DRAW_COLLISION_MAP))
 		{
-			graphics.setColor(settings.display().colourCollisionMap());
+			graphics.setColor(settings.get(ConfigKey.COLOUR_COLLISION_MAP));
 			int mapWorldPoint = geometry.calculateMapPoint(worldMapRectangle.x, worldMapRectangle.y);
 			int extentX = WorldPointUtil.unpackWorldX(mapWorldPoint);
 			int extentY = WorldPointUtil.unpackWorldY(mapWorldPoint);
@@ -84,7 +85,7 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (settings.display().drawTransports())
+		if (settings.bool(ConfigKey.DRAW_TRANSPORTS))
 		{
 			OverlayDrawing.forEachDisplayTransport(annotator, new OverlayDrawing.TransportVisitor()
 			{
@@ -133,7 +134,7 @@ public class PathMapOverlay extends Overlay
 					drawSmallSquareOnMap(graphics, point);
 				}
 			}
-			else if (TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
+			else if (TileStyle.ARROW_LINE.equals(settings.get(ConfigKey.PATH_STYLE)))
 			{
 				graphics.setColor(colour);
 				drawArrowPath(graphics, path);
@@ -154,7 +155,7 @@ public class PathMapOverlay extends Overlay
 			}
 			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
 			{
-				graphics.setColor(settings.display().colourPathCalculating());
+				graphics.setColor(settings.get(ConfigKey.COLOUR_PATH_CALCULATING));
 				drawOnMap(graphics, target, true, cursorPos);
 			});
 		}

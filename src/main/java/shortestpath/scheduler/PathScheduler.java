@@ -1,5 +1,6 @@
 package shortestpath.scheduler;
 
+import shortestpath.settings.ConfigKey;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.awt.image.BufferedImage;
 import java.util.*;
@@ -277,14 +278,14 @@ public class PathScheduler
 		boolean sameLocation = lastLocation == location;
 		lastLocation = location;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			settings.lifecycle().recalculateDistance() < 0 || sameLocation)
+			settings.num(ConfigKey.RECALCULATE_DISTANCE) < 0 || sameLocation)
 		{
 			return true;
 		}
 
 		for (PathStep pathStep : path)
 		{
-			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < settings.lifecycle().recalculateDistance())
+			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < settings.num(ConfigKey.RECALCULATE_DISTANCE))
 			{
 				return true;
 			}
@@ -296,7 +297,7 @@ public class PathScheduler
 			for (int i = 1; i < path.size(); i++)
 			{
 				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
-					< settings.lifecycle().recalculateDistance())
+					< settings.num(ConfigKey.RECALCULATE_DISTANCE))
 				{
 					return true;
 				}

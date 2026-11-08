@@ -183,7 +183,7 @@ public class ConfigDemotionTest
 		missing.removeIf(key ->
 		{
 			ConfigKey row = ConfigKey.forKey(key);
-			return row != null && row.isKeyed() && !annotatedKeys.contains(key)
+			return row != null && !annotatedKeys.contains(key)
 				&& ConfigItems.of(key) != null;
 		});
 		assertTrue("panel-owned keys missing a keyed row or metadata: " + missing,
@@ -218,7 +218,7 @@ public class ConfigDemotionTest
 		for (String key : DECLARED_KEYED_KEYS)
 		{
 			ConfigKey row = ConfigKey.forKey(key);
-			if (row == null || !row.isKeyed())
+			if (row == null)
 			{
 				violations.add(key + " lost its keyed ConfigKey row");
 			}
@@ -337,10 +337,7 @@ public class ConfigDemotionTest
 			"sectionSettings", item.section());
 		assertEquals("the toggle is a boolean read",
 			boolean.class, getter.getReturnType());
-		// The keyed read rides the ConfigKey registry — a missing row throws,
-		// so this asserts both the row and the getter's default in one call.
-		assertEquals("the sidebar icon shows by default — hiding is opt-out",
-			Boolean.TRUE,
-			Settings.wrap(new TestShortestPathConfig()).configuredValue("showSidebarPanel"));
+		assertTrue("the sidebar icon shows by default — hiding is opt-out",
+			new TestShortestPathConfig().showSidebarPanel());
 	}
 }

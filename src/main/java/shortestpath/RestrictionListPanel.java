@@ -82,7 +82,7 @@ class RestrictionListPanel extends JPanel
 
 		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds, optionBlocks);
 		itemsDisabled = TeleportationItem.NONE.equals(
-			settings.configuredValue("useTeleportationItems"));
+			settings.configured("useTeleportationItems"));
 
 		// checklistFamilies adds the code-defined fairy-staff family to the
 		// generated map — the injected ring requirement is restrictable like
@@ -341,7 +341,7 @@ class RestrictionListPanel extends JPanel
 		optionBlocks.clear();
 		TeleportRestriction.parseBlocked(blockedCsv(), blocked, thresholds, optionBlocks);
 		itemsDisabled = TeleportationItem.NONE.equals(
-			settings.configuredValue("useTeleportationItems"));
+			settings.configured("useTeleportationItems"));
 		syncing = true;
 		try
 		{
@@ -359,7 +359,7 @@ class RestrictionListPanel extends JPanel
 
 	private String blockedCsv()
 	{
-		Object csv = settings.configuredValue("blockedTeleportItems");
+		Object csv = settings.configured("blockedTeleportItems");
 		return csv instanceof String ? (String) csv : "";
 	}
 

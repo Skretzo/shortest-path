@@ -14,18 +14,6 @@ public enum JewelleryBoxTier
 
 	private final String type;
 
-	public static JewelleryBoxTier fromType(String type)
-	{
-		for (JewelleryBoxTier tier : values())
-		{
-			if (tier.type.equals(type))
-			{
-				return tier;
-			}
-		}
-		return null;
-	}
-
 	@Override
 	public String toString()
 	{
