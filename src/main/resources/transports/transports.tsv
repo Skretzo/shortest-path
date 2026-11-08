@@ -6662,3 +6662,34 @@
 2452 3232 0	3015 5629 0	Climb Ladder 29635						2	
 3015 5629 0	2453 3231 0	Climb Ladder 29636						2	
 3016 5630 0	2453 3231 0	Climb Ladder 29636						2	
+									
+# Heroes' Guild upstairs									
+2896 3512 0	2897 3513 1	Climb-up Staircase 16671						2	
+2897 3513 1	2896 3512 0	Climb-down Staircase 16673						2	
+# Ladder at 2895 3516									
+2895 3517 1	2895 3517 2	Climb-up Ladder 16683						2	
+2895 3517 2	2895 3517 1	Climb-down Ladder 16679						2	
+2896 3516 1	2896 3516 2	Climb-up Ladder 16683						2	
+2896 3516 2	2896 3516 1	Climb-down Ladder 16679						2	
+2895 3515 1	2895 3515 2	Climb-up Ladder 16683						2	
+2895 3515 2	2895 3515 1	Climb-down Ladder 16679						2	
+2894 3516 1	2894 3516 2	Climb-up Ladder 16683						2	
+2894 3516 2	2894 3516 1	Climb-down Ladder 16679						2	
+# Ladder at 2890 3508									
+2890 3509 1	2890 3509 2	Climb-up Ladder 16683						2	
+2890 3509 2	2890 3509 1	Climb-down Ladder 16679						2	
+2891 3508 1	2891 3508 2	Climb-up Ladder 16683						2	
+2891 3508 2	2891 3508 1	Climb-down Ladder 16679						2	
+2890 3507 1	2890 3507 2	Climb-up Ladder 16683						2	
+2890 3507 2	2890 3507 1	Climb-down Ladder 16679						2	
+2889 3508 1	2889 3508 2	Climb-up Ladder 16683						2	
+2889 3508 2	2889 3508 1	Climb-down Ladder 16679						2	
+# Ladder at 2895 3505									
+2895 3506 1	2895 3506 2	Climb-up Ladder 16683						2	
+2895 3506 2	2895 3506 1	Climb-down Ladder 16679						2	
+2896 3505 1	2896 3505 2	Climb-up Ladder 16683						2	
+2896 3505 2	2896 3505 1	Climb-down Ladder 16679						2	
+2895 3504 1	2895 3504 2	Climb-up Ladder 16683						2	
+2895 3504 2	2895 3504 1	Climb-down Ladder 16679						2	
+2894 3505 1	2894 3505 2	Climb-up Ladder 16683						2	
+2894 3505 2	2894 3505 1	Climb-down Ladder 16679						2	
