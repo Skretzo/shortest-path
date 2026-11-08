@@ -481,7 +481,7 @@ public class ShortestPathPanel extends PluginPanel
 				return on + "/" + total + " on";
 			case "Teleport Restrictions":
 				if (TeleportationItem.NONE.equals(
-					settings.configuredValue("useTeleportationItems")))
+					settings.configured("useTeleportationItems")))
 				{
 					return "Items disabled";
 				}
@@ -489,7 +489,7 @@ public class ShortestPathPanel extends PluginPanel
 					? 0 : restrictionListPanel.restrictionCount();
 				return restricted == 0 ? "All allowed" : restricted + " restricted";
 			case "Player-Owned House":
-				return settings.configuredBool("usePoh") ? "On" : "Off";
+				return Boolean.TRUE.equals(settings.configured("usePoh")) ? "On" : "Off";
 			default:
 				return "";
 		}
@@ -677,7 +677,7 @@ public class ShortestPathPanel extends PluginPanel
 		String description = item == null ? "" : item.description();
 
 		JCheckBox checkBox = new JCheckBox();
-		checkBox.setSelected(settings.configuredBool(keyName));
+		checkBox.setSelected(Boolean.TRUE.equals(settings.configured(keyName)));
 		checkBox.setToolTipText(html(description));
 		PanelRows.controlRow(this, keyName, checkBox,
 			(control, guard) -> control.addActionListener(e ->
@@ -687,7 +687,7 @@ public class ShortestPathPanel extends PluginPanel
 				PanelRows.guardedWrite(guard,
 					() -> settings.write(keyName, control.isSelected()));
 			}),
-			() -> checkBox.setSelected(settings.configuredBool(keyName)),
+			() -> checkBox.setSelected(Boolean.TRUE.equals(settings.configured(keyName))),
 			onChange);
 		return labeledRow(name, description, checkBox);
 	}
@@ -698,7 +698,7 @@ public class ShortestPathPanel extends PluginPanel
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
-		Object value = settings.configuredValue(keyName);
+		Object value = settings.configured(keyName);
 		int current = value instanceof Number ? ((Number) value).intValue() : 0;
 		// The declared range is honoured verbatim: keys like
 		// recalculateDistance/finishDistance take a negative min whose
@@ -721,7 +721,7 @@ public class ShortestPathPanel extends PluginPanel
 					() -> settings.write(keyName, control.getValue()))),
 			() ->
 			{
-				Object updated = settings.configuredValue(keyName);
+				Object updated = settings.configured(keyName);
 				if (updated instanceof Number)
 				{
 					// Same clamp as construction: an out-of-range external
@@ -742,7 +742,7 @@ public class ShortestPathPanel extends PluginPanel
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
-		Object value = settings.configuredValue(keyName);
+		Object value = settings.configured(keyName);
 		if (!(value instanceof Enum))
 		{
 			// A null or corrupt persisted value gives no enum type to derive
@@ -766,7 +766,7 @@ public class ShortestPathPanel extends PluginPanel
 						() -> settings.write(keyName, control.getSelectedItem()));
 				}
 			}),
-			() -> combo.setSelectedItem(settings.configuredValue(keyName)),
+			() -> combo.setSelectedItem(settings.configured(keyName)),
 			null);
 		return labeledRow(name, description, combo);
 	}
@@ -878,7 +878,7 @@ public class ShortestPathPanel extends PluginPanel
 	<E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
 	{
 		Set<E> set = EnumSet.noneOf(type);
-		Set<?> value = settings.configuredSet(keyName);
+		Set<?> value = settings.configured(keyName);
 		if (value != null)
 		{
 			set.addAll((Set<E>) value);

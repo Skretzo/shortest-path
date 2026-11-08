@@ -141,7 +141,7 @@ public class ShortestPathPanelLayoutTest
 			return null;
 		}).when(configManager).setConfiguration(
 			any(String.class), any(String.class), any(Object.class));
-		settings = new Settings(configManager, config);
+		settings = Settings.wrap(configManager, config);
 		Client client = mock(Client.class);
 		ClientThread clientThread = mock(ClientThread.class);
 		// The Owned filter's container reads post through clientThread.invoke;

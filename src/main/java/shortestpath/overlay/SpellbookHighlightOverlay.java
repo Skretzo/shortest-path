@@ -1,5 +1,6 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 import java.awt.*;
 import java.util.*;
@@ -42,7 +43,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 	@Override
 	protected boolean enabled()
 	{
-		return settings.display().highlightSpellbookSpells();
+		return settings.bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS);
 	}
 
 	@Override
@@ -57,7 +58,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 		ActiveSearch search)
 	{
 		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
-		Color highlight = settings.display().colourBankPickupHighlight();
+		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
 
 		for (Transport transport : transports)
 		{

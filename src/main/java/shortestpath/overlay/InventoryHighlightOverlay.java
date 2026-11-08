@@ -1,5 +1,6 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 import java.awt.*;
 import java.util.*;
@@ -54,7 +55,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 	@Override
 	protected boolean enabled()
 	{
-		return settings.display().highlightInventoryItems();
+		return settings.bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS);
 	}
 
 	@Override
@@ -92,7 +93,7 @@ public class InventoryHighlightOverlay extends AbstractHighlightOverlay
 			return null;
 		}
 
-		Color highlight = settings.display().colourBankPickupHighlight();
+		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
 
 		// Highlight matching items in the inventory
 		Widget inventoryContainer = client.getWidget(InterfaceID.Inventory.ITEMS);

@@ -13,7 +13,7 @@ public enum Effect
 	ROUTE_INVALIDATING,
 	/** The debug overlay panel must be added to or removed from the overlay manager. */
 	SIDE_EFFECT_DEBUG_OVERLAY,
-	/** No shell side effect beyond the views republishing; a running search continues. */
+	/** No shell side effect; a running search continues. */
 	DISPLAY_ONLY,
 	/** The eligibility snapshot is stale; the engine rebuilds it lazily. */
 	ELIGIBILITY_STALE

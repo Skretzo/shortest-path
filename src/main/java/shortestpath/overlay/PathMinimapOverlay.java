@@ -1,5 +1,6 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 
 import java.awt.*;
@@ -59,7 +60,7 @@ public class PathMinimapOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		ActiveSearch search = scheduler.getActiveSearch();
-		if (!settings.display().drawMinimap() || search == null)
+		if (!settings.bool(ConfigKey.DRAW_MINIMAP) || search == null)
 		{
 			return null;
 		}
@@ -92,7 +93,7 @@ public class PathMinimapOverlay extends Overlay
 			drawOnMinimap(graphics, pathPoint, pathColor, sailing ? 0.5 : 1.0);
 		}
 		OverlayDrawing.forEachUnreachedTarget(search, pathPoints,
-			target -> drawOnMinimap(graphics, target, settings.display().colourPathCalculating()));
+			target -> drawOnMinimap(graphics, target, settings.get(ConfigKey.COLOUR_PATH_CALCULATING)));
 
 		return null;
 	}

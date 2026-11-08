@@ -1,5 +1,6 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 import java.awt.*;
 import java.util.*;
@@ -52,7 +53,7 @@ public class ScrollBookHighlightOverlay extends AbstractHighlightOverlay
 	@Override
 	protected boolean enabled()
 	{
-		return settings.display().highlightInventoryItems();
+		return settings.bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS);
 	}
 
 	@Override
@@ -67,7 +68,7 @@ public class ScrollBookHighlightOverlay extends AbstractHighlightOverlay
 		int pathIndex, ActiveSearch search)
 	{
 		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
-		Color highlight = settings.display().colourBankPickupHighlight();
+		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
 
 		for (Transport transport : transports)
 		{

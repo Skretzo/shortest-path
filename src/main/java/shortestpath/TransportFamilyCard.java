@@ -149,7 +149,7 @@ class TransportFamilyCard extends ExpandableSurface
 		{
 			// No master control to ask — the configured value itself says
 			// whether the family routes (enums: anything but NONE).
-			Object value = panel.settings.configuredValue(keyName);
+			Object value = panel.settings.configured(keyName);
 			if (value instanceof Enum)
 			{
 				return !"NONE".equals(((Enum<?>) value).name());
@@ -183,7 +183,7 @@ class TransportFamilyCard extends ExpandableSurface
 	 */
 	void syncFromConfig()
 	{
-		Object value = panel.settings.configuredValue(keyName);
+		Object value = panel.settings.configured(keyName);
 		PanelRows.resync(syncing, () ->
 		{
 			if (masterControl instanceof JCheckBox)
@@ -204,7 +204,7 @@ class TransportFamilyCard extends ExpandableSurface
 
 	private JComponent createMasterControl(String description)
 	{
-		Object value = panel.settings.configuredValue(keyName);
+		Object value = panel.settings.configured(keyName);
 		if (value instanceof Enum)
 		{
 			@SuppressWarnings("unchecked")

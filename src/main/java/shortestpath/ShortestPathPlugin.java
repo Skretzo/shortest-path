@@ -176,7 +176,7 @@ public class ShortestPathPlugin extends Plugin
 		pluginOverlays = new PluginOverlays(pathOverlay, pathMinimapOverlay,
 			pathMapOverlay, pathMapTooltipOverlay, bankItemHighlightOverlay,
 			spellbookHighlightOverlay, inventoryHighlightOverlay, scrollBookHighlightOverlay, debugOverlayPanel);
-		pluginOverlays.register(overlayManager, settings.lifecycle().drawDebugPanel());
+		pluginOverlays.register(overlayManager, settings.bool(ConfigKey.DRAW_DEBUG_PANEL));
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		pohService.loadFromProfile();
@@ -312,7 +312,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private void syncDebugPanelVisibility()
 	{
-		pluginOverlays.syncDebug(overlayManager, settings.lifecycle().drawDebugPanel());
+		pluginOverlays.syncDebug(overlayManager, settings.bool(ConfigKey.DRAW_DEBUG_PANEL));
 	}
 
 	@Subscribe

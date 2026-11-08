@@ -1,6 +1,5 @@
 package shortestpath.settings;
 
-import java.awt.Color;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -8,30 +7,19 @@ import java.util.function.Function;
 import javax.inject.*;
 import javax.swing.SwingUtilities;
 
-import lombok.*;
-import lombok.experimental.Accessors;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.*;
 import net.runelite.client.events.ConfigChanged;
-import shortestpath.*;
-import shortestpath.requirement.RoutingPolicy;
-import shortestpath.poh.*;
-import shortestpath.transport.*;
+import shortestpath.ShortestPathConfig;
 
 /**
- * The injected owner of configured state: the base {@link ShortestPathConfig}
- * proxy, the runtime override map received through plugin-message payloads, and
- * the immutable snapshots consumers read.
+ * Reads and writes the plugin's settings. A key's value is, in order: the
+ * override another plugin sent through the plugin-message API (when it has
+ * the key's type), the stored value, then the key's default.
  *
- * <p>{@link #display()} and {@link #lifecycle()} are immutable view snapshots
- * republished on every override apply/clear and every {@link ConfigChanged}
- * for this group. They are captured from {@link #effective()}, so payload
- * overrides and persisted config both reach them.
- *
- * <p>The override map is stored verbatim — keys are never validated on apply,
- * so unknown keys survive for the raw echo — and every publication is an
- * immutable copy swapped through a single volatile reference, so readers never
- * observe a torn map/decorator/view combination.
+ * <p>The sidebar panel edits stored values with {@link #write} and shows them
+ * with {@link #configured}, which ignores overrides.
  *
  * <p>This package is a leaf: it must not reference the plugin class.
  */
@@ -39,195 +27,143 @@ import shortestpath.transport.*;
 @Slf4j
 public class Settings
 {
-	/**
-	 * The persisted config group — mirrors the {@code @ConfigGroup} value on
-	 * {@link ShortestPathConfig}. Kept as a literal so this leaf package
-	 * neither reads annotations reflectively nor references the plugin class;
-	 * a divergence would surface as every persisted read/write missing its
-	 * namespace. Public so sibling leaf packages (e.g. {@code poh}) reuse the
-	 * one literal rather than duplicating it per call site.
-	 */
 	public static final String CONFIG_GROUP = "shortestpath";
 
-	/**
-	 * Retained for the persisted write path (panel edits write through the
-	 * config manager); reads here go through the injected config proxy.
-	 */
 	private final ConfigManager configManager;
-	/** The raw config proxy — configured values with no overrides applied. */
-	@Getter @Accessors(fluent = true) private final ShortestPathConfig configured;
-
-	/**
-	 * The one publication slot. Overridden values, the effective decorator, and
-	 * every view snapshot are derived together and swapped together, so a reader
-	 * never sees a payload apply's map without its matching views.
-	 */
-	private volatile Published published;
-
-	/**
-	 * Keyed listeners registered through {@link #listen}. Read on whichever
-	 * thread a {@link ConfigChanged} arrives on, so the lists are copy-on-write.
-	 */
+	/** A key's stored value, or null when it was never written. */
+	private final Function<ConfigKey, Object> stored;
+	/** Stored values read since the last config change; overlays read settings every frame. */
+	private final Map<ConfigKey, Optional<Object>> cache = new ConcurrentHashMap<>();
+	private final Map<String, ConfigItemDescriptor> itemDescriptors = new HashMap<>();
+	/** The overrides as received, unknown keys included, so they can be echoed back. */
+	@Getter
+	private volatile Map<String, Object> overrides = Map.of();
 	private final Map<String, List<Runnable>> listeners = new ConcurrentHashMap<>();
-
-	/**
-	 * Keys with a {@link #write} call on the stack, mapped to the thread
-	 * performing the write. A {@link ConfigChanged} arriving on that same
-	 * thread while its key is marked here is the write's own synchronous
-	 * echo: it still republishes and classifies, but its listeners already
-	 * fired inside {@link #write}, so the external-delivery path skips it.
-	 * A same-key event arriving on a different thread is genuinely external
-	 * and still delivers.
-	 */
 	private final Map<String, Thread> writeInFlight = new ConcurrentHashMap<>();
 
 	@Inject
-	public Settings(ConfigManager configManager, ShortestPathConfig configured)
+	public Settings(ConfigManager configManager, ShortestPathConfig config)
 	{
 		this.configManager = configManager;
-		this.configured = configured;
-		ConfigDescriptor descriptor = configManager == null
-			? null
-			: configManager.getConfigDescriptor(configured);
-		this.itemDescriptors = descriptor == null ? Map.of() : indexItems(descriptor);
-		republish();
+		this.stored = key -> cache.computeIfAbsent(key, k -> Optional.ofNullable(k.read(configManager))).orElse(null);
+		ConfigDescriptor descriptor = configManager.getConfigDescriptor(config);
+		for (ConfigItemDescriptor item : descriptor == null ? List.<ConfigItemDescriptor>of() : descriptor.getItems())
+		{
+			itemDescriptors.putIfAbsent(item.key(), item);
+		}
+	}
+
+	private Settings(ConfigManager configManager, Function<ConfigKey, Object> stored)
+	{
+		this.configManager = configManager;
+		this.stored = stored;
 	}
 
 	/**
-	 * Test/harness seam: a service over the given config with no overrides and
-	 * no config manager, so {@link #effective()} and the views pass the stub
-	 * config through unchanged.
+	 * Settings for tests: stored values come from {@code config} when it is a
+	 * {@link KeyedValues}, otherwise every key reads its default. Writes go to
+	 * {@code configManager}, which may be null.
 	 */
-	Settings(ShortestPathConfig configured)
+	public static Settings wrap(ConfigManager configManager, ShortestPathConfig config)
 	{
-		this(null, configured);
+		return new Settings(configManager, config instanceof KeyedValues
+			? key -> ((KeyedValues) config).value(key.getKey())
+			: key -> null);
 	}
 
 	public static Settings wrap(ShortestPathConfig config)
 	{
-		return new Settings(config);
+		return wrap(null, config);
 	}
 
-	/**
-	 * keyName → config-item descriptor, resolved through the config manager's
-	 * descriptor surface ({@link ConfigManager#getConfigDescriptor}) so the
-	 * {@link ConfigItem}/{@link Range} metadata controls use comes from
-	 * RuneLite's own resolution, not plugin-side reflection. Empty on the
-	 * wrap seam, where no manager exists — {@link #configItem} and
-	 * {@link #rangeOf} then return {@code null}.
-	 */
-	private final Map<String, ConfigItemDescriptor> itemDescriptors;
-
-	private static Map<String, ConfigItemDescriptor> indexItems(ConfigDescriptor descriptor)
+	/** The value routing and drawing use: override, else stored, else default. */
+	@SuppressWarnings("unchecked")
+	public <T> T get(ConfigKey key)
 	{
-		Map<String, ConfigItemDescriptor> items = new HashMap<>();
-		for (ConfigItemDescriptor item : descriptor.getItems())
+		Object value = key.coerce(overrides.get(key.getKey()));
+		return (T) (value != null ? value : storedOrDefault(key, true));
+	}
+
+	public boolean bool(ConfigKey key)
+	{
+		return Boolean.TRUE.equals(get(key));
+	}
+
+	public int num(ConfigKey key)
+	{
+		Object value = get(key);
+		return value instanceof Number ? ((Number) value).intValue() : 0;
+	}
+
+	/** The value the player configured, ignoring overrides: stored, else default. */
+	@SuppressWarnings("unchecked")
+	public <T> T configured(String key)
+	{
+		ConfigKey row = ConfigKey.forKey(key);
+		if (row == null)
 		{
-			items.putIfAbsent(item.key(), item);
+			throw new IllegalArgumentException("unknown config key: " + key);
 		}
-		return items;
+		return (T) storedOrDefault(row, false);
 	}
 
-	/**
-	 * The override-applying decorator over {@link #configured()}: coercible keys
-	 * read the payload map, every other key reads the configured value.
-	 */
-	public EffectiveConfig effective()
+	private Object storedOrDefault(ConfigKey key, boolean withOverrides)
 	{
-		return published.effective;
-	}
-
-	/**
-	 * The stored runtime override map, verbatim and immutable. Unknown keys are
-	 * preserved for the payload echo.
-	 */
-	public Map<String, Object> rawOverrides()
-	{
-		return published.overrides;
-	}
-
-	public DisplayView display()
-	{
-		return published.display;
-	}
-
-	public LifecycleView lifecycle()
-	{
-		return published.lifecycle;
-	}
-
-	/**
-	 * Snapshots the routing settings the gate chain reads this refresh: the
-	 * effective transport-type enablement (post-{@code disableUnless}), the
-	 * teleportation-item mode and the POH toggles. Called once per refresh —
-	 * after the transport-type derivations have run — so a built chain can
-	 * never observe later config mutation.
-	 *
-	 * <p>The scalar arguments are the effective values the caller already
-	 * computed this refresh — production never re-reads config live.
-	 */
-	public RoutingPolicy buildRoutingPolicy(TransportTypeConfig transportTypeConfig,
-		boolean usePoh, boolean usePohFairyRing, boolean usePohSpiritTree,
-		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
-		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
-		int currencyThreshold, boolean includeBankPath,
-		Set<Integer> blockedItemIds)
-	{
-		return buildRoutingPolicy(transportTypeConfig, usePoh, usePohFairyRing,
-			usePohSpiritTree, usePohObelisk, enabledPohNexusPortals,
-			enabledPohMountedItems, pohJewelleryBoxTier, currencyThreshold,
-			includeBankPath, blockedItemIds, Map.of());
-	}
-
-	public RoutingPolicy buildRoutingPolicy(TransportTypeConfig transportTypeConfig,
-		boolean usePoh, boolean usePohFairyRing, boolean usePohSpiritTree,
-		boolean usePohObelisk, Set<PohNexusPortal> enabledPohNexusPortals,
-		Set<PohMountedItem> enabledPohMountedItems, JewelleryBoxTier pohJewelleryBoxTier,
-		int currencyThreshold, boolean includeBankPath,
-		Set<Integer> blockedItemIds,
-		Map<Integer, Set<Integer>> blockedOptionDests)
-	{
-		EnumSet<TransportType> enabledTypes = EnumSet.noneOf(TransportType.class);
-		for (TransportType type : TransportType.values())
+		Object value = stored.apply(key);
+		if (value != null)
 		{
-			if (transportTypeConfig.isEnabled(type))
-			{
-				enabledTypes.add(type);
-			}
+			return value;
 		}
-		RoutingPolicy policy = new RoutingPolicy(enabledTypes,
-			transportTypeConfig.getTeleportationItemSetting(),
-			usePoh, usePohFairyRing, usePohSpiritTree, usePohObelisk,
-			enabledPohNexusPortals, enabledPohMountedItems, pohJewelleryBoxTier,
-			currencyThreshold, includeBankPath, blockedItemIds, blockedOptionDests);
-		return policy;
+		ConfigKey flag = key.getFlag();
+		if (flag == null)
+		{
+			return key.getDef();
+		}
+		return key.flagDefault(withOverrides ? bool(flag) : Boolean.TRUE.equals(storedOrDefault(flag, false)));
 	}
 
-	// ---- Panel write/listen/keyed-read contract ---------------------------
+	public void applyOverrides(Map<String, Object> payload)
+	{
+		if (payload != null && !payload.isEmpty())
+		{
+			overrides = Collections.unmodifiableMap(new HashMap<>(payload));
+		}
+	}
+
+	public void clearOverrides()
+	{
+		overrides = Map.of();
+	}
+
+	/** Panel metadata for a key: the bundled {@code config-items.tsv} row, else the {@code @ConfigItem}. */
+	public ConfigItems.Meta item(String key)
+	{
+		ConfigItems.Meta meta = ConfigItems.of(key);
+		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
+		if (meta != null || descriptor == null)
+		{
+			return meta;
+		}
+		Range range = descriptor.getRange();
+		return new ConfigItems.Meta(key, descriptor.getItem().name(), descriptor.getItem().description(),
+			range == null ? null : range.min(), range == null ? null : range.max());
+	}
 
 	/**
-	 * The sole mutation path for persisted settings: delegates straight to
-	 * {@link ConfigManager#setConfiguration}, which dispatches the
-	 * {@link ConfigChanged} synchronously on this thread. The echo is marked
-	 * write-originated so {@link #onConfigChanged} republishes and classifies
-	 * it but skips external listener delivery; same-key listeners fire here
-	 * instead, synchronously, before {@code write} returns. Values pass
-	 * through untouched — {@code Set}-typed values reach the manager as-is.
-	 *
-	 * <p>Unknown keys pass through to the manager unchanged, matching the
-	 * permissive behaviour this contract replaces.
+	 * Stores a value and runs the key's listeners now. The {@link ConfigChanged}
+	 * echo of this write does not run them a second time.
 	 */
 	public void write(String key, Object value)
 	{
 		if (configManager == null)
 		{
-			throw new UnsupportedOperationException(
-				"a wrap-seam settings service has no config manager to write through");
+			throw new UnsupportedOperationException("settings without a config manager cannot write");
 		}
 		writeInFlight.put(key, Thread.currentThread());
 		try
 		{
 			configManager.setConfiguration(CONFIG_GROUP, key, value);
+			cache.clear();
 			fireListeners(key);
 		}
 		finally
@@ -236,26 +172,12 @@ public class Settings
 		}
 	}
 
-	/**
-	 * Register a callback for changes to {@code key}: it runs synchronously
-	 * inside {@link #write} for write-originated changes and on the EDT for
-	 * external {@link ConfigChanged} events. Multiple listeners per key are
-	 * supported and run in registration order.
-	 *
-	 * <p>Returns a handle that unregisters this listener when run. The
-	 * service is a singleton, so a caller whose lifecycle ends — a panel
-	 * rebuilt on every plugin enable — must drop its registrations or the
-	 * dead component graph stays reachable and keeps firing on each
-	 * subsequent change.
-	 */
+	/** Runs {@code listener} whenever {@code key} changes; the returned runnable unregisters it. */
 	public Runnable listen(String key, Runnable listener)
 	{
-		// List creation, add, remove and empty-pruning all run inside the
-		// map's per-key atomic compute, so a concurrent unregister can never
-		// detach a list a registration is about to add to.
-		listeners.compute(key, (k, existing) ->
+		listeners.compute(key, (k, keyed) ->
 		{
-			List<Runnable> keyed = existing != null ? existing : new CopyOnWriteArrayList<>();
+			keyed = keyed != null ? keyed : new CopyOnWriteArrayList<>();
 			keyed.add(listener);
 			return keyed;
 		});
@@ -266,94 +188,9 @@ public class Settings
 		});
 	}
 
-	/**
-	 * The configured value for {@code key} — the base read, never the
-	 * override-adjusted effective value, so the UI always displays what is
-	 * stored. Unknown keys fail loudly.
-	 */
-	public Object configuredValue(String key)
-	{
-		ConfigKey row = ConfigKey.forKey(key);
-		if (row == null)
-		{
-			throw new IllegalArgumentException("unknown config key: " + key);
-		}
-		return row.isKeyed() ? keyedBase(row) : row.getConfiguredGetter().apply(configured);
-	}
-
-	/**
-	 * The base (configured-level) value for a hidden key: the stored value
-	 * parsed through {@link ConfigManager}, or — on the {@link #wrap} seam —
-	 * the {@link KeyedValues} the stub config supplies, falling back to the
-	 * key's declared default when nothing is set.
-	 */
-	Object keyedBase(ConfigKey row)
-	{
-		Object value = null;
-		if (configManager != null)
-		{
-			value = row.getType() == Set.class
-				? ConfigKey.parseSet(
-					configManager.getConfiguration(CONFIG_GROUP, row.getKey()), row.getElement())
-				: configManager.getConfiguration(CONFIG_GROUP, row.getKey(), row.getType());
-		}
-		// On harness seams the configured object supplies values the manager
-		// does not have (an unwritten key reads as null through a mock).
-		if (value == null && configured instanceof KeyedValues)
-		{
-			value = ((KeyedValues) configured).value(row.getKey());
-		}
-		return value != null ? value : row.resolveDefault(this::keyedBase);
-	}
-
-	/**
-	 * The display metadata for {@code key} — name, description and range
-	 * bounds — resolved from the bundled {@code config-items.tsv} for hidden
-	 * keys and the config descriptor for visible ones. {@code null} when the
-	 * key carries no metadata.
-	 */
-	public ConfigItems.Meta item(String key)
-	{
-		ConfigItems.Meta meta = ConfigItems.of(key);
-		if (meta != null)
-		{
-			return meta;
-		}
-		ConfigItemDescriptor descriptor = itemDescriptors.get(key);
-		if (descriptor == null)
-		{
-			return null;
-		}
-		Range range = descriptor.getRange();
-		return new ConfigItems.Meta(key, descriptor.getItem().name(), descriptor.getItem().description(),
-			range == null ? null : range.min(), range == null ? null : range.max());
-	}
-
-	/** Typed convenience wrapper over {@link #configuredValue}. */
-	public boolean configuredBool(String key)
-	{
-		return Boolean.TRUE.equals(configuredValue(key));
-	}
-
-	/**
-	 * Typed convenience wrapper over {@link #configuredValue}: returns the
-	 * stored {@code Set} untouched, or {@code null} when the key holds no
-	 * set value.
-	 */
-	public Set<?> configuredSet(String key)
-	{
-		Object value = configuredValue(key);
-		return value instanceof Set ? (Set<?>) value : null;
-	}
-
 	void fireListeners(String key)
 	{
-		List<Runnable> keyed = listeners.get(key);
-		if (keyed == null)
-		{
-			return;
-		}
-		for (Runnable listener : keyed)
+		for (Runnable listener : listeners.getOrDefault(key, List.of()))
 		{
 			try
 			{
@@ -361,265 +198,25 @@ public class Settings
 			}
 			catch (RuntimeException e)
 			{
-				// A listener failure must not skip the rest of the list —
-				// on the write path the config value is already persisted,
-				// and on the EDT an uncaught throw kills the remaining
-				// deliveries too.
 				log.warn("settings listener for key {} threw; continuing with remaining listeners", key, e);
 			}
 		}
 	}
 
-	/**
-	 * Apply a plugin-message {@code "config"} payload as the runtime override
-	 * map. The map is copied and stored immutably; an empty (or null) payload
-	 * is a no-op and does not clear existing overrides — clearing is the
-	 * explicit {@link #clearOverrides()} path.
-	 */
-	public void applyOverrides(Map<String, Object> payload)
-	{
-		if (payload == null || payload.isEmpty())
-		{
-			return;
-		}
-		publish(Collections.unmodifiableMap(new HashMap<>(payload)));
-	}
-
-	/**
-	 * Drop all runtime overrides; effective reads return to configured values.
-	 */
-	public void clearOverrides()
-	{
-		publish(Map.of());
-	}
-
-	/**
-	 * Consume a config-change event: republish the view snapshots off the
-	 * updated base values and return a fact describing the change for the
-	 * shell to act on. Returns {@code null} for events outside this config
-	 * group; an in-group key with no registry row produces a fact carrying
-	 * an empty effect set.
-	 *
-	 * <p>Registered listeners for the event's key are delivered on the EDT —
-	 * the same marshalling the panel applied to changes made elsewhere —
-	 * except when the event is the echo of an in-flight {@link #write}: that
-	 * change already delivered its same-key listeners synchronously inside
-	 * {@code write}, so the external path skips it and no write ever echoes
-	 * back to the writer twice. The write marker is thread-scoped: a
-	 * same-key event arriving on a different thread mid-write is external,
-	 * not the echo, and still delivers.
-	 */
+	/** The change a config event makes, or null when it is for another plugin. */
 	public ConfigChange onConfigChanged(ConfigChanged event)
 	{
 		if (event == null || !CONFIG_GROUP.equals(event.getGroup()))
 		{
 			return null;
 		}
-		republish();
+		cache.clear();
 		String key = event.getKey();
 		if (writeInFlight.get(key) != Thread.currentThread() && listeners.containsKey(key))
 		{
 			SwingUtilities.invokeLater(() -> fireListeners(key));
 		}
-		return new ConfigChange(key, effectsOf(key));
-	}
-
-	private static Set<Effect> effectsOf(String key)
-	{
 		ConfigKey row = ConfigKey.forKey(key);
-		return row == null ? Set.of() : row.getEffects();
-	}
-
-	/**
-	 * The keyed coercion helpers reproduce the legacy {@code override()} overload
-	 * discipline for call sites whose override key is not the getter's own key
-	 * name (the transport-type-driven reads): a payload value only takes effect
-	 * when it carries exactly the type the key's coercion demands.
-	 */
-	public boolean coerceBoolean(String key, boolean base)
-	{
-		return coerceBoolean(key, base, published.overrides);
-	}
-
-	/**
-	 * Snapshot variant: coerce against an overrides map the caller already
-	 * captured, so a run of coercions observes one publication rather than
-	 * re-reading the volatile slot per call.
-	 */
-	public boolean coerceBoolean(String key, boolean base, Map<String, Object> overrides)
-	{
-		Object value = overrides.get(key);
-		return value instanceof Boolean ? (boolean) value : base;
-	}
-
-	public int coerceInt(String key, int base)
-	{
-		return coerceInt(key, base, published.overrides);
-	}
-
-	public int coerceInt(String key, int base, Map<String, Object> overrides)
-	{
-		Object value = overrides.get(key);
-		return value instanceof Integer ? (int) value : base;
-	}
-
-	public TeleportationItem coerceTeleportationItem(String key, TeleportationItem base)
-	{
-		return coerceTeleportationItem(key, base, published.overrides);
-	}
-
-	public TeleportationItem coerceTeleportationItem(String key, TeleportationItem base,
-		Map<String, Object> overrides)
-	{
-		return coerceStringEnum(key, TeleportationItem::fromType, base, overrides);
-	}
-
-	private <T> T coerceStringEnum(String key, Function<String, T> fromType, T base,
-		Map<String, Object> overrides)
-	{
-		Object value = overrides.get(key);
-		if (value instanceof String)
-		{
-			T parsed = fromType.apply((String) value);
-			if (parsed != null)
-			{
-				return parsed;
-			}
-		}
-		return base;
-	}
-
-	/**
-	 * Rebuild the views off the current override map and swap the published
-	 * slot. Synchronized so a republish that captured map N cannot finish
-	 * after — and silently revert — an {@link #applyOverrides}/{@link
-	 * #clearOverrides} publication of map N+1: the read of
-	 * {@code published.overrides} and the installation of the rebuilt
-	 * snapshot run under the same monitor as every other publication.
-	 */
-	private synchronized void republish()
-	{
-		publish(published == null ? Map.of() : published.overrides);
-	}
-
-	private synchronized void publish(Map<String, Object> overrides)
-	{
-		EffectiveConfig effective = new EffectiveConfig(configured, overrides, this::keyedBase);
-		published = new Published(
-			overrides,
-			effective,
-			new DisplayView(effective, configured, this::keyedBase),
-			new LifecycleView(effective, configured, this::keyedBase));
-	}
-
-	private static final class Published
-	{
-		private final Map<String, Object> overrides;
-		private final EffectiveConfig effective;
-		private final DisplayView display;
-		private final LifecycleView lifecycle;
-
-		private Published(Map<String, Object> overrides, EffectiveConfig effective,
-			DisplayView display, LifecycleView lifecycle)
-		{
-			this.overrides = overrides;
-			this.effective = effective;
-			this.display = display;
-			this.lifecycle = lifecycle;
-		}
-	}
-
-	/**
-	 * Immutable snapshot of the display-facing values the plugin used to cache
-	 * per change — path/transport drawing toggles, colours, counters, and label
-	 * state.
-	 *
-	 * <p>Member mapping (the former plugin field bag, one home each):
-	 * {@code draw*}/{@code show*}/{@code highlight*} toggles, the eight
-	 * {@code colour*} values, {@code tileCounterStep},
-	 * {@code unreachableTargetDistance} (key
-	 * {@code unreachableTargetDistanceThreshold}), {@code showTileCounter},
-	 * {@code pathStyle}, and {@code unreachableText}. The bank-pickup display
-	 * pair ({@code showBankPickupInfo}, {@code colourBankPickupHighlight})
-	 * lives here because they are draw-state, not routing inputs.
-	 *
-	 * <p>Every member reads the effective (override-aware) value except
-	 * {@code unreachableText}, which reads the configured value: payloads
-	 * never coerced it, and it stays raw here.
-	 */
-	@Getter
-	@Accessors(fluent = true)
-	@AllArgsConstructor(access = AccessLevel.PRIVATE)
-	public static final class DisplayView
-	{
-		private final boolean drawCollisionMap, drawMap, drawMinimap, drawTiles, drawTransports,
-			drawClickPoints, showTransportInfo, showBankPickupInfo, showUnreachableText,
-			highlightBankPickupItems, highlightSpellbookSpells, highlightInventoryItems,
-			showTeleportPulse;
-		private final Color colourCollisionMap, colourPath, colourPathCalculating,
-			colourPathUnreachable, colourText, colourTransports, colourBankPickupHighlight,
-			colourTeleportPulse;
-		private final int tileCounterStep, unreachableTargetDistance;
-		private final String unreachableText;
-		private final TileCounter showTileCounter;
-		private final TileStyle pathStyle;
-
-		private DisplayView(EffectiveConfig effective, ShortestPathConfig configured,
-			Function<ConfigKey, Object> base)
-		{
-			this(effective.drawCollisionMap(), effective.drawMap(), effective.drawMinimap(),
-				effective.drawTiles(), effective.drawTransports(), effective.drawClickPoints(),
-				effective.bool(ConfigKey.SHOW_TRANSPORT_INFO),
-				effective.bool(ConfigKey.SHOW_BANK_PICKUP_INFO),
-				effective.bool(ConfigKey.SHOW_UNREACHABLE_TEXT),
-				effective.bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS),
-				effective.bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS),
-				effective.bool(ConfigKey.HIGHLIGHT_INVENTORY_ITEMS),
-				effective.showTeleportPulse(),
-				effective.colourCollisionMap(), effective.colourPath(),
-				effective.colourPathCalculating(), effective.colourPathUnreachable(),
-				effective.colourText(), effective.colourTransports(),
-				effective.colourBankPickupHighlight(), effective.colourTeleportPulse(),
-				effective.num(ConfigKey.TILE_COUNTER_STEP),
-				effective.num(ConfigKey.UNREACHABLE_TARGET_DISTANCE_THRESHOLD),
-				// Payloads never coerced this key — it stays a raw read.
-				(String) base.apply(ConfigKey.UNREACHABLE_TEXT),
-				effective.showTileCounter(), effective.pathStyle());
-		}
-	}
-
-	/**
-	 * Immutable snapshot of the running-search lifecycle inputs: search
-	 * cutoffs and the debug/post toggles that act on a live
-	 * search rather than display state.
-	 *
-	 * <p>These members mirror how the shell and refresh path always read them:
-	 * every member is a raw configured read — lifecycle side-effect inputs
-	 * never consulted the override map — except {@code postTransports}, which
-	 * the transport-posting path has always read through the override layer.
-	 */
-	@Getter
-	@Accessors(fluent = true)
-	@AllArgsConstructor(access = AccessLevel.PRIVATE)
-	public static final class LifecycleView
-	{
-		private final int calculationCutoff, recalculateDistance, reachedDistance;
-		private final boolean cancelInstead, drawDebugPanel, postTransports;
-
-		private LifecycleView(EffectiveConfig effective, ShortestPathConfig configured,
-			Function<ConfigKey, Object> base)
-		{
-			this(num(base, ConfigKey.CALCULATION_CUTOFF),
-				num(base, ConfigKey.RECALCULATE_DISTANCE),
-				num(base, ConfigKey.FINISH_DISTANCE),
-				Boolean.TRUE.equals(base.apply(ConfigKey.CANCEL_INSTEAD)),
-				configured.drawDebugPanel(), effective.postTransports());
-		}
-
-		private static int num(Function<ConfigKey, Object> base, ConfigKey key)
-		{
-			Object value = base.apply(key);
-			return value instanceof Number ? ((Number) value).intValue() : 0;
-		}
+		return new ConfigChange(key, row == null ? Set.of() : row.getEffects());
 	}
 }
