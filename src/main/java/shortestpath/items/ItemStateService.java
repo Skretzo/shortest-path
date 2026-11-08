@@ -4,8 +4,7 @@ import java.util.*;
 
 import javax.inject.*;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemContainer;

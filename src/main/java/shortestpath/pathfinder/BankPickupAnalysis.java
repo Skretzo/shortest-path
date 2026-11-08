@@ -1,16 +1,10 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import net.runelite.api.ItemContainer;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.TransportItems;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.transport.*;
 
 /**
  * The raw result of the bank-pickup analysis for a path: which pickup

@@ -7,8 +7,7 @@ import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.*;
 import net.runelite.client.ui.components.DimmableJPanel;
 import net.runelite.client.util.SwingUtil;
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 
 /**
  * One transport-family card in the sidebar panel: a 16px icon slot, the family
