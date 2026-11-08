@@ -1,35 +1,15 @@
 package shortestpath.transport;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
-import shortestpath.Util;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.leagues.LeagueRegion;
-import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.requirement.model.SkillLevels;
-import shortestpath.requirement.model.VarRequirement;
-import shortestpath.transport.parser.FieldParser;
-import shortestpath.transport.parser.QuestParser;
-import shortestpath.transport.parser.SkillRequirementParser;
-import shortestpath.transport.parser.TransportRecord;
-import shortestpath.transport.parser.TsvParser;
-import shortestpath.transport.parser.VarRequirementParser;
+import shortestpath.requirement.model.*;
+import shortestpath.transport.parser.*;
 
 /**
  * The single typed resource-loading path for the plugin's bundled data.

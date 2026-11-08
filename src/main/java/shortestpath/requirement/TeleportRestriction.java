@@ -1,14 +1,9 @@
 package shortestpath.requirement;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.transport.ResourceLoader;
-import shortestpath.transport.TransportType;
+import shortestpath.transport.*;
 
 /**
  * Per-item teleport restriction support: the family map the config panel's
