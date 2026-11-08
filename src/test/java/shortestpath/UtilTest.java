@@ -149,7 +149,9 @@ public class UtilTest
 	public void eachMissingResourceThrowsNpe()
 	{
 		Assert.assertThrows(NullPointerException.class,
-			() -> Util.each("/no-such-resource.tsv", (line, cols) -> { }));
+			() -> Util.each("/no-such-resource.tsv", (line, cols) ->
+			{
+			}));
 	}
 
 	@Test

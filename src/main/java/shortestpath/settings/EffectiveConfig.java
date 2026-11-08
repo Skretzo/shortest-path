@@ -1,7 +1,6 @@
 package shortestpath.settings;
 
 import java.awt.Color;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;

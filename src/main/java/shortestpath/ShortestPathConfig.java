@@ -1,21 +1,12 @@
 package shortestpath;
 
 import java.awt.Color;
-import java.util.EnumSet;
-import java.util.Set;
 import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
-import net.runelite.client.config.Range;
-import net.runelite.client.config.Units;
-import shortestpath.settings.TeleportationItem;
-import shortestpath.poh.JewelleryBoxTier;
-import shortestpath.poh.PohNexusPortal;
-import shortestpath.poh.PohMountedItem;
-import java.util.HashSet;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config
@@ -39,92 +30,92 @@ public interface ShortestPathConfig extends Config
 		return true;
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * Legacy persisted setting used as the migration default for {@link #pohMountedItems()}.
 	 * Remove once the old config value is no longer supported.
 	 */
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	@ConfigSection(
 		name = "Display",
 		description = "Path display on world map, minimap and scene tiles",
@@ -390,13 +381,13 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
 	/**
 	 * The balloon routes whose destination basket holds the required logs.
 	 * While this key has never been written its default derives from the
@@ -405,5 +396,5 @@ public interface ShortestPathConfig extends Config
 	 * permanently, after which the flag keeps meaning only for profiles that
 	 * never wrote this key.
 	 */
-	
+
 }

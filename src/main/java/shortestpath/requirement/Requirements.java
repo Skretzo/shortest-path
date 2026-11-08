@@ -8,7 +8,6 @@ import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.ItemID;
-import shortestpath.ShortestPathPlugin;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeSnapshot;

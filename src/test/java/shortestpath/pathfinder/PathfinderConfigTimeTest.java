@@ -5,7 +5,6 @@ import static org.mockito.Mockito.mock;
 
 import net.runelite.api.Client;
 import org.junit.Test;
-import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 
 public class PathfinderConfigTimeTest

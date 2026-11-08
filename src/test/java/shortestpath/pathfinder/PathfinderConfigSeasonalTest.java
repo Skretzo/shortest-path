@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueModeState;
@@ -15,7 +14,6 @@ import shortestpath.leagues.LeagueRegion;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PathfinderConfigSeasonalTest
