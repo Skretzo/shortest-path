@@ -226,24 +226,26 @@ public class PathTileOverlay extends Overlay
 
 			List<PathStep> path = search.getPath();
 			int counter = 0;
-			if (renderState.isSailing())
+			// A route's sailing legs are lines along each heading the boat holds, drawn through the spot within each tile
+			// where the boat sits; the walking style below skips them
+			Color sailingColor = renderState.getSailingPathColor();
+			for (int i = 1; i < path.size(); i++)
 			{
-				// On a boat the path sails the boat's headings: lines along each heading it holds, drawn through the
-				// spot within each tile where the boat actually sits
-				Color sailingColor = renderState.isPathUnreachable() ? renderState.getPathColor() : PathRenderState.SAILING_PATH_COLOUR;
-				for (int i = 1; i < path.size(); i++)
+				if (PathStep.sailedInto(path, i))
 				{
 					drawOffsetLine(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition(),
 						renderState.getSailingPivotX(), renderState.getSailingPivotY(), sailingColor);
-					drawTransportInfo(graphics, path.get(i - 1), path.get(i), path, i - 1, search);
 				}
-				drawUnreachedTargets(graphics, path, colorCalculating, true, search);
 			}
-			else if (TileStyle.LINES.equals(settings.display().pathStyle()) || TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
+			if (TileStyle.LINES.equals(settings.display().pathStyle()) || TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
 			{
 				boolean arrows = TileStyle.ARROW_LINE.equals(settings.display().pathStyle());
 				for (int i = 1; i < path.size(); i++)
 				{
+					if (PathStep.sailedInto(path, i))
+					{
+						continue;
+					}
 					PathStep currentStep = path.get(i - 1);
 					PathStep nextStep = path.get(i);
 					// Arrowheads only where they carry information: at direction changes and the end.
@@ -252,7 +254,7 @@ public class PathTileOverlay extends Overlay
 							path.get(i + 1).getPackedPosition()));
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color,
 						1 + counter++, head, search);
-					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, search);
+					drawTransportInfo(graphics, currentStep, path, i - 1, search);
 				}
 			}
 			else if (TileStyle.TURN_MARKERS.equals(settings.display().pathStyle()))
@@ -261,9 +263,9 @@ public class PathTileOverlay extends Overlay
 				// The walker skips marker draws inside POH (no collision data, tiles
 				// render at wrong positions); the index doubles as the tile counter.
 				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
-					(steps, i) -> i == 0 || i == steps.size() - 1
+					(steps, i) -> !steps.get(i).isSailing() && (i == 0 || i == steps.size() - 1
 						|| directionChanges(steps.get(i - 1).getPackedPosition(),
-							steps.get(i).getPackedPosition(), steps.get(i + 1).getPackedPosition()),
+							steps.get(i).getPackedPosition(), steps.get(i + 1).getPackedPosition())),
 					(step, i) ->
 					{
 						drawTile(graphics, step.getPackedPosition(), color, i, true, search);
@@ -279,11 +281,15 @@ public class PathTileOverlay extends Overlay
 					color.getAlpha() / 2);
 				for (int i = 1; i < path.size(); i++)
 				{
+					if (PathStep.sailedInto(path, i))
+					{
+						continue;
+					}
 					PathStep currentStep = path.get(i - 1);
 					PathStep nextStep = path.get(i);
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), tracerLineColour,
 						1 + counter++, false, search);
-					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, search);
+					drawTransportInfo(graphics, currentStep, path, i - 1, search);
 				}
 				if (!path.isEmpty())
 				{
@@ -325,7 +331,7 @@ public class PathTileOverlay extends Overlay
 				// never one sprite per tile (per-tile sprite density is too heavy).
 				// The walker skips sprite draws inside POH, same as the other markers.
 				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
-					(steps, i) -> i % SPRITE_STRIDE == 0 || i == steps.size() - 1,
+					(steps, i) -> !steps.get(i).isSailing() && (i % SPRITE_STRIDE == 0 || i == steps.size() - 1),
 					(step, i) ->
 					{
 						Point p = tileCenter(step.getPackedPosition());
@@ -363,7 +369,7 @@ public class PathTileOverlay extends Overlay
 				// render at wrong positions); the index doubles as the tile counter.
 				boolean showTiles = TileStyle.TILES.equals(settings.display().pathStyle());
 				ProjectedTiles.forEachVisibleStep(this, graphics, path, annotator, colorCalculating, search,
-					(steps, i) -> true,
+					(steps, i) -> !steps.get(i).isSailing(),
 					(step, i) -> drawTile(graphics, step.getPackedPosition(), color, i, showTiles, search),
 					showTiles);
 			}
@@ -719,9 +725,10 @@ public class PathTileOverlay extends Overlay
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path,
-		int pathIndex, ActiveSearch search)
+	void drawTransportInfo(Graphics2D graphics, PathStep currentStep, List<PathStep> path, int pathIndex,
+		ActiveSearch search)
 	{
+		PathStep nextStep = annotator.nextPathStep(path, pathIndex);
 		int location = currentStep.getPackedPosition();
 		int lx = WorldPointUtil.unpackWorldX(location);
 		int ly = WorldPointUtil.unpackWorldY(location);

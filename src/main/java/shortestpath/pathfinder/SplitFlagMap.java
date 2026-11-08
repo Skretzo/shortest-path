@@ -1,6 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -39,12 +40,23 @@ public class SplitFlagMap
 	// Every region's collision bits are packed into one shared word array instead of a separate
 	// FlagMap + BitSet + long[] per region. regionWordOffset gives each region's start word, or -1
 	// when the region has no collision data (issue #491).
+	// The only layer read at runtime
+	private static final String RUNTIME_LAYER = "sailing/";
+
 	private final long[] flags;
 	private final int[] regionWordOffset;
 	private final int widthInclusive;
+	// The zip's other entries, the layers, by name: each in a directory, such as sea/40_47
+	private final Map<String, byte[]> layers;
 
 	public SplitFlagMap(Map<Integer, byte[]> compressedRegions)
 	{
+		this(compressedRegions, Map.of());
+	}
+
+	public SplitFlagMap(Map<Integer, byte[]> compressedRegions, Map<String, byte[]> layers)
+	{
+		this.layers = Map.copyOf(layers);
 		widthInclusive = regionExtents.getWidth() + 1;
 		final int heightInclusive = regionExtents.getHeight() + 1;
 		final int regionCount = widthInclusive * heightInclusive;
@@ -93,10 +105,27 @@ public class SplitFlagMap
 		return (x & 0xFFFF) | ((y & 0xFFFF) << 16);
 	}
 
+	/** The plugin's collision map, keeping only the layers read at runtime: the rest are inputs to the generated data. */
 	public static SplitFlagMap fromResources()
 	{
+		return fromZip(ResourceLoader.collisionMap(), RUNTIME_LAYER);
+	}
+
+	/**
+	 * The collision map in a zip like the plugin's collision-map.zip: an entry per region, named by its region
+	 * coordinates, and layers of other data per tile in directories (see {@link #layers}).
+	 */
+	public static SplitFlagMap fromZip(InputStream zip)
+	{
+		return fromZip(zip, "");
+	}
+
+	// As above, keeping only the layer entries whose names start with layerPrefix
+	private static SplitFlagMap fromZip(InputStream zip, String layerPrefix)
+	{
 		Map<Integer, byte[]> compressedRegions = new HashMap<>();
-		try (ZipInputStream in = new ZipInputStream(ResourceLoader.collisionMap()))
+		Map<String, byte[]> layers = new HashMap<>();
+		try (ZipInputStream in = new ZipInputStream(zip))
 		{
 			int minX = Integer.MAX_VALUE;
 			int minY = Integer.MAX_VALUE;
@@ -106,6 +135,12 @@ public class SplitFlagMap
 			ZipEntry entry;
 			while ((entry = in.getNextEntry()) != null)
 			{
+				if (entry.isDirectory()) continue;
+				if (entry.getName().indexOf('/') >= 0)
+				{
+					if (entry.getName().startsWith(layerPrefix)) layers.put(entry.getName(), Util.readAllBytes(in));
+					continue;
+				}
 				String[] n = entry.getName().split("_");
 				final int x = Integer.parseInt(n[0]);
 				final int y = Integer.parseInt(n[1]);
@@ -124,7 +159,22 @@ public class SplitFlagMap
 			throw new UncheckedIOException(e);
 		}
 
-		return new SplitFlagMap(compressedRegions);
+		return new SplitFlagMap(compressedRegions, layers);
+	}
+
+	/**
+	 * The layer {@code directory}: its entries' contents by the rest of their names, such as {@code 40_47} for
+	 * {@code sea/40_47}; empty if the map has none.
+	 */
+	public Map<String, byte[]> layers(String directory)
+	{
+		String prefix = directory + "/";
+		Map<String, byte[]> found = new HashMap<>();
+		for (Map.Entry<String, byte[]> entry : layers.entrySet())
+		{
+			if (entry.getKey().startsWith(prefix)) found.put(entry.getKey().substring(prefix.length()), entry.getValue());
+		}
+		return found;
 	}
 
 	public byte getRegionPlaneCounts(int index)

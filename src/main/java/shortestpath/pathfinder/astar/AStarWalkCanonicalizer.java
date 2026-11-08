@@ -11,6 +11,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.Traversal;
 
 /**
  * Picks a natural-looking walk for each walking leg of an A* route, without changing what the
@@ -196,6 +197,9 @@ public final class AStarWalkCanonicalizer
 		// A transport can land one tile away; its edge paid the transport's duration, not a walk
 		// tick, so it must not be folded into a walking leg.
 		if (to.getTransport() != null) return false;
+		// A sailing move, boarding or stepping off is never a walk, even a move of one tile: sailing legs bound the
+		// walking legs on either side and are never rewritten
+		if (to.getTraversal() != Traversal.WALK) return false;
 		if (from.getBankVisitState() != to.getBankVisitState()) return false;
 		int a = from.getPackedPosition(), b = to.getPackedPosition();
 		int plane = WorldPointUtil.unpackWorldPlane(a);

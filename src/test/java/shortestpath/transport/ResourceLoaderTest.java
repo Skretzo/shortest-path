@@ -1480,23 +1480,32 @@ public class ResourceLoaderTest
 	@Test
 	public void collisionMapReturnsTheCommittedZip() throws IOException
 	{
-		int entries = 0;
-		int packedNames = 0;
+		int regions = 0;
+		int layered = 0;
+		int other = 0;
 		try (InputStream in = ResourceLoader.collisionMap();
 			ZipInputStream zip = new ZipInputStream(in))
 		{
 			for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry())
 			{
-				entries++;
 				if (entry.getName().matches("\\d+_\\d+"))
 				{
-					packedNames++;
+					regions++;
+				}
+				else if (entry.getName().matches("(sea|sailing)/.+"))
+				{
+					layered++;
+				}
+				else
+				{
+					other++;
 				}
 			}
 		}
 
-		assertFloor("committed collision map regions", 2773, entries);
-		Assert.assertEquals("Every entry is a packed region name", entries, packedNames);
+		assertFloor("committed collision map regions", 2773, regions);
+		assertFloor("committed collision map layer entries", 1, layered);
+		Assert.assertEquals("Every entry is a packed region name or in a layer", 0, other);
 	}
 
 	/**

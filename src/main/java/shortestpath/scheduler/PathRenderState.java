@@ -38,17 +38,6 @@ public final class PathRenderState
 	private final Settings settings;
 
 	/**
-	 * Whether the active search sails a boat's headings rather than walking
-	 * (see {@link ActiveSearch#isSailing}), so it has a point at the end of
-	 * each move and is drawn as lines along its headings.
-	 */
-	public boolean isSailing()
-	{
-		ActiveSearch search = scheduler.getActiveSearch();
-		return search != null && search.isSailing();
-	}
-
-	/**
 	 * The boat's in-tile pivot X for the current sailing dispatch, in local
 	 * units signed from the tile centre. This is the value written when the
 	 * sailing search was dispatched — it matches what that search drew.
@@ -98,9 +87,9 @@ public final class PathRenderState
 			return false;
 		}
 
-		// A sailing path arrives once the boat's hull covers the target, with the boat's own tile up to a boat length
-		// from it, so the search says whether it got there
-		if (pathfinder.isSailing())
+		// A route that ends with a sailing leg arrives once the boat's hull covers the target, with the boat's own tile
+		// up to a boat length from it, so the search says whether it got there
+		if (!path.isEmpty() && path.get(path.size() - 1).isSailing())
 		{
 			PathfinderResult result = pathfinder.getResult();
 			return result != null && !result.isReached();
@@ -117,6 +106,12 @@ public final class PathRenderState
 		}
 
 		return closestTargetDistance > settings.display().unreachableTargetDistance();
+	}
+
+	/** The colour of a route's sailing legs: blue, or the unreachable colour when the route falls short. */
+	public Color getSailingPathColor()
+	{
+		return isPathUnreachable() ? getPathColor() : SAILING_PATH_COLOUR;
 	}
 
 	/**

@@ -56,6 +56,33 @@ public class PathAnnotatorTest
 	}
 
 	@Test
+	public void sailingHintIsShownAtBoardingInsteadOfLanding()
+	{
+		int dock = WorldPointUtil.packWorldPoint(3050, 3192, 0);
+		Transport boat = new Transport.TransportBuilder().origin(dock).destination(LANDING)
+			.type(TransportType.SAILING).displayInfo("Recover boat (4125 gp), then sail").build();
+		for (BankVisitState state : BankVisitState.values())
+		{
+			List<PathStep> path = List.of(new PathStep(dock, state),
+				PathStep.sailing(dock - 1, state), PathStep.sailing(LANDING - 1, state),
+				new PathStep(LANDING, state, boat));
+			assertSame(path.get(3), annotator.nextPathStep(path, 0));
+			assertEquals(Set.of(boat), annotator.transportsForEdge(path.get(0), annotator.nextPathStep(path, 0)));
+			assertNull(annotator.nextPathStep(path, 2));
+			assertNull(annotator.nextPathStep(path, 3));
+			assertSame(boat, path.get(3).getTransport());
+		}
+	}
+
+	@Test
+	public void sailingWithoutALandingTransportDoesNotBorrowALaterHint()
+	{
+		List<PathStep> path = List.of(new PathStep(1, BankVisitState.CARRIED),
+			PathStep.sailing(2, BankVisitState.CARRIED), PathStep.sailing(3, BankVisitState.CARRIED));
+		assertSame(path.get(1), annotator.nextPathStep(path, 0));
+	}
+
+	@Test
 	public void testFormatTransportDisplay()
 	{
 		pohService.putFromDialogLine("3: Lumbridge");

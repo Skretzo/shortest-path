@@ -19,6 +19,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.ItemID;
 import shortestpath.requirement.model.DestinationRequirements;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.requirement.model.ItemRequirement;
@@ -29,9 +30,18 @@ import shortestpath.settings.ConfigKey;
 import shortestpath.settings.EffectiveConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.items.ItemStateService;
+import shortestpath.items.OwnedItems;
 import shortestpath.leagues.LeagueModeState;
+import shortestpath.pathfinder.astar.EstimateEdges;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
-import shortestpath.pathfinder.sailing.SailingMoves;
+import shortestpath.pathfinder.sailing.PreparedSailingCapability;
+import shortestpath.pathfinder.sailing.SailingFleet;
+import shortestpath.pathfinder.sailing.SailingFleets;
+import shortestpath.pathfinder.sailing.SailingMooring;
+import shortestpath.pathfinder.sailing.SailingMoorings;
+import shortestpath.pathfinder.sailing.SailingEstimates;
+import shortestpath.pathfinder.sailing.SailingWaters;
+import shortestpath.pathfinder.sailing.SeaGraph;
 import shortestpath.poh.PohService;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.requirement.PlayerStateSource;
@@ -55,7 +65,6 @@ import shortestpath.requirement.model.TransportItems;
 import shortestpath.requirement.model.VarRequirement;
 import shortestpath.requirement.model.Unlock;
 import shortestpath.sailing.SailingService;
-import shortestpath.sailing.SailingState;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig
@@ -275,17 +284,13 @@ public class PathfinderConfig
 	{
 		return sailing.getState().isAboard();
 	}
-	/**
-	 * On a boat with the option on, search with sailing moves (see {@link SailingMoves}) instead of walking.
-	 */
-	@Getter
-	private volatile boolean sailingMoves;
-	/**
-	 * Speed sailing moves are built for: the boat's base speed in tiles per tick, or an estimate when it
-	 * can't be read. Speed boosts are random and temporary, so they are left out.
-	 */
-	@Getter
-	private volatile double sailingSpeed = SailingMoves.ESTIMATED_SPEED;
+	/** Whether routes sail the player's boats: "Sail on boats" on, logged in. */
+	private volatile boolean sailingBoats;
+	private volatile int boatRecoveryThreshold;
+	/** Whether a boat recovery costs more than the player carries, so routes may visit a bank whatever the settings. */
+	private volatile boolean recoveryNeedsBank;
+	/** What the search's estimate knows of sailing the player's boats between moorings ({@link SailingEstimates}). */
+	private volatile EstimateEdges sailingEstimates = EstimateEdges.NONE;
 
 	public PathfinderConfig(Client client, ShortestPathConfig config)
 	{
@@ -405,8 +410,63 @@ public class PathfinderConfig
 	public PreparedRoutingAccount prepareAStarRoutingAccount(boolean allowTransports, boolean targetsNeedBank)
 	{
 		return PreparedRoutingAccount.compile(
-			getTransportAvailability(BankVisitState.CARRIED), getTransportAvailability(BankVisitState.BANKED), includeBankPath || targetsNeedBank,
-			accessibleBankTiles, bankVisitCost, allowTransports, this::getAdditionalTransportCost);
+			getTransportAvailability(BankVisitState.CARRIED), getTransportAvailability(BankVisitState.BANKED), includeBankPath || targetsNeedBank || recoveryNeedsBank,
+			accessibleBankTiles, bankVisitCost, allowTransports, this::getAdditionalTransportCost)
+			.withEstimateEdges(allowTransports ? sailingEstimates : EstimateEdges.NONE);
+	}
+
+	/**
+	 * This query's sailing capability: the account's boats ({@link #sailingFleet}) and the moorings whose
+	 * requirements it meets. {@link PreparedSailingCapability#NONE} unless a boat can be sailed. Client thread
+	 * only, like {@link #prepareAStarRoutingAccount}: requirements read this refresh's account state.
+	 */
+	public PreparedSailingCapability prepareSailingCapability()
+	{
+		SailingFleet fleet = sailingFleet();
+		if (fleet.aboard() == null && fleet.boats().isEmpty())
+		{
+			return PreparedSailingCapability.NONE;
+		}
+		return new PreparedSailingCapability(fleet, usableMoorings());
+	}
+
+	// The requirements of the banks and the moorings, whose quests and vars no transport may declare
+	private List<DestinationRequirements> destinationRequirements()
+	{
+		List<DestinationRequirements> requirements = new ArrayList<>(bankRequirements.values());
+		for (SailingMooring mooring : SailingMoorings.all()) requirements.add(mooring.requirements());
+		return requirements;
+	}
+
+	// The moorings whose requirements the account meets
+	private List<SailingMooring> usableMoorings()
+	{
+		List<SailingMooring> usable = new ArrayList<>();
+		for (SailingMooring mooring : SailingMoorings.all())
+		{
+			if (requirements.satisfied(mooring.requirements()) && mooring.questsStarted().stream()
+				.allMatch(quest -> getQuestState(quest) != QuestState.NOT_STARTED))
+			{
+				usable.add(mooring);
+			}
+		}
+		return usable;
+	}
+
+	/**
+	 * The player's boats as far as the game shows them, with "Sail on boats" on ({@link SailingFleets#fromState}).
+	 * An account model that knows its boats overrides this.
+	 */
+	protected SailingFleet sailingFleet()
+	{
+		if (!sailingBoats)
+		{
+			return SailingFleet.NONE;
+		}
+		int carried = heldItems.carried().getOrDefault(ItemID.COINS, 0);
+		long owned = (long) carried + OwnedItems.collect(itemState.getBank()).getOrDefault(ItemID.COINS, 0);
+		return SailingFleets.fromState(sailing.getState(), Math.min(boatRecoveryThreshold, currencyThreshold), owned,
+			carried);
 	}
 
 	public boolean hasDestination(String destinationType)
@@ -458,6 +518,7 @@ public class PathfinderConfig
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
 		currencyThreshold = effective.num(ConfigKey.CURRENCY_THRESHOLD);
+		boatRecoveryThreshold = Math.max(0, effective.num(ConfigKey.BOAT_RECOVERY_THRESHOLD));
 		// Banked teleport items are only usable from the bankVisited path state, so a
 		// mode that collects bank contents must also enable bank-path traversal —
 		// otherwise the banked items are gathered but can never be offered.
@@ -537,19 +598,11 @@ public class PathfinderConfig
 		// boat-state reads and republishes its snapshot here unconditionally, so a
 		// stale read (e.g. after logging out aboard a boat) can never keep the
 		// search sailing when there is no boat
-		sailingMoves = false;
-		sailingSpeed = SailingMoves.ESTIMATED_SPEED;
+		sailingBoats = false;
 		sailing.refresh(playerStateSource);
 		if (GameState.LOGGED_IN.equals(playerStateSource.gameState()))
 		{
-			SailingState sailingState = sailing.getState();
-			sailingMoves = sailingState.isAboard() && effective.bool(ConfigKey.USE_SAILING_MOVES);
-			// The game stores the base speed in 1/128ths of a tile per tick; a read above any real
-			// boat's speed is a stale or mis-scaled varbit rather than a fast boat — the moves it
-			// would build are so long nothing can sail them — so estimate instead
-			double speed = sailingState.getBaseSpeed() / 128.0;
-			sailingSpeed = sailingState.getBaseSpeed() > 0 && speed <= SailingMoves.MAX_SPEED
-				? speed : SailingMoves.ESTIMATED_SPEED;
+			sailingBoats = effective.bool(ConfigKey.USE_SAILING_MOVES);
 			refreshTransports(evaluationTimeMinutes);
 		}
 
@@ -786,7 +839,7 @@ public class PathfinderConfig
 		// All player state the checks below read is captured once per refresh in
 		// an immutable snapshot, so no check can observe the game mid-refresh.
 		RequirementContext context = RequirementContext.capture(playerStateSource, requirementHooks,
-			policy, evaluationTimeMinutes, Arrays.asList(allTransports), bankRequirements, itemState.getBank(),
+			policy, evaluationTimeMinutes, Arrays.asList(allTransports), destinationRequirements(), itemState.getBank(),
 			unlocks, respawnPrifddinas, leagueModeState, spiritTrees.getAvailableSpiritTrees(),
 			balloonLogBasketDestinations);
 		eligibility = context.getEligibility();
@@ -795,6 +848,11 @@ public class PathfinderConfig
 		varbitValues = context.getVarbitValues();
 		varPlayerValues = context.getVarPlayerValues();
 		requirements = new Requirements(context, policy, requirementHooks);
+		// The estimate sees across the sea by the least times to sail the player's boats between moorings
+		SailingFleet fleet = sailingFleet();
+		recoveryNeedsBank = fleet.recoveryMayNeedBank();
+		sailingEstimates = fleet.boats().isEmpty() ? EstimateEdges.NONE : SailingEstimates.edges(fleet, usableMoorings(),
+			SailingWaters.of(getMap()), SeaGraph.all(getMap()));
 		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
 		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
 		for (Transport transport : allTransports)
@@ -881,12 +939,12 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Whether any loaded transport lands on the given tile, regardless of whether the
-	 * transport is currently usable by this account.
+	 * Whether any loaded transport lands on the given tile, or docking a boat does (a mooring's
+	 * land tile, which is walkable as any transport's is), regardless of whether this account can use it.
 	 */
 	public boolean isTransportDestination(int packedPosition)
 	{
-		return transportDestinations.contains(packedPosition);
+		return transportDestinations.contains(packedPosition) || SailingMoorings.atLand(packedPosition) != null;
 	}
 
 	private static PrimitiveIntHashMap<Transport[]> buildAllDisplayTransports(Transport[] transports)

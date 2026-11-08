@@ -43,7 +43,8 @@ highlightBankPickupItems	Highlight Bank Pickup Items	Highlight items in the bank
 highlightSpellbookSpells	Highlight Spellbook Spells	Highlight spells in the spellbook that need to be cast for the current path step		
 highlightInventoryItems	Highlight Inventory Items	Highlight items in the inventory and equipment that need to be used for the current path step		
 collisionAwareBlockedTargets	Collision-Aware Blocked Targets	When the target tile cannot be stood on, limit the fallback goal tiles to tiles<br>connected to it through the collision map (the same side of walls), instead of every<br>walkable tile within the unreachable target distance		
-useSailingMoves	Sail On Boats	While on a boat, find a path that sails the boat's 16 headings at its base speed<br>with its whole hull clear, and draw it in blue, instead of a walking path		
+useSailingMoves	Sail On Boats	Route with your own boats: sail on from the boat you are on, and board your moored boats<br>to sail between moorings and to targets at sea. Sailing legs are drawn in blue		
+boatRecoveryThreshold	Boat Recovery Limit (GP)	Maximum coins per boat recovery at a shipwright (0 disables recovery).<br>Recovery can discard cargo.	0	2147483647
 usePoh	Enable POH Teleports	Master toggle for all Player-Owned House (POH) teleports.<br>When disabled, all POH transports are excluded regardless of individual settings below.		
 usePohFairyRing	POH Fairy Ring	Whether to include the POH fairy ring in the path.<br>Enable this if you have built a fairy ring in your house (85 Construction or boosted)		
 usePohSpiritTree	POH Spirit Tree	Whether to include the POH spirit tree in the path.<br>Enable this if you have built a spirit tree in your house (75 Construction, 83 Farming or boosted)		

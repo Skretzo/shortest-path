@@ -52,6 +52,12 @@ public final class ClientPlayerStateSource implements PlayerStateSource
 	}
 
 	@Override
+	public Object[] dbTableField(int row, int column, int tuple)
+	{
+		return client.getDBTableField(row, column, tuple);
+	}
+
+	@Override
 	public int varbit(int varbitId)
 	{
 		checkOnClientThread();

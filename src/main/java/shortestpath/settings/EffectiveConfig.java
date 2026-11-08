@@ -304,6 +304,12 @@ public final class EffectiveConfig implements ShortestPathConfig
 	}
 
 	@Override
+	public int boatRecoveryThreshold()
+	{
+		return num(ConfigKey.BOAT_RECOVERY_THRESHOLD);
+	}
+
+	@Override
 	public int currencyThreshold()
 	{
 		return num(ConfigKey.CURRENCY_THRESHOLD);

@@ -6,10 +6,9 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.DBTableID;
-import net.runelite.api.gameval.VarbitID;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -23,6 +22,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.WorldPointUtil;
+import shortestpath.sailing.BoatSpeed;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
@@ -80,13 +80,8 @@ public class SailingMovesTest
 	@Test
 	public void testSailingSpeedIsTheBoatsBaseSpeed()
 	{
-		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(192);
-		pathfinderConfig.refresh();
-		assertEquals(1.5, pathfinderConfig.getSailingSpeed(), 0);
-
-		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(0);
-		pathfinderConfig.refresh();
-		assertEquals("Falls back to the estimate", SailingMoves.ESTIMATED_SPEED, pathfinderConfig.getSailingSpeed(), 0);
+		assertEquals(192, SailingFleets.speed(192));
+		assertEquals("Falls back to the estimate", BoatSpeed.ESTIMATED, SailingFleets.speed(0));
 	}
 
 	@Test
@@ -115,31 +110,10 @@ public class SailingMovesTest
 	{
 		// The side-panel varbit is in 1/128ths of a tile per tick: a stale or mis-scaled read far above
 		// a real boat's speed is not a faster boat
-		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn(65536);
-		pathfinderConfig.refresh();
-		assertEquals(SailingMoves.ESTIMATED_SPEED, pathfinderConfig.getSailingSpeed(), 0);
-
-		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn((int) (SailingMoves.MAX_SPEED * 128));
-		pathfinderConfig.refresh();
-		assertEquals("The fastest real speed still counts", SailingMoves.MAX_SPEED,
-			pathfinderConfig.getSailingSpeed(), 0);
-
-		when(client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED)).thenReturn((int) (SailingMoves.MAX_SPEED * 128) + 1);
-		pathfinderConfig.refresh();
-		assertEquals("Just above it does not", SailingMoves.ESTIMATED_SPEED, pathfinderConfig.getSailingSpeed(), 0);
-	}
-
-	@Test
-	public void testOpenSeaTakesTheDirectHeading()
-	{
-		// 15 across and 35 up is 5 NNE moves (38 tiles); N, N, NE five times takes as long but sails 41 tiles
-		List<PathStep> path = findPath(OPEN_SEA_START, WorldPointUtil.packWorldPoint(2963, 3109, 0), SailingMoves.ESTIMATE);
-
-		assertEquals(6, path.size());
-		for (int i = 1; i < path.size(); i++)
-		{
-			assertEquals("Move " + i + " should be NNE", "NNE", SailingMoves.ESTIMATE.name(moveIndex(path, i)));
-		}
+		int fastest = (int) (SailingMoves.MAX_SPEED * BoatSpeed.UNITS);
+		assertEquals(BoatSpeed.ESTIMATED, SailingFleets.speed(65536));
+		assertEquals("The fastest real speed still counts", fastest, SailingFleets.speed(fastest));
+		assertEquals("Just above it does not", BoatSpeed.ESTIMATED, SailingFleets.speed(fastest + 1));
 	}
 
 	@Test
@@ -192,61 +166,16 @@ public class SailingMovesTest
 		}
 	}
 
-	@Test
-	public void testArrivesNextToATargetTheBoatCantStopOn()
-	{
-		// At speed 2 every move goes an even number of tiles across and up together, so 15 across and 16 up is out of reach
-		int target = WorldPointUtil.packWorldPoint(2963, 3090, 0);
-		List<PathStep> path = findPath(OPEN_SEA_START, target, SailingMoves.ESTIMATE);
-
-		assertEquals("Ends next to the target", 1, WorldPointUtil.distanceBetween(target, last(path)));
-		for (int i = 1; i < path.size(); i++)
-		{
-			assertNotEquals("Move " + i + " should be a boat heading", -1, SailingMoves.ESTIMATE.headingOf(dx(path, i), dy(path, i)));
-		}
-	}
-
-	@Test
-	public void testLinesDontCrossBlockedTiles()
-	{
-		// A 3x2 shipwreck at (2704-2706, 3050-3051) in open sea
-		CollisionMap map = pathfinderConfig.getMap();
-		assertTrue(map.isBlocked(2705, 3050, 0));
-		assertTrue("Stops short of the wreck", SailingSearch.canSailLine(map, 2705, 3044, 0, 0, 5));
-		assertFalse("Runs into the wreck", SailingSearch.canSailLine(map, 2705, 3044, 0, 0, 13));
-		assertFalse("Clips the wreck's corner", SailingSearch.canSailLine(map, 2702, 3048, 0, 3, 3));
-		// A boat that starts on a blocked tile can sail out of it, but not further into the blocked tiles
-		assertTrue("Leaves the wreck", SailingSearch.canSailLine(map, 2705, 3050, 0, 0, -3));
-		assertFalse("Stays in the wreck", SailingSearch.canSailLine(map, 2705, 3050, 0, 0, 3));
-	}
-
-	@Test
-	public void testSailingSkipsBankVisitsAndTransports()
-	{
-		// The Bank Boat at (2280, 2544) is a bank out at sea. With paths through a bank turned on, a walking search
-		// passing it would consider visiting it; a sailing search only sails, since bank visits and transports cost
-		// ticks rather than the distance sailed
-		config.set("includeBankPath", true);
-		pathfinderConfig.refresh();
-		assertTrue(pathfinderConfig.bankAccessible(WorldPointUtil.packWorldPoint(2280, 2544, 0)));
-
-		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, WorldPointUtil.packWorldPoint(2260, 2544, 0),
-			Set.of(WorldPointUtil.packWorldPoint(2300, 2548, 0)), null, SailingMoves.ESTIMATE);
-		pathfinder.run();
-
-		assertTrue(pathfinder.getResult().isReached());
-		assertEquals("No bank visits or transports queued", 0, pathfinder.getResult().getTransportsChecked());
-	}
-
+	// A raft's leg from start to target
 	private List<PathStep> findPath(int start, int target, SailingMoves sailingMoves)
 	{
-		SailingPathfinder pathfinder = new SailingPathfinder(pathfinderConfig, start, Set.of(target), null, sailingMoves);
-		pathfinder.run();
-		assertTrue("Target should be reachable", pathfinder.getResult().isReached());
-		return pathfinder.getPath();
+		List<PathStep> path = TestSail.sail(pathfinderConfig.getMap(), sailingMoves,
+			SailingVessel.of(SailingVessel.Kind.RAFT, BoatSpeed.ESTIMATED).hull(), -1, start, target);
+		assertNotNull("Target should be reachable", path);
+		return path;
 	}
 
-	// Checks move i independently of CollisionMap#canSailLine: samples the line between the tile centres every
+	// Checks move i independently of the search: samples the line between the tile centres every
 	// twentieth of a tile, and describes the first blocked tile it passes over after the one it starts on, or returns
 	// null if there are none
 	private String blockedOnLine(List<PathStep> path, int i)
@@ -278,16 +207,6 @@ public class SailingMovesTest
 		assertEquals(name + " ticks", ticks, moves.ticks(index));
 	}
 
-	private static int last(List<PathStep> path)
-	{
-		return path.get(path.size() - 1).getPackedPosition();
-	}
-
-	private static int moveIndex(List<PathStep> path, int i)
-	{
-		return SailingMoves.ESTIMATE.indexOf(dx(path, i), dy(path, i));
-	}
-
 	private static int dx(List<PathStep> path, int i)
 	{
 		return WorldPointUtil.unpackWorldX(path.get(i).getPackedPosition()) - WorldPointUtil.unpackWorldX(path.get(i - 1).getPackedPosition());
@@ -296,5 +215,17 @@ public class SailingMovesTest
 	private static int dy(List<PathStep> path, int i)
 	{
 		return WorldPointUtil.unpackWorldY(path.get(i).getPackedPosition()) - WorldPointUtil.unpackWorldY(path.get(i - 1).getPackedPosition());
+	}
+
+	@Test
+	public void aBoatCanAlwaysSailSlower()
+	{
+		SailingMoves moves = SailingMoves.forSpeed(2.0), both = moves.withSlow();
+		// A tile a tick north, slowly, as well as its own moves
+		assertTrue(both.indexOf(0, 1) >= 0);
+		assertTrue(both.size() > moves.size());
+		for (int move = 0; move < moves.size(); move++) assertTrue(both.indexOf(moves.dx(move), moves.dy(move)) >= 0);
+		// Slowing never sails faster
+		assertEquals(moves.openWaterTicks(30, 40), both.openWaterTicks(30, 40), 1e-9);
 	}
 }

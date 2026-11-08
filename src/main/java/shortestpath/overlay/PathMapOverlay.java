@@ -129,30 +129,38 @@ public class PathMapOverlay extends Overlay
 			Color colour = renderState.getPathColor();
 			List<PathStep> path = search.getPath();
 			Point cursorPos = client.getMouseCanvasPosition();
-			if (renderState.isSailing())
+			// A route's sailing legs are a line along each heading the boat holds, with a small square at the end of each
+			// move; the walking style skips them
+			Color sailingColour = renderState.getSailingPathColor();
+			for (int i = 1; i < path.size(); i++)
 			{
-				// On a boat the path sails the boat's headings: a line along each heading it holds, with a small square
-				// at the end of each move
-				graphics.setColor(renderState.isPathUnreachable() ? renderState.getPathColor() : PathRenderState.SAILING_PATH_COLOUR);
-				for (int i = 0; i < path.size(); i++)
+				if (PathStep.sailedInto(path, i))
 				{
-					int point = path.get(i).getPackedPosition();
-					if (i > 0)
-					{
-						drawSolidLineOnMap(graphics, path.get(i - 1).getPackedPosition(), point);
-					}
-					drawSmallSquareOnMap(graphics, point);
+					graphics.setColor(sailingColour);
+					drawSolidLineOnMap(graphics, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition());
+					drawSmallSquareOnMap(graphics, path.get(i).getPackedPosition());
 				}
 			}
-			else if (TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
+			if (TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
 			{
 				graphics.setColor(colour);
-				drawArrowPath(graphics, path);
+				// Each walking run between sailing legs on its own, so no arrow crosses a leg
+				int runStart = 0;
+				for (int i = 1; i <= path.size(); i++)
+				{
+					if (i < path.size() && !PathStep.sailedInto(path, i)) continue;
+					if (i - 1 > runStart) drawArrowPath(graphics, path.subList(runStart, i));
+					runStart = i;
+				}
 			}
 			else
 			{
 				for (int i = 0; i < path.size(); i++)
 				{
+					if (path.get(i).isSailing())
+					{
+						continue;
+					}
 					graphics.setColor(colour);
 					int point = path.get(i).getPackedPosition();
 					int lastPoint = (i > 0) ? path.get(i - 1).getPackedPosition() : point;

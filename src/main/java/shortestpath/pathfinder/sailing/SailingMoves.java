@@ -3,7 +3,6 @@ package shortestpath.pathfinder.sailing;
 import java.util.Arrays;
 
 import net.runelite.api.Perspective;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -15,13 +14,11 @@ import lombok.experimental.Accessors;
  * quarter tiles across and 7 up per tick (23.2 degrees, not 22.5). Holding a heading for 1, 2 or 4
  * ticks always lands a whole number of tiles away, with the boat at the same spot within its tile.
  * Each move here is one heading held for the fewest such ticks, so every leg of a path is a direction
- * the boat can actually sail. The search looks for the shortest route rather than the quickest, so each
- * move costs the distance it sails ({@link #length}).
+ * the boat can actually sail, and costs the ticks it takes.
  * <p>
  * The search uses the boat's base speed for the whole route, since speed boosts are random and
  * temporary; {@link #ESTIMATE} is the fallback when the base speed can't be read.
  */
-@AllArgsConstructor
 public final class SailingMoves
 {
 	private static final String[] HEADING_NAMES = {
@@ -46,19 +43,40 @@ public final class SailingMoves
 	public static final SailingMoves ESTIMATE = forSpeed(ESTIMATED_SPEED);
 
 	/**
-	 * {@link #length} is in thousandths of a tile, so that adding lengths up is exact.
+	 * The speed a boat can always slow to, in tiles per tick: to come in to a berth, or round a bend too tight for its
+	 * full speed. It turns as at full speed, a heading a tick as it moves.
 	 */
-	public static final int LENGTH_UNITS_PER_TILE = 1000;
+	public static final double SLOW_SPEED = 1.0;
+	private static final SailingMoves SLOW = forSpeed(SLOW_SPEED);
+	// These moves and the slow ones, made on first ask
+	private volatile SailingMoves withSlow;
 
 	@Getter @Accessors(fluent = true) private final double speed;
 	private final int[] dx;
 	private final int[] dy;
 	private final int[] ticks;
-	private final int[] lengths;
 	private final int[] headings;
 	private final String[] names;
+	private final double longestMove, topSpeed;
 
-
+	private SailingMoves(double speed, int[] dx, int[] dy, int[] ticks, int[] headings, String[] names)
+	{
+		this.speed = speed;
+		this.dx = dx;
+		this.dy = dy;
+		this.ticks = ticks;
+		this.headings = headings;
+		this.names = names;
+		double longest = 0, top = 0;
+		for (int move = 0; move < dx.length; move++)
+		{
+			longest = Math.max(longest, Math.hypot(dx[move], dy[move]));
+			top = Math.max(top, Math.hypot(dx[move], dy[move]) / ticks[move]);
+		}
+		buildFacets();
+		longestMove = longest;
+		topSpeed = top;
+	}
 
 	/**
 	 * @param tilesPerTick boat speed, e.g. 1.5 or 2.0; an out-of-range value (including NaN) gives the estimate
@@ -72,7 +90,6 @@ public final class SailingMoves
 		int[] dx = new int[HEADING_NAMES.length];
 		int[] dy = new int[HEADING_NAMES.length];
 		int[] ticks = new int[HEADING_NAMES.length];
-		int[] lengths = new int[HEADING_NAMES.length];
 		int[] headings = new int[HEADING_NAMES.length];
 		String[] names = new String[HEADING_NAMES.length];
 		int count = 0;
@@ -95,8 +112,6 @@ public final class SailingMoves
 			dx[count] = k * quarterX / 4;
 			dy[count] = k * quarterY / 4;
 			ticks[count] = k;
-			// Rounded up, so a route never costs less than its real length and the search's estimate stays a lower bound
-			lengths[count] = (int) Math.ceil(Math.hypot(dx[count], dy[count]) * LENGTH_UNITS_PER_TILE);
 			headings[count] = heading;
 			names[count] = HEADING_NAMES[heading];
 			count++;
@@ -108,8 +123,36 @@ public final class SailingMoves
 			return ESTIMATE;
 		}
 		return new SailingMoves(tilesPerTick, Arrays.copyOf(dx, count), Arrays.copyOf(dy, count),
-			Arrays.copyOf(ticks, count), Arrays.copyOf(lengths, count), Arrays.copyOf(headings, count),
+			Arrays.copyOf(ticks, count), Arrays.copyOf(headings, count),
 			Arrays.copyOf(names, count));
+	}
+
+	/**
+	 * These moves and those at {@link #SLOW_SPEED}: what a boat can sail, slowing where it must. A slow move going as
+	 * far as one of these is left out, being slower.
+	 */
+	public SailingMoves withSlow()
+	{
+		SailingMoves both = withSlow;
+		if (both != null) return both;
+		int n = dx.length;
+		int[] bx = Arrays.copyOf(dx, n + SLOW.size()), by = Arrays.copyOf(dy, n + SLOW.size());
+		int[] bt = Arrays.copyOf(ticks, n + SLOW.size()), bh = Arrays.copyOf(headings, n + SLOW.size());
+		String[] bn = Arrays.copyOf(names, n + SLOW.size());
+		int count = n;
+		for (int move = 0; move < SLOW.size(); move++)
+		{
+			if (indexOf(SLOW.dx[move], SLOW.dy[move]) >= 0) continue;
+			bx[count] = SLOW.dx[move];
+			by[count] = SLOW.dy[move];
+			bt[count] = SLOW.ticks[move];
+			bh[count] = SLOW.headings[move];
+			bn[count++] = SLOW.names[move] + " slowly";
+		}
+		both = new SailingMoves(speed, Arrays.copyOf(bx, count), Arrays.copyOf(by, count), Arrays.copyOf(bt, count),
+			Arrays.copyOf(bh, count), Arrays.copyOf(bn, count));
+		withSlow = both;
+		return both;
 	}
 
 	// The game's velocity along one axis: rounded to local units (128 per tile), then to quarter tiles (32 each)
@@ -119,6 +162,70 @@ public final class SailingMoves
 		return (int) (Math.signum(local) * Math.round(Math.abs(local) / 32.0));
 	}
 
+	// The convex hull of the moves' velocities, as facets {nx, ny}: a velocity v is inside when n.v <= 1 for each
+	private double[] facetX, facetY;
+	private double maxFacet;
+
+	private void buildFacets()
+	{
+		int n = dx.length;
+		double[][] v = new double[n][];
+		for (int i = 0; i < n; i++) v[i] = new double[] {(double) dx[i] / ticks[i], (double) dy[i] / ticks[i]};
+		java.util.Arrays.sort(v, (a, b) -> a[0] != b[0] ? Double.compare(a[0], b[0]) : Double.compare(a[1], b[1]));
+		double[][] hull = new double[2 * n + 1][];
+		int k = 0;
+		for (int i = 0; i < n; i++)
+		{
+			while (k >= 2 && cross(hull[k - 2], hull[k - 1], v[i]) <= 1e-12) k--;
+			hull[k++] = v[i];
+		}
+		int lower = k + 1;
+		for (int i = n - 2; i >= 0; i--)
+		{
+			while (k >= lower && cross(hull[k - 2], hull[k - 1], v[i]) <= 1e-12) k--;
+			hull[k++] = v[i];
+		}
+		k--;
+		facetX = new double[k];
+		facetY = new double[k];
+		maxFacet = 0;
+		for (int i = 0; i < k; i++)
+		{
+			double[] a = hull[i], b = hull[(i + 1) % k];
+			double nx = b[1] - a[1], ny = a[0] - b[0];
+			double scale = nx * a[0] + ny * a[1];
+			facetX[i] = nx / scale;
+			facetY[i] = ny / scale;
+			maxFacet = Math.max(maxFacet, Math.hypot(facetX[i], facetY[i]));
+		}
+	}
+
+	private static double cross(double[] o, double[] a, double[] b)
+	{
+		return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+	}
+
+	/** A lower bound on the ticks to sail (x, y) tiles by these moves, however they are combined. */
+	public double openWaterTicks(int x, int y)
+	{
+		double most = 0;
+		for (int i = 0; i < facetX.length; i++) most = Math.max(most, facetX[i] * x + facetY[i] * y);
+		return most;
+	}
+
+	/** {@link #openWaterTicks(int, int)} for a displacement off the tile grid. */
+	public double openWaterTicks(double x, double y)
+	{
+		double most = 0;
+		for (int i = 0; i < facetX.length; i++) most = Math.max(most, facetX[i] * x + facetY[i] * y);
+		return most;
+	}
+
+	/** The most {@link #openWaterTicks} one tile of displacement can change by. */
+	public double ticksPerTile()
+	{
+		return maxFacet;
+	}
 
 
 	public int size()
@@ -154,12 +261,22 @@ public final class SailingMoves
 		return names[move];
 	}
 
-	/**
-	 * How far the move sails in a straight line, in thousandths of a tile ({@link #LENGTH_UNITS_PER_TILE}), rounded up.
-	 */
-	public int length(int move)
+	/** How far the move sails in a straight line, in tiles. */
+	public double distance(int move)
 	{
-		return lengths[move];
+		return Math.hypot(dx[move], dy[move]);
+	}
+
+	/** The farthest any move sails, in tiles. */
+	public double longestMove()
+	{
+		return longestMove;
+	}
+
+	/** The fastest any move sails in a straight line, in tiles per tick. */
+	public double topSpeed()
+	{
+		return topSpeed;
 	}
 
 	/**

@@ -1,5 +1,6 @@
 package shortestpath.pathfinder;
 
+import java.util.Map;
 import shortestpath.WorldPointUtil;
 import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
@@ -16,6 +17,21 @@ public class CollisionMap
 	public SplitFlagMap.RegionExtent regionExtent()
 	{
 		return SplitFlagMap.getRegionExtents();
+	}
+
+	/**
+	 * What identifies the collision data behind this map: maps over the same data (each thread has its own) answer the
+	 * same object, so data derived from it once can be shared between them.
+	 */
+	public Object dataIdentity()
+	{
+		return collisionData != null ? collisionData : this;
+	}
+
+	/** The collision data's layer {@code directory} ({@link SplitFlagMap#layers}); empty for a map without data. */
+	public Map<String, byte[]> layers(String directory)
+	{
+		return collisionData != null ? collisionData.layers(directory) : Map.of();
 	}
 
 	public byte getRegionPlaneCounts(int regionIndex)

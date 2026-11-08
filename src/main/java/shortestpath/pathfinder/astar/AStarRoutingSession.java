@@ -86,11 +86,22 @@ public final class AStarRoutingSession
 		return target(graph, collision, new TargetKey(packedTargets, java.util.Objects.requireNonNull(terminalLayers)));
 	}
 
+	/**
+	 * The prepared target for {@code packedTargets} with seed costs (see {@link PreparedTarget#prepare(SiteGraph,
+	 * CollisionMap, int[], int[], int[])}): the same target set with other seeds is another entry.
+	 */
+	public synchronized Lookup<PreparedTarget> target(SiteGraph graph, CollisionMap collision, int[] packedTargets,
+		int[] terminalLayers, int[] seedCosts)
+	{
+		return target(graph, collision, new TargetKey(packedTargets, java.util.Objects.requireNonNull(terminalLayers),
+			java.util.Objects.requireNonNull(seedCosts)));
+	}
+
 	private Lookup<PreparedTarget> target(SiteGraph graph, CollisionMap collision, TargetKey key)
 	{
 		if (graph == null || collision == null) throw new NullPointerException();
 		if (graph != this.graph)
-			return new Lookup<>(PreparedTarget.prepare(graph, collision, key.states), false);
+			return new Lookup<>(key.prepare(graph, collision), false);
 		if (collision != targetCollision)
 		{
 			targets.clear();
@@ -98,7 +109,7 @@ public final class AStarRoutingSession
 		}
 		PreparedTarget cached = targets.get(key);
 		if (cached != null) return new Lookup<>(cached, true);
-		PreparedTarget prepared = PreparedTarget.prepare(graph, collision, key.states);
+		PreparedTarget prepared = key.prepare(graph, collision);
 		targets.put(key, prepared);
 		for (Iterator<Map.Entry<TargetKey, PreparedTarget>> eldest = targets.entrySet().iterator();
 			targets.size() > targetCapacity; )
@@ -134,10 +145,26 @@ public final class AStarRoutingSession
 	{
 		@EqualsAndHashCode.Include
 		private final long[] states;
+		// Each canonical target's seed cost, or null for destinations alone
+		@EqualsAndHashCode.Include
+		private final int[] seeds;
 
 		TargetKey(int[] packedTargets, int[] terminalLayers)
 		{
 			states = TargetOverlay.canonicalTargets(packedTargets, terminalLayers);
+			seeds = null;
+		}
+
+		TargetKey(int[] packedTargets, int[] terminalLayers, int[] seedCosts)
+		{
+			states = TargetOverlay.canonicalTargets(packedTargets, terminalLayers);
+			seeds = TargetOverlay.canonicalSeedCosts(states, packedTargets, seedCosts);
+		}
+
+		PreparedTarget prepare(SiteGraph graph, CollisionMap collision)
+		{
+			return seeds == null ? PreparedTarget.prepare(graph, collision, states)
+				: PreparedTarget.prepare(graph, collision, states, seeds);
 		}
 	}
 

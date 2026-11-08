@@ -42,6 +42,7 @@ public final class SiteGraph
 		EdgeBuilder edges = new EdgeBuilder();
 		addLocalEdges(edges, account.localView(BankVisitState.CARRIED), BankVisitState.CARRIED, stat);
 		addLocalEdges(edges, account.localView(BankVisitState.BANKED), BankVisitState.BANKED, stat);
+		addEstimateEdges(edges, account.estimateEdges(), stat);
 		if (account.bankPathEnabled())
 		{
 			for (int bankSite : bankSites)
@@ -173,10 +174,30 @@ public final class SiteGraph
 		}
 	}
 
+	// The estimate's edges, taken as transports are: the search never takes them, but the estimate sees through them
+	private static void addEstimateEdges(EdgeBuilder edges, EstimateEdges estimate, RoutingStatic stat)
+	{
+		for (BankVisitState banked : BankVisitState.values())
+		{
+			for (int i = 0; i < estimate.count(banked); i++)
+			{
+				int from = stat.siteIndex(estimate.origin(banked, i));
+				int to = stat.siteIndex(estimate.destination(banked, i));
+				edges.add(stateId(from, banked), stateId(to, banked), estimate.cost(banked, i), true, EdgeKind.LOCAL);
+			}
+		}
+	}
+
 	private static void validateEndpoints(PreparedRoutingAccount account, RoutingStatic stat)
 	{
 		for (BankVisitState banked : BankVisitState.values())
 		{
+			EstimateEdges estimate = account.estimateEdges();
+			for (int i = 0; i < estimate.count(banked); i++)
+			{
+				requireSite(stat, estimate.origin(banked, i), "estimate origin");
+				requireSite(stat, estimate.destination(banked, i), "estimate destination");
+			}
 			PreparedRoutingAccount.View local = account.localView(banked);
 			for (int i = 0; i < local.destinations.length; i++)
 			{

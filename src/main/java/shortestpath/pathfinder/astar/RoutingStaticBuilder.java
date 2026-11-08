@@ -141,7 +141,18 @@ public final class RoutingStaticBuilder
 	public static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles, int[] cuts) throws IOException
 	{
-		return build(collision, rawTransports, bankTiles, cuts, SEED_TILE);
+		return build(collision, rawTransports, Set.of(), bankTiles, cuts, SEED_TILE);
+	}
+
+	/**
+	 * As {@link #build(CollisionMap, Map, Set, int[])}, with {@code joinedTiles}: tiles a route may get between by
+	 * something other than walking and transports, as the moorings are joined by the sea. Each is a site, and each
+	 * joins every other, as every known transport does, whatever an account can take.
+	 */
+	public static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
+		Set<Integer> joinedTiles, Set<Integer> bankTiles, int[] cuts) throws IOException
+	{
+		return build(collision, rawTransports, joinedTiles, bankTiles, cuts, SEED_TILE);
 	}
 
 	/**
@@ -154,10 +165,16 @@ public final class RoutingStaticBuilder
 	public static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles, int[] cuts, int seedTile) throws IOException
 	{
+		return build(collision, rawTransports, Set.of(), bankTiles, cuts, seedTile);
+	}
+
+	static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
+		Set<Integer> joinedTiles, Set<Integer> bankTiles, int[] cuts, int seedTile) throws IOException
+	{
 		long totalStarted = System.nanoTime();
 
 		long stepStarted = System.nanoTime();
-		TileSelection selected = discoverCandidateTiles(collision, rawTransports, cuts, seedTile);
+		TileSelection selected = discoverCandidateTiles(collision, rawTransports, joinedTiles, cuts, seedTile);
 		WalkableTiles walkable = enumerateWalkableTiles(collision, selected);
 		selected = null;
 		int walkableTileCount = walkable.tiles.length;
@@ -174,7 +191,7 @@ public final class RoutingStaticBuilder
 
 		stepStarted = System.nanoTime();
 		boolean[] reachableNatural = structuralReachability(collision, walkable, componentIds, naturalComponentCount,
-			rawTransports, seedTile);
+			rawTransports, joinedTiles, seedTile);
 		int reachableNaturalCount = count(reachableNatural);
 		BitSet reachableTiles = new BitSet(walkable.tiles.length);
 		for (int i = 0; i < componentIds.length; i++)
@@ -202,7 +219,7 @@ public final class RoutingStaticBuilder
 		walkable = null;
 		componentIds = null;
 		int nonSeparating = cutSet.valid.size() - crossings.size();
-		SitesAndAttachments sites = buildSites(rawTransports, bankTiles, crossings, search, collision,
+		SitesAndAttachments sites = buildSites(rawTransports, joinedTiles, bankTiles, crossings, search, collision,
 			routingComponentCount);
 		long sitesAndAttachmentsNanos = System.nanoTime() - stepStarted;
 
@@ -314,16 +331,29 @@ public final class RoutingStaticBuilder
 	/** Builds the walking graph used for cut generation; see {@link WalkingGraph}. */
 	public static WalkingGraph walkingGraph(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports)
 	{
-		return walkingGraph(collision, rawTransports, SEED_TILE);
+		return walkingGraph(collision, rawTransports, Set.of(), SEED_TILE);
+	}
+
+	/** As above, with tiles joined to one another as {@link #build(CollisionMap, Map, Set, Set, int[])} takes them. */
+	public static WalkingGraph walkingGraph(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
+		Set<Integer> joinedTiles)
+	{
+		return walkingGraph(collision, rawTransports, joinedTiles, SEED_TILE);
 	}
 
 	static WalkingGraph walkingGraph(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports, int seedTile)
+	{
+		return walkingGraph(collision, rawTransports, Set.of(), seedTile);
+	}
+
+	private static WalkingGraph walkingGraph(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
+		Set<Integer> joinedTiles, int seedTile)
 	{
 		WalkableTiles walkable = enumerateWalkableTiles(collision);
 		int[] naturalId = new int[walkable.tiles.length];
 		int naturalComponentCount = floodFillComponents(walkable, null, naturalId);
 		boolean[] reachable = structuralReachability(collision, walkable, naturalId, naturalComponentCount,
-			rawTransports, seedTile);
+			rawTransports, joinedTiles, seedTile);
 		return new WalkingGraph(walkable, naturalId, naturalComponentCount, reachable);
 	}
 
@@ -390,7 +420,7 @@ public final class RoutingStaticBuilder
 
 	/** Keep endpoint-connected land before allocating arrays; open sea can otherwise look walkable. */
 	private static TileSelection discoverCandidateTiles(CollisionMap collision,
-		Map<Integer, Set<Transport>> rawTransports, int[] cuts, int seedTile)
+		Map<Integer, Set<Transport>> rawTransports, Set<Integer> joinedTiles, int[] cuts, int seedTile)
 	{
 		TileSelection selected = new TileSelection(collision);
 		IntDeque queue = new IntDeque(4096);
@@ -408,6 +438,7 @@ public final class RoutingStaticBuilder
 				selected.attach(transport.getDestination(), collision, queue);
 			}
 		}
+		for (int tile : joinedTiles) selected.attach(tile, collision, queue);
 		// Preserve cut diagnostics and crossings even when their land is unreachable.
 		for (int tile : cuts) selected.add(tile, collision, queue);
 		while (!queue.isEmpty())
@@ -677,9 +708,16 @@ public final class RoutingStaticBuilder
 	// transport is decided later, by PreparedRoutingAccount and the forward search.
 
 	private static boolean[] structuralReachability(CollisionMap collision, WalkableTiles walkable, int[] naturalId,
-		int naturalComponentCount, Map<Integer, Set<Transport>> rawTransports, int seedTile)
+		int naturalComponentCount, Map<Integer, Set<Transport>> rawTransports, Set<Integer> joinedTiles, int seedTile)
 	{
 		Map<Integer, List<Integer>> edges = new HashMap<>();
+		// The joined tiles' components all reach one another
+		Set<Integer> joined = new HashSet<>();
+		for (int tile : joinedTiles)
+		{
+			for (int component : naturalAttachments(tile, walkable, naturalId, collision)) joined.add(component);
+		}
+		addAttachmentClique(edges, joined.stream().mapToInt(Integer::intValue).sorted().toArray());
 		Set<Integer> globalDestinations = new HashSet<>();
 		for (Set<Transport> set : rawTransports.values())
 		{
@@ -883,8 +921,9 @@ public final class RoutingStaticBuilder
 		final int[] reachableBankTiles;
 	}
 
-	private static SitesAndAttachments buildSites(Map<Integer, Set<Transport>> rawTransports, Set<Integer> bankTiles,
-		List<Crossing> crossings, SearchTiles search, CollisionMap collision, int routingComponentCount)
+	private static SitesAndAttachments buildSites(Map<Integer, Set<Transport>> rawTransports, Set<Integer> joinedTiles,
+		Set<Integer> bankTiles, List<Crossing> crossings, SearchTiles search, CollisionMap collision,
+		int routingComponentCount)
 	{
 		HashSet<Integer> siteSet = new HashSet<>();
 		for (Set<Transport> set : rawTransports.values())
@@ -898,6 +937,7 @@ public final class RoutingStaticBuilder
 				siteSet.add(transport.getDestination());
 			}
 		}
+		siteSet.addAll(joinedTiles);
 		for (Crossing crossing : crossings)
 		{
 			siteSet.add(crossing.fromTile);

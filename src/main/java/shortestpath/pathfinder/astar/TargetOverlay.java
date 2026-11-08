@@ -23,6 +23,9 @@ public final class TargetOverlay
 	@Getter(AccessLevel.PACKAGE) @Accessors(fluent = true) private final CollisionMap collision;
 	private final int[] packed;
 	private final byte[] terminalLayers;
+	// What reaching each target already costs: 0 for a destination, the rest of the route from it otherwise (see
+	// withSeedCosts)
+	private final int[] seedCosts;
 	private final int[] nodes;
 	private final int[][] components;
 	private final int[][] attachmentSites;
@@ -47,8 +50,56 @@ public final class TargetOverlay
 
 	TargetOverlay(SiteGraph graph, CollisionMap collision, long[] targets)
 	{
+		this(graph, collision, targets, new int[targets.length]);
+	}
+
+	/**
+	 * An overlay whose targets are not destinations but places a route can go on from at a known least cost: a
+	 * heuristic towards it bounds the cost of reaching a target and carrying on from it, {@code seedCosts[i]} more
+	 * from {@code packedTargets[i]}. Both bank layers are terminal; a tile listed twice keeps its smaller cost.
+	 */
+	public static TargetOverlay withSeedCosts(SiteGraph graph, CollisionMap collision, int[] packedTargets,
+		int[] seedCosts)
+	{
+		return withSeedCosts(graph, collision, packedTargets, null, seedCosts);
+	}
+
+	/** As above, each target terminal in the layers of {@code terminalLayers} (null for both). */
+	public static TargetOverlay withSeedCosts(SiteGraph graph, CollisionMap collision, int[] packedTargets,
+		int[] terminalLayers, int[] seedCosts)
+	{
+		long[] targets = canonicalTargets(packedTargets, terminalLayers);
+		return new TargetOverlay(graph, collision, targets, canonicalSeedCosts(targets, packedTargets, seedCosts));
+	}
+
+	static TargetOverlay withCanonicalSeeds(SiteGraph graph, CollisionMap collision, long[] targets, int[] seeds)
+	{
+		return new TargetOverlay(graph, collision, targets, seeds);
+	}
+
+	/** Each canonical target's seed: the least of {@code seedCosts} given for its tile. */
+	static int[] canonicalSeedCosts(long[] targets, int[] packedTargets, int[] seedCosts)
+	{
+		if (packedTargets.length != seedCosts.length)
+			throw new IllegalArgumentException("one seed cost is required per target");
+		long[] tiles = new long[targets.length];
+		for (int i = 0; i < targets.length; i++) tiles[i] = targets[i] >>> 2;
+		int[] costs = new int[targets.length];
+		Arrays.fill(costs, CostArithmetic.INF);
+		for (int i = 0; i < packedTargets.length; i++)
+		{
+			int index = Arrays.binarySearch(tiles, Integer.toUnsignedLong(packedTargets[i]));
+			CostArithmetic.validate(seedCosts[i]);
+			costs[index] = Math.min(costs[index], seedCosts[i]);
+		}
+		return costs;
+	}
+
+	private TargetOverlay(SiteGraph graph, CollisionMap collision, long[] targets, int[] seedCosts)
+	{
 		if (graph == null || collision == null)
 			throw new NullPointerException();
+		this.seedCosts = seedCosts;
 		this.graph = graph;
 		this.stat = graph.routingStatic();
 		this.account = graph.preparedAccount();
@@ -130,6 +181,11 @@ public final class TargetOverlay
 	public boolean isTarget(int tile)
 	{
 		return targetIndex(tile) >= 0;
+	}
+	/** What reaching target {@code target} already costs towards the end of a route; 0 for a destination. */
+	public int seedCost(int target)
+	{
+		return seedCosts[target];
 	}
 	public int targetLayers(int target)
 	{

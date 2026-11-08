@@ -2,6 +2,7 @@ package shortestpath.pathfinder;
 
 import java.util.List;
 import java.util.Map;
+import shortestpath.WorldPointUtil;
 
 /**
  * The plugin-facing handle for an active route search.
@@ -26,11 +27,16 @@ public interface ActiveSearch extends Runnable
 	String backendName();
 
 	/**
-	 * Whether this search sails a boat's headings rather than walking (see
-	 * {@code Pathfinder#isSailing}); the render side reads it for the sailing
-	 * draw and reached verdict instead of casting to {@code Pathfinder}.
+	 * The requested target a boat on {@code boatTile} facing {@code heading}
+	 * (one of the 16 headings, -1 unknown) has arrived at by the route's sailing
+	 * arrival rule — its hull covers the target — or
+	 * {@link WorldPointUtil#UNDEFINED} if none, or if the route
+	 * does not end at sea.
 	 */
-	boolean isSailing();
+	default int sailingArrivedTarget(int boatTile, int heading)
+	{
+		return WorldPointUtil.UNDEFINED;
+	}
 
 	/**
 	 * Whether {@link #getPath()} is still the previous route shown while the

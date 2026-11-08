@@ -90,6 +90,13 @@ jobs:
           zip -r collision-map.zip .
           mv collision-map.zip ../src/main/resources/collision-map.zip
 
+      # The sailing layer (the sea, each boat kind's bodies of water and sea graph) is made from the collision map and
+      # written into it, so it comes before the routing cuts, whose fingerprint covers the whole collision map.
+      - name: Generate sailing data
+        run: |
+          cd tooling
+          ./gradlew sailingData -PshortestPathDir=..
+
       # The exact pathfinder's routing cuts are derived from the collision map, so they are
       # regenerated with it and committed in the same commit.
       - name: Restore KaHIP
@@ -125,6 +132,7 @@ jobs:
         run: |
           unzip -t src/main/resources/collision-map.zip > /dev/null
           test -s src/main/resources/routing-cuts.bin
+          unzip -l src/main/resources/collision-map.zip | grep -q ' sailing/index$'
           ls -lh src/main/resources/collision-map.zip src/main/resources/routing-cuts.bin
 
       - name: Build and test plugin with new data

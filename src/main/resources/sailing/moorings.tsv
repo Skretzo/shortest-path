@@ -1,0 +1,75 @@
+# Name	Land	Berth	Skills	Quests	Quests started	Vessels	Dock	Shipwright
+# Sailing mooring points: where a player boards or leaves their own boat. See SailingMoorings.								
+# Name, Sailing level and quests: OSRS Wiki 'Mooring point' (Docking points table, rev 15355932);								
+# Land: the walkable tile the gangplank or mooring point is used from, and Berth: the boat's tile								
+# when moored, both from the GPS plugin's cache-derived sailing-moorings.tsv								
+# (runelite-gps-plugin@961c3ba81241), matched to the wiki row whose map pin is within 8 tiles of the								
+# berth. Last Light, missing from that table, has its requirements from the wiki's 'List of islands'								
+# (rev 15333567). Quests marked 'Partial completion' on the wiki are listed under								
+# Quests started. Vessels: the boats that fit, empty for every boat.								
+# Not modelled: 'must have visited Kourend/Varlamore', Entrana's prohibited items. Missing: Wyrmscraig								
+# Cavern (level 62, Fallen From Grace started, raft or skiff only), which has no cache-derived land tile.								
+# Land is moved off the GPS plugin's blocked tile at Wintumber Island (where the player lands, checked in game)								
+# and Tear of the Soul (the walkable tile east of it).								
+# Dock: the game's dock id (DB table sailing_dock, column dock_id, cache 2746), which a boat's port varbit holds.								
+# Shipwright: yes where a shipwright recovers boats (OSRS Wiki 'Shipwright' locations); island moorings can't.								
+Port Sarim	3050 3192 0	3051 3193 0	1 Sailing				0	yes
+The Pandemonium	3069 2986 0	3070 2987 0	1 Sailing				1	yes
+Land's End	1506 3402 0	1507 3403 0	5 Sailing				2	yes
+Hosidius	1726 3453 0	1726 3452 0	5 Sailing				4	
+Musa Point	2960 3146 0	2961 3146 0	10 Sailing				3	yes
+Port Piscarilius	1844 3688 0	1845 3687 0	15 Sailing				7	yes
+Rimmington	2907 3225 0	2906 3225 0	18 Sailing				5	
+Catherby	2796 3413 0	2796 3412 0	20 Sailing				6	yes
+Brimhaven	2759 3229 0	2758 3230 0	25 Sailing				8	yes
+Ardougne	2670 3266 0	2671 3265 0	28 Sailing				9	
+Port Khazard	2685 3162 0	2686 3162 0	30 Sailing				10	yes
+Witchaven	2746 3304 0	2747 3305 0	34 Sailing				11	
+Entrana	2878 3335 0	2879 3336 0	36 Sailing				12	
+Civitas illa Fortis	1776 3141 0	1775 3142 0	38 Sailing	Children of the Sun			13	yes
+Corsair Cove	2579 2843 0	2580 2844 0	40 Sailing	The Corsair Curse			14	yes
+Dognose Island	3060 2638 0	3061 2638 0	40 Sailing				35	
+Cairn Isle	2751 2951 0	2750 2952 0	42 Sailing				15	
+Chinchompa Island	1892 3428 0	1893 3429 0	42 Sailing				52	
+Sunset Coast	1513 2973 0	1512 2974 0	44 Sailing	Children of the Sun			16	
+Remote Island	2965 2608 0	2972 2602 0	45 Sailing				36	
+The Summer Shore	3173 2368 0	3174 2367 0	45 Sailing		Troubled Tortugans		17	
+The Little Pearl	3353 2215 0	3353 2216 0	45 Sailing		Troubled Tortugans		37	
+Aldarin	1451 2969 0	1452 2970 0	46 Sailing	Children of the Sun			18	yes
+Vatrachos Island	1873 2983 0	1872 2984 0	46 Sailing	Children of the Sun			41	
+The Onyx Crest	2996 2287 0	2996 2289 0	47 Sailing				38	
+Ruins of Unkah	3145 2824 0	3144 2825 0	48 Sailing				19	
+Shimmering Atoll	1555 2772 0	1557 2770 0	49 Sailing				50	
+Void Knights' Outpost	2651 2677 0	2651 2678 0	50 Sailing				20	
+Port Roberts	1862 3307 0	1861 3307 0	50 Sailing				21	yes
+Anglers' Retreat	2467 2718 0	2466 2720 0	51 Sailing				42	
+Red Rock	2808 2509 0	2809 2509 0	52 Sailing		The Red Reef		22	yes
+Minotaurs' Rest	1958 3113 0	1958 3116 0	54 Sailing	Children of the Sun			43	
+Isle of Souls	2282 2821 0	2283 2822 0	55 Sailing				32	
+Isle of Bones	2532 2531 0	2533 2530 0	56 Sailing				44	
+Laguna Aurorae	1201 2733 0	1202 2732 0	58 Sailing				51	
+Charred Island	2660 2392 0	2660 2395 0	60 Sailing				40	
+Tear of the Soul	2321 2774 0	2318 2773 0	61 Sailing				45	
+Rellekka	2629 3704 0	2630 3705 0	62 Sailing	The Fremennik Trials			23	yes
+Wyrmscraig	2569 2295 0	2568 2295 0	62 Sailing				59	
+Wintumber Island	2060 2606 0	2056 2605 0	63 Sailing				46	
+The Crown Jewel	1758 2655 0	1766 2658 0	64 Sailing				47	
+Etceteria	2612 3841 0	2613 3840 0	65 Sailing	Royal Trouble			24	
+Port Tyras	2143 3121 0	2144 3120 0	66 Sailing	Regicide			25	
+Lledrith Island	2095 3188 0	2098 3187 0	66 Sailing				53	
+Deepfin Point	1922 2759 0	1923 2758 0	67 Sailing				26	yes
+Jatizso	2411 3781 0	2412 3780 0	68 Sailing	The Fremennik Isles			27	
+Neitiznot	2310 3781 0	2309 3782 0	68 Sailing	The Fremennik Isles			28	
+Rainbow's End	2344 2268 0	2345 2268 0	69 Sailing				48	
+Prifddinas	2157 3325 0	2158 3324 0	70 Sailing	Song of the Elves			29	yes
+Sunbleak Island	2193 2319 0	2189 2326 0	72 Sailing				49	
+Ynysdail	2220 3466 0	2222 3464 0	73 Sailing				54	
+Waterbirth Island	2542 3764 0	2543 3766 0	74 Sailing	The Fremennik Trials			33	
+Piscatoris	2305 3689 0	2304 3689 0	75 Sailing	Swan Song			30	
+Lunar Isle	2151 3880 0	2152 3881 0	76 Sailing	Lunar Diplomacy			31	
+Buccaneers' Haven	2079 3689 0	2080 3691 0	76 Sailing				55	
+Drumstick Isle	2148 3531 0	2150 3529 0	79 Sailing				56	
+Weiss	2860 3970 0	2860 3972 0	80 Sailing	Making Friends with My Arm			34	
+Brittle Isle	1953 4056 0	1954 4055 0	81 Sailing				57	
+Grimstone	2927 4055 0	2928 4055 0	87 Sailing				58	
+Last Light	2849 2325 0	2848 2326 0	52 Sailing		The Red Reef		39	

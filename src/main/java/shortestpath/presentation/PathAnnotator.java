@@ -287,13 +287,35 @@ public class PathAnnotator
 		return stepTransports;
 	}
 
+	/**
+	 * The next step for display hints. A sailing leg's steps are filled in before the landing step that carries its
+	 * transport, so the hint is shown where the leg is boarded, by looking past them, and not again where it docks.
+	 */
 	public PathStep nextPathStep(List<PathStep> path, int index)
 	{
 		if (path == null || index < 0 || index + 1 >= path.size())
 		{
 			return null;
 		}
-		return path.get(index + 1);
+		PathStep current = path.get(index);
+		PathStep next = path.get(index + 1);
+		if (current.isSailing())
+		{
+			return isSailingLeg(next) ? null : next;
+		}
+		if (next.isSailing())
+		{
+			int landing = index + 1;
+			while (landing < path.size() && path.get(landing).isSailing()) landing++;
+			if (landing < path.size() && isSailingLeg(path.get(landing))
+				&& path.get(landing).getTransport().getOrigin() == current.getPackedPosition()) return path.get(landing);
+		}
+		return next;
+	}
+
+	private static boolean isSailingLeg(PathStep step)
+	{
+		return step.getTransport() != null && step.getTransport().getType().isSailing();
 	}
 
 	public String formatTransportDisplay(Transport transport)

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.awt.Color;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -77,33 +78,18 @@ public class PathRenderStateTest
 	}
 
 	/**
-	 * Stubs a done search with the given path, targets, and sailing flag —
-	 * the state the unreachable verdict reads past its guards.
+	 * Stubs a done search with the given path and targets, its steps points of a sailing leg when the route ends at
+	 * sea — the state the unreachable verdict reads past its guards.
 	 */
-	private void doneSearch(List<PathStep> path, Set<Integer> targets, boolean sailingSearch)
+	private void doneSearch(List<PathStep> path, Set<Integer> targets, boolean endsAtSea)
 	{
+		List<PathStep> steps = path == null || !endsAtSea ? path : path.stream()
+			.map(step -> PathStep.sailing(step.getPackedPosition(), step.getBankVisitState()))
+			.collect(Collectors.toList());
 		when(scheduler.getActiveSearch()).thenReturn(search);
 		when(search.isDone()).thenReturn(true);
-		when(search.getPath()).thenReturn(path);
+		when(search.getPath()).thenReturn(steps);
 		when(search.getTargets()).thenReturn(Targets.at(targets));
-		when(search.isSailing()).thenReturn(sailingSearch);
-	}
-
-	@Test
-	public void isSailingIsFalseWithNoActiveSearch()
-	{
-		assertFalse(renderState.isSailing());
-	}
-
-	@Test
-	public void isSailingDelegatesToTheActiveSearch()
-	{
-		when(scheduler.getActiveSearch()).thenReturn(search);
-		when(search.isSailing()).thenReturn(false);
-		assertFalse(renderState.isSailing());
-
-		when(search.isSailing()).thenReturn(true);
-		assertTrue(renderState.isSailing());
 	}
 
 	@Test
@@ -180,7 +166,7 @@ public class PathRenderStateTest
 	// ---------------------------------------------------------------
 
 	@Test
-	public void sailingSearchIsReachableWhenTheResultReached()
+	public void routeEndingAtSeaIsReachableWhenTheResultReached()
 	{
 		doneSearch(List.of(step(5, 5)), Set.of(packed(20, 20)), true);
 		PathfinderResult result = mock(PathfinderResult.class);
@@ -191,7 +177,7 @@ public class PathRenderStateTest
 	}
 
 	@Test
-	public void sailingSearchIsUnreachableWhenTheResultDidNotReach()
+	public void routeEndingAtSeaIsUnreachableWhenTheResultDidNotReach()
 	{
 		doneSearch(List.of(step(5, 5)), Set.of(packed(20, 20)), true);
 		PathfinderResult result = mock(PathfinderResult.class);
@@ -202,7 +188,7 @@ public class PathRenderStateTest
 	}
 
 	@Test
-	public void sailingSearchIsNotUnreachableWithoutAResult()
+	public void routeEndingAtSeaIsNotUnreachableWithoutAResult()
 	{
 		doneSearch(List.of(step(5, 5)), Set.of(packed(20, 20)), true);
 		when(search.getResult()).thenReturn(null);

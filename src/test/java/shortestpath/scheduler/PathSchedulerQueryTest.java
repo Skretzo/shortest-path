@@ -1,6 +1,7 @@
 package shortestpath.scheduler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.Set;
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,12 +28,18 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.AStarRoutingStaticProvider;
 import shortestpath.pathfinder.ActiveSearch;
+import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.PathTerminationReason;
 import shortestpath.pathfinder.Targets;
 import shortestpath.sailing.SailingService;
+import shortestpath.sailing.SailingState;
+import shortestpath.pathfinder.sailing.SailingVessel;
+import shortestpath.pathfinder.sailing.SailingFleet;
+import shortestpath.pathfinder.sailing.PreparedSailingCapability;
 import shortestpath.settings.Settings;
 
 /**
@@ -76,7 +84,9 @@ public class PathSchedulerQueryTest
 			new DebugState());
 		responder = mock(QueryResponder.class);
 		pathfinderConfig = mock(PathfinderConfig.class);
-		scheduler.attach(pathfinderConfig, mock(SailingService.class), responder);
+		SailingService sailing = mock(SailingService.class);
+		when(sailing.getState()).thenReturn(SailingState.EMPTY);
+		scheduler.attach(pathfinderConfig, sailing, responder);
 	}
 
 	@After
@@ -131,6 +141,39 @@ public class PathSchedulerQueryTest
 		{
 			throw new AssertionError(e);
 		}
+	}
+
+	@Test
+	public void boardingRestartsFromTheActualBoatInsteadOfTheOldLandStart() throws Exception
+	{
+		int boatTile = packed(3050, 3180);
+		SailingVessel skiff = SailingVessel.of(
+			SailingVessel.Kind.SKIFF, 256);
+		SailingFleet fleet = SailingFleet.aboard(new SailingFleet.Aboard(boatTile, 0, skiff));
+		when(pathfinderConfig.prepareSailingCapability()).thenReturn(
+			new PreparedSailingCapability(fleet, List.of()));
+		when(pathfinderConfig.getAStarHeuristicWeight()).thenReturn(1.0);
+		when(pathfinderConfig.getMap()).thenReturn(mock(CollisionMap.class));
+		Targets targets = Targets.at(Set.of(packed(3240, 3225)));
+		when(pathfinderConfig.filterLocations(targets, true)).thenReturn(targets);
+		injectRoutingStatic(new AStarRoutingStaticProvider(() ->
+		{
+			throw new IllegalStateException("no routing statics in this test");
+		}));
+
+		ActiveSearch oldRoute = mock(ActiveSearch.class);
+		when(oldRoute.getTargets()).thenReturn(targets);
+		when(oldRoute.getPath()).thenReturn(List.of(
+			new PathStep(packed(3222, 3218), BankVisitState.CARRIED),
+			new PathStep(packed(3240, 3225), BankVisitState.CARRIED)));
+		Field activeSearch = PathScheduler.class.getDeclaredField("pathfinder");
+		activeSearch.setAccessible(true);
+		activeSearch.set(scheduler, oldRoute);
+
+		scheduler.restart("sailing varbit", packed(3222, 3218), targets);
+
+		assertEquals(boatTile, scheduler.getActiveSearch().getStart());
+		assertFalse(scheduler.getActiveSearch().isShowingProvisionalPath());
 	}
 
 	@Test

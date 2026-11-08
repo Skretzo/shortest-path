@@ -65,6 +65,7 @@ SKIP_FILES = {
     "config-items.tsv",
     "config-keys.tsv",
     "item-variations.tsv",
+    "moorings.tsv",
     "poh-name-aliases.tsv",
     "spell-widget-ids.tsv",
     "spirit-tree-patches.tsv",

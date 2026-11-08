@@ -53,10 +53,10 @@ public final class ReverseLabels
 		{
 			for (BankVisitState banked : BankVisitState.values())
 			{
-				if (!overlay.isTerminal(target, banked)) continue;
-				int seed = overlay.targetState(target, banked);
-				labels[seed] = 0;
-				queue.push(0, 0, seed);
+				if (!overlay.isTerminal(target, banked) || overlay.seedCost(target) == CostArithmetic.INF) continue;
+				int seed = overlay.targetState(target, banked), cost = overlay.seedCost(target);
+				labels[seed] = cost;
+				queue.push(cost, cost, seed);
 				pushes++;
 			}
 		}
@@ -139,12 +139,12 @@ public final class ReverseLabels
 		{
 			for (BankVisitState banked : BankVisitState.values())
 			{
-				if (!overlay.isTerminal(target, banked)) continue;
-				int seed = overlay.targetState(target, banked);
-				doubled[seed] = 0;
+				if (!overlay.isTerminal(target, banked) || overlay.seedCost(target) == CostArithmetic.INF) continue;
+				int seed = overlay.targetState(target, banked), cost = CostArithmetic.twice(overlay.seedCost(target));
+				doubled[seed] = cost;
 				origins[seed] = seed;
-				weights[seed] = 0;
-				queue.push(0, 0, seed);
+				weights[seed] = cost;
+				queue.push(cost, cost, seed);
 				pushes++;
 			}
 		}

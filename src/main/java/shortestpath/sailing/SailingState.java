@@ -1,5 +1,9 @@
 package shortestpath.sailing;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -9,10 +13,11 @@ import shortestpath.WorldPointUtil;
  * One immutable snapshot of the plugin's sailing state, captured on the client
  * thread and published as a single volatile reference so readers on other
  * threads never observe a torn mix of fields from different refreshes. The
- * varbit side carries the boarded-boat flag and the raw side-panel speed
- * values (in the game's own units); the entity side carries the boarded
+ * varbit side carries the boarded-boat flag, the raw side-panel speed
+ * values (in the game's own units) and the restricted sea areas the boarded
+ * boat's parts let it enter; the entity side carries the boarded
  * boat's hull bounds, hull config id, packed world point, in-tile pivot, and
- * target orientation. Deliberately primitives only — no {@code Client},
+ * target orientation. Deliberately plain values only — no {@code Client},
  * {@code WorldEntity}, {@code LocalPoint}, or hull-type references — so the
  * sailing package never couples to the entity graph or the search engine.
  */
@@ -26,7 +31,7 @@ public final class SailingState
 	 * {@code heading} = -1, the rest 0).
 	 */
 	public static final SailingState EMPTY = new SailingState(
-		false, 0, 0, 0, false, false, 0, 0, 0, 0, -1, WorldPointUtil.UNDEFINED, 0, 0, -1);
+		false, 0, 0, 0, SeaArea.NONE, List.of(), 0, false, false, 0, 0, 0, 0, -1, WorldPointUtil.UNDEFINED, 0, 0, -1);
 
 	/** Whether the boarded-boat varbit reported the player on a boat. */
 	private final boolean aboard;
@@ -36,6 +41,15 @@ public final class SailingState
 	private final int speedCap;
 	/** Raw {@code SAILING_SIDEPANEL_BOAT_ACCELERATION} varbit value. */
 	private final int acceleration;
+	/**
+	 * The restricted sea areas the boarded boat's parts let it enter, from the side panel's resistances; none when
+	 * not aboard.
+	 */
+	private final Set<SeaArea> seaAreas;
+	/** The boats the player owns, from their slots' varbits ({@link SailingBoat}). */
+	private final List<SailingBoat> boats;
+	/** The slot of the boat the player is aboard, or 0 when not aboard one of their own. */
+	private final int boardedSlot;
 	/** Whether the entity-graph boat lookup resolved (the boat is in the scene). */
 	@Getter @Accessors(fluent = true)
 	private final boolean hasBoat;
@@ -56,8 +70,8 @@ public final class SailingState
 	/** The boat's target orientation, or -1 when there is no boat. */
 	private final int heading;
 
-	SailingState(boolean aboard, int baseSpeed, int speedCap, int acceleration,
-		boolean hasBoat, boolean hasBounds,
+	SailingState(boolean aboard, int baseSpeed, int speedCap, int acceleration, Set<SeaArea> seaAreas,
+		List<SailingBoat> boats, int boardedSlot, boolean hasBoat, boolean hasBounds,
 		int boundsX, int boundsY, int boundsWidth, int boundsHeight,
 		int hullConfigId, int boatPoint, int pivotX, int pivotY, int heading)
 	{
@@ -65,6 +79,9 @@ public final class SailingState
 		this.baseSpeed = baseSpeed;
 		this.speedCap = speedCap;
 		this.acceleration = acceleration;
+		this.seaAreas = seaAreas.isEmpty() ? SeaArea.NONE : Collections.unmodifiableSet(EnumSet.copyOf(seaAreas));
+		this.boats = List.copyOf(boats);
+		this.boardedSlot = boardedSlot;
 		this.hasBoat = hasBoat;
 		this.hasBounds = hasBounds;
 		this.boundsX = boundsX;
@@ -81,8 +98,10 @@ public final class SailingState
 	/**
 	 * Whether two snapshots differ on a field the route actually consumes:
 	 * {@code aboard} gates the sailing dispatch, the boat/bounds presence
-	 * flags and the bounds feed the hull every move must fit, and
-	 * {@code baseSpeed} prices the sailing moves. Positional fields
+	 * flags and the bounds feed the hull every move must fit,
+	 * {@code baseSpeed} prices the sailing moves, {@code seaAreas} says
+	 * which water the boat may enter, and {@code boats} and
+	 * {@code boardedSlot} say which boats wait at which moorings. Positional fields
 	 * ({@code boatPoint}, {@code pivotX}, {@code pivotY}, {@code heading})
 	 * are deliberately excluded — ordinary boat movement never changes a
 	 * route's sailing inputs — and so are the captured-but-unconsumed
@@ -101,6 +120,9 @@ public final class SailingState
 			&& boundsY == other.boundsY
 			&& boundsWidth == other.boundsWidth
 			&& boundsHeight == other.boundsHeight
-			&& baseSpeed == other.baseSpeed;
+			&& baseSpeed == other.baseSpeed
+			&& seaAreas.equals(other.seaAreas)
+			&& boats.equals(other.boats)
+			&& boardedSlot == other.boardedSlot;
 	}
 }

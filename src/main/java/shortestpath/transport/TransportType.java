@@ -39,6 +39,11 @@ public enum TransportType
 	MINECART,
 	QUETZAL,
 	QUETZAL_WHISTLE,
+	/*
+	 * Boarding, sailing and leaving the player's own boat: the sea search's steps, never loaded from a file. Which boats
+	 * the player has, and where, comes from the sailing service, not config keys.
+	 */
+	SAILING,
 	SEASONAL_TRANSPORTS,
 	SPIRIT_TREE,
 	TELEPORTATION_BOX,
@@ -216,6 +221,12 @@ public enum TransportType
 	public boolean hasCostKey()
 	{
 		return costKey != null;
+	}
+
+	/** Whether this is boarding, sailing or leaving the player's own boat. */
+	public boolean isSailing()
+	{
+		return this == SAILING;
 	}
 
 	/**
