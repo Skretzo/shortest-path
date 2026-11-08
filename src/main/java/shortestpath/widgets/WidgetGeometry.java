@@ -1,25 +1,18 @@
 package shortestpath.widgets;
 
-import java.awt.Color;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
+import java.awt.*;
+import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
 import lombok.RequiredArgsConstructor;
 
 import net.runelite.api.Client;
 import net.runelite.api.Point;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.game.SpriteManager;

@@ -1,24 +1,11 @@
 package shortestpath.requirement;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import lombok.Getter;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
-import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.api.gameval.VarbitID;
-import shortestpath.leagues.LeagueModeSnapshot;
-import shortestpath.leagues.LeagueModeState;
-import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.requirement.model.SkillLevels;
-import shortestpath.requirement.model.MusicTracks;
-import shortestpath.requirement.model.Unlock;
-import shortestpath.requirement.model.VarRequirement;
+import net.runelite.api.*;
+import net.runelite.api.gameval.*;
+import shortestpath.leagues.*;
+import shortestpath.requirement.model.*;
 import shortestpath.transport.Transport;
 
 /**

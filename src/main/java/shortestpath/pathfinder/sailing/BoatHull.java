@@ -1,13 +1,11 @@
 package shortestpath.pathfinder.sailing;
 
-import java.util.Arrays;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 import net.runelite.api.Perspective;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.SplitFlagMap;
+import shortestpath.pathfinder.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 

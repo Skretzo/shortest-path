@@ -1,23 +1,13 @@
 package shortestpath.overlay;
 
 import com.google.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.util.List;
 import net.runelite.api.Client;
-import net.runelite.client.ui.overlay.OverlayPanel;
-import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.components.LayoutableRenderableEntity;
-import net.runelite.client.ui.overlay.components.LineComponent;
-import net.runelite.client.ui.overlay.components.TitleComponent;
-import shortestpath.scheduler.DebugState;
-import shortestpath.scheduler.PathScheduler;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathTerminationReason;
-import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.pathfinder.PathfinderStats;
+import net.runelite.client.ui.overlay.*;
+import net.runelite.client.ui.overlay.components.*;
+import shortestpath.scheduler.*;
+import shortestpath.pathfinder.*;
 
 public class DebugOverlayPanel extends OverlayPanel
 {

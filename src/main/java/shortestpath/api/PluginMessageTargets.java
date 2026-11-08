@@ -1,17 +1,10 @@
 package shortestpath.api;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import net.runelite.api.coords.WorldPoint;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.Target;
-import shortestpath.pathfinder.Targets;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
+import shortestpath.pathfinder.*;
+import shortestpath.requirement.model.*;
 
 /**
  * Converts between {@link Targets} and the values other plugins put in the {@code target} of a

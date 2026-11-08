@@ -1,20 +1,12 @@
 package shortestpath.settings;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import lombok.Getter;
 
-import shortestpath.ShortestPathConfig;
-import shortestpath.Util;
-import shortestpath.poh.JewelleryBoxTier;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.poh.PohNexusPortal;
-import shortestpath.TileCounter;
+import shortestpath.*;
+import shortestpath.poh.*;
 import shortestpath.transport.BalloonRoute;
 
 /**

@@ -3,15 +3,12 @@ package shortestpath.scheduler;
 import java.awt.Color;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
 import lombok.RequiredArgsConstructor;
 
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathfinderResult;
+import shortestpath.pathfinder.*;
 import shortestpath.sailing.SailingService;
 import shortestpath.settings.Settings;
 

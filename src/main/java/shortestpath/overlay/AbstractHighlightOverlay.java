@@ -1,20 +1,15 @@
 package shortestpath.overlay;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
-import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.*;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.*;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;

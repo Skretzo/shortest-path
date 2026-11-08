@@ -1,20 +1,12 @@
 package shortestpath.pathfinder;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import shortestpath.PrimitiveIntHashMap;
-import static shortestpath.poh.PohService.POH_LANDING_X;
-import static shortestpath.poh.PohService.POH_LANDING_Y;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
+import static shortestpath.poh.PohService.*;
 import shortestpath.poh.PohService;
 import shortestpath.transport.Transport;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class TransportAvailability

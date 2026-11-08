@@ -1,26 +1,18 @@
 package shortestpath.items;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import net.runelite.client.config.ConfigManager;
 
 import shortestpath.scheduler.RefreshCoordinator;
-import shortestpath.settings.Effect;
-import shortestpath.settings.Settings;
+import shortestpath.settings.*;
 
 /**
  * Owns the plugin's player item state observed from game events — the live

@@ -1,19 +1,15 @@
 package shortestpath.overlay;
 
 import com.google.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.presentation.BankPickupRequirements;
-import shortestpath.presentation.PathAnnotator;
+import shortestpath.pathfinder.*;
+import shortestpath.presentation.*;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 

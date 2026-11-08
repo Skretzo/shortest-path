@@ -1,10 +1,8 @@
 package shortestpath.widgets;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;

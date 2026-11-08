@@ -3,13 +3,8 @@ package shortestpath.pathfinder.sailing;
 import java.util.Arrays;
 
 import static net.runelite.api.Constants.REGION_SIZE;
-import shortestpath.PrimitiveIntList;
-import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.NodeGraph;
-import shortestpath.pathfinder.SplitFlagMap;
-import shortestpath.pathfinder.VisitedTiles;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
 
 /**
  * One sailing search's moves, boat, targets and when it counts as arriving (see {@link SailingPathfinder}).

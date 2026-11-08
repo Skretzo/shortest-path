@@ -1,7 +1,6 @@
 package shortestpath.spirittree;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Parsed contents of one spirit tree travel menu: every patch row the

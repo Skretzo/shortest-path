@@ -1,10 +1,8 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.CollisionMap;
-import lombok.AccessLevel;
-import lombok.Getter;
+import shortestpath.pathfinder.*;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /**

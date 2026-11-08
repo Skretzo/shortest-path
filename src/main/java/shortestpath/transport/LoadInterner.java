@@ -1,11 +1,8 @@
 package shortestpath.transport;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import net.runelite.api.Quest;
-import shortestpath.requirement.model.VarRequirement;
-import shortestpath.requirement.model.TransportItems;
+import shortestpath.requirement.model.*;
 
 /**
  * Load-scoped deduplication pools for transport requirement objects and display strings (issue

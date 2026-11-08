@@ -1,15 +1,11 @@
 package shortestpath.transport;
 
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.ShortestPathConfig;
-import shortestpath.settings.ConfigKey;
-import shortestpath.settings.TeleportationItem;
-import shortestpath.settings.Settings;
+import shortestpath.settings.*;
 
 /**
  * Manages the enabled/disabled state and cost thresholds of each TransportType

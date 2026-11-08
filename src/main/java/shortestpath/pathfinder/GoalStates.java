@@ -1,11 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The search states that finish a route: a goal tile, in a bank layer where the player holds that

@@ -1,10 +1,8 @@
 package shortestpath.settings;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 import shortestpath.Util;
 

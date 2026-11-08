@@ -1,25 +1,14 @@
 package shortestpath.requirement;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import shortestpath.ItemVariations;
 import shortestpath.items.OwnedItems;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.HeldItems;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.Unlock;
+import shortestpath.pathfinder.*;
+import shortestpath.requirement.model.*;
 import shortestpath.settings.TeleportationItem;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.transport.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 

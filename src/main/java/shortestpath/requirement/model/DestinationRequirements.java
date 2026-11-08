@@ -1,8 +1,6 @@
 package shortestpath.requirement.model;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import lombok.Getter;
 import net.runelite.api.Quest;
 

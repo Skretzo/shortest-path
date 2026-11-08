@@ -1,21 +1,12 @@
 package shortestpath;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.ItemEvent;
-import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.DimmableJPanel;
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 
 /**
  * One transport-family card in the sidebar panel: a 16px icon slot, the family

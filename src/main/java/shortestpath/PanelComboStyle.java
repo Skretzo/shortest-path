@@ -1,11 +1,7 @@
 package shortestpath;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.JComboBox;
-import javax.swing.JList;
+import java.awt.*;
+import javax.swing.*;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.TitleCaseListCellRenderer;
 

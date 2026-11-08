@@ -1,24 +1,10 @@
 package shortestpath.requirement;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.EnumSet;
-import java.util.Map;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.Player;
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
-import net.runelite.api.WorldType;
+import java.util.*;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.HashTable;
-import net.runelite.api.WidgetNode;
 import net.runelite.api.gameval.DBTableID;
-import shortestpath.requirement.model.MusicTracks;
-import shortestpath.requirement.model.SkillLevels;
+import shortestpath.requirement.model.*;
 import net.runelite.api.widgets.WidgetModalMode;
 import shortestpath.items.OwnedItems;
 import lombok.AllArgsConstructor;
