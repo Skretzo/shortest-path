@@ -1,6 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -26,12 +27,20 @@ public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 		+ " --tests '*RoutingComponentsFreshnessTest' --rerun";
 
 	private final Supplier<CollisionMap> collision;
+	private final Supplier<InputStream> layerSource;
 	private RoutingStatic routingStatic;
 	private RuntimeException failure;
 
 	public AStarRoutingStaticProvider(Supplier<CollisionMap> collision)
 	{
+		this(collision, RoutingStaticLoader::bundledLayer);
+	}
+
+	/** A seam for tests: where the layer comes from. A {@code null} stream is a missing resource. */
+	AStarRoutingStaticProvider(Supplier<CollisionMap> collision, Supplier<InputStream> layerSource)
+	{
 		this.collision = Objects.requireNonNull(collision, "collision");
+		this.layerSource = Objects.requireNonNull(layerSource, "layerSource");
 	}
 
 	@Override
@@ -44,7 +53,11 @@ public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 		{
 			Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 			Set<Integer> banks = ResourceLoader.destinations().get("bank");
-			routingStatic = RoutingStaticLoader.build(collision.get(), transports, banks == null ? Set.of() : banks);
+			try (InputStream layer = layerSource.get())
+			{
+				routingStatic = RoutingStaticLoader.build(collision.get(), transports, banks == null ? Set.of() : banks,
+					layer);
+			}
 			log.debug("Loaded A* routing data in {} ms: {} search tiles, {} sites",
 				(System.nanoTime() - started) / 1_000_000, routingStatic.searchTileCount(), routingStatic.siteCount());
 			return routingStatic;

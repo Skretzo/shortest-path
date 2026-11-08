@@ -61,10 +61,26 @@ public final class RoutingStaticLoader
 	public static RoutingStatic build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles) throws IOException
 	{
-		try (InputStream stream = ComponentLayer.class.getResourceAsStream(ComponentLayer.RESOURCE))
+		try (InputStream stream = bundledLayer())
 		{
-			return build(collision, rawTransports, bankTiles, ComponentLayer.read(stream), SEED_TILE);
+			return build(collision, rawTransports, bankTiles, stream);
 		}
+	}
+
+	/** Opens the packaged layer, {@code routing-components.bin}; {@code null} when it is missing. */
+	public static InputStream bundledLayer()
+	{
+		return ComponentLayer.class.getResourceAsStream(ComponentLayer.RESOURCE);
+	}
+
+	/**
+	 * As above, but reading the layer from {@code layer} (a {@code null} stream is a missing
+	 * resource). The stream is not closed. The seam for loading something other than the bundled layer.
+	 */
+	public static RoutingStatic build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
+		Set<Integer> bankTiles, InputStream layer) throws IOException
+	{
+		return build(collision, rawTransports, bankTiles, ComponentLayer.read(layer), SEED_TILE);
 	}
 
 	/** As above, from a given layer and structural reachability seed tile. */
