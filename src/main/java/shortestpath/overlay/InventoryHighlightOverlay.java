@@ -1,24 +1,18 @@
 package shortestpath.overlay;
 
 import com.google.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.util.HashSet;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.*;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
+import shortestpath.transport.*;
+import shortestpath.requirement.model.*;
 import shortestpath.settings.Settings;
 
 public class InventoryHighlightOverlay extends AbstractHighlightOverlay

@@ -1,26 +1,14 @@
 package shortestpath.transport;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
-import shortestpath.transport.parser.FieldParser;
-import shortestpath.transport.parser.ItemRequirementParser;
-import shortestpath.transport.parser.QuestParser;
-import shortestpath.transport.parser.SkillRequirementParser;
-import shortestpath.transport.parser.TransportRecord;
-import shortestpath.requirement.model.SkillLevels;
-import shortestpath.requirement.model.VarRequirement;
-import shortestpath.transport.parser.VarRequirementParser;
-import shortestpath.transport.parser.WorldPointParser;
-import shortestpath.requirement.model.TransportItems;
+import shortestpath.transport.parser.*;
+import shortestpath.requirement.model.*;
 
 /**
  * This class represents a travel point between two WorldPoints.

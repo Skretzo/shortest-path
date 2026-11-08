@@ -2,8 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.util.function.BooleanSupplier;
 import shortestpath.pathfinder.CollisionMap;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /**

@@ -1,42 +1,19 @@
 package shortestpath;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import net.runelite.api.Client;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.DynamicGridLayout;
-import net.runelite.client.ui.FontManager;
+import net.runelite.client.ui.*;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
-import shortestpath.items.ItemStateService;
-import shortestpath.items.OwnedItems;
+import shortestpath.items.*;
 import shortestpath.requirement.TeleportRestriction;
-import shortestpath.settings.Settings;
-import shortestpath.settings.TeleportationItem;
+import shortestpath.settings.*;
 
 /**
  * The Teleport Restrictions checklist: one row per {@link TeleportRestriction.Family}

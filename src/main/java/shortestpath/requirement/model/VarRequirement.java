@@ -2,9 +2,7 @@ package shortestpath.requirement.model;
 
 import java.util.Map;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 /**
  * Represents a variable-based requirement for a transport.

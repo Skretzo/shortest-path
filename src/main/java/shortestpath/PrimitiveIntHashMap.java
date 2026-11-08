@@ -1,7 +1,6 @@
 package shortestpath;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 

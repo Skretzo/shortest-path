@@ -1,8 +1,7 @@
 package shortestpath.pathfinder.astar;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.BitSet;
+import java.util.*;
 import shortestpath.pathfinder.CollisionMap;
 import lombok.Getter;
 import lombok.experimental.Accessors;

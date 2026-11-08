@@ -1,20 +1,12 @@
 package shortestpath;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.util.ArrayList;
-import java.util.EnumSet;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
-import lombok.AccessLevel;
-import lombok.Getter;
+import net.runelite.client.ui.*;
+import lombok.*;
 
 /**
  * One collapsible bucket inside a {@code Set<Enum>} config sub-list: a

@@ -1,21 +1,14 @@
 package shortestpath.overlay;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.IntPredicate;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 import net.runelite.api.Client;
 import net.runelite.api.coords.LocalPoint;
 
-import shortestpath.PrimitiveIntList;
-import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
 

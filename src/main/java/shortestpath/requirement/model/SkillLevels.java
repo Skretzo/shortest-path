@@ -3,8 +3,7 @@ package shortestpath.requirement.model;
 import java.util.Arrays;
 import net.runelite.api.Skill;
 import shortestpath.requirement.RejectionReason;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 /**
  * Immutable skill-level set in the extended-index layout: one slot per

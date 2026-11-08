@@ -1,7 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.IntPredicate;
 import shortestpath.WorldPointUtil;
 

@@ -1,29 +1,18 @@
 package shortestpath.poh;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.*;
+import java.util.regex.*;
+import javax.inject.*;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
-import shortestpath.Util;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.scheduler.RefreshCoordinator;
-import shortestpath.settings.Effect;
-import shortestpath.settings.Settings;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.settings.*;
+import shortestpath.transport.*;
 import shortestpath.widgets.GameWidgets;
 
 /**

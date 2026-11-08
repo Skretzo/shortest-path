@@ -1,11 +1,8 @@
 package shortestpath.transport;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 import net.runelite.api.Skill;
 import shortestpath.Util;
 import shortestpath.requirement.model.SkillLevels;

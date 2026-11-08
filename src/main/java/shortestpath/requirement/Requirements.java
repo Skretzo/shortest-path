@@ -1,27 +1,16 @@
 package shortestpath.requirement;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
+import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
 
 import shortestpath.WorldPointUtil;
-import shortestpath.leagues.LeagueModeSnapshot;
-import shortestpath.leagues.LeagueRegion;
-import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.leagues.*;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.poh.PohService;
-import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.SkillLevels;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.Unlock;
-import shortestpath.requirement.model.VarRequirement;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.requirement.model.*;
+import shortestpath.transport.*;
 
 /**
  * The ordered gate chain deciding which transports can run this refresh.

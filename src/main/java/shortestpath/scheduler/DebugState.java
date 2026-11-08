@@ -1,7 +1,6 @@
 package shortestpath.scheduler;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 import lombok.Getter;
 import shortestpath.pathfinder.ActiveSearch;
 

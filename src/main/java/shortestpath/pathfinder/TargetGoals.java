@@ -1,11 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.IntPredicate;
 import shortestpath.WorldPointUtil;
 import lombok.Getter;

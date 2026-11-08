@@ -1,26 +1,13 @@
 package shortestpath.requirement;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.gameval.ItemID;
-import shortestpath.ItemVariations;
-import shortestpath.WorldPointUtil;
-import shortestpath.transport.ResourceLoader;
-import shortestpath.transport.TransportType;
+import shortestpath.*;
+import shortestpath.transport.*;
 import shortestpath.transport.parser.TransportRecord;
 
 /**

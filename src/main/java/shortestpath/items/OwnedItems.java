@@ -1,14 +1,7 @@
 package shortestpath.items;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import net.runelite.api.Client;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.EnumID;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
+import java.util.*;
+import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 

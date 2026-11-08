@@ -1,16 +1,10 @@
 package shortestpath.pathfinder;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.io.*;
+import java.util.*;
+import java.util.zip.*;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 

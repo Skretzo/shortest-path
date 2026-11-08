@@ -1,8 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.util.Arrays;
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /**

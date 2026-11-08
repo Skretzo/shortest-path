@@ -1,11 +1,7 @@
 package shortestpath;
 
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
+import java.awt.event.*;
+import javax.swing.*;
 import javax.swing.border.Border;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.util.SwingUtil;

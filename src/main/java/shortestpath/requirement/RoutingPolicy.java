@@ -1,13 +1,8 @@
 package shortestpath.requirement;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import shortestpath.poh.JewelleryBoxTier;
+import java.util.*;
+import shortestpath.poh.*;
 import shortestpath.settings.TeleportationItem;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.poh.PohNexusPortal;
 import shortestpath.transport.TransportType;
 import lombok.Getter;
 import lombok.experimental.Accessors;

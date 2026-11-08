@@ -1,26 +1,12 @@
 package shortestpath.pathfinder.astar;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import java.util.*;
+import lombok.*;
 import lombok.experimental.Accessors;
-import shortestpath.PrimitiveIntHashMap;
-import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.IntDeque;
-import shortestpath.pathfinder.SplitFlagMap;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
+import shortestpath.transport.*;
 
 /**
  * Derives the A* backend's {@link RoutingStatic} from the {@link CollisionMap}, the raw

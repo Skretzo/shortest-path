@@ -2,23 +2,15 @@ package shortestpath.sailing;
 
 import java.util.Set;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.Perspective;
-import net.runelite.api.Player;
-import net.runelite.api.WorldEntity;
-import net.runelite.api.WorldEntityConfig;
+import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.gameval.VarbitID;
 import shortestpath.WorldPointUtil;
-import shortestpath.requirement.ClientPlayerStateSource;
-import shortestpath.requirement.PlayerStateSource;
+import shortestpath.requirement.*;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 

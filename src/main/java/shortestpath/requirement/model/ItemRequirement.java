@@ -1,11 +1,8 @@
 package shortestpath.requirement.model;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.*;
 import shortestpath.Util;
 
 /**

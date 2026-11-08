@@ -1,7 +1,6 @@
 package shortestpath.settings;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 @Getter
 @RequiredArgsConstructor
