@@ -1,23 +1,17 @@
 package shortestpath.scheduler;
 
-import java.util.Map;
-import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.*;
+import javax.inject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
-import shortestpath.settings.Settings;
+import shortestpath.settings.*;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.Targets;
+import shortestpath.pathfinder.*;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
 import shortestpath.poh.PohChange;
 import shortestpath.sailing.SailingChange;
-import shortestpath.settings.ConfigChange;
-import shortestpath.settings.Settings;
-import shortestpath.settings.Effect;
 import shortestpath.spirittree.TreeChange;
 
 /**

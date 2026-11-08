@@ -2,8 +2,7 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.CollisionMap;
+import shortestpath.pathfinder.*;
 import lombok.*;
 import lombok.experimental.Accessors;
 

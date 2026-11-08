@@ -2,8 +2,7 @@ package shortestpath.requirement;
 
 import java.util.*;
 import shortestpath.ItemVariations;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.HeldItems;
+import shortestpath.pathfinder.*;
 import shortestpath.requirement.model.*;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.transport.*;
