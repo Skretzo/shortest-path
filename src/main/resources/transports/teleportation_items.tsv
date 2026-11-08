@@ -399,11 +399,11 @@
 3808 9700 1			22400=1		4	Drakan's medallion: Slepe	F	20	12416>0	
 # Mythical cape										
 2457 2850 0			21913=1||22114=1||24855=1		4	Mythical cape	F	20		
-# Stony basalt - 6528 is MAKING_FRIENDS_WITH_MY_ARM and 4493 is DIARY_FREMENNIK_HARD										
-2845 3694 0			22601=1		4	Stony basalt	T	20	6528=207	
-2837 3695 0		73 Agility	22601=1		4	Stony basalt: Roof	T	20	6528=207;4493=1	
+# Stony basalt - 4493 is DIARY_FREMENNIK_HARD										
+2845 3694 0			22601=1	Making Friends with My Arm	4	Stony basalt	T	20		
+2837 3695 0		73 Agility	22601=1	Making Friends with My Arm	4	Stony basalt: Roof	T	20	4493=1	
 # Icy basalt										
-2846 3938 0			22599=1		4	Icy basalt	T	20	6528=207	
+2846 3938 0			22599=1	Making Friends with My Arm	4	Icy basalt	T	20		
 										
 # Pharaoh's sceptre										
 1934 4428 3			26948=1		4	Pharaoh's sceptre: Jalsavrah	T	20		
