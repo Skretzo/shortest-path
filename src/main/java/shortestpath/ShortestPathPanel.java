@@ -34,7 +34,6 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.MultiplexingPluginPanel;
 import net.runelite.client.ui.PluginPanel;

@@ -1,15 +1,7 @@
 package shortestpath;
 
 import java.awt.Color;
-import java.util.EnumSet;
-import java.util.Set;
 import net.runelite.client.config.*;
-import net.runelite.client.config.Range;
-import net.runelite.client.config.Units;
-import shortestpath.settings.TeleportationItem;
-import shortestpath.poh.JewelleryBoxTier;
-import shortestpath.poh.PohNexusPortal;
-import shortestpath.poh.PohMountedItem;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config
@@ -379,7 +371,7 @@ public interface ShortestPathConfig extends Config
 
 
 
-	
+
 	/**
 	 * The balloon routes whose destination basket holds the required logs.
 	 * While this key has never been written its default derives from the

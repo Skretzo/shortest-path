@@ -1,8 +1,6 @@
 package shortestpath.settings;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -18,7 +16,6 @@ import org.junit.Test;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import shortestpath.ShortestPathConfig;
-import shortestpath.TestShortestPathConfig;
 
 /**
  * Demotion-boundary gate for the settings split: the sidebar panel owns every
@@ -168,7 +165,8 @@ public class ConfigDemotionTest
 			boundaryViolations.isEmpty());
 
 		Set<String> missing = new TreeSet<>(PANEL_OWNED_KEYS);
-		missing.removeIf(key -> {
+		missing.removeIf(key ->
+		{
 			ConfigKey row = ConfigKey.forKey(key);
 			return row != null && row.isKeyed() && !annotatedKeys.contains(key)
 				&& ConfigItems.of(key) != null;

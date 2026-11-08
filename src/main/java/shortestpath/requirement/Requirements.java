@@ -4,7 +4,6 @@ import java.util.*;
 
 import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
-import shortestpath.ShortestPathPlugin;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.*;
