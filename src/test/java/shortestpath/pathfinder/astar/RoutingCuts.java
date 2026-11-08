@@ -105,7 +105,7 @@ public final class RoutingCuts
 		return pairs.clone();
 	}
 
-	/** No cuts at all: builds without separators, so it only costs performance. */
+	/** No cuts at all: the generated layer has no separators and no crossings. */
 	public static RoutingCuts empty()
 	{
 		return new RoutingCuts(0, new Parameters(0, 0, 0, 0, 0, ""), new int[0]);
@@ -113,9 +113,9 @@ public final class RoutingCuts
 
 	/**
 	 * Loads the packaged {@code routing-cuts.bin}, or an empty index when the jar does not
-	 * contain it: missing cuts only affect build performance, never the routes. A corrupt
-	 * resource still fails loudly, since that indicates a broken build rather than an
-	 * optional one.
+	 * contain it. Missing cuts are not harmless for the generator: the layer it writes then has
+	 * no crossings, which {@code RoutingComponentsFreshnessTest} rejects. A corrupt resource
+	 * fails loudly, since that indicates a broken build rather than an optional one.
 	 */
 	public static RoutingCuts loadFromResources()
 	{
