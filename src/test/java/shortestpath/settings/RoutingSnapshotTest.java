@@ -106,7 +106,7 @@ public class RoutingSnapshotTest
 	 * row — a missing member is invisible until a consumer trusts the
 	 * snapshot and silently loses an unlock.
 	 */
-	
+
 	@Test
 	public void buildRoutingPolicyBuildsTheSnapshot()
 	{

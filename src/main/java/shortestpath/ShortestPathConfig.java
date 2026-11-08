@@ -1,16 +1,7 @@
 package shortestpath;
 
 import java.awt.Color;
-import java.util.EnumSet;
-import java.util.Set;
 import net.runelite.client.config.*;
-import net.runelite.client.config.Range;
-import net.runelite.client.config.Units;
-import shortestpath.settings.TeleportationItem;
-import shortestpath.poh.JewelleryBoxTier;
-import shortestpath.poh.PohNexusPortal;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.transport.BalloonRoute;
 
 @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config
