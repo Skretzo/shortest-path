@@ -1,11 +1,7 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
+import java.util.*;
+import shortestpath.requirement.model.*;
 import lombok.Getter;
 
 /**

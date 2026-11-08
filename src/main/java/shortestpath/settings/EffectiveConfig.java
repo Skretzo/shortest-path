@@ -1,14 +1,11 @@
 package shortestpath.settings;
 
 import java.awt.Color;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import net.runelite.client.config.Keybind;
-import shortestpath.ShortestPathConfig;
-import shortestpath.TileCounter;
-import shortestpath.TileStyle;
+import shortestpath.*;
 import shortestpath.poh.JewelleryBoxTier;
 
 /**

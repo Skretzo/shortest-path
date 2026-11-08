@@ -1,7 +1,6 @@
 package shortestpath.pathfinder;
 
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /**

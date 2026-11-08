@@ -1,27 +1,11 @@
 package shortestpath.pathfinder.sailing;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import lombok.Getter;
-import shortestpath.PrimitiveIntList;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.leagues.LeagueModeState;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.IntDeque;
-import shortestpath.pathfinder.IntMinHeap;
-import shortestpath.pathfinder.NodeGraph;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathTerminationReason;
-import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.pathfinder.PathfinderStats;
-import shortestpath.pathfinder.SearchDeadline;
-import shortestpath.pathfinder.TargetGoals;
-import shortestpath.pathfinder.Targets;
-import shortestpath.pathfinder.VisitedTiles;
-import shortestpath.pathfinder.WildernessChecker;
+import shortestpath.pathfinder.*;
 
 /**
  * The sailing search: a Dijkstra over the boat's 16 headings (see {@link SailingMoves}) that keeps the

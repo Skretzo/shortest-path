@@ -1,9 +1,7 @@
 package shortestpath.pathfinder;
 
-import java.util.List;
-import java.util.Set;
-import net.runelite.api.Client;
-import net.runelite.api.ItemContainer;
+import java.util.*;
+import net.runelite.api.*;
 import shortestpath.items.ItemStateService;
 import shortestpath.requirement.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.model.TransportItems;

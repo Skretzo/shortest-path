@@ -1,7 +1,6 @@
 package shortestpath.requirement.model;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import lombok.Getter;
 import shortestpath.Util;

@@ -1,13 +1,10 @@
 package shortestpath.pathfinder.astar;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.*;
 
 /**
  * Rewrites the canonical walking legs of an A* route into the tiles the game's own walking

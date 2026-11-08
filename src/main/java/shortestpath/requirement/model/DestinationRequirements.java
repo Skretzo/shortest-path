@@ -1,11 +1,8 @@
 package shortestpath.requirement.model;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import lombok.Getter;
-import net.runelite.api.Quest;
-import net.runelite.api.Skill;
+import net.runelite.api.*;
 
 /**
  * Optional access requirements for a destination tile (e.g. bank booths). Empty requirements mean

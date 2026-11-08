@@ -1,18 +1,11 @@
 package shortestpath.requirement;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import shortestpath.ItemVariations;
 import shortestpath.pathfinder.HeldItems;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.Unlock;
+import shortestpath.requirement.model.*;
 import shortestpath.settings.TeleportationItem;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.transport.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 

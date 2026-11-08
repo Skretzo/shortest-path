@@ -1,17 +1,12 @@
 package shortestpath.pathfinder;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import shortestpath.Destination;
-import shortestpath.pathfinder.astar.RoutingCuts;
-import shortestpath.pathfinder.astar.RoutingStatic;
-import shortestpath.pathfinder.astar.RoutingStaticBuilder;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportLoader;
+import shortestpath.pathfinder.astar.*;
+import shortestpath.transport.*;
 
 /**
  * Builds the A* backend's static routing data once per plugin session, on first use.

@@ -2,24 +2,12 @@ package shortestpath;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Quest;
-import net.runelite.api.Skill;
-import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.transport.parser.FieldParser;
-import shortestpath.transport.parser.QuestParser;
-import shortestpath.transport.parser.SkillRequirementParser;
-import shortestpath.requirement.model.VarRequirement;
-import shortestpath.transport.parser.VarRequirementParser;
+import net.runelite.api.*;
+import shortestpath.requirement.model.*;
+import shortestpath.transport.parser.*;
 
 /**
  * Utility loader for destination coordinate sets grouped by feature category.

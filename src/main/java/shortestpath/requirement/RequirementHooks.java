@@ -1,9 +1,7 @@
 package shortestpath.requirement;
 
-import java.util.Collection;
-import java.util.Map;
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
+import java.util.*;
+import net.runelite.api.*;
 import shortestpath.requirement.model.VarRequirement;
 
 /**

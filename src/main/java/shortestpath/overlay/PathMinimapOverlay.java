@@ -2,22 +2,13 @@ package shortestpath.overlay;
 
 import com.google.inject.Inject;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Shape;
+import java.awt.*;
 
-import net.runelite.api.Client;
-import net.runelite.api.Perspective;
+import net.runelite.api.*;
 import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
-import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
-import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.PrimitiveIntList;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.WorldPointUtil;
+import net.runelite.client.ui.overlay.*;
+import shortestpath.*;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.settings.Settings;
 

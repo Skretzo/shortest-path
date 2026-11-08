@@ -1,8 +1,6 @@
 package shortestpath.leagues;
 
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import net.runelite.api.WorldType;
 import shortestpath.requirement.PlayerStateSource;
 

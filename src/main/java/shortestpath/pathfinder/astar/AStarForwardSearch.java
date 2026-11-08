@@ -1,17 +1,11 @@
 package shortestpath.pathfinder.astar;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.BooleanSupplier;
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
-import shortestpath.PrimitiveIntHashMap;
-import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.WildernessChecker;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
 import shortestpath.transport.Transport;
 
 /** Correctness-first forward search over tiles, capability hubs, and bank layers. */

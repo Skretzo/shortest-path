@@ -2,21 +2,11 @@ package shortestpath.transport;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.Util;
-import shortestpath.WorldPointUtil;
-import shortestpath.transport.parser.TransportRecord;
-import shortestpath.transport.parser.TsvParser;
+import shortestpath.*;
+import shortestpath.transport.parser.*;
 
 @Slf4j
 public class TransportLoader

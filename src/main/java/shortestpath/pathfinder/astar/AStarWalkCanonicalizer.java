@@ -1,15 +1,10 @@
 package shortestpath.pathfinder.astar;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import java.util.*;
+import lombok.*;
 import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.*;
 
 /**
  * Picks a natural-looking walk for each walking leg of an A* route, without changing what the

@@ -2,41 +2,23 @@ package shortestpath.settings;
 
 
 import java.awt.Color;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 import javax.swing.SwingUtilities;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigDescriptor;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigItemDescriptor;
-import net.runelite.client.config.ConfigManager;
-import net.runelite.client.config.Range;
+import net.runelite.client.config.*;
 import net.runelite.client.events.ConfigChanged;
 import shortestpath.pathfinder.PathfinderBackend;
-import shortestpath.ShortestPathConfig;
-import shortestpath.TileCounter;
-import shortestpath.TileStyle;
+import shortestpath.*;
 import shortestpath.requirement.RoutingPolicy;
-import shortestpath.poh.JewelleryBoxTier;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.poh.PohNexusPortal;
-import shortestpath.transport.TransportType;
-import shortestpath.transport.TransportTypeConfig;
+import shortestpath.poh.*;
+import shortestpath.transport.*;
 
 /**
  * The injected owner of configured state: the base {@link ShortestPathConfig}

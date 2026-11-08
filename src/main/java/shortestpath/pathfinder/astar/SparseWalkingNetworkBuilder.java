@@ -1,7 +1,6 @@
 package shortestpath.pathfinder.astar;
 
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 import shortestpath.WorldPointUtil;
 
 /**

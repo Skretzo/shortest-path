@@ -1,12 +1,10 @@
 package shortestpath.transport.parser;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.requirement.model.VarCheckType;
-import shortestpath.requirement.model.VarRequirement;
+import shortestpath.requirement.model.*;
 import lombok.AllArgsConstructor;
 
 /**

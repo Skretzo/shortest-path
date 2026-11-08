@@ -1,21 +1,10 @@
 package shortestpath.pathfinder;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.IntPredicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import shortestpath.leagues.LeagueModeState;
-import shortestpath.pathfinder.astar.AStarForwardSearch;
-import shortestpath.pathfinder.astar.AStarRoute;
-import shortestpath.pathfinder.astar.AStarRoutingSession;
-import shortestpath.pathfinder.astar.AStarWalkCanonicalizer;
-import shortestpath.pathfinder.astar.InGameWalkRewriter;
-import shortestpath.pathfinder.astar.PreparedRoutingAccount;
-import shortestpath.pathfinder.astar.PreparedTarget;
-import shortestpath.pathfinder.astar.RoutingStatic;
-import shortestpath.pathfinder.astar.SearchRestrictions;
-import shortestpath.pathfinder.astar.SiteGraph;
+import shortestpath.pathfinder.astar.*;
 import lombok.Getter;
 
 /** ActiveSearch adapter for the A* core. */

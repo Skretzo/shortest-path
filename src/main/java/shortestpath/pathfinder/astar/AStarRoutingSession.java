@@ -1,12 +1,7 @@
 package shortestpath.pathfinder.astar;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import java.util.*;
+import lombok.*;
 import lombok.experimental.Accessors;
 import shortestpath.pathfinder.CollisionMap;
 

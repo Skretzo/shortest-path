@@ -1,12 +1,8 @@
 package shortestpath.requirement;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Static metadata for the five plantable spirit tree patches (Port Sarim,

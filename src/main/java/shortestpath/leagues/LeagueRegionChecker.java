@@ -1,16 +1,11 @@
 package shortestpath.leagues;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.Util;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 
 /**
  * Resolves a packed world point to its {@link LeagueRegion} for the Demonic

@@ -2,45 +2,23 @@ package shortestpath.overlay;
 
 import com.google.inject.Inject;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Polygon;
-import java.awt.Stroke;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.*;
+import java.awt.geom.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
-import net.runelite.api.Client;
-import net.runelite.api.Perspective;
-import net.runelite.api.Player;
+import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.api.Tile;
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.coords.*;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
-import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.PrimitiveIntList;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.TileCounter;
-import shortestpath.TileStyle;
-import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.AStarPathfinder;
-import shortestpath.pathfinder.PathStep;
+import net.runelite.client.ui.overlay.*;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
-import shortestpath.requirement.BankPickupRequirements;
+import shortestpath.requirement.*;
 import shortestpath.transport.Transport;
-import shortestpath.requirement.TransportEligibility;
 import shortestpath.settings.Settings;
 
 public class PathTileOverlay extends Overlay

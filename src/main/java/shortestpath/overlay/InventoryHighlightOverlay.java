@@ -1,25 +1,18 @@
 package shortestpath.overlay;
 
 import com.google.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
+import java.awt.*;
 
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import net.runelite.api.Client;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
-import shortestpath.ItemVariations;
-import shortestpath.ShortestPathPlugin;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.transport.Transport;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
+import shortestpath.transport.*;
 import shortestpath.requirement.TransportEligibility;
-import shortestpath.transport.TransportType;
 import shortestpath.requirement.model.ItemRequirement;
 import shortestpath.settings.Settings;
 

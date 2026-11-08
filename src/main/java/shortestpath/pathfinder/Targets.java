@@ -1,11 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import shortestpath.WorldPointUtil;
 
 /**

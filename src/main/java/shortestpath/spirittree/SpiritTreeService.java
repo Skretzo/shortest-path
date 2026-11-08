@@ -1,25 +1,16 @@
 package shortestpath.spirittree;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.*;
+import java.util.regex.*;
+import javax.inject.*;
 import lombok.Getter;
-import net.runelite.api.Client;
-import net.runelite.api.Player;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.util.Text;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
-import shortestpath.requirement.ClientPlayerStateSource;
-import shortestpath.requirement.PlayerStateSource;
-import shortestpath.requirement.SpiritTreePatches;
+import shortestpath.requirement.*;
 import shortestpath.settings.Effect;
 
 /**

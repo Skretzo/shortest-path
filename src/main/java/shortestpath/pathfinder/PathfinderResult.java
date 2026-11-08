@@ -1,8 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.util.List;
-import lombok.Getter;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 @AllArgsConstructor
 @Getter

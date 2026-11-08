@@ -1,20 +1,14 @@
 package shortestpath.items;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
 import net.runelite.api.ItemContainer;
-import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.gameval.VarbitID;
-import shortestpath.requirement.PlayerStateSource;
-import shortestpath.requirement.TransportEligibility;
+import net.runelite.api.gameval.*;
+import shortestpath.requirement.*;
 import shortestpath.requirement.model.Unlock;
-import shortestpath.settings.Effect;
-import shortestpath.settings.TeleportationItem;
+import shortestpath.settings.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 

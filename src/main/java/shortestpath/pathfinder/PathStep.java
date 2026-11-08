@@ -1,8 +1,7 @@
 package shortestpath.pathfinder;
 
-import lombok.Getter;
+import lombok.*;
 import shortestpath.transport.Transport;
-import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 @Getter
