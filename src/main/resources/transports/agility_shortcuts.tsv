@@ -655,6 +655,10 @@
 3035 9558 0	3026 9571 0	Enter Tunnel 42506	72 Agility				1	
 3036 9558 0	3026 9571 0	Enter Tunnel 42506	72 Agility				1	
 2841 3427 0	2841 3433 0	Swim-to Shore 62421	72 Agility					
+# Barrows dry stone wall								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3545 3282 0	3547 3282 0	Jump-Across Dry stone wall 53256	72 Agility					
+3547 3282 0	3545 3282 0	Jump-Across Dry stone wall 53256	72 Agility					
 1742 3854 0	1752 3854 0	Climb Rocks 27984	73 Agility				4	
 2838 3693 0	2844 3693 0	Climb Rocks 16464	73 Agility					
 2844 3693 0	2838 3693 0	Climb Rocks 16464	73 Agility					
