@@ -178,3 +178,18 @@
 2527 7839 0	3162 7711 0	Enter Portal 61223		The Blood Moon Rises			1	
 2526 7836 0	3162 7711 0	Enter Portal 61223		The Blood Moon Rises			1	
 2526 7840 0	3162 7711 0	Enter Portal 61223		The Blood Moon Rises			1	
+# The Scar - blue neural teleporters								
+1731 6435 0	1788 6418 0	Enter Neural Teleporter 49414					2	
+1788 6418 0	1731 6435 0	Enter Neural Teleporter 49413					2	
+# The Scar - green neural teleporters								
+1742 6403 0	1731 6459 0	Enter Neural Teleporter 49415					2	
+1731 6459 0	1742 6403 0	Enter Neural Teleporter 49416					2	
+# The Scar - second puzzle green neural teleporters								
+2234 6460 0	2179 6403 0	Enter Neural Teleporter 49415					2	
+2179 6403 0	2234 6460 0	Enter Neural Teleporter 49416					2	
+# The Scar - second puzzle blue neural teleporters								
+2236 6444 0	2182 6425 0	Enter Neural Teleporter 49413					2	
+2182 6425 0	2236 6444 0	Enter Neural Teleporter 49414					2	
+# The Scar - third puzzle green neural teleporters								
+1892 6456 0	1862 6408 0	Enter Neural Teleporter 49416					2	
+1862 6409 0	1892 6455 0	Enter Neural Teleporter 49415					2	
