@@ -483,6 +483,27 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testCabinFeverHalvesCharterFares()
+	{
+		// Cabin Fever halves charter fares (https://oldschool.runescape.wiki/w/Charter_ship).
+		// With 2,500 coins, Civitas illa Fortis -> Port Tyras is a direct 1,600 coin fare,
+		// not a detour via Mos Le'Harmless, whose fares are listed halved already.
+		config.set("useCharterShips", true);
+		setupInventory(new Item(ItemID.COINS, 2500));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		Pathfinder pathfinder = runPathfinder(
+			WorldPointUtil.packWorldPoint(1743, 3136, 0),
+			WorldPointUtil.packWorldPoint(2142, 3122, 0));
+
+		assertTrue("expected path to reach Port Tyras",
+			pathfinder.getResult() != null && pathfinder.getResult().isReached());
+		assertFalse("expected the direct half-price charter, not a detour via Mos Le'Harmless",
+			usedTransportWithDisplayInfo(pathfinder, TransportType.CHARTER_SHIP, "Mos Le'Harmless"));
+	}
+
+	@Test
 	public void testCatherbyCharterReusedAfterBankVisitWithBankedCoins()
 	{
 		// Start on the Catherby charter tile with no coins on hand. The route must bank,
