@@ -350,17 +350,16 @@ public final class Requirements
 	 */
 	private boolean checkRespawnGate(Transport transport)
 	{
-		if (!transport.hasDisplayInfo("Respawn") && !transport.hasDisplayInfo("Ring of returning:"))
+		if (!transport.hasDisplayInfo("Respawn"))
 		{
 			return true;
 		}
-		// Ring of returning lands on different tiles from the spell and POH portal.
 		int destination = transport.getDestination();
-		if (destination == PRIFDDINAS_RESPAWN || transport.hasDisplayInfo("Ring of returning: Prifddinas"))
+		if (destination == PRIFDDINAS_RESPAWN)
 		{
 			return context.isRespawnPrifddinas();
 		}
-		if (destination == LUMBRIDGE_RESPAWN || transport.hasDisplayInfo("Ring of returning: Lumbridge"))
+		if (destination == LUMBRIDGE_RESPAWN)
 		{
 			return !context.isRespawnPrifddinas();
 		}
