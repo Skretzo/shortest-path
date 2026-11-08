@@ -425,6 +425,10 @@
 1631 3813 1	1631 3811 0	Jump-down Railing 28373	52 Agility					
 1633 3813 1	1633 3811 0	Jump-down Railing 28374	52 Agility					
 1635 3813 1	1635 3811 0	Jump-down Railing 28373	52 Agility					
+# Great Conch eastern plateau								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3235 2390 0	3235 2386 0	Climb Rocks 57931	52 Agility				3	
+3235 2386 0	3235 2390 0	Climb Rocks 57932	52 Agility				3	
 2874 3133 0	2874 3127 0	Grapple Strong Tree 17074	53 Agility;42 Ranged;21 Strength	CROSSBOW=1&MITH_GRAPPLE=1				
 2874 3127 0	2874 3133 0	Grapple Strong Tree 17074	53 Agility;42 Ranged;21 Strength	CROSSBOW=1&MITH_GRAPPLE=1				
 2874 3136 0	2874 3142 0	Grapple Strong Tree 17074	53 Agility;42 Ranged;21 Strength	CROSSBOW=1&MITH_GRAPPLE=1				
