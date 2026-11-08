@@ -6532,9 +6532,8 @@
 1117 3428 0	1119 3428 0	Climb-over Rocks 48740				15125>37			
 1119 3428 0	1117 3428 0	Leave Rocks 48742							
 # The Scar									
-# shortcut: require quest completion to avoid the quest monster gate; relax when its unlock can be verified.									
-2035 6430 0	2029 6430 0	Cross Stepping Stone 49209			Desert Treasure II - The Fallen Empire			4	
-2029 6430 0	2035 6430 0	Cross Stepping Stone 49209			Desert Treasure II - The Fallen Empire			4	
+2035 6430 0	2029 6430 0	Cross Stepping Stone 49209				15128>7		4	
+2029 6430 0	2035 6430 0	Cross Stepping Stone 49209				15128>7		4	
 # shortcut: entrance limited to the captured Scar stage and puzzle order; expand with verified destinations.									
 2044 6440 0	1789 6405 0	Enter Passage 49526				15128=16;15191=2;15192=0;15193=1;15194=1			
 1789 6405 0	2047 6436 0	Exit Passage 49408							Yes.
