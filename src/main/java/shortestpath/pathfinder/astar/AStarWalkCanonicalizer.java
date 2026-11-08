@@ -290,7 +290,8 @@ public final class AStarWalkCanonicalizer
 			// then runs as deep as the leg is long, to see every tile that far from the source.
 			boolean finalStretch = goal != null && !blocked && to - current <= CLICK_RADIUS;
 			int discovered = search(originX, originY, plane, sx, sy,
-				finalStretch ? to - current : blocked ? 1 : Math.min(remaining, HALF_WINDOW));
+				finalStretch ? to - current : blocked ? 1 : Math.min(remaining, HALF_WINDOW),
+				finalStretch ? -1 : remaining);
 
 			if (finalStretch)
 			{
@@ -464,9 +465,12 @@ public final class AStarWalkCanonicalizer
 
 	/**
 	 * The game's walking BFS from {@code (sx, sy)}, stopped once every tile within {@code depth} is
-	 * found. Returns how many tiles it discovered; {@code queue} lists them in discovery order.
+	 * found. Returns how many tiles it discovered; {@code queue} lists them in discovery order. With
+	 * {@code remaining} not negative, only tiles that lie on a walk of that many steps to the leg's
+	 * end are explored: the others cannot be clicked, and leaving them out changes neither the
+	 * distances nor the first discoverers of those that can.
 	 */
-	private int search(int originX, int originY, int plane, int sx, int sy, int depth)
+	private int search(int originX, int originY, int plane, int sx, int sy, int depth, int remaining)
 	{
 		Arrays.fill(distance, UNVISITED);
 		int start = (sy - originY) * WINDOW + (sx - originX);
@@ -494,7 +498,11 @@ public final class AStarWalkCanonicalizer
 				int nx = x + GameWalkOrder.ORDER_DX[i], ny = y + GameWalkOrder.ORDER_DY[i];
 				if (nx < 0 || ny < 0 || nx >= WINDOW || ny >= WINDOW) continue;
 				int next = ny * WINDOW + nx;
-				if (distance[next] != UNVISITED) continue;
+				if (distance[next] != UNVISITED
+					|| remaining >= 0 && toEnd(originX + nx, originY + ny) != remaining - distance[at] - 1)
+				{
+					continue;
+				}
 				distance[next] = distance[at] + 1;
 				parent[next] = at;
 				axis[next] = axis[at] + Math.abs(GameWalkOrder.ORDER_DX[i]) + Math.abs(GameWalkOrder.ORDER_DY[i]);

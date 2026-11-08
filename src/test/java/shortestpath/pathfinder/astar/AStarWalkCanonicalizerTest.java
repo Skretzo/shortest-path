@@ -87,11 +87,10 @@ public class AStarWalkCanonicalizerTest
 	public void longLegsAreSplitIntoSeveralClicks()
 	{
 		Grid grid = new Grid();
-		// 30 east, then 12 north-east, then 10 north.
+		// 30 east, then 12 north-east: 42 ticks, as many as the game needs to (42,12).
 		List<PathStep> route = new ArrayList<>(steps(0, 0));
 		for (int x = 1; x <= 30; x++) route.add(step(x, 0));
 		for (int d = 1; d <= 12; d++) route.add(step(30 + d, d));
-		for (int y = 13; y <= 22; y++) route.add(step(42, y));
 		int end = route.size() - 1;
 
 		AStarWalkCanonicalizer.Result result = rewrite(grid, route, 0, end);
