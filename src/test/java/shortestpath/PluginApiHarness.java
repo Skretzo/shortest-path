@@ -135,7 +135,7 @@ final class PluginApiHarness implements AutoCloseable
 		set("clientThread", clientThread);
 		set("config", settings);
 		set("settings", settingsService);
-		shortestpath.poh.PohService pohService = shortestpath.poh.PohService.forTesting();
+		shortestpath.poh.PohService pohService = shortestpath.poh.PohTestServices.forTesting();
 		set("pohService", pohService);
 		set("pathfinderConfig", pathfinderConfig);
 		// The harness builds the plugin without DI, so the scheduler, the refresh
@@ -155,7 +155,7 @@ final class PluginApiHarness implements AutoCloseable
 		set("itemState", itemState);
 		set("sailing", sailing);
 		annotator =
-			shortestpath.presentation.PathAnnotator.forTesting(client, pohService, itemState);
+			shortestpath.presentation.PathAnnotatorTestServices.forTesting(client, pohService, itemState);
 		annotator.attach(pathfinderConfig);
 		set("annotator", annotator);
 		shortestpath.api.PluginMessageHandler apiHandler =

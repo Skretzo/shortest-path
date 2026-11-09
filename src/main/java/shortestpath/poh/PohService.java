@@ -234,31 +234,6 @@ public class PohService
 		this(configManager, null, null);
 	}
 
-	PohService()
-	{
-		this(null, null, null);
-	}
-
-	/**
-	 * A detached service for harnesses and tests: no persistence, so every
-	 * RSProfile read/write takes its detached arm instead of touching
-	 * storage, and no coordinator, so change declares no-op.
-	 */
-	public static PohService forTesting()
-	{
-		return new PohService();
-	}
-
-	/**
-	 * Test seam for asserting change declares: the returned instance hands
-	 * admitted facts to the given (typically mocked) coordinator while
-	 * staying detached from persistence.
-	 */
-	public static PohService forTesting(RefreshCoordinator coordinator)
-	{
-		return new PohService(null, coordinator, null);
-	}
-
 	/**
 	 * Reads the current keybind map from the open Portal Nexus dialog and
 	 * declares the resulting fact to the coordinator. Returns whether at
@@ -394,7 +369,7 @@ public class PohService
 
 	/**
 	 * Hands an admitted fact to the refresh coordinator. Detached
-	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * instances (built with a null coordinator) carry none, so the declare
 	 * no-ops there; a null fact declares nothing, mirroring the return-null
 	 * convention the shell's mapper used to guard.
 	 */

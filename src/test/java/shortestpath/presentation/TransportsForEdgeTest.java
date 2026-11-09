@@ -35,7 +35,7 @@ public class TransportsForEdgeTest
 	@Before
 	public void before()
 	{
-		annotator = PathAnnotator.forTesting();
+		annotator = PathAnnotatorTestServices.forTesting();
 		annotator.attach(pathfinderConfig);
 		for (Transport transport : TRANSPORTS.get(Transport.UNDEFINED_ORIGIN))
 		{
