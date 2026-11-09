@@ -28,6 +28,7 @@ import shortestpath.requirement.SpiritTreePatches;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.widgets.GameWidgets;
+import shortestpath.widgets.WidgetTestServices;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -695,7 +696,7 @@ public class SpiritTreeServiceTest
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 		SpiritTreeService service = new SpiritTreeService(
-			mock(ConfigManager.class), null, coordinator, GameWidgets.forTesting());
+			mock(ConfigManager.class), null, coordinator, WidgetTestServices.gameWidgets());
 
 		service.onMenuOpened(false);
 		service.onMenuOpened(true);

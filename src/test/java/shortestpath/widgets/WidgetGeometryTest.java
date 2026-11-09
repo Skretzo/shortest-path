@@ -41,7 +41,7 @@ import shortestpath.WorldPointUtil;
  * on any bounds change, the mask-sprite fallback chain, the
  * {@code menuOpened(Point)} single-owner write seam feeding
  * {@code getSelectedWorldPoint}, and the detached-instance sentinels — a
- * {@code forTesting()} geometry answers null/{@code Integer.MIN_VALUE}/
+ * geometry built without a client answers null/{@code Integer.MIN_VALUE}/
  * {@link WorldPointUtil#UNDEFINED} and never throws.
  */
 @RunWith(MockitoJUnitRunner.Silent.class)
@@ -103,7 +103,7 @@ public class WidgetGeometryTest
 	@Test
 	public void detachedInstanceCollapsesToSentinels()
 	{
-		WidgetGeometry detached = WidgetGeometry.forTesting();
+		WidgetGeometry detached = WidgetTestServices.geometry();
 
 		assertNull(detached.getMinimapClipArea());
 		assertEquals(Integer.MIN_VALUE, detached.mapWorldPointToGraphicsPointX(0));

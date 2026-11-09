@@ -68,6 +68,7 @@ import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import shortestpath.widgets.WidgetGeometry;
+import shortestpath.widgets.WidgetTestServices;
 
 /**
  * Golden-master transcripts over every overlay render path this phase touches:
@@ -218,7 +219,7 @@ public class OverlayTranscriptTest
 		when(client.getItemDefinition(anyInt())).thenReturn(def);
 
 		spriteManager = mock(SpriteManager.class);
-		geometry = WidgetGeometry.forTesting(client, spriteManager);
+		geometry = WidgetTestServices.geometry(client, spriteManager);
 
 		injector = Guice.createInjector(new AbstractModule()
 		{
