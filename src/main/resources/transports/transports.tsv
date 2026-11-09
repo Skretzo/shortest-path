@@ -6587,3 +6587,6 @@
 # Minotaurs' Rest - Here be minotaurs									
 1933 9519 0	1966 3097 0	Exit Opening 60174						2	
 1966 3097 0	1933 9519 0	Enter Cave entrance 60173						2	
+# Charred Island - Charred Dungeon									
+2637 2414 0	2683 8877 0	Climb-down Dark hole 60073				19537=1		2	
+2683 8877 0	2637 2414 0	Climb-up Rope 60076						2	
