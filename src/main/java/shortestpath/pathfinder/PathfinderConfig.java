@@ -107,7 +107,8 @@ public class PathfinderConfig
 	 * below draw from. The plugin wires the injected singleton in production;
 	 * harnesses and tests keep the default detached instance.
 	 */
-	private SailingService sailing = SailingService.forTesting();
+	// null collaborators mean detached
+	private SailingService sailing = new SailingService(null, null);
 
 	public void setSailingService(SailingService sailing)
 	{

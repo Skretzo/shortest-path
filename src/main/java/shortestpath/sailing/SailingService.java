@@ -47,52 +47,6 @@ public class SailingService
 	 */
 	@Getter private volatile SailingState state = SailingState.EMPTY;
 
-	private SailingService()
-	{
-		this(null, null);
-	}
-
-	/**
-	 * Test/harness seam: returns an instance detached from Guice. The
-	 * production instance is the injected singleton. Without a client the
-	 * detached instance resolves no entity state, so a refresh captures the
-	 * varbit side of the handed source alone — the same reduced world the
-	 * test harnesses run against today.
-	 */
-	public static SailingService forTesting()
-	{
-		return new SailingService();
-	}
-
-	/**
-	 * Test/harness seam for callers that exercise the entity side of the
-	 * capture: the handed client drives the boat lookup while the instance
-	 * stays detached from the coordinator channel.
-	 */
-	public static SailingService forTesting(Client client)
-	{
-		return new SailingService(client, null);
-	}
-
-	/**
-	 * Test seam for asserting change declares: the returned instance hands
-	 * minted facts to the given (typically mocked) {@link RefreshCoordinator}.
-	 */
-	public static SailingService forTesting(RefreshCoordinator coordinator)
-	{
-		return new SailingService(null, coordinator);
-	}
-
-	/**
-	 * Test seam for callers that need both sides wired: entity capture
-	 * through the handed client and fact declares to the handed
-	 * {@link RefreshCoordinator} channel.
-	 */
-	public static SailingService forTesting(Client client, RefreshCoordinator coordinator)
-	{
-		return new SailingService(client, coordinator);
-	}
-
 	/**
 	 * Republishes {@link SailingState#EMPTY}. The service is a singleton on
 	 * the plugin injector, which RuneLite reuses across shutDown/startUp
@@ -196,7 +150,7 @@ public class SailingService
 
 	/**
 	 * Hands an admitted fact to the refresh coordinator. Detached
-	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * instances (built with a null coordinator) carry none, so the declare
 	 * no-ops there; a null fact declares nothing, mirroring the return-null
 	 * convention the shell's mapper used to guard.
 	 */

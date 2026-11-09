@@ -60,6 +60,7 @@ import shortestpath.presentation.BankPickupRequirements;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.sailing.SailingService;
+import shortestpath.sailing.SailingTestServices;
 import shortestpath.sailing.SailingState;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
@@ -414,7 +415,7 @@ public class OverlayTranscriptTest
 	@Test
 	public void infoSailingDisembark()
 	{
-		SailingService live = SailingService.forTesting();
+		SailingService live = SailingTestServices.forTesting();
 		PlayerStateSource source = mock(PlayerStateSource.class);
 		when(source.gameState()).thenReturn(GameState.LOGGED_IN);
 		when(source.varbit(VarbitID.SAILING_BOARDED_BOAT)).thenReturn(1);
