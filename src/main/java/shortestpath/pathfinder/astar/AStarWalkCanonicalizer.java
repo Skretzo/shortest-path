@@ -1,63 +1,63 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.*;
-import lombok.*;
+import java.util.function.IntPredicate;
+import lombok.Getter;
 import lombok.experimental.Accessors;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.*;
 
 /**
- * Picks a natural-looking walk for each walking leg of an A* route, without changing what the
- * route costs or does.
+ * Rewrites the walking legs of an A* route into the tiles the game's own walking takes when the
+ * player clicks along them, without changing what the route costs or does.
  * <p>
- * The A* search minimises route cost only (the primary objective). Walking costs one tick in
- * each of the eight directions, so a walking leg usually has many equally cheap realisations, and
- * the search returns whichever its queue order found: diagonals that zig-zag, sideways drift, or an
- * arbitrary tile along the edge of the area a teleport may be cast from. This pass runs after the
- * search and replaces each leg by the best leg under a secondary, presentation-only objective,
- * compared lexicographically:
- * <ol>
- * <li>walking ticks, which must equal the leg's ticks in the route: the primary cost is fixed;</li>
- * <li>axis travel, the sum of |dx| + |dy| over the moves (a cardinal move counts 1, a diagonal 2).
- * Once the ticks are fixed, the least axis travel removes needless coordinate backtracking: a leg
- * travels at least the Manhattan distance between its ends, and every move west that a later move
- * east cancels adds 2. Diagonals are not penalised as such; (0,0) to (40,40) remains 40 diagonal
- * moves, while (0,0) to (1,40) becomes one diagonal and 39 straight moves rather than alternating
- * diagonals;</li>
- * <li>heading changes, the number of moves whose direction differs from the previous move's. They
- * come last because they only describe how a path that is already short and direct reads, and
- * fewer turns must never buy extra distance;</li>
- * <li>a deterministic tie-break: among legs equal on all three, the search keeps the first one it
- * finds, expanding moves in the game's own order (W, E, S, N, SW, SE, NW, NE).</li>
- * </ol>
+ * The A* search minimises route cost only. Walking costs one tick in each of the eight
+ * directions, so a walking leg usually has many equally cheap realisations, and the search
+ * returns whichever its queue order found. The player does not walk tiles, though; they click a
+ * tile, and the game runs a breadth-first search over a 128x128 window centred on them,
+ * expanding neighbours in the order W, E, S, N, SW, SE, NW, NE, and walks the path traced back
+ * from the clicked tile along each tile's first discoverer.
  * <p>
- * A leg need not end on the tile the search chose. It ends anywhere its next action can be taken
- * with the same consequences (a {@link WalkGoal}): the leg before a global teleport ends anywhere
- * the teleport can be cast, and the leg before a transport at any origin of the same action
- * (the prepared account's local action class). Every other leg keeps its end tile: the final
- * destination, a bank visit, or a transport taken straight after banking.
+ * Each leg is walked end to end. A breadth-first search from the leg's start, in the game's order,
+ * explores only the tiles that can lie on a walk of the leg's length (a tile's distance from the
+ * start plus a straight walk to the end must fit), so the path traced back from the end through
+ * each tile's first discoverer is the game's own walk to it, whatever detour the A* search took.
+ * Every stretch of it is also the game's path between its own two tiles, so the player can click
+ * along it. The clicks are placed afterwards: from each tile, the furthest one in a
+ * {@link #CLICK_RADIUS minimap click's reach} whose path needs at most {@link #MAX_CHECKPOINTS}
+ * checkpoint tiles, which the game would walk only up to the 25th corner. Steps the search's
+ * {@link SearchRestrictions} gate off are not taken, since the game does not know those gates and
+ * keeping the search's step preserves both the cost and the restriction. A leg no game walk
+ * matches in length keeps the search's steps, and so does a step no click realises: the search's
+ * own step onto a blocked transport origin, and the game's first step on its way off a blocked
+ * tile a transport landed on. Legs keep their length and their first tile, so every other step of
+ * the route, and the route's cost, are unchanged.
  * <p>
- * Each leg is searched with A* over (tile, incoming direction) under the lexicographic objective,
- * bounded by the leg's ticks. Since the A* search is optimal, no goal is fewer ticks away; a
- * leg whose goal is closer, or that cannot reach its goal in its ticks, means the route and this
- * pass disagree about walking, and the leg is kept unchanged with a {@link Diagnostic}.
+ * A leg need not end on the tile the search chose. The leg before a global teleport may end on any
+ * tile the teleport can be cast from, and the leg before a transport on any origin of the same
+ * action (the prepared account's local action class). It ends on the first such tile the game's
+ * search discovers at exactly the leg's length, so the cost is unchanged; a qualifying tile nearer
+ * than that is never taken, and without one the leg ends on the search's own end tile. Every other leg keeps its end tile: the
+ * final destination, a bank visit, or a transport taken straight after banking.
  */
 public final class AStarWalkCanonicalizer
 {
-	/** Legs longer than this keep the search's walk; their window would not fit the state keys. */
-	static final int MAX_LEG_TICKS = 4096;
-	/** States a leg's search may expand before the leg keeps the search's walk. */
-	static final int MAX_EXPANSIONS = 250_000;
+	/** Roughly the reach of a minimap click, in tiles. */
+	static final int CLICK_RADIUS = 35;
 
-	private static final int NONE = 8;
-	// Directions index GameWalkOrder's tables: the game's expansion order W, E, S, N, SW, SE,
-	// NW, NE, of which the first four are cardinal.
+	/**
+	 * Checkpoint tiles the client keeps for one click's walk: the direction-change corners of
+	 * the path plus the destination. A click needing more is walked only up to the 25th
+	 * checkpoint and the player stops short, so a click never spans more.
+	 */
+	private static final int MAX_CHECKPOINTS = 25;
+
+	private static final int UNVISITED = -1;
+	// The game's expansion order lives in GameWalkOrder.
 
 	private final CollisionMap map;
 	private final PreparedRoutingAccount account;
 	private final SearchRestrictions restrictions;
-	private final StateTable states = new StateTable();
-	private final LexHeap heap = new LexHeap();
 
 	public AStarWalkCanonicalizer(CollisionMap map, PreparedRoutingAccount account)
 	{
@@ -65,121 +65,85 @@ public final class AStarWalkCanonicalizer
 	}
 
 	/**
-	 * @param restrictions the search's positional gates: a canonical walk must obey them too, or
-	 * it could reroute a leg through tiles the forward search was not allowed to enter
+	 * @param restrictions the search's positional gates: the in-game paths must obey them too, or a
+	 * leg could be drawn through tiles the forward search was not allowed to enter
 	 */
 	public AStarWalkCanonicalizer(CollisionMap map, PreparedRoutingAccount account, SearchRestrictions restrictions)
 	{
-		if (map == null || account == null || restrictions == null) throw new NullPointerException();
-		this.map = map;
-		this.account = account;
-		this.restrictions = restrictions;
+		this.map = Objects.requireNonNull(map, "map");
+		this.account = Objects.requireNonNull(account, "account");
+		this.restrictions = Objects.requireNonNull(restrictions, "restrictions");
 	}
 
-	/** Why a leg kept the search's own walk. */
-	public enum Outcome
-	{
-		/** The leg was replaced by its canonical walk, which may be the same walk. */
-		CANONICAL,
-		/** A goal tile is fewer ticks away than the leg took: the route or the goal is wrong. */
-		SHORTER_ROUTE,
-		/** No goal tile is reachable in the leg's ticks: the walking models disagree. */
-		NO_ROUTE,
-		/** The search expanded {@link #MAX_EXPANSIONS} states without finishing. */
-		SEARCH_LIMIT,
-		/** The leg is longer than {@link #MAX_LEG_TICKS}. */
-		TOO_LONG
-	}
-
-	/** A leg that kept the search's walk, and why. */
-	@AllArgsConstructor(access = AccessLevel.PACKAGE)
-	public static final class Diagnostic
-	{
-		@Getter @Accessors(fluent = true) private final int startIndex, ticks;
-		private final int foundTicks;
-		@Getter @Accessors(fluent = true) private final Outcome outcome;
-		private final String goal;
-
-		@Override
-		public String toString()
-		{
-			return "walking leg at step " + startIndex + " (" + ticks + " ticks, " + goal + "): " + outcome
-				+ (outcome == Outcome.SHORTER_ROUTE ? " in " + foundTicks + " ticks" : "");
-		}
-	}
-
-	/** A route with canonical walking legs. */
-	@AllArgsConstructor(access = AccessLevel.PACKAGE)
+	/** A rewritten route and the indices of its steps the player clicks to walk it. */
 	public static final class Result
 	{
+		/** The route, as long as the search's and with the same steps outside its walking legs. */
 		@Getter @Accessors(fluent = true) private final List<PathStep> path;
-		// Each leg's first and last step index in path, two entries per leg.
-		private final int[] legBounds;
-		/** Legs that kept the search's walk; empty when every leg was canonicalised. */
-		@Getter @Accessors(fluent = true) private final List<Diagnostic> diagnostics;
+		/**
+		 * Ascending indices into {@link #path()} of the tiles to click, one per click. Every
+		 * index is a real click: the game's own walking path lands on that tile.
+		 */
+		@Getter @Accessors(fluent = true) private final List<Integer> clickPoints;
+		/**
+		 * Ascending indices into {@link #path()} of the steps no in-game click realises, such as
+		 * onto a blocked transport origin or off a blocked landing; they are not clicks.
+		 */
+		@Getter @Accessors(fluent = true) private final List<Integer> keptStepIndices;
 
-		/** Walking legs of at least one tick in the route. */
-		public int legs()
+		Result(List<PathStep> path, List<Integer> clickPoints, List<Integer> keptStepIndices)
 		{
-			return legBounds.length / 2;
+			this.path = path;
+			this.clickPoints = clickPoints;
+			this.keptStepIndices = keptStepIndices;
 		}
-
-		/** The index in {@link #path()} of the first step of walking leg {@code leg}. */
-		public int legStart(int leg)
-		{
-			return legBounds[2 * leg];
-		}
-
-		/** The index in {@link #path()} of the last step of walking leg {@code leg}. */
-		public int legEnd(int leg)
-		{
-			return legBounds[2 * leg + 1];
-		}
-	}
-
-	/** A walk found by {@link #walk}: the tiles after the start, or why there is none. */
-	@AllArgsConstructor
-	static final class Walk
-	{
-		final Outcome outcome;
-		final int[] tiles;
-		final int foundTicks, expansions;
 	}
 
 	public Result canonicalize(AStarRoute route)
 	{
 		List<PathStep> steps = route.steps();
-		List<PathStep> path = new ArrayList<>(steps);
-		List<Diagnostic> diagnostics = new ArrayList<>();
 		int[] legBounds = new int[8];
+		IntPredicate[] goals = new IntPredicate[4];
 		int legs = 0;
 		int legStart = 0;
 		for (int i = 1; i <= steps.size(); i++)
 		{
 			if (i < steps.size() && isWalk(route, i)) continue;
-			int legEnd = i - 1, ticks = legEnd - legStart;
-			if (ticks > 0)
+			if (i - 1 > legStart)
 			{
-				if (2 * legs == legBounds.length) legBounds = Arrays.copyOf(legBounds, 2 * legBounds.length);
+				if (legs == goals.length)
+				{
+					legBounds = Arrays.copyOf(legBounds, 4 * legs);
+					goals = Arrays.copyOf(goals, 2 * legs);
+				}
 				legBounds[2 * legs] = legStart;
-				legBounds[2 * legs + 1] = legEnd;
-				legs++;
-				PathStep start = steps.get(legStart);
-				WalkGoal goal = goal(route, legEnd);
-				Walk walk = walk(start.getPackedPosition(), ticks, goal);
-				if (walk.outcome == Outcome.CANONICAL)
-				{
-					for (int t = 0; t < ticks; t++)
-						path.set(legStart + 1 + t, new PathStep(walk.tiles[t], start.getBankVisitState()));
-				}
-				else
-				{
-					diagnostics.add(new Diagnostic(legStart, ticks, walk.foundTicks, walk.outcome, goal.toString()));
-				}
+				legBounds[2 * legs + 1] = i - 1;
+				goals[legs++] = goal(route, i - 1);
 			}
 			legStart = i;
 		}
-		return new Result(List.copyOf(path), Arrays.copyOf(legBounds, 2 * legs), List.copyOf(diagnostics));
+		return rewrite(steps, Arrays.copyOf(legBounds, 2 * legs), goals);
+	}
+
+	/**
+	 * Rewrites the walking legs of {@code path}: leg {@code k} runs from step {@code legBounds[2k]}
+	 * to step {@code legBounds[2k + 1]}, and its steps are single-tile walking moves. Every leg
+	 * keeps its end tile.
+	 */
+	Result rewrite(List<PathStep> path, int[] legBounds)
+	{
+		return rewrite(path, legBounds, new IntPredicate[legBounds.length / 2]);
+	}
+
+	/** As above, with leg {@code k} free to end on any tile {@code goals[k]} accepts; null keeps its end. */
+	private Result rewrite(List<PathStep> path, int[] legBounds, IntPredicate[] goals)
+	{
+		List<PathStep> rewritten = new ArrayList<>(path);
+		List<Integer> clicks = new ArrayList<>();
+		List<Integer> kept = new ArrayList<>();
+		for (int leg = 0; leg < legBounds.length / 2; leg++)
+			rewriteLeg(rewritten, legBounds[2 * leg], legBounds[2 * leg + 1], goals[leg], clicks, kept);
+		return new Result(List.copyOf(rewritten), List.copyOf(clicks), List.copyOf(kept));
 	}
 
 	/** Whether step {@code index} is a walking move from the previous step, as the A* search walks. */
@@ -210,27 +174,37 @@ public final class AStarWalkCanonicalizer
 		return direction < 4 && map.isBlocked(bx, by, plane) && hasLocalOrigin(b, from.getBankVisitState());
 	}
 
-	/** Where the leg ending at step {@code end} may end instead, given the route's next action. */
-	private WalkGoal goal(AStarRoute route, int end)
+	/**
+	 * The tiles the leg ending at step {@code end} may end on instead of there, given the route's
+	 * next action; {@code null} when it has to end where it does.
+	 */
+	private IntPredicate goal(AStarRoute route, int end)
 	{
 		List<PathStep> steps = route.steps();
 		PathStep last = steps.get(end);
 		int tile = last.getPackedPosition();
-		if (end + 1 == steps.size()) return WalkGoal.tile(tile);
+		if (end + 1 == steps.size()) return null;
 		byte arrival = route.arrival(end + 1);
 		if (arrival != AStarRoute.FROM_STEP)
 		{
 			// A global teleport: castable anywhere its hub's capability is.
-			WalkGoal area = WalkGoal.teleportArea(AStarRoute.hubCapability(arrival));
-			return area.contains(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile))
-				? area : WalkGoal.tile(tile);
+			TeleportCapability capability = AStarRoute.hubCapability(arrival);
+			return TeleportCapability.at(tile).allows(capability)
+				? other -> TeleportCapability.at(other).allows(capability) : null;
 		}
 		PathStep next = steps.get(end + 1);
 		// A bank visit, or a transport taken with banked items straight after it, stays where it is.
-		if (next.getBankVisitState() != last.getBankVisitState()) return WalkGoal.tile(tile);
+		if (next.getBankVisitState() != last.getBankVisitState()) return null;
 		int[] origins = actionOrigins(tile, next.getPackedPosition(), route.cost(end + 1) - route.cost(end),
 			last.getBankVisitState());
-		return origins == null ? WalkGoal.tile(tile) : WalkGoal.tiles(origins, WorldPointUtil.unpackWorldPlane(tile));
+		return origins == null ? null : other -> contains(origins, other);
+	}
+
+	private static boolean contains(int[] values, int value)
+	{
+		for (int candidate : values)
+			if (candidate == value) return true;
+		return false;
 	}
 
 	/**
@@ -266,124 +240,6 @@ public final class AStarWalkCanonicalizer
 		return index < view.destinations.length && view.origins[index] == tile;
 	}
 
-	/**
-	 * The lexicographically best walk of exactly {@code ticks} moves from {@code start} to a tile of
-	 * {@code goal} on the same plane.
-	 */
-	Walk walk(int start, int ticks, WalkGoal goal)
-	{
-		if (ticks > MAX_LEG_TICKS) return new Walk(Outcome.TOO_LONG, null, 0, 0);
-		int sx = WorldPointUtil.unpackWorldX(start), sy = WorldPointUtil.unpackWorldY(start);
-		int plane = WorldPointUtil.unpackWorldPlane(start);
-		// Tiles are numbered within the (2 ticks + 1)-wide square the leg cannot leave.
-		int width = 2 * ticks + 1;
-		// Lexicographic keys (f ticks, f axis travel, g turns) packed into one long.
-		long axisRange = 2L * ticks + 1, turnRange = ticks + 1;
-		states.reset();
-		heap.clear();
-
-		long startBound = goal.lowerBound(sx, sy);
-		if (WalkGoal.ticks(startBound) > ticks) return new Walk(Outcome.NO_ROUTE, null, 0, 0);
-		int startState = states.tile(ticks * width + ticks) * 9 + NONE;
-		states.set(startState, 0, 0, 0, -1);
-		heap.push((WalkGoal.ticks(startBound) * axisRange + WalkGoal.axisTravel(startBound)) * turnRange, startState);
-
-		int expansions = 0;
-		while (!heap.isEmpty())
-		{
-			int state = heap.pop();
-			if (states.closed[state]) continue;
-			states.closed[state] = true;
-			int tile = state / 9, incoming = state % 9, local = states.locals[tile];
-			int x = sx - ticks + local % width, y = sy - ticks + local / width;
-			int gTicks = states.ticks[state], gAxis = states.axis[state], gTurns = states.turns[state];
-			if (dominated(gTicks, gAxis, gTurns, tile)) continue;
-			if (goal.contains(x, y))
-			{
-				if (gTicks < ticks) return new Walk(Outcome.SHORTER_ROUTE, null, gTicks, expansions);
-				return new Walk(Outcome.CANONICAL, trace(state, sx, sy, ticks, width, plane), gTicks, expansions);
-			}
-			if (++expansions > MAX_EXPANSIONS) return new Walk(Outcome.SEARCH_LIMIT, null, 0, expansions);
-			if (gTicks == ticks) continue;
-
-			int packed = WorldPointUtil.packWorldPoint(x, y, plane);
-			int mask;
-			boolean blocked = map.isBlocked(x, y, plane);
-			if (blocked)
-			{
-				// Only the start can be blocked (a transport may land on one); leave it as the search does.
-				mask = 0;
-				for (int next : map.ordinaryWalkingNeighbors(packed))
-					mask |= 1 << GameWalkOrder.ORDER_BITS[direction(WorldPointUtil.unpackWorldX(next) - x,
-						WorldPointUtil.unpackWorldY(next) - y)];
-			}
-			else
-			{
-				mask = map.ordinaryWalkingMask(packed);
-			}
-			for (int direction = 0; direction < 8; direction++)
-			{
-				int nx = x + GameWalkOrder.ORDER_DX[direction], ny = y + GameWalkOrder.ORDER_DY[direction];
-				if ((mask & 1 << GameWalkOrder.ORDER_BITS[direction]) == 0)
-				{
-					// A blocked goal tile may still be stepped onto cardinally, as the A* search does.
-					if (direction >= 4 || blocked || !goal.entersBlockedTiles() || !map.isBlocked(nx, ny, plane)
-						|| !goal.contains(nx, ny)) continue;
-				}
-				if (!restrictions.stepAllowed(packed, WorldPointUtil.packWorldPoint(nx, ny, plane)))
-				{
-					continue;
-				}
-				long bound = goal.lowerBound(nx, ny);
-				int nextTicks = gTicks + 1;
-				if (nextTicks + WalkGoal.ticks(bound) > ticks) continue;
-				int nextAxis = gAxis + (direction < 4 ? 1 : 2);
-				int nextTurns = gTurns + (incoming == NONE || incoming == direction ? 0 : 1);
-				int nextTile = states.tile((ny - sy + ticks) * width + nx - sx + ticks);
-				if (dominated(nextTicks, nextAxis, nextTurns, nextTile)) continue;
-				int next = nextTile * 9 + direction;
-				if (states.closed[next] || !better(nextTicks, nextAxis, nextTurns, next)) continue;
-				states.set(next, nextTicks, nextAxis, nextTurns, state);
-				long fTicks = nextTicks + WalkGoal.ticks(bound), fAxis = nextAxis + WalkGoal.axisTravel(bound);
-				heap.push((fTicks * axisRange + fAxis) * turnRange + nextTurns, next);
-			}
-		}
-		return new Walk(Outcome.NO_ROUTE, null, 0, expansions);
-	}
-
-	/**
-	 * Whether a state of {@code tile} reached with (ticks, axis, turns) cannot beat the tile's best
-	 * state so far. Any walk on from the state can continue from the best one with the same moves,
-	 * at the cost of at most one more turn for the first move, so only a state with less ticks or
-	 * axis travel, or the same and no more turns, can still do better. Best states only improve, so
-	 * a state this rejects stays rejected.
-	 */
-	private boolean dominated(int ticks, int axis, int turns, int tile)
-	{
-		if (ticks != states.bestTicks[tile]) return ticks > states.bestTicks[tile];
-		if (axis != states.bestAxis[tile]) return axis > states.bestAxis[tile];
-		return turns > states.bestTurns[tile];
-	}
-
-	/** Whether the state's recorded walk is lexicographically worse than (ticks, axis, turns); unset ones are. */
-	private boolean better(int ticks, int axis, int turns, int state)
-	{
-		if (ticks != states.ticks[state]) return ticks < states.ticks[state];
-		if (axis != states.axis[state]) return axis < states.axis[state];
-		return turns < states.turns[state];
-	}
-
-	private int[] trace(int state, int sx, int sy, int ticks, int width, int plane)
-	{
-		int[] tiles = new int[states.ticks[state]];
-		for (int i = tiles.length - 1; i >= 0; i--, state = states.parent[state])
-		{
-			int local = states.locals[state / 9];
-			tiles[i] = WorldPointUtil.packWorldPoint(sx - ticks + local % width, sy - ticks + local / width, plane);
-		}
-		return tiles;
-	}
-
 	private static int direction(int dx, int dy)
 	{
 		for (int i = 0; i < 8; i++)
@@ -391,180 +247,138 @@ public final class AStarWalkCanonicalizer
 		throw new IllegalArgumentException("not a walking move: " + dx + "," + dy);
 	}
 
-
-
 	/**
-	 * The tiles a leg's search has reached, by their number in the leg's square, reused across legs.
-	 * Tile {@code t} owns states {@code 9t} to {@code 9t + 8}, one per incoming direction (8 for the
-	 * start's none), and the best* arrays hold the lexicographically least of them.
+	 * Replaces {@code leg[from + 1..to]} by the game's walk, appending the index of each click along
+	 * it to {@code clicks} and the index of each step the game does not walk to {@code kept}. A
+	 * {@code goal} lets the leg end on another tile than {@code leg[to]}.
 	 */
-	private static final class StateTable
+	private void rewriteLeg(List<PathStep> leg, int from, int to, IntPredicate goal, List<Integer> clicks,
+		List<Integer> kept)
 	{
-		private static final int UNSET = Integer.MAX_VALUE;
-
-		int size;
-		int[] locals = new int[256], bestTicks = new int[256], bestAxis = new int[256], bestTurns = new int[256];
-		int[] ticks = new int[256 * 9], axis = new int[256 * 9], turns = new int[256 * 9], parent = new int[256 * 9];
-		boolean[] closed = new boolean[256 * 9];
-		// Open addressing from tile number to tile; a slot is live only if stamped with this leg's generation.
-		private int[] slots = new int[1024], stamps = new int[1024];
-		private int generation;
-
-		void reset()
+		BankVisitState banked = leg.get(from).getBankVisitState();
+		int start = leg.get(from).getPackedPosition();
+		int plane = WorldPointUtil.unpackWorldPlane(start);
+		// The search may cross a blocked tile the game's search cannot, so the game's walk to the leg's
+		// end would not exist from before it: each side is rewritten on its own around the kept step.
+		for (int k = from + 1; k < to; k++)
 		{
-			size = 0;
-			if (++generation == 0)
+			int tile = leg.get(k).getPackedPosition();
+			if (!map.isBlocked(WorldPointUtil.unpackWorldX(tile), WorldPointUtil.unpackWorldY(tile), plane)) continue;
+			if (k - 1 > from) rewriteLeg(leg, from, k - 1, null, clicks, kept);
+			kept.add(k);
+			rewriteLeg(leg, k, to, goal, clicks, kept);
+			return;
+		}
+		int endTile = leg.get(to).getPackedPosition();
+		// The step onto a blocked transport origin is the search's own: the game does not walk it.
+		boolean blockedEnd = map.isBlocked(WorldPointUtil.unpackWorldX(endTile), WorldPointUtil.unpackWorldY(endTile), plane);
+		int last = blockedEnd ? to - 1 : to;
+		if (last > from)
+		{
+			if (walk(leg, from, last, blockedEnd ? null : goal, banked, plane))
 			{
-				Arrays.fill(stamps, 0);
-				generation = 1;
+				// A transport may land on a blocked tile: the game walks off it, but is not clicked from it.
+				int first = from;
+				if (map.isBlocked(WorldPointUtil.unpackWorldX(start), WorldPointUtil.unpackWorldY(start), plane)) kept.add(++first);
+				clicksAlong(leg, first, last, clicks);
+			}
+			else
+			{
+				// No game walk has the leg's length: the search's own steps stand.
+				for (int k = from + 1; k <= last; k++) kept.add(k);
 			}
 		}
-
-		/** The tile numbered {@code local}, added with no states if it is new. */
-		int tile(int local)
-		{
-			int mask = slots.length - 1, slot = hash(local) & mask;
-			for (; stamps[slot] == generation; slot = slot + 1 & mask)
-				if (locals[slots[slot]] == local) return slots[slot];
-			if (size == locals.length) grow();
-			if (2 * (size + 1) > slots.length)
-			{
-				rehash();
-				mask = slots.length - 1;
-				for (slot = hash(local) & mask; stamps[slot] == generation; ) slot = slot + 1 & mask;
-			}
-			int tile = size++;
-			locals[tile] = local;
-			bestTicks[tile] = UNSET;
-			Arrays.fill(ticks, tile * 9, tile * 9 + 9, UNSET);
-			Arrays.fill(closed, tile * 9, tile * 9 + 9, false);
-			stamps[slot] = generation;
-			slots[slot] = tile;
-			return tile;
-		}
-
-		void set(int state, int tick, int axisTravel, int turnCount, int from)
-		{
-			ticks[state] = tick;
-			axis[state] = axisTravel;
-			turns[state] = turnCount;
-			parent[state] = from;
-			int tile = state / 9;
-			if (tick < bestTicks[tile] || tick == bestTicks[tile] && (axisTravel < bestAxis[tile]
-				|| axisTravel == bestAxis[tile] && turnCount < bestTurns[tile]))
-			{
-				bestTicks[tile] = tick;
-				bestAxis[tile] = axisTravel;
-				bestTurns[tile] = turnCount;
-			}
-		}
-
-		private void grow()
-		{
-			int capacity = locals.length * 2;
-			locals = Arrays.copyOf(locals, capacity);
-			bestTicks = Arrays.copyOf(bestTicks, capacity);
-			bestAxis = Arrays.copyOf(bestAxis, capacity);
-			bestTurns = Arrays.copyOf(bestTurns, capacity);
-			ticks = Arrays.copyOf(ticks, capacity * 9);
-			axis = Arrays.copyOf(axis, capacity * 9);
-			turns = Arrays.copyOf(turns, capacity * 9);
-			parent = Arrays.copyOf(parent, capacity * 9);
-			closed = Arrays.copyOf(closed, capacity * 9);
-		}
-
-		private void rehash()
-		{
-			slots = new int[slots.length * 2];
-			stamps = new int[slots.length];
-			generation = 1;
-			int mask = slots.length - 1;
-			for (int tile = 0; tile < size; tile++)
-			{
-				int slot = hash(locals[tile]) & mask;
-				while (stamps[slot] == generation) slot = slot + 1 & mask;
-				stamps[slot] = generation;
-				slots[slot] = tile;
-			}
-		}
-
-		private static int hash(int key)
-		{
-			int h = key * 0x9E3779B9;
-			return h ^ h >>> 16;
-		}
+		if (blockedEnd) kept.add(to);
 	}
 
-	/** A binary min-heap of states by key, first in first out among equal keys. */
-	private static final class LexHeap
+	/**
+	 * Walks {@code leg[from..last]} the way the game's search would from its start to its end: a
+	 * breadth-first search in the game's order whose first-discoverer path back from the end is the
+	 * game's walk. Only tiles that can lie on a walk of the leg's length are explored, so the end
+	 * is found at exactly that length or the leg keeps its steps (returns false). With a
+	 * {@code goal}, the end is the first tile it accepts that the search discovers at that length.
+	 */
+	private boolean walk(List<PathStep> leg, int from, int last, IntPredicate goal, BankVisitState banked, int plane)
 	{
-		private long[] keys = new long[1024];
-		private int[] sequence = new int[1024], states = new int[1024];
-		private int size, pushed;
-
-		void clear()
+		int length = last - from;
+		int sx = WorldPointUtil.unpackWorldX(leg.get(from).getPackedPosition());
+		int sy = WorldPointUtil.unpackWorldY(leg.get(from).getPackedPosition());
+		int ex = WorldPointUtil.unpackWorldX(leg.get(last).getPackedPosition());
+		int ey = WorldPointUtil.unpackWorldY(leg.get(last).getPackedPosition());
+		int side = 2 * length + 1, ox = sx - length, oy = sy - length;
+		PagedSearchArray distance = new PagedSearchArray(side * side, UNVISITED);
+		PagedSearchArray parent = new PagedSearchArray(side * side, UNVISITED);
+		int start = length * side + length, found = -1;
+		int[] queue = new int[256];
+		int head = 0, tail = 0;
+		distance.set(start, 0);
+		queue[tail++] = start;
+		while (head < tail && found < 0)
 		{
-			size = 0;
-			pushed = 0;
-		}
-
-		boolean isEmpty()
-		{
-			return size == 0;
-		}
-
-		void push(long key, int state)
-		{
-			if (size == keys.length)
+			int at = queue[head++];
+			int steps = distance.get(at);
+			if (steps >= length) break;
+			int x = ox + at % side, y = oy + at / side;
+			int packed = WorldPointUtil.packWorldPoint(x, y, plane);
+			int mask = map.ordinaryWalkingMask(packed);
+			// A blocked start is walked off as the A* search does.
+			if (at == start)
+				for (int next : map.ordinaryWalkingNeighbors(packed))
+					mask |= 1 << GameWalkOrder.ORDER_BITS[direction(WorldPointUtil.unpackWorldX(next) - x,
+						WorldPointUtil.unpackWorldY(next) - y)];
+			for (int i = 0; i < GameWalkOrder.ORDER_BITS.length && found < 0; i++)
 			{
-				keys = Arrays.copyOf(keys, size * 2);
-				sequence = Arrays.copyOf(sequence, size * 2);
-				states = Arrays.copyOf(states, size * 2);
+				if ((mask & (1 << GameWalkOrder.ORDER_BITS[i])) == 0) continue;
+				int nx = x + GameWalkOrder.ORDER_DX[i], ny = y + GameWalkOrder.ORDER_DY[i];
+				int next = (ny - oy) * side + nx - ox;
+				int nextPacked = WorldPointUtil.packWorldPoint(nx, ny, plane);
+				if (distance.get(next) != UNVISITED
+					|| goal == null && steps + 1 + Math.max(Math.abs(nx - ex), Math.abs(ny - ey)) > length
+					|| !restrictions.stepAllowed(packed, nextPacked))
+				{
+					continue;
+				}
+				distance.set(next, steps + 1);
+				parent.set(next, at);
+				if (goal == null ? nx == ex && ny == ey : steps + 1 == length && goal.test(nextPacked)) found = next;
+				if (tail == queue.length) queue = Arrays.copyOf(queue, 2 * tail);
+				queue[tail++] = next;
 			}
-			int at = size++, order = pushed++;
-			while (at > 0)
+		}
+		if (found < 0) found = (ey - oy) * side + ex - ox;
+		if (distance.get(found) != length) return false;
+		for (int i = last, at = found; i > from; i--, at = parent.get(at))
+			leg.set(i, new PathStep(WorldPointUtil.packWorldPoint(ox + at % side, oy + at / side, plane), banked));
+		return true;
+	}
+
+	/**
+	 * Appends the clicks along {@code leg[from..last]}, a walk the game takes: from each tile, the
+	 * furthest one within a minimap click's reach whose path needs at most {@link #MAX_CHECKPOINTS}
+	 * checkpoint tiles (its direction-change corners plus the destination), or the game would stop
+	 * short of the click.
+	 */
+	private static void clicksAlong(List<PathStep> leg, int from, int last, List<Integer> clicks)
+	{
+		for (int at = from; at < last; )
+		{
+			int x = WorldPointUtil.unpackWorldX(leg.get(at).getPackedPosition());
+			int y = WorldPointUtil.unpackWorldY(leg.get(at).getPackedPosition());
+			int best = at + 1, turns = 0, previousDx = 0, previousDy = 0;
+			for (int k = at + 1; k <= last; k++)
 			{
-				int up = (at - 1) / 2;
-				if (!less(key, order, keys[up], sequence[up])) break;
-				move(up, at);
-				at = up;
+				int tx = WorldPointUtil.unpackWorldX(leg.get(k).getPackedPosition());
+				int ty = WorldPointUtil.unpackWorldY(leg.get(k).getPackedPosition());
+				int dx = tx - WorldPointUtil.unpackWorldX(leg.get(k - 1).getPackedPosition());
+				int dy = ty - WorldPointUtil.unpackWorldY(leg.get(k - 1).getPackedPosition());
+				if (k > at + 1 && (dx != previousDx || dy != previousDy)) turns++;
+				if (turns + 1 > MAX_CHECKPOINTS || (tx - x) * (tx - x) + (ty - y) * (ty - y) > CLICK_RADIUS * CLICK_RADIUS) break;
+				previousDx = dx;
+				previousDy = dy;
+				best = k;
 			}
-			keys[at] = key;
-			sequence[at] = order;
-			states[at] = state;
-		}
-
-		int pop()
-		{
-			int result = states[0];
-			size--;
-			long key = keys[size];
-			int order = sequence[size], state = states[size], at = 0;
-			while (true)
-			{
-				int child = 2 * at + 1;
-				if (child >= size) break;
-				if (child + 1 < size && less(keys[child + 1], sequence[child + 1], keys[child], sequence[child])) child++;
-				if (!less(keys[child], sequence[child], key, order)) break;
-				move(child, at);
-				at = child;
-			}
-			keys[at] = key;
-			sequence[at] = order;
-			states[at] = state;
-			return result;
-		}
-
-		private void move(int from, int to)
-		{
-			keys[to] = keys[from];
-			sequence[to] = sequence[from];
-			states[to] = states[from];
-		}
-
-		private static boolean less(long key, int order, long otherKey, int otherOrder)
-		{
-			return key < otherKey || key == otherKey && order < otherOrder;
+			clicks.add(best);
+			at = best;
 		}
 	}
 }
