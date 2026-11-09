@@ -6716,7 +6716,7 @@
 									
 # Lassar Undercity - central drain									
 2656 6421 0	2784 6282 1	Enter Drain 49488				15126>30			
-2784 6282 1	2656 6421 0	Climb-up Rope 48299						2	
+2784 6282 1	2623 6408 0	Climb-up Rope 48299						2	
 									
 # Lassar Undercity - drain dungeon ladder									
 2805 6303 1	2804 6303 0	Climb-down Ladder 48304						2	
