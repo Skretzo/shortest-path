@@ -73,11 +73,6 @@ public class CollisionMap
 		return get(x, y, z, SplitFlagMap.FLAG_WALL_EAST);
 	}
 
-	public boolean wallW(int x, int y, int z)
-	{
-		return wallE(x - 1, y, z);
-	}
-
 	private boolean ne(int x, int y, int z)
 	{
 		return n(x, y, z) && e(x, y + 1, z) && e(x, y, z) && n(x + 1, y, z);
