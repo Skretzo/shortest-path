@@ -6713,3 +6713,7 @@
 2411 6418 0	2667 6418 0	Use Puddle 49478				15126>14			
 2617 6405 0	2361 6405 0	Use Puddle 49478				15126>14			
 2361 6405 0	2617 6405 0	Use Puddle 49478				15126>14			
+									
+# Lassar Undercity - central drain									
+2656 6421 0	2784 6282 1	Enter Drain 49488				15126>30			
+2784 6282 1	2656 6421 0	Climb-up Rope 48299						2	
