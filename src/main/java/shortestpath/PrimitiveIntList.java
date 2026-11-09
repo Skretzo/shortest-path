@@ -187,9 +187,14 @@ public class PrimitiveIntList
 	 * @param stride number of values per group.
 	 * @param offset position inside a group of the value to extract.
 	 * @return one value per complete group, in list order.
+	 * @throws IllegalArgumentException if {@code stride < 1} or {@code offset} is not inside a group.
 	 */
 	public int[] column(int stride, int offset)
 	{
+		if (stride < 1 || offset < 0 || offset >= stride)
+		{
+			throw new IllegalArgumentException("Stride: " + stride + ", Offset: " + offset);
+		}
 		int[] out = new int[size / stride];
 		for (int i = 0; i < out.length; i++)
 		{

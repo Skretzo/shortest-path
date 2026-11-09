@@ -269,4 +269,21 @@ public class PrimitiveIntListTests
 		Assert.assertArrayEquals(new int[] {1, 3}, intList.column(2, 0));
 		Assert.assertArrayEquals(new int[] {2, 4}, intList.column(2, 1));
 	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void columnRejectsAnOffsetOutsideTheGroup()
+	{
+		PrimitiveIntList intList = new PrimitiveIntList();
+		for (int i = 1; i <= 4; i++)
+		{
+			intList.add(i);
+		}
+		intList.column(2, 2);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void columnRejectsAZeroStride()
+	{
+		new PrimitiveIntList().column(0, 0);
+	}
 }
