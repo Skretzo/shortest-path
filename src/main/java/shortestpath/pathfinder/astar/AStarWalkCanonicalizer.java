@@ -18,29 +18,26 @@ import shortestpath.pathfinder.*;
  * expanding neighbours in the order W, E, S, N, SW, SE, NW, NE, and walks the path traced back
  * from the clicked tile along each tile's first discoverer.
  * <p>
- * Each leg is split into clicks. A backward search from the leg's end finds every tile that can lie
- * on a walk of the leg's length, with the least axis travel (|dx| + |dy| over the moves) left from
- * it. From the leg's current tile, the game's search finds the tiles in its window that lie exactly
- * as far as the leg has left to walk to the end, and the click is the one within
- * {@link #CLICK_RADIUS a minimap click's reach} with the least axis travel, the game's path to it
- * included. The walk is as direct as the leg's ticks allow, whatever detour the A* search took, and
- * the player clicks on the way the game walks to where they are going.
- * A candidate whose traced
- * path steps through a tile the search's {@link SearchRestrictions} gate off is refused, since the game does
- * not know those gates and keeping the search's step preserves both the cost and the restriction,
- * and so is one needing more than {@link #MAX_CHECKPOINTS} checkpoint tiles, which the game would walk
- * only up to the 25th corner. A step no click realises is kept: the search's own step onto a
- * blocked transport origin, and the game's first step on its way off a blocked tile a transport
- * landed on. The client's fallback search for an approximate target when a click is unreachable is
- * deliberately not emulated. Legs keep their length and their first tile, so every other step of
+ * Each leg is walked end to end. A breadth-first search from the leg's start, in the game's order,
+ * explores only the tiles that can lie on a walk of the leg's length (a tile's distance from the
+ * start plus a straight walk to the end must fit), so the path traced back from the end through
+ * each tile's first discoverer is the game's own walk to it, whatever detour the A* search took.
+ * Every stretch of it is also the game's path between its own two tiles, so the player can click
+ * along it. The clicks are placed afterwards: from each tile, the furthest one in a
+ * {@link #CLICK_RADIUS minimap click's reach} whose path needs at most {@link #MAX_CHECKPOINTS}
+ * checkpoint tiles, which the game would walk only up to the 25th corner. Steps the search's
+ * {@link SearchRestrictions} gate off are not taken, since the game does not know those gates and
+ * keeping the search's step preserves both the cost and the restriction. A leg no game walk
+ * matches in length keeps the search's steps, and so does a step no click realises: the search's
+ * own step onto a blocked transport origin, and the game's first step on its way off a blocked
+ * tile a transport landed on. Legs keep their length and their first tile, so every other step of
  * the route, and the route's cost, are unchanged.
  * <p>
  * A leg need not end on the tile the search chose. The leg before a global teleport may end on any
  * tile the teleport can be cast from, and the leg before a transport on any origin of the same
- * action (the prepared account's local action class). When the leg is within one click of its
- * end, it ends on the first such tile the game's search discovers at exactly the leg's remaining
- * length, so the cost is unchanged; a qualifying tile nearer than that is never taken, and
- * without one the leg ends on the search's own end tile. Every other leg keeps its end tile: the
+ * action (the prepared account's local action class). It ends on the first such tile the game's
+ * search discovers at exactly the leg's length, so the cost is unchanged; a qualifying tile nearer
+ * than that is never taken, and without one the leg ends on the search's own end tile. Every other leg keeps its end tile: the
  * final destination, a bank visit, or a transport taken straight after banking.
  */
 public final class AStarWalkCanonicalizer
@@ -50,26 +47,17 @@ public final class AStarWalkCanonicalizer
 
 	/**
 	 * Checkpoint tiles the client keeps for one click's walk: the direction-change corners of
-	 * the traced path plus the destination. A click needing more is walked only up to the 25th
-	 * checkpoint and the player stops short, so such a candidate is refused rather than drawn.
+	 * the path plus the destination. A click needing more is walked only up to the 25th
+	 * checkpoint and the player stops short, so a click never spans more.
 	 */
 	private static final int MAX_CHECKPOINTS = 25;
 
-	private static final int WINDOW = 128;
-	private static final int HALF_WINDOW = WINDOW / 2;
 	private static final int UNVISITED = -1;
 	// The game's expansion order lives in GameWalkOrder.
 
 	private final CollisionMap map;
 	private final PreparedRoutingAccount account;
 	private final SearchRestrictions restrictions;
-	private final int[] distance = new int[WINDOW * WINDOW];
-	private final int[] parent = new int[WINDOW * WINDOW];
-	private final int[] queue = new int[WINDOW * WINDOW];
-	private final int[] axis = new int[WINDOW * WINDOW];
-	// The current leg's walking distance to its end: see reverse().
-	private PagedSearchArray toEnd, axisToEnd;
-	private int endX, endY, endSide;
 
 	public AStarWalkCanonicalizer(CollisionMap map, PreparedRoutingAccount account)
 	{
@@ -260,9 +248,9 @@ public final class AStarWalkCanonicalizer
 	}
 
 	/**
-	 * Replaces {@code leg[from + 1..to]} by the in-game walk along its clicks, appending each click's
-	 * index to {@code clicks} and the index of each step no click realises to {@code kept}. Within
-	 * one click of {@code to}, a {@code goal} lets the walk end on another tile than {@code leg[to]}.
+	 * Replaces {@code leg[from + 1..to]} by the game's walk, appending the index of each click along
+	 * it to {@code clicks} and the index of each step the game does not walk to {@code kept}. A
+	 * {@code goal} lets the leg end on another tile than {@code leg[to]}.
 	 */
 	private void rewriteLeg(List<PathStep> leg, int from, int to, IntPredicate goal, List<Integer> clicks,
 		List<Integer> kept)
@@ -285,252 +273,112 @@ public final class AStarWalkCanonicalizer
 		// The step onto a blocked transport origin is the search's own: the game does not walk it.
 		boolean blockedEnd = map.isBlocked(WorldPointUtil.unpackWorldX(endTile), WorldPointUtil.unpackWorldY(endTile), plane);
 		int last = blockedEnd ? to - 1 : to;
-		int ex = WorldPointUtil.unpackWorldX(leg.get(last).getPackedPosition());
-		int ey = WorldPointUtil.unpackWorldY(leg.get(last).getPackedPosition());
-		if (last > from) reverse(plane, ex, ey, WorldPointUtil.unpackWorldX(start), WorldPointUtil.unpackWorldY(start), last - from);
-		int current = from;
-		while (current < last)
+		if (last > from)
 		{
-			int source = leg.get(current).getPackedPosition();
-			int sx = WorldPointUtil.unpackWorldX(source), sy = WorldPointUtil.unpackWorldY(source);
-			int originX = sx - HALF_WINDOW, originY = sy - HALF_WINDOW;
-			// A transport may land on a blocked tile: the game walks off it, but is not clicked from it.
-			boolean blocked = map.isBlocked(sx, sy, plane);
-			int remaining = last - current;
-			// Once the leg fits the game's window, it may end on any tile the goal accepts; the BFS then
-			// runs as deep as the leg is long, to see every tile that far from the source.
-			boolean finalStretch = goal != null && !blocked && to - current <= HALF_WINDOW;
-			int discovered = search(originX, originY, plane, sx, sy,
-				finalStretch ? to - current : blocked ? 1 : Math.min(remaining, HALF_WINDOW),
-				finalStretch ? -1 : remaining);
-
-			if (finalStretch)
+			if (walk(leg, from, last, blockedEnd ? null : goal, banked, plane))
 			{
-				int end = goalTile(goal, originX, originY, plane, sx, sy, to - current, discovered);
-				if (end >= 0 && withinReach(sx, sy, WorldPointUtil.packWorldPoint(originX + end % WINDOW,
-					originY + end / WINDOW, plane)))
-				{
-					splice(leg, to, current, end, originX, originY, plane, banked);
-					clicks.add(to);
-					return;
-				}
-				if (end >= 0)
-				{
-					// Too far to click: the rest of the leg heads for that tile, the most direct end.
-					goal = null;
-					blockedEnd = false;
-					last = to;
-					remaining = to - current;
-					reverse(plane, originX + end % WINDOW, originY + end / WINDOW, sx, sy, remaining);
-				}
+				// A transport may land on a blocked tile: the game walks off it, but is not clicked from it.
+				int first = from;
+				if (map.isBlocked(WorldPointUtil.unpackWorldX(start), WorldPointUtil.unpackWorldY(start), plane)) kept.add(++first);
+				clicksAlong(leg, first, last, clicks);
 			}
-
-			// Of the tiles the game finds exactly as far as the leg has left to walk to the end, in
-			// one click's reach, the one with the least axis travel left: the walk stays as direct as
-			// the leg's ticks allow, whatever detour the search took. A trace the restrictions or
-			// checkpoints refuse is skipped.
-			int best = -1, bestAxis = Integer.MAX_VALUE;
-			for (int k = 1; k < discovered; k++)
+			else
 			{
-				int at = queue[k];
-				int x = originX + at % WINDOW, y = originY + at / WINDOW;
-				int travel = remaining - distance[at] < 0 || toEnd(x, y) != remaining - distance[at] ? Integer.MAX_VALUE : axis[at] + axisToEnd(x, y);
-				if (travel == Integer.MAX_VALUE || travel > bestAxis || travel == bestAxis && distance[at] <= distance[best]
-					|| !withinReach(sx, sy, WorldPointUtil.packWorldPoint(x, y, plane))
-					|| !traceAllowed(originX, originY, plane, at, distance[at]))
-				{
-					continue;
-				}
-				best = at;
-				bestAxis = travel;
+				// No game walk has the leg's length: the search's own steps stand.
+				for (int k = from + 1; k <= last; k++) kept.add(k);
 			}
-			if (best < 0)
-			{
-				// No step of the game's keeps the leg's length: the search's own step stands.
-				kept.add(++current);
-				continue;
-			}
-			current += distance[best];
-			splice(leg, current, current - distance[best], best, originX, originY, plane, banked);
-			if (blocked) kept.add(current);
-			else clicks.add(current);
 		}
 		if (blockedEnd) kept.add(to);
 	}
 
 	/**
-	 * Fills {@code toEnd} with the game's walking distance to {@code (ex, ey)} over the tiles that can
-	 * lie on a walk of {@code length} steps from {@code (ox, oy)}: a backward breadth-first search over
-	 * the steps the search's restrictions allow, pruned where even a straight walk from the origin
-	 * could not make it.
+	 * Walks {@code leg[from..last]} the way the game's search would from its start to its end: a
+	 * breadth-first search in the game's order whose first-discoverer path back from the end is the
+	 * game's walk. Only tiles that can lie on a walk of the leg's length are explored, so the end
+	 * is found at exactly that length or the leg keeps its steps (returns false). With a
+	 * {@code goal}, the end is the first tile it accepts that the search discovers at that length.
 	 */
-	private void reverse(int plane, int ex, int ey, int ox, int oy, int length)
+	private boolean walk(List<PathStep> leg, int from, int last, IntPredicate goal, BankVisitState banked, int plane)
 	{
-		endX = ex - length;
-		endY = ey - length;
-		endSide = 2 * length + 1;
-		toEnd = new PagedSearchArray(endSide * endSide, UNVISITED);
-		axisToEnd = new PagedSearchArray(endSide * endSide, 0);
-		int[] frontier = new int[1024];
+		int length = last - from;
+		int sx = WorldPointUtil.unpackWorldX(leg.get(from).getPackedPosition());
+		int sy = WorldPointUtil.unpackWorldY(leg.get(from).getPackedPosition());
+		int ex = WorldPointUtil.unpackWorldX(leg.get(last).getPackedPosition());
+		int ey = WorldPointUtil.unpackWorldY(leg.get(last).getPackedPosition());
+		int side = 2 * length + 1, ox = sx - length, oy = sy - length;
+		PagedSearchArray distance = new PagedSearchArray(side * side, UNVISITED);
+		PagedSearchArray parent = new PagedSearchArray(side * side, UNVISITED);
+		int start = length * side + length, found = -1;
+		int[] queue = new int[256];
 		int head = 0, tail = 0;
-		toEnd.set(length * endSide + length, 0);
-		frontier[tail++] = length * endSide + length;
-		while (head < tail)
-		{
-			int at = frontier[head++];
-			int x = endX + at % endSide, y = endY + at / endSide;
-			int steps = toEnd.get(at) + 1;
-			int next = WorldPointUtil.packWorldPoint(x, y, plane);
-			for (int i = 0; i < GameWalkOrder.ORDER_BITS.length; i++)
-			{
-				int px = x - GameWalkOrder.ORDER_DX[i], py = y - GameWalkOrder.ORDER_DY[i];
-				int seen = toEnd(px, py);
-				if (seen != UNVISITED && seen != steps || px < endX || py < endY || px >= endX + endSide
-					|| py >= endY + endSide || Math.max(Math.abs(px - ox), Math.abs(py - oy)) + steps > length)
-				{
-					continue;
-				}
-				int previous = WorldPointUtil.packWorldPoint(px, py, plane);
-				if ((map.ordinaryWalkingMask(previous) & 1 << GameWalkOrder.ORDER_BITS[i]) == 0
-					|| !restrictions.stepAllowed(previous, next))
-				{
-					continue;
-				}
-				int index = (py - endY) * endSide + px - endX;
-				int travel = axisToEnd.get(at) + Math.abs(GameWalkOrder.ORDER_DX[i]) + Math.abs(GameWalkOrder.ORDER_DY[i]);
-				if (seen == UNVISITED)
-				{
-					if (tail == frontier.length) frontier = Arrays.copyOf(frontier, 2 * tail);
-					toEnd.set(index, steps);
-					axisToEnd.set(index, travel);
-					frontier[tail++] = index;
-				}
-				else if (travel < axisToEnd.get(index)) axisToEnd.set(index, travel);
-			}
-		}
-	}
-
-	private int axisToEnd(int x, int y)
-	{
-		return axisToEnd.get((y - endY) * endSide + x - endX);
-	}
-
-	/** The distance to the leg's end found by {@link #reverse}, or -1 for a tile it did not reach. */
-	private int toEnd(int x, int y)
-	{
-		int ix = x - endX, iy = y - endY;
-		return ix < 0 || iy < 0 || ix >= endSide || iy >= endSide ? UNVISITED : toEnd.get(iy * endSide + ix);
-	}
-
-	/**
-	 * The local index of the tile the game's search discovered at exactly {@code remaining} steps that
-	 * {@code goal} accepts and whose traced path the restrictions allow, with the least axis travel
-	 * along that path (the first discovered of equals); -1 when there is none. The game's expansion order decides which path leads to a tile, not where a player stops, so
-	 * it is no tie-break between tiles. A tile nearer than {@code remaining} is never taken: the leg
-	 * would end short of its length and change the route's cost.
-	 */
-	private int goalTile(IntPredicate goal, int originX, int originY, int plane, int sx, int sy, int remaining,
-		int discovered)
-	{
-		int best = -1;
-		for (int k = 0; k < discovered; k++)
-		{
-			int at = queue[k];
-			if (distance[at] != remaining || best >= 0 && axis[at] >= axis[best]) continue;
-			int tile = WorldPointUtil.packWorldPoint(originX + at % WINDOW, originY + at / WINDOW, plane);
-			if (goal.test(tile) && traceAllowed(originX, originY, plane, at, remaining)) best = at;
-		}
-		return best;
-	}
-
-	/** Writes the traced path from the search's source to local index {@code at} over {@code rewritten[from + 1..click]}. */
-	private void splice(List<PathStep> rewritten, int click, int from, int at, int originX, int originY, int plane,
-		BankVisitState banked)
-	{
-		for (int i = click; i > from; i--, at = parent[at])
-			rewritten.set(i, new PathStep(WorldPointUtil.packWorldPoint(originX + at % WINDOW,
-				originY + at / WINDOW, plane), banked));
-	}
-
-	/**
-	 * Whether the in-game path traced back {@code hops} steps from local index {@code at} may be
-	 * spliced into the leg: every hop must be a step the search's restrictions allow, directed
-	 * from the tile nearer the click's source to the tile it lands on, and the path must fit the
-	 * client's per-click budget of {@link #MAX_CHECKPOINTS} checkpoint tiles (its
-	 * direction-change corners plus the destination), or the game would stop short of the click.
-	 */
-	private boolean traceAllowed(int originX, int originY, int plane, int at, int hops)
-	{
-		int previousDx = 0, previousDy = 0, turns = 0;
-		for (int i = 0; i < hops; i++, at = parent[at])
-		{
-			int from = parent[at];
-			if (!restrictions.stepAllowed(
-				WorldPointUtil.packWorldPoint(originX + from % WINDOW, originY + from / WINDOW, plane),
-				WorldPointUtil.packWorldPoint(originX + at % WINDOW, originY + at / WINDOW, plane)))
-			{
-				return false;
-			}
-			int dx = at % WINDOW - from % WINDOW, dy = at / WINDOW - from / WINDOW;
-			if (i > 0 && (dx != previousDx || dy != previousDy)) turns++;
-			previousDx = dx;
-			previousDy = dy;
-		}
-		return turns + 1 <= MAX_CHECKPOINTS;
-	}
-
-	private boolean withinReach(int sx, int sy, int tile)
-	{
-		int dx = WorldPointUtil.unpackWorldX(tile) - sx, dy = WorldPointUtil.unpackWorldY(tile) - sy;
-		return dx * dx + dy * dy <= CLICK_RADIUS * CLICK_RADIUS;
-	}
-
-	/**
-	 * The game's walking BFS from {@code (sx, sy)}, stopped once every tile within {@code depth} is
-	 * found. Returns how many tiles it discovered; {@code queue} lists them in discovery order. With
-	 * {@code remaining} not negative, only tiles that lie on a walk of that many steps to the leg's
-	 * end are explored: the others cannot be clicked, and leaving them out changes neither the
-	 * distances nor the first discoverers of those that can.
-	 */
-	private int search(int originX, int originY, int plane, int sx, int sy, int depth, int remaining)
-	{
-		Arrays.fill(distance, UNVISITED);
-		int start = (sy - originY) * WINDOW + (sx - originX);
-		distance[start] = 0;
-		parent[start] = start;
-		axis[start] = 0;
-		int head = 0, tail = 0;
+		distance.set(start, 0);
 		queue[tail++] = start;
-		while (head < tail)
+		while (head < tail && found < 0)
 		{
 			int at = queue[head++];
-			if (distance[at] >= depth) break;
-			int x = at % WINDOW, y = at / WINDOW;
-			int packed = WorldPointUtil.packWorldPoint(originX + x, originY + y, plane);
+			int steps = distance.get(at);
+			if (steps >= length) break;
+			int x = ox + at % side, y = oy + at / side;
+			int packed = WorldPointUtil.packWorldPoint(x, y, plane);
 			int mask = map.ordinaryWalkingMask(packed);
-			// A blocked start is walked off as the A* search does; any other start's neighbours are
-			// its mask's own moves.
+			// A blocked start is walked off as the A* search does.
 			if (at == start)
 				for (int next : map.ordinaryWalkingNeighbors(packed))
-					mask |= 1 << GameWalkOrder.ORDER_BITS[direction(WorldPointUtil.unpackWorldX(next) - originX - x,
-						WorldPointUtil.unpackWorldY(next) - originY - y)];
-			for (int i = 0; i < GameWalkOrder.ORDER_BITS.length; i++)
+					mask |= 1 << GameWalkOrder.ORDER_BITS[direction(WorldPointUtil.unpackWorldX(next) - x,
+						WorldPointUtil.unpackWorldY(next) - y)];
+			for (int i = 0; i < GameWalkOrder.ORDER_BITS.length && found < 0; i++)
 			{
 				if ((mask & (1 << GameWalkOrder.ORDER_BITS[i])) == 0) continue;
 				int nx = x + GameWalkOrder.ORDER_DX[i], ny = y + GameWalkOrder.ORDER_DY[i];
-				if (nx < 0 || ny < 0 || nx >= WINDOW || ny >= WINDOW) continue;
-				int next = ny * WINDOW + nx;
-				if (distance[next] != UNVISITED
-					|| remaining >= 0 && toEnd(originX + nx, originY + ny) != remaining - distance[at] - 1)
+				int next = (ny - oy) * side + nx - ox;
+				int nextPacked = WorldPointUtil.packWorldPoint(nx, ny, plane);
+				if (distance.get(next) != UNVISITED
+					|| goal == null && steps + 1 + Math.max(Math.abs(nx - ex), Math.abs(ny - ey)) > length
+					|| !restrictions.stepAllowed(packed, nextPacked))
 				{
 					continue;
 				}
-				distance[next] = distance[at] + 1;
-				parent[next] = at;
-				axis[next] = axis[at] + Math.abs(GameWalkOrder.ORDER_DX[i]) + Math.abs(GameWalkOrder.ORDER_DY[i]);
+				distance.set(next, steps + 1);
+				parent.set(next, at);
+				if (goal == null ? nx == ex && ny == ey : steps + 1 == length && goal.test(nextPacked)) found = next;
+				if (tail == queue.length) queue = Arrays.copyOf(queue, 2 * tail);
 				queue[tail++] = next;
 			}
 		}
-		return tail;
+		if (found < 0) found = (ey - oy) * side + ex - ox;
+		if (distance.get(found) != length) return false;
+		for (int i = last, at = found; i > from; i--, at = parent.get(at))
+			leg.set(i, new PathStep(WorldPointUtil.packWorldPoint(ox + at % side, oy + at / side, plane), banked));
+		return true;
+	}
+
+	/**
+	 * Appends the clicks along {@code leg[from..last]}, a walk the game takes: from each tile, the
+	 * furthest one within a minimap click's reach whose path needs at most {@link #MAX_CHECKPOINTS}
+	 * checkpoint tiles (its direction-change corners plus the destination), or the game would stop
+	 * short of the click.
+	 */
+	private static void clicksAlong(List<PathStep> leg, int from, int last, List<Integer> clicks)
+	{
+		for (int at = from; at < last; )
+		{
+			int x = WorldPointUtil.unpackWorldX(leg.get(at).getPackedPosition());
+			int y = WorldPointUtil.unpackWorldY(leg.get(at).getPackedPosition());
+			int best = at + 1, turns = 0, previousDx = 0, previousDy = 0;
+			for (int k = at + 1; k <= last; k++)
+			{
+				int tx = WorldPointUtil.unpackWorldX(leg.get(k).getPackedPosition());
+				int ty = WorldPointUtil.unpackWorldY(leg.get(k).getPackedPosition());
+				int dx = tx - WorldPointUtil.unpackWorldX(leg.get(k - 1).getPackedPosition());
+				int dy = ty - WorldPointUtil.unpackWorldY(leg.get(k - 1).getPackedPosition());
+				if (k > at + 1 && (dx != previousDx || dy != previousDy)) turns++;
+				if (turns + 1 > MAX_CHECKPOINTS || (tx - x) * (tx - x) + (ty - y) * (ty - y) > CLICK_RADIUS * CLICK_RADIUS) break;
+				previousDx = dx;
+				previousDy = dy;
+				best = k;
+			}
+			clicks.add(best);
+			at = best;
+		}
 	}
 }
