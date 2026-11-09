@@ -20,8 +20,6 @@ public final class ReverseLabels
 	private final int explicitRelaxations;
 	private final int attachmentRelaxations;
 	@Getter @Accessors(fluent = true) private final long elapsedNanos;
-	@Getter @Accessors(fluent = true) private final boolean sparse;
-
 
 	/** Sparse CSR reverse Dijkstra, including internal Steiner states. */
 	static ReverseLabels computeSparse(TargetOverlay overlay)
@@ -111,7 +109,7 @@ public final class ReverseLabels
 			routingWeights[state] = weights[state];
 		}
 		return new ReverseLabels(overlay, labels, routingOrigins, routingWeights, settled, stale, pushes,
-			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started, true);
+			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started);
 	}
 
 	public int label(int node, BankVisitState banked)
@@ -160,10 +158,6 @@ public final class ReverseLabels
 		return attachmentRelaxations;
 	}
 
-	boolean hasProvenance()
-	{
-		return generatorOrigins != null;
-	}
 	int generatorOrigin(int state)
 	{
 		return generatorOrigins[state];

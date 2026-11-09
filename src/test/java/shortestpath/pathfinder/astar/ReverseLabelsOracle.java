@@ -8,7 +8,7 @@ import shortestpath.pathfinder.BankVisitState;
 
 /**
  * Reverse labels for tests: the transparent component-clique reference the sparse production labels
- * are checked against, and the rule that picks between them for hand-built statics.
+ * are checked against.
  */
 public final class ReverseLabelsOracle
 {
@@ -16,12 +16,10 @@ public final class ReverseLabelsOracle
 	{
 	}
 
-	/** Sparse labels when the static carries a sparse network (or has at most one site), else the clique. */
+	/** The labels production computes; every static, hand-built or derived, carries a sparse network. */
 	public static ReverseLabels compute(TargetOverlay overlay)
 	{
-		RoutingStatic stat = overlay.routingStatic();
-		return stat.sparseAdjacencyCount() != 0 || stat.siteCount() <= 1
-			? ReverseLabels.computeSparse(overlay) : computeClique(overlay);
+		return ReverseLabels.computeSparse(overlay);
 	}
 
 	/**
@@ -107,7 +105,7 @@ public final class ReverseLabelsOracle
 			}
 		}
 		return new ReverseLabels(overlay, labels, null, null, settled, stale, pushes, 0, 0, 0,
-			System.nanoTime() - started, false);
+			System.nanoTime() - started);
 	}
 
 	private static boolean relax(int[] labels, AStarMinHeap queue, int state, int candidate)

@@ -27,7 +27,6 @@ public class SparseManhattanTest
 		ReverseLabels sparse = ReverseLabels.computeSparse(target);
 		ReverseLabels clique = ReverseLabelsOracle.computeClique(target);
 		assertArrayEquals(clique.labels(), sparse.labels());
-		assertTrue(sparse.sparse());
 		assertTrue(sparse.sparseRelaxationCount() > 0);
 		assertTrue(sparse.attachmentRelaxationCount() > 0);
 		assertEquals(0, sparse.targetLabel(BankVisitState.CARRIED));
