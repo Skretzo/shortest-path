@@ -4,11 +4,10 @@ import shortestpath.pathfinder.CollisionMap;
 
 /**
  * The order the game's own walking expands a tile's neighbours — W, E, S, N, SW, SE, NW, NE —
- * as the {@link CollisionMap#ordinaryWalkingMask} bit and step delta of each direction. Shared
- * by the walk passes that model that order — the leg canonicaliser and the in-game walk
- * rewriter — which would silently disagree with the game if the tables ever drifted apart.
- * Package-private:
- * the arrays are mutable, so they are not exposed to callers.
+ * as the {@link CollisionMap#ordinaryWalkingMask} bit and step delta of each direction. Used by
+ * {@link AStarWalkCanonicalizer}, which would silently disagree with the game if these tables
+ * were wrong; its test re-derives them on purpose, to check against an independent copy.
+ * Package-private: the arrays are mutable, so they are not exposed to callers.
  */
 final class GameWalkOrder
 {
