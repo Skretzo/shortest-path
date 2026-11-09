@@ -147,7 +147,7 @@ final class PluginApiHarness implements AutoCloseable
 			mock(WorldMapPointManager.class), new shortestpath.scheduler.DebugState());
 		shortestpath.scheduler.RefreshCoordinator coordinator =
 			new shortestpath.scheduler.RefreshCoordinator(scheduler, settingsService);
-		itemState = shortestpath.items.ItemStateService.forTesting(coordinator);
+		itemState = shortestpath.items.ItemStateTestServices.forTesting(coordinator);
 		shortestpath.sailing.SailingService sailing =
 			shortestpath.sailing.SailingTestServices.forTesting(client, coordinator);
 		pathfinderConfig.setItemStateService(itemState);

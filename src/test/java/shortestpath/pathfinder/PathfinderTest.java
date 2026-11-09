@@ -48,6 +48,7 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.items.ItemStateService;
+import shortestpath.items.ItemStateTestServices;
 import shortestpath.poh.PohService;
 import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.settings.TeleportationItem;
@@ -77,7 +78,7 @@ public class PathfinderTest
 	ItemContainer bank;
 	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private PathfinderConfig pathfinderConfig;
-	private final ItemStateService itemState = ItemStateService.forTesting();
+	private final ItemStateService itemState = ItemStateTestServices.forTesting();
 
 	@Before
 	public void before()
