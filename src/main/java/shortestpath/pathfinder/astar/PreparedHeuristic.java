@@ -1,7 +1,7 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.pathfinder.*;
 import lombok.*;
 import lombok.experimental.Accessors;
@@ -28,8 +28,8 @@ public final class PreparedHeuristic
 			throw new IllegalArgumentException("reverse labels belong to another target overlay");
 		long started = System.nanoTime();
 		int bucketCount = overlay.routingStatic().routingComponentCount() * 2;
-		IntList[] raw = new IntList[bucketCount];
-		GeneratorList[] reduced = new GeneratorList[bucketCount];
+		PrimitiveIntList[] raw = new PrimitiveIntList[bucketCount];
+		PrimitiveIntList[] reduced = new PrimitiveIntList[bucketCount];
 		RoutingStatic stat = overlay.routingStatic();
 		SiteGraph graph = overlay.graph();
 		for (int site = 0; site < graph.spatialNodeCount(); site++)
@@ -52,10 +52,10 @@ public final class PreparedHeuristic
 		int[][] generatorTiles = new int[bucketCount][], generatorLabels = new int[bucketCount][];
 		for (int i = 0; i < bucketCount; i++)
 		{
-			tiles[i] = raw[i] == null ? EMPTY : raw[i].tiles();
-			labels[i] = raw[i] == null ? EMPTY : raw[i].labels();
-			generatorTiles[i] = reduced[i] == null ? EMPTY : reduced[i].tiles();
-			generatorLabels[i] = reduced[i] == null ? EMPTY : reduced[i].labels();
+			tiles[i] = raw[i] == null ? EMPTY : raw[i].column(2, 0);
+			labels[i] = raw[i] == null ? EMPTY : raw[i].column(2, 1);
+			generatorTiles[i] = reduced[i] == null ? EMPTY : byId(reduced[i], 1);
+			generatorLabels[i] = reduced[i] == null ? EMPTY : byId(reduced[i], 2);
 		}
 		return new PreparedHeuristic(overlay, reverse, tiles, labels, generatorTiles, generatorLabels,
 			System.nanoTime() - started);
@@ -182,7 +182,7 @@ public final class PreparedHeuristic
 		return best;
 	}
 
-	private static void addSite(IntList[] raw, GeneratorList[] reduced, ReverseLabels reverse,
+	private static void addSite(PrimitiveIntList[] raw, PrimitiveIntList[] reduced, ReverseLabels reverse,
 		TargetOverlay overlay, int node, int packed, int[] components, BankVisitState banked)
 	{
 		int state = SiteGraph.stateId(node, banked);
@@ -203,8 +203,17 @@ public final class PreparedHeuristic
 			int generatorLabel = reverse.label(generatorNode,
 				(generatorState & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED);
 			if (reduced[key] == null)
-				reduced[key] = new GeneratorList();
-			reduced[key].add(generatorState, generatorTile, generatorLabel);
+				reduced[key] = new PrimitiveIntList(24);
+			PrimitiveIntList triples = reduced[key];
+			boolean known = false;
+			for (int i = 0; i < triples.size() && !known; i += 3)
+				known = triples.get(i) == generatorState;
+			if (!known)
+			{
+				triples.add(generatorState);
+				triples.add(generatorTile);
+				triples.add(generatorLabel);
+			}
 		}
 	}
 
@@ -238,14 +247,13 @@ public final class PreparedHeuristic
 		return component * 2 + (banked == BankVisitState.BANKED ? 1 : 0);
 	}
 
-	private static void add(IntList[] raw, int key, int packed, int label)
+	private static void add(PrimitiveIntList[] raw, int key, int packed, int label)
 	{
 		if (raw[key] == null)
-			raw[key] = new IntList();
-		raw[key].add(packed, label);
+			raw[key] = new PrimitiveIntList(16);
+		raw[key].add(packed);
+		raw[key].add(label);
 	}
-
-
 
 	private static int total(int[][] values)
 	{
@@ -255,80 +263,16 @@ public final class PreparedHeuristic
 		return total;
 	}
 
-	private static final class IntList
+	/** The values at {@code offset} of (id, tile, label) triples, ordered by ascending id. */
+	private static int[] byId(PrimitiveIntList triples, int offset)
 	{
-		private int[] tiles = new int[8], labels = new int[8];
-		private int size;
-
-		void add(int tile, int label)
-		{
-			if (size == tiles.length)
-			{
-				tiles = Arrays.copyOf(tiles, size * 2);
-				labels = Arrays.copyOf(labels, size * 2);
-			}
-			tiles[size] = tile;
-			labels[size++] = label;
-		}
-		int[] tiles()
-		{
-			return Arrays.copyOf(tiles, size);
-		}
-		int[] labels()
-		{
-			return Arrays.copyOf(labels, size);
-		}
-	}
-
-	private static final class GeneratorList
-	{
-		private int[] ids = new int[8], tiles = new int[8], labels = new int[8];
-		private int size;
-
-		void add(int id, int tile, int label)
-		{
-			for (int i = 0; i < size; i++)
-				if (ids[i] == id)
-					return;
-			if (size == ids.length)
-			{
-				ids = Arrays.copyOf(ids, size * 2);
-				tiles = Arrays.copyOf(tiles, size * 2);
-				labels = Arrays.copyOf(labels, size * 2);
-			}
-			ids[size] = id;
-			tiles[size] = tile;
-			labels[size++] = label;
-		}
-		int[] tiles()
-		{
-			sort();
-			return Arrays.copyOf(tiles, size);
-		}
-		int[] labels()
-		{
-			sort();
-			return Arrays.copyOf(labels, size);
-		}
-		private void sort()
-		{
-			for (int i = 1; i < size; i++)
-			{
-				int j = i;
-				while (j > 0 && ids[j] < ids[j - 1])
-				{
-					int id = ids[j];
-					ids[j] = ids[j - 1];
-					ids[j - 1] = id;
-					int tile = tiles[j];
-					tiles[j] = tiles[j - 1];
-					tiles[j - 1] = tile;
-					int label = labels[j];
-					labels[j] = labels[j - 1];
-					labels[j - 1] = label;
-					j--;
-				}
-			}
-		}
+		long[] keys = new long[triples.size() / 3];
+		for (int i = 0; i < keys.length; i++)
+			keys[i] = (long) triples.get(3 * i) << 32 | i;
+		Arrays.sort(keys);
+		int[] out = new int[keys.length];
+		for (int i = 0; i < out.length; i++)
+			out[i] = triples.get(3 * (int) keys[i] + offset);
+		return out;
 	}
 }

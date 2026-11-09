@@ -1,7 +1,7 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 
 /**
  * Exact walking distances between the sites of each small routing component.
@@ -225,8 +225,7 @@ final class ExactWalks
 	private static int[] keptEdges(int[] sites, int[][] distance)
 	{
 		int k = sites.length;
-		int[] result = new int[3 * k];
-		int size = 0;
+		PrimitiveIntList result = new PrimitiveIntList(3 * k);
 		for (int i = 0; i < k; i++)
 		{
 			for (int j = i + 1; j < k; j++)
@@ -236,12 +235,11 @@ final class ExactWalks
 				for (int m = 0; m < k && !redundant; m++)
 					redundant = m != i && m != j && CostArithmetic.add(distance[i][m], distance[m][j]) <= distance[i][j];
 				if (redundant) continue;
-				if (size + 3 > result.length) result = Arrays.copyOf(result, result.length * 2);
-				result[size++] = sites[i];
-				result[size++] = sites[j];
-				result[size++] = distance[i][j];
+				result.add(sites[i]);
+				result.add(sites[j]);
+				result.add(distance[i][j]);
 			}
 		}
-		return Arrays.copyOf(result, size);
+		return result.column(1, 0);
 	}
 }
