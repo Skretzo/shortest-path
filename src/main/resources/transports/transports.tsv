@@ -6703,3 +6703,7 @@
 # shortcut: entry requires the attached-rope quest state; expand to earlier stages with verified access.									
 2922 5826 0	2615 6408 0	Climb-rope Rock 49477				15126>4		2	
 2587 6435 0	2922 5826 0	Climb-up Rope 48198						2	
+									
+# Lassar Undercity - Shadow Realm puddle									
+2597 6365 0	2341 6365 0	Use Puddle 49478				15126>14			
+2341 6365 0	2597 6365 0	Use Puddle 49478				15126>14			
