@@ -124,7 +124,7 @@ public class SearchRestrictionsTest
 		PreparedRoutingAccount account)
 	{
 		TargetOverlay overlay = new TargetOverlay(new SiteGraph(routingStatic(), account), emptyCollision(), target);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, ReverseLabels.compute(overlay));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, ReverseLabelsOracle.compute(overlay));
 		AStarForwardSearch.Result result = AStarForwardSearch.search(overlay, heuristic, start,
 			() -> false, true, 1, restrictions, AStarForwardSearch.NO_PROGRESS);
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(overlay, heuristic, start,

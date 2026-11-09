@@ -12,6 +12,7 @@ import shortestpath.pathfinder.astar.AStarMinHeap;
 import shortestpath.pathfinder.astar.PreparedHeuristic;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
 import shortestpath.pathfinder.astar.ReverseLabels;
+import shortestpath.pathfinder.astar.ReverseLabelsOracle;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticTestFixture;
 import shortestpath.pathfinder.astar.SiteGraph;
@@ -35,7 +36,7 @@ public class ReverseLabelsTest
 		assertArrayEquals(new int[] {0, 1}, target.components());
 		assertEquals(graph.nodeCount() + 1, target.queryNodeCount());
 		assertEquals(5, target.attachmentCount());
-		ReverseLabels reverse = ReverseLabels.compute(target);
+		ReverseLabels reverse = ReverseLabelsOracle.compute(target);
 		assertEquals(0, reverse.targetLabel(BankVisitState.CARRIED));
 		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_A), BankVisitState.CARRIED));
 		assertEquals(1, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_C), BankVisitState.CARRIED));
@@ -59,12 +60,12 @@ public class ReverseLabelsTest
 			new TargetOverlay(graph, collision(RoutingStaticTestFixture.T3_D), RoutingStaticTestFixture.T3_D);
 		assertTrue(!staticTarget.synthetic());
 		assertEquals(graph.nodeForTile(RoutingStaticTestFixture.T3_D), staticTarget.targetNode());
-		ReverseLabels reverse = ReverseLabels.compute(staticTarget);
+		ReverseLabels reverse = ReverseLabelsOracle.compute(staticTarget);
 		assertEquals(7, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_B), BankVisitState.CARRIED));
 
 		TargetOverlay reverseDirection =
 			new TargetOverlay(graph, collision(RoutingStaticTestFixture.T3_B), RoutingStaticTestFixture.T3_B);
-		reverse = ReverseLabels.compute(reverseDirection);
+		reverse = ReverseLabelsOracle.compute(reverseDirection);
 		assertEquals(CostArithmetic.INF, reverse.label(graph.nodeForTile(RoutingStaticTestFixture.T3_D), BankVisitState.CARRIED));
 	}
 
@@ -76,7 +77,7 @@ public class ReverseLabelsTest
 			local(RoutingStaticTestFixture.T3_A, RoutingStaticTestFixture.T3_D, 10),
 			local(RoutingStaticTestFixture.T3_A, RoutingStaticTestFixture.T3_B, 1));
 		SiteGraph graph = new SiteGraph(stat, account);
-		ReverseLabels stale = ReverseLabels.compute(
+		ReverseLabels stale = ReverseLabelsOracle.compute(
 			new TargetOverlay(graph, collision(RoutingStaticTestFixture.T3_D), RoutingStaticTestFixture.T3_D));
 		assertEquals(8, stale.label(graph.nodeForTile(RoutingStaticTestFixture.T3_A), BankVisitState.CARRIED));
 		assertTrue(stale.staleCount() > 0);
@@ -90,7 +91,7 @@ public class ReverseLabelsTest
 		assertTrue(bankGraph.hasBankedGlobalHub());
 		TargetOverlay target =
 			new TargetOverlay(bankGraph, collision(RoutingStaticTestFixture.T3_D), RoutingStaticTestFixture.T3_D);
-		ReverseLabels reverse = ReverseLabels.compute(target);
+		ReverseLabels reverse = ReverseLabelsOracle.compute(target);
 		int bank = bankGraph.nodeForTile(RoutingStaticTestFixture.T3_B);
 		assertEquals(6, reverse.label(bank, BankVisitState.CARRIED));
 		assertEquals(20, reverse.label(bank, BankVisitState.BANKED));
@@ -116,7 +117,7 @@ public class ReverseLabelsTest
 		SiteGraph graph = new SiteGraph(stat, emptyAccount());
 		TargetOverlay first =
 			new TargetOverlay(graph, collision(RoutingStaticTestFixture.T3_TARGET), RoutingStaticTestFixture.T3_TARGET);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(first, ReverseLabels.compute(first));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(first, ReverseLabelsOracle.compute(first));
 		TargetOverlay otherTarget =
 			new TargetOverlay(new SiteGraph(RoutingStaticTestFixture.createT3(), emptyAccount()),
 				collision(RoutingStaticTestFixture.T3_TARGET), RoutingStaticTestFixture.T3_TARGET);
@@ -145,7 +146,7 @@ public class ReverseLabelsTest
 				RoutingStaticTestFixture.T3_SEARCH_1),
 			RoutingStaticTestFixture.T3_TARGET);
 
-		assertArrayEquals(simpleLabels(target), ReverseLabels.compute(target).labels());
+		assertArrayEquals(simpleLabels(target), ReverseLabelsOracle.compute(target).labels());
 	}
 
 	private static int[] simpleLabels(TargetOverlay target)

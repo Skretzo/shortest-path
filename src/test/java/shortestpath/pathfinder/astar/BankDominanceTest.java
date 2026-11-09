@@ -18,7 +18,7 @@ public class BankDominanceTest
 		RoutingStatic stat = dominanceStatic();
 		PreparedRoutingAccount account = account();
 		TargetOverlay target = new TargetOverlay(new SiteGraph(stat, account), emptyCollision(), D);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target, heuristic, A, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 		AStarForwardSearch.Result optimized = AStarForwardSearch.search(target, heuristic, A, () -> false, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);

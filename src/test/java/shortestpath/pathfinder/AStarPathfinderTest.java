@@ -12,7 +12,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import shortestpath.pathfinder.astar.AStarForwardSearch;
 import shortestpath.pathfinder.astar.PreparedHeuristic;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
-import shortestpath.pathfinder.astar.ReverseLabels;
+import shortestpath.pathfinder.astar.ReverseLabelsOracle;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticTestFixture;
 import shortestpath.pathfinder.astar.SearchRestrictions;
@@ -193,7 +193,7 @@ public class AStarPathfinderTest
 		TargetOverlay target = target(stat, account, RoutingStaticTestFixture.D);
 
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), RoutingStaticTestFixture.A, () -> true, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS, (tile, banked) -> target.isTarget(tile));
+			PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), RoutingStaticTestFixture.A, () -> true, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS, (tile, banked) -> target.isTarget(tile));
 
 		assertTrue(result.cancelled());
 		assertFalse(result.reached());
@@ -262,7 +262,7 @@ public class AStarPathfinderTest
 
 	private static AStarForwardSearch.Result search(TargetOverlay target, int start)
 	{
-		return AStarForwardSearch.search(target, PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start);
+		return AStarForwardSearch.search(target, PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), start);
 	}
 
 	private static TargetOverlay target(RoutingStatic stat, PreparedRoutingAccount account, int target)

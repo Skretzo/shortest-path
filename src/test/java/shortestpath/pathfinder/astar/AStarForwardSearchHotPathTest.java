@@ -42,7 +42,7 @@ public class AStarForwardSearchHotPathTest
 			corridor[0]).routingStatic;
 		TargetOverlay target = new TargetOverlay(new SiteGraph(stat, account()), collision,
 			corridor[corridor.length - 1]);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target, heuristic, corridor[0]);
 
@@ -58,7 +58,7 @@ public class AStarForwardSearchHotPathTest
 	{
 		RoutingStatic stat = RoutingStaticTestFixture.createT4Walking();
 		TargetOverlay target = target(stat, account(), RoutingStaticTestFixture.C);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 		for (int node = 0; node < stat.searchTileCount(); node++)
 		{
 			assertEquals(stat.searchIndex(stat.searchTile(node)) * 2,
@@ -99,7 +99,7 @@ public class AStarForwardSearchHotPathTest
 	public void cancelledSearchKeepsTheRouteToTheClosestPoppedTile() throws Exception
 	{
 		TargetOverlay target = target(RoutingStaticTestFixture.createT4Walking(), account(), RoutingStaticTestFixture.C);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 		int[] checks = {0};
 
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target, heuristic, RoutingStaticTestFixture.A,
@@ -129,7 +129,7 @@ public class AStarForwardSearchHotPathTest
 			TargetOverlay target = new TargetOverlay(new SiteGraph(stat, account(transport)), collision, destination);
 
 			AStarForwardSearch.Result result = AStarForwardSearch.search(target,
-				PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start);
+				PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), start);
 
 			assertTrue(result.reached());
 			assertEquals(4, result.cost());
@@ -155,7 +155,7 @@ public class AStarForwardSearchHotPathTest
 		RoutingStatic stat = wildernessStatic();
 		PreparedRoutingAccount account = account(local(DEEP_WILDERNESS, OUTSIDE, 5), global(TARGET, 1));
 		TargetOverlay target = target(stat, account, TARGET);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target, heuristic, DEEP_WILDERNESS, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target, heuristic, DEEP_WILDERNESS, () -> false, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
@@ -198,7 +198,7 @@ public class AStarForwardSearchHotPathTest
 		int start, int destination)
 	{
 		TargetOverlay target = target(stat, account, destination);
-		return AStarForwardSearch.search(target, PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start);
+		return AStarForwardSearch.search(target, PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), start);
 	}
 
 	private static TargetOverlay target(RoutingStatic stat, PreparedRoutingAccount account, int destination)

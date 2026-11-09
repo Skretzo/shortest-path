@@ -117,10 +117,10 @@ public class WildernessGlobalTeleportTest
 		PreparedRoutingAccount account = account(transports);
 		TargetOverlay target = new TargetOverlay(new SiteGraph(routingStatic(), account), emptyCollision(), TARGET);
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start);
+			PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), start);
 		assertTrue(result.reached());
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
+			PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), start, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 		assertEquals("optimised search agrees with the unoptimised one", oracle.cost(), result.cost());
 		return result;
 	}
