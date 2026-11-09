@@ -25,6 +25,7 @@ import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.Targets;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.sailing.SailingService;
+import shortestpath.sailing.SailingTestServices;
 import shortestpath.sailing.SailingState;
 import shortestpath.settings.Settings;
 
@@ -131,7 +132,7 @@ public class PathRenderStateTest
 		// A detached service still captures the varbit side of a refresh, so
 		// it can publish an aboard snapshot without a client — the seam then
 		// reads that same publication.
-		SailingService live = SailingService.forTesting();
+		SailingService live = SailingTestServices.forTesting();
 		PlayerStateSource source = mock(PlayerStateSource.class);
 		when(source.gameState()).thenReturn(GameState.LOGGED_IN);
 		when(source.varbit(VarbitID.SAILING_BOARDED_BOAT)).thenReturn(1);

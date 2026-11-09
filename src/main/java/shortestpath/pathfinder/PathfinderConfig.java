@@ -79,7 +79,8 @@ public class PathfinderConfig
 	// The plugin wires the injected singleton in production; harnesses and
 	// tests keep the default detached instance, whose refresh arm merges a
 	// live in-region sample into the published set without persistence.
-	@Getter private SpiritTreeService spiritTrees = SpiritTreeService.forTesting();
+	// null collaborators mean detached
+	@Getter private SpiritTreeService spiritTrees = new SpiritTreeService(null, null, null, null);
 
 	public void setSpiritTreeService(SpiritTreeService spiritTrees)
 	{
@@ -93,7 +94,7 @@ public class PathfinderConfig
 	 * eligibility capture below. The plugin wires the injected singleton in
 	 * production; harnesses and tests keep the default detached instance.
 	 */
-	private ItemStateService itemState = ItemStateService.forTesting();
+	private ItemStateService itemState = new ItemStateService(null, null);
 
 	public void setItemStateService(ItemStateService itemState)
 	{
@@ -107,7 +108,7 @@ public class PathfinderConfig
 	 * below draw from. The plugin wires the injected singleton in production;
 	 * harnesses and tests keep the default detached instance.
 	 */
-	private SailingService sailing = SailingService.forTesting();
+	private SailingService sailing = new SailingService(null, null);
 
 	public void setSailingService(SailingService sailing)
 	{

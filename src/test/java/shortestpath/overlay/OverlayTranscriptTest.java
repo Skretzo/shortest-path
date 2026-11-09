@@ -60,6 +60,7 @@ import shortestpath.presentation.BankPickupRequirements;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.requirement.PlayerStateSource;
 import shortestpath.sailing.SailingService;
+import shortestpath.sailing.SailingTestServices;
 import shortestpath.sailing.SailingState;
 import shortestpath.scheduler.PathRenderState;
 import shortestpath.scheduler.PathScheduler;
@@ -67,6 +68,7 @@ import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.transport.TransportType;
 import shortestpath.widgets.WidgetGeometry;
+import shortestpath.widgets.WidgetTestServices;
 
 /**
  * Golden-master transcripts over every overlay render path this phase touches:
@@ -217,7 +219,7 @@ public class OverlayTranscriptTest
 		when(client.getItemDefinition(anyInt())).thenReturn(def);
 
 		spriteManager = mock(SpriteManager.class);
-		geometry = WidgetGeometry.forTesting(client, spriteManager);
+		geometry = WidgetTestServices.geometry(client, spriteManager);
 
 		injector = Guice.createInjector(new AbstractModule()
 		{
@@ -414,7 +416,7 @@ public class OverlayTranscriptTest
 	@Test
 	public void infoSailingDisembark()
 	{
-		SailingService live = SailingService.forTesting();
+		SailingService live = SailingTestServices.forTesting();
 		PlayerStateSource source = mock(PlayerStateSource.class);
 		when(source.gameState()).thenReturn(GameState.LOGGED_IN);
 		when(source.varbit(VarbitID.SAILING_BOARDED_BOAT)).thenReturn(1);

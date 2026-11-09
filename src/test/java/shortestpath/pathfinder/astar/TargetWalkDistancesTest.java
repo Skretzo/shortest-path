@@ -189,7 +189,7 @@ public class TargetWalkDistancesTest
 			TargetOverlay overlay = overlay(stat, TARGET);
 
 			AStarForwardSearch.Result result = AStarForwardSearch.search(overlay,
-				PreparedHeuristic.prepare(overlay, ReverseLabels.compute(overlay)), BANK);
+				PreparedHeuristic.prepare(overlay, ReverseLabelsOracle.compute(overlay)), BANK);
 
 			assertTrue(result.reached());
 			assertEquals(10, result.cost());

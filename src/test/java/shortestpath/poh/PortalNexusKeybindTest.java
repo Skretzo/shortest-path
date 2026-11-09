@@ -30,7 +30,7 @@ public class PortalNexusKeybindTest
 	public void setUp()
 	{
 		coordinator = mock(RefreshCoordinator.class);
-		keybinds = PohService.forTesting(coordinator);
+		keybinds = PohTestServices.forTesting(coordinator);
 	}
 
 	@Test

@@ -45,6 +45,7 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.items.ItemStateService;
+import shortestpath.items.ItemStateTestServices;
 import shortestpath.poh.PohService;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.ConfigChange;
@@ -73,7 +74,7 @@ public class PathfinderTest
 	ItemContainer bank;
 	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private PathfinderConfig pathfinderConfig;
-	private final ItemStateService itemState = ItemStateService.forTesting();
+	private final ItemStateService itemState = ItemStateTestServices.forTesting();
 
 	@Before
 	public void before()
@@ -1153,7 +1154,7 @@ public class PathfinderTest
 			assertTrue("test requires a blocked target tile",
 				map.isBlocked(2533, ty, 0));
 			assertTrue("test requires the west edge to be a wall boundary",
-				map.wallW(2533, ty, 0));
+				map.wallE(2532, ty, 0));
 			int end = runBlockedTargetRoute(2526, 3087, 2533, ty);
 			assertTrue("path must end on the corridor side of the wall column",
 				WorldPointUtil.unpackWorldX(end) > 2533);

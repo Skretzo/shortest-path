@@ -64,6 +64,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import shortestpath.items.ItemStateService;
+import shortestpath.items.ItemStateTestServices;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohNexusPortal;
 import shortestpath.requirement.TeleportRestriction;
@@ -102,7 +103,7 @@ public class ShortestPathPanelLayoutTest
 
 	private ShortestPathPanel newPanel()
 	{
-		return newPanel(ItemStateService.forTesting());
+		return newPanel(ItemStateTestServices.forTesting());
 	}
 
 	private ShortestPathPanel newPanel(ItemStateService itemState)
@@ -883,7 +884,7 @@ public class ShortestPathPanelLayoutTest
 		// only in the remembered bank snapshot — every live container is
 		// empty (the client mock serves nulls), so the family counts as
 		// owned only if the filter unions the service's persisted record.
-		ItemStateService itemState = ItemStateService.forTesting();
+		ItemStateService itemState = ItemStateTestServices.forTesting();
 		itemState.noteLastSeenBank(containerWith(new Item(13121, 1)), true);
 		newPanel(itemState);
 		flushEdt();

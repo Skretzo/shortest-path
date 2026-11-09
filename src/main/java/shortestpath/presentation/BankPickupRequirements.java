@@ -106,7 +106,7 @@ public final class BankPickupRequirements
 		{
 			int itemId = entry.getKey();
 			long qty = entry.getValue();
-			// A detached (forTesting) item-state service passes no client —
+			// A detached item-state service passes no client —
 			// degrade to the placeholder name rather than throwing.
 			String itemName = client == null ? null : client.getItemDefinition(itemId).getName();
 			if (itemName == null || itemName.isEmpty() || "null".equals(itemName))

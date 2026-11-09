@@ -159,7 +159,7 @@ public class AStarRoutingSessionTest
 		{
 			TargetOverlay fresh = new TargetOverlay(new SiteGraph(stat, account), collision, D);
 			AStarForwardSearch.Result expected = AStarForwardSearch.search(fresh,
-				PreparedHeuristic.prepare(fresh, ReverseLabels.compute(fresh)), start);
+				PreparedHeuristic.prepare(fresh, ReverseLabelsOracle.compute(fresh)), start);
 			AStarForwardSearch.Result actual = second.value().search(start, () -> false, 1);
 			assertEquals(expected.reached(), actual.reached());
 			assertEquals(expected.cost(), actual.cost());
@@ -247,7 +247,7 @@ public class AStarRoutingSessionTest
 	private static AStarForwardSearch.Result search(SiteGraph graph, CollisionMap collision)
 	{
 		TargetOverlay target = new TargetOverlay(graph, collision, D);
-		return AStarForwardSearch.search(target, PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), A);
+		return AStarForwardSearch.search(target, PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), A);
 	}
 
 	private static Transport global(int destination, int duration)

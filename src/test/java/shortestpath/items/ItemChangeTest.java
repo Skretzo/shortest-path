@@ -85,7 +85,7 @@ public class ItemChangeTest
 	public void everyProducerFactDeclaresExactlyEligibilityStale()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 
 		int admitted = 0;
 		for (int containerId : new int[]{InventoryID.BANK, InventoryID.INV, InventoryID.WORN})

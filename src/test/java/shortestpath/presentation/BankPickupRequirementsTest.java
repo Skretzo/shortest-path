@@ -255,7 +255,7 @@ public class BankPickupRequirementsTest
 	@Test
 	public void formatPickupsDegradesWithoutAClient()
 	{
-		// The detached forTesting() item-state service has no client to resolve
+		// A detached item-state service has no client to resolve
 		// names with; the phrases degrade instead of throwing.
 		Map<Integer, Long> pickups = new LinkedHashMap<>();
 		pickups.put(ItemID.LAWRUNE, 2L);

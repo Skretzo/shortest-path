@@ -63,7 +63,7 @@ public class GameWidgetsTest
 	@Test
 	public void detachedInstanceCollapsesToEmptyReads()
 	{
-		GameWidgets detached = GameWidgets.forTesting();
+		GameWidgets detached = WidgetTestServices.gameWidgets();
 
 		assertEquals(List.of(), detached.childTexts(GROUP, CHILD));
 		assertEquals(List.of(), detached.childTexts(PACKED));

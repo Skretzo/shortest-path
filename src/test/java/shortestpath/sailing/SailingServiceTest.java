@@ -80,7 +80,7 @@ public class SailingServiceTest
 	public void detachedInstanceCapturesVarbitsButNoEntityState()
 	{
 		stubVarbits(1, 192, 384, 96);
-		SailingService service = SailingService.forTesting();
+		SailingService service = SailingTestServices.forTesting();
 
 		service.refresh(source());
 
@@ -141,7 +141,7 @@ public class SailingServiceTest
 		when(boatSceneView.getBaseX()).thenReturn(3000);
 		when(boatSceneView.getBaseY()).thenReturn(3100);
 
-		SailingService service = SailingService.forTesting(client);
+		SailingService service = SailingTestServices.forTesting(client);
 		service.refresh(source());
 
 		SailingState state = service.getState();
@@ -173,7 +173,7 @@ public class SailingServiceTest
 		when(player.getWorldView()).thenReturn(top);
 		when(top.getId()).thenReturn(WorldView.TOPLEVEL);
 
-		SailingService service = SailingService.forTesting(client);
+		SailingService service = SailingTestServices.forTesting(client);
 		service.refresh(source());
 
 		SailingState state = service.getState();
@@ -195,7 +195,7 @@ public class SailingServiceTest
 		when(client.getLocalPlayer()).thenReturn(player);
 		when(player.getWorldView()).thenReturn(null);
 
-		SailingService service = SailingService.forTesting(client);
+		SailingService service = SailingTestServices.forTesting(client);
 		service.refresh(source());
 
 		SailingState state = service.getState();
@@ -217,7 +217,7 @@ public class SailingServiceTest
 		when(boatView.getId()).thenReturn(BOAT_WORLDVIEW);
 		when(client.getTopLevelWorldView()).thenReturn(null);
 
-		SailingService service = SailingService.forTesting(client);
+		SailingService service = SailingTestServices.forTesting(client);
 		service.refresh(source());
 
 		SailingState state = service.getState();
@@ -231,7 +231,7 @@ public class SailingServiceTest
 	public void loggedOutRefreshReadsNoVarbitsAndClearsThem()
 	{
 		when(client.getGameState()).thenReturn(GameState.LOGIN_SCREEN);
-		SailingService service = SailingService.forTesting(client);
+		SailingService service = SailingTestServices.forTesting(client);
 
 		service.refresh(source());
 
@@ -251,7 +251,7 @@ public class SailingServiceTest
 	@Test
 	public void stateBeforeAnyRefreshIsEmpty()
 	{
-		SailingService service = SailingService.forTesting();
+		SailingService service = SailingTestServices.forTesting();
 		assertNotNull(service.getState());
 		assertSame(SailingState.EMPTY, service.getState());
 	}
@@ -260,7 +260,7 @@ public class SailingServiceTest
 	public void resetRepublishesTheEmptySnapshot()
 	{
 		stubVarbits(1, 192, 384, 96);
-		SailingService service = SailingService.forTesting(client);
+		SailingService service = SailingTestServices.forTesting(client);
 		service.refresh(source());
 		assertTrue(service.getState().isAboard());
 
@@ -273,7 +273,7 @@ public class SailingServiceTest
 	public void untrackedVarbitDeclaresNothing()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SailingService service = SailingService.forTesting(client, coordinator);
+		SailingService service = SailingTestServices.forTesting(client, coordinator);
 
 		service.onVarbitChanged(VarbitID.FAIRY2_QUEENCURE_QUEST);
 
@@ -285,7 +285,7 @@ public class SailingServiceTest
 	{
 		stubVarbits(1, 192, 384, 96);
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SailingService service = SailingService.forTesting(client, coordinator);
+		SailingService service = SailingTestServices.forTesting(client, coordinator);
 		service.refresh(source());
 
 		// The re-capture produces an identical snapshot, so the event mints no fact.
@@ -299,7 +299,7 @@ public class SailingServiceTest
 	{
 		stubVarbits(0, 192, 384, 96);
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SailingService service = SailingService.forTesting(client, coordinator);
+		SailingService service = SailingTestServices.forTesting(client, coordinator);
 		service.refresh(source());
 
 		// The varbit flips between captures; with no entity chain stubbed the
@@ -319,7 +319,7 @@ public class SailingServiceTest
 	{
 		stubVarbits(1, 192, 384, 96);
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SailingService service = SailingService.forTesting(client, coordinator);
+		SailingService service = SailingTestServices.forTesting(client, coordinator);
 		service.refresh(source());
 
 		// The route sails at the base speed, so a change there is material.
@@ -336,7 +336,7 @@ public class SailingServiceTest
 	{
 		stubVarbits(1, 192, 384, 96);
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SailingService service = SailingService.forTesting(client, coordinator);
+		SailingService service = SailingTestServices.forTesting(client, coordinator);
 		service.refresh(source());
 
 		// The speed cap and acceleration varbits are captured for snapshot
@@ -388,7 +388,7 @@ public class SailingServiceTest
 		when(boatSceneView.getBaseY()).thenReturn(3100);
 
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SailingService service = SailingService.forTesting(client, coordinator);
+		SailingService service = SailingTestServices.forTesting(client, coordinator);
 		service.refresh(source());
 
 		// The boat slides a tile: point and pivots move, nothing material does.
@@ -402,7 +402,7 @@ public class SailingServiceTest
 	public void detachedInstanceIgnoresVarbitEvents()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SailingService service = SailingService.forTesting(coordinator);
+		SailingService service = SailingTestServices.forTesting(coordinator);
 
 		service.onVarbitChanged(VarbitID.SAILING_BOARDED_BOAT);
 

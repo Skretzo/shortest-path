@@ -131,19 +131,19 @@ of these masks; APIs without masks retain the either-layer default.
 ## 4. Reverse search (`ReverseLabels`)
 
 Dijkstra seeds only accepted target states at cost 0, over the
-reverse explicit edges plus same-component walking. There are two
-implementations, and their labels must be equal:
+reverse explicit edges plus same-component walking. Production has one
+implementation; the tests check it against a second, and their labels must be equal:
 
 A bank-only target is not a carried-layer terminal seed. Carried sites can still get finite
 labels through the directed bank transition into the banked layer. Without an accessible
 bank path, those labels remain `INF`, allowing the forward search to reject the start.
 
-- **`computeClique`** is the reference oracle. On settling a site it relaxes
-  every other site in each of its components at Chebyshev cost, or at the
-  exact walking distance in a component with exact walks (below). This is
-  quadratic in component size.
-- **`computeSparse`** is the production path (`compute` uses it whenever a
-  sparse network exists). It walks the static sparse network instead.
+- **`computeSparse`** is the only production path. It walks the static sparse
+  network.
+- **`ReverseLabelsOracle.computeClique`** (test sources) is the reference
+  oracle. On settling a site it relaxes every other site in each of its
+  components at Chebyshev cost, or at the exact walking distance in a
+  component with exact walks (below). This is quadratic in component size.
 
 ### The sparse walking network (`SparseWalkingNetworkBuilder`)
 
@@ -186,7 +186,7 @@ by exact walks instead of a tree:
   the component.
 - An edge is dropped when a path through a third site of the component is no
   longer. Weights are positive, so the remaining edges keep every pair
-  distance, and `computeClique` checks them against the full table.
+  distance, and the test oracle `computeClique` checks them against the full table.
 
 This is a lower bound for the same reason as the target walk above: a walk
 leaves a component only across a cut, whose endpoints are sites. Larger
@@ -281,7 +281,7 @@ twin of a bank-dominated state.
 1. The relaxed graph must contain every real edge, or a cheaper equivalent.
    Never drop an attachment or a transport.
 2. `INF` means prune. Never turn a missing value into 0.
-3. Clique and sparse labels must be equal, and the
+3. The tests check the clique and sparse labels against each other, and the
    generator scan must equal the raw scan (`PreparedHeuristic.estimateRaw`).
    `SparseManhattanTest` and `MultiTargetTest` check both.
 4. Packed tiles are signed `int`s, and planes 2 and 3 are negative. Anything
