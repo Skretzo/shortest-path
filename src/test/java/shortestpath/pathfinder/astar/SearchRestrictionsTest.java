@@ -161,7 +161,7 @@ public class SearchRestrictionsTest
 	{
 		int[] tiles = {SAFE2, SAFE, WILD, WILDT, WILD25};
 		int n = tiles.length;
-		int[] siteOffsets = new int[n + 1], componentMembers = new int[n], sparseOffsets = new int[n + 1];
+		int[] siteOffsets = new int[n + 1], componentMembers = new int[n];
 		for (int i = 0; i < n; i++)
 		{
 			siteOffsets[i] = i;
@@ -170,10 +170,11 @@ public class SearchRestrictionsTest
 		siteOffsets[n] = n;
 		try
 		{
-			return RoutingStatic.takeOwnership(tiles, new TileComponents(n, 1), new byte[] {4, 68, 64, 0, 0},
+			return RoutingStaticTestFixture.takeOwnershipWithNetwork(tiles, new TileComponents(n, 1),
+				new byte[] {4, 68, 64, 0, 0},
 				new char[5], new char[5], tiles, siteOffsets,
 				new int[n], 1, new int[] {0, n}, componentMembers, new int[0], new int[0], new int[0],
-				new int[0], n, n, 0, 0, 0, sparseOffsets, new int[0], new int[0]);
+				new int[0]);
 		}
 		catch (java.io.IOException e)
 		{
