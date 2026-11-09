@@ -111,7 +111,7 @@ public final class RoutingStaticBuilder
 	 * lets synthetic-world unit tests exercise structural reachability without embedding the real
 	 * seed tile {@code (3221, 3218, 0)} in every tiny test world.
 	 */
-	public static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
+	static Result build(CollisionMap collision, Map<Integer, Set<Transport>> rawTransports,
 		Set<Integer> bankTiles, int[] cuts, int seedTile) throws IOException
 	{
 		long started = System.nanoTime();

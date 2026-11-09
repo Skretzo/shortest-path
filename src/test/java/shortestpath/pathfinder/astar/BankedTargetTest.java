@@ -103,8 +103,7 @@ public class BankedTargetTest
 				int[] tiles = masks.length == 1 ? new int[] {TARGET} : new int[] {TARGET, FAR};
 				TargetOverlay overlay = prepare(tiles, masks, accessible, 5).overlay();
 				ReverseLabels sparse = ReverseLabels.computeSparse(overlay);
-				ReverseLabels clique = ReverseLabels.computeClique(overlay);
-				assertTrue(sparse.sparse());
+				ReverseLabels clique = ReverseLabelsOracle.computeClique(overlay);
 				assertArrayEquals(clique.labels(), sparse.labels());
 				PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, sparse);
 				for (int node = 0; node < stat.searchTileCount(); node++)

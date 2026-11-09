@@ -193,7 +193,7 @@ public class AStarBankAccessParityTest
 		settings.set("costBankVisit", bankVisitCost);
 
 		PathfinderConfig config = new TestPathfinderConfig(client, settings, QuestState.FINISHED, true, true);
-		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting();
+		shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateTestServices.forTesting();
 		config.setItemStateService(itemState);
 		itemState.noteBankContainer(bank);
 		config.refresh();

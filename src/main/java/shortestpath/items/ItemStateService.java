@@ -68,43 +68,6 @@ public class ItemStateService
 	// of this service observing their invalidation needs.
 	@Getter @Accessors(fluent = true) private int itemStateRevision;
 
-	private ItemStateService()
-	{
-		this(null, null);
-	}
-
-	/**
-	 * Test/harness seam: returns an instance detached from Guice. The
-	 * production instance is the injected singleton; a detached instance
-	 * carries no coordinator, so its change declares no-op, and no config
-	 * manager, so the last-seen snapshot lives in memory only.
-	 */
-	public static ItemStateService forTesting()
-	{
-		return new ItemStateService();
-	}
-
-	/**
-	 * Test seam for asserting change declares: the returned instance hands
-	 * admitted facts to the given (typically mocked) coordinator while
-	 * staying detached from persistence.
-	 */
-	public static ItemStateService forTesting(RefreshCoordinator coordinator)
-	{
-		return new ItemStateService(coordinator, null);
-	}
-
-	/**
-	 * Test seam for asserting profile persistence: the returned instance
-	 * reads and writes the last-seen bank snapshot through the given
-	 * (typically mocked) config manager.
-	 */
-	public static ItemStateService forTesting(RefreshCoordinator coordinator,
-		ConfigManager configManager)
-	{
-		return new ItemStateService(coordinator, configManager);
-	}
-
 	/**
 	 * Consumes an item-container event. The bank container id additionally
 	 * updates the live bank reference; the tracked containers (bank,
@@ -146,7 +109,7 @@ public class ItemStateService
 
 	/**
 	 * Hands an admitted fact to the refresh coordinator. Detached
-	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * instances (built with a null coordinator) carry none, so the declare
 	 * no-ops there; a null fact declares nothing, mirroring the return-null
 	 * convention the shell's mapper used to guard.
 	 */

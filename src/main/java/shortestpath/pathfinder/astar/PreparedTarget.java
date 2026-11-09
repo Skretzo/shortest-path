@@ -44,7 +44,7 @@ public final class PreparedTarget
 	private static PreparedTarget prepare(TargetOverlay overlay)
 	{
 		long phaseStarted = System.nanoTime();
-		ReverseLabels reverse = ReverseLabels.compute(overlay);
+		ReverseLabels reverse = ReverseLabels.computeSparse(overlay);
 		long reverseSearchNanos = System.nanoTime() - phaseStarted;
 		phaseStarted = System.nanoTime();
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, reverse);

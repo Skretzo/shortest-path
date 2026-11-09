@@ -18,7 +18,7 @@ public class BankDominanceTest
 		RoutingStatic stat = dominanceStatic();
 		PreparedRoutingAccount account = account();
 		TargetOverlay target = new TargetOverlay(new SiteGraph(stat, account), emptyCollision(), D);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target, heuristic, A, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 		AStarForwardSearch.Result optimized = AStarForwardSearch.search(target, heuristic, A, () -> false, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
@@ -45,11 +45,11 @@ public class BankDominanceTest
 	{
 		try
 		{
-			return RoutingStatic.takeOwnership(new int[0], new TileComponents(0, 1), new byte[0], new char[0], new char[0],
+			return RoutingStaticTestFixture.takeOwnershipWithNetwork(new int[0], new TileComponents(0, 1), new byte[0],
+				new char[0], new char[0],
 				new int[] {A, X, BANK1, BANK2, Y, D}, new int[] {0, 1, 2, 3, 4, 5, 6},
 				new int[] {0, 0, 0, 0, 1, 1}, 2, new int[] {0, 4, 6},
-				new int[] {0, 1, 2, 3, 4, 5}, new int[] {BANK1, BANK2}, new int[0], new int[0], new int[0],
-				6, 6, 0, 0, 0, new int[] {0, 0, 0, 0, 0, 0, 0}, new int[0], new int[0]);
+				new int[] {0, 1, 2, 3, 4, 5}, new int[] {BANK1, BANK2}, new int[0], new int[0], new int[0]);
 		}
 		catch (Exception error)
 		{

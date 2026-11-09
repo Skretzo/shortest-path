@@ -21,6 +21,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import shortestpath.ItemVariations;
 import shortestpath.items.ItemStateService;
+import shortestpath.items.ItemStateTestServices;
 import shortestpath.items.OwnedItems;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.requirement.model.ItemRequirement;
@@ -137,7 +138,7 @@ public class TransportEligibilityCollectTest
 	@Test
 	public void bankSeededViaNoteBankContainerFeedsTheBankedPool()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteBankContainer(containerOf(new Item(ItemID.SHANTAY_PASS, 1)));
 		PlayerStateSource source = sourceWith(null, null, Map.of());
 
@@ -151,7 +152,7 @@ public class TransportEligibilityCollectTest
 	@Test
 	public void includeBankPathOffLeavesBankItemsOutOfTheBankedPool()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteBankContainer(containerOf(new Item(ItemID.SHANTAY_PASS, 1)));
 		PlayerStateSource source = sourceWith(null, null, Map.of());
 
@@ -165,7 +166,7 @@ public class TransportEligibilityCollectTest
 	@Test
 	public void bankedRunePouchSuppliesItsRunesOnTheBankPath()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteBankContainer(containerOf(new Item(ItemID.BH_RUNE_POUCH, 1)));
 		PlayerStateSource source = sourceWith(null, null, Map.of(ItemID.AIRRUNE, 3));
 
@@ -182,7 +183,7 @@ public class TransportEligibilityCollectTest
 	{
 		// The bank holds two pouch variants; the selector must pick the one
 		// earliest in the declared pouch order (BH before DIVINE).
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteBankContainer(containerOf(
 			new Item(ItemID.DIVINE_RUNE_POUCH, 1), new Item(ItemID.BH_RUNE_POUCH, 1)));
 		PlayerStateSource source = sourceWith(null, null, Map.of(ItemID.AIRRUNE, 3));
@@ -202,7 +203,7 @@ public class TransportEligibilityCollectTest
 	{
 		// The source reports pouch runes, but without a pouch in the bank the
 		// bank-pouch rune pool must stay empty and the pickup unsatisfiable.
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteBankContainer(containerOf());
 		PlayerStateSource source = sourceWith(null, null, Map.of(ItemID.AIRRUNE, 3));
 

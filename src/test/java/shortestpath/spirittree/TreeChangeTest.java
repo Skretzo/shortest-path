@@ -52,7 +52,7 @@ public class TreeChangeTest
 		// declare theirs to the coordinator while the internal
 		// apply* helpers still hand facts to their caller.
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		SpiritTreeService service = SpiritTreeService.forTesting(coordinator);
+		SpiritTreeService service = SpiritTreeTestServices.forTesting(coordinator);
 		service.loadFromProfile();
 		ArgumentCaptor<TreeChange> captor = ArgumentCaptor.forClass(TreeChange.class);
 		verify(coordinator).treeSetChanged(captor.capture());
@@ -68,7 +68,7 @@ public class TreeChangeTest
 	@Test
 	public void unchangedObservationsEmitNullFacts()
 	{
-		SpiritTreeService service = SpiritTreeService.forTesting();
+		SpiritTreeService service = SpiritTreeTestServices.forTesting();
 		service.applyVarbitSample("Port Sarim", 20);
 
 		// An identical re-read is not a change — no fact is emitted.

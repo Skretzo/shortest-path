@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.items.ItemStateService;
+import shortestpath.items.ItemStateTestServices;
 import shortestpath.settings.TeleportationItem;
 
 import static org.junit.Assert.assertFalse;
@@ -161,7 +162,7 @@ public class PathfinderConfigConsumableModesTest
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-		ItemStateService itemState = ItemStateService.forTesting();
+		ItemStateService itemState = ItemStateTestServices.forTesting();
 		pathfinderConfig.setItemStateService(itemState);
 		itemState.noteBankContainer(bank);
 		pathfinderConfig.refresh();

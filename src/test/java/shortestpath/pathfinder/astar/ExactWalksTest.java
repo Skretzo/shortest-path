@@ -113,10 +113,9 @@ public class ExactWalksTest
 	{
 		RoutingStatic stat = corridor();
 		TargetOverlay overlay = new TargetOverlay(new SiteGraph(stat, account()), collision(), C);
-		ReverseLabels sparse = ReverseLabels.compute(overlay);
-		assertTrue(sparse.sparse());
+		ReverseLabels sparse = ReverseLabelsOracle.compute(overlay);
 		assertEquals(10, sparse.label(stat.siteIndex(A), BankVisitState.CARRIED));
-		assertArrayEquals(ReverseLabels.computeClique(overlay).labels(), sparse.labels());
+		assertArrayEquals(ReverseLabelsOracle.computeClique(overlay).labels(), sparse.labels());
 	}
 
 	private static PreparedRoutingAccount account()

@@ -117,10 +117,10 @@ public class WildernessGlobalTeleportTest
 		PreparedRoutingAccount account = account(transports);
 		TargetOverlay target = new TargetOverlay(new SiteGraph(routingStatic(), account), emptyCollision(), TARGET);
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start);
+			PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), start);
 		assertTrue(result.reached());
 		AStarForwardSearch.Result oracle = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), start, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
+			PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), start, () -> false, false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS);
 		assertEquals("optimised search agrees with the unoptimised one", oracle.cost(), result.cost());
 		return result;
 	}
@@ -159,9 +159,9 @@ public class WildernessGlobalTeleportTest
 		for (int i = 0; i < n; i++) members[i] = i;
 		try
 		{
-			return RoutingStatic.takeOwnership(new int[0], new TileComponents(0, 1), new byte[0], new char[0], new char[0], sites, offsets,
-				ids, 1, new int[] {0, n}, members, new int[0], new int[0], new int[0], new int[0], n, n, 0, 0, 0,
-				new int[n + 1], new int[0], new int[0]);
+			return RoutingStaticTestFixture.takeOwnershipWithNetwork(new int[0], new TileComponents(0, 1), new byte[0],
+				new char[0], new char[0], sites, offsets,
+				ids, 1, new int[] {0, n}, members, new int[0], new int[0], new int[0], new int[0]);
 		}
 		catch (java.io.IOException e)
 		{

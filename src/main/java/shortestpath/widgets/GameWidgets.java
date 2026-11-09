@@ -32,22 +32,6 @@ public class GameWidgets
 		this.client = client;
 	}
 
-	private GameWidgets()
-	{
-		this(null);
-	}
-
-	/**
-	 * Test/harness seam: returns an instance detached from Guice. The
-	 * production instance is the injected singleton. Without a client the
-	 * detached instance collapses to the empty arms — {@link List#of()}
-	 * and {@code false} — and never throws.
-	 */
-	public static GameWidgets forTesting()
-	{
-		return new GameWidgets();
-	}
-
 	/**
 	 * Ordered texts of a group's child widget's dynamic children — a
 	 * missing widget or missing children yield an empty list. The order

@@ -25,9 +25,8 @@ public class SparseManhattanTest
 		TargetOverlay target = new TargetOverlay(new SiteGraph(stat, emptyAccount()),
 			attachments(A, OTHER_PLANE), TARGET);
 		ReverseLabels sparse = ReverseLabels.computeSparse(target);
-		ReverseLabels clique = ReverseLabels.computeClique(target);
+		ReverseLabels clique = ReverseLabelsOracle.computeClique(target);
 		assertArrayEquals(clique.labels(), sparse.labels());
-		assertTrue(sparse.sparse());
 		assertTrue(sparse.sparseRelaxationCount() > 0);
 		assertTrue(sparse.attachmentRelaxationCount() > 0);
 		assertEquals(0, sparse.targetLabel(BankVisitState.CARRIED));
@@ -39,7 +38,7 @@ public class SparseManhattanTest
 		RoutingStatic stat = syntheticSparse();
 		TargetOverlay target = new TargetOverlay(new SiteGraph(stat, emptyAccount()),
 			attachments(A, OTHER_PLANE), TARGET);
-		ReverseLabels reverse = ReverseLabels.compute(target);
+		ReverseLabels reverse = ReverseLabelsOracle.compute(target);
 		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, reverse);
 		for (int packed : new int[] {A, B, C, TARGET, OTHER_PLANE,
 			WorldPointUtil.packWorldPoint(1002, 1002, 0)})
@@ -69,7 +68,7 @@ public class SparseManhattanTest
 			TargetOverlay overlay = new TargetOverlay(new SiteGraph(stat, emptyAccount()),
 				attachments(A, OTHER_PLANE), tiles, masks);
 			ReverseLabels sparse = ReverseLabels.computeSparse(overlay);
-			assertArrayEquals(ReverseLabels.computeClique(overlay).labels(), sparse.labels());
+			assertArrayEquals(ReverseLabelsOracle.computeClique(overlay).labels(), sparse.labels());
 			assertTrue(sparse.sparseRelaxationCount() > 0);
 			PreparedHeuristic heuristic = PreparedHeuristic.prepare(overlay, sparse);
 			for (int packed : new int[] {A, B, C, TARGET, OTHER_PLANE})
@@ -89,7 +88,7 @@ public class SparseManhattanTest
 	{
 		TargetOverlay target = new TargetOverlay(new SiteGraph(syntheticSparse(), emptyAccount()),
 			attachments(A), TARGET);
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 
 		for (BankVisitState banked : BankVisitState.values())
 		{

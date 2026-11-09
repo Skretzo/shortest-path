@@ -29,9 +29,9 @@ import shortestpath.transport.*;
  * This package is a leaf: nothing here may reference the plugin type.
  * The engine config is late-bound by {@link #attach(PathfinderConfig)}
  * because the shell still constructs it in {@code startUp} and Guice
- * cannot inject it. A detached annotator — one built by
- * {@link #forTesting()} or never attached — answers every display read
- * with its empty/no-op arm rather than throwing.
+ * cannot inject it. A detached annotator — one built without its
+ * collaborators or never attached — answers every display read with its
+ * empty/no-op arm rather than throwing.
  */
 @Singleton
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -80,43 +80,9 @@ public class PathAnnotator
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
 
-	private PathAnnotator()
-	{
-		this(null, null, null);
-	}
-
 	PathAnnotator(PohService pohService, ItemStateService itemState)
 	{
 		this(null, pohService, itemState);
-	}
-
-	/**
-	 * A detached annotator for harnesses and tests: no client, no POH
-	 * service, and no item-state service, so every dependent read takes its
-	 * detached arm instead of throwing. {@link #attach(PathfinderConfig)}
-	 * still wires the engine config for the reads that need it.
-	 */
-	public static PathAnnotator forTesting()
-	{
-		return new PathAnnotator();
-	}
-
-	/**
-	 * Test seam for callers that exercise the POH display arms or the
-	 * bank-pickup facade with real collaborators.
-	 */
-	public static PathAnnotator forTesting(PohService pohService, ItemStateService itemState)
-	{
-		return new PathAnnotator(pohService, itemState);
-	}
-
-	/**
-	 * Test seam for callers that exercise the missing-items label, which
-	 * resolves item names through the client.
-	 */
-	public static PathAnnotator forTesting(Client client, PohService pohService, ItemStateService itemState)
-	{
-		return new PathAnnotator(client, pohService, itemState);
 	}
 
 	/**
@@ -212,7 +178,7 @@ public class PathAnnotator
 		}
 		if (pathfinderConfig == null)
 		{
-			// Detached (un-attached or forTesting) annotator — no engine config
+			// Detached (un-attached or built without collaborators) annotator — no engine config
 			// to reconstruct the edge against.
 			return Set.of();
 		}

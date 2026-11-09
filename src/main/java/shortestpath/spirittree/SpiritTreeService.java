@@ -101,32 +101,6 @@ public class SpiritTreeService
 		this(configManager, client, null, null);
 	}
 
-	SpiritTreeService()
-	{
-		this(null, null, null);
-	}
-
-	/**
-	 * A detached service for harnesses and tests: no persistence and no
-	 * client, so {@link #refreshAvailability} takes its detached arm and
-	 * merges live samples into the published set instead of recording
-	 * observations. No coordinator either, so change declares no-op.
-	 */
-	public static SpiritTreeService forTesting()
-	{
-		return new SpiritTreeService();
-	}
-
-	/**
-	 * Test seam for asserting change declares: the returned instance hands
-	 * admitted facts to the given (typically mocked) coordinator while
-	 * staying detached from persistence and the client.
-	 */
-	public static SpiritTreeService forTesting(RefreshCoordinator coordinator)
-	{
-		return new SpiritTreeService(null, null, coordinator);
-	}
-
 	static boolean spiritTreeTravelable(int varbitValue)
 	{
 		// Matches PatchImplementation.SPIRIT_TREE: 0-7 weeds, 8-19 growing,
@@ -584,7 +558,7 @@ public class SpiritTreeService
 
 	/**
 	 * Hands an admitted fact to the refresh coordinator. Detached
-	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * instances (built with a null coordinator) carry none, so the declare
 	 * no-ops there; a null fact declares nothing, mirroring the return-null
 	 * convention the shell's mapper used to guard.
 	 */

@@ -401,7 +401,7 @@ public class RoutingStaticBuilderTest
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(availability, TransportAvailabilityFixture.of(),
 			false, Set.of(), 0, true, ignored -> 0);
 		TargetOverlay overlay = new TargetOverlay(new SiteGraph(stat, account), seasonalWorld(), target);
-		return AStarForwardSearch.search(overlay, PreparedHeuristic.prepare(overlay, ReverseLabels.compute(overlay)), A1);
+		return AStarForwardSearch.search(overlay, PreparedHeuristic.prepare(overlay, ReverseLabelsOracle.compute(overlay)), A1);
 	}
 
 	@Test

@@ -193,8 +193,6 @@ public final class PreparedHeuristic
 		{
 			int key = key(component, banked);
 			add(raw, key, packed, distance);
-			if (!reverse.hasProvenance())
-				continue;
 			int origin = reverse.generatorOrigin(state);
 			int generatorState = validOrigin(reverse, overlay, node, packed, components, component, state, origin)
 				? origin : state;
