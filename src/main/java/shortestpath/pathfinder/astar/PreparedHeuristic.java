@@ -1,7 +1,7 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.pathfinder.*;
 import lombok.*;
 import lombok.experimental.Accessors;
@@ -28,7 +28,7 @@ public final class PreparedHeuristic
 			throw new IllegalArgumentException("reverse labels belong to another target overlay");
 		long started = System.nanoTime();
 		int bucketCount = overlay.routingStatic().routingComponentCount() * 2;
-		IntList[] raw = new IntList[bucketCount];
+		PrimitiveIntList[] raw = new PrimitiveIntList[bucketCount];
 		GeneratorList[] reduced = new GeneratorList[bucketCount];
 		RoutingStatic stat = overlay.routingStatic();
 		SiteGraph graph = overlay.graph();
@@ -52,8 +52,8 @@ public final class PreparedHeuristic
 		int[][] generatorTiles = new int[bucketCount][], generatorLabels = new int[bucketCount][];
 		for (int i = 0; i < bucketCount; i++)
 		{
-			tiles[i] = raw[i] == null ? EMPTY : raw[i].tiles();
-			labels[i] = raw[i] == null ? EMPTY : raw[i].labels();
+			tiles[i] = raw[i] == null ? EMPTY : raw[i].column(2, 0);
+			labels[i] = raw[i] == null ? EMPTY : raw[i].column(2, 1);
 			generatorTiles[i] = reduced[i] == null ? EMPTY : reduced[i].tiles();
 			generatorLabels[i] = reduced[i] == null ? EMPTY : reduced[i].labels();
 		}
@@ -182,7 +182,7 @@ public final class PreparedHeuristic
 		return best;
 	}
 
-	private static void addSite(IntList[] raw, GeneratorList[] reduced, ReverseLabels reverse,
+	private static void addSite(PrimitiveIntList[] raw, GeneratorList[] reduced, ReverseLabels reverse,
 		TargetOverlay overlay, int node, int packed, int[] components, BankVisitState banked)
 	{
 		int state = SiteGraph.stateId(node, banked);
@@ -238,14 +238,13 @@ public final class PreparedHeuristic
 		return component * 2 + (banked == BankVisitState.BANKED ? 1 : 0);
 	}
 
-	private static void add(IntList[] raw, int key, int packed, int label)
+	private static void add(PrimitiveIntList[] raw, int key, int packed, int label)
 	{
 		if (raw[key] == null)
-			raw[key] = new IntList();
-		raw[key].add(packed, label);
+			raw[key] = new PrimitiveIntList(16);
+		raw[key].add(packed);
+		raw[key].add(label);
 	}
-
-
 
 	private static int total(int[][] values)
 	{
@@ -253,31 +252,6 @@ public final class PreparedHeuristic
 		for (int[] value : values)
 			total += value.length;
 		return total;
-	}
-
-	private static final class IntList
-	{
-		private int[] tiles = new int[8], labels = new int[8];
-		private int size;
-
-		void add(int tile, int label)
-		{
-			if (size == tiles.length)
-			{
-				tiles = Arrays.copyOf(tiles, size * 2);
-				labels = Arrays.copyOf(labels, size * 2);
-			}
-			tiles[size] = tile;
-			labels[size++] = label;
-		}
-		int[] tiles()
-		{
-			return Arrays.copyOf(tiles, size);
-		}
-		int[] labels()
-		{
-			return Arrays.copyOf(labels, size);
-		}
 	}
 
 	private static final class GeneratorList
