@@ -1,7 +1,7 @@
 package shortestpath.pathfinder.astar;
 
 import java.util.*;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 
 /**
  * Builds the sparse same-component walking network used by {@link ReverseLabels#computeSparse}.
@@ -112,7 +112,7 @@ public final class SparseWalkingNetworkBuilder
 			}
 		}
 
-		EdgeList edges = new EdgeList();
+		PrimitiveIntList edges = new PrimitiveIntList(48);
 		int next = originalCount;
 		for (int cid = 0; cid < componentCount; cid++)
 		{
@@ -128,7 +128,7 @@ public final class SparseWalkingNetworkBuilder
 				// Exact walking edges instead of a tree, doubled like every other weight.
 				int[] triples = exactWalks.edges(cid);
 				for (int i = 0; i < triples.length; i += 3)
-					edges.add(triples[i], triples[i + 1], CostArithmetic.twice(triples[i + 2]));
+					addEdge(edges, triples[i], triples[i + 1], CostArithmetic.twice(triples[i + 2]));
 				continue;
 			}
 			Point[] points = new Point[size];
@@ -211,7 +211,7 @@ public final class SparseWalkingNetworkBuilder
 	 * axis-sorted list below it); that order, not any re-sort here, decides which Steiner vertex
 	 * id each point receives in {@link #addProjectionLevel}, keeping numbering deterministic.
 	 */
-	private static int buildComponent(int next, Point[] pts, EdgeList edges)
+	private static int buildComponent(int next, Point[] pts, PrimitiveIntList edges)
 	{
 		if (pts.length <= 1)
 		{
@@ -239,7 +239,7 @@ public final class SparseWalkingNetworkBuilder
 			// keyed on (axis-or-a-b, a, b, original).
 			for (int i = 0; i + 1 < pts.length; i++)
 			{
-				edges.add(pts[i].original, pts[i + 1].original, 0);
+				addEdge(edges, pts[i].original, pts[i + 1].original, 0);
 			}
 			return next;
 		}
@@ -248,7 +248,7 @@ public final class SparseWalkingNetworkBuilder
 	}
 
 	/** Splits {@code pts} at the most balanced gap along {@code axis} and recurses on both halves. */
-	private static int splitOn(Axis axis, int next, Point[] pts, EdgeList edges)
+	private static int splitOn(Axis axis, int next, Point[] pts, PrimitiveIntList edges)
 	{
 		Point[] sorted = pts.clone();
 		Arrays.sort(sorted, axisComparator(axis));
@@ -299,14 +299,14 @@ public final class SparseWalkingNetworkBuilder
 	 * order of the other axis coordinate (ties by original site index).
 	 */
 	private static int addProjectionLevel(Axis axis, int splitCoordinate, int firstProjection, Point[] pts,
-		EdgeList edges)
+		PrimitiveIntList edges)
 	{
 		int count = pts.length;
 		int[] steinerIds = new int[count];
 		for (int i = 0; i < count; i++)
 		{
 			steinerIds[i] = firstProjection + i;
-			edges.add(pts[i].original, steinerIds[i], Math.abs(coordOf(axis, pts[i]) - splitCoordinate));
+			addEdge(edges, pts[i].original, steinerIds[i], Math.abs(coordOf(axis, pts[i]) - splitCoordinate));
 		}
 		Integer[] order = new Integer[count];
 		for (int i = 0; i < count; i++)
@@ -328,46 +328,31 @@ public final class SparseWalkingNetworkBuilder
 			int leftIndex = order[i];
 			int rightIndex = order[i + 1];
 			int weight = Math.abs(otherCoordOf(axis, pts[leftIndex]) - otherCoordOf(axis, pts[rightIndex]));
-			edges.add(steinerIds[leftIndex], steinerIds[rightIndex], weight);
+			addEdge(edges, steinerIds[leftIndex], steinerIds[rightIndex], weight);
 		}
 		return firstProjection + count;
 	}
 
-	/** Growable primitive (from, to, weight) triples; final counts are small primitive arrays. */
-	private static final class EdgeList
+	/** Appends one (from, to, weight) edge to the interleaved edge list. */
+	private static void addEdge(PrimitiveIntList edges, int from, int to, int weight)
 	{
-		private int[] from = new int[16];
-		private int[] to = new int[16];
-		private int[] weight = new int[16];
-		private int size;
-
-		void add(int a, int b, int w)
-		{
-			if (size == from.length)
-			{
-				int capacity = size * 2;
-				from = Arrays.copyOf(from, capacity);
-				to = Arrays.copyOf(to, capacity);
-				weight = Arrays.copyOf(weight, capacity);
-			}
-			from[size] = a;
-			to[size] = b;
-			weight[size] = w;
-			size++;
-		}
+		edges.add(from);
+		edges.add(to);
+		edges.add(weight);
 	}
 
 	/**
 	 * Materialises both directions of every edge as CSR adjacency. The order of entries within
 	 * one vertex's range does not affect any distance.
 	 */
-	private static Result undirectedAdjacency(int originalCount, int vertexCount, int steinerCount, EdgeList edges)
+	private static Result undirectedAdjacency(int originalCount, int vertexCount, int steinerCount, PrimitiveIntList edges)
 	{
+		int edgeCount = edges.size() / 3;
 		int[] counts = new int[vertexCount];
-		for (int i = 0; i < edges.size; i++)
+		for (int i = 0; i < edgeCount; i++)
 		{
-			counts[edges.from[i]]++;
-			counts[edges.to[i]]++;
+			counts[edges.get(3 * i)]++;
+			counts[edges.get(3 * i + 1)]++;
 		}
 		int[] offsets = new int[vertexCount + 1];
 		for (int v = 0; v < vertexCount; v++)
@@ -377,11 +362,11 @@ public final class SparseWalkingNetworkBuilder
 		int[] destinations = new int[offsets[vertexCount]];
 		int[] weights = new int[offsets[vertexCount]];
 		int[] cursor = offsets.clone();
-		for (int i = 0; i < edges.size; i++)
+		for (int i = 0; i < edgeCount; i++)
 		{
-			int a = edges.from[i];
-			int b = edges.to[i];
-			int w = edges.weight[i];
+			int a = edges.get(3 * i);
+			int b = edges.get(3 * i + 1);
+			int w = edges.get(3 * i + 2);
 			destinations[cursor[a]] = b;
 			weights[cursor[a]] = w;
 			cursor[a]++;
@@ -389,6 +374,6 @@ public final class SparseWalkingNetworkBuilder
 			weights[cursor[b]] = w;
 			cursor[b]++;
 		}
-		return new Result(originalCount, vertexCount, steinerCount, edges.size, offsets, destinations, weights);
+		return new Result(originalCount, vertexCount, steinerCount, edgeCount, offsets, destinations, weights);
 	}
 }

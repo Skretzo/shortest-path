@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.function.IntPredicate;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.pathfinder.*;
 
 /**
@@ -222,15 +222,13 @@ public final class AStarWalkCanonicalizer
 			actionClass = view.actionClasses[i];
 		}
 		if (actionClass == Integer.MIN_VALUE) return null;
-		int[] origins = new int[4];
-		int count = 0;
+		PrimitiveIntList origins = new PrimitiveIntList(4);
 		for (int i = 0; i < view.destinations.length; i++)
 		{
 			if (view.actionClasses[i] != actionClass) continue;
-			if (count == origins.length) origins = Arrays.copyOf(origins, count * 2);
-			origins[count++] = view.origins[i];
+			origins.add(view.origins[i]);
 		}
-		return Arrays.copyOf(origins, count);
+		return origins.column(1, 0);
 	}
 
 	private boolean hasLocalOrigin(int tile, BankVisitState banked)

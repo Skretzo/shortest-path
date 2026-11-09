@@ -19,7 +19,6 @@ public final class AStarMinHeap
 		states = new int[capacity];
 	}
 
-
 	public boolean isEmpty()
 	{
 		return size == 0;
@@ -74,15 +73,6 @@ public final class AStarMinHeap
 		return true;
 	}
 
-	private boolean before(int left, int right)
-	{
-		int result = Integer.compare(priorities[left], priorities[right]);
-		if (result != 0)
-			return result < 0;
-		result = Integer.compare(costs[left], costs[right]);
-		return result != 0 ? result < 0 : Integer.compare(states[left], states[right]) < 0;
-	}
-
 	private void siftUp(int index)
 	{
 		int priority = priorities[index], cost = costs[index], state = states[index];
@@ -109,7 +99,7 @@ public final class AStarMinHeap
 		{
 			int child = (index << 1) + 1;
 			int right = child + 1;
-			if (right < size && before(right, child))
+			if (right < size && compare(priorities[right], costs[right], states[right], priorities[child], costs[child], states[child]) < 0)
 				child = right;
 			if (compare(priority, cost, state, priorities[child], costs[child], states[child]) <= 0)
 				break;

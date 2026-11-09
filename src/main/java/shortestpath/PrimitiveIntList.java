@@ -180,6 +180,25 @@ public class PrimitiveIntList
 	}
 
 	/**
+	 * Reads the list as groups of {@code stride} interleaved values and returns
+	 * the value at {@code offset} of every complete group. An incomplete
+	 * trailing group is ignored.
+	 *
+	 * @param stride number of values per group.
+	 * @param offset position inside a group of the value to extract.
+	 * @return one value per complete group, in list order.
+	 */
+	public int[] column(int stride, int offset)
+	{
+		int[] out = new int[size / stride];
+		for (int i = 0; i < out.length; i++)
+		{
+			out[i] = elementData[i * stride + offset];
+		}
+		return out;
+	}
+
+	/**
 	 * Replaces the value at the specified index.
 	 *
 	 * @param index   zero-based position of the element to overwrite.

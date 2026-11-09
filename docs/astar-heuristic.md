@@ -295,6 +295,7 @@ twin of a bank-dominated state.
 - **Target attachments:** the reverse search relaxes only a synthetic target's own
   attachment edges. Non-terminal synthetic target layers are also estimated from their
   component's finite site labels by `PreparedHeuristic`, including valid bank detours.
-- **Generator lists:** `GeneratorList` de-duplicates with a linear scan and
-  sorts with an insertion sort, so building a bucket is quadratic in its size.
-  This is worth checking if heuristic preparation shows up in profiles.
+- **Generator lists:** each bucket is a `PrimitiveIntList` of (id, tile, label)
+  triples that is de-duplicated by id with a linear scan, so building a bucket is
+  quadratic in its size. The bucket is read in ascending id order through a sort
+  of long keys. This is worth checking if heuristic preparation shows up in profiles.
