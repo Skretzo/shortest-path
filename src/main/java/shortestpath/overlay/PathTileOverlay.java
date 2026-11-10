@@ -8,7 +8,6 @@ import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.function.ToIntFunction;
 
 import net.runelite.api.*;

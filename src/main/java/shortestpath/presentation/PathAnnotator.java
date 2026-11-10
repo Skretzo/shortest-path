@@ -16,11 +16,10 @@ import shortestpath.items.ItemStateService;
 import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
-import shortestpath.requirement.Capability;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
+import shortestpath.requirement.Capability;
 import shortestpath.transport.*;
-import shortestpath.requirement.model.SkillLevels;
 
 /**
  * The presentation leaf: owns the shared edge-annotation and display

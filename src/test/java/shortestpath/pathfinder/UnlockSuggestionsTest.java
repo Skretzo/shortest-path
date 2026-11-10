@@ -33,9 +33,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
-import shortestpath.items.ItemStateService;
+import shortestpath.items.*;
 import shortestpath.pathfinder.astar.RoutingStatic;
-import shortestpath.presentation.PathAnnotator;
+import shortestpath.presentation.PathAnnotatorTestServices;
 import shortestpath.requirement.Capability;
 import shortestpath.requirement.model.SkillLevels;
 import shortestpath.settings.TeleportationItem;
@@ -131,7 +131,7 @@ public class UnlockSuggestionsTest
 		// An ironman with the fare in the bank but not on them, and routes through a bank turned off.
 		ItemContainer bank = mock(ItemContainer.class);
 		doReturn(new Item[]{new Item(ItemID.COINS, 1000)}).when(bank).getItems();
-		ItemStateService itemState = ItemStateService.forTesting();
+		ItemStateService itemState = ItemStateTestServices.forTesting();
 		itemState.onContainerChanged(InventoryID.BANK, bank);
 		config.disableTransportToggles();
 		config.set("useShips", true);
@@ -149,7 +149,7 @@ public class UnlockSuggestionsTest
 		when(coins.getName()).thenReturn("Coins");
 		when(client.getItemDefinition(ItemID.COINS)).thenReturn(coins);
 		assertEquals("Bring 20 Coins from your bank to use: Ship Aldarin",
-			PathAnnotator.forTesting(client, null, null).getUnlockSuggestionLines(search).get(0));
+			PathAnnotatorTestServices.forTesting(client, null, null).getUnlockSuggestionLines(search).get(0));
 	}
 
 	/** The Sunset Coast to Aldarin search with ships and quetzals only, running {@code completed} once it's done. */

@@ -18,13 +18,6 @@ import shortestpath.pathfinder.sailing.SailingMoves;
 import shortestpath.requirement.*;
 import shortestpath.transport.*;
 import shortestpath.sailing.*;
-import shortestpath.poh.PohService;
-import shortestpath.settings.Settings;
-import shortestpath.poh.PohNexusPortal;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.VarRequirement;
-import shortestpath.requirement.model.Unlock;
 
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig

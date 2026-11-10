@@ -1,7 +1,6 @@
 package shortestpath.pathfinder;
 
 import java.util.*;
-import shortestpath.transport.Transport;
 
 /**
  * The plugin-facing handle for an active route search.
