@@ -13,7 +13,7 @@ useMagicMushtrees	Use Magic Mushtrees	Whether to include Fossil Island Magic Mus
 useMinecarts	Use Minecarts	Whether to include minecarts in the path<br>(e.g. the Keldagrim and Lovakengj minecart networks)		
 useQuetzals	Use Quetzals	Whether to include quetzals in the path		
 useSpiritTrees	Use Spirit Trees	Whether to include spirit trees in the path		
-useTeleportationItems	Use Teleportation Items	Whether to include teleportation items from the player's inventory and equipment.<br>Options labelled (perm) only use permanent non-charge items.<br>The All options do not check skill, quest or item requirements.		
+useTeleportationItems	Use Teleportation Items	Whether to include teleportation items from the player's inventory, equipment and bank.<br>The (perm) label limits items from the indicated location to permanent items without charges.<br>The All options do not check skill, quest or item requirements.		
 useTeleportationLevers	Use Teleportation Levers	Whether to include teleportation levers in the path<br>(e.g. the lever from Edgeville to Wilderness)		
 useTeleportationPortals	Use Teleportation Portals	Whether to include teleportation portals in the path<br>(e.g. the portal from Ferox Enclave to Castle Wars)		
 useTeleportationSpells	Use Teleportation Spells	Whether to include teleportation spells in the path		

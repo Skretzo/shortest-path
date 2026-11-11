@@ -395,6 +395,7 @@ public class TransportEligibilityTest
 		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, false);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK, true);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, false);
+		expected.put(TeleportationItem.INVENTORY_ALL_AND_BANK_NON_CONSUMABLE, true);
 		expected.put(TeleportationItem.UNLOCKED, true);
 		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, false);
 		expected.put(TeleportationItem.ALL, true);
@@ -425,6 +426,7 @@ public class TransportEligibilityTest
 		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, true);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK, true);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, true);
+		expected.put(TeleportationItem.INVENTORY_ALL_AND_BANK_NON_CONSUMABLE, true);
 		expected.put(TeleportationItem.UNLOCKED, true);
 		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, true);
 		expected.put(TeleportationItem.ALL, true);

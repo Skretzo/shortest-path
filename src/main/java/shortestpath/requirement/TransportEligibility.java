@@ -259,9 +259,11 @@ public final class TransportEligibility
 	 */
 	public boolean usable(Transport transport, BankVisitState banked)
 	{
+		Map<Integer, Integer> ownedItems = banked == BankVisitState.BANKED ? bankPathItems : carriedItems;
+
 		// Mirror the requirement chain's teleportation-item gate: the shared
 		// policy verdict bypasses the pools or rejects outright, and
-		// EVALUATE_ITEMS falls through to pool evaluation below.
+		// item evaluation falls through to the selected pool below.
 		if (TeleportRestriction.isItemTeleportType(transport.getType()))
 		{
 			switch (TeleportationItemPolicy.verdict(teleportationItemSetting, transport.isConsumable()))
@@ -270,12 +272,13 @@ public final class TransportEligibility
 					return true;
 				case REJECT:
 					return false;
+				case EVALUATE_CARRIED_ITEMS:
+					ownedItems = carriedItems;
+					break;
 				default:
 					break;
 			}
 		}
-
-		Map<Integer, Integer> ownedItems = banked == BankVisitState.BANKED ? bankPathItems : carriedItems;
 
 		TransportItems transportItems = transport.getItemRequirements();
 		return transportItems == null

@@ -99,7 +99,7 @@ public class PathfinderConfigItemQuantitiesTest
 	}
 
 	/**
-	 * includeBankPath is forced on only by the two modes that gather banked
+	 * includeBankPath is forced on only by the modes that gather banked
 	 * items; every other mode leaves the configured value alone.
 	 */
 	@Test
@@ -111,7 +111,8 @@ public class PathfinderConfigItemQuantitiesTest
 		for (TeleportationItem mode : TeleportationItem.values())
 		{
 			boolean bankCapable = mode == TeleportationItem.INVENTORY_AND_BANK
-				|| mode == TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE;
+				|| mode == TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE
+				|| mode == TeleportationItem.INVENTORY_ALL_AND_BANK_NON_CONSUMABLE;
 
 			refresh(false, mode);
 
