@@ -5,7 +5,7 @@ import javax.inject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
-import net.runelite.api.gameval.*;
+import net.runelite.api.gameval.InterfaceID;
 import shortestpath.settings.*;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;
@@ -50,14 +50,12 @@ public class RefreshCoordinator
 		"dialogLine", "nexus dialog line");
 
 	/**
-	 * While one of these is open, an inventory or worn gear change re-plans the route on the next
-	 * tick, since the route may rely on items that were put away or could use ones taken out.
+	 * While one of these is open, any item change re-plans the route on the next tick, since the
+	 * route may rely on items that were put away or could use ones taken out. Opening one re-plans
+	 * too, since that is when its contents become known.
 	 */
 	private static final Set<Integer> ITEM_PANELS = Set.of(InterfaceID.BANKMAIN, InterfaceID.BANK_DEPOSITBOX,
 		InterfaceID.SHARED_BANK, InterfaceID.SHOPMAIN, InterfaceID.GE_OFFERS, InterfaceID.GE_COLLECT);
-
-	private static final Set<String> CARRIED_CHANGES = Set.of(
-		ItemChange.containerKey(InventoryID.INV), ItemChange.containerKey(InventoryID.WORN));
 
 	private final PathScheduler scheduler;
 	private final Settings settings;
@@ -74,9 +72,8 @@ public class RefreshCoordinator
 	/**
 	 * Maps an item-state change fact to its follow-up actions: the declared
 	 * {@link Effect#ELIGIBILITY_STALE} effect lazily rebuilds the eligibility
-	 * snapshot, and an inventory or worn gear change while an item panel is open
-	 * queues a re-plan for the next tick. {@code null} facts admit nothing and
-	 * map to no action.
+	 * snapshot, and any item change while an item panel is open queues a re-plan
+	 * for the next tick. {@code null} facts admit nothing and map to no action.
 	 */
 	public void itemsChanged(ItemChange change)
 	{
@@ -88,15 +85,14 @@ public class RefreshCoordinator
 		{
 			scheduler.invalidateEligibility();
 		}
-		if (!openItemPanels.isEmpty() && CARRIED_CHANGES.contains(change.getKey())
-			&& scheduler.getActiveSearch() != null)
+		if (!openItemPanels.isEmpty() && scheduler.getActiveSearch() != null)
 		{
 			itemReplanPending = true;
 		}
 	}
 
 	/**
-	 * Tracks open item panels. Opening the bank also re-plans the route, since that's when its
+	 * Tracks open item panels. Opening any of them also re-plans the route, since that's when its
 	 * contents become known.
 	 */
 	public void widgetLoaded(int groupId)
@@ -104,7 +100,7 @@ public class RefreshCoordinator
 		if (ITEM_PANELS.contains(groupId))
 		{
 			openItemPanels.add(groupId);
-			itemReplanPending |= groupId == InterfaceID.BANKMAIN && scheduler.getActiveSearch() != null;
+			itemReplanPending |= scheduler.getActiveSearch() != null;
 		}
 	}
 

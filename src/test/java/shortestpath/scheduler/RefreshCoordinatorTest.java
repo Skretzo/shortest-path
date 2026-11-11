@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -469,7 +470,7 @@ public class RefreshCoordinatorTest
 
 	private static ItemChange inventoryChanged()
 	{
-		return TestItemChange.of(ItemChange.containerKey(InventoryID.INV), Set.of(Effect.ELIGIBILITY_STALE));
+		return TestItemChange.of("container:" + InventoryID.INV, Set.of(Effect.ELIGIBILITY_STALE));
 	}
 
 	private void tick(int tick)
@@ -517,15 +518,30 @@ public class RefreshCoordinatorTest
 	}
 
 	@Test
-	public void browsingAShopWithoutBuyingDoesNothing()
+	public void aBankChangeWhileTheBankIsOpenReplansOnTheNextTick()
 	{
 		standingOnTheRoute();
 
-		coordinator.widgetLoaded(InterfaceID.SHOPMAIN);
-		coordinator.widgetClosed(InterfaceID.SHOPMAIN);
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
 		tick(20);
+		coordinator.itemsChanged(TestItemChange.of("container:" + InventoryID.BANK, Set.of(Effect.ELIGIBILITY_STALE)));
+		tick(21);
 
-		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+		verify(scheduler, times(2)).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void theDrainAfterTheBankClosesDoesNotReplan()
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		tick(20);
+		coordinator.widgetClosed(InterfaceID.BANKMAIN);
+		coordinator.itemsChanged(TestItemChange.of("container:" + InventoryID.BANK, Set.of(Effect.ELIGIBILITY_STALE)));
+		tick(21);
+
+		verify(scheduler, times(1)).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
 	}
 
 	@Test
