@@ -679,6 +679,25 @@ public class OverlayTranscriptTest
 	}
 
 	@Test
+	public void highlightBankIsNotDrawnOverPotionStorage()
+	{
+		BankPickupRequirements.BankPickupResult pickup = BankPickupRequirements.BankPickupResult.format(
+			client, new BankPickupAnalysis(List.of(List.of(Map.of(4151, 1L))), Set.of(4151)));
+		when(annotator.getBankPickup(any(), anyInt(), any())).thenReturn(pickup);
+		when(annotator.isBankOpen()).thenReturn(true);
+		when(annotator.getDestinations(eq("bank"))).thenReturn(Set.of(packed(BASE + 20, BASE + 20)));
+		when(client.getVarbitValue(VarbitID.BANK_CURRENTTAB)).thenReturn(15);
+		Widget item = mock(Widget.class);
+		when(item.isHidden()).thenReturn(false);
+		when(item.getItemId()).thenReturn(4151);
+		Widget bank = mock(Widget.class);
+		when(bank.isHidden()).thenReturn(false);
+		when(bank.getChildren()).thenReturn(new Widget[]{item});
+		widgets.put(InterfaceID.Bankmain.ITEMS, bank);
+		check("highlight-bank-off", injector.getInstance(BankItemHighlightOverlay.class));
+	}
+
+	@Test
 	public void highlightSpellbookOff()
 	{
 		override("highlightSpellbookSpells", false);

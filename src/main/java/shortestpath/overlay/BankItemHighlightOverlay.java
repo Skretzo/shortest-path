@@ -5,8 +5,7 @@ import com.google.inject.Inject;
 import java.awt.*;
 import java.util.List;
 import net.runelite.api.Client;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 
@@ -17,8 +16,9 @@ import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
-	// The BANK_CURRENTTAB value while potion storage is open, RuneLite's PotionStorage.BANKTAB_POTIONSTORE
-	private static final int POTION_STORE_TAB = 15;
+	// The bank's own tabs are 0 to 9. BANK_CURRENTTAB holds a larger value while potion storage
+	// (RuneLite's PotionStorage.BANKTAB_POTIONSTORE, 15) covers the item area.
+	private static final int MAX_BANK_TAB = 9;
 
 	private final ItemManager itemManager;
 	// extraGatesPass() fetches the container; drawHighlights reads it in the
@@ -53,8 +53,8 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return false;
 		}
 
-		// Potion storage covers the bank's item area, so the outlines would be drawn over its list
-		if (client.getVarbitValue(VarbitID.BANK_CURRENTTAB) == POTION_STORE_TAB)
+		// Outlines drawn on another panel's list would be misplaced
+		if (client.getVarbitValue(VarbitID.BANK_CURRENTTAB) > MAX_BANK_TAB)
 		{
 			return false;
 		}
