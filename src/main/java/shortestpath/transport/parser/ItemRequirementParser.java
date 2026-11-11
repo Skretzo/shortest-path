@@ -93,14 +93,12 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 				// (missing '=', extra '=', non-numeric or non-"1" quantity).
 				// Anything else would surface as NumberFormatException and be
 				// softened into dropping the whole Items cell by parse().
-				int eq = orPart.indexOf(DELIM_STATE);
-				if (eq < 0
-					|| eq != orPart.lastIndexOf(DELIM_STATE)
-					|| !"1".equals(orPart.substring(eq + 1)))
+				String[] tokenAndQuantity = orPart.split(DELIM_STATE, -1);
+				if (tokenAndQuantity.length != 2 || !"1".equals(tokenAndQuantity[1]))
 				{
 					throw new IllegalArgumentException("An unlock token must be =1: " + orPart);
 				}
-				Unlock unlock = Unlock.fromName(orPart.substring(0, eq));
+				Unlock unlock = Unlock.fromName(tokenAndQuantity[0]);
 				if (unlock == null)
 				{
 					// A typo'd unlock name must fail loudly rather than silently
