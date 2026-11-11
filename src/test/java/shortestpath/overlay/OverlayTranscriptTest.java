@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import net.runelite.api.CameraFocusableEntity;
@@ -656,6 +657,26 @@ public class OverlayTranscriptTest
 	{
 		override("highlightBankPickupItems", false);
 		check("highlight-bank-off", injector.getInstance(BankItemHighlightOverlay.class));
+	}
+
+	@Test
+	public void highlightBankFindsTheRoutesBankStepWhereverThePlayerStands()
+	{
+		BankPickupRequirements.BankPickupResult pickup = BankPickupRequirements.BankPickupResult.format(
+			client, new BankPickupAnalysis(List.of(List.of(Map.of(4151, 1L))), Set.of(4151)));
+		when(annotator.getBankPickup(any(), anyInt(), any())).thenReturn(pickup);
+		when(annotator.isBankOpen()).thenReturn(true);
+		// The route's bank step is its third tile, two tiles from where the player stands
+		when(annotator.getDestinations(eq("bank"))).thenReturn(Set.of(packed(BASE + 22, BASE + 20)));
+		Widget bank = mock(Widget.class);
+		when(bank.isHidden()).thenReturn(false);
+		when(bank.getChildren()).thenReturn(new Widget[0]);
+		widgets.put(InterfaceID.Bankmain.ITEMS, bank);
+
+		injector.getInstance(BankItemHighlightOverlay.class).render(new RecordingGraphics2D(
+			new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB).createGraphics(), new ArrayList<>()));
+
+		verify(annotator).getBankPickup(any(), eq(2), any());
 	}
 
 	@Test
