@@ -1,5 +1,6 @@
 package shortestpath.pathfinder;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import shortestpath.poh.PohService;
@@ -81,7 +82,7 @@ public final class TestWorldData
 
 	private static final class BankRequirements
 	{
-		static final Map<Integer, DestinationRequirements> ALL = ResourceLoader.bankRequirements();
+		static final Map<Integer, List<DestinationRequirements>> ALL = ResourceLoader.bankRequirements();
 	}
 
 	private static final class Cuts
@@ -127,7 +128,7 @@ public final class TestWorldData
 	}
 
 	/** Per-tile bank requirements for pickup-aware routing. */
-	public static Map<Integer, DestinationRequirements> bankRequirements()
+	public static Map<Integer, List<DestinationRequirements>> bankRequirements()
 	{
 		return BankRequirements.ALL;
 	}
