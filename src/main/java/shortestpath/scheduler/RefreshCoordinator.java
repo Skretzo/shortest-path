@@ -11,7 +11,7 @@ import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;
 import shortestpath.pathfinder.*;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
-import shortestpath.poh.PohChange;
+import shortestpath.poh.*;
 import shortestpath.sailing.SailingChange;
 import shortestpath.spirittree.TreeChange;
 
@@ -56,6 +56,8 @@ public class RefreshCoordinator
 	 */
 	private static final Set<Integer> ITEM_PANELS = Set.of(InterfaceID.BANKMAIN, InterfaceID.BANK_DEPOSITBOX,
 		InterfaceID.SHARED_BANK, InterfaceID.SHOPMAIN, InterfaceID.GE_OFFERS, InterfaceID.GE_COLLECT);
+
+	private static final int POH_LANDING = WorldPointUtil.packWorldPoint(PohService.POH_LANDING_X, PohService.POH_LANDING_Y, 0);
 
 	private final PathScheduler scheduler;
 	private final Settings settings;
@@ -267,9 +269,11 @@ public class RefreshCoordinator
 	 * The tick's off-route decision: when the player reaches a target tile the
 	 * path is cleared, and when the player strays too far from the displayed
 	 * route the search either clears or restarts from the current position,
-	 * per config. It also runs the item re-plans queued since the last tick. With
-	 * no running search there is nothing to guard — the shell already declined the
-	 * tick, and the re-read below keeps that no-op exact.
+	 * per config. A player inside the house counts as standing on its landing
+	 * tile for the off-route decision and for every restart start. It also runs
+	 * the item re-plans queued since the last tick. With no running search there
+	 * is nothing to guard — the shell already declined the tick, and the re-read
+	 * below keeps that no-op exact.
 	 */
 	public void offRouteTick(int tick, int currentLocation, int boatLocation, int boatHeading)
 	{
@@ -302,23 +306,29 @@ public class RefreshCoordinator
 			}
 		}
 
+		// Routes model the whole house as its landing tile, so inside the house the player counts as
+		// standing there: arriving by tablet is on the route, and a re-plan never starts from a house
+		// tile that would send the search back through the house
+		int location = PohService.isInsidePoh(WorldPointUtil.unpackWorldX(currentLocation),
+			WorldPointUtil.unpackWorldY(currentLocation)) ? POH_LANDING : currentLocation;
+
 		if (itemReplan)
 		{
 			// From where the player stands, like an off-route restart: they walked to the panel
 			// after the route was planned
-			int start = scheduler.isStartPointSet() ? pathfinder.getStart() : currentLocation;
+			int start = scheduler.isStartPointSet() ? pathfinder.getStart() : location;
 			scheduler.restart("items changed", start, pathfinder.getTargets());
 			return;
 		}
 
-		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(currentLocation))
+		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(location))
 		{
 			if (settings.bool(ConfigKey.CANCEL_INSTEAD))
 			{
 				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
-			scheduler.restart("off route", currentLocation, pathfinder.getTargets());
+			scheduler.restart("off route", location, pathfinder.getTargets());
 		}
 	}
 

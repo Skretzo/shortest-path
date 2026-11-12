@@ -34,7 +34,7 @@ import shortestpath.items.TestItemChange;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.Targets;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
-import shortestpath.poh.TestPohChange;
+import shortestpath.poh.*;
 import shortestpath.sailing.TestSailingChange;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -580,5 +580,64 @@ public class RefreshCoordinatorTest
 		tick(20);
 
 		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+	}
+
+	// ---------------------------------------------------------------
+	// Inside the player-owned house: routes model it as its landing tile
+	// ---------------------------------------------------------------
+
+	private static final int POH_LANDING = WorldPointUtil.packWorldPoint(PohService.POH_LANDING_X, PohService.POH_LANDING_Y, 0);
+	private static final int IN_THE_HOUSE = WorldPointUtil.packWorldPoint(1922, 7051, 1);
+
+	@Test
+	public void arrivingInTheHouseDoesNotRestartARouteThroughTheLanding()
+	{
+		runningSearch(50, Targets.at(Set.of(TARGET)));
+		when(scheduler.isNearPath(POH_LANDING)).thenReturn(true);
+		config.set("cancelInstead", false);
+
+		coordinator.offRouteTick(20, IN_THE_HOUSE, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+
+		verify(scheduler).isNearPath(POH_LANDING);
+		verify(scheduler, never()).isNearPath(IN_THE_HOUSE);
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+		verify(scheduler, never()).setTarget(anyInt());
+	}
+
+	@Test
+	public void anOffRouteRestartInsideTheHouseStartsAtTheLanding()
+	{
+		runningSearch(50, Targets.at(Set.of(TARGET)));
+		when(scheduler.isNearPath(POH_LANDING)).thenReturn(false);
+		config.set("cancelInstead", false);
+
+		coordinator.offRouteTick(20, IN_THE_HOUSE, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+
+		verify(scheduler).restart("off route", POH_LANDING, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void anItemReplanInsideTheHouseStartsAtTheLanding()
+	{
+		runningSearch(50, Targets.at(Set.of(TARGET)));
+		when(scheduler.isNearPath(POH_LANDING)).thenReturn(true);
+
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		coordinator.offRouteTick(20, IN_THE_HOUSE, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+
+		verify(scheduler).restart("items changed", POH_LANDING, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void aTileJustOutsideTheHouseKeepsItsOwnLocation()
+	{
+		int outside = WorldPointUtil.packWorldPoint(2048, 7051, 0);
+		runningSearch(50, Targets.at(Set.of(TARGET)));
+		when(scheduler.isNearPath(outside)).thenReturn(false);
+		config.set("cancelInstead", false);
+
+		coordinator.offRouteTick(20, outside, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+
+		verify(scheduler).restart("off route", outside, Targets.at(Set.of(TARGET)));
 	}
 }
