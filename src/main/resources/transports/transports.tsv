@@ -6567,6 +6567,10 @@
 3658 9815 0	3647 9815 0	Squeeze-through Web tunnel 54152	92 Slayer			10996=0	394>0;395=124		
 3647 9815 0	3658 9815 0	Squeeze-through Web tunnel 54159				10996=0			
 									
+# Haunted Woods - A Shell of a Friend island									
+3567 3489 0	3569 3487 0	Cross Stepping stone 33158						4	
+3569 3487 0	3567 3489 0	Cross Stepping stone 33158						4	
+									
 # Mort Myre Swamp - quest Hespori island									
 3501 3355 0	3497 3355 0	Cross Stepping stone 42588						4	
 3497 3355 0	3501 3355 0	Cross Stepping stone 42588				12276>39		4	
