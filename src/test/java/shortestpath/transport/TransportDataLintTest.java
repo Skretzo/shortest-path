@@ -15,6 +15,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
+import shortestpath.overlay.ScrollBookHighlightOverlay;
 import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.SplitFlagMap;
 import shortestpath.requirement.TeleportRestriction;
@@ -517,6 +518,47 @@ public class TransportDataLintTest
 
 		System.out.printf("Validated %d family-serving rows; every destination belongs to "
 			+ "exactly one option within all %d families.\n", servingRows, families.size());
+	}
+
+	/**
+	 * Asserts every {@code Master scroll book: } row in {@code teleportation_items.tsv} has a key in
+	 * {@link ScrollBookHighlightOverlay}, and every overlay key has a row. The overlay only covers
+	 * master scroll book entries; scrolls outside the book need no overlay entry.
+	 */
+	@Test
+	public void testScrollBookOverlayMatchesTsv() throws IOException
+	{
+		String itemsTsv = new String(
+			Util.readAllBytes(Objects.requireNonNull(
+				TeleportRestriction.class.getResourceAsStream("/transports/teleportation_items.tsv"))),
+			StandardCharsets.UTF_8);
+		List<TransportRecord> records = new TsvParser().parse(itemsTsv);
+
+		Set<String> tsvDisplayInfo = new HashSet<>();
+		for (TransportRecord record : records)
+		{
+			String displayInfo = record.getDisplayInfo();
+			if (displayInfo != null && displayInfo.trim().startsWith("Master scroll book: "))
+			{
+				tsvDisplayInfo.add(displayInfo.trim());
+			}
+		}
+		Assert.assertFalse("teleportation_items.tsv should contain master scroll book rows",
+			tsvDisplayInfo.isEmpty());
+
+		Set<String> overlayDisplayInfo = ScrollBookHighlightOverlay.SCROLL_WIDGET_IDS.keySet();
+
+		Set<String> missingFromOverlay = new HashSet<>(tsvDisplayInfo);
+		missingFromOverlay.removeAll(overlayDisplayInfo);
+		Assert.assertTrue("master scroll book Display info missing from ScrollBookHighlightOverlay: "
+			+ missingFromOverlay, missingFromOverlay.isEmpty());
+
+		Set<String> missingFromTsv = new HashSet<>(overlayDisplayInfo);
+		missingFromTsv.removeAll(tsvDisplayInfo);
+		Assert.assertTrue("ScrollBookHighlightOverlay Display info not found in teleportation_items.tsv: "
+			+ missingFromTsv, missingFromTsv.isEmpty());
+
+		System.out.printf("Validated %d master scroll book overlay entries.\n", tsvDisplayInfo.size());
 	}
 
 	/**

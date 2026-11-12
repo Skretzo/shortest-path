@@ -16,7 +16,8 @@ import shortestpath.transport.*;
 
 public class ScrollBookHighlightOverlay extends AbstractHighlightOverlay
 {
-	private static final Map<String, Integer> SCROLL_WIDGET_IDS = new HashMap<>();
+	// Public for tests
+	public static final Map<String, Integer> SCROLL_WIDGET_IDS = new HashMap<>();
 
 	static
 	{
@@ -39,9 +40,9 @@ public class ScrollBookHighlightOverlay extends AbstractHighlightOverlay
 		SCROLL_WIDGET_IDS.put("Master scroll book: Watson teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_WATSON);
 		SCROLL_WIDGET_IDS.put("Master scroll book: Guthixian temple teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_GUTHIXIAN_TEMPLE);
 		SCROLL_WIDGET_IDS.put("Master scroll book: Spider cave teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_SPIDERCAVE);
-		SCROLL_WIDGET_IDS.put("Master scroll book: Colossal wyrm teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_COLOSSAL_WYRM);
-		SCROLL_WIDGET_IDS.put("Master scroll book: Chasm of fire teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_CHASMOFFIRE);
-		SCROLL_WIDGET_IDS.put("Master scroll book: Arde-aglais teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_ARDEAGLAIS);
+		SCROLL_WIDGET_IDS.put("Master scroll book: Colossal wyrm teleport scroll", InterfaceID.Bookofscrolls.TELEPORTSCROLL_COLOSSAL_WYRM);
+		SCROLL_WIDGET_IDS.put("Master scroll book: Chasm teleport scroll", InterfaceID.Bookofscrolls.TELEPORTSCROLL_CHASMOFFIRE);
+		SCROLL_WIDGET_IDS.put("Master scroll book: Ardeaglais teleport", InterfaceID.Bookofscrolls.TELEPORTSCROLL_ARDEAGLAIS);
 	}
 
 	@Inject
