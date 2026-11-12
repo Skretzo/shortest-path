@@ -6702,3 +6702,26 @@
 3271 2464 0	3288 8868 1	Climb Steps 57904		7534=1|32386=1&7535=1|32386=1				2	
 3288 8869 1	3271 2463 0	Climb Steps 57903						2	
 3288 8868 1	3271 2463 0	Climb Steps 57903						2	
+									
+# Lassar Undercity - rope entrance									
+# shortcut: entry requires the attached-rope quest state; expand to earlier stages with verified access.									
+2922 5826 0	2588 6435 0	Climb-rope Rock 49477				15126>4		2	
+2587 6435 0	2922 5826 0	Climb-up Rope 48198						2	
+									
+# Lassar Undercity - Shadow Realm puddle									
+2597 6365 0	2341 6365 0	Use Puddle 49478				15126>14			
+2341 6365 0	2597 6365 0	Use Puddle 49478				15126>14			
+2667 6419 0	2411 6419 0	Use Puddle 49478				15126>14			
+2411 6419 0	2667 6419 0	Use Puddle 49478				15126>14			
+2667 6418 0	2411 6418 0	Use Puddle 49478				15126>14			
+2411 6418 0	2667 6418 0	Use Puddle 49478				15126>14			
+2617 6405 0	2361 6405 0	Use Puddle 49478				15126>14			
+2361 6405 0	2617 6405 0	Use Puddle 49478				15126>14			
+									
+# Lassar Undercity - central drain									
+2656 6421 0	2784 6282 1	Enter Drain 49488				15126>30			
+2784 6282 1	2623 6408 0	Climb-up Rope 48299						2	
+									
+# Lassar Undercity - drain dungeon ladder									
+2805 6303 1	2804 6303 0	Climb-down Ladder 48304						2	
+2804 6303 0	2805 6303 1	Climb-up Ladder 48303						3	

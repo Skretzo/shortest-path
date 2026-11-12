@@ -193,3 +193,155 @@
 # The Scar - third puzzle green neural teleporters								
 1892 6456 0	1862 6408 0	Enter Neural Teleporter 49416					2	
 1862 6409 0	1892 6455 0	Enter Neural Teleporter 49415					2	
+								
+# Lassar Undercity - The Palace								
+2593 6425 0	2616 6417 0	Use Teleporter 49479			15088=1;15089=1		1	The Plaza
+2593 6425 0	2653 6405 0	Use Teleporter 49479			15088=1;15090=1		1	The Cathedral
+2593 6425 0	2612 6379 0	Use Teleporter 49479			15088=1;15091=1		1	Northern Science District
+2593 6425 0	2598 6341 0	Use Teleporter 49479			15088=1;15092=1		1	Southern Science District
+2593 6425 0	2644 6434 0	Use Teleporter 49479			15088=1;15093=1		1	Western Residential District
+2593 6425 0	2690 6415 0	Use Teleporter 49479			15088=1;15094=1		1	Eastern Residential District
+2593 6423 0	2616 6417 0	Use Teleporter 49479			15088=1;15089=1		1	The Plaza
+2593 6423 0	2653 6405 0	Use Teleporter 49479			15088=1;15090=1		1	The Cathedral
+2593 6423 0	2612 6379 0	Use Teleporter 49479			15088=1;15091=1		1	Northern Science District
+2593 6423 0	2598 6341 0	Use Teleporter 49479			15088=1;15092=1		1	Southern Science District
+2593 6423 0	2644 6434 0	Use Teleporter 49479			15088=1;15093=1		1	Western Residential District
+2593 6423 0	2690 6415 0	Use Teleporter 49479			15088=1;15094=1		1	Eastern Residential District
+# Lassar Undercity - The Plaza								
+2617 6418 0	2593 6425 0	Use Teleporter 49480			15089=1;15088=1		1	The Palace
+2617 6418 0	2653 6405 0	Use Teleporter 49480			15089=1;15090=1		1	The Cathedral
+2617 6418 0	2612 6379 0	Use Teleporter 49480			15089=1;15091=1		1	Northern Science District
+2617 6418 0	2598 6341 0	Use Teleporter 49480			15089=1;15092=1		1	Southern Science District
+2617 6418 0	2644 6434 0	Use Teleporter 49480			15089=1;15093=1		1	Western Residential District
+2617 6418 0	2690 6415 0	Use Teleporter 49480			15089=1;15094=1		1	Eastern Residential District
+2618 6417 0	2593 6425 0	Use Teleporter 49480			15089=1;15088=1		1	The Palace
+2618 6417 0	2653 6405 0	Use Teleporter 49480			15089=1;15090=1		1	The Cathedral
+2618 6417 0	2612 6379 0	Use Teleporter 49480			15089=1;15091=1		1	Northern Science District
+2618 6417 0	2598 6341 0	Use Teleporter 49480			15089=1;15092=1		1	Southern Science District
+2618 6417 0	2644 6434 0	Use Teleporter 49480			15089=1;15093=1		1	Western Residential District
+2618 6417 0	2690 6415 0	Use Teleporter 49480			15089=1;15094=1		1	Eastern Residential District
+2617 6416 0	2593 6425 0	Use Teleporter 49480			15089=1;15088=1		1	The Palace
+2617 6416 0	2653 6405 0	Use Teleporter 49480			15089=1;15090=1		1	The Cathedral
+2617 6416 0	2612 6379 0	Use Teleporter 49480			15089=1;15091=1		1	Northern Science District
+2617 6416 0	2598 6341 0	Use Teleporter 49480			15089=1;15092=1		1	Southern Science District
+2617 6416 0	2644 6434 0	Use Teleporter 49480			15089=1;15093=1		1	Western Residential District
+2617 6416 0	2690 6415 0	Use Teleporter 49480			15089=1;15094=1		1	Eastern Residential District
+2616 6417 0	2593 6425 0	Use Teleporter 49480			15089=1;15088=1		1	The Palace
+2616 6417 0	2653 6405 0	Use Teleporter 49480			15089=1;15090=1		1	The Cathedral
+2616 6417 0	2612 6379 0	Use Teleporter 49480			15089=1;15091=1		1	Northern Science District
+2616 6417 0	2598 6341 0	Use Teleporter 49480			15089=1;15092=1		1	Southern Science District
+2616 6417 0	2644 6434 0	Use Teleporter 49480			15089=1;15093=1		1	Western Residential District
+2616 6417 0	2690 6415 0	Use Teleporter 49480			15089=1;15094=1		1	Eastern Residential District
+# Lassar Undercity - The Cathedral								
+2652 6406 0	2593 6425 0	Use Teleporter 49481			15090=1;15088=1		1	The Palace
+2652 6406 0	2616 6417 0	Use Teleporter 49481			15090=1;15089=1		1	The Plaza
+2652 6406 0	2612 6379 0	Use Teleporter 49481			15090=1;15091=1		1	Northern Science District
+2652 6406 0	2598 6341 0	Use Teleporter 49481			15090=1;15092=1		1	Southern Science District
+2652 6406 0	2644 6434 0	Use Teleporter 49481			15090=1;15093=1		1	Western Residential District
+2652 6406 0	2690 6415 0	Use Teleporter 49481			15090=1;15094=1		1	Eastern Residential District
+2653 6405 0	2593 6425 0	Use Teleporter 49481			15090=1;15088=1		1	The Palace
+2653 6405 0	2616 6417 0	Use Teleporter 49481			15090=1;15089=1		1	The Plaza
+2653 6405 0	2612 6379 0	Use Teleporter 49481			15090=1;15091=1		1	Northern Science District
+2653 6405 0	2598 6341 0	Use Teleporter 49481			15090=1;15092=1		1	Southern Science District
+2653 6405 0	2644 6434 0	Use Teleporter 49481			15090=1;15093=1		1	Western Residential District
+2653 6405 0	2690 6415 0	Use Teleporter 49481			15090=1;15094=1		1	Eastern Residential District
+2652 6404 0	2593 6425 0	Use Teleporter 49481			15090=1;15088=1		1	The Palace
+2652 6404 0	2616 6417 0	Use Teleporter 49481			15090=1;15089=1		1	The Plaza
+2652 6404 0	2612 6379 0	Use Teleporter 49481			15090=1;15091=1		1	Northern Science District
+2652 6404 0	2598 6341 0	Use Teleporter 49481			15090=1;15092=1		1	Southern Science District
+2652 6404 0	2644 6434 0	Use Teleporter 49481			15090=1;15093=1		1	Western Residential District
+2652 6404 0	2690 6415 0	Use Teleporter 49481			15090=1;15094=1		1	Eastern Residential District
+2651 6405 0	2593 6425 0	Use Teleporter 49481			15090=1;15088=1		1	The Palace
+2651 6405 0	2616 6417 0	Use Teleporter 49481			15090=1;15089=1		1	The Plaza
+2651 6405 0	2612 6379 0	Use Teleporter 49481			15090=1;15091=1		1	Northern Science District
+2651 6405 0	2598 6341 0	Use Teleporter 49481			15090=1;15092=1		1	Southern Science District
+2651 6405 0	2644 6434 0	Use Teleporter 49481			15090=1;15093=1		1	Western Residential District
+2651 6405 0	2690 6415 0	Use Teleporter 49481			15090=1;15094=1		1	Eastern Residential District
+# Lassar Undercity - Northern Science District								
+2611 6380 0	2593 6425 0	Use Teleporter 49482			15091=1;15088=1		1	The Palace
+2611 6380 0	2616 6417 0	Use Teleporter 49482			15091=1;15089=1		1	The Plaza
+2611 6380 0	2653 6405 0	Use Teleporter 49482			15091=1;15090=1		1	The Cathedral
+2611 6380 0	2598 6341 0	Use Teleporter 49482			15091=1;15092=1		1	Southern Science District
+2611 6380 0	2644 6434 0	Use Teleporter 49482			15091=1;15093=1		1	Western Residential District
+2611 6380 0	2690 6415 0	Use Teleporter 49482			15091=1;15094=1		1	Eastern Residential District
+2612 6379 0	2593 6425 0	Use Teleporter 49482			15091=1;15088=1		1	The Palace
+2612 6379 0	2616 6417 0	Use Teleporter 49482			15091=1;15089=1		1	The Plaza
+2612 6379 0	2653 6405 0	Use Teleporter 49482			15091=1;15090=1		1	The Cathedral
+2612 6379 0	2598 6341 0	Use Teleporter 49482			15091=1;15092=1		1	Southern Science District
+2612 6379 0	2644 6434 0	Use Teleporter 49482			15091=1;15093=1		1	Western Residential District
+2612 6379 0	2690 6415 0	Use Teleporter 49482			15091=1;15094=1		1	Eastern Residential District
+2611 6378 0	2593 6425 0	Use Teleporter 49482			15091=1;15088=1		1	The Palace
+2611 6378 0	2616 6417 0	Use Teleporter 49482			15091=1;15089=1		1	The Plaza
+2611 6378 0	2653 6405 0	Use Teleporter 49482			15091=1;15090=1		1	The Cathedral
+2611 6378 0	2598 6341 0	Use Teleporter 49482			15091=1;15092=1		1	Southern Science District
+2611 6378 0	2644 6434 0	Use Teleporter 49482			15091=1;15093=1		1	Western Residential District
+2611 6378 0	2690 6415 0	Use Teleporter 49482			15091=1;15094=1		1	Eastern Residential District
+2610 6379 0	2593 6425 0	Use Teleporter 49482			15091=1;15088=1		1	The Palace
+2610 6379 0	2616 6417 0	Use Teleporter 49482			15091=1;15089=1		1	The Plaza
+2610 6379 0	2653 6405 0	Use Teleporter 49482			15091=1;15090=1		1	The Cathedral
+2610 6379 0	2598 6341 0	Use Teleporter 49482			15091=1;15092=1		1	Southern Science District
+2610 6379 0	2644 6434 0	Use Teleporter 49482			15091=1;15093=1		1	Western Residential District
+2610 6379 0	2690 6415 0	Use Teleporter 49482			15091=1;15094=1		1	Eastern Residential District
+# Lassar Undercity - Southern Science District								
+2599 6342 0	2593 6425 0	Use Teleporter 49483			15092=1;15088=1		1	The Palace
+2599 6342 0	2616 6417 0	Use Teleporter 49483			15092=1;15089=1		1	The Plaza
+2599 6342 0	2653 6405 0	Use Teleporter 49483			15092=1;15090=1		1	The Cathedral
+2599 6342 0	2612 6379 0	Use Teleporter 49483			15092=1;15091=1		1	Northern Science District
+2599 6342 0	2644 6434 0	Use Teleporter 49483			15092=1;15093=1		1	Western Residential District
+2599 6342 0	2690 6415 0	Use Teleporter 49483			15092=1;15094=1		1	Eastern Residential District
+2600 6341 0	2593 6425 0	Use Teleporter 49483			15092=1;15088=1		1	The Palace
+2600 6341 0	2616 6417 0	Use Teleporter 49483			15092=1;15089=1		1	The Plaza
+2600 6341 0	2653 6405 0	Use Teleporter 49483			15092=1;15090=1		1	The Cathedral
+2600 6341 0	2612 6379 0	Use Teleporter 49483			15092=1;15091=1		1	Northern Science District
+2600 6341 0	2644 6434 0	Use Teleporter 49483			15092=1;15093=1		1	Western Residential District
+2600 6341 0	2690 6415 0	Use Teleporter 49483			15092=1;15094=1		1	Eastern Residential District
+2599 6340 0	2593 6425 0	Use Teleporter 49483			15092=1;15088=1		1	The Palace
+2599 6340 0	2616 6417 0	Use Teleporter 49483			15092=1;15089=1		1	The Plaza
+2599 6340 0	2653 6405 0	Use Teleporter 49483			15092=1;15090=1		1	The Cathedral
+2599 6340 0	2612 6379 0	Use Teleporter 49483			15092=1;15091=1		1	Northern Science District
+2599 6340 0	2644 6434 0	Use Teleporter 49483			15092=1;15093=1		1	Western Residential District
+2599 6340 0	2690 6415 0	Use Teleporter 49483			15092=1;15094=1		1	Eastern Residential District
+2598 6341 0	2593 6425 0	Use Teleporter 49483			15092=1;15088=1		1	The Palace
+2598 6341 0	2616 6417 0	Use Teleporter 49483			15092=1;15089=1		1	The Plaza
+2598 6341 0	2653 6405 0	Use Teleporter 49483			15092=1;15090=1		1	The Cathedral
+2598 6341 0	2612 6379 0	Use Teleporter 49483			15092=1;15091=1		1	Northern Science District
+2598 6341 0	2644 6434 0	Use Teleporter 49483			15092=1;15093=1		1	Western Residential District
+2598 6341 0	2690 6415 0	Use Teleporter 49483			15092=1;15094=1		1	Eastern Residential District
+# Lassar Undercity - Western Residential District								
+2643 6435 0	2593 6425 0	Use Teleporter 49484			15093=1;15088=1		1	The Palace
+2643 6435 0	2616 6417 0	Use Teleporter 49484			15093=1;15089=1		1	The Plaza
+2643 6435 0	2653 6405 0	Use Teleporter 49484			15093=1;15090=1		1	The Cathedral
+2643 6435 0	2612 6379 0	Use Teleporter 49484			15093=1;15091=1		1	Northern Science District
+2643 6435 0	2598 6341 0	Use Teleporter 49484			15093=1;15092=1		1	Southern Science District
+2643 6435 0	2690 6415 0	Use Teleporter 49484			15093=1;15094=1		1	Eastern Residential District
+2644 6434 0	2593 6425 0	Use Teleporter 49484			15093=1;15088=1		1	The Palace
+2644 6434 0	2616 6417 0	Use Teleporter 49484			15093=1;15089=1		1	The Plaza
+2644 6434 0	2653 6405 0	Use Teleporter 49484			15093=1;15090=1		1	The Cathedral
+2644 6434 0	2612 6379 0	Use Teleporter 49484			15093=1;15091=1		1	Northern Science District
+2644 6434 0	2598 6341 0	Use Teleporter 49484			15093=1;15092=1		1	Southern Science District
+2644 6434 0	2690 6415 0	Use Teleporter 49484			15093=1;15094=1		1	Eastern Residential District
+2643 6433 0	2593 6425 0	Use Teleporter 49484			15093=1;15088=1		1	The Palace
+2643 6433 0	2616 6417 0	Use Teleporter 49484			15093=1;15089=1		1	The Plaza
+2643 6433 0	2653 6405 0	Use Teleporter 49484			15093=1;15090=1		1	The Cathedral
+2643 6433 0	2612 6379 0	Use Teleporter 49484			15093=1;15091=1		1	Northern Science District
+2643 6433 0	2598 6341 0	Use Teleporter 49484			15093=1;15092=1		1	Southern Science District
+2643 6433 0	2690 6415 0	Use Teleporter 49484			15093=1;15094=1		1	Eastern Residential District
+# Lassar Undercity - Eastern Residential District								
+2692 6415 0	2593 6425 0	Use Teleporter 49485			15094=1;15088=1		1	The Palace
+2692 6415 0	2616 6417 0	Use Teleporter 49485			15094=1;15089=1		1	The Plaza
+2692 6415 0	2653 6405 0	Use Teleporter 49485			15094=1;15090=1		1	The Cathedral
+2692 6415 0	2612 6379 0	Use Teleporter 49485			15094=1;15091=1		1	Northern Science District
+2692 6415 0	2598 6341 0	Use Teleporter 49485			15094=1;15092=1		1	Southern Science District
+2692 6415 0	2644 6434 0	Use Teleporter 49485			15094=1;15093=1		1	Western Residential District
+2691 6414 0	2593 6425 0	Use Teleporter 49485			15094=1;15088=1		1	The Palace
+2691 6414 0	2616 6417 0	Use Teleporter 49485			15094=1;15089=1		1	The Plaza
+2691 6414 0	2653 6405 0	Use Teleporter 49485			15094=1;15090=1		1	The Cathedral
+2691 6414 0	2612 6379 0	Use Teleporter 49485			15094=1;15091=1		1	Northern Science District
+2691 6414 0	2598 6341 0	Use Teleporter 49485			15094=1;15092=1		1	Southern Science District
+2691 6414 0	2644 6434 0	Use Teleporter 49485			15094=1;15093=1		1	Western Residential District
+2690 6415 0	2593 6425 0	Use Teleporter 49485			15094=1;15088=1		1	The Palace
+2690 6415 0	2616 6417 0	Use Teleporter 49485			15094=1;15089=1		1	The Plaza
+2690 6415 0	2653 6405 0	Use Teleporter 49485			15094=1;15090=1		1	The Cathedral
+2690 6415 0	2612 6379 0	Use Teleporter 49485			15094=1;15091=1		1	Northern Science District
+2690 6415 0	2598 6341 0	Use Teleporter 49485			15094=1;15092=1		1	Southern Science District
+2690 6415 0	2644 6434 0	Use Teleporter 49485			15094=1;15093=1		1	Western Residential District
